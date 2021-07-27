@@ -1,0 +1,75 @@
+{
+  "name": "TempleDAO",
+  "short_name": "TempleDAO",
+  "start_url": "/?source=pwa",
+  "description": "In a world of volatility and stress, the Temple of long term wealth creation is where disciples come to stake, sleep easy, and chill.",
+  "background_color": "#000000",
+  "display": "fullscreen",
+  "scope": "/",
+  "theme_color": "#BD7B4F",
+  "shortcuts": [
+    {
+      "name": "Rituals",
+      "short_name": "Rituals",
+      "description": "Burn incense to enter the Temple",
+      "url": "/rituals?source=pwa",
+      "icons": [{ "src": "icons/android-icon-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icons/dapp_screenshot.png",
+      "type": "image/png",
+      "sizes": "1280x800"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/icons/android-icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/android-icon-36x36.png",
+      "sizes": "36x36",
+      "type": "image/png",
+      "density": "0.75"
+    },
+    {
+      "src": "/icons/android-icon-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "density": "1.0"
+    },
+    {
+      "src": "/icons/android-icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "density": "1.5"
+    },
+    {
+      "src": "/icons/android-icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "density": "2.0"
+    },
+    {
+      "src": "/icons/android-icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "density": "3.0"
+    },
+    {
+      "src": "/icons/android-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "density": "4.0"
+    },
+    {
+      "src": "icons/maskable_icon.png",
+      "sizes": "500x500",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
