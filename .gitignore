@@ -1,0 +1,9 @@
+node_modules
+venv
+
+#Hardhat files
+cache
+artifacts
+
+# slither
+slither.db.json
