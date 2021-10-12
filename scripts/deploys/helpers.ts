@@ -1,6 +1,5 @@
 import { ethers, network } from "hardhat";
 import { BaseContract, BigNumber, ContractFactory, ContractTransaction } from "ethers";
-import { hasUncaughtExceptionCaptureCallback } from "process";
 
 export interface DeployedContracts {
   FRAX: string,

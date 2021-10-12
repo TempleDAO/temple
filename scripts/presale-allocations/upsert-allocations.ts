@@ -1,11 +1,10 @@
 /**
  * Run to update pre-sale allocations. An epoch at a time
  *
- * Script needs some manual editing on each run (hasn't been factored to command line flags)
+ * Script needs some environment variables set
  *
- *   1/ Update CURRENT_EPOCH value
- *   2/ Run once in 'dryrun' mode (that is, with lines which update contracts commented out)
- *   3/ After confirming changes, run again with those lines enabled
+ *   1/ set EPOCH to whatever epoch we want to update (default 1)
+ *   2/ By default, it's run in dryrun mode. To run it for realz, set the environment variable FOR_REALZ
  */
 
 import '@nomiclabs/hardhat-ethers';
@@ -13,12 +12,29 @@ import { ethers, network } from 'hardhat';
 import { ERC20__factory, ExitQueue__factory, FakeERC20, FakeERC20__factory, LockedOGTemple, LockedOGTemple__factory, Presale, PresaleAllocation, PresaleAllocation__factory, Presale__factory, TempleERC20Token, TempleERC20Token__factory, TempleStaking, TempleStaking__factory, TempleTreasury, TempleTreasury__factory } from '../../typechain';
 import * as fs from 'fs';
 import parse from 'csv-parse';
-import { fromAtto, toAtto } from '../deploys/helpers';
+import { expectAddressWithPrivateKeyOnMainnet, fromAtto, toAtto } from '../deploys/helpers';
 import { createSecureServer } from 'http2';
 import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
 
 async function main() {
   expectAddressWithPrivateKeyOnMainnet();
+
+  const FOR_REALZ: boolean = process.env.FOR_REALZ !== undefined;
+  const EPOCH = Number.parseInt(process.env.EPOCH || "1");
+
+  console.log('');
+  if (FOR_REALZ) {
+    console.log("!!!!!!!!!! Running for realz, CTRL-C now if that's not what you want");
+    // One second delay, to give operator a chance to cancel if they expected this to be in
+    // dry run mode
+    await new Promise((resolve, reject) => {
+      setTimeout(resolve, 1000);
+    })
+    console.log(`Updating alloccations for epoch ${EPOCH}`)
+  } else {
+    console.log(`DRY RUN: expected actions to update alloccations for epoch ${EPOCH}`)
+  }
+  console.log('');
 
   const [owner] = await ethers.getSigners();
 
@@ -56,26 +72,38 @@ async function main() {
   // Set each allocation if
   //   1. not already set
   //   2. if it's the current epoch, then we add to whatever was there before
-  const CURRENT_EPOCH = 11;
   for (const alloc of allocations) {
-    if (alloc.address == 'missing') {
-      continue;
-    }
 
     // optimisation to speed up script, only run for the current epoch
-    if (alloc.epoch !== CURRENT_EPOCH) {
+    if (alloc.epoch !== EPOCH) {
       continue;
     }
 
+    // If it's data we can't handle, skip
+    if (alloc.address == 'missing' || alloc.address == 'none') {
+      console.log(`**** SKIPING no address: ${alloc.address}`);
+      continue;
+    }
+
+    if (alloc.allocation === 0) {
+      console.log(`**** SKIPING ${alloc.address}. 0 Allocation in data sheet`);
+      continue;
+    }
+
+    // Otherwise, get value on chain, and work out what the new alloc should be and update
     const currAlloc = await PRESALE_ALLOCATION.allocationOf(alloc.address);
     const [epoch, amount] = [currAlloc.epoch.toNumber(), fromAtto(currAlloc.amount)]
 
     if (amount === 0) {
       console.log(`ADD ${alloc.address} (${alloc.epoch}, ${alloc.allocation})`);
-      // await PRESALE_ALLOCATION.setAllocation(alloc.address, toAtto(alloc.allocation), alloc.epoch)
-    } else if (epoch < CURRENT_EPOCH && alloc.epoch === CURRENT_EPOCH) {
+      if (FOR_REALZ) {
+        await PRESALE_ALLOCATION.setAllocation(alloc.address, toAtto(alloc.allocation), alloc.epoch)
+      }
+    } else if (epoch < EPOCH && alloc.epoch === EPOCH) {
       console.log(`**** UPDATING ${alloc.address} FROM (${epoch}, ${amount}) -- TO -- (${alloc.epoch}, ${amount + alloc.allocation})`);
-      // await PRESALE_ALLOCATION.setAllocation(alloc.address, toAtto(amount + alloc.allocation), alloc.epoch)
+      if (FOR_REALZ) {
+        await PRESALE_ALLOCATION.setAllocation(alloc.address, toAtto(amount + alloc.allocation), alloc.epoch)
+      }
     } else {
       console.log(`**** SKIPING ${alloc.address}. Already exists on chain: (${epoch}, ${amount})`);
     }
