@@ -3,10 +3,12 @@ import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import {
   ExitQueue__factory,
-  FakeERC20__factory, LockedOGTemple__factory,
+  FakeERC20__factory,
+  LockedOGTemple__factory,
   Presale__factory,
   PresaleAllocation__factory,
   TempleERC20Token__factory,
+  TempleOpeningCeremony__factory,
   TempleStaking__factory,
   TempleTreasury__factory
 } from '../typechain';
@@ -23,7 +25,7 @@ async function main() {
   const [owner] = await ethers.getSigners();
 
   const startEpochSeconds = Math.floor(Date.now() / 1000);
-  const epochSizeSeconds = 24*60*60;
+  const epochSizeSeconds = 24 * 60 * 60;
   const unlockTimestampSeconds = startEpochSeconds + epochSizeSeconds * 2;
 
   const TEMPLE = await new TempleERC20Token__factory(owner).deploy();
@@ -132,11 +134,25 @@ async function main() {
     console.log(`EXPORT ${envvar}=${contract_address[envvar]}`);
   }
 
+  console.log(`==================== TEMPLE OPENING CEREMONY =====================`);
+  const TEMPLE_OPENING_CEREMONY = await new TempleOpeningCeremony__factory(owner).deploy();
+  const openingCeremonyData = {
+    roles: ['echoing whispers']
+  };
+  const stringifyOpeningCeremonyData = JSON.stringify(openingCeremonyData);
+  await TEMPLE_OPENING_CEREMONY.setData(accounts[0].address, 'v1', stringifyOpeningCeremonyData);
+  console.log(`TEMPLE_OPENING_CEREMONY: ${TEMPLE_OPENING_CEREMONY.address}`);
+
   for (const account of accounts) {
     const address = await account.getAddress();
     const allocation = await PRESALE_ALLOCATION.allocationOf(address);
     const { amount, epoch } = allocation;
+    const logData = await TEMPLE_OPENING_CEREMONY.dataOf(address);
     console.info(`address: ${address} amount: ${fromAtto(amount)} epoch: ${epoch.toNumber()}`);
+    if (logData.version) {
+      console.info(`Opening Ceremony Data:`);
+      console.info(`version: ${logData.version} data: ${logData.data}`);
+    }
   }
 }
 
