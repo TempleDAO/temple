@@ -10,7 +10,7 @@ contract TempleOpeningCeremony is Ownable {
 
     struct TempleOpeningCeremonyTemplarData {
         // data version so dapps can map the data field
-        string version;
+        uint256 version;
         // templar data as JSON.stringify
         string data;
     }
@@ -19,7 +19,7 @@ contract TempleOpeningCeremony is Ownable {
     mapping(address => TempleOpeningCeremonyTemplarData) public dataOf;
 
     // use to update data for a templar
-    function setData(address templar, string memory version, string memory data) external onlyOwner {
+    function setData(address templar, uint256 version, string memory data) external onlyOwner {
         dataOf[templar].version = version;
         dataOf[templar].data = data;
     }

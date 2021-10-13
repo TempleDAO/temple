@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { Signer } from 'ethers';
+import { BigNumber, Signer } from 'ethers';
 import { ethers } from 'hardhat';
 import { TempleOpeningCeremony, TempleOpeningCeremony__factory } from '../typechain';
 import { shouldThrow } from './helpers';
 
-describe('Test Opening Ceremony', async () => {
+describe.only('Test Opening Ceremony', async () => {
   const ownableErr = /Ownable: caller is not the owner/;
   const DEFAULT_DATA = {
     roles: ['r1', 'r2'],
@@ -14,7 +14,7 @@ describe('Test Opening Ceremony', async () => {
   let TEMPLE_OPENING_CEREMONY: TempleOpeningCeremony;
   let owner: Signer;
   let nonOwner: Signer;
-  const testVersion = 'beta';
+  const testVersion = BigNumber.from(1);
 
 
   beforeEach(async () => {
@@ -33,8 +33,8 @@ describe('Test Opening Ceremony', async () => {
     // Check that Owner CAN update templar data
     await TEMPLE_OPENING_CEREMONY.setData(nonOwnerAddress, testVersion, templarDataStringify);
     const templarData = await TEMPLE_OPENING_CEREMONY.dataOf(nonOwnerAddress);
-    expect(templarData.version, testVersion);
-    expect(templarData.data, templarDataStringify);
+    expect(templarData.version).eq(testVersion);
+    expect(templarData.data).eq(templarDataStringify);
   });
 
 
@@ -45,8 +45,8 @@ describe('Test Opening Ceremony', async () => {
     // Set data and chek original values
     await TEMPLE_OPENING_CEREMONY.setData(nonOwnerAddress, testVersion, templarDataStringify);
     const templarData = await TEMPLE_OPENING_CEREMONY.dataOf(nonOwnerAddress);
-    expect(templarData.version, testVersion);
-    expect(templarData.data, templarDataStringify);
+    expect(templarData.version).eq(testVersion);
+    expect(templarData.data).eq(templarDataStringify);
 
     // Update data
     const newData = JSON.parse(templarData.data);

@@ -140,7 +140,7 @@ async function main() {
     roles: ['echoing whispers']
   };
   const stringifyOpeningCeremonyData = JSON.stringify(openingCeremonyData);
-  await TEMPLE_OPENING_CEREMONY.setData(accounts[0].address, 'v1', stringifyOpeningCeremonyData);
+  await TEMPLE_OPENING_CEREMONY.setData(accounts[0].address, 1, stringifyOpeningCeremonyData);
   console.log(`TEMPLE_OPENING_CEREMONY: ${TEMPLE_OPENING_CEREMONY.address}`);
 
   for (const account of accounts) {

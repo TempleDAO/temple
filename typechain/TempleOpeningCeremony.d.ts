@@ -24,7 +24,7 @@ interface TempleOpeningCeremonyInterface extends ethers.utils.Interface {
     "dataOf(address)": FunctionFragment;
     "owner()": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
-    "setData(address,string,string)": FunctionFragment;
+    "setData(address,uint256,string)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
   };
 
@@ -36,7 +36,7 @@ interface TempleOpeningCeremonyInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "setData",
-    values: [string, string, string]
+    values: [string, BigNumberish, string]
   ): string;
   encodeFunctionData(
     functionFragment: "transferOwnership",
@@ -113,7 +113,7 @@ export class TempleOpeningCeremony extends BaseContract {
     dataOf(
       arg0: string,
       overrides?: CallOverrides
-    ): Promise<[string, string] & { version: string; data: string }>;
+    ): Promise<[BigNumber, string] & { version: BigNumber; data: string }>;
 
     owner(overrides?: CallOverrides): Promise<[string]>;
 
@@ -123,7 +123,7 @@ export class TempleOpeningCeremony extends BaseContract {
 
     setData(
       templar: string,
-      version: string,
+      version: BigNumberish,
       data: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -137,7 +137,7 @@ export class TempleOpeningCeremony extends BaseContract {
   dataOf(
     arg0: string,
     overrides?: CallOverrides
-  ): Promise<[string, string] & { version: string; data: string }>;
+  ): Promise<[BigNumber, string] & { version: BigNumber; data: string }>;
 
   owner(overrides?: CallOverrides): Promise<string>;
 
@@ -147,7 +147,7 @@ export class TempleOpeningCeremony extends BaseContract {
 
   setData(
     templar: string,
-    version: string,
+    version: BigNumberish,
     data: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -161,7 +161,7 @@ export class TempleOpeningCeremony extends BaseContract {
     dataOf(
       arg0: string,
       overrides?: CallOverrides
-    ): Promise<[string, string] & { version: string; data: string }>;
+    ): Promise<[BigNumber, string] & { version: BigNumber; data: string }>;
 
     owner(overrides?: CallOverrides): Promise<string>;
 
@@ -169,7 +169,7 @@ export class TempleOpeningCeremony extends BaseContract {
 
     setData(
       templar: string,
-      version: string,
+      version: BigNumberish,
       data: string,
       overrides?: CallOverrides
     ): Promise<void>;
@@ -209,7 +209,7 @@ export class TempleOpeningCeremony extends BaseContract {
 
     setData(
       templar: string,
-      version: string,
+      version: BigNumberish,
       data: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -234,7 +234,7 @@ export class TempleOpeningCeremony extends BaseContract {
 
     setData(
       templar: string,
-      version: string,
+      version: BigNumberish,
       data: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
