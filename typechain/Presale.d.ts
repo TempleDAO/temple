@@ -29,9 +29,9 @@ interface PresaleInterface extends ethers.utils.Interface {
     "TEMPLE()": FunctionFragment;
     "TREASURY()": FunctionFragment;
     "allocationUsed(address)": FunctionFragment;
-    "getEstimatedFraxOutput(uint256,address)": FunctionFragment;
+    "getEstimatedOutput(uint256,bytes)": FunctionFragment;
     "mintAndStake(uint256)": FunctionFragment;
-    "mintAndStakeZaps(uint256,address,uint256)": FunctionFragment;
+    "mintAndStakeZaps(uint256,address,uint256,bytes)": FunctionFragment;
     "mintMultiple()": FunctionFragment;
     "owner()": FunctionFragment;
     "pause()": FunctionFragment;
@@ -62,8 +62,8 @@ interface PresaleInterface extends ethers.utils.Interface {
     values: [string]
   ): string;
   encodeFunctionData(
-    functionFragment: "getEstimatedFraxOutput",
-    values: [BigNumberish, string]
+    functionFragment: "getEstimatedOutput",
+    values: [BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "mintAndStake",
@@ -71,7 +71,7 @@ interface PresaleInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "mintAndStakeZaps",
-    values: [BigNumberish, string, BigNumberish]
+    values: [BigNumberish, string, BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "mintMultiple",
@@ -120,7 +120,7 @@ interface PresaleInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getEstimatedFraxOutput",
+    functionFragment: "getEstimatedOutput",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -252,9 +252,9 @@ export class Presale extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
-    getEstimatedFraxOutput(
+    getEstimatedOutput(
       _amountTokenIn: BigNumberish,
-      _tokenAddress: string,
+      _path: BytesLike,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -266,7 +266,8 @@ export class Presale extends BaseContract {
     mintAndStakeZaps(
       _amountTokenIn: BigNumberish,
       _tokenAddress: string,
-      _amountOutMinimum: BigNumberish,
+      _fraxAmountOutMinimum: BigNumberish,
+      _path: BytesLike,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -319,9 +320,9 @@ export class Presale extends BaseContract {
 
   allocationUsed(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-  getEstimatedFraxOutput(
+  getEstimatedOutput(
     _amountTokenIn: BigNumberish,
-    _tokenAddress: string,
+    _path: BytesLike,
     overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -333,7 +334,8 @@ export class Presale extends BaseContract {
   mintAndStakeZaps(
     _amountTokenIn: BigNumberish,
     _tokenAddress: string,
-    _amountOutMinimum: BigNumberish,
+    _fraxAmountOutMinimum: BigNumberish,
+    _path: BytesLike,
     overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -386,9 +388,9 @@ export class Presale extends BaseContract {
 
     allocationUsed(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    getEstimatedFraxOutput(
+    getEstimatedOutput(
       _amountTokenIn: BigNumberish,
-      _tokenAddress: string,
+      _path: BytesLike,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -400,7 +402,8 @@ export class Presale extends BaseContract {
     mintAndStakeZaps(
       _amountTokenIn: BigNumberish,
       _tokenAddress: string,
-      _amountOutMinimum: BigNumberish,
+      _fraxAmountOutMinimum: BigNumberish,
+      _path: BytesLike,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -508,9 +511,9 @@ export class Presale extends BaseContract {
 
     allocationUsed(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    getEstimatedFraxOutput(
+    getEstimatedOutput(
       _amountTokenIn: BigNumberish,
-      _tokenAddress: string,
+      _path: BytesLike,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -522,7 +525,8 @@ export class Presale extends BaseContract {
     mintAndStakeZaps(
       _amountTokenIn: BigNumberish,
       _tokenAddress: string,
-      _amountOutMinimum: BigNumberish,
+      _fraxAmountOutMinimum: BigNumberish,
+      _path: BytesLike,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -581,9 +585,9 @@ export class Presale extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    getEstimatedFraxOutput(
+    getEstimatedOutput(
       _amountTokenIn: BigNumberish,
-      _tokenAddress: string,
+      _path: BytesLike,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -595,7 +599,8 @@ export class Presale extends BaseContract {
     mintAndStakeZaps(
       _amountTokenIn: BigNumberish,
       _tokenAddress: string,
-      _amountOutMinimum: BigNumberish,
+      _fraxAmountOutMinimum: BigNumberish,
+      _path: BytesLike,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

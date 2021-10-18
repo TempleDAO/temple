@@ -38,13 +38,8 @@ contract Presale is Ownable, Pausable {
     event MintComplete(address minter, uint256 acceptedStablec, uint256 mintedTemple, uint256 mintedOGTemple);
 
     // USDC/USDT/DAI/ETH Zaps
-    ISwapRouter public constant uniswapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
-    IQuoter public constant quoter = IQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6);
-    address private constant usdcAddr = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; //6 Decimals
-    address private constant usdtAddr = 0xdAC17F958D2ee523a2206206994597C13D831ec7; //6 Decimals
-    address private constant daiAddr = 0x6B175474E89094C44Da98b954EedeAC495271d0F; //18 Decimals
-    address private constant wethAddr = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; //18 Decimals
-    address private constant fraxAddr = 0x853d955aCEf822Db058eb8505911ED77F175b99e; //18 Decimals
+    ISwapRouter public uniswapRouter;
+    IQuoter public quoter;
 
     constructor(
       IERC20 _STABLEC,
@@ -54,7 +49,9 @@ contract Presale is Ownable, Pausable {
       TempleTreasury _TREASURY,
       PresaleAllocation _PRESALE_ALLOCATION,
       uint256 _mintMultiple,
-      uint256 _unlockTimestamp) {
+      uint256 _unlockTimestamp,
+      ISwapRouter _uniswapRouter,
+      IQuoter _quoter) {
 
       STABLEC = _STABLEC;
       TEMPLE = _TEMPLE;
@@ -65,25 +62,24 @@ contract Presale is Ownable, Pausable {
 
       mintMultiple = _mintMultiple;
       unlockTimestamp = _unlockTimestamp;
+
+      uniswapRouter = _uniswapRouter;
+      quoter =  _quoter;
     }
 
     function setUnlockTimestamp(uint256 _unlockTimestamp) external onlyOwner {
       unlockTimestamp = _unlockTimestamp;
     }
 
-    // USDC/USDT/DAI/WETH/ETH Zaps (_tokenAddress = address(0) for ETH)
-    function mintAndStakeZaps(uint256 _amountTokenIn, address _tokenAddress, uint256 _amountOutMinimum) external payable {
-      require(_tokenAddress == usdcAddr || _tokenAddress == usdtAddr || _tokenAddress == daiAddr
-        || _tokenAddress == wethAddr || _tokenAddress == address(0), "Unsupported token for zapping.");
-      require((_tokenAddress != address(0) && msg.value == 0) ||  (_tokenAddress == address(0) && msg.value > 0), "ETH only accepted if zapping ETH ");
+    // Zaps (_tokenAddress = address(0) for ETH)
+    function mintAndStakeZaps(uint256 _amountTokenIn, address _tokenAddress, uint256 _fraxAmountOutMinimum, bytes memory _path) external payable {
+      require((_tokenAddress != address(0) && msg.value == 0) ||  (_tokenAddress == address(0) && msg.value > 0), "ETH only accepted if zapping ETH.");
 
       if (_tokenAddress != address(0)) {
         SafeERC20.safeTransferFrom(IERC20(_tokenAddress), msg.sender, address(this), _amountTokenIn);
       }
 
-      uint256 _fee = 500;
       uint256 _amountIn;
-      bytes memory _path;
 
       if (_tokenAddress != address(0)) {
         _amountIn = _amountTokenIn;
@@ -92,24 +88,18 @@ contract Presale is Ownable, Pausable {
         _amountIn = msg.value;
       }
 
-      if (_tokenAddress != address(0) && _tokenAddress != wethAddr) {
-        _path = abi.encodePacked(_tokenAddress, _fee, fraxAddr);
-      }
-      else {
-        _path = abi.encodePacked(wethAddr, _fee, usdcAddr, _fee, fraxAddr);
-      }
-
       ISwapRouter.ExactInputParams memory params =
           ISwapRouter.ExactInputParams({
               path: _path,
               recipient: address(this),
-              deadline: block.timestamp + 1200,
+              deadline: block.timestamp,
               amountIn: _amountIn,
-              amountOutMinimum: _amountOutMinimum
+              amountOutMinimum: _fraxAmountOutMinimum
           });
       
       uint256 _amountPaidStablec = uniswapRouter.exactInput{ value: msg.value }(params); //Get amount of FRAX returned
 
+      // Everything from here down will be deleted and replaced by a call to OpeningCeremony.mintAndStakeFor (currently unimplemented!)
       (uint256 totalAllocation, uint256 allocationEpoch) = PRESALE_ALLOCATION.allocationOf(msg.sender);
 
       require(_amountPaidStablec + allocationUsed[msg.sender] <= totalAllocation, "Amount requested exceed address allocation");
@@ -135,26 +125,7 @@ contract Presale is Ownable, Pausable {
     }
 
     // Do not use on-chain, gas inefficient. Use only for frontend
-    // USDC/USDT/DAI/WETH/ETH quotes for Frax (_tokenAddress = address(0) for ETH)
-    function getEstimatedFraxOutput(uint256 _amountTokenIn, address _tokenAddress) external payable returns (uint256) {
-      require(_tokenAddress == usdcAddr || _tokenAddress == usdtAddr || _tokenAddress == daiAddr
-        || _tokenAddress == wethAddr || _tokenAddress == address(0), "Unsupported token for zapping.");
-
-      uint256 _fee = 500;
-      bytes memory _path;
-      address tokenIn = _tokenAddress;
-
-      if (_tokenAddress == address(0)) {
-        tokenIn = wethAddr;
-      }
-
-      if (_tokenAddress != address(0) && _tokenAddress != wethAddr) {
-        _path = abi.encodePacked(_tokenAddress, _fee, fraxAddr);
-      }
-      else {
-        _path = abi.encodePacked(wethAddr, _fee, usdcAddr, _fee, fraxAddr);
-      }
-
+    function getEstimatedOutput(uint256 _amountTokenIn,  bytes memory _path) external payable returns (uint256) {
       return quoter.quoteExactInput(
           _path,
           _amountTokenIn

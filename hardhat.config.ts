@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ganache";  // for testing
@@ -20,13 +22,19 @@ if (!process.env.ETHERSCAN_API_KEY) {
  */
 module.exports = {
   solidity: "0.8.4",
+          settings: {
+          optimizer: {
+            enabled: false,
+            runs: 200,
+          },
+        },
   typechain: {
     target: "ethers-v5",
   },
   networks: {
     rinkeby: {
       url: "https://eth-rinkeby.alchemyapi.io/v2/QqeiqrSzcuz0ZEcK3i01eL5gPmFgQRfu",
-      accounts: ["edb88f8e1987401dd2a0babf4fcd8ef16c0c32bd9db3c71e556a0f0ea505b754"],
+      accounts: [process.env.TESTNET_ADDRESS_PRIVATE_KEY],
     },
     mainnet: {
       url: "https://eth-mainnet.alchemyapi.io/v2/wMu8LWhZqh3KFpNCQZH4EVgNuF7qcrw9",

@@ -22,10 +22,10 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface ISwapRouterInterface extends ethers.utils.Interface {
   functions: {
-    "exactInput((bytes,address,uint256,uint256,uint256))": FunctionFragment;
-    "exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))": FunctionFragment;
-    "exactOutput((bytes,address,uint256,uint256,uint256))": FunctionFragment;
-    "exactOutputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))": FunctionFragment;
+    "exactInput(tuple)": FunctionFragment;
+    "exactInputSingle(tuple)": FunctionFragment;
+    "exactOutput(tuple)": FunctionFragment;
+    "exactOutputSingle(tuple)": FunctionFragment;
     "uniswapV3SwapCallback(int256,int256,bytes)": FunctionFragment;
   };
 
