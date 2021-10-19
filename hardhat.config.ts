@@ -22,12 +22,6 @@ if (!process.env.ETHERSCAN_API_KEY) {
  */
 module.exports = {
   solidity: "0.8.4",
-          settings: {
-          optimizer: {
-            enabled: false,
-            runs: 200,
-          },
-        },
   typechain: {
     target: "ethers-v5",
   },
