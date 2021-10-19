@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ganache";  // for testing
