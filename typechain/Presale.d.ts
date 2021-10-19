@@ -12,6 +12,7 @@ import {
   BaseContract,
   ContractTransaction,
   Overrides,
+  PayableOverrides,
   CallOverrides,
 } from "ethers";
 import { BytesLike } from "@ethersproject/bytes";
@@ -28,14 +29,18 @@ interface PresaleInterface extends ethers.utils.Interface {
     "TEMPLE()": FunctionFragment;
     "TREASURY()": FunctionFragment;
     "allocationUsed(address)": FunctionFragment;
+    "getEstimatedOutput(uint256,bytes)": FunctionFragment;
     "mintAndStake(uint256)": FunctionFragment;
+    "mintAndStakeZaps(uint256,address,uint256,bytes)": FunctionFragment;
     "mintMultiple()": FunctionFragment;
     "owner()": FunctionFragment;
     "pause()": FunctionFragment;
     "paused()": FunctionFragment;
+    "quoter()": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "setUnlockTimestamp(uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
+    "uniswapRouter()": FunctionFragment;
     "unlockTimestamp()": FunctionFragment;
     "unpause()": FunctionFragment;
   };
@@ -57,8 +62,16 @@ interface PresaleInterface extends ethers.utils.Interface {
     values: [string]
   ): string;
   encodeFunctionData(
+    functionFragment: "getEstimatedOutput",
+    values: [BigNumberish, BytesLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "mintAndStake",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "mintAndStakeZaps",
+    values: [BigNumberish, string, BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "mintMultiple",
@@ -67,6 +80,7 @@ interface PresaleInterface extends ethers.utils.Interface {
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "pause", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
+  encodeFunctionData(functionFragment: "quoter", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
     values?: undefined
@@ -78,6 +92,10 @@ interface PresaleInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "uniswapRouter",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "unlockTimestamp",
@@ -102,7 +120,15 @@ interface PresaleInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "getEstimatedOutput",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "mintAndStake",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "mintAndStakeZaps",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -112,6 +138,7 @@ interface PresaleInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "quoter", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
@@ -122,6 +149,10 @@ interface PresaleInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "uniswapRouter",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -221,9 +252,23 @@ export class Presale extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
+    getEstimatedOutput(
+      _amountTokenIn: BigNumberish,
+      _path: BytesLike,
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     mintAndStake(
       _amountPaidStablec: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    mintAndStakeZaps(
+      _amountTokenIn: BigNumberish,
+      _tokenAddress: string,
+      _fraxAmountOutMinimum: BigNumberish,
+      _path: BytesLike,
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     mintMultiple(overrides?: CallOverrides): Promise<[BigNumber]>;
@@ -235,6 +280,8 @@ export class Presale extends BaseContract {
     ): Promise<ContractTransaction>;
 
     paused(overrides?: CallOverrides): Promise<[boolean]>;
+
+    quoter(overrides?: CallOverrides): Promise<[string]>;
 
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -249,6 +296,8 @@ export class Presale extends BaseContract {
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    uniswapRouter(overrides?: CallOverrides): Promise<[string]>;
 
     unlockTimestamp(overrides?: CallOverrides): Promise<[BigNumber]>;
 
@@ -271,9 +320,23 @@ export class Presale extends BaseContract {
 
   allocationUsed(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
+  getEstimatedOutput(
+    _amountTokenIn: BigNumberish,
+    _path: BytesLike,
+    overrides?: PayableOverrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   mintAndStake(
     _amountPaidStablec: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  mintAndStakeZaps(
+    _amountTokenIn: BigNumberish,
+    _tokenAddress: string,
+    _fraxAmountOutMinimum: BigNumberish,
+    _path: BytesLike,
+    overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   mintMultiple(overrides?: CallOverrides): Promise<BigNumber>;
@@ -285,6 +348,8 @@ export class Presale extends BaseContract {
   ): Promise<ContractTransaction>;
 
   paused(overrides?: CallOverrides): Promise<boolean>;
+
+  quoter(overrides?: CallOverrides): Promise<string>;
 
   renounceOwnership(
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -299,6 +364,8 @@ export class Presale extends BaseContract {
     newOwner: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
+
+  uniswapRouter(overrides?: CallOverrides): Promise<string>;
 
   unlockTimestamp(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -321,8 +388,22 @@ export class Presale extends BaseContract {
 
     allocationUsed(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
+    getEstimatedOutput(
+      _amountTokenIn: BigNumberish,
+      _path: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     mintAndStake(
       _amountPaidStablec: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    mintAndStakeZaps(
+      _amountTokenIn: BigNumberish,
+      _tokenAddress: string,
+      _fraxAmountOutMinimum: BigNumberish,
+      _path: BytesLike,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -333,6 +414,8 @@ export class Presale extends BaseContract {
     pause(overrides?: CallOverrides): Promise<void>;
 
     paused(overrides?: CallOverrides): Promise<boolean>;
+
+    quoter(overrides?: CallOverrides): Promise<string>;
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
@@ -345,6 +428,8 @@ export class Presale extends BaseContract {
       newOwner: string,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    uniswapRouter(overrides?: CallOverrides): Promise<string>;
 
     unlockTimestamp(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -426,9 +511,23 @@ export class Presale extends BaseContract {
 
     allocationUsed(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
+    getEstimatedOutput(
+      _amountTokenIn: BigNumberish,
+      _path: BytesLike,
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     mintAndStake(
       _amountPaidStablec: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    mintAndStakeZaps(
+      _amountTokenIn: BigNumberish,
+      _tokenAddress: string,
+      _fraxAmountOutMinimum: BigNumberish,
+      _path: BytesLike,
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     mintMultiple(overrides?: CallOverrides): Promise<BigNumber>;
@@ -440,6 +539,8 @@ export class Presale extends BaseContract {
     ): Promise<BigNumber>;
 
     paused(overrides?: CallOverrides): Promise<BigNumber>;
+
+    quoter(overrides?: CallOverrides): Promise<BigNumber>;
 
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -454,6 +555,8 @@ export class Presale extends BaseContract {
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
+
+    uniswapRouter(overrides?: CallOverrides): Promise<BigNumber>;
 
     unlockTimestamp(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -482,9 +585,23 @@ export class Presale extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    getEstimatedOutput(
+      _amountTokenIn: BigNumberish,
+      _path: BytesLike,
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     mintAndStake(
       _amountPaidStablec: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    mintAndStakeZaps(
+      _amountTokenIn: BigNumberish,
+      _tokenAddress: string,
+      _fraxAmountOutMinimum: BigNumberish,
+      _path: BytesLike,
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     mintMultiple(overrides?: CallOverrides): Promise<PopulatedTransaction>;
@@ -496,6 +613,8 @@ export class Presale extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     paused(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    quoter(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -510,6 +629,8 @@ export class Presale extends BaseContract {
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
+
+    uniswapRouter(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     unlockTimestamp(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
