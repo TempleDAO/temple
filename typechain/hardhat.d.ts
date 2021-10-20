@@ -108,6 +108,22 @@ declare module "hardhat/types/runtime" {
       name: "TreasuryInvestmentDefend",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TreasuryInvestmentDefend__factory>;
+    getContractFactory(
+      name: "KeeperCompatibleInterface",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.KeeperCompatibleInterface__factory>;
+    getContractFactory(
+      name: "TreasuryKeeper",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TreasuryKeeper__factory>;
+    getContractFactory(
+      name: "KeeperCompatibleInterface",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.KeeperCompatibleInterface__factory>;
+    getContractFactory(
+      name: "TreasuryProxy",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TreasuryProxy__factory>;
 
     getContractAt(
       name: "AccessControl",
@@ -229,6 +245,26 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TreasuryInvestmentDefend>;
+    getContractAt(
+      name: "KeeperCompatibleInterface",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.KeeperCompatibleInterface>;
+    getContractAt(
+      name: "TreasuryKeeper",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TreasuryKeeper>;
+    getContractAt(
+      name: "KeeperCompatibleInterface",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.KeeperCompatibleInterface>;
+    getContractAt(
+      name: "TreasuryProxy",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TreasuryProxy>;
 
     // default types
     getContractFactory(
