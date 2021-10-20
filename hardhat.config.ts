@@ -33,7 +33,7 @@ module.exports = {
     mainnet: {
       url: "https://eth-mainnet.alchemyapi.io/v2/wMu8LWhZqh3KFpNCQZH4EVgNuF7qcrw9",
       accounts: (process.env.MAINNET_ADDRESS_PRIVATE_KEY) ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY] : [],
-      gasPrice: 100000000000,
+      gasPrice: 70000000000,
     },
   },
   etherscan: {
