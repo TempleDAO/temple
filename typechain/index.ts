@@ -25,6 +25,9 @@ export type { TempleERC20Token } from "./TempleERC20Token";
 export type { TempleStaking } from "./TempleStaking";
 export type { TempleTreasury } from "./TempleTreasury";
 export type { TreasuryInvestmentDefend } from "./TreasuryInvestmentDefend";
+export type { KeeperCompatibleInterface } from "./KeeperCompatibleInterface";
+export type { TreasuryKeeper } from "./TreasuryKeeper";
+export type { TreasuryProxy } from "./TreasuryProxy";
 
 export { AccessControl__factory } from "./factories/AccessControl__factory";
 export { IAccessControl__factory } from "./factories/IAccessControl__factory";
@@ -50,3 +53,6 @@ export { TempleERC20Token__factory } from "./factories/TempleERC20Token__factory
 export { TempleStaking__factory } from "./factories/TempleStaking__factory";
 export { TempleTreasury__factory } from "./factories/TempleTreasury__factory";
 export { TreasuryInvestmentDefend__factory } from "./factories/TreasuryInvestmentDefend__factory";
+export { KeeperCompatibleInterface__factory } from "./factories/KeeperCompatibleInterface__factory";
+export { TreasuryKeeper__factory } from "./factories/TreasuryKeeper__factory";
+export { TreasuryProxy__factory } from "./factories/TreasuryProxy__factory";
