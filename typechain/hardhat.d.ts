@@ -101,6 +101,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.PresaleAllocation__factory>;
     getContractFactory(
+      name: "SandalwoodToken",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.SandalwoodToken__factory>;
+    getContractFactory(
       name: "TempleERC20Token",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleERC20Token__factory>;
@@ -235,6 +239,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.PresaleAllocation>;
+    getContractAt(
+      name: "SandalwoodToken",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.SandalwoodToken>;
     getContractAt(
       name: "TempleERC20Token",
       address: string,

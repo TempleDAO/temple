@@ -10,6 +10,7 @@ export interface DeployedContracts {
   LOCKED_OG_TEMPLE: string,
   TREASURY: string,
   PRESALE: string,
+  SANDALWOOD_TOKEN: string,
 }
 
 export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
@@ -22,6 +23,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     LOCKED_OG_TEMPLE: '0x2Ad6671bCAd84A2a12BeB5da2d1C490aA00dcBEC',
     TREASURY: '0x0c8Ae2793F5ED0479084f92284BfF8f8E587F8BC',
     PRESALE: '0x8E861254C691FA1D4E25b966F064fAE395D9D630',
+    SANDALWOOD_TOKEN: '',
   },
   mainnet: {
     FRAX: '0x853d955acef822db058eb8505911ed77f175b99e',
@@ -32,6 +34,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     LOCKED_OG_TEMPLE: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
     TREASURY: '0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443',
     PRESALE: '0xDC9D4685847f1C8bDd4CE86BE6A83Fa09B6A08b1',
+    SANDALWOOD_TOKEN: '',
   }
 }
 
@@ -88,8 +91,12 @@ export async function deployAndMine<T extends BaseContract, D extends (...args: 
 /**
  * Check if process.env.MAINNET_ADDRESS_PRIVATE_KEY (required when doing deploy)
  */
-export function expectAddressWithPrivateKeyOnMainnet() {
+export function expectAddressWithPrivateKey() {
   if (network.name == 'mainnet' && !process.env.MAINNET_ADDRESS_PRIVATE_KEY) {
     throw new Error("Missing environment variable MAINNET_ADDRESS_PRIVATE_KEY. A mainnet address private key with eth is required to deploy/manage contracts");
+  }
+
+  if (network.name == 'rinkeby' && !process.env.RINKEBY_ADDRESS_PRIVATE_KEY) {
+    throw new Error("Missing environment variable RINKEBY_ADDRESS_PRIVATE_KEY. A mainnet address private key with eth is required to deploy/manage contracts");
   }
 }
