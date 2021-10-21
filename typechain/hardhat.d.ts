@@ -121,10 +121,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TreasuryKeeper__factory>;
     getContractFactory(
-      name: "KeeperCompatibleInterface",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.KeeperCompatibleInterface__factory>;
-    getContractFactory(
       name: "TreasuryProxy",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TreasuryProxy__factory>;
@@ -264,11 +260,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TreasuryKeeper>;
-    getContractAt(
-      name: "KeeperCompatibleInterface",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.KeeperCompatibleInterface>;
     getContractAt(
       name: "TreasuryProxy",
       address: string,
