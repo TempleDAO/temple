@@ -19,7 +19,7 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface TreasuryKeeperInterface extends ethers.utils.Interface {
+interface AutoHarvestKeeperInterface extends ethers.utils.Interface {
   functions: {
     "checkUpkeep(bytes)": FunctionFragment;
     "performUpkeep(bytes)": FunctionFragment;
@@ -46,7 +46,7 @@ interface TreasuryKeeperInterface extends ethers.utils.Interface {
   events: {};
 }
 
-export class TreasuryKeeper extends BaseContract {
+export class AutoHarvestKeeper extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -87,7 +87,7 @@ export class TreasuryKeeper extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: TreasuryKeeperInterface;
+  interface: AutoHarvestKeeperInterface;
 
   functions: {
     checkUpkeep(
