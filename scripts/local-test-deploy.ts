@@ -136,11 +136,20 @@ async function main() {
 
   console.log(`==================== TEMPLE OPENING CEREMONY =====================`);
   const TEMPLE_OPENING_CEREMONY = await new TempleOpeningCeremony__factory(owner).deploy();
-  const openingCeremonyData = {
-    roles: ['echoing whispers']
+  // Add data to account 0 to be in step 1
+  const openingCeremonyDataStep1 = {
+    roles: ['echoing whispers'],
   };
-  const stringifyOpeningCeremonyData = JSON.stringify(openingCeremonyData);
+  const stringifyOpeningCeremonyData = JSON.stringify(openingCeremonyDataStep1);
   await TEMPLE_OPENING_CEREMONY.setData(accounts[0].address, 1, stringifyOpeningCeremonyData);
+
+  // Add data to account 1 to be in step 2
+  const openingCeremonyDataStep2 = {
+    roles: ['echoing whispers', 'enclave member'],
+    joinedEnclaveAt: Date.now(),
+  };
+  const stringifyOpeningCeremonyData2 = JSON.stringify(openingCeremonyDataStep2);
+  await TEMPLE_OPENING_CEREMONY.setData(accounts[1].address, 1, stringifyOpeningCeremonyData2);
   console.log(`TEMPLE_OPENING_CEREMONY: ${TEMPLE_OPENING_CEREMONY.address}`);
 
   for (const account of accounts) {
