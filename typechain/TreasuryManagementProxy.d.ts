@@ -19,50 +19,27 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface TreasuryProxyInterface extends ethers.utils.Interface {
+interface TreasuryManagementProxyInterface extends ethers.utils.Interface {
   functions: {
-    "ALLOCATOR_ROLE()": FunctionFragment;
-    "DEFAULT_ADMIN_ROLE()": FunctionFragment;
-    "POLICY_ROLE()": FunctionFragment;
-    "TREASURY()": FunctionFragment;
     "allocateTreasuryStablec(address,uint256)": FunctionFragment;
     "distributeHarvest()": FunctionFragment;
     "ejectTreasuryAllocation(address)": FunctionFragment;
-    "getRoleAdmin(bytes32)": FunctionFragment;
-    "grantRole(bytes32,address)": FunctionFragment;
     "harvest()": FunctionFragment;
     "harvestEnabled()": FunctionFragment;
     "harvestPercentageAmount()": FunctionFragment;
-    "hasRole(bytes32,address)": FunctionFragment;
     "mintAndAllocateTemple(address,uint256)": FunctionFragment;
     "removePool(uint256,address)": FunctionFragment;
-    "renounceRole(bytes32,address)": FunctionFragment;
     "resetIV()": FunctionFragment;
-    "revokeRole(bytes32,address)": FunctionFragment;
-    "seedMint(uint256,uint256)": FunctionFragment;
     "setHarvestAmount(uint256)": FunctionFragment;
-    "supportsInterface(bytes4)": FunctionFragment;
     "toggleHarvest()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
+    "treasury()": FunctionFragment;
     "unallocateAndBurnUnusedMintedTemple(address)": FunctionFragment;
     "updateMarkToMarket(address)": FunctionFragment;
     "upsertPool(address,uint96)": FunctionFragment;
     "withdraw(address)": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "ALLOCATOR_ROLE",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "DEFAULT_ADMIN_ROLE",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "POLICY_ROLE",
-    values?: undefined
-  ): string;
-  encodeFunctionData(functionFragment: "TREASURY", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "allocateTreasuryStablec",
     values: [string, BigNumberish]
@@ -75,14 +52,6 @@ interface TreasuryProxyInterface extends ethers.utils.Interface {
     functionFragment: "ejectTreasuryAllocation",
     values: [string]
   ): string;
-  encodeFunctionData(
-    functionFragment: "getRoleAdmin",
-    values: [BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "grantRole",
-    values: [BytesLike, string]
-  ): string;
   encodeFunctionData(functionFragment: "harvest", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "harvestEnabled",
@@ -93,10 +62,6 @@ interface TreasuryProxyInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "hasRole",
-    values: [BytesLike, string]
-  ): string;
-  encodeFunctionData(
     functionFragment: "mintAndAllocateTemple",
     values: [string, BigNumberish]
   ): string;
@@ -104,26 +69,10 @@ interface TreasuryProxyInterface extends ethers.utils.Interface {
     functionFragment: "removePool",
     values: [BigNumberish, string]
   ): string;
-  encodeFunctionData(
-    functionFragment: "renounceRole",
-    values: [BytesLike, string]
-  ): string;
   encodeFunctionData(functionFragment: "resetIV", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "revokeRole",
-    values: [BytesLike, string]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "seedMint",
-    values: [BigNumberish, BigNumberish]
-  ): string;
   encodeFunctionData(
     functionFragment: "setHarvestAmount",
     values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "supportsInterface",
-    values: [BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "toggleHarvest",
@@ -133,6 +82,7 @@ interface TreasuryProxyInterface extends ethers.utils.Interface {
     functionFragment: "transferOwnership",
     values: [string]
   ): string;
+  encodeFunctionData(functionFragment: "treasury", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "unallocateAndBurnUnusedMintedTemple",
     values: [string]
@@ -148,19 +98,6 @@ interface TreasuryProxyInterface extends ethers.utils.Interface {
   encodeFunctionData(functionFragment: "withdraw", values: [string]): string;
 
   decodeFunctionResult(
-    functionFragment: "ALLOCATOR_ROLE",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "DEFAULT_ADMIN_ROLE",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "POLICY_ROLE",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "TREASURY", data: BytesLike): Result;
-  decodeFunctionResult(
     functionFragment: "allocateTreasuryStablec",
     data: BytesLike
   ): Result;
@@ -172,11 +109,6 @@ interface TreasuryProxyInterface extends ethers.utils.Interface {
     functionFragment: "ejectTreasuryAllocation",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "getRoleAdmin",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "harvest", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "harvestEnabled",
@@ -186,25 +118,14 @@ interface TreasuryProxyInterface extends ethers.utils.Interface {
     functionFragment: "harvestPercentageAmount",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "mintAndAllocateTemple",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "removePool", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "renounceRole",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "resetIV", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "seedMint", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "setHarvestAmount",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "supportsInterface",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -215,6 +136,7 @@ interface TreasuryProxyInterface extends ethers.utils.Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "treasury", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "unallocateAndBurnUnusedMintedTemple",
     data: BytesLike
@@ -226,34 +148,10 @@ interface TreasuryProxyInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "upsertPool", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
-  events: {
-    "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
-    "RoleGranted(bytes32,address,address)": EventFragment;
-    "RoleRevoked(bytes32,address,address)": EventFragment;
-  };
-
-  getEvent(nameOrSignatureOrTopic: "RoleAdminChanged"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "RoleRevoked"): EventFragment;
+  events: {};
 }
 
-export type RoleAdminChangedEvent = TypedEvent<
-  [string, string, string] & {
-    role: string;
-    previousAdminRole: string;
-    newAdminRole: string;
-  }
->;
-
-export type RoleGrantedEvent = TypedEvent<
-  [string, string, string] & { role: string; account: string; sender: string }
->;
-
-export type RoleRevokedEvent = TypedEvent<
-  [string, string, string] & { role: string; account: string; sender: string }
->;
-
-export class TreasuryProxy extends BaseContract {
+export class TreasuryManagementProxy extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -294,17 +192,9 @@ export class TreasuryProxy extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: TreasuryProxyInterface;
+  interface: TreasuryManagementProxyInterface;
 
   functions: {
-    ALLOCATOR_ROLE(overrides?: CallOverrides): Promise<[string]>;
-
-    DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<[string]>;
-
-    POLICY_ROLE(overrides?: CallOverrides): Promise<[string]>;
-
-    TREASURY(overrides?: CallOverrides): Promise<[string]>;
-
     allocateTreasuryStablec(
       _contract: string,
       amountStablec: BigNumberish,
@@ -320,14 +210,6 @@ export class TreasuryProxy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<[string]>;
-
-    grantRole(
-      role: BytesLike,
-      account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
     harvest(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -335,12 +217,6 @@ export class TreasuryProxy extends BaseContract {
     harvestEnabled(overrides?: CallOverrides): Promise<[boolean]>;
 
     harvestPercentageAmount(overrides?: CallOverrides): Promise<[BigNumber]>;
-
-    hasRole(
-      role: BytesLike,
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<[boolean]>;
 
     mintAndAllocateTemple(
       _contract: string,
@@ -354,25 +230,7 @@ export class TreasuryProxy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    renounceRole(
-      role: BytesLike,
-      account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
     resetIV(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    revokeRole(
-      role: BytesLike,
-      account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    seedMint(
-      amountStablec: BigNumberish,
-      amountTemple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -380,11 +238,6 @@ export class TreasuryProxy extends BaseContract {
       _harvestPercentageAmount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-
-    supportsInterface(
-      interfaceId: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[boolean]>;
 
     toggleHarvest(
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -394,6 +247,8 @@ export class TreasuryProxy extends BaseContract {
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    treasury(overrides?: CallOverrides): Promise<[string]>;
 
     unallocateAndBurnUnusedMintedTemple(
       _contract: string,
@@ -417,14 +272,6 @@ export class TreasuryProxy extends BaseContract {
     ): Promise<ContractTransaction>;
   };
 
-  ALLOCATOR_ROLE(overrides?: CallOverrides): Promise<string>;
-
-  DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
-
-  POLICY_ROLE(overrides?: CallOverrides): Promise<string>;
-
-  TREASURY(overrides?: CallOverrides): Promise<string>;
-
   allocateTreasuryStablec(
     _contract: string,
     amountStablec: BigNumberish,
@@ -440,14 +287,6 @@ export class TreasuryProxy extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<string>;
-
-  grantRole(
-    role: BytesLike,
-    account: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
   harvest(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -455,12 +294,6 @@ export class TreasuryProxy extends BaseContract {
   harvestEnabled(overrides?: CallOverrides): Promise<boolean>;
 
   harvestPercentageAmount(overrides?: CallOverrides): Promise<BigNumber>;
-
-  hasRole(
-    role: BytesLike,
-    account: string,
-    overrides?: CallOverrides
-  ): Promise<boolean>;
 
   mintAndAllocateTemple(
     _contract: string,
@@ -474,25 +307,7 @@ export class TreasuryProxy extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  renounceRole(
-    role: BytesLike,
-    account: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
   resetIV(
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  revokeRole(
-    role: BytesLike,
-    account: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  seedMint(
-    amountStablec: BigNumberish,
-    amountTemple: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -500,11 +315,6 @@ export class TreasuryProxy extends BaseContract {
     _harvestPercentageAmount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
-
-  supportsInterface(
-    interfaceId: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<boolean>;
 
   toggleHarvest(
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -514,6 +324,8 @@ export class TreasuryProxy extends BaseContract {
     newOwner: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
+
+  treasury(overrides?: CallOverrides): Promise<string>;
 
   unallocateAndBurnUnusedMintedTemple(
     _contract: string,
@@ -537,14 +349,6 @@ export class TreasuryProxy extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    ALLOCATOR_ROLE(overrides?: CallOverrides): Promise<string>;
-
-    DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
-
-    POLICY_ROLE(overrides?: CallOverrides): Promise<string>;
-
-    TREASURY(overrides?: CallOverrides): Promise<string>;
-
     allocateTreasuryStablec(
       _contract: string,
       amountStablec: BigNumberish,
@@ -558,25 +362,11 @@ export class TreasuryProxy extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<string>;
-
-    grantRole(
-      role: BytesLike,
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     harvest(overrides?: CallOverrides): Promise<void>;
 
     harvestEnabled(overrides?: CallOverrides): Promise<boolean>;
 
     harvestPercentageAmount(overrides?: CallOverrides): Promise<BigNumber>;
-
-    hasRole(
-      role: BytesLike,
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
 
     mintAndAllocateTemple(
       _contract: string,
@@ -590,35 +380,12 @@ export class TreasuryProxy extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    renounceRole(
-      role: BytesLike,
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     resetIV(overrides?: CallOverrides): Promise<void>;
-
-    revokeRole(
-      role: BytesLike,
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    seedMint(
-      amountStablec: BigNumberish,
-      amountTemple: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     setHarvestAmount(
       _harvestPercentageAmount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
-
-    supportsInterface(
-      interfaceId: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
 
     toggleHarvest(overrides?: CallOverrides): Promise<void>;
 
@@ -626,6 +393,8 @@ export class TreasuryProxy extends BaseContract {
       newOwner: string,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    treasury(overrides?: CallOverrides): Promise<string>;
 
     unallocateAndBurnUnusedMintedTemple(
       _contract: string,
@@ -646,71 +415,9 @@ export class TreasuryProxy extends BaseContract {
     withdraw(_contract: string, overrides?: CallOverrides): Promise<void>;
   };
 
-  filters: {
-    "RoleAdminChanged(bytes32,bytes32,bytes32)"(
-      role?: BytesLike | null,
-      previousAdminRole?: BytesLike | null,
-      newAdminRole?: BytesLike | null
-    ): TypedEventFilter<
-      [string, string, string],
-      { role: string; previousAdminRole: string; newAdminRole: string }
-    >;
-
-    RoleAdminChanged(
-      role?: BytesLike | null,
-      previousAdminRole?: BytesLike | null,
-      newAdminRole?: BytesLike | null
-    ): TypedEventFilter<
-      [string, string, string],
-      { role: string; previousAdminRole: string; newAdminRole: string }
-    >;
-
-    "RoleGranted(bytes32,address,address)"(
-      role?: BytesLike | null,
-      account?: string | null,
-      sender?: string | null
-    ): TypedEventFilter<
-      [string, string, string],
-      { role: string; account: string; sender: string }
-    >;
-
-    RoleGranted(
-      role?: BytesLike | null,
-      account?: string | null,
-      sender?: string | null
-    ): TypedEventFilter<
-      [string, string, string],
-      { role: string; account: string; sender: string }
-    >;
-
-    "RoleRevoked(bytes32,address,address)"(
-      role?: BytesLike | null,
-      account?: string | null,
-      sender?: string | null
-    ): TypedEventFilter<
-      [string, string, string],
-      { role: string; account: string; sender: string }
-    >;
-
-    RoleRevoked(
-      role?: BytesLike | null,
-      account?: string | null,
-      sender?: string | null
-    ): TypedEventFilter<
-      [string, string, string],
-      { role: string; account: string; sender: string }
-    >;
-  };
+  filters: {};
 
   estimateGas: {
-    ALLOCATOR_ROLE(overrides?: CallOverrides): Promise<BigNumber>;
-
-    DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<BigNumber>;
-
-    POLICY_ROLE(overrides?: CallOverrides): Promise<BigNumber>;
-
-    TREASURY(overrides?: CallOverrides): Promise<BigNumber>;
-
     allocateTreasuryStablec(
       _contract: string,
       amountStablec: BigNumberish,
@@ -726,17 +433,6 @@ export class TreasuryProxy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    getRoleAdmin(
-      role: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    grantRole(
-      role: BytesLike,
-      account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
     harvest(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -744,12 +440,6 @@ export class TreasuryProxy extends BaseContract {
     harvestEnabled(overrides?: CallOverrides): Promise<BigNumber>;
 
     harvestPercentageAmount(overrides?: CallOverrides): Promise<BigNumber>;
-
-    hasRole(
-      role: BytesLike,
-      account: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
 
     mintAndAllocateTemple(
       _contract: string,
@@ -763,36 +453,13 @@ export class TreasuryProxy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    renounceRole(
-      role: BytesLike,
-      account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
     resetIV(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    revokeRole(
-      role: BytesLike,
-      account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    seedMint(
-      amountStablec: BigNumberish,
-      amountTemple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     setHarvestAmount(
       _harvestPercentageAmount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    supportsInterface(
-      interfaceId: BytesLike,
-      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     toggleHarvest(
@@ -803,6 +470,8 @@ export class TreasuryProxy extends BaseContract {
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
+
+    treasury(overrides?: CallOverrides): Promise<BigNumber>;
 
     unallocateAndBurnUnusedMintedTemple(
       _contract: string,
@@ -827,16 +496,6 @@ export class TreasuryProxy extends BaseContract {
   };
 
   populateTransaction: {
-    ALLOCATOR_ROLE(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    DEFAULT_ADMIN_ROLE(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    POLICY_ROLE(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    TREASURY(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     allocateTreasuryStablec(
       _contract: string,
       amountStablec: BigNumberish,
@@ -852,17 +511,6 @@ export class TreasuryProxy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    getRoleAdmin(
-      role: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    grantRole(
-      role: BytesLike,
-      account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
     harvest(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
@@ -870,12 +518,6 @@ export class TreasuryProxy extends BaseContract {
     harvestEnabled(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     harvestPercentageAmount(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    hasRole(
-      role: BytesLike,
-      account: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -891,36 +533,13 @@ export class TreasuryProxy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    renounceRole(
-      role: BytesLike,
-      account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
     resetIV(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    revokeRole(
-      role: BytesLike,
-      account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    seedMint(
-      amountStablec: BigNumberish,
-      amountTemple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     setHarvestAmount(
       _harvestPercentageAmount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    supportsInterface(
-      interfaceId: BytesLike,
-      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     toggleHarvest(
@@ -931,6 +550,8 @@ export class TreasuryProxy extends BaseContract {
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
+
+    treasury(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     unallocateAndBurnUnusedMintedTemple(
       _contract: string,
