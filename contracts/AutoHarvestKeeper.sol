@@ -43,9 +43,9 @@ contract AutoHarvestKeeper is KeeperCompatibleInterface {
         bool harvestEnabled = treasuryManagement.harvestEnabled(); 
 
         uint256 currentTreasury = stablec.balanceOf(address(treasury));
-        
+
         // Harvest for two percent increase in IV
-        upkeepNeeded = harvestEnabled && _stablec * 102 /100 > currentTreasury;
+        upkeepNeeded = harvestEnabled && currentTreasury >= _stablec * 102 /100;
 
         // We don't use the checkData
         // checkData was defined when the Upkeep was registered
