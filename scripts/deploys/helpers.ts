@@ -13,6 +13,16 @@ export interface DeployedContracts {
   SANDALWOOD_TOKEN: string,
 }
 
+export interface PolygonContracts {
+  SANDALWOOD_TOKEN: string,
+}
+
+export const POLYGON_CONTRACTS: {[key: string]: PolygonContracts} = {
+  mainnet: {
+    SANDALWOOD_TOKEN: '0xe99e95ec6DCae4c85806F13CDf1351aE0FEf55Be', // bridged: 0x4FA80013F5d13DB10f2c5DC2987081cb48c7c069
+  }
+}
+
 export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
   rinkeby: {
     FRAX: '0x5eD8BD53B0c3fa3dEaBd345430B1A3a6A4e8BD7C',
@@ -34,8 +44,8 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     LOCKED_OG_TEMPLE: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
     TREASURY: '0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443',
     PRESALE: '0xDC9D4685847f1C8bDd4CE86BE6A83Fa09B6A08b1',
-    SANDALWOOD_TOKEN: '0x4FA80013F5d13DB10f2c5DC2987081cb48c7c069',
-  }
+    SANDALWOOD_TOKEN: '0x4FA80013F5d13DB10f2c5DC2987081cb48c7c069', // bridged 0xe99e95ec6DCae4c85806F13CDf1351aE0FEf55Be
+  },
 }
 
 /**
