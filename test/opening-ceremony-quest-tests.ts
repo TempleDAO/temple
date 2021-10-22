@@ -4,7 +4,7 @@ import { ethers } from 'hardhat';
 import { OpeningCeremonyQuest, OpeningCeremonyQuest__factory } from '../typechain';
 import { shouldThrow } from './helpers';
 
-describe.only('Test Opening Ceremony', async () => {
+describe('Test Opening Ceremony Quest', async () => {
   const ownableErr = /Ownable: caller is not the owner/;
   const DEFAULT_DATA = {
     roles: ['r1', 'r2'],
