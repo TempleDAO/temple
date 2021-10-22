@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /**
  * Temple opening ceremony contract
  */
-contract TempleOpeningCeremony is Ownable {
+contract OpeningCeremonyQuest is Ownable {
 
-    struct TempleOpeningCeremonyTemplarData {
+    struct QuestData {
         // data version so dapps can map the data field
         uint256 version;
         // templar data as JSON.stringify
@@ -16,7 +16,7 @@ contract TempleOpeningCeremony is Ownable {
     }
 
     // opening ceremony data from a templar
-    mapping(address => TempleOpeningCeremonyTemplarData) public dataOf;
+    mapping(address => QuestData) public dataOf;
 
     // use to update data for a templar
     function setData(address templar, uint256 version, string memory data) external onlyOwner {

@@ -93,6 +93,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.OGTemple__factory>;
     getContractFactory(
+      name: "OpeningCeremonyQuest",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.OpeningCeremonyQuest__factory>;
+    getContractFactory(
       name: "Presale",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Presale__factory>;
@@ -108,10 +112,6 @@ declare module "hardhat/types/runtime" {
       name: "TempleERC20Token",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleERC20Token__factory>;
-    getContractFactory(
-      name: "TempleOpeningCeremony",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.TempleOpeningCeremony__factory>;
     getContractFactory(
       name: "TempleStaking",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -230,6 +230,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.OGTemple>;
     getContractAt(
+      name: "OpeningCeremonyQuest",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.OpeningCeremonyQuest>;
+    getContractAt(
       name: "Presale",
       address: string,
       signer?: ethers.Signer
@@ -249,11 +254,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TempleERC20Token>;
-    getContractAt(
-      name: "TempleOpeningCeremony",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.TempleOpeningCeremony>;
     getContractAt(
       name: "TempleStaking",
       address: string,

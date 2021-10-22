@@ -19,7 +19,7 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface TempleOpeningCeremonyInterface extends ethers.utils.Interface {
+interface OpeningCeremonyQuestInterface extends ethers.utils.Interface {
   functions: {
     "dataOf(address)": FunctionFragment;
     "owner()": FunctionFragment;
@@ -66,7 +66,7 @@ export type OwnershipTransferredEvent = TypedEvent<
   [string, string] & { previousOwner: string; newOwner: string }
 >;
 
-export class TempleOpeningCeremony extends BaseContract {
+export class OpeningCeremonyQuest extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -107,7 +107,7 @@ export class TempleOpeningCeremony extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: TempleOpeningCeremonyInterface;
+  interface: OpeningCeremonyQuestInterface;
 
   functions: {
     dataOf(
