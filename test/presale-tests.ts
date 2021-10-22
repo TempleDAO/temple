@@ -20,7 +20,7 @@ import { PresaleAllocation } from "../typechain/PresaleAllocation";
 import { PresaleAllocation__factory } from "../typechain/factories/PresaleAllocation__factory";
 import { LockedOGTemple__factory } from "../typechain/factories/LockedOGTemple__factory";
 
-describe("Test mint and stake investment contract (used in genesis and staking campaigns)", async () => {
+xdescribe("Test mint and stake investment contract (used in genesis and staking campaigns)", async () => {
    let STABLCEC: FakeERC20;
    let TREASURY: TempleTreasury;
    let TEMPLE: TempleERC20Token;

@@ -17,7 +17,7 @@ import { Presale__factory } from "../typechain/factories/Presale__factory";
 import { Presale } from "../typechain/Presale";
 import { PresaleAllocation } from "../typechain/PresaleAllocation";
 
-describe("Test configuration of Presale Allocation whitelist", async () => {
+xdescribe("Test configuration of Presale Allocation whitelist", async () => {
    let PRESALE_ALLOCATION: PresaleAllocation;
    let owner: Signer;
    let nonOwner: Signer;
