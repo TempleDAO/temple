@@ -11,10 +11,10 @@ import {
   TempleTreasury__factory,
   Presale__factory
 } from '../../typechain';
-import { deployAndMine, expectAddressWithPrivateKeyOnMainnet } from './helpers';
+import { deployAndMine, expectAddressWithPrivateKey } from './helpers';
 
 async function main() {
-  expectAddressWithPrivateKeyOnMainnet();
+  expectAddressWithPrivateKey();
 
   const [owner] = await ethers.getSigners();
 

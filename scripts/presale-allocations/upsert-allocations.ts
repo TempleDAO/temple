@@ -12,12 +12,12 @@ import { ethers, network } from 'hardhat';
 import { ERC20__factory, ExitQueue__factory, FakeERC20, FakeERC20__factory, LockedOGTemple, LockedOGTemple__factory, Presale, PresaleAllocation, PresaleAllocation__factory, Presale__factory, TempleERC20Token, TempleERC20Token__factory, TempleStaking, TempleStaking__factory, TempleTreasury, TempleTreasury__factory } from '../../typechain';
 import * as fs from 'fs';
 import parse from 'csv-parse';
-import { expectAddressWithPrivateKeyOnMainnet, fromAtto, toAtto } from '../deploys/helpers';
+import { expectAddressWithPrivateKey, fromAtto, toAtto } from '../deploys/helpers';
 import { createSecureServer } from 'http2';
 import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
 
 async function main() {
-  expectAddressWithPrivateKeyOnMainnet();
+  expectAddressWithPrivateKey();
 
   const FOR_REALZ: boolean = process.env.FOR_REALZ !== undefined;
   const EPOCH = Number.parseInt(process.env.EPOCH || "1");
