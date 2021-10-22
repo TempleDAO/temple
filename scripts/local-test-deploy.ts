@@ -8,7 +8,7 @@ import {
   Presale__factory,
   PresaleAllocation__factory,
   TempleERC20Token__factory,
-  TempleOpeningCeremony__factory,
+  OpeningCeremonyQuest__factory,
   TempleStaking__factory,
   TempleTreasury__factory
 } from '../typechain';
@@ -135,13 +135,13 @@ async function main() {
   }
 
   console.log(`==================== TEMPLE OPENING CEREMONY =====================`);
-  const TEMPLE_OPENING_CEREMONY = await new TempleOpeningCeremony__factory(owner).deploy();
+  const OPENING_CEREMONY_QUEST = await new OpeningCeremonyQuest__factory(owner).deploy();
   // Add data to account 0 to be in step 1
   const openingCeremonyDataStep1 = {
     roles: ['echoing whispers'],
   };
   const stringifyOpeningCeremonyData = JSON.stringify(openingCeremonyDataStep1);
-  await TEMPLE_OPENING_CEREMONY.setData(accounts[0].address, 1, stringifyOpeningCeremonyData);
+  await OPENING_CEREMONY_QUEST.setData(accounts[0].address, 1, stringifyOpeningCeremonyData);
 
   // Add data to account 1 to be in step 2
   const openingCeremonyDataStep2 = {
@@ -149,14 +149,14 @@ async function main() {
     joinedEnclaveAt: Date.now(),
   };
   const stringifyOpeningCeremonyData2 = JSON.stringify(openingCeremonyDataStep2);
-  await TEMPLE_OPENING_CEREMONY.setData(accounts[1].address, 1, stringifyOpeningCeremonyData2);
-  console.log(`TEMPLE_OPENING_CEREMONY: ${TEMPLE_OPENING_CEREMONY.address}`);
+  await OPENING_CEREMONY_QUEST.setData(accounts[1].address, 1, stringifyOpeningCeremonyData2);
+  console.log(`TEMPLE_OPENING_CEREMONY: ${OPENING_CEREMONY_QUEST.address}`);
 
   for (const account of accounts) {
     const address = await account.getAddress();
     const allocation = await PRESALE_ALLOCATION.allocationOf(address);
     const { amount, epoch } = allocation;
-    const logData = await TEMPLE_OPENING_CEREMONY.dataOf(address);
+    const logData = await OPENING_CEREMONY_QUEST.dataOf(address);
     console.info(`address: ${address} amount: ${fromAtto(amount)} epoch: ${epoch.toNumber()}`);
     if (logData.version) {
       console.info(`Opening Ceremony Data:`);

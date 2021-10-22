@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { BigNumber, Signer } from 'ethers';
 import { ethers } from 'hardhat';
-import { TempleOpeningCeremony, TempleOpeningCeremony__factory } from '../typechain';
+import { OpeningCeremonyQuest, OpeningCeremonyQuest__factory } from '../typechain';
 import { shouldThrow } from './helpers';
 
 describe.only('Test Opening Ceremony', async () => {
@@ -11,7 +11,7 @@ describe.only('Test Opening Ceremony', async () => {
     lastCompletedStep: 4,
   };
   const templarDataStringify = JSON.stringify(DEFAULT_DATA);
-  let TEMPLE_OPENING_CEREMONY: TempleOpeningCeremony;
+  let TEMPLE_OPENING_CEREMONY: OpeningCeremonyQuest;
   let owner: Signer;
   let nonOwner: Signer;
   const testVersion = BigNumber.from(1);
@@ -19,7 +19,7 @@ describe.only('Test Opening Ceremony', async () => {
 
   beforeEach(async () => {
     [owner, nonOwner] = (await ethers.getSigners()) as Signer[];
-    TEMPLE_OPENING_CEREMONY = await new TempleOpeningCeremony__factory(owner).deploy();
+    TEMPLE_OPENING_CEREMONY = await new OpeningCeremonyQuest__factory(owner).deploy();
   });
 
   it('Only owner can set data', async () => {
