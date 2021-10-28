@@ -38,6 +38,8 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     "setMintMultiple(uint256)": FunctionFragment;
     "setUnlockDelay(uint256)": FunctionFragment;
     "stablecToken()": FunctionFragment;
+    "stake(uint256,uint256)": FunctionFragment;
+    "stakeFor(address,uint256,uint256)": FunctionFragment;
     "staking()": FunctionFragment;
     "templeToken()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
@@ -105,6 +107,14 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "stablecToken",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "stake",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "stakeFor",
+    values: [string, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "staking", values?: undefined): string;
   encodeFunctionData(
@@ -185,6 +195,8 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     functionFragment: "stablecToken",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "stake", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "stakeFor", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "staking", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "templeToken",
@@ -209,12 +221,14 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     "MintComplete(address,uint256,uint256,uint256,uint256,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
     "Paused(address)": EventFragment;
+    "StakeComplete(address,uint256,uint256,uint256,uint256)": EventFragment;
     "Unpaused(address)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "MintComplete"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Paused"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "StakeComplete"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Unpaused"): EventFragment;
 }
 
@@ -234,6 +248,16 @@ export type OwnershipTransferredEvent = TypedEvent<
 >;
 
 export type PausedEvent = TypedEvent<[string] & { account: string }>;
+
+export type StakeCompleteEvent = TypedEvent<
+  [string, BigNumber, BigNumber, BigNumber, BigNumber] & {
+    minter: string;
+    sandalwoodBurned: BigNumber;
+    acceptedTemple: BigNumber;
+    bonusTemple: BigNumber;
+    mintedOGTemple: BigNumber;
+  }
+>;
 
 export type UnpausedEvent = TypedEvent<[string] & { account: string }>;
 
@@ -348,6 +372,19 @@ export class OpeningCeremony extends BaseContract {
 
     stablecToken(overrides?: CallOverrides): Promise<[string]>;
 
+    stake(
+      _amountSandalwood: BigNumberish,
+      _amountTemple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    stakeFor(
+      _staker: string,
+      _amountSandalwood: BigNumberish,
+      _amountTemple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     staking(overrides?: CallOverrides): Promise<[string]>;
 
     templeToken(overrides?: CallOverrides): Promise<[string]>;
@@ -432,6 +469,19 @@ export class OpeningCeremony extends BaseContract {
 
   stablecToken(overrides?: CallOverrides): Promise<string>;
 
+  stake(
+    _amountSandalwood: BigNumberish,
+    _amountTemple: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  stakeFor(
+    _staker: string,
+    _amountSandalwood: BigNumberish,
+    _amountTemple: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   staking(overrides?: CallOverrides): Promise<string>;
 
   templeToken(overrides?: CallOverrides): Promise<string>;
@@ -515,6 +565,19 @@ export class OpeningCeremony extends BaseContract {
 
     stablecToken(overrides?: CallOverrides): Promise<string>;
 
+    stake(
+      _amountSandalwood: BigNumberish,
+      _amountTemple: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    stakeFor(
+      _staker: string,
+      _amountSandalwood: BigNumberish,
+      _amountTemple: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     staking(overrides?: CallOverrides): Promise<string>;
 
     templeToken(overrides?: CallOverrides): Promise<string>;
@@ -594,6 +657,40 @@ export class OpeningCeremony extends BaseContract {
 
     Paused(account?: null): TypedEventFilter<[string], { account: string }>;
 
+    "StakeComplete(address,uint256,uint256,uint256,uint256)"(
+      minter?: null,
+      sandalwoodBurned?: null,
+      acceptedTemple?: null,
+      bonusTemple?: null,
+      mintedOGTemple?: null
+    ): TypedEventFilter<
+      [string, BigNumber, BigNumber, BigNumber, BigNumber],
+      {
+        minter: string;
+        sandalwoodBurned: BigNumber;
+        acceptedTemple: BigNumber;
+        bonusTemple: BigNumber;
+        mintedOGTemple: BigNumber;
+      }
+    >;
+
+    StakeComplete(
+      minter?: null,
+      sandalwoodBurned?: null,
+      acceptedTemple?: null,
+      bonusTemple?: null,
+      mintedOGTemple?: null
+    ): TypedEventFilter<
+      [string, BigNumber, BigNumber, BigNumber, BigNumber],
+      {
+        minter: string;
+        sandalwoodBurned: BigNumber;
+        acceptedTemple: BigNumber;
+        bonusTemple: BigNumber;
+        mintedOGTemple: BigNumber;
+      }
+    >;
+
     "Unpaused(address)"(
       account?: null
     ): TypedEventFilter<[string], { account: string }>;
@@ -664,6 +761,19 @@ export class OpeningCeremony extends BaseContract {
     ): Promise<BigNumber>;
 
     stablecToken(overrides?: CallOverrides): Promise<BigNumber>;
+
+    stake(
+      _amountSandalwood: BigNumberish,
+      _amountTemple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    stakeFor(
+      _staker: string,
+      _amountSandalwood: BigNumberish,
+      _amountTemple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
 
     staking(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -748,6 +858,19 @@ export class OpeningCeremony extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     stablecToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    stake(
+      _amountSandalwood: BigNumberish,
+      _amountTemple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    stakeFor(
+      _staker: string,
+      _amountSandalwood: BigNumberish,
+      _amountTemple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
 
     staking(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
