@@ -26,12 +26,14 @@ import {
 import { blockTimestamp, fromAtto, mineToEpoch, shouldThrow, toAtto } from "./helpers";
 
 
-describe("Test Opening Ceremony", async () => {
+describe.only("Test Opening Ceremony", async () => {
    const EPOCH_SIZE: number = 600;
    const MINT_MULTIPLE: number = 6;
    const UNLOCK_DELAY_SECONDS: number = 10;
    const HARVEST_THRESHOLD: BigNumber = toAtto(10000);
-   const BONUS_FACTOR: {numerator: number, denominator: number} = { numerator: 51879, denominator: 100000};
+   const INVITE_THRESHOLD: BigNumber = toAtto(10000);
+   const VERIFIED_BONUS_FACTOR: {numerator: number, denominator: number} = { numerator: 51879, denominator: 100000}; // 0.1 EPY as bonus
+   const GUEST_BONUS_FACTOR: {numerator: number, denominator: number} = { numerator: 45779, denominator: 100000};    // 0.9 EPY as bonus
 
    let stablecToken: FakeERC20;
    let sandalwoodToken: SandalwoodToken;
@@ -71,7 +73,7 @@ describe("Test Opening Ceremony", async () => {
       EPOCH_SIZE,
       (await blockTimestamp()) - 1,
     );
-    await staking.setEpy(1,100);
+    await staking.setEpy(0,100);
 
     lockedOGTemple = await new LockedOGTemple__factory(owner).deploy(await staking.OG_TEMPLE());
 
@@ -83,10 +85,10 @@ describe("Test Opening Ceremony", async () => {
       lockedOGTemple.address,
       treasury.address,
       treasuryManagement.address,
-      MINT_MULTIPLE,
-      UNLOCK_DELAY_SECONDS,
       HARVEST_THRESHOLD,
-      BONUS_FACTOR
+      INVITE_THRESHOLD,
+      VERIFIED_BONUS_FACTOR,
+      GUEST_BONUS_FACTOR,
     )
 
     await templeToken.addMinter(treasury.address);
@@ -118,10 +120,10 @@ describe("Test Opening Ceremony", async () => {
 
     // All methods should be disabled when paused
     const address = await stakers[0].getAddress()
-    await shouldThrow(openingCeremony.connect(stakers[0]).mintAndStakeFor(address, 0, 0), /Pausable:/);
-    await shouldThrow(openingCeremony.connect(stakers[0]).mintAndStake(0, 0), /Pausable:/);
-    await shouldThrow(openingCeremony.connect(stakers[0]).stakeFor(address, 0, 0), /Pausable:/);
-    await shouldThrow(openingCeremony.connect(stakers[0]).stake(0, 0), /Pausable:/);
+    await shouldThrow(openingCeremony.connect(stakers[0]).mintAndStakeFor(address, 0), /Pausable:/);
+    await shouldThrow(openingCeremony.connect(stakers[0]).mintAndStake(0), /Pausable:/);
+    await shouldThrow(openingCeremony.connect(stakers[0]).stakeFor(address, 0), /Pausable:/);
+    await shouldThrow(openingCeremony.connect(stakers[0]).stake(0), /Pausable:/);
 
     // Only owner can unpause
     await shouldThrow(openingCeremony.connect(stakers[0]).unpause(), /Ownable:/);
@@ -129,23 +131,10 @@ describe("Test Opening Ceremony", async () => {
   });
 
   describe("mintAndStakeFor", async () => {
-    it("Insufficient sandalwood", async () => {
-      const stakerAddr = await stakers[0].getAddress()
-      await shouldThrow(openingCeremony.mintAndStakeFor(stakerAddr, toAtto(1), toAtto(10)), /Incorrect Sandalwood offered/);
-      await shouldThrow(openingCeremony.mintAndStakeFor(stakerAddr, toAtto(1), toAtto(1001)), /Incorrect Sandalwood offered/);
-    });
-
     it("Insufficient stablec allowance", async () => {
       const stakerAddr = await stakers[0].getAddress()
       await stablecToken.increaseAllowance(openingCeremony.address, toAtto(999));
-      await shouldThrow(openingCeremony.mintAndStakeFor(stakerAddr, toAtto(1), toAtto(1000)), /ERC20: transfer amount exceeds allowance/);
-    });
-
-    it("Insufficient sandalwood allowance", async () => {
-      const stakerAddr = await stakers[0].getAddress()
-      await stablecToken.increaseAllowance(openingCeremony.address, toAtto(1000));
-      await sandalwoodToken.increaseAllowance(openingCeremony.address, toAtto(1).sub(1));
-      await shouldThrow(openingCeremony.mintAndStakeFor(stakerAddr, toAtto(1), toAtto(1000)), /ERC20: burn amount exceeds allowance/);
+      await shouldThrow(openingCeremony.mintAndStakeFor(stakerAddr, toAtto(1000)), /ERC20: transfer amount exceeds allowance/);
     });
 
     it("Happy path (with and without harvest)", async () => {
@@ -155,8 +144,8 @@ describe("Test Opening Ceremony", async () => {
       // mint and stake twice
       await stablecToken.increaseAllowance(openingCeremony.address, toAtto(100000));
       await sandalwoodToken.increaseAllowance(openingCeremony.address, toAtto(100));
-      await openingCeremony.mintAndStakeFor(stakerAddr, toAtto(9), toAtto(9000));
-      await openingCeremony.mintAndStakeFor(stakerAddr, toAtto(11), toAtto(11000));
+      await openingCeremony.mintAndStakeFor(stakerAddr, toAtto(9000));
+      await openingCeremony.mintAndStakeFor(stakerAddr, toAtto(11000));
 
       // check mint, stake and locks are as expected
       const mintEvents = await openingCeremony.queryFilter(openingCeremony.filters.MintComplete())
@@ -169,7 +158,7 @@ describe("Test Opening Ceremony", async () => {
         const block = await l.getBlock();
           
         expect(fromAtto(m.args.mintedTemple)).eq(fromAtto(m.args.acceptedStablec) / startingIV / MINT_MULTIPLE)
-        expect(fromAtto(m.args.bonusTemple)).eq(fromAtto(m.args.acceptedStablec) / startingIV / MINT_MULTIPLE * BONUS_FACTOR.numerator / BONUS_FACTOR.denominator)
+        expect(fromAtto(m.args.bonusTemple)).eq(fromAtto(m.args.acceptedStablec) / startingIV / MINT_MULTIPLE * VERIFIED_BONUS_FACTOR.numerator / VERIFIED_BONUS_FACTOR.denominator)
         expect(fromAtto(m.args.mintedOGTemple)).gt(1); // expect OG Temple, calcs themselves tested elsewhere
         expect(fromAtto(m.args.mintedOGTemple)).eq(fromAtto(l.args._amount))
         expect(l.args._lockedUntil.toNumber()).eq(block.timestamp + UNLOCK_DELAY_SECONDS);
@@ -184,24 +173,12 @@ describe("Test Opening Ceremony", async () => {
   })
 
   describe("stakeFor", async () => {
-    it("Insufficient sandalwood", async () => {
-      const stakerAddr = await stakers[0].getAddress()
-      await shouldThrow(openingCeremony.stakeFor(stakerAddr, toAtto(1), toAtto(10)), /Incorrect Sandalwood offered/);
-      await shouldThrow(openingCeremony.stakeFor(stakerAddr, toAtto(1), toAtto(1001)), /Incorrect Sandalwood offered/);
-    });
-
-    it("Insufficient sandalwood allowance", async () => {
-      const stakerAddr = await stakers[0].getAddress()
-      await sandalwoodToken.increaseAllowance(openingCeremony.address, toAtto(1).sub(1));
-      await shouldThrow(openingCeremony.stakeFor(stakerAddr, toAtto(1), toAtto(1000)), /ERC20: burn amount exceeds allowance/);
-    });
-
     it("Insufficient temple allowance", async () => {
       const stakerAddr = await stakers[0].getAddress()
       await sandalwoodToken.increaseAllowance(openingCeremony.address, toAtto(1));
       await templeToken.mint(await owner.getAddress(), toAtto(100000));
       await templeToken.increaseAllowance(openingCeremony.address, toAtto(999));
-      await shouldThrow(openingCeremony.stakeFor(stakerAddr, toAtto(1), toAtto(1000)), /ERC20: transfer amount exceeds allowance/);
+      await shouldThrow(openingCeremony.stakeFor(stakerAddr, toAtto(1000)), /ERC20: transfer amount exceeds allowance/);
     });
 
     it("Happy path", async () => {
@@ -210,7 +187,7 @@ describe("Test Opening Ceremony", async () => {
       await templeToken.increaseAllowance(openingCeremony.address, toAtto(100000));
       await sandalwoodToken.increaseAllowance(openingCeremony.address, toAtto(100));
 
-      await openingCeremony.stakeFor(stakerAddr, toAtto(10), toAtto(10000));
+      await openingCeremony.stakeFor(stakerAddr, toAtto(10000));
 
       // check stake and locks are as expected
       const stakeEvents = await openingCeremony.queryFilter(openingCeremony.filters.StakeComplete())
@@ -222,7 +199,7 @@ describe("Test Opening Ceremony", async () => {
         const l = lockEvents[i];
         const block = await l.getBlock();
           
-        expect(fromAtto(s.args.bonusTemple)).eq(fromAtto(s.args.acceptedTemple) * BONUS_FACTOR.numerator / BONUS_FACTOR.denominator)
+        expect(fromAtto(s.args.bonusTemple)).eq(fromAtto(s.args.acceptedTemple) * VERIFIED_BONUS_FACTOR.numerator / VERIFIED_BONUS_FACTOR.denominator)
         expect(fromAtto(s.args.mintedOGTemple)).gt(1); // expect OG Temple, calcs themselves tested elsewhere
         expect(fromAtto(s.args.mintedOGTemple)).eq(fromAtto(l.args._amount))
         expect(l.args._lockedUntil.toNumber()).eq(block.timestamp + UNLOCK_DELAY_SECONDS);
