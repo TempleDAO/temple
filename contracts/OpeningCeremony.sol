@@ -35,7 +35,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
     uint256 public harvestThreshold; // At what mint level do stakers trigger a harvest
     uint256 public inviteThresholdStablec; // At what mint level do stakers trigger a harvest
 
-    uint256 public maxLimitFactor = 1; // how much to increase staking/minting limit by
+    uint256 public maxLimitFactor = 1; // how much to increase staking/minting limit by TODO(butler): better name
     uint256 public lastUpdatedTimestamp; // when was the limitFactor last updated
 
     struct Limit {
@@ -112,6 +112,10 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       harvestThreshold = _harvestThreshold;
     }
 
+    function setInviteThreshold(uint256 _inviteThresholdStablec) external onlyOwner {
+      inviteThresholdStablec = _inviteThresholdStablec;
+    }
+
     function setVerifiedBonusFactor(uint256 _numerator, uint256 _denominator) external onlyOwner {
       verifiedBonusFactor.numerator = _numerator;
       verifiedBonusFactor.denominator = _denominator;
@@ -153,7 +157,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       emit VerifiedUserAdded(userAddress);
     }
 
-    function addGuestUser(address userAddress) external onlyOwner {
+    function addGuestUser(address userAddress) external {
       require(users[msg.sender].isVerified && users[msg.sender].totalSacrificedTemple >= inviteThresholdStablec, "Need to sacrifice more frax before you can invite others");
       sandalwoodToken.burnFrom(msg.sender, 1);
       users[userAddress].isGuest = true;
@@ -183,8 +187,8 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       uint256 _boughtTemple = _amountPaidStablec * _temple / _stablec / mintMultiple;
       
       // Calculate extra temple required to account for bonus APY
-      uint _bonusTemple = _boughtTemple * bonusFactor.numerator / bonusFactor.denominator;
-      uint _totalTemple = _boughtTemple + _bonusTemple;
+      uint256 _bonusTemple = _boughtTemple * bonusFactor.numerator / bonusFactor.denominator;
+      uint256 _totalTemple = _boughtTemple + _bonusTemple;
 
       userInfo.totalSacrificedStablec += _amountPaidStablec;
 
@@ -234,8 +238,8 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       }
       
       // Calculate extra temple required to account for bonus APY
-      uint _bonusTemple = _amountTemple * bonusFactor.numerator / bonusFactor.denominator;
-      uint _totalTemple = _amountTemple + _bonusTemple;
+      uint256 _bonusTemple = _amountTemple * bonusFactor.numerator / bonusFactor.denominator;
+      uint256 _totalTemple = _amountTemple + _bonusTemple;
 
       userInfo.totalSacrificedTemple += _amountTemple;
 

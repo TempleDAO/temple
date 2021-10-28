@@ -26,7 +26,7 @@ import {
 import { blockTimestamp, fromAtto, mineToEpoch, shouldThrow, toAtto } from "./helpers";
 
 
-describe.only("Test Opening Ceremony", async () => {
+describe("Test Opening Ceremony", async () => {
    const EPOCH_SIZE: number = 600;
    const MINT_MULTIPLE: number = 6;
    const UNLOCK_DELAY_SECONDS: number = 10;
@@ -113,31 +113,50 @@ describe.only("Test Opening Ceremony", async () => {
     await treasury.transferOwnership(treasuryManagement.address);
   })
 
-  it("Only owner can pause/unpause", async () => {
-    // only owner can pause
-    await shouldThrow(openingCeremony.connect(stakers[0]).pause(), /Ownable:/);
-    await openingCeremony.pause();
+  describe("Management", async () => {
+    xit("Only owner can pause/unpause", async () => {
+      // only owner can pause
+      await shouldThrow(openingCeremony.connect(stakers[0]).pause(), /Ownable:/);
+      await openingCeremony.pause();
 
-    // All methods should be disabled when paused
-    const address = await stakers[0].getAddress()
-    await shouldThrow(openingCeremony.connect(stakers[0]).mintAndStakeFor(address, 0), /Pausable:/);
-    await shouldThrow(openingCeremony.connect(stakers[0]).mintAndStake(0), /Pausable:/);
-    await shouldThrow(openingCeremony.connect(stakers[0]).stakeFor(address, 0), /Pausable:/);
-    await shouldThrow(openingCeremony.connect(stakers[0]).stake(0), /Pausable:/);
+      // All methods should be disabled when paused
+      const address = await stakers[0].getAddress()
+      await shouldThrow(openingCeremony.connect(stakers[0]).mintAndStakeFor(address, 0), /Pausable:/);
+      await shouldThrow(openingCeremony.connect(stakers[0]).mintAndStake(0), /Pausable:/);
+      await shouldThrow(openingCeremony.connect(stakers[0]).stakeFor(address, 0), /Pausable:/);
+      await shouldThrow(openingCeremony.connect(stakers[0]).stake(0), /Pausable:/);
 
-    // Only owner can unpause
-    await shouldThrow(openingCeremony.connect(stakers[0]).unpause(), /Ownable:/);
-    await openingCeremony.unpause();
+      // Only owner can unpause
+      await shouldThrow(openingCeremony.connect(stakers[0]).unpause(), /Ownable:/);
+      await openingCeremony.unpause();
+    });
+
+    xit("Only owner can update unlock delay", async() => {});
+    xit("Only owner can update mint multiple", async() => {});
+    xit("Only owner can update harvest threshold", async() => {});
+    xit("Only owner can update invite threshold", async() => {});
+    xit("Only owner can change bonus factor for verified users", async() => {});
+    xit("Only owner can change bonus factor for guest users", async() => {});
+    xit("Only owner can change mint limit", async() => {});
+    xit("Only owner can change stake limit", async() => {});
+    xit("Only owner can change bonus factors", async() => {});
+    xit("Only owner can add/remove verifiers", async() => {});
+    xit("Only addresses with the CAN_ADD_VERIFIED_USER, can add a verified user", async() => {});
   });
 
-  describe("mintAndStakeFor", async () => {
-    it("Insufficient stablec allowance", async () => {
+  xdescribe("mintAndStakeFor", async () => {
+    xit("Must be guest or verified", async() => {});
+    xit("Guest limit enforced", async() => {});
+
+    xit("Insufficient stablec allowance", async () => {
       const stakerAddr = await stakers[0].getAddress()
       await stablecToken.increaseAllowance(openingCeremony.address, toAtto(999));
       await shouldThrow(openingCeremony.mintAndStakeFor(stakerAddr, toAtto(1000)), /ERC20: transfer amount exceeds allowance/);
     });
 
-    it("Happy path (with and without harvest)", async () => {
+    xit("Happy path for guest", async() => {});
+
+    xit("Happy path for Verified user (with and without harvest)", async () => {
       const stakerAddr = await stakers[0].getAddress()
       const startingIV = 1/100;
 
@@ -170,10 +189,16 @@ describe.only("Test Opening Ceremony", async () => {
       expect(harvestEvents.length).eq(1);
       expect(fromAtto(ivStablec) / fromAtto(ivTemple)).gt(startingIV);
     });
+
+    xit("Quester limit increases daily", async() => {});
   })
 
   describe("stakeFor", async () => {
-    it("Insufficient temple allowance", async () => {
+    xit("Must be guest or verified", async() => {});
+    xit("Guest limit enforced", async() => {});
+    xit("Quester limit enforced", async() => {});
+
+    xit("Insufficient temple allowance", async () => {
       const stakerAddr = await stakers[0].getAddress()
       await sandalwoodToken.increaseAllowance(openingCeremony.address, toAtto(1));
       await templeToken.mint(await owner.getAddress(), toAtto(100000));
@@ -181,7 +206,8 @@ describe.only("Test Opening Ceremony", async () => {
       await shouldThrow(openingCeremony.stakeFor(stakerAddr, toAtto(1000)), /ERC20: transfer amount exceeds allowance/);
     });
 
-    it("Happy path", async () => {
+    xit("Happy path for guest", async() => {});
+    xit("Happy path", async () => {
       const stakerAddr = await stakers[0].getAddress()
       await templeToken.mint(await owner.getAddress(), toAtto(100000));
       await templeToken.increaseAllowance(openingCeremony.address, toAtto(100000));

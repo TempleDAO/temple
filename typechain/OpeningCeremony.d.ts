@@ -51,6 +51,7 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     "sandalwoodToken()": FunctionFragment;
     "setGuestBonusFactor(uint256,uint256)": FunctionFragment;
     "setHarvestThreshold(uint256)": FunctionFragment;
+    "setInviteThreshold(uint256)": FunctionFragment;
     "setLimitStablec(uint256,uint256,uint256)": FunctionFragment;
     "setLimitTemple(uint256,uint256)": FunctionFragment;
     "setMintMultiple(uint256)": FunctionFragment;
@@ -177,6 +178,10 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "setHarvestThreshold",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setInviteThreshold",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -337,6 +342,10 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "setHarvestThreshold",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setInviteThreshold",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -635,6 +644,11 @@ export class OpeningCeremony extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    setInviteThreshold(
+      _inviteThresholdStablec: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     setLimitStablec(
       guestMax: BigNumberish,
       verifiedMax: BigNumberish,
@@ -850,6 +864,11 @@ export class OpeningCeremony extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  setInviteThreshold(
+    _inviteThresholdStablec: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   setLimitStablec(
     guestMax: BigNumberish,
     verifiedMax: BigNumberish,
@@ -1049,6 +1068,11 @@ export class OpeningCeremony extends BaseContract {
 
     setHarvestThreshold(
       _harvestThreshold: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setInviteThreshold(
+      _inviteThresholdStablec: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1405,6 +1429,11 @@ export class OpeningCeremony extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    setInviteThreshold(
+      _inviteThresholdStablec: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     setLimitStablec(
       guestMax: BigNumberish,
       verifiedMax: BigNumberish,
@@ -1594,6 +1623,11 @@ export class OpeningCeremony extends BaseContract {
 
     setHarvestThreshold(
       _harvestThreshold: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setInviteThreshold(
+      _inviteThresholdStablec: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
