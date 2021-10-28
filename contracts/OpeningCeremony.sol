@@ -4,6 +4,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "./TempleERC20Token.sol";
 import "./SandalwoodToken.sol";
@@ -17,8 +18,9 @@ import "./LockedOGTemple.sol";
 /**
  * Mint and Stake for those who have quested in the Opening Ceremony
  */
-contract OpeningCeremony is Ownable, Pausable {
-    uint256 constant ALLOWANCE_PER_SANDALWOOD = 1000;
+contract OpeningCeremony is Ownable, Pausable, AccessControl {
+    bytes32 public constant CAN_ADD_VERIFIED_USER = keccak256("CAN_ADD_VERIFIED_USER");
+    uint256 constant SECONDS_IN_DAY = 24 * 60 * 60;
 
     IERC20 public stablecToken; // contract address for stable coin used in treasury
     TempleERC20Token public templeToken; // temple ERC20 contract
@@ -28,21 +30,45 @@ contract OpeningCeremony is Ownable, Pausable {
     TempleStaking public staking; // Staking contract
     LockedOGTemple public lockedOGTemple; // contract where OG Temple is locked
 
-    uint256 public unlockDelaySeconds; // How long after after buying can templars unlock
-    uint256 public mintMultiple; // presale mint multiple
+    uint256 public unlockDelaySeconds = SECONDS_IN_DAY * 7 * 6; // How long after after buying can templars unlock
+    uint256 public mintMultiple = 6; // presale mint multiple
     uint256 public harvestThreshold; // At what mint level do stakers trigger a harvest
+    uint256 public inviteThresholdStablec; // At what mint level do stakers trigger a harvest
+
+    uint256 public maxLimitFactor = 1; // how much to increase staking/minting limit by
+    uint256 public lastUpdatedTimestamp; // when was the limitFactor last updated
+
+    struct Limit {
+      uint256 guestMax;
+      uint256 verifiedMax;
+      uint256 verifiedDayOne;
+    }
+
+    Limit public limitStablec;
+    Limit public limitTemple;
 
     struct Factor {
       uint256 numerator;
       uint256 denominator;
     }
-    Factor public bonusFactor; // Factor applied to minted temple, to work out (effective) bonus APY
+    Factor public verifiedBonusFactor; // Factor applied to verified user, to boost APY
+    Factor public guestBonusFactor;    // Factor applied to temple guests, to boost APY
+
+    struct User {
+      bool isVerified;
+      bool isGuest;
+
+      uint256 factorAtVerification;
+      uint256 totalSacrificedStablec;
+      uint256 totalSacrificedTemple;
+    }
 
     // How much allocation has each user used.
-    mapping(address => uint256) public sandalwoodBurned;
+    mapping(address => User) public users;
 
-    event MintComplete(address minter, uint256 sandalwoodBurned, uint256 acceptedStablec, uint256 mintedTemple, uint256 bonusTemple, uint256 mintedOGTemple);
-    event StakeComplete(address minter, uint256 sandalwoodBurned, uint256 acceptedTemple, uint256 bonusTemple, uint256 mintedOGTemple);
+    event MintComplete(address minter, uint256 acceptedStablec, uint256 mintedTemple, uint256 bonusTemple, uint256 mintedOGTemple);
+    event StakeComplete(address minter, uint256 acceptedTemple, uint256 bonusTemple, uint256 mintedOGTemple);
+    event VerifiedUserAdded(address user);
 
     constructor(
       IERC20 _stablecToken,
@@ -52,10 +78,11 @@ contract OpeningCeremony is Ownable, Pausable {
       LockedOGTemple _lockedOGTemple,
       TempleTreasury _treasury,
       TreasuryManagementProxy _treasuryManagement,
-      uint256 _mintMultiple,
-      uint256 _unlockDelaySeconds,
       uint256 _harvestThreshold,
-      Factor memory _bonusFactor) {
+      uint256 _inviteThresholdStablec,
+      Factor memory _verifiedBonusFactor,
+      Factor memory _guestBonusFactor
+    ) {
 
       stablecToken = _stablecToken;
       templeToken = _templeToken;
@@ -65,10 +92,12 @@ contract OpeningCeremony is Ownable, Pausable {
       treasury = _treasury;
       treasuryManagement = _treasuryManagement;
 
-      mintMultiple = _mintMultiple;
-      unlockDelaySeconds = _unlockDelaySeconds;
       harvestThreshold = _harvestThreshold;
-      bonusFactor = _bonusFactor;
+      inviteThresholdStablec = _inviteThresholdStablec;
+      verifiedBonusFactor = _verifiedBonusFactor;
+      guestBonusFactor = _guestBonusFactor;
+
+      lastUpdatedTimestamp = block.timestamp;
     }
 
     function setUnlockDelay(uint256 _unlockDelaySeconds) external onlyOwner {
@@ -83,29 +112,84 @@ contract OpeningCeremony is Ownable, Pausable {
       harvestThreshold = _harvestThreshold;
     }
 
-    function setBonusFactor(uint256 _numerator, uint256 _denominator) external onlyOwner {
-      bonusFactor.numerator = _numerator;
-      bonusFactor.denominator = _denominator;
+    function setVerifiedBonusFactor(uint256 _numerator, uint256 _denominator) external onlyOwner {
+      verifiedBonusFactor.numerator = _numerator;
+      verifiedBonusFactor.denominator = _denominator;
+    }
+
+    function setGuestBonusFactor(uint256 _numerator, uint256 _denominator) external onlyOwner {
+      guestBonusFactor.numerator = _numerator;
+      guestBonusFactor.denominator = _denominator;
+    }
+
+
+    function setLimitStablec(uint256 guestMax, uint256 verifiedMax, uint256 verifiedDayOne) external onlyOwner {
+      limitStablec.guestMax = guestMax;
+      limitStablec.verifiedMax = verifiedMax;
+      limitStablec.verifiedDayOne = verifiedDayOne;
+    }
+
+    function setLimitTemple(uint256 guestMax, uint256 verifiedMax) external onlyOwner {
+      limitTemple.guestMax = guestMax;
+      limitTemple.verifiedMax = verifiedMax;
+      // unused limitTemple.verifiedDayOne
+    }
+
+    function addVerifier(address account) external onlyOwner {
+      grantRole(CAN_ADD_VERIFIED_USER, account);
+    }
+
+    function removeVerifier(address account) external onlyOwner {
+      revokeRole(CAN_ADD_VERIFIED_USER, account);
+    }
+
+    function addVerifiedUser(address userAddress) external {
+      require(hasRole(CAN_ADD_VERIFIED_USER, msg.sender), "Caller cannot add verified user");
+      require(!users[userAddress].isVerified, "Address already verified");
+      sandalwoodToken.burnFrom(msg.sender, 1);
+      users[userAddress].isVerified = true;
+      users[userAddress].factorAtVerification = maxLimitFactor;
+
+      emit VerifiedUserAdded(userAddress);
+    }
+
+    function addGuestUser(address userAddress) external onlyOwner {
+      require(users[msg.sender].isVerified && users[msg.sender].totalSacrificedTemple >= inviteThresholdStablec, "Need to sacrifice more frax before you can invite others");
+      sandalwoodToken.burnFrom(msg.sender, 1);
+      users[userAddress].isGuest = true;
     }
 
     /** mint temple and immediately stake, on behalf of a staker, with a bonus + lockin period */
-    function mintAndStakeFor(address _staker, uint256 _amountSandalwood, uint256 _amountPaidStablec) public whenNotPaused {
-      require(_amountPaidStablec == _amountSandalwood * ALLOWANCE_PER_SANDALWOOD, "Incorrect Sandalwood offered");
+    function mintAndStakeFor(address _staker, uint256 _amountPaidStablec) public whenNotPaused {
+      User storage userInfo = users[_staker];
+
+      Factor storage bonusFactor;
+      if (userInfo.isVerified) {
+        require(userInfo.totalSacrificedStablec + _amountPaidStablec < maxSacrificableStablec(userInfo.factorAtVerification));
+        bonusFactor = verifiedBonusFactor;
+      } else if (userInfo.isGuest) {
+        require(userInfo.totalSacrificedStablec + _amountPaidStablec < limitStablec.guestMax);
+        bonusFactor = guestBonusFactor;
+      } else {
+        revert("Only verified templars and their guests can partake in the opening ceremony");
+      }
+
+      // update max limit
+      if ((block.timestamp - lastUpdatedTimestamp) > SECONDS_IN_DAY) {
+        maxLimitFactor *= 2;
+      }
 
       (uint256 _stablec, uint256 _temple) = treasury.intrinsicValueRatio();
-
-      sandalwoodBurned[_staker] += _amountSandalwood;
       uint256 _boughtTemple = _amountPaidStablec * _temple / _stablec / mintMultiple;
       
-      // Calculate extra temple required to account for bonus APY offered to questers
+      // Calculate extra temple required to account for bonus APY
       uint _bonusTemple = _boughtTemple * bonusFactor.numerator / bonusFactor.denominator;
       uint _totalTemple = _boughtTemple + _bonusTemple;
 
+      userInfo.totalSacrificedStablec += _amountPaidStablec;
+
       // pull stablec from staker and immediately transfer back to treasury
       SafeERC20.safeTransferFrom(stablecToken, msg.sender, address(treasury), _amountPaidStablec);
-
-      // burn sandalwood offered
-      sandalwoodToken.burnFrom(msg.sender, _amountSandalwood);
 
       // mint temple
       templeToken.mint(address(this), _totalTemple);
@@ -121,26 +205,39 @@ contract OpeningCeremony is Ownable, Pausable {
         treasuryManagement.harvest();
       }
 
-      emit MintComplete(_staker, _amountSandalwood, _amountPaidStablec, _boughtTemple, _bonusTemple, _amountOgTemple);
+      emit MintComplete(_staker, _amountPaidStablec, _boughtTemple, _bonusTemple, _amountOgTemple);
     }
 
     /** mint temple and immediately stake, with a bonus + lockin period */
-    function mintAndStake(uint256 _amountSandalwood, uint256 _amountPaidStablec) external whenNotPaused {
-      mintAndStakeFor(msg.sender, _amountSandalwood, _amountPaidStablec);
+    function mintAndStake(uint256 _amountPaidStablec) external whenNotPaused {
+      mintAndStakeFor(msg.sender, _amountPaidStablec);
     }
 
     /** Stake temple, consuming sandalwood to get bonus APY **/
-    function stakeFor(address _staker, uint256 _amountSandalwood, uint256 _amountTemple) public whenNotPaused {
-      require(_amountTemple == _amountSandalwood * ALLOWANCE_PER_SANDALWOOD, "Incorrect Sandalwood offered");
+    function stakeFor(address _staker, uint256 _amountTemple) public whenNotPaused {
+      User storage userInfo = users[_staker];
 
-      sandalwoodBurned[_staker] += _amountSandalwood;
+      Factor storage bonusFactor;
+      if (userInfo.isVerified) {
+        require(userInfo.totalSacrificedStablec + _amountTemple <= limitTemple.verifiedMax);
+        bonusFactor = verifiedBonusFactor;
+      } else if (userInfo.isGuest) {
+        require(userInfo.totalSacrificedStablec + _amountTemple <= limitTemple.guestMax);
+        bonusFactor = guestBonusFactor;
+      } else {
+        revert("Only verified templars and their guests can partake in the opening ceremony");
+      }
+
+      // update max limit
+      if ((block.timestamp - lastUpdatedTimestamp) > SECONDS_IN_DAY) {
+        maxLimitFactor *= 2;
+      }
       
-      // Calculate extra temple required to account for bonus APY offered to questers
+      // Calculate extra temple required to account for bonus APY
       uint _bonusTemple = _amountTemple * bonusFactor.numerator / bonusFactor.denominator;
       uint _totalTemple = _amountTemple + _bonusTemple;
 
-      // burn sandalwood offered
-      sandalwoodToken.burnFrom(msg.sender, _amountSandalwood);
+      userInfo.totalSacrificedTemple += _amountTemple;
 
       // pull temple from caller (to be staked)
       SafeERC20.safeTransferFrom(templeToken, msg.sender, address(this), _amountTemple);
@@ -154,12 +251,12 @@ contract OpeningCeremony is Ownable, Pausable {
       SafeERC20.safeIncreaseAllowance(staking.OG_TEMPLE(), address(lockedOGTemple), _amountOgTemple);
       lockedOGTemple.lockFor(_staker, _amountOgTemple, block.timestamp + unlockDelaySeconds);
 
-      emit StakeComplete(_staker, _amountSandalwood, _amountTemple, _bonusTemple, _amountOgTemple);
+      emit StakeComplete(_staker, _amountTemple, _bonusTemple, _amountOgTemple);
     }
 
     /** Stake temple, consuming sandalwood to get bonus APY **/
-    function stake(uint256 _amountSandalwood, uint256 _amountTemple) external whenNotPaused {
-      stakeFor(msg.sender, _amountSandalwood, _amountTemple);
+    function stake(uint256 _amountTemple) external whenNotPaused {
+      stakeFor(msg.sender, _amountTemple);
     }
 
     /**
@@ -175,4 +272,13 @@ contract OpeningCeremony is Ownable, Pausable {
     function unpause() external onlyOwner {
         _unpause();
     }
+
+    function maxSacrificableStablec(uint256 factorAtVerification) public view returns(uint256 maxLimit) {
+      maxLimit = limitStablec.verifiedDayOne * maxLimitFactor / factorAtVerification;
+      if (maxLimit > limitStablec.verifiedMax) {
+        maxLimit = limitStablec.verifiedMax;
+      }
+    }
 }
+
+

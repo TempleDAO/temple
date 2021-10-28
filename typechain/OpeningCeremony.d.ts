@@ -21,36 +21,83 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface OpeningCeremonyInterface extends ethers.utils.Interface {
   functions: {
-    "bonusFactor()": FunctionFragment;
+    "CAN_ADD_VERIFIED_USER()": FunctionFragment;
+    "DEFAULT_ADMIN_ROLE()": FunctionFragment;
+    "addGuestUser(address)": FunctionFragment;
+    "addVerifiedUser(address)": FunctionFragment;
+    "addVerifier(address)": FunctionFragment;
+    "getRoleAdmin(bytes32)": FunctionFragment;
+    "grantRole(bytes32,address)": FunctionFragment;
+    "guestBonusFactor()": FunctionFragment;
     "harvestThreshold()": FunctionFragment;
+    "hasRole(bytes32,address)": FunctionFragment;
+    "inviteThresholdStablec()": FunctionFragment;
+    "lastUpdatedTimestamp()": FunctionFragment;
+    "limitStablec()": FunctionFragment;
+    "limitTemple()": FunctionFragment;
     "lockedOGTemple()": FunctionFragment;
-    "mintAndStake(uint256,uint256)": FunctionFragment;
-    "mintAndStakeFor(address,uint256,uint256)": FunctionFragment;
+    "maxLimitFactor()": FunctionFragment;
+    "maxSacrificableStablec(uint256)": FunctionFragment;
+    "mintAndStake(uint256)": FunctionFragment;
+    "mintAndStakeFor(address,uint256)": FunctionFragment;
     "mintMultiple()": FunctionFragment;
     "owner()": FunctionFragment;
     "pause()": FunctionFragment;
     "paused()": FunctionFragment;
+    "removeVerifier(address)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
-    "sandalwoodBurned(address)": FunctionFragment;
+    "renounceRole(bytes32,address)": FunctionFragment;
+    "revokeRole(bytes32,address)": FunctionFragment;
     "sandalwoodToken()": FunctionFragment;
-    "setBonusFactor(uint256,uint256)": FunctionFragment;
+    "setGuestBonusFactor(uint256,uint256)": FunctionFragment;
     "setHarvestThreshold(uint256)": FunctionFragment;
+    "setLimitStablec(uint256,uint256,uint256)": FunctionFragment;
+    "setLimitTemple(uint256,uint256)": FunctionFragment;
     "setMintMultiple(uint256)": FunctionFragment;
     "setUnlockDelay(uint256)": FunctionFragment;
+    "setVerifiedBonusFactor(uint256,uint256)": FunctionFragment;
     "stablecToken()": FunctionFragment;
-    "stake(uint256,uint256)": FunctionFragment;
-    "stakeFor(address,uint256,uint256)": FunctionFragment;
+    "stake(uint256)": FunctionFragment;
+    "stakeFor(address,uint256)": FunctionFragment;
     "staking()": FunctionFragment;
+    "supportsInterface(bytes4)": FunctionFragment;
     "templeToken()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
     "treasury()": FunctionFragment;
     "treasuryManagement()": FunctionFragment;
     "unlockDelaySeconds()": FunctionFragment;
     "unpause()": FunctionFragment;
+    "users(address)": FunctionFragment;
+    "verifiedBonusFactor()": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: "bonusFactor",
+    functionFragment: "CAN_ADD_VERIFIED_USER",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "DEFAULT_ADMIN_ROLE",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "addGuestUser",
+    values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "addVerifiedUser",
+    values: [string]
+  ): string;
+  encodeFunctionData(functionFragment: "addVerifier", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "getRoleAdmin",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "grantRole",
+    values: [BytesLike, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "guestBonusFactor",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -58,16 +105,44 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "hasRole",
+    values: [BytesLike, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "inviteThresholdStablec",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "lastUpdatedTimestamp",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "limitStablec",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "limitTemple",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "lockedOGTemple",
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "maxLimitFactor",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "maxSacrificableStablec",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "mintAndStake",
-    values: [BigNumberish, BigNumberish]
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "mintAndStakeFor",
-    values: [string, BigNumberish, BigNumberish]
+    values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "mintMultiple",
@@ -77,24 +152,40 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
   encodeFunctionData(functionFragment: "pause", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "removeVerifier",
+    values: [string]
+  ): string;
+  encodeFunctionData(
     functionFragment: "renounceOwnership",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "sandalwoodBurned",
-    values: [string]
+    functionFragment: "renounceRole",
+    values: [BytesLike, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "revokeRole",
+    values: [BytesLike, string]
   ): string;
   encodeFunctionData(
     functionFragment: "sandalwoodToken",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "setBonusFactor",
+    functionFragment: "setGuestBonusFactor",
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "setHarvestThreshold",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setLimitStablec",
+    values: [BigNumberish, BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setLimitTemple",
+    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "setMintMultiple",
@@ -105,18 +196,23 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "stablecToken",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "stake",
+    functionFragment: "setVerifiedBonusFactor",
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "stablecToken",
+    values?: undefined
+  ): string;
+  encodeFunctionData(functionFragment: "stake", values: [BigNumberish]): string;
+  encodeFunctionData(
     functionFragment: "stakeFor",
-    values: [string, BigNumberish, BigNumberish]
+    values: [string, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "staking", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "supportsInterface",
+    values: [BytesLike]
+  ): string;
   encodeFunctionData(
     functionFragment: "templeToken",
     values?: undefined
@@ -135,17 +231,72 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
+  encodeFunctionData(functionFragment: "users", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "verifiedBonusFactor",
+    values?: undefined
+  ): string;
 
   decodeFunctionResult(
-    functionFragment: "bonusFactor",
+    functionFragment: "CAN_ADD_VERIFIED_USER",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "DEFAULT_ADMIN_ROLE",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "addGuestUser",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "addVerifiedUser",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "addVerifier",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getRoleAdmin",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "guestBonusFactor",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "harvestThreshold",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "inviteThresholdStablec",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "lastUpdatedTimestamp",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "limitStablec",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "limitTemple",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "lockedOGTemple",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "maxLimitFactor",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "maxSacrificableStablec",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -164,23 +315,36 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "removeVerifier",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "sandalwoodBurned",
+    functionFragment: "renounceRole",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "sandalwoodToken",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "setBonusFactor",
+    functionFragment: "setGuestBonusFactor",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "setHarvestThreshold",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setLimitStablec",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setLimitTemple",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -192,12 +356,20 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "setVerifiedBonusFactor",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "stablecToken",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "stake", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "stakeFor", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "staking", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "supportsInterface",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "templeToken",
     data: BytesLike
@@ -216,26 +388,38 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "users", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "verifiedBonusFactor",
+    data: BytesLike
+  ): Result;
 
   events: {
-    "MintComplete(address,uint256,uint256,uint256,uint256,uint256)": EventFragment;
+    "MintComplete(address,uint256,uint256,uint256,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
     "Paused(address)": EventFragment;
-    "StakeComplete(address,uint256,uint256,uint256,uint256)": EventFragment;
+    "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
+    "RoleGranted(bytes32,address,address)": EventFragment;
+    "RoleRevoked(bytes32,address,address)": EventFragment;
+    "StakeComplete(address,uint256,uint256,uint256)": EventFragment;
     "Unpaused(address)": EventFragment;
+    "VerifiedUserAdded(address)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "MintComplete"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Paused"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleAdminChanged"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleRevoked"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "StakeComplete"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Unpaused"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "VerifiedUserAdded"): EventFragment;
 }
 
 export type MintCompleteEvent = TypedEvent<
-  [string, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber] & {
+  [string, BigNumber, BigNumber, BigNumber, BigNumber] & {
     minter: string;
-    sandalwoodBurned: BigNumber;
     acceptedStablec: BigNumber;
     mintedTemple: BigNumber;
     bonusTemple: BigNumber;
@@ -249,10 +433,25 @@ export type OwnershipTransferredEvent = TypedEvent<
 
 export type PausedEvent = TypedEvent<[string] & { account: string }>;
 
+export type RoleAdminChangedEvent = TypedEvent<
+  [string, string, string] & {
+    role: string;
+    previousAdminRole: string;
+    newAdminRole: string;
+  }
+>;
+
+export type RoleGrantedEvent = TypedEvent<
+  [string, string, string] & { role: string; account: string; sender: string }
+>;
+
+export type RoleRevokedEvent = TypedEvent<
+  [string, string, string] & { role: string; account: string; sender: string }
+>;
+
 export type StakeCompleteEvent = TypedEvent<
-  [string, BigNumber, BigNumber, BigNumber, BigNumber] & {
+  [string, BigNumber, BigNumber, BigNumber] & {
     minter: string;
-    sandalwoodBurned: BigNumber;
     acceptedTemple: BigNumber;
     bonusTemple: BigNumber;
     mintedOGTemple: BigNumber;
@@ -260,6 +459,8 @@ export type StakeCompleteEvent = TypedEvent<
 >;
 
 export type UnpausedEvent = TypedEvent<[string] & { account: string }>;
+
+export type VerifiedUserAddedEvent = TypedEvent<[string] & { user: string }>;
 
 export class OpeningCeremony extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
@@ -305,7 +506,34 @@ export class OpeningCeremony extends BaseContract {
   interface: OpeningCeremonyInterface;
 
   functions: {
-    bonusFactor(
+    CAN_ADD_VERIFIED_USER(overrides?: CallOverrides): Promise<[string]>;
+
+    DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<[string]>;
+
+    addGuestUser(
+      userAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    addVerifiedUser(
+      userAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    addVerifier(
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<[string]>;
+
+    grantRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    guestBonusFactor(
       overrides?: CallOverrides
     ): Promise<
       [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
@@ -313,17 +541,52 @@ export class OpeningCeremony extends BaseContract {
 
     harvestThreshold(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    hasRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
+
+    inviteThresholdStablec(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    lastUpdatedTimestamp(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    limitStablec(
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber, BigNumber] & {
+        guestMax: BigNumber;
+        verifiedMax: BigNumber;
+        verifiedDayOne: BigNumber;
+      }
+    >;
+
+    limitTemple(
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber, BigNumber] & {
+        guestMax: BigNumber;
+        verifiedMax: BigNumber;
+        verifiedDayOne: BigNumber;
+      }
+    >;
+
     lockedOGTemple(overrides?: CallOverrides): Promise<[string]>;
 
+    maxLimitFactor(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    maxSacrificableStablec(
+      factorAtVerification: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber] & { maxLimit: BigNumber }>;
+
     mintAndStake(
-      _amountSandalwood: BigNumberish,
       _amountPaidStablec: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     mintAndStakeFor(
       _staker: string,
-      _amountSandalwood: BigNumberish,
       _amountPaidStablec: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -338,18 +601,30 @@ export class OpeningCeremony extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<[boolean]>;
 
+    removeVerifier(
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    sandalwoodBurned(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
+    renounceRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    revokeRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
 
     sandalwoodToken(overrides?: CallOverrides): Promise<[string]>;
 
-    setBonusFactor(
+    setGuestBonusFactor(
       _numerator: BigNumberish,
       _denominator: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -357,6 +632,19 @@ export class OpeningCeremony extends BaseContract {
 
     setHarvestThreshold(
       _harvestThreshold: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setLimitStablec(
+      guestMax: BigNumberish,
+      verifiedMax: BigNumberish,
+      verifiedDayOne: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setLimitTemple(
+      guestMax: BigNumberish,
+      verifiedMax: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -370,22 +658,31 @@ export class OpeningCeremony extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    setVerifiedBonusFactor(
+      _numerator: BigNumberish,
+      _denominator: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     stablecToken(overrides?: CallOverrides): Promise<[string]>;
 
     stake(
-      _amountSandalwood: BigNumberish,
       _amountTemple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     stakeFor(
       _staker: string,
-      _amountSandalwood: BigNumberish,
       _amountTemple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     staking(overrides?: CallOverrides): Promise<[string]>;
+
+    supportsInterface(
+      interfaceId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
 
     templeToken(overrides?: CallOverrides): Promise<[string]>;
 
@@ -403,9 +700,55 @@ export class OpeningCeremony extends BaseContract {
     unpause(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    users(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<
+      [boolean, boolean, BigNumber, BigNumber, BigNumber] & {
+        isVerified: boolean;
+        isGuest: boolean;
+        factorAtVerification: BigNumber;
+        totalSacrificedStablec: BigNumber;
+        totalSacrificedTemple: BigNumber;
+      }
+    >;
+
+    verifiedBonusFactor(
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
+    >;
   };
 
-  bonusFactor(
+  CAN_ADD_VERIFIED_USER(overrides?: CallOverrides): Promise<string>;
+
+  DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
+
+  addGuestUser(
+    userAddress: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  addVerifiedUser(
+    userAddress: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  addVerifier(
+    account: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<string>;
+
+  grantRole(
+    role: BytesLike,
+    account: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  guestBonusFactor(
     overrides?: CallOverrides
   ): Promise<
     [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
@@ -413,17 +756,52 @@ export class OpeningCeremony extends BaseContract {
 
   harvestThreshold(overrides?: CallOverrides): Promise<BigNumber>;
 
+  hasRole(
+    role: BytesLike,
+    account: string,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
+
+  inviteThresholdStablec(overrides?: CallOverrides): Promise<BigNumber>;
+
+  lastUpdatedTimestamp(overrides?: CallOverrides): Promise<BigNumber>;
+
+  limitStablec(
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber, BigNumber, BigNumber] & {
+      guestMax: BigNumber;
+      verifiedMax: BigNumber;
+      verifiedDayOne: BigNumber;
+    }
+  >;
+
+  limitTemple(
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber, BigNumber, BigNumber] & {
+      guestMax: BigNumber;
+      verifiedMax: BigNumber;
+      verifiedDayOne: BigNumber;
+    }
+  >;
+
   lockedOGTemple(overrides?: CallOverrides): Promise<string>;
 
+  maxLimitFactor(overrides?: CallOverrides): Promise<BigNumber>;
+
+  maxSacrificableStablec(
+    factorAtVerification: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   mintAndStake(
-    _amountSandalwood: BigNumberish,
     _amountPaidStablec: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   mintAndStakeFor(
     _staker: string,
-    _amountSandalwood: BigNumberish,
     _amountPaidStablec: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -438,15 +816,30 @@ export class OpeningCeremony extends BaseContract {
 
   paused(overrides?: CallOverrides): Promise<boolean>;
 
+  removeVerifier(
+    account: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   renounceOwnership(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  sandalwoodBurned(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+  renounceRole(
+    role: BytesLike,
+    account: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  revokeRole(
+    role: BytesLike,
+    account: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
   sandalwoodToken(overrides?: CallOverrides): Promise<string>;
 
-  setBonusFactor(
+  setGuestBonusFactor(
     _numerator: BigNumberish,
     _denominator: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -454,6 +847,19 @@ export class OpeningCeremony extends BaseContract {
 
   setHarvestThreshold(
     _harvestThreshold: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setLimitStablec(
+    guestMax: BigNumberish,
+    verifiedMax: BigNumberish,
+    verifiedDayOne: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setLimitTemple(
+    guestMax: BigNumberish,
+    verifiedMax: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -467,22 +873,31 @@ export class OpeningCeremony extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  setVerifiedBonusFactor(
+    _numerator: BigNumberish,
+    _denominator: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   stablecToken(overrides?: CallOverrides): Promise<string>;
 
   stake(
-    _amountSandalwood: BigNumberish,
     _amountTemple: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   stakeFor(
     _staker: string,
-    _amountSandalwood: BigNumberish,
     _amountTemple: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   staking(overrides?: CallOverrides): Promise<string>;
+
+  supportsInterface(
+    interfaceId: BytesLike,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
 
   templeToken(overrides?: CallOverrides): Promise<string>;
 
@@ -501,8 +916,48 @@ export class OpeningCeremony extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  users(
+    arg0: string,
+    overrides?: CallOverrides
+  ): Promise<
+    [boolean, boolean, BigNumber, BigNumber, BigNumber] & {
+      isVerified: boolean;
+      isGuest: boolean;
+      factorAtVerification: BigNumber;
+      totalSacrificedStablec: BigNumber;
+      totalSacrificedTemple: BigNumber;
+    }
+  >;
+
+  verifiedBonusFactor(
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
+  >;
+
   callStatic: {
-    bonusFactor(
+    CAN_ADD_VERIFIED_USER(overrides?: CallOverrides): Promise<string>;
+
+    DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
+
+    addGuestUser(userAddress: string, overrides?: CallOverrides): Promise<void>;
+
+    addVerifiedUser(
+      userAddress: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    addVerifier(account: string, overrides?: CallOverrides): Promise<void>;
+
+    getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<string>;
+
+    grantRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    guestBonusFactor(
       overrides?: CallOverrides
     ): Promise<
       [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
@@ -510,17 +965,52 @@ export class OpeningCeremony extends BaseContract {
 
     harvestThreshold(overrides?: CallOverrides): Promise<BigNumber>;
 
+    hasRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
+
+    inviteThresholdStablec(overrides?: CallOverrides): Promise<BigNumber>;
+
+    lastUpdatedTimestamp(overrides?: CallOverrides): Promise<BigNumber>;
+
+    limitStablec(
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber, BigNumber] & {
+        guestMax: BigNumber;
+        verifiedMax: BigNumber;
+        verifiedDayOne: BigNumber;
+      }
+    >;
+
+    limitTemple(
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber, BigNumber] & {
+        guestMax: BigNumber;
+        verifiedMax: BigNumber;
+        verifiedDayOne: BigNumber;
+      }
+    >;
+
     lockedOGTemple(overrides?: CallOverrides): Promise<string>;
 
+    maxLimitFactor(overrides?: CallOverrides): Promise<BigNumber>;
+
+    maxSacrificableStablec(
+      factorAtVerification: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     mintAndStake(
-      _amountSandalwood: BigNumberish,
       _amountPaidStablec: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
     mintAndStakeFor(
       _staker: string,
-      _amountSandalwood: BigNumberish,
       _amountPaidStablec: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
@@ -533,16 +1023,25 @@ export class OpeningCeremony extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<boolean>;
 
+    removeVerifier(account: string, overrides?: CallOverrides): Promise<void>;
+
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
-    sandalwoodBurned(
-      arg0: string,
+    renounceRole(
+      role: BytesLike,
+      account: string,
       overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    ): Promise<void>;
+
+    revokeRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     sandalwoodToken(overrides?: CallOverrides): Promise<string>;
 
-    setBonusFactor(
+    setGuestBonusFactor(
       _numerator: BigNumberish,
       _denominator: BigNumberish,
       overrides?: CallOverrides
@@ -550,6 +1049,19 @@ export class OpeningCeremony extends BaseContract {
 
     setHarvestThreshold(
       _harvestThreshold: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setLimitStablec(
+      guestMax: BigNumberish,
+      verifiedMax: BigNumberish,
+      verifiedDayOne: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setLimitTemple(
+      guestMax: BigNumberish,
+      verifiedMax: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -563,22 +1075,31 @@ export class OpeningCeremony extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    setVerifiedBonusFactor(
+      _numerator: BigNumberish,
+      _denominator: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     stablecToken(overrides?: CallOverrides): Promise<string>;
 
     stake(
-      _amountSandalwood: BigNumberish,
       _amountTemple: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
     stakeFor(
       _staker: string,
-      _amountSandalwood: BigNumberish,
       _amountTemple: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
     staking(overrides?: CallOverrides): Promise<string>;
+
+    supportsInterface(
+      interfaceId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
 
     templeToken(overrides?: CallOverrides): Promise<string>;
 
@@ -594,21 +1115,38 @@ export class OpeningCeremony extends BaseContract {
     unlockDelaySeconds(overrides?: CallOverrides): Promise<BigNumber>;
 
     unpause(overrides?: CallOverrides): Promise<void>;
+
+    users(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<
+      [boolean, boolean, BigNumber, BigNumber, BigNumber] & {
+        isVerified: boolean;
+        isGuest: boolean;
+        factorAtVerification: BigNumber;
+        totalSacrificedStablec: BigNumber;
+        totalSacrificedTemple: BigNumber;
+      }
+    >;
+
+    verifiedBonusFactor(
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
+    >;
   };
 
   filters: {
-    "MintComplete(address,uint256,uint256,uint256,uint256,uint256)"(
+    "MintComplete(address,uint256,uint256,uint256,uint256)"(
       minter?: null,
-      sandalwoodBurned?: null,
       acceptedStablec?: null,
       mintedTemple?: null,
       bonusTemple?: null,
       mintedOGTemple?: null
     ): TypedEventFilter<
-      [string, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber],
+      [string, BigNumber, BigNumber, BigNumber, BigNumber],
       {
         minter: string;
-        sandalwoodBurned: BigNumber;
         acceptedStablec: BigNumber;
         mintedTemple: BigNumber;
         bonusTemple: BigNumber;
@@ -618,16 +1156,14 @@ export class OpeningCeremony extends BaseContract {
 
     MintComplete(
       minter?: null,
-      sandalwoodBurned?: null,
       acceptedStablec?: null,
       mintedTemple?: null,
       bonusTemple?: null,
       mintedOGTemple?: null
     ): TypedEventFilter<
-      [string, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber],
+      [string, BigNumber, BigNumber, BigNumber, BigNumber],
       {
         minter: string;
-        sandalwoodBurned: BigNumber;
         acceptedStablec: BigNumber;
         mintedTemple: BigNumber;
         bonusTemple: BigNumber;
@@ -657,17 +1193,69 @@ export class OpeningCeremony extends BaseContract {
 
     Paused(account?: null): TypedEventFilter<[string], { account: string }>;
 
-    "StakeComplete(address,uint256,uint256,uint256,uint256)"(
+    "RoleAdminChanged(bytes32,bytes32,bytes32)"(
+      role?: BytesLike | null,
+      previousAdminRole?: BytesLike | null,
+      newAdminRole?: BytesLike | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; previousAdminRole: string; newAdminRole: string }
+    >;
+
+    RoleAdminChanged(
+      role?: BytesLike | null,
+      previousAdminRole?: BytesLike | null,
+      newAdminRole?: BytesLike | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; previousAdminRole: string; newAdminRole: string }
+    >;
+
+    "RoleGranted(bytes32,address,address)"(
+      role?: BytesLike | null,
+      account?: string | null,
+      sender?: string | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; account: string; sender: string }
+    >;
+
+    RoleGranted(
+      role?: BytesLike | null,
+      account?: string | null,
+      sender?: string | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; account: string; sender: string }
+    >;
+
+    "RoleRevoked(bytes32,address,address)"(
+      role?: BytesLike | null,
+      account?: string | null,
+      sender?: string | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; account: string; sender: string }
+    >;
+
+    RoleRevoked(
+      role?: BytesLike | null,
+      account?: string | null,
+      sender?: string | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; account: string; sender: string }
+    >;
+
+    "StakeComplete(address,uint256,uint256,uint256)"(
       minter?: null,
-      sandalwoodBurned?: null,
       acceptedTemple?: null,
       bonusTemple?: null,
       mintedOGTemple?: null
     ): TypedEventFilter<
-      [string, BigNumber, BigNumber, BigNumber, BigNumber],
+      [string, BigNumber, BigNumber, BigNumber],
       {
         minter: string;
-        sandalwoodBurned: BigNumber;
         acceptedTemple: BigNumber;
         bonusTemple: BigNumber;
         mintedOGTemple: BigNumber;
@@ -676,15 +1264,13 @@ export class OpeningCeremony extends BaseContract {
 
     StakeComplete(
       minter?: null,
-      sandalwoodBurned?: null,
       acceptedTemple?: null,
       bonusTemple?: null,
       mintedOGTemple?: null
     ): TypedEventFilter<
-      [string, BigNumber, BigNumber, BigNumber, BigNumber],
+      [string, BigNumber, BigNumber, BigNumber],
       {
         minter: string;
-        sandalwoodBurned: BigNumber;
         acceptedTemple: BigNumber;
         bonusTemple: BigNumber;
         mintedOGTemple: BigNumber;
@@ -696,24 +1282,81 @@ export class OpeningCeremony extends BaseContract {
     ): TypedEventFilter<[string], { account: string }>;
 
     Unpaused(account?: null): TypedEventFilter<[string], { account: string }>;
+
+    "VerifiedUserAdded(address)"(
+      user?: null
+    ): TypedEventFilter<[string], { user: string }>;
+
+    VerifiedUserAdded(
+      user?: null
+    ): TypedEventFilter<[string], { user: string }>;
   };
 
   estimateGas: {
-    bonusFactor(overrides?: CallOverrides): Promise<BigNumber>;
+    CAN_ADD_VERIFIED_USER(overrides?: CallOverrides): Promise<BigNumber>;
+
+    DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<BigNumber>;
+
+    addGuestUser(
+      userAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    addVerifiedUser(
+      userAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    addVerifier(
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    getRoleAdmin(
+      role: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    grantRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    guestBonusFactor(overrides?: CallOverrides): Promise<BigNumber>;
 
     harvestThreshold(overrides?: CallOverrides): Promise<BigNumber>;
 
+    hasRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    inviteThresholdStablec(overrides?: CallOverrides): Promise<BigNumber>;
+
+    lastUpdatedTimestamp(overrides?: CallOverrides): Promise<BigNumber>;
+
+    limitStablec(overrides?: CallOverrides): Promise<BigNumber>;
+
+    limitTemple(overrides?: CallOverrides): Promise<BigNumber>;
+
     lockedOGTemple(overrides?: CallOverrides): Promise<BigNumber>;
 
+    maxLimitFactor(overrides?: CallOverrides): Promise<BigNumber>;
+
+    maxSacrificableStablec(
+      factorAtVerification: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     mintAndStake(
-      _amountSandalwood: BigNumberish,
       _amountPaidStablec: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     mintAndStakeFor(
       _staker: string,
-      _amountSandalwood: BigNumberish,
       _amountPaidStablec: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -728,18 +1371,30 @@ export class OpeningCeremony extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<BigNumber>;
 
+    removeVerifier(
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    sandalwoodBurned(
-      arg0: string,
-      overrides?: CallOverrides
+    renounceRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    revokeRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     sandalwoodToken(overrides?: CallOverrides): Promise<BigNumber>;
 
-    setBonusFactor(
+    setGuestBonusFactor(
       _numerator: BigNumberish,
       _denominator: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -747,6 +1402,19 @@ export class OpeningCeremony extends BaseContract {
 
     setHarvestThreshold(
       _harvestThreshold: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setLimitStablec(
+      guestMax: BigNumberish,
+      verifiedMax: BigNumberish,
+      verifiedDayOne: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setLimitTemple(
+      guestMax: BigNumberish,
+      verifiedMax: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -760,22 +1428,31 @@ export class OpeningCeremony extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    setVerifiedBonusFactor(
+      _numerator: BigNumberish,
+      _denominator: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     stablecToken(overrides?: CallOverrides): Promise<BigNumber>;
 
     stake(
-      _amountSandalwood: BigNumberish,
       _amountTemple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     stakeFor(
       _staker: string,
-      _amountSandalwood: BigNumberish,
       _amountTemple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     staking(overrides?: CallOverrides): Promise<BigNumber>;
+
+    supportsInterface(
+      interfaceId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     templeToken(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -793,24 +1470,85 @@ export class OpeningCeremony extends BaseContract {
     unpause(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
+
+    users(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    verifiedBonusFactor(overrides?: CallOverrides): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    bonusFactor(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+    CAN_ADD_VERIFIED_USER(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    DEFAULT_ADMIN_ROLE(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    addGuestUser(
+      userAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    addVerifiedUser(
+      userAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    addVerifier(
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    getRoleAdmin(
+      role: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    grantRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    guestBonusFactor(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     harvestThreshold(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    hasRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    inviteThresholdStablec(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    lastUpdatedTimestamp(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    limitStablec(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    limitTemple(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     lockedOGTemple(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    maxLimitFactor(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    maxSacrificableStablec(
+      factorAtVerification: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     mintAndStake(
-      _amountSandalwood: BigNumberish,
       _amountPaidStablec: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     mintAndStakeFor(
       _staker: string,
-      _amountSandalwood: BigNumberish,
       _amountPaidStablec: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
@@ -825,18 +1563,30 @@ export class OpeningCeremony extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    removeVerifier(
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    sandalwoodBurned(
-      arg0: string,
-      overrides?: CallOverrides
+    renounceRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    revokeRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     sandalwoodToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    setBonusFactor(
+    setGuestBonusFactor(
       _numerator: BigNumberish,
       _denominator: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -844,6 +1594,19 @@ export class OpeningCeremony extends BaseContract {
 
     setHarvestThreshold(
       _harvestThreshold: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setLimitStablec(
+      guestMax: BigNumberish,
+      verifiedMax: BigNumberish,
+      verifiedDayOne: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setLimitTemple(
+      guestMax: BigNumberish,
+      verifiedMax: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -857,22 +1620,31 @@ export class OpeningCeremony extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    setVerifiedBonusFactor(
+      _numerator: BigNumberish,
+      _denominator: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     stablecToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     stake(
-      _amountSandalwood: BigNumberish,
       _amountTemple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     stakeFor(
       _staker: string,
-      _amountSandalwood: BigNumberish,
       _amountTemple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     staking(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    supportsInterface(
+      interfaceId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
     templeToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
@@ -893,6 +1665,15 @@ export class OpeningCeremony extends BaseContract {
 
     unpause(
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    users(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    verifiedBonusFactor(
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };
 }
