@@ -18,7 +18,7 @@ import "./LockedOGTemple.sol";
  * Mint and Stake for those who have quested in the Opening Ceremony
  */
 contract OpeningCeremony is Ownable, Pausable {
-    uint256 constant STABLEC_ALLOWANCE_PER_SANDALWOOD = 1000;
+    uint256 constant ALLOWANCE_PER_SANDALWOOD = 1000;
 
     IERC20 public stablecToken; // contract address for stable coin used in treasury
     TempleERC20Token public templeToken; // temple ERC20 contract
@@ -42,6 +42,7 @@ contract OpeningCeremony is Ownable, Pausable {
     mapping(address => uint256) public sandalwoodBurned;
 
     event MintComplete(address minter, uint256 sandalwoodBurned, uint256 acceptedStablec, uint256 mintedTemple, uint256 bonusTemple, uint256 mintedOGTemple);
+    event StakeComplete(address minter, uint256 sandalwoodBurned, uint256 acceptedTemple, uint256 bonusTemple, uint256 mintedOGTemple);
 
     constructor(
       IERC20 _stablecToken,
@@ -89,13 +90,17 @@ contract OpeningCeremony is Ownable, Pausable {
 
     /** mint temple and immediately stake, on behalf of a staker, with a bonus + lockin period */
     function mintAndStakeFor(address _staker, uint256 _amountSandalwood, uint256 _amountPaidStablec) public whenNotPaused {
-      require(_amountPaidStablec == _amountSandalwood * STABLEC_ALLOWANCE_PER_SANDALWOOD, "Insufficient Sandalwood offered for requested amount");
+      require(_amountPaidStablec == _amountSandalwood * ALLOWANCE_PER_SANDALWOOD, "Incorrect Sandalwood offered");
 
       (uint256 _stablec, uint256 _temple) = treasury.intrinsicValueRatio();
 
       sandalwoodBurned[_staker] += _amountSandalwood;
-      uint256 _templeMinted = _amountPaidStablec * _temple / _stablec / mintMultiple;
+      uint256 _boughtTemple = _amountPaidStablec * _temple / _stablec / mintMultiple;
       
+      // Calculate extra temple required to account for bonus APY offered to questers
+      uint _bonusTemple = _boughtTemple * bonusFactor.numerator / bonusFactor.denominator;
+      uint _totalTemple = _boughtTemple + _bonusTemple;
+
       // pull stablec from staker and immediately transfer back to treasury
       SafeERC20.safeTransferFrom(stablecToken, msg.sender, address(treasury), _amountPaidStablec);
 
@@ -103,14 +108,11 @@ contract OpeningCeremony is Ownable, Pausable {
       sandalwoodToken.burnFrom(msg.sender, _amountSandalwood);
 
       // mint temple
-      templeToken.mint(address(this), _templeMinted);
-
-      // Calculate extra temple required to account for bonus APY offered to questers
-      uint _bonusTemple = _templeMinted * bonusFactor.numerator / bonusFactor.denominator;
+      templeToken.mint(address(this), _totalTemple);
 
       // Stake both minted and bonus temple. Locking up any OGTemple
-      SafeERC20.safeIncreaseAllowance(templeToken, address(staking), _templeMinted + _bonusTemple);
-      uint256 _amountOgTemple = staking.stake(_templeMinted + _bonusTemple);
+      SafeERC20.safeIncreaseAllowance(templeToken, address(staking), _totalTemple);
+      uint256 _amountOgTemple = staking.stake(_totalTemple);
       SafeERC20.safeIncreaseAllowance(staking.OG_TEMPLE(), address(lockedOGTemple), _amountOgTemple);
       lockedOGTemple.lockFor(_staker, _amountOgTemple, block.timestamp + unlockDelaySeconds);
 
@@ -119,12 +121,45 @@ contract OpeningCeremony is Ownable, Pausable {
         treasuryManagement.harvest();
       }
 
-      emit MintComplete(_staker, _amountSandalwood, _amountPaidStablec, _templeMinted, _bonusTemple, _amountOgTemple);
+      emit MintComplete(_staker, _amountSandalwood, _amountPaidStablec, _boughtTemple, _bonusTemple, _amountOgTemple);
     }
 
     /** mint temple and immediately stake, with a bonus + lockin period */
     function mintAndStake(uint256 _amountSandalwood, uint256 _amountPaidStablec) external whenNotPaused {
       mintAndStakeFor(msg.sender, _amountSandalwood, _amountPaidStablec);
+    }
+
+    /** Stake temple, consuming sandalwood to get bonus APY **/
+    function stakeFor(address _staker, uint256 _amountSandalwood, uint256 _amountTemple) public whenNotPaused {
+      require(_amountTemple == _amountSandalwood * ALLOWANCE_PER_SANDALWOOD, "Incorrect Sandalwood offered");
+
+      sandalwoodBurned[_staker] += _amountSandalwood;
+      
+      // Calculate extra temple required to account for bonus APY offered to questers
+      uint _bonusTemple = _amountTemple * bonusFactor.numerator / bonusFactor.denominator;
+      uint _totalTemple = _amountTemple + _bonusTemple;
+
+      // burn sandalwood offered
+      sandalwoodToken.burnFrom(msg.sender, _amountSandalwood);
+
+      // pull temple from caller (to be staked)
+      SafeERC20.safeTransferFrom(templeToken, msg.sender, address(this), _amountTemple);
+
+      // mint bonus APY temple
+      templeToken.mint(address(this), _totalTemple);
+
+      // Stake both minted and bonus temple. Locking up any OGTemple
+      SafeERC20.safeIncreaseAllowance(templeToken, address(staking), _totalTemple);
+      uint256 _amountOgTemple = staking.stake(_totalTemple);
+      SafeERC20.safeIncreaseAllowance(staking.OG_TEMPLE(), address(lockedOGTemple), _amountOgTemple);
+      lockedOGTemple.lockFor(_staker, _amountOgTemple, block.timestamp + unlockDelaySeconds);
+
+      emit StakeComplete(_staker, _amountSandalwood, _amountTemple, _bonusTemple, _amountOgTemple);
+    }
+
+    /** Stake temple, consuming sandalwood to get bonus APY **/
+    function stake(uint256 _amountSandalwood, uint256 _amountTemple) external whenNotPaused {
+      stakeFor(msg.sender, _amountSandalwood, _amountTemple);
     }
 
     /**
