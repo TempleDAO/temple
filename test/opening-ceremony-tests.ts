@@ -91,6 +91,9 @@ describe("Test Opening Ceremony", async () => {
       GUEST_BONUS_FACTOR,
     )
 
+    await openingCeremony.setLimitStablec(toAtto(5000), toAtto(1000000), toAtto(10000));
+    await openingCeremony.setLimitTemple(toAtto(5000), toAtto(1000000));
+
     await templeToken.addMinter(treasury.address);
     await templeToken.addMinter(openingCeremony.address);
     await templeToken.addMinter(await owner.getAddress());
@@ -114,7 +117,7 @@ describe("Test Opening Ceremony", async () => {
   })
 
   describe("Management", async () => {
-    xit("Only owner can pause/unpause", async () => {
+    it("Only owner can pause/unpause", async () => {
       // only owner can pause
       await shouldThrow(openingCeremony.connect(stakers[0]).pause(), /Ownable:/);
       await openingCeremony.pause();
@@ -131,17 +134,92 @@ describe("Test Opening Ceremony", async () => {
       await openingCeremony.unpause();
     });
 
-    xit("Only owner can update unlock delay", async() => {});
-    xit("Only owner can update mint multiple", async() => {});
-    xit("Only owner can update harvest threshold", async() => {});
-    xit("Only owner can update invite threshold", async() => {});
-    xit("Only owner can change bonus factor for verified users", async() => {});
-    xit("Only owner can change bonus factor for guest users", async() => {});
-    xit("Only owner can change mint limit", async() => {});
-    xit("Only owner can change stake limit", async() => {});
-    xit("Only owner can change bonus factors", async() => {});
-    xit("Only owner can add/remove verifiers", async() => {});
-    xit("Only addresses with the CAN_ADD_VERIFIED_USER, can add a verified user", async() => {});
+    it("Only owner can update unlock delay", async() => {
+      await shouldThrow(openingCeremony.connect(stakers[0]).setUnlockDelay(100), /Ownable:/);
+      await openingCeremony.setUnlockDelay(100);
+      expect(await openingCeremony.unlockDelaySeconds()).eq(100);
+    });
+
+    it("Only owner can update mint multiple", async() => {
+      await shouldThrow(openingCeremony.connect(stakers[0]).setMintMultiple(1), /Ownable:/);
+      await openingCeremony.setMintMultiple(1);
+      expect(await openingCeremony.mintMultiple()).eq(1);
+    });
+
+    it("Only owner can update harvest threshold", async() => {
+      await shouldThrow(openingCeremony.connect(stakers[0]).setHarvestThreshold(toAtto(50000)), /Ownable:/);
+      await openingCeremony.setHarvestThreshold(toAtto(50000));
+      expect(await openingCeremony.harvestThresholdStablec()).eql(toAtto(50000));
+    });
+
+    it("Only owner can update invite threshold", async() => {
+      await shouldThrow(openingCeremony.connect(stakers[0]).setInviteThreshold(toAtto(50000)), /Ownable:/);
+      await openingCeremony.setInviteThreshold(toAtto(50000));
+      expect(await openingCeremony.inviteThresholdStablec()).eql(toAtto(50000));
+    });
+
+    it("Only owner can change bonus factor for verified users", async() => {
+      await shouldThrow(openingCeremony.connect(stakers[0]).setVerifiedBonusFactor(1, 100), /Ownable:/);
+      await openingCeremony.setVerifiedBonusFactor(1, 100);
+      const factor = await openingCeremony.verifiedBonusFactor();
+      expect(factor.numerator).eq(1)
+      expect(factor.denominator).eq(100);
+    });
+
+    it("Only owner can change bonus factor for guest users", async() => {
+      await shouldThrow(openingCeremony.connect(stakers[0]).setGuestBonusFactor(1, 100), /Ownable:/);
+      await openingCeremony.setGuestBonusFactor(1, 100);
+      const factor = await openingCeremony.guestBonusFactor();
+      expect(factor.numerator).eq(1)
+      expect(factor.denominator).eq(100);
+    });
+
+    it("Only owner can change mint limit", async() => {
+      await shouldThrow(openingCeremony.connect(stakers[0]).setLimitStablec(3, 2, 1), /Ownable:/);
+      await openingCeremony.setLimitStablec(3, 2, 1);
+      const limit = await openingCeremony.limitStablec();
+      expect(limit.guestMax).eq(3);
+      expect(limit.verifiedMax).eq(2);
+      expect(limit.verifiedDayOne).eq(1);
+    });
+
+    it("Only owner can change stake limit", async() => {
+      await shouldThrow(openingCeremony.connect(stakers[0]).setLimitTemple(1, 2), /Ownable:/);
+      await openingCeremony.setLimitTemple(1, 2);
+      const limit = await openingCeremony.limitTemple();
+      expect(limit.guestMax).eq(1);
+      expect(limit.verifiedMax).eq(2);
+    });
+
+    it("Only owner can add/remove verifiers", async() => {
+      const can_add_verifier_role = await openingCeremony.CAN_ADD_VERIFIED_USER()
+      const verifier = await (await ethers.getSigners())[10].getAddress()
+
+      await shouldThrow(openingCeremony.connect(stakers[0]).grantRole(can_add_verifier_role, verifier), /AccessControl:.* is missing role 0x0/)
+      await openingCeremony.grantRole(can_add_verifier_role, verifier)
+      expect(await openingCeremony.hasRole(can_add_verifier_role, verifier)).is.true
+
+      await shouldThrow(openingCeremony.connect(stakers[0]).revokeRole(can_add_verifier_role, verifier), /AccessControl:.* is missing role 0x0/)
+      await openingCeremony.revokeRole(can_add_verifier_role, verifier)
+      expect(await openingCeremony.hasRole(can_add_verifier_role, verifier)).is.false
+    });
+
+    it("Only addresses with the CAN_ADD_VERIFIED_USER role, can add a verified user", async() => {
+      const can_add_verifier_role = await openingCeremony.CAN_ADD_VERIFIED_USER()
+      const verifier = (await ethers.getSigners())[10]
+      await openingCeremony.grantRole(can_add_verifier_role, await verifier.getAddress())
+
+      await shouldThrow(openingCeremony.connect(stakers[0]).addVerifiedUser(await stakers[0].getAddress()), /Caller cannot add verified user/)
+      
+      await sandalwoodToken.transfer(await verifier.getAddress(), toAtto(1));
+      await sandalwoodToken.connect(verifier).increaseAllowance(openingCeremony.address, toAtto(1));
+      await openingCeremony.connect(verifier).addVerifiedUser(await stakers[0].getAddress());
+
+      expect((await openingCeremony.users(await stakers[0].getAddress())).isVerified).is.true;
+    });
+
+    xit("Only verified users who have sacrificed 10,000 frax can invite guests", async() => {
+    })
   });
 
   xdescribe("mintAndStakeFor", async () => {

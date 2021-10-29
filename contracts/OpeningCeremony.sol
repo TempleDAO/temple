@@ -32,7 +32,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
 
     uint256 public unlockDelaySeconds = SECONDS_IN_DAY * 7 * 6; // How long after after buying can templars unlock
     uint256 public mintMultiple = 6; // presale mint multiple
-    uint256 public harvestThreshold; // At what mint level do stakers trigger a harvest
+    uint256 public harvestThresholdStablec; // At what mint level do stakers trigger a harvest
     uint256 public inviteThresholdStablec; // At what mint level do stakers trigger a harvest
 
     uint256 public maxLimitFactor = 1; // how much to increase staking/minting limit by TODO(butler): better name
@@ -78,7 +78,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       LockedOGTemple _lockedOGTemple,
       TempleTreasury _treasury,
       TreasuryManagementProxy _treasuryManagement,
-      uint256 _harvestThreshold,
+      uint256 _harvestThresholdStablec,
       uint256 _inviteThresholdStablec,
       Factor memory _verifiedBonusFactor,
       Factor memory _guestBonusFactor
@@ -92,12 +92,14 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       treasury = _treasury;
       treasuryManagement = _treasuryManagement;
 
-      harvestThreshold = _harvestThreshold;
+      harvestThresholdStablec = _harvestThresholdStablec;
       inviteThresholdStablec = _inviteThresholdStablec;
       verifiedBonusFactor = _verifiedBonusFactor;
       guestBonusFactor = _guestBonusFactor;
 
       lastUpdatedTimestamp = block.timestamp;
+
+      _setupRole(DEFAULT_ADMIN_ROLE, owner());
     }
 
     function setUnlockDelay(uint256 _unlockDelaySeconds) external onlyOwner {
@@ -108,8 +110,8 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       mintMultiple = _mintMultiple;
     }
 
-    function setHarvestThreshold(uint256 _harvestThreshold) external onlyOwner {
-      harvestThreshold = _harvestThreshold;
+    function setHarvestThreshold(uint256 _harvestThresholdStablec) external onlyOwner {
+      harvestThresholdStablec = _harvestThresholdStablec;
     }
 
     function setInviteThreshold(uint256 _inviteThresholdStablec) external onlyOwner {
@@ -150,7 +152,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
     function addVerifiedUser(address userAddress) external {
       require(hasRole(CAN_ADD_VERIFIED_USER, msg.sender), "Caller cannot add verified user");
       require(!users[userAddress].isVerified, "Address already verified");
-      sandalwoodToken.burnFrom(msg.sender, 1);
+      sandalwoodToken.burnFrom(msg.sender, 1e18);
       users[userAddress].isVerified = true;
       users[userAddress].factorAtVerification = maxLimitFactor;
 
@@ -159,7 +161,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
 
     function addGuestUser(address userAddress) external {
       require(users[msg.sender].isVerified && users[msg.sender].totalSacrificedTemple >= inviteThresholdStablec, "Need to sacrifice more frax before you can invite others");
-      sandalwoodToken.burnFrom(msg.sender, 1);
+      sandalwoodToken.burnFrom(msg.sender, 1e18);
       users[userAddress].isGuest = true;
     }
 
@@ -205,7 +207,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       lockedOGTemple.lockFor(_staker, _amountOgTemple, block.timestamp + unlockDelaySeconds);
 
       // Finally, run harvest if amount sacrificed is 10k or greater
-      if (_amountPaidStablec > harvestThreshold) {
+      if (_amountPaidStablec > harvestThresholdStablec) {
         treasuryManagement.harvest();
       }
 

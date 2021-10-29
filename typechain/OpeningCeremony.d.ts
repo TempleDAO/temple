@@ -29,7 +29,7 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     "getRoleAdmin(bytes32)": FunctionFragment;
     "grantRole(bytes32,address)": FunctionFragment;
     "guestBonusFactor()": FunctionFragment;
-    "harvestThreshold()": FunctionFragment;
+    "harvestThresholdStablec()": FunctionFragment;
     "hasRole(bytes32,address)": FunctionFragment;
     "inviteThresholdStablec()": FunctionFragment;
     "lastUpdatedTimestamp()": FunctionFragment;
@@ -102,7 +102,7 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "harvestThreshold",
+    functionFragment: "harvestThresholdStablec",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -272,7 +272,7 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "harvestThreshold",
+    functionFragment: "harvestThresholdStablec",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
@@ -548,7 +548,7 @@ export class OpeningCeremony extends BaseContract {
       [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
     >;
 
-    harvestThreshold(overrides?: CallOverrides): Promise<[BigNumber]>;
+    harvestThresholdStablec(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     hasRole(
       role: BytesLike,
@@ -640,7 +640,7 @@ export class OpeningCeremony extends BaseContract {
     ): Promise<ContractTransaction>;
 
     setHarvestThreshold(
-      _harvestThreshold: BigNumberish,
+      _harvestThresholdStablec: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -768,7 +768,7 @@ export class OpeningCeremony extends BaseContract {
     [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
   >;
 
-  harvestThreshold(overrides?: CallOverrides): Promise<BigNumber>;
+  harvestThresholdStablec(overrides?: CallOverrides): Promise<BigNumber>;
 
   hasRole(
     role: BytesLike,
@@ -860,7 +860,7 @@ export class OpeningCeremony extends BaseContract {
   ): Promise<ContractTransaction>;
 
   setHarvestThreshold(
-    _harvestThreshold: BigNumberish,
+    _harvestThresholdStablec: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -982,7 +982,7 @@ export class OpeningCeremony extends BaseContract {
       [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
     >;
 
-    harvestThreshold(overrides?: CallOverrides): Promise<BigNumber>;
+    harvestThresholdStablec(overrides?: CallOverrides): Promise<BigNumber>;
 
     hasRole(
       role: BytesLike,
@@ -1067,7 +1067,7 @@ export class OpeningCeremony extends BaseContract {
     ): Promise<void>;
 
     setHarvestThreshold(
-      _harvestThreshold: BigNumberish,
+      _harvestThresholdStablec: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1349,7 +1349,7 @@ export class OpeningCeremony extends BaseContract {
 
     guestBonusFactor(overrides?: CallOverrides): Promise<BigNumber>;
 
-    harvestThreshold(overrides?: CallOverrides): Promise<BigNumber>;
+    harvestThresholdStablec(overrides?: CallOverrides): Promise<BigNumber>;
 
     hasRole(
       role: BytesLike,
@@ -1425,7 +1425,7 @@ export class OpeningCeremony extends BaseContract {
     ): Promise<BigNumber>;
 
     setHarvestThreshold(
-      _harvestThreshold: BigNumberish,
+      _harvestThresholdStablec: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1542,7 +1542,9 @@ export class OpeningCeremony extends BaseContract {
 
     guestBonusFactor(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    harvestThreshold(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+    harvestThresholdStablec(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
     hasRole(
       role: BytesLike,
@@ -1622,7 +1624,7 @@ export class OpeningCeremony extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     setHarvestThreshold(
-      _harvestThreshold: BigNumberish,
+      _harvestThresholdStablec: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
