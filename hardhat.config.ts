@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ganache";  // for testing
@@ -38,6 +40,9 @@ module.exports = {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
     apiKey: process.env.ETHERSCAN_API_KEY
+  },
+  mocha: {
+    timeout: 120000
   }
 };
 
