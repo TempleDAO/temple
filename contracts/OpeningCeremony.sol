@@ -286,5 +286,3 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       }
     }
 }
-
-
