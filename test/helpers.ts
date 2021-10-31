@@ -44,6 +44,13 @@ export const mineToTimestamp = async (timestamp: number) => {
 }
 
 /**
+ * Mine forward the given number of seconds
+ */
+export const mineForwardSeconds = async (seconds: number) => {
+  await mineToTimestamp(await blockTimestamp() + seconds);
+}
+
+/**
  * Helper to always mine up to a given epoch (failing if we have passed it already)
  */
 export const mineToEpoch = async (startTimestamp: number, epochSizeSecond: number, epochNumber: number) => {
