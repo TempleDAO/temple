@@ -1,8 +1,6 @@
+import { ethers } from "hardhat";
 import { expect } from "chai";
 import { BigNumber, Signer } from "ethers";
-import { ethers } from "hardhat";
-import { isTemplateLiteralToken } from "typescript";
-import { expectAddressWithPrivateKey } from "../scripts/deploys/helpers";
 import { 
   ExitQueue,
   ExitQueue__factory,
@@ -12,8 +10,6 @@ import {
   LockedOGTemple__factory,
   OpeningCeremony, 
   OpeningCeremony__factory, 
-  SandalwoodToken, 
-  SandalwoodToken__factory, 
   TempleERC20Token, 
   TempleERC20Token__factory, 
   TempleStaking, 
@@ -23,20 +19,21 @@ import {
   TreasuryManagementProxy, 
   TreasuryManagementProxy__factory 
 } from "../typechain";
-import { blockTimestamp, fromAtto, mineToEpoch, shouldThrow, toAtto } from "./helpers";
+import { blockTimestamp, fromAtto, mineForwardSeconds, mineToEpoch, mineToTimestamp, shouldThrow, toAtto } from "./helpers";
 
 
 describe("Test Opening Ceremony", async () => {
+   const SECONDS_IN_DAY = 24 * 60 * 60;
    const EPOCH_SIZE: number = 600;
    const MINT_MULTIPLE: number = 6;
    const UNLOCK_DELAY_SECONDS: number = 10;
    const HARVEST_THRESHOLD: BigNumber = toAtto(10000);
    const INVITE_THRESHOLD: BigNumber = toAtto(10000);
+   const MAX_INVITES = 2;
    const VERIFIED_BONUS_FACTOR: {numerator: number, denominator: number} = { numerator: 51879, denominator: 100000}; // 0.1 EPY as bonus
    const GUEST_BONUS_FACTOR: {numerator: number, denominator: number} = { numerator: 45779, denominator: 100000};    // 0.9 EPY as bonus
 
    let stablecToken: FakeERC20;
-   let sandalwoodToken: SandalwoodToken;
    let templeToken: TempleERC20Token;
    let treasury: TempleTreasury;
    let treasuryManagement: TreasuryManagementProxy;
@@ -53,7 +50,6 @@ describe("Test Opening Ceremony", async () => {
 
     stablecToken = await new FakeERC20__factory(owner).deploy("STABLCEC", "STABLCEC");
     templeToken = await new TempleERC20Token__factory(owner).deploy()
-    sandalwoodToken = await new SandalwoodToken__factory(owner).deploy()
     
     treasury = await new TempleTreasury__factory(owner).deploy(templeToken.address, stablecToken.address);
     treasuryManagement = await new TreasuryManagementProxy__factory(owner).deploy(
@@ -80,19 +76,26 @@ describe("Test Opening Ceremony", async () => {
     openingCeremony = await new OpeningCeremony__factory(owner).deploy(
       stablecToken.address,
       templeToken.address,
-      sandalwoodToken.address,
       staking.address,
       lockedOGTemple.address,
       treasury.address,
       treasuryManagement.address,
       HARVEST_THRESHOLD,
       INVITE_THRESHOLD,
+      MAX_INVITES,
       VERIFIED_BONUS_FACTOR,
-      GUEST_BONUS_FACTOR,
+      GUEST_BONUS_FACTOR
+    );
+    await openingCeremony.grantRole(
+      await openingCeremony.CAN_ADD_VERIFIED_USER(), 
+      await owner.getAddress()
     )
+    await openingCeremony.setUnlockDelay(UNLOCK_DELAY_SECONDS);
 
     await openingCeremony.setLimitStablec(toAtto(5000), toAtto(1000000), toAtto(10000));
-    await openingCeremony.setLimitTemple(toAtto(5000), toAtto(1000000));
+    await openingCeremony.setLimitTemple(toAtto(5000), toAtto(10000));
+
+    await stablecToken.increaseAllowance(openingCeremony.address, toAtto(100000));
 
     await templeToken.addMinter(treasury.address);
     await templeToken.addMinter(openingCeremony.address);
@@ -102,14 +105,14 @@ describe("Test Opening Ceremony", async () => {
 
     for (const s of stakers) {
       await stablecToken.mint(await s.getAddress(), toAtto(1000000))
-      await sandalwoodToken.transfer(await s.getAddress(), toAtto(1000))
       await stablecToken.connect(s).increaseAllowance(openingCeremony.address, toAtto(1000000))
-      await sandalwoodToken.connect(s).increaseAllowance(openingCeremony.address, toAtto(1000))
     }
 
     await Promise.all([
       stablecToken.mint(await owner.getAddress(), toAtto(100000)),
       stablecToken.connect(owner).increaseAllowance(treasury.address, toAtto(100000)),
+      templeToken.mint(await owner.getAddress(), toAtto(100000)),
+      templeToken.connect(owner).increaseAllowance(openingCeremony.address, toAtto(100000)),
     ]);
 
     await treasury.seedMint(1,100);
@@ -156,6 +159,12 @@ describe("Test Opening Ceremony", async () => {
       await shouldThrow(openingCeremony.connect(stakers[0]).setInviteThreshold(toAtto(50000)), /Ownable:/);
       await openingCeremony.setInviteThreshold(toAtto(50000));
       expect(await openingCeremony.inviteThresholdStablec()).eql(toAtto(50000));
+    });
+
+    it("Only owner can change max invites per user", async() => {
+      await shouldThrow(openingCeremony.connect(stakers[0]).setMaxInvitesPerVerifiedUser(10), /Ownable:/);
+      await openingCeremony.setMaxInvitesPerVerifiedUser(10);
+      expect(await openingCeremony.maxInvitesPerVerifiedUser()).eq(10);
     });
 
     it("Only owner can change bonus factor for verified users", async() => {
@@ -210,39 +219,74 @@ describe("Test Opening Ceremony", async () => {
       await openingCeremony.grantRole(can_add_verifier_role, await verifier.getAddress())
 
       await shouldThrow(openingCeremony.connect(stakers[0]).addVerifiedUser(await stakers[0].getAddress()), /Caller cannot add verified user/)
-      
-      await sandalwoodToken.transfer(await verifier.getAddress(), toAtto(1));
-      await sandalwoodToken.connect(verifier).increaseAllowance(openingCeremony.address, toAtto(1));
       await openingCeremony.connect(verifier).addVerifiedUser(await stakers[0].getAddress());
-
       expect((await openingCeremony.users(await stakers[0].getAddress())).isVerified).is.true;
     });
 
-    xit("Only verified users who have sacrificed 10,000 frax can invite guests", async() => {
+    it("Only verified users who have sacrificed 10,000 frax can invite guests (max 2)", async() => {
+      const guestAddress1 = await stakers[0].getAddress()
+      const guestAddress2 = await stakers[2].getAddress()
+      const guestAddress3 = await stakers[3].getAddress()
+
+      await shouldThrow(openingCeremony.addGuestUser(guestAddress1), /only verified users can invite guests/)
+      await openingCeremony.addVerifiedUser(await owner.getAddress());
+
+      await shouldThrow(openingCeremony.addGuestUser(guestAddress1), /Need to sacrifice more frax before you can invite others/)
+      await openingCeremony.mintAndStake(INVITE_THRESHOLD);
+
+      // all predonditions met, can add guests (max 2)
+      expect((await openingCeremony.users(guestAddress1)).isGuest).is.false
+      await openingCeremony.addGuestUser(guestAddress1)
+      expect((await openingCeremony.users(guestAddress1)).isGuest).is.true
+
+      expect((await openingCeremony.users(guestAddress2)).isGuest).is.false
+      await openingCeremony.addGuestUser(guestAddress2);
+      expect((await openingCeremony.users(guestAddress2)).isGuest).is.true
+
+      expect((await openingCeremony.users(guestAddress3)).isGuest).is.false
+      await shouldThrow(openingCeremony.addGuestUser(guestAddress3), /Exceed maximum number of invites/)
+      expect((await openingCeremony.users(guestAddress3)).isGuest).is.false
     })
   });
 
-  xdescribe("mintAndStakeFor", async () => {
-    xit("Must be guest or verified", async() => {});
-    xit("Guest limit enforced", async() => {});
+  describe("mintAndStakeFor", async () => {
+    it("Must be guest or verified", async() => {
+      await shouldThrow(
+        openingCeremony.mintAndStakeFor(await stakers[0].getAddress(), toAtto(1000)),
+        /Only verified templars and their guests can partake in the opening ceremony/)
 
-    xit("Insufficient stablec allowance", async () => {
+      // Add verified staker
+      await openingCeremony.addVerifiedUser(await stakers[0].getAddress());
+      await openingCeremony.mintAndStakeFor(await stakers[0].getAddress(), INVITE_THRESHOLD);
+
+      // Add verified staker
+      await openingCeremony.connect(stakers[0]).addGuestUser(await stakers[1].getAddress());
+      await openingCeremony.mintAndStakeFor(await stakers[1].getAddress(), toAtto(1000));
+    });
+
+    it("Guest limit enforced", async() => {
+      await openingCeremony.addVerifiedUser(await stakers[0].getAddress());
+      await openingCeremony.mintAndStakeFor(await stakers[0].getAddress(), INVITE_THRESHOLD);
+      await openingCeremony.connect(stakers[0]).addGuestUser(await stakers[1].getAddress());
+
+      await shouldThrow(openingCeremony.mintAndStakeFor(await stakers[1].getAddress(), toAtto(5000).add(1)), /Exceeded max mint limit/);
+      await openingCeremony.mintAndStakeFor(await stakers[1].getAddress(), toAtto(5000));
+    });
+
+    it("Insufficient stablec allowance", async () => {
       const stakerAddr = await stakers[0].getAddress()
-      await stablecToken.increaseAllowance(openingCeremony.address, toAtto(999));
+      await openingCeremony.addVerifiedUser(stakerAddr);
+      await stablecToken.approve(openingCeremony.address, toAtto(999));
       await shouldThrow(openingCeremony.mintAndStakeFor(stakerAddr, toAtto(1000)), /ERC20: transfer amount exceeds allowance/);
     });
 
-    xit("Happy path for guest", async() => {});
-
-    xit("Happy path for Verified user (with and without harvest)", async () => {
-      const stakerAddr = await stakers[0].getAddress()
+    it("Happy path for guest", async() => {
       const startingIV = 1/100;
 
-      // mint and stake twice
-      await stablecToken.increaseAllowance(openingCeremony.address, toAtto(100000));
-      await sandalwoodToken.increaseAllowance(openingCeremony.address, toAtto(100));
-      await openingCeremony.mintAndStakeFor(stakerAddr, toAtto(9000));
-      await openingCeremony.mintAndStakeFor(stakerAddr, toAtto(11000));
+      await openingCeremony.addVerifiedUser(await stakers[0].getAddress());
+      await openingCeremony.mintAndStakeFor(await stakers[0].getAddress(), INVITE_THRESHOLD);
+      await openingCeremony.connect(stakers[0]).addGuestUser(await stakers[1].getAddress());
+      await openingCeremony.mintAndStakeFor(await stakers[1].getAddress(), toAtto(5000));
 
       // check mint, stake and locks are as expected
       const mintEvents = await openingCeremony.queryFilter(openingCeremony.filters.MintComplete())
@@ -254,8 +298,8 @@ describe("Test Opening Ceremony", async () => {
         const l = lockEvents[i];
         const block = await l.getBlock();
           
-        expect(fromAtto(m.args.mintedTemple)).eq(fromAtto(m.args.acceptedStablec) / startingIV / MINT_MULTIPLE)
-        expect(fromAtto(m.args.bonusTemple)).eq(fromAtto(m.args.acceptedStablec) / startingIV / MINT_MULTIPLE * VERIFIED_BONUS_FACTOR.numerator / VERIFIED_BONUS_FACTOR.denominator)
+        expect(fromAtto(m.args.mintedTemple)).approximately(fromAtto(m.args.acceptedStablec) / startingIV / MINT_MULTIPLE, 1e5)
+        expect(fromAtto(m.args.bonusTemple)).approximately(fromAtto(m.args.acceptedStablec) / startingIV / MINT_MULTIPLE * VERIFIED_BONUS_FACTOR.numerator / VERIFIED_BONUS_FACTOR.denominator, 1e5)
         expect(fromAtto(m.args.mintedOGTemple)).gt(1); // expect OG Temple, calcs themselves tested elsewhere
         expect(fromAtto(m.args.mintedOGTemple)).eq(fromAtto(l.args._amount))
         expect(l.args._lockedUntil.toNumber()).eq(block.timestamp + UNLOCK_DELAY_SECONDS);
@@ -268,33 +312,139 @@ describe("Test Opening Ceremony", async () => {
       expect(fromAtto(ivStablec) / fromAtto(ivTemple)).gt(startingIV);
     });
 
-    xit("Quester limit increases daily", async() => {});
+    it("Happy path for Verified user (with and without harvest)", async () => {
+      const startingIV = 1/100;
+
+      // Add first staker as a verified user
+      const stakerAddr = await stakers[0].getAddress()
+      await openingCeremony.addVerifiedUser(stakerAddr);
+
+      // mint and stake 3 times (once twice
+      await openingCeremony.mintAndStakeFor(stakerAddr, toAtto(9000));
+      await openingCeremony.mintAndStakeFor(stakerAddr, toAtto(1000));
+
+      // Used entire 1st day allowance. No more minting for 24hrs
+      await shouldThrow(openingCeremony.mintAndStakeFor(stakerAddr, 1), /Exceeded max mint limit/);
+      await mineForwardSeconds(SECONDS_IN_DAY);
+      await openingCeremony.mintAndStakeFor(stakerAddr, HARVEST_THRESHOLD);
+
+      // check mint, stake and locks are as expected
+      const mintEvents = await openingCeremony.queryFilter(openingCeremony.filters.MintComplete())
+      const lockEvents = await lockedOGTemple.queryFilter(lockedOGTemple.filters.OGTempleLocked());
+      expect(mintEvents.length).eq(lockEvents.length);
+
+      for (const i in mintEvents) {
+        const m = mintEvents[i];
+        const l = lockEvents[i];
+        const block = await l.getBlock();
+          
+        expect(fromAtto(m.args.mintedTemple)).approximately(fromAtto(m.args.acceptedStablec) / startingIV / MINT_MULTIPLE, 1e5)
+        expect(fromAtto(m.args.bonusTemple)).approximately(fromAtto(m.args.acceptedStablec) / startingIV / MINT_MULTIPLE * VERIFIED_BONUS_FACTOR.numerator / VERIFIED_BONUS_FACTOR.denominator, 1e5)
+        expect(fromAtto(m.args.mintedOGTemple)).gt(1); // expect OG Temple, calcs themselves tested elsewhere
+        expect(fromAtto(m.args.mintedOGTemple)).eq(fromAtto(l.args._amount))
+        expect(l.args._lockedUntil.toNumber()).eq(block.timestamp + UNLOCK_DELAY_SECONDS);
+      }
+
+      // expect a single harvest to be run, and iv to have increased
+      const harvestEvents = await treasury.queryFilter(treasury.filters.RewardsHarvested());
+      const [ivStablec, ivTemple] = await treasury.intrinsicValueRatio();
+      expect(harvestEvents.length).eq(1);
+      expect(fromAtto(ivStablec) / fromAtto(ivTemple)).gt(startingIV);
+    });
+
+    it("Quester limit increases daily", async() => {
+      // Add first staker as a verified user
+      const stakerAddr = await stakers[0].getAddress()
+      await openingCeremony.addVerifiedUser(stakerAddr);
+
+      // doubles every day, until we reach the max. Get's udpated by stakers
+      let expectedLimit = 10000;
+      const maxLimit = 1000000;
+      for (let i = 0; i < 10; i++) {
+        expect(fromAtto(await openingCeremony.maxSacrificableStablec(1))).eq(expectedLimit);
+        await mineForwardSeconds(SECONDS_IN_DAY);
+        await openingCeremony.mintAndStakeFor(stakerAddr, toAtto(1000));
+        expectedLimit *= 2;
+        if (expectedLimit > maxLimit) {
+          expectedLimit = maxLimit;
+        }
+      }
+    });
   })
 
   describe("stakeFor", async () => {
-    xit("Must be guest or verified", async() => {});
-    xit("Guest limit enforced", async() => {});
-    xit("Quester limit enforced", async() => {});
+    it("Must be guest or verified", async() => {
+      await shouldThrow(
+        openingCeremony.stakeFor(await stakers[0].getAddress(), toAtto(1000)),
+        /Only verified templars and their guests can partake in the opening ceremony/)
 
-    xit("Insufficient temple allowance", async () => {
+      // Add verified staker
+      await openingCeremony.addVerifiedUser(await stakers[0].getAddress());
+      await openingCeremony.stakeFor(await stakers[0].getAddress(), INVITE_THRESHOLD);
+
+      // Add verified staker
+      await openingCeremony.mintAndStakeFor(await stakers[0].getAddress(), INVITE_THRESHOLD);
+      await openingCeremony.connect(stakers[0]).addGuestUser(await stakers[1].getAddress());
+      await openingCeremony.stakeFor(await stakers[1].getAddress(), toAtto(1000));
+    });
+
+    it("Guest limit enforced", async() => {
+      await openingCeremony.addVerifiedUser(await stakers[0].getAddress());
+      await openingCeremony.mintAndStakeFor(await stakers[0].getAddress(), INVITE_THRESHOLD);
+      await openingCeremony.connect(stakers[0]).addGuestUser(await stakers[1].getAddress());
+
+      await shouldThrow(openingCeremony.stakeFor(await stakers[1].getAddress(), toAtto(5000).add(1)), /exceeded max limit/);
+      await openingCeremony.stakeFor(await stakers[1].getAddress(), toAtto(5000));
+    });
+
+    it("Insufficient temple allowance", async () => {
       const stakerAddr = await stakers[0].getAddress()
-      await sandalwoodToken.increaseAllowance(openingCeremony.address, toAtto(1));
-      await templeToken.mint(await owner.getAddress(), toAtto(100000));
-      await templeToken.increaseAllowance(openingCeremony.address, toAtto(999));
+      await openingCeremony.addVerifiedUser(stakerAddr);
+      await templeToken.approve(openingCeremony.address, toAtto(999));
       await shouldThrow(openingCeremony.stakeFor(stakerAddr, toAtto(1000)), /ERC20: transfer amount exceeds allowance/);
     });
 
-    xit("Happy path for guest", async() => {});
-    xit("Happy path", async () => {
-      const stakerAddr = await stakers[0].getAddress()
-      await templeToken.mint(await owner.getAddress(), toAtto(100000));
-      await templeToken.increaseAllowance(openingCeremony.address, toAtto(100000));
-      await sandalwoodToken.increaseAllowance(openingCeremony.address, toAtto(100));
+    it("Happy path for guest", async() => {
+      const startingIV = 1/100;
 
-      await openingCeremony.stakeFor(stakerAddr, toAtto(10000));
+      await openingCeremony.addVerifiedUser(await stakers[0].getAddress());
+      await openingCeremony.mintAndStakeFor(await stakers[0].getAddress(), INVITE_THRESHOLD);
+      await openingCeremony.connect(stakers[0]).addGuestUser(await stakers[1].getAddress());
+      await openingCeremony.stakeFor(await stakers[1].getAddress(), toAtto(5000));
+
+      // check mint, stake and locks are as expected
+      const stakeEvents = await openingCeremony.queryFilter(openingCeremony.filters.StakeComplete());
+      const lockEvents = (await lockedOGTemple.queryFilter(lockedOGTemple.filters.OGTempleLocked()))
+        .slice(1); // Ignore first event as that's from mintAndStake required to
+                   // invite the guest
+      expect(stakeEvents.length).eq(lockEvents.length);
+
+      for (const i in stakeEvents) {
+        const s = stakeEvents[i];
+        const l = lockEvents[i];
+        const block = await l.getBlock();
+          
+        expect(fromAtto(s.args.bonusTemple)).approximately(fromAtto(s.args.acceptedTemple) * VERIFIED_BONUS_FACTOR.numerator / VERIFIED_BONUS_FACTOR.denominator, 1e5)
+        expect(fromAtto(s.args.mintedOGTemple)).gt(1); // expect OG Temple, calcs themselves tested elsewhere
+        expect(fromAtto(s.args.mintedOGTemple)).eq(fromAtto(l.args._amount))
+        expect(l.args._lockedUntil.toNumber()).eq(block.timestamp + UNLOCK_DELAY_SECONDS);
+      }
+    });
+
+    it("Happy path for Verified user (with and without harvest)", async () => {
+      // Add first staker as a verified user
+      const stakerAddr = await stakers[0].getAddress()
+      await openingCeremony.addVerifiedUser(stakerAddr);
+
+      // Stake existing temple
+      await openingCeremony.stakeFor(stakerAddr, toAtto(9000));
+      await openingCeremony.stakeFor(stakerAddr, toAtto(1000));
+
+      // Used entire 1st day allowance. No more minting for 24hrs
+      await shouldThrow(openingCeremony.stakeFor(stakerAddr, toAtto(1000)), /exceeded max limit/);
 
       // check stake and locks are as expected
-      const stakeEvents = await openingCeremony.queryFilter(openingCeremony.filters.StakeComplete())
+      const stakeEvents = await openingCeremony.queryFilter(openingCeremony.filters.StakeComplete());
       const lockEvents = await lockedOGTemple.queryFilter(lockedOGTemple.filters.OGTempleLocked());
       expect(stakeEvents.length).eq(lockEvents.length);
 
@@ -303,7 +453,7 @@ describe("Test Opening Ceremony", async () => {
         const l = lockEvents[i];
         const block = await l.getBlock();
           
-        expect(fromAtto(s.args.bonusTemple)).eq(fromAtto(s.args.acceptedTemple) * VERIFIED_BONUS_FACTOR.numerator / VERIFIED_BONUS_FACTOR.denominator)
+        expect(fromAtto(s.args.bonusTemple)).approximately(fromAtto(s.args.acceptedTemple) * VERIFIED_BONUS_FACTOR.numerator / VERIFIED_BONUS_FACTOR.denominator, 1e5)
         expect(fromAtto(s.args.mintedOGTemple)).gt(1); // expect OG Temple, calcs themselves tested elsewhere
         expect(fromAtto(s.args.mintedOGTemple)).eq(fromAtto(l.args._amount))
         expect(l.args._lockedUntil.toNumber()).eq(block.timestamp + UNLOCK_DELAY_SECONDS);

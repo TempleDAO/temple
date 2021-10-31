@@ -14,6 +14,7 @@ import "./TempleStaking.sol";
 import "./PresaleAllocation.sol";
 import "./LockedOGTemple.sol";
 
+// import "hardhat/console.sol";
 
 /**
  * Mint and Stake for those who have quested in the Opening Ceremony
@@ -24,7 +25,6 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
 
     IERC20 public stablecToken; // contract address for stable coin used in treasury
     TempleERC20Token public templeToken; // temple ERC20 contract
-    SandalwoodToken public sandalwoodToken; // sandalwood burned to work out a users allowed allocation
     TempleTreasury public treasury; // temple treasury
     TreasuryManagementProxy public treasuryManagement; // temple treasury
     TempleStaking public staking; // Staking contract
@@ -34,6 +34,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
     uint256 public mintMultiple = 6; // presale mint multiple
     uint256 public harvestThresholdStablec; // At what mint level do stakers trigger a harvest
     uint256 public inviteThresholdStablec; // At what mint level do stakers trigger a harvest
+    uint256 public maxInvitesPerVerifiedUser; // How many guests can each verified user invite
 
     uint256 public maxLimitFactor = 1; // how much to increase staking/minting limit by TODO(butler): better name
     uint256 public lastUpdatedTimestamp; // when was the limitFactor last updated
@@ -57,36 +58,37 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
     struct User {
       bool isVerified;
       bool isGuest;
+      uint8 numInvited;
 
       uint256 factorAtVerification;
       uint256 totalSacrificedStablec;
       uint256 totalSacrificedTemple;
+
     }
 
     // How much allocation has each user used.
     mapping(address => User) public users;
 
     event MintComplete(address minter, uint256 acceptedStablec, uint256 mintedTemple, uint256 bonusTemple, uint256 mintedOGTemple);
-    event StakeComplete(address minter, uint256 acceptedTemple, uint256 bonusTemple, uint256 mintedOGTemple);
+    event StakeComplete(address staker, uint256 acceptedTemple, uint256 bonusTemple, uint256 mintedOGTemple);
     event VerifiedUserAdded(address user);
 
     constructor(
       IERC20 _stablecToken,
       TempleERC20Token _templeToken,
-      SandalwoodToken _sandalwoodToken,
       TempleStaking _staking,
       LockedOGTemple _lockedOGTemple,
       TempleTreasury _treasury,
       TreasuryManagementProxy _treasuryManagement,
       uint256 _harvestThresholdStablec,
       uint256 _inviteThresholdStablec,
+      uint256 _maxInvitesPerVerifiedUser,
       Factor memory _verifiedBonusFactor,
       Factor memory _guestBonusFactor
     ) {
 
       stablecToken = _stablecToken;
       templeToken = _templeToken;
-      sandalwoodToken = _sandalwoodToken;
       staking = _staking;
       lockedOGTemple = _lockedOGTemple;
       treasury = _treasury;
@@ -94,6 +96,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
 
       harvestThresholdStablec = _harvestThresholdStablec;
       inviteThresholdStablec = _inviteThresholdStablec;
+      maxInvitesPerVerifiedUser = _maxInvitesPerVerifiedUser;
       verifiedBonusFactor = _verifiedBonusFactor;
       guestBonusFactor = _guestBonusFactor;
 
@@ -116,6 +119,10 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
 
     function setInviteThreshold(uint256 _inviteThresholdStablec) external onlyOwner {
       inviteThresholdStablec = _inviteThresholdStablec;
+    }
+
+    function setMaxInvitesPerVerifiedUser(uint256 _maxInvitesPerVerifiedUser) external onlyOwner {
+      maxInvitesPerVerifiedUser = _maxInvitesPerVerifiedUser;
     }
 
     function setVerifiedBonusFactor(uint256 _numerator, uint256 _denominator) external onlyOwner {
@@ -152,7 +159,6 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
     function addVerifiedUser(address userAddress) external {
       require(hasRole(CAN_ADD_VERIFIED_USER, msg.sender), "Caller cannot add verified user");
       require(!users[userAddress].isVerified, "Address already verified");
-      sandalwoodToken.burnFrom(msg.sender, 1e18);
       users[userAddress].isVerified = true;
       users[userAddress].factorAtVerification = maxLimitFactor;
 
@@ -160,29 +166,36 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
     }
 
     function addGuestUser(address userAddress) external {
-      require(users[msg.sender].isVerified && users[msg.sender].totalSacrificedTemple >= inviteThresholdStablec, "Need to sacrifice more frax before you can invite others");
-      sandalwoodToken.burnFrom(msg.sender, 1e18);
+      require(users[msg.sender].isVerified, "only verified users can invite guests");
+      require(users[msg.sender].totalSacrificedStablec >= inviteThresholdStablec, 
+        "Need to sacrifice more frax before you can invite others");
+      require(users[msg.sender].numInvited < maxInvitesPerVerifiedUser,
+        "Exceed maximum number of invites");
+
       users[userAddress].isGuest = true;
+      users[msg.sender].numInvited += 1;
     }
 
     /** mint temple and immediately stake, on behalf of a staker, with a bonus + lockin period */
     function mintAndStakeFor(address _staker, uint256 _amountPaidStablec) public whenNotPaused {
       User storage userInfo = users[_staker];
 
+      // update max limit. This happens before checks, to ensure maxSacrificable
+      // is correctly calculated.
+      if ((block.timestamp - lastUpdatedTimestamp) > SECONDS_IN_DAY) {
+        maxLimitFactor *= 2;
+        lastUpdatedTimestamp = block.timestamp;
+      }
+
       Factor storage bonusFactor;
       if (userInfo.isVerified) {
-        require(userInfo.totalSacrificedStablec + _amountPaidStablec < maxSacrificableStablec(userInfo.factorAtVerification));
+        require(userInfo.totalSacrificedStablec + _amountPaidStablec <= maxSacrificableStablec(userInfo.factorAtVerification), "Exceeded max mint limit");
         bonusFactor = verifiedBonusFactor;
       } else if (userInfo.isGuest) {
-        require(userInfo.totalSacrificedStablec + _amountPaidStablec < limitStablec.guestMax);
+        require(userInfo.totalSacrificedStablec + _amountPaidStablec <= limitStablec.guestMax, "Exceeded max mint limit");
         bonusFactor = guestBonusFactor;
       } else {
         revert("Only verified templars and their guests can partake in the opening ceremony");
-      }
-
-      // update max limit
-      if ((block.timestamp - lastUpdatedTimestamp) > SECONDS_IN_DAY) {
-        maxLimitFactor *= 2;
       }
 
       (uint256 _stablec, uint256 _temple) = treasury.intrinsicValueRatio();
@@ -207,7 +220,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       lockedOGTemple.lockFor(_staker, _amountOgTemple, block.timestamp + unlockDelaySeconds);
 
       // Finally, run harvest if amount sacrificed is 10k or greater
-      if (_amountPaidStablec > harvestThresholdStablec) {
+      if (_amountPaidStablec >= harvestThresholdStablec) {
         treasuryManagement.harvest();
       }
 
@@ -225,10 +238,10 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
 
       Factor storage bonusFactor;
       if (userInfo.isVerified) {
-        require(userInfo.totalSacrificedStablec + _amountTemple <= limitTemple.verifiedMax);
+        require(userInfo.totalSacrificedTemple + _amountTemple <= limitTemple.verifiedMax, "exceeded max limit");
         bonusFactor = verifiedBonusFactor;
       } else if (userInfo.isGuest) {
-        require(userInfo.totalSacrificedStablec + _amountTemple <= limitTemple.guestMax);
+        require(userInfo.totalSacrificedTemple + _amountTemple <= limitTemple.guestMax, "exceeded max limit");
         bonusFactor = guestBonusFactor;
       } else {
         revert("Only verified templars and their guests can partake in the opening ceremony");
@@ -237,6 +250,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       // update max limit
       if ((block.timestamp - lastUpdatedTimestamp) > SECONDS_IN_DAY) {
         maxLimitFactor *= 2;
+        lastUpdatedTimestamp = block.timestamp;
       }
       
       // Calculate extra temple required to account for bonus APY

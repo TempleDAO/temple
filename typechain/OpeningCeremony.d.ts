@@ -36,6 +36,7 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     "limitStablec()": FunctionFragment;
     "limitTemple()": FunctionFragment;
     "lockedOGTemple()": FunctionFragment;
+    "maxInvitesPerVerifiedUser()": FunctionFragment;
     "maxLimitFactor()": FunctionFragment;
     "maxSacrificableStablec(uint256)": FunctionFragment;
     "mintAndStake(uint256)": FunctionFragment;
@@ -48,12 +49,12 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     "renounceOwnership()": FunctionFragment;
     "renounceRole(bytes32,address)": FunctionFragment;
     "revokeRole(bytes32,address)": FunctionFragment;
-    "sandalwoodToken()": FunctionFragment;
     "setGuestBonusFactor(uint256,uint256)": FunctionFragment;
     "setHarvestThreshold(uint256)": FunctionFragment;
     "setInviteThreshold(uint256)": FunctionFragment;
     "setLimitStablec(uint256,uint256,uint256)": FunctionFragment;
     "setLimitTemple(uint256,uint256)": FunctionFragment;
+    "setMaxInvitesPerVerifiedUser(uint256)": FunctionFragment;
     "setMintMultiple(uint256)": FunctionFragment;
     "setUnlockDelay(uint256)": FunctionFragment;
     "setVerifiedBonusFactor(uint256,uint256)": FunctionFragment;
@@ -130,6 +131,10 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "maxInvitesPerVerifiedUser",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "maxLimitFactor",
     values?: undefined
   ): string;
@@ -169,10 +174,6 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     values: [BytesLike, string]
   ): string;
   encodeFunctionData(
-    functionFragment: "sandalwoodToken",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
     functionFragment: "setGuestBonusFactor",
     values: [BigNumberish, BigNumberish]
   ): string;
@@ -191,6 +192,10 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "setLimitTemple",
     values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setMaxInvitesPerVerifiedUser",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "setMintMultiple",
@@ -297,6 +302,10 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "maxInvitesPerVerifiedUser",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "maxLimitFactor",
     data: BytesLike
   ): Result;
@@ -333,10 +342,6 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "sandalwoodToken",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "setGuestBonusFactor",
     data: BytesLike
   ): Result;
@@ -354,6 +359,10 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "setLimitTemple",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setMaxInvitesPerVerifiedUser",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -460,7 +469,7 @@ export type RoleRevokedEvent = TypedEvent<
 
 export type StakeCompleteEvent = TypedEvent<
   [string, BigNumber, BigNumber, BigNumber] & {
-    minter: string;
+    staker: string;
     acceptedTemple: BigNumber;
     bonusTemple: BigNumber;
     mintedOGTemple: BigNumber;
@@ -582,6 +591,8 @@ export class OpeningCeremony extends BaseContract {
 
     lockedOGTemple(overrides?: CallOverrides): Promise<[string]>;
 
+    maxInvitesPerVerifiedUser(overrides?: CallOverrides): Promise<[BigNumber]>;
+
     maxLimitFactor(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     maxSacrificableStablec(
@@ -631,8 +642,6 @@ export class OpeningCeremony extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    sandalwoodToken(overrides?: CallOverrides): Promise<[string]>;
-
     setGuestBonusFactor(
       _numerator: BigNumberish,
       _denominator: BigNumberish,
@@ -659,6 +668,11 @@ export class OpeningCeremony extends BaseContract {
     setLimitTemple(
       guestMax: BigNumberish,
       verifiedMax: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setMaxInvitesPerVerifiedUser(
+      _maxInvitesPerVerifiedUser: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -719,9 +733,10 @@ export class OpeningCeremony extends BaseContract {
       arg0: string,
       overrides?: CallOverrides
     ): Promise<
-      [boolean, boolean, BigNumber, BigNumber, BigNumber] & {
+      [boolean, boolean, number, BigNumber, BigNumber, BigNumber] & {
         isVerified: boolean;
         isGuest: boolean;
+        numInvited: number;
         factorAtVerification: BigNumber;
         totalSacrificedStablec: BigNumber;
         totalSacrificedTemple: BigNumber;
@@ -802,6 +817,8 @@ export class OpeningCeremony extends BaseContract {
 
   lockedOGTemple(overrides?: CallOverrides): Promise<string>;
 
+  maxInvitesPerVerifiedUser(overrides?: CallOverrides): Promise<BigNumber>;
+
   maxLimitFactor(overrides?: CallOverrides): Promise<BigNumber>;
 
   maxSacrificableStablec(
@@ -851,8 +868,6 @@ export class OpeningCeremony extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  sandalwoodToken(overrides?: CallOverrides): Promise<string>;
-
   setGuestBonusFactor(
     _numerator: BigNumberish,
     _denominator: BigNumberish,
@@ -879,6 +894,11 @@ export class OpeningCeremony extends BaseContract {
   setLimitTemple(
     guestMax: BigNumberish,
     verifiedMax: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setMaxInvitesPerVerifiedUser(
+    _maxInvitesPerVerifiedUser: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -939,9 +959,10 @@ export class OpeningCeremony extends BaseContract {
     arg0: string,
     overrides?: CallOverrides
   ): Promise<
-    [boolean, boolean, BigNumber, BigNumber, BigNumber] & {
+    [boolean, boolean, number, BigNumber, BigNumber, BigNumber] & {
       isVerified: boolean;
       isGuest: boolean;
+      numInvited: number;
       factorAtVerification: BigNumber;
       totalSacrificedStablec: BigNumber;
       totalSacrificedTemple: BigNumber;
@@ -1016,6 +1037,8 @@ export class OpeningCeremony extends BaseContract {
 
     lockedOGTemple(overrides?: CallOverrides): Promise<string>;
 
+    maxInvitesPerVerifiedUser(overrides?: CallOverrides): Promise<BigNumber>;
+
     maxLimitFactor(overrides?: CallOverrides): Promise<BigNumber>;
 
     maxSacrificableStablec(
@@ -1058,8 +1081,6 @@ export class OpeningCeremony extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    sandalwoodToken(overrides?: CallOverrides): Promise<string>;
-
     setGuestBonusFactor(
       _numerator: BigNumberish,
       _denominator: BigNumberish,
@@ -1086,6 +1107,11 @@ export class OpeningCeremony extends BaseContract {
     setLimitTemple(
       guestMax: BigNumberish,
       verifiedMax: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setMaxInvitesPerVerifiedUser(
+      _maxInvitesPerVerifiedUser: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1144,9 +1170,10 @@ export class OpeningCeremony extends BaseContract {
       arg0: string,
       overrides?: CallOverrides
     ): Promise<
-      [boolean, boolean, BigNumber, BigNumber, BigNumber] & {
+      [boolean, boolean, number, BigNumber, BigNumber, BigNumber] & {
         isVerified: boolean;
         isGuest: boolean;
+        numInvited: number;
         factorAtVerification: BigNumber;
         totalSacrificedStablec: BigNumber;
         totalSacrificedTemple: BigNumber;
@@ -1272,14 +1299,14 @@ export class OpeningCeremony extends BaseContract {
     >;
 
     "StakeComplete(address,uint256,uint256,uint256)"(
-      minter?: null,
+      staker?: null,
       acceptedTemple?: null,
       bonusTemple?: null,
       mintedOGTemple?: null
     ): TypedEventFilter<
       [string, BigNumber, BigNumber, BigNumber],
       {
-        minter: string;
+        staker: string;
         acceptedTemple: BigNumber;
         bonusTemple: BigNumber;
         mintedOGTemple: BigNumber;
@@ -1287,14 +1314,14 @@ export class OpeningCeremony extends BaseContract {
     >;
 
     StakeComplete(
-      minter?: null,
+      staker?: null,
       acceptedTemple?: null,
       bonusTemple?: null,
       mintedOGTemple?: null
     ): TypedEventFilter<
       [string, BigNumber, BigNumber, BigNumber],
       {
-        minter: string;
+        staker: string;
         acceptedTemple: BigNumber;
         bonusTemple: BigNumber;
         mintedOGTemple: BigNumber;
@@ -1367,6 +1394,8 @@ export class OpeningCeremony extends BaseContract {
 
     lockedOGTemple(overrides?: CallOverrides): Promise<BigNumber>;
 
+    maxInvitesPerVerifiedUser(overrides?: CallOverrides): Promise<BigNumber>;
+
     maxLimitFactor(overrides?: CallOverrides): Promise<BigNumber>;
 
     maxSacrificableStablec(
@@ -1416,8 +1445,6 @@ export class OpeningCeremony extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    sandalwoodToken(overrides?: CallOverrides): Promise<BigNumber>;
-
     setGuestBonusFactor(
       _numerator: BigNumberish,
       _denominator: BigNumberish,
@@ -1444,6 +1471,11 @@ export class OpeningCeremony extends BaseContract {
     setLimitTemple(
       guestMax: BigNumberish,
       verifiedMax: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setMaxInvitesPerVerifiedUser(
+      _maxInvitesPerVerifiedUser: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1566,6 +1598,10 @@ export class OpeningCeremony extends BaseContract {
 
     lockedOGTemple(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    maxInvitesPerVerifiedUser(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     maxLimitFactor(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     maxSacrificableStablec(
@@ -1615,8 +1651,6 @@ export class OpeningCeremony extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    sandalwoodToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     setGuestBonusFactor(
       _numerator: BigNumberish,
       _denominator: BigNumberish,
@@ -1643,6 +1677,11 @@ export class OpeningCeremony extends BaseContract {
     setLimitTemple(
       guestMax: BigNumberish,
       verifiedMax: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setMaxInvitesPerVerifiedUser(
+      _maxInvitesPerVerifiedUser: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
