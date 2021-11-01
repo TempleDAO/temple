@@ -39,7 +39,7 @@ import {
   bytecode as SWAP_ROUTER_BYTECODE,
 } from '@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json';
 
-describe.only("Zaps Test", async () => {
+xdescribe("Zaps Test", async () => {
 
   let stablecToken;
   let treasury: TempleTreasury;
