@@ -25,12 +25,12 @@ interface TreasuryManagementProxyInterface extends ethers.utils.Interface {
     "distributeHarvest()": FunctionFragment;
     "ejectTreasuryAllocation(address)": FunctionFragment;
     "harvest()": FunctionFragment;
+    "harvestDistributionPercentage()": FunctionFragment;
     "harvestEnabled()": FunctionFragment;
-    "harvestPercentageAmount()": FunctionFragment;
     "mintAndAllocateTemple(address,uint256)": FunctionFragment;
     "removePool(uint256,address)": FunctionFragment;
     "resetIV()": FunctionFragment;
-    "setHarvestAmount(uint256)": FunctionFragment;
+    "setHarvestDistributionPercentage(uint256)": FunctionFragment;
     "toggleHarvest()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
     "treasury()": FunctionFragment;
@@ -54,11 +54,11 @@ interface TreasuryManagementProxyInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "harvest", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "harvestEnabled",
+    functionFragment: "harvestDistributionPercentage",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "harvestPercentageAmount",
+    functionFragment: "harvestEnabled",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -71,7 +71,7 @@ interface TreasuryManagementProxyInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "resetIV", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "setHarvestAmount",
+    functionFragment: "setHarvestDistributionPercentage",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -111,11 +111,11 @@ interface TreasuryManagementProxyInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "harvest", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "harvestEnabled",
+    functionFragment: "harvestDistributionPercentage",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "harvestPercentageAmount",
+    functionFragment: "harvestEnabled",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -125,7 +125,7 @@ interface TreasuryManagementProxyInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "removePool", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "resetIV", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "setHarvestAmount",
+    functionFragment: "setHarvestDistributionPercentage",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -214,9 +214,11 @@ export class TreasuryManagementProxy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    harvestEnabled(overrides?: CallOverrides): Promise<[boolean]>;
+    harvestDistributionPercentage(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
 
-    harvestPercentageAmount(overrides?: CallOverrides): Promise<[BigNumber]>;
+    harvestEnabled(overrides?: CallOverrides): Promise<[boolean]>;
 
     mintAndAllocateTemple(
       _contract: string,
@@ -234,8 +236,8 @@ export class TreasuryManagementProxy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    setHarvestAmount(
-      _harvestPercentageAmount: BigNumberish,
+    setHarvestDistributionPercentage(
+      _harvestDistributionPercentage: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -291,9 +293,9 @@ export class TreasuryManagementProxy extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  harvestEnabled(overrides?: CallOverrides): Promise<boolean>;
+  harvestDistributionPercentage(overrides?: CallOverrides): Promise<BigNumber>;
 
-  harvestPercentageAmount(overrides?: CallOverrides): Promise<BigNumber>;
+  harvestEnabled(overrides?: CallOverrides): Promise<boolean>;
 
   mintAndAllocateTemple(
     _contract: string,
@@ -311,8 +313,8 @@ export class TreasuryManagementProxy extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  setHarvestAmount(
-    _harvestPercentageAmount: BigNumberish,
+  setHarvestDistributionPercentage(
+    _harvestDistributionPercentage: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -364,9 +366,11 @@ export class TreasuryManagementProxy extends BaseContract {
 
     harvest(overrides?: CallOverrides): Promise<void>;
 
-    harvestEnabled(overrides?: CallOverrides): Promise<boolean>;
+    harvestDistributionPercentage(
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
-    harvestPercentageAmount(overrides?: CallOverrides): Promise<BigNumber>;
+    harvestEnabled(overrides?: CallOverrides): Promise<boolean>;
 
     mintAndAllocateTemple(
       _contract: string,
@@ -382,8 +386,8 @@ export class TreasuryManagementProxy extends BaseContract {
 
     resetIV(overrides?: CallOverrides): Promise<void>;
 
-    setHarvestAmount(
-      _harvestPercentageAmount: BigNumberish,
+    setHarvestDistributionPercentage(
+      _harvestDistributionPercentage: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -437,9 +441,11 @@ export class TreasuryManagementProxy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    harvestEnabled(overrides?: CallOverrides): Promise<BigNumber>;
+    harvestDistributionPercentage(
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
-    harvestPercentageAmount(overrides?: CallOverrides): Promise<BigNumber>;
+    harvestEnabled(overrides?: CallOverrides): Promise<BigNumber>;
 
     mintAndAllocateTemple(
       _contract: string,
@@ -457,8 +463,8 @@ export class TreasuryManagementProxy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    setHarvestAmount(
-      _harvestPercentageAmount: BigNumberish,
+    setHarvestDistributionPercentage(
+      _harvestDistributionPercentage: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -515,11 +521,11 @@ export class TreasuryManagementProxy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    harvestEnabled(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    harvestPercentageAmount(
+    harvestDistributionPercentage(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
+
+    harvestEnabled(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     mintAndAllocateTemple(
       _contract: string,
@@ -537,8 +543,8 @@ export class TreasuryManagementProxy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    setHarvestAmount(
-      _harvestPercentageAmount: BigNumberish,
+    setHarvestDistributionPercentage(
+      _harvestDistributionPercentage: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

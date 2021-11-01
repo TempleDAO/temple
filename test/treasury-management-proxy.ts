@@ -48,32 +48,34 @@ describe("TreasuryManagementProxy calls", async () => {
   })
 
   it("only owner can call functions", async () => {
-    await shouldThrow(TREASURYPROXY.connect(nonOwner).resetIV(), /Caller is not the owner/);
-    await shouldThrow(TREASURYPROXY.connect(nonOwner).setHarvestAmount(100), /Caller is not the owner/);
-    await shouldThrow(TREASURYPROXY.connect(nonOwner).distributeHarvest(), /Caller is not the owner/);
-    await shouldThrow(TREASURYPROXY.connect(nonOwner).mintAndAllocateTemple(await owner.getAddress(), 420), /Caller is not the owner/);
-    await shouldThrow(TREASURYPROXY.connect(nonOwner).unallocateAndBurnUnusedMintedTemple(await owner.getAddress()), /Caller is not the owner/);
-    await shouldThrow(TREASURYPROXY.connect(nonOwner).updateMarkToMarket(await owner.getAddress()), /Caller is not the owner/);
-    await shouldThrow(TREASURYPROXY.connect(nonOwner).withdraw(await owner.getAddress()), /Caller is not the owner/);
-    await shouldThrow(TREASURYPROXY.connect(nonOwner).ejectTreasuryAllocation(await owner.getAddress()), /Caller is not the owner/);
-    await shouldThrow(TREASURYPROXY.connect(nonOwner).upsertPool(await owner.getAddress(), 20), /Caller is not the owner/);
-    await shouldThrow(TREASURYPROXY.connect(nonOwner).removePool(0, await owner.getAddress()), /Caller is not the owner/);
-    await shouldThrow(TREASURYPROXY.connect(nonOwner).transferOwnership(await nonOwner.getAddress()), /Caller is not the owner/);
+    const expectedErr = /caller is not the owner/;
+
+    await shouldThrow(TREASURYPROXY.connect(nonOwner).resetIV(), expectedErr);
+    await shouldThrow(TREASURYPROXY.connect(nonOwner).setHarvestDistributionPercentage(100), expectedErr);
+    await shouldThrow(TREASURYPROXY.connect(nonOwner).distributeHarvest(), expectedErr);
+    await shouldThrow(TREASURYPROXY.connect(nonOwner).mintAndAllocateTemple(await owner.getAddress(), 420), expectedErr);
+    await shouldThrow(TREASURYPROXY.connect(nonOwner).unallocateAndBurnUnusedMintedTemple(await owner.getAddress()), expectedErr);
+    await shouldThrow(TREASURYPROXY.connect(nonOwner).updateMarkToMarket(await owner.getAddress()), expectedErr);
+    await shouldThrow(TREASURYPROXY.connect(nonOwner).withdraw(await owner.getAddress()), expectedErr);
+    await shouldThrow(TREASURYPROXY.connect(nonOwner).ejectTreasuryAllocation(await owner.getAddress()), expectedErr);
+    await shouldThrow(TREASURYPROXY.connect(nonOwner).upsertPool(await owner.getAddress(), 20), expectedErr);
+    await shouldThrow(TREASURYPROXY.connect(nonOwner).removePool(0, await owner.getAddress()), expectedErr);
+    await shouldThrow(TREASURYPROXY.connect(nonOwner).transferOwnership(await nonOwner.getAddress()), expectedErr);
   });
 
 
-  it("treasuryMangementProxy is owner of Treasy", async() => {
-      expect(await TREASURY.owner()).to.eq(TREASURYPROXY.address)
-      await shouldThrow(TREASURY.resetIV(), /Ownable: caller is not the owner/);
-      await shouldThrow(TREASURY.distributeHarvest(), /Ownable: caller is not the owner/);
-      await shouldThrow(TREASURY.mintAndAllocateTemple(await owner.getAddress(), 420), /Ownable: caller is not the owner/);
-      await shouldThrow(TREASURY.unallocateAndBurnUnusedMintedTemple(await owner.getAddress()), /Ownable: caller is not the owner/);
-      await shouldThrow(TREASURY.updateMarkToMarket(await owner.getAddress()), /Ownable: caller is not the owner/);
-      await shouldThrow(TREASURY.withdraw(await owner.getAddress()), /Ownable: caller is not the owner/);
-      await shouldThrow(TREASURY.ejectTreasuryAllocation(await owner.getAddress()), /Ownable: caller is not the owner/);
-      await shouldThrow(TREASURY.upsertPool(await owner.getAddress(), 20), /Ownable: caller is not the owner/);
-      await shouldThrow(TREASURY.removePool(0, await owner.getAddress()), /Ownable: caller is not the owner/);
-      await shouldThrow(TREASURY.transferOwnership(await nonOwner.getAddress()), /Ownable: caller is not the owner/);
+  it("treasuryMangementProxy is owner of treasury", async() => {
+    expect(await TREASURY.owner()).to.eq(TREASURYPROXY.address)
+    await shouldThrow(TREASURY.resetIV(), /Ownable: caller is not the owner/);
+    await shouldThrow(TREASURY.distributeHarvest(), /Ownable: caller is not the owner/);
+    await shouldThrow(TREASURY.mintAndAllocateTemple(await owner.getAddress(), 420), /Ownable: caller is not the owner/);
+    await shouldThrow(TREASURY.unallocateAndBurnUnusedMintedTemple(await owner.getAddress()), /Ownable: caller is not the owner/);
+    await shouldThrow(TREASURY.updateMarkToMarket(await owner.getAddress()), /Ownable: caller is not the owner/);
+    await shouldThrow(TREASURY.withdraw(await owner.getAddress()), /Ownable: caller is not the owner/);
+    await shouldThrow(TREASURY.ejectTreasuryAllocation(await owner.getAddress()), /Ownable: caller is not the owner/);
+    await shouldThrow(TREASURY.upsertPool(await owner.getAddress(), 20), /Ownable: caller is not the owner/);
+    await shouldThrow(TREASURY.removePool(0, await owner.getAddress()), /Ownable: caller is not the owner/);
+    await shouldThrow(TREASURY.transferOwnership(await nonOwner.getAddress()), /Ownable: caller is not the owner/);
   })
 
   it("Owner of TreasurManagementProxy can call treasury", async () => {
@@ -92,9 +94,9 @@ describe("TreasuryManagementProxy calls", async () => {
   })
 
   it("update harvest amount", async() => {
-    expect(await TREASURYPROXY.harvestPercentageAmount()).to.eq(80);
-    await TREASURYPROXY.setHarvestAmount(100);
-    expect(await TREASURYPROXY.harvestPercentageAmount()).to.eq(100);
+    expect(await TREASURYPROXY.harvestDistributionPercentage()).to.eq(80);
+    await TREASURYPROXY.setHarvestDistributionPercentage(100);
+    expect(await TREASURYPROXY.harvestDistributionPercentage()).to.eq(100);
   })
 
 

@@ -8,16 +8,19 @@ import { TempleERC20Token__factory } from "../typechain/factories/TempleERC20Tok
 import { FakeERC20__factory } from "../typechain/factories/FakeERC20__factory";
 import { TempleTreasury__factory } from "../typechain/factories/TempleTreasury__factory";
 import { TestTreasuryAllocation__factory } from "../typechain/factories/TestTreasuryAllocation__factory";
-import { BigNumber, Signer } from "ethers";
+import { BigNumber, BigNumberish, ContractTransaction, Overrides, Signer } from "ethers";
 import { fromAtto, shouldThrow, toAtto } from "./helpers";
 import { TestTreasuryAllocation } from "../typechain/TestTreasuryAllocation";
+import { TreasuryManagementProxy, TreasuryManagementProxy__factory } from "../typechain";
 
-describe("Temple Treasury Configuration", async () => {
+describe("Temple Treasury management", async () => {
   let TEMPLE: TempleERC20Token;
   let STABLEC: FakeERC20;
   let TREASURY: TempleTreasury;
+  let treasuryManagement: TreasuryManagementProxy;
   let owner: Signer;
   let nonOwner: Signer;
+
  
   beforeEach(async () => {
     [owner, nonOwner] = await ethers.getSigners();
@@ -28,6 +31,11 @@ describe("Temple Treasury Configuration", async () => {
         TEMPLE.address,
         STABLEC.address,
     );
+
+    treasuryManagement = await new TreasuryManagementProxy__factory(owner).deploy(
+      await owner.getAddress(),
+      TREASURY.address,
+    )
 
     TEMPLE.addMinter(TREASURY.address);
     await Promise.all([
@@ -53,194 +61,217 @@ describe("Temple Treasury Configuration", async () => {
     await shouldThrow(TREASURY.seedMint(100,100), /Owner has already seeded treasury/);
   });
 
-  it("Only owners can mint and allocate TEMPLE", async () => {
-    const nonOwnerAddress = await nonOwner.getAddress()
+  type HarvestTestFacade = (distributionPercent: BigNumberish, overrides?: Overrides & { from?: string | Promise<string> }) => Promise<ContractTransaction>
 
-    await STABLEC.increaseAllowance(TREASURY.address, toAtto(100));
-    await TREASURY.seedMint(toAtto(100),toAtto(1000));
+  // helper to run the same test with and without the managgement proxy
+  const withAndWithoutProxyVariants = (testCase: (treasury: TempleTreasury, mgmt: TreasuryManagementProxy, harvest: HarvestTestFacade) => Promise<void>) => {
+    it("withProxy", async () => {
+      await STABLEC.increaseAllowance(TREASURY.address, toAtto(100));
+      await TREASURY.seedMint(toAtto(100),toAtto(1000));
+      await TREASURY.transferOwnership(treasuryManagement.address);
 
-    // Only owner can add or inccrease minted temple allocated
-    await shouldThrow(TREASURY.connect(nonOwner).mintAndAllocateTemple(nonOwnerAddress, toAtto(500)), /Ownable: caller is not the owner/);
-    await TREASURY.mintAndAllocateTemple(nonOwnerAddress, toAtto(500));
-    expect(fromAtto(await TEMPLE.allowance(await TREASURY.MINT_ALLOWANCE(), nonOwnerAddress))).eq(500);
-    await shouldThrow(TREASURY.connect(nonOwner).mintAndAllocateTemple(nonOwnerAddress, toAtto(500)), /Ownable: caller is not the owner/);
-    await TREASURY.mintAndAllocateTemple(nonOwnerAddress, toAtto(500));
-    expect(fromAtto(await TEMPLE.allowance(await TREASURY.MINT_ALLOWANCE(), nonOwnerAddress))).eq(1000);
+      // facade for harvest which uses treasuryManagement (but first updates
+      // % of harvest). Always called as owner
+      async function harvestTestFacade(
+          distributionPercent: BigNumberish,
+          overrides?: Overrides & { from?: string | Promise<string> }
+          ): Promise<ContractTransaction> {
+       
+        await treasuryManagement.setHarvestDistributionPercentage(distributionPercent);
+        return await treasuryManagement.harvest();
+      }
+      
+      await testCase(TREASURY, treasuryManagement, harvestTestFacade);
+    })
 
-    // Minted temple sits in the mint allowance contract, and doesn't effect IV
-    expect(fromAtto(await TEMPLE.allowance(await TREASURY.MINT_ALLOWANCE(), nonOwnerAddress))).eq(1000);
-    expect(fromAtto(await TEMPLE.balanceOf(nonOwnerAddress))).eq(0);
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(1/10);
+    it("withoutProxy", async () => {
+      await STABLEC.increaseAllowance(TREASURY.address, toAtto(100));
+      await TREASURY.seedMint(toAtto(100),toAtto(1000));
+      await testCase(TREASURY, TREASURY as unknown as TreasuryManagementProxy, TREASURY.harvest.bind(TREASURY));
+    })
+  }
 
-    // Once we pull minted temple, this will effect the IV
-    await TEMPLE.connect(nonOwner).transferFrom(await TREASURY.MINT_ALLOWANCE(), nonOwnerAddress, toAtto(500));
-    expect(fromAtto(await TEMPLE.allowance(await TREASURY.MINT_ALLOWANCE(), nonOwnerAddress))).eq(500);
-    expect(fromAtto(await TEMPLE.balanceOf(nonOwnerAddress))).eq(500);
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(1/10);
-    await TREASURY.resetIV()
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(1/15);
+  describe("Only owners can mint and allocate TEMPLE", async () => {
+    withAndWithoutProxyVariants(async (treasury: TempleTreasury, mgmt: TreasuryManagementProxy, harvest: HarvestTestFacade) => {
+      const nonOwnerAddress = await nonOwner.getAddress()
 
-    // Only owner can remove and burn unallocated temple
-    await shouldThrow(TREASURY.connect(nonOwner).unallocateAndBurnUnusedMintedTemple(nonOwnerAddress), /Ownable: caller is not the owner/);
-    await TREASURY.unallocateAndBurnUnusedMintedTemple(nonOwnerAddress);
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(1/15); // no change to IV
-    expect(fromAtto(await TEMPLE.balanceOf(nonOwnerAddress))).eq(500);
-    expect(fromAtto(await TEMPLE.allowance(await TREASURY.MINT_ALLOWANCE(), nonOwnerAddress))).eq(0);
+      // Only owner can add or inccrease minted temple allocated
+      await shouldThrow(mgmt.connect(nonOwner).mintAndAllocateTemple(nonOwnerAddress, toAtto(500)), /caller is not the owner/);
+      await mgmt.mintAndAllocateTemple(nonOwnerAddress, toAtto(500));
+      expect(fromAtto(await TEMPLE.allowance(await treasury.MINT_ALLOWANCE(), nonOwnerAddress))).eq(500);
+      await shouldThrow(mgmt.connect(nonOwner).mintAndAllocateTemple(nonOwnerAddress, toAtto(500)), /caller is not the owner/);
+      await mgmt.mintAndAllocateTemple(nonOwnerAddress, toAtto(500));
+      expect(fromAtto(await TEMPLE.allowance(await treasury.MINT_ALLOWANCE(), nonOwnerAddress))).eq(1000);
+
+      // Minted temple sits in the mint allowance contract, and doesn't effect IV
+      expect(fromAtto(await TEMPLE.allowance(await treasury.MINT_ALLOWANCE(), nonOwnerAddress))).eq(1000);
+      expect(fromAtto(await TEMPLE.balanceOf(nonOwnerAddress))).eq(0);
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(1/10);
+
+      // Once we pull minted temple, this will effect the IV
+      await TEMPLE.connect(nonOwner).transferFrom(await treasury.MINT_ALLOWANCE(), nonOwnerAddress, toAtto(500));
+      expect(fromAtto(await TEMPLE.allowance(await treasury.MINT_ALLOWANCE(), nonOwnerAddress))).eq(500);
+      expect(fromAtto(await TEMPLE.balanceOf(nonOwnerAddress))).eq(500);
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(1/10);
+      await mgmt.resetIV()
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(1/15);
+
+      // Only owner can remove and burn unallocated temple
+      await shouldThrow(mgmt.connect(nonOwner).unallocateAndBurnUnusedMintedTemple(nonOwnerAddress), /caller is not the owner/);
+      await mgmt.unallocateAndBurnUnusedMintedTemple(nonOwnerAddress);
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(1/15); // no change to IV
+      expect(fromAtto(await TEMPLE.balanceOf(nonOwnerAddress))).eq(500);
+      expect(fromAtto(await TEMPLE.allowance(await treasury.MINT_ALLOWANCE(), nonOwnerAddress))).eq(0);
+    })
   });
 
-  it("Minting and allocating temple shouldn't change IV", async () => {
-    const nonOwnerAddress = await nonOwner.getAddress()
+  describe("Minting and allocating temple shouldn't change IV", async () => {
+    withAndWithoutProxyVariants(async (treasury: TempleTreasury, mgmt: TreasuryManagementProxy, harvest: HarvestTestFacade) => {
+      const nonOwnerAddress = await nonOwner.getAddress()
 
-    await STABLEC.increaseAllowance(TREASURY.address, toAtto(100));
-    await TREASURY.seedMint(toAtto(100),toAtto(1000));
-
-    await TREASURY.mintAndAllocateTemple(nonOwnerAddress, toAtto(500));
-    expect(fromAtto(await TEMPLE.allowance(await TREASURY.MINT_ALLOWANCE(), nonOwnerAddress))).eq(500);
-    const iv = toRatio(await TREASURY.intrinsicValueRatio());
-    await TREASURY.harvest(0);
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(iv);
+      await mgmt.mintAndAllocateTemple(nonOwnerAddress, toAtto(500));
+      expect(fromAtto(await TEMPLE.allowance(await treasury.MINT_ALLOWANCE(), nonOwnerAddress))).eq(500);
+      const iv = toRatio(await treasury.intrinsicValueRatio());
+      await harvest(0);
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(iv);
+    });
   });
 
-  it("Only owners can allocate STABLEC", async () => {
-    const treasuryAllocation = await new TestTreasuryAllocation__factory(owner).deploy(STABLEC.address);
+  describe("Only owners can allocate STABLEC", async () => {
+    withAndWithoutProxyVariants(async (treasury: TempleTreasury, mgmt: TreasuryManagementProxy, harvest: HarvestTestFacade) => {
+      const treasuryAllocation = await new TestTreasuryAllocation__factory(owner).deploy(STABLEC.address);
 
-    await STABLEC.increaseAllowance(TREASURY.address, toAtto(100));
-    await TREASURY.seedMint(toAtto(100),toAtto(1000));
+      // Only owner can add pool
+      await shouldThrow(mgmt.connect(nonOwner).allocateTreasuryStablec(treasuryAllocation.address, toAtto(10)), /caller is not the owner/);
+      await mgmt.allocateTreasuryStablec(treasuryAllocation.address, toAtto(10));
 
-    // Only owner can add pool
-    await shouldThrow(TREASURY.connect(nonOwner).allocateTreasuryStablec(treasuryAllocation.address, toAtto(10)), /Ownable: caller is not the owner/);
-    await TREASURY.allocateTreasuryStablec(treasuryAllocation.address, toAtto(10));
+      // STABLEC should be transferred immediately on allocation
+      expect(fromAtto(await treasuryAllocation.reval())).eq(10);
+      expect(fromAtto(await STABLEC.balanceOf(treasuryAllocation.address))).eq(10);
 
-    // STABLEC should be transferred immediately on allocation
-    expect(fromAtto(await treasuryAllocation.reval())).eq(10);
-    expect(fromAtto(await STABLEC.balanceOf(treasuryAllocation.address))).eq(10);
+      // Allocated STABLEC shouldn't effect IV, unless we decide to update the book value
+      // simulated in test by spending STABLEC.
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(1/10);
+      await treasuryAllocation.transfer(await owner.getAddress(), toAtto(5));
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(1/10);
+      await mgmt.updateMarkToMarket(treasuryAllocation.address);
+      await mgmt.resetIV();
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(95/1000);
 
-    // Allocated STABLEC shouldn't effect IV, unless we decide to update the book value
-    // simulated in test by spending STABLEC.
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(1/10);
-    await treasuryAllocation.transfer(await owner.getAddress(), toAtto(5));
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(1/10);
-    await TREASURY.updateMarkToMarket(treasuryAllocation.address);
-    await TREASURY.resetIV();
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(95/1000);
-
-    // STABLEC returned to treasury shouldn't effect IV
-    await treasuryAllocation.increaseAllowance(TREASURY.address, toAtto(5));
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(95/1000);
-    await TREASURY.updateMarkToMarket(treasuryAllocation.address);
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(95/1000);
-    await TREASURY.withdraw(treasuryAllocation.address);
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(95/1000);
-    await TREASURY.resetIV();
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(95/1000);
+      // STABLEC returned to treasury shouldn't effect IV
+      await treasuryAllocation.increaseAllowance(treasury.address, toAtto(5));
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(95/1000);
+      await mgmt.updateMarkToMarket(treasuryAllocation.address);
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(95/1000);
+      await mgmt.withdraw(treasuryAllocation.address);
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(95/1000);
+      await mgmt.resetIV();
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(95/1000);
+    });
   });
 
-  it("Only owners can unsafe withdraw", async () => {
-    const treasuryAllocation = await new TestTreasuryAllocation__factory(owner).deploy(STABLEC.address);
+  describe("Only owners can unsafe withdraw", async () => {
+    withAndWithoutProxyVariants(async (treasury: TempleTreasury, mgmt: TreasuryManagementProxy, harvest: HarvestTestFacade) => {
+      const treasuryAllocation = await new TestTreasuryAllocation__factory(owner).deploy(STABLEC.address);
+      await mgmt.allocateTreasuryStablec(treasuryAllocation.address, toAtto(10));
 
-    // setup
-    await STABLEC.increaseAllowance(TREASURY.address, toAtto(100));
-    await TREASURY.seedMint(toAtto(100),toAtto(1000));
-    await TREASURY.allocateTreasuryStablec(treasuryAllocation.address, toAtto(10));
+      // Only owner should be able to eject a treasury allocation (to be used to recover funds)
+      // when a treasury allocation contract stops working how we expect
+      await shouldThrow(mgmt.connect(nonOwner).ejectTreasuryAllocation(treasuryAllocation.address), /caller is not the owner/);
 
-    // Only owner should be able to eject a treasury allocation (to be used to recover funds)
-    // when a treasury allocation contract stops working how we expect
-    await shouldThrow(TREASURY.connect(nonOwner).ejectTreasuryAllocation(treasuryAllocation.address), /Ownable: caller is not the owner/);
+      // Unsafe withdraw should hard reset all STABLEC allocations for the contract
+      await treasuryAllocation.increaseAllowance(treasury.address, toAtto(10));
+      expect(fromAtto(await treasury.totalAllocationStablec())).eq(10);
+      expect(fromAtto(await treasury.treasuryAllocationsStablec(treasuryAllocation.address))).eq(10);
+      await mgmt.ejectTreasuryAllocation(treasuryAllocation.address);
+      expect(fromAtto(await treasury.totalAllocationStablec())).eq(0);
+      expect(fromAtto(await treasury.treasuryAllocationsStablec(treasuryAllocation.address))).eq(0);
 
-    // Unsafe withdraw should hard reset all STABLEC allocations for the contract
-    await treasuryAllocation.increaseAllowance(TREASURY.address, toAtto(10));
-    expect(fromAtto(await TREASURY.totalAllocationStablec())).eq(10);
-    expect(fromAtto(await TREASURY.treasuryAllocationsStablec(treasuryAllocation.address))).eq(10);
-    await TREASURY.ejectTreasuryAllocation(treasuryAllocation.address);
-    expect(fromAtto(await TREASURY.totalAllocationStablec())).eq(0);
-    expect(fromAtto(await TREASURY.treasuryAllocationsStablec(treasuryAllocation.address))).eq(0);
-
-    // The above test should have no change to IV (just updating book keeping)
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(1/10);
-    await TREASURY.resetIV();
-    expect(toRatio(await TREASURY.intrinsicValueRatio())).eq(1/10);
+      // The above test should have no change to IV (just updating book keeping)
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(1/10);
+      await mgmt.resetIV();
+      expect(toRatio(await treasury.intrinsicValueRatio())).eq(1/10);
+    });
   });
 
-  it("Only owners can add or remove pools", async () => {
-    const nonOwnerAddress = await nonOwner.getAddress()
+  describe("Only owners can add or remove pools", async () => {
+    withAndWithoutProxyVariants(async (treasury: TempleTreasury, mgmt: TreasuryManagementProxy, harvest: HarvestTestFacade) => {
+      const nonOwnerAddress = await nonOwner.getAddress()
 
-    await STABLEC.increaseAllowance(TREASURY.address, toAtto(100));
-    await TREASURY.seedMint(toAtto(100),toAtto(1000));
+      // Only owner can set/change a pool's share of harvest
+      await shouldThrow(mgmt.connect(nonOwner).upsertPool(nonOwnerAddress, 1), /caller is not the owner/);
+      await mgmt.upsertPool(nonOwnerAddress, 1);
+      expect(await treasury.poolHarvestShare(nonOwnerAddress)).eq(1);
+      expect(await treasury.totalHarvestShares()).eq(1);
 
-    // Only owner can set/change a pool's share of harvest
-    await shouldThrow(TREASURY.connect(nonOwner).upsertPool(nonOwnerAddress, 1), /Ownable: caller is not the owner/);
-    await TREASURY.upsertPool(nonOwnerAddress, 1);
-    expect(await TREASURY.poolHarvestShare(nonOwnerAddress)).eq(1);
-    expect(await TREASURY.totalHarvestShares()).eq(1);
+      // Only owner can change a pool's share of harvest
+      await shouldThrow(mgmt.connect(nonOwner).upsertPool(nonOwnerAddress, 2), /caller is not the owner/);
+      await mgmt.upsertPool(nonOwnerAddress, 2);
+      expect(await treasury.poolHarvestShare(nonOwnerAddress)).eq(2);
+      expect(await treasury.totalHarvestShares()).eq(2);
 
-    // Only owner can change a pool's share of harvest
-    await shouldThrow(TREASURY.connect(nonOwner).upsertPool(nonOwnerAddress, 2), /Ownable: caller is not the owner/);
-    await TREASURY.upsertPool(nonOwnerAddress, 2);
-    expect(await TREASURY.poolHarvestShare(nonOwnerAddress)).eq(2);
-    expect(await TREASURY.totalHarvestShares()).eq(2);
+      // Pools must have a share > 0
+      await shouldThrow(mgmt.upsertPool(nonOwnerAddress, 0), /Harvest share must be > 0/);
 
-    // Pools must have a share > 0
-    await shouldThrow(TREASURY.upsertPool(nonOwnerAddress, 0), /Harvest share must be > 0/);
-
-    // Only treasury can remove a pool completely (effectively 
-    // setting it's share to 0, and removing the contract from the
-    // list of contracts that get distributed too)
-    await shouldThrow(TREASURY.connect(nonOwner).removePool(0, nonOwnerAddress), /Ownable: caller is not the owner/);
-    await shouldThrow(TREASURY.removePool(1, nonOwnerAddress), /No pool at the specified index/);
-    await shouldThrow(TREASURY.removePool(0, await owner.getAddress()), /Pool at index and passed in address don't match/);
-    await TREASURY.removePool(0, nonOwnerAddress);
-    expect(await TREASURY.poolHarvestShare(nonOwnerAddress)).eq(0);
-    expect(await TREASURY.totalHarvestShares()).eq(0);
+      // Only treasury can remove a pool completely (effectively 
+      // setting it's share to 0, and removing the contract from the
+      // list of contracts that get distributed too)
+      await shouldThrow(mgmt.connect(nonOwner).removePool(0, nonOwnerAddress), /caller is not the owner/);
+      await shouldThrow(mgmt.removePool(1, nonOwnerAddress), /No pool at the specified index/);
+      await shouldThrow(mgmt.removePool(0, await owner.getAddress()), /Pool at index and passed in address don't match/);
+      await mgmt.removePool(0, nonOwnerAddress);
+      expect(await treasury.poolHarvestShare(nonOwnerAddress)).eq(0);
+      expect(await treasury.totalHarvestShares()).eq(0);
+    });
   });
 
-  it("Adding/Remove multiple pools", async () => {
-    await STABLEC.increaseAllowance(TREASURY.address, 100);
-    await TREASURY.seedMint(100,1000);
+  describe("Adding/Remove multiple pools", async () => {
+    withAndWithoutProxyVariants(async (treasury: TempleTreasury, mgmt: TreasuryManagementProxy, harvest: HarvestTestFacade) => {
+      const pools: string[] = await Promise.all((await ethers.getSigners()).slice(3).map(s => s.getAddress()));
+      const poolHarvestShare: { [key: string]: number; } = {}
 
-    const pools: string[] = await Promise.all((await ethers.getSigners()).slice(3).map(s => s.getAddress()));
-    const poolHarvestShare: { [key: string]: number; } = {}
+      let expectedTotalHarvestShares = 0;
+      for (let i = 1; i < pools.length; i++) {
+        await mgmt.upsertPool(pools[i], 10*i);
+        expectedTotalHarvestShares += 10*i;
+        poolHarvestShare[pools[i]] = 10*i;
+      }
 
-    let expectedTotalHarvestShares = 0;
-    for (let i = 1; i < pools.length; i++) {
-      await TREASURY.upsertPool(pools[i], 10*i);
-      expectedTotalHarvestShares += 10*i;
-      poolHarvestShare[pools[i]] = 10*i;
-    }
+      // check all pools exist
+      for (let i = 1; i < pools.length; i++) {
+        const addr = await treasury.pools(i-1);
+        expect(addr).not.eq("");
+        expect(await treasury.poolHarvestShare(addr)).eq(i*10);
+      }
 
-    // check all pools exist
-    for (let i = 1; i < pools.length; i++) {
-      const addr = await TREASURY.pools(i-1);
-      expect(addr).not.eq("");
-      expect(await TREASURY.poolHarvestShare(addr)).eq(i*10);
-    }
+      // check bookkeeping of totalHarvestShare
+      expect(await treasury.totalHarvestShares()).eq(expectedTotalHarvestShares);
 
-    // check bookkeeping of totalHarvestShare
-    expect(await TREASURY.totalHarvestShares()).eq(expectedTotalHarvestShares);
+      // Update first 4 pools share of harvest, and check the changes propogate as expected
+      for (let i = 1; i < 5; i++) {
+        await mgmt.upsertPool(pools[i], 5);
+        expectedTotalHarvestShares = expectedTotalHarvestShares - 10*i + 5;
+        poolHarvestShare[pools[i]] = 5;
+      }
 
-    // Update first 4 pools share of harvest, and check the changes propogate as expected
-    for (let i = 1; i < 5; i++) {
-      await TREASURY.upsertPool(pools[i], 5);
-      expectedTotalHarvestShares = expectedTotalHarvestShares - 10*i + 5;
-      poolHarvestShare[pools[i]] = 5;
-    }
+      // re-check pool shares
+      for (let i = 1; i < 5; i++) {
+        const addr = await treasury.pools(i-1);
+        expect(await treasury.poolHarvestShare(addr)).eq(5);
+      }
+      expect(await treasury.totalHarvestShares()).eq(expectedTotalHarvestShares);
 
-    // re-check pool shares
-    for (let i = 1; i < 5; i++) {
-      const addr = await TREASURY.pools(i-1);
-      expect(await TREASURY.poolHarvestShare(addr)).eq(5);
-    }
-    expect(await TREASURY.totalHarvestShares()).eq(expectedTotalHarvestShares);
+      // Closeout all pools, checking conditions along the way
+      for (let i = 1; i < pools.length; i++) {
+        const poolAddress = await treasury.pools(0);
+        await mgmt.removePool(0, poolAddress);
 
-    // Closeout all pools, checking conditions along the way
-    for (let i = 1; i < pools.length; i++) {
-       const poolAddress = await TREASURY.pools(0);
-       await TREASURY.removePool(0, poolAddress);
-
-       expectedTotalHarvestShares -= poolHarvestShare[poolAddress];
-       expect(await TREASURY.poolHarvestShare(poolAddress)).eq(0);
-       expect(await TREASURY.totalHarvestShares()).eq(expectedTotalHarvestShares)
-    }
-    await shouldThrow(TREASURY.pools(0), /Transaction reverted without a reason/);
+        expectedTotalHarvestShares -= poolHarvestShare[poolAddress];
+        expect(await treasury.poolHarvestShare(poolAddress)).eq(0);
+        expect(await treasury.totalHarvestShares()).eq(expectedTotalHarvestShares)
+      }
+      await shouldThrow(treasury.pools(0), /Transaction reverted without a reason/);
+    });
   });
 });
 

@@ -16,7 +16,7 @@ contract TreasuryManagementProxy {
     bool public harvestEnabled = true;
     address owner;
 
-    uint256 public harvestPercentageAmount = 80;
+    uint256 public harvestDistributionPercentage = 80;
 
     constructor(address _owner, address _treasury) {
         owner = _owner;
@@ -24,18 +24,18 @@ contract TreasuryManagementProxy {
     }
 
     modifier onlyOwner() {
-       require(owner == msg.sender, "Caller is not the owner");
+       require(owner == msg.sender, "caller is not the owner");
        _;
     }
 
     function harvest() external {
         if (harvestEnabled) {
-           treasury.harvest(harvestPercentageAmount);
+           treasury.harvest(harvestDistributionPercentage);
         }
     }
 
-    function setHarvestAmount(uint256 _harvestPercentageAmount) external onlyOwner {
-        harvestPercentageAmount = _harvestPercentageAmount;
+    function setHarvestDistributionPercentage(uint256 _harvestDistributionPercentage) external onlyOwner {
+        harvestDistributionPercentage = _harvestDistributionPercentage;
     }
 
     function toggleHarvest() external onlyOwner {
