@@ -21,49 +21,191 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface OpeningCeremonyQuestInterface extends ethers.utils.Interface {
   functions: {
+    "CAN_CHANGE_STATE()": FunctionFragment;
+    "DEFAULT_ADMIN_ROLE()": FunctionFragment;
     "dataOf(address)": FunctionFragment;
-    "owner()": FunctionFragment;
-    "renounceOwnership()": FunctionFragment;
-    "setData(address,uint256,string)": FunctionFragment;
-    "transferOwnership(address)": FunctionFragment;
+    "getCurrentStep(address)": FunctionFragment;
+    "getRoleAdmin(bytes32)": FunctionFragment;
+    "grantRole(bytes32,address)": FunctionFragment;
+    "hasRole(bytes32,address)": FunctionFragment;
+    "overrideUserData(address,tuple)": FunctionFragment;
+    "removeLock(address)": FunctionFragment;
+    "renounceRole(bytes32,address)": FunctionFragment;
+    "revokeRole(bytes32,address)": FunctionFragment;
+    "setCompleted(address)": FunctionFragment;
+    "setCompletedCondition()": FunctionFragment;
+    "setConditions(bytes32,bytes32)": FunctionFragment;
+    "setCurrentStep(address,bytes32)": FunctionFragment;
+    "setCurrentStepWithLock(address,bytes32,uint256,bytes32)": FunctionFragment;
+    "setEnclave(address,bytes32)": FunctionFragment;
+    "setEnclaveCondition()": FunctionFragment;
+    "supportsInterface(bytes4)": FunctionFragment;
   };
 
-  encodeFunctionData(functionFragment: "dataOf", values: [string]): string;
-  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "renounceOwnership",
+    functionFragment: "CAN_CHANGE_STATE",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "setData",
-    values: [string, BigNumberish, string]
+    functionFragment: "DEFAULT_ADMIN_ROLE",
+    values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "dataOf", values: [string]): string;
   encodeFunctionData(
-    functionFragment: "transferOwnership",
+    functionFragment: "getCurrentStep",
     values: [string]
   ): string;
+  encodeFunctionData(
+    functionFragment: "getRoleAdmin",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "grantRole",
+    values: [BytesLike, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "hasRole",
+    values: [BytesLike, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "overrideUserData",
+    values: [
+      string,
+      {
+        stepWhenLocked: BytesLike;
+        stepWhenUnlocked: BytesLike;
+        lockedUntil: BigNumberish;
+        enclave: BytesLike;
+        completed: boolean;
+      }
+    ]
+  ): string;
+  encodeFunctionData(functionFragment: "removeLock", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "renounceRole",
+    values: [BytesLike, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "revokeRole",
+    values: [BytesLike, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setCompleted",
+    values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setCompletedCondition",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setConditions",
+    values: [BytesLike, BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setCurrentStep",
+    values: [string, BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setCurrentStepWithLock",
+    values: [string, BytesLike, BigNumberish, BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setEnclave",
+    values: [string, BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setEnclaveCondition",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "supportsInterface",
+    values: [BytesLike]
+  ): string;
 
-  decodeFunctionResult(functionFragment: "dataOf", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "renounceOwnership",
+    functionFragment: "CAN_CHANGE_STATE",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "setData", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "transferOwnership",
+    functionFragment: "DEFAULT_ADMIN_ROLE",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "dataOf", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "getCurrentStep",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getRoleAdmin",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "overrideUserData",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "removeLock", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "renounceRole",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setCompleted",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setCompletedCondition",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setConditions",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setCurrentStep",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setCurrentStepWithLock",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "setEnclave", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setEnclaveCondition",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "supportsInterface",
     data: BytesLike
   ): Result;
 
   events: {
-    "OwnershipTransferred(address,address)": EventFragment;
+    "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
+    "RoleGranted(bytes32,address,address)": EventFragment;
+    "RoleRevoked(bytes32,address,address)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleAdminChanged"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleRevoked"): EventFragment;
 }
 
-export type OwnershipTransferredEvent = TypedEvent<
-  [string, string] & { previousOwner: string; newOwner: string }
+export type RoleAdminChangedEvent = TypedEvent<
+  [string, string, string] & {
+    role: string;
+    previousAdminRole: string;
+    newAdminRole: string;
+  }
+>;
+
+export type RoleGrantedEvent = TypedEvent<
+  [string, string, string] & { role: string; account: string; sender: string }
+>;
+
+export type RoleRevokedEvent = TypedEvent<
+  [string, string, string] & { role: string; account: string; sender: string }
 >;
 
 export class OpeningCeremonyQuest extends BaseContract {
@@ -110,138 +252,572 @@ export class OpeningCeremonyQuest extends BaseContract {
   interface: OpeningCeremonyQuestInterface;
 
   functions: {
+    CAN_CHANGE_STATE(overrides?: CallOverrides): Promise<[string]>;
+
+    DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<[string]>;
+
     dataOf(
       arg0: string,
       overrides?: CallOverrides
-    ): Promise<[BigNumber, string] & { version: BigNumber; data: string }>;
+    ): Promise<
+      [string, string, BigNumber, string, boolean] & {
+        stepWhenLocked: string;
+        stepWhenUnlocked: string;
+        lockedUntil: BigNumber;
+        enclave: string;
+        completed: boolean;
+      }
+    >;
 
-    owner(overrides?: CallOverrides): Promise<[string]>;
-
-    renounceOwnership(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    setData(
+    getCurrentStep(
       templar: string,
-      version: BigNumberish,
-      data: string,
+      overrides?: CallOverrides
+    ): Promise<[string]>;
+
+    getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<[string]>;
+
+    grantRole(
+      role: BytesLike,
+      account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    transferOwnership(
-      newOwner: string,
+    hasRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
+
+    overrideUserData(
+      templar: string,
+      data: {
+        stepWhenLocked: BytesLike;
+        stepWhenUnlocked: BytesLike;
+        lockedUntil: BigNumberish;
+        enclave: BytesLike;
+        completed: boolean;
+      },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    removeLock(
+      templar: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    renounceRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    revokeRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setCompleted(
+      templar: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setCompletedCondition(overrides?: CallOverrides): Promise<[string]>;
+
+    setConditions(
+      _setEnclaveCondition: BytesLike,
+      _setCompletedCondition: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setCurrentStep(
+      templar: string,
+      step: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setCurrentStepWithLock(
+      templar: string,
+      step: BytesLike,
+      lockDurationSeconds: BigNumberish,
+      stepWhenUnlocked: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setEnclave(
+      templar: string,
+      enclave: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setEnclaveCondition(overrides?: CallOverrides): Promise<[string]>;
+
+    supportsInterface(
+      interfaceId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
   };
+
+  CAN_CHANGE_STATE(overrides?: CallOverrides): Promise<string>;
+
+  DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
 
   dataOf(
     arg0: string,
     overrides?: CallOverrides
-  ): Promise<[BigNumber, string] & { version: BigNumber; data: string }>;
+  ): Promise<
+    [string, string, BigNumber, string, boolean] & {
+      stepWhenLocked: string;
+      stepWhenUnlocked: string;
+      lockedUntil: BigNumber;
+      enclave: string;
+      completed: boolean;
+    }
+  >;
 
-  owner(overrides?: CallOverrides): Promise<string>;
+  getCurrentStep(templar: string, overrides?: CallOverrides): Promise<string>;
 
-  renounceOwnership(
+  getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<string>;
+
+  grantRole(
+    role: BytesLike,
+    account: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  setData(
+  hasRole(
+    role: BytesLike,
+    account: string,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
+
+  overrideUserData(
     templar: string,
-    version: BigNumberish,
-    data: string,
+    data: {
+      stepWhenLocked: BytesLike;
+      stepWhenUnlocked: BytesLike;
+      lockedUntil: BigNumberish;
+      enclave: BytesLike;
+      completed: boolean;
+    },
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  transferOwnership(
-    newOwner: string,
+  removeLock(
+    templar: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
+
+  renounceRole(
+    role: BytesLike,
+    account: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  revokeRole(
+    role: BytesLike,
+    account: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setCompleted(
+    templar: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setCompletedCondition(overrides?: CallOverrides): Promise<string>;
+
+  setConditions(
+    _setEnclaveCondition: BytesLike,
+    _setCompletedCondition: BytesLike,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setCurrentStep(
+    templar: string,
+    step: BytesLike,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setCurrentStepWithLock(
+    templar: string,
+    step: BytesLike,
+    lockDurationSeconds: BigNumberish,
+    stepWhenUnlocked: BytesLike,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setEnclave(
+    templar: string,
+    enclave: BytesLike,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setEnclaveCondition(overrides?: CallOverrides): Promise<string>;
+
+  supportsInterface(
+    interfaceId: BytesLike,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
 
   callStatic: {
+    CAN_CHANGE_STATE(overrides?: CallOverrides): Promise<string>;
+
+    DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
+
     dataOf(
       arg0: string,
       overrides?: CallOverrides
-    ): Promise<[BigNumber, string] & { version: BigNumber; data: string }>;
+    ): Promise<
+      [string, string, BigNumber, string, boolean] & {
+        stepWhenLocked: string;
+        stepWhenUnlocked: string;
+        lockedUntil: BigNumber;
+        enclave: string;
+        completed: boolean;
+      }
+    >;
 
-    owner(overrides?: CallOverrides): Promise<string>;
+    getCurrentStep(templar: string, overrides?: CallOverrides): Promise<string>;
 
-    renounceOwnership(overrides?: CallOverrides): Promise<void>;
+    getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<string>;
 
-    setData(
+    grantRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    hasRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
+
+    overrideUserData(
       templar: string,
-      version: BigNumberish,
-      data: string,
+      data: {
+        stepWhenLocked: BytesLike;
+        stepWhenUnlocked: BytesLike;
+        lockedUntil: BigNumberish;
+        enclave: BytesLike;
+        completed: boolean;
+      },
       overrides?: CallOverrides
     ): Promise<void>;
 
-    transferOwnership(
-      newOwner: string,
+    removeLock(templar: string, overrides?: CallOverrides): Promise<void>;
+
+    renounceRole(
+      role: BytesLike,
+      account: string,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    revokeRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setCompleted(templar: string, overrides?: CallOverrides): Promise<void>;
+
+    setCompletedCondition(overrides?: CallOverrides): Promise<string>;
+
+    setConditions(
+      _setEnclaveCondition: BytesLike,
+      _setCompletedCondition: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setCurrentStep(
+      templar: string,
+      step: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setCurrentStepWithLock(
+      templar: string,
+      step: BytesLike,
+      lockDurationSeconds: BigNumberish,
+      stepWhenUnlocked: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setEnclave(
+      templar: string,
+      enclave: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setEnclaveCondition(overrides?: CallOverrides): Promise<string>;
+
+    supportsInterface(
+      interfaceId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
   };
 
   filters: {
-    "OwnershipTransferred(address,address)"(
-      previousOwner?: string | null,
-      newOwner?: string | null
+    "RoleAdminChanged(bytes32,bytes32,bytes32)"(
+      role?: BytesLike | null,
+      previousAdminRole?: BytesLike | null,
+      newAdminRole?: BytesLike | null
     ): TypedEventFilter<
-      [string, string],
-      { previousOwner: string; newOwner: string }
+      [string, string, string],
+      { role: string; previousAdminRole: string; newAdminRole: string }
     >;
 
-    OwnershipTransferred(
-      previousOwner?: string | null,
-      newOwner?: string | null
+    RoleAdminChanged(
+      role?: BytesLike | null,
+      previousAdminRole?: BytesLike | null,
+      newAdminRole?: BytesLike | null
     ): TypedEventFilter<
-      [string, string],
-      { previousOwner: string; newOwner: string }
+      [string, string, string],
+      { role: string; previousAdminRole: string; newAdminRole: string }
+    >;
+
+    "RoleGranted(bytes32,address,address)"(
+      role?: BytesLike | null,
+      account?: string | null,
+      sender?: string | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; account: string; sender: string }
+    >;
+
+    RoleGranted(
+      role?: BytesLike | null,
+      account?: string | null,
+      sender?: string | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; account: string; sender: string }
+    >;
+
+    "RoleRevoked(bytes32,address,address)"(
+      role?: BytesLike | null,
+      account?: string | null,
+      sender?: string | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; account: string; sender: string }
+    >;
+
+    RoleRevoked(
+      role?: BytesLike | null,
+      account?: string | null,
+      sender?: string | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; account: string; sender: string }
     >;
   };
 
   estimateGas: {
+    CAN_CHANGE_STATE(overrides?: CallOverrides): Promise<BigNumber>;
+
+    DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<BigNumber>;
+
     dataOf(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    owner(overrides?: CallOverrides): Promise<BigNumber>;
-
-    renounceOwnership(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    setData(
+    getCurrentStep(
       templar: string,
-      version: BigNumberish,
-      data: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    getRoleAdmin(
+      role: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    grantRole(
+      role: BytesLike,
+      account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    transferOwnership(
-      newOwner: string,
+    hasRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    overrideUserData(
+      templar: string,
+      data: {
+        stepWhenLocked: BytesLike;
+        stepWhenUnlocked: BytesLike;
+        lockedUntil: BigNumberish;
+        enclave: BytesLike;
+        completed: boolean;
+      },
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    removeLock(
+      templar: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    renounceRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    revokeRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setCompleted(
+      templar: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setCompletedCondition(overrides?: CallOverrides): Promise<BigNumber>;
+
+    setConditions(
+      _setEnclaveCondition: BytesLike,
+      _setCompletedCondition: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setCurrentStep(
+      templar: string,
+      step: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setCurrentStepWithLock(
+      templar: string,
+      step: BytesLike,
+      lockDurationSeconds: BigNumberish,
+      stepWhenUnlocked: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setEnclave(
+      templar: string,
+      enclave: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setEnclaveCondition(overrides?: CallOverrides): Promise<BigNumber>;
+
+    supportsInterface(
+      interfaceId: BytesLike,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
+    CAN_CHANGE_STATE(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    DEFAULT_ADMIN_ROLE(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     dataOf(
       arg0: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    renounceOwnership(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    setData(
+    getCurrentStep(
       templar: string,
-      version: BigNumberish,
-      data: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    getRoleAdmin(
+      role: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    grantRole(
+      role: BytesLike,
+      account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    transferOwnership(
-      newOwner: string,
+    hasRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    overrideUserData(
+      templar: string,
+      data: {
+        stepWhenLocked: BytesLike;
+        stepWhenUnlocked: BytesLike;
+        lockedUntil: BigNumberish;
+        enclave: BytesLike;
+        completed: boolean;
+      },
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    removeLock(
+      templar: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    renounceRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    revokeRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setCompleted(
+      templar: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setCompletedCondition(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    setConditions(
+      _setEnclaveCondition: BytesLike,
+      _setCompletedCondition: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setCurrentStep(
+      templar: string,
+      step: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setCurrentStepWithLock(
+      templar: string,
+      step: BytesLike,
+      lockDurationSeconds: BigNumberish,
+      stepWhenUnlocked: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setEnclave(
+      templar: string,
+      enclave: BytesLike,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setEnclaveCondition(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    supportsInterface(
+      interfaceId: BytesLike,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };
 }
