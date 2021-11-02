@@ -27,6 +27,7 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     "addVerifiedUser(address)": FunctionFragment;
     "addVerifier(address)": FunctionFragment;
     "getRoleAdmin(bytes32)": FunctionFragment;
+    "globalDoublingIndex()": FunctionFragment;
     "grantRole(bytes32,address)": FunctionFragment;
     "guestBonusFactor()": FunctionFragment;
     "harvestThresholdStablec()": FunctionFragment;
@@ -37,7 +38,6 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     "limitTemple()": FunctionFragment;
     "lockedOGTemple()": FunctionFragment;
     "maxInvitesPerVerifiedUser()": FunctionFragment;
-    "maxLimitFactor()": FunctionFragment;
     "maxSacrificableStablec(uint256)": FunctionFragment;
     "mintAndStake(uint256)": FunctionFragment;
     "mintAndStakeFor(address,uint256)": FunctionFragment;
@@ -95,6 +95,10 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "globalDoublingIndex",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "grantRole",
     values: [BytesLike, string]
   ): string;
@@ -132,10 +136,6 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "maxInvitesPerVerifiedUser",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "maxLimitFactor",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -271,6 +271,10 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
     functionFragment: "getRoleAdmin",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "globalDoublingIndex",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "guestBonusFactor",
@@ -303,10 +307,6 @@ interface OpeningCeremonyInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "maxInvitesPerVerifiedUser",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "maxLimitFactor",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -545,6 +545,8 @@ export class OpeningCeremony extends BaseContract {
 
     getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<[string]>;
 
+    globalDoublingIndex(overrides?: CallOverrides): Promise<[BigNumber]>;
+
     grantRole(
       role: BytesLike,
       account: string,
@@ -593,10 +595,8 @@ export class OpeningCeremony extends BaseContract {
 
     maxInvitesPerVerifiedUser(overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    maxLimitFactor(overrides?: CallOverrides): Promise<[BigNumber]>;
-
     maxSacrificableStablec(
-      factorAtVerification: BigNumberish,
+      doublingIndexAtVerification: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { maxLimit: BigNumber }>;
 
@@ -737,7 +737,7 @@ export class OpeningCeremony extends BaseContract {
         isVerified: boolean;
         isGuest: boolean;
         numInvited: number;
-        factorAtVerification: BigNumber;
+        doublingIndexAtVerification: BigNumber;
         totalSacrificedStablec: BigNumber;
         totalSacrificedTemple: BigNumber;
       }
@@ -770,6 +770,8 @@ export class OpeningCeremony extends BaseContract {
   ): Promise<ContractTransaction>;
 
   getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<string>;
+
+  globalDoublingIndex(overrides?: CallOverrides): Promise<BigNumber>;
 
   grantRole(
     role: BytesLike,
@@ -819,10 +821,8 @@ export class OpeningCeremony extends BaseContract {
 
   maxInvitesPerVerifiedUser(overrides?: CallOverrides): Promise<BigNumber>;
 
-  maxLimitFactor(overrides?: CallOverrides): Promise<BigNumber>;
-
   maxSacrificableStablec(
-    factorAtVerification: BigNumberish,
+    doublingIndexAtVerification: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
@@ -963,7 +963,7 @@ export class OpeningCeremony extends BaseContract {
       isVerified: boolean;
       isGuest: boolean;
       numInvited: number;
-      factorAtVerification: BigNumber;
+      doublingIndexAtVerification: BigNumber;
       totalSacrificedStablec: BigNumber;
       totalSacrificedTemple: BigNumber;
     }
@@ -990,6 +990,8 @@ export class OpeningCeremony extends BaseContract {
     addVerifier(account: string, overrides?: CallOverrides): Promise<void>;
 
     getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<string>;
+
+    globalDoublingIndex(overrides?: CallOverrides): Promise<BigNumber>;
 
     grantRole(
       role: BytesLike,
@@ -1039,10 +1041,8 @@ export class OpeningCeremony extends BaseContract {
 
     maxInvitesPerVerifiedUser(overrides?: CallOverrides): Promise<BigNumber>;
 
-    maxLimitFactor(overrides?: CallOverrides): Promise<BigNumber>;
-
     maxSacrificableStablec(
-      factorAtVerification: BigNumberish,
+      doublingIndexAtVerification: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1174,7 +1174,7 @@ export class OpeningCeremony extends BaseContract {
         isVerified: boolean;
         isGuest: boolean;
         numInvited: number;
-        factorAtVerification: BigNumber;
+        doublingIndexAtVerification: BigNumber;
         totalSacrificedStablec: BigNumber;
         totalSacrificedTemple: BigNumber;
       }
@@ -1368,6 +1368,8 @@ export class OpeningCeremony extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    globalDoublingIndex(overrides?: CallOverrides): Promise<BigNumber>;
+
     grantRole(
       role: BytesLike,
       account: string,
@@ -1396,10 +1398,8 @@ export class OpeningCeremony extends BaseContract {
 
     maxInvitesPerVerifiedUser(overrides?: CallOverrides): Promise<BigNumber>;
 
-    maxLimitFactor(overrides?: CallOverrides): Promise<BigNumber>;
-
     maxSacrificableStablec(
-      factorAtVerification: BigNumberish,
+      doublingIndexAtVerification: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1566,6 +1566,10 @@ export class OpeningCeremony extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    globalDoublingIndex(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     grantRole(
       role: BytesLike,
       account: string,
@@ -1602,10 +1606,8 @@ export class OpeningCeremony extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    maxLimitFactor(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     maxSacrificableStablec(
-      factorAtVerification: BigNumberish,
+      doublingIndexAtVerification: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
