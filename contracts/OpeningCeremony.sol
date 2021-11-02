@@ -33,10 +33,14 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
     uint256 public unlockDelaySeconds = SECONDS_IN_DAY * 7 * 6; // How long after after buying can templars unlock
     uint256 public mintMultiple = 6; // presale mint multiple
     uint256 public harvestThresholdStablec; // At what mint level do stakers trigger a harvest
-    uint256 public inviteThresholdStablec; // At what mint level do stakers trigger a harvest
+    uint256 public inviteThresholdStablec; // How much does a verified user have to spend before they can invite others
     uint256 public maxInvitesPerVerifiedUser; // How many guests can each verified user invite
 
-    uint256 public maxLimitFactor = 1; // how much to increase staking/minting limit by TODO(butler): better name
+    // how much to multiple a verified users day 1 mint limit to work out
+    // their total at a given point in time. So for a user who quests 
+    // on day 1 => 3 day limit will be DAY_ONE_LIMIT * 4 / 1
+    // on day 2 => 3 day limit will be DAY_ONE_LIMIT * 4 / 2
+    uint256 public globalDoublingIndex = 1; 
     uint256 public lastUpdatedTimestamp; // when was the limitFactor last updated
 
     struct Limit {
@@ -45,8 +49,8 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       uint256 verifiedDayOne;
     }
 
-    Limit public limitStablec;
-    Limit public limitTemple;
+    Limit public limitStablec; // = {guestMax: 2, guestMax: 10000 * 1e18,  verifiedMax: 480000 * 1e18, verifiedDayOne: 30000 * 1e18};
+    Limit public limitTemple; //  = {guestMax: 2, guestMax: 100000 * 1e18, verifiedMax: 2000000 * 1e18, verifiedDayOne: 0};
 
     struct Factor {
       uint256 numerator;
@@ -60,13 +64,11 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       bool isGuest;
       uint8 numInvited;
 
-      uint256 factorAtVerification;
+      uint256 doublingIndexAtVerification;
       uint256 totalSacrificedStablec;
       uint256 totalSacrificedTemple;
-
     }
 
-    // How much allocation has each user used.
     mapping(address => User) public users;
 
     event MintComplete(address minter, uint256 acceptedStablec, uint256 mintedTemple, uint256 bonusTemple, uint256 mintedOGTemple);
@@ -160,7 +162,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       require(hasRole(CAN_ADD_VERIFIED_USER, msg.sender), "Caller cannot add verified user");
       require(!users[userAddress].isVerified, "Address already verified");
       users[userAddress].isVerified = true;
-      users[userAddress].factorAtVerification = maxLimitFactor;
+      users[userAddress].doublingIndexAtVerification = globalDoublingIndex;
 
       emit VerifiedUserAdded(userAddress);
     }
@@ -183,13 +185,13 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       // update max limit. This happens before checks, to ensure maxSacrificable
       // is correctly calculated.
       if ((block.timestamp - lastUpdatedTimestamp) > SECONDS_IN_DAY) {
-        maxLimitFactor *= 2;
-        lastUpdatedTimestamp = block.timestamp;
+        globalDoublingIndex *= 2;
+        lastUpdatedTimestamp += SECONDS_IN_DAY;
       }
 
       Factor storage bonusFactor;
       if (userInfo.isVerified) {
-        require(userInfo.totalSacrificedStablec + _amountPaidStablec <= maxSacrificableStablec(userInfo.factorAtVerification), "Exceeded max mint limit");
+        require(userInfo.totalSacrificedStablec + _amountPaidStablec <= maxSacrificableStablec(userInfo.doublingIndexAtVerification), "Exceeded max mint limit");
         bonusFactor = verifiedBonusFactor;
       } else if (userInfo.isGuest) {
         require(userInfo.totalSacrificedStablec + _amountPaidStablec <= limitStablec.guestMax, "Exceeded max mint limit");
@@ -249,7 +251,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
 
       // update max limit
       if ((block.timestamp - lastUpdatedTimestamp) > SECONDS_IN_DAY) {
-        maxLimitFactor *= 2;
+        globalDoublingIndex *= 2;
         lastUpdatedTimestamp = block.timestamp;
       }
       
@@ -293,8 +295,8 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
         _unpause();
     }
 
-    function maxSacrificableStablec(uint256 factorAtVerification) public view returns(uint256 maxLimit) {
-      maxLimit = limitStablec.verifiedDayOne * maxLimitFactor / factorAtVerification;
+    function maxSacrificableStablec(uint256 doublingIndexAtVerification) public view returns(uint256 maxLimit) {
+      maxLimit = limitStablec.verifiedDayOne * globalDoublingIndex / doublingIndexAtVerification;
       if (maxLimit > limitStablec.verifiedMax) {
         maxLimit = limitStablec.verifiedMax;
       }
