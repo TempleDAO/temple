@@ -14,8 +14,6 @@ import "./TempleStaking.sol";
 import "./PresaleAllocation.sol";
 import "./LockedOGTemple.sol";
 
-// import "hardhat/console.sol";
-
 /**
  * Mint and Stake for those who have quested in the Opening Ceremony
  */
@@ -49,8 +47,8 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       uint256 verifiedDayOne;
     }
 
-    Limit public limitStablec; // = {guestMax: 2, guestMax: 10000 * 1e18,  verifiedMax: 480000 * 1e18, verifiedDayOne: 30000 * 1e18};
-    Limit public limitTemple; //  = {guestMax: 2, guestMax: 100000 * 1e18, verifiedMax: 2000000 * 1e18, verifiedDayOne: 0};
+    Limit public limitStablec = Limit({guestMax: 10000 * 1e18,  verifiedMax: 480000 * 1e18, verifiedDayOne: 30000 * 1e18});
+    Limit public limitTemple = Limit({guestMax: 10000 * 1e18,  verifiedMax: 480000 * 1e18, verifiedDayOne: 30000 * 1e18});
 
     struct Factor {
       uint256 numerator;
@@ -191,7 +189,9 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
 
       Factor storage bonusFactor;
       if (userInfo.isVerified) {
-        require(userInfo.totalSacrificedStablec + _amountPaidStablec <= maxSacrificableStablec(userInfo.doublingIndexAtVerification), "Exceeded max mint limit");
+        require(
+          userInfo.totalSacrificedStablec + _amountPaidStablec <= maxSacrificableStablec(userInfo.doublingIndexAtVerification),
+          "Exceeded max mint limit");
         bonusFactor = verifiedBonusFactor;
       } else if (userInfo.isGuest) {
         require(userInfo.totalSacrificedStablec + _amountPaidStablec <= limitStablec.guestMax, "Exceeded max mint limit");
@@ -249,12 +249,6 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
         revert("Only verified templars and their guests can partake in the opening ceremony");
       }
 
-      // update max limit
-      if ((block.timestamp - lastUpdatedTimestamp) > SECONDS_IN_DAY) {
-        globalDoublingIndex *= 2;
-        lastUpdatedTimestamp = block.timestamp;
-      }
-      
       // Calculate extra temple required to account for bonus APY
       uint256 _bonusTemple = _amountTemple * bonusFactor.numerator / bonusFactor.denominator;
       uint256 _totalTemple = _amountTemple + _bonusTemple;
@@ -265,7 +259,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       SafeERC20.safeTransferFrom(templeToken, msg.sender, address(this), _amountTemple);
 
       // mint bonus APY temple
-      templeToken.mint(address(this), _totalTemple);
+      templeToken.mint(address(this), _bonusTemple);
 
       // Stake both minted and bonus temple. Locking up any OGTemple
       SafeERC20.safeIncreaseAllowance(templeToken, address(staking), _totalTemple);
