@@ -12,9 +12,7 @@ import {
   TempleStaking__factory,
   TempleTreasury__factory,
   TreasuryManagementProxy__factory,
-  OpeningCeremony,
   OpeningCeremony__factory,
-  TempleStaking,
 } from '../typechain';
 
 function toAtto(n: number) {

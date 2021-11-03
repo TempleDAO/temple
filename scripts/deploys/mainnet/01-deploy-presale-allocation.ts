@@ -1,17 +1,10 @@
 import '@nomiclabs/hardhat-ethers';
-import { BaseContract, BigNumber, ContractTransaction } from 'ethers';
-import { ethers, network } from 'hardhat';
+import { ethers } from 'hardhat';
 import {
-  ExitQueue__factory,
-  FakeERC20__factory,
   PresaleAllocation,
   PresaleAllocation__factory,
-  TempleERC20Token__factory,
-  TempleStaking__factory,
-  TempleTreasury__factory,
-  Presale__factory
-} from '../../typechain';
-import { deployAndMine, expectAddressWithPrivateKey } from './helpers';
+} from '../../../typechain';
+import { deployAndMine, expectAddressWithPrivateKey } from '../helpers';
 
 async function main() {
   expectAddressWithPrivateKey();

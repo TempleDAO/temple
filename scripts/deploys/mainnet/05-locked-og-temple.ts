@@ -1,7 +1,7 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers, network } from 'hardhat';
-import { ERC20__factory, ExitQueue__factory, FakeERC20, FakeERC20__factory, LockedOGTemple, LockedOGTemple__factory, Presale, PresaleAllocation, PresaleAllocation__factory, Presale__factory, TempleERC20Token, TempleERC20Token__factory, TempleStaking, TempleStaking__factory, TempleTreasury, TempleTreasury__factory } from '../../typechain';
-import { deployAndMine, DeployedContracts, DEPLOYED_CONTRACTS, fromAtto, toAtto } from './helpers';
+import { LockedOGTemple__factory, TempleStaking__factory } from '../../../typechain';
+import { deployAndMine, DeployedContracts, DEPLOYED_CONTRACTS, fromAtto, toAtto } from '../helpers';
 
 const EPOCH_SIZE = 24 * 60 * 60;
 const START_TIMESTAMP = 1632880800; // Wednesday, September 29, 2021 2:00:00 AM UTC
@@ -22,13 +22,12 @@ async function main() {
     DEPLOYED = DEPLOYED_CONTRACTS[network.name];
   }
 
-  const FRAX = new ERC20__factory(owner).attach(DEPLOYED.FRAX);
+  const STAKING = new TempleStaking__factory(owner).attach(DEPLOYED.STAKING);
+  const lockedOgTempleFactory = new LockedOGTemple__factory(owner);
 
-  const treasuryFactory = new TempleTreasury__factory(owner);
-  const TREASURY = await deployAndMine(
-    'TREASURY', treasuryFactory, treasuryFactory.deploy,
-    DEPLOYED.TEMPLE,
-    DEPLOYED.FRAX,
+  const LOCKED_OG_TEMPLE = await deployAndMine(
+    'LOCKED_OG_TEMPLE', lockedOgTempleFactory, lockedOgTempleFactory.deploy,
+    await STAKING.OG_TEMPLE(),
   )
 }
 

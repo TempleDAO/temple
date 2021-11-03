@@ -1,7 +1,7 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers, network } from 'hardhat';
-import { SandalwoodToken, SandalwoodToken__factory } from '../../typechain';
-import { deployAndMine, expectAddressWithPrivateKey } from './helpers';
+import { SandalwoodToken, SandalwoodToken__factory } from '../../../typechain';
+import { deployAndMine, expectAddressWithPrivateKey } from '../helpers';
 
 async function main() {
   expectAddressWithPrivateKey();

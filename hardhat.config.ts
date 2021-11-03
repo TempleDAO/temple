@@ -35,6 +35,11 @@ module.exports = {
       accounts: (process.env.MAINNET_ADDRESS_PRIVATE_KEY) ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY] : [],
       gasPrice: 70000000000,
     },
+    matic: {
+      url: "https://rpc-mainnet.maticvigil.com",
+      accounts: (process.env.MAINNET_ADDRESS_PRIVATE_KEY) ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY] : [],
+      gasPrice: 40000000000,
+    }
   },
   etherscan: {
     // Your API key for Etherscan
