@@ -145,6 +145,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TreasuryManagementProxy__factory>;
     getContractFactory(
+      name: "VerifyQuest",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.VerifyQuest__factory>;
+    getContractFactory(
       name: "IUniswapRouter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IUniswapRouter__factory>;
@@ -318,6 +322,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TreasuryManagementProxy>;
+    getContractAt(
+      name: "VerifyQuest",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.VerifyQuest>;
     getContractAt(
       name: "IUniswapRouter",
       address: string,

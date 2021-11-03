@@ -34,6 +34,7 @@ export type { TempleStaking } from "./TempleStaking";
 export type { TempleTreasury } from "./TempleTreasury";
 export type { TreasuryInvestmentDefend } from "./TreasuryInvestmentDefend";
 export type { TreasuryManagementProxy } from "./TreasuryManagementProxy";
+export type { VerifyQuest } from "./VerifyQuest";
 export type { IUniswapRouter } from "./IUniswapRouter";
 export type { Zap } from "./Zap";
 
@@ -70,5 +71,6 @@ export { TempleStaking__factory } from "./factories/TempleStaking__factory";
 export { TempleTreasury__factory } from "./factories/TempleTreasury__factory";
 export { TreasuryInvestmentDefend__factory } from "./factories/TreasuryInvestmentDefend__factory";
 export { TreasuryManagementProxy__factory } from "./factories/TreasuryManagementProxy__factory";
+export { VerifyQuest__factory } from "./factories/VerifyQuest__factory";
 export { IUniswapRouter__factory } from "./factories/IUniswapRouter__factory";
 export { Zap__factory } from "./factories/Zap__factory";
