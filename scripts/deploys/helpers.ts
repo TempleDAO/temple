@@ -11,15 +11,19 @@ export interface DeployedContracts {
   TREASURY: string,
   PRESALE: string,
   SANDALWOOD_TOKEN: string,
+  TREASURY_MANAGEMENT: string,
+  OPENING_CEREMONY: string,
 }
 
 export interface PolygonContracts {
   SANDALWOOD_TOKEN: string,
+  OPENING_CEREMONY_QUEST: string,
 }
 
 export const POLYGON_CONTRACTS: {[key: string]: PolygonContracts} = {
-  mainnet: {
+  matic: {
     SANDALWOOD_TOKEN: '0xe99e95ec6DCae4c85806F13CDf1351aE0FEf55Be', // bridged: 0x4FA80013F5d13DB10f2c5DC2987081cb48c7c069
+    OPENING_CEREMONY_QUEST: '0x17d723436740F2852274192dA27F65116ECd011E'
   }
 }
 
@@ -34,6 +38,8 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TREASURY: '0x0c8Ae2793F5ED0479084f92284BfF8f8E587F8BC',
     PRESALE: '0x8E861254C691FA1D4E25b966F064fAE395D9D630',
     SANDALWOOD_TOKEN: '0xA7377AbD44F62730271DE322F920037E86e9e5C8', // not bridged onto polygon
+    TREASURY_MANAGEMENT: '',
+    OPENING_CEREMONY: '',
   },
   mainnet: {
     FRAX: '0x853d955acef822db058eb8505911ed77f175b99e',
@@ -45,7 +51,22 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TREASURY: '0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443',
     PRESALE: '0xDC9D4685847f1C8bDd4CE86BE6A83Fa09B6A08b1',
     SANDALWOOD_TOKEN: '0x4FA80013F5d13DB10f2c5DC2987081cb48c7c069', // bridged 0xe99e95ec6DCae4c85806F13CDf1351aE0FEf55Be
+    TREASURY_MANAGEMENT: '0xb18F07b22845dF936310B63bdD04ce0E28e78C6F',
+    OPENING_CEREMONY: '0xA2642dF0139faeBB1D45526a46d5c54B805Be02c'
   },
+  localhost: {
+    FRAX: process.env.FRAX || '',
+    PRESALE_ALLOCATION: process.env.PRESALE_ALLOCATION || '',
+    TEMPLE: process.env.TEMPLE || '',
+    EXIT_QUEUE: process.env.EXIT_QUEUE || '',
+    STAKING: process.env.STAKING || '',
+    LOCKED_OG_TEMPLE: process.env.LOCKED_OG_TEMPLE || '',
+    TREASURY: process.env.TREASURY || '',
+    PRESALE: process.env.PRESALE || '',
+    SANDALWOOD_TOKEN: process.env.SANDALWOOD_TOKEN || '',
+    TREASURY_MANAGEMENT: process.env.TREASURY_MANAGEMENT || '',
+    OPENING_CEREMONY: process.env.OPENING_CEREMONY || '',
+  }
 }
 
 /**

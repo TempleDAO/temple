@@ -1,7 +1,7 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers, network } from 'hardhat';
-import { ERC20__factory, ExitQueue__factory, FakeERC20, FakeERC20__factory, LockedOGTemple, LockedOGTemple__factory, Presale, PresaleAllocation, PresaleAllocation__factory, Presale__factory, TempleERC20Token, TempleERC20Token__factory, TempleStaking, TempleStaking__factory, TempleTreasury, TempleTreasury__factory } from '../../typechain';
-import { deployAndMine, DeployedContracts, DEPLOYED_CONTRACTS, fromAtto, toAtto } from './helpers';
+import { ERC20__factory, FakeERC20__factory, PresaleAllocation__factory, TempleERC20Token, TempleERC20Token__factory } from '../../../typechain';
+import { deployAndMine, DEPLOYED_CONTRACTS, toAtto } from '../helpers';
 
 const EPOCH_SIZE = 24 * 60 * 60;
 const START_TIMESTAMP = 1632880800; // Wednesday, September 29, 2021 2:00:00 AM UTC

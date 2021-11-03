@@ -102,8 +102,8 @@ describe('Test Opening Ceremony Quest', async () => {
     }), aclErr);
 
     await quest.connect(stateChanger).setCurrentStepWithLock(
-      await nonOwner.getAddress(), 
-      ethers.utils.formatBytes32String("2"), 
+      await nonOwner.getAddress(),
+      ethers.utils.formatBytes32String("2"),
       1000, 
       ethers.utils.formatBytes32String("1"));
     expect(await quest.getCurrentStep(await nonOwner.getAddress())).eq(ethers.utils.formatBytes32String("2"));
