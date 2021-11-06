@@ -1,16 +1,15 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { OpeningCeremonyQuest, OpeningCeremonyQuest__factory } from '../../../typechain';
-import { deployAndMine, expectAddressWithPrivateKey } from '../helpers';
+import { deployAndMine, expectAddressWithPrivateKey, EchoingWhispers__factory, EchoingWhispers } from '../helpers';
 
 async function main() {
   expectAddressWithPrivateKey();
 
   const [owner] = await ethers.getSigners();
 
-  const openingCeremonyQuestFactory = new OpeningCeremonyQuest__factory(owner);
+  const openingCeremonyQuestFactory = new EchoingWhispers__factory(owner);
 
-  const openingCeremonyQuest: OpeningCeremonyQuest = await deployAndMine(
+  const openingCeremonyQuest: EchoingWhispers = await deployAndMine(
     'OPENING_CEREMONY_QUEST', openingCeremonyQuestFactory, openingCeremonyQuestFactory.deploy,
   );
 

@@ -37,7 +37,7 @@
     "clean": "hardhat clean",
     "test": "hardhat test",
     "local-node": "hardhat node",
-    "local-deploy": "hardhat run --network localhost scripts/local-test-deploy.ts",
+    "local-deploy": "hardhat run --network localhost scripts/local-dapp-dev/deploy.ts",
     "hardhat:local": "hardhat --network localhost",
     "hardhat:testnet": "hardhat --network rinkeby",
     "hardhat:mainnet": "hardhat --network mainnet",

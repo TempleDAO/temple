@@ -73,6 +73,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.KeeperCompatibleInterface__factory>;
     getContractFactory(
+      name: "EchoingWhispers",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.EchoingWhispers__factory>;
+    getContractFactory(
       name: "ExitQueue",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ExitQueue__factory>;
@@ -108,10 +112,6 @@ declare module "hardhat/types/runtime" {
       name: "OpeningCeremony",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.OpeningCeremony__factory>;
-    getContractFactory(
-      name: "OpeningCeremonyQuest",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.OpeningCeremonyQuest__factory>;
     getContractFactory(
       name: "Presale",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -233,6 +233,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.KeeperCompatibleInterface>;
     getContractAt(
+      name: "EchoingWhispers",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.EchoingWhispers>;
+    getContractAt(
       name: "ExitQueue",
       address: string,
       signer?: ethers.Signer
@@ -277,11 +282,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.OpeningCeremony>;
-    getContractAt(
-      name: "OpeningCeremonyQuest",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.OpeningCeremonyQuest>;
     getContractAt(
       name: "Presale",
       address: string,

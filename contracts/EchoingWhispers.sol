@@ -5,8 +5,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
- * Temple opening ceremony contract */ 
- contract OpeningCeremonyQuest is AccessControl {
+ * Contract where we track progress of a users openign ceremony quest
+ */ 
+ contract EchoingWhispers is AccessControl {
     bytes32 public constant CAN_CHANGE_STATE = keccak256("CAN_CHANGE_STATE");
 
     struct QuestData {
@@ -67,13 +68,12 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
     }
 
     /** Owner only method to udpate any/all user quest data if required by enclave of order to support questers */
-    function overrideUserData(address templar, QuestData memory data) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        dataOf[templar] = data;
-    }
-
-    /** Owner only method to remove a lock for a given user (to speed up testing) */
-    function removeLock(address templar) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        dataOf[templar].lockedUntil = 0;
+    function overrideUserData(address templar, bytes32 stepWhenLocked, bytes32 stepWhenUnlocked, uint256 lockedUntil, bytes32 enclave, bool completed) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        dataOf[templar].stepWhenLocked = stepWhenLocked;
+        dataOf[templar].stepWhenUnlocked = stepWhenUnlocked;
+        dataOf[templar].lockedUntil = lockedUntil;
+        dataOf[templar].enclave = enclave;
+        dataOf[templar].completed = completed;
     }
 
     function getCurrentStep(address templar) public view returns(bytes32) {

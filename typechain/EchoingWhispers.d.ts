@@ -19,7 +19,7 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface OpeningCeremonyQuestInterface extends ethers.utils.Interface {
+interface EchoingWhispersInterface extends ethers.utils.Interface {
   functions: {
     "CAN_CHANGE_STATE()": FunctionFragment;
     "DEFAULT_ADMIN_ROLE()": FunctionFragment;
@@ -28,8 +28,7 @@ interface OpeningCeremonyQuestInterface extends ethers.utils.Interface {
     "getRoleAdmin(bytes32)": FunctionFragment;
     "grantRole(bytes32,address)": FunctionFragment;
     "hasRole(bytes32,address)": FunctionFragment;
-    "overrideUserData(address,tuple)": FunctionFragment;
-    "removeLock(address)": FunctionFragment;
+    "overrideUserData(address,bytes32,bytes32,uint256,bytes32,bool)": FunctionFragment;
     "renounceRole(bytes32,address)": FunctionFragment;
     "revokeRole(bytes32,address)": FunctionFragment;
     "setCompleted(address)": FunctionFragment;
@@ -69,18 +68,8 @@ interface OpeningCeremonyQuestInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "overrideUserData",
-    values: [
-      string,
-      {
-        stepWhenLocked: BytesLike;
-        stepWhenUnlocked: BytesLike;
-        lockedUntil: BigNumberish;
-        enclave: BytesLike;
-        completed: boolean;
-      }
-    ]
+    values: [string, BytesLike, BytesLike, BigNumberish, BytesLike, boolean]
   ): string;
-  encodeFunctionData(functionFragment: "removeLock", values: [string]): string;
   encodeFunctionData(
     functionFragment: "renounceRole",
     values: [BytesLike, string]
@@ -145,7 +134,6 @@ interface OpeningCeremonyQuestInterface extends ethers.utils.Interface {
     functionFragment: "overrideUserData",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "removeLock", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceRole",
     data: BytesLike
@@ -208,7 +196,7 @@ export type RoleRevokedEvent = TypedEvent<
   [string, string, string] & { role: string; account: string; sender: string }
 >;
 
-export class OpeningCeremonyQuest extends BaseContract {
+export class EchoingWhispers extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -249,7 +237,7 @@ export class OpeningCeremonyQuest extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: OpeningCeremonyQuestInterface;
+  interface: EchoingWhispersInterface;
 
   functions: {
     CAN_CHANGE_STATE(overrides?: CallOverrides): Promise<[string]>;
@@ -290,18 +278,11 @@ export class OpeningCeremonyQuest extends BaseContract {
 
     overrideUserData(
       templar: string,
-      data: {
-        stepWhenLocked: BytesLike;
-        stepWhenUnlocked: BytesLike;
-        lockedUntil: BigNumberish;
-        enclave: BytesLike;
-        completed: boolean;
-      },
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    removeLock(
-      templar: string,
+      stepWhenLocked: BytesLike,
+      stepWhenUnlocked: BytesLike,
+      lockedUntil: BigNumberish,
+      enclave: BytesLike,
+      completed: boolean,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -393,18 +374,11 @@ export class OpeningCeremonyQuest extends BaseContract {
 
   overrideUserData(
     templar: string,
-    data: {
-      stepWhenLocked: BytesLike;
-      stepWhenUnlocked: BytesLike;
-      lockedUntil: BigNumberish;
-      enclave: BytesLike;
-      completed: boolean;
-    },
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  removeLock(
-    templar: string,
+    stepWhenLocked: BytesLike,
+    stepWhenUnlocked: BytesLike,
+    lockedUntil: BigNumberish,
+    enclave: BytesLike,
+    completed: boolean,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -496,17 +470,13 @@ export class OpeningCeremonyQuest extends BaseContract {
 
     overrideUserData(
       templar: string,
-      data: {
-        stepWhenLocked: BytesLike;
-        stepWhenUnlocked: BytesLike;
-        lockedUntil: BigNumberish;
-        enclave: BytesLike;
-        completed: boolean;
-      },
+      stepWhenLocked: BytesLike,
+      stepWhenUnlocked: BytesLike,
+      lockedUntil: BigNumberish,
+      enclave: BytesLike,
+      completed: boolean,
       overrides?: CallOverrides
     ): Promise<void>;
-
-    removeLock(templar: string, overrides?: CallOverrides): Promise<void>;
 
     renounceRole(
       role: BytesLike,
@@ -645,18 +615,11 @@ export class OpeningCeremonyQuest extends BaseContract {
 
     overrideUserData(
       templar: string,
-      data: {
-        stepWhenLocked: BytesLike;
-        stepWhenUnlocked: BytesLike;
-        lockedUntil: BigNumberish;
-        enclave: BytesLike;
-        completed: boolean;
-      },
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    removeLock(
-      templar: string,
+      stepWhenLocked: BytesLike,
+      stepWhenUnlocked: BytesLike,
+      lockedUntil: BigNumberish,
+      enclave: BytesLike,
+      completed: boolean,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -749,18 +712,11 @@ export class OpeningCeremonyQuest extends BaseContract {
 
     overrideUserData(
       templar: string,
-      data: {
-        stepWhenLocked: BytesLike;
-        stepWhenUnlocked: BytesLike;
-        lockedUntil: BigNumberish;
-        enclave: BytesLike;
-        completed: boolean;
-      },
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    removeLock(
-      templar: string,
+      stepWhenLocked: BytesLike,
+      stepWhenUnlocked: BytesLike,
+      lockedUntil: BigNumberish,
+      enclave: BytesLike,
+      completed: boolean,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
