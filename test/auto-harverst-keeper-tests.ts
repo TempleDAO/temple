@@ -11,9 +11,8 @@ import { FakeERC20__factory } from "../typechain/factories/FakeERC20__factory";
 import { TempleTreasury__factory } from "../typechain/factories/TempleTreasury__factory";
 import { AutoHarvestKeeper__factory } from "../typechain/factories/AutoHarvestKeeper__factory";
 import { TreasuryManagementProxy__factory} from "../typechain/factories/TreasuryManagementProxy__factory"
-import { BigNumber, Signer } from "ethers";
-import { fromAtto, shouldThrow, toAtto } from "./helpers";
-import { TestTreasuryAllocation } from "../typechain/TestTreasuryAllocation";
+import { Signer } from "ethers";
+import { toAtto } from "./helpers";
 
 describe("AutoHarvest Keeper calls", async () => {
   let TEMPLE: TempleERC20Token;
