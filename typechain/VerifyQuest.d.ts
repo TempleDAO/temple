@@ -158,7 +158,7 @@ export class VerifyQuest extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[string] & { digest: string }>;
 
-    nonces(owner: string, overrides?: CallOverrides): Promise<[BigNumber]>;
+    nonces(user: string, overrides?: CallOverrides): Promise<[BigNumber]>;
 
     openingCeremony(overrides?: CallOverrides): Promise<[string]>;
 
@@ -194,7 +194,7 @@ export class VerifyQuest extends BaseContract {
 
   digestFor(quester: string, overrides?: CallOverrides): Promise<string>;
 
-  nonces(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
+  nonces(user: string, overrides?: CallOverrides): Promise<BigNumber>;
 
   openingCeremony(overrides?: CallOverrides): Promise<string>;
 
@@ -230,7 +230,7 @@ export class VerifyQuest extends BaseContract {
 
     digestFor(quester: string, overrides?: CallOverrides): Promise<string>;
 
-    nonces(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
+    nonces(user: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     openingCeremony(overrides?: CallOverrides): Promise<string>;
 
@@ -280,7 +280,7 @@ export class VerifyQuest extends BaseContract {
 
     digestFor(quester: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    nonces(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
+    nonces(user: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     openingCeremony(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -321,7 +321,7 @@ export class VerifyQuest extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     nonces(
-      owner: string,
+      user: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
