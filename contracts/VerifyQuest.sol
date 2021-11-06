@@ -72,8 +72,8 @@ contract VerifyQuest is EIP712, Ownable {
     /**
      * Current nonce for an given 
      */
-    function nonces(address owner) public view returns (uint256) {
-        return _nonces[owner].current();
+    function nonces(address user) public view returns (uint256) {
+        return _nonces[user].current();
     }
 
     /**
@@ -89,8 +89,8 @@ contract VerifyQuest is EIP712, Ownable {
      *
      * _Available since v4.1._
      */
-    function _useNonce(address owner) internal returns (uint256 current) {
-        Counters.Counter storage nonce = _nonces[owner];
+    function _useNonce(address user) internal returns (uint256 current) {
+        Counters.Counter storage nonce = _nonces[user];
         current = nonce.current();
         nonce.increment();
     }
