@@ -1,7 +1,5 @@
 import '@nomiclabs/hardhat-ethers';
-import { ethers } from 'hardhat';
 import { blockTimestamp, mineToTimestamp } from '../test/helpers';
-import { OpeningCeremonyQuest__factory } from '../typechain';
 
 // Mine a new block every second (useful in local testing to simulate activity on production)
 async function main() {

@@ -1,19 +1,7 @@
 import '@nomiclabs/hardhat-ethers';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import {
-  ExitQueue__factory,
-  FakeERC20__factory,
-  LockedOGTemple__factory,
-  OpeningCeremonyQuest__factory,
-  Presale__factory,
-  PresaleAllocation__factory,
-  TempleERC20Token__factory,
-  TempleStaking__factory,
-  TempleTreasury__factory,
-  TreasuryManagementProxy__factory,
-  OpeningCeremony__factory,
-} from '../typechain';
+import { TempleERC20Token__factory, ExitQueue__factory, TempleStaking__factory, FakeERC20__factory, TempleTreasury__factory, LockedOGTemple__factory, PresaleAllocation__factory, Presale__factory, TreasuryManagementProxy__factory, OpeningCeremony__factory, EchoingWhispers__factory } from '../../typechain';
 
 function toAtto(n: number) {
   return BigNumber.from(10).pow(18).mul(n);
@@ -105,8 +93,8 @@ async function main() {
   );
   await templeToken.addMinter(openingCeremony.address);
 
-  const openingCeremonyQuest = await new OpeningCeremonyQuest__factory(owner).deploy();
-  await openingCeremonyQuest.setConditions(
+  const echoingWhispers = await new EchoingWhispers__factory(owner).deploy();
+  await echoingWhispers.setConditions(
       ethers.utils.keccak256(ethers.utils.formatBytes32String("1.5")),
       ethers.utils.keccak256(ethers.utils.formatBytes32String("3.2")))
 
@@ -148,7 +136,7 @@ async function main() {
     'TREASURY_ADDRESS': treasury.address,
     'TREASURY_MANAGEMENT_ADDRESS': treasuryManagementProxy.address,
     'OPENING_CEREMONY_ADDRESS': openingCeremony.address,
-    'OPENING_CEREMONY_QUEST_ADDRESS': openingCeremonyQuest.address,
+    'ECHOING_WHISPERS_ADDRESS': echoingWhispers.address,
   };
 
   console.log();
