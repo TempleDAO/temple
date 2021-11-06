@@ -1,7 +1,7 @@
 import '@nomiclabs/hardhat-ethers';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { TempleERC20Token__factory, ExitQueue__factory, TempleStaking__factory, FakeERC20__factory, TempleTreasury__factory, LockedOGTemple__factory, PresaleAllocation__factory, Presale__factory, TreasuryManagementProxy__factory, OpeningCeremony__factory, EchoingWhispers__factory } from '../../typechain';
+import { TempleERC20Token__factory, ExitQueue__factory, TempleStaking__factory, FakeERC20__factory, TempleTreasury__factory, LockedOGTemple__factory, PresaleAllocation__factory, Presale__factory, TreasuryManagementProxy__factory, OpeningCeremony__factory, EchoingWhispers__factory, VerifyQuest, VerifyQuest__factory } from '../../typechain';
 
 function toAtto(n: number) {
   return BigNumber.from(10).pow(18).mul(n);
@@ -93,20 +93,21 @@ async function main() {
   );
   await templeToken.addMinter(openingCeremony.address);
 
+  const verifier = ethers.Wallet.createRandom();
+  const verifyQuest = new VerifyQuest__factory(owner).deploy(
+    openingCeremony.address,
+    verifier.address,
+  )
+
   const echoingWhispers = await new EchoingWhispers__factory(owner).deploy();
   await echoingWhispers.setConditions(
-      ethers.utils.keccak256(ethers.utils.formatBytes32String("1.5")),
-      ethers.utils.keccak256(ethers.utils.formatBytes32String("3.2")))
-
-  // Add both Mint and Stake and TempleStake as strategies
-  // NOTE: Currently we just mint temple into each, the later should be done as a strategy
-  // await treasury. addPool(presale.address, 0, toAtto(10000000), 0);
-  // await treasury.addPool(staking.address, 0, toAtto(10000000), 0);
+      ethers.utils.keccak256(ethers.utils.formatBytes32String("1-5")),
+      ethers.utils.keccak256(ethers.utils.formatBytes32String("3-2")))
 
   // Add an allowance for each account to join mint and stake
   let counter = 0;
   // set allocation only on the 1st half of the accounts
-  for (const account of accounts) {
+  for (const account of accounts.slice(5)) {
     const stakerAddress = await account.getAddress();
     if (counter < accounts.length / 2) {
       await presaleAllocation.setAllocation(stakerAddress, toAtto(15000), 6);
@@ -137,6 +138,7 @@ async function main() {
     'TREASURY_MANAGEMENT_ADDRESS': treasuryManagementProxy.address,
     'OPENING_CEREMONY_ADDRESS': openingCeremony.address,
     'ECHOING_WHISPERS_ADDRESS': echoingWhispers.address,
+    'VERIFIER_PRIVATE_KEY': verifier.privateKey,
   };
 
   console.log();
