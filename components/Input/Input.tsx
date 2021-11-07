@@ -1,5 +1,5 @@
-import React, { InputHTMLAttributes } from 'react';
-import styled from 'styled-components';
+import React, { ChangeEvent, InputHTMLAttributes } from 'react';
+import styled, { css } from 'styled-components';
 import { formatNumber } from '../../utils/formatter';
 import { InputSelect, Option, SelectTempleDaoOptions } from '../InputSelect/InputSelect';
 
@@ -25,7 +25,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   crypto?: CryptoSelector | CryptoValue,
 
   // Callback for input value change
-  onChange(e: React.ChangeEvent<HTMLInputElement>): void,
+  onChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void,
 }
 
 /**
@@ -50,15 +50,20 @@ export const Input = ({ onChange, hint, crypto, type, value, ...props }: InputPr
   };
 
   return (
-      <InputWrapper>
-        <InputStyled onChange={onChange}
-                     type={type}
-                     value={type === 'number' && value ? formatNumber(+value) : value}
-                     {...props} />
-        <InputCrypto>
-          {renderCrypto()}
-        </InputCrypto>
-        {hint && <InputHint>{hint}</InputHint>}
+      <InputWrapper isTextarea={type === 'textarea'}>
+        {type === 'textarea'
+            ? <TextareaStyled onInput={(e) => onChange(e as ChangeEvent<HTMLTextAreaElement>)}/>
+
+            : <>
+              <InputStyled onChange={onChange}
+                           type={type}
+                           value={type === 'number' && value ? formatNumber(+value) : value}
+                           {...props} />
+              <InputCrypto>
+                {renderCrypto()}
+              </InputCrypto>
+              {hint && <InputHint>{hint}</InputHint>}</>
+        }
       </InputWrapper>
   );
 };
@@ -66,7 +71,11 @@ export const Input = ({ onChange, hint, crypto, type, value, ...props }: InputPr
 
 const cryptoWidth = '12.5rem';
 
-export const InputWrapper = styled.div`
+interface InputWrapperProps {
+  isTextarea?: boolean;
+}
+
+export const InputWrapper = styled.div<InputWrapperProps>`
   position: relative;
   margin-bottom: 2rem;
   padding: 0.75rem 2rem /* 12/16 */;
@@ -76,6 +85,10 @@ export const InputWrapper = styled.div`
   // width will be manage by layout case by case
   width: 100%;
 
+  ${(props) => props.isTextarea && css`
+    height: 13rem;
+  `}
+  
   h3 {
     margin: 0;
   }
@@ -105,6 +118,7 @@ export const InputHint = styled.small`
   color: ${(props) => props.theme.palette.light};
 `;
 
+
 export const InputStyled = styled.input`
   // common
   cursor: pointer;
@@ -123,4 +137,15 @@ export const InputStyled = styled.input`
     appearance: none;
     margin: 0;
   }
+`;
+
+export const TextareaStyled = styled.textarea`
+  // common
+  color: ${(props) => props.theme.palette.light};
+  background-color: transparent;
+  border: none;
+  ${(props) => props.theme.typography.meta};
+  outline: none;
+  width: 100%;
+  height: 100%;
 `;

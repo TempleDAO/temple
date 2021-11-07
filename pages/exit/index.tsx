@@ -39,7 +39,7 @@ const Exit = () => {
     return [
       {
         label: PageTabs.EXIT,
-        disabledMessage: 'This Chamber will open after the completion of the Fire Ceremony',
+        disabledMessage: 'This Chamber will open soon',
         content: <>
           <Input hint={`Balance: ${withdrawalAllowance}`}
                  crypto={
@@ -64,7 +64,7 @@ const Exit = () => {
       },
       {
         label: PageTabs.COLLECT,
-        disabledMessage: 'This Chamber will open after the completion of the Fire Ceremony',
+        disabledMessage: 'This Chamber will open soon',
         content: <>
           <h4 className={'margin-remove'}>Your queue progress on XXXX $TEMPLE:</h4>
           <pre>TODO: bar for queue progress!</pre>

@@ -1,14 +1,13 @@
 import { JsonRpcProvider, JsonRpcSigner } from '@ethersproject/providers';
 import { BigNumber, ethers } from 'ethers';
-import { createContext, PropsWithChildren, useContext, useState } from 'react';
+import { createContext, PropsWithChildren, useContext, useEffect, useState } from 'react';
 import { STABLE_COIN_SYMBOL } from '../pages/rituals';
 import {
   ERC20__factory,
   LockedOGTemple__factory,
-  Presale__factory,
-  PresaleAllocation__factory,
-  TempleStaking__factory,
-  TempleTreasury__factory
+  OpeningCeremony__factory,
+  TempleStaking__factory, TempleTreasury__factory,
+  VerifyQuest__factory
 } from '../types/typechain';
 import { fromAtto } from '../utils/bigNumber';
 import { noop } from '../utils/helpers';
@@ -19,7 +18,13 @@ import { useNotification } from './NotificationProvider';
  */
 
 export enum RitualKind {
-  OFFERING_STAKING = 'OFFERING_STAKING'
+  OFFERING_STAKING = 'OFFERING_STAKING',
+  VERIFYING = 'VERIFYING',
+}
+
+enum ETH_ACTIONS {
+  REQUEST_ACCOUNTS = 'eth_requestAccounts',
+  REQUEST_PERMISSIONS = 'wallet_requestPermissions',
 }
 
 export type Balance = {
@@ -44,8 +49,18 @@ export enum RitualStatus {
 type RitualMapping = Map<RitualKind, {
   completedBalanceApproval: RitualStatus,
   completedTransaction: RitualStatus,
+  verifyingTransaction: RitualStatus,
   ritualMessage?: string,
 }>;
+
+interface OpeningCeremonyUser {
+  isVerified: boolean;
+  isGuest: boolean;
+  numInvited: number;
+  doublingIndexAtVerification: number;
+  totalSacrificedStablec: number;
+  totalSacrificedTemple: number;
+}
 
 interface WalletState {
   // has the user connected a wallet to the dapp
@@ -64,6 +79,7 @@ interface WalletState {
   lockInPeriod: number,
   currentEpoch: number,
   isLoading: boolean,
+  ocTemplar: OpeningCeremonyUser,
 
   connectWallet(): void
 
@@ -78,6 +94,8 @@ interface WalletState {
   increaseAllowanceForRitual(amountToBuy: BigNumber, ritualKind: RitualKind): void
 
   clearRitual(ritualKind: RitualKind): void
+
+  verifyQuest(sandalWoodToken: string, ritualKind: RitualKind): void
 
 }
 
@@ -103,6 +121,14 @@ const INITIAL_STATE: WalletState = {
   lockInPeriod: 0,
   currentEpoch: -1,
   isLoading: true,
+  ocTemplar: {
+    isGuest: false,
+    isVerified: false,
+    numInvited: 0,
+    doublingIndexAtVerification: 1,
+    totalSacrificedTemple: 0,
+    totalSacrificedStablec: 0,
+  },
   buy: noop,
   connectWallet: noop,
   updateWallet: noop,
@@ -110,42 +136,39 @@ const INITIAL_STATE: WalletState = {
   mintAndStake: noop,
   increaseAllowanceForRitual: noop,
   clearRitual: noop,
+  verifyQuest: noop,
 };
-
-enum ethActions {
-  REQUEST_ACCOUNTS = 'eth_requestAccounts',
-}
 
 const STABLE_COIN_ADDRESS = process.env.NEXT_PUBLIC_STABLE_COIN_ADDRESS;
 const TEMPLE_ADDRESS = process.env.NEXT_PUBLIC_TEMPLE_ADDRESS;
 const LOCKED_OG_TEMPLE_ADDRESS = process.env.NEXT_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS;
 const TEMPLE_STAKING_ADDRESS = process.env.NEXT_PUBLIC_TEMPLE_STAKING_ADDRESS;
-const PRESALE_ADDRESS = process.env.NEXT_PUBLIC_PRESALE_ADDRESS;
-const PRESALE_ALLOCATION_ADDRESS = process.env.NEXT_PUBLIC_PRESALE_ALLOCATION_ADDRESS;
 const TREASURY_ADDRESS = process.env.NEXT_PUBLIC_TREASURY_ADDRESS;
 const EXIT_QUEUE_ADDRESS = process.env.NEXT_PUBLIC_EXIT_QUEUE_ADDRESS;
+const OPENING_CEREMONY_ADDRESS = process.env.NEXT_PUBLIC_OPENING_CEREMONY_ADDRESS;
+const VERIFY_QUEST_ADDRESS = process.env.NEXT_PUBLIC_VERIFY_QUEST_ADDRESS;
 
 if (
     STABLE_COIN_ADDRESS === undefined
     || TEMPLE_ADDRESS === undefined
     || TEMPLE_STAKING_ADDRESS === undefined
     || TREASURY_ADDRESS === undefined
-    || PRESALE_ADDRESS === undefined
-    || PRESALE_ALLOCATION_ADDRESS === undefined
     || LOCKED_OG_TEMPLE_ADDRESS === undefined
     || EXIT_QUEUE_ADDRESS === undefined
+    || OPENING_CEREMONY_ADDRESS === undefined
+    || VERIFY_QUEST_ADDRESS === undefined
 ) {
   console.info(`
 STABLE_COIN_ADDRESS=${STABLE_COIN_ADDRESS}
 TEMPLE_ADDRESS=${TEMPLE_ADDRESS}
 TEMPLE_STAKING_ADDRESS=${TEMPLE_STAKING_ADDRESS}
 TREASURY_ADDRESS=${TREASURY_ADDRESS}
-PRESALE_ADDRESS=${PRESALE_ADDRESS}
-PRESALE_ALLOCATION_ADDRESS=${PRESALE_ALLOCATION_ADDRESS}
 LOCKED_OG_TEMPLE_ADDRESS=${LOCKED_OG_TEMPLE_ADDRESS}
 EXIT_QUEUE_ADDRESS=${EXIT_QUEUE_ADDRESS}
+OPENING_CEREMONY_ADDRESS=${OPENING_CEREMONY_ADDRESS}
+VERIFY_QUEST_ADDRESS=${VERIFY_QUEST_ADDRESS}
 `);
-  throw new Error(`Missinig contract address from .env (in local dev, it's an output of yarn local-deploy, just copy pasta that into .env.local)`);
+  throw new Error(`Missinig contract address from .env`);
 }
 
 const WalletContext = createContext<WalletState>(INITIAL_STATE);
@@ -165,8 +188,51 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const [lockInPeriod, setLockInPeriod] = useState<number>(INITIAL_STATE.lockInPeriod);
   const [currentEpoch, setCurrentEpoch] = useState<number>(INITIAL_STATE.currentEpoch);
   const [isLoading, setIsLoading] = useState<boolean>(INITIAL_STATE.isLoading);
+  const [ocTemplar, setOcTemplar] = useState<OpeningCeremonyUser>(INITIAL_STATE.ocTemplar);
 
   const { openNotification } = useNotification();
+
+
+  useEffect(() => {
+    interactWithMetamask(undefined, true).then();
+  }, []);
+
+  const interactWithMetamask = async (action?: ETH_ACTIONS, syncConnected?: boolean) => {
+    if (typeof window !== undefined) {
+      // @ts-ignore
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider: JsonRpcProvider = new ethers.providers.Web3Provider(ethereum);
+        if (syncConnected) {
+          const accounts = await provider.listAccounts();
+          if (accounts.length > 0) {
+            setWalletAddress(accounts[0]);
+          }
+        } else if (action) {
+          await provider.send(action, [{
+            eth_accounts: {}
+          }]);
+          const signer = provider.getSigner();
+          const wallet: string = await signer.getAddress();
+          setSignerState(signer);
+          setProvider(provider);
+          setWalletAddress(wallet);
+          await updateWallet();
+        }
+      } else {
+        alert('Please add MetaMask to your browser');
+      }
+    }
+
+  };
+
+  const connectWallet = async () => {
+    await interactWithMetamask(ETH_ACTIONS.REQUEST_ACCOUNTS);
+  };
+
+  const disconnectWallet = async () => {
+    await interactWithMetamask(ETH_ACTIONS.REQUEST_PERMISSIONS);
+  };
 
   const isConnected = (): void => {
     // only trigger once window is loaded
@@ -177,6 +243,67 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         const connected = ethereum.isConnected();
         setIsConnectedState(connected);
       }
+    }
+  };
+
+  const verifyQuest = async (sandalWoodToken: string, ritualKind: RitualKind) => {
+    if (walletAddress && signerState) {
+      setRitual(new Map(ritual.set(ritualKind, {
+        completedBalanceApproval: RitualStatus.NO_STATUS,
+        completedTransaction: RitualStatus.NO_STATUS,
+        verifyingTransaction: RitualStatus.PROCESSING,
+      })));
+
+      try {
+        const verifyQuestContract = new VerifyQuest__factory()
+            .attach(VERIFY_QUEST_ADDRESS)
+            .connect(signerState);
+        const sig = JSON.parse(Buffer.from(sandalWoodToken, 'base64').toString('ascii'));
+        console.info(sig, sandalWoodToken);
+
+        const verifyTransaction = await verifyQuestContract.verify(sig.v, sig.r, sig.s, {
+          gasLimit: 200000
+        });
+        await verifyTransaction.wait();
+        setRitual(new Map(ritual.set(ritualKind, {
+          completedBalanceApproval: RitualStatus.NO_STATUS,
+          completedTransaction: RitualStatus.NO_STATUS,
+          verifyingTransaction: RitualStatus.COMPLETED,
+          ritualMessage: `commence ${STABLE_COIN_SYMBOL} sacrifice`
+        })));
+      } catch (e) {
+        setRitual(new Map(ritual.set(ritualKind, {
+          completedBalanceApproval: RitualStatus.NO_STATUS,
+          completedTransaction: RitualStatus.NO_STATUS,
+          verifyingTransaction: RitualStatus.FAILED,
+          ritualMessage: `RETRY`
+        })));
+      }
+
+      // update state userData
+    }
+  };
+
+
+  /**
+   * updates the Templar data from OC Contract
+   */
+  const getOCTemplar = async () => {
+    if (walletAddress && signerState) {
+      const openingCeremony = new OpeningCeremony__factory()
+          .attach(OPENING_CEREMONY_ADDRESS)
+          .connect(signerState);
+
+      const ocTemplarData = await openingCeremony.users(walletAddress);
+
+      setOcTemplar({
+        doublingIndexAtVerification: ocTemplarData.doublingIndexAtVerification.toNumber(),
+        isGuest: ocTemplarData.isGuest,
+        isVerified: ocTemplarData.isVerified,
+        numInvited: 0,
+        totalSacrificedStablec: fromAtto(ocTemplarData.totalSacrificedStablec),
+        totalSacrificedTemple: fromAtto(ocTemplarData.totalSacrificedTemple),
+      });
     }
   };
 
@@ -200,29 +327,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await getTreasuryValue();
         await getLockInPeriod();
         await getBalance();
+        await getOCTemplar();
         if (updateLoading) {
           setIsLoading(false);
         }
-      }
-    }
-  };
-
-
-  const connectWallet = async () => {
-    if (typeof window !== undefined) {
-      // @ts-ignore
-      const ethereum = window.ethereum;
-      if (ethereum) {
-        const provider: JsonRpcProvider = new ethers.providers.Web3Provider(ethereum);
-        await provider.send(ethActions.REQUEST_ACCOUNTS, []);
-        const signer = provider.getSigner();
-        setProvider(provider);
-        const wallet: string = await signer.getAddress();
-        setSignerState(signer);
-        setWalletAddress(wallet);
-        await updateWallet();
-      } else {
-        alert('Please add MetaMask to your browser');
       }
     }
   };
@@ -268,14 +376,11 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const treasury = new TempleTreasury__factory()
           .attach(TREASURY_ADDRESS)
           .connect(signerState);
-      const presale = new Presale__factory()
-          .attach(PRESALE_ADDRESS)
-          .connect(signerState);
 
       const iv = await treasury.intrinsicValueRatio();
       const { temple, stablec } = iv;
-      const mintMultiple = (await presale.mintMultiple());
-      const rate = (fromAtto(temple) / fromAtto(stablec)) / mintMultiple.toNumber();
+      const mintMultiple = 6.0;
+      const rate = (fromAtto(temple) / fromAtto(stablec)) / mintMultiple;
       // Only change the value if contract has valid data
       if (rate > 0) {
         setExchangeRateState(rate);
@@ -284,17 +389,18 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   };
 
   const getTempleEpy = async (): Promise<void> => {
-    if (walletAddress && signerState) {
-      const templeStaking = new TempleStaking__factory()
-          .attach(TEMPLE_STAKING_ADDRESS)
-          .connect(signerState);
-
-      const epy = (await templeStaking.getEpy(10000)).toNumber() / 10000;
-      // Only change the value if contract has valid data
-      if (epy > 0) {
-        setTempleEpy(epy);
-      }
-    }
+    // if (walletAddress && signerState) {
+    //   const templeStaking = new TempleStaking__factory()
+    //       .attach(TEMPLE_STAKING_ADDRESS)
+    //       .connect(signerState);
+    //
+    //   const epy = (await templeStaking.getEpy(10000)).toNumber() / 10000;
+    //   // Only change the value if contract has valid data
+    //   if (epy > 0) {
+    //     setTempleEpy(epy);
+    //   }
+    // }
+    setTempleEpy(1/100.0);
   };
 
   const getCurrentEpoch = async (): Promise<void> => {
@@ -321,28 +427,17 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getAllocation = async (): Promise<void> => {
     if (walletAddress && signerState) {
-      const presaleAllocation = new PresaleAllocation__factory()
-          .attach(PRESALE_ALLOCATION_ADDRESS)
-          .connect(signerState);
-      const presaleContract = new Presale__factory()
-          .attach(PRESALE_ADDRESS)
-          .connect(signerState);
-      const stakingContract = new TempleStaking__factory()
-          .attach(TEMPLE_STAKING_ADDRESS)
+      const openingCeremony = new OpeningCeremony__factory()
+          .attach(OPENING_CEREMONY_ADDRESS)
           .connect(signerState);
 
-      const userPresaleAllocation = await presaleAllocation.allocationOf(walletAddress);
-      const userUsedAllocation = await presaleContract.allocationUsed(walletAddress);
-      const { amount, epoch } = userPresaleAllocation;
-
-      // returns seconds not ms
-      const startTimestamp = (await stakingContract.startTimestamp()).toNumber() * 1000;
-      // returns seconds not ms
-      const epochSize = 24 * 60 * 60 * 1000; // seconds in day;
+      const allocation = await openingCeremony.maxSacrificableStablec(ocTemplar.doublingIndexAtVerification);
 
       setAllocation({
-        amount: fromAtto(amount.sub(userUsedAllocation)),
-        startEpoch: epoch.toNumber() * epochSize + startTimestamp,
+        amount: fromAtto(allocation),
+        // amount: fromAtto(amount.sub(userUsedAllocation)),
+        //they can start right away once verified
+        startEpoch: 1,
       });
     }
   };
@@ -352,16 +447,17 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       setRitual(new Map(ritual.set(ritualKind, {
         completedBalanceApproval: RitualStatus.PROCESSING,
         completedTransaction: RitualStatus.NO_STATUS,
+        verifyingTransaction: RitualStatus.NO_STATUS,
       })));
       const stableCoinContract = new ERC20__factory()
           .attach(STABLE_COIN_ADDRESS)
           .connect(signerState);
       let approvalFailed: boolean = false;
-      const stableCoinAllowance = await stableCoinContract.allowance(walletAddress, PRESALE_ADDRESS);
+      const stableCoinAllowance = await stableCoinContract.allowance(walletAddress, OPENING_CEREMONY_ADDRESS);
 
       if (stableCoinAllowance.lt(amount)) {
         try {
-          const stableApproveTransaction = await stableCoinContract.approve(PRESALE_ADDRESS, amount);
+          const stableApproveTransaction = await stableCoinContract.approve(OPENING_CEREMONY_ADDRESS, amount);
           // Show feedback to user
           openNotification({
             title: `${STABLE_COIN_SYMBOL} Approved`,
@@ -374,6 +470,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           setRitual(new Map(ritual.set(ritualKind, {
             completedBalanceApproval: RitualStatus.FAILED,
             completedTransaction: RitualStatus.NO_STATUS,
+            verifyingTransaction: RitualStatus.NO_STATUS,
             ritualMessage: 'RITUAL FAILED ➢ PRAY HARDER'
           })));
         }
@@ -383,6 +480,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         setRitual(new Map(ritual.set(ritualKind, {
           completedBalanceApproval: RitualStatus.COMPLETED,
           completedTransaction: RitualStatus.NO_STATUS,
+          verifyingTransaction: RitualStatus.NO_STATUS,
         })));
 
         switch (ritualKind) {
@@ -399,8 +497,8 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const mintAndStake = async (amount: BigNumber) => {
     if (walletAddress && signerState) {
-      const presaleContract = new Presale__factory()
-          .attach(PRESALE_ADDRESS)
+      const openingCeremonyContract = new OpeningCeremony__factory()
+          .attach(OPENING_CEREMONY_ADDRESS)
           .connect(signerState);
 
       const stableCoinContract = new ERC20__factory()
@@ -411,11 +509,12 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         setRitual(new Map(ritual.set(RitualKind.OFFERING_STAKING, {
           completedBalanceApproval: RitualStatus.COMPLETED,
           completedTransaction: RitualStatus.PROCESSING,
+          verifyingTransaction: RitualStatus.NO_STATUS,
         })));
         const stableCoinBalance: BigNumber = await stableCoinContract.balanceOf(walletAddress);
         // ensure user input is not greater than user balance. if greater use all user balance.
         const offering = amount.lte(stableCoinBalance) ? amount : stableCoinBalance;
-        const mintAndStakeTransaction = await presaleContract.mintAndStake(offering, {
+        const mintAndStakeTransaction = await openingCeremonyContract.mintAndStake(offering, {
           gasLimit: 500000
         });
 
@@ -429,6 +528,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         setRitual(new Map(ritual.set(RitualKind.OFFERING_STAKING, {
           completedBalanceApproval: RitualStatus.COMPLETED,
           completedTransaction: RitualStatus.COMPLETED,
+          verifyingTransaction: RitualStatus.NO_STATUS,
           ritualMessage: 'burn more incense?'
         })));
         await updateWallet(false);
@@ -437,6 +537,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         setRitual(new Map(ritual.set(RitualKind.OFFERING_STAKING, {
           completedBalanceApproval: RitualStatus.COMPLETED,
           completedTransaction: RitualStatus.FAILED,
+          verifyingTransaction: RitualStatus.NO_STATUS,
           ritualMessage: 'RITUAL FAILED ➢ PRAY HARDER'
         })));
       }
@@ -444,18 +545,18 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   };
 
   const getLockInPeriod = async () => {
-    if (walletAddress && signerState) {
-      const presaleContract = new Presale__factory()
-          .attach(PRESALE_ADDRESS)
-          .connect(signerState);
-
-      const unlockTimestamp = (await presaleContract.unlockTimestamp()).toNumber();
-      const now = Date.now();
-      const diff = unlockTimestamp - now;
-      // Transform ms to days
-      const lip = diff / 1000 / 60 / 60 / 24;
-      setLockInPeriod(Math.ceil(lip));
-    }
+    // if (walletAddress && signerState) {
+    //   const presaleContract = new Presale__factory()
+    //       .attach(PRESALE_ADDRESS)
+    //       .connect(signerState);
+    //
+    //   const unlockTimestamp = (await presaleContract.unlockTimestamp()).toNumber();
+    //   const now = Date.now();
+    //   const diff = unlockTimestamp - now;
+    //   // Transform ms to days
+    //   const lip = diff / 1000 / 60 / 60 / 24;
+    //   setLockInPeriod(Math.ceil(lip));
+    // }
   };
 
   const clearRitual = (ritualKind: RitualKind) => {
@@ -477,6 +578,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         lockInPeriod,
         currentEpoch,
         isLoading,
+        ocTemplar,
         buy: noop,
         connectWallet,
         updateWallet,
@@ -484,6 +586,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         mintAndStake,
         increaseAllowanceForRitual,
         clearRitual,
+        verifyQuest
       }}>
     {children}
   </WalletContext.Provider>;

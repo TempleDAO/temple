@@ -109,7 +109,7 @@ const Enter = () => {
     return [
       {
         label: 'buy',
-        disabledMessage: 'This Chamber will open after the completion of the Fire Ceremony',
+        disabledMessage: 'This Chamber will open soon',
         content: <>
           <Input hint={`Balance: ${getExpectedBalance('temple')}`}
                  crypto={{ kind: 'value', value: '$TEMPLE' }}
@@ -148,7 +148,7 @@ const Enter = () => {
       },
       {
         label: 'stake',
-        disabledMessage: 'This Chamber will open after the completion of the Fire Ceremony',
+        disabledMessage: 'This Chamber will open soon',
         content: <>
           <Input hint={`Balance: ${getExpectedBalance('temple')}`}
                  crypto={{ kind: 'value', value: '$TEMPLE' }}
