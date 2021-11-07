@@ -100,13 +100,6 @@ export const Footer = () => {
                     </Link>
                   </li>
                   <li>
-                    <Link href={'https://docs.templedao.link/'}>
-                      <a target={'_blank'}>
-                        <strong>GitBooks</strong>
-                      </a>
-                    </Link>
-                  </li>
-                  <li>
                     <Link href={'mailto:templedao@protonmail.com'}>
                       <a>
                         <Image src={'/images/social-message.png'} alt={''} width={24} height={24}/>

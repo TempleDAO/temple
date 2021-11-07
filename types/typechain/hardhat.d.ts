@@ -53,6 +53,30 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC165__factory>;
     getContractFactory(
+      name: "IUniswapV3SwapCallback",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IUniswapV3SwapCallback__factory>;
+    getContractFactory(
+      name: "IQuoter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IQuoter__factory>;
+    getContractFactory(
+      name: "ISwapRouter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ISwapRouter__factory>;
+    getContractFactory(
+      name: "AutoHarvestKeeper",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AutoHarvestKeeper__factory>;
+    getContractFactory(
+      name: "KeeperCompatibleInterface",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.KeeperCompatibleInterface__factory>;
+    getContractFactory(
+      name: "EchoingWhispers",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.EchoingWhispers__factory>;
+    getContractFactory(
       name: "ExitQueue",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ExitQueue__factory>;
@@ -60,6 +84,10 @@ declare module "hardhat/types/runtime" {
       name: "FakeERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.FakeERC20__factory>;
+    getContractFactory(
+      name: "FakeUniswapRouter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.FakeUniswapRouter__factory>;
     getContractFactory(
       name: "TestTreasuryAllocation",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -73,10 +101,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.LockedOGTemple__factory>;
     getContractFactory(
-      name: "LPTokenStaking",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.LPTokenStaking__factory>;
-    getContractFactory(
       name: "MintAllowance",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MintAllowance__factory>;
@@ -85,6 +109,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.OGTemple__factory>;
     getContractFactory(
+      name: "OpeningCeremony",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.OpeningCeremony__factory>;
+    getContractFactory(
       name: "Presale",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Presale__factory>;
@@ -92,6 +120,10 @@ declare module "hardhat/types/runtime" {
       name: "PresaleAllocation",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.PresaleAllocation__factory>;
+    getContractFactory(
+      name: "SandalwoodToken",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.SandalwoodToken__factory>;
     getContractFactory(
       name: "TempleERC20Token",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -108,6 +140,22 @@ declare module "hardhat/types/runtime" {
       name: "TreasuryInvestmentDefend",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TreasuryInvestmentDefend__factory>;
+    getContractFactory(
+      name: "TreasuryManagementProxy",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TreasuryManagementProxy__factory>;
+    getContractFactory(
+      name: "VerifyQuest",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.VerifyQuest__factory>;
+    getContractFactory(
+      name: "IUniswapRouter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IUniswapRouter__factory>;
+    getContractFactory(
+      name: "Zap",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Zap__factory>;
 
     getContractAt(
       name: "AccessControl",
@@ -160,6 +208,36 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IERC165>;
     getContractAt(
+      name: "IUniswapV3SwapCallback",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IUniswapV3SwapCallback>;
+    getContractAt(
+      name: "IQuoter",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IQuoter>;
+    getContractAt(
+      name: "ISwapRouter",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ISwapRouter>;
+    getContractAt(
+      name: "AutoHarvestKeeper",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AutoHarvestKeeper>;
+    getContractAt(
+      name: "KeeperCompatibleInterface",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.KeeperCompatibleInterface>;
+    getContractAt(
+      name: "EchoingWhispers",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.EchoingWhispers>;
+    getContractAt(
       name: "ExitQueue",
       address: string,
       signer?: ethers.Signer
@@ -169,6 +247,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.FakeERC20>;
+    getContractAt(
+      name: "FakeUniswapRouter",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.FakeUniswapRouter>;
     getContractAt(
       name: "TestTreasuryAllocation",
       address: string,
@@ -185,11 +268,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.LockedOGTemple>;
     getContractAt(
-      name: "LPTokenStaking",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.LPTokenStaking>;
-    getContractAt(
       name: "MintAllowance",
       address: string,
       signer?: ethers.Signer
@@ -200,6 +278,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.OGTemple>;
     getContractAt(
+      name: "OpeningCeremony",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.OpeningCeremony>;
+    getContractAt(
       name: "Presale",
       address: string,
       signer?: ethers.Signer
@@ -209,6 +292,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.PresaleAllocation>;
+    getContractAt(
+      name: "SandalwoodToken",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.SandalwoodToken>;
     getContractAt(
       name: "TempleERC20Token",
       address: string,
@@ -229,6 +317,26 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TreasuryInvestmentDefend>;
+    getContractAt(
+      name: "TreasuryManagementProxy",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TreasuryManagementProxy>;
+    getContractAt(
+      name: "VerifyQuest",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.VerifyQuest>;
+    getContractAt(
+      name: "IUniswapRouter",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IUniswapRouter>;
+    getContractAt(
+      name: "Zap",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Zap>;
 
     // default types
     getContractFactory(

@@ -20,10 +20,9 @@ import checkImage from '../../public/images/check.svg';
 import crossImage from '../../public/images/cross.svg';
 import earlyEpochImage from '../../public/images/early-epoch.webp';
 import lockImage from '../../public/images/lock.svg';
-import noAllocationImage from '../../public/images/no-allocation.webp';
 import tagImage from '../../public/images/tag.svg';
 import { toAtto } from '../../utils/bigNumber';
-import { allocationToIncense, formatMillions, formatNumber } from '../../utils/formatter';
+import { formatMillions, formatNumber } from '../../utils/formatter';
 
 const templePart1Video = require('../../public/videos/templedao-part1.mp4');
 const templePart2Video = require('../../public/videos/templedao-part2.mp4');
@@ -40,6 +39,11 @@ const Rituals = () => {
   const [cryptoWalletAmount, setCryptoWalletAmount] = useState<number>(0);
   // crypto(FRAX,...) amount from user input in the UI
   const [cryptoAmount, setCryptoAmount] = useState<number | undefined>(0);
+  // holds the value for the SandalWood Verify Token
+  const [sandalWoodToken, setSandalWoodToken] = useState('');
+  // todo
+  const [verifying, setVerifying] = useState(false);
+
   const [videoHasEnded, setVideoHasEnded] = useState<boolean>(false);
 
 
@@ -61,6 +65,8 @@ const Rituals = () => {
     currentEpoch,
     clearRitual,
     isLoading,
+    ocTemplar,
+    verifyQuest,
   } = useWallet();
 
   const { amount: allocationAmount, startEpoch } = allocation;
@@ -118,6 +124,11 @@ const Rituals = () => {
     }
   };
 
+  const handleSandalwoodVerify = async () => {
+    setVerifying(true);
+    await verifyQuest(sandalWoodToken, RitualKind.VERIFYING);
+  };
+
   const handleUpdateCrypto = (event: React.ChangeEvent<HTMLInputElement>) => {
     let x = +event.target.value > 0 ? +event.target.value : undefined;
     setCryptoAmount(x);
@@ -140,17 +151,38 @@ const Rituals = () => {
     }
   };
 
+  const getNotVerifiedTab = (): Array<Tab> => {
+    return [
+      {
+        label: 'Welcome Templar',
+        disabledMessage: !isConnected ? 'Connect wallet to participate in ritual' : undefined,
+        content: <Card
+            flipped={verifying}
+            backContent={renderActivity()}
+            frontContent={<>
+              <Input hint={`Sandalwood Incense`}
+                     type={'textarea'}
+                     onChange={(e) => setSandalWoodToken(e.target.value)}
+              />
+              <Button label={'!verify'} onClick={handleSandalwoodVerify}/>
+            </>}
+        />
+      },
+
+    ];
+  };
+
   const getTabs = (): Array<Tab> => {
     return [
       {
-        label: 'Fire ritual',
+        label: 'Opening Ceremony',
         disabledMessage: !isConnected ? 'Connect wallet to participate in ritual' : undefined,
         content: <Card
             flipped={ritual.has(RitualKind.OFFERING_STAKING)}
             backContent={renderActivity()}
             frontContent={<>
-              <p>You approach the altar with <strong
-                  className={'color-brand'}>{allocationToIncense(allocationAmount)} incense</strong>, welcome
+              <p>Total sacrificable {STABLE_COIN_SYMBOL} is <strong
+                  className={'color-brand'}>{allocationAmount}</strong>, welcome
                 Templar.</p>
               <Input hint={`Balance: ${getExpectedBalance('crypto')}`}
                      crypto={{ kind: 'value', value: STABLE_COIN_SYMBOL }}
@@ -172,8 +204,7 @@ const Rituals = () => {
               />
               <Button label={'Make Offering and Stake'} onClick={handleBuyAndStake}/>
               <p>
-                Staked <strong className={'color-brand'}>$TEMPLE</strong> will be locked for 15-30 days after the end of
-                the Fire Ritual. Those who complete the Fire Ritual first will be locked the longest.
+                Staked <strong className={'color-brand'}>$TEMPLE</strong> will be locked for 6 weeks.
               </p>
             </>}
         />
@@ -215,6 +246,24 @@ const Rituals = () => {
         </>);
       }
     }
+
+    if (ritual.has(RitualKind.VERIFYING)) {
+      const verificationRitual = ritual.get(RitualKind.VERIFYING);
+      if (verificationRitual) {
+        const { verifyingTransaction, ritualMessage } = verificationRitual;
+        return (<>
+          <RitualCheck className={'flex flex-v-center'}>
+            <RitualCheckImageWrapper>{renderRitualStatus(verifyingTransaction)}</RitualCheckImageWrapper>
+            Verifying Sandalwood
+          </RitualCheck>
+          {ritualMessage && <Button label={ritualMessage} onClick={() => {
+            clearRitual(RitualKind.VERIFYING);
+            setVerifying(false);
+            updateWallet();
+          }}/>}
+        </>);
+      }
+    }
   };
 
 
@@ -229,48 +278,53 @@ const Rituals = () => {
           col: 'fullwidth',
           justifyContent: 'center',
         }}>
-        <Loader iconSize={72} />
+          <Loader iconSize={72}/>
         </Flex>
-      </Flex>
+      </Flex>;
     }
 
-    // User has no allocation
-    if (step === '1' || step === undefined && allocationAmount === 0 && templeWalletAmount === 0) {
+    // Templar is not verified
+    if (step === '1' || step === undefined && !ocTemplar.isVerified) {
       return (<>
-        <Typical
-            steps={[
-              'You approach the altar without any offerings...', 1000,
-              'You approach the altar without any offerings... There is no response...'
-            ]}
-            loop={false}
-            key={'typing-no-allocation'}
-            wrapper="p"
-        />
-        <Ritual>
-          <Image src={noAllocationImage} alt={'No allocation'} layout={'responsive'}/>
-          <RitualCopy positionY={'bottom'}>
-          </RitualCopy>
-        </Ritual>
+        <Flex layout={{
+          kind: 'container'
+        }}>
+          <Apy cryptoName={'$TEMPLE'} value={`$${formatNumber(1 / exchangeRate)}`} imageData={{
+            imageUrl: cashImage,
+            alt: ''
+          }}/>
+          <Apy cryptoName={'APY'} value={`${formatNumber(templeApy)} %`} imageData={{
+            imageUrl: tagImage,
+            alt: ''
+          }}/>
+          <Apy cryptoName={'Treasury'} value={`$${formatMillions(treasury)}`} imageData={{
+            imageUrl: lockImage,
+            alt: ''
+          }}/>
+        </Flex>
+        <Flex layout={{
+          kind: 'container',
+          canWrap: true,
+          canWrapTablet: false,
+        }}>
+          <Flex layout={{
+            kind: 'item',
+            col: 'fullwidth',
+            colTablet: 'half',
+          }}>
+            <Tabs tabs={getNotVerifiedTab()} onChange={() => {
+            }}/>
+          </Flex>
+          <Flex layout={{
+            kind: 'item',
+            col: 'fullwidth',
+            colTablet: 'half',
+            alignItems: 'flex-start',
+          }}>
+            <Image src={BuyImage} alt={'Buy art'}/>
+          </Flex>
+        </Flex>
       </>);
-    }
-
-    // User has allocation and its NOT yet time to make their offerings
-    if (step === '2' || step === undefined && allocationAmount > 0 && startEpoch && currentEpoch < startEpoch) {
-      const incense = allocationToIncense(allocationAmount);
-      return <>
-        <Typical
-            steps={[`You have prepared ${incense} incense stick${incense > 1 ? 's' : ''} and approach the Temple...`, 1000, `You have prepared ${incense} incense stick${incense > 1 ? 's' : ''} and approach the Temple... You are early.`, 500, `You have prepared ${incense} incense stick${incense > 1 ? 's' : ''} and approach the Temple... You are early. Please wait outside until summoned...`]}
-            loop={false}
-            key={'typing-early'}
-            wrapper="p"
-        />
-        <Ritual>
-          <Image src={earlyEpochImage} alt={'All incense burned'} layout={'responsive'}/>
-          {/* TODO: show counter once contract is deployed */}
-          <RitualCopy positionY={'bottom'} positionX={'right'}>
-            <Countdown date={startEpoch}/>
-          </RitualCopy>
-        </Ritual></>;
     }
 
     // User has allocation and its time to make their offerings
@@ -357,7 +411,7 @@ const Rituals = () => {
 
   return (
       <>
-        <h1 className={'margin-remove--bottom'}>Fire Ritual</h1>
+        <h1 className={'margin-remove--bottom'}>Opening Ceremony</h1>
         {renderRitualStep()}
       </>
   );
