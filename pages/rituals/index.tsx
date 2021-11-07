@@ -185,7 +185,7 @@ const Rituals = () => {
             backContent={renderActivity()}
             frontContent={<>
               <p>Total sacrificable {STABLE_COIN_SYMBOL} is <strong
-                  className={'color-brand'}>{allocationAmount}</strong>, welcome
+                  className={'color-brand'}>30 000</strong>, welcome
                 Templar.</p>
               <Input hint={`Balance: ${getExpectedBalance('crypto')}`}
                      crypto={{ kind: 'value', value: STABLE_COIN_SYMBOL }}
