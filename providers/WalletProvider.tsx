@@ -261,7 +261,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         const sig = JSON.parse(Buffer.from(sandalWoodToken, 'base64').toString('ascii'));
         console.info(sig, sandalWoodToken);
 
-        const verifyTransaction = await verifyQuestContract.verify(sig.v, sig.r, sig.s);
+        const verifyTransaction = await verifyQuestContract.verify(sig.v, sig.r, sig.s, {
+          gasLimit: 100000
+        });
         await verifyTransaction.wait();
         setRitual(new Map(ritual.set(ritualKind, {
           completedBalanceApproval: RitualStatus.NO_STATUS,
