@@ -160,10 +160,13 @@ const Rituals = () => {
             flipped={verifying}
             backContent={renderActivity()}
             frontContent={<>
+              <p className={'align-text-center'}>You must use the same address the you used in <a href={'https://echoingwhispers.link/'} >echoingwhispers.link</a></p>
+              <br/>
               <Input hint={`Sandalwood Incense`}
                      type={'textarea'}
                      onChange={(e) => setSandalWoodToken(e.target.value)}
               />
+              <br/>
               <Button label={'!verify'} onClick={handleSandalwoodVerify}/>
             </>}
         />
