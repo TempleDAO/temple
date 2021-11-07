@@ -286,7 +286,6 @@ const Rituals = () => {
     // Templar is not verified
     if (step === '1' || step === undefined && !ocTemplar.isVerified) {
       return (<>
-        <pre>ngmi + not-verified</pre>
         <Flex layout={{
           kind: 'container'
         }}>
