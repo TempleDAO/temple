@@ -1,20 +1,9 @@
 import { ethers } from "hardhat";
-import { BigNumber, Signer } from "ethers";
+import { Signer } from "ethers";
 import { expect } from "chai";
 
-import { TempleERC20Token } from "../typechain/TempleERC20Token";
-import { FakeERC20 } from "../typechain/FakeERC20";
-import { TempleTreasury } from "../typechain/TempleTreasury";
-import { TempleStaking } from "../typechain/TempleStaking";
 import { fromAtto, shouldThrow, toAtto } from "./helpers";
-import { ExitQueue } from "../typechain/ExitQueue";
-import { TempleERC20Token__factory } from "../typechain/factories/TempleERC20Token__factory";
-import { ExitQueue__factory } from "../typechain/factories/ExitQueue__factory";
-import { TempleStaking__factory } from "../typechain/factories/TempleStaking__factory";
-import { FakeERC20__factory } from "../typechain/factories/FakeERC20__factory";
 import { PresaleAllocation__factory } from "../typechain/factories/PresaleAllocation__factory";
-import { Presale__factory } from "../typechain/factories/Presale__factory";
-import { Presale } from "../typechain/Presale";
 import { PresaleAllocation } from "../typechain/PresaleAllocation";
 
 xdescribe("Test configuration of Presale Allocation whitelist", async () => {
