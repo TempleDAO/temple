@@ -11,7 +11,7 @@ import { splitSignature } from "@ethersproject/bytes";
 import { hashMessage } from "@ethersproject/hash";
 
 
-describe.only("Verify Quest Complete tests", async () => {
+describe("Verify Quest Complete tests", async () => {
   let openingCeremony: OpeningCeremony;
   let verifyQuest: VerifyQuest;
 
