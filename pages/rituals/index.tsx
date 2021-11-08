@@ -154,7 +154,7 @@ const Rituals = () => {
   const getNotVerifiedTab = (): Array<Tab> => {
     return [
       {
-        label: 'Welcome Templar',
+        label: 'HALT AND VERIFY SANDALWOOD',
         disabledMessage: !isConnected ? 'Connect wallet to participate in ritual' : undefined,
         content: <Card
             flipped={verifying}
