@@ -13,6 +13,7 @@ export interface DeployedContracts {
   SANDALWOOD_TOKEN: string,
   TREASURY_MANAGEMENT: string,
   OPENING_CEREMONY: string,
+  OPENING_CEREMONY_VERIFIER: string,
 }
 
 export interface PolygonContracts {
@@ -40,6 +41,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     SANDALWOOD_TOKEN: '0xA7377AbD44F62730271DE322F920037E86e9e5C8', // not bridged onto polygon
     TREASURY_MANAGEMENT: '',
     OPENING_CEREMONY: '',
+    OPENING_CEREMONY_VERIFIER: '',
   },
   mainnet: {
     FRAX: '0x853d955acef822db058eb8505911ed77f175b99e',
@@ -52,7 +54,8 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     PRESALE: '0xDC9D4685847f1C8bDd4CE86BE6A83Fa09B6A08b1',
     SANDALWOOD_TOKEN: '0x4FA80013F5d13DB10f2c5DC2987081cb48c7c069', // bridged 0xe99e95ec6DCae4c85806F13CDf1351aE0FEf55Be
     TREASURY_MANAGEMENT: '0xb18F07b22845dF936310B63bdD04ce0E28e78C6F',
-    OPENING_CEREMONY: '0xA2642dF0139faeBB1D45526a46d5c54B805Be02c'
+    OPENING_CEREMONY: '0xA2642dF0139faeBB1D45526a46d5c54B805Be02c',
+    OPENING_CEREMONY_VERIFIER: '0x8ed9a9980E4C7e87eDf8DA13Fc2ba53802BBa117',
   },
   localhost: {
     FRAX: process.env.FRAX || '',
@@ -66,6 +69,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     SANDALWOOD_TOKEN: process.env.SANDALWOOD_TOKEN || '',
     TREASURY_MANAGEMENT: process.env.TREASURY_MANAGEMENT || '',
     OPENING_CEREMONY: process.env.OPENING_CEREMONY || '',
+    OPENING_CEREMONY_VERIFIER: process.env.OPENING_CEREMONY_VERIFIER || '',
   }
 }
 
