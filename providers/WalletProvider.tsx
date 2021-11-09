@@ -6,7 +6,7 @@ import {
   ERC20__factory,
   LockedOGTemple__factory,
   OpeningCeremony__factory,
-  TempleStaking__factory, TempleTreasury__factory,
+  TempleTreasury__factory,
   VerifyQuest__factory
 } from '../types/typechain';
 import { fromAtto } from '../utils/bigNumber';
@@ -20,6 +20,7 @@ import { useNotification } from './NotificationProvider';
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
   VERIFYING = 'VERIFYING',
+  INVITE_FRIEND = 'INVITE_FRIEND',
 }
 
 enum ETH_ACTIONS {
@@ -50,6 +51,7 @@ type RitualMapping = Map<RitualKind, {
   completedBalanceApproval: RitualStatus,
   completedTransaction: RitualStatus,
   verifyingTransaction: RitualStatus,
+  inviteFriendTransaction: RitualStatus,
   ritualMessage?: string,
 }>;
 
@@ -80,6 +82,7 @@ interface WalletState {
   currentEpoch: number,
   isLoading: boolean,
   ocTemplar: OpeningCeremonyUser,
+  maxInvitesPerVerifiedUser: number,
 
   connectWallet(): void
 
@@ -96,6 +99,8 @@ interface WalletState {
   clearRitual(ritualKind: RitualKind): void
 
   verifyQuest(sandalWoodToken: string, ritualKind: RitualKind): void
+
+  inviteFriend(sandalWoodToken: string, ritualKind: RitualKind): void
 
 }
 
@@ -129,6 +134,7 @@ const INITIAL_STATE: WalletState = {
     totalSacrificedTemple: 0,
     totalSacrificedStablec: 0,
   },
+  maxInvitesPerVerifiedUser: 0,
   buy: noop,
   connectWallet: noop,
   updateWallet: noop,
@@ -137,6 +143,7 @@ const INITIAL_STATE: WalletState = {
   increaseAllowanceForRitual: noop,
   clearRitual: noop,
   verifyQuest: noop,
+  inviteFriend: noop,
 };
 
 const STABLE_COIN_ADDRESS = process.env.NEXT_PUBLIC_STABLE_COIN_ADDRESS;
@@ -189,6 +196,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const [currentEpoch, setCurrentEpoch] = useState<number>(INITIAL_STATE.currentEpoch);
   const [isLoading, setIsLoading] = useState<boolean>(INITIAL_STATE.isLoading);
   const [ocTemplar, setOcTemplar] = useState<OpeningCeremonyUser>(INITIAL_STATE.ocTemplar);
+  const [maxInvitesPerVerifiedUser, setMaxInvitesPerVerifiedUser] = useState<number>(INITIAL_STATE.maxInvitesPerVerifiedUser);
 
   const { openNotification } = useNotification();
 
@@ -251,6 +259,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       setRitual(new Map(ritual.set(ritualKind, {
         completedBalanceApproval: RitualStatus.NO_STATUS,
         completedTransaction: RitualStatus.NO_STATUS,
+        inviteFriendTransaction: RitualStatus.NO_STATUS,
         verifyingTransaction: RitualStatus.PROCESSING,
       })));
 
@@ -262,12 +271,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         console.info(sig, sandalWoodToken);
 
         const verifyTransaction = await verifyQuestContract.verify(sig.v, sig.r, sig.s, {
-          gasLimit: 200000
+          gasLimit: 125000
         });
         await verifyTransaction.wait();
         setRitual(new Map(ritual.set(ritualKind, {
           completedBalanceApproval: RitualStatus.NO_STATUS,
           completedTransaction: RitualStatus.NO_STATUS,
+          inviteFriendTransaction: RitualStatus.NO_STATUS,
           verifyingTransaction: RitualStatus.COMPLETED,
           ritualMessage: `commence ${STABLE_COIN_SYMBOL} sacrifice`
         })));
@@ -275,12 +285,49 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         setRitual(new Map(ritual.set(ritualKind, {
           completedBalanceApproval: RitualStatus.NO_STATUS,
           completedTransaction: RitualStatus.NO_STATUS,
+          inviteFriendTransaction: RitualStatus.NO_STATUS,
           verifyingTransaction: RitualStatus.FAILED,
           ritualMessage: `RETRY`
         })));
       }
+    }
+  };
 
-      // update state userData
+  const inviteFriend = async (friendAddress: string, ritualKind: RitualKind) => {
+    if (walletAddress && signerState) {
+      setRitual(new Map(ritual.set(ritualKind, {
+        inviteFriendTransaction: RitualStatus.PROCESSING,
+        completedBalanceApproval: RitualStatus.NO_STATUS,
+        completedTransaction: RitualStatus.NO_STATUS,
+        verifyingTransaction: RitualStatus.NO_STATUS,
+      })));
+
+      try {
+        const openingCeremonyContract = new OpeningCeremony__factory()
+            .attach(OPENING_CEREMONY_ADDRESS)
+            .connect(signerState);
+
+        const inviteGuestTransaction = await openingCeremonyContract.addGuestUser(friendAddress, {
+          gasLimit: 85000
+        });
+        await inviteGuestTransaction.wait();
+
+        setRitual(new Map(ritual.set(ritualKind, {
+          completedBalanceApproval: RitualStatus.NO_STATUS,
+          completedTransaction: RitualStatus.NO_STATUS,
+          inviteFriendTransaction: RitualStatus.COMPLETED,
+          verifyingTransaction: RitualStatus.NO_STATUS,
+          ritualMessage: `continue`
+        })));
+      } catch (e) {
+        setRitual(new Map(ritual.set(ritualKind, {
+          inviteFriendTransaction: RitualStatus.FAILED,
+          completedBalanceApproval: RitualStatus.NO_STATUS,
+          completedTransaction: RitualStatus.NO_STATUS,
+          verifyingTransaction: RitualStatus.NO_STATUS,
+          ritualMessage: `failed to invite friend`
+        })));
+      }
     }
   };
 
@@ -300,10 +347,21 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         doublingIndexAtVerification: ocTemplarData.doublingIndexAtVerification.toNumber(),
         isGuest: ocTemplarData.isGuest,
         isVerified: ocTemplarData.isVerified,
-        numInvited: 0,
+        numInvited: ocTemplarData.numInvited,
         totalSacrificedStablec: fromAtto(ocTemplarData.totalSacrificedStablec),
         totalSacrificedTemple: fromAtto(ocTemplarData.totalSacrificedTemple),
       });
+    }
+  };
+
+  const getMaxInvitesPerVerifiedUser = async () => {
+    if (walletAddress && signerState) {
+      const openingCeremony = new OpeningCeremony__factory()
+          .attach(OPENING_CEREMONY_ADDRESS)
+          .connect(signerState);
+
+      const ocMaxInvitesPerVerifiedUser = await openingCeremony.maxInvitesPerVerifiedUser();
+      setMaxInvitesPerVerifiedUser(ocMaxInvitesPerVerifiedUser.toNumber());
     }
   };
 
@@ -320,14 +378,15 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const ethereum = window.ethereum;
       if (ethereum) {
         isConnected();
-        await getAllocation();
+        await getOCTemplar();
         await getCurrentEpoch();
         await getExchangeRate();
         await getTempleEpy();
         await getTreasuryValue();
         await getLockInPeriod();
         await getBalance();
-        await getOCTemplar();
+        await getAllocation();
+        await getMaxInvitesPerVerifiedUser();
         if (updateLoading) {
           setIsLoading(false);
         }
@@ -400,7 +459,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     //     setTempleEpy(epy);
     //   }
     // }
-    setTempleEpy(1/100.0);
+    setTempleEpy(1 / 100.0);
   };
 
   const getCurrentEpoch = async (): Promise<void> => {
@@ -426,16 +485,19 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   };
 
   const getAllocation = async (): Promise<void> => {
-    if (walletAddress && signerState) {
+    if (walletAddress && signerState && ocTemplar) {
       const openingCeremony = new OpeningCeremony__factory()
           .attach(OPENING_CEREMONY_ADDRESS)
           .connect(signerState);
 
-      const allocation = await openingCeremony.maxSacrificableStablec(ocTemplar.doublingIndexAtVerification);
+      const allocation: number = ocTemplar.isVerified
+          ? fromAtto(await openingCeremony.maxSacrificableStablec(ocTemplar.doublingIndexAtVerification))
+          : ocTemplar.isGuest
+              ? 10000
+              : 0;
 
       setAllocation({
-        amount: fromAtto(allocation),
-        // amount: fromAtto(amount.sub(userUsedAllocation)),
+        amount: allocation - ocTemplar.totalSacrificedStablec,
         //they can start right away once verified
         startEpoch: 1,
       });
@@ -447,6 +509,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       setRitual(new Map(ritual.set(ritualKind, {
         completedBalanceApproval: RitualStatus.PROCESSING,
         completedTransaction: RitualStatus.NO_STATUS,
+        inviteFriendTransaction: RitualStatus.NO_STATUS,
         verifyingTransaction: RitualStatus.NO_STATUS,
       })));
       const stableCoinContract = new ERC20__factory()
@@ -470,6 +533,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           setRitual(new Map(ritual.set(ritualKind, {
             completedBalanceApproval: RitualStatus.FAILED,
             completedTransaction: RitualStatus.NO_STATUS,
+            inviteFriendTransaction: RitualStatus.NO_STATUS,
             verifyingTransaction: RitualStatus.NO_STATUS,
             ritualMessage: 'RITUAL FAILED ➢ PRAY HARDER'
           })));
@@ -480,6 +544,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         setRitual(new Map(ritual.set(ritualKind, {
           completedBalanceApproval: RitualStatus.COMPLETED,
           completedTransaction: RitualStatus.NO_STATUS,
+          inviteFriendTransaction: RitualStatus.NO_STATUS,
           verifyingTransaction: RitualStatus.NO_STATUS,
         })));
 
@@ -510,12 +575,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           completedBalanceApproval: RitualStatus.COMPLETED,
           completedTransaction: RitualStatus.PROCESSING,
           verifyingTransaction: RitualStatus.NO_STATUS,
+          inviteFriendTransaction: RitualStatus.NO_STATUS,
         })));
         const stableCoinBalance: BigNumber = await stableCoinContract.balanceOf(walletAddress);
         // ensure user input is not greater than user balance. if greater use all user balance.
         const offering = amount.lte(stableCoinBalance) ? amount : stableCoinBalance;
         const mintAndStakeTransaction = await openingCeremonyContract.mintAndStake(offering, {
-          gasLimit: 500000
+          gasLimit: 370000
         });
 
         // Show feedback to user
@@ -527,6 +593,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await mintAndStakeTransaction.wait();
         setRitual(new Map(ritual.set(RitualKind.OFFERING_STAKING, {
           completedBalanceApproval: RitualStatus.COMPLETED,
+          inviteFriendTransaction: RitualStatus.NO_STATUS,
           completedTransaction: RitualStatus.COMPLETED,
           verifyingTransaction: RitualStatus.NO_STATUS,
           ritualMessage: 'burn more incense?'
@@ -535,6 +602,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       } catch (e) {
         /* TODO: Set a notification transaction has failed */
         setRitual(new Map(ritual.set(RitualKind.OFFERING_STAKING, {
+          inviteFriendTransaction: RitualStatus.NO_STATUS,
           completedBalanceApproval: RitualStatus.COMPLETED,
           completedTransaction: RitualStatus.FAILED,
           verifyingTransaction: RitualStatus.NO_STATUS,
@@ -586,7 +654,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         mintAndStake,
         increaseAllowanceForRitual,
         clearRitual,
-        verifyQuest
+        verifyQuest,
+        inviteFriend,
+        maxInvitesPerVerifiedUser,
       }}>
     {children}
   </WalletContext.Provider>;

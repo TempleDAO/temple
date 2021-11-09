@@ -49,7 +49,7 @@ export const ButtonStyled = styled.button<ButtonStyledProps>`
   background-color: transparent;
   cursor: pointer;
   color: ${(props) => props.theme.palette.brand};
-  border: 0.0625rem /* 1/16 */ solid ${(props) => props.theme.palette.brand};
+  border: 0.0625rem /* 1/16 */ solid currentColor;
   height: 4.75rem /* 76/16 */;
   ${(props) => props.theme.typography.meta};
   width: 100%;
@@ -57,14 +57,17 @@ export const ButtonStyled = styled.button<ButtonStyledProps>`
   justify-content: center;
   align-items: center;
   padding: 0 1rem;
+  transition: color 250ms linear;
 
   ${(props) => props.isSmall && css`
     height: 2.625rem /* 42/16 */;
   `}
-
   ${(props) => props.showArrow && css`
     justify-content: space-between;
   `}
+  &:disabled {
+    color: ${(props) => props.theme.palette.brand50};
+  }
 `;
 
 export const ButtonLabel = styled.span<ButtonStyledProps>`
