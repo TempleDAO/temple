@@ -271,7 +271,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         console.info(sig, sandalWoodToken);
 
         const verifyTransaction = await verifyQuestContract.verify(sig.v, sig.r, sig.s, {
-          gasLimit: 200000
+          gasLimit: 125000
         });
         await verifyTransaction.wait();
         setRitual(new Map(ritual.set(ritualKind, {
@@ -308,7 +308,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
             .connect(signerState);
 
         const inviteGuestTransaction = await openingCeremonyContract.addGuestUser(friendAddress, {
-          gasLimit: 100000
+          gasLimit: 85000
         });
         await inviteGuestTransaction.wait();
 
@@ -581,7 +581,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         // ensure user input is not greater than user balance. if greater use all user balance.
         const offering = amount.lte(stableCoinBalance) ? amount : stableCoinBalance;
         const mintAndStakeTransaction = await openingCeremonyContract.mintAndStake(offering, {
-          gasLimit: 500000
+          gasLimit: 370000
         });
 
         // Show feedback to user
