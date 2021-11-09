@@ -581,7 +581,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         // ensure user input is not greater than user balance. if greater use all user balance.
         const offering = amount.lte(stableCoinBalance) ? amount : stableCoinBalance;
         const mintAndStakeTransaction = await openingCeremonyContract.mintAndStake(offering, {
-          gasLimit: 370000
+          gasLimit: process.env.NEXT_PUBLIC_MINT_AND_STAKE_GAS_LIMIT || 500000
         });
 
         // Show feedback to user
