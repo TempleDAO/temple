@@ -124,8 +124,18 @@ export const GlobalStyle = createGlobalStyle`
     &-remove {
       margin: 0;
     }
+    
     &-remove--bottom {
       margin-bottom: 0;
+    }
+    &-remove--top {
+      margin-top: 0;
+    }
+    &-remove--left {
+      margin-left: 0;
+    }
+    &-remove--right {
+      margin-right: 0;
     }
   }
 

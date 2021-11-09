@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import React, { ReactNode, RefObject, useEffect, useRef, useState } from 'react';
-import Countdown from 'react-countdown';
 // @ts-ignore no @types for this package
 import Typical from 'react-typical';
 import styled, { css } from 'styled-components';
@@ -18,7 +17,6 @@ import BuyImage from '../../public/images/buy-art.svg';
 import cashImage from '../../public/images/cash.svg';
 import checkImage from '../../public/images/check.svg';
 import crossImage from '../../public/images/cross.svg';
-import earlyEpochImage from '../../public/images/early-epoch.webp';
 import lockImage from '../../public/images/lock.svg';
 import tagImage from '../../public/images/tag.svg';
 import { toAtto } from '../../utils/bigNumber';
@@ -45,6 +43,8 @@ const Rituals = () => {
   const [verifying, setVerifying] = useState(false);
 
   const [videoHasEnded, setVideoHasEnded] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>('');
+  const [guestAddress, setGuestAddress] = useState<string>('');
 
 
   const router = useRouter();
@@ -67,6 +67,8 @@ const Rituals = () => {
     isLoading,
     ocTemplar,
     verifyQuest,
+    inviteFriend,
+    maxInvitesPerVerifiedUser,
   } = useWallet();
 
   const { amount: allocationAmount, startEpoch } = allocation;
@@ -160,7 +162,8 @@ const Rituals = () => {
             flipped={verifying}
             backContent={renderActivity()}
             frontContent={<>
-              <p className={'align-text-center'}>You must use the same address the you used in <a href={'https://echoingwhispers.link/'} >echoingwhispers.link</a></p>
+              <p className={'align-text-center'}>You must use the same address the you used in <a
+                  href={'https://echoingwhispers.link/'}>echoingwhispers.link</a></p>
               <br/>
               <Input hint={`Sandalwood Incense`}
                      type={'textarea'}
@@ -175,18 +178,41 @@ const Rituals = () => {
     ];
   };
 
+  const handleInviteGuest = async () => {
+    await inviteFriend(guestAddress, RitualKind.INVITE_FRIEND);
+  };
+
   const getTabs = (): Array<Tab> => {
     return [
       {
-        label: 'Opening Ceremony',
+        label: 'sacrifice',
         disabledMessage: !isConnected ? 'Connect wallet to participate in ritual' : undefined,
         content: <Card
             flipped={ritual.has(RitualKind.OFFERING_STAKING)}
             backContent={renderActivity()}
             frontContent={<>
+              {ocTemplar.isVerified &&
               <p>Total sacrificable {STABLE_COIN_SYMBOL} is <strong
-                  className={'color-brand'}>30 000</strong>, welcome
+                  className={'color-brand'}>{allocationAmount}</strong>, welcome
                 Templar.</p>
+              }
+              {ocTemplar.isGuest && !ocTemplar.isVerified && <>
+                <p className={'margin-remove--top'}><strong>Welcome, you have received Sandalwood from someone inside
+                  the
+                  Temple.</strong></p>
+                <p>As a favour to friends of our friends, you may sacrifice up to <strong
+                    className={'color-brand'}>{allocationAmount} {STABLE_COIN_SYMBOL}</strong> at Opening Ceremony
+                  rates. You will receive an almost-as high 0.9% per day yield.
+                </p>
+                <p>If you would like to sacrifice more <strong
+                    className={'color-brand'}>{STABLE_COIN_SYMBOL}</strong>, or receive the full Pilgrim rate 1.0% per
+                  day yield, please
+                  &nbsp;<a href={'https://discord.gg/templedao'} target={'_blank'} rel="noreferrer">join Discord</a> and
+                  begin the Pilgrimage (note: it takes minimum 48 hours to complete).
+                </p>
+                <br/>
+              </>
+              }
               <Input hint={`Balance: ${getExpectedBalance('crypto')}`}
                      crypto={{ kind: 'value', value: STABLE_COIN_SYMBOL }}
                      type={'number'}
@@ -206,9 +232,45 @@ const Rituals = () => {
                      onChange={handleUpdateBuyTemple}
               />
               <Button label={'Make Offering and Stake'} onClick={handleBuyAndStake}/>
-              <p>
+              <br/>
+              <p className={'margin-remove--bottom'}>
                 Staked <strong className={'color-brand'}>$TEMPLE</strong> will be locked for 6 weeks.
               </p>
+            </>}
+        />
+      },
+      {
+        label: 'invite',
+        disabledMessage: ocTemplar.isVerified
+            ? ocTemplar.totalSacrificedStablec === 0
+                ? `To invite a friend, you need to sacrifice some ${STABLE_COIN_SYMBOL}`
+                : undefined
+            : ocTemplar.isGuest
+                ? 'To invite a friend you need to complete the Opening Ceremony'
+                : undefined
+        ,
+        content: <Card
+            flipped={ritual.has(RitualKind.INVITE_FRIEND)}
+            backContent={renderActivity()}
+            frontContent={<>
+              {ocTemplar.isVerified && <>
+                <p className={'margin-remove--top'}><strong>Conditions for invitation:</strong> You are logged in with
+                  your
+                  address that completed the Opening Ceremony, that you have sacrificed $FRAX, that it is a valid
+                  address, and that you have not used all two of your invitations already.</p>
+                <br/>
+                <Input type={'text'}
+                       onChange={(e) => setGuestAddress(e.target.value)}
+                       placeholder={'0x12....0a1b'}
+                />
+                <Button label={'Invite friend'}
+                        disabled={guestAddress === '' || ocTemplar.numInvited === maxInvitesPerVerifiedUser}
+                        onClick={handleInviteGuest}/>
+                <p><strong>You have invited <span
+                    className={'color-brand'}>{ocTemplar.numInvited}</span>/{maxInvitesPerVerifiedUser} Friends</strong>
+                </p>
+              </>
+              }
             </>}
         />
       },
@@ -245,6 +307,7 @@ const Rituals = () => {
           </RitualCheck>
           {ritualMessage && <Button label={ritualMessage} onClick={() => {
             clearRitual(RitualKind.OFFERING_STAKING);
+            updateWallet();
           }}/>}
         </>);
       }
@@ -261,6 +324,23 @@ const Rituals = () => {
           </RitualCheck>
           {ritualMessage && <Button label={ritualMessage} onClick={() => {
             clearRitual(RitualKind.VERIFYING);
+            setVerifying(false);
+            updateWallet();
+          }}/>}
+        </>);
+      }
+    }
+    if (ritual.has(RitualKind.INVITE_FRIEND)) {
+      const inviteFriendRitual = ritual.get(RitualKind.INVITE_FRIEND);
+      if (inviteFriendRitual) {
+        const { inviteFriendTransaction, ritualMessage } = inviteFriendRitual;
+        return (<>
+          <RitualCheck className={'flex flex-v-center'}>
+            <RitualCheckImageWrapper>{renderRitualStatus(inviteFriendTransaction)}</RitualCheckImageWrapper>
+            Inviting friend to the Temple
+          </RitualCheck>
+          {ritualMessage && <Button label={ritualMessage} onClick={() => {
+            clearRitual(RitualKind.INVITE_FRIEND);
             setVerifying(false);
             updateWallet();
           }}/>}
@@ -287,7 +367,7 @@ const Rituals = () => {
     }
 
     // Templar is not verified
-    if (step === '1' || step === undefined && !ocTemplar.isVerified) {
+    if (step === '1' || step === undefined && (!ocTemplar.isVerified && !ocTemplar.isGuest)) {
       return (<>
         <Flex layout={{
           kind: 'container'
@@ -363,8 +443,7 @@ const Rituals = () => {
                       col: 'fullwidth',
                       colTablet: 'half',
                     }}>
-                      <Tabs tabs={getTabs()} onChange={() => {
-                      }}/>
+                      <Tabs tabs={getTabs()} onChange={setActiveTab}/>
                     </Flex>
                     <Flex layout={{
                       kind: 'item',
@@ -378,7 +457,7 @@ const Rituals = () => {
                 </>
                 :
                 // @ts-ignore
-                <video controls={false} autoPlay width={'100%'} ref={videoRef}>
+                <video controls={process.env.NODE_ENV === 'development'} autoPlay width={'100%'} ref={videoRef}>
                   {/* TODO: update video URL once video is hosted */}
                   <source
                       src={templePart1Video}/>
