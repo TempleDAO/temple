@@ -9,7 +9,7 @@ import {
   TempleTreasury__factory,
   VerifyQuest__factory
 } from '../types/typechain';
-import { fromAtto } from '../utils/bigNumber';
+import { fromAtto, toAtto } from '../utils/bigNumber';
 import { noop } from '../utils/helpers';
 import { useNotification } from './NotificationProvider';
 
@@ -520,7 +520,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       if (stableCoinAllowance.lt(amount)) {
         try {
-          const stableApproveTransaction = await stableCoinContract.approve(OPENING_CEREMONY_ADDRESS, amount);
+          // We want to save gas burn $ for the Templars,
+          // so we approving 1M up front, so only 1 approve TXN is required for approve
+          const ONE_MILLION = toAtto(1000000);
+          const stableApproveTransaction = await stableCoinContract.approve(OPENING_CEREMONY_ADDRESS, ONE_MILLION);
           // Show feedback to user
           openNotification({
             title: `${STABLE_COIN_SYMBOL} Approved`,
