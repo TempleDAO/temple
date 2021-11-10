@@ -2,8 +2,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 import React, { ReactNode, RefObject, useEffect, useRef, useState } from 'react';
 // @ts-ignore no @types for this package
-import Typical from 'react-typical';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { Apy } from '../../components/Apy/Apy';
 import { Button } from '../../components/Button/Button';
 import Card from '../../components/Card/Card';
@@ -23,7 +22,6 @@ import { toAtto } from '../../utils/bigNumber';
 import { formatMillions, formatNumber } from '../../utils/formatter';
 
 const templePart1Video = require('../../public/videos/templedao-part1.mp4');
-const templePart2Video = require('../../public/videos/templedao-part2.mp4');
 
 export const STABLE_COIN_SYMBOL = '$FRAX';
 export const RITUAL_ICON_SIZE = 48;
@@ -231,7 +229,8 @@ const Rituals = () => {
                      max={allocationAmount}
                      onChange={handleUpdateBuyTemple}
               />
-              <Button label={'Make Offering and Stake'} onClick={handleBuyAndStake}/>
+              <Button label={'Make Offering and Stake'} onClick={handleBuyAndStake} disabled={allocationAmount === 0}/>
+              {allocationAmount === 0 && <small>You have Burned all your Sandalwood Incense</small>}
               <br/>
               <p className={'margin-remove--bottom'}>
                 Staked <strong className={'color-brand'}>$TEMPLE</strong> will be locked for 6 weeks.
@@ -411,7 +410,7 @@ const Rituals = () => {
     }
 
     // User has allocation and its time to make their offerings
-    if (step === '3' || step === undefined && allocationAmount > 0 && startEpoch && currentEpoch >= startEpoch) {
+    if (step === '3' || step === undefined && ocTemplar.isVerified || ocTemplar.isGuest) {
       return (
           <>
             {/* Only show video if the user has not yet burn any incense */}
@@ -466,29 +465,6 @@ const Rituals = () => {
           </>
       );
     }
-
-    // User has burned all allocation
-    if (step === '4' || step === undefined && allocationAmount === 0 && templeWalletAmount > 0) {
-      return <>
-        <Typical
-            steps={[
-              'You burn your incense at the altar...', 1000,
-              'You burn your incense at the altar... A sense of presence builds around you...', 500,
-              'You burn your incense at the altar... A sense of presence builds around you... The air itself begins to feel more dense, rich, alive...', 1500,
-              'You burn your incense at the altar... A sense of presence builds around you... The air itself begins to feel more dense, rich, alive... Your offering is accepted. Welcome to the Temple.'
-            ]}
-            loop={false}
-            key={'typing-burned'}
-            wrapper="p"
-        />
-        <Ritual>
-          {/* TODO: Swap for video */}
-          <video autoPlay width={'100%'}>
-            <source src={templePart2Video}/>
-          </video>
-        </Ritual></>;
-    }
-
   };
 
   return (
@@ -498,41 +474,6 @@ const Rituals = () => {
       </>
   );
 };
-
-
-const Ritual = styled.div`
-  position: relative;
-  width: 100%;
-`;
-
-interface RitualCopyProps {
-  // defaulted to left
-  positionX?: 'left' | 'right';
-  // defaulted to top
-  positionY?: 'top' | 'bottom';
-}
-
-const RitualCopy = styled.p<RitualCopyProps>`
-  position: absolute;
-  max-width: 70%;
-  ${(props) => props.positionX === 'right' ?
-          css`
-            right: 2rem;
-          `
-          : css`
-            left: 2rem;
-          `
-  }
-
-  ${(props) => props.positionY === 'bottom' ?
-          css`
-            bottom: 2rem;
-          `
-          : css`
-            top: 2rem;
-          `
-  }
-`;
 
 const RitualCheck = styled.h4`
   position: relative;
