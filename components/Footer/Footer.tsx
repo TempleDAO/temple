@@ -83,14 +83,14 @@ export const Footer = () => {
               }}>
                 <h4>Resources</h4>
                 <ul>
-                  {/*<li>*/}
-                  {/*  <Link href={'https://docs.templedao.link/'}>*/}
-                  {/*    <a target={'_blank'}>*/}
-                  {/*      <Image src={'/images/social-docs.png'} alt={''} width={24} height={24}/>*/}
-                  {/*      <strong>Docs</strong>*/}
-                  {/*    </a>*/}
-                  {/*  </Link>*/}
-                  {/*</li>*/}
+                  <li>
+                    <Link href={'https://docs.templedao.link/'}>
+                      <a target={'_blank'}>
+                        <Image src={'/images/social-docs.png'} alt={''} width={24} height={24}/>
+                        <strong>Docs</strong>
+                      </a>
+                    </Link>
+                  </li>
                   <li>
                     <Link href={'https://templedao.medium.com/'}>
                       <a target={'_blank'}>
