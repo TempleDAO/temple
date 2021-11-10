@@ -109,6 +109,11 @@ export const GlobalStyle = createGlobalStyle`
     text-decoration: none;
     font-weight: bold;
   }
+  
+  small {
+    font-size: 0.875rem  /* 14/16 */;
+    font-weight: bold;
+  }
 
   button {
     ${theme.typography.fonts.fontBody}
