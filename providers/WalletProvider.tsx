@@ -300,6 +300,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           verifyingTransaction: RitualStatus.COMPLETED,
           ritualMessage: `commence ${STABLE_COIN_SYMBOL} sacrifice`
         })));
+
+        // Update Templar data from contract.
+        await getOCTemplar();
       } catch (e) {
         setRitual(new Map(ritual.set(ritualKind, {
           completedBalanceApproval: RitualStatus.NO_STATUS,
