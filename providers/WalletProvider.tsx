@@ -86,6 +86,8 @@ interface WalletState {
 
   connectWallet(): void
 
+  changeWalletAddress(): void
+
   updateWallet(): Promise<void> | void
 
   buy(amountToBuy: number): void
@@ -137,6 +139,7 @@ const INITIAL_STATE: WalletState = {
   maxInvitesPerVerifiedUser: 0,
   buy: noop,
   connectWallet: noop,
+  changeWalletAddress: noop,
   updateWallet: noop,
   stake: noop,
   mintAndStake: noop,
@@ -203,24 +206,40 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   useEffect(() => {
     interactWithMetamask(undefined, true).then();
+    if (typeof window !== undefined) {
+      // @ts-ignore
+      const { ethereum } = window;
+
+      if (ethereum && ethereum.isMetaMask) {
+        ethereum.on('accountsChanged', () => {
+          window.location.reload();
+        });
+      }
+
+      return () => {
+        ethereum.removeListener('accountsChanged');
+      };
+    }
+
   }, []);
 
   const interactWithMetamask = async (action?: ETH_ACTIONS, syncConnected?: boolean) => {
     if (typeof window !== undefined) {
       // @ts-ignore
       const { ethereum } = window;
-      if (ethereum) {
+
+      if (ethereum && ethereum.isMetaMask) {
         const provider: JsonRpcProvider = new ethers.providers.Web3Provider(ethereum);
-        if (syncConnected) {
-          const accounts = await provider.listAccounts();
-          if (accounts.length > 0) {
-            setWalletAddress(accounts[0]);
-          }
-        } else if (action) {
+
+        if (action) {
           await provider.send(action, [{
             eth_accounts: {}
           }]);
-          const signer = provider.getSigner();
+        }
+
+        const signer = provider.getSigner();
+        const accounts = await provider.listAccounts();
+        if (accounts.length > 0) {
           const wallet: string = await signer.getAddress();
           setSignerState(signer);
           setProvider(provider);
@@ -238,7 +257,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     await interactWithMetamask(ETH_ACTIONS.REQUEST_ACCOUNTS);
   };
 
-  const disconnectWallet = async () => {
+  const changeWalletAddress = async () => {
     await interactWithMetamask(ETH_ACTIONS.REQUEST_PERMISSIONS);
   };
 
@@ -652,6 +671,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         ocTemplar,
         buy: noop,
         connectWallet,
+        changeWalletAddress,
         updateWallet,
         stake: noop,
         mintAndStake,
