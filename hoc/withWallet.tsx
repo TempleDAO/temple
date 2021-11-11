@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { ComponentType } from 'react';
 import styled from 'styled-components';
 import { Button } from '../components/Button/Button';
 import { useWallet } from '../providers/WalletProvider';
 
-const withWallet = (WrappedComponent: () => JSX.Element) => {
-  // @ts-ignore
-  return props => {
-    const { isConnected, connectWallet } = useWallet();
+export function withWallet<T>(WrappedComponent: ComponentType<T>) {
+  const HOCWithWallet = (props: T) => {
+    const { wallet, connectWallet } = useWallet();
+
     return (
         <>
-          {isConnected ?
+          {wallet ?
               <WrappedComponent {...props}/>
               : <WithWalletContainer>
                 <h4>Who knocks on the Temple gates?</h4>
@@ -21,6 +21,8 @@ const withWallet = (WrappedComponent: () => JSX.Element) => {
         </>
     );
   };
+
+  return HOCWithWallet;
 };
 
 const WithWalletContainer = styled.div`
@@ -34,7 +36,7 @@ const WithWalletContainer = styled.div`
   margin: 4rem auto 3rem;
   box-shadow: ${(props) => props.theme.shadows.base};
   border: 0.0625rem /* 1/16 */ solid ${(props) => props.theme.palette.brand};
-  
+
 `;
 
 export default withWallet;

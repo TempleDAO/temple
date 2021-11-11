@@ -6,18 +6,18 @@ import { useWallet } from '../../providers/WalletProvider';
 import MenuImage from '../../public/images/menu.svg';
 import { Button } from '../Button/Button';
 
-const formatWalletAddress = (address: string | null): string | null => {
+const formatWalletAddress = (address: string | null): string => {
   if (address) {
 
     const addressLength = address.length;
     return `${address.substr(0, 4)}...${address.substr(addressLength - 4, addressLength)}`;
   }
 
-  return null;
+  return '';
 };
 
 export const Header = () => {
-  const { connectWallet, isConnected, wallet } = useWallet();
+  const { connectWallet, changeWalletAddress, wallet } = useWallet();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -50,11 +50,8 @@ export const Header = () => {
             </HeaderNav>
             <HeaderNavOverlay onClick={() => setIsMenuOpen(false)}/>
             <WalletContainer>
-              {
-                isConnected
-                    ? formatWalletAddress(wallet)
-                    : <Button label={'connect wallet'} onClick={connectWallet} isSmall isUppercase/>
-              }
+              <Button label={wallet ? formatWalletAddress(wallet) : 'connect wallet'}
+                      onClick={wallet ? changeWalletAddress : connectWallet} isSmall isUppercase/>
             </WalletContainer>
             <MenuToggle onClick={() => setIsMenuOpen(!isMenuOpen)}>
               <Image src={MenuImage} alt={'nav menu'} width={32} height={32}/>

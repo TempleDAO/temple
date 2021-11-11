@@ -59,7 +59,7 @@ const Rituals = () => {
     updateWallet,
     ritual,
     increaseAllowanceForRitual,
-    isConnected,
+    wallet,
     currentEpoch,
     clearRitual,
     isLoading,
@@ -155,7 +155,7 @@ const Rituals = () => {
     return [
       {
         label: 'HALT AND VERIFY SANDALWOOD',
-        disabledMessage: !isConnected ? 'Connect wallet to participate in ritual' : undefined,
+        disabledMessage: !wallet ? 'Connect wallet to participate in ritual' : undefined,
         content: <Card
             flipped={verifying}
             backContent={renderActivity()}
@@ -184,7 +184,7 @@ const Rituals = () => {
     return [
       {
         label: 'sacrifice',
-        disabledMessage: !isConnected ? 'Connect wallet to participate in ritual' : undefined,
+        disabledMessage: !wallet ? 'Connect wallet to participate in ritual' : undefined,
         content: <Card
             flipped={ritual.has(RitualKind.OFFERING_STAKING)}
             backContent={renderActivity()}
