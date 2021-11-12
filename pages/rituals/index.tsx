@@ -236,6 +236,13 @@ const Rituals = () => {
               <p className={'margin-remove--bottom'}>
                 Staked <strong className={'color-brand'}>$TEMPLE</strong> will be locked for 6 weeks.
               </p>
+              <br/>
+              {
+                ocTemplar.isGuest && !ocTemplar.isVerified &&
+                <small>Have you completed the Opening Ceremony and want to verify your own Sandalwood?&nbsp;
+                  <a href="rituals?step=1">Go here.</a>
+                </small>
+              }
             </>}
         />
       },
@@ -323,6 +330,10 @@ const Rituals = () => {
             Verifying Sandalwood
           </RitualCheck>
           {ritualMessage && <Button label={ritualMessage} onClick={() => {
+            if (verificationRitual.verifyingTransaction === RitualStatus.COMPLETED) {
+              // remove the ?step=[] from the query params, so user is not locked in any step after verifying.
+              void router.replace('/rituals', undefined, { shallow: true});
+            }
             clearRitual(RitualKind.VERIFYING);
             setVerifying(false);
             updateWallet();
