@@ -12,11 +12,12 @@ import Loader from '../../components/Loader/Loader';
 import { Tab, Tabs } from '../../components/Tabs/Tabs';
 import withWallet from '../../hoc/withWallet';
 import { RitualKind, RitualStatus, useWallet } from '../../providers/WalletProvider';
-import BuyImage from '../../public/images/buy-art.svg';
 import cashImage from '../../public/images/cash.svg';
 import checkImage from '../../public/images/check.svg';
 import crossImage from '../../public/images/cross.svg';
+import TempleGatesImage from '../../public/images/early-epoch.webp';
 import lockImage from '../../public/images/lock.svg';
+import TempleSacrificeImage from '../../public/images/no-allocation.webp';
 import tagImage from '../../public/images/tag.svg';
 import { toAtto } from '../../utils/bigNumber';
 import { formatMillions, formatNumber } from '../../utils/formatter';
@@ -403,7 +404,7 @@ const Rituals = () => {
             colTablet: 'half',
             alignItems: 'flex-start',
           }}>
-            <Image src={BuyImage} alt={'Buy art'}/>
+            <Image src={TempleGatesImage} alt={'Sandalwood  verify to enter the Temple'} layout={'fill'}/>
           </Flex>
         </Flex>
       </>);
@@ -450,7 +451,7 @@ const Rituals = () => {
                       colTablet: 'half',
                       alignItems: 'flex-start',
                     }}>
-                      <Image src={BuyImage} alt={'Buy art'}/>
+                      <Image src={TempleSacrificeImage} alt={'Sacrifice for the Temple'} layout={'fill'}/>
                     </Flex>
                   </Flex>
                 </>
