@@ -74,9 +74,6 @@ interface WalletState {
 
   exchangeRate: number,
   allocation: Allocation,
-  templeEpy: number,
-  templeApy: number,
-  treasury: number,
   ritual: RitualMapping,
   lockInPeriod: number,
   currentEpoch: number,
@@ -116,12 +113,6 @@ const INITIAL_STATE: WalletState = {
     amount: 0,
     startEpoch: undefined,
   },
-  templeEpy: 0.01,
-  templeApy: 0,
-  // Fallback when user has not connected wallet, we can update this from Vercel and redeploy
-  treasury: process.env.NEXT_PUBLIC_TREASURY_VALUE
-      ? +process.env.NEXT_PUBLIC_TREASURY_VALUE
-      : 100000,
   isConnected: false,
   wallet: null,
   ritual: new Map(),
@@ -192,8 +183,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const [balanceState, setBalanceState] = useState<Balance>(null);
   const [exchangeRateState, setExchangeRateState] = useState<number>(INITIAL_STATE.exchangeRate);
   const [allocation, setAllocation] = useState<Allocation>(INITIAL_STATE.allocation);
-  const [templeEpy, setTempleEpy] = useState<number>(INITIAL_STATE.templeEpy);
-  const [treasury, setTreasury] = useState<number>(INITIAL_STATE.treasury);
   const [ritual, setRitual] = useState<RitualMapping>(INITIAL_STATE.ritual);
   const [lockInPeriod, setLockInPeriod] = useState<number>(INITIAL_STATE.lockInPeriod);
   const [currentEpoch, setCurrentEpoch] = useState<number>(INITIAL_STATE.currentEpoch);
@@ -403,8 +392,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await getOCTemplar();
         await getCurrentEpoch();
         await getExchangeRate();
-        await getTempleEpy();
-        await getTreasuryValue();
         await getLockInPeriod();
         await getBalance();
         await getAllocation();
@@ -469,40 +456,12 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const getTempleEpy = async (): Promise<void> => {
-    // if (walletAddress && signerState) {
-    //   const templeStaking = new TempleStaking__factory()
-    //       .attach(TEMPLE_STAKING_ADDRESS)
-    //       .connect(signerState);
-    //
-    //   const epy = (await templeStaking.getEpy(10000)).toNumber() / 10000;
-    //   // Only change the value if contract has valid data
-    //   if (epy > 0) {
-    //     setTempleEpy(epy);
-    //   }
-    // }
-    setTempleEpy(1 / 100.0);
-  };
-
   const getCurrentEpoch = async (): Promise<void> => {
     if (provider) {
       const blockNumber = await provider.getBlockNumber();
       const currentBlockTimestamp = (await provider.getBlock(blockNumber)).timestamp;
       // block timestamps are in seconds no ms
       setCurrentEpoch(currentBlockTimestamp * 1000);
-    }
-  };
-
-  const getTreasuryValue = async (): Promise<void> => {
-    if (walletAddress && signerState) {
-      const stableCoinContract = new ERC20__factory()
-          .attach(STABLE_COIN_ADDRESS)
-          .connect(signerState);
-
-      const treasury = fromAtto((await stableCoinContract.balanceOf(TREASURY_ADDRESS)));
-      if (treasury > 0) {
-        setTreasury(treasury);
-      }
     }
   };
 
@@ -663,9 +622,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         exchangeRate: exchangeRateState,
         ritual: ritual,
         allocation,
-        templeEpy,
-        templeApy: Math.trunc((Math.pow(templeEpy + 1, 365.25) - 1) * 100),
-        treasury,
         isConnected: isConnectedState,
         wallet: walletAddress,
         lockInPeriod,

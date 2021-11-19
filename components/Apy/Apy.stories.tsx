@@ -1,8 +1,8 @@
 import { ComponentMeta, ComponentStory } from '@storybook/react';
 import React from 'react';
 import BuyImage from '../../public/images/buy-art.svg';
-
 import { Apy } from './Apy';
+
 
 export default {
   title: 'Components/Apy',

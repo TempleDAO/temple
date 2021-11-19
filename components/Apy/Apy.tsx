@@ -2,13 +2,13 @@ import Image from 'next/image';
 import React from 'react';
 import styled, { css } from 'styled-components';
 
-interface ApyProps {
+interface ApyProps extends ApyStyledProps {
   cryptoName: string,
   imageData: {
     imageUrl: StaticImageData,
     alt: string,
   },
-  value: string
+  value: string,
 }
 
 /**
@@ -17,16 +17,23 @@ interface ApyProps {
 export const Apy = ({
                       cryptoName,
                       value,
-                      imageData
+                      imageData,
+                      isWhite,
+                      isHome = false,
                     }: ApyProps) => {
-  const {imageUrl, alt} = imageData;
+  const { imageUrl, alt } = imageData;
+
+  const getImageSize = () => {
+    return isHome ? 36 : 22;
+  };
+
   return (
-      <ApyStyled>
-        <i><Image src={imageUrl} alt={alt} width={22} height={22} /></i>
-        <ApyLabel>
+      <ApyStyled isHome={isHome}>
+        <i><Image src={imageUrl} alt={alt} width={getImageSize()} height={getImageSize()}/></i>
+        <ApyValue>
           {value}
-        </ApyLabel>
-        <ApyLabel isGold>
+        </ApyValue>
+        <ApyLabel isWhite={isWhite}>
           {cryptoName}
         </ApyLabel>
       </ApyStyled>
@@ -34,7 +41,8 @@ export const Apy = ({
 };
 
 interface ApyStyledProps {
-  isGold?: boolean;
+  isWhite?: boolean;
+  isHome?: boolean;
 }
 
 export const ApyStyled = styled.div<ApyStyledProps>`
@@ -58,10 +66,35 @@ export const ApyStyled = styled.div<ApyStyledProps>`
     align-items: center;
     justify-content: center;
   }
+
+  ${(props) => props.isHome && css`
+    padding-left: 0;
+
+    i {
+      position: relative;
+      justify-content: flex-start;
+      margin-bottom: 1.5rem;
+    }
+
+    ${ApyValue} {
+      ${(props) => props.theme.typography.h3};
+    }
+    
+    ${ApyLabel} {
+      margin-top: 1.5rem;
+    }
+  `};
+
+`;
+
+const ApyValue = styled.strong`
+  color: ${(props) => props.theme.palette.brand};
 `;
 
 const ApyLabel = styled.strong<ApyStyledProps>`
-  ${(props) => props.isGold && css`
-    color: ${(props) => props.theme.palette.brand}
+  color: ${(props) => props.theme.palette.brand};
+
+  ${(props) => props.isWhite && css`
+    color: ${(props) => props.theme.palette.light};
   `};
 `;

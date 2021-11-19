@@ -1,5 +1,7 @@
+import { GetStaticProps, GetStaticPropsContext } from 'next';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
+import { ParsedUrlQuery } from 'querystring';
 import React, { ReactNode, RefObject, useEffect, useRef, useState } from 'react';
 // @ts-ignore no @types for this package
 import styled from 'styled-components';
@@ -9,6 +11,7 @@ import Card from '../../components/Card/Card';
 import { Input } from '../../components/Input/Input';
 import { Flex } from '../../components/Layout/Flex';
 import Loader from '../../components/Loader/Loader';
+import Metrics from '../../components/Metrics/Metrics';
 import { Tab, Tabs } from '../../components/Tabs/Tabs';
 import withWallet from '../../hoc/withWallet';
 import { RitualKind, RitualStatus, useWallet } from '../../providers/WalletProvider';
@@ -19,6 +22,7 @@ import TempleGatesImage from '../../public/images/early-epoch.webp';
 import lockImage from '../../public/images/lock.svg';
 import TempleSacrificeImage from '../../public/images/no-allocation.webp';
 import tagImage from '../../public/images/tag.svg';
+import { MetricsService, TreasuryMetrics } from '../../services/MetricsService';
 import { toAtto } from '../../utils/bigNumber';
 import { formatMillions, formatNumber } from '../../utils/formatter';
 
@@ -27,7 +31,11 @@ const templePart1Video = require('../../public/videos/templedao-part1.mp4');
 export const STABLE_COIN_SYMBOL = '$FRAX';
 export const RITUAL_ICON_SIZE = 48;
 
-const Rituals = () => {
+interface HomeProps {
+  treasuryMetrics: TreasuryMetrics
+}
+
+const Rituals = ({treasuryMetrics}: HomeProps) => {
   // temple amount in the user wallet
   const [templeWalletAmount, setTempleWalletAmount] = useState<number>(0);
   // temple amount from user input in the UI
@@ -55,13 +63,10 @@ const Rituals = () => {
     balance,
     exchangeRate,
     allocation,
-    templeApy,
-    treasury,
     updateWallet,
     ritual,
     increaseAllowanceForRitual,
     wallet,
-    currentEpoch,
     clearRitual,
     isLoading,
     ocTemplar,
@@ -70,7 +75,7 @@ const Rituals = () => {
     maxInvitesPerVerifiedUser,
   } = useWallet();
 
-  const { amount: allocationAmount, startEpoch } = allocation;
+  const { amount: allocationAmount } = allocation;
 
   useEffect(() => {
     if (balance) {
@@ -380,22 +385,7 @@ const Rituals = () => {
     // Templar is not verified
     if (step === '1' || step === undefined && (!ocTemplar.isVerified && !ocTemplar.isGuest)) {
       return (<>
-        <Flex layout={{
-          kind: 'container'
-        }}>
-          <Apy cryptoName={'$TEMPLE'} value={`$${formatNumber(1 / exchangeRate)}`} imageData={{
-            imageUrl: cashImage,
-            alt: ''
-          }}/>
-          <Apy cryptoName={'APY'} value={`${formatNumber(templeApy)} %`} imageData={{
-            imageUrl: tagImage,
-            alt: ''
-          }}/>
-          <Apy cryptoName={'Treasury'} value={`$${formatMillions(treasury)}`} imageData={{
-            imageUrl: lockImage,
-            alt: ''
-          }}/>
-        </Flex>
+        <Metrics treasuryMetrics={treasuryMetrics} />
         <Flex layout={{
           kind: 'container',
           canWrap: true,
@@ -428,22 +418,7 @@ const Rituals = () => {
             {/* Only show video if the user has not yet burn any incense */}
             {videoHasEnded || templeWalletAmount > 0 || step === '3' ?
                 <>
-                  <Flex layout={{
-                    kind: 'container'
-                  }}>
-                    <Apy cryptoName={'$TEMPLE'} value={`$${formatNumber(1 / exchangeRate)}`} imageData={{
-                      imageUrl: cashImage,
-                      alt: ''
-                    }}/>
-                    <Apy cryptoName={'APY'} value={`${formatNumber(templeApy)} %`} imageData={{
-                      imageUrl: tagImage,
-                      alt: ''
-                    }}/>
-                    <Apy cryptoName={'Treasury'} value={`$${formatMillions(treasury)}`} imageData={{
-                      imageUrl: lockImage,
-                      alt: ''
-                    }}/>
-                  </Flex>
+                  <Metrics treasuryMetrics={treasuryMetrics} />
                   <Flex layout={{
                     kind: 'container',
                     canWrap: true,
@@ -499,5 +474,19 @@ const RitualCheckImageWrapper = styled.div`
   width: ${RITUAL_ICON_SIZE}px;
   height: ${RITUAL_ICON_SIZE}px;
 `;
+
+
+export const getStaticProps: GetStaticProps = async (ctx:GetStaticPropsContext<ParsedUrlQuery>) => {
+  const metricsService = new MetricsService();
+  const treasuryMetrics = await metricsService.getTreasuryMetrics();
+
+  return {
+    props : {
+      treasuryMetrics
+    },
+    // cache to 5 minutes
+    revalidate: 5 * 60,
+  }
+}
 
 export default withWallet(Rituals);
