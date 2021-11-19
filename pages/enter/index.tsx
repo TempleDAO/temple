@@ -21,7 +21,7 @@ const Enter = () => {
   const [cryptoAmount, setCryptoAmount] = useState<number>(0);
   // has the value of the current tab buy | stake
   const [activeTab, setActiveTab] = useState<string>('');
-  const { updateWallet, balance, buy, stake, exchangeRate,  templeApy, treasury } = useWallet();
+  const { updateWallet, balance, buy, stake, exchangeRate } = useWallet();
 
 
   useEffect(() => {

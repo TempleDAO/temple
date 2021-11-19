@@ -17,8 +17,6 @@ const Exit = () => {
   /* TODO: get data */
   const [withdrawalAmount, setWithdrawalAmount] = useState<number>(0);
   const [withdrawalAllowance, setWithdrawalAllowance] = useState<number>(0);
-  const { exchangeRate, templeApy, treasury } = useWallet();
-
 
   const handleWithdrawalAmountUpdate = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;

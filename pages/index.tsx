@@ -1,25 +1,23 @@
+import { GetStaticProps, GetStaticPropsContext } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import { ParsedUrlQuery } from 'querystring';
 import React from 'react';
 import styled, { css } from 'styled-components';
 import { Button } from '../components/Button/Button';
 import { Flex } from '../components/Layout/Flex';
-import { useWallet } from '../providers/WalletProvider';
-import cashImage from '../public/images/cash.svg';
+import Metrics, { MetricsProps } from '../components/Metrics/Metrics';
 import circleBgImage from '../public/images/circle-bg.svg';
 import earnTradingFeeImage from '../public/images/earn-trading-fee.svg';
 import eyeImage from '../public/images/eye.svg';
 import gateImage from '../public/images/gate.svg';
-import lockImage from '../public/images/lock.svg';
 import planetsImage from '../public/images/planets.svg';
 import receiveTokenImage from '../public/images/receive-token.svg';
 import sunImage from '../public/images/sun-art.svg';
 import sunsetImage from '../public/images/sunset.svg';
-import tagImage from '../public/images/tag.svg';
-import { formatMillions, formatNumber } from '../utils/formatter';
+import { MetricsService } from '../services/MetricsService';
 
-const Home = () => {
-  const { templeApy, exchangeRate, treasury } = useWallet();
+const Home = ({ treasuryMetrics }: MetricsProps) => {
 
   return (
       <>
@@ -60,41 +58,7 @@ const Home = () => {
             <br/>
             <br/>
             <br/>
-            <Flex layout={{
-              kind: 'container',
-              direction: 'row',
-            }}>
-              <Flex layout={{
-                kind: 'item',
-                direction: 'column',
-                col: 'third',
-                alignItems: 'flex-start'
-              }}>
-                <Image src={cashImage} alt={'temple price'} height={36} width={36}/>
-                <h3>${formatNumber(1 / exchangeRate)}</h3>
-                <strong>$TEMPLE</strong>
-              </Flex>
-              <Flex layout={{
-                kind: 'item',
-                direction: 'column',
-                col: 'third',
-                alignItems: 'flex-start'
-              }}>
-                <Image src={lockImage} alt={'temple price'} height={36} width={36}/>
-                <h3>{formatNumber(templeApy)}%</h3>
-                <strong className={'color-brand'}>APY</strong>
-              </Flex>
-              <Flex layout={{
-                kind: 'item',
-                direction: 'column',
-                col: 'third',
-                alignItems: 'flex-start'
-              }}>
-                <Image src={tagImage} alt={'temple price'} height={36} width={36}/>
-                <h3>${formatMillions(treasury)}</h3>
-                <strong className={'color-brand'}>Treasury</strong>
-              </Flex>
-            </Flex>
+            <Metrics treasuryMetrics={treasuryMetrics} isHome />
           </Flex>
           <Flex layout={{
             kind: 'item',
@@ -254,5 +218,18 @@ const CircleBgWrapper = styled.div<CircleBgWrapperProps>`
 
   `}
 `;
+
+export const getStaticProps: GetStaticProps = async (ctx: GetStaticPropsContext<ParsedUrlQuery>) => {
+  const metricsService = new MetricsService();
+  const treasuryMetrics = await metricsService.getTreasuryMetrics();
+
+  return {
+    props: {
+      treasuryMetrics,
+    },
+    // cache to 5 minutes
+    revalidate: 5 * 60,
+  };
+};
 
 export default Home;
