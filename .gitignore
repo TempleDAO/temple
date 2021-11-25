@@ -8,10 +8,6 @@
 # testing
 /coverage
 
-# next.js
-/.next/
-/out/
-
 # production
 /build
 
@@ -31,5 +27,7 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
-# vercel
-.vercel
+node_modules
+.DS_Store
+dist
+*.local
