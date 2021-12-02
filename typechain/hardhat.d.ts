@@ -53,6 +53,30 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC165__factory>;
     getContractFactory(
+      name: "IERC20",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20__factory>;
+    getContractFactory(
+      name: "IUniswapV2Callee",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IUniswapV2Callee__factory>;
+    getContractFactory(
+      name: "IUniswapV2ERC20",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IUniswapV2ERC20__factory>;
+    getContractFactory(
+      name: "IUniswapV2Factory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IUniswapV2Factory__factory>;
+    getContractFactory(
+      name: "IUniswapV2Pair",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IUniswapV2Pair__factory>;
+    getContractFactory(
+      name: "UniswapV2ERC20",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.UniswapV2ERC20__factory>;
+    getContractFactory(
       name: "IUniswapV3SwapCallback",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IUniswapV3SwapCallback__factory>;
@@ -64,6 +88,30 @@ declare module "hardhat/types/runtime" {
       name: "ISwapRouter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ISwapRouter__factory>;
+    getContractFactory(
+      name: "ITempleFactory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ITempleFactory__factory>;
+    getContractFactory(
+      name: "ITempleTreasury",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ITempleTreasury__factory>;
+    getContractFactory(
+      name: "IUniswapV2Pair",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IUniswapV2Pair__factory>;
+    getContractFactory(
+      name: "TempleFactory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TempleFactory__factory>;
+    getContractFactory(
+      name: "TempleRouter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TempleRouter__factory>;
+    getContractFactory(
+      name: "UniswapV2Pair",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.UniswapV2Pair__factory>;
     getContractFactory(
       name: "AutoHarvestKeeper",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -204,6 +252,36 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IERC165>;
     getContractAt(
+      name: "IERC20",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC20>;
+    getContractAt(
+      name: "IUniswapV2Callee",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IUniswapV2Callee>;
+    getContractAt(
+      name: "IUniswapV2ERC20",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IUniswapV2ERC20>;
+    getContractAt(
+      name: "IUniswapV2Factory",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IUniswapV2Factory>;
+    getContractAt(
+      name: "IUniswapV2Pair",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IUniswapV2Pair>;
+    getContractAt(
+      name: "UniswapV2ERC20",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.UniswapV2ERC20>;
+    getContractAt(
       name: "IUniswapV3SwapCallback",
       address: string,
       signer?: ethers.Signer
@@ -218,6 +296,36 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ISwapRouter>;
+    getContractAt(
+      name: "ITempleFactory",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ITempleFactory>;
+    getContractAt(
+      name: "ITempleTreasury",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ITempleTreasury>;
+    getContractAt(
+      name: "IUniswapV2Pair",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IUniswapV2Pair>;
+    getContractAt(
+      name: "TempleFactory",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TempleFactory>;
+    getContractAt(
+      name: "TempleRouter",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TempleRouter>;
+    getContractAt(
+      name: "UniswapV2Pair",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.UniswapV2Pair>;
     getContractAt(
       name: "AutoHarvestKeeper",
       address: string,
