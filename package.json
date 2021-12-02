@@ -14,6 +14,7 @@
     "@types/chai": "^4.2.19",
     "@types/mocha": "^8.2.2",
     "@types/node": "^15.12.5",
+    "@uniswap/v2-core": "^1.0.1",
     "@uniswap/v3-periphery": "^1.2.1",
     "csv-parse": "^4.16.3",
     "dotenv": "^10.0.0",
