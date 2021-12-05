@@ -1,0 +1,36 @@
+# Temple analytics backend infrastructure
+https://docs.google.com/document/d/1xU3v2WY3kSDGr2iT697kTJf5ZPVAc7k-6NYbLvjPAlc/edit#
+
+## ETL
+
+# Dev
+## Persistent storage
+Postgresql database
+
+for development
+``` sh
+$ docker run --rm --name templedb -p 54321:5432 -v $(pwd)/storage:/tmp/storage -ePOSTGRES_PASSWORD=postgres postgres:14-alpine
+$ bash storage/prepare_test_db.sh
+```
+
+you can then connect to the db (from node) on port 54321
+
+`npm i pg`
+
+``` sh
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  user: 'postgres',
+  host: '127.0.0.1',
+  database: 'postgres',
+  password: 'postgres',
+  port: 54321
+});
+await pool.connect();
+const res = await pool.query('select * from discord_users');
+console.log(res.rows[0]);
+await pool.end();
+```
+
+
