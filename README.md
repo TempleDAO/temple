@@ -1,7 +1,12 @@
-# Temple analytics backend infrastructure
+# Temple analytics backend
 https://docs.google.com/document/d/1xU3v2WY3kSDGr2iT697kTJf5ZPVAc7k-6NYbLvjPAlc/edit#
 
 ## ETL
+### Discord
+
+
+### Twitter
+
 
 # Dev
 ## Persistent storage

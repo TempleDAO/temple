@@ -3,6 +3,7 @@ CREATE TABLE discord_users (
  user_name text,
  joined_at timestamp,
  premium_since timestamp,
+ last_seen_at timestamp,
  primary key(user_id)
 );
 
