@@ -557,7 +557,7 @@ const Rituals = () => {
               <Image
                 src={TempleGatesImage}
                 alt={'Sandalwood  verify to enter the Temple'}
-                fill
+                fillContainer
               />
             </Flex>
           </Flex>
@@ -602,7 +602,7 @@ const Rituals = () => {
                   <Image
                     src={TempleSacrificeImage}
                     alt={'Sacrifice for the Temple'}
-                    fill
+                    fillContainer
                   />
                 </Flex>
               </Flex>
