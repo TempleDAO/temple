@@ -6,7 +6,7 @@ interface ImageProps {
   width?: number;
   height?: number;
   fit?: string;
-  fill?: boolean;
+  fillContainer?: boolean;
   objectPosition?: string;
   onClick?: Function; // eslint-disable-line
 }
@@ -22,7 +22,7 @@ const Image = styled.img.attrs(({ src, alt }: ImageProps) => ({
     props.objectPosition && `object-position: ${props.objectPosition};`}
 
   ${(props: ImageProps) => props.fit && `object-fit: ${props.fit};`}
-  ${(props: ImageProps) => props.fill && `width: 100%; height: 100%;`}
+  ${(props: ImageProps) => props.fillContainer && `width: 100%; height: 100%;`}
 `;
 
 export default Image;

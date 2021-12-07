@@ -205,7 +205,7 @@ const Enter = () => {
             alignItems: 'flex-start',
           }}
         >
-          <Image src={BuyImage} alt={'Buy art'} fill />
+          <Image src={BuyImage} alt={'Buy art'} fillContainer />
         </Flex>
       </Flex>
     </>
