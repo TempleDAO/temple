@@ -14,4 +14,5 @@ interface ImportMetaEnv {
   VITE_ALCHEMY_PROVIDER_NETWORK: string;
   VITE_ALCHEMY_API_KEY: string;
   VITE_SERVER_PRIVATE_KEY: string;
+  VITE_ENV: string;
 }

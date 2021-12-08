@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
 import Image from 'components/Image/Image';
@@ -12,8 +13,10 @@ export type NotificationProps = {
   title: string;
 };
 
+const ENV_VARS = import.meta.env;
+
 const ETHERSCAN_DOMAIN =
-  process.env.NODE_ENV === 'production'
+  ENV_VARS.VITE_ENV === 'production'
     ? 'https://etherscan.io'
     : 'https://rinkeby.etherscan.io';
 

@@ -57,7 +57,7 @@ export class MetricsService {
     const ENV = ENV_VARS.VITE_ENV;
 
     this.provider =
-      ENV === 'dev'
+      ENV === 'development'
         ? //@ts-ignore
           new ethers.providers.Web3Provider(window.ethereum)
         : new ethers.providers.AlchemyProvider(
