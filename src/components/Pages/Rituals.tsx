@@ -55,7 +55,7 @@ const Rituals = () => {
 
   const query = useQuery();
   /** we user this step to help debug the different ritual steps {@link renderRitualStep} */
-  const step = ENV_VARS.ENV !== 'dev' ? query.get('step') : null;
+  const step = ENV_VARS.ENV !== 'development' ? query.get('step') : null;
   const navigate = useNavigate();
 
   const videoRef = useRef<RefObject<HTMLVideoElement>>();
@@ -609,7 +609,7 @@ const Rituals = () => {
             </>
           ) : (
             <video
-              controls={process.env.NODE_ENV === 'development'}
+              controls={ENV_VARS.VITE_ENV === 'development'}
               autoPlay
               width={'100%'}
               // @ts-ignore
