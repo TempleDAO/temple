@@ -59,12 +59,17 @@ describe("Exit Queue", async () => {
     await EXIT_QUEUE.setStartingBlock(1);
     expect(await EXIT_QUEUE.firstBlock()).eq(1);
 
+    const benAddress = await ben.getAddress();
+    await EXIT_QUEUE.setOwedTemple([benAddress], [10]);
+    expect(await EXIT_QUEUE.owedTemple(benAddress)).eq(10);
+
     // Should fail as anyone else
     const nonOwner = EXIT_QUEUE.connect(amanda);
     await shouldThrow(nonOwner.setEpochSize(20), /Ownable: caller is not the owner/);
     await shouldThrow(nonOwner.setMaxPerAddress(10), /Ownable: caller is not the owner/);
     await shouldThrow(nonOwner.setEpochSize(20), /Ownable: caller is not the owner/);
     await shouldThrow(nonOwner.setStartingBlock(1), /Ownable: caller is not the owner/);
+    await shouldThrow(nonOwner.setOwedTemple([benAddress], [10]), /Ownable: caller is not the owner/);
   });
 
   it("Correctly calculates EPOCHS", async () => {
@@ -279,5 +284,60 @@ describe("Exit Queue", async () => {
       expect(exitData.FirstExitEpoch, `${idx}, ${JSON.stringify(testCases[idx])}`).eq(firstExitEpoch);
       expect(exitData.LastExitEpoch, `${idx}, ${JSON.stringify(testCases[idx])}`).eq(lastExitEpoch);
     }
+  });
+
+  it("ensures owed temple is burned and user joins exit queue with new amount", async () => {
+    const addressZero = "0x0000000000000000000000000000000000000000";
+    const join = async (staker: Signer, amount: number) => {
+      await EXIT_QUEUE.connect(staker).join(await staker.getAddress(), amount);
+    }
+
+    const users: {[key: string]: Signer} = {
+      'amanda': amanda,
+      'ben': ben,
+      'clint': clint,
+    }
+
+    const checkExit = async (expectedEpoch: number, epoch: number, expected: {[key: string]: number}) => {
+      expect(await EXIT_QUEUE.currentEpoch(), "Expected epoch").eq(expectedEpoch);
+
+      if (epoch >= expectedEpoch) {
+        for (let name in expected) {
+          const exiter = users[name]
+          await shouldThrow(EXIT_QUEUE.connect(exiter).withdraw(epoch), /Can only withdraw from past epoch/);
+        }
+        return
+      }
+
+      for (let name in expected) {
+        const expectedWithdrawal = expected[name]
+        const exiter = users[name]
+        const preWithdrawBalance = (await TEMPLE.balanceOf(await exiter.getAddress())).toNumber()
+        await EXIT_QUEUE.connect(exiter).withdraw(epoch)
+        expect((await TEMPLE.balanceOf(await exiter.getAddress())).toNumber() - preWithdrawBalance, `${name} expected withdrawal`).eq(expectedWithdrawal)
+      }
+    }
+
+    // no join with less than owed amount
+    const benAddress = await ben.getAddress();
+    await EXIT_QUEUE.setOwedTemple([benAddress], [100]);
+    await shouldThrow(EXIT_QUEUE.connect(ben).join(benAddress, 50), /owing more than withdraw amount/);
+
+    // join and receives right amount of temple after withdraw(minus burned temple)
+    await expect(EXIT_QUEUE.connect(ben).join(benAddress, 120)).to.emit(TEMPLE, 'Transfer').withArgs(benAddress, addressZero, 100);
+    await join(amanda, 100);
+    await join(clint, 100);
+    // roll over
+    mineNBlocks(10);
+    await checkExit(1, 0, {'amanda': 100, 'ben': 20, 'clint': 80});
+
+    // (formerly owing) user can exit again and receive amount without another burn
+    await join(amanda, 10);
+    await join(ben, 150);
+    await join(clint, 60);
+    mineNBlocks(10*2);
+    await checkExit(4, 1, {'amanda': 0, 'ben': 0, 'clint': 20});
+    await checkExit(4, 2, {'amanda': 10, 'ben': 100, 'clint': 60});
+    await checkExit(4, 3, {'amanda': 0, 'ben': 50, 'clint': 0});
   });
 });

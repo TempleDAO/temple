@@ -1,9 +1,9 @@
 pragma solidity ^0.8.4;
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./TempleERC20Token.sol";
 
 
 // import "hardhat/console.sol";
@@ -29,10 +29,13 @@ contract ExitQueue is Ownable {
     // total queued to be exited in a given epoch
     mapping(uint256 => uint256) public totalPerEpoch;
 
+    // temple owed by users from buying above $30k
+    mapping(address => uint256) public owedTemple;
+
     // The first unwithdrawn epoch for the user
     mapping(address => User) public userData;
 
-    IERC20 public TEMPLE;   // TEMPLE
+    TempleERC20Token immutable public TEMPLE; // The token being staked, for which TEMPLE rewards are generated
 
     // Limit of how much temple can exit per epoch
     uint256 public maxPerEpoch;
@@ -53,12 +56,12 @@ contract ExitQueue is Ownable {
     event Withdrawal(address exiter, uint256 amount);    
 
     constructor(
-        address _TEMPLE,
+        TempleERC20Token _TEMPLE,
         uint256 _maxPerEpoch,
         uint256 _maxPerAddress,
         uint256 _epochSize) {
 
-        TEMPLE = IERC20(_TEMPLE);
+        TEMPLE = _TEMPLE;
 
         maxPerEpoch = _maxPerEpoch;
         maxPerAddress = _maxPerAddress;
@@ -84,6 +87,14 @@ contract ExitQueue is Ownable {
         firstBlock = _firstBlock;
     }
 
+    function setOwedTemple(address[] memory _users, uint256[] memory _amounts) external onlyOwner {
+        uint256 size = _users.length;
+        require(_amounts.length == size, "not of equal sizes");
+        for (uint256 i=0; i<size; i++) {
+            owedTemple[_users[i]] = _amounts[i];
+        }
+    }
+
     function currentEpoch() public view returns (uint256) {
         return (block.number - firstBlock) / epochSize;
     }
@@ -94,6 +105,16 @@ contract ExitQueue is Ownable {
 
     function join(address _exiter, uint256 _amount) external {        
         require(_amount > 0, "Amount must be > 0");
+
+        uint256 owedAmount = owedTemple[_exiter];
+        require(_amount > owedAmount, "owing more than withdraw amount");
+
+        // burn owed temple and update amount
+        if (owedAmount > 0) {
+            TEMPLE.burnFrom(msg.sender, owedAmount);
+            _amount = _amount - owedAmount;
+            owedTemple[_exiter] = 0;
+        }
 
         if (nextUnallocatedEpoch < currentEpoch()) {
             nextUnallocatedEpoch = currentEpoch();
