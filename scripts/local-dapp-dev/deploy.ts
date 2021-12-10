@@ -1,7 +1,7 @@
 import '@nomiclabs/hardhat-ethers';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { TempleERC20Token__factory, ExitQueue__factory, TempleStaking__factory, FakeERC20__factory, TempleTreasury__factory, LockedOGTemple__factory, PresaleAllocation__factory, Presale__factory, TreasuryManagementProxy__factory, OpeningCeremony__factory, EchoingWhispers__factory, VerifyQuest, VerifyQuest__factory, TempleCashback__factory } from '../../typechain';
+import { TempleERC20Token__factory, ExitQueue__factory, TempleStaking__factory, FakeERC20__factory, TempleTreasury__factory, LockedOGTemple__factory, PresaleAllocation__factory, TreasuryManagementProxy__factory, OpeningCeremony__factory, EchoingWhispers__factory, VerifyQuest, VerifyQuest__factory, TempleCashback__factory } from '../../typechain';
 
 function toAtto(n: number) {
   return BigNumber.from(10).pow(18).mul(n);
@@ -44,19 +44,6 @@ async function main() {
 
   const lockedOGTemple = await new LockedOGTemple__factory(owner).deploy(await staking.OG_TEMPLE());
   const presaleAllocation = await new PresaleAllocation__factory(owner).deploy();
-
-  // TODO: Delete
-  const presale = await new Presale__factory(owner).deploy(
-      stablecToken.address,
-      templeToken.address,
-      staking.address,
-      lockedOGTemple.address,
-      treasury.address,
-      presaleAllocation.address,
-      6,
-      unlockTimestampSeconds,
-  );
-  await templeToken.addMinter(presale.address);
 
   // mint fake stablecToken into all test accounts
   const accounts = await ethers.getSigners();
@@ -131,7 +118,6 @@ async function main() {
   const contract_address: { [key: string]: string; } = {
     'EXIT_QUEUE_ADDRESS': exitQueue.address,
     'LOCKED_OG_TEMPLE_ADDRESS': lockedOGTemple.address,
-    'PRESALE_ADDRESS': presale.address,
     'PRESALE_ALLOCATION_ADDRESS': presaleAllocation.address,
     'STABLE_COIN_ADDRESS': stablecToken.address,
     'TEMPLE_ADDRESS': templeToken.address,
