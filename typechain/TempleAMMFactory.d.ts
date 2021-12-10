@@ -19,7 +19,7 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface TempleFactoryInterface extends ethers.utils.Interface {
+interface TempleAMMFactoryInterface extends ethers.utils.Interface {
   functions: {
     "allPairs(uint256)": FunctionFragment;
     "allPairsLength()": FunctionFragment;
@@ -116,7 +116,7 @@ export type PairCreatedEvent = TypedEvent<
   }
 >;
 
-export class TempleFactory extends BaseContract {
+export class TempleAMMFactory extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -157,7 +157,7 @@ export class TempleFactory extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: TempleFactoryInterface;
+  interface: TempleAMMFactoryInterface;
 
   functions: {
     allPairs(arg0: BigNumberish, overrides?: CallOverrides): Promise<[string]>;
