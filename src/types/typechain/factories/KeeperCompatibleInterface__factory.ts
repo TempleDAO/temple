@@ -2,50 +2,50 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import { Contract, Signer, utils } from 'ethers';
-import { Provider } from '@ethersproject/providers';
+import { Contract, Signer, utils } from "ethers";
+import { Provider } from "@ethersproject/providers";
 import type {
   KeeperCompatibleInterface,
   KeeperCompatibleInterfaceInterface,
-} from '../KeeperCompatibleInterface';
+} from "../KeeperCompatibleInterface";
 
 const _abi = [
   {
     inputs: [
       {
-        internalType: 'bytes',
-        name: 'checkData',
-        type: 'bytes',
+        internalType: "bytes",
+        name: "checkData",
+        type: "bytes",
       },
     ],
-    name: 'checkUpkeep',
+    name: "checkUpkeep",
     outputs: [
       {
-        internalType: 'bool',
-        name: 'upkeepNeeded',
-        type: 'bool',
+        internalType: "bool",
+        name: "upkeepNeeded",
+        type: "bool",
       },
       {
-        internalType: 'bytes',
-        name: 'performData',
-        type: 'bytes',
+        internalType: "bytes",
+        name: "performData",
+        type: "bytes",
       },
     ],
-    stateMutability: 'nonpayable',
-    type: 'function',
+    stateMutability: "nonpayable",
+    type: "function",
   },
   {
     inputs: [
       {
-        internalType: 'bytes',
-        name: 'performData',
-        type: 'bytes',
+        internalType: "bytes",
+        name: "performData",
+        type: "bytes",
       },
     ],
-    name: 'performUpkeep',
+    name: "performUpkeep",
     outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
+    stateMutability: "nonpayable",
+    type: "function",
   },
 ];
 

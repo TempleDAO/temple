@@ -13,426 +13,426 @@ import {
   ContractTransaction,
   Overrides,
   CallOverrides,
-} from 'ethers';
-import { BytesLike } from '@ethersproject/bytes';
-import { Listener, Provider } from '@ethersproject/providers';
-import { FunctionFragment, EventFragment, Result } from '@ethersproject/abi';
-import type { TypedEventFilter, TypedEvent, TypedListener } from './common';
+} from "ethers";
+import { BytesLike } from "@ethersproject/bytes";
+import { Listener, Provider } from "@ethersproject/providers";
+import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
+import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface OpeningCeremonyInterface extends ethers.utils.Interface {
   functions: {
-    'CAN_ADD_VERIFIED_USER()': FunctionFragment;
-    'DEFAULT_ADMIN_ROLE()': FunctionFragment;
-    'addGuestUser(address)': FunctionFragment;
-    'addVerifiedUser(address)': FunctionFragment;
-    'addVerifier(address)': FunctionFragment;
-    'getRoleAdmin(bytes32)': FunctionFragment;
-    'globalDoublingIndex()': FunctionFragment;
-    'grantRole(bytes32,address)': FunctionFragment;
-    'guestBonusFactor()': FunctionFragment;
-    'harvestThresholdStablec()': FunctionFragment;
-    'hasRole(bytes32,address)': FunctionFragment;
-    'inviteThresholdStablec()': FunctionFragment;
-    'lastUpdatedTimestamp()': FunctionFragment;
-    'limitStablec()': FunctionFragment;
-    'limitTemple()': FunctionFragment;
-    'lockedOGTemple()': FunctionFragment;
-    'maxInvitesPerVerifiedUser()': FunctionFragment;
-    'maxSacrificableStablec(uint256)': FunctionFragment;
-    'mintAndStake(uint256)': FunctionFragment;
-    'mintAndStakeFor(address,uint256)': FunctionFragment;
-    'mintMultiple()': FunctionFragment;
-    'owner()': FunctionFragment;
-    'pause()': FunctionFragment;
-    'paused()': FunctionFragment;
-    'removeVerifier(address)': FunctionFragment;
-    'renounceOwnership()': FunctionFragment;
-    'renounceRole(bytes32,address)': FunctionFragment;
-    'revokeRole(bytes32,address)': FunctionFragment;
-    'setGuestBonusFactor(uint256,uint256)': FunctionFragment;
-    'setHarvestThreshold(uint256)': FunctionFragment;
-    'setInviteThreshold(uint256)': FunctionFragment;
-    'setLimitStablec(uint256,uint256,uint256)': FunctionFragment;
-    'setLimitTemple(uint256,uint256)': FunctionFragment;
-    'setMaxInvitesPerVerifiedUser(uint256)': FunctionFragment;
-    'setMintMultiple(uint256)': FunctionFragment;
-    'setUnlockDelay(uint256)': FunctionFragment;
-    'setVerifiedBonusFactor(uint256,uint256)': FunctionFragment;
-    'stablecToken()': FunctionFragment;
-    'stake(uint256)': FunctionFragment;
-    'stakeFor(address,uint256)': FunctionFragment;
-    'staking()': FunctionFragment;
-    'supportsInterface(bytes4)': FunctionFragment;
-    'templeToken()': FunctionFragment;
-    'transferOwnership(address)': FunctionFragment;
-    'treasury()': FunctionFragment;
-    'treasuryManagement()': FunctionFragment;
-    'unlockDelaySeconds()': FunctionFragment;
-    'unpause()': FunctionFragment;
-    'users(address)': FunctionFragment;
-    'verifiedBonusFactor()': FunctionFragment;
+    "CAN_ADD_VERIFIED_USER()": FunctionFragment;
+    "DEFAULT_ADMIN_ROLE()": FunctionFragment;
+    "addGuestUser(address)": FunctionFragment;
+    "addVerifiedUser(address)": FunctionFragment;
+    "addVerifier(address)": FunctionFragment;
+    "getRoleAdmin(bytes32)": FunctionFragment;
+    "globalDoublingIndex()": FunctionFragment;
+    "grantRole(bytes32,address)": FunctionFragment;
+    "guestBonusFactor()": FunctionFragment;
+    "harvestThresholdStablec()": FunctionFragment;
+    "hasRole(bytes32,address)": FunctionFragment;
+    "inviteThresholdStablec()": FunctionFragment;
+    "lastUpdatedTimestamp()": FunctionFragment;
+    "limitStablec()": FunctionFragment;
+    "limitTemple()": FunctionFragment;
+    "lockedOGTemple()": FunctionFragment;
+    "maxInvitesPerVerifiedUser()": FunctionFragment;
+    "maxSacrificableStablec(uint256)": FunctionFragment;
+    "mintAndStake(uint256)": FunctionFragment;
+    "mintAndStakeFor(address,uint256)": FunctionFragment;
+    "mintMultiple()": FunctionFragment;
+    "owner()": FunctionFragment;
+    "pause()": FunctionFragment;
+    "paused()": FunctionFragment;
+    "removeVerifier(address)": FunctionFragment;
+    "renounceOwnership()": FunctionFragment;
+    "renounceRole(bytes32,address)": FunctionFragment;
+    "revokeRole(bytes32,address)": FunctionFragment;
+    "setGuestBonusFactor(uint256,uint256)": FunctionFragment;
+    "setHarvestThreshold(uint256)": FunctionFragment;
+    "setInviteThreshold(uint256)": FunctionFragment;
+    "setLimitStablec(uint256,uint256,uint256)": FunctionFragment;
+    "setLimitTemple(uint256,uint256)": FunctionFragment;
+    "setMaxInvitesPerVerifiedUser(uint256)": FunctionFragment;
+    "setMintMultiple(uint256)": FunctionFragment;
+    "setUnlockDelay(uint256)": FunctionFragment;
+    "setVerifiedBonusFactor(uint256,uint256)": FunctionFragment;
+    "stablecToken()": FunctionFragment;
+    "stake(uint256)": FunctionFragment;
+    "stakeFor(address,uint256)": FunctionFragment;
+    "staking()": FunctionFragment;
+    "supportsInterface(bytes4)": FunctionFragment;
+    "templeToken()": FunctionFragment;
+    "transferOwnership(address)": FunctionFragment;
+    "treasury()": FunctionFragment;
+    "treasuryManagement()": FunctionFragment;
+    "unlockDelaySeconds()": FunctionFragment;
+    "unpause()": FunctionFragment;
+    "users(address)": FunctionFragment;
+    "verifiedBonusFactor()": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: 'CAN_ADD_VERIFIED_USER',
+    functionFragment: "CAN_ADD_VERIFIED_USER",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'DEFAULT_ADMIN_ROLE',
+    functionFragment: "DEFAULT_ADMIN_ROLE",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'addGuestUser',
+    functionFragment: "addGuestUser",
     values: [string]
   ): string;
   encodeFunctionData(
-    functionFragment: 'addVerifiedUser',
+    functionFragment: "addVerifiedUser",
     values: [string]
   ): string;
-  encodeFunctionData(functionFragment: 'addVerifier', values: [string]): string;
+  encodeFunctionData(functionFragment: "addVerifier", values: [string]): string;
   encodeFunctionData(
-    functionFragment: 'getRoleAdmin',
+    functionFragment: "getRoleAdmin",
     values: [BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: 'globalDoublingIndex',
+    functionFragment: "globalDoublingIndex",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'grantRole',
+    functionFragment: "grantRole",
     values: [BytesLike, string]
   ): string;
   encodeFunctionData(
-    functionFragment: 'guestBonusFactor',
+    functionFragment: "guestBonusFactor",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'harvestThresholdStablec',
+    functionFragment: "harvestThresholdStablec",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'hasRole',
+    functionFragment: "hasRole",
     values: [BytesLike, string]
   ): string;
   encodeFunctionData(
-    functionFragment: 'inviteThresholdStablec',
+    functionFragment: "inviteThresholdStablec",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'lastUpdatedTimestamp',
+    functionFragment: "lastUpdatedTimestamp",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'limitStablec',
+    functionFragment: "limitStablec",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'limitTemple',
+    functionFragment: "limitTemple",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'lockedOGTemple',
+    functionFragment: "lockedOGTemple",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'maxInvitesPerVerifiedUser',
+    functionFragment: "maxInvitesPerVerifiedUser",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'maxSacrificableStablec',
+    functionFragment: "maxSacrificableStablec",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'mintAndStake',
+    functionFragment: "mintAndStake",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'mintAndStakeFor',
+    functionFragment: "mintAndStakeFor",
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'mintMultiple',
+    functionFragment: "mintMultiple",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: 'owner', values?: undefined): string;
-  encodeFunctionData(functionFragment: 'pause', values?: undefined): string;
-  encodeFunctionData(functionFragment: 'paused', values?: undefined): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(functionFragment: "pause", values?: undefined): string;
+  encodeFunctionData(functionFragment: "paused", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: 'removeVerifier',
+    functionFragment: "removeVerifier",
     values: [string]
   ): string;
   encodeFunctionData(
-    functionFragment: 'renounceOwnership',
+    functionFragment: "renounceOwnership",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'renounceRole',
+    functionFragment: "renounceRole",
     values: [BytesLike, string]
   ): string;
   encodeFunctionData(
-    functionFragment: 'revokeRole',
+    functionFragment: "revokeRole",
     values: [BytesLike, string]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setGuestBonusFactor',
+    functionFragment: "setGuestBonusFactor",
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setHarvestThreshold',
+    functionFragment: "setHarvestThreshold",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setInviteThreshold',
+    functionFragment: "setInviteThreshold",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setLimitStablec',
+    functionFragment: "setLimitStablec",
     values: [BigNumberish, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setLimitTemple',
+    functionFragment: "setLimitTemple",
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setMaxInvitesPerVerifiedUser',
+    functionFragment: "setMaxInvitesPerVerifiedUser",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setMintMultiple',
+    functionFragment: "setMintMultiple",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setUnlockDelay',
+    functionFragment: "setUnlockDelay",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setVerifiedBonusFactor',
+    functionFragment: "setVerifiedBonusFactor",
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'stablecToken',
+    functionFragment: "stablecToken",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: 'stake', values: [BigNumberish]): string;
+  encodeFunctionData(functionFragment: "stake", values: [BigNumberish]): string;
   encodeFunctionData(
-    functionFragment: 'stakeFor',
+    functionFragment: "stakeFor",
     values: [string, BigNumberish]
   ): string;
-  encodeFunctionData(functionFragment: 'staking', values?: undefined): string;
+  encodeFunctionData(functionFragment: "staking", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: 'supportsInterface',
+    functionFragment: "supportsInterface",
     values: [BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: 'templeToken',
+    functionFragment: "templeToken",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'transferOwnership',
+    functionFragment: "transferOwnership",
     values: [string]
   ): string;
-  encodeFunctionData(functionFragment: 'treasury', values?: undefined): string;
+  encodeFunctionData(functionFragment: "treasury", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: 'treasuryManagement',
+    functionFragment: "treasuryManagement",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'unlockDelaySeconds',
+    functionFragment: "unlockDelaySeconds",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: 'unpause', values?: undefined): string;
-  encodeFunctionData(functionFragment: 'users', values: [string]): string;
+  encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
+  encodeFunctionData(functionFragment: "users", values: [string]): string;
   encodeFunctionData(
-    functionFragment: 'verifiedBonusFactor',
+    functionFragment: "verifiedBonusFactor",
     values?: undefined
   ): string;
 
   decodeFunctionResult(
-    functionFragment: 'CAN_ADD_VERIFIED_USER',
+    functionFragment: "CAN_ADD_VERIFIED_USER",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'DEFAULT_ADMIN_ROLE',
+    functionFragment: "DEFAULT_ADMIN_ROLE",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'addGuestUser',
+    functionFragment: "addGuestUser",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'addVerifiedUser',
+    functionFragment: "addVerifiedUser",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'addVerifier',
+    functionFragment: "addVerifier",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'getRoleAdmin',
+    functionFragment: "getRoleAdmin",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'globalDoublingIndex',
+    functionFragment: "globalDoublingIndex",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: 'grantRole', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: 'guestBonusFactor',
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: 'harvestThresholdStablec',
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: 'hasRole', data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: 'inviteThresholdStablec',
+    functionFragment: "guestBonusFactor",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'lastUpdatedTimestamp',
+    functionFragment: "harvestThresholdStablec",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "inviteThresholdStablec",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'limitStablec',
+    functionFragment: "lastUpdatedTimestamp",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'limitTemple',
+    functionFragment: "limitStablec",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'lockedOGTemple',
+    functionFragment: "limitTemple",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'maxInvitesPerVerifiedUser',
+    functionFragment: "lockedOGTemple",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'maxSacrificableStablec',
+    functionFragment: "maxInvitesPerVerifiedUser",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'mintAndStake',
+    functionFragment: "maxSacrificableStablec",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'mintAndStakeFor',
+    functionFragment: "mintAndStake",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'mintMultiple',
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: 'owner', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'pause', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'paused', data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: 'removeVerifier',
+    functionFragment: "mintAndStakeFor",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'renounceOwnership',
+    functionFragment: "mintMultiple",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "removeVerifier",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'renounceRole',
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: 'revokeRole', data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: 'setGuestBonusFactor',
+    functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setHarvestThreshold',
+    functionFragment: "renounceRole",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setGuestBonusFactor",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setInviteThreshold',
+    functionFragment: "setHarvestThreshold",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setLimitStablec',
+    functionFragment: "setInviteThreshold",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setLimitTemple',
+    functionFragment: "setLimitStablec",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setMaxInvitesPerVerifiedUser',
+    functionFragment: "setLimitTemple",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setMintMultiple',
+    functionFragment: "setMaxInvitesPerVerifiedUser",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setUnlockDelay',
+    functionFragment: "setMintMultiple",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setVerifiedBonusFactor',
+    functionFragment: "setUnlockDelay",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'stablecToken',
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: 'stake', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'stakeFor', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'staking', data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: 'supportsInterface',
+    functionFragment: "setVerifiedBonusFactor",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'templeToken',
+    functionFragment: "stablecToken",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "stake", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "stakeFor", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "staking", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "supportsInterface",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'transferOwnership',
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: 'treasury', data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: 'treasuryManagement',
+    functionFragment: "templeToken",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'unlockDelaySeconds',
+    functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: 'unpause', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'users', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "treasury", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: 'verifiedBonusFactor',
+    functionFragment: "treasuryManagement",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "unlockDelaySeconds",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "users", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "verifiedBonusFactor",
     data: BytesLike
   ): Result;
 
   events: {
-    'MintComplete(address,uint256,uint256,uint256,uint256)': EventFragment;
-    'OwnershipTransferred(address,address)': EventFragment;
-    'Paused(address)': EventFragment;
-    'RoleAdminChanged(bytes32,bytes32,bytes32)': EventFragment;
-    'RoleGranted(bytes32,address,address)': EventFragment;
-    'RoleRevoked(bytes32,address,address)': EventFragment;
-    'StakeComplete(address,uint256,uint256,uint256)': EventFragment;
-    'Unpaused(address)': EventFragment;
-    'VerifiedUserAdded(address)': EventFragment;
+    "MintComplete(address,uint256,uint256,uint256,uint256)": EventFragment;
+    "OwnershipTransferred(address,address)": EventFragment;
+    "Paused(address)": EventFragment;
+    "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
+    "RoleGranted(bytes32,address,address)": EventFragment;
+    "RoleRevoked(bytes32,address,address)": EventFragment;
+    "StakeComplete(address,uint256,uint256,uint256)": EventFragment;
+    "Unpaused(address)": EventFragment;
+    "VerifiedUserAdded(address)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: 'MintComplete'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'OwnershipTransferred'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'Paused'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'RoleAdminChanged'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'RoleGranted'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'RoleRevoked'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'StakeComplete'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'Unpaused'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'VerifiedUserAdded'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "MintComplete"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Paused"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleAdminChanged"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleRevoked"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "StakeComplete"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Unpaused"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "VerifiedUserAdded"): EventFragment;
 }
 
 export type MintCompleteEvent = TypedEvent<
@@ -571,7 +571,9 @@ export class OpeningCeremony extends BaseContract {
 
     lastUpdatedTimestamp(overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    limitStablec(overrides?: CallOverrides): Promise<
+    limitStablec(
+      overrides?: CallOverrides
+    ): Promise<
       [BigNumber, BigNumber, BigNumber] & {
         guestMax: BigNumber;
         verifiedMax: BigNumber;
@@ -579,7 +581,9 @@ export class OpeningCeremony extends BaseContract {
       }
     >;
 
-    limitTemple(overrides?: CallOverrides): Promise<
+    limitTemple(
+      overrides?: CallOverrides
+    ): Promise<
       [BigNumber, BigNumber, BigNumber] & {
         guestMax: BigNumber;
         verifiedMax: BigNumber;
@@ -793,7 +797,9 @@ export class OpeningCeremony extends BaseContract {
 
   lastUpdatedTimestamp(overrides?: CallOverrides): Promise<BigNumber>;
 
-  limitStablec(overrides?: CallOverrides): Promise<
+  limitStablec(
+    overrides?: CallOverrides
+  ): Promise<
     [BigNumber, BigNumber, BigNumber] & {
       guestMax: BigNumber;
       verifiedMax: BigNumber;
@@ -801,7 +807,9 @@ export class OpeningCeremony extends BaseContract {
     }
   >;
 
-  limitTemple(overrides?: CallOverrides): Promise<
+  limitTemple(
+    overrides?: CallOverrides
+  ): Promise<
     [BigNumber, BigNumber, BigNumber] & {
       guestMax: BigNumber;
       verifiedMax: BigNumber;
@@ -1009,7 +1017,9 @@ export class OpeningCeremony extends BaseContract {
 
     lastUpdatedTimestamp(overrides?: CallOverrides): Promise<BigNumber>;
 
-    limitStablec(overrides?: CallOverrides): Promise<
+    limitStablec(
+      overrides?: CallOverrides
+    ): Promise<
       [BigNumber, BigNumber, BigNumber] & {
         guestMax: BigNumber;
         verifiedMax: BigNumber;
@@ -1017,7 +1027,9 @@ export class OpeningCeremony extends BaseContract {
       }
     >;
 
-    limitTemple(overrides?: CallOverrides): Promise<
+    limitTemple(
+      overrides?: CallOverrides
+    ): Promise<
       [BigNumber, BigNumber, BigNumber] & {
         guestMax: BigNumber;
         verifiedMax: BigNumber;
@@ -1176,7 +1188,7 @@ export class OpeningCeremony extends BaseContract {
   };
 
   filters: {
-    'MintComplete(address,uint256,uint256,uint256,uint256)'(
+    "MintComplete(address,uint256,uint256,uint256,uint256)"(
       minter?: null,
       acceptedStablec?: null,
       mintedTemple?: null,
@@ -1210,7 +1222,7 @@ export class OpeningCeremony extends BaseContract {
       }
     >;
 
-    'OwnershipTransferred(address,address)'(
+    "OwnershipTransferred(address,address)"(
       previousOwner?: string | null,
       newOwner?: string | null
     ): TypedEventFilter<
@@ -1226,13 +1238,13 @@ export class OpeningCeremony extends BaseContract {
       { previousOwner: string; newOwner: string }
     >;
 
-    'Paused(address)'(
+    "Paused(address)"(
       account?: null
     ): TypedEventFilter<[string], { account: string }>;
 
     Paused(account?: null): TypedEventFilter<[string], { account: string }>;
 
-    'RoleAdminChanged(bytes32,bytes32,bytes32)'(
+    "RoleAdminChanged(bytes32,bytes32,bytes32)"(
       role?: BytesLike | null,
       previousAdminRole?: BytesLike | null,
       newAdminRole?: BytesLike | null
@@ -1250,7 +1262,7 @@ export class OpeningCeremony extends BaseContract {
       { role: string; previousAdminRole: string; newAdminRole: string }
     >;
 
-    'RoleGranted(bytes32,address,address)'(
+    "RoleGranted(bytes32,address,address)"(
       role?: BytesLike | null,
       account?: string | null,
       sender?: string | null
@@ -1268,7 +1280,7 @@ export class OpeningCeremony extends BaseContract {
       { role: string; account: string; sender: string }
     >;
 
-    'RoleRevoked(bytes32,address,address)'(
+    "RoleRevoked(bytes32,address,address)"(
       role?: BytesLike | null,
       account?: string | null,
       sender?: string | null
@@ -1286,7 +1298,7 @@ export class OpeningCeremony extends BaseContract {
       { role: string; account: string; sender: string }
     >;
 
-    'StakeComplete(address,uint256,uint256,uint256)'(
+    "StakeComplete(address,uint256,uint256,uint256)"(
       staker?: null,
       acceptedTemple?: null,
       bonusTemple?: null,
@@ -1316,13 +1328,13 @@ export class OpeningCeremony extends BaseContract {
       }
     >;
 
-    'Unpaused(address)'(
+    "Unpaused(address)"(
       account?: null
     ): TypedEventFilter<[string], { account: string }>;
 
     Unpaused(account?: null): TypedEventFilter<[string], { account: string }>;
 
-    'VerifiedUserAdded(address)'(
+    "VerifiedUserAdded(address)"(
       user?: null
     ): TypedEventFilter<[string], { user: string }>;
 
