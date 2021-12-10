@@ -185,6 +185,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.SandalwoodToken__factory>;
     getContractFactory(
+      name: "TempleCashback",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TempleCashback__factory>;
+    getContractFactory(
       name: "TempleERC20Token",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleERC20Token__factory>;
@@ -432,6 +436,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.SandalwoodToken>;
+    getContractAt(
+      name: "TempleCashback",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TempleCashback>;
     getContractAt(
       name: "TempleERC20Token",
       address: string,
