@@ -16,7 +16,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
 
     address public factory;
-    address public owner;
+    // Change from standard uniswap. Owner can only change the 'manager' (ie. router)
+    address public owner;  
     address public token0;
     address public token1;
 
@@ -28,6 +29,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     uint public price1CumulativeLast;
     uint public kLast; // reserve0 * reserve1, as of immediately after the most recent liquidity event
 
+    // The router which can interact with this pair. required to make AMM private (change
+    // from default uniswap v2)
     address public manager;
 
     uint private unlocked = 1;
@@ -61,6 +64,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     );
     event Sync(uint112 reserve0, uint112 reserve1);
 
+    // change from default uniswap v2 - set owner when pair is created
     constructor(address _owner) public {
         factory = msg.sender;
         owner = _owner;
@@ -73,6 +77,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
         token1 = _token1;
     }
 
+    // Owner can change the manager (ie router) which can call the various AMM methods
     function setManager(address _manager) external {
         require(msg.sender == owner, 'UniswapV2: FORBIDDEN');
         manager = _manager;
@@ -167,7 +172,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     // this low-level function should be called from a contract which performs important safety checks
     function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external lock {
         require(amount0Out > 0 || amount1Out > 0, 'UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT');
-        require(msg.sender == manager, 'UniswapV2: FORBIDDEN');
+        require(msg.sender == manager, 'UniswapV2: FORBIDDEN'); // access control on swap
         (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
         require(amount0Out < _reserve0 && amount1Out < _reserve1, 'UniswapV2: INSUFFICIENT_LIQUIDITY');
 
