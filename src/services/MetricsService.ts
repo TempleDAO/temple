@@ -4,14 +4,46 @@ import {
   ERC20__factory,
   TempleTreasury,
   TempleTreasury__factory,
+  TempleStaking,
+  TempleStaking__factory,
+  LockedOGTemple,
+  LockedOGTemple__factory,
 } from 'types/typechain';
 import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
+import { fetchSubgraph } from 'utils/subgraph';
+import axios from 'axios';
 
 export interface TreasuryMetrics {
   treasuryValue: number;
   templeApy: number;
   templeValue: number;
+}
+
+export interface DashboardMetrics {
+  treasuryValue: number;
+  treasuryTempleValue: number;
+  templeTotalSupply: number;
+  templeEpy: number;
+  templeApy: number;
+  templeValue: number;
+  ogTemplePrice: number;
+  ogTempleRatio: number;
+  iv: number;
+  circMCap: number;
+  circTempleSupply: number;
+  socialMetrics: unknown;
+}
+
+export interface AccountMetrics {
+  templeBalance: number;
+  templeValue: number;
+  ogTemplePrice: number;
+  ogTempleRatio: number;
+  lockedOGTempleBalance: number;
+  OGTempleBalance: number;
+  totalSacrificed: number;
+  templeApy: number;
 }
 
 const ENV_VARS = import.meta.env;
@@ -27,7 +59,11 @@ const TEMPLE_EPY = 1 / 100;
 export class MetricsService {
   private readonly signer: Wallet;
   private stableCoinContract: ERC20;
+  private templeCoinContract: ERC20;
+  private ogTempleCoinContract: ERC20;
   private treasuryContract: TempleTreasury;
+  private templeStakingContract: TempleStaking;
+  private lockedOGTempleContract: LockedOGTemple;
   private readonly treasuryAddress: string;
   private provider;
 
@@ -37,7 +73,11 @@ export class MetricsService {
       ENV_VARS.VITE_ALCHEMY_API_KEY === undefined ||
       ENV_VARS.VITE_PUBLIC_TREASURY_ADDRESS === undefined ||
       ENV_VARS.VITE_SERVER_PRIVATE_KEY === undefined ||
-      ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS === undefined
+      ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS === undefined ||
+      ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS === undefined ||
+      ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS === undefined ||
+      ENV_VARS.VITE_PUBLIC_OG_TEMPLE_ADDRESS === undefined ||
+      ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS === undefined
     ) {
       console.info(`
       VITE_ALCHEMY_PROVIDER_NETWORK=${ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK}
@@ -45,15 +85,24 @@ export class MetricsService {
       VITE_PUBLIC_TREASURY_ADDRESS=${ENV_VARS.VITE_PUBLIC_TREASURY_ADDRESS}
       VITE_SERVER_PRIVATE_KEY=${ENV_VARS.VITE_SERVER_PRIVATE_KEY}
       VITE_PUBLIC_STABLE_COIN_ADDRESS=${ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS}
+      VITE_PUBLIC_TEMPLE_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS}
+      VITE_PUBLIC_TEMPLE_STAKING_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS}
+      VITE_PUBLIC_OG_TEMPLE_ADDRESS=${ENV_VARS.VITE_PUBLIC_OG_TEMPLE_ADDRESS}
+      VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS=${ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS}
       `);
       throw new Error(`Missing env vars in Metrics Service`);
     }
 
+    const TEMPLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS;
     const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
+    const OG_TEMPLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_OG_TEMPLE_ADDRESS;
     const ALCHEMY_PROVIDER_NETWORK = ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK;
     const ALCHEMY_API_KEY = ENV_VARS.VITE_ALCHEMY_API_KEY;
     const TREASURY_ADDRESS = ENV_VARS.VITE_PUBLIC_TREASURY_ADDRESS;
     const SERVER_PRIVATE_KEY = ENV_VARS.VITE_SERVER_PRIVATE_KEY;
+    const TEMPLE_STAKING_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS;
+    const LOCKED_OG_TEMPLE_ADDRESS =
+      ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS;
     const ENV = ENV_VARS.VITE_ENV;
 
     this.provider =
@@ -70,9 +119,26 @@ export class MetricsService {
     this.stableCoinContract = new ERC20__factory()
       .attach(STABLE_COIN_ADDRESS)
       .connect(this.signer);
+
+    this.templeCoinContract = new ERC20__factory()
+      .attach(TEMPLE_COIN_ADDRESS)
+      .connect(this.signer);
+
+    this.ogTempleCoinContract = new ERC20__factory()
+      .attach(OG_TEMPLE_COIN_ADDRESS)
+      .connect(this.signer);
+
     this.treasuryAddress = TREASURY_ADDRESS;
     this.treasuryContract = new TempleTreasury__factory()
       .attach(TREASURY_ADDRESS)
+      .connect(this.signer);
+
+    this.templeStakingContract = new TempleStaking__factory()
+      .attach(TEMPLE_STAKING_ADDRESS)
+      .connect(this.signer);
+
+    this.lockedOGTempleContract = new LockedOGTemple__factory()
+      .attach(LOCKED_OG_TEMPLE_ADDRESS)
       .connect(this.signer);
   }
 
@@ -91,6 +157,104 @@ export class MetricsService {
     };
   }
 
+  async getDashboardMetrics(): Promise<DashboardMetrics> {
+    const treasuryValue = fromAtto(
+      await this.stableCoinContract.balanceOf(this.treasuryAddress)
+    );
+    const treasuryTempleValue = fromAtto(
+      await this.templeCoinContract.balanceOf(this.treasuryAddress)
+    );
+    const templeTotalSupply = fromAtto(
+      await this.templeCoinContract.totalSupply()
+    );
+    const ogTempleTotalSupply = fromAtto(
+      await this.ogTempleCoinContract.totalSupply()
+    );
+    const epy = (await this.templeStakingContract.getEpy(10000000)) / 10000000;
+
+    const templeValue = await this.getTempleValueSubgraph();
+
+    const ogTempleRatio =
+      (await this.templeStakingContract.balance(1000)) / 1000;
+
+    const socialMetrics = await this.getSocialMetrics();
+
+    return {
+      socialMetrics,
+      treasuryValue,
+      treasuryTempleValue,
+      templeTotalSupply,
+      templeEpy: epy * 100,
+      templeApy: this.getTempleApy(epy),
+      templeValue,
+      circTempleSupply: ogTempleTotalSupply * ogTempleRatio,
+      circMCap: ogTempleTotalSupply * ogTempleRatio * templeValue,
+      ogTempleTotalSupply,
+      ogTemplePrice: templeValue * ogTempleRatio,
+      ogTempleRatio,
+      iv: templeValue / 6,
+    };
+  }
+
+  async getAccountMetrics(walletAddress: string): Promise<AccountMetrics> {
+    const templeValue = await this.getTempleValue();
+    const currentTime = Date.now();
+
+    const templeBalance = fromAtto(
+      await this.templeCoinContract.balanceOf(walletAddress)
+    );
+
+    const ogTempleRatio =
+      (await this.templeStakingContract.balance(1000)) / 1000;
+
+    const { stakes, unstakes } = await this.getStakedOGTempleTransactions(
+      walletAddress
+    );
+
+    const totalSacrificed = stakes.reduce(
+      (prev, current) => prev + parseFloat(current?.stableAmount),
+      0
+    );
+
+    const lockedOGTempleBalance = stakes.reduce(
+      (prev, current) =>
+        prev +
+        (current.lockedUntil * 1000 > currentTime
+          ? parseFloat(current?.ogAmount)
+          : 0),
+      0
+    );
+
+    const OGTempleBalanceStaked = stakes.reduce(
+      (prev, current) =>
+        prev +
+        (current.lockedUntil * 1000 < currentTime
+          ? parseFloat(current?.ogAmount)
+          : 0),
+      0
+    );
+
+    const OGTempleBalanceUnstaked = unstakes.reduce(
+      (prev, current) => prev + parseFloat(current?.ogAmount),
+      0
+    );
+
+    const OGTempleBalance = OGTempleBalanceStaked - OGTempleBalanceUnstaked;
+
+    const epy = (await this.templeStakingContract.getEpy(10000000)) / 10000000;
+
+    return {
+      templeBalance,
+      templeValue,
+      ogTemplePrice: templeValue * ogTempleRatio,
+      ogTempleRatio,
+      lockedOGTempleBalance,
+      OGTempleBalance,
+      totalSacrificed,
+      templeApy: this.getTempleApy(epy),
+    };
+  }
+
   /**
    * Helper to get the Temple Value
    */
@@ -104,7 +268,73 @@ export class MetricsService {
   /**
    * Helper to calculate the APY
    */
-  private getTempleApy = (): number => {
-    return Math.trunc((Math.pow(TEMPLE_EPY + 1, 365.25) - 1) * 100);
+  private getTempleApy = (epy = TEMPLE_EPY): number => {
+    return Math.trunc((Math.pow(epy + 1, 365.25) - 1) * 100);
+  };
+
+  /**
+   * Helper to get the stake transactions
+   */
+  private getStakedOGTempleTransactions = async (walletAddress: string) => {
+    const response = await fetchSubgraph(
+      `{
+        stakes(where: {templar: "${walletAddress.toLowerCase()}"}) {
+          templar {
+            id
+          }
+          amount
+          ogAmount
+          stableAmount
+          mintedTemple
+          bonusTemple
+          lockedUntil
+          transaction {
+            id
+          }
+          timestamp
+        }
+        unstakes(where: {templar: "${walletAddress.toLowerCase()}"}) {
+          templar {
+            id
+          }
+          ogAmount
+          transaction {
+            id
+          }
+          timestamp
+        }
+      }`
+    );
+    return response?.data ?? { stakes: [], unstakes: [] };
+  };
+
+  private getTempleValueSubgraph = async (): Promise<number> => {
+    const response = await fetchSubgraph(
+      `{
+        protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
+          templePrice
+        }
+      }`
+    );
+    return response?.data?.protocolMetrics?.length > 0
+      ? parseFloat(response?.data?.protocolMetrics[0]?.templePrice)
+      : 0;
+  };
+
+  private getSocialMetrics = async () => {
+    const twitter_response = await axios({
+      url: `https://temple-analytics.vercel.app/api/twitter/summary`,
+    });
+    const twitter_followers_count = twitter_response?.data?.followers_count;
+
+    const response = await axios({
+      url: `https://temple-analytics.vercel.app/api/discord/members/summary`,
+    });
+    const discord_metrics = response?.data;
+
+    return {
+      twitter_followers_count,
+      discord: discord_metrics,
+    };
   };
 }

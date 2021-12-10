@@ -32,23 +32,31 @@ const theme: DefaultTheme = {
   palette: {
     brand: brandColor,
     brand75: transparentize(0.25, brandColor),
-    brand50: transparentize(0.50, brandColor),
+    brand50: transparentize(0.5, brandColor),
     brand25: transparentize(0.75, brandColor),
     dark: darkColor,
     dark75: transparentize(0.25, darkColor),
     grayOpaque: '#1b1919',
     light: '#FFFFFF',
-    light50: darken(0.50, '#FFFFFF'),
+    light75: darken(0.25, '#FFFFFF'),
+    light50: darken(0.5, '#FFFFFF'),
+    enclave: {
+      structure: '#01806C',
+      order: '#bbaa6c',
+      chaos: '#ad2d47',
+      mystery: '#8e76b0',
+      logic: '#226697',
+    },
   },
   metrics: {
-    headerHeight: '5rem'  /* 80/16 */,
+    headerHeight: '5rem' /* 80/16 */,
     desktop: {
-      maxWidth: '72rem'  /* 1152/16 */
+      maxWidth: '72rem' /* 1152/16 */,
     },
     devices: {
       tablet: '64rem',
       laptop: '90rem  /* 1440/16 */',
-    }
+    },
   },
   typography: {
     fonts: {
@@ -79,25 +87,29 @@ const theme: DefaultTheme = {
       ${fontBody};
       font-size: 0.875rem /* 14/16 */;
       font-weight: 700;
-    `
+    `,
   },
   transitions: {
     color: makeTransition('color'),
-    backgroundColor: makeTransition('background-color')
+    backgroundColor: makeTransition('background-color'),
   },
   animations: {
-    spin: css`${spinKeyframe} 60000ms linear infinite`,
-    loading: css`${spinKeyframe} 1500ms cubic-bezier(0.84, -0.49, 0.18, 1.36) infinite`,
+    spin: css`
+      ${spinKeyframe} 60000ms linear infinite
+    `,
+    loading: css`
+      ${spinKeyframe} 1500ms cubic-bezier(0.84, -0.49, 0.18, 1.36) infinite
+    `,
   },
   shadows: {
-    base: `0px 4px 24px ${transparentize(0.75, brandColor)}`
+    base: `0px 4px 24px ${transparentize(0.75, brandColor)}`,
   },
   zIndexes: {
     below: -1,
     base: 0,
     up: 1,
     top: 10,
-  }
+  },
 };
 
 export { theme };

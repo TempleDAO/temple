@@ -53,7 +53,7 @@ export const Flex = ({
   </FlexStyled>
 );
 
-const FlexStyled = styled.div<PropsWithChildren<FlexProps>>`
+export const FlexStyled = styled.div<PropsWithChildren<FlexProps>>`
   position: relative;
   display: flex;
   width: 100%;

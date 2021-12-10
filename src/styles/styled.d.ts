@@ -14,7 +14,15 @@ declare module 'styled-components' {
       dark75: string;
       grayOpaque: string;
       light: string;
+      light75: string;
       light50: string;
+      enclave: {
+        structure: string;
+        order: string;
+        chaos: string;
+        mystery: string;
+        logic: string;
+      };
     };
     metrics: {
       headerHeight: string;

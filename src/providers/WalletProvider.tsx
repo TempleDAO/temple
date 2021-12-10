@@ -535,6 +535,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const mintMultiple = 6.0;
       const rate = fromAtto(temple) / fromAtto(stablec) / mintMultiple;
       // Only change the value if contract has valid data
+
       if (rate > 0) {
         setExchangeRateState(rate);
       }
