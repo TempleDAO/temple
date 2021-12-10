@@ -6,7 +6,7 @@ import React, {
 } from 'react';
 import styled from 'styled-components';
 import { curveCatmullRom } from 'd3-shape';
-import { XYPlot, XAxis, YAxis, LineSeries, Crosshair } from 'react-vis';
+import { FlexibleXYPlot, XAxis, YAxis, LineSeries, Crosshair } from 'react-vis';
 import { formatNumber } from 'utils/formatter';
 import Image from 'components/Image/Image';
 import useRefreshablePriceMetrics from 'hooks/use-refreshable-price-metrics';
@@ -62,10 +62,11 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   //not using rem as not to have the value hardcoded
-  //see <XYPlot> component usage below
+  //see <FlexibleXYPlot> component usage below
   min-width: ${CHART_SIZE.width}px;
   min-height: ${CHART_SIZE.height}px;
-
+  width: 100%;
+  height: 100%;
   * {
     font-family: megant;
   }
@@ -185,9 +186,7 @@ export const PriceChart = ({
           </TogglerContainer>
         </TogglerRow>
         {dataPoints.priceDataPoints.length >= 2 ? (
-          <XYPlot
-            width={CHART_SIZE.width}
-            height={CHART_SIZE.height}
+          <FlexibleXYPlot
             xType={'time-utc'}
             xDomain={xDomain}
             yDomain={yDomain}
@@ -244,7 +243,7 @@ export const PriceChart = ({
                 { title: 'IV', value: `$${+Number(d[1].y).toFixed(4)}` },
               ]}
             />
-          </XYPlot>
+          </FlexibleXYPlot>
         ) : (
           <NotEnoughData>
             <p className={'color-brand'}>
