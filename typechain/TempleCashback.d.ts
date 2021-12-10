@@ -29,6 +29,7 @@ interface TempleCashbackInterface extends ethers.utils.Interface {
     "renounceOwnership()": FunctionFragment;
     "setVerifier(address)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
+    "usedNonces(address,uint256)": FunctionFragment;
     "verifier()": FunctionFragment;
     "withdraw(address,uint256)": FunctionFragment;
   };
@@ -54,6 +55,10 @@ interface TempleCashbackInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "usedNonces",
+    values: [string, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "verifier", values?: undefined): string;
   encodeFunctionData(
@@ -83,6 +88,7 @@ interface TempleCashbackInterface extends ethers.utils.Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "usedNonces", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "verifier", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
@@ -186,6 +192,12 @@ export class TempleCashback extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    usedNonces(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
+
     verifier(overrides?: CallOverrides): Promise<[string]>;
 
     withdraw(
@@ -230,6 +242,12 @@ export class TempleCashback extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  usedNonces(
+    arg0: string,
+    arg1: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
+
   verifier(overrides?: CallOverrides): Promise<string>;
 
   withdraw(
@@ -268,6 +286,12 @@ export class TempleCashback extends BaseContract {
       newOwner: string,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    usedNonces(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
 
     verifier(overrides?: CallOverrides): Promise<string>;
 
@@ -350,6 +374,12 @@ export class TempleCashback extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    usedNonces(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     verifier(overrides?: CallOverrides): Promise<BigNumber>;
 
     withdraw(
@@ -393,6 +423,12 @@ export class TempleCashback extends BaseContract {
     transferOwnership(
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    usedNonces(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     verifier(overrides?: CallOverrides): Promise<PopulatedTransaction>;
