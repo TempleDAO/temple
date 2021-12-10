@@ -1,13 +1,15 @@
 pragma solidity ^0.5.16;
 
-import './interfaces/ITempleFactory.sol';
-import './UniswapV2Pair.sol';
+import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol';
+import '@uniswap/v2-core/contracts/UniswapV2Pair.sol';
 
 contract TempleFactory is IUniswapV2Factory {
     address public feeTo;
-    address public feeToSetter;
-    address public owner;
 
+    // change from default factory. Only owner can create new pairs and set fees
+    address public owner; 
+
+    // change from default factory. Pairs must be with temple
     address public templeToken;
 
     mapping(address => mapping(address => address)) public getPair;
@@ -15,8 +17,8 @@ contract TempleFactory is IUniswapV2Factory {
 
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 
-    constructor(address _feeToSetter, address _owner, address _templeToken) public {
-        feeToSetter = _feeToSetter;
+    // Update from default factory. Add owner and templeToken to constructor, remove feeToSetter
+    constructor(address _owner, address _templeToken) public {
         owner = _owner;
         templeToken = _templeToken;
     }
@@ -25,19 +27,23 @@ contract TempleFactory is IUniswapV2Factory {
         return allPairs.length;
     }
 
+    // change from default. Add owner to create call for Pair contract
     function getContractCreationByteCode(address _owner) public pure returns (bytes memory) {
         bytes memory bytecode = type(UniswapV2Pair).creationCode;
         return abi.encodePacked(bytecode, abi.encode(_owner));
     }
-
     function createPair(address tokenA, address tokenB) external returns (address pair) {
-        require(tokenA != tokenB, 'TempleFactory: IDENTICAL_ADDRESSES');
-        require(tokenA == templeToken || tokenB == templeToken, 'TempleFactory: Invalid Pair');
+        // New checks
         require(msg.sender == owner, 'TempleFactory: FORBIDDEN');
-        (address token0, address token1) = tokenA == templeToken ? (tokenA, tokenB) : (tokenB, tokenA);
-        require(token0 != address(0), 'TempleFactory: ZERO_ADDRESS');
-        require(getPair[token0][token1] == address(0), 'TempleFactory: PAIR_EXISTS'); // single check is sufficient
+        require(tokenA == templeToken || tokenB == templeToken, 'TempleFactory: Invalid Pair');
 
+        // Standard checks from forked contract
+        require(tokenA != tokenB, 'TempleAMMFactory: IDENTICAL_ADDRESSES');
+        (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        require(token0 != address(0), 'TempleAMMFactory: ZERO_ADDRESS');
+        require(getPair[token0][token1] == address(0), 'TempleAMMFactory: PAIR_EXISTS'); // single check is sufficient
+        
+        // Update bytecode for contract creation to include owner
         bytes memory bytecode = getContractCreationByteCode(owner);
 
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
@@ -52,13 +58,8 @@ contract TempleFactory is IUniswapV2Factory {
     }
 
     function setFeeTo(address _feeTo) external {
-        require(msg.sender == feeToSetter, 'TempleFactory: FORBIDDEN');
+        require(msg.sender == owner, 'TempleFactory: FORBIDDEN');
         feeTo = _feeTo;
-    }
-
-    function setFeeToSetter(address _feeToSetter) external {
-        require(msg.sender == feeToSetter, 'TempleFactory: FORBIDDEN');
-        feeToSetter = _feeToSetter;
     }
 
     function setOwner(address _owner) external {

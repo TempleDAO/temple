@@ -77,6 +77,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.UniswapV2ERC20__factory>;
     getContractFactory(
+      name: "UniswapV2Pair",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.UniswapV2Pair__factory>;
+    getContractFactory(
       name: "IUniswapV3SwapCallback",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IUniswapV3SwapCallback__factory>;
@@ -100,6 +104,10 @@ declare module "hardhat/types/runtime" {
       name: "IUniswapV2Pair",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IUniswapV2Pair__factory>;
+    getContractFactory(
+      name: "TempleAMMFactory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TempleAMMFactory__factory>;
     getContractFactory(
       name: "TempleFactory",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -282,6 +290,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.UniswapV2ERC20>;
     getContractAt(
+      name: "UniswapV2Pair",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.UniswapV2Pair>;
+    getContractAt(
       name: "IUniswapV3SwapCallback",
       address: string,
       signer?: ethers.Signer
@@ -311,6 +324,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IUniswapV2Pair>;
+    getContractAt(
+      name: "TempleAMMFactory",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TempleAMMFactory>;
     getContractAt(
       name: "TempleFactory",
       address: string,

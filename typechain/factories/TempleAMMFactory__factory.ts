@@ -4,7 +4,10 @@
 
 import { Contract, Signer, utils } from "ethers";
 import { Provider } from "@ethersproject/providers";
-import type { TempleFactory, TempleFactoryInterface } from "../TempleFactory";
+import type {
+  TempleAMMFactory,
+  TempleAMMFactoryInterface,
+} from "../TempleAMMFactory";
 
 const _abi = [
   {
@@ -271,15 +274,15 @@ const _abi = [
   },
 ];
 
-export class TempleFactory__factory {
+export class TempleAMMFactory__factory {
   static readonly abi = _abi;
-  static createInterface(): TempleFactoryInterface {
-    return new utils.Interface(_abi) as TempleFactoryInterface;
+  static createInterface(): TempleAMMFactoryInterface {
+    return new utils.Interface(_abi) as TempleAMMFactoryInterface;
   }
   static connect(
     address: string,
     signerOrProvider: Signer | Provider
-  ): TempleFactory {
-    return new Contract(address, _abi, signerOrProvider) as TempleFactory;
+  ): TempleAMMFactory {
+    return new Contract(address, _abi, signerOrProvider) as TempleAMMFactory;
   }
 }
