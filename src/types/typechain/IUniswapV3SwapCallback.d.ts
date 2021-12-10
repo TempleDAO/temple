@@ -13,24 +13,24 @@ import {
   ContractTransaction,
   Overrides,
   CallOverrides,
-} from 'ethers';
-import { BytesLike } from '@ethersproject/bytes';
-import { Listener, Provider } from '@ethersproject/providers';
-import { FunctionFragment, EventFragment, Result } from '@ethersproject/abi';
-import type { TypedEventFilter, TypedEvent, TypedListener } from './common';
+} from "ethers";
+import { BytesLike } from "@ethersproject/bytes";
+import { Listener, Provider } from "@ethersproject/providers";
+import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
+import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface IUniswapV3SwapCallbackInterface extends ethers.utils.Interface {
   functions: {
-    'uniswapV3SwapCallback(int256,int256,bytes)': FunctionFragment;
+    "uniswapV3SwapCallback(int256,int256,bytes)": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: 'uniswapV3SwapCallback',
+    functionFragment: "uniswapV3SwapCallback",
     values: [BigNumberish, BigNumberish, BytesLike]
   ): string;
 
   decodeFunctionResult(
-    functionFragment: 'uniswapV3SwapCallback',
+    functionFragment: "uniswapV3SwapCallback",
     data: BytesLike
   ): Result;
 

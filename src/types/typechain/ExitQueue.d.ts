@@ -30,11 +30,13 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     "maxPerAddress()": FunctionFragment;
     "maxPerEpoch()": FunctionFragment;
     "nextUnallocatedEpoch()": FunctionFragment;
+    "owedTemple(address)": FunctionFragment;
     "owner()": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "setEpochSize(uint256)": FunctionFragment;
     "setMaxPerAddress(uint256)": FunctionFragment;
     "setMaxPerEpoch(uint256)": FunctionFragment;
+    "setOwedTemple(address[],uint256[])": FunctionFragment;
     "setStartingBlock(uint256)": FunctionFragment;
     "totalPerEpoch(uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
@@ -72,6 +74,7 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     functionFragment: "nextUnallocatedEpoch",
     values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "owedTemple", values: [string]): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
@@ -88,6 +91,10 @@ interface ExitQueueInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "setMaxPerEpoch",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setOwedTemple",
+    values: [string[], BigNumberish[]]
   ): string;
   encodeFunctionData(
     functionFragment: "setStartingBlock",
@@ -131,6 +138,7 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     functionFragment: "nextUnallocatedEpoch",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "owedTemple", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
@@ -146,6 +154,10 @@ interface ExitQueueInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "setMaxPerEpoch",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setOwedTemple",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -256,6 +268,8 @@ export class ExitQueue extends BaseContract {
 
     nextUnallocatedEpoch(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    owedTemple(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
+
     owner(overrides?: CallOverrides): Promise<[string]>;
 
     renounceOwnership(
@@ -274,6 +288,12 @@ export class ExitQueue extends BaseContract {
 
     setMaxPerEpoch(
       _maxPerEpoch: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setOwedTemple(
+      _users: string[],
+      _amounts: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -335,6 +355,8 @@ export class ExitQueue extends BaseContract {
 
   nextUnallocatedEpoch(overrides?: CallOverrides): Promise<BigNumber>;
 
+  owedTemple(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
   owner(overrides?: CallOverrides): Promise<string>;
 
   renounceOwnership(
@@ -353,6 +375,12 @@ export class ExitQueue extends BaseContract {
 
   setMaxPerEpoch(
     _maxPerEpoch: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setOwedTemple(
+    _users: string[],
+    _amounts: BigNumberish[],
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -414,6 +442,8 @@ export class ExitQueue extends BaseContract {
 
     nextUnallocatedEpoch(overrides?: CallOverrides): Promise<BigNumber>;
 
+    owedTemple(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
     owner(overrides?: CallOverrides): Promise<string>;
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
@@ -430,6 +460,12 @@ export class ExitQueue extends BaseContract {
 
     setMaxPerEpoch(
       _maxPerEpoch: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setOwedTemple(
+      _users: string[],
+      _amounts: BigNumberish[],
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -539,6 +575,8 @@ export class ExitQueue extends BaseContract {
 
     nextUnallocatedEpoch(overrides?: CallOverrides): Promise<BigNumber>;
 
+    owedTemple(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     renounceOwnership(
@@ -557,6 +595,12 @@ export class ExitQueue extends BaseContract {
 
     setMaxPerEpoch(
       _maxPerEpoch: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setOwedTemple(
+      _users: string[],
+      _amounts: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -612,6 +656,11 @@ export class ExitQueue extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    owedTemple(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     renounceOwnership(
@@ -630,6 +679,12 @@ export class ExitQueue extends BaseContract {
 
     setMaxPerEpoch(
       _maxPerEpoch: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setOwedTemple(
+      _users: string[],
+      _amounts: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

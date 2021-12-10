@@ -12,6 +12,7 @@ import {
   BaseContract,
   ContractTransaction,
   Overrides,
+  PayableOverrides,
   CallOverrides,
 } from "ethers";
 import { BytesLike } from "@ethersproject/bytes";
@@ -19,34 +20,31 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface VerifyQuestInterface extends ethers.utils.Interface {
+interface TempleCashbackInterface extends ethers.utils.Interface {
   functions: {
-    "DOMAIN_SEPARATOR()": FunctionFragment;
     "VERIFY_TYPEHASH()": FunctionFragment;
-    "digestFor(address)": FunctionFragment;
-    "nonces(address)": FunctionFragment;
-    "openingCeremony()": FunctionFragment;
+    "claim(bytes32,bytes,address,uint256,uint256)": FunctionFragment;
+    "generateHash(address,address,uint256,uint256)": FunctionFragment;
     "owner()": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "setVerifier(address)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
+    "usedNonces(address,uint256)": FunctionFragment;
     "verifier()": FunctionFragment;
-    "verify(uint8,bytes32,bytes32)": FunctionFragment;
+    "withdraw(address,uint256)": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "DOMAIN_SEPARATOR",
-    values?: undefined
-  ): string;
   encodeFunctionData(
     functionFragment: "VERIFY_TYPEHASH",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: "digestFor", values: [string]): string;
-  encodeFunctionData(functionFragment: "nonces", values: [string]): string;
   encodeFunctionData(
-    functionFragment: "openingCeremony",
-    values?: undefined
+    functionFragment: "claim",
+    values: [BytesLike, BytesLike, string, BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "generateHash",
+    values: [string, string, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
@@ -58,24 +56,23 @@ interface VerifyQuestInterface extends ethers.utils.Interface {
     functionFragment: "transferOwnership",
     values: [string]
   ): string;
+  encodeFunctionData(
+    functionFragment: "usedNonces",
+    values: [string, BigNumberish]
+  ): string;
   encodeFunctionData(functionFragment: "verifier", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "verify",
-    values: [BigNumberish, BytesLike, BytesLike]
+    functionFragment: "withdraw",
+    values: [string, BigNumberish]
   ): string;
 
-  decodeFunctionResult(
-    functionFragment: "DOMAIN_SEPARATOR",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "VERIFY_TYPEHASH",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "digestFor", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "nonces", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "claim", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "openingCeremony",
+    functionFragment: "generateHash",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
@@ -91,21 +88,32 @@ interface VerifyQuestInterface extends ethers.utils.Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "usedNonces", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "verifier", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "verify", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
   events: {
     "OwnershipTransferred(address,address)": EventFragment;
+    "Withdrawal(address,address,uint256)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Withdrawal"): EventFragment;
 }
 
 export type OwnershipTransferredEvent = TypedEvent<
   [string, string] & { previousOwner: string; newOwner: string }
 >;
 
-export class VerifyQuest extends BaseContract {
+export type WithdrawalEvent = TypedEvent<
+  [string, string, BigNumber] & {
+    tokenAddress: string;
+    recipient: string;
+    tokenQuantity: BigNumber;
+  }
+>;
+
+export class TempleCashback extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -146,21 +154,27 @@ export class VerifyQuest extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: VerifyQuestInterface;
+  interface: TempleCashbackInterface;
 
   functions: {
-    DOMAIN_SEPARATOR(overrides?: CallOverrides): Promise<[string]>;
-
     VERIFY_TYPEHASH(overrides?: CallOverrides): Promise<[string]>;
 
-    digestFor(
-      quester: string,
+    claim(
+      hash: BytesLike,
+      signature: BytesLike,
+      tokenAddress: string,
+      tokenQuantity: BigNumberish,
+      nonce: BigNumberish,
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    generateHash(
+      tokenAddress: string,
+      recipient: string,
+      tokenQuantity: BigNumberish,
+      nonce: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<[string] & { digest: string }>;
-
-    nonces(user: string, overrides?: CallOverrides): Promise<[BigNumber]>;
-
-    openingCeremony(overrides?: CallOverrides): Promise<[string]>;
+    ): Promise<[string]>;
 
     owner(overrides?: CallOverrides): Promise<[string]>;
 
@@ -178,25 +192,39 @@ export class VerifyQuest extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    usedNonces(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
+
     verifier(overrides?: CallOverrides): Promise<[string]>;
 
-    verify(
-      v: BigNumberish,
-      r: BytesLike,
-      s: BytesLike,
+    withdraw(
+      tokenAddress: string,
+      tokenQuantity: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
 
-  DOMAIN_SEPARATOR(overrides?: CallOverrides): Promise<string>;
-
   VERIFY_TYPEHASH(overrides?: CallOverrides): Promise<string>;
 
-  digestFor(quester: string, overrides?: CallOverrides): Promise<string>;
+  claim(
+    hash: BytesLike,
+    signature: BytesLike,
+    tokenAddress: string,
+    tokenQuantity: BigNumberish,
+    nonce: BigNumberish,
+    overrides?: PayableOverrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
-  nonces(user: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-  openingCeremony(overrides?: CallOverrides): Promise<string>;
+  generateHash(
+    tokenAddress: string,
+    recipient: string,
+    tokenQuantity: BigNumberish,
+    nonce: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<string>;
 
   owner(overrides?: CallOverrides): Promise<string>;
 
@@ -214,25 +242,39 @@ export class VerifyQuest extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  usedNonces(
+    arg0: string,
+    arg1: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
+
   verifier(overrides?: CallOverrides): Promise<string>;
 
-  verify(
-    v: BigNumberish,
-    r: BytesLike,
-    s: BytesLike,
+  withdraw(
+    tokenAddress: string,
+    tokenQuantity: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    DOMAIN_SEPARATOR(overrides?: CallOverrides): Promise<string>;
-
     VERIFY_TYPEHASH(overrides?: CallOverrides): Promise<string>;
 
-    digestFor(quester: string, overrides?: CallOverrides): Promise<string>;
+    claim(
+      hash: BytesLike,
+      signature: BytesLike,
+      tokenAddress: string,
+      tokenQuantity: BigNumberish,
+      nonce: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
-    nonces(user: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-    openingCeremony(overrides?: CallOverrides): Promise<string>;
+    generateHash(
+      tokenAddress: string,
+      recipient: string,
+      tokenQuantity: BigNumberish,
+      nonce: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<string>;
 
     owner(overrides?: CallOverrides): Promise<string>;
 
@@ -245,12 +287,17 @@ export class VerifyQuest extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    usedNonces(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
+
     verifier(overrides?: CallOverrides): Promise<string>;
 
-    verify(
-      v: BigNumberish,
-      r: BytesLike,
-      s: BytesLike,
+    withdraw(
+      tokenAddress: string,
+      tokenQuantity: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
   };
@@ -271,18 +318,45 @@ export class VerifyQuest extends BaseContract {
       [string, string],
       { previousOwner: string; newOwner: string }
     >;
+
+    "Withdrawal(address,address,uint256)"(
+      tokenAddress?: string | null,
+      recipient?: string | null,
+      tokenQuantity?: BigNumberish | null
+    ): TypedEventFilter<
+      [string, string, BigNumber],
+      { tokenAddress: string; recipient: string; tokenQuantity: BigNumber }
+    >;
+
+    Withdrawal(
+      tokenAddress?: string | null,
+      recipient?: string | null,
+      tokenQuantity?: BigNumberish | null
+    ): TypedEventFilter<
+      [string, string, BigNumber],
+      { tokenAddress: string; recipient: string; tokenQuantity: BigNumber }
+    >;
   };
 
   estimateGas: {
-    DOMAIN_SEPARATOR(overrides?: CallOverrides): Promise<BigNumber>;
-
     VERIFY_TYPEHASH(overrides?: CallOverrides): Promise<BigNumber>;
 
-    digestFor(quester: string, overrides?: CallOverrides): Promise<BigNumber>;
+    claim(
+      hash: BytesLike,
+      signature: BytesLike,
+      tokenAddress: string,
+      tokenQuantity: BigNumberish,
+      nonce: BigNumberish,
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
 
-    nonces(user: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-    openingCeremony(overrides?: CallOverrides): Promise<BigNumber>;
+    generateHash(
+      tokenAddress: string,
+      recipient: string,
+      tokenQuantity: BigNumberish,
+      nonce: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -300,32 +374,40 @@ export class VerifyQuest extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    usedNonces(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     verifier(overrides?: CallOverrides): Promise<BigNumber>;
 
-    verify(
-      v: BigNumberish,
-      r: BytesLike,
-      s: BytesLike,
+    withdraw(
+      tokenAddress: string,
+      tokenQuantity: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    DOMAIN_SEPARATOR(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     VERIFY_TYPEHASH(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    digestFor(
-      quester: string,
-      overrides?: CallOverrides
+    claim(
+      hash: BytesLike,
+      signature: BytesLike,
+      tokenAddress: string,
+      tokenQuantity: BigNumberish,
+      nonce: BigNumberish,
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    nonces(
-      user: string,
+    generateHash(
+      tokenAddress: string,
+      recipient: string,
+      tokenQuantity: BigNumberish,
+      nonce: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
-
-    openingCeremony(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
@@ -343,12 +425,17 @@ export class VerifyQuest extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    usedNonces(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     verifier(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    verify(
-      v: BigNumberish,
-      r: BytesLike,
-      s: BytesLike,
+    withdraw(
+      tokenAddress: string,
+      tokenQuantity: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

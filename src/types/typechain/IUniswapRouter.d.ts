@@ -14,24 +14,24 @@ import {
   Overrides,
   PayableOverrides,
   CallOverrides,
-} from 'ethers';
-import { BytesLike } from '@ethersproject/bytes';
-import { Listener, Provider } from '@ethersproject/providers';
-import { FunctionFragment, EventFragment, Result } from '@ethersproject/abi';
-import type { TypedEventFilter, TypedEvent, TypedListener } from './common';
+} from "ethers";
+import { BytesLike } from "@ethersproject/bytes";
+import { Listener, Provider } from "@ethersproject/providers";
+import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
+import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface IUniswapRouterInterface extends ethers.utils.Interface {
   functions: {
-    'exactInput(tuple)': FunctionFragment;
-    'exactInputSingle(tuple)': FunctionFragment;
-    'exactOutput(tuple)': FunctionFragment;
-    'exactOutputSingle(tuple)': FunctionFragment;
-    'refundETH()': FunctionFragment;
-    'uniswapV3SwapCallback(int256,int256,bytes)': FunctionFragment;
+    "exactInput(tuple)": FunctionFragment;
+    "exactInputSingle(tuple)": FunctionFragment;
+    "exactOutput(tuple)": FunctionFragment;
+    "exactOutputSingle(tuple)": FunctionFragment;
+    "refundETH()": FunctionFragment;
+    "uniswapV3SwapCallback(int256,int256,bytes)": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: 'exactInput',
+    functionFragment: "exactInput",
     values: [
       {
         path: BytesLike;
@@ -43,7 +43,7 @@ interface IUniswapRouterInterface extends ethers.utils.Interface {
     ]
   ): string;
   encodeFunctionData(
-    functionFragment: 'exactInputSingle',
+    functionFragment: "exactInputSingle",
     values: [
       {
         tokenIn: string;
@@ -58,7 +58,7 @@ interface IUniswapRouterInterface extends ethers.utils.Interface {
     ]
   ): string;
   encodeFunctionData(
-    functionFragment: 'exactOutput',
+    functionFragment: "exactOutput",
     values: [
       {
         path: BytesLike;
@@ -70,7 +70,7 @@ interface IUniswapRouterInterface extends ethers.utils.Interface {
     ]
   ): string;
   encodeFunctionData(
-    functionFragment: 'exactOutputSingle',
+    functionFragment: "exactOutputSingle",
     values: [
       {
         tokenIn: string;
@@ -84,28 +84,28 @@ interface IUniswapRouterInterface extends ethers.utils.Interface {
       }
     ]
   ): string;
-  encodeFunctionData(functionFragment: 'refundETH', values?: undefined): string;
+  encodeFunctionData(functionFragment: "refundETH", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: 'uniswapV3SwapCallback',
+    functionFragment: "uniswapV3SwapCallback",
     values: [BigNumberish, BigNumberish, BytesLike]
   ): string;
 
-  decodeFunctionResult(functionFragment: 'exactInput', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "exactInput", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: 'exactInputSingle',
+    functionFragment: "exactInputSingle",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'exactOutput',
+    functionFragment: "exactOutput",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'exactOutputSingle',
+    functionFragment: "exactOutputSingle",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: 'refundETH', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "refundETH", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: 'uniswapV3SwapCallback',
+    functionFragment: "uniswapV3SwapCallback",
     data: BytesLike
   ): Result;
 

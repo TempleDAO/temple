@@ -2,136 +2,136 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import { Contract, Signer, utils } from 'ethers';
-import { Provider } from '@ethersproject/providers';
-import type { IQuoter, IQuoterInterface } from '../IQuoter';
+import { Contract, Signer, utils } from "ethers";
+import { Provider } from "@ethersproject/providers";
+import type { IQuoter, IQuoterInterface } from "../IQuoter";
 
 const _abi = [
   {
     inputs: [
       {
-        internalType: 'bytes',
-        name: 'path',
-        type: 'bytes',
+        internalType: "bytes",
+        name: "path",
+        type: "bytes",
       },
       {
-        internalType: 'uint256',
-        name: 'amountIn',
-        type: 'uint256',
+        internalType: "uint256",
+        name: "amountIn",
+        type: "uint256",
       },
     ],
-    name: 'quoteExactInput',
+    name: "quoteExactInput",
     outputs: [
       {
-        internalType: 'uint256',
-        name: 'amountOut',
-        type: 'uint256',
+        internalType: "uint256",
+        name: "amountOut",
+        type: "uint256",
       },
     ],
-    stateMutability: 'nonpayable',
-    type: 'function',
+    stateMutability: "nonpayable",
+    type: "function",
   },
   {
     inputs: [
       {
-        internalType: 'address',
-        name: 'tokenIn',
-        type: 'address',
+        internalType: "address",
+        name: "tokenIn",
+        type: "address",
       },
       {
-        internalType: 'address',
-        name: 'tokenOut',
-        type: 'address',
+        internalType: "address",
+        name: "tokenOut",
+        type: "address",
       },
       {
-        internalType: 'uint24',
-        name: 'fee',
-        type: 'uint24',
+        internalType: "uint24",
+        name: "fee",
+        type: "uint24",
       },
       {
-        internalType: 'uint256',
-        name: 'amountIn',
-        type: 'uint256',
+        internalType: "uint256",
+        name: "amountIn",
+        type: "uint256",
       },
       {
-        internalType: 'uint160',
-        name: 'sqrtPriceLimitX96',
-        type: 'uint160',
+        internalType: "uint160",
+        name: "sqrtPriceLimitX96",
+        type: "uint160",
       },
     ],
-    name: 'quoteExactInputSingle',
+    name: "quoteExactInputSingle",
     outputs: [
       {
-        internalType: 'uint256',
-        name: 'amountOut',
-        type: 'uint256',
+        internalType: "uint256",
+        name: "amountOut",
+        type: "uint256",
       },
     ],
-    stateMutability: 'nonpayable',
-    type: 'function',
+    stateMutability: "nonpayable",
+    type: "function",
   },
   {
     inputs: [
       {
-        internalType: 'bytes',
-        name: 'path',
-        type: 'bytes',
+        internalType: "bytes",
+        name: "path",
+        type: "bytes",
       },
       {
-        internalType: 'uint256',
-        name: 'amountOut',
-        type: 'uint256',
+        internalType: "uint256",
+        name: "amountOut",
+        type: "uint256",
       },
     ],
-    name: 'quoteExactOutput',
+    name: "quoteExactOutput",
     outputs: [
       {
-        internalType: 'uint256',
-        name: 'amountIn',
-        type: 'uint256',
+        internalType: "uint256",
+        name: "amountIn",
+        type: "uint256",
       },
     ],
-    stateMutability: 'nonpayable',
-    type: 'function',
+    stateMutability: "nonpayable",
+    type: "function",
   },
   {
     inputs: [
       {
-        internalType: 'address',
-        name: 'tokenIn',
-        type: 'address',
+        internalType: "address",
+        name: "tokenIn",
+        type: "address",
       },
       {
-        internalType: 'address',
-        name: 'tokenOut',
-        type: 'address',
+        internalType: "address",
+        name: "tokenOut",
+        type: "address",
       },
       {
-        internalType: 'uint24',
-        name: 'fee',
-        type: 'uint24',
+        internalType: "uint24",
+        name: "fee",
+        type: "uint24",
       },
       {
-        internalType: 'uint256',
-        name: 'amountOut',
-        type: 'uint256',
+        internalType: "uint256",
+        name: "amountOut",
+        type: "uint256",
       },
       {
-        internalType: 'uint160',
-        name: 'sqrtPriceLimitX96',
-        type: 'uint160',
+        internalType: "uint160",
+        name: "sqrtPriceLimitX96",
+        type: "uint160",
       },
     ],
-    name: 'quoteExactOutputSingle',
+    name: "quoteExactOutputSingle",
     outputs: [
       {
-        internalType: 'uint256',
-        name: 'amountIn',
-        type: 'uint256',
+        internalType: "uint256",
+        name: "amountIn",
+        type: "uint256",
       },
     ],
-    stateMutability: 'nonpayable',
-    type: 'function',
+    stateMutability: "nonpayable",
+    type: "function",
   },
 ];
 
