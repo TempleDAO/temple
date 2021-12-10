@@ -8,6 +8,7 @@ import "@nomiclabs/hardhat-etherscan";
 
 import "./tasks/query";
 // import "./tasks/management";
+// import "./tasks/on-chain-ops";
 
 if (!process.env.ETHERSCAN_API_KEY) {
   console.log("NOTE: environment variable ETHERSCAN_API_KEY isn't set. tasks that interact with etherscan won't work");
