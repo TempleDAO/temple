@@ -109,10 +109,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleAMMFactory__factory>;
     getContractFactory(
-      name: "TempleFactory",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.TempleFactory__factory>;
-    getContractFactory(
       name: "TempleRouter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleRouter__factory>;
@@ -329,11 +325,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TempleAMMFactory>;
-    getContractAt(
-      name: "TempleFactory",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.TempleFactory>;
     getContractAt(
       name: "TempleRouter",
       address: string,

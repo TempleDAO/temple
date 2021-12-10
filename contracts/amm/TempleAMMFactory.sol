@@ -1,9 +1,9 @@
 pragma solidity ^0.5.16;
 
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol';
-import '@uniswap/v2-core/contracts/UniswapV2Pair.sol';
+import './UniswapV2Pair.sol';
 
-contract TempleFactory is IUniswapV2Factory {
+contract TempleAMMFactory is IUniswapV2Factory {
     address public feeTo;
 
     // change from default factory. Only owner can create new pairs and set fees
@@ -65,5 +65,14 @@ contract TempleFactory is IUniswapV2Factory {
     function setOwner(address _owner) external {
         require(msg.sender == owner, 'TempleFactory: FORBIDDEN');
         owner = _owner;
+    }
+
+    // Implemented so to keep IUniswapV2Factory interface
+    function feeToSetter() external view returns (address) {
+        return owner;
+    }
+
+    function setFeeToSetter(address) external {
+        revert("Unimplemented - doesn't make sense for Temple Private AMM Factory");
     }
 }
