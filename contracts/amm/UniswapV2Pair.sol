@@ -16,7 +16,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
 
     address public factory;
-    // Change from standard uniswap. Owner can only change the 'manager' (ie. router)
+    // Change from standard uniswap. Owner can only change the single allowed router
     address public owner;  
     address public token0;
     address public token1;
@@ -31,7 +31,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
 
     // The router which can interact with this pair. required to make AMM private (change
     // from default uniswap v2)
-    address public manager;
+    address public router;
 
     uint private unlocked = 1;
     modifier lock() {
@@ -77,10 +77,10 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
         token1 = _token1;
     }
 
-    // Owner can change the manager (ie router) which can call the various AMM methods
-    function setManager(address _manager) external {
+    // Owner can change the router which can call the various AMM methods
+    function setRouter(address _router) external {
         require(msg.sender == owner, 'UniswapV2: FORBIDDEN');
-        manager = _manager;
+        router = _router;
     }
 
     // update reserves and, on the first call per block, price accumulators
@@ -172,7 +172,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     // this low-level function should be called from a contract which performs important safety checks
     function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external lock {
         require(amount0Out > 0 || amount1Out > 0, 'UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT');
-        require(msg.sender == manager, 'UniswapV2: FORBIDDEN'); // access control on swap
+        require(msg.sender == router, 'UniswapV2: FORBIDDEN'); // access control on swap
         (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
         require(amount0Out < _reserve0 && amount1Out < _reserve1, 'UniswapV2: INSUFFICIENT_LIQUIDITY');
 
