@@ -1,36 +1,37 @@
 pragma solidity ^0.8.4;
 
-import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol';
+import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
 import '@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol';
 import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract TempleFraxAMMRouter {
-    address public immutable override factory;
+    // precondition token0/tokenA is temple. token1/tokenB is frax
+    IUniswapV2Pair public pair;
+
+    IERC20 public templeToken;
+    IERC20 public fraxToken;
 
     modifier ensure(uint deadline) {
         require(deadline >= block.timestamp, 'UniswapV2Router: EXPIRED');
         _;
     }
 
-    constructor(address _factory) public {
-        factory = _factory;
+    constructor(IUniswapV2Pair _pair, IERC20 _templeToken, IERC20 _fraxToken) public {
+        pair = _pair;
+        templeToken = _templeToken;
+        fraxToken = _fraxToken;
     }
 
     // **** ADD LIQUIDITY ****
     function _addLiquidity(
-        address tokenA,
-        address tokenB,
         uint amountADesired,
         uint amountBDesired,
         uint amountAMin,
         uint amountBMin
     ) internal virtual returns (uint amountA, uint amountB) {
-        // create the pair if it doesn't exist yet
-        if (IUniswapV2Factory(factory).getPair(tokenA, tokenB) == address(0)) {
-            IUniswapV2Factory(factory).createPair(tokenA, tokenB);
-        }
-        (uint reserveA, uint reserveB) = UniswapV2Library.getReserves(factory, tokenA, tokenB);
+        (uint reserveA, uint reserveB) = pair.getReserves();
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
@@ -47,8 +48,6 @@ contract TempleFraxAMMRouter {
         }
     }
     function addLiquidity(
-        address tokenA,
-        address tokenB,
         uint amountADesired,
         uint amountBDesired,
         uint amountAMin,
@@ -56,30 +55,24 @@ contract TempleFraxAMMRouter {
         address to,
         uint deadline
     ) external virtual override ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
-        (amountA, amountB) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin);
-        address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB);
-        TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
-        TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
-        liquidity = IUniswapV2Pair(pair).mint(to);
+        (amountA, amountB) = _addLiquidity(amountADesired, amountBDesired, amountAMin, amountBMin);
+        SafeERC20.safeTransferFrom(templeToken, msg.sender, pair, amountA);
+        SafeERC20.safeTransferFrom(fraxToken, msg.sender, pair, amountB);
+        liquidity = pair.mint(to);
     }
 
     // **** REMOVE LIQUIDITY ****
     function removeLiquidity(
-        address tokenA,
-        address tokenB,
         uint liquidity,
         uint amountAMin,
         uint amountBMin,
         address to,
         uint deadline
     ) public virtual override ensure(deadline) returns (uint amountA, uint amountB) {
-        address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB);
-        IUniswapV2Pair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
-        (uint amount0, uint amount1) = IUniswapV2Pair(pair).burn(to);
-        (address token0,) = UniswapV2Library.sortTokens(tokenA, tokenB);
-        (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
-        require(amountA >= amountAMin, 'UniswapV2Router: INSUFFICIENT_A_AMOUNT');
-        require(amountB >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');
+        SafeERC20.safeTransferFrom(pair, msg.sender, pair, liquidity);
+        (uint amount0, uint amount1) = pair.burn(to);
+        require(amountA >= amountAMin, 'TempleFraxAMMRouter: INSUFFICIENT_TEMPLE');
+        require(amountB >= amountBMin, 'TempleFraxAMMRouter: INSUFFICIENT_FRAX');
     }
     
     function removeLiquidityWithPermit(
