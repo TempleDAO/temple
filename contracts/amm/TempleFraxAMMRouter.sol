@@ -119,15 +119,13 @@ contract TempleFraxAMMRouter {
     }
     
     // **** LIBRARY FUNCTIONS ****
-    function quote(uint amountA, uint reserveA, uint reserveB) public pure virtual override returns (uint amountB) {
+    function quote(uint amountA, uint reserveA, uint reserveB) public pure returns (uint amountB) {
         return UniswapV2Library.quote(amountA, reserveA, reserveB);
     }
 
     function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut)
         public
         pure
-        virtual
-        override
         returns (uint amountOut)
     {
         return UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
@@ -136,30 +134,8 @@ contract TempleFraxAMMRouter {
     function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut)
         public
         pure
-        virtual
-        override
         returns (uint amountIn)
     {
         return UniswapV2Library.getAmountIn(amountOut, reserveIn, reserveOut);
-    }
-
-    function getAmountsOut(uint amountIn, address[] memory path)
-        public
-        view
-        virtual
-        override
-        returns (uint[] memory amounts)
-    {
-        return UniswapV2Library.getAmountsOut(factory, amountIn, path);
-    }
-
-    function getAmountsIn(uint amountOut, address[] memory path)
-        public
-        view
-        virtual
-        override
-        returns (uint[] memory amounts)
-    {
-        return UniswapV2Library.getAmountsIn(factory, amountOut, path);
     }
 }
