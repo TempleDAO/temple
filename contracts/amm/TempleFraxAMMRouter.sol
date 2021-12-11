@@ -74,50 +74,59 @@ contract TempleFraxAMMRouter {
         require(amountA >= amountAMin, 'TempleFraxAMMRouter: INSUFFICIENT_TEMPLE');
         require(amountB >= amountBMin, 'TempleFraxAMMRouter: INSUFFICIENT_FRAX');
     }
-    
-    // **** SWAP ****
-    // requires the initial amount to have already been sent to the first pair
-    function _swap(uint[] memory amounts, address[] memory path, address _to) internal virtual {
-        for (uint i; i < path.length - 1; i++) {
-            (address input, address output) = (path[i], path[i + 1]);
-            (address token0,) = UniswapV2Library.sortTokens(input, output);
-            uint amountOut = amounts[i + 1];
-            (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
-            address to = i < path.length - 2 ? UniswapV2Library.pairFor(factory, output, path[i + 2]) : _to;
-            IUniswapV2Pair(UniswapV2Library.pairFor(factory, input, output)).swap(
-                amount0Out, amount1Out, to, new bytes(0)
-            );
-        }
-    }
-    function swapExactTokensForTokens(
+
+    function swapExactFraxForTemple(
         uint amountIn,
         uint amountOutMin,
-        address[] calldata path,
         address to,
         uint deadline
-    ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
-        amounts = UniswapV2Library.getAmountsOut(factory, amountIn, path);
-        require(amounts[amounts.length - 1] >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(
-            path[0], msg.sender, UniswapV2Library.pairFor(factory, path[0], path[1]), amounts[0]
-        );
-        _swap(amounts, path, to);
+    ) external virtual override ensure(deadline) returns (uint amountOut) {
+        (uint reserveA, uint reserveB) = pair.getReserves();
+        amountOut = getAmountOut(amountIn, reserveB, reserveA);
+        require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+        SafeERC20.safeTransferFrom(fraxToken, msg.sender, pair, amountIn);
+        pair.swap(amountOut, 0, to, new bytes(0));
     }
-    function swapTokensForExactTokens(
+
+    function swapFraxForExactTemple(
         uint amountOut,
         uint amountInMax,
-        address[] calldata path,
         address to,
         uint deadline
-    ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
-        amounts = UniswapV2Library.getAmountsIn(factory, amountOut, path);
-        require(amounts[0] <= amountInMax, 'TempleFraxAMMRouter: EXCESSIVE_INPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(
-            path[0], msg.sender, UniswapV2Library.pairFor(factory, path[0], path[1]), amounts[0]
-        );
-        _swap(amounts, path, to);
+    ) external virtual override ensure(deadline) returns (uint amountIn) {
+        (uint reserveA, uint reserveB) = pair.getReserves();
+        amountIn = getAmountIn(amountOut, reserveB, reserveA);
+        require(amountIn <= amountInMax, 'TempleFraxAMMRouter: EXCESSIVE_INPUT_AMOUNT');
+        SafeERC20.safeTransferFrom(fraxToken, msg.sender, pair, amountIn);
+        pair.swap(amountOut, 0, to, new bytes(0));
     }
-    
+
+    function swapExactTempleForFrax(
+        uint amountIn,
+        uint amountOutMin,
+        address to,
+        uint deadline
+    ) external virtual override ensure(deadline) returns (uint amountOut) {
+        (uint reserveA, uint reserveB) = pair.getReserves();
+        amountOut = getAmountOut(amountIn, reserveA, reserveB);
+        require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+        SafeERC20.safeTransferFrom(templeToken, msg.sender, pair, amountIn);
+        pair.swap(0, amountOut, to, new bytes(0));
+    }
+
+    function swapTempleForExactFrax(
+        uint amountOut,
+        uint amountInMax,
+        address to,
+        uint deadline
+    ) external virtual override ensure(deadline) returns (uint amountIn) {
+        (uint reserveA, uint reserveB) = pair.getReserves();
+        amountIn = getAmountIn(amountOut, reserveA, reserveB);
+        require(amountIn <= amountInMax, 'TempleFraxAMMRouter: EXCESSIVE_INPUT_AMOUNT');
+        SafeERC20.safeTransferFrom(templeToken, msg.sender, pair, amountIn);
+        pair.swap(0, amountOut, 0, to, new bytes(0));
+    }
+
     // **** LIBRARY FUNCTIONS ****
     function quote(uint amountA, uint reserveA, uint reserveB) public pure returns (uint amountB) {
         return UniswapV2Library.quote(amountA, reserveA, reserveB);
