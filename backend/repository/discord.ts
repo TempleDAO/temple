@@ -70,6 +70,25 @@ export class DiscordDataRepository {
 
     return result.rows[0];
   }
+
+  async memberGrowth(since: Date, until: Date) {
+    const query = `
+        SELECT DISTINCT
+            DATE(joined_at),
+            count(*) as new_members
+        FROM
+            discord_users
+        WHERE
+            joined_at BETWEEN $1 AND $2
+        GROUP BY
+            DATE(joined_at)
+        ORDER BY date
+      `;
+    const values = [since, until];
+    const result = await this.store.query(query, values);
+
+    return result.rows;
+  }
 }
 
 export const discordRepo = new DiscordDataRepository(pgStore);
