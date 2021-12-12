@@ -1,9 +1,6 @@
-channel_id,channel_name
-889589694390763602,Text Channels
-889589694390763603,Voice Channels
-889589694889873428,general
-889589694889873429,General
-889623504754974830,morning-ritual
-889626631558291496,evening-ritual
-889641438055383041,verify-yourself-or-ngmi
-892888319728435200,test-replies
+channel_id,category,channel_name,last_seen_at
+889589694889873428,Text Channels test,general,2021-12-12T14:15:49.596848
+889623504754974830,Text Channels test,morning-ritual,2021-12-12T14:15:49.596848
+889626631558291496,Text Channels test,evening-ritual,2021-12-12T14:15:49.596848
+889641438055383041,Text Channels test,verify-yourself-or-ngmi,2021-12-12T14:15:49.596848
+892888319728435200,Text Channels test,test-replies,2021-12-12T14:15:49.596848

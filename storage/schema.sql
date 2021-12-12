@@ -1,6 +1,7 @@
 CREATE TABLE discord_users (
  user_id varchar(255),
  user_name text,
+ guild_name text,
  joined_at timestamp,
  premium_since timestamp,
  last_seen_at timestamp,
@@ -15,7 +16,9 @@ CREATE TABLE discord_user_roles (
 
 CREATE TABLE discord_channels (
  channel_id varchar(255),
+ category text,
  channel_name text,
+ last_seen_at timestamp,
  primary key(channel_id)
 );
 
