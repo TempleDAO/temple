@@ -1,16 +1,16 @@
 # Temple analytics backend
 https://docs.google.com/document/d/1xU3v2WY3kSDGr2iT697kTJf5ZPVAc7k-6NYbLvjPAlc/edit#
 
+[metrics/data model/example endpoints](
+https://docs.google.com/spreadsheets/d/14-ZyCYmHp94sGCELO3S-Cdt3-MHp01dVt3BvwrA8GKA/edit#gid=1256935808)
+
 ## ETL
 ### Discord
+https://connection.keboola.com will update docs later
 
-
-### Twitter
-
-
-# Dev
 ## Persistent storage
-Postgresql database
+- Postgresql database supabase.com. Will share credentials later
+
 
 for development
 ``` sh
@@ -37,5 +37,3 @@ const res = await pool.query('select * from discord_users');
 console.log(res.rows[0]);
 await pool.end();
 ```
-
-
