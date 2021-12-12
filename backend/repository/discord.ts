@@ -89,6 +89,20 @@ export class DiscordDataRepository {
 
     return result.rows;
   }
+
+  // TODO: finish this later
+  async orgchartMembers({ rank, enclave, userid }) {
+    // different queries depending which query we get. 
+    // also need to implement paging, so the params here will be updated to include those too
+    
+    const query = `
+        SELECT * from discord_users limit 5;
+      `;
+    const values = [];
+    const result = await this.store.query(query, values);
+
+    return result.rows;
+  }
 }
 
 export const discordRepo = new DiscordDataRepository(pgStore);
