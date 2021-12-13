@@ -13,171 +13,171 @@ import {
   ContractTransaction,
   Overrides,
   CallOverrides,
-} from 'ethers';
-import { BytesLike } from '@ethersproject/bytes';
-import { Listener, Provider } from '@ethersproject/providers';
-import { FunctionFragment, EventFragment, Result } from '@ethersproject/abi';
-import type { TypedEventFilter, TypedEvent, TypedListener } from './common';
+} from "ethers";
+import { BytesLike } from "@ethersproject/bytes";
+import { Listener, Provider } from "@ethersproject/providers";
+import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
+import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface EchoingWhispersInterface extends ethers.utils.Interface {
   functions: {
-    'CAN_CHANGE_STATE()': FunctionFragment;
-    'DEFAULT_ADMIN_ROLE()': FunctionFragment;
-    'dataOf(address)': FunctionFragment;
-    'getCurrentStep(address)': FunctionFragment;
-    'getRoleAdmin(bytes32)': FunctionFragment;
-    'grantRole(bytes32,address)': FunctionFragment;
-    'hasRole(bytes32,address)': FunctionFragment;
-    'overrideUserData(address,bytes32,bytes32,uint256,bytes32,bool)': FunctionFragment;
-    'renounceRole(bytes32,address)': FunctionFragment;
-    'revokeRole(bytes32,address)': FunctionFragment;
-    'setCompleted(address)': FunctionFragment;
-    'setCompletedCondition()': FunctionFragment;
-    'setConditions(bytes32,bytes32)': FunctionFragment;
-    'setCurrentStep(address,bytes32)': FunctionFragment;
-    'setCurrentStepWithLock(address,bytes32,uint256,bytes32)': FunctionFragment;
-    'setEnclave(address,bytes32)': FunctionFragment;
-    'setEnclaveCondition()': FunctionFragment;
-    'supportsInterface(bytes4)': FunctionFragment;
+    "CAN_CHANGE_STATE()": FunctionFragment;
+    "DEFAULT_ADMIN_ROLE()": FunctionFragment;
+    "dataOf(address)": FunctionFragment;
+    "getCurrentStep(address)": FunctionFragment;
+    "getRoleAdmin(bytes32)": FunctionFragment;
+    "grantRole(bytes32,address)": FunctionFragment;
+    "hasRole(bytes32,address)": FunctionFragment;
+    "overrideUserData(address,bytes32,bytes32,uint256,bytes32,bool)": FunctionFragment;
+    "renounceRole(bytes32,address)": FunctionFragment;
+    "revokeRole(bytes32,address)": FunctionFragment;
+    "setCompleted(address)": FunctionFragment;
+    "setCompletedCondition()": FunctionFragment;
+    "setConditions(bytes32,bytes32)": FunctionFragment;
+    "setCurrentStep(address,bytes32)": FunctionFragment;
+    "setCurrentStepWithLock(address,bytes32,uint256,bytes32)": FunctionFragment;
+    "setEnclave(address,bytes32)": FunctionFragment;
+    "setEnclaveCondition()": FunctionFragment;
+    "supportsInterface(bytes4)": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: 'CAN_CHANGE_STATE',
+    functionFragment: "CAN_CHANGE_STATE",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'DEFAULT_ADMIN_ROLE',
+    functionFragment: "DEFAULT_ADMIN_ROLE",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: 'dataOf', values: [string]): string;
+  encodeFunctionData(functionFragment: "dataOf", values: [string]): string;
   encodeFunctionData(
-    functionFragment: 'getCurrentStep',
+    functionFragment: "getCurrentStep",
     values: [string]
   ): string;
   encodeFunctionData(
-    functionFragment: 'getRoleAdmin',
+    functionFragment: "getRoleAdmin",
     values: [BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: 'grantRole',
+    functionFragment: "grantRole",
     values: [BytesLike, string]
   ): string;
   encodeFunctionData(
-    functionFragment: 'hasRole',
+    functionFragment: "hasRole",
     values: [BytesLike, string]
   ): string;
   encodeFunctionData(
-    functionFragment: 'overrideUserData',
+    functionFragment: "overrideUserData",
     values: [string, BytesLike, BytesLike, BigNumberish, BytesLike, boolean]
   ): string;
   encodeFunctionData(
-    functionFragment: 'renounceRole',
+    functionFragment: "renounceRole",
     values: [BytesLike, string]
   ): string;
   encodeFunctionData(
-    functionFragment: 'revokeRole',
+    functionFragment: "revokeRole",
     values: [BytesLike, string]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setCompleted',
+    functionFragment: "setCompleted",
     values: [string]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setCompletedCondition',
+    functionFragment: "setCompletedCondition",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'setConditions',
+    functionFragment: "setConditions",
     values: [BytesLike, BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setCurrentStep',
+    functionFragment: "setCurrentStep",
     values: [string, BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setCurrentStepWithLock',
+    functionFragment: "setCurrentStepWithLock",
     values: [string, BytesLike, BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setEnclave',
+    functionFragment: "setEnclave",
     values: [string, BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setEnclaveCondition',
+    functionFragment: "setEnclaveCondition",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'supportsInterface',
+    functionFragment: "supportsInterface",
     values: [BytesLike]
   ): string;
 
   decodeFunctionResult(
-    functionFragment: 'CAN_CHANGE_STATE',
+    functionFragment: "CAN_CHANGE_STATE",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'DEFAULT_ADMIN_ROLE',
+    functionFragment: "DEFAULT_ADMIN_ROLE",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: 'dataOf', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "dataOf", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: 'getCurrentStep',
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: 'getRoleAdmin',
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: 'grantRole', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'hasRole', data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: 'overrideUserData',
+    functionFragment: "getCurrentStep",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'renounceRole',
+    functionFragment: "getRoleAdmin",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: 'revokeRole', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: 'setCompleted',
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: 'setCompletedCondition',
+    functionFragment: "overrideUserData",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setConditions',
+    functionFragment: "renounceRole",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setCompleted",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setCurrentStep',
+    functionFragment: "setCompletedCondition",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setCurrentStepWithLock',
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: 'setEnclave', data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: 'setEnclaveCondition',
+    functionFragment: "setConditions",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'supportsInterface',
+    functionFragment: "setCurrentStep",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setCurrentStepWithLock",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "setEnclave", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setEnclaveCondition",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "supportsInterface",
     data: BytesLike
   ): Result;
 
   events: {
-    'RoleAdminChanged(bytes32,bytes32,bytes32)': EventFragment;
-    'RoleGranted(bytes32,address,address)': EventFragment;
-    'RoleRevoked(bytes32,address,address)': EventFragment;
+    "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
+    "RoleGranted(bytes32,address,address)": EventFragment;
+    "RoleRevoked(bytes32,address,address)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: 'RoleAdminChanged'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'RoleGranted'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'RoleRevoked'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleAdminChanged"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleRevoked"): EventFragment;
 }
 
 export type RoleAdminChangedEvent = TypedEvent<
@@ -529,7 +529,7 @@ export class EchoingWhispers extends BaseContract {
   };
 
   filters: {
-    'RoleAdminChanged(bytes32,bytes32,bytes32)'(
+    "RoleAdminChanged(bytes32,bytes32,bytes32)"(
       role?: BytesLike | null,
       previousAdminRole?: BytesLike | null,
       newAdminRole?: BytesLike | null
@@ -547,7 +547,7 @@ export class EchoingWhispers extends BaseContract {
       { role: string; previousAdminRole: string; newAdminRole: string }
     >;
 
-    'RoleGranted(bytes32,address,address)'(
+    "RoleGranted(bytes32,address,address)"(
       role?: BytesLike | null,
       account?: string | null,
       sender?: string | null
@@ -565,7 +565,7 @@ export class EchoingWhispers extends BaseContract {
       { role: string; account: string; sender: string }
     >;
 
-    'RoleRevoked(bytes32,address,address)'(
+    "RoleRevoked(bytes32,address,address)"(
       role?: BytesLike | null,
       account?: string | null,
       sender?: string | null
