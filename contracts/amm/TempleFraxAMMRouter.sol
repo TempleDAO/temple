@@ -45,6 +45,10 @@ contract TempleFraxAMMRouter {
     Price public interpolateFromPrice;
     Price public interpolateToPrice;
 
+    // who's allowed to swap on the AMM. Only used if openAccessEnabled is false;
+    mapping(address => bool) public allowed;
+    bool public openAccessEnabled = false;
+
     modifier ensure(uint deadline) {
         require(deadline >= block.timestamp, 'TempleFraxAMMRouter: EXPIRED');
         _;
@@ -126,9 +130,10 @@ contract TempleFraxAMMRouter {
         address to,
         uint deadline
     ) external virtual ensure(deadline) returns (uint amountOut) {
+        require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
+
         (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
 
-        
         uint thresholdDecay = (block.number - decayStartBlock) * dynamicThresholdDecayPerBlock;
         if (thresholdDecay > dynamicThresholdPrice.temple) {
             thresholdDecay = dynamicThresholdPrice.temple;
@@ -185,6 +190,8 @@ contract TempleFraxAMMRouter {
         address to,
         uint deadline
     ) external virtual ensure(deadline) returns (uint amountOut) {
+        require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
+
         (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
 
         // if AMM is currently trading above target, route some portion to mint on protocol

@@ -22,6 +22,7 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   functions: {
     "addLiquidity(uint256,uint256,uint256,uint256,address,uint256)": FunctionFragment;
+    "allowed(address)": FunctionFragment;
     "decayStartBlock()": FunctionFragment;
     "dynamicThresholdDecayPerBlock()": FunctionFragment;
     "dynamicThresholdIncreasePct()": FunctionFragment;
@@ -31,6 +32,7 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     "interpolateFromPrice()": FunctionFragment;
     "interpolateToPrice()": FunctionFragment;
     "mintRatioAt(uint256,uint256)": FunctionFragment;
+    "openAccessEnabled()": FunctionFragment;
     "pair()": FunctionFragment;
     "quote(uint256,uint256,uint256)": FunctionFragment;
     "removeLiquidity(uint256,uint256,uint256,address,uint256)": FunctionFragment;
@@ -51,6 +53,7 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
       BigNumberish
     ]
   ): string;
+  encodeFunctionData(functionFragment: "allowed", values: [string]): string;
   encodeFunctionData(
     functionFragment: "decayStartBlock",
     values?: undefined
@@ -84,6 +87,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     functionFragment: "mintRatioAt",
     values: [BigNumberish, BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "openAccessEnabled",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "pair", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "quote",
@@ -114,6 +121,7 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     functionFragment: "addLiquidity",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "allowed", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "decayStartBlock",
     data: BytesLike
@@ -145,6 +153,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "mintRatioAt",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "openAccessEnabled",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "pair", data: BytesLike): Result;
@@ -227,6 +239,8 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    allowed(arg0: string, overrides?: CallOverrides): Promise<[boolean]>;
+
     decayStartBlock(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     dynamicThresholdDecayPerBlock(
@@ -265,6 +279,8 @@ export class TempleFraxAMMRouter extends BaseContract {
     ): Promise<
       [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
     >;
+
+    openAccessEnabled(overrides?: CallOverrides): Promise<[boolean]>;
 
     pair(overrides?: CallOverrides): Promise<[string]>;
 
@@ -315,6 +331,8 @@ export class TempleFraxAMMRouter extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  allowed(arg0: string, overrides?: CallOverrides): Promise<boolean>;
+
   decayStartBlock(overrides?: CallOverrides): Promise<BigNumber>;
 
   dynamicThresholdDecayPerBlock(overrides?: CallOverrides): Promise<BigNumber>;
@@ -349,6 +367,8 @@ export class TempleFraxAMMRouter extends BaseContract {
   ): Promise<
     [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
   >;
+
+  openAccessEnabled(overrides?: CallOverrides): Promise<boolean>;
 
   pair(overrides?: CallOverrides): Promise<string>;
 
@@ -405,6 +425,8 @@ export class TempleFraxAMMRouter extends BaseContract {
       }
     >;
 
+    allowed(arg0: string, overrides?: CallOverrides): Promise<boolean>;
+
     decayStartBlock(overrides?: CallOverrides): Promise<BigNumber>;
 
     dynamicThresholdDecayPerBlock(
@@ -441,6 +463,8 @@ export class TempleFraxAMMRouter extends BaseContract {
     ): Promise<
       [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
     >;
+
+    openAccessEnabled(overrides?: CallOverrides): Promise<boolean>;
 
     pair(overrides?: CallOverrides): Promise<string>;
 
@@ -496,6 +520,8 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    allowed(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
     decayStartBlock(overrides?: CallOverrides): Promise<BigNumber>;
 
     dynamicThresholdDecayPerBlock(
@@ -524,6 +550,8 @@ export class TempleFraxAMMRouter extends BaseContract {
       frax: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    openAccessEnabled(overrides?: CallOverrides): Promise<BigNumber>;
 
     pair(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -575,6 +603,11 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    allowed(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     decayStartBlock(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     dynamicThresholdDecayPerBlock(
@@ -611,6 +644,8 @@ export class TempleFraxAMMRouter extends BaseContract {
       frax: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
+
+    openAccessEnabled(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     pair(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
