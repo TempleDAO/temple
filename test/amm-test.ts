@@ -1,12 +1,9 @@
 import { ethers, hardhatArguments } from "hardhat";
 import { expect } from "chai";
 
-import { FakeERC20, FakeERC20__factory, TempleERC20Token, TempleERC20Token__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTreasury, TempleTreasury__factory } from "../typechain";
+import { FakeERC20, FakeERC20__factory, TempleERC20Token, TempleERC20Token__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTreasury, TempleTreasury__factory, TempleUniswapV2Pair, TempleUniswapV2Pair__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Router02NoEth, UniswapV2Router02NoEth__factory } from "../typechain";
 
-import {UniswapV2Pair} from "../typechain/UniswapV2Pair";
-import {UniswapV2Pair__factory} from "../typechain/factories/UniswapV2Pair__factory"
-
-import { Signer } from "ethers";
+import { BigNumber, Signer } from "ethers";
 import { toAtto } from "./helpers";
 
 import { fromAtto } from "../scripts/deploys/helpers";
@@ -16,12 +13,13 @@ import { factory } from "typescript";
 describe("AMM", async () => {
     let templeToken: TempleERC20Token;
     let fraxToken: FakeERC20;
-    let templeRouter: TempleFraxAMMRouter;
     let treasury: TempleTreasury;
     let owner: Signer;
     let alan: Signer;
     let ben: Signer
-    let pair: UniswapV2Pair;
+    let pair: TempleUniswapV2Pair;
+    let templeRouter: TempleFraxAMMRouter;
+    let uniswapRouter: UniswapV2Router02NoEth;
     let expiryDate: number =  Math.floor(Date.now() / 1000) + 900;
    
     beforeEach(async () => {
@@ -42,7 +40,7 @@ describe("AMM", async () => {
         templeToken.mint(await owner.getAddress(), toAtto(100000)),
       ]);
 
-      pair = await new UniswapV2Pair__factory(owner).deploy(await owner.getAddress(), templeToken.address, fraxToken.address);
+      pair = await new TempleUniswapV2Pair__factory(owner).deploy(await owner.getAddress(), templeToken.address, fraxToken.address);
       templeRouter = await new TempleFraxAMMRouter__factory(owner).deploy(
         pair.address,
         templeToken.address,
@@ -56,9 +54,15 @@ describe("AMM", async () => {
 
       await pair.setRouter(templeRouter.address);
       await templeToken.addMinter(templeRouter.address);
+
+      // Create a stock standard uniswap, so we can compare our AMM against the standard constant product AMM
+      const uniswapFactory: UniswapV2Factory = await new UniswapV2Factory__factory(owner).deploy(await owner.getAddress())
+
+      uniswapRouter = await new UniswapV2Router02NoEth__factory(owner).deploy(uniswapFactory.address, fraxToken.address);
+      console.log("HERE");
     })
 
-    it("Factory", async() => {
+    it("Happy path user flows", async() => {
         // await factory.connect(recipient).createPair(TEMPLE.address, STABLEC.address);
         
         it("permission", async() => {
