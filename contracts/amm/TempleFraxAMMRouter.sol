@@ -1,26 +1,72 @@
 pragma solidity ^0.8.4;
 
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
-import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+import "../TempleERC20Token.sol";
+
+interface ITempleTWAP {
+    function update() external;
+    function consult(uint amountIn) external view;
+}
+
+interface ITempleTreasury {
+    function intrinsicValueRatio() external view returns (uint256 frax, uint256 temple);
+}
 
 contract TempleFraxAMMRouter {
     // precondition token0/tokenA is temple. token1/tokenB is frax
     IUniswapV2Pair public pair;
 
-    IERC20 public templeToken;
-    IERC20 public fraxToken;
+    TempleERC20Token public templeToken;
+    IERC20 public immutable fraxToken;
+    ITempleTreasury public immutable templeTreasury;
+
+    struct Price {
+        uint frax;
+        uint temple;
+    }
+
+    // some portion of all buys above threshold get minted on protocol
+    Price public dynamicThresholdPrice; 
+
+    // Rate at which threshold decays, when AMM price is below the dynamicThresholdPrice
+    uint256 public dynamicThresholdDecayPerBlock = 1e18; 
+
+    // Percentage (represented as an int from 0 to 100) 
+    uint public dynamicThresholdIncreasePct = 100;
+
+    // Block at which we start calculating the threshold decay when the AMM price is below the 
+    uint256 public decayStartBlock; 
+
+    // To decide how much we mint on protocol, we linearly interp between these two price points, only when the 
+    // market is trading above the dynamicThresholdPrice;
+    Price public interpolateFromPrice;
+    Price public interpolateToPrice;
 
     modifier ensure(uint deadline) {
         require(deadline >= block.timestamp, 'TempleFraxAMMRouter: EXPIRED');
         _;
     }
 
-    constructor(IUniswapV2Pair _pair, IERC20 _templeToken, IERC20 _fraxToken) {
+    constructor(
+            IUniswapV2Pair _pair,
+            TempleERC20Token _templeToken,
+            IERC20 _fraxToken,
+            ITempleTreasury _templeTreasury,
+            Price memory _dynamicThresholdPrice,
+            Price memory _interpolateFromPrice,
+            Price memory _interpolateToPrice
+            ) {
+
         pair = _pair;
         templeToken = _templeToken;
         fraxToken = _fraxToken;
+        templeTreasury = _templeTreasury;
+        dynamicThresholdPrice = _dynamicThresholdPrice;
+        interpolateFromPrice = _interpolateFromPrice;
+        interpolateToPrice = _interpolateToPrice;
     }
 
     // **** ADD LIQUIDITY ****
@@ -80,11 +126,44 @@ contract TempleFraxAMMRouter {
         address to,
         uint deadline
     ) external virtual ensure(deadline) returns (uint amountOut) {
-        (uint reserveA, uint reserveB,) = pair.getReserves();
-        amountOut = getAmountOut(amountIn, reserveB, reserveA);
+        (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
+
+        
+        uint thresholdDecay = (block.number - decayStartBlock) * dynamicThresholdDecayPerBlock;
+        if (thresholdDecay > dynamicThresholdPrice.temple) {
+            thresholdDecay = dynamicThresholdPrice.temple;
+        }
+
+        // if AMM is currently trading above target, route some portion to mint on protocol
+        uint amountInProtocol = 0;
+        if ((dynamicThresholdPrice.temple - thresholdDecay) * reserveTemple >= dynamicThresholdPrice.frax * reserveFrax) {
+            (uint numerator, uint denominator) = mintRatioAt(reserveTemple, reserveFrax);
+            amountInProtocol = amountIn * numerator / denominator;
+            // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant
+            dynamicThresholdPrice.temple = reserveTemple * dynamicThresholdIncreasePct / 100 * dynamicThresholdPrice.frax / reserveFrax;
+            decayStartBlock = block.number;
+        }
+
+        uint amountInAMM = amountIn - amountInProtocol;
+
+        // Allocate a portion of temple to the AMM
+        uint amountOutAMM = getAmountOut(amountInAMM, reserveFrax, reserveTemple);
+
+        // Allocate a portion of temple to the protocol
+        uint amountOutProtocol = amountInProtocol * amountOutAMM / amountInAMM;
+        
+        // Check temple out is witamountOutAMMhin acceptable user bounds
+        amountOut = amountOutAMM + amountOutProtocol;
         require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(pair), amountIn);
+
+        // Swap on AMM and mint on protocol
+        SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(pair), amountInAMM);
         pair.swap(amountOut, 0, to, new bytes(0));
+
+        if (amountInAMM > 0) {
+            SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(this), amountInAMM); // TODO(butlerji): Where should this frax go?
+            templeToken.mint(to, amountOutAMM);
+        }
     }
 
     // function swapFraxForExactTemple(
@@ -106,11 +185,22 @@ contract TempleFraxAMMRouter {
         address to,
         uint deadline
     ) external virtual ensure(deadline) returns (uint amountOut) {
-        (uint reserveA, uint reserveB,) = pair.getReserves();
-        amountOut = getAmountOut(amountIn, reserveA, reserveB);
-        require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        SafeERC20.safeTransferFrom(templeToken, msg.sender, address(pair), amountIn);
-        pair.swap(0, amountOut, to, new bytes(0));
+        (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
+
+        // if AMM is currently trading above target, route some portion to mint on protocol
+        (uint256 ivFrax, uint256 ivTemple) = templeTreasury.intrinsicValueRatio();
+
+        if (ivTemple * reserveFrax <= ivFrax * reserveTemple) {
+            amountOut = amountIn * ivFrax / ivTemple;
+            require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+            templeToken.burnFrom(msg.sender, amountIn);
+            SafeERC20.safeTransfer(fraxToken, to, amountOut);
+        } else {
+            amountOut = getAmountOut(amountIn, reserveTemple, reserveFrax);
+            require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+            SafeERC20.safeTransferFrom(templeToken, msg.sender, address(pair), amountIn);
+            pair.swap(0, amountOut, to, new bytes(0));
+        }
     }
 
     // function swapTempleForExactFrax(
@@ -175,4 +265,13 @@ contract TempleFraxAMMRouter {
     //     uint denominator = reserveOut.sub(amountOut).mul(997);
     //     amountIn = (numerator / denominator).add(1);
     // }
+
+    function mintRatioAt(uint temple, uint frax)
+        public
+        pure
+        returns (uint numerator, uint denominator)
+    {
+        // TODO(butlerji): efficient tested linear interp
+        return (80, 100);
+    }
 }

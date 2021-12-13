@@ -22,14 +22,22 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   functions: {
     "addLiquidity(uint256,uint256,uint256,uint256,address,uint256)": FunctionFragment;
+    "decayStartBlock()": FunctionFragment;
+    "dynamicThresholdDecayPerBlock()": FunctionFragment;
+    "dynamicThresholdIncreasePct()": FunctionFragment;
+    "dynamicThresholdPrice()": FunctionFragment;
     "fraxToken()": FunctionFragment;
     "getAmountOut(uint256,uint256,uint256)": FunctionFragment;
+    "interpolateFromPrice()": FunctionFragment;
+    "interpolateToPrice()": FunctionFragment;
+    "mintRatioAt(uint256,uint256)": FunctionFragment;
     "pair()": FunctionFragment;
     "quote(uint256,uint256,uint256)": FunctionFragment;
     "removeLiquidity(uint256,uint256,uint256,address,uint256)": FunctionFragment;
     "swapExactFraxForTemple(uint256,uint256,address,uint256)": FunctionFragment;
     "swapExactTempleForFrax(uint256,uint256,address,uint256)": FunctionFragment;
     "templeToken()": FunctionFragment;
+    "templeTreasury()": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -43,10 +51,38 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
       BigNumberish
     ]
   ): string;
+  encodeFunctionData(
+    functionFragment: "decayStartBlock",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "dynamicThresholdDecayPerBlock",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "dynamicThresholdIncreasePct",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "dynamicThresholdPrice",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "fraxToken", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "getAmountOut",
     values: [BigNumberish, BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "interpolateFromPrice",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "interpolateToPrice",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "mintRatioAt",
+    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "pair", values?: undefined): string;
   encodeFunctionData(
@@ -69,14 +105,46 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     functionFragment: "templeToken",
     values?: undefined
   ): string;
+  encodeFunctionData(
+    functionFragment: "templeTreasury",
+    values?: undefined
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "addLiquidity",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "decayStartBlock",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "dynamicThresholdDecayPerBlock",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "dynamicThresholdIncreasePct",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "dynamicThresholdPrice",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "fraxToken", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getAmountOut",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "interpolateFromPrice",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "interpolateToPrice",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "mintRatioAt",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "pair", data: BytesLike): Result;
@@ -95,6 +163,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "templeToken",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "templeTreasury",
     data: BytesLike
   ): Result;
 
@@ -155,6 +227,20 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    decayStartBlock(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    dynamicThresholdDecayPerBlock(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
+    dynamicThresholdIncreasePct(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
+    dynamicThresholdPrice(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
     fraxToken(overrides?: CallOverrides): Promise<[string]>;
 
     getAmountOut(
@@ -163,6 +249,22 @@ export class TempleFraxAMMRouter extends BaseContract {
       reserveOut: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { amountOut: BigNumber }>;
+
+    interpolateFromPrice(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
+    interpolateToPrice(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
+    mintRatioAt(
+      temple: BigNumberish,
+      frax: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
+    >;
 
     pair(overrides?: CallOverrides): Promise<[string]>;
 
@@ -199,6 +301,8 @@ export class TempleFraxAMMRouter extends BaseContract {
     ): Promise<ContractTransaction>;
 
     templeToken(overrides?: CallOverrides): Promise<[string]>;
+
+    templeTreasury(overrides?: CallOverrides): Promise<[string]>;
   };
 
   addLiquidity(
@@ -211,6 +315,16 @@ export class TempleFraxAMMRouter extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  decayStartBlock(overrides?: CallOverrides): Promise<BigNumber>;
+
+  dynamicThresholdDecayPerBlock(overrides?: CallOverrides): Promise<BigNumber>;
+
+  dynamicThresholdIncreasePct(overrides?: CallOverrides): Promise<BigNumber>;
+
+  dynamicThresholdPrice(
+    overrides?: CallOverrides
+  ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
   fraxToken(overrides?: CallOverrides): Promise<string>;
 
   getAmountOut(
@@ -219,6 +333,22 @@ export class TempleFraxAMMRouter extends BaseContract {
     reserveOut: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
+
+  interpolateFromPrice(
+    overrides?: CallOverrides
+  ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
+  interpolateToPrice(
+    overrides?: CallOverrides
+  ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
+  mintRatioAt(
+    temple: BigNumberish,
+    frax: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
+  >;
 
   pair(overrides?: CallOverrides): Promise<string>;
 
@@ -256,6 +386,8 @@ export class TempleFraxAMMRouter extends BaseContract {
 
   templeToken(overrides?: CallOverrides): Promise<string>;
 
+  templeTreasury(overrides?: CallOverrides): Promise<string>;
+
   callStatic: {
     addLiquidity(
       amountADesired: BigNumberish,
@@ -273,6 +405,18 @@ export class TempleFraxAMMRouter extends BaseContract {
       }
     >;
 
+    decayStartBlock(overrides?: CallOverrides): Promise<BigNumber>;
+
+    dynamicThresholdDecayPerBlock(
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    dynamicThresholdIncreasePct(overrides?: CallOverrides): Promise<BigNumber>;
+
+    dynamicThresholdPrice(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
     fraxToken(overrides?: CallOverrides): Promise<string>;
 
     getAmountOut(
@@ -281,6 +425,22 @@ export class TempleFraxAMMRouter extends BaseContract {
       reserveOut: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    interpolateFromPrice(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
+    interpolateToPrice(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
+    mintRatioAt(
+      temple: BigNumberish,
+      frax: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
+    >;
 
     pair(overrides?: CallOverrides): Promise<string>;
 
@@ -319,6 +479,8 @@ export class TempleFraxAMMRouter extends BaseContract {
     ): Promise<BigNumber>;
 
     templeToken(overrides?: CallOverrides): Promise<string>;
+
+    templeTreasury(overrides?: CallOverrides): Promise<string>;
   };
 
   filters: {};
@@ -334,12 +496,32 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    decayStartBlock(overrides?: CallOverrides): Promise<BigNumber>;
+
+    dynamicThresholdDecayPerBlock(
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    dynamicThresholdIncreasePct(overrides?: CallOverrides): Promise<BigNumber>;
+
+    dynamicThresholdPrice(overrides?: CallOverrides): Promise<BigNumber>;
+
     fraxToken(overrides?: CallOverrides): Promise<BigNumber>;
 
     getAmountOut(
       amountIn: BigNumberish,
       reserveIn: BigNumberish,
       reserveOut: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    interpolateFromPrice(overrides?: CallOverrides): Promise<BigNumber>;
+
+    interpolateToPrice(overrides?: CallOverrides): Promise<BigNumber>;
+
+    mintRatioAt(
+      temple: BigNumberish,
+      frax: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -378,6 +560,8 @@ export class TempleFraxAMMRouter extends BaseContract {
     ): Promise<BigNumber>;
 
     templeToken(overrides?: CallOverrides): Promise<BigNumber>;
+
+    templeTreasury(overrides?: CallOverrides): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -391,12 +575,40 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    decayStartBlock(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    dynamicThresholdDecayPerBlock(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    dynamicThresholdIncreasePct(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    dynamicThresholdPrice(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     fraxToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     getAmountOut(
       amountIn: BigNumberish,
       reserveIn: BigNumberish,
       reserveOut: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    interpolateFromPrice(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    interpolateToPrice(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    mintRatioAt(
+      temple: BigNumberish,
+      frax: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -435,5 +647,7 @@ export class TempleFraxAMMRouter extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     templeToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    templeTreasury(overrides?: CallOverrides): Promise<PopulatedTransaction>;
   };
 }
