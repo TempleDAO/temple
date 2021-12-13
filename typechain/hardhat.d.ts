@@ -85,6 +85,14 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ISwapRouter__factory>;
     getContractFactory(
+      name: "ITempleTreasury",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ITempleTreasury__factory>;
+    getContractFactory(
+      name: "ITempleTWAP",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ITempleTWAP__factory>;
+    getContractFactory(
       name: "TempleFraxAMMRouter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleFraxAMMRouter__factory>;
@@ -271,6 +279,16 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ISwapRouter>;
+    getContractAt(
+      name: "ITempleTreasury",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ITempleTreasury>;
+    getContractAt(
+      name: "ITempleTWAP",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ITempleTWAP>;
     getContractAt(
       name: "TempleFraxAMMRouter",
       address: string,
