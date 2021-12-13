@@ -29,9 +29,7 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
     "balanceOf(address)": FunctionFragment;
     "burn(address)": FunctionFragment;
     "decimals()": FunctionFragment;
-    "factory()": FunctionFragment;
     "getReserves()": FunctionFragment;
-    "initialize(address,address)": FunctionFragment;
     "kLast()": FunctionFragment;
     "mint(address)": FunctionFragment;
     "name()": FunctionFragment;
@@ -76,14 +74,9 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
   encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
   encodeFunctionData(functionFragment: "burn", values: [string]): string;
   encodeFunctionData(functionFragment: "decimals", values?: undefined): string;
-  encodeFunctionData(functionFragment: "factory", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "getReserves",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "initialize",
-    values: [string, string]
   ): string;
   encodeFunctionData(functionFragment: "kLast", values?: undefined): string;
   encodeFunctionData(functionFragment: "mint", values: [string]): string;
@@ -151,12 +144,10 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "burn", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "decimals", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "factory", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getReserves",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "kLast", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
@@ -321,8 +312,6 @@ export class UniswapV2Pair extends BaseContract {
 
     decimals(overrides?: CallOverrides): Promise<[number]>;
 
-    factory(overrides?: CallOverrides): Promise<[string]>;
-
     getReserves(
       overrides?: CallOverrides
     ): Promise<
@@ -332,12 +321,6 @@ export class UniswapV2Pair extends BaseContract {
         _blockTimestampLast: number;
       }
     >;
-
-    initialize(
-      arg0: string,
-      arg1: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
 
     kLast(overrides?: CallOverrides): Promise<[BigNumber]>;
 
@@ -440,8 +423,6 @@ export class UniswapV2Pair extends BaseContract {
 
   decimals(overrides?: CallOverrides): Promise<number>;
 
-  factory(overrides?: CallOverrides): Promise<string>;
-
   getReserves(
     overrides?: CallOverrides
   ): Promise<
@@ -451,12 +432,6 @@ export class UniswapV2Pair extends BaseContract {
       _blockTimestampLast: number;
     }
   >;
-
-  initialize(
-    arg0: string,
-    arg1: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
 
   kLast(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -561,8 +536,6 @@ export class UniswapV2Pair extends BaseContract {
 
     decimals(overrides?: CallOverrides): Promise<number>;
 
-    factory(overrides?: CallOverrides): Promise<string>;
-
     getReserves(
       overrides?: CallOverrides
     ): Promise<
@@ -572,12 +545,6 @@ export class UniswapV2Pair extends BaseContract {
         _blockTimestampLast: number;
       }
     >;
-
-    initialize(
-      arg0: string,
-      arg1: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     kLast(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -800,15 +767,7 @@ export class UniswapV2Pair extends BaseContract {
 
     decimals(overrides?: CallOverrides): Promise<BigNumber>;
 
-    factory(overrides?: CallOverrides): Promise<BigNumber>;
-
     getReserves(overrides?: CallOverrides): Promise<BigNumber>;
-
-    initialize(
-      arg0: string,
-      arg1: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
 
     kLast(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -915,15 +874,7 @@ export class UniswapV2Pair extends BaseContract {
 
     decimals(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    factory(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     getReserves(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    initialize(
-      arg0: string,
-      arg1: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
 
     kLast(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
