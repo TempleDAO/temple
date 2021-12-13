@@ -88,18 +88,18 @@ contract TempleFraxAMMRouter {
         pair.swap(amountOut, 0, to, new bytes(0));
     }
 
-    function swapFraxForExactTemple(
-        uint amountOut,
-        uint amountInMax,
-        address to,
-        uint deadline
-    ) external virtual override ensure(deadline) returns (uint amountIn) {
-        (uint reserveA, uint reserveB) = pair.getReserves();
-        amountIn = getAmountIn(amountOut, reserveB, reserveA);
-        require(amountIn <= amountInMax, 'TempleFraxAMMRouter: EXCESSIVE_INPUT_AMOUNT');
-        SafeERC20.safeTransferFrom(fraxToken, msg.sender, pair, amountIn);
-        pair.swap(amountOut, 0, to, new bytes(0));
-    }
+    // function swapFraxForExactTemple(
+    //     uint amountOut,
+    //     uint amountInMax,
+    //     address to,
+    //     uint deadline
+    // ) external virtual override ensure(deadline) returns (uint amountIn) {
+    //     (uint reserveA, uint reserveB) = pair.getReserves();
+    //     amountIn = getAmountIn(amountOut, reserveB, reserveA);
+    //     require(amountIn <= amountInMax, 'TempleFraxAMMRouter: EXCESSIVE_INPUT_AMOUNT');
+    //     SafeERC20.safeTransferFrom(fraxToken, msg.sender, pair, amountIn);
+    //     pair.swap(amountOut, 0, to, new bytes(0));
+    // }
 
     function swapExactTempleForFrax(
         uint amountIn,
@@ -114,18 +114,18 @@ contract TempleFraxAMMRouter {
         pair.swap(0, amountOut, to, new bytes(0));
     }
 
-    function swapTempleForExactFrax(
-        uint amountOut,
-        uint amountInMax,
-        address to,
-        uint deadline
-    ) external virtual override ensure(deadline) returns (uint amountIn) {
-        (uint reserveA, uint reserveB) = pair.getReserves();
-        amountIn = getAmountIn(amountOut, reserveA, reserveB);
-        require(amountIn <= amountInMax, 'TempleFraxAMMRouter: EXCESSIVE_INPUT_AMOUNT');
-        SafeERC20.safeTransferFrom(templeToken, msg.sender, pair, amountIn);
-        pair.swap(0, amountOut, 0, to, new bytes(0));
-    }
+    // function swapTempleForExactFrax(
+    //     uint amountOut,
+    //     uint amountInMax,
+    //     address to,
+    //     uint deadline
+    // ) external virtual override ensure(deadline) returns (uint amountIn) {
+    //     (uint reserveA, uint reserveB) = pair.getReserves();
+    //     amountIn = getAmountIn(amountOut, reserveA, reserveB);
+    //     require(amountIn <= amountInMax, 'TempleFraxAMMRouter: EXCESSIVE_INPUT_AMOUNT');
+    //     SafeERC20.safeTransferFrom(templeToken, msg.sender, pair, amountIn);
+    //     pair.swap(0, amountOut, 0, to, new bytes(0));
+    // }
 
     // **** LIBRARY FUNCTIONS ****
     function quote(uint amountA, uint reserveA, uint reserveB) public pure returns (uint amountB) {
