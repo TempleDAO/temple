@@ -21,6 +21,9 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   functions: {
+    "CAN_ADD_ALLOWED_USER()": FunctionFragment;
+    "DEFAULT_ADMIN_ROLE()": FunctionFragment;
+    "addAllowedUser(address)": FunctionFragment;
     "addLiquidity(uint256,uint256,uint256,uint256,address,uint256)": FunctionFragment;
     "allowed(address)": FunctionFragment;
     "decayStartBlock()": FunctionFragment;
@@ -29,19 +32,46 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     "dynamicThresholdPrice()": FunctionFragment;
     "fraxToken()": FunctionFragment;
     "getAmountOut(uint256,uint256,uint256)": FunctionFragment;
+    "getRoleAdmin(bytes32)": FunctionFragment;
+    "grantRole(bytes32,address)": FunctionFragment;
+    "hasRole(bytes32,address)": FunctionFragment;
     "interpolateFromPrice()": FunctionFragment;
     "interpolateToPrice()": FunctionFragment;
     "mintRatioAt(uint256,uint256)": FunctionFragment;
     "openAccessEnabled()": FunctionFragment;
+    "owner()": FunctionFragment;
     "pair()": FunctionFragment;
     "quote(uint256,uint256,uint256)": FunctionFragment;
+    "removeAllowedUser(address)": FunctionFragment;
     "removeLiquidity(uint256,uint256,uint256,address,uint256)": FunctionFragment;
+    "renounceOwnership()": FunctionFragment;
+    "renounceRole(bytes32,address)": FunctionFragment;
+    "revokeRole(bytes32,address)": FunctionFragment;
+    "setDynamicThresholdDecayPerBlock(uint256)": FunctionFragment;
+    "setDynamicThresholdIncreasePct(uint256)": FunctionFragment;
+    "setInterpolateFromPrice(uint256,uint256)": FunctionFragment;
+    "setInterpolateToPrice(uint256,uint256)": FunctionFragment;
+    "supportsInterface(bytes4)": FunctionFragment;
     "swapExactFraxForTemple(uint256,uint256,address,uint256)": FunctionFragment;
     "swapExactTempleForFrax(uint256,uint256,address,uint256)": FunctionFragment;
     "templeToken()": FunctionFragment;
     "templeTreasury()": FunctionFragment;
+    "toggleOpenAccess()": FunctionFragment;
+    "transferOwnership(address)": FunctionFragment;
   };
 
+  encodeFunctionData(
+    functionFragment: "CAN_ADD_ALLOWED_USER",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "DEFAULT_ADMIN_ROLE",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "addAllowedUser",
+    values: [string]
+  ): string;
   encodeFunctionData(
     functionFragment: "addLiquidity",
     values: [
@@ -76,6 +106,18 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     values: [BigNumberish, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "getRoleAdmin",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "grantRole",
+    values: [BytesLike, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "hasRole",
+    values: [BytesLike, string]
+  ): string;
+  encodeFunctionData(
     functionFragment: "interpolateFromPrice",
     values?: undefined
   ): string;
@@ -91,14 +133,51 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     functionFragment: "openAccessEnabled",
     values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "pair", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "quote",
     values: [BigNumberish, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "removeAllowedUser",
+    values: [string]
+  ): string;
+  encodeFunctionData(
     functionFragment: "removeLiquidity",
     values: [BigNumberish, BigNumberish, BigNumberish, string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "renounceOwnership",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "renounceRole",
+    values: [BytesLike, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "revokeRole",
+    values: [BytesLike, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setDynamicThresholdDecayPerBlock",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setDynamicThresholdIncreasePct",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setInterpolateFromPrice",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setInterpolateToPrice",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "supportsInterface",
+    values: [BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "swapExactFraxForTemple",
@@ -116,7 +195,27 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     functionFragment: "templeTreasury",
     values?: undefined
   ): string;
+  encodeFunctionData(
+    functionFragment: "toggleOpenAccess",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "transferOwnership",
+    values: [string]
+  ): string;
 
+  decodeFunctionResult(
+    functionFragment: "CAN_ADD_ALLOWED_USER",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "DEFAULT_ADMIN_ROLE",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "addAllowedUser",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "addLiquidity",
     data: BytesLike
@@ -144,6 +243,12 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "getRoleAdmin",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
+  decodeFunctionResult(
     functionFragment: "interpolateFromPrice",
     data: BytesLike
   ): Result;
@@ -159,10 +264,44 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     functionFragment: "openAccessEnabled",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pair", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "quote", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "removeAllowedUser",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "removeLiquidity",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "renounceOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "renounceRole",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setDynamicThresholdDecayPerBlock",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setDynamicThresholdIncreasePct",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setInterpolateFromPrice",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setInterpolateToPrice",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "supportsInterface",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -181,9 +320,47 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     functionFragment: "templeTreasury",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "toggleOpenAccess",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
 
-  events: {};
+  events: {
+    "OwnershipTransferred(address,address)": EventFragment;
+    "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
+    "RoleGranted(bytes32,address,address)": EventFragment;
+    "RoleRevoked(bytes32,address,address)": EventFragment;
+  };
+
+  getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleAdminChanged"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RoleRevoked"): EventFragment;
 }
+
+export type OwnershipTransferredEvent = TypedEvent<
+  [string, string] & { previousOwner: string; newOwner: string }
+>;
+
+export type RoleAdminChangedEvent = TypedEvent<
+  [string, string, string] & {
+    role: string;
+    previousAdminRole: string;
+    newAdminRole: string;
+  }
+>;
+
+export type RoleGrantedEvent = TypedEvent<
+  [string, string, string] & { role: string; account: string; sender: string }
+>;
+
+export type RoleRevokedEvent = TypedEvent<
+  [string, string, string] & { role: string; account: string; sender: string }
+>;
 
 export class TempleFraxAMMRouter extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
@@ -229,6 +406,15 @@ export class TempleFraxAMMRouter extends BaseContract {
   interface: TempleFraxAMMRouterInterface;
 
   functions: {
+    CAN_ADD_ALLOWED_USER(overrides?: CallOverrides): Promise<[string]>;
+
+    DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<[string]>;
+
+    addAllowedUser(
+      userAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     addLiquidity(
       amountADesired: BigNumberish,
       amountBDesired: BigNumberish,
@@ -264,6 +450,20 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { amountOut: BigNumber }>;
 
+    getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<[string]>;
+
+    grantRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    hasRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
+
     interpolateFromPrice(
       overrides?: CallOverrides
     ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
@@ -282,6 +482,8 @@ export class TempleFraxAMMRouter extends BaseContract {
 
     openAccessEnabled(overrides?: CallOverrides): Promise<[boolean]>;
 
+    owner(overrides?: CallOverrides): Promise<[string]>;
+
     pair(overrides?: CallOverrides): Promise<[string]>;
 
     quote(
@@ -291,6 +493,11 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { amountB: BigNumber }>;
 
+    removeAllowedUser(
+      userAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     removeLiquidity(
       liquidity: BigNumberish,
       amountAMin: BigNumberish,
@@ -299,6 +506,49 @@ export class TempleFraxAMMRouter extends BaseContract {
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    renounceOwnership(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    renounceRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    revokeRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setDynamicThresholdDecayPerBlock(
+      _dynamicThresholdDecayPerBlock: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setDynamicThresholdIncreasePct(
+      _dynamicThresholdIncreasePct: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setInterpolateFromPrice(
+      frax: BigNumberish,
+      temple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setInterpolateToPrice(
+      frax: BigNumberish,
+      temple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    supportsInterface(
+      interfaceId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
 
     swapExactFraxForTemple(
       amountIn: BigNumberish,
@@ -319,7 +569,25 @@ export class TempleFraxAMMRouter extends BaseContract {
     templeToken(overrides?: CallOverrides): Promise<[string]>;
 
     templeTreasury(overrides?: CallOverrides): Promise<[string]>;
+
+    toggleOpenAccess(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    transferOwnership(
+      newOwner: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
   };
+
+  CAN_ADD_ALLOWED_USER(overrides?: CallOverrides): Promise<string>;
+
+  DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
+
+  addAllowedUser(
+    userAddress: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
   addLiquidity(
     amountADesired: BigNumberish,
@@ -352,6 +620,20 @@ export class TempleFraxAMMRouter extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
+  getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<string>;
+
+  grantRole(
+    role: BytesLike,
+    account: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  hasRole(
+    role: BytesLike,
+    account: string,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
+
   interpolateFromPrice(
     overrides?: CallOverrides
   ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
@@ -370,6 +652,8 @@ export class TempleFraxAMMRouter extends BaseContract {
 
   openAccessEnabled(overrides?: CallOverrides): Promise<boolean>;
 
+  owner(overrides?: CallOverrides): Promise<string>;
+
   pair(overrides?: CallOverrides): Promise<string>;
 
   quote(
@@ -379,6 +663,11 @@ export class TempleFraxAMMRouter extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
+  removeAllowedUser(
+    userAddress: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   removeLiquidity(
     liquidity: BigNumberish,
     amountAMin: BigNumberish,
@@ -387,6 +676,49 @@ export class TempleFraxAMMRouter extends BaseContract {
     deadline: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
+
+  renounceOwnership(
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  renounceRole(
+    role: BytesLike,
+    account: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  revokeRole(
+    role: BytesLike,
+    account: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setDynamicThresholdDecayPerBlock(
+    _dynamicThresholdDecayPerBlock: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setDynamicThresholdIncreasePct(
+    _dynamicThresholdIncreasePct: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setInterpolateFromPrice(
+    frax: BigNumberish,
+    temple: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setInterpolateToPrice(
+    frax: BigNumberish,
+    temple: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  supportsInterface(
+    interfaceId: BytesLike,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
 
   swapExactFraxForTemple(
     amountIn: BigNumberish,
@@ -408,7 +740,25 @@ export class TempleFraxAMMRouter extends BaseContract {
 
   templeTreasury(overrides?: CallOverrides): Promise<string>;
 
+  toggleOpenAccess(
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  transferOwnership(
+    newOwner: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   callStatic: {
+    CAN_ADD_ALLOWED_USER(overrides?: CallOverrides): Promise<string>;
+
+    DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
+
+    addAllowedUser(
+      userAddress: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     addLiquidity(
       amountADesired: BigNumberish,
       amountBDesired: BigNumberish,
@@ -448,6 +798,20 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<string>;
+
+    grantRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    hasRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
+
     interpolateFromPrice(
       overrides?: CallOverrides
     ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
@@ -466,6 +830,8 @@ export class TempleFraxAMMRouter extends BaseContract {
 
     openAccessEnabled(overrides?: CallOverrides): Promise<boolean>;
 
+    owner(overrides?: CallOverrides): Promise<string>;
+
     pair(overrides?: CallOverrides): Promise<string>;
 
     quote(
@@ -474,6 +840,11 @@ export class TempleFraxAMMRouter extends BaseContract {
       reserveB: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    removeAllowedUser(
+      userAddress: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     removeLiquidity(
       liquidity: BigNumberish,
@@ -485,6 +856,47 @@ export class TempleFraxAMMRouter extends BaseContract {
     ): Promise<
       [BigNumber, BigNumber] & { amountA: BigNumber; amountB: BigNumber }
     >;
+
+    renounceOwnership(overrides?: CallOverrides): Promise<void>;
+
+    renounceRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    revokeRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setDynamicThresholdDecayPerBlock(
+      _dynamicThresholdDecayPerBlock: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setDynamicThresholdIncreasePct(
+      _dynamicThresholdIncreasePct: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setInterpolateFromPrice(
+      frax: BigNumberish,
+      temple: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setInterpolateToPrice(
+      frax: BigNumberish,
+      temple: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    supportsInterface(
+      interfaceId: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
 
     swapExactFraxForTemple(
       amountIn: BigNumberish,
@@ -505,11 +917,97 @@ export class TempleFraxAMMRouter extends BaseContract {
     templeToken(overrides?: CallOverrides): Promise<string>;
 
     templeTreasury(overrides?: CallOverrides): Promise<string>;
+
+    toggleOpenAccess(overrides?: CallOverrides): Promise<void>;
+
+    transferOwnership(
+      newOwner: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
-  filters: {};
+  filters: {
+    "OwnershipTransferred(address,address)"(
+      previousOwner?: string | null,
+      newOwner?: string | null
+    ): TypedEventFilter<
+      [string, string],
+      { previousOwner: string; newOwner: string }
+    >;
+
+    OwnershipTransferred(
+      previousOwner?: string | null,
+      newOwner?: string | null
+    ): TypedEventFilter<
+      [string, string],
+      { previousOwner: string; newOwner: string }
+    >;
+
+    "RoleAdminChanged(bytes32,bytes32,bytes32)"(
+      role?: BytesLike | null,
+      previousAdminRole?: BytesLike | null,
+      newAdminRole?: BytesLike | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; previousAdminRole: string; newAdminRole: string }
+    >;
+
+    RoleAdminChanged(
+      role?: BytesLike | null,
+      previousAdminRole?: BytesLike | null,
+      newAdminRole?: BytesLike | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; previousAdminRole: string; newAdminRole: string }
+    >;
+
+    "RoleGranted(bytes32,address,address)"(
+      role?: BytesLike | null,
+      account?: string | null,
+      sender?: string | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; account: string; sender: string }
+    >;
+
+    RoleGranted(
+      role?: BytesLike | null,
+      account?: string | null,
+      sender?: string | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; account: string; sender: string }
+    >;
+
+    "RoleRevoked(bytes32,address,address)"(
+      role?: BytesLike | null,
+      account?: string | null,
+      sender?: string | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; account: string; sender: string }
+    >;
+
+    RoleRevoked(
+      role?: BytesLike | null,
+      account?: string | null,
+      sender?: string | null
+    ): TypedEventFilter<
+      [string, string, string],
+      { role: string; account: string; sender: string }
+    >;
+  };
 
   estimateGas: {
+    CAN_ADD_ALLOWED_USER(overrides?: CallOverrides): Promise<BigNumber>;
+
+    DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<BigNumber>;
+
+    addAllowedUser(
+      userAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     addLiquidity(
       amountADesired: BigNumberish,
       amountBDesired: BigNumberish,
@@ -541,6 +1039,23 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    getRoleAdmin(
+      role: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    grantRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    hasRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     interpolateFromPrice(overrides?: CallOverrides): Promise<BigNumber>;
 
     interpolateToPrice(overrides?: CallOverrides): Promise<BigNumber>;
@@ -553,6 +1068,8 @@ export class TempleFraxAMMRouter extends BaseContract {
 
     openAccessEnabled(overrides?: CallOverrides): Promise<BigNumber>;
 
+    owner(overrides?: CallOverrides): Promise<BigNumber>;
+
     pair(overrides?: CallOverrides): Promise<BigNumber>;
 
     quote(
@@ -562,6 +1079,11 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    removeAllowedUser(
+      userAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     removeLiquidity(
       liquidity: BigNumberish,
       amountAMin: BigNumberish,
@@ -569,6 +1091,49 @@ export class TempleFraxAMMRouter extends BaseContract {
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    renounceOwnership(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    renounceRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    revokeRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setDynamicThresholdDecayPerBlock(
+      _dynamicThresholdDecayPerBlock: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setDynamicThresholdIncreasePct(
+      _dynamicThresholdIncreasePct: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setInterpolateFromPrice(
+      frax: BigNumberish,
+      temple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setInterpolateToPrice(
+      frax: BigNumberish,
+      temple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    supportsInterface(
+      interfaceId: BytesLike,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     swapExactFraxForTemple(
@@ -590,9 +1155,31 @@ export class TempleFraxAMMRouter extends BaseContract {
     templeToken(overrides?: CallOverrides): Promise<BigNumber>;
 
     templeTreasury(overrides?: CallOverrides): Promise<BigNumber>;
+
+    toggleOpenAccess(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    transferOwnership(
+      newOwner: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
+    CAN_ADD_ALLOWED_USER(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    DEFAULT_ADMIN_ROLE(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    addAllowedUser(
+      userAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     addLiquidity(
       amountADesired: BigNumberish,
       amountBDesired: BigNumberish,
@@ -631,6 +1218,23 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    getRoleAdmin(
+      role: BytesLike,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    grantRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    hasRole(
+      role: BytesLike,
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     interpolateFromPrice(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
@@ -647,6 +1251,8 @@ export class TempleFraxAMMRouter extends BaseContract {
 
     openAccessEnabled(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     pair(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     quote(
@@ -656,6 +1262,11 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    removeAllowedUser(
+      userAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     removeLiquidity(
       liquidity: BigNumberish,
       amountAMin: BigNumberish,
@@ -663,6 +1274,49 @@ export class TempleFraxAMMRouter extends BaseContract {
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    renounceOwnership(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    renounceRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    revokeRole(
+      role: BytesLike,
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setDynamicThresholdDecayPerBlock(
+      _dynamicThresholdDecayPerBlock: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setDynamicThresholdIncreasePct(
+      _dynamicThresholdIncreasePct: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setInterpolateFromPrice(
+      frax: BigNumberish,
+      temple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setInterpolateToPrice(
+      frax: BigNumberish,
+      temple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    supportsInterface(
+      interfaceId: BytesLike,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     swapExactFraxForTemple(
@@ -684,5 +1338,14 @@ export class TempleFraxAMMRouter extends BaseContract {
     templeToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     templeTreasury(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    toggleOpenAccess(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    transferOwnership(
+      newOwner: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
   };
 }
