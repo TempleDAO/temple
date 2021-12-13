@@ -62,19 +62,32 @@ describe("AMM", async () => {
       // Add liquidity to both AMMs
       await templeToken.increaseAllowance(templeRouter.address, toAtto(10000000));
       await fraxToken.increaseAllowance(templeRouter.address, toAtto(10000000));
-      await templeRouter.addLiquidity(toAtto(1000000), toAtto(1000000), 1, 1, await owner.getAddress(), expiryDate());
+      await templeRouter.addLiquidity(toAtto(100000), toAtto(1000000), 1, 1, await owner.getAddress(), expiryDate());
 
       await templeToken.increaseAllowance(uniswapRouter.address, toAtto(10000000));
       await fraxToken.increaseAllowance(uniswapRouter.address, toAtto(10000000));
-      await uniswapRouter.addLiquidity(templeToken.address, fraxToken.address, toAtto(1000000), toAtto(1000000), 1, 1, await owner.getAddress(), expiryDate());
+      await uniswapRouter.addLiquidity(templeToken.address, fraxToken.address, toAtto(100000), toAtto(1000000), 1, 1, await owner.getAddress(), expiryDate());
 
       // Make temple router open access (useful state for most tests)
       await templeRouter.toggleOpenAccess();
     })
 
-    it("Swap frax for temple, all on AMM", async() => {
-      // await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await alan.getAddress(), expiryDate());
+    it("Swap frax for temple below dynamic threshold should be all on AMM", async() => {
+      const fmtReserves = (reserves: [BigNumber, BigNumber, number?]): [number, number] => {
+        return [fromAtto(reserves[0]), fromAtto(reserves[1])]
+      }
+
+      // do swaps
       await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
+      await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await alan.getAddress(), expiryDate());
+
+      // Expect reserves to match
+      const uniswapReseves = fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address));
+      expect(fmtReserves(await pair.getReserves())).eql(uniswapReseves);
+
+      // Expect temple balances to match
+      expect(fromAtto(await templeToken.balanceOf(await alan.getAddress())))
+        .eq(fromAtto(await templeToken.balanceOf(await ben.getAddress())))
     })
 
     // it("pair contract", async () => {
