@@ -20,7 +20,7 @@ describe("AMM", async () => {
     let pair: TempleUniswapV2Pair;
     let templeRouter: TempleFraxAMMRouter;
     let uniswapRouter: UniswapV2Router02NoEth;
-    let expiryDate: number =  Math.floor(Date.now() / 1000) + 900;
+    const expiryDate = (): number =>  Math.floor(Date.now() / 1000) + 900;
    
     beforeEach(async () => {
       [owner, alan, ben] = await ethers.getSigners();
@@ -36,8 +36,8 @@ describe("AMM", async () => {
       await templeToken.addMinter(await owner.getAddress()),
 
       await Promise.all([
-        fraxToken.mint(await owner.getAddress(), toAtto(100000)),
-        templeToken.mint(await owner.getAddress(), toAtto(100000)),
+        fraxToken.mint(await owner.getAddress(), toAtto(100000000)),
+        templeToken.mint(await owner.getAddress(), toAtto(100000000)),
       ]);
 
       pair = await new TempleUniswapV2Pair__factory(owner).deploy(await owner.getAddress(), templeToken.address, fraxToken.address);
@@ -57,9 +57,16 @@ describe("AMM", async () => {
 
       // Create a stock standard uniswap, so we can compare our AMM against the standard constant product AMM
       const uniswapFactory: UniswapV2Factory = await new UniswapV2Factory__factory(owner).deploy(await owner.getAddress())
-
       uniswapRouter = await new UniswapV2Router02NoEth__factory(owner).deploy(uniswapFactory.address, fraxToken.address);
-      console.log("HERE");
+
+      // Add liquidity to both AMMs
+      await templeToken.increaseAllowance(templeRouter.address, toAtto(1000000));
+      await fraxToken.increaseAllowance(templeRouter.address, toAtto(1000000));
+      await templeRouter.addLiquidity(toAtto(1000000), toAtto(1000000), 1, 1, await owner.getAddress(), expiryDate());
+
+      await templeToken.increaseAllowance(uniswapRouter.address, toAtto(1000000));
+      await fraxToken.increaseAllowance(uniswapRouter.address, toAtto(1000000));
+      await uniswapRouter.addLiquidity(templeToken.address, fraxToken.address, toAtto(1000000), toAtto(1000000), 1, 1, await owner.getAddress(), expiryDate());
     })
 
     it("Happy path user flows", async() => {
