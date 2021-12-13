@@ -17,7 +17,7 @@ contract TempleFraxAMMRouter {
         _;
     }
 
-    constructor(IUniswapV2Pair _pair, IERC20 _templeToken, IERC20 _fraxToken) public {
+    constructor(IUniswapV2Pair _pair, IERC20 _templeToken, IERC20 _fraxToken) {
         pair = _pair;
         templeToken = _templeToken;
         fraxToken = _fraxToken;
@@ -30,7 +30,7 @@ contract TempleFraxAMMRouter {
         uint amountAMin,
         uint amountBMin
     ) internal virtual returns (uint amountA, uint amountB) {
-        (uint reserveA, uint reserveB) = pair.getReserves();
+        (uint reserveA, uint reserveB,) = pair.getReserves();
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
@@ -53,10 +53,10 @@ contract TempleFraxAMMRouter {
         uint amountBMin,
         address to,
         uint deadline
-    ) external virtual override ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
+    ) external virtual ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
         (amountA, amountB) = _addLiquidity(amountADesired, amountBDesired, amountAMin, amountBMin);
-        SafeERC20.safeTransferFrom(templeToken, msg.sender, pair, amountA);
-        SafeERC20.safeTransferFrom(fraxToken, msg.sender, pair, amountB);
+        SafeERC20.safeTransferFrom(templeToken, msg.sender, address(pair), amountA);
+        SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(pair), amountB);
         liquidity = pair.mint(to);
     }
 
@@ -67,9 +67,9 @@ contract TempleFraxAMMRouter {
         uint amountBMin,
         address to,
         uint deadline
-    ) public virtual override ensure(deadline) returns (uint amountA, uint amountB) {
-        SafeERC20.safeTransferFrom(pair, msg.sender, pair, liquidity);
-        (uint amount0, uint amount1) = pair.burn(to);
+    ) public virtual ensure(deadline) returns (uint amountA, uint amountB) {
+        SafeERC20.safeTransferFrom(IERC20(address(pair)), msg.sender, address(pair), liquidity);
+        (amountA, amountB) = pair.burn(to);
         require(amountA >= amountAMin, 'TempleFraxAMMRouter: INSUFFICIENT_TEMPLE');
         require(amountB >= amountBMin, 'TempleFraxAMMRouter: INSUFFICIENT_FRAX');
     }
@@ -79,11 +79,11 @@ contract TempleFraxAMMRouter {
         uint amountOutMin,
         address to,
         uint deadline
-    ) external virtual override ensure(deadline) returns (uint amountOut) {
-        (uint reserveA, uint reserveB) = pair.getReserves();
+    ) external virtual ensure(deadline) returns (uint amountOut) {
+        (uint reserveA, uint reserveB,) = pair.getReserves();
         amountOut = getAmountOut(amountIn, reserveB, reserveA);
         require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        SafeERC20.safeTransferFrom(fraxToken, msg.sender, pair, amountIn);
+        SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(pair), amountIn);
         pair.swap(amountOut, 0, to, new bytes(0));
     }
 
@@ -105,11 +105,11 @@ contract TempleFraxAMMRouter {
         uint amountOutMin,
         address to,
         uint deadline
-    ) external virtual override ensure(deadline) returns (uint amountOut) {
-        (uint reserveA, uint reserveB) = pair.getReserves();
+    ) external virtual ensure(deadline) returns (uint amountOut) {
+        (uint reserveA, uint reserveB,) = pair.getReserves();
         amountOut = getAmountOut(amountIn, reserveA, reserveB);
         require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        SafeERC20.safeTransferFrom(templeToken, msg.sender, pair, amountIn);
+        SafeERC20.safeTransferFrom(templeToken, msg.sender, address(pair), amountIn);
         pair.swap(0, amountOut, to, new bytes(0));
     }
 
