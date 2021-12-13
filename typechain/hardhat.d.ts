@@ -65,6 +65,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IUniswapV2ERC20__factory>;
     getContractFactory(
+      name: "IUniswapV2Factory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IUniswapV2Factory__factory>;
+    getContractFactory(
       name: "IUniswapV2Pair",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IUniswapV2Pair__factory>;
@@ -72,6 +76,30 @@ declare module "hardhat/types/runtime" {
       name: "UniswapV2ERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.UniswapV2ERC20__factory>;
+    getContractFactory(
+      name: "UniswapV2Factory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.UniswapV2Factory__factory>;
+    getContractFactory(
+      name: "UniswapV2Pair",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.UniswapV2Pair__factory>;
+    getContractFactory(
+      name: "IERC20",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20__factory>;
+    getContractFactory(
+      name: "IUniswapV2Router01",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IUniswapV2Router01__factory>;
+    getContractFactory(
+      name: "IUniswapV2Router02",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IUniswapV2Router02__factory>;
+    getContractFactory(
+      name: "IWETH",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IWETH__factory>;
     getContractFactory(
       name: "IUniswapV3SwapCallback",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -97,9 +125,9 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleFraxAMMRouter__factory>;
     getContractFactory(
-      name: "UniswapV2Pair",
+      name: "TempleUniswapV2Pair",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.UniswapV2Pair__factory>;
+    ): Promise<Contracts.TempleUniswapV2Pair__factory>;
     getContractFactory(
       name: "AutoHarvestKeeper",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -121,13 +149,13 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.FakeERC20__factory>;
     getContractFactory(
-      name: "FakeUniswapRouter",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.FakeUniswapRouter__factory>;
-    getContractFactory(
       name: "TestTreasuryAllocation",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestTreasuryAllocation__factory>;
+    getContractFactory(
+      name: "UniswapV2Router02NoEth",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.UniswapV2Router02NoEth__factory>;
     getContractFactory(
       name: "ITreasuryAllocation",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -255,6 +283,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IUniswapV2ERC20>;
     getContractAt(
+      name: "IUniswapV2Factory",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IUniswapV2Factory>;
+    getContractAt(
       name: "IUniswapV2Pair",
       address: string,
       signer?: ethers.Signer
@@ -264,6 +297,36 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.UniswapV2ERC20>;
+    getContractAt(
+      name: "UniswapV2Factory",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.UniswapV2Factory>;
+    getContractAt(
+      name: "UniswapV2Pair",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.UniswapV2Pair>;
+    getContractAt(
+      name: "IERC20",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC20>;
+    getContractAt(
+      name: "IUniswapV2Router01",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IUniswapV2Router01>;
+    getContractAt(
+      name: "IUniswapV2Router02",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IUniswapV2Router02>;
+    getContractAt(
+      name: "IWETH",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IWETH>;
     getContractAt(
       name: "IUniswapV3SwapCallback",
       address: string,
@@ -295,10 +358,10 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.TempleFraxAMMRouter>;
     getContractAt(
-      name: "UniswapV2Pair",
+      name: "TempleUniswapV2Pair",
       address: string,
       signer?: ethers.Signer
-    ): Promise<Contracts.UniswapV2Pair>;
+    ): Promise<Contracts.TempleUniswapV2Pair>;
     getContractAt(
       name: "AutoHarvestKeeper",
       address: string,
@@ -325,15 +388,15 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.FakeERC20>;
     getContractAt(
-      name: "FakeUniswapRouter",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.FakeUniswapRouter>;
-    getContractAt(
       name: "TestTreasuryAllocation",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TestTreasuryAllocation>;
+    getContractAt(
+      name: "UniswapV2Router02NoEth",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.UniswapV2Router02NoEth>;
     getContractAt(
       name: "ITreasuryAllocation",
       address: string,

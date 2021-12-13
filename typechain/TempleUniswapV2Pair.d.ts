@@ -19,7 +19,7 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface UniswapV2PairInterface extends ethers.utils.Interface {
+interface TempleUniswapV2PairInterface extends ethers.utils.Interface {
   functions: {
     "DOMAIN_SEPARATOR()": FunctionFragment;
     "MINIMUM_LIQUIDITY()": FunctionFragment;
@@ -29,16 +29,17 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
     "balanceOf(address)": FunctionFragment;
     "burn(address)": FunctionFragment;
     "decimals()": FunctionFragment;
-    "factory()": FunctionFragment;
     "getReserves()": FunctionFragment;
-    "initialize(address,address)": FunctionFragment;
     "kLast()": FunctionFragment;
     "mint(address)": FunctionFragment;
     "name()": FunctionFragment;
     "nonces(address)": FunctionFragment;
+    "owner()": FunctionFragment;
     "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)": FunctionFragment;
     "price0CumulativeLast()": FunctionFragment;
     "price1CumulativeLast()": FunctionFragment;
+    "router()": FunctionFragment;
+    "setRouter(address)": FunctionFragment;
     "skim(address)": FunctionFragment;
     "swap(uint256,uint256,address,bytes)": FunctionFragment;
     "symbol()": FunctionFragment;
@@ -73,19 +74,15 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
   encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
   encodeFunctionData(functionFragment: "burn", values: [string]): string;
   encodeFunctionData(functionFragment: "decimals", values?: undefined): string;
-  encodeFunctionData(functionFragment: "factory", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "getReserves",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "initialize",
-    values: [string, string]
   ): string;
   encodeFunctionData(functionFragment: "kLast", values?: undefined): string;
   encodeFunctionData(functionFragment: "mint", values: [string]): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(functionFragment: "nonces", values: [string]): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "permit",
     values: [
@@ -106,6 +103,8 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
     functionFragment: "price1CumulativeLast",
     values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "router", values?: undefined): string;
+  encodeFunctionData(functionFragment: "setRouter", values: [string]): string;
   encodeFunctionData(functionFragment: "skim", values: [string]): string;
   encodeFunctionData(
     functionFragment: "swap",
@@ -145,16 +144,15 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "burn", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "decimals", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "factory", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getReserves",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "kLast", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "nonces", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "permit", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "price0CumulativeLast",
@@ -164,6 +162,8 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
     functionFragment: "price1CumulativeLast",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "router", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "setRouter", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "skim", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "swap", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "symbol", data: BytesLike): Result;
@@ -241,7 +241,7 @@ export type TransferEvent = TypedEvent<
   [string, string, BigNumber] & { from: string; to: string; value: BigNumber }
 >;
 
-export class UniswapV2Pair extends BaseContract {
+export class TempleUniswapV2Pair extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -282,7 +282,7 @@ export class UniswapV2Pair extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: UniswapV2PairInterface;
+  interface: TempleUniswapV2PairInterface;
 
   functions: {
     DOMAIN_SEPARATOR(overrides?: CallOverrides): Promise<[string]>;
@@ -312,8 +312,6 @@ export class UniswapV2Pair extends BaseContract {
 
     decimals(overrides?: CallOverrides): Promise<[number]>;
 
-    factory(overrides?: CallOverrides): Promise<[string]>;
-
     getReserves(
       overrides?: CallOverrides
     ): Promise<
@@ -323,12 +321,6 @@ export class UniswapV2Pair extends BaseContract {
         _blockTimestampLast: number;
       }
     >;
-
-    initialize(
-      _token0: string,
-      _token1: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
 
     kLast(overrides?: CallOverrides): Promise<[BigNumber]>;
 
@@ -340,6 +332,8 @@ export class UniswapV2Pair extends BaseContract {
     name(overrides?: CallOverrides): Promise<[string]>;
 
     nonces(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    owner(overrides?: CallOverrides): Promise<[string]>;
 
     permit(
       owner: string,
@@ -355,6 +349,13 @@ export class UniswapV2Pair extends BaseContract {
     price0CumulativeLast(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     price1CumulativeLast(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    router(overrides?: CallOverrides): Promise<[string]>;
+
+    setRouter(
+      _router: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
 
     skim(
       to: string,
@@ -422,8 +423,6 @@ export class UniswapV2Pair extends BaseContract {
 
   decimals(overrides?: CallOverrides): Promise<number>;
 
-  factory(overrides?: CallOverrides): Promise<string>;
-
   getReserves(
     overrides?: CallOverrides
   ): Promise<
@@ -433,12 +432,6 @@ export class UniswapV2Pair extends BaseContract {
       _blockTimestampLast: number;
     }
   >;
-
-  initialize(
-    _token0: string,
-    _token1: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
 
   kLast(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -450,6 +443,8 @@ export class UniswapV2Pair extends BaseContract {
   name(overrides?: CallOverrides): Promise<string>;
 
   nonces(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+  owner(overrides?: CallOverrides): Promise<string>;
 
   permit(
     owner: string,
@@ -465,6 +460,13 @@ export class UniswapV2Pair extends BaseContract {
   price0CumulativeLast(overrides?: CallOverrides): Promise<BigNumber>;
 
   price1CumulativeLast(overrides?: CallOverrides): Promise<BigNumber>;
+
+  router(overrides?: CallOverrides): Promise<string>;
+
+  setRouter(
+    _router: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
   skim(
     to: string,
@@ -534,8 +536,6 @@ export class UniswapV2Pair extends BaseContract {
 
     decimals(overrides?: CallOverrides): Promise<number>;
 
-    factory(overrides?: CallOverrides): Promise<string>;
-
     getReserves(
       overrides?: CallOverrides
     ): Promise<
@@ -546,12 +546,6 @@ export class UniswapV2Pair extends BaseContract {
       }
     >;
 
-    initialize(
-      _token0: string,
-      _token1: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     kLast(overrides?: CallOverrides): Promise<BigNumber>;
 
     mint(to: string, overrides?: CallOverrides): Promise<BigNumber>;
@@ -559,6 +553,8 @@ export class UniswapV2Pair extends BaseContract {
     name(overrides?: CallOverrides): Promise<string>;
 
     nonces(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    owner(overrides?: CallOverrides): Promise<string>;
 
     permit(
       owner: string,
@@ -574,6 +570,10 @@ export class UniswapV2Pair extends BaseContract {
     price0CumulativeLast(overrides?: CallOverrides): Promise<BigNumber>;
 
     price1CumulativeLast(overrides?: CallOverrides): Promise<BigNumber>;
+
+    router(overrides?: CallOverrides): Promise<string>;
+
+    setRouter(_router: string, overrides?: CallOverrides): Promise<void>;
 
     skim(to: string, overrides?: CallOverrides): Promise<void>;
 
@@ -767,15 +767,7 @@ export class UniswapV2Pair extends BaseContract {
 
     decimals(overrides?: CallOverrides): Promise<BigNumber>;
 
-    factory(overrides?: CallOverrides): Promise<BigNumber>;
-
     getReserves(overrides?: CallOverrides): Promise<BigNumber>;
-
-    initialize(
-      _token0: string,
-      _token1: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
 
     kLast(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -787,6 +779,8 @@ export class UniswapV2Pair extends BaseContract {
     name(overrides?: CallOverrides): Promise<BigNumber>;
 
     nonces(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     permit(
       owner: string,
@@ -802,6 +796,13 @@ export class UniswapV2Pair extends BaseContract {
     price0CumulativeLast(overrides?: CallOverrides): Promise<BigNumber>;
 
     price1CumulativeLast(overrides?: CallOverrides): Promise<BigNumber>;
+
+    router(overrides?: CallOverrides): Promise<BigNumber>;
+
+    setRouter(
+      _router: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
 
     skim(
       to: string,
@@ -873,15 +874,7 @@ export class UniswapV2Pair extends BaseContract {
 
     decimals(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    factory(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     getReserves(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    initialize(
-      _token0: string,
-      _token1: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
 
     kLast(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
@@ -896,6 +889,8 @@ export class UniswapV2Pair extends BaseContract {
       arg0: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
+
+    owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     permit(
       owner: string,
@@ -914,6 +909,13 @@ export class UniswapV2Pair extends BaseContract {
 
     price1CumulativeLast(
       overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    router(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    setRouter(
+      _router: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     skim(
