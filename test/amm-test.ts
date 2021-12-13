@@ -60,21 +60,21 @@ describe("AMM", async () => {
       uniswapRouter = await new UniswapV2Router02NoEth__factory(owner).deploy(uniswapFactory.address, fraxToken.address);
 
       // Add liquidity to both AMMs
-      await templeToken.increaseAllowance(templeRouter.address, toAtto(1000000));
-      await fraxToken.increaseAllowance(templeRouter.address, toAtto(1000000));
+      await templeToken.increaseAllowance(templeRouter.address, toAtto(10000000));
+      await fraxToken.increaseAllowance(templeRouter.address, toAtto(10000000));
       await templeRouter.addLiquidity(toAtto(1000000), toAtto(1000000), 1, 1, await owner.getAddress(), expiryDate());
 
-      await templeToken.increaseAllowance(uniswapRouter.address, toAtto(1000000));
-      await fraxToken.increaseAllowance(uniswapRouter.address, toAtto(1000000));
+      await templeToken.increaseAllowance(uniswapRouter.address, toAtto(10000000));
+      await fraxToken.increaseAllowance(uniswapRouter.address, toAtto(10000000));
       await uniswapRouter.addLiquidity(templeToken.address, fraxToken.address, toAtto(1000000), toAtto(1000000), 1, 1, await owner.getAddress(), expiryDate());
+
+      // Make temple router open access (useful state for most tests)
+      await templeRouter.toggleOpenAccess();
     })
 
-    it("Happy path user flows", async() => {
-        // await factory.connect(recipient).createPair(TEMPLE.address, STABLEC.address);
-        
-        it("permission", async() => {
-           
-        })
+    it("Swap frax for temple, all on AMM", async() => {
+      // await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await alan.getAddress(), expiryDate());
+      await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
     })
 
     // it("pair contract", async () => {
