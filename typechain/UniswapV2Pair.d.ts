@@ -33,7 +33,6 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
     "getReserves()": FunctionFragment;
     "initialize(address,address)": FunctionFragment;
     "kLast()": FunctionFragment;
-    "manager()": FunctionFragment;
     "mint(address)": FunctionFragment;
     "name()": FunctionFragment;
     "nonces(address)": FunctionFragment;
@@ -41,7 +40,8 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
     "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)": FunctionFragment;
     "price0CumulativeLast()": FunctionFragment;
     "price1CumulativeLast()": FunctionFragment;
-    "setManager(address)": FunctionFragment;
+    "router()": FunctionFragment;
+    "setRouter(address)": FunctionFragment;
     "skim(address)": FunctionFragment;
     "swap(uint256,uint256,address,bytes)": FunctionFragment;
     "symbol()": FunctionFragment;
@@ -86,7 +86,6 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
     values: [string, string]
   ): string;
   encodeFunctionData(functionFragment: "kLast", values?: undefined): string;
-  encodeFunctionData(functionFragment: "manager", values?: undefined): string;
   encodeFunctionData(functionFragment: "mint", values: [string]): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(functionFragment: "nonces", values: [string]): string;
@@ -111,7 +110,8 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
     functionFragment: "price1CumulativeLast",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: "setManager", values: [string]): string;
+  encodeFunctionData(functionFragment: "router", values?: undefined): string;
+  encodeFunctionData(functionFragment: "setRouter", values: [string]): string;
   encodeFunctionData(functionFragment: "skim", values: [string]): string;
   encodeFunctionData(
     functionFragment: "swap",
@@ -158,7 +158,6 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "kLast", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "manager", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "nonces", data: BytesLike): Result;
@@ -172,7 +171,8 @@ interface UniswapV2PairInterface extends ethers.utils.Interface {
     functionFragment: "price1CumulativeLast",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "setManager", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "router", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "setRouter", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "skim", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "swap", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "symbol", data: BytesLike): Result;
@@ -334,14 +334,12 @@ export class UniswapV2Pair extends BaseContract {
     >;
 
     initialize(
-      _token0: string,
-      _token1: string,
+      arg0: string,
+      arg1: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     kLast(overrides?: CallOverrides): Promise<[BigNumber]>;
-
-    manager(overrides?: CallOverrides): Promise<[string]>;
 
     mint(
       to: string,
@@ -369,8 +367,10 @@ export class UniswapV2Pair extends BaseContract {
 
     price1CumulativeLast(overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    setManager(
-      _manager: string,
+    router(overrides?: CallOverrides): Promise<[string]>;
+
+    setRouter(
+      _router: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -453,14 +453,12 @@ export class UniswapV2Pair extends BaseContract {
   >;
 
   initialize(
-    _token0: string,
-    _token1: string,
+    arg0: string,
+    arg1: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   kLast(overrides?: CallOverrides): Promise<BigNumber>;
-
-  manager(overrides?: CallOverrides): Promise<string>;
 
   mint(
     to: string,
@@ -488,8 +486,10 @@ export class UniswapV2Pair extends BaseContract {
 
   price1CumulativeLast(overrides?: CallOverrides): Promise<BigNumber>;
 
-  setManager(
-    _manager: string,
+  router(overrides?: CallOverrides): Promise<string>;
+
+  setRouter(
+    _router: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -574,14 +574,12 @@ export class UniswapV2Pair extends BaseContract {
     >;
 
     initialize(
-      _token0: string,
-      _token1: string,
+      arg0: string,
+      arg1: string,
       overrides?: CallOverrides
     ): Promise<void>;
 
     kLast(overrides?: CallOverrides): Promise<BigNumber>;
-
-    manager(overrides?: CallOverrides): Promise<string>;
 
     mint(to: string, overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -606,7 +604,9 @@ export class UniswapV2Pair extends BaseContract {
 
     price1CumulativeLast(overrides?: CallOverrides): Promise<BigNumber>;
 
-    setManager(_manager: string, overrides?: CallOverrides): Promise<void>;
+    router(overrides?: CallOverrides): Promise<string>;
+
+    setRouter(_router: string, overrides?: CallOverrides): Promise<void>;
 
     skim(to: string, overrides?: CallOverrides): Promise<void>;
 
@@ -805,14 +805,12 @@ export class UniswapV2Pair extends BaseContract {
     getReserves(overrides?: CallOverrides): Promise<BigNumber>;
 
     initialize(
-      _token0: string,
-      _token1: string,
+      arg0: string,
+      arg1: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     kLast(overrides?: CallOverrides): Promise<BigNumber>;
-
-    manager(overrides?: CallOverrides): Promise<BigNumber>;
 
     mint(
       to: string,
@@ -840,8 +838,10 @@ export class UniswapV2Pair extends BaseContract {
 
     price1CumulativeLast(overrides?: CallOverrides): Promise<BigNumber>;
 
-    setManager(
-      _manager: string,
+    router(overrides?: CallOverrides): Promise<BigNumber>;
+
+    setRouter(
+      _router: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -920,14 +920,12 @@ export class UniswapV2Pair extends BaseContract {
     getReserves(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     initialize(
-      _token0: string,
-      _token1: string,
+      arg0: string,
+      arg1: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     kLast(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    manager(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     mint(
       to: string,
@@ -962,8 +960,10 @@ export class UniswapV2Pair extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    setManager(
-      _manager: string,
+    router(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    setRouter(
+      _router: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

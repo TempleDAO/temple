@@ -19,26 +19,19 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface TempleRouterInterface extends ethers.utils.Interface {
+interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   functions: {
-    "aboveTargetTreasuryDistributeRatio()": FunctionFragment;
     "addLiquidity(uint256,uint256,uint256,uint256,address,uint256)": FunctionFragment;
-    "buyTemple(uint256,uint256,address,uint256)": FunctionFragment;
-    "pairContract()": FunctionFragment;
-    "pairToken()": FunctionFragment;
+    "fraxToken()": FunctionFragment;
+    "getAmountOut(uint256,uint256,uint256)": FunctionFragment;
+    "pair()": FunctionFragment;
+    "quote(uint256,uint256,uint256)": FunctionFragment;
     "removeLiquidity(uint256,uint256,uint256,address,uint256)": FunctionFragment;
-    "sellTemple(uint256,uint256,address,uint256)": FunctionFragment;
-    "setAboveTargetTreasuryDistributeRatio(uint256)": FunctionFragment;
-    "setTargetPrice(tuple)": FunctionFragment;
-    "targetPrice()": FunctionFragment;
+    "swapExactFraxForTemple(uint256,uint256,address,uint256)": FunctionFragment;
+    "swapExactTempleForFrax(uint256,uint256,address,uint256)": FunctionFragment;
     "templeToken()": FunctionFragment;
-    "templeTreasury()": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "aboveTargetTreasuryDistributeRatio",
-    values?: undefined
-  ): string;
   encodeFunctionData(
     functionFragment: "addLiquidity",
     values: [
@@ -50,88 +43,65 @@ interface TempleRouterInterface extends ethers.utils.Interface {
       BigNumberish
     ]
   ): string;
+  encodeFunctionData(functionFragment: "fraxToken", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "buyTemple",
-    values: [BigNumberish, BigNumberish, string, BigNumberish]
+    functionFragment: "getAmountOut",
+    values: [BigNumberish, BigNumberish, BigNumberish]
   ): string;
+  encodeFunctionData(functionFragment: "pair", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "pairContract",
-    values?: undefined
+    functionFragment: "quote",
+    values: [BigNumberish, BigNumberish, BigNumberish]
   ): string;
-  encodeFunctionData(functionFragment: "pairToken", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "removeLiquidity",
     values: [BigNumberish, BigNumberish, BigNumberish, string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "sellTemple",
+    functionFragment: "swapExactFraxForTemple",
     values: [BigNumberish, BigNumberish, string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "setAboveTargetTreasuryDistributeRatio",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "setTargetPrice",
-    values: [{ numerator: BigNumberish; denominator: BigNumberish }]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "targetPrice",
-    values?: undefined
+    functionFragment: "swapExactTempleForFrax",
+    values: [BigNumberish, BigNumberish, string, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "templeToken",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "templeTreasury",
     values?: undefined
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "aboveTargetTreasuryDistributeRatio",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "addLiquidity",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "buyTemple", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "fraxToken", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "pairContract",
+    functionFragment: "getAmountOut",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "pairToken", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "pair", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "quote", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "removeLiquidity",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "sellTemple", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "setAboveTargetTreasuryDistributeRatio",
+    functionFragment: "swapExactFraxForTemple",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "setTargetPrice",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "targetPrice",
+    functionFragment: "swapExactTempleForFrax",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "templeToken",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "templeTreasury",
     data: BytesLike
   ): Result;
 
   events: {};
 }
 
-export class TempleRouter extends BaseContract {
+export class TempleFraxAMMRouter extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -172,45 +142,47 @@ export class TempleRouter extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: TempleRouterInterface;
+  interface: TempleFraxAMMRouterInterface;
 
   functions: {
-    aboveTargetTreasuryDistributeRatio(
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
-
     addLiquidity(
-      amountTempleDesired: BigNumberish,
-      amountPairDesired: BigNumberish,
-      amountTempleMin: BigNumberish,
-      amountPairMin: BigNumberish,
+      amountADesired: BigNumberish,
+      amountBDesired: BigNumberish,
+      amountAMin: BigNumberish,
+      amountBMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    buyTemple(
+    fraxToken(overrides?: CallOverrides): Promise<[string]>;
+
+    getAmountOut(
       amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
+      reserveIn: BigNumberish,
+      reserveOut: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber] & { amountOut: BigNumber }>;
 
-    pairContract(overrides?: CallOverrides): Promise<[string]>;
+    pair(overrides?: CallOverrides): Promise<[string]>;
 
-    pairToken(overrides?: CallOverrides): Promise<[string]>;
+    quote(
+      amountA: BigNumberish,
+      reserveA: BigNumberish,
+      reserveB: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber] & { amountB: BigNumber }>;
 
     removeLiquidity(
       liquidity: BigNumberish,
-      amountTempleMin: BigNumberish,
-      amountPairMin: BigNumberish,
+      amountAMin: BigNumberish,
+      amountBMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    sellTemple(
+    swapExactFraxForTemple(
       amountIn: BigNumberish,
       amountOutMin: BigNumberish,
       to: string,
@@ -218,63 +190,55 @@ export class TempleRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    setAboveTargetTreasuryDistributeRatio(
-      _aboveTargetTreasuryDistributeRatio: BigNumberish,
+    swapExactTempleForFrax(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      to: string,
+      deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-
-    setTargetPrice(
-      _targetPrice: { numerator: BigNumberish; denominator: BigNumberish },
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    targetPrice(
-      overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
-    >;
 
     templeToken(overrides?: CallOverrides): Promise<[string]>;
-
-    templeTreasury(overrides?: CallOverrides): Promise<[string]>;
   };
 
-  aboveTargetTreasuryDistributeRatio(
+  addLiquidity(
+    amountADesired: BigNumberish,
+    amountBDesired: BigNumberish,
+    amountAMin: BigNumberish,
+    amountBMin: BigNumberish,
+    to: string,
+    deadline: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  fraxToken(overrides?: CallOverrides): Promise<string>;
+
+  getAmountOut(
+    amountIn: BigNumberish,
+    reserveIn: BigNumberish,
+    reserveOut: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
-  addLiquidity(
-    amountTempleDesired: BigNumberish,
-    amountPairDesired: BigNumberish,
-    amountTempleMin: BigNumberish,
-    amountPairMin: BigNumberish,
-    to: string,
-    deadline: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
+  pair(overrides?: CallOverrides): Promise<string>;
 
-  buyTemple(
-    amountIn: BigNumberish,
-    amountOutMin: BigNumberish,
-    to: string,
-    deadline: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  pairContract(overrides?: CallOverrides): Promise<string>;
-
-  pairToken(overrides?: CallOverrides): Promise<string>;
+  quote(
+    amountA: BigNumberish,
+    reserveA: BigNumberish,
+    reserveB: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
   removeLiquidity(
     liquidity: BigNumberish,
-    amountTempleMin: BigNumberish,
-    amountPairMin: BigNumberish,
+    amountAMin: BigNumberish,
+    amountBMin: BigNumberish,
     to: string,
     deadline: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  sellTemple(
+  swapExactFraxForTemple(
     amountIn: BigNumberish,
     amountOutMin: BigNumberish,
     to: string,
@@ -282,36 +246,22 @@ export class TempleRouter extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  setAboveTargetTreasuryDistributeRatio(
-    _aboveTargetTreasuryDistributeRatio: BigNumberish,
+  swapExactTempleForFrax(
+    amountIn: BigNumberish,
+    amountOutMin: BigNumberish,
+    to: string,
+    deadline: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
-
-  setTargetPrice(
-    _targetPrice: { numerator: BigNumberish; denominator: BigNumberish },
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  targetPrice(
-    overrides?: CallOverrides
-  ): Promise<
-    [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
-  >;
 
   templeToken(overrides?: CallOverrides): Promise<string>;
 
-  templeTreasury(overrides?: CallOverrides): Promise<string>;
-
   callStatic: {
-    aboveTargetTreasuryDistributeRatio(
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     addLiquidity(
-      amountTempleDesired: BigNumberish,
-      amountPairDesired: BigNumberish,
-      amountTempleMin: BigNumberish,
-      amountPairMin: BigNumberish,
+      amountADesired: BigNumberish,
+      amountBDesired: BigNumberish,
+      amountAMin: BigNumberish,
+      amountBMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: CallOverrides
@@ -323,22 +273,28 @@ export class TempleRouter extends BaseContract {
       }
     >;
 
-    buyTemple(
+    fraxToken(overrides?: CallOverrides): Promise<string>;
+
+    getAmountOut(
       amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
-      to: string,
-      deadline: BigNumberish,
+      reserveIn: BigNumberish,
+      reserveOut: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<void>;
+    ): Promise<BigNumber>;
 
-    pairContract(overrides?: CallOverrides): Promise<string>;
+    pair(overrides?: CallOverrides): Promise<string>;
 
-    pairToken(overrides?: CallOverrides): Promise<string>;
+    quote(
+      amountA: BigNumberish,
+      reserveA: BigNumberish,
+      reserveB: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     removeLiquidity(
       liquidity: BigNumberish,
-      amountTempleMin: BigNumberish,
-      amountPairMin: BigNumberish,
+      amountAMin: BigNumberish,
+      amountBMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: CallOverrides
@@ -346,74 +302,66 @@ export class TempleRouter extends BaseContract {
       [BigNumber, BigNumber] & { amountA: BigNumber; amountB: BigNumber }
     >;
 
-    sellTemple(
+    swapExactFraxForTemple(
       amountIn: BigNumberish,
       amountOutMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<void>;
+    ): Promise<BigNumber>;
 
-    setAboveTargetTreasuryDistributeRatio(
-      _aboveTargetTreasuryDistributeRatio: BigNumberish,
+    swapExactTempleForFrax(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      to: string,
+      deadline: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<void>;
-
-    setTargetPrice(
-      _targetPrice: { numerator: BigNumberish; denominator: BigNumberish },
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    targetPrice(
-      overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
-    >;
+    ): Promise<BigNumber>;
 
     templeToken(overrides?: CallOverrides): Promise<string>;
-
-    templeTreasury(overrides?: CallOverrides): Promise<string>;
   };
 
   filters: {};
 
   estimateGas: {
-    aboveTargetTreasuryDistributeRatio(
+    addLiquidity(
+      amountADesired: BigNumberish,
+      amountBDesired: BigNumberish,
+      amountAMin: BigNumberish,
+      amountBMin: BigNumberish,
+      to: string,
+      deadline: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    fraxToken(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getAmountOut(
+      amountIn: BigNumberish,
+      reserveIn: BigNumberish,
+      reserveOut: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    addLiquidity(
-      amountTempleDesired: BigNumberish,
-      amountPairDesired: BigNumberish,
-      amountTempleMin: BigNumberish,
-      amountPairMin: BigNumberish,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
+    pair(overrides?: CallOverrides): Promise<BigNumber>;
+
+    quote(
+      amountA: BigNumberish,
+      reserveA: BigNumberish,
+      reserveB: BigNumberish,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
-
-    buyTemple(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    pairContract(overrides?: CallOverrides): Promise<BigNumber>;
-
-    pairToken(overrides?: CallOverrides): Promise<BigNumber>;
 
     removeLiquidity(
       liquidity: BigNumberish,
-      amountTempleMin: BigNumberish,
-      amountPairMin: BigNumberish,
+      amountAMin: BigNumberish,
+      amountBMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    sellTemple(
+    swapExactFraxForTemple(
       amountIn: BigNumberish,
       amountOutMin: BigNumberish,
       to: string,
@@ -421,60 +369,56 @@ export class TempleRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    setAboveTargetTreasuryDistributeRatio(
-      _aboveTargetTreasuryDistributeRatio: BigNumberish,
+    swapExactTempleForFrax(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      to: string,
+      deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
-
-    setTargetPrice(
-      _targetPrice: { numerator: BigNumberish; denominator: BigNumberish },
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    targetPrice(overrides?: CallOverrides): Promise<BigNumber>;
 
     templeToken(overrides?: CallOverrides): Promise<BigNumber>;
-
-    templeTreasury(overrides?: CallOverrides): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    aboveTargetTreasuryDistributeRatio(
+    addLiquidity(
+      amountADesired: BigNumberish,
+      amountBDesired: BigNumberish,
+      amountAMin: BigNumberish,
+      amountBMin: BigNumberish,
+      to: string,
+      deadline: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    fraxToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    getAmountOut(
+      amountIn: BigNumberish,
+      reserveIn: BigNumberish,
+      reserveOut: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    addLiquidity(
-      amountTempleDesired: BigNumberish,
-      amountPairDesired: BigNumberish,
-      amountTempleMin: BigNumberish,
-      amountPairMin: BigNumberish,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
+    pair(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    quote(
+      amountA: BigNumberish,
+      reserveA: BigNumberish,
+      reserveB: BigNumberish,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
-
-    buyTemple(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    pairContract(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    pairToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     removeLiquidity(
       liquidity: BigNumberish,
-      amountTempleMin: BigNumberish,
-      amountPairMin: BigNumberish,
+      amountAMin: BigNumberish,
+      amountBMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    sellTemple(
+    swapExactFraxForTemple(
       amountIn: BigNumberish,
       amountOutMin: BigNumberish,
       to: string,
@@ -482,20 +426,14 @@ export class TempleRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    setAboveTargetTreasuryDistributeRatio(
-      _aboveTargetTreasuryDistributeRatio: BigNumberish,
+    swapExactTempleForFrax(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      to: string,
+      deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
-
-    setTargetPrice(
-      _targetPrice: { numerator: BigNumberish; denominator: BigNumberish },
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    targetPrice(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     templeToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    templeTreasury(overrides?: CallOverrides): Promise<PopulatedTransaction>;
   };
 }
