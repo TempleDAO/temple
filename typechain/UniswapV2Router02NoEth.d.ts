@@ -30,6 +30,7 @@ interface UniswapV2Router02NoEthInterface extends ethers.utils.Interface {
     "getAmountOut(uint256,uint256,uint256)": FunctionFragment;
     "getAmountsIn(uint256,address[])": FunctionFragment;
     "getAmountsOut(uint256,address[])": FunctionFragment;
+    "getReserves(address,address)": FunctionFragment;
     "quote(uint256,uint256,uint256)": FunctionFragment;
     "removeLiquidity(address,address,uint256,uint256,uint256,address,uint256)": FunctionFragment;
     "removeLiquidityETH(address,uint256,uint256,uint256,address,uint256)": FunctionFragment;
@@ -89,6 +90,10 @@ interface UniswapV2Router02NoEthInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "getAmountsOut",
     values: [BigNumberish, string[]]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getReserves",
+    values: [string, string]
   ): string;
   encodeFunctionData(
     functionFragment: "quote",
@@ -235,6 +240,10 @@ interface UniswapV2Router02NoEthInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getAmountsOut",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getReserves",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "quote", data: BytesLike): Result;
@@ -397,6 +406,14 @@ export class UniswapV2Router02NoEth extends BaseContract {
       path: string[],
       overrides?: CallOverrides
     ): Promise<[BigNumber[]] & { amounts: BigNumber[] }>;
+
+    getReserves(
+      tokenA: string,
+      tokenB: string,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber] & { reserveA: BigNumber; reserveB: BigNumber }
+    >;
 
     quote(
       amountA: BigNumberish,
@@ -609,6 +626,14 @@ export class UniswapV2Router02NoEth extends BaseContract {
     path: string[],
     overrides?: CallOverrides
   ): Promise<BigNumber[]>;
+
+  getReserves(
+    tokenA: string,
+    tokenB: string,
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber, BigNumber] & { reserveA: BigNumber; reserveB: BigNumber }
+  >;
 
   quote(
     amountA: BigNumberish,
@@ -834,6 +859,14 @@ export class UniswapV2Router02NoEth extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber[]>;
 
+    getReserves(
+      tokenA: string,
+      tokenB: string,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber] & { reserveA: BigNumber; reserveB: BigNumber }
+    >;
+
     quote(
       amountA: BigNumberish,
       reserveA: BigNumberish,
@@ -1057,6 +1090,12 @@ export class UniswapV2Router02NoEth extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    getReserves(
+      tokenA: string,
+      tokenB: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     quote(
       amountA: BigNumberish,
       reserveA: BigNumberish,
@@ -1267,6 +1306,12 @@ export class UniswapV2Router02NoEth extends BaseContract {
     getAmountsOut(
       amountIn: BigNumberish,
       path: string[],
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    getReserves(
+      tokenA: string,
+      tokenB: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

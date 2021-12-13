@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "../TempleERC20Token.sol";
 
+import "hardhat/console.sol";
+
 interface ITempleTWAP {
     function update() external;
     function consult(uint amountIn) external view;
@@ -201,13 +203,14 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         
         // Check temple out is witamountOutAMMhin acceptable user bounds
         amountOut = amountOutAMM + amountOutProtocol;
+
         require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
 
         // Swap on AMM and mint on protocol
         SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(pair), amountInAMM);
-        pair.swap(amountOut, 0, to, new bytes(0));
+        pair.swap(amountOutAMM, 0, to, new bytes(0));
 
-        if (amountInAMM > 0) {
+        if (amountInProtocol > 0) {
             SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(this), amountInAMM); // TODO(butlerji): Where should this frax go?
             templeToken.mint(to, amountOutAMM);
         }
@@ -282,7 +285,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     /**
      * given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
      *
-     * Direct copy of UniswapV2Library.quote(amountA, reserveA, reserveB) - can't use as directly as it's built off a different version of solidity
+     * Direct copy of UniswapV2Library.getAmountOut
      */
     function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut)
         public
@@ -300,7 +303,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     // /**
     //  * given an output amount of an asset and pair reserves, returns a required input amount of the other asset
     //  *
-    //  * Direct copy of UniswapV2Library.quote(amountA, reserveA, reserveB) - can't use as directly as it's built off a different version of solidity
+    //  * Direct copy of UniswapV2Library.getAmountIn
     //  * NOTE: Currently unused (copied in as we need for the swapTokenForTokens variants)
     //  */
     // function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut)
