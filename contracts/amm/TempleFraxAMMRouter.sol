@@ -1,7 +1,6 @@
 pragma solidity ^0.8.4;
 
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
-import '@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol';
 import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -35,12 +34,12 @@ contract TempleFraxAMMRouter {
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
-            uint amountBOptimal = UniswapV2Library.quote(amountADesired, reserveA, reserveB);
+            uint amountBOptimal = quote(amountADesired, reserveA, reserveB);
             if (amountBOptimal <= amountBDesired) {
                 require(amountBOptimal >= amountBMin, 'TempleFraxAMMRouter: INSUFFICIENT_FRAX');
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
-                uint amountAOptimal = UniswapV2Library.quote(amountBDesired, reserveB, reserveA);
+                uint amountAOptimal = quote(amountBDesired, reserveB, reserveA);
                 assert(amountAOptimal <= amountADesired);
                 require(amountAOptimal >= amountAMin, 'TempleFraxAMMRouter: INSUFFICIENT_TEMPLE');
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
@@ -128,23 +127,52 @@ contract TempleFraxAMMRouter {
     // }
 
     // **** LIBRARY FUNCTIONS ****
+
+    /** 
+     * given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
+     *
+     * Direct copy of UniswapV2Library.quote(amountA, reserveA, reserveB) - can't use as directly as it's built off a different version of solidity
+     */
     function quote(uint amountA, uint reserveA, uint reserveB) public pure returns (uint amountB) {
-        return UniswapV2Library.quote(amountA, reserveA, reserveB);
+        require(amountA > 0, 'UniswapV2Library: INSUFFICIENT_AMOUNT');
+        require(reserveA > 0 && reserveB > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+        amountB = amountA.mul(reserveB) / reserveA;
+
     }
 
+    /**
+     * given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
+     *
+     * Direct copy of UniswapV2Library.quote(amountA, reserveA, reserveB) - can't use as directly as it's built off a different version of solidity
+     */
     function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut)
         public
         pure
         returns (uint amountOut)
     {
-        return UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
+        require(amountIn > 0, 'UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT');
+        require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+        uint amountInWithFee = amountIn.mul(997);
+        uint numerator = amountInWithFee.mul(reserveOut);
+        uint denominator = reserveIn.mul(1000).add(amountInWithFee);
+        amountOut = numerator / denominator;
     }
 
-    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut)
-        public
-        pure
-        returns (uint amountIn)
-    {
-        return UniswapV2Library.getAmountIn(amountOut, reserveIn, reserveOut);
-    }
+    // /**
+    //  * given an output amount of an asset and pair reserves, returns a required input amount of the other asset
+    //  *
+    //  * Direct copy of UniswapV2Library.quote(amountA, reserveA, reserveB) - can't use as directly as it's built off a different version of solidity
+    //  * NOTE: Currently unused (copied in as we need for the swapTokenForTokens variants)
+    //  */
+    // function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut)
+    //     public
+    //     pure
+    //     returns (uint amountIn)
+    // {
+    //     require(amountOut > 0, 'UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT');
+    //     require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+    //     uint numerator = reserveIn.mul(amountOut).mul(1000);
+    //     uint denominator = reserveOut.sub(amountOut).mul(997);
+    //     amountIn = (numerator / denominator).add(1);
+    // }
 }
