@@ -62,14 +62,44 @@ export class DiscordDataRepository {
             WHERE
                 user_id = $1
                 AND created_at > CURRENT_DATE - interval '30' day
-        ) AS engagementLast30Days,
-        $1 as user_id
+        ) AS engagementLast30Days
     `;
     const values = [userId];
     const result = await this.store.query(query, values);
 
     return result.rows[0];
   }
+
+  // async userDetails(userId: string) {
+  //   if (!userId) throw new Error("Missing userId in userDetails query");
+
+  //   const query = `
+  //       SELECT 
+  //       (
+  //           SELECT
+  //               count(*) AS total
+  //           FROM
+  //               discord_user_messages
+  //           WHERE
+  //               user_id = $1
+  //               AND created_at > CURRENT_DATE - interval '7' day
+  //       ) AS engagementLast7Days,
+  //       (
+  //           SELECT
+  //               count(*) AS total
+  //           FROM
+  //               discord_user_messages
+  //           WHERE
+  //               user_id = $1
+  //               AND created_at > CURRENT_DATE - interval '30' day
+  //       ) AS engagementLast30Days,
+  //       $1 as user_id
+  //   `;
+  //   const values = [userId];
+  //   const result = await this.store.query(query, values);
+
+  //   return result.rows[0];
+  // }
 
   async memberGrowth(since: Date, until: Date) {
     const query = `
@@ -90,18 +120,142 @@ export class DiscordDataRepository {
     return result.rows;
   }
 
-  // TODO: finish this later
-  async orgchartMembers({ rank, enclave, userid }) {
-    // different queries depending which query we get. 
-    // also need to implement paging, so the params here will be updated to include those too
-    
+  async getUsersByEnclave(enclave: string){
     const query = `
-        SELECT * from discord_users limit 5;
+    SELECT
+        *
+      FROM (
+        SELECT
+          user_id,
+          user_name,
+          guild_name,
+          joined_at,
+          CASE WHEN ('Members of Order' = ANY (roles)) THEN
+            'Order'
+          WHEN ('Members of Logic' = ANY (roles)) THEN
+            'Logic'
+          WHEN ('Members of Mystery' = ANY (roles)) THEN
+            'Mystery'
+          WHEN ('Members of Structure' = ANY (roles)) THEN
+            'Structure'
+          WHEN ('Members of Chaos' = ANY (roles)) THEN
+            'Chaos'
+          END AS enclave,
+          roles
+        FROM (
+          SELECT
+            u.user_id,
+            u.user_name,
+            u.guild_name,
+            u.joined_at,
+            array_agg(r.role_name order by role_name) roles
+          FROM
+            discord_users u
+          LEFT OUTER JOIN discord_user_roles r ON u.user_id = r.user_id
+      GROUP BY
+        u.user_id,
+        u.user_name,
+        u.guild_name,
+        u.joined_at) AS users) u
+      WHERE
+        enclave = $1
       `;
-    const values = [];
+    const values = [enclave];
     const result = await this.store.query(query, values);
 
     return result.rows;
+  }
+
+  async getUsersByRole(role: string){
+    const query = `
+    SELECT
+        *
+      FROM (
+        SELECT
+          user_id,
+          user_name,
+          guild_name,
+          joined_at,
+          CASE WHEN ('Members of Order' = ANY (roles)) THEN
+            'Order'
+          WHEN ('Members of Logic' = ANY (roles)) THEN
+            'Logic'
+          WHEN ('Members of Mystery' = ANY (roles)) THEN
+            'Mystery'
+          WHEN ('Members of Structure' = ANY (roles)) THEN
+            'Structure'
+          WHEN ('Members of Chaos' = ANY (roles)) THEN
+            'Chaos'
+          END AS enclave,
+          roles
+        FROM (
+          SELECT
+            u.user_id,
+            u.user_name,
+            u.guild_name,
+            u.joined_at,
+            array_agg(r.role_name ORDER BY role_name) roles
+          FROM
+            discord_users u
+          LEFT OUTER JOIN discord_user_roles r ON u.user_id = r.user_id
+      GROUP BY
+        u.user_id,
+        u.user_name,
+        u.guild_name,
+        u.joined_at) AS users) u
+      WHERE
+        $1 = ANY (roles)
+      `;
+    const values = [role];
+    const result = await this.store.query(query, values);
+
+    return result.rows;
+  }
+
+  async getUser(role: string){
+    const query = `
+    SELECT
+        *
+      FROM (
+        SELECT
+          user_id,
+          user_name,
+          guild_name,
+          joined_at,
+          CASE WHEN ('Members of Order' = ANY (roles)) THEN
+            'Order'
+          WHEN ('Members of Logic' = ANY (roles)) THEN
+            'Logic'
+          WHEN ('Members of Mystery' = ANY (roles)) THEN
+            'Mystery'
+          WHEN ('Members of Structure' = ANY (roles)) THEN
+            'Structure'
+          WHEN ('Members of Chaos' = ANY (roles)) THEN
+            'Chaos'
+          END AS enclave,
+          roles
+        FROM (
+          SELECT
+            u.user_id,
+            u.user_name,
+            u.guild_name,
+            u.joined_at,
+            array_agg(r.role_name ORDER BY role_name) roles
+          FROM
+            discord_users u
+          LEFT OUTER JOIN discord_user_roles r ON u.user_id = r.user_id
+      GROUP BY
+        u.user_id,
+        u.user_name,
+        u.guild_name,
+        u.joined_at) AS users) u
+      WHERE
+        user_id = $1
+      `;
+    const values = [role];
+    const result = await this.store.query(query, values);
+
+    return result.rows[0];
   }
 }
 
