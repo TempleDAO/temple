@@ -3,6 +3,8 @@ pragma solidity ^0.8.4;
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "../TempleERC20Token.sol";
 
@@ -15,11 +17,13 @@ interface ITempleTreasury {
     function intrinsicValueRatio() external view returns (uint256 frax, uint256 temple);
 }
 
-contract TempleFraxAMMRouter {
-    // precondition token0/tokenA is temple. token1/tokenB is frax
-    IUniswapV2Pair public pair;
+contract TempleFraxAMMRouter is Ownable, AccessControl {
+    bytes32 public constant CAN_ADD_ALLOWED_USER = keccak256("CAN_ADD_ALLOWED_USER");
 
-    TempleERC20Token public templeToken;
+    // precondition token0/tokenA is temple. token1/tokenB is frax
+    IUniswapV2Pair public immutable pair;
+
+    TempleERC20Token public immutable templeToken;
     IERC20 public immutable fraxToken;
     ITempleTreasury public immutable templeTreasury;
 
@@ -32,7 +36,7 @@ contract TempleFraxAMMRouter {
     Price public dynamicThresholdPrice; 
 
     // Rate at which threshold decays, when AMM price is below the dynamicThresholdPrice
-    uint256 public dynamicThresholdDecayPerBlock = 1e18; 
+    uint256 public dynamicThresholdDecayPerBlock;
 
     // Percentage (represented as an int from 0 to 100) 
     uint public dynamicThresholdIncreasePct = 100;
@@ -60,6 +64,7 @@ contract TempleFraxAMMRouter {
             IERC20 _fraxToken,
             ITempleTreasury _templeTreasury,
             Price memory _dynamicThresholdPrice,
+            uint256 _dynamicThresholdDecayPerBlock,
             Price memory _interpolateFromPrice,
             Price memory _interpolateToPrice
             ) {
@@ -69,8 +74,45 @@ contract TempleFraxAMMRouter {
         fraxToken = _fraxToken;
         templeTreasury = _templeTreasury;
         dynamicThresholdPrice = _dynamicThresholdPrice;
+        dynamicThresholdDecayPerBlock = _dynamicThresholdDecayPerBlock;
         interpolateFromPrice = _interpolateFromPrice;
         interpolateToPrice = _interpolateToPrice;
+
+        decayStartBlock = block.number;
+    }
+
+    function setDynamicThresholdDecayPerBlock(uint256 _dynamicThresholdDecayPerBlock) external onlyOwner {
+        dynamicThresholdDecayPerBlock = _dynamicThresholdDecayPerBlock;
+    }
+
+    // Percentage (represented as an int from 0 to 100) 
+    function setDynamicThresholdIncreasePct(uint256 _dynamicThresholdIncreasePct) external onlyOwner {
+        require(_dynamicThresholdIncreasePct > 0 && _dynamicThresholdIncreasePct <= 100, "Increase is a pct represented as an integer between 0 and 100");
+        dynamicThresholdIncreasePct = _dynamicThresholdIncreasePct;
+    }
+
+    // To decide how much we mint on protocol, we linearly interp between these two price points, only when the 
+    // market is trading above the dynamicThresholdPrice;
+    function setInterpolateFromPrice(uint256 frax, uint256 temple) external onlyOwner {
+        interpolateFromPrice.frax = frax;
+        interpolateFromPrice.temple = temple;
+    }
+
+    function setInterpolateToPrice(uint256 frax, uint256 temple) external onlyOwner {
+        interpolateToPrice.frax = frax;
+        interpolateToPrice.temple = temple;
+    }
+
+    function toggleOpenAccess() external onlyOwner {
+        openAccessEnabled = !openAccessEnabled;
+    }
+
+    function addAllowedUser(address userAddress) external onlyRole(CAN_ADD_ALLOWED_USER) {
+      allowed[userAddress] = true;
+    }
+
+    function removeAllowedUser(address userAddress) external onlyOwner {
+      allowed[userAddress] = false;
     }
 
     // **** ADD LIQUIDITY ****
