@@ -14,94 +14,94 @@ import {
   Overrides,
   PayableOverrides,
   CallOverrides,
-} from 'ethers';
-import { BytesLike } from '@ethersproject/bytes';
-import { Listener, Provider } from '@ethersproject/providers';
-import { FunctionFragment, EventFragment, Result } from '@ethersproject/abi';
-import type { TypedEventFilter, TypedEvent, TypedListener } from './common';
+} from "ethers";
+import { BytesLike } from "@ethersproject/bytes";
+import { Listener, Provider } from "@ethersproject/providers";
+import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
+import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface ZapInterface extends ethers.utils.Interface {
   functions: {
-    'mintAndStakeZapsOC(uint256,address,uint256,bytes)': FunctionFragment;
-    'openingCeremonyContract()': FunctionFragment;
-    'owner()': FunctionFragment;
-    'quoter()': FunctionFragment;
-    'renounceOwnership()': FunctionFragment;
-    'sandalwoodToken()': FunctionFragment;
-    'stablecToken()': FunctionFragment;
-    'transferOwnership(address)': FunctionFragment;
-    'uniswapRouter()': FunctionFragment;
+    "mintAndStakeZapsOC(uint256,address,uint256,bytes)": FunctionFragment;
+    "openingCeremonyContract()": FunctionFragment;
+    "owner()": FunctionFragment;
+    "quoter()": FunctionFragment;
+    "renounceOwnership()": FunctionFragment;
+    "sandalwoodToken()": FunctionFragment;
+    "stablecToken()": FunctionFragment;
+    "transferOwnership(address)": FunctionFragment;
+    "uniswapRouter()": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: 'mintAndStakeZapsOC',
+    functionFragment: "mintAndStakeZapsOC",
     values: [BigNumberish, string, BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: 'openingCeremonyContract',
+    functionFragment: "openingCeremonyContract",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: 'owner', values?: undefined): string;
-  encodeFunctionData(functionFragment: 'quoter', values?: undefined): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(functionFragment: "quoter", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: 'renounceOwnership',
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: 'sandalwoodToken',
+    functionFragment: "renounceOwnership",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'stablecToken',
+    functionFragment: "sandalwoodToken",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'transferOwnership',
+    functionFragment: "stablecToken",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "transferOwnership",
     values: [string]
   ): string;
   encodeFunctionData(
-    functionFragment: 'uniswapRouter',
+    functionFragment: "uniswapRouter",
     values?: undefined
   ): string;
 
   decodeFunctionResult(
-    functionFragment: 'mintAndStakeZapsOC',
+    functionFragment: "mintAndStakeZapsOC",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'openingCeremonyContract',
+    functionFragment: "openingCeremonyContract",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: 'owner', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'quoter', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "quoter", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: 'renounceOwnership',
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: 'sandalwoodToken',
+    functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'stablecToken',
+    functionFragment: "sandalwoodToken",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'transferOwnership',
+    functionFragment: "stablecToken",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'uniswapRouter',
+    functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "uniswapRouter",
     data: BytesLike
   ): Result;
 
   events: {
-    'OwnershipTransferred(address,address)': EventFragment;
-    'ZapComplete(address,address,uint256,uint256)': EventFragment;
+    "OwnershipTransferred(address,address)": EventFragment;
+    "ZapComplete(address,address,uint256,uint256)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: 'OwnershipTransferred'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'ZapComplete'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "ZapComplete"): EventFragment;
 }
 
 export type OwnershipTransferredEvent = TypedEvent<
@@ -250,7 +250,7 @@ export class Zap extends BaseContract {
   };
 
   filters: {
-    'OwnershipTransferred(address,address)'(
+    "OwnershipTransferred(address,address)"(
       previousOwner?: string | null,
       newOwner?: string | null
     ): TypedEventFilter<
@@ -266,7 +266,7 @@ export class Zap extends BaseContract {
       { previousOwner: string; newOwner: string }
     >;
 
-    'ZapComplete(address,address,uint256,uint256)'(
+    "ZapComplete(address,address,uint256,uint256)"(
       minter?: null,
       exchangeTokenAddress?: null,
       amountExchangeToken?: null,
