@@ -23,6 +23,7 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   functions: {
     "CAN_ADD_ALLOWED_USER()": FunctionFragment;
     "DEFAULT_ADMIN_ROLE()": FunctionFragment;
+    "DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR()": FunctionFragment;
     "addAllowedUser(address)": FunctionFragment;
     "addLiquidity(uint256,uint256,uint256,uint256,address,uint256)": FunctionFragment;
     "allowed(address)": FunctionFragment;
@@ -66,6 +67,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "DEFAULT_ADMIN_ROLE",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -210,6 +215,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "DEFAULT_ADMIN_ROLE",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -410,6 +419,10 @@ export class TempleFraxAMMRouter extends BaseContract {
 
     DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<[string]>;
 
+    DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     addAllowedUser(
       userAddress: string,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -584,6 +597,10 @@ export class TempleFraxAMMRouter extends BaseContract {
 
   DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
 
+  DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR(
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   addAllowedUser(
     userAddress: string,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -753,6 +770,10 @@ export class TempleFraxAMMRouter extends BaseContract {
     CAN_ADD_ALLOWED_USER(overrides?: CallOverrides): Promise<string>;
 
     DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
+
+    DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR(
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     addAllowedUser(
       userAddress: string,
@@ -1003,6 +1024,10 @@ export class TempleFraxAMMRouter extends BaseContract {
 
     DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<BigNumber>;
 
+    DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR(
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     addAllowedUser(
       userAddress: string,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -1172,6 +1197,10 @@ export class TempleFraxAMMRouter extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     DEFAULT_ADMIN_ROLE(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

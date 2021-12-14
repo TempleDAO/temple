@@ -41,7 +41,8 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     uint256 public dynamicThresholdDecayPerBlock;
 
     // Percentage (represented as an int from 0 to 100) 
-    uint public dynamicThresholdIncreasePct = 100;
+    uint constant public DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR = 10000;
+    uint public dynamicThresholdIncreasePct = DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR;
 
     // Block at which we start calculating the threshold decay when the AMM price is below the 
     uint256 public decayStartBlock; 
@@ -87,9 +88,9 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         dynamicThresholdDecayPerBlock = _dynamicThresholdDecayPerBlock;
     }
 
-    // Percentage (represented as an int from 0 to 100) 
+    // Percentage (represented as an int from 0 to DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR) 
     function setDynamicThresholdIncreasePct(uint256 _dynamicThresholdIncreasePct) external onlyOwner {
-        require(_dynamicThresholdIncreasePct > 0 && _dynamicThresholdIncreasePct <= 100, "Increase is a pct represented as an integer between 0 and 100");
+        require(_dynamicThresholdIncreasePct > 0 && _dynamicThresholdIncreasePct <= DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR, "Increase is a pct represented as an integer between 0 and 100");
         dynamicThresholdIncreasePct = _dynamicThresholdIncreasePct;
     }
 
@@ -190,7 +191,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
             (uint numerator, uint denominator) = mintRatioAt(reserveTemple, reserveFrax);
             amountInProtocol = amountIn * numerator / denominator;
             // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant
-            dynamicThresholdPrice.temple = reserveTemple * dynamicThresholdIncreasePct / 100 * dynamicThresholdPrice.frax / reserveFrax;
+            dynamicThresholdPrice.temple = reserveTemple * dynamicThresholdIncreasePct / DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR * dynamicThresholdPrice.frax / reserveFrax;
             decayStartBlock = block.number;
         }
 
