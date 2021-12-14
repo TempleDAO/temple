@@ -169,7 +169,7 @@ contract ExitQueue is Ownable {
     /**
      * Withdraw processed allowance from a specific epoch
      */
-    function withdraw(uint256 epoch) external {
+    function withdraw(uint256 epoch) public {
         require(epoch < currentEpoch(), "Can only withdraw from past epochs");
 
         User storage user = userData[msg.sender];
@@ -189,5 +189,14 @@ contract ExitQueue is Ownable {
 
         SafeERC20.safeTransfer(TEMPLE, msg.sender, amount);
         emit Withdrawal(msg.sender, amount);    
+    }
+
+    /**
+     * Withdraw processed allowance from a specific epoch
+     */
+    function withdrawEpochs(uint256[] calldata epochs, uint256 length) external {
+        for (uint i = 0; i < length; i++) {
+            withdraw(epochs[i]);
+        }
     }
 }
