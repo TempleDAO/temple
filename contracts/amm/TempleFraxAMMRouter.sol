@@ -187,7 +187,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         // if AMM is currently trading above target, route some portion to mint on protocol
         uint amountInProtocol = 0;
 
-        if ((dynamicThresholdPrice.temple - thresholdDecay) * reserveFrax >= dynamicThresholdPrice.frax * reserveTemple) {
+        if ((dynamicThresholdPrice.temple + thresholdDecay) * reserveFrax >= dynamicThresholdPrice.frax * reserveTemple) {
             (uint numerator, uint denominator) = mintRatioAt(reserveTemple, reserveFrax);
             amountInProtocol = amountIn * numerator / denominator;
             // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant
