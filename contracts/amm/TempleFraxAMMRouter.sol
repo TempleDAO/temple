@@ -198,20 +198,31 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         uint amountInAMM = amountIn - amountInProtocol;
 
         // Allocate a portion of temple to the AMM
-        uint amountOutAMM = getAmountOut(amountInAMM, reserveFrax, reserveTemple);
+        uint amountOutAMM = 0;
+        if (amountInAMM > 0) {
+            amountOutAMM = getAmountOut(amountInAMM, reserveFrax, reserveTemple);
+        }
 
         // Allocate a portion of temple to the protocol
-        uint amountOutProtocol = amountInProtocol * amountOutAMM / amountInAMM;
+        uint amountOutProtocol = 0;
+        if (amountInAMM > 0) {
+            amountOutProtocol = amountInProtocol * amountOutAMM / amountInAMM;
+        } else {
+            amountOutProtocol = amountInProtocol * reserveTemple / reserveFrax;
+        }
         
         // Check temple out is witamountOutAMMhin acceptable user bounds
         amountOut = amountOutAMM + amountOutProtocol;
 
         require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
 
-        // Swap on AMM and mint on protocol
-        SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(pair), amountInAMM);
-        pair.swap(amountOutAMM, 0, to, new bytes(0));
+        // Swap on AMM
+        if (amountInAMM > 0) {
+            SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(pair), amountInAMM);
+            pair.swap(amountOutAMM, 0, to, new bytes(0));
+        }
 
+        // Mint on protocol
         if (amountInProtocol > 0) {
             SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(this), amountInAMM); // TODO(butlerji): Where should this frax go?
             templeToken.mint(to, amountOutAMM);
@@ -322,10 +333,40 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
 
     function mintRatioAt(uint temple, uint frax)
         public
-        pure
+        view
         returns (uint numerator, uint denominator)
     {
-        // TODO(butlerji): efficient tested linear interp
-        return (80, 100);
+        /*
+         * Formula used to calculate ratio
+         * 
+         * ts,fs = temple,frax spot
+         * t1,f1 = temple,frax start
+         * t2,f2 = temple,frax end
+         *
+         * (fs/ts - f1/t1) / (f2/t2 - f1/t1)
+         *
+         * with some algebra this works out to be
+         * 
+         * ((fs*t1 - f1*ts) * t2) / ((f2*t1 - f1*t2) * ts)
+        */
+
+        (uint ts, uint fs, uint t1, uint f1, uint t2, uint f2) = (temple, frax, interpolateFromPrice.temple, interpolateFromPrice.frax, interpolateToPrice.temple, interpolateToPrice.frax);
+
+        uint n1 = fs*t1;
+        uint n2 = f1*ts;
+
+        // if spot is below the from price, we don't mint on protocol
+        if (n2 > n1) {
+            return (0,1);
+        }
+
+        numerator = (n1 - n2) * t2;
+        denominator = (f2*t1 - f1*t2) * ts; // pre-condition, no overflow as fromPrice will be < toPrice
+
+        if (numerator >= denominator) {
+            return (1,1); // once we are above the interpolateToPrice, we 100% mint on protocol
+        } else {
+            return (numerator, denominator);
+        }
     }
 }

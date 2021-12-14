@@ -58,7 +58,7 @@ describe("AMM", async () => {
         {frax: 100000, temple: 9000},
         1, /* threshold decay per block */
         {frax: 1000000, temple: 1000000},
-        {frax: 1000000, temple: 12000000},
+        {frax: 1000000, temple: 100000},
       );
 
       await pair.setRouter(templeRouter.address);
@@ -111,6 +111,7 @@ describe("AMM", async () => {
         }
 
         // Until we pass dynamic threshold, buys are on AMM
+        await templeRouter.setInterpolateToPrice(1000000, 10000)
         await uniswapRouter.swapExactTokensForTokens(toAtto(100000), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
         await templeRouter.swapExactFraxForTemple(toAtto(100000), 1, await alan.getAddress(), expiryDate());
 
@@ -137,6 +138,37 @@ describe("AMM", async () => {
         expect(rFrax / rTemple).approximately(dtpFraxNew / dtpTempleNew, 1e-2);
         expect(rTempleCustomAMM).gt(rTempleUniswapAMM);
         expect(rFraxUniswapAMM).lt(rfUniswapAMM);
+      })
+
+      it("Above dynamic threshold and toPrice should have 100% of buy minted on protocol", async() => {
+        // Price should start below the dynamic threshold
+        {
+          const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
+          const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
+          expect(rFrax / rTemple).lt(dtpFrax / dtpTemple);
+        }
+
+        // Until we pass dynamic threshold, buys are on AMM
+        await uniswapRouter.swapExactTokensForTokens(toAtto(100000), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
+        await templeRouter.swapExactFraxForTemple(toAtto(100000), 1, await alan.getAddress(), expiryDate());
+
+        // Expect reserves to match
+        expect(fmtPricePair(await pair.getReserves()))
+          .eql(fmtPricePair(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
+
+        // Expect temple balances to match
+        expect(fromAtto(await templeToken.balanceOf(await alan.getAddress())))
+          .eq(fromAtto(await templeToken.balanceOf(await ben.getAddress())))
+
+        // Expect price to be above dynamic threshold
+        const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
+        const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
+        expect(rFrax / rTemple).gte(dtpFrax / dtpTemple);
+
+        // Now, if we mint again, we expect less slippage on AMM, and the dtp price to be the start price of the last buy
+        await templeRouter.swapExactFraxForTemple(toAtto(1000), 1, await alan.getAddress(), expiryDate());
+        expect(fmtPricePair(await pair.getReserves()))
+          .eql([rTemple, rFrax]);
       })
     });
 
@@ -224,6 +256,39 @@ describe("AMM", async () => {
         expect(await uniswapPair.balanceOf(await owner.getAddress()))
           .eql(await pair.balanceOf(await owner.getAddress()))
       });
+    })
+
+    describe("Mint Ratio", async() => {
+      const cases: [string, number, number, number][] = [
+        ["spot just below from price", 1000000, 1000001, 0],
+        ["spot well below from price", 1000000, 2000000, 0],
+        ["spot just above to price", 1000000, 99999, 1],
+        ["spot well above to price", 1000000, 1000, 1],
+      ]
+
+      // add cases across the range
+      const fromPrice = 1;
+      const toPrice = 10;
+      for (let i = 0; i < 10; i += 2) {
+        const spot = 1+i;
+        cases.push([`Ratio at $${spot} for price range (1,10)`, 1+i,1, (spot - fromPrice) / (toPrice - fromPrice)]);
+      }
+
+      for (const [name, frax, temple, expectedRatio] of cases) {
+        it(name, async () => {
+          const [n,d] = await templeRouter.mintRatioAt(temple, frax)
+          let mintRatio = 0;
+          if (n.eq(0)) {
+            mintRatio = 0;
+          } else if (n.eq(1) && d.eq(1)) {
+            mintRatio = 1;
+          } else {
+            mintRatio = fromAtto(n) / fromAtto(d);
+          }
+
+          expect(mintRatio).approximately(expectedRatio, 1e-2);
+        })
+      }
     })
 
     // it("pair contract", async () => {
