@@ -87,36 +87,43 @@ task("generate-signatures", "Generate signatures for claimable temple and owed t
     const nonce = args.nonce;
     const fileContent = readFileSync(args.path, 'utf8');
     const lines = fileContent.split("\n");
-    let sigs: {[key: string]: { 
-      hash: string, 
-      signature: string, 
-      tokenAddress: string, 
-      tokenQuantity: string, 
+    let sigs: {[key: string]: {
+      hash: string,
+      signature: string,
+      tokenAddress: string,
+      tokenQuantity: string,
       nonce: string }} = {} // address: { hash, signature, tokenAddress, tokenQuantity, nonce }
     const TEMPLE_CASHBACK = new TempleCashback__factory(owner).attach(args.templecashback);
-    
-    const privateKeyFilePath: string = process.env.PRIVATE_KEY_FILE!;
-    const privateKeyFilePassword: string = process.env.PRIVATE_KEY_PASSWORD!;
-    const privateKey = hre.ethers.Wallet.fromEncryptedJsonSync(
-      readFileSync(privateKeyFilePath, 'utf8'),
-      privateKeyFilePassword
-    ).privateKey
+
+
+    let privateKey
+    if (hre.network.name == 'localhost') {
+        // Hardhat local account #0
+        privateKey =
+            '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
+    } else {
+      const privateKeyFilePath: string = process.env.PRIVATE_KEY_FILE!;
+      const privateKeyFilePassword: string = process.env.PRIVATE_KEY_PASSWORD!;
+      privateKey = hre.ethers.Wallet.fromEncryptedJsonSync(
+        readFileSync(privateKeyFilePath, 'utf8'),
+        privateKeyFilePassword
+      ).privateKey
+    }
     const signingKey = new hre.ethers.utils.SigningKey(privateKey);
 
     // generate signatures
     for (let i=0; i<lines.length; i++) {
       if (i==0) continue; // skip header
-      const [userAddress, tokenQuantity] = lines[i].split(",");
-      console.log(tokenQuantity);
+      const [userAddress, tokenQuantity] = lines[i].trim().split(",");
       if (userAddress) {
-        const { signature, hash } = 
+        const { signature, hash } =
           await createSignature(
             hre,
             signingKey,
             TEMPLE_CASHBACK,
-            tokenAddress, 
-            userAddress, 
-            BigNumber.from(tokenQuantity), 
+            tokenAddress,
+            userAddress,
+            BigNumber.from(tokenQuantity),
             Number(nonce)
           );
         sigs[userAddress] = { hash, signature, tokenAddress, tokenQuantity, nonce };
