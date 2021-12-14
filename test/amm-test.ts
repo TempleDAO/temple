@@ -1,7 +1,7 @@
 import { ethers, hardhatArguments } from "hardhat";
 import { expect } from "chai";
 
-import { FakeERC20, FakeERC20__factory, TempleERC20Token, TempleERC20Token__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTreasury, TempleTreasury__factory, TempleUniswapV2Pair, TempleUniswapV2Pair__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Router02NoEth, UniswapV2Router02NoEth__factory } from "../typechain";
+import { FakeERC20, FakeERC20__factory, TempleERC20Token, TempleERC20Token__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTreasury, TempleTreasury__factory, TempleUniswapV2Pair, TempleUniswapV2Pair__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02NoEth, UniswapV2Router02NoEth__factory } from "../typechain";
 
 import { BigNumber, Signer } from "ethers";
 import { toAtto } from "./helpers";
@@ -9,6 +9,9 @@ import { toAtto } from "./helpers";
 import { fromAtto } from "../scripts/deploys/helpers";
 import { factory } from "typescript";
 
+const fmtReserves = (reserves: [BigNumber, BigNumber, number?]): [number, number] => {
+  return [fromAtto(reserves[0]), fromAtto(reserves[1])]
+}
 
 describe("AMM", async () => {
     let templeToken: TempleERC20Token;
@@ -19,7 +22,10 @@ describe("AMM", async () => {
     let ben: Signer
     let pair: TempleUniswapV2Pair;
     let templeRouter: TempleFraxAMMRouter;
+    let uniswapFactory: UniswapV2Factory;
     let uniswapRouter: UniswapV2Router02NoEth;
+    let uniswapPair: UniswapV2Pair;
+
     const expiryDate = (): number =>  Math.floor(Date.now() / 1000) + 900;
    
     beforeEach(async () => {
@@ -56,7 +62,7 @@ describe("AMM", async () => {
       await templeToken.addMinter(templeRouter.address);
 
       // Create a stock standard uniswap, so we can compare our AMM against the standard constant product AMM
-      const uniswapFactory: UniswapV2Factory = await new UniswapV2Factory__factory(owner).deploy(await owner.getAddress())
+      uniswapFactory = await new UniswapV2Factory__factory(owner).deploy(await owner.getAddress())
       uniswapRouter = await new UniswapV2Router02NoEth__factory(owner).deploy(uniswapFactory.address, fraxToken.address);
 
       // Add liquidity to both AMMs
@@ -67,27 +73,111 @@ describe("AMM", async () => {
       await templeToken.increaseAllowance(uniswapRouter.address, toAtto(10000000));
       await fraxToken.increaseAllowance(uniswapRouter.address, toAtto(10000000));
       await uniswapRouter.addLiquidity(templeToken.address, fraxToken.address, toAtto(100000), toAtto(1000000), 1, 1, await owner.getAddress(), expiryDate());
+      uniswapPair = new UniswapV2Pair__factory(owner).attach(await uniswapFactory.getPair(templeToken.address, fraxToken.address));
 
       // Make temple router open access (useful state for most tests)
       await templeRouter.toggleOpenAccess();
     })
 
-    it("Swap frax for temple below dynamic threshold should be all on AMM", async() => {
-      const fmtReserves = (reserves: [BigNumber, BigNumber, number?]): [number, number] => {
-        return [fromAtto(reserves[0]), fromAtto(reserves[1])]
-      }
+    describe("Buy", async() => {
+      it("Below dynamic threshold should be same as AMM buy", async() => {
+        // do swaps
+        await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
+        await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await alan.getAddress(), expiryDate());
 
-      // do swaps
-      await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
-      await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await alan.getAddress(), expiryDate());
+        // Expect reserves to match
+        expect(fmtReserves(await pair.getReserves()))
+          .eql(fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
 
-      // Expect reserves to match
-      const uniswapReseves = fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address));
-      expect(fmtReserves(await pair.getReserves())).eql(uniswapReseves);
+        // Expect temple balances to match
+        expect(fromAtto(await templeToken.balanceOf(await alan.getAddress())))
+          .eq(fromAtto(await templeToken.balanceOf(await ben.getAddress())))
+      })
 
-      // Expect temple balances to match
-      expect(fromAtto(await templeToken.balanceOf(await alan.getAddress())))
-        .eq(fromAtto(await templeToken.balanceOf(await ben.getAddress())))
+      xit("Above dynamic threshold should have some portion of buy minted on protocol", async() => {
+        // do swaps
+        await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
+        await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await alan.getAddress(), expiryDate());
+
+        // Expect reserves to match
+        expect(fmtReserves(await pair.getReserves()))
+          .eql(fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
+
+        // Expect temple balances to match
+        expect(fromAtto(await templeToken.balanceOf(await alan.getAddress())))
+          .eq(fromAtto(await templeToken.balanceOf(await ben.getAddress())))
+      })
+    });
+
+    describe("Sell", async() => {
+      xit("Above IV sells should be same as on AMM", async() => {
+        // do swaps
+        await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
+        await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await alan.getAddress(), expiryDate());
+
+        // Expect reserves to match
+        expect(fmtReserves(await pair.getReserves()))
+          .eql(fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
+
+        // Expect temple balances to match
+        expect(fromAtto(await templeToken.balanceOf(await alan.getAddress())))
+          .eq(fromAtto(await templeToken.balanceOf(await ben.getAddress())))
+      })
+
+      xit("Below IV sells should always be exactly at IV", async() => {
+        // do swaps
+        await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
+        await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await alan.getAddress(), expiryDate());
+
+        // Expect reserves to match
+        expect(fmtReserves(await pair.getReserves()))
+          .eql(fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
+
+        // Expect temple balances to match
+        expect(fromAtto(await templeToken.balanceOf(await alan.getAddress())))
+          .eq(fromAtto(await templeToken.balanceOf(await ben.getAddress())))
+      })
+    });
+
+    describe("Liquidity", async() => {
+      it("add", async () => {
+        // Expect reserves to match before/after adding liquidity
+        expect(fmtReserves(await pair.getReserves()))
+          .eql(fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
+
+        await templeRouter.addLiquidity(toAtto(100000), toAtto(1000000), 1, 1, await owner.getAddress(), expiryDate());
+        await uniswapRouter.addLiquidity(templeToken.address, fraxToken.address, toAtto(100000), toAtto(1000000), 1, 1, await owner.getAddress(), expiryDate())
+
+        expect(fmtReserves(await pair.getReserves()))
+          .eql(fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
+      });
+
+      it.only("remove", async () => {
+        // Expect reserves to match before/after adding liquidity
+        expect(fmtReserves(await pair.getReserves()))
+          .eql(fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
+
+        expect(await uniswapPair.balanceOf(await owner.getAddress()))
+          .eql(await pair.balanceOf(await owner.getAddress()))
+
+        // remove liquidity
+        await pair.approve(templeRouter.address, toAtto(100));
+        await templeRouter.removeLiquidity(
+          toAtto(100), 1, 1, await owner.getAddress(), expiryDate())
+
+        await uniswapPair.approve(uniswapRouter.address, toAtto(100));
+        await uniswapRouter.removeLiquidity(
+          templeToken.address,
+          fraxToken.address,
+          toAtto(100), 1, 1, await owner.getAddress(), expiryDate())
+
+        // Compare reserves and LP token balances
+        expect(fmtReserves(await pair.getReserves()))
+          .eql(fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
+
+        expect(await uniswapPair.balanceOf(await owner.getAddress()))
+          .eql(await pair.balanceOf(await owner.getAddress()))
+      });
     })
 
     // it("pair contract", async () => {
