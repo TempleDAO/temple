@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { FakeERC20, FakeERC20__factory, TempleERC20Token, TempleERC20Token__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTreasury, TempleTreasury__factory, TempleUniswapV2Pair, TempleUniswapV2Pair__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02NoEth, UniswapV2Router02NoEth__factory } from "../typechain";
 
 import { BigNumber, Signer } from "ethers";
-import { toAtto } from "./helpers";
+import { mineNBlocks, toAtto } from "./helpers";
 
 import { fromAtto } from "../scripts/deploys/helpers";
 
@@ -291,6 +291,15 @@ describe("AMM", async () => {
           expect(mintRatio).approximately(expectedRatio, 1e-2);
         })
       }
+    })
+
+    it("Threshold Decay", async() => {
+        const [dtpFraxOld, dtpTempleOld] = (await templeRouter.dynamicThresholdPriceWithDecay()).map(v => v.toNumber());
+        await mineNBlocks(1);
+        const [dtpFraxNew, dtpTempleNew] = (await templeRouter.dynamicThresholdPriceWithDecay()).map(v => v.toNumber());
+
+        // new threshold should be less than the old threshold, that is, the threshold is dropping
+        expect(dtpFraxNew/dtpTempleNew).lt(dtpFraxOld/dtpTempleOld);
     })
 
     // it("pair contract", async () => {
