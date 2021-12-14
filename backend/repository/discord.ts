@@ -70,37 +70,6 @@ export class DiscordDataRepository {
     return result.rows[0];
   }
 
-  // async userDetails(userId: string) {
-  //   if (!userId) throw new Error("Missing userId in userDetails query");
-
-  //   const query = `
-  //       SELECT 
-  //       (
-  //           SELECT
-  //               count(*) AS total
-  //           FROM
-  //               discord_user_messages
-  //           WHERE
-  //               user_id = $1
-  //               AND created_at > CURRENT_DATE - interval '7' day
-  //       ) AS engagementLast7Days,
-  //       (
-  //           SELECT
-  //               count(*) AS total
-  //           FROM
-  //               discord_user_messages
-  //           WHERE
-  //               user_id = $1
-  //               AND created_at > CURRENT_DATE - interval '30' day
-  //       ) AS engagementLast30Days,
-  //       $1 as user_id
-  //   `;
-  //   const values = [userId];
-  //   const result = await this.store.query(query, values);
-
-  //   return result.rows[0];
-  // }
-
   async memberGrowth(since: Date, until: Date) {
     const query = `
         SELECT DISTINCT
@@ -247,6 +216,21 @@ export class DiscordDataRepository {
         user_id = $1
       `;
     const values = [role];
+    const result = await this.store.query(query, values);
+
+    return result.rows[0];
+  }
+
+  async twitterSummary() {
+    const query = `
+    SELECT
+      followers_count
+    FROM
+      public.twitter_temple_stats
+    WHERE
+      screen_name = 'templedao';
+      `;
+    const values = [];
     const result = await this.store.query(query, values);
 
     return result.rows[0];
