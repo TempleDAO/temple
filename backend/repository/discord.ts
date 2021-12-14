@@ -122,44 +122,42 @@ export class DiscordDataRepository {
 
   async getUsersByEnclave(enclave: string){
     const query = `
-    SELECT
-        *
-      FROM (
+      SELECT * FROM 
+      (
         SELECT
           user_id,
           user_name,
           guild_name,
           joined_at,
-          CASE WHEN ('Members of Order' = ANY (roles)) THEN
-            'Order'
-          WHEN ('Members of Logic' = ANY (roles)) THEN
-            'Logic'
-          WHEN ('Members of Mystery' = ANY (roles)) THEN
-            'Mystery'
-          WHEN ('Members of Structure' = ANY (roles)) THEN
-            'Structure'
-          WHEN ('Members of Chaos' = ANY (roles)) THEN
-            'Chaos'
+          CASE 
+            WHEN array_to_string(roles, ' ') LIKE '%Order%' THEN 'Order'
+            WHEN array_to_string(roles, ' ') LIKE '%Mystery%' THEN 'Mystery'
+            WHEN array_to_string(roles, ' ') LIKE '%Structure%' THEN 'Structure'
+            WHEN array_to_string(roles, ' ') LIKE '%Logic%' THEN 'Logic'
+            WHEN array_to_string(roles, ' ') LIKE '%Chaos%' THEN 'Chaos'
           END AS enclave,
           roles
-        FROM (
-          SELECT
-            u.user_id,
-            u.user_name,
-            u.guild_name,
-            u.joined_at,
-            array_agg(r.role_name order by role_name) roles
-          FROM
-            discord_users u
-          LEFT OUTER JOIN discord_user_roles r ON u.user_id = r.user_id
-      GROUP BY
-        u.user_id,
-        u.user_name,
-        u.guild_name,
-        u.joined_at) AS users) u
+        FROM 
+          (
+            SELECT
+              u.user_id,
+              u.user_name,
+              u.guild_name,
+              u.joined_at,
+              array_agg(r.role_name ORDER BY role_name) roles
+            FROM
+              discord_users u
+            LEFT OUTER JOIN discord_user_roles r ON u.user_id = r.user_id
+            GROUP BY
+              u.user_id,
+              u.user_name,
+              u.guild_name,
+              u.joined_at
+          ) AS t
+        ) as users
       WHERE
-        enclave = $1
-      `;
+      enclave = $1
+    `;
     const values = [enclave];
     const result = await this.store.query(query, values);
 
@@ -168,41 +166,39 @@ export class DiscordDataRepository {
 
   async getUsersByRole(role: string){
     const query = `
-    SELECT
-        *
-      FROM (
+      SELECT * FROM 
+      (
         SELECT
           user_id,
           user_name,
           guild_name,
           joined_at,
-          CASE WHEN ('Members of Order' = ANY (roles)) THEN
-            'Order'
-          WHEN ('Members of Logic' = ANY (roles)) THEN
-            'Logic'
-          WHEN ('Members of Mystery' = ANY (roles)) THEN
-            'Mystery'
-          WHEN ('Members of Structure' = ANY (roles)) THEN
-            'Structure'
-          WHEN ('Members of Chaos' = ANY (roles)) THEN
-            'Chaos'
+          CASE 
+            WHEN array_to_string(roles, ' ') LIKE '%Order%' THEN 'Order'
+            WHEN array_to_string(roles, ' ') LIKE '%Mystery%' THEN 'Mystery'
+            WHEN array_to_string(roles, ' ') LIKE '%Structure%' THEN 'Structure'
+            WHEN array_to_string(roles, ' ') LIKE '%Logic%' THEN 'Logic'
+            WHEN array_to_string(roles, ' ') LIKE '%Chaos%' THEN 'Chaos'
           END AS enclave,
           roles
-        FROM (
-          SELECT
-            u.user_id,
-            u.user_name,
-            u.guild_name,
-            u.joined_at,
-            array_agg(r.role_name ORDER BY role_name) roles
-          FROM
-            discord_users u
-          LEFT OUTER JOIN discord_user_roles r ON u.user_id = r.user_id
-      GROUP BY
-        u.user_id,
-        u.user_name,
-        u.guild_name,
-        u.joined_at) AS users) u
+        FROM 
+          (
+            SELECT
+              u.user_id,
+              u.user_name,
+              u.guild_name,
+              u.joined_at,
+              array_agg(r.role_name ORDER BY role_name) roles
+            FROM
+              discord_users u
+            LEFT OUTER JOIN discord_user_roles r ON u.user_id = r.user_id
+            GROUP BY
+              u.user_id,
+              u.user_name,
+              u.guild_name,
+              u.joined_at
+          ) AS t
+        ) as users
       WHERE
         $1 = ANY (roles)
       `;
@@ -214,41 +210,39 @@ export class DiscordDataRepository {
 
   async getUser(role: string){
     const query = `
-    SELECT
-        *
-      FROM (
+      SELECT * FROM 
+      (
         SELECT
           user_id,
           user_name,
           guild_name,
           joined_at,
-          CASE WHEN ('Members of Order' = ANY (roles)) THEN
-            'Order'
-          WHEN ('Members of Logic' = ANY (roles)) THEN
-            'Logic'
-          WHEN ('Members of Mystery' = ANY (roles)) THEN
-            'Mystery'
-          WHEN ('Members of Structure' = ANY (roles)) THEN
-            'Structure'
-          WHEN ('Members of Chaos' = ANY (roles)) THEN
-            'Chaos'
+          CASE 
+            WHEN array_to_string(roles, ' ') LIKE '%Order%' THEN 'Order'
+            WHEN array_to_string(roles, ' ') LIKE '%Mystery%' THEN 'Mystery'
+            WHEN array_to_string(roles, ' ') LIKE '%Structure%' THEN 'Structure'
+            WHEN array_to_string(roles, ' ') LIKE '%Logic%' THEN 'Logic'
+            WHEN array_to_string(roles, ' ') LIKE '%Chaos%' THEN 'Chaos'
           END AS enclave,
           roles
-        FROM (
-          SELECT
-            u.user_id,
-            u.user_name,
-            u.guild_name,
-            u.joined_at,
-            array_agg(r.role_name ORDER BY role_name) roles
-          FROM
-            discord_users u
-          LEFT OUTER JOIN discord_user_roles r ON u.user_id = r.user_id
-      GROUP BY
-        u.user_id,
-        u.user_name,
-        u.guild_name,
-        u.joined_at) AS users) u
+        FROM 
+          (
+            SELECT
+              u.user_id,
+              u.user_name,
+              u.guild_name,
+              u.joined_at,
+              array_agg(r.role_name ORDER BY role_name) roles
+            FROM
+              discord_users u
+            LEFT OUTER JOIN discord_user_roles r ON u.user_id = r.user_id
+            GROUP BY
+              u.user_id,
+              u.user_name,
+              u.guild_name,
+              u.joined_at
+          ) AS t
+        ) as users
       WHERE
         user_id = $1
       `;
