@@ -92,6 +92,16 @@ async function main() {
       ethers.utils.keccak256(ethers.utils.formatBytes32String("3-2")))
 
   const templeCashback = await new TempleCashback__factory(owner).deploy(await owner.getAddress());
+  
+  await templeToken.addMinter(await owner.getAddress());
+  await templeToken.mint(await owner.getAddress(), toAtto(1000000));
+
+	// Deposit TEMPLE to TempleCashback Contract
+  Promise.all([
+		await templeToken
+			.connect(owner)
+			.transfer(templeCashback.address, toAtto(150000)),
+  ]);
 
   // Add an allowance for each account to join mint and stake
   let counter = 0;
