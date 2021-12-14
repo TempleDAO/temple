@@ -133,6 +133,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleStaking__factory>;
     getContractFactory(
+      name: "TempleTeamPayments",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TempleTeamPayments__factory>;
+    getContractFactory(
       name: "TempleTreasury",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleTreasury__factory>;
@@ -307,6 +311,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TempleStaking>;
+    getContractAt(
+      name: "TempleTeamPayments",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TempleTeamPayments>;
     getContractAt(
       name: "TempleTreasury",
       address: string,
