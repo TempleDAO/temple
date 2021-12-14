@@ -7,7 +7,6 @@ import { BigNumber, Signer } from "ethers";
 import { toAtto } from "./helpers";
 
 import { fromAtto } from "../scripts/deploys/helpers";
-import { factory } from "typescript";
 
 const fmtReserves = (reserves: [BigNumber, BigNumber, number?]): [number, number] => {
   return [fromAtto(reserves[0]), fromAtto(reserves[1])]
@@ -20,6 +19,7 @@ describe("AMM", async () => {
     let owner: Signer;
     let alan: Signer;
     let ben: Signer
+    let carol: Signer
     let pair: TempleUniswapV2Pair;
     let templeRouter: TempleFraxAMMRouter;
     let uniswapFactory: UniswapV2Factory;
@@ -29,7 +29,7 @@ describe("AMM", async () => {
     const expiryDate = (): number =>  Math.floor(Date.now() / 1000) + 900;
    
     beforeEach(async () => {
-      [owner, alan, ben] = await ethers.getSigners();
+      [owner, alan, ben, carol] = await ethers.getSigners();
 
       templeToken = await new TempleERC20Token__factory(owner).deploy();
       fraxToken = await new FakeERC20__factory(owner).deploy("STABLEC", "STABLEC");
@@ -56,7 +56,7 @@ describe("AMM", async () => {
         fraxToken.address,
         treasury.address,
         {frax: 1000000, temple: 4000000},
-        100000, /* threshold decay per block */
+        1, /* threshold decay per block */
         {frax: 1000000, temple: 1000000},
         {frax: 1000000, temple: 12000000},
       );
@@ -127,18 +127,33 @@ describe("AMM", async () => {
           .eq(fromAtto(await templeToken.balanceOf(await ben.getAddress())))
       })
 
-      xit("Below IV sells should always be exactly at IV", async() => {
-        // do swaps
-        await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
-        await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await alan.getAddress(), expiryDate());
+      it("Below IV sells should always be exactly at IV", async() => {
+        // fund router with some frax (for use when price is below IV)
+        await fraxToken.transfer(templeRouter.address, toAtto(1000));
 
-        // Expect reserves to match
+        // First, sell enough temple to bring price below IV
+        await templeRouter.swapExactTempleForFrax(toAtto(900000), 1, await alan.getAddress(), expiryDate());
+        await uniswapRouter.swapExactTokensForTokens(toAtto(900000), 1, [templeToken.address, fraxToken.address], await alan.getAddress(), expiryDate());
         expect(fmtReserves(await pair.getReserves()))
           .eql(fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
 
-        // Expect temple balances to match
-        expect(fromAtto(await templeToken.balanceOf(await alan.getAddress())))
-          .eq(fromAtto(await templeToken.balanceOf(await ben.getAddress())))
+        // Expect price to be below IV
+        const [ivFrax, ivTemple] = fmtReserves(await treasury.intrinsicValueRatio());
+        const [rTemple, rFrax] = fmtReserves(await pair.getReserves());
+        expect(rFrax / rTemple).lte(ivFrax / ivTemple);
+
+        // From this point on, any sell should be at the IV Price (not reserve price)
+        await templeRouter.swapExactTempleForFrax(toAtto(100), 1, await ben.getAddress(), expiryDate());
+        expect(fromAtto(await fraxToken.balanceOf(await ben.getAddress()))).eq(100 * ivFrax / ivTemple);
+
+        await templeRouter.swapExactTempleForFrax(toAtto(100), 1, await ben.getAddress(), expiryDate());
+        expect(fromAtto(await fraxToken.balanceOf(await ben.getAddress()))).eq(200 * ivFrax / ivTemple);
+
+        // Buys should be on the constant product AMM
+        await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [fraxToken.address, templeToken.address], await alan.getAddress(), expiryDate());
+        await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await alan.getAddress(), expiryDate());
+        expect(fmtReserves(await pair.getReserves()))
+          .eql(fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
       })
     });
 
