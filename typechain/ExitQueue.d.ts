@@ -42,6 +42,7 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     "transferOwnership(address)": FunctionFragment;
     "userData(address)": FunctionFragment;
     "withdraw(uint256)": FunctionFragment;
+    "withdrawEpochs(uint256[],uint256)": FunctionFragment;
   };
 
   encodeFunctionData(functionFragment: "TEMPLE", values?: undefined): string;
@@ -113,6 +114,10 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     functionFragment: "withdraw",
     values: [BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "withdrawEpochs",
+    values: [BigNumberish[], BigNumberish]
+  ): string;
 
   decodeFunctionResult(functionFragment: "TEMPLE", data: BytesLike): Result;
   decodeFunctionResult(
@@ -174,6 +179,10 @@ interface ExitQueueInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "userData", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "withdrawEpochs",
+    data: BytesLike
+  ): Result;
 
   events: {
     "JoinQueue(address,uint256)": EventFragment;
@@ -327,6 +336,12 @@ export class ExitQueue extends BaseContract {
       epoch: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    withdrawEpochs(
+      epochs: BigNumberish[],
+      length: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
   };
 
   TEMPLE(overrides?: CallOverrides): Promise<string>;
@@ -415,6 +430,12 @@ export class ExitQueue extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  withdrawEpochs(
+    epochs: BigNumberish[],
+    length: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   callStatic: {
     TEMPLE(overrides?: CallOverrides): Promise<string>;
 
@@ -496,6 +517,12 @@ export class ExitQueue extends BaseContract {
     >;
 
     withdraw(epoch: BigNumberish, overrides?: CallOverrides): Promise<void>;
+
+    withdrawEpochs(
+      epochs: BigNumberish[],
+      length: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
   filters: {
@@ -625,6 +652,12 @@ export class ExitQueue extends BaseContract {
       epoch: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
+
+    withdrawEpochs(
+      epochs: BigNumberish[],
+      length: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -710,6 +743,12 @@ export class ExitQueue extends BaseContract {
 
     withdraw(
       epoch: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    withdrawEpochs(
+      epochs: BigNumberish[],
+      length: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

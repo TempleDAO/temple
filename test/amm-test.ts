@@ -151,8 +151,8 @@ describe("AMM", async () => {
         }
 
         // Until we pass dynamic threshold, buys are on AMM
-        await uniswapRouter.swapExactTokensForTokens(toAtto(100000), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
-        await templeRouter.swapExactFraxForTemple(toAtto(100000), 1, await alan.getAddress(), expiryDate());
+        await uniswapRouter.swapExactTokensForTokens(toAtto(1000000), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
+        await templeRouter.swapExactFraxForTemple(toAtto(1000000), 1, await alan.getAddress(), expiryDate());
 
         // Expect reserves to match
         expect(fmtPricePair(await pair.getReserves()))
