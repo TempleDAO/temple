@@ -6,8 +6,8 @@ import "@nomiclabs/hardhat-ganache";  // for testing
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-etherscan";
 
-import "./tasks/query";
-// import "./tasks/management";
+// NOTE: Issue with tasks as they depend on typechain typescript which may not have been generated yet.
+//       Favour scripts with helpers over tasks
 import "./tasks/on-chain-ops";
 
 if (!process.env.ETHERSCAN_API_KEY) {
