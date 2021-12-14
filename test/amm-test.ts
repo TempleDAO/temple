@@ -113,7 +113,7 @@ describe("AMM", async () => {
     });
 
     describe("Sell", async() => {
-      it.only("Above IV sells should be same as on AMM", async() => {
+      it("Above IV sells should be same as on AMM", async() => {
         // do swaps
         await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [templeToken.address, fraxToken.address], await ben.getAddress(), expiryDate());
         await templeRouter.swapExactTempleForFrax(toAtto(100), 1, await alan.getAddress(), expiryDate());
