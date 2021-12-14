@@ -212,7 +212,7 @@ describe("AMM", async () => {
   
     // });
 
-    xdescribe("Contract Management", async() => {
+    xdescribe("Contract Management / ACL", async() => {
       it("only owner can change dynamic decay per block", async () => {
       });
 
@@ -235,6 +235,12 @@ describe("AMM", async () => {
       });
 
       it("Owner can change the active router on the UniswapV2Pair", async () => {
+      });
+
+      it("Need to be on allowedlist to call router and swap (before open access is enabled)", async () => {
+      });
+
+      it("Once open access is enabled, anyone can swap frax/temple", async () => {
       });
     })
 })
