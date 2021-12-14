@@ -112,6 +112,7 @@ describe("AMM", async () => {
 
         // Until we pass dynamic threshold, buys are on AMM
         await templeRouter.setInterpolateToPrice(1000000, 10000)
+        await templeRouter.setDynamicThresholdIncreasePct(9000)
         await uniswapRouter.swapExactTokensForTokens(toAtto(100000), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
         await templeRouter.swapExactFraxForTemple(toAtto(100000), 1, await alan.getAddress(), expiryDate());
 
@@ -135,7 +136,8 @@ describe("AMM", async () => {
         const [dtpFraxNew, dtpTempleNew] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
         const [rTempleCustomAMM, rFraxUniswapAMM] = fmtPricePair(await pair.getReserves());
         const [rTempleUniswapAMM, rfUniswapAMM] = fmtPricePair(await uniswapRouter.getReserves(templeToken.address, fraxToken.address));
-        expect(rFrax / rTemple).approximately(dtpFraxNew / dtpTempleNew, 1e-2);
+        expect(rFrax / rTemple * 0.9).approximately(dtpFraxNew / dtpTempleNew, 1e-2);
+        expect(rFrax / rTemple).gt(dtpFraxNew / dtpTempleNew);
         expect(rTempleCustomAMM).gt(rTempleUniswapAMM);
         expect(rFraxUniswapAMM).lt(rfUniswapAMM);
       })

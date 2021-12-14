@@ -191,7 +191,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
             (uint numerator, uint denominator) = mintRatioAt(reserveTemple, reserveFrax);
             amountInProtocol = amountIn * numerator / denominator;
             // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant
-            dynamicThresholdPrice.temple = reserveTemple * dynamicThresholdIncreasePct / DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR * dynamicThresholdPrice.frax / reserveFrax;
+            dynamicThresholdPrice.temple = reserveTemple * dynamicThresholdPrice.frax * DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR / (reserveFrax * dynamicThresholdIncreasePct);
             decayStartBlock = block.number;
         }
 
