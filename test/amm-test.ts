@@ -152,7 +152,7 @@ describe("AMM", async () => {
           .eql(fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
       });
 
-      it.only("remove", async () => {
+      it("remove", async () => {
         // Expect reserves to match before/after adding liquidity
         expect(fmtReserves(await pair.getReserves()))
           .eql(fmtReserves(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
@@ -209,4 +209,29 @@ describe("AMM", async () => {
   
     // });
 
+    xdescribe("Contract Management", async() => {
+      it("only owner can change dynamic decay per block", async () => {
+      });
+
+      it("only owner can change dynamic threshold percentage", async () => {
+      });
+
+      it("only owner can set interpolation from/to price", async () => {
+      });
+
+      it("only owner can toggle access", async () => {
+      });
+
+      it("Need appropriate role to add allowed user", async () => {
+      });
+
+      it("Only owner can remove a user from the allowed list", async () => {
+      });
+
+      it("UniswapV2Pair has access control enabled s.t only a single router can call swap (permissioned access)", async () => {
+      });
+
+      it("Owner can change the active router on the UniswapV2Pair", async () => {
+      });
+    })
 })
