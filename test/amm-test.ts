@@ -34,17 +34,20 @@ describe("AMM", async () => {
       templeToken = await new TempleERC20Token__factory(owner).deploy();
       fraxToken = await new FakeERC20__factory(owner).deploy("STABLEC", "STABLEC");
 
-      treasury = await new TempleTreasury__factory(owner).deploy(
-        templeToken.address,
-        fraxToken.address,
-      );
-
       await templeToken.addMinter(await owner.getAddress()),
 
       await Promise.all([
         fraxToken.mint(await owner.getAddress(), toAtto(100000000)),
         templeToken.mint(await owner.getAddress(), toAtto(100000000)),
       ]);
+
+      treasury = await new TempleTreasury__factory(owner).deploy(
+        templeToken.address,
+        fraxToken.address,
+      );
+      await templeToken.addMinter(treasury.address),
+      await fraxToken.increaseAllowance(treasury.address, toAtto(100));
+      await treasury.seedMint(toAtto(100), toAtto(50));
 
       pair = await new TempleUniswapV2Pair__factory(owner).deploy(await owner.getAddress(), templeToken.address, fraxToken.address);
       templeRouter = await new TempleFraxAMMRouter__factory(owner).deploy(
@@ -110,10 +113,10 @@ describe("AMM", async () => {
     });
 
     describe("Sell", async() => {
-      xit("Above IV sells should be same as on AMM", async() => {
+      it.only("Above IV sells should be same as on AMM", async() => {
         // do swaps
-        await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
-        await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await alan.getAddress(), expiryDate());
+        await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [templeToken.address, fraxToken.address], await ben.getAddress(), expiryDate());
+        await templeRouter.swapExactTempleForFrax(toAtto(100), 1, await alan.getAddress(), expiryDate());
 
         // Expect reserves to match
         expect(fmtReserves(await pair.getReserves()))
