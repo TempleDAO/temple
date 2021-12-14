@@ -4,6 +4,16 @@ https://docs.google.com/document/d/1xU3v2WY3kSDGr2iT697kTJf5ZPVAc7k-6NYbLvjPAlc/
 [metrics/data model/example endpoints](
 https://docs.google.com/spreadsheets/d/14-ZyCYmHp94sGCELO3S-Cdt3-MHp01dVt3BvwrA8GKA/edit#gid=1256935808)
 
+# Endpoints
+
+```
+/api/discord/members/growth?since=2021-10-31&until=2021-12-31
+/api/discord/members/summary
+/api/discord/members/:userid
+/api/discord/members/enclave/:enclave  (ex "Structure")
+/api/discord/members/role/:role        (ex "Members of Structure")
+```
+
 ## ETL
 ### Discord
 https://connection.keboola.com will update docs later
@@ -14,8 +24,7 @@ https://connection.keboola.com will update docs later
 
 for development
 ``` sh
-$ docker run --rm --name templedb -p 54321:5432 -v $(pwd)/storage:/tmp/storage -ePOSTGRES_PASSWORD=postgres postgres:14-alpine
-$ bash storage/prepare_test_db.sh
+cd ./storage && ./startdb.sh
 ```
 
 you can then connect to the db (from node) on port 54321
