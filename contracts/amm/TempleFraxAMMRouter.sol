@@ -185,7 +185,8 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
 
         // if AMM is currently trading above target, route some portion to mint on protocol
         uint amountInProtocol = 0;
-        if ((dynamicThresholdPrice.temple - thresholdDecay) * reserveTemple >= dynamicThresholdPrice.frax * reserveFrax) {
+
+        if ((dynamicThresholdPrice.temple - thresholdDecay) * reserveFrax >= dynamicThresholdPrice.frax * reserveTemple) {
             (uint numerator, uint denominator) = mintRatioAt(reserveTemple, reserveFrax);
             amountInProtocol = amountIn * numerator / denominator;
             // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant
@@ -242,7 +243,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         // if AMM is currently trading above target, route some portion to mint on protocol
         (uint256 ivFrax, uint256 ivTemple) = templeTreasury.intrinsicValueRatio();
 
-        if (ivTemple * reserveFrax <= ivFrax * reserveTemple) {
+        if (ivTemple * reserveFrax <= reserveTemple * ivFrax) {
             amountOut = amountIn * ivFrax / ivTemple;
             require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
             templeToken.burnFrom(msg.sender, amountIn);
