@@ -8,7 +8,7 @@ import "@nomiclabs/hardhat-etherscan";
 
 import "./tasks/query";
 // import "./tasks/management";
-// import "./tasks/on-chain-ops";
+import "./tasks/on-chain-ops";
 
 if (!process.env.ETHERSCAN_API_KEY) {
   console.log("NOTE: environment variable ETHERSCAN_API_KEY isn't set. tasks that interact with etherscan won't work");
@@ -52,6 +52,9 @@ module.exports = {
       url: "https://rpc-mainnet.maticvigil.com",
       accounts: (process.env.MAINNET_ADDRESS_PRIVATE_KEY) ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY] : [],
       gasPrice: 40000000000,
+    },
+    hardhat: {
+      chainId: 1337
     }
   },
   etherscan: {
