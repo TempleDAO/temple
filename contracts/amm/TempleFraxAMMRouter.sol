@@ -178,16 +178,12 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
 
         (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
-
-        uint thresholdDecay = (block.number - decayStartBlock) * dynamicThresholdDecayPerBlock;
-        if (thresholdDecay > dynamicThresholdPrice.temple) {
-            thresholdDecay = dynamicThresholdPrice.temple;
-        }
+        (uint thresholdPriceFrax, uint thresholdPriceTemple) = dynamicThresholdPriceWithDecay();
 
         // if AMM is currently trading above target, route some portion to mint on protocol
         uint amountInProtocol = 0;
 
-        if ((dynamicThresholdPrice.temple + thresholdDecay) * reserveFrax >= dynamicThresholdPrice.frax * reserveTemple) {
+        if (thresholdPriceTemple * reserveFrax >= thresholdPriceFrax * reserveTemple) {
             (uint numerator, uint denominator) = mintRatioAt(reserveTemple, reserveFrax);
             amountInProtocol = amountIn * numerator / denominator;
             // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant
@@ -368,5 +364,14 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         } else {
             return (numerator, denominator);
         }
+    }
+
+    function dynamicThresholdPriceWithDecay() public view returns (uint frax, uint temple) {
+        uint thresholdDecay = (block.number - decayStartBlock) * dynamicThresholdDecayPerBlock;
+        if (thresholdDecay > dynamicThresholdPrice.temple) {
+            thresholdDecay = dynamicThresholdPrice.temple;
+        }
+
+        return (dynamicThresholdPrice.frax, dynamicThresholdPrice.temple + thresholdDecay);
     }
 }

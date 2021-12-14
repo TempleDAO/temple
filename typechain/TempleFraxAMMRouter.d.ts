@@ -31,6 +31,7 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     "dynamicThresholdDecayPerBlock()": FunctionFragment;
     "dynamicThresholdIncreasePct()": FunctionFragment;
     "dynamicThresholdPrice()": FunctionFragment;
+    "dynamicThresholdPriceWithDecay()": FunctionFragment;
     "fraxToken()": FunctionFragment;
     "getAmountOut(uint256,uint256,uint256)": FunctionFragment;
     "getRoleAdmin(bytes32)": FunctionFragment;
@@ -103,6 +104,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "dynamicThresholdPrice",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "dynamicThresholdPriceWithDecay",
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "fraxToken", values?: undefined): string;
@@ -244,6 +249,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "dynamicThresholdPrice",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "dynamicThresholdPriceWithDecay",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "fraxToken", data: BytesLike): Result;
@@ -454,6 +463,10 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
 
+    dynamicThresholdPriceWithDecay(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
     fraxToken(overrides?: CallOverrides): Promise<[string]>;
 
     getAmountOut(
@@ -625,6 +638,10 @@ export class TempleFraxAMMRouter extends BaseContract {
   dynamicThresholdIncreasePct(overrides?: CallOverrides): Promise<BigNumber>;
 
   dynamicThresholdPrice(
+    overrides?: CallOverrides
+  ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
+  dynamicThresholdPriceWithDecay(
     overrides?: CallOverrides
   ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
 
@@ -807,6 +824,10 @@ export class TempleFraxAMMRouter extends BaseContract {
     dynamicThresholdIncreasePct(overrides?: CallOverrides): Promise<BigNumber>;
 
     dynamicThresholdPrice(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
+    dynamicThresholdPriceWithDecay(
       overrides?: CallOverrides
     ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
 
@@ -1055,6 +1076,10 @@ export class TempleFraxAMMRouter extends BaseContract {
 
     dynamicThresholdPrice(overrides?: CallOverrides): Promise<BigNumber>;
 
+    dynamicThresholdPriceWithDecay(
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     fraxToken(overrides?: CallOverrides): Promise<BigNumber>;
 
     getAmountOut(
@@ -1235,6 +1260,10 @@ export class TempleFraxAMMRouter extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     dynamicThresholdPrice(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    dynamicThresholdPriceWithDecay(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
