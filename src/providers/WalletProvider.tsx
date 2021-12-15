@@ -94,6 +94,7 @@ interface WalletState {
   isLoading: boolean;
   ocTemplar: OpeningCeremonyUser;
   maxInvitesPerVerifiedUser: number;
+  signer: JsonRpcSigner | null;
 
   connectWallet(): void;
 
@@ -157,6 +158,7 @@ const INITIAL_STATE: WalletState = {
   verifyQuest: noop,
   inviteFriend: noop,
   claim: asyncNoop,
+  signer: null,
 };
 
 const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
@@ -802,6 +804,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         inviteFriend,
         maxInvitesPerVerifiedUser,
         claim,
+        signer: signerState,
       }}
     >
       {children}
