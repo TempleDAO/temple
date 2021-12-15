@@ -117,6 +117,7 @@ export async function deployAndMine<T extends BaseContract, D extends (...args: 
   await contract.deployed();
   console.log('Contract deployed');
   console.log(`${name}=${contract.address}`);
+  console.log(`export ${name}=${contract.address}`);
   console.log(`yarn hardhat verify --network ${network.name} ${contract.address} ${renderedArgs}`);
   console.log('********************\n');
 
