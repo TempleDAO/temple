@@ -82,6 +82,8 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         interpolateToPrice = _interpolateToPrice;
 
         decayStartBlock = block.number;
+
+        _setupRole(DEFAULT_ADMIN_ROLE, owner());
     }
 
     function setDynamicThresholdDecayPerBlock(uint256 _dynamicThresholdDecayPerBlock) external onlyOwner {
