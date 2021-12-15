@@ -1,4 +1,5 @@
 import { JsonRpcProvider, JsonRpcSigner } from '@ethersproject/providers';
+import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { BigNumber, ethers } from 'ethers';
 import React, {
   createContext,
@@ -14,9 +15,11 @@ import {
   OpeningCeremony__factory,
   TempleTreasury__factory,
   VerifyQuest__factory,
+  TempleCashback__factory,
 } from 'types/typechain';
+import { ClaimType } from 'enums/claim-type';
 import { fromAtto, toAtto } from 'utils/bigNumber';
-import { noop } from 'utils/helpers';
+import { noop, asyncNoop } from 'utils/helpers';
 import { useNotification } from 'providers/NotificationProvider';
 
 /**
@@ -114,6 +117,8 @@ interface WalletState {
   verifyQuest(sandalWoodToken: string, ritualKind: RitualKind): void;
 
   inviteFriend(sandalWoodToken: string, ritualKind: RitualKind): void;
+
+  claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
 }
 
 const INITIAL_STATE: WalletState = {
@@ -151,6 +156,7 @@ const INITIAL_STATE: WalletState = {
   clearRitual: noop,
   verifyQuest: noop,
   inviteFriend: noop,
+  claim: asyncNoop,
 };
 
 const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
@@ -161,6 +167,7 @@ const TREASURY_ADDRESS = ENV_VARS.VITE_PUBLIC_TREASURY_ADDRESS;
 const EXIT_QUEUE_ADDRESS = ENV_VARS.VITE_PUBLIC_EXIT_QUEUE_ADDRESS;
 const OPENING_CEREMONY_ADDRESS = ENV_VARS.VITE_PUBLIC_OPENING_CEREMONY_ADDRESS;
 const VERIFY_QUEST_ADDRESS = ENV_VARS.VITE_PUBLIC_VERIFY_QUEST_ADDRESS;
+const TEMPLE_CASHBACK_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_CASHBACK_ADDRESS;
 
 if (
   STABLE_COIN_ADDRESS === undefined ||
@@ -170,7 +177,8 @@ if (
   LOCKED_OG_TEMPLE_ADDRESS === undefined ||
   EXIT_QUEUE_ADDRESS === undefined ||
   OPENING_CEREMONY_ADDRESS === undefined ||
-  VERIFY_QUEST_ADDRESS === undefined
+  VERIFY_QUEST_ADDRESS === undefined ||
+  TEMPLE_CASHBACK_ADDRESS === undefined
 ) {
   console.info(`
 STABLE_COIN_ADDRESS=${STABLE_COIN_ADDRESS}
@@ -181,8 +189,9 @@ LOCKED_OG_TEMPLE_ADDRESS=${LOCKED_OG_TEMPLE_ADDRESS}
 EXIT_QUEUE_ADDRESS=${EXIT_QUEUE_ADDRESS}
 OPENING_CEREMONY_ADDRESS=${OPENING_CEREMONY_ADDRESS}
 VERIFY_QUEST_ADDRESS=${VERIFY_QUEST_ADDRESS}
+TEMPLE_CASHBACK_ADDRESS=${TEMPLE_CASHBACK_ADDRESS}
 `);
-  throw new Error(`Missinig contract address from .env`);
+  throw new Error(`Missing contract address from .env`);
 }
 
 const WalletContext = createContext<WalletState>(INITIAL_STATE);
@@ -728,6 +737,46 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     setRitual(new Map(ritual));
   };
 
+  const claim = async (
+    claimType: ClaimType
+  ): Promise<TransactionReceipt | void> => {
+    if (walletAddress && signerState) {
+      const { default: claims } = await import(
+        `../data/claims/${claimType}.json`
+      );
+
+      const {
+        hash,
+        signature,
+        tokenAddress,
+        tokenQuantity,
+        nonce,
+      }: {
+        hash: string;
+        signature: string;
+        tokenAddress: string;
+        tokenQuantity: string;
+        nonce: string;
+      } = claims[walletAddress];
+
+      const templeCashback = new TempleCashback__factory()
+        .attach(TEMPLE_CASHBACK_ADDRESS)
+        .connect(signerState);
+
+      const tx = await templeCashback.claim(
+        hash,
+        signature,
+        tokenAddress,
+        tokenQuantity,
+        nonce
+      );
+
+      return tx.wait();
+    } else {
+      console.error('Missing wallet address');
+    }
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -752,6 +801,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         verifyQuest,
         inviteFriend,
         maxInvitesPerVerifiedUser,
+        claim,
       }}
     >
       {children}

@@ -165,6 +165,14 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "setStartingBlock",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "totalPerEpoch",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "totalPerEpoch",
     data: BytesLike
   ): Result;
