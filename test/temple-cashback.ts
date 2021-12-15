@@ -40,7 +40,7 @@ describe('Test Temple Cashback', async () => {
 
     it('Only owner can withdraw', async () => {
         // Validate owner can withdraw and receive tokens
-        expect(
+        await expect(
             async () =>
                 await Cashback.connect(owner).withdraw(
                     TEMPLE.address,
@@ -48,7 +48,7 @@ describe('Test Temple Cashback', async () => {
                 )
         ).to.changeTokenBalance(TEMPLE, owner, toAtto(500))
         // Non-owner throws error on withdraw
-        shouldThrow(
+        await shouldThrow(
             Cashback.connect(unapproved).withdraw(TEMPLE.address, toAtto(1000)),
             /Ownable: caller is not the owner/
         )
@@ -57,13 +57,13 @@ describe('Test Temple Cashback', async () => {
     it('Only owner can update verifier', async () => {
         const approvedAddr: string = await approved.getAddress()
         // Non-owner throws error
-        shouldThrow(
+        await shouldThrow(
             Cashback.connect(unapproved).setVerifier(approvedAddr),
             /Ownable: caller is not the owner/
         )
         // Validate owner can update signer
         await Cashback.connect(owner).setVerifier(approvedAddr)
-        expect(await Cashback.verifier()).to.equal(approvedAddr)
+        await expect(await Cashback.verifier()).to.equal(approvedAddr)
     })
 
     it('Address with verified signature can withdraw funds', async () => {
@@ -75,7 +75,7 @@ describe('Test Temple Cashback', async () => {
             value,
             nonce
         )
-        expect(
+        await expect(
             async () =>
                 await Cashback.connect(approved).claim(
                     hash,
@@ -87,7 +87,7 @@ describe('Test Temple Cashback', async () => {
         ).to.changeTokenBalance(TEMPLE, approved, value)
 
         // Unapproved address cannot claim funds
-        shouldThrow(
+        await shouldThrow(
             Cashback.connect(unapproved).claim(
                 hash,
                 signature,
@@ -107,7 +107,7 @@ describe('Test Temple Cashback', async () => {
             toAtto(10),
             nonce
         )
-        shouldThrow(
+        await shouldThrow(
             Cashback.connect(approved).claim(
                 hash,
                 signature,
@@ -128,7 +128,7 @@ describe('Test Temple Cashback', async () => {
             nonce
         )
         // First claim should work
-        expect(
+        await expect(
             async () =>
                 await Cashback.connect(approved).claim(
                     hash,
@@ -139,7 +139,7 @@ describe('Test Temple Cashback', async () => {
                 )
         ).to.changeTokenBalance(TEMPLE, approved, value)
         // Second claim with same signature should fail
-        shouldThrow(
+        await shouldThrow(
             Cashback.connect(approved).claim(
                 hash,
                 signature,
