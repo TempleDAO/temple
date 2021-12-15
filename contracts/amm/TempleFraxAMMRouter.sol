@@ -188,12 +188,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         if (thresholdPriceTemple * reserveFrax >= thresholdPriceFrax * reserveTemple) {
             (uint numerator, uint denominator) = mintRatioAt(reserveTemple, reserveFrax);
             amountInProtocol = amountIn * numerator / denominator;
-            // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant
-            uint dynamicThresholdIncrease = reserveTemple * dynamicThresholdPrice.frax * DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR / (reserveFrax * dynamicThresholdIncreasePct);
-            if (dynamicThresholdIncrease < dynamicThresholdPrice.temple) {
-                dynamicThresholdPrice.temple = dynamicThresholdIncrease;
-                decayStartBlock = block.number;
-            }
+            
         }
 
         uint amountInAMM = amountIn - amountInProtocol;
@@ -227,6 +222,14 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         if (amountInProtocol > 0) {
             SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(this), amountInAMM); // TODO(butlerji): Where should this frax go?
             templeToken.mint(to, amountOutAMM);
+
+            // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant
+            (uint rt, uint rf,) = pair.getReserves();
+            uint newDynamicThresholdPriceTemple = rt * dynamicThresholdPrice.frax * DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR / (rf * dynamicThresholdIncreasePct);
+            if (newDynamicThresholdPriceTemple < dynamicThresholdPrice.temple) {
+                dynamicThresholdPrice.temple = newDynamicThresholdPriceTemple;
+                decayStartBlock = block.number;
+            }
         }
     }
 
