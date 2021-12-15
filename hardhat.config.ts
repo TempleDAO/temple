@@ -8,7 +8,7 @@ import "@nomiclabs/hardhat-etherscan";
 
 // NOTE: Issue with tasks as they depend on typechain typescript which may not have been generated yet.
 //       Favour scripts with helpers over tasks
-import "./tasks/on-chain-ops";
+// import "./tasks/on-chain-ops";
 
 if (!process.env.ETHERSCAN_API_KEY) {
   console.log("NOTE: environment variable ETHERSCAN_API_KEY isn't set. tasks that interact with etherscan won't work");
