@@ -129,17 +129,35 @@ describe("AMM", async () => {
         const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
         expect(rFrax / rTemple).gte(dtpFrax / dtpTemple);
 
-        // Now, if we mint again, we expect less slippage on AMM, and the dtp price to be the start price of the last buy
-        await uniswapRouter.swapExactTokensForTokens(toAtto(1000), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
-        await templeRouter.swapExactFraxForTemple(toAtto(1000), 1, await alan.getAddress(), expiryDate());
+        // Now, if we mint again, we expect less slippage on AMM.
+        {
+        await uniswapRouter.swapExactTokensForTokens(toAtto(10000), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
+        await templeRouter.swapExactFraxForTemple(toAtto(10000), 1, await alan.getAddress(), expiryDate());
 
         const [dtpFraxNew, dtpTempleNew] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
-        const [rTempleCustomAMM, rFraxUniswapAMM] = fmtPricePair(await pair.getReserves());
-        const [rTempleUniswapAMM, rfUniswapAMM] = fmtPricePair(await uniswapRouter.getReserves(templeToken.address, fraxToken.address));
-        expect(rFrax / rTemple * 0.9).approximately(dtpFraxNew / dtpTempleNew, 1e-2);
+        const [rTempleCustomAMM, rFraxCustomAMM] = fmtPricePair(await pair.getReserves());
+        const [rTempleUniswapAMM, rFraxUniswapAMM] = fmtPricePair(await uniswapRouter.getReserves(templeToken.address, fraxToken.address));
+
+        // No change to the DTP Price, as the buy didn't go far enough in front
+        expect(dtpFrax/ dtpTemple).approximately(dtpFraxNew / dtpTempleNew, 1e-5);
         expect(rFrax / rTemple).gt(dtpFraxNew / dtpTempleNew);
         expect(rTempleCustomAMM).gt(rTempleUniswapAMM);
-        expect(rFraxUniswapAMM).lt(rfUniswapAMM);
+        expect(rFraxCustomAMM).lt(rFraxUniswapAMM);
+        }
+
+        // Buy again, this time we expect the DTP price to move up
+        {
+        await templeRouter.swapExactFraxForTemple(toAtto(10000), 1, await alan.getAddress(), expiryDate());
+        const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
+        const [dtpFraxNew, dtpTempleNew] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
+
+        // The DTP Price only moves up
+        expect(rFrax / rTemple).gt(dtpFraxNew / dtpTempleNew);
+        expect(dtpFrax/ dtpTemple).lt(dtpFraxNew / dtpTempleNew);
+        expect(rFrax / rTemple).gt(dtpFraxNew / dtpTempleNew);
+        expect(rFrax / rTemple * 0.9).approximately(dtpFraxNew / dtpTempleNew, 1e-2);
+        }
+
       })
 
       it("Above dynamic threshold and toPrice should have 100% of buy minted on protocol", async() => {
