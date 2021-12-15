@@ -5,10 +5,6 @@ import { deployAndMine, DeployedContracts, DEPLOYED_CONTRACTS, fromAtto, toAtto 
 
 const EPOCH_SIZE = 24 * 60 * 60;
 const START_TIMESTAMP = 1632880800; // Wednesday, September 29, 2021 2:00:00 AM UTC
-const UNLOCK_TIMESTAMP = 1637236800; // Thursday, November 18, 2021 12:00:00 PM UTC
-const MAX_EXITABLE_PER_ADDRESS = toAtto(1000) ;
-const MAX_EXITABLE_PER_EPOCH = toAtto(1000) ;
-const MINT_MULTIPLE = 6;
 
 async function main() {
   const [owner] = await ethers.getSigners();
@@ -28,7 +24,7 @@ async function main() {
     DEPLOYED.TEMPLE,
     DEPLOYED.EXIT_QUEUE,
     EPOCH_SIZE,
-    START_TIMESTAMP,
+    START_TIMESTAMP, // TODO: Should make it now
   );
 }
 

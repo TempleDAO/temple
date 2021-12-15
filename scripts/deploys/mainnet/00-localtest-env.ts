@@ -1,14 +1,16 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TempleERC20Token, TempleERC20Token__factory } from '../../../typechain';
-import { deployAndMine, DEPLOYED_CONTRACTS, toAtto } from '../helpers';
+import { FakeERC20, FakeERC20__factory } from '../../../typechain';
+import { deployAndMine } from '../helpers';
 
 async function main() {
   const [owner] = await ethers.getSigners();
 
-  const templeFactory = new TempleERC20Token__factory(owner);
-  const TEMPLE: TempleERC20Token = await deployAndMine(
-    'TEMPLE', templeFactory, templeFactory.deploy,
+  const fraxFactory = new FakeERC20__factory(owner);
+  const FRAX: FakeERC20 = await deployAndMine(
+    'FRAX', fraxFactory , fraxFactory .deploy,
+    'FRAX',
+    'FRAX', 
   )
 }
 
