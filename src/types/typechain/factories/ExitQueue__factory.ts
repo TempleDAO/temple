@@ -9,9 +9,9 @@ import {
   Contract,
   ContractFactory,
   Overrides,
-} from "ethers";
-import { Provider, TransactionRequest } from "@ethersproject/providers";
-import type { ExitQueue, ExitQueueInterface } from "../ExitQueue";
+} from 'ethers';
+import { Provider, TransactionRequest } from '@ethersproject/providers';
+import type { ExitQueue, ExitQueueInterface } from '../ExitQueue';
 
 const _abi = [
   {
@@ -22,84 +22,84 @@ const _abi = [
         type: "address",
       },
       {
-        internalType: "uint256",
-        name: "_maxPerEpoch",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '_maxPerEpoch',
+        type: 'uint256',
       },
       {
-        internalType: "uint256",
-        name: "_maxPerAddress",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '_maxPerAddress',
+        type: 'uint256',
       },
       {
-        internalType: "uint256",
-        name: "_epochSize",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '_epochSize',
+        type: 'uint256',
       },
     ],
-    stateMutability: "nonpayable",
-    type: "constructor",
+    stateMutability: 'nonpayable',
+    type: 'constructor',
   },
   {
     anonymous: false,
     inputs: [
       {
         indexed: false,
-        internalType: "address",
-        name: "exiter",
-        type: "address",
+        internalType: 'address',
+        name: 'exiter',
+        type: 'address',
       },
       {
         indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
+        internalType: 'uint256',
+        name: 'amount',
+        type: 'uint256',
       },
     ],
-    name: "JoinQueue",
-    type: "event",
+    name: 'JoinQueue',
+    type: 'event',
   },
   {
     anonymous: false,
     inputs: [
       {
         indexed: true,
-        internalType: "address",
-        name: "previousOwner",
-        type: "address",
+        internalType: 'address',
+        name: 'previousOwner',
+        type: 'address',
       },
       {
         indexed: true,
-        internalType: "address",
-        name: "newOwner",
-        type: "address",
+        internalType: 'address',
+        name: 'newOwner',
+        type: 'address',
       },
     ],
-    name: "OwnershipTransferred",
-    type: "event",
+    name: 'OwnershipTransferred',
+    type: 'event',
   },
   {
     anonymous: false,
     inputs: [
       {
         indexed: false,
-        internalType: "address",
-        name: "exiter",
-        type: "address",
+        internalType: 'address',
+        name: 'exiter',
+        type: 'address',
       },
       {
         indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
+        internalType: 'uint256',
+        name: 'amount',
+        type: 'uint256',
       },
     ],
-    name: "Withdrawal",
-    type: "event",
+    name: 'Withdrawal',
+    type: 'event',
   },
   {
     inputs: [],
-    name: "TEMPLE",
+    name: 'TEMPLE',
     outputs: [
       {
         internalType: "contract TempleERC20Token",
@@ -107,128 +107,147 @@ const _abi = [
         type: "address",
       },
     ],
-    stateMutability: "view",
-    type: "function",
+    stateMutability: 'view',
+    type: 'function',
   },
   {
     inputs: [],
-    name: "currentEpoch",
+    name: 'currentEpoch',
     outputs: [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
       },
     ],
-    stateMutability: "view",
-    type: "function",
+    stateMutability: 'view',
+    type: 'function',
   },
   {
     inputs: [
       {
-        internalType: "address",
-        name: "_exiter",
-        type: "address",
+        internalType: 'address',
+        name: '_exiter',
+        type: 'address',
       },
       {
-        internalType: "uint256",
-        name: "_epoch",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '_epoch',
+        type: 'uint256',
       },
     ],
-    name: "currentEpochAllocation",
+    name: 'currentEpochAllocation',
     outputs: [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
       },
     ],
-    stateMutability: "view",
-    type: "function",
+    stateMutability: 'view',
+    type: 'function',
   },
   {
     inputs: [],
-    name: "epochSize",
+    name: 'epochSize',
     outputs: [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
       },
     ],
-    stateMutability: "view",
-    type: "function",
+    stateMutability: 'view',
+    type: 'function',
   },
   {
     inputs: [],
-    name: "firstBlock",
+    name: 'firstBlock',
     outputs: [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
       },
     ],
-    stateMutability: "view",
-    type: "function",
+    stateMutability: 'view',
+    type: 'function',
   },
   {
     inputs: [
       {
-        internalType: "address",
-        name: "_exiter",
-        type: "address",
+        internalType: 'address',
+        name: '_exiter',
+        type: 'address',
       },
       {
-        internalType: "uint256",
-        name: "_amount",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '_amount',
+        type: 'uint256',
       },
     ],
-    name: "join",
+    name: 'join',
     outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
     inputs: [],
-    name: "maxPerAddress",
+    name: 'maxPerAddress',
     outputs: [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
       },
     ],
-    stateMutability: "view",
-    type: "function",
+    stateMutability: 'view',
+    type: 'function',
   },
   {
     inputs: [],
-    name: "maxPerEpoch",
+    name: 'maxPerEpoch',
     outputs: [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
       },
     ],
-    stateMutability: "view",
-    type: "function",
+    stateMutability: 'view',
+    type: 'function',
   },
   {
     inputs: [],
-    name: "nextUnallocatedEpoch",
+    name: 'nextUnallocatedEpoch',
     outputs: [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
       },
     ],
-    stateMutability: "view",
-    type: "function",
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    name: 'owedTemple',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
   },
   {
     inputs: [
@@ -288,13 +307,38 @@ const _abi = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "owner",
-    outputs: [
+    inputs: [
       {
         internalType: "address",
         name: "",
         type: "address",
+      },
+    ],
+    name: "owedTemple",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    name: "owedTemple",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
       },
     ],
     stateMutability: "view",
@@ -302,7 +346,95 @@ const _abi = [
   },
   {
     inputs: [],
-    name: "renounceOwnership",
+    name: 'owner',
+    outputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: '_epochSize',
+        type: 'uint256',
+      },
+    ],
+    name: 'setEpochSize',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: '_maxPerAddress',
+        type: 'uint256',
+      },
+    ],
+    name: 'setMaxPerAddress',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: '_maxPerEpoch',
+        type: 'uint256',
+      },
+    ],
+    name: 'setMaxPerEpoch',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address[]',
+        name: '_users',
+        type: 'address[]',
+      },
+      {
+        internalType: 'uint256[]',
+        name: '_amounts',
+        type: 'uint256[]',
+      },
+    ],
+    name: 'setOwedTemple',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: "address[]",
+        name: "_users",
+        type: "address[]",
+      },
+      {
+        internalType: "uint256[]",
+        name: "_amounts",
+        type: "uint256[]",
+      },
+    ],
+    name: "setOwedTemple",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -310,38 +442,17 @@ const _abi = [
   {
     inputs: [
       {
-        internalType: "uint256",
-        name: "_epochSize",
-        type: "uint256",
+        internalType: "address[]",
+        name: "_users",
+        type: "address[]",
       },
-    ],
-    name: "setEpochSize",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
       {
-        internalType: "uint256",
-        name: "_maxPerAddress",
-        type: "uint256",
+        internalType: "uint256[]",
+        name: "_amounts",
+        type: "uint256[]",
       },
     ],
-    name: "setMaxPerAddress",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "_maxPerEpoch",
-        type: "uint256",
-      },
-    ],
-    name: "setMaxPerEpoch",
+    name: "setOwedTemple",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -408,84 +519,84 @@ const _abi = [
         type: "uint256",
       },
     ],
-    name: "setStartingBlock",
+    name: 'setStartingBlock',
     outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
     inputs: [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
       },
     ],
-    name: "totalPerEpoch",
+    name: 'totalPerEpoch',
     outputs: [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
       },
     ],
-    stateMutability: "view",
-    type: "function",
+    stateMutability: 'view',
+    type: 'function',
   },
   {
     inputs: [
       {
-        internalType: "address",
-        name: "newOwner",
-        type: "address",
+        internalType: 'address',
+        name: 'newOwner',
+        type: 'address',
       },
     ],
-    name: "transferOwnership",
+    name: 'transferOwnership',
     outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
   {
     inputs: [
       {
-        internalType: "address",
-        name: "",
-        type: "address",
+        internalType: 'address',
+        name: '',
+        type: 'address',
       },
     ],
-    name: "userData",
+    name: 'userData',
     outputs: [
       {
-        internalType: "uint256",
-        name: "Amount",
-        type: "uint256",
+        internalType: 'uint256',
+        name: 'Amount',
+        type: 'uint256',
       },
       {
-        internalType: "uint256",
-        name: "FirstExitEpoch",
-        type: "uint256",
+        internalType: 'uint256',
+        name: 'FirstExitEpoch',
+        type: 'uint256',
       },
       {
-        internalType: "uint256",
-        name: "LastExitEpoch",
-        type: "uint256",
+        internalType: 'uint256',
+        name: 'LastExitEpoch',
+        type: 'uint256',
       },
     ],
-    stateMutability: "view",
-    type: "function",
+    stateMutability: 'view',
+    type: 'function',
   },
   {
     inputs: [
       {
-        internalType: "uint256",
-        name: "epoch",
-        type: "uint256",
+        internalType: 'uint256',
+        name: 'epoch',
+        type: 'uint256',
       },
     ],
-    name: "withdraw",
+    name: 'withdraw',
     outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    stateMutability: 'nonpayable',
+    type: 'function',
   },
 ];
 
