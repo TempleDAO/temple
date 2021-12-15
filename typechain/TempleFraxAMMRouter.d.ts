@@ -55,7 +55,9 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     "setInterpolateToPrice(uint256,uint256)": FunctionFragment;
     "supportsInterface(bytes4)": FunctionFragment;
     "swapExactFraxForTemple(uint256,uint256,address,uint256)": FunctionFragment;
+    "swapExactFraxForTempleQuote(uint256)": FunctionFragment;
     "swapExactTempleForFrax(uint256,uint256,address,uint256)": FunctionFragment;
+    "swapExactTempleForFraxQuote(uint256)": FunctionFragment;
     "templeToken()": FunctionFragment;
     "templeTreasury()": FunctionFragment;
     "toggleOpenAccess()": FunctionFragment;
@@ -194,8 +196,16 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     values: [BigNumberish, BigNumberish, string, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "swapExactFraxForTempleQuote",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "swapExactTempleForFrax",
     values: [BigNumberish, BigNumberish, string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "swapExactTempleForFraxQuote",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "templeToken",
@@ -327,7 +337,15 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "swapExactFraxForTempleQuote",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "swapExactTempleForFrax",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "swapExactTempleForFraxQuote",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -584,6 +602,18 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    swapExactFraxForTempleQuote(
+      amountIn: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber, BigNumber, BigNumber] & {
+        amountInAMM: BigNumber;
+        amountInProtocol: BigNumber;
+        amountOutAMM: BigNumber;
+        amountOutProtocol: BigNumber;
+      }
+    >;
+
     swapExactTempleForFrax(
       amountIn: BigNumberish,
       amountOutMin: BigNumberish,
@@ -591,6 +621,13 @@ export class TempleFraxAMMRouter extends BaseContract {
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    swapExactTempleForFraxQuote(
+      amountIn: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [boolean, BigNumber] & { priceBelowIV: boolean; amountOut: BigNumber }
+    >;
 
     templeToken(overrides?: CallOverrides): Promise<[string]>;
 
@@ -762,6 +799,18 @@ export class TempleFraxAMMRouter extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  swapExactFraxForTempleQuote(
+    amountIn: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber, BigNumber, BigNumber, BigNumber] & {
+      amountInAMM: BigNumber;
+      amountInProtocol: BigNumber;
+      amountOutAMM: BigNumber;
+      amountOutProtocol: BigNumber;
+    }
+  >;
+
   swapExactTempleForFrax(
     amountIn: BigNumberish,
     amountOutMin: BigNumberish,
@@ -769,6 +818,13 @@ export class TempleFraxAMMRouter extends BaseContract {
     deadline: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
+
+  swapExactTempleForFraxQuote(
+    amountIn: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<
+    [boolean, BigNumber] & { priceBelowIV: boolean; amountOut: BigNumber }
+  >;
 
   templeToken(overrides?: CallOverrides): Promise<string>;
 
@@ -948,6 +1004,18 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    swapExactFraxForTempleQuote(
+      amountIn: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber, BigNumber, BigNumber] & {
+        amountInAMM: BigNumber;
+        amountInProtocol: BigNumber;
+        amountOutAMM: BigNumber;
+        amountOutProtocol: BigNumber;
+      }
+    >;
+
     swapExactTempleForFrax(
       amountIn: BigNumberish,
       amountOutMin: BigNumberish,
@@ -955,6 +1023,13 @@ export class TempleFraxAMMRouter extends BaseContract {
       deadline: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    swapExactTempleForFraxQuote(
+      amountIn: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [boolean, BigNumber] & { priceBelowIV: boolean; amountOut: BigNumber }
+    >;
 
     templeToken(overrides?: CallOverrides): Promise<string>;
 
@@ -1194,12 +1269,22 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    swapExactFraxForTempleQuote(
+      amountIn: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     swapExactTempleForFrax(
       amountIn: BigNumberish,
       amountOutMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    swapExactTempleForFraxQuote(
+      amountIn: BigNumberish,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     templeToken(overrides?: CallOverrides): Promise<BigNumber>;
@@ -1385,12 +1470,22 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    swapExactFraxForTempleQuote(
+      amountIn: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     swapExactTempleForFrax(
       amountIn: BigNumberish,
       amountOutMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    swapExactTempleForFraxQuote(
+      amountIn: BigNumberish,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     templeToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;

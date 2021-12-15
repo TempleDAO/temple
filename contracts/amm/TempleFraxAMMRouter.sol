@@ -179,35 +179,8 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     ) external virtual ensure(deadline) returns (uint amountOut) {
         require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
 
-        (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
-        (uint thresholdPriceFrax, uint thresholdPriceTemple) = dynamicThresholdPriceWithDecay();
-
-        // if AMM is currently trading above target, route some portion to mint on protocol
-        uint amountInProtocol = 0;
-
-        if (thresholdPriceTemple * reserveFrax >= thresholdPriceFrax * reserveTemple) {
-            (uint numerator, uint denominator) = mintRatioAt(reserveTemple, reserveFrax);
-            amountInProtocol = amountIn * numerator / denominator;
-            
-        }
-
-        uint amountInAMM = amountIn - amountInProtocol;
-
-        // Allocate a portion of temple to the AMM
-        uint amountOutAMM = 0;
-        if (amountInAMM > 0) {
-            amountOutAMM = getAmountOut(amountInAMM, reserveFrax, reserveTemple);
-        }
-
-        // Allocate a portion of temple to the protocol
-        uint amountOutProtocol = 0;
-        if (amountInAMM > 0) {
-            amountOutProtocol = amountInProtocol * amountOutAMM / amountInAMM;
-        } else {
-            amountOutProtocol = amountInProtocol * reserveTemple / reserveFrax;
-        }
-        
         // Check temple out is witamountOutAMMhin acceptable user bounds
+        (uint amountInAMM, uint amountInProtocol, uint amountOutAMM, uint amountOutProtocol) = swapExactFraxForTempleQuote(amountIn);
         amountOut = amountOutAMM + amountOutProtocol;
 
         require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
@@ -251,25 +224,22 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         uint amountOutMin,
         address to,
         uint deadline
-    ) external virtual ensure(deadline) returns (uint amountOut) {
+    ) external virtual ensure(deadline) returns (uint) {
         require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
 
-        (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
+        (bool priceBelowIV, uint amountOut) = swapExactTempleForFraxQuote(amountIn);
 
-        // if AMM is currently trading above target, route some portion to mint on protocol
-        (uint256 ivFrax, uint256 ivTemple) = templeTreasury.intrinsicValueRatio();
-
-        if (ivTemple * reserveFrax <= reserveTemple * ivFrax) {
-            amountOut = amountIn * ivFrax / ivTemple;
+        if (priceBelowIV) {
             require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
             templeToken.burnFrom(msg.sender, amountIn);
             SafeERC20.safeTransfer(fraxToken, to, amountOut);
         } else {
-            amountOut = getAmountOut(amountIn, reserveTemple, reserveFrax);
             require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
             SafeERC20.safeTransferFrom(templeToken, msg.sender, address(pair), amountIn);
             pair.swap(0, amountOut, to, new bytes(0));
         }
+
+        return amountOut;
     }
 
     // function swapTempleForExactFrax(
@@ -381,5 +351,46 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         }
 
         return (dynamicThresholdPrice.frax, dynamicThresholdPrice.temple + thresholdDecay);
+    }
+
+    function swapExactFraxForTempleQuote(uint amountIn) public view returns (uint amountInAMM, uint amountInProtocol, uint amountOutAMM, uint amountOutProtocol) {
+        (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
+        (uint thresholdPriceFrax, uint thresholdPriceTemple) = dynamicThresholdPriceWithDecay();
+
+        // if AMM is currently trading above target, route some portion to mint on protocol
+        if (thresholdPriceTemple * reserveFrax >= thresholdPriceFrax * reserveTemple) {
+            (uint numerator, uint denominator) = mintRatioAt(reserveTemple, reserveFrax);
+            amountInProtocol = amountIn * numerator / denominator;
+        }
+
+        amountInAMM = amountIn - amountInProtocol;
+
+        // Allocate a portion of temple to the AMM
+        amountOutAMM = 0;
+        if (amountInAMM > 0) {
+            amountOutAMM = getAmountOut(amountInAMM, reserveFrax, reserveTemple);
+        }
+
+        // Allocate a portion of temple to the protocol
+        amountOutProtocol = 0;
+        if (amountInAMM > 0) {
+            amountOutProtocol = amountInProtocol * amountOutAMM / amountInAMM;
+        } else {
+            amountOutProtocol = amountInProtocol * reserveTemple / reserveFrax;
+        }
+    }
+
+    function swapExactTempleForFraxQuote(uint amountIn) public view returns (bool priceBelowIV, uint amountOut) {
+        (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
+
+        // if AMM is currently trading above target, route some portion to mint on protocol
+        (uint256 ivFrax, uint256 ivTemple) = templeTreasury.intrinsicValueRatio();
+        priceBelowIV = ivTemple * reserveFrax <= reserveTemple * ivFrax;
+
+        if (priceBelowIV) {
+            amountOut = amountIn * ivFrax / ivTemple;
+        } else {
+            amountOut = getAmountOut(amountIn, reserveTemple, reserveFrax);
+        }
     }
 }
