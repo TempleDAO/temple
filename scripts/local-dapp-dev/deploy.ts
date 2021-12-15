@@ -10,6 +10,7 @@ import {
   TempleCashback__factory,
   TempleERC20Token__factory,
   TempleStaking__factory,
+  TempleTeamPayments__factory,
   TempleTreasury__factory,
   TreasuryManagementProxy__factory,
 } from '../../typechain';
@@ -116,6 +117,19 @@ async function main() {
   // Mine a couple of epochs forward, to help testing
   await mineNBlocks((await exitQueue.epochSize()).toNumber() * 2);
 
+  // Create 2 versions of the team payment contract (contigent and fixed)
+  const teamPaymentsFixed = await new TempleTeamPayments__factory(owner).deploy(templeToken.address);
+  const teamPaymentsContigent = await new TempleTeamPayments__factory(owner).deploy(templeToken.address);
+
+  templeToken.mint(teamPaymentsFixed.address, toAtto(1000000))
+  templeToken.mint(teamPaymentsContigent.address, toAtto(1000000))
+
+  // Setup payments for first 5 users
+  for (let i = 0; i < 5; i++) {
+    teamPaymentsFixed.setAllocation(accounts[i+1].address, toAtto(1000 * (i+1)))
+    teamPaymentsContigent.setAllocation(accounts[i+1].address, toAtto(1000 * (i+1)))
+  }
+
   // Print config required to run dApp
   const contract_address: { [key: string]: string; } = {
     'EXIT_QUEUE_ADDRESS': exitQueue.address,
@@ -126,8 +140,14 @@ async function main() {
     'TREASURY_ADDRESS': treasury.address,
     'TREASURY_MANAGEMENT_ADDRESS': treasuryManagementProxy.address,
     'TEMPLE_CASHBACK_ADDRESS': templeCashback.address,
-    'VERIFY_QUEST_ADDRESS': verifier.address,
-    'VERIFIER_PRIVATE_KEY': verifier.privateKey,
+
+    'TEMPLE_TEAM_FIXED_PAYMENTS_ADDRESS': teamPaymentsFixed.address,
+    'TEMPLE_TEAM_CONTIGENT_PAYMENTS_ADDRESS': teamPaymentsContigent.address,
+
+    // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
+    //       In production, these will always be different keys
+    'LOCALDEV_VERIFER_EXTERNAL_ADDRESS': verifier.address,
+    'LOCALDEV_VERIFER_EXTERNAL_PRIVATE_KEY': verifier.privateKey,
   };
 
   console.log();
