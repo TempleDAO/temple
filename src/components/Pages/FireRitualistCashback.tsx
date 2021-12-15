@@ -93,7 +93,7 @@ function useFireRitualistCashback(): FireRitualCashbackState {
   // wallet may be falsey, the code can handle that
   // hooks should not be called conditionally so we deal with it this way
   //@ts-ignore
-  const userClaim = claims[wallet];
+  const userClaim = claims[wallet?.toLowerCase()];
   const allocationAmount = userClaim?.tokenQuantity ?? 0;
 
   const [state, dispatch] = useReducer(reducer, {
