@@ -81,17 +81,8 @@ async function main() {
 
   const verifier = ethers.Wallet.createRandom();
 
-  const templeCashback = await new TempleCashback__factory(owner).deploy(await owner.getAddress());
-
-  await templeToken.addMinter(await owner.getAddress());
-  await templeToken.mint(await owner.getAddress(), toAtto(1000000));
-
-	// Deposit TEMPLE to TempleCashback Contract
-  Promise.all([
-		await templeToken
-			.connect(owner)
-			.transfer(templeCashback.address, toAtto(150000)),
-  ]);
+  const templeCashback = await new TempleCashback__factory(owner).deploy(verifier.address);
+  await templeToken.mint(templeCashback.address, toAtto(150000));
 
   // stake, lock and exit some temple for a few users
   let nLocks = 1;
