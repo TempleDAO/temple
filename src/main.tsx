@@ -8,6 +8,7 @@ import Enter from 'components/Pages/Enter';
 import Exit from 'components/Pages/Exit';
 import Home from 'components/Pages/Home';
 import Rituals from 'components/Pages/Rituals';
+import MetamaskError from 'components/Pages/MetamaskError';
 import NotificationManager from 'components/Notification/NotificationManager';
 import { NotificationProvider } from 'providers/NotificationProvider';
 import { WalletProvider } from 'providers/WalletProvider';
@@ -23,11 +24,24 @@ ReactDOM.render(
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<PageLayout />}>
-                <Route path="/" element={<Home />} />
-                <Route path="disclaimer" element={<Disclaimer />} />
-                <Route path="enter" element={<Enter />} />
-                <Route path="exit" element={<Exit />} />
-                <Route path="rituals" element={<Rituals />} />
+                {
+                  //@ts-ignore
+                  window.ethereum ? (
+                    <>
+                      <Route path="/" element={<Home />} />
+                      <Route path="disclaimer" element={<Disclaimer />} />
+                      <Route path="enter" element={<Enter />} />
+                      <Route path="exit" element={<Exit />} />
+                      <Route path="rituals" element={<Rituals />} />
+                      <Route path="/*" element={<Home />} />
+                    </>
+                  ) : (
+                    <>
+                      <Route path="/" element={<MetamaskError />} />
+                      <Route path="/*" element={<MetamaskError />} />
+                    </>
+                  )
+                }
               </Route>
             </Routes>
           </BrowserRouter>
