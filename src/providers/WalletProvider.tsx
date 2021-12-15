@@ -265,7 +265,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           await updateWallet();
         }
       } else {
-        alert('Please add MetaMask to your browser');
+        console.error('Please add MetaMask to your browser');
       }
     }
   };
