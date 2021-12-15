@@ -1,7 +1,19 @@
 import '@nomiclabs/hardhat-ethers';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { TempleERC20Token__factory, ExitQueue__factory, TempleStaking__factory, FakeERC20__factory, TempleTreasury__factory, LockedOGTemple__factory, PresaleAllocation__factory, TreasuryManagementProxy__factory, OpeningCeremony__factory, EchoingWhispers__factory, VerifyQuest, VerifyQuest__factory, TempleCashback__factory } from '../../typechain';
+import { blockTimestamp, mineNBlocks } from '../../test/helpers';
+import {
+  ExitQueue__factory,
+  FakeERC20__factory,
+  LockedOGTemple__factory,
+  OGTemple__factory,
+  OpeningCeremony__factory,
+  TempleCashback__factory,
+  TempleERC20Token__factory,
+  TempleStaking__factory,
+  TempleTreasury__factory,
+  TreasuryManagementProxy__factory,
+} from '../../typechain';
 
 function toAtto(n: number) {
   return BigNumber.from(10).pow(18).mul(n);
@@ -12,38 +24,38 @@ function fromAtto(n: BigNumber) {
 }
 
 async function main() {
-  const [owner] = await ethers.getSigners();
+  const [owner, user] = await ethers.getSigners();
 
-  const startEpochSeconds = Math.floor(Date.now() / 1000);
+  const startEpochSeconds = await blockTimestamp();
   const epochSizeSeconds = 24 * 60 * 60;
   const unlockTimestampSeconds = startEpochSeconds + epochSizeSeconds * 2;
 
-  const templeToken = await new TempleERC20Token__factory(owner).deploy();
-  const exitQueue = await new ExitQueue__factory(owner).deploy(
-      templeToken.address,
-      toAtto(10000), /* max per epoch */
+  const TEMPLE = await new TempleERC20Token__factory(owner).deploy();
+  const EXIT_QUEUE = await new ExitQueue__factory(owner).deploy(
+      TEMPLE.address,
+      toAtto(50), /* max per epoch */
       toAtto(1000), /* max per address per epoch */
-      epochSizeSeconds, /* epoch size, in blocks */
+      10, /* epoch size, in blocks */
   );
 
-  const staking = await new TempleStaking__factory(owner).deploy(
-      templeToken.address,
-      exitQueue.address,
+  const STAKING = await new TempleStaking__factory(owner).deploy(
+      TEMPLE.address,
+      EXIT_QUEUE.address,
       epochSizeSeconds, /* epoch size, in blocks */
       startEpochSeconds
   );
-  // await staking.setStartingBlock(await exitQueue.firstBlock());
-  await staking.setEpy(80, 10000);
+  await STAKING.setEpy(80, 10000);
+
+  const OG_TEMPLE = new OGTemple__factory(owner).attach(await STAKING.OG_TEMPLE());
 
   const stablecToken = await new FakeERC20__factory(owner).deploy('FRAX', 'FRAX');
   const treasury = await new TempleTreasury__factory(owner).deploy(
-      templeToken.address,
+      TEMPLE.address,
       stablecToken.address,
   );
-  await templeToken.addMinter(treasury.address);
+  await TEMPLE.addMinter(treasury.address);
 
-  const lockedOGTemple = await new LockedOGTemple__factory(owner).deploy(await staking.OG_TEMPLE());
-  const presaleAllocation = await new PresaleAllocation__factory(owner).deploy();
+  const OG_TEMPLE_LOCKED = await new LockedOGTemple__factory(owner).deploy(OG_TEMPLE.address);
 
   // mint fake stablecToken into all test accounts
   const accounts = await ethers.getSigners();
@@ -67,9 +79,9 @@ async function main() {
 
   const openingCeremony = await new OpeningCeremony__factory(owner).deploy(
     stablecToken.address,
-    templeToken.address,
-    staking.address,
-    lockedOGTemple.address,
+    TEMPLE.address,
+    STAKING.address,
+    OG_TEMPLE_LOCKED.address,
     treasury.address,
     treasuryManagementProxy.address,
     toAtto(10000),
@@ -78,65 +90,61 @@ async function main() {
     { numerator: 2, denominator: 10 },
     { numerator: 1, denominator: 10 },
   );
-  await templeToken.addMinter(openingCeremony.address);
+  await TEMPLE.addMinter(openingCeremony.address);
 
   const verifier = ethers.Wallet.createRandom();
-  const verifyQuest = new VerifyQuest__factory(owner).deploy(
-    openingCeremony.address,
-    verifier.address,
-  )
-
-  const echoingWhispers = await new EchoingWhispers__factory(owner).deploy();
-  await echoingWhispers.setConditions(
-      ethers.utils.keccak256(ethers.utils.formatBytes32String("1-5")),
-      ethers.utils.keccak256(ethers.utils.formatBytes32String("3-2")))
 
   const templeCashback = await new TempleCashback__factory(owner).deploy(await owner.getAddress());
-  
-  await templeToken.addMinter(await owner.getAddress());
-  await templeToken.mint(await owner.getAddress(), toAtto(1000000));
+
+  await TEMPLE.addMinter(await owner.getAddress());
+  await TEMPLE.mint(await owner.getAddress(), toAtto(1000000));
 
 	// Deposit TEMPLE to TempleCashback Contract
   Promise.all([
-		await templeToken
+		await TEMPLE
 			.connect(owner)
 			.transfer(templeCashback.address, toAtto(150000)),
   ]);
 
-  // Add an allowance for each account to join mint and stake
-  let counter = 0;
-  // set allocation only on the 1st half of the accounts
-  for (const account of accounts.slice(5)) {
-    const stakerAddress = await account.getAddress();
-    if (counter < accounts.length / 2) {
-      await presaleAllocation.setAllocation(stakerAddress, toAtto(15000), 6);
-    }
-    if (counter < accounts.length / 3) {
-      await presaleAllocation.setAllocation(stakerAddress, toAtto(15000), 7);
-    }
-    if (counter < accounts.length / 4) {
-      await presaleAllocation.setAllocation(stakerAddress, toAtto(15000), 8);
-    }
-    if (counter > accounts.length - 3) {
-      await presaleAllocation.setAllocation(stakerAddress, toAtto(15000), 0);
-    }
+  // UNLOCK SETUP
+  await TEMPLE.addMinter(owner.address);
+  await TEMPLE.mint(STAKING.address,           toAtto(1000000000));
+  await TEMPLE.mint(user.address,           toAtto(700));
+  await OG_TEMPLE.connect(user).increaseAllowance(OG_TEMPLE_LOCKED.address, toAtto(1000));
+  const lockedUntil = (await blockTimestamp());
+  await TEMPLE.connect(user).increaseAllowance(STAKING.address, toAtto(1000));
+  await STAKING.connect(user).stake(toAtto(100));
+  const userBalanceOGT = await OG_TEMPLE.balanceOf(user.address);
+  await OG_TEMPLE.connect(user).increaseAllowance(STAKING.address, userBalanceOGT);
+  await STAKING.connect(user).unstake(userBalanceOGT);
 
-    counter++;
-  }
+  await STAKING.connect(user).stake(toAtto(600));
+
+  await OG_TEMPLE_LOCKED.connect(user).lock(toAtto(100), lockedUntil);
+  await OG_TEMPLE_LOCKED.connect(user).lock(toAtto(50), lockedUntil + 10);
+  await OG_TEMPLE_LOCKED.connect(user).lock(toAtto(100), lockedUntil);
+  await OG_TEMPLE_LOCKED.connect(user).lock(toAtto(150), lockedUntil + 24 * 60 * 60);
+  await OG_TEMPLE_LOCKED.connect(user).lock(toAtto(200), lockedUntil + 7 * 24 * 60 * 60);
+  // // JoinQueue
+  await OG_TEMPLE_LOCKED.connect(user).withdraw(0);
+  await OG_TEMPLE_LOCKED.connect(user).withdraw(1);
+
+  // go to epoch 2
+  await mineNBlocks((await EXIT_QUEUE.epochSize()).toNumber() * 2);
+  await EXIT_QUEUE.withdraw(1);
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string; } = {
-    'EXIT_QUEUE_ADDRESS': exitQueue.address,
-    'LOCKED_OG_TEMPLE_ADDRESS': lockedOGTemple.address,
-    'PRESALE_ALLOCATION_ADDRESS': presaleAllocation.address,
+    'EXIT_QUEUE_ADDRESS': EXIT_QUEUE.address,
+    'LOCKED_OG_TEMPLE_ADDRESS': OG_TEMPLE_LOCKED.address,
     'STABLE_COIN_ADDRESS': stablecToken.address,
-    'TEMPLE_ADDRESS': templeToken.address,
-    'TEMPLE_STAKING_ADDRESS': staking.address,
+    'TEMPLE_ADDRESS': TEMPLE.address,
+    'TEMPLE_STAKING_ADDRESS': STAKING.address,
     'TREASURY_ADDRESS': treasury.address,
     'TREASURY_MANAGEMENT_ADDRESS': treasuryManagementProxy.address,
     'OPENING_CEREMONY_ADDRESS': openingCeremony.address,
-    'ECHOING_WHISPERS_ADDRESS': echoingWhispers.address,
     'TEMPLE_CASHBACK_ADDRESS': templeCashback.address,
+    'VERIFY_QUEST_ADDRESS': verifier.address,
     'VERIFIER_PRIVATE_KEY': verifier.privateKey,
   };
 
