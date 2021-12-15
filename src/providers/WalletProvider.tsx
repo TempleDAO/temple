@@ -759,7 +759,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         tokenAddress: string;
         tokenQuantity: string;
         nonce: string;
-      } = claims[walletAddress];
+      } = claims[walletAddress.toLowerCase()];
 
       const templeCashback = new TempleCashback__factory()
         .attach(TEMPLE_CASHBACK_ADDRESS)
