@@ -129,6 +129,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleUniswapV2Pair__factory>;
     getContractFactory(
+      name: "AMMWhitelist",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMMWhitelist__factory>;
+    getContractFactory(
       name: "AutoHarvestKeeper",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.AutoHarvestKeeper__factory>;
@@ -350,6 +354,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TempleUniswapV2Pair>;
+    getContractAt(
+      name: "AMMWhitelist",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMMWhitelist>;
     getContractAt(
       name: "AutoHarvestKeeper",
       address: string,
