@@ -7,11 +7,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "./TempleERC20Token.sol";
-import "./SandalwoodToken.sol";
 import "./TempleTreasury.sol";
 import "./TreasuryManagementProxy.sol";
 import "./TempleStaking.sol";
-import "./PresaleAllocation.sol";
 import "./LockedOGTemple.sol";
 
 /**

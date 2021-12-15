@@ -137,10 +137,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.KeeperCompatibleInterface__factory>;
     getContractFactory(
-      name: "EchoingWhispers",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.EchoingWhispers__factory>;
-    getContractFactory(
       name: "ExitQueue",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ExitQueue__factory>;
@@ -177,14 +173,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.OpeningCeremony__factory>;
     getContractFactory(
-      name: "PresaleAllocation",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.PresaleAllocation__factory>;
-    getContractFactory(
-      name: "SandalwoodToken",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.SandalwoodToken__factory>;
-    getContractFactory(
       name: "TempleCashback",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleCashback__factory>;
@@ -205,17 +193,9 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleTreasury__factory>;
     getContractFactory(
-      name: "TreasuryInvestmentDefend",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.TreasuryInvestmentDefend__factory>;
-    getContractFactory(
       name: "TreasuryManagementProxy",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TreasuryManagementProxy__factory>;
-    getContractFactory(
-      name: "VerifyQuest",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.VerifyQuest__factory>;
     getContractFactory(
       name: "IUniswapRouter",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -381,11 +361,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.KeeperCompatibleInterface>;
     getContractAt(
-      name: "EchoingWhispers",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.EchoingWhispers>;
-    getContractAt(
       name: "ExitQueue",
       address: string,
       signer?: ethers.Signer
@@ -431,16 +406,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.OpeningCeremony>;
     getContractAt(
-      name: "PresaleAllocation",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.PresaleAllocation>;
-    getContractAt(
-      name: "SandalwoodToken",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.SandalwoodToken>;
-    getContractAt(
       name: "TempleCashback",
       address: string,
       signer?: ethers.Signer
@@ -466,20 +431,10 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.TempleTreasury>;
     getContractAt(
-      name: "TreasuryInvestmentDefend",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.TreasuryInvestmentDefend>;
-    getContractAt(
       name: "TreasuryManagementProxy",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TreasuryManagementProxy>;
-    getContractAt(
-      name: "VerifyQuest",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.VerifyQuest>;
     getContractAt(
       name: "IUniswapRouter",
       address: string,
