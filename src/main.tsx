@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import PageLayout from 'components/Layouts/Page';
 import Disclaimer from 'components/Pages/Disclaimer';
@@ -33,12 +33,12 @@ ReactDOM.render(
                       <Route path="enter" element={<Enter />} />
                       <Route path="exit" element={<Exit />} />
                       <Route path="rituals" element={<Rituals />} />
-                      <Route path="/*" element={<Home />} />
+                      <Route path="/*" element={<Navigate replace to="/" />} />
                     </>
                   ) : (
                     <>
                       <Route path="/" element={<MetamaskError />} />
-                      <Route path="/*" element={<MetamaskError />} />
+                      <Route path="/*" element={<Navigate replace to="/" />} />
                     </>
                   )
                 }
