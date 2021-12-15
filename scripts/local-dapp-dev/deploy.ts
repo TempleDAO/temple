@@ -3,15 +3,18 @@ import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { blockTimestamp, mineNBlocks } from '../../test/helpers';
 import {
+  AMMWhitelist__factory,
   ExitQueue__factory,
   FakeERC20__factory,
   LockedOGTemple__factory,
   OGTemple__factory,
   TempleCashback__factory,
   TempleERC20Token__factory,
+  TempleFraxAMMRouter__factory,
   TempleStaking__factory,
   TempleTeamPayments__factory,
   TempleTreasury__factory,
+  TempleUniswapV2Pair__factory,
   TreasuryManagementProxy__factory,
 } from '../../typechain';
 
@@ -121,6 +124,35 @@ async function main() {
     teamPaymentsContigent.setAllocation(accounts[i+1].address, toAtto(1000 * (i+1)))
   }
 
+  // Setup custom AMM with liquidity
+  const pair = await new TempleUniswapV2Pair__factory(owner).deploy(await owner.getAddress(), templeToken.address, stablecToken.address);
+  const templeRouter = await new TempleFraxAMMRouter__factory(owner).deploy(
+        pair.address,
+        templeToken.address,
+        stablecToken.address,
+        treasury.address,
+        {frax: 100000, temple: 9000},
+        100, /* threshold decay per block */
+        {frax: 1000000, temple: 1000000},
+        {frax: 1000000, temple: 100000},
+      );
+
+  await pair.setRouter(templeRouter.address);
+  await templeToken.addMinter(templeRouter.address);
+
+  // Add liquidity to the AMM
+  templeToken.mint(owner.address, toAtto(10000000))
+  stablecToken.mint(owner.address, toAtto(10000000))
+  await templeToken.increaseAllowance(templeRouter.address, toAtto(10000000));
+  await stablecToken.increaseAllowance(templeRouter.address, toAtto(10000000));
+  await templeRouter.addLiquidity(toAtto(100000), toAtto(1000000), 1, 1, await owner.getAddress(),  (await blockTimestamp()) + 900);
+
+  // Make temple router open access
+  await templeRouter.toggleOpenAccess();
+
+  // AMMWhitelist
+  const ammWhitelist = await new AMMWhitelist__factory(owner).deploy(templeRouter.address, verifier.address);
+
   // Print config required to run dApp
   const contract_address: { [key: string]: string; } = {
     'EXIT_QUEUE_ADDRESS': exitQueue.address,
@@ -133,6 +165,9 @@ async function main() {
 
     'TEMPLE_TEAM_FIXED_PAYMENTS_ADDRESS': teamPaymentsFixed.address,
     'TEMPLE_TEAM_CONTIGENT_PAYMENTS_ADDRESS': teamPaymentsContigent.address,
+    'TEMPLE_V2_PAIR_ADDRESS': pair.address,
+    'TEMPLE_V2_ROUTER_ADDRESS': templeRouter.address,
+    'TEMPLE_ROUTER_WHITELIST': ammWhitelist.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys
