@@ -28,7 +28,6 @@ async function main() {
 
   const startEpochSeconds = await blockTimestamp();
   const epochSizeSeconds = 24 * 60 * 60;
-  const unlockTimestampSeconds = startEpochSeconds + epochSizeSeconds * 2;
 
   const templeToken = await new TempleERC20Token__factory(owner).deploy();
   await templeToken.addMinter(await owner.getAddress()); // useful for tests for owner to be able to mint temple
@@ -72,12 +71,13 @@ async function main() {
   await stablecToken.increaseAllowance(treasury.address, 100);
   await treasury.seedMint(100, 1000);
 
-  // Deploy treasury proxy (used for all treasury management going forward)
-  const treasuryManagementProxy = await new TreasuryManagementProxy__factory(owner).deploy(
-    await owner.getAddress(),
-    treasury.address,
-  );
-  await treasury.transferOwnership(treasuryManagementProxy.address);
+  // XXX(butlerji): Currently not in play, will comment out when it's back in action
+  // // Deploy treasury proxy (used for all treasury management going forward)
+  // const treasuryManagementProxy = await new TreasuryManagementProxy__factory(owner).deploy(
+  //   await owner.getAddress(),
+  //   treasury.address,
+  // );
+  // await treasury.transferOwnership(treasuryManagementProxy.address);
 
   const verifier = ethers.Wallet.createRandom();
 
@@ -129,7 +129,6 @@ async function main() {
     'TEMPLE_ADDRESS': templeToken.address,
     'TEMPLE_STAKING_ADDRESS': templeStaking.address,
     'TREASURY_ADDRESS': treasury.address,
-    'TREASURY_MANAGEMENT_ADDRESS': treasuryManagementProxy.address,
     'TEMPLE_CASHBACK_ADDRESS': templeCashback.address,
 
     'TEMPLE_TEAM_FIXED_PAYMENTS_ADDRESS': teamPaymentsFixed.address,
