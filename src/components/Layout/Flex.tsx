@@ -39,14 +39,16 @@ type Layout = FlexContainer | FlexItem;
 interface FlexProps {
   layout: Layout;
   debug?: boolean;
+  className?: string;
 }
 
 export const Flex = ({
   layout,
   debug,
   children,
+  className,
 }: PropsWithChildren<FlexProps>) => (
-  <FlexStyled layout={layout} debug={debug}>
+  <FlexStyled layout={layout} debug={debug} className={className}>
     {children}
   </FlexStyled>
 );
