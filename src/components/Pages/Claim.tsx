@@ -87,10 +87,11 @@ const TempleCashbackPage = () => {
 
   useEffect((): void => {
     if (!wallet) return;
+    const address: string = wallet.toLowerCase();
     setOptions(
       Object.keys(claims).map((file) => {
         const claim = claims[file];
-        if (claim[wallet]) {
+        if (claim[address]) {
           // Find the label name
           const relevantClaim = relevantClaims.find(
             (claim) => claim.file == file
@@ -102,7 +103,7 @@ const TempleCashbackPage = () => {
           return {
             value: file,
             label: `${name} - ${fromAtto(
-              BigNumber.from(claim[wallet].tokenQuantity)
+              BigNumber.from(claim[address].tokenQuantity)
             )}`,
           };
         } else return { value: '', label: '' };
@@ -188,9 +189,12 @@ function useTempleCashback() {
   // Count eligible claims and set activeClaim to the last eligible
   let claimCount = 0;
   if (wallet) {
+    const address: string = wallet.toLowerCase();
     relevantClaims.forEach((claim: ClaimFile) => {
-      if (claims[claim.file] && claims[claim.file][wallet]) {
-        const tokens = BigNumber.from(claims[claim.file][wallet].tokenQuantity);
+      if (claims[claim.file] && claims[claim.file][address]) {
+        const tokens = BigNumber.from(
+          claims[claim.file][address].tokenQuantity
+        );
         if (tokens.gt(0)) {
           claimCount++;
         }
@@ -199,9 +203,17 @@ function useTempleCashback() {
   }
 
   useEffect(() => {
-    if (wallet && claims[activeClaim] && claims[activeClaim][wallet])
+    if (
+      wallet &&
+      claims[activeClaim] &&
+      claims[activeClaim][wallet.toLowerCase()]
+    )
       setAllocation(
-        fromAtto(BigNumber.from(claims[activeClaim][wallet].tokenQuantity))
+        fromAtto(
+          BigNumber.from(
+            claims[activeClaim][wallet.toLowerCase()].tokenQuantity
+          )
+        )
       );
     else setAllocation(0);
     if (dispatch) dispatch({ type: 'fileChange' });
