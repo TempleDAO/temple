@@ -8,6 +8,7 @@ import Enter from 'components/Pages/Enter';
 import Exit from 'components/Pages/Exit';
 import Home from 'components/Pages/Home';
 import Rituals from 'components/Pages/Rituals';
+import Claim from 'components/Pages/Claim';
 import MetamaskError from 'components/Pages/MetamaskError';
 import FireRitualistCashback from 'components/Pages/FireRitualistCashback';
 import NotificationManager from 'components/Notification/NotificationManager';
@@ -38,6 +39,7 @@ ReactDOM.render(
                         path="fire-ritualist-cashback"
                         element={<FireRitualistCashback />}
                       />
+                      <Route path="claim" element={<Claim />} />
                       <Route path="/*" element={<Navigate replace to="/" />} />
                     </>
                   ) : (
@@ -47,6 +49,7 @@ ReactDOM.render(
                     </>
                   )
                 }
+                
               </Route>
             </Routes>
           </BrowserRouter>
