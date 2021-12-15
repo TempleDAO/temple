@@ -25,6 +25,8 @@
       "hooks/*": ["./hooks/*"],
       "services/*": ["./services/*"],
       "hoc/*": ["./hoc/*"],
+      "enums/*": ["./enums/*"],
+      "data/*": ["./data/*"],
       "types/*": ["./types/*"]
     }
   },

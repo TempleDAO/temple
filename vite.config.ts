@@ -16,6 +16,8 @@ export default defineConfig({
       hooks: path.resolve(__dirname, 'src/hooks'),
       services: path.resolve(__dirname, 'src/services'),
       hoc: path.resolve(__dirname, 'src/hoc'),
+      enums: path.resolve(__dirname, 'src/enums'),
+      data: path.resolve(__dirname, 'src/data'),
       types: path.resolve(__dirname, 'src/types'),
     },
   },
