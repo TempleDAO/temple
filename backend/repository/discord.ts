@@ -62,7 +62,15 @@ export class DiscordDataRepository {
             WHERE
                 user_id = $1
                 AND created_at > CURRENT_DATE - interval '30' day
-        ) AS engagementLast30Days
+        ) AS engagementLast30Days,
+        (
+            SELECT
+                count(*) AS total
+            FROM
+                discord_user_messages
+            WHERE
+                user_id = $1
+        ) AS engagementAllTime
     `;
     const values = [userId];
     const result = await this.store.query(query, values);
