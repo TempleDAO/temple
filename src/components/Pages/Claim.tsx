@@ -1,6 +1,5 @@
 import React, {
   useReducer,
-  useCallback,
   useEffect,
   HTMLProps,
   useState,
@@ -10,6 +9,7 @@ import React, {
 import styled, { keyframes } from 'styled-components';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
+import { InputSelect, Option } from 'components/InputSelect/InputSelect';
 import withWallet from 'hoc/withWallet';
 import { useWallet } from 'providers/WalletProvider';
 import { ClaimType } from 'enums/claim-type';
@@ -19,7 +19,10 @@ import { ProgressAnimation } from 'components/Loader/ProgressAnimation';
 import { BigNumber } from '@ethersproject/bignumber';
 import { fromAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
-import { InputSelect, Option } from 'components/InputSelect/InputSelect';
+import { TempleCashback__factory } from 'types/typechain';
+
+const ENV_VARS = import.meta.env;
+const TEMPLE_CASHBACK_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_CASHBACK_ADDRESS;
 
 // Map filenames to dropdown name
 type ClaimFile = {
@@ -28,18 +31,22 @@ type ClaimFile = {
 };
 const relevantClaims: ClaimFile[] = [
   {
-    file: ClaimType.GAS_REFUND_OC_PUZZLES,
+    file: ClaimType.GAS_REFUND_OC_PUZZLES as ActiveClaim,
     name: 'OC Gas Refund',
   },
-  { file: ClaimType.TEAM_BONUS_OC, name: 'OC Team' },
+  { file: ClaimType.TEAM_BONUS_OC as ActiveClaim, name: 'OC Team' },
 ];
+
+type ActiveClaim = ClaimType.GAS_REFUND_OC_PUZZLES | ClaimType.TEAM_BONUS_OC;
 
 // Import relevant claims
 type ClaimData = {
   [address: string]: {
     tokenQuantity: BigNumber;
+    nonce: BigNumber;
   };
 };
+
 const claims: {
   [filename: string]: ClaimData;
 } = {};
@@ -51,7 +58,10 @@ relevantClaims.forEach(async (claim: ClaimFile) => {
 });
 
 type TempleCashbackState = {
-  cashbackComplete: boolean;
+  cashbackComplete: {
+    [ClaimType.GAS_REFUND_OC_PUZZLES]: boolean;
+    [ClaimType.TEAM_BONUS_OC]: boolean;
+  };
   cashbackSuccessful: boolean;
   collecting: boolean;
   label: string;
@@ -59,12 +69,15 @@ type TempleCashbackState = {
 
 type Action =
   | { type: 'collect' }
-  | { type: 'success' }
-  | { type: 'failure' }
+  | { type: 'success'; claim: ActiveClaim }
+  | { type: 'failure'; claim: ActiveClaim }
   | { type: 'fileChange' };
 
 const cashbackInitialState: TempleCashbackState = {
-  cashbackComplete: false,
+  cashbackComplete: {
+    [ClaimType.GAS_REFUND_OC_PUZZLES]: false,
+    [ClaimType.TEAM_BONUS_OC]: false,
+  },
   cashbackSuccessful: false,
   collecting: false,
   label: 'Collect',
@@ -72,6 +85,7 @@ const cashbackInitialState: TempleCashbackState = {
 
 const TempleCashbackPage = () => {
   const {
+    activeClaim,
     claims,
     claimCount,
     cashbackComplete,
@@ -119,7 +133,7 @@ const TempleCashbackPage = () => {
         alignItems: 'center',
       }}
     >
-      {collecting || cashbackComplete ? (
+      {collecting || cashbackComplete[activeClaim] ? (
         <ClaimContainer>
           <ProgressAnimation play={collecting} finished={cashbackSuccessful} />
         </ClaimContainer>
@@ -145,7 +159,7 @@ const TempleCashbackPage = () => {
         <CollectButton
           label={label}
           onClick={cashbackContractCall}
-          disabled={collecting || cashbackComplete}
+          disabled={collecting || cashbackComplete[activeClaim]}
           ongoingRequest={collecting}
         />
       ) : (
@@ -166,7 +180,7 @@ const TempleCashbackPage = () => {
           <CollectButton
             label={label}
             onClick={cashbackContractCall}
-            disabled={collecting || cashbackComplete}
+            disabled={collecting || cashbackComplete[activeClaim]}
             ongoingRequest={collecting}
           />
         </>
@@ -176,11 +190,11 @@ const TempleCashbackPage = () => {
 };
 
 function useTempleCashback() {
-  const { claim, wallet } = useWallet();
+  const { claim, wallet, signer } = useWallet();
   const [activeClaim, setActiveClaim]: [
-    ClaimType,
-    Dispatch<SetStateAction<ClaimType>>
-  ] = useState(relevantClaims[0].file);
+    ActiveClaim,
+    Dispatch<SetStateAction<ActiveClaim>>
+  ] = useState(relevantClaims[0].file as ActiveClaim);
   const [allocation, setAllocation]: [
     number,
     Dispatch<SetStateAction<number>>
@@ -202,6 +216,7 @@ function useTempleCashback() {
     });
   }
 
+  // re-render component on claim change
   useEffect(() => {
     if (
       wallet &&
@@ -219,6 +234,28 @@ function useTempleCashback() {
     if (dispatch) dispatch({ type: 'fileChange' });
   }, [activeClaim, wallet]);
 
+  // checks if user has already claimed their allocation
+  useEffect(() => {
+    async function isAllocationAlreadyClaimed() {
+      if (signer && wallet && activeClaim) {
+        const templeCashback = new TempleCashback__factory()
+          .attach(TEMPLE_CASHBACK_ADDRESS)
+          .connect(signer);
+
+        const allocationClaimed = await templeCashback.usedNonces(
+          wallet,
+          BigNumber.from(claims[activeClaim][wallet.toLowerCase()].nonce)
+        );
+
+        if (allocationClaimed) {
+          dispatch({ type: 'success', claim: activeClaim });
+        }
+      }
+    }
+
+    isAllocationAlreadyClaimed();
+  }, [signer, activeClaim]);
+
   const [state, dispatch] = useReducer(reducer, {
     ...cashbackInitialState,
     label: `Collect ${allocation} $TEMPLE`,
@@ -234,7 +271,7 @@ function useTempleCashback() {
       case 'success':
         return {
           ...state,
-          cashbackComplete: true,
+          cashbackComplete: { ...state.cashbackComplete, [action.claim]: true },
           cashbackSuccessful: true,
           collecting: false,
           label: 'Collected',
@@ -242,7 +279,7 @@ function useTempleCashback() {
       case 'failure':
         return {
           ...state,
-          cashbackComplete: true,
+          cashbackComplete: { ...state.cashbackComplete, [action.claim]: true },
           collecting: false,
           label: 'Failed to collect',
         };
@@ -256,19 +293,20 @@ function useTempleCashback() {
     }
   }
 
-  const cashbackContractCall = useCallback(() => {
+  const cashbackContractCall = () => {
     const txPromise = claim(activeClaim);
 
     if (txPromise) {
       dispatch({ type: 'collect' });
       txPromise
-        .then(() => dispatch({ type: 'success' }))
-        .catch(() => dispatch({ type: 'failure' }));
+        .then(() => dispatch({ type: 'success', claim: activeClaim }))
+        .catch(() => dispatch({ type: 'failure', claim: activeClaim }));
     }
-  }, [claim, dispatch, ClaimType.FIRE_RITUAL_ROLLOVER]);
+  };
 
   return {
     ...state,
+    activeClaim,
     claimCount,
     claims,
     wallet,
@@ -334,19 +372,6 @@ const WelcomeImage = styled.div`
   background: url(${welcomeImage}) center no-repeat;
   background-size: contain;
   margin-bottom: 50px;
-`;
-
-const Dropdown = styled.select`
-  max-width: 500px;
-  margin-bottom: 15px;
-  text-align: center;
-  width: 100%;
-  padding: 1rem;
-  transition: color 250ms linear;
-  background-color: transparent;
-  color: ${(props) => props.theme.palette.brand};
-  ${(props) => props.theme.typography.meta};
-  border: 0.0625rem /* 1/16 */ solid currentColor;
 `;
 
 export default withWallet(TempleCashbackPage);

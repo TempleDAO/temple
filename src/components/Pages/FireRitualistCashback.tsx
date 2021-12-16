@@ -93,7 +93,7 @@ function useFireRitualistCashback(): FireRitualCashbackState {
   // wallet may be falsey, the code can handle that
   // hooks should not be called conditionally so we deal with it this way
   //@ts-ignore
-  const userClaim = wallet ?? claims[wallet.toLowerCase()];
+  const userClaim = wallet && claims[wallet.toLowerCase()];
   const allocationAmount = userClaim?.tokenQuantity ?? 0;
 
   const [state, dispatch] = useReducer(reducer, {
@@ -154,7 +154,7 @@ function useFireRitualistCashback(): FireRitualCashbackState {
       txPromise
         .then(() => dispatch({ type: 'success' }))
         .catch((e) => {
-          console.log('error', e);
+          console.error('error', e);
           dispatch({ type: 'failure' });
         });
     }
