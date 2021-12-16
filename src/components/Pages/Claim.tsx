@@ -109,25 +109,27 @@ const TempleCashbackPage = () => {
     if (!wallet) return;
     const address: string = wallet.toLowerCase();
     setOptions(
-      Object.keys(claims).map((file) => {
-        const claim = claims[file];
-        if (claim[address]) {
-          // Find the label name
-          const relevantClaim = relevantClaims.find(
-            (claim) => claim.file == file
-          );
-          if (!relevantClaim) return;
-          const name = relevantClaim.name;
+      Object.keys(claims)
+        .map((file) => {
+          const claim = claims[file];
+          if (claim[address]) {
+            // Find the label name
+            const relevantClaim = relevantClaims.find(
+              (claim) => claim.file == file
+            );
+            if (!relevantClaim) return;
+            const name = relevantClaim.name;
 
-          // Return an Option
-          return {
-            value: file,
-            label: `${name} - ${fromAtto(
-              BigNumber.from(claim[address].tokenQuantity)
-            )}`,
-          };
-        } else return { value: '', label: '' };
-      })
+            // Return an Option
+            return {
+              value: file,
+              label: `${name} - ${fromAtto(
+                BigNumber.from(claim[address].tokenQuantity)
+              )}`,
+            };
+          } else return { value: '', label: '' };
+        })
+        .filter((claimObj) => claimObj?.value != '')
     );
   }, [claims, wallet]);
 
@@ -199,14 +201,6 @@ const TempleCashbackPage = () => {
 
 function useTempleCashback() {
   const { claim, wallet, signer } = useWallet();
-  const [activeClaim, setActiveClaim]: [
-    ActiveClaim,
-    Dispatch<SetStateAction<ActiveClaim>>
-  ] = useState(relevantClaims[0].file as ActiveClaim);
-  const [allocation, setAllocation]: [
-    number,
-    Dispatch<SetStateAction<number>>
-  ] = useState(0);
 
   // Count eligible claim
   let claimCount = 0;
@@ -223,6 +217,22 @@ function useTempleCashback() {
       }
     });
   }
+
+  //wallet should always be true here
+  //@ts-ignore
+  const initialActiveClaim = claims[relevantClaims[0].file][wallet]
+    ? relevantClaims[0].file
+    : relevantClaims[1].file;
+
+  const [activeClaim, setActiveClaim]: [
+    ActiveClaim,
+    Dispatch<SetStateAction<ActiveClaim>>
+  ] = useState(initialActiveClaim as ActiveClaim);
+
+  const [allocation, setAllocation]: [
+    number,
+    Dispatch<SetStateAction<number>>
+  ] = useState(0);
 
   // re-render component on claim change
   useEffect(() => {
