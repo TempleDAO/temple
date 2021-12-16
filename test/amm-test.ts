@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { FakeERC20, FakeERC20__factory, TempleERC20Token, TempleERC20Token__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTreasury, TempleTreasury__factory, TempleUniswapV2Pair, TempleUniswapV2Pair__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02NoEth, UniswapV2Router02NoEth__factory } from "../typechain";
 
 import { BigNumber, Signer } from "ethers";
-import { mineNBlocks, toAtto } from "./helpers";
+import { mineNBlocks, toAtto, shouldThrow } from "./helpers";
 
 import { fromAtto } from "../scripts/deploys/helpers";
 
@@ -349,35 +349,176 @@ describe("AMM", async () => {
   
     // });
 
-    xdescribe("Contract Management / ACL", async() => {
-      it("only owner can change dynamic decay per block", async () => {
+    describe('Contract Management / ACL', async () => {
+      const ONLY_OWNER_ERROR = /Ownable: caller is not the owner/;
+
+      let ownerConnectTR: TempleFraxAMMRouter;
+      let alanConnectTR: TempleFraxAMMRouter;
+      let benConnectTR: TempleFraxAMMRouter;
+      let ownerConnectPair: TempleUniswapV2Pair;
+      let alanConnectPair: TempleUniswapV2Pair;
+
+      beforeEach(async () => {
+        ownerConnectTR = templeRouter.connect(owner);
+        alanConnectTR = templeRouter.connect(alan);
+        benConnectTR = templeRouter.connect(ben);
+
+        ownerConnectPair = pair.connect(owner);
+        alanConnectPair = pair.connect(alan);
       });
 
-      it("only owner can change dynamic threshold percentage", async () => {
+      it('only owner can change dynamic decay per block', async () => {
+        await shouldThrow(alanConnectTR.setDynamicThresholdDecayPerBlock(100000), ONLY_OWNER_ERROR);
+        await ownerConnectTR.setDynamicThresholdDecayPerBlock(100000);
+        expect(await ownerConnectTR.dynamicThresholdDecayPerBlock()).to.eq(100000);
       });
 
-      it("only owner can set interpolation from/to price", async () => {
+      it('only owner can change dynamic threshold percentage', async () => {
+        await shouldThrow(alanConnectTR.setDynamicThresholdIncreasePct(5000), ONLY_OWNER_ERROR);
+        await ownerConnectTR.setDynamicThresholdIncreasePct(5000);
+        expect(await ownerConnectTR.dynamicThresholdIncreasePct()).to.eq(5000);
       });
 
-      it("only owner can toggle access", async () => {
+      it('only owner can set interpolation from/to price', async () => {
+        await shouldThrow(alanConnectTR.setInterpolateFromPrice(100000, 100000), ONLY_OWNER_ERROR);
+        await shouldThrow(alanConnectTR.setInterpolateToPrice(200000, 200000), ONLY_OWNER_ERROR);
+
+        await ownerConnectTR.setInterpolateFromPrice(100000, 100000);
+        await ownerConnectTR.setInterpolateToPrice(200000, 200000);
+
+        const { frax: fraxFrom, temple: templeFrom } = await ownerConnectTR.interpolateFromPrice();
+        const { frax: fraxTo, temple: templeTo } = await ownerConnectTR.interpolateToPrice();
+
+        expect(fraxFrom).to.eq(100000);
+        expect(templeFrom).to.eq(100000);
+        expect(fraxTo).to.eq(200000);
+        expect(templeTo).to.eq(200000);
       });
 
-      it("Need appropriate role to add allowed user", async () => {
+      it('only owner can toggle access', async () => {
+        await shouldThrow(alanConnectTR.toggleOpenAccess(), ONLY_OWNER_ERROR);
+
+        expect(await ownerConnectTR.openAccessEnabled()).to.eq(true);
+        await ownerConnectTR.toggleOpenAccess();
+        expect(await ownerConnectTR.openAccessEnabled()).to.eq(false);
       });
 
-      it("Only owner can remove a user from the allowed list", async () => {
+      it('Need appropriate role to add allowed user', async () => {
+        const ACCESS_CONTROL_ERROR = /AccessControl:.* is missing role/;
+        const alanAddress = await alan.getAddress();
+        const benAddress = await ben.getAddress();
+        const role = await templeRouter.CAN_ADD_ALLOWED_USER();
+
+        await shouldThrow(alanConnectTR.addAllowedUser(benAddress), ACCESS_CONTROL_ERROR);
+        await templeRouter.grantRole(role, alanAddress);
+        await alanConnectTR.addAllowedUser(benAddress);
       });
 
-      it("UniswapV2Pair has access control enabled s.t only a single router can call swap (permissioned access)", async () => {
+      it('Only owner can remove a user from the allowed list', async () => {
+        const alanAddress = await alan.getAddress();
+        const benAddress = await ben.getAddress();
+        const role = await templeRouter.CAN_ADD_ALLOWED_USER();
+
+        await templeRouter.grantRole(role, alanAddress);
+        await alanConnectTR.addAllowedUser(benAddress);
+
+        await shouldThrow(alanConnectTR.removeAllowedUser(benAddress), ONLY_OWNER_ERROR); // non-owner with access role
+        await shouldThrow(benConnectTR.removeAllowedUser(benAddress), ONLY_OWNER_ERROR); // non-owner without access role
+        await ownerConnectTR.removeAllowedUser(benAddress);
       });
 
-      it("Owner can change the active router on the UniswapV2Pair", async () => {
+      it('UniswapV2Pair has access control enabled s.t only a single router can call swap (permissioned access)', async () => {
+        const FORBIDDEN_ERROR = 'UniswapV2: FORBIDDEN';
+
+        const alanAddress = await alan.getAddress();
+        const routerConnectPair = pair.connect(templeRouter.address);
+
+        await shouldThrow(alanConnectPair.swap(1000, 1000, alanAddress, '0x'), new RegExp(FORBIDDEN_ERROR));
+        await expect(routerConnectPair.swap(1000, 1000, alanAddress, '0x')).not.revertedWith(FORBIDDEN_ERROR);
       });
 
-      it("Need to be on allowedlist to call router and swap (before open access is enabled)", async () => {
+      it('Owner can change the active router on the UniswapV2Pair', async () => {
+        const benAddress = await ben.getAddress();
+
+        await shouldThrow(alanConnectPair.setRouter(benAddress), /UniswapV2: FORBIDDEN/);
+
+        await ownerConnectPair.setRouter(benAddress);
+        expect(await pair.router()).to.eq(benAddress);
       });
 
-      it("Once open access is enabled, anyone can swap frax/temple", async () => {
+      it('Need to be on allowedlist to call router and swap (before open access is enabled)', async () => {
+        const NOT_ALLOWED_ERROR = "Router isn't open access and caller isn't in the allowed list";
+
+        const alanAddress = await alan.getAddress();
+
+        // await fraxToken.connect(alan).increaseAllowance(templeRouter.address, 100000);
+        // await templeToken.connect(alan).increaseAllowance(templeRouter.address, 100000);
+
+        await Promise.all([
+          fraxToken.mint(alanAddress, toAtto(100000000)),
+          templeToken.mint(alanAddress, toAtto(100000000)),
+        ]);
+
+        // Set open access to false
+        await templeRouter.toggleOpenAccess();
+        expect(await templeRouter.openAccessEnabled()).to.eq(false);
+        await shouldThrow(
+          alanConnectTR.swapExactFraxForTemple(toAtto(100), 1, alanAddress, expiryDate()),
+          new RegExp(NOT_ALLOWED_ERROR)
+        );
+        await shouldThrow(
+          alanConnectTR.swapExactTempleForFrax(toAtto(100), 1, alanAddress, expiryDate()),
+          new RegExp(NOT_ALLOWED_ERROR)
+        );
+
+        // Let Alan add himself to allowed list and attempt swap
+        const role = await templeRouter.CAN_ADD_ALLOWED_USER();
+        await templeRouter.grantRole(role, alanAddress);
+        await alanConnectTR.addAllowedUser(alanAddress);
+
+        await expect(alanConnectTR.swapExactFraxForTemple(toAtto(100), 1, alanAddress, expiryDate())).not.revertedWith(
+          NOT_ALLOWED_ERROR
+        );
+        await expect(alanConnectTR.swapExactTempleForFrax(toAtto(100), 1, alanAddress, expiryDate())).not.revertedWith(
+          NOT_ALLOWED_ERROR
+        );
+
+        // await alanConnectTR.swapExactFraxForTemple(toAtto(100), 1, alanAddress, expiryDate());
+        // await alanConnectTR.swapExactTempleForFrax(toAtto(100), 1, alanAddress, expiryDate());
       });
-    })
+
+      it('Once open access is enabled, anyone can swap frax/temple', async () => {
+        const NOT_ALLOWED_ERROR_STR = "Router isn't open access and caller isn't in the allowed list";
+
+        const alanAddress = await alan.getAddress();
+        const benAddress = await ben.getAddress();
+
+        await Promise.all([
+          fraxToken.mint(alanAddress, toAtto(100000000)),
+          templeToken.mint(alanAddress, toAtto(100000000)),
+          fraxToken.mint(benAddress, toAtto(100000000)),
+          templeToken.mint(benAddress, toAtto(100000000)),
+        ]);
+
+        expect(await templeRouter.openAccessEnabled()).to.eq(true);
+        // non-allowed user should be able to swap
+        await expect(benConnectTR.swapExactFraxForTemple(toAtto(100), 1, benAddress, expiryDate())).not.revertedWith(
+          NOT_ALLOWED_ERROR_STR
+        );
+        await expect(benConnectTR.swapExactTempleForFrax(toAtto(100), 1, benAddress, expiryDate())).not.revertedWith(
+          NOT_ALLOWED_ERROR_STR
+        );
+
+        // allowed user should be able to swap
+        const role = await templeRouter.CAN_ADD_ALLOWED_USER();
+        await templeRouter.grantRole(role, alanAddress);
+        await alanConnectTR.addAllowedUser(alanAddress);
+        await expect(alanConnectTR.swapExactFraxForTemple(toAtto(100), 1, alanAddress, expiryDate())).not.revertedWith(
+          NOT_ALLOWED_ERROR_STR
+        );
+        await expect(alanConnectTR.swapExactTempleForFrax(toAtto(100), 1, alanAddress, expiryDate())).not.revertedWith(
+          NOT_ALLOWED_ERROR_STR
+        );
+      });
+    });
 })
