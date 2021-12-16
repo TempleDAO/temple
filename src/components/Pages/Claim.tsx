@@ -208,7 +208,7 @@ function useTempleCashback() {
     Dispatch<SetStateAction<number>>
   ] = useState(0);
 
-  // Count eligible claims and set activeClaim to the last eligible
+  // Count eligible claim
   let claimCount = 0;
   if (wallet) {
     const address: string = wallet.toLowerCase();
@@ -245,15 +245,23 @@ function useTempleCashback() {
   // checks if user has already claimed their allocation
   useEffect(() => {
     async function isAllocationAlreadyClaimed() {
-      if (signer && wallet && activeClaim) {
+      if (
+        signer &&
+        wallet &&
+        activeClaim &&
+        claims[activeClaim][wallet.toLowerCase()]
+      ) {
         const templeCashback = new TempleCashback__factory()
           .attach(TEMPLE_CASHBACK_ADDRESS)
           .connect(signer);
 
-        const allocationClaimed = await templeCashback.usedNonces(
-          wallet,
-          BigNumber.from(claims[activeClaim][wallet.toLowerCase()].nonce)
-        );
+        let allocationClaimed;
+        if (claims[activeClaim][wallet.toLowerCase()]) {
+          allocationClaimed = await templeCashback.usedNonces(
+            wallet,
+            BigNumber.from(claims[activeClaim][wallet.toLowerCase()]?.nonce)
+          );
+        }
 
         if (allocationClaimed) {
           dispatch({ type: 'success', claim: activeClaim });
