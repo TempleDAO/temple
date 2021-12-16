@@ -62,7 +62,10 @@ type TempleCashbackState = {
     [ClaimType.GAS_REFUND_OC_PUZZLES]: boolean;
     [ClaimType.TEAM_BONUS_OC]: boolean;
   };
-  cashbackSuccessful: boolean;
+  cashbackSuccessful: {
+    [ClaimType.GAS_REFUND_OC_PUZZLES]: boolean;
+    [ClaimType.TEAM_BONUS_OC]: boolean;
+  };
   collecting: boolean;
   label: string;
 };
@@ -78,7 +81,10 @@ const cashbackInitialState: TempleCashbackState = {
     [ClaimType.GAS_REFUND_OC_PUZZLES]: false,
     [ClaimType.TEAM_BONUS_OC]: false,
   },
-  cashbackSuccessful: false,
+  cashbackSuccessful: {
+    [ClaimType.GAS_REFUND_OC_PUZZLES]: false,
+    [ClaimType.TEAM_BONUS_OC]: false,
+  },
   collecting: false,
   label: 'Collect',
 };
@@ -135,7 +141,10 @@ const TempleCashbackPage = () => {
     >
       {collecting || cashbackComplete[activeClaim] ? (
         <ClaimContainer>
-          <ProgressAnimation play={collecting} finished={cashbackSuccessful} />
+          <ProgressAnimation
+            play={collecting}
+            finished={cashbackSuccessful[activeClaim]}
+          />
         </ClaimContainer>
       ) : (
         <WelcomeImage />
@@ -271,7 +280,10 @@ function useTempleCashback() {
         return {
           ...state,
           cashbackComplete: { ...state.cashbackComplete, [action.claim]: true },
-          cashbackSuccessful: true,
+          cashbackSuccessful: {
+            ...state.cashbackSuccessful,
+            [action.claim]: true,
+          },
           collecting: false,
           label: 'Collected',
         };
