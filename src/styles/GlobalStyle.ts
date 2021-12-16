@@ -65,6 +65,7 @@ export const GlobalStyle = createGlobalStyle`
     background-color: ${theme.palette.dark};
     color: ${theme.palette.light};
     overflow-x: hidden;
+    margin: 0px;
   }
 
   h1,
@@ -98,7 +99,7 @@ export const GlobalStyle = createGlobalStyle`
     font-size: 1.5rem /* 24/16 */;
     line-height: 2.75rem /* 44/16 */;
   }
-  
+
   h5 {
     font-size: 1.25rem  /* 20/16 */;
     line-height: 1.5rem  /* 24/16 */;
@@ -114,7 +115,7 @@ export const GlobalStyle = createGlobalStyle`
     text-decoration: none;
     font-weight: bold;
   }
-  
+
   small {
     font-size: 0.875rem  /* 14/16 */;
     font-weight: bold;
@@ -134,7 +135,7 @@ export const GlobalStyle = createGlobalStyle`
     &-remove {
       margin: 0;
     }
-    
+
     &-remove--bottom {
       margin-bottom: 0;
     }
@@ -158,13 +159,13 @@ export const GlobalStyle = createGlobalStyle`
       color: ${theme.palette.light};
     }
   }
-  
+
   .align-text {
     &-center {
       text-align: center;
     }
   }
-  
+
   .flex {
     display: flex;
     &-v-center {
