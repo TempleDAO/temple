@@ -1,6 +1,12 @@
 const BRANCH = process.env.VERCEL_GIT_COMMIT_REF;
 
-const VALID_BUILD_BRANCHES = ['main', 'develop', 'release', 'hotfix'];
+const VALID_BUILD_BRANCHES = [
+  'main',
+  'develop',
+  'hotfix',
+  'release',
+  'staging',
+];
 
 if (VALID_BUILD_BRANCHES.find((validBranch) => validBranch === BRANCH)) {
   process.exit(0);
