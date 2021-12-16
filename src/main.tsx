@@ -9,6 +9,7 @@ import Exit from 'components/Pages/Exit';
 import Home from 'components/Pages/Home';
 import Rituals from 'components/Pages/Rituals';
 import Claim from 'components/Pages/Claim';
+import TempleGates from 'components/Pages/TempleGates';
 import MetamaskError from 'components/Pages/MetamaskError';
 import FireRitualistCashback from 'components/Pages/FireRitualistCashback';
 import NotificationManager from 'components/Notification/NotificationManager';
@@ -50,6 +51,7 @@ ReactDOM.render(
                   )
                 }
               </Route>
+              <Route path="temple-gates" element={<TempleGates />} />
             </Routes>
           </BrowserRouter>
           <NotificationManager />
