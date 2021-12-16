@@ -150,7 +150,6 @@ const TempleCashbackPage = () => {
         // TODO: Upgrade to new button loader where loading state can be promise
         <CollectButton
           label="There's not a gift for you."
-          //eslint-disable-next-line no-unused-vars
           onClick={noop}
           disabled={true}
           ongoingRequest={false}
