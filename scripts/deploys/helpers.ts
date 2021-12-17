@@ -87,7 +87,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_V2_PAIR: '',
     TEMPLE_V2_ROUTER: '',
     AMM_WHITELIST: '',
-    TEMPLE_CASHBACK: '',
+    TEMPLE_CASHBACK: '0x72e9fa8eD38ddbdA4b044E95A206EDaA509FdF72',
   },
   localhost: {
     // No longer active/unused
