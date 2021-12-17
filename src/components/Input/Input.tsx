@@ -1,5 +1,5 @@
 import React, { InputHTMLAttributes } from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { formatNumber } from 'utils/formatter';
 import {
   InputSelect,
@@ -29,7 +29,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   crypto?: CryptoSelector | CryptoValue;
 
   // Callback for input value change
-  onChange(e: React.ChangeEvent<HTMLInputElement>): void;
+  onChange?(e: React.ChangeEvent<HTMLInputElement>): void;
 }
 
 /**
@@ -41,6 +41,7 @@ export const Input = ({
   crypto,
   type,
   value,
+  disabled,
   ...props
 }: InputProps) => {
   const renderCrypto = () => {
@@ -66,11 +67,12 @@ export const Input = ({
   };
 
   return (
-    <InputWrapper>
+    <InputWrapper isDisabled={disabled}>
       <InputStyled
         onChange={onChange}
         type={type}
         value={type === 'number' && value ? formatNumber(+value) : value}
+        disabled={disabled}
         {...props}
       />
       <InputCrypto>{renderCrypto()}</InputCrypto>
@@ -79,29 +81,38 @@ export const Input = ({
   );
 };
 
-const cryptoWidth = '12.5rem';
+interface InputWrapperProps {
+  isDisabled?: boolean;
+}
 
-export const InputWrapper = styled.div`
+export const InputWrapper = styled.div<InputWrapperProps>`
   position: relative;
   margin-bottom: 2rem;
-  padding: 0.75rem 2rem /* 12/16 */;
+  padding: 0 2rem /* 12/16 */;
   background-color: ${(props) => props.theme.palette.brand25};
   height: 4.75rem /* 76/16 */;
   border: 0.0625rem /* 1/16 */ solid ${(props) => props.theme.palette.brand};
   // width will be manage by layout case by case
   width: 100%;
 
-  h3 {
-    margin: 0;
-  }
+  ${(props) =>
+    props.isDisabled &&
+    css`
+      background-color: ${(props) => props.theme.palette.dark};
+    `}
 `;
 
 export const InputCrypto = styled.div`
   position: absolute;
-  top: 0.75rem /* 6/16 */;
-  right: 2rem;
-  width: ${cryptoWidth};
-  text-align: right;
+  top: 0.5rem /* 6/16 */;
+  left: 2rem;
+  text-align: left;
+  width: 10.5rem;
+
+  h3 {
+    margin: 0;
+    width: auto;
+  }
 
   & > * {
     line-height: 1;
@@ -116,7 +127,7 @@ export const InputCrypto = styled.div`
 export const InputHint = styled.small`
   position: absolute;
   bottom: 0.75rem /* 12/16 */;
-  right: 2rem;
+  left: 2rem;
   color: ${(props) => props.theme.palette.light};
 `;
 
@@ -129,6 +140,8 @@ export const InputStyled = styled.input`
   ${(props) => props.theme.typography.h3};
   outline: none;
   width: 100%;
+  height: 100%;
+  text-align: right;
 
   // remove input number controls ^ v
   &[type='number']::-webkit-inner-spin-button,

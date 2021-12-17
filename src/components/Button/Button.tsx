@@ -1,11 +1,12 @@
-import React, { HTMLProps } from 'react';
+import React, { HTMLProps, useState } from 'react';
 import styled, { css } from 'styled-components';
+import Loader from '../Loader/Loader';
 
 interface ButtonProps extends ButtonStyledProps, HTMLProps<HTMLButtonElement> {
   type?: 'submit' | 'reset' | 'button' | undefined;
   label: string;
 
-  onClick?(): void;
+  onClick?(): Promise<void> | void;
 }
 
 /**
@@ -20,20 +21,55 @@ export const Button = ({
   showArrow,
   ...props
 }: ButtonProps) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  /**
+   * Click handler which shows a spinner while the action is in progress.
+   * If button is already in progress then callback is not called.
+   */
+  const onClickHandler = async () => {
+    if (isLoading) {
+      return;
+    }
+    if (!onClick) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await onClick();
+    } catch (err) {
+      /* TODO: Handle JSON-RPC errors better */
+      if (err.code === 4001) {
+        console.info(`Cancelled by user`);
+      } else {
+        console.info(`Error: ${JSON.stringify(err, null, 2)}`);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     // @ts-ignore expected multiple children
     <ButtonStyled
       type={type}
-      onClick={onClick}
+      onClick={onClickHandler}
       isSmall={isSmall}
       isUppercase={isUppercase}
       showArrow={showArrow}
       {...props}
     >
-      <ButtonLabel isUppercase={isUppercase} isSmall={isSmall}>
-        {label}
-      </ButtonLabel>
-      {showArrow && <i>&#10146;</i>}
+      {isLoading ? (
+        <Loader iconSize={32} />
+      ) : (
+        <>
+          <ButtonLabel isUppercase={isUppercase} isSmall={isSmall}>
+            {label}
+          </ButtonLabel>
+          {showArrow && <i>&#10146;</i>}
+        </>
+      )}
     </ButtonStyled>
   );
 };
@@ -42,6 +78,9 @@ interface ButtonStyledProps {
   isSmall?: boolean;
   isUppercase?: boolean;
   showArrow?: boolean;
+  isActive?: boolean;
+  // default takes fullwidth of parent
+  autoWidth?: boolean;
 }
 
 export const ButtonStyled = styled.button<ButtonStyledProps>`
@@ -52,13 +91,17 @@ export const ButtonStyled = styled.button<ButtonStyledProps>`
   border: 0.0625rem /* 1/16 */ solid currentColor;
   height: 4.75rem /* 76/16 */;
   ${(props) => props.theme.typography.meta};
-  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 0 1rem;
-  transition: color 250ms linear;
+  transition: color 250ms linear, background-color 250ms linear;
 
+  ${(props) =>
+    !props.autoWidth &&
+    css`
+      width: 100%;
+    `}
   ${(props) =>
     props.isSmall &&
     css`
@@ -71,6 +114,22 @@ export const ButtonStyled = styled.button<ButtonStyledProps>`
     `}
   &:disabled {
     color: ${(props) => props.theme.palette.brand50};
+    cursor: default;
+  }
+
+  ${(props) =>
+    props.isActive &&
+    css`
+      background-color: ${(props) => props.theme.palette.brand};
+      color: ${(props) => props.theme.palette.light};
+    `};
+
+  :hover:not(:disabled) {
+    ${(props) =>
+      !props.isActive &&
+      css`
+        background-color: ${(props) => props.theme.palette.brand25};
+      `};
   }
 `;
 

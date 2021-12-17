@@ -121,7 +121,8 @@ const Rituals = () => {
       if (cryptoAmount) {
         await increaseAllowanceForRitual(
           toAtto(cryptoAmount),
-          RitualKind.OFFERING_STAKING
+          RitualKind.OFFERING_STAKING,
+          'FRAX'
         );
       }
     } catch (e) {
