@@ -19,8 +19,7 @@ async function main() {
     DEPLOYED = DEPLOYED_CONTRACTS[network.name];
   }
 
-  // TODO: Update to actual verifier wallet
-  const verifierPublicKey = "0x4c606F18Cc8883b90712b339c0b14565148050CA" // for testnet
+  const verifierPublicKey = "0x56308ae1FD1a70c46B246Af4c0DCd855bD87d7a7"
 
   const templeCashbackFactory = new TempleCashback__factory(owner);
   await deployAndMine(
