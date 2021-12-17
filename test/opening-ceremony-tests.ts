@@ -22,7 +22,7 @@ import {
 import { blockTimestamp, fromAtto, mineForwardSeconds, mineToEpoch, mineToTimestamp, shouldThrow, toAtto } from "./helpers";
 
 
-describe("Test Opening Ceremony", async () => {
+xdescribe("Test Opening Ceremony", async () => {
    const SECONDS_IN_DAY = 24 * 60 * 60;
    const EPOCH_SIZE: number = 600;
    const MINT_MULTIPLE: number = 6;
