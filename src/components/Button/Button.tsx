@@ -1,5 +1,3 @@
-//@ts-nocheck
-
 import React, { HTMLProps, useState } from 'react';
 import styled, { css } from 'styled-components';
 import Loader from '../Loader/Loader';
