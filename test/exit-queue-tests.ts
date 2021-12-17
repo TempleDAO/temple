@@ -1,6 +1,6 @@
 import { ethers, network } from "hardhat";
 import { Signer } from "ethers";
-import { expect } from "chai";
+import { expect, should } from "chai";
 
 import { mineNBlocks, shouldThrow } from "./helpers";
 
@@ -305,6 +305,81 @@ describe("Exit Queue", async () => {
       const exitData = await EXIT_QUEUE.userData(exiterAddress)
       expect(exitData.FirstExitEpoch, `${idx}, ${JSON.stringify(testCases[idx])}`).eq(firstExitEpoch);
       expect(exitData.LastExitEpoch, `${idx}, ${JSON.stringify(testCases[idx])}`).eq(lastExitEpoch);
+    }
+  });
+
+  it("Only owner can migrate exiters", async () => {
+    await shouldThrow(EXIT_QUEUE.connect(amanda).migrate(await amanda.getAddress(), [0], 1, EXIT_QUEUE.address), /Ownable: caller is not the owner/);
+  });
+
+  it("Can migrate entire active exit queue, if required (owner only)", async () => {
+    // Create a new exit queue. For testing purposes it's identical to our current implementation
+    const NEW_EXIT_QUEUE = await new ExitQueue__factory(owner).deploy(
+      TEMPLE.address,
+      await EXIT_QUEUE.maxPerEpoch(),
+      await EXIT_QUEUE.maxPerAddress(),
+      await EXIT_QUEUE.epochSize(),
+    )
+    
+    const users: {[key: string]: Signer} = {
+      'amanda': amanda,
+      'ben': ben,
+      'clint': clint,
+    }
+
+    // || who | exitAmount
+    const testCases : [string, number][] = [
+      ['amanda', 100],
+      ['ben', 50],
+      ['clint', 250],
+      ['clint', 100],
+      ['ben', 150],
+      ['amanda', 50],
+      ['amanda', 100],
+      ['amanda', 50],
+      ['amanda', 50],
+      ['ben', 50],
+    ]
+
+    // Simulate users joining queue, capture balance per user
+    const oldBalances: {[key: string]: number} = {
+      'amanda': 0,
+      'ben': 0,
+      'clint': 0,
+    }
+
+    for (let idx in testCases) {
+      const [who, amount] = testCases[idx];
+
+      const exiterAddress = await users[who].getAddress();
+      await EXIT_QUEUE.connect(users[who]).join(exiterAddress, amount);
+      oldBalances[who] += amount;
+    }
+
+    // Migrate everyone to the new queue
+    for (const exiter of [amanda, ben, clint]) {
+      const exitData = await EXIT_QUEUE.userData(await exiter.getAddress());
+
+      // get epochs where user has some temple.
+      const epochs = []
+      for (let i = exitData.FirstExitEpoch.toNumber(); i < exitData.LastExitEpoch.toNumber()+1; i++) {
+        epochs.push(i);
+      }
+      await EXIT_QUEUE.migrate(await exiter.getAddress(), epochs, epochs.length, NEW_EXIT_QUEUE.address);
+    }
+
+    // Compare total exit amount, it should be the same (NOTE: test hasn't been written to preserve ordering.
+    // it's assumed that will be the remit of the dev who writes the migration script)
+    for (const exiterName of ['amanda', 'ben', 'clint']) {
+      const exiter = users[exiterName];
+      const exitDataNew = await NEW_EXIT_QUEUE.userData(await exiter.getAddress());
+
+      let newBalance = 0;      
+      for (let i = exitDataNew.FirstExitEpoch.toNumber(); i < exitDataNew.LastExitEpoch.toNumber()+1; i++) {
+        newBalance += (await NEW_EXIT_QUEUE.currentEpochAllocation(await exiter.getAddress(), i)).toNumber();
+      }
+
+      expect(oldBalances[exiterName], `Balance for ${exiterName} doesn't reconcile`).eq(newBalance);
     }
   });
 
