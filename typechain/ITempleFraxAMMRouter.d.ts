@@ -22,14 +22,7 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 interface ITempleFraxAMMRouterInterface extends ethers.utils.Interface {
   functions: {
     "addLiquidity(uint256,uint256,uint256,uint256,address,uint256)": FunctionFragment;
-    "checkPointBlock()": FunctionFragment;
-    "dynamicThresholdDecayPerBlock()": FunctionFragment;
-    "dynamicThresholdPriceWithDecay()": FunctionFragment;
-    "mintRatioAt(uint256,uint256)": FunctionFragment;
-    "pair()": FunctionFragment;
-    "quote(uint256,uint256,uint256)": FunctionFragment;
-    "swapExactFraxForTemple(uint256,uint256,address,uint256)": FunctionFragment;
-    "swapExactTempleForFrax(uint256,uint256,address,uint256)": FunctionFragment;
+    "removeLiquidity(uint256,uint256,uint256,address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -44,33 +37,8 @@ interface ITempleFraxAMMRouterInterface extends ethers.utils.Interface {
     ]
   ): string;
   encodeFunctionData(
-    functionFragment: "checkPointBlock",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "dynamicThresholdDecayPerBlock",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "dynamicThresholdPriceWithDecay",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "mintRatioAt",
-    values: [BigNumberish, BigNumberish]
-  ): string;
-  encodeFunctionData(functionFragment: "pair", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "quote",
-    values: [BigNumberish, BigNumberish, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "swapExactFraxForTemple",
-    values: [BigNumberish, BigNumberish, string, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "swapExactTempleForFrax",
-    values: [BigNumberish, BigNumberish, string, BigNumberish]
+    functionFragment: "removeLiquidity",
+    values: [BigNumberish, BigNumberish, BigNumberish, string, BigNumberish]
   ): string;
 
   decodeFunctionResult(
@@ -78,29 +46,7 @@ interface ITempleFraxAMMRouterInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "checkPointBlock",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "dynamicThresholdDecayPerBlock",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "dynamicThresholdPriceWithDecay",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "mintRatioAt",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "pair", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "quote", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "swapExactFraxForTemple",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "swapExactTempleForFrax",
+    functionFragment: "removeLiquidity",
     data: BytesLike
   ): Result;
 
@@ -161,48 +107,10 @@ export class ITempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    checkPointBlock(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    dynamicThresholdDecayPerBlock(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    dynamicThresholdPriceWithDecay(
-      overrides?: CallOverrides
-    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
-
-    mintRatioAt(
-      temple: BigNumberish,
-      frax: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
-    >;
-
-    pair(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    quote(
-      amountA: BigNumberish,
-      reserveA: BigNumberish,
-      reserveB: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber] & { amountB: BigNumber }>;
-
-    swapExactFraxForTemple(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    swapExactTempleForFrax(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
+    removeLiquidity(
+      liquidity: BigNumberish,
+      amountAMin: BigNumberish,
+      amountBMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -219,48 +127,10 @@ export class ITempleFraxAMMRouter extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  checkPointBlock(
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  dynamicThresholdDecayPerBlock(
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  dynamicThresholdPriceWithDecay(
-    overrides?: CallOverrides
-  ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
-
-  mintRatioAt(
-    temple: BigNumberish,
-    frax: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<
-    [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
-  >;
-
-  pair(
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  quote(
-    amountA: BigNumberish,
-    reserveA: BigNumberish,
-    reserveB: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
-  swapExactFraxForTemple(
-    amountIn: BigNumberish,
-    amountOutMin: BigNumberish,
-    to: string,
-    deadline: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  swapExactTempleForFrax(
-    amountIn: BigNumberish,
-    amountOutMin: BigNumberish,
+  removeLiquidity(
+    liquidity: BigNumberish,
+    amountAMin: BigNumberish,
+    amountBMin: BigNumberish,
     to: string,
     deadline: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -283,48 +153,16 @@ export class ITempleFraxAMMRouter extends BaseContract {
       }
     >;
 
-    checkPointBlock(overrides?: CallOverrides): Promise<BigNumber>;
-
-    dynamicThresholdDecayPerBlock(
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    dynamicThresholdPriceWithDecay(
-      overrides?: CallOverrides
-    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
-
-    mintRatioAt(
-      temple: BigNumberish,
-      frax: BigNumberish,
+    removeLiquidity(
+      liquidity: BigNumberish,
+      amountAMin: BigNumberish,
+      amountBMin: BigNumberish,
+      to: string,
+      deadline: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
+      [BigNumber, BigNumber] & { amountA: BigNumber; amountB: BigNumber }
     >;
-
-    pair(overrides?: CallOverrides): Promise<string>;
-
-    quote(
-      amountA: BigNumberish,
-      reserveA: BigNumberish,
-      reserveB: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    swapExactFraxForTemple(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    swapExactTempleForFrax(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
   };
 
   filters: {};
@@ -340,46 +178,10 @@ export class ITempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    checkPointBlock(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    dynamicThresholdDecayPerBlock(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    dynamicThresholdPriceWithDecay(
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    mintRatioAt(
-      temple: BigNumberish,
-      frax: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    pair(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    quote(
-      amountA: BigNumberish,
-      reserveA: BigNumberish,
-      reserveB: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    swapExactFraxForTemple(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    swapExactTempleForFrax(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
+    removeLiquidity(
+      liquidity: BigNumberish,
+      amountAMin: BigNumberish,
+      amountBMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -397,46 +199,10 @@ export class ITempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    checkPointBlock(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    dynamicThresholdDecayPerBlock(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    dynamicThresholdPriceWithDecay(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    mintRatioAt(
-      temple: BigNumberish,
-      frax: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    pair(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    quote(
-      amountA: BigNumberish,
-      reserveA: BigNumberish,
-      reserveB: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    swapExactFraxForTemple(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    swapExactTempleForFrax(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
+    removeLiquidity(
+      liquidity: BigNumberish,
+      amountAMin: BigNumberish,
+      amountBMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }

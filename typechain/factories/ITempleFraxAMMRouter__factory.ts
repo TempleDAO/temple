@@ -65,93 +65,35 @@ const _abi = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "checkPointBlock",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "blockNumber",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "dynamicThresholdDecayPerBlock",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "dynamicThresholdPriceWithDecay",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "frax",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "temple",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [
       {
         internalType: "uint256",
-        name: "temple",
+        name: "liquidity",
         type: "uint256",
       },
       {
         internalType: "uint256",
-        name: "frax",
-        type: "uint256",
-      },
-    ],
-    name: "mintRatioAt",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "numerator",
+        name: "amountAMin",
         type: "uint256",
       },
       {
         internalType: "uint256",
-        name: "denominator",
+        name: "amountBMin",
         type: "uint256",
       },
-    ],
-    stateMutability: "pure",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "pair",
-    outputs: [
       {
         internalType: "address",
-        name: "",
+        name: "to",
         type: "address",
       },
+      {
+        internalType: "uint256",
+        name: "deadline",
+        type: "uint256",
+      },
     ],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
+    name: "removeLiquidity",
+    outputs: [
       {
         internalType: "uint256",
         name: "amountA",
@@ -159,88 +101,7 @@ const _abi = [
       },
       {
         internalType: "uint256",
-        name: "reserveA",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "reserveB",
-        type: "uint256",
-      },
-    ],
-    name: "quote",
-    outputs: [
-      {
-        internalType: "uint256",
         name: "amountB",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "pure",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "amountIn",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "amountOutMin",
-        type: "uint256",
-      },
-      {
-        internalType: "address",
-        name: "to",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "deadline",
-        type: "uint256",
-      },
-    ],
-    name: "swapExactFraxForTemple",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "amountOut",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "amountIn",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "amountOutMin",
-        type: "uint256",
-      },
-      {
-        internalType: "address",
-        name: "to",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "deadline",
-        type: "uint256",
-      },
-    ],
-    name: "swapExactTempleForFrax",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "amountOut",
         type: "uint256",
       },
     ],

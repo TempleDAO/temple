@@ -121,6 +121,18 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ITempleFraxAMMRouter__factory>;
     getContractFactory(
+      name: "ITempleFraxAMMRouter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ITempleFraxAMMRouter__factory>;
+    getContractFactory(
+      name: "ITreasuryManagementProxy",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ITreasuryManagementProxy__factory>;
+    getContractFactory(
+      name: "TempleFraxAMMOps",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TempleFraxAMMOps__factory>;
+    getContractFactory(
       name: "ITempleTreasury",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ITempleTreasury__factory>;
@@ -360,6 +372,21 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ITempleFraxAMMRouter>;
+    getContractAt(
+      name: "ITempleFraxAMMRouter",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ITempleFraxAMMRouter>;
+    getContractAt(
+      name: "ITreasuryManagementProxy",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ITreasuryManagementProxy>;
+    getContractAt(
+      name: "TempleFraxAMMOps",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TempleFraxAMMOps>;
     getContractAt(
       name: "ITempleTreasury",
       address: string,
