@@ -40,12 +40,14 @@ module.exports = {
   },
   networks: {
     rinkeby: {
+      // whitelisted to a single deployment address.
       url: "https://eth-rinkeby.alchemyapi.io/v2/QqeiqrSzcuz0ZEcK3i01eL5gPmFgQRfu",
       accounts: (process.env.RINKEBY_ADDRESS_PRIVATE_KEY) ? [process.env.RINKEBY_ADDRESS_PRIVATE_KEY] : [],
       gasPrice: 20000000000,
     },
     mainnet: {
-      url: "https://eth-mainnet.alchemyapi.io/v2/wMu8LWhZqh3KFpNCQZH4EVgNuF7qcrw9",
+      // whitelisted to a single deployment address.
+      url: "https://eth-mainnet.alchemyapi.io/v2/YDQ_EDc7dwxDWf_U8LOgCXRFgKiQOa3K",
       accounts: (process.env.MAINNET_ADDRESS_PRIVATE_KEY) ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY] : [],
       gasPrice: 100000000000,
     },
