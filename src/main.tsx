@@ -1,3 +1,4 @@
+import AmmAltars from 'components/Pages/AmmAltars';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -31,6 +32,7 @@ ReactDOM.render(
                   <>
                     <Route path="/temple-gates" element={<AmmSpaRoot />} />
                     <Route path="/" element={<PageLayout />}>
+                      <Route path="/amm-altars" element={<AmmAltars />} />
                       <Route path="/" element={<Home />} />
                       <Route path="disclaimer" element={<Disclaimer />} />
                       <Route path="enter" element={<Enter />} />
