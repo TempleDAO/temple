@@ -29,6 +29,7 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     "join(address,uint256)": FunctionFragment;
     "maxPerAddress()": FunctionFragment;
     "maxPerEpoch()": FunctionFragment;
+    "migrate(address,uint256[],uint256,address)": FunctionFragment;
     "nextUnallocatedEpoch()": FunctionFragment;
     "owedTemple(address)": FunctionFragment;
     "owner()": FunctionFragment;
@@ -69,6 +70,10 @@ interface ExitQueueInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "maxPerEpoch",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "migrate",
+    values: [string, BigNumberish[], BigNumberish, string]
   ): string;
   encodeFunctionData(
     functionFragment: "nextUnallocatedEpoch",
@@ -134,6 +139,7 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     functionFragment: "maxPerEpoch",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "migrate", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "nextUnallocatedEpoch",
     data: BytesLike
@@ -269,6 +275,14 @@ export class ExitQueue extends BaseContract {
 
     maxPerEpoch(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    migrate(
+      exiter: string,
+      epochs: BigNumberish[],
+      length: BigNumberish,
+      newExitQueue: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     nextUnallocatedEpoch(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     owedTemple(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
@@ -357,6 +371,14 @@ export class ExitQueue extends BaseContract {
 
   maxPerEpoch(overrides?: CallOverrides): Promise<BigNumber>;
 
+  migrate(
+    exiter: string,
+    epochs: BigNumberish[],
+    length: BigNumberish,
+    newExitQueue: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   nextUnallocatedEpoch(overrides?: CallOverrides): Promise<BigNumber>;
 
   owedTemple(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
@@ -444,6 +466,14 @@ export class ExitQueue extends BaseContract {
     maxPerAddress(overrides?: CallOverrides): Promise<BigNumber>;
 
     maxPerEpoch(overrides?: CallOverrides): Promise<BigNumber>;
+
+    migrate(
+      exiter: string,
+      epochs: BigNumberish[],
+      length: BigNumberish,
+      newExitQueue: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     nextUnallocatedEpoch(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -582,6 +612,14 @@ export class ExitQueue extends BaseContract {
 
     maxPerEpoch(overrides?: CallOverrides): Promise<BigNumber>;
 
+    migrate(
+      exiter: string,
+      epochs: BigNumberish[],
+      length: BigNumberish,
+      newExitQueue: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     nextUnallocatedEpoch(overrides?: CallOverrides): Promise<BigNumber>;
 
     owedTemple(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
@@ -661,6 +699,14 @@ export class ExitQueue extends BaseContract {
     maxPerAddress(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     maxPerEpoch(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    migrate(
+      exiter: string,
+      epochs: BigNumberish[],
+      length: BigNumberish,
+      newExitQueue: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
 
     nextUnallocatedEpoch(
       overrides?: CallOverrides

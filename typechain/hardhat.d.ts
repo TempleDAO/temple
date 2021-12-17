@@ -165,6 +165,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ExitQueue__factory>;
     getContractFactory(
+      name: "IExitQueue",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IExitQueue__factory>;
+    getContractFactory(
       name: "Faith",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Faith__factory>;
@@ -427,6 +431,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ExitQueue>;
+    getContractAt(
+      name: "IExitQueue",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IExitQueue>;
     getContractAt(
       name: "Faith",
       address: string,

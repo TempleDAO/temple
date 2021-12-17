@@ -8,6 +8,11 @@ import "./TempleERC20Token.sol";
 
 // import "hardhat/console.sol";
 
+// Assumption, any new unstake queue will have the same interface
+interface IExitQueue {
+    function join(address _exiter, uint256 _amount) external;
+}
+
 /**
  * How all exit of TEMPLE rewards are managed.
  */
@@ -169,8 +174,8 @@ contract ExitQueue is Ownable {
     /**
      * Withdraw internal per epoch
      */
-    function withdrawInternal(uint256 epoch, address sender) internal returns (uint256 amount) {
-        require(epoch < currentEpoch(), "Can only withdraw from past epochs");
+    function withdrawInternal(uint256 epoch, address sender, bool isMigration) internal returns (uint256 amount) {
+        require(epoch < currentEpoch() || isMigration, "Can only withdraw from past epochs");
 
         User storage user = userData[sender];
         amount = user.Exits[epoch];
@@ -189,11 +194,26 @@ contract ExitQueue is Ownable {
         uint256 totalAmount;
         for (uint i = 0; i < length; i++) {
             if (userData[msg.sender].Amount > 0) {
-                uint256 amount = withdrawInternal(epochs[i], msg.sender);
+                uint256 amount = withdrawInternal(epochs[i], msg.sender, false);
                 totalAmount += amount;
             } 
         }
         SafeERC20.safeTransfer(TEMPLE, msg.sender, totalAmount);
         emit Withdrawal(msg.sender, totalAmount);
+    }
+
+    /**
+     * Owner only, migrate users between exit queue implementations
+     */
+    function migrate(address exiter, uint256[] calldata epochs, uint256 length, IExitQueue newExitQueue) external onlyOwner {
+        uint256 totalAmount;
+        for (uint i = 0; i < length; i++) {
+            if (userData[exiter].Amount > 0) {
+                uint256 amount = withdrawInternal(epochs[i], exiter, true);
+                totalAmount += amount;
+            } 
+        }
+        SafeERC20.safeIncreaseAllowance(TEMPLE, address(newExitQueue), totalAmount);
+        newExitQueue.join(exiter, totalAmount);
     }
 }
