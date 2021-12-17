@@ -23,8 +23,8 @@ interface AmmIncentivisorInterface extends ethers.utils.Interface {
   functions: {
     "SetStakeAndLockMultiplier(uint256)": FunctionFragment;
     "buyTheDip(uint256,uint256,uint256)": FunctionFragment;
+    "buyTheDipIsActive()": FunctionFragment;
     "buyTheDipMultiplier()": FunctionFragment;
-    "buyTheDipStakeAndLock(uint256,uint256,uint256)": FunctionFragment;
     "faith()": FunctionFragment;
     "numBlocksForUnlockIncentive()": FunctionFragment;
     "ogTempleLocked(address)": FunctionFragment;
@@ -61,12 +61,12 @@ interface AmmIncentivisorInterface extends ethers.utils.Interface {
     values: [BigNumberish, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "buyTheDipMultiplier",
+    functionFragment: "buyTheDipIsActive",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "buyTheDipStakeAndLock",
-    values: [BigNumberish, BigNumberish, BigNumberish]
+    functionFragment: "buyTheDipMultiplier",
+    values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "faith", values?: undefined): string;
   encodeFunctionData(
@@ -142,11 +142,11 @@ interface AmmIncentivisorInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "buyTheDip", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "buyTheDipMultiplier",
+    functionFragment: "buyTheDipIsActive",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "buyTheDipStakeAndLock",
+    functionFragment: "buyTheDipMultiplier",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "faith", data: BytesLike): Result;
@@ -218,24 +218,24 @@ interface AmmIncentivisorInterface extends ethers.utils.Interface {
   ): Result;
 
   events: {
-    "BuyTheDipComplete(address,uint256,uint256)": EventFragment;
+    "BuyTheDipComplete(address,uint256,uint256,uint256,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
     "Paused(address)": EventFragment;
-    "StakeAndLockComplete(address,uint256,uint256,uint256,uint256)": EventFragment;
     "Unpaused(address)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "BuyTheDipComplete"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Paused"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "StakeAndLockComplete"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Unpaused"): EventFragment;
 }
 
 export type BuyTheDipCompleteEvent = TypedEvent<
-  [string, BigNumber, BigNumber] & {
-    buyer: string;
+  [string, BigNumber, BigNumber, BigNumber, BigNumber] & {
+    staker: string;
     boughtTemple: BigNumber;
+    bonusTemple: BigNumber;
+    mintedOGTemple: BigNumber;
     faithGranted: BigNumber;
   }
 >;
@@ -245,16 +245,6 @@ export type OwnershipTransferredEvent = TypedEvent<
 >;
 
 export type PausedEvent = TypedEvent<[string] & { account: string }>;
-
-export type StakeAndLockCompleteEvent = TypedEvent<
-  [string, BigNumber, BigNumber, BigNumber, BigNumber] & {
-    staker: string;
-    boughtTemple: BigNumber;
-    bonusTemple: BigNumber;
-    mintedOGTemple: BigNumber;
-    faithGranted: BigNumber;
-  }
->;
 
 export type UnpausedEvent = TypedEvent<[string] & { account: string }>;
 
@@ -314,14 +304,9 @@ export class AmmIncentivisor extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    buyTheDipMultiplier(overrides?: CallOverrides): Promise<[BigNumber]>;
+    buyTheDipIsActive(overrides?: CallOverrides): Promise<[boolean]>;
 
-    buyTheDipStakeAndLock(
-      amountStablec: BigNumberish,
-      templeOutMin: BigNumberish,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
+    buyTheDipMultiplier(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     faith(overrides?: CallOverrides): Promise<[string]>;
 
@@ -428,14 +413,9 @@ export class AmmIncentivisor extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  buyTheDipMultiplier(overrides?: CallOverrides): Promise<BigNumber>;
+  buyTheDipIsActive(overrides?: CallOverrides): Promise<boolean>;
 
-  buyTheDipStakeAndLock(
-    amountStablec: BigNumberish,
-    templeOutMin: BigNumberish,
-    deadline: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
+  buyTheDipMultiplier(overrides?: CallOverrides): Promise<BigNumber>;
 
   faith(overrides?: CallOverrides): Promise<string>;
 
@@ -540,14 +520,9 @@ export class AmmIncentivisor extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    buyTheDipMultiplier(overrides?: CallOverrides): Promise<BigNumber>;
+    buyTheDipIsActive(overrides?: CallOverrides): Promise<boolean>;
 
-    buyTheDipStakeAndLock(
-      amountStablec: BigNumberish,
-      templeOutMin: BigNumberish,
-      deadline: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    buyTheDipMultiplier(overrides?: CallOverrides): Promise<BigNumber>;
 
     faith(overrides?: CallOverrides): Promise<string>;
 
@@ -630,22 +605,38 @@ export class AmmIncentivisor extends BaseContract {
   };
 
   filters: {
-    "BuyTheDipComplete(address,uint256,uint256)"(
-      buyer?: null,
+    "BuyTheDipComplete(address,uint256,uint256,uint256,uint256)"(
+      staker?: null,
       boughtTemple?: null,
+      bonusTemple?: null,
+      mintedOGTemple?: null,
       faithGranted?: null
     ): TypedEventFilter<
-      [string, BigNumber, BigNumber],
-      { buyer: string; boughtTemple: BigNumber; faithGranted: BigNumber }
+      [string, BigNumber, BigNumber, BigNumber, BigNumber],
+      {
+        staker: string;
+        boughtTemple: BigNumber;
+        bonusTemple: BigNumber;
+        mintedOGTemple: BigNumber;
+        faithGranted: BigNumber;
+      }
     >;
 
     BuyTheDipComplete(
-      buyer?: null,
+      staker?: null,
       boughtTemple?: null,
+      bonusTemple?: null,
+      mintedOGTemple?: null,
       faithGranted?: null
     ): TypedEventFilter<
-      [string, BigNumber, BigNumber],
-      { buyer: string; boughtTemple: BigNumber; faithGranted: BigNumber }
+      [string, BigNumber, BigNumber, BigNumber, BigNumber],
+      {
+        staker: string;
+        boughtTemple: BigNumber;
+        bonusTemple: BigNumber;
+        mintedOGTemple: BigNumber;
+        faithGranted: BigNumber;
+      }
     >;
 
     "OwnershipTransferred(address,address)"(
@@ -670,40 +661,6 @@ export class AmmIncentivisor extends BaseContract {
 
     Paused(account?: null): TypedEventFilter<[string], { account: string }>;
 
-    "StakeAndLockComplete(address,uint256,uint256,uint256,uint256)"(
-      staker?: null,
-      boughtTemple?: null,
-      bonusTemple?: null,
-      mintedOGTemple?: null,
-      faithGranted?: null
-    ): TypedEventFilter<
-      [string, BigNumber, BigNumber, BigNumber, BigNumber],
-      {
-        staker: string;
-        boughtTemple: BigNumber;
-        bonusTemple: BigNumber;
-        mintedOGTemple: BigNumber;
-        faithGranted: BigNumber;
-      }
-    >;
-
-    StakeAndLockComplete(
-      staker?: null,
-      boughtTemple?: null,
-      bonusTemple?: null,
-      mintedOGTemple?: null,
-      faithGranted?: null
-    ): TypedEventFilter<
-      [string, BigNumber, BigNumber, BigNumber, BigNumber],
-      {
-        staker: string;
-        boughtTemple: BigNumber;
-        bonusTemple: BigNumber;
-        mintedOGTemple: BigNumber;
-        faithGranted: BigNumber;
-      }
-    >;
-
     "Unpaused(address)"(
       account?: null
     ): TypedEventFilter<[string], { account: string }>;
@@ -724,14 +681,9 @@ export class AmmIncentivisor extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    buyTheDipMultiplier(overrides?: CallOverrides): Promise<BigNumber>;
+    buyTheDipIsActive(overrides?: CallOverrides): Promise<BigNumber>;
 
-    buyTheDipStakeAndLock(
-      amountStablec: BigNumberish,
-      templeOutMin: BigNumberish,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
+    buyTheDipMultiplier(overrides?: CallOverrides): Promise<BigNumber>;
 
     faith(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -829,15 +781,10 @@ export class AmmIncentivisor extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    buyTheDipIsActive(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     buyTheDipMultiplier(
       overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    buyTheDipStakeAndLock(
-      amountStablec: BigNumberish,
-      templeOutMin: BigNumberish,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     faith(overrides?: CallOverrides): Promise<PopulatedTransaction>;

@@ -19,7 +19,6 @@ describe("AMM", async () => {
     let owner: Signer;
     let alan: Signer;
     let ben: Signer
-    let carol: Signer
     let pair: TempleUniswapV2Pair;
     let templeRouter: TempleFraxAMMRouter;
     let uniswapFactory: UniswapV2Factory;
@@ -30,7 +29,7 @@ describe("AMM", async () => {
     const expiryDate = (): number =>  Math.floor(Date.now() / 1000) + 900;
    
     beforeEach(async () => {
-      [owner, alan, ben, carol] = await ethers.getSigners();
+      [owner, alan, ben] = await ethers.getSigners();
 
       templeToken = await new TempleERC20Token__factory(owner).deploy();
       fraxToken = await new FakeERC20__factory(owner).deploy("STABLEC", "STABLEC");
@@ -85,6 +84,7 @@ describe("AMM", async () => {
     })
 
     describe("Buy", async() => {
+      
       it("Below dynamic threshold should be same as AMM buy", async() => {
         // confirm price is below dynamic threshold (test case pre-condition)
         const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
@@ -325,43 +325,101 @@ describe("AMM", async () => {
       }
     })
 
-    it("Threshold Decay", async() => {
-        const [dtpFraxOld, dtpTempleOld] = (await templeRouter.dynamicThresholdPriceWithDecay()).map(v => v.toNumber());
+    describe("Dynamic Threshold", async () => {
+      beforeEach(async () => {
+        // setup temple router so dtp is < price for DTP checks
+        templeRouter = await new TempleFraxAMMRouter__factory(owner).deploy(
+          pair.address,
+          templeToken.address,
+          fraxToken.address,
+          treasury.address,
+          treasury.address, // for testing, make the earning account treasury
+          {frax: 100000, temple: 100010},
+          1, /* threshold decay per block */
+          {frax: 1000000, temple: 1000000},
+          {frax: 1000000, temple: 100000},
+        );
+
+        await pair.setRouter(templeRouter.address);
+        await templeToken.addMinter(templeRouter.address);
+
+        await templeToken.increaseAllowance(templeRouter.address, toAtto(10000000));
+        await fraxToken.increaseAllowance(templeRouter.address, toAtto(10000000))
+
+        await templeRouter.toggleOpenAccess();
+      });
+
+      it("Threshold only decays when price is above dynamic threshold", async() => {
+        const [dtpFraxOld, dtpTempleOld] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
+
+        // preconditions
+        expect(await templeRouter.priceCrossedBelowDynamicThresholdBlock()).eq(0);
+        expect(dtpFraxOld/dtpTempleOld).lt(rFrax/rTemple);
+
+        await mineNBlocks(2);
+        const [dtpFraxNew, dtpTempleNew] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+
+        // new threshold should be the same as the old threshold while the price hasn't crossed.
+        expect(dtpFraxNew/dtpTempleNew).approximately(dtpFraxOld/dtpTempleOld, 1e-5);
+      })
+
+      it("Threshold starts decaying as soon as price drops below the dynamic threshold", async() => {
+        await templeRouter.setDynamicThresholdDecayPerBlock(toAtto(100));
+
+        const [dtpFraxOld, dtpTempleOld] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
+
+        // preconditions
+        expect(dtpFraxOld/dtpTempleOld).lt(rFrax/rTemple);
+        expect(await templeRouter.priceCrossedBelowDynamicThresholdBlock()).eq(0);
+
+        // sell some temple
+        await templeRouter.swapExactTempleForFrax(toAtto(1000000), 1, await alan.getAddress(), expiryDate());
+
+        // Watch dynamic threshold drop
+        expect(await templeRouter.priceCrossedBelowDynamicThresholdBlock()).gt(0);
         await mineNBlocks(1);
-        const [dtpFraxNew, dtpTempleNew] = (await templeRouter.dynamicThresholdPriceWithDecay()).map(v => v.toNumber());
+        const [dtpFraxNew1, dtpTempleNew1] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        expect(dtpFraxNew1/dtpTempleNew1).lt(dtpFraxOld/dtpTempleOld);
 
-        // new threshold should be less than the old threshold, that is, the threshold is dropping
-        expect(dtpFraxNew/dtpTempleNew).lt(dtpFraxOld/dtpTempleOld);
+        await mineNBlocks(2);
+        const [dtpFraxNew2, dtpTempleNew2] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        expect(dtpFraxNew2/dtpTempleNew2).lt(dtpFraxNew1/dtpTempleNew1);
+      });
+
+      it("Threshold stops decaying when prices crosses above dynamic threshold", async() => {
+        await templeRouter.setDynamicThresholdDecayPerBlock(toAtto(100));
+
+        const [dtpFraxOld, dtpTempleOld] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
+
+        // preconditions
+        expect(dtpFraxOld/dtpTempleOld).lt(rFrax/rTemple);
+        expect(await templeRouter.priceCrossedBelowDynamicThresholdBlock()).eq(0);
+
+        // sell some temple
+        await templeRouter.swapExactTempleForFrax(toAtto(1000000), 1, await alan.getAddress(), expiryDate());
+
+        // Watch dynamic threshold drop
+        expect(await templeRouter.priceCrossedBelowDynamicThresholdBlock()).gt(0);
+        await mineNBlocks(1);
+        const [dtpFraxNew1, dtpTempleNew1] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        expect(dtpFraxNew1/dtpTempleNew1).lt(dtpFraxOld/dtpTempleOld);
+
+        await mineNBlocks(2);
+        const [dtpFraxNew2, dtpTempleNew2] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        expect(dtpFraxNew2/dtpTempleNew2).lt(dtpFraxNew1/dtpTempleNew1);
+
+        // Buy back up dyanmic threshold should stay steady
+        await templeRouter.swapExactFraxForTemple(toAtto(1100000), 1, await alan.getAddress(), expiryDate());
+        const [dtpFraxNew3, dtpTempleNew3] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+
+        await mineNBlocks(3);
+        const [dtpFraxNew4, dtpTempleNew4] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        expect(dtpFraxNew3/dtpTempleNew3).approximately(dtpFraxNew4/dtpTempleNew4, 1e-5);
+      });
     })
-
-    // it("pair contract", async () => {
-    //     expect(await pairContract.token0()).to.eq(TEMPLE.address)
-    //     expect(await pairContract.token1()).to.eq(STABLEC.address)
-    //     expect(await pairContract.owner()).to.eq(await owner.getAddress())
-    // })
-  
-    // it("buy above target price", async () => {
-
-    //     await TEMPLE.approve(templeRouter.address, toAtto(10000))
-    //     await STABLEC.approve(templeRouter.address, toAtto(60000))
-    //     await templeRouter.addLiquidity(toAtto(10000), toAtto(60000), toAtto(10000), toAtto(60000), await owner.getAddress(), expiryDate);
-
-    //     await STABLEC.approve(templeRouter.address, toAtto(1000))
-    //     await templeRouter.buyTemple(toAtto(1000), toAtto(160), await recipient.getAddress(), expiryDate)
-
-    //     console.log(fromAtto(await TEMPLE.balanceOf(await recipient.getAddress())))
-
-    // });
-
-    //   
-    // it("buy in range", async () => {
-
-  
-    // });
-
-    // it("sell below target", async () => {
-  
-    // });
 
     describe('Contract Management / ACL', async () => {
       const ONLY_OWNER_ERROR = /Ownable: caller is not the owner/;
@@ -537,9 +595,7 @@ describe("AMM", async () => {
     })
 
     describe("AMM Incenstivisor", async() => {
-
       beforeEach(async () => {
-
         faith = await new Faith__factory(owner).deploy();
         staking = await new TempleStaking__factory(owner).deploy(
             templeToken.address,
@@ -568,84 +624,64 @@ describe("AMM", async () => {
 
         await faith.addManager(ammIncentivisor.address)
         await templeToken.mint(ammIncentivisor.address, toAtto(1000000)); // seed contract with bonus temple
-      })
+    })
 
     describe("Incentive active", async() => {
+      beforeEach(async () => {
 
-          beforeEach(async () => {
+        // Price should start below the dynamic threshold
+        {
+          const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
+          const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
+          expect(rFrax / rTemple).lt(dtpFrax / dtpTemple);
+        }
 
-            // Price should start below the dynamic threshold
-            {
-              const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
-              const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
-              expect(rFrax / rTemple).lt(dtpFrax / dtpTemple);
-            }
+        // Until we pass dynamic threshold, buys are on AMM
+        await templeRouter.setInterpolateToPrice(1000000, 10000)
+        await templeRouter.setDynamicThresholdIncreasePct(9000)
+        await templeRouter.swapExactFraxForTemple(toAtto(100000), 1, await alan.getAddress(), expiryDate());
 
-            // Until we pass dynamic threshold, buys are on AMM
-            await templeRouter.setInterpolateToPrice(1000000, 10000)
-            await templeRouter.setDynamicThresholdIncreasePct(9000)
-            await templeRouter.swapExactFraxForTemple(toAtto(100000), 1, await alan.getAddress(), expiryDate());
+        // Expect price to be above dynamic threshold
+        const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
+        expect(rFrax / rTemple).gte(dtpFrax / dtpTemple);
 
-            // Expect price to be above dynamic threshold
-            const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
-            const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
-            expect(rFrax / rTemple).gte(dtpFrax / dtpTemple);
+        expect(await templeRouter.priceCrossedBelowDynamicThresholdBlock()).to.eq(0)
 
-            expect(await templeRouter.checkPointBlock()).to.eq(0)
-
-             // First, sell enough temple to bring price below threshold
-            await templeRouter.swapExactTempleForFrax(toAtto(9000), 1, await owner.getAddress(), expiryDate());
-             {
-              const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
-              const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
-               expect(rFrax / rTemple).lte(dtpFrax / dtpTemple);
-             }
-             expect(await templeRouter.checkPointBlock()).to.eq(await ethers.provider.getBlockNumber())
-          })
-
-          it("buy the dip stack and lock", async() => {
-
-            let amountIn = toAtto(10000)
-            let quoted = await templeRouter.swapExactFraxForTempleQuote(amountIn)
-            let templeAmoutOut = fromAtto(quoted[2]) + fromAtto(quoted[3])
-            await fraxToken.connect(owner).increaseAllowance(ammIncentivisor.address, amountIn);
-
-            await shouldThrow(ammIncentivisor.connect(owner).buyTheDipStakeAndLock(amountIn, 1, expiryDate()), /AMM Incentivizor: Not Active/);
-
-            await mineNBlocks(6);
-            await ammIncentivisor.connect(owner).buyTheDipStakeAndLock(amountIn, 1, expiryDate());
-
-           const event = await ammIncentivisor.queryFilter(ammIncentivisor.filters.StakeAndLockComplete())
-           const stakeEvent = await staking.queryFilter(staking.filters.StakeCompleted())
-           
-           let computedBonusTemple = 21.71
-           expect(fromAtto(event[0].args.bonusTemple)).approximately(computedBonusTemple, 1) // Computed off-chain
-           expect(fromAtto(event[0].args.faithGranted)).approximately(templeAmoutOut * 1.5, 1);
-           let amountOgLocked = await ammIncentivisor.ogTempleLocked(await owner.getAddress())
-           expect(event[0].args.mintedOGTemple).eq(amountOgLocked.amount)
-           expect(event[0].args.staker).eq(await owner.getAddress())
-           expect(fromAtto(stakeEvent[0].args._amount)).approximately( templeAmoutOut+ computedBonusTemple, 1)
-            
-          })
-
-          it("buy the dip only", async() => {
-
-            let amountIn = toAtto(10000)
-            let quoted = await templeRouter.swapExactFraxForTempleQuote(amountIn)
-            let templeAmoutOut = fromAtto(quoted[2]) + fromAtto(quoted[3])
-            await fraxToken.connect(owner).increaseAllowance(ammIncentivisor.address, amountIn);
-            await shouldThrow(ammIncentivisor.connect(owner).buyTheDip(amountIn, 1, expiryDate()), /AMM Incentivizor: Not Active/);
-
-            await mineNBlocks(6);
-            await ammIncentivisor.connect(owner).buyTheDip(amountIn, 1, expiryDate());
-
-            const event = await ammIncentivisor.queryFilter(ammIncentivisor.filters.BuyTheDipComplete())
-            expect(fromAtto(event[0].args.boughtTemple)).eq(templeAmoutOut);
-            expect(fromAtto(event[0].args.faithGranted)).approximately(templeAmoutOut * 1.2, 1);
-            expect(event[0].args.buyer).eq(await owner.getAddress())
-            
-          })
+          // First, sell enough temple to bring price below threshold
+        await templeRouter.swapExactTempleForFrax(toAtto(9000), 1, await owner.getAddress(), expiryDate());
+          {
+          const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+          const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
+            expect(rFrax / rTemple).lte(dtpFrax / dtpTemple);
+          }
+          expect(await templeRouter.priceCrossedBelowDynamicThresholdBlock()).to.eq(await ethers.provider.getBlockNumber())
       })
 
+      xit("buy the dip stack", async() => {
+
+        let amountIn = toAtto(10000)
+        let quoted = await templeRouter.swapExactFraxForTempleQuote(amountIn)
+        let templeAmoutOut = fromAtto(quoted[2]) + fromAtto(quoted[3])
+        await fraxToken.connect(owner).increaseAllowance(ammIncentivisor.address, amountIn);
+
+        await shouldThrow(ammIncentivisor.connect(owner).buyTheDip(amountIn, 1, expiryDate()), /AMM Incentivizor: Not Active/);
+
+        await mineNBlocks(6);
+        await ammIncentivisor.connect(owner).buyTheDip(amountIn, 1, expiryDate());
+
+        const event = await ammIncentivisor.queryFilter(ammIncentivisor.filters.BuyTheDipComplete())
+        const stakeEvent = await staking.queryFilter(staking.filters.StakeCompleted())
+        
+        let computedBonusTemple = 21.71
+        expect(fromAtto(event[0].args.bonusTemple)).approximately(computedBonusTemple, 1) // Computed off-chain
+        expect(fromAtto(event[0].args.faithGranted)).approximately(templeAmoutOut * 1.5, 1);
+        let amountOgLocked = await ammIncentivisor.ogTempleLocked(await owner.getAddress())
+        expect(event[0].args.mintedOGTemple).eq(amountOgLocked.amount)
+        expect(event[0].args.staker).eq(await owner.getAddress())
+        expect(fromAtto(stakeEvent[0].args._amount)).approximately( templeAmoutOut+ computedBonusTemple, 1)
+        
+      })
     })
+  })
 })

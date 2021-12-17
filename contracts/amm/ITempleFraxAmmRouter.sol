@@ -8,7 +8,7 @@ interface ITempleFraxAMMRouter {
 
     function dynamicThresholdDecayPerBlock() external returns(uint);
 
-    function checkPointBlock() external returns(uint blockNumber);
+    function priceCrossedBelowDynamicThresholdBlock() external view returns(uint blockNumber);
     
     function addLiquidity(
         uint amountADesired,
