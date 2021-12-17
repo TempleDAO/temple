@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { FakeERC20, FakeERC20__factory, TempleERC20Token, TempleERC20Token__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTreasury, TempleTreasury__factory, TempleUniswapV2Pair, TempleUniswapV2Pair__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02NoEth, UniswapV2Router02NoEth__factory } from "../typechain";
 
 import { BigNumber, Signer } from "ethers";
-import { mineNBlocks, toAtto, shouldThrow } from "./helpers";
+import { mineNBlocks, toAtto, shouldThrow, blockTimestamp } from "./helpers";
 
 import { fromAtto } from "../scripts/deploys/helpers";
 
@@ -190,6 +190,12 @@ describe("AMM", async () => {
         expect(fmtPricePair(await pair.getReserves()))
           .eql([rTemple, rFrax]);
       })
+
+      it("AMM buy with deadline in the past should fail", async() => {
+        const beforeTS = await blockTimestamp() - 1
+        const EXPIRED_ERROR = /.*TempleFraxAMMRouter: EXPIRED/
+        await shouldThrow(templeRouter.swapExactFraxForTemple(toAtto(1000), 1, await alan.getAddress(), beforeTS), EXPIRED_ERROR);
+      })
     });
 
     describe("Sell", async() => {
@@ -234,6 +240,12 @@ describe("AMM", async () => {
         await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await alan.getAddress(), expiryDate());
         expect(fmtPricePair(await pair.getReserves()))
           .eql(fmtPricePair(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
+      })
+
+      it("AMM sell with deadline in the past should fail", async() => {
+        const beforeTS = await blockTimestamp() - 1
+        const EXPIRED_ERROR = /.*TempleFraxAMMRouter: EXPIRED/
+        await shouldThrow(templeRouter.swapExactTempleForFrax(toAtto(1000), 1, await alan.getAddress(), beforeTS), EXPIRED_ERROR);
       })
     });
 
