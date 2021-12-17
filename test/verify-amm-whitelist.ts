@@ -45,6 +45,7 @@ describe("Verify Quest for AMM whitelist Complete tests", async () => {
       templeToken.address,
       fraxToken.address,
       treasury.address,
+      treasury.address, // for testing, make the earning account treasury
       {frax: 1000000, temple: 4000000},
       100000, /* threshold decay per block */
       {frax: 1000000, temple: 1000000},
