@@ -1,10 +1,19 @@
-import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import React, {
+  Dispatch,
+  SetStateAction,
+  useLayoutEffect,
+  useState,
+} from 'react';
 import styled, { keyframes } from 'styled-components';
+import RitualsPosters from 'components/Pages/RitualsMoviePoster';
+import BackButton from 'components/Button/BackButton';
 import foyerImage from 'assets/images/foyer.png';
+import triangle from 'assets/images/triangle.svg';
 import midGlow from 'assets/images/mid-glow.png';
 import leftGlow from 'assets/images/left-glow.png';
 import rightGlow from 'assets/images/right-glow.png';
 import { getBgImgDimensions } from 'utils/imageSize';
+import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 
 type BgDimension = {
   width: number;
@@ -22,7 +31,7 @@ enum Pages {
   Right,
 }
 
-const FoyerPage = () => {
+const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
   const [visiblePage, setVisiblePage] = useState(Pages.Foyer);
 
   // Used to determine door images size and position
@@ -30,6 +39,8 @@ const FoyerPage = () => {
     BgDimension | undefined,
     Dispatch<SetStateAction<BgDimension | undefined>>
   ] = useState();
+
+  const { back, changePageTo } = routingHelper;
 
   // Update bgDimensions state
   function handleResize() {
@@ -42,9 +53,10 @@ const FoyerPage = () => {
   }
 
   // Set event listeners for load and resize to handleResize()
-  useEffect(() => {
+  useLayoutEffect(() => {
     window.onload = () => handleResize();
     window.addEventListener('resize', () => handleResize());
+    setTimeout(() => handleResize(), 200);
     return window.removeEventListener('resize', () => handleResize());
   }, []);
 
@@ -57,7 +69,7 @@ const FoyerPage = () => {
               <DoorGlow
                 src={leftGlow}
                 title="Rituals"
-                onClick={() => setVisiblePage(Pages.Left)}
+                onClick={() => changePageTo(RitualsPosters)}
                 style={{
                   transform: `scale(${0.965 * bgDimensions.scaleW}%)`,
                   bottom: `${0.234 * bgDimensions.height}px`,
@@ -104,6 +116,7 @@ const FoyerPage = () => {
               />
             </>
           )}
+          <BackButton src={triangle} width={112} height={112} onClick={back} />
         </Background>
       ) : visiblePage == Pages.Left ? (
         <p>Left</p>
@@ -156,5 +169,4 @@ const DoorGlow = styled.img`
   }
   animation: ${flicker} 3s infinite alternate ease-out;
 `;
-
 export default FoyerPage;

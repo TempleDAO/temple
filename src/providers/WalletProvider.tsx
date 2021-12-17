@@ -14,7 +14,6 @@ import {
   LockedOGTemple__factory,
   OpeningCeremony__factory,
   TempleTreasury__factory,
-  VerifyQuest__factory,
   TempleCashback__factory,
   AMMWhitelist__factory,
 } from 'types/typechain';
