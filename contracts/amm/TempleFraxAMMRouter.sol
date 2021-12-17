@@ -1,4 +1,5 @@
 pragma solidity ^0.8.4;
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
