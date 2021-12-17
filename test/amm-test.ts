@@ -56,6 +56,7 @@ describe("AMM", async () => {
         templeToken.address,
         fraxToken.address,
         treasury.address,
+        treasury.address, // for testing, make the earning account treasury
         {frax: 100000, temple: 9000},
         1, /* threshold decay per block */
         {frax: 1000000, temple: 1000000},

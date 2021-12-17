@@ -30,6 +30,9 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     IERC20 public immutable fraxToken;
     ITempleTreasury public immutable templeTreasury;
 
+    // Address all frax earned via protocol mint is sent
+    address protocolMintEarningsAccount;
+
     struct Price {
         uint frax;
         uint temple;
@@ -72,6 +75,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
             TempleERC20Token _templeToken,
             IERC20 _fraxToken,
             ITempleTreasury _templeTreasury,
+            address _protocolMintEarningsAccount,
             Price memory _dynamicThresholdPrice,
             uint256 _dynamicThresholdDecayPerBlock,
             Price memory _interpolateFromPrice,
@@ -82,6 +86,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         templeToken = _templeToken;
         fraxToken = _fraxToken;
         templeTreasury = _templeTreasury;
+        protocolMintEarningsAccount = _protocolMintEarningsAccount;
         dynamicThresholdPrice = _dynamicThresholdPrice;
         dynamicThresholdDecayPerBlock = _dynamicThresholdDecayPerBlock;
         interpolateFromPrice = _interpolateFromPrice;
@@ -199,7 +204,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
 
         // Mint on protocol
         if (amountInProtocol > 0) {
-            SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(this), amountInAMM); // TODO(butlerji): Where should this frax go?
+            SafeERC20.safeTransferFrom(fraxToken, msg.sender, protocolMintEarningsAccount, amountInAMM);
             templeToken.mint(to, amountOutAMM);
 
             // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant

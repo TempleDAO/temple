@@ -52,6 +52,7 @@ describe("AMM Ops", async () => {
       templeToken.address,
       fraxToken.address,
       treasury.address,
+      treasury.address, // for testing, on protocol mint is sent to treaury
       {frax: 100000, temple: 9000},
       1, /* threshold decay per block */
       {frax: 1000000, temple: 1000000},
