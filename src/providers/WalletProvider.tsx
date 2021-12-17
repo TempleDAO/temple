@@ -1,6 +1,6 @@
 import { JsonRpcProvider, JsonRpcSigner } from '@ethersproject/providers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, BytesLike, ContractTransaction, ethers } from 'ethers';
 import React, {
   createContext,
   PropsWithChildren,
@@ -16,6 +16,7 @@ import {
   TempleTreasury__factory,
   VerifyQuest__factory,
   TempleCashback__factory,
+  AMMWhitelist__factory,
 } from 'types/typechain';
 import { ClaimType } from 'enums/claim-type';
 import { fromAtto, toAtto } from 'utils/bigNumber';
@@ -120,6 +121,8 @@ interface WalletState {
   inviteFriend(sandalWoodToken: string, ritualKind: RitualKind): void;
 
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
+
+  verifyAMMWhitelist(signature: string): Promise<ContractTransaction | void>;
 }
 
 const INITIAL_STATE: WalletState = {
@@ -158,6 +161,7 @@ const INITIAL_STATE: WalletState = {
   verifyQuest: noop,
   inviteFriend: noop,
   claim: asyncNoop,
+  verifyAMMWhitelist: asyncNoop,
   signer: null,
 };
 
@@ -170,6 +174,7 @@ const EXIT_QUEUE_ADDRESS = ENV_VARS.VITE_PUBLIC_EXIT_QUEUE_ADDRESS;
 const OPENING_CEREMONY_ADDRESS = ENV_VARS.VITE_PUBLIC_OPENING_CEREMONY_ADDRESS;
 const VERIFY_QUEST_ADDRESS = ENV_VARS.VITE_PUBLIC_VERIFY_QUEST_ADDRESS;
 const TEMPLE_CASHBACK_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_CASHBACK_ADDRESS;
+const AMM_WHITELIST_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_ROUTER_WHITELIST;
 
 if (
   STABLE_COIN_ADDRESS === undefined ||
@@ -782,6 +787,25 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
+  const verifyAMMWhitelist = async (
+    signature: string
+  ): Promise<ethers.ContractTransaction | void> => {
+    if (walletAddress && signerState) {
+      const AMMWhitelist = new AMMWhitelist__factory()
+        .attach(AMM_WHITELIST_ADDRESS)
+        .connect(signerState);
+
+      try {
+        const sig = await ethers.utils.splitSignature(signature.trim());
+        return await AMMWhitelist.verify(sig.v, sig.r, sig.s);
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      console.error('Missing wallet address');
+    }
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -805,6 +829,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         clearRitual,
         verifyQuest,
         inviteFriend,
+        verifyAMMWhitelist,
         maxInvitesPerVerifiedUser,
         claim,
         signer: signerState,

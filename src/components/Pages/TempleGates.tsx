@@ -1,36 +1,75 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import styled, { css } from 'styled-components';
-import { Flex } from 'components/Layout/Flex';
 import withWallet from 'hoc/withWallet';
 import gatesImage from 'assets/images/EnterTheGates.png';
 import { useWallet } from 'providers/WalletProvider';
-import { AMMWhitelist__factory } from 'types/typechain';
-import { Input } from 'components/Input/Input';
-import { Button } from 'components/Button/Button';
+import { TempleFraxAMMRouter__factory } from 'types/typechain';
 
 const ENV_VARS = import.meta.env;
-const AMM_WHITELIST_ADDRESS = ENV_VARS.VITE_PUBLIC_AMM_WHITELIST_ADDRESS;
+const TEMPLE_V2_ROUTER_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS;
+
+enum Status {
+  Start = 'ENTER',
+  Loading = 'WAIT',
+  Failed = 'DENIED',
+  Complete = 'WELCOME',
+}
 
 const TempleGatesPage = () => {
   const [key, setKey]: [string, Dispatch<SetStateAction<string>>] =
     useState('');
+  const { wallet, signer, verifyAMMWhitelist } = useWallet();
+  const [status, setStatus]: [
+    Status | undefined,
+    Dispatch<SetStateAction<Status | undefined>>
+  ] = useState();
+
+  // Check if user is whitelisted already
+  const isWhitelisted = async () => {
+    if (wallet && signer) {
+      const fraxAMMRouter = new TempleFraxAMMRouter__factory()
+        .attach(TEMPLE_V2_ROUTER_ADDRESS)
+        .connect(signer);
+      const whitelisted = await fraxAMMRouter.allowed(wallet);
+      if (whitelisted) setStatus(Status.Complete);
+      else setStatus(Status.Start);
+    }
+  };
+  useEffect(() => {
+    isWhitelisted();
+  }, [wallet, signer]);
+
+  // Send signature to contract to be whitelisted
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStatus(Status.Loading);
+    const tx = await verifyAMMWhitelist(key);
+    if (!tx) {
+      setStatus(Status.Failed);
+      return;
+    }
+    const res = await tx.wait();
+    isWhitelisted();
+  };
 
   return (
-    <TempleGatesContainer>
-      <KeyForm
-        onSubmit={(e) => {
-          e.preventDefault();
-        }}
-      >
-        <KeyInput
-          placeholder="Sacred Key"
-          type="text"
-          onChange={(e) => setKey(e.target.value)}
-          value={key}
-        />
-        <EnterButton>ENTER</EnterButton>
-      </KeyForm>
-    </TempleGatesContainer>
+    <>
+      {status == Status.Complete ? (
+        <p>Welcome</p> // Load next page
+      ) : (
+        <TempleGatesContainer>
+          <KeyForm onSubmit={submit}>
+            <KeyInput
+              placeholder="Sacred Key"
+              type="text"
+              onChange={(e) => setKey(e.target.value)}
+              value={key}
+            />
+            <EnterButton>{status}</EnterButton>
+          </KeyForm>
+        </TempleGatesContainer>
+      )}
+    </>
   );
 };
 
@@ -49,9 +88,7 @@ const KeyForm = styled.form`
   display: flex;
 `;
 
-const KeyInput = styled.input.attrs({
-  placeholderTextColor: 'red',
-})`
+const KeyInput = styled.input`
   ${(props) => props.theme.typography.h4};
   background: ${(props) => props.theme.palette.brand25};
   border: none;
@@ -59,6 +96,7 @@ const KeyInput = styled.input.attrs({
   color: #d1c0a7;
   margin-right: 1rem;
   opacity: 1;
+  min-height: 3rem;
   padding: 0rem 0.5rem;
   text-align: center;
   width: 14rem;
