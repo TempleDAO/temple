@@ -26,8 +26,8 @@ interface AmmIncentivisorInterface extends ethers.utils.Interface {
     "buyTheDipIsActive()": FunctionFragment;
     "buyTheDipMultiplier()": FunctionFragment;
     "faith()": FunctionFragment;
+    "lockedOGTemple()": FunctionFragment;
     "numBlocksForUnlockIncentive()": FunctionFragment;
-    "ogTempleLocked(address)": FunctionFragment;
     "owner()": FunctionFragment;
     "pair()": FunctionFragment;
     "pause()": FunctionFragment;
@@ -45,8 +45,6 @@ interface AmmIncentivisorInterface extends ethers.utils.Interface {
     "templeToken()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
     "treasury()": FunctionFragment;
-    "unLock()": FunctionFragment;
-    "unLockFor(address)": FunctionFragment;
     "unlockDelaySeconds()": FunctionFragment;
     "unpause()": FunctionFragment;
     "withdrawBalance(address,address,uint256)": FunctionFragment;
@@ -70,12 +68,12 @@ interface AmmIncentivisorInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "faith", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "numBlocksForUnlockIncentive",
+    functionFragment: "lockedOGTemple",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "ogTempleLocked",
-    values: [string]
+    functionFragment: "numBlocksForUnlockIncentive",
+    values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "pair", values?: undefined): string;
@@ -124,8 +122,6 @@ interface AmmIncentivisorInterface extends ethers.utils.Interface {
     values: [string]
   ): string;
   encodeFunctionData(functionFragment: "treasury", values?: undefined): string;
-  encodeFunctionData(functionFragment: "unLock", values?: undefined): string;
-  encodeFunctionData(functionFragment: "unLockFor", values: [string]): string;
   encodeFunctionData(
     functionFragment: "unlockDelaySeconds",
     values?: undefined
@@ -151,11 +147,11 @@ interface AmmIncentivisorInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "faith", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "numBlocksForUnlockIncentive",
+    functionFragment: "lockedOGTemple",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "ogTempleLocked",
+    functionFragment: "numBlocksForUnlockIncentive",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
@@ -205,8 +201,6 @@ interface AmmIncentivisorInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "treasury", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "unLock", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "unLockFor", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "unlockDelaySeconds",
     data: BytesLike
@@ -310,19 +304,11 @@ export class AmmIncentivisor extends BaseContract {
 
     faith(overrides?: CallOverrides): Promise<[string]>;
 
+    lockedOGTemple(overrides?: CallOverrides): Promise<[string]>;
+
     numBlocksForUnlockIncentive(
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
-
-    ogTempleLocked(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, BigNumber] & {
-        amount: BigNumber;
-        lockedUntilTimestamp: BigNumber;
-      }
-    >;
 
     owner(overrides?: CallOverrides): Promise<[string]>;
 
@@ -378,15 +364,6 @@ export class AmmIncentivisor extends BaseContract {
 
     treasury(overrides?: CallOverrides): Promise<[string]>;
 
-    unLock(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    unLockFor(
-      account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
     unlockDelaySeconds(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     unpause(
@@ -419,17 +396,9 @@ export class AmmIncentivisor extends BaseContract {
 
   faith(overrides?: CallOverrides): Promise<string>;
 
-  numBlocksForUnlockIncentive(overrides?: CallOverrides): Promise<BigNumber>;
+  lockedOGTemple(overrides?: CallOverrides): Promise<string>;
 
-  ogTempleLocked(
-    arg0: string,
-    overrides?: CallOverrides
-  ): Promise<
-    [BigNumber, BigNumber] & {
-      amount: BigNumber;
-      lockedUntilTimestamp: BigNumber;
-    }
-  >;
+  numBlocksForUnlockIncentive(overrides?: CallOverrides): Promise<BigNumber>;
 
   owner(overrides?: CallOverrides): Promise<string>;
 
@@ -485,15 +454,6 @@ export class AmmIncentivisor extends BaseContract {
 
   treasury(overrides?: CallOverrides): Promise<string>;
 
-  unLock(
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  unLockFor(
-    account: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
   unlockDelaySeconds(overrides?: CallOverrides): Promise<BigNumber>;
 
   unpause(
@@ -526,17 +486,9 @@ export class AmmIncentivisor extends BaseContract {
 
     faith(overrides?: CallOverrides): Promise<string>;
 
-    numBlocksForUnlockIncentive(overrides?: CallOverrides): Promise<BigNumber>;
+    lockedOGTemple(overrides?: CallOverrides): Promise<string>;
 
-    ogTempleLocked(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, BigNumber] & {
-        amount: BigNumber;
-        lockedUntilTimestamp: BigNumber;
-      }
-    >;
+    numBlocksForUnlockIncentive(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<string>;
 
@@ -587,10 +539,6 @@ export class AmmIncentivisor extends BaseContract {
     ): Promise<void>;
 
     treasury(overrides?: CallOverrides): Promise<string>;
-
-    unLock(overrides?: CallOverrides): Promise<void>;
-
-    unLockFor(account: string, overrides?: CallOverrides): Promise<void>;
 
     unlockDelaySeconds(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -687,9 +635,9 @@ export class AmmIncentivisor extends BaseContract {
 
     faith(overrides?: CallOverrides): Promise<BigNumber>;
 
-    numBlocksForUnlockIncentive(overrides?: CallOverrides): Promise<BigNumber>;
+    lockedOGTemple(overrides?: CallOverrides): Promise<BigNumber>;
 
-    ogTempleLocked(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+    numBlocksForUnlockIncentive(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -745,15 +693,6 @@ export class AmmIncentivisor extends BaseContract {
 
     treasury(overrides?: CallOverrides): Promise<BigNumber>;
 
-    unLock(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    unLockFor(
-      account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
     unlockDelaySeconds(overrides?: CallOverrides): Promise<BigNumber>;
 
     unpause(
@@ -789,12 +728,9 @@ export class AmmIncentivisor extends BaseContract {
 
     faith(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    numBlocksForUnlockIncentive(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
+    lockedOGTemple(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    ogTempleLocked(
-      arg0: string,
+    numBlocksForUnlockIncentive(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -853,15 +789,6 @@ export class AmmIncentivisor extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     treasury(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    unLock(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    unLockFor(
-      account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
 
     unlockDelaySeconds(
       overrides?: CallOverrides

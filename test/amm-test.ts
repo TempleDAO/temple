@@ -1,7 +1,7 @@
 import { ethers, hardhatArguments } from "hardhat";
 import { expect } from "chai";
 
-import { FakeERC20, FakeERC20__factory, TempleERC20Token, TempleERC20Token__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTreasury, TempleTreasury__factory, TempleUniswapV2Pair, TempleUniswapV2Pair__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02NoEth, UniswapV2Router02NoEth__factory, AmmIncentivisor, AmmIncentivisor__factory, Faith, Faith__factory, TempleStaking, TempleStaking__factory, ISwapRouter } from "../typechain";
+import { FakeERC20, FakeERC20__factory, TempleERC20Token, TempleERC20Token__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTreasury, TempleTreasury__factory, TempleUniswapV2Pair, TempleUniswapV2Pair__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02NoEth, UniswapV2Router02NoEth__factory, AmmIncentivisor, AmmIncentivisor__factory, Faith, Faith__factory, TempleStaking, TempleStaking__factory, ISwapRouter, LockedOGTemple, LockedOGTemple__factory } from "../typechain";
 
 import { BigNumber, Signer } from "ethers";
 import { mineNBlocks, toAtto, shouldThrow, blockTimestamp, fromAtto } from "./helpers";
@@ -13,9 +13,7 @@ const fmtPricePair = (pair: [BigNumber, BigNumber, number?]): [number, number] =
 describe("AMM", async () => {
     let templeToken: TempleERC20Token;
     let fraxToken: FakeERC20;
-    let faith: Faith;
     let treasury: TempleTreasury;
-    let staking: TempleStaking;
     let owner: Signer;
     let alan: Signer;
     let ben: Signer
@@ -595,6 +593,10 @@ describe("AMM", async () => {
     })
 
     describe("AMM Incenstivisor", async() => {
+      let faith: Faith;
+      let staking: TempleStaking;
+      let lockedOGTemple: LockedOGTemple;
+
       beforeEach(async () => {
         faith = await new Faith__factory(owner).deploy();
         staking = await new TempleStaking__factory(owner).deploy(
@@ -606,6 +608,8 @@ describe("AMM", async () => {
 
         await staking.setEpy(7000, 1000000);
 
+        lockedOGTemple = await new LockedOGTemple__factory(owner).deploy(await staking.OG_TEMPLE());
+
         ammIncentivisor = await new AmmIncentivisor__factory(owner).deploy(
           fraxToken.address,
           faith.address,
@@ -613,6 +617,7 @@ describe("AMM", async () => {
           staking.address,
           templeRouter.address,
           uniswapPair.address,
+          lockedOGTemple.address,
           treasury.address,
         )
         await ammIncentivisor.SetStakeAndLockMultiplier(1500) // 1.5 multplier
@@ -658,7 +663,7 @@ describe("AMM", async () => {
           expect(await templeRouter.priceCrossedBelowDynamicThresholdBlock()).to.eq(await ethers.provider.getBlockNumber())
       })
 
-      xit("buy the dip stack", async() => {
+      it("buy the dip stack", async() => {
 
         let amountIn = toAtto(10000)
         let quoted = await templeRouter.swapExactFraxForTempleQuote(amountIn)
@@ -676,7 +681,7 @@ describe("AMM", async () => {
         let computedBonusTemple = 21.71
         expect(fromAtto(event[0].args.bonusTemple)).approximately(computedBonusTemple, 1) // Computed off-chain
         expect(fromAtto(event[0].args.faithGranted)).approximately(templeAmoutOut * 1.5, 1);
-        let amountOgLocked = await ammIncentivisor.ogTempleLocked(await owner.getAddress())
+        let amountOgLocked = await lockedOGTemple.ogTempleLocked(await owner.getAddress());
         expect(event[0].args.mintedOGTemple).eq(amountOgLocked.amount)
         expect(event[0].args.staker).eq(await owner.getAddress())
         expect(fromAtto(stakeEvent[0].args._amount)).approximately( templeAmoutOut+ computedBonusTemple, 1)

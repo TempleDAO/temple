@@ -8,8 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./TempleERC20Token.sol";
 import "./TempleTreasury.sol";
 import "./TempleStaking.sol";
-import "./LockedOGTemple.sol";
-import "./OpeningCeremony.sol";
+import "./deprecated/OpeningCeremony.sol";
 
 // USDC/USDT/DAI/ETH Zaps
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
