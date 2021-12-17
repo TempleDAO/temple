@@ -14,6 +14,7 @@ export type { IERC165 } from "./IERC165";
 export type { IUniswapV3SwapCallback } from "./IUniswapV3SwapCallback";
 export type { IQuoter } from "./IQuoter";
 export type { ISwapRouter } from "./ISwapRouter";
+export type { TempleFraxAMMRouter } from './TempleFraxAMMRouter'
 export type { AMMWhitelist } from './AMMWhitelist'
 export type { AutoHarvestKeeper } from "./AutoHarvestKeeper";
 export type { KeeperCompatibleInterface } from "./KeeperCompatibleInterface";
@@ -53,6 +54,7 @@ export { IERC165__factory } from "./factories/IERC165__factory";
 export { IUniswapV3SwapCallback__factory } from "./factories/IUniswapV3SwapCallback__factory";
 export { IQuoter__factory } from "./factories/IQuoter__factory";
 export { ISwapRouter__factory } from "./factories/ISwapRouter__factory";
+export { TempleFraxAMMRouter__factory } from './factories/TempleFraxAMMRouter__factory'
 export { AMMWhitelist__factory } from './factories/AMMWhitelist__factory'
 export { AutoHarvestKeeper__factory } from "./factories/AutoHarvestKeeper__factory";
 export { KeeperCompatibleInterface__factory } from "./factories/KeeperCompatibleInterface__factory";
