@@ -115,7 +115,7 @@ interface WalletState {
 
   clearRitual(ritualKind: RitualKind): void;
 
-  verifyQuest(sandalWoodToken: string, ritualKind: RitualKind): void;
+  //verifyQuest(sandalWoodToken: string, ritualKind: RitualKind): void;
 
   inviteFriend(sandalWoodToken: string, ritualKind: RitualKind): void;
 
@@ -157,7 +157,7 @@ const INITIAL_STATE: WalletState = {
   mintAndStake: noop,
   increaseAllowanceForRitual: noop,
   clearRitual: noop,
-  verifyQuest: noop,
+  //verifyQuest: noop,
   inviteFriend: noop,
   claim: asyncNoop,
   verifyAMMWhitelist: asyncNoop,
@@ -305,7 +305,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const verifyQuest = async (
+  /*const verifyQuest = async (
     sandalWoodToken: string,
     ritualKind: RitualKind
   ) => {
@@ -367,7 +367,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         );
       }
     }
-  };
+  };*/
 
   const inviteFriend = async (
     friendAddress: string,
@@ -826,7 +826,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         mintAndStake,
         increaseAllowanceForRitual,
         clearRitual,
-        verifyQuest,
+        //verifyQuest,
         inviteFriend,
         verifyAMMWhitelist,
         maxInvitesPerVerifiedUser,

@@ -116,7 +116,7 @@ const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
               />
             </>
           )}
-          <BackButton src={triangle} width={112} height={112} onClick={back} />
+          <BackButton width={112} height={112} onClick={back} />
         </Background>
       ) : visiblePage == Pages.Left ? (
         <p>Left</p>
