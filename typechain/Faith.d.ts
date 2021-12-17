@@ -21,25 +21,30 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface FaithInterface extends ethers.utils.Interface {
   functions: {
-    "addMinter(address)": FunctionFragment;
+    "addManager(address)": FunctionFragment;
     "balances(address)": FunctionFragment;
-    "mint(address,uint256)": FunctionFragment;
+    "gain(address,uint256)": FunctionFragment;
+    "loose(address,uint256)": FunctionFragment;
     "owner()": FunctionFragment;
-    "removeMinter(address)": FunctionFragment;
+    "removeManager(address)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "totalSupply()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
   };
 
-  encodeFunctionData(functionFragment: "addMinter", values: [string]): string;
+  encodeFunctionData(functionFragment: "addManager", values: [string]): string;
   encodeFunctionData(functionFragment: "balances", values: [string]): string;
   encodeFunctionData(
-    functionFragment: "mint",
+    functionFragment: "gain",
+    values: [string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "loose",
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "removeMinter",
+    functionFragment: "removeManager",
     values: [string]
   ): string;
   encodeFunctionData(
@@ -55,12 +60,13 @@ interface FaithInterface extends ethers.utils.Interface {
     values: [string]
   ): string;
 
-  decodeFunctionResult(functionFragment: "addMinter", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "addManager", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balances", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "gain", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "loose", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "removeMinter",
+    functionFragment: "removeManager",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -77,15 +83,21 @@ interface FaithInterface extends ethers.utils.Interface {
   ): Result;
 
   events: {
-    "Mint(address,uint256)": EventFragment;
+    "Gain(address,uint256)": EventFragment;
+    "Loose(address,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: "Mint"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Gain"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Loose"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
 }
 
-export type MintEvent = TypedEvent<
+export type GainEvent = TypedEvent<
+  [string, BigNumber] & { account: string; amount: BigNumber }
+>;
+
+export type LooseEvent = TypedEvent<
   [string, BigNumber] & { account: string; amount: BigNumber }
 >;
 
@@ -137,14 +149,20 @@ export class Faith extends BaseContract {
   interface: FaithInterface;
 
   functions: {
-    addMinter(
+    addManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     balances(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    mint(
+    gain(
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    loose(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -152,7 +170,7 @@ export class Faith extends BaseContract {
 
     owner(overrides?: CallOverrides): Promise<[string]>;
 
-    removeMinter(
+    removeManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -169,14 +187,20 @@ export class Faith extends BaseContract {
     ): Promise<ContractTransaction>;
   };
 
-  addMinter(
+  addManager(
     account: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   balances(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-  mint(
+  gain(
+    to: string,
+    amount: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  loose(
     to: string,
     amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -184,7 +208,7 @@ export class Faith extends BaseContract {
 
   owner(overrides?: CallOverrides): Promise<string>;
 
-  removeMinter(
+  removeManager(
     account: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -201,11 +225,17 @@ export class Faith extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    addMinter(account: string, overrides?: CallOverrides): Promise<void>;
+    addManager(account: string, overrides?: CallOverrides): Promise<void>;
 
     balances(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    mint(
+    gain(
+      to: string,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    loose(
       to: string,
       amount: BigNumberish,
       overrides?: CallOverrides
@@ -213,7 +243,7 @@ export class Faith extends BaseContract {
 
     owner(overrides?: CallOverrides): Promise<string>;
 
-    removeMinter(account: string, overrides?: CallOverrides): Promise<void>;
+    removeManager(account: string, overrides?: CallOverrides): Promise<void>;
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
@@ -226,7 +256,7 @@ export class Faith extends BaseContract {
   };
 
   filters: {
-    "Mint(address,uint256)"(
+    "Gain(address,uint256)"(
       account?: null,
       amount?: null
     ): TypedEventFilter<
@@ -234,7 +264,23 @@ export class Faith extends BaseContract {
       { account: string; amount: BigNumber }
     >;
 
-    Mint(
+    Gain(
+      account?: null,
+      amount?: null
+    ): TypedEventFilter<
+      [string, BigNumber],
+      { account: string; amount: BigNumber }
+    >;
+
+    "Loose(address,uint256)"(
+      account?: null,
+      amount?: null
+    ): TypedEventFilter<
+      [string, BigNumber],
+      { account: string; amount: BigNumber }
+    >;
+
+    Loose(
       account?: null,
       amount?: null
     ): TypedEventFilter<
@@ -260,14 +306,20 @@ export class Faith extends BaseContract {
   };
 
   estimateGas: {
-    addMinter(
+    addManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     balances(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    mint(
+    gain(
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    loose(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -275,7 +327,7 @@ export class Faith extends BaseContract {
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
-    removeMinter(
+    removeManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -293,7 +345,7 @@ export class Faith extends BaseContract {
   };
 
   populateTransaction: {
-    addMinter(
+    addManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
@@ -303,7 +355,13 @@ export class Faith extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    mint(
+    gain(
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    loose(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -311,7 +369,7 @@ export class Faith extends BaseContract {
 
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    removeMinter(
+    removeManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
