@@ -16,7 +16,7 @@ const Image = styled.img.attrs(({ src, alt }: ImageProps) => ({
   alt,
 }))`
   ${(props: ImageProps) => props.width && `width: ${props.width}px;`}
-  ${(props: ImageProps) => props.height && `width: ${props.height}px;`}
+  ${(props: ImageProps) => props.height && `height: ${props.height}px;`}
 
   ${(props: ImageProps) =>
     props.objectPosition && `object-position: ${props.objectPosition};`}
