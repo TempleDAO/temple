@@ -41,7 +41,6 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     "totalPerEpoch(uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
     "userData(address)": FunctionFragment;
-    "withdraw(uint256)": FunctionFragment;
     "withdrawEpochs(uint256[],uint256)": FunctionFragment;
   };
 
@@ -111,10 +110,6 @@ interface ExitQueueInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "userData", values: [string]): string;
   encodeFunctionData(
-    functionFragment: "withdraw",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "withdrawEpochs",
     values: [BigNumberish[], BigNumberish]
   ): string;
@@ -178,7 +173,6 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "userData", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "withdrawEpochs",
     data: BytesLike
@@ -332,11 +326,6 @@ export class ExitQueue extends BaseContract {
       }
     >;
 
-    withdraw(
-      epoch: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
     withdrawEpochs(
       epochs: BigNumberish[],
       length: BigNumberish,
@@ -425,11 +414,6 @@ export class ExitQueue extends BaseContract {
     }
   >;
 
-  withdraw(
-    epoch: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
   withdrawEpochs(
     epochs: BigNumberish[],
     length: BigNumberish,
@@ -515,8 +499,6 @@ export class ExitQueue extends BaseContract {
         LastExitEpoch: BigNumber;
       }
     >;
-
-    withdraw(epoch: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
     withdrawEpochs(
       epochs: BigNumberish[],
@@ -648,11 +630,6 @@ export class ExitQueue extends BaseContract {
 
     userData(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    withdraw(
-      epoch: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
     withdrawEpochs(
       epochs: BigNumberish[],
       length: BigNumberish,
@@ -739,11 +716,6 @@ export class ExitQueue extends BaseContract {
     userData(
       arg0: string,
       overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    withdraw(
-      epoch: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     withdrawEpochs(
