@@ -32,11 +32,6 @@ export const Header = () => {
           <HeaderNav isOpen={isMenuOpen}>
             <ul>
               <li>
-                <Link to="/rituals" onClick={() => setIsMenuOpen(false)}>
-                  rituals
-                </Link>
-              </li>
-              <li>
                 <Link to="/enter" onClick={() => setIsMenuOpen(false)}>
                   enter
                 </Link>

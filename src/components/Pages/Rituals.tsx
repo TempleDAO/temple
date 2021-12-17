@@ -70,7 +70,7 @@ const Rituals = () => {
     clearRitual,
     isLoading,
     ocTemplar,
-    verifyQuest,
+    // verifyQuest,
     inviteFriend,
     maxInvitesPerVerifiedUser,
   } = useWallet();
@@ -142,10 +142,10 @@ const Rituals = () => {
     }
   };
 
-  const handleSandalwoodVerify = async () => {
+  /*const handleSandalwoodVerify = async () => {
     setVerifying(true);
     await verifyQuest(sandalWoodToken, RitualKind.VERIFYING);
-  };
+  };*/
 
   const handleUpdateCrypto = (event: React.ChangeEvent<HTMLInputElement>) => {
     const x = +event.target.value > 0 ? +event.target.value : undefined;
@@ -195,7 +195,7 @@ const Rituals = () => {
                   onChange={(e) => setSandalWoodToken(e.target.value)}
                 />
                 <br />
-                <Button label={'!verify'} onClick={handleSandalwoodVerify} />
+                {/*<Button label={'!verify'} onClick={handleSandalwoodVerify} />*/}
               </>
             }
           />
