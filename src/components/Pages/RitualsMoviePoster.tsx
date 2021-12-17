@@ -5,9 +5,11 @@ import { Flex } from 'components/Layout/Flex';
 import talismanImage from 'assets/images/comingsoon.png';
 import enclavesImage from 'assets/images/openingceremony.png';
 import triangle from 'assets/images/triangle.svg';
+import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 
+const RitualsMoviePoster: CustomRoutingPage = ({ routingHelper }) => {
+  const { back } = routingHelper;
 
-const RitualsMoviePoster = () => {
   return (
     <>
       <Flex
@@ -123,7 +125,7 @@ const RitualsMoviePoster = () => {
           justifyContent: 'center',
         }}
       >
-        <Image src={triangle} width={112} height={112} />
+        <Image src={triangle} width={112} height={112} onClick={back} />
       </Flex>
     </>
   );

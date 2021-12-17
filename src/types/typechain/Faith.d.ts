@@ -19,44 +19,62 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface PresaleAllocationInterface extends ethers.utils.Interface {
+interface FaithInterface extends ethers.utils.Interface {
   functions: {
-    "allocationOf(address)": FunctionFragment;
+    "addManager(address)": FunctionFragment;
+    "balances(address)": FunctionFragment;
+    "gain(address,uint256)": FunctionFragment;
+    "loose(address,uint256)": FunctionFragment;
     "owner()": FunctionFragment;
+    "removeManager(address)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
-    "setAllocation(address,uint256,uint256)": FunctionFragment;
+    "totalSupply()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
   };
 
+  encodeFunctionData(functionFragment: "addManager", values: [string]): string;
+  encodeFunctionData(functionFragment: "balances", values: [string]): string;
   encodeFunctionData(
-    functionFragment: "allocationOf",
-    values: [string]
+    functionFragment: "gain",
+    values: [string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "loose",
+    values: [string, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "removeManager",
+    values: [string]
+  ): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "setAllocation",
-    values: [string, BigNumberish, BigNumberish]
+    functionFragment: "totalSupply",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [string]
   ): string;
 
+  decodeFunctionResult(functionFragment: "addManager", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "balances", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "gain", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "loose", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "allocationOf",
+    functionFragment: "removeManager",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "setAllocation",
+    functionFragment: "totalSupply",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -65,17 +83,29 @@ interface PresaleAllocationInterface extends ethers.utils.Interface {
   ): Result;
 
   events: {
+    "Gain(address,uint256)": EventFragment;
+    "Loose(address,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
   };
 
+  getEvent(nameOrSignatureOrTopic: "Gain"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Loose"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
 }
+
+export type GainEvent = TypedEvent<
+  [string, BigNumber] & { account: string; amount: BigNumber }
+>;
+
+export type LooseEvent = TypedEvent<
+  [string, BigNumber] & { account: string; amount: BigNumber }
+>;
 
 export type OwnershipTransferredEvent = TypedEvent<
   [string, string] & { previousOwner: string; newOwner: string }
 >;
 
-export class PresaleAllocation extends BaseContract {
+export class Faith extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -116,28 +146,40 @@ export class PresaleAllocation extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: PresaleAllocationInterface;
+  interface: FaithInterface;
 
   functions: {
-    allocationOf(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, BigNumber] & { amount: BigNumber; epoch: BigNumber }
-    >;
+    addManager(
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    balances(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    gain(
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    loose(
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
 
     owner(overrides?: CallOverrides): Promise<[string]>;
+
+    removeManager(
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
 
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    setAllocation(
-      staker: string,
-      amount: BigNumberish,
-      epoch: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
+    totalSupply(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     transferOwnership(
       newOwner: string,
@@ -145,23 +187,37 @@ export class PresaleAllocation extends BaseContract {
     ): Promise<ContractTransaction>;
   };
 
-  allocationOf(
-    arg0: string,
-    overrides?: CallOverrides
-  ): Promise<[BigNumber, BigNumber] & { amount: BigNumber; epoch: BigNumber }>;
+  addManager(
+    account: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  balances(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+  gain(
+    to: string,
+    amount: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  loose(
+    to: string,
+    amount: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
   owner(overrides?: CallOverrides): Promise<string>;
+
+  removeManager(
+    account: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
   renounceOwnership(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  setAllocation(
-    staker: string,
-    amount: BigNumberish,
-    epoch: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
+  totalSupply(overrides?: CallOverrides): Promise<BigNumber>;
 
   transferOwnership(
     newOwner: string,
@@ -169,23 +225,29 @@ export class PresaleAllocation extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    allocationOf(
-      arg0: string,
+    addManager(account: string, overrides?: CallOverrides): Promise<void>;
+
+    balances(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    gain(
+      to: string,
+      amount: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, BigNumber] & { amount: BigNumber; epoch: BigNumber }
-    >;
+    ): Promise<void>;
+
+    loose(
+      to: string,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     owner(overrides?: CallOverrides): Promise<string>;
 
+    removeManager(account: string, overrides?: CallOverrides): Promise<void>;
+
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
-    setAllocation(
-      staker: string,
-      amount: BigNumberish,
-      epoch: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    totalSupply(overrides?: CallOverrides): Promise<BigNumber>;
 
     transferOwnership(
       newOwner: string,
@@ -194,6 +256,38 @@ export class PresaleAllocation extends BaseContract {
   };
 
   filters: {
+    "Gain(address,uint256)"(
+      account?: null,
+      amount?: null
+    ): TypedEventFilter<
+      [string, BigNumber],
+      { account: string; amount: BigNumber }
+    >;
+
+    Gain(
+      account?: null,
+      amount?: null
+    ): TypedEventFilter<
+      [string, BigNumber],
+      { account: string; amount: BigNumber }
+    >;
+
+    "Loose(address,uint256)"(
+      account?: null,
+      amount?: null
+    ): TypedEventFilter<
+      [string, BigNumber],
+      { account: string; amount: BigNumber }
+    >;
+
+    Loose(
+      account?: null,
+      amount?: null
+    ): TypedEventFilter<
+      [string, BigNumber],
+      { account: string; amount: BigNumber }
+    >;
+
     "OwnershipTransferred(address,address)"(
       previousOwner?: string | null,
       newOwner?: string | null
@@ -212,20 +306,37 @@ export class PresaleAllocation extends BaseContract {
   };
 
   estimateGas: {
-    allocationOf(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+    addManager(
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    balances(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    gain(
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    loose(
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
+
+    removeManager(
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
 
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    setAllocation(
-      staker: string,
-      amount: BigNumberish,
-      epoch: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
+    totalSupply(overrides?: CallOverrides): Promise<BigNumber>;
 
     transferOwnership(
       newOwner: string,
@@ -234,23 +345,40 @@ export class PresaleAllocation extends BaseContract {
   };
 
   populateTransaction: {
-    allocationOf(
+    addManager(
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    balances(
       arg0: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    gain(
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    loose(
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    removeManager(
+      account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
 
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    setAllocation(
-      staker: string,
-      amount: BigNumberish,
-      epoch: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
+    totalSupply(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     transferOwnership(
       newOwner: string,

@@ -27,6 +27,7 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     "addAllowedUser(address)": FunctionFragment;
     "addLiquidity(uint256,uint256,uint256,uint256,address,uint256)": FunctionFragment;
     "allowed(address)": FunctionFragment;
+    "checkPointBlock()": FunctionFragment;
     "decayStartBlock()": FunctionFragment;
     "dynamicThresholdDecayPerBlock()": FunctionFragment;
     "dynamicThresholdIncreasePct()": FunctionFragment;
@@ -92,6 +93,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     ]
   ): string;
   encodeFunctionData(functionFragment: "allowed", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "checkPointBlock",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "decayStartBlock",
     values?: undefined
@@ -246,6 +251,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "allowed", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "checkPointBlock",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "decayStartBlock",
     data: BytesLike
   ): Result;
@@ -366,17 +375,23 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   ): Result;
 
   events: {
+    "CheckPointUpdated(uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
     "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
     "RoleGranted(bytes32,address,address)": EventFragment;
     "RoleRevoked(bytes32,address,address)": EventFragment;
   };
 
+  getEvent(nameOrSignatureOrTopic: "CheckPointUpdated"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleAdminChanged"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleRevoked"): EventFragment;
 }
+
+export type CheckPointUpdatedEvent = TypedEvent<
+  [BigNumber] & { blockNumber: BigNumber }
+>;
 
 export type OwnershipTransferredEvent = TypedEvent<
   [string, string] & { previousOwner: string; newOwner: string }
@@ -466,6 +481,8 @@ export class TempleFraxAMMRouter extends BaseContract {
     ): Promise<ContractTransaction>;
 
     allowed(arg0: string, overrides?: CallOverrides): Promise<[boolean]>;
+
+    checkPointBlock(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     decayStartBlock(overrides?: CallOverrides): Promise<[BigNumber]>;
 
@@ -626,7 +643,12 @@ export class TempleFraxAMMRouter extends BaseContract {
       amountIn: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [boolean, BigNumber] & { priceBelowIV: boolean; amountOut: BigNumber }
+      [boolean, BigNumber, BigNumber, BigNumber] & {
+        priceBelowIV: boolean;
+        amountOut: BigNumber;
+        reserveTemple: BigNumber;
+        reserveFrax: BigNumber;
+      }
     >;
 
     templeToken(overrides?: CallOverrides): Promise<[string]>;
@@ -667,6 +689,8 @@ export class TempleFraxAMMRouter extends BaseContract {
   ): Promise<ContractTransaction>;
 
   allowed(arg0: string, overrides?: CallOverrides): Promise<boolean>;
+
+  checkPointBlock(overrides?: CallOverrides): Promise<BigNumber>;
 
   decayStartBlock(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -823,7 +847,12 @@ export class TempleFraxAMMRouter extends BaseContract {
     amountIn: BigNumberish,
     overrides?: CallOverrides
   ): Promise<
-    [boolean, BigNumber] & { priceBelowIV: boolean; amountOut: BigNumber }
+    [boolean, BigNumber, BigNumber, BigNumber] & {
+      priceBelowIV: boolean;
+      amountOut: BigNumber;
+      reserveTemple: BigNumber;
+      reserveFrax: BigNumber;
+    }
   >;
 
   templeToken(overrides?: CallOverrides): Promise<string>;
@@ -870,6 +899,8 @@ export class TempleFraxAMMRouter extends BaseContract {
     >;
 
     allowed(arg0: string, overrides?: CallOverrides): Promise<boolean>;
+
+    checkPointBlock(overrides?: CallOverrides): Promise<BigNumber>;
 
     decayStartBlock(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -1028,7 +1059,12 @@ export class TempleFraxAMMRouter extends BaseContract {
       amountIn: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [boolean, BigNumber] & { priceBelowIV: boolean; amountOut: BigNumber }
+      [boolean, BigNumber, BigNumber, BigNumber] & {
+        priceBelowIV: boolean;
+        amountOut: BigNumber;
+        reserveTemple: BigNumber;
+        reserveFrax: BigNumber;
+      }
     >;
 
     templeToken(overrides?: CallOverrides): Promise<string>;
@@ -1044,6 +1080,14 @@ export class TempleFraxAMMRouter extends BaseContract {
   };
 
   filters: {
+    "CheckPointUpdated(uint256)"(
+      blockNumber?: null
+    ): TypedEventFilter<[BigNumber], { blockNumber: BigNumber }>;
+
+    CheckPointUpdated(
+      blockNumber?: null
+    ): TypedEventFilter<[BigNumber], { blockNumber: BigNumber }>;
+
     "OwnershipTransferred(address,address)"(
       previousOwner?: string | null,
       newOwner?: string | null
@@ -1140,6 +1184,8 @@ export class TempleFraxAMMRouter extends BaseContract {
     ): Promise<BigNumber>;
 
     allowed(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    checkPointBlock(overrides?: CallOverrides): Promise<BigNumber>;
 
     decayStartBlock(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -1333,6 +1379,8 @@ export class TempleFraxAMMRouter extends BaseContract {
       arg0: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
+
+    checkPointBlock(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     decayStartBlock(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 

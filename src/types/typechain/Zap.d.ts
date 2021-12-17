@@ -27,7 +27,6 @@ interface ZapInterface extends ethers.utils.Interface {
     "owner()": FunctionFragment;
     "quoter()": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
-    "sandalwoodToken()": FunctionFragment;
     "stablecToken()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
     "uniswapRouter()": FunctionFragment;
@@ -45,10 +44,6 @@ interface ZapInterface extends ethers.utils.Interface {
   encodeFunctionData(functionFragment: "quoter", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "sandalwoodToken",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -76,10 +71,6 @@ interface ZapInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "quoter", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "sandalwoodToken",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -179,8 +170,6 @@ export class Zap extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    sandalwoodToken(overrides?: CallOverrides): Promise<[string]>;
-
     stablecToken(overrides?: CallOverrides): Promise<[string]>;
 
     transferOwnership(
@@ -209,8 +198,6 @@ export class Zap extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  sandalwoodToken(overrides?: CallOverrides): Promise<string>;
-
   stablecToken(overrides?: CallOverrides): Promise<string>;
 
   transferOwnership(
@@ -236,8 +223,6 @@ export class Zap extends BaseContract {
     quoter(overrides?: CallOverrides): Promise<string>;
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
-
-    sandalwoodToken(overrides?: CallOverrides): Promise<string>;
 
     stablecToken(overrides?: CallOverrides): Promise<string>;
 
@@ -316,8 +301,6 @@ export class Zap extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    sandalwoodToken(overrides?: CallOverrides): Promise<BigNumber>;
-
     stablecToken(overrides?: CallOverrides): Promise<BigNumber>;
 
     transferOwnership(
@@ -348,8 +331,6 @@ export class Zap extends BaseContract {
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
-
-    sandalwoodToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     stablecToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 

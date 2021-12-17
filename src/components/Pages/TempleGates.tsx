@@ -1,9 +1,11 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
-import styled, { css } from 'styled-components';
-import withWallet from 'hoc/withWallet';
+import styled from 'styled-components';
+import Foyer from 'components/Pages/Foyer';
 import gatesImage from 'assets/images/EnterTheGates.png';
 import { useWallet } from 'providers/WalletProvider';
 import { TempleFraxAMMRouter__factory } from 'types/typechain';
+import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import withWallet from 'hoc/withWallet';
 
 const ENV_VARS = import.meta.env;
 const TEMPLE_V2_ROUTER_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS;
@@ -15,7 +17,7 @@ enum Status {
   Complete = 'WELCOME',
 }
 
-const TempleGatesPage = () => {
+const TempleGatesPage: CustomRoutingPage = ({ routingHelper }) => {
   const [key, setKey]: [string, Dispatch<SetStateAction<string>>] =
     useState('');
   const { wallet, signer, verifyAMMWhitelist } = useWallet();
@@ -24,6 +26,8 @@ const TempleGatesPage = () => {
     Dispatch<SetStateAction<Status | undefined>>
   ] = useState();
 
+  const { changePageTo } = routingHelper;
+
   // Check if user is whitelisted already
   const isWhitelisted = async () => {
     if (wallet && signer) {
@@ -31,8 +35,11 @@ const TempleGatesPage = () => {
         .attach(TEMPLE_V2_ROUTER_ADDRESS)
         .connect(signer);
       const whitelisted = await fraxAMMRouter.allowed(wallet);
-      if (whitelisted) setStatus(Status.Complete);
-      else setStatus(Status.Start);
+      if (whitelisted) {
+        changePageTo(Foyer);
+      } else {
+        setStatus(Status.Start);
+      }
     }
   };
   useEffect(() => {
@@ -58,6 +65,7 @@ const TempleGatesPage = () => {
         <p>Welcome</p> // Load next page
       ) : (
         <TempleGatesContainer>
+          <button onClick={() => changePageTo(Foyer)}>HERE</button>
           <KeyForm onSubmit={submit}>
             <KeyInput
               placeholder="Sacred Key"

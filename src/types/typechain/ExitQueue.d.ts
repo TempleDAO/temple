@@ -13,11 +13,11 @@ import {
   ContractTransaction,
   Overrides,
   CallOverrides,
-} from 'ethers';
-import { BytesLike } from '@ethersproject/bytes';
-import { Listener, Provider } from '@ethersproject/providers';
-import { FunctionFragment, EventFragment, Result } from '@ethersproject/abi';
-import type { TypedEventFilter, TypedEvent, TypedListener } from './common';
+} from "ethers";
+import { BytesLike } from "@ethersproject/bytes";
+import { Listener, Provider } from "@ethersproject/providers";
+import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
+import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface ExitQueueInterface extends ethers.utils.Interface {
   functions: {
@@ -29,6 +29,7 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     "join(address,uint256)": FunctionFragment;
     "maxPerAddress()": FunctionFragment;
     "maxPerEpoch()": FunctionFragment;
+    "migrate(address,uint256[],uint256,address)": FunctionFragment;
     "nextUnallocatedEpoch()": FunctionFragment;
     "owedTemple(address)": FunctionFragment;
     "owner()": FunctionFragment;
@@ -41,55 +42,59 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     "totalPerEpoch(uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
     "userData(address)": FunctionFragment;
-    "withdraw(uint256)": FunctionFragment;
+    "withdrawEpochs(uint256[],uint256)": FunctionFragment;
   };
 
-  encodeFunctionData(functionFragment: 'TEMPLE', values?: undefined): string;
+  encodeFunctionData(functionFragment: "TEMPLE", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: 'currentEpoch',
+    functionFragment: "currentEpoch",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'currentEpochAllocation',
+    functionFragment: "currentEpochAllocation",
     values: [string, BigNumberish]
   ): string;
-  encodeFunctionData(functionFragment: 'epochSize', values?: undefined): string;
+  encodeFunctionData(functionFragment: "epochSize", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: 'firstBlock',
+    functionFragment: "firstBlock",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'join',
+    functionFragment: "join",
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'maxPerAddress',
+    functionFragment: "maxPerAddress",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'maxPerEpoch',
+    functionFragment: "maxPerEpoch",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'nextUnallocatedEpoch',
+    functionFragment: "migrate",
+    values: [string, BigNumberish[], BigNumberish, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "nextUnallocatedEpoch",
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "owedTemple", values: [string]): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: 'renounceOwnership',
+    functionFragment: "renounceOwnership",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: 'setEpochSize',
+    functionFragment: "setEpochSize",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setMaxPerAddress',
+    functionFragment: "setMaxPerAddress",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'setMaxPerEpoch',
+    functionFragment: "setMaxPerEpoch",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -101,59 +106,60 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'totalPerEpoch',
+    functionFragment: "totalPerEpoch",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: 'transferOwnership',
+    functionFragment: "transferOwnership",
     values: [string]
   ): string;
-  encodeFunctionData(functionFragment: 'userData', values: [string]): string;
+  encodeFunctionData(functionFragment: "userData", values: [string]): string;
   encodeFunctionData(
-    functionFragment: 'withdraw',
-    values: [BigNumberish]
+    functionFragment: "withdrawEpochs",
+    values: [BigNumberish[], BigNumberish]
   ): string;
 
-  decodeFunctionResult(functionFragment: 'TEMPLE', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "TEMPLE", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: 'currentEpoch',
+    functionFragment: "currentEpoch",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'currentEpochAllocation',
+    functionFragment: "currentEpochAllocation",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: 'epochSize', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'firstBlock', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'join', data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "epochSize", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "firstBlock", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "join", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: 'maxPerAddress',
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: 'maxPerEpoch',
+    functionFragment: "maxPerAddress",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'nextUnallocatedEpoch',
+    functionFragment: "maxPerEpoch",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "migrate", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "nextUnallocatedEpoch",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "owedTemple", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: 'renounceOwnership',
+    functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setEpochSize',
+    functionFragment: "setEpochSize",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setMaxPerAddress',
+    functionFragment: "setMaxPerAddress",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: 'setMaxPerEpoch',
+    functionFragment: "setMaxPerEpoch",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -165,22 +171,6 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "setStartingBlock",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: 'setStartingBlock',
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "totalPerEpoch",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "totalPerEpoch",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "totalPerEpoch",
     data: BytesLike
   ): Result;
@@ -188,22 +178,21 @@ interface ExitQueueInterface extends ethers.utils.Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "userData", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: 'transferOwnership',
+    functionFragment: "withdrawEpochs",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: 'userData', data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: 'withdraw', data: BytesLike): Result;
 
   events: {
-    'JoinQueue(address,uint256)': EventFragment;
-    'OwnershipTransferred(address,address)': EventFragment;
-    'Withdrawal(address,uint256)': EventFragment;
+    "JoinQueue(address,uint256)": EventFragment;
+    "OwnershipTransferred(address,address)": EventFragment;
+    "Withdrawal(address,uint256)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: 'JoinQueue'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'OwnershipTransferred'): EventFragment;
-  getEvent(nameOrSignatureOrTopic: 'Withdrawal'): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "JoinQueue"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "Withdrawal"): EventFragment;
 }
 
 export type JoinQueueEvent = TypedEvent<
@@ -286,6 +275,14 @@ export class ExitQueue extends BaseContract {
 
     maxPerEpoch(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    migrate(
+      exiter: string,
+      epochs: BigNumberish[],
+      length: BigNumberish,
+      newExitQueue: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     nextUnallocatedEpoch(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     owedTemple(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
@@ -343,8 +340,9 @@ export class ExitQueue extends BaseContract {
       }
     >;
 
-    withdraw(
-      epoch: BigNumberish,
+    withdrawEpochs(
+      epochs: BigNumberish[],
+      length: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
@@ -372,6 +370,14 @@ export class ExitQueue extends BaseContract {
   maxPerAddress(overrides?: CallOverrides): Promise<BigNumber>;
 
   maxPerEpoch(overrides?: CallOverrides): Promise<BigNumber>;
+
+  migrate(
+    exiter: string,
+    epochs: BigNumberish[],
+    length: BigNumberish,
+    newExitQueue: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
   nextUnallocatedEpoch(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -430,8 +436,9 @@ export class ExitQueue extends BaseContract {
     }
   >;
 
-  withdraw(
-    epoch: BigNumberish,
+  withdrawEpochs(
+    epochs: BigNumberish[],
+    length: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -459,6 +466,14 @@ export class ExitQueue extends BaseContract {
     maxPerAddress(overrides?: CallOverrides): Promise<BigNumber>;
 
     maxPerEpoch(overrides?: CallOverrides): Promise<BigNumber>;
+
+    migrate(
+      exiter: string,
+      epochs: BigNumberish[],
+      length: BigNumberish,
+      newExitQueue: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     nextUnallocatedEpoch(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -515,11 +530,15 @@ export class ExitQueue extends BaseContract {
       }
     >;
 
-    withdraw(epoch: BigNumberish, overrides?: CallOverrides): Promise<void>;
+    withdrawEpochs(
+      epochs: BigNumberish[],
+      length: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
   filters: {
-    'JoinQueue(address,uint256)'(
+    "JoinQueue(address,uint256)"(
       exiter?: null,
       amount?: null
     ): TypedEventFilter<
@@ -535,7 +554,7 @@ export class ExitQueue extends BaseContract {
       { exiter: string; amount: BigNumber }
     >;
 
-    'OwnershipTransferred(address,address)'(
+    "OwnershipTransferred(address,address)"(
       previousOwner?: string | null,
       newOwner?: string | null
     ): TypedEventFilter<
@@ -551,7 +570,7 @@ export class ExitQueue extends BaseContract {
       { previousOwner: string; newOwner: string }
     >;
 
-    'Withdrawal(address,uint256)'(
+    "Withdrawal(address,uint256)"(
       exiter?: null,
       amount?: null
     ): TypedEventFilter<
@@ -592,6 +611,14 @@ export class ExitQueue extends BaseContract {
     maxPerAddress(overrides?: CallOverrides): Promise<BigNumber>;
 
     maxPerEpoch(overrides?: CallOverrides): Promise<BigNumber>;
+
+    migrate(
+      exiter: string,
+      epochs: BigNumberish[],
+      length: BigNumberish,
+      newExitQueue: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
 
     nextUnallocatedEpoch(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -641,8 +668,9 @@ export class ExitQueue extends BaseContract {
 
     userData(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    withdraw(
-      epoch: BigNumberish,
+    withdrawEpochs(
+      epochs: BigNumberish[],
+      length: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
@@ -671,6 +699,14 @@ export class ExitQueue extends BaseContract {
     maxPerAddress(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     maxPerEpoch(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    migrate(
+      exiter: string,
+      epochs: BigNumberish[],
+      length: BigNumberish,
+      newExitQueue: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
 
     nextUnallocatedEpoch(
       overrides?: CallOverrides
@@ -728,8 +764,9 @@ export class ExitQueue extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    withdraw(
-      epoch: BigNumberish,
+    withdrawEpochs(
+      epochs: BigNumberish[],
+      length: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };
