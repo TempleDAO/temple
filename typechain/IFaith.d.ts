@@ -21,23 +21,31 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface IFaithInterface extends ethers.utils.Interface {
   functions: {
-    "addMinter(address)": FunctionFragment;
+    "adManager(address)": FunctionFragment;
     "balances(address)": FunctionFragment;
-    "canMint(address)": FunctionFragment;
-    "mint(address,uint256)": FunctionFragment;
-    "removeMinter(address)": FunctionFragment;
+    "canManagerFaith(address)": FunctionFragment;
+    "gain(address,uint256)": FunctionFragment;
+    "loose(address,uint256)": FunctionFragment;
+    "removeManager(address)": FunctionFragment;
     "totalSupply()": FunctionFragment;
   };
 
-  encodeFunctionData(functionFragment: "addMinter", values: [string]): string;
+  encodeFunctionData(functionFragment: "adManager", values: [string]): string;
   encodeFunctionData(functionFragment: "balances", values: [string]): string;
-  encodeFunctionData(functionFragment: "canMint", values: [string]): string;
   encodeFunctionData(
-    functionFragment: "mint",
+    functionFragment: "canManagerFaith",
+    values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "gain",
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "removeMinter",
+    functionFragment: "loose",
+    values: [string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "removeManager",
     values: [string]
   ): string;
   encodeFunctionData(
@@ -45,12 +53,16 @@ interface IFaithInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
 
-  decodeFunctionResult(functionFragment: "addMinter", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "adManager", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balances", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "canMint", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "removeMinter",
+    functionFragment: "canManagerFaith",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "gain", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "loose", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "removeManager",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -105,7 +117,7 @@ export class IFaith extends BaseContract {
   interface: IFaithInterface;
 
   functions: {
-    addMinter(
+    adManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -115,18 +127,24 @@ export class IFaith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    canMint(
+    canManagerFaith(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    mint(
+    gain(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    removeMinter(
+    loose(
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    removeManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -136,7 +154,7 @@ export class IFaith extends BaseContract {
     ): Promise<ContractTransaction>;
   };
 
-  addMinter(
+  adManager(
     account: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -146,18 +164,24 @@ export class IFaith extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  canMint(
+  canManagerFaith(
     account: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  mint(
+  gain(
     to: string,
     amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  removeMinter(
+  loose(
+    to: string,
+    amount: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  removeManager(
     account: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -167,19 +191,28 @@ export class IFaith extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    addMinter(account: string, overrides?: CallOverrides): Promise<void>;
+    adManager(account: string, overrides?: CallOverrides): Promise<void>;
 
     balances(account: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    canMint(account: string, overrides?: CallOverrides): Promise<boolean>;
+    canManagerFaith(
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
 
-    mint(
+    gain(
       to: string,
       amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
-    removeMinter(account: string, overrides?: CallOverrides): Promise<void>;
+    loose(
+      to: string,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    removeManager(account: string, overrides?: CallOverrides): Promise<void>;
 
     totalSupply(overrides?: CallOverrides): Promise<BigNumber>;
   };
@@ -187,7 +220,7 @@ export class IFaith extends BaseContract {
   filters: {};
 
   estimateGas: {
-    addMinter(
+    adManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -197,18 +230,24 @@ export class IFaith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    canMint(
+    canManagerFaith(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    mint(
+    gain(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    removeMinter(
+    loose(
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    removeManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -219,7 +258,7 @@ export class IFaith extends BaseContract {
   };
 
   populateTransaction: {
-    addMinter(
+    adManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
@@ -229,18 +268,24 @@ export class IFaith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    canMint(
+    canManagerFaith(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    mint(
+    gain(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    removeMinter(
+    loose(
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    removeManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;

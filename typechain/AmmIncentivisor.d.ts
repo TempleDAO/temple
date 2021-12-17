@@ -49,6 +49,7 @@ interface AmmIncentivisorInterface extends ethers.utils.Interface {
     "unLockFor(address)": FunctionFragment;
     "unlockDelaySeconds()": FunctionFragment;
     "unpause()": FunctionFragment;
+    "withdrawBalance(address,address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -130,6 +131,10 @@ interface AmmIncentivisorInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "withdrawBalance",
+    values: [string, string, BigNumberish]
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "SetStakeAndLockMultiplier",
@@ -207,6 +212,10 @@ interface AmmIncentivisorInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "withdrawBalance",
+    data: BytesLike
+  ): Result;
 
   events: {
     "BuyTheDipComplete(address,uint256,uint256)": EventFragment;
@@ -398,6 +407,13 @@ export class AmmIncentivisor extends BaseContract {
     unpause(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    withdrawBalance(
+      token: string,
+      _to: string,
+      _amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
   };
 
   SetStakeAndLockMultiplier(
@@ -504,6 +520,13 @@ export class AmmIncentivisor extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  withdrawBalance(
+    token: string,
+    _to: string,
+    _amount: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   callStatic: {
     SetStakeAndLockMultiplier(
       _stakeAndLockMultiplier: BigNumberish,
@@ -597,6 +620,13 @@ export class AmmIncentivisor extends BaseContract {
     unlockDelaySeconds(overrides?: CallOverrides): Promise<BigNumber>;
 
     unpause(overrides?: CallOverrides): Promise<void>;
+
+    withdrawBalance(
+      token: string,
+      _to: string,
+      _amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
   filters: {
@@ -777,6 +807,13 @@ export class AmmIncentivisor extends BaseContract {
     unpause(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
+
+    withdrawBalance(
+      token: string,
+      _to: string,
+      _amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -884,6 +921,13 @@ export class AmmIncentivisor extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     unpause(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    withdrawBalance(
+      token: string,
+      _to: string,
+      _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

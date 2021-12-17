@@ -566,9 +566,8 @@ describe("AMM", async () => {
         // Set scalling factory to adjust for the high inbalance in circulating supply and faith total supply
         await ammIncentivisor.setScalingFactor(1, 70000);
 
-        await faith.addMinter(ammIncentivisor.address)
-        await templeToken.addMinter(ammIncentivisor.address)
-
+        await faith.addManager(ammIncentivisor.address)
+        await templeToken.mint(ammIncentivisor.address, toAtto(1000000)); // seed contract with bonus temple
       })
 
     describe("Incentive active", async() => {

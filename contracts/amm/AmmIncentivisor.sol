@@ -24,7 +24,7 @@ contract AmmIncentivisor is Ownable, Pausable {
 
     IERC20 public stablecToken; // contract address for stable coin used in treasury
     IFaith public faith;
-    TempleERC20Token public templeToken; // temple ERC20 contract
+    IERC20 public templeToken; // temple ERC20 contract
     TempleStaking public staking; // Staking contract
     ITempleFraxAMMRouter public router;
     IUniswapV2Pair public pair;
@@ -106,7 +106,7 @@ contract AmmIncentivisor is Ownable, Pausable {
                 //reward some-faith token
                 uint256 faithGranted = buyTheDipMultiplier * templeOut / 1000; 
                 //Reward faith
-                faith.mint(msg.sender, faithGranted);
+                faith.gain(msg.sender, faithGranted);
                 emit BuyTheDipComplete(msg.sender, templeOut, faithGranted);
           }
     }
@@ -132,7 +132,7 @@ contract AmmIncentivisor is Ownable, Pausable {
                 //reward some-faith token
                 uint256 faithGranted = stakeAndLockMultiplier * templeOut / 1000; 
                 //Reward faith
-                faith.mint(msg.sender, faithGranted);
+                faith.gain(msg.sender, faithGranted);
 
                 // baseApy * (1 + (L/M)/(N/O))*P 
                 // L = amount of faith you have
@@ -151,11 +151,8 @@ contract AmmIncentivisor is Ownable, Pausable {
                 uint256 currentOGTempleAmount = ogTempleLocked[msg.sender].amount;
                 uint256 bonusTemple = calculateBonusTemple(staking.balance(currentOGTempleAmount) + templeOut, epy, bonusEpy);
 
-                // mint temple
-                templeToken.mint(address(this), bonusTemple);
-
-                uint256 totalTemple = templeOut + bonusTemple;
                 // Stake both minted and bonus temple. Locking up any OGTemple
+                uint256 totalTemple = templeOut + bonusTemple;
                 SafeERC20.safeIncreaseAllowance(templeToken, address(staking), totalTemple);
                 uint256 amountOgTemple = staking.stake(totalTemple);
                 lock(msg.sender, amountOgTemple + currentOGTempleAmount);
@@ -210,4 +207,10 @@ contract AmmIncentivisor is Ownable, Pausable {
         return (integralDigits * 1e18) + fractionalDigits;
     }
 
+    function withdrawBalance(IERC20 token, address _to, uint256 _amount)
+        external
+        onlyOwner
+    {
+        SafeERC20.safeTransfer(token, _to, _amount);
+    }
 }

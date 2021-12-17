@@ -15,7 +15,7 @@ const _abi = [
         type: "address",
       },
     ],
-    name: "addMinter",
+    name: "adManager",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -47,7 +47,7 @@ const _abi = [
         type: "address",
       },
     ],
-    name: "canMint",
+    name: "canManagerFaith",
     outputs: [
       {
         internalType: "bool",
@@ -71,7 +71,25 @@ const _abi = [
         type: "uint256",
       },
     ],
-    name: "mint",
+    name: "gain",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "loose",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -84,7 +102,7 @@ const _abi = [
         type: "address",
       },
     ],
-    name: "removeMinter",
+    name: "removeManager",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",

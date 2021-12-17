@@ -7,25 +7,38 @@ contract Faith is Ownable {
 
     // User balance
     mapping(address => uint256) public balances;
-    mapping(address => bool ) private canMint;
+    mapping(address => bool ) private canManageFaith;
 
     uint256 public totalSupply;
  
-    event Mint(address account, uint256 amount);
+    event Gain(address account, uint256 amount);
+    event Loose(address account, uint256 amount);
+
     constructor() {
     }
 
-    function mint(address to, uint256 amount) external {
-        require(canMint[msg.sender] == true, "Faith: caller can't mint");
+    function gain(address to, uint256 amount) external {
+        require(canManageFaith[msg.sender] == true, "Faith: caller cannot manage faith");
         totalSupply += amount;
         balances[to] += amount;
-        emit Mint(to, amount);
+        emit Gain(to, amount);
     }
-    function addMinter(address account) external onlyOwner {
-        canMint[account] = true;
-   }
 
-    function removeMinter(address account) external onlyOwner {
-        canMint[account] = false;
+    function loose(address to, uint256 amount) external {
+        require(canManageFaith[msg.sender] == true, "Faith: caller cannot manage faith");
+        if (amount > balances[to]) {
+            amount = balances[to];
+        }
+        totalSupply -= amount;
+        balances[to] -= amount;
+        emit Loose(to, amount);
+    }
+
+    function addManager(address account) external onlyOwner {
+        canManageFaith[account] = true;
+    }
+
+    function removeManager(address account) external onlyOwner {
+        canManageFaith[account] = false;
   }
 }

@@ -7,11 +7,12 @@ interface IFaith {
 
     function balances(address account) external returns(uint256);
 
-    function canMint(address account) external returns(bool);
+    function canManagerFaith(address account) external returns(bool);
     
-    function mint(address to, uint256 amount) external;
+    function gain(address to, uint256 amount) external;
+    function loose(address to, uint256 amount) external;
 
-    function addMinter(address account) external;
+    function adManager(address account) external;
 
-    function removeMinter(address account) external;
+    function removeManager(address account) external;
 }
