@@ -198,7 +198,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
 
             // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant
             (uint rt, uint rf,) = pair.getReserves();
-            uint newDynamicThresholdPriceTemple = rt * dynamicThresholdPrice.frax * DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR / (rf * dynamicThresholdIncreasePct);
+            uint newDynamicThresholdPriceTemple = (rt * dynamicThresholdPrice.frax * DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR) / (rf * dynamicThresholdIncreasePct);
             if (newDynamicThresholdPriceTemple < dynamicThresholdPrice.temple) {
                 dynamicThresholdPrice.temple = newDynamicThresholdPriceTemple;
                 decayStartBlock = block.number;
@@ -265,7 +265,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     function quote(uint amountA, uint reserveA, uint reserveB) public pure returns (uint amountB) {
         require(amountA > 0, 'UniswapV2Library: INSUFFICIENT_AMOUNT');
         require(reserveA > 0 && reserveB > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
-        amountB = amountA * reserveB / reserveA;
+        amountB = (amountA * reserveB) / reserveA;
 
     }
 
@@ -360,7 +360,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         // if AMM is currently trading above target, route some portion to mint on protocol
         if (thresholdPriceTemple * reserveFrax >= thresholdPriceFrax * reserveTemple) {
             (uint numerator, uint denominator) = mintRatioAt(reserveTemple, reserveFrax);
-            amountInProtocol = amountIn * numerator / denominator;
+            amountInProtocol = (amountIn * numerator) / denominator;
         }
 
         amountInAMM = amountIn - amountInProtocol;
@@ -374,9 +374,9 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         // Allocate a portion of temple to the protocol
         amountOutProtocol = 0;
         if (amountInAMM > 0) {
-            amountOutProtocol = amountInProtocol * amountOutAMM / amountInAMM;
+            amountOutProtocol = (amountInProtocol * amountOutAMM) / amountInAMM;
         } else {
-            amountOutProtocol = amountInProtocol * reserveTemple / reserveFrax;
+            amountOutProtocol = (amountInProtocol * reserveTemple) / reserveFrax;
         }
     }
 
@@ -388,7 +388,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         priceBelowIV = ivTemple * reserveFrax <= reserveTemple * ivFrax;
 
         if (priceBelowIV) {
-            amountOut = amountIn * ivFrax / ivTemple;
+            amountOut = (amountIn * ivFrax) / ivTemple;
         } else {
             amountOut = getAmountOut(amountIn, reserveTemple, reserveFrax);
         }
