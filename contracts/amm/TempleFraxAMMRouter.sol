@@ -52,6 +52,9 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     Price public interpolateFromPrice;
     Price public interpolateToPrice;
 
+    // Checkpoint for when price fell below threshold
+    uint public checkPointBlock;
+
     // who's allowed to swap on the AMM. Only used if openAccessEnabled is false;
     mapping(address => bool) public allowed;
     bool public openAccessEnabled = false;
@@ -60,6 +63,8 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         require(deadline >= block.timestamp, 'TempleFraxAMMRouter: EXPIRED');
         _;
     }
+
+    event CheckPointUpdated(uint256 blockNumber);
 
     constructor(
             IUniswapV2Pair _pair,
@@ -227,13 +232,23 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     ) external virtual ensure(deadline) returns (uint) {
         require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
 
-        (bool priceBelowIV, uint amountOut) = swapExactTempleForFraxQuote(amountIn);
-
+        (bool priceBelowIV, uint amountOut, uint reserveTemple, uint reserveFrax) = swapExactTempleForFraxQuote(amountIn);
         if (priceBelowIV) {
             require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
             templeToken.burnFrom(msg.sender, amountIn);
             SafeERC20.safeTransfer(fraxToken, to, amountOut);
         } else {
+            (uint thresholdPriceFrax, uint thresholdPriceTemple) = dynamicThresholdPriceWithDecay();
+
+            //If current AMM price above threshold price
+            if (thresholdPriceTemple * reserveFrax > thresholdPriceFrax * reserveTemple) {
+                // If post-sell price moves below threshold
+                if (thresholdPriceTemple * (reserveFrax - amountOut) < thresholdPriceFrax * (reserveTemple + amountIn)) {
+                    checkPointBlock = block.number;
+                    emit CheckPointUpdated(checkPointBlock);
+                }
+            }
+            
             require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
             SafeERC20.safeTransferFrom(templeToken, msg.sender, address(pair), amountIn);
             pair.swap(0, amountOut, to, new bytes(0));
@@ -380,9 +395,9 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         }
     }
 
-    function swapExactTempleForFraxQuote(uint amountIn) public view returns (bool priceBelowIV, uint amountOut) {
-        (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
-
+    function swapExactTempleForFraxQuote(uint amountIn) public view returns (bool priceBelowIV, uint amountOut, uint reserveTemple, uint reserveFrax) {
+        ( reserveTemple,  reserveFrax,) = pair.getReserves();
+  
         // if AMM is currently trading above target, route some portion to mint on protocol
         (uint256 ivFrax, uint256 ivTemple) = templeTreasury.intrinsicValueRatio();
         priceBelowIV = ivTemple * reserveFrax <= reserveTemple * ivFrax;
