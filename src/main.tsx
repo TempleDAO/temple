@@ -25,12 +25,12 @@ ReactDOM.render(
         <ThemeProvider theme={theme}>
           <BrowserRouter>
             <Routes>
-              <Route path="/temple-gates" element={<AmmSpaRoot />} />
-              <Route path="/" element={<PageLayout />}>
-                {
-                  //@ts-ignore
-                  window.ethereum ? (
-                    <>
+              {
+                //@ts-ignore
+                window.ethereum ? (
+                  <>
+                    <Route path="/temple-gates" element={<AmmSpaRoot />} />
+                    <Route path="/" element={<PageLayout />}>
                       <Route path="/" element={<Home />} />
                       <Route path="disclaimer" element={<Disclaimer />} />
                       <Route path="enter" element={<Enter />} />
@@ -41,15 +41,15 @@ ReactDOM.render(
                       />
                       <Route path="temple-claim" element={<Claim />} />
                       <Route path="/*" element={<Navigate replace to="/" />} />
-                    </>
-                  ) : (
-                    <>
-                      <Route path="/" element={<MetamaskError />} />
-                      <Route path="/*" element={<Navigate replace to="/" />} />
-                    </>
-                  )
-                }
-              </Route>
+                    </Route>
+                  </>
+                ) : (
+                  <>
+                    <Route path="/" element={<MetamaskError />} />
+                    <Route path="/*" element={<Navigate replace to="/" />} />
+                  </>
+                )
+              }
             </Routes>
           </BrowserRouter>
           <NotificationManager />
