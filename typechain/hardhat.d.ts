@@ -161,6 +161,14 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.KeeperCompatibleInterface__factory>;
     getContractFactory(
+      name: "LockedOGTempleDeprecated",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.LockedOGTempleDeprecated__factory>;
+    getContractFactory(
+      name: "OpeningCeremony",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.OpeningCeremony__factory>;
+    getContractFactory(
       name: "ExitQueue",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ExitQueue__factory>;
@@ -204,10 +212,6 @@ declare module "hardhat/types/runtime" {
       name: "OGTemple",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.OGTemple__factory>;
-    getContractFactory(
-      name: "OpeningCeremony",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.OpeningCeremony__factory>;
     getContractFactory(
       name: "TempleCashback",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -427,6 +431,16 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.KeeperCompatibleInterface>;
     getContractAt(
+      name: "LockedOGTempleDeprecated",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.LockedOGTempleDeprecated>;
+    getContractAt(
+      name: "OpeningCeremony",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.OpeningCeremony>;
+    getContractAt(
       name: "ExitQueue",
       address: string,
       signer?: ethers.Signer
@@ -481,11 +495,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.OGTemple>;
-    getContractAt(
-      name: "OpeningCeremony",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.OpeningCeremony>;
     getContractAt(
       name: "TempleCashback",
       address: string,

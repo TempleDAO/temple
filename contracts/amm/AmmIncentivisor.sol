@@ -12,6 +12,7 @@ import "../TempleERC20Token.sol";
 import "./ITempleFraxAmmRouter.sol";
 import "../TempleTreasury.sol";
 import "../TempleStaking.sol";
+import "../LockedOGTemple.sol";
 import "../IFaith.sol";
 
 
@@ -28,6 +29,7 @@ contract AmmIncentivisor is Ownable, Pausable {
     TempleStaking public staking; // Staking contract
     ITempleFraxAMMRouter public router;
     IUniswapV2Pair public pair;
+    LockedOGTemple public lockedOGTemple;
 
     //treasury address
     address public treasury;
@@ -39,12 +41,6 @@ contract AmmIncentivisor is Ownable, Pausable {
     uint256 public numBlocksForUnlockIncentive;
     uint256 public unlockDelaySeconds = SECONDS_IN_DAY * 7; // How long after buying the dip can people unlock
 
-    struct LockedEntry {
-       uint256 amount;
-       uint256 lockedUntilTimestamp;
-    }
-    mapping(address => LockedEntry) public ogTempleLocked;
-
     event BuyTheDipComplete(address staker, uint256 boughtTemple, uint256 bonusTemple, uint256 mintedOGTemple, uint256 faithGranted);
 
     constructor(
@@ -54,6 +50,7 @@ contract AmmIncentivisor is Ownable, Pausable {
       TempleStaking _staking,
       ITempleFraxAMMRouter _router,
       IUniswapV2Pair _pair,
+      LockedOGTemple _lockedOGTemple,
       address _treasury
     ) {
 
@@ -63,6 +60,7 @@ contract AmmIncentivisor is Ownable, Pausable {
       staking = _staking;
       router = _router;
       pair   = _pair;
+      lockedOGTemple = _lockedOGTemple;
       treasury = _treasury;
     }
 
@@ -120,14 +118,15 @@ contract AmmIncentivisor is Ownable, Pausable {
         int128 bonusEpy = epy.sub(ABDKMath64x64.fromUInt(1)).mul(scalingFactor.mul(ABDKMath64x64.fromUInt(1).add(ABDKMath64x64.div(ABDKMath64x64.fromUInt(baseIncrease), ABDKMath64x64.fromUInt(PRECISION)))));
 
         // Compute bonus temple from current temple plus currently locked temple
-        uint256 currentOGTempleAmount = ogTempleLocked[msg.sender].amount;
+        (uint256 currentOGTempleAmount,) = lockedOGTemple.ogTempleLocked(msg.sender);
         uint256 bonusTemple = calculateBonusTemple(staking.balance(currentOGTempleAmount) + templeOut, epy, bonusEpy);
 
         // Stake both minted and bonus temple. Locking up any OGTemple
         uint256 totalTemple = templeOut + bonusTemple;
         SafeERC20.safeIncreaseAllowance(templeToken, address(staking), totalTemple);
         uint256 amountOgTemple = staking.stake(totalTemple);
-        lock(msg.sender, amountOgTemple + currentOGTempleAmount);
+        SafeERC20.safeIncreaseAllowance(staking.OG_TEMPLE(), address(lockedOGTemple), amountOgTemple);
+        lockedOGTemple.lockFor(msg.sender, amountOgTemple, unlockDelaySeconds);
 
         emit BuyTheDipComplete(msg.sender, templeOut, bonusTemple, amountOgTemple, faithGranted);
     }
@@ -148,25 +147,6 @@ contract AmmIncentivisor is Ownable, Pausable {
           //bonus-temple = Y * ( [ ( 1 + a + p )  / ( 1 + a )  ] ^ d - 1 ) 
           int128 bonusFactor = ABDKMath64x64.pow(ABDKMath64x64.div(ABDKMath64x64.fromUInt(1).add(bonusEpy), baseEpy), numEpochs).sub(ABDKMath64x64.fromUInt(1));
           return _overflowSafeMul1e18(ABDKMath64x64.divu(totalTempleBalance, 1e18).mul(bonusFactor));
-    }
-
-    /*
-     * used by contract to lock in OgTemple
-    */
-    function lock(address account, uint256 _amountOgTemple) internal {
-        ogTempleLocked[account] = LockedEntry({amount: _amountOgTemple, lockedUntilTimestamp: block.timestamp + unlockDelaySeconds });
-    }
-
-    function unLock() external {
-        unLockFor(msg.sender);
-    }
-
-    function unLockFor(address account) public {
-        LockedEntry memory lockedEntry = ogTempleLocked[account];
-        require(lockedEntry.lockedUntilTimestamp < block.timestamp, "AMM Incentivizor: Too soon!");
-
-        SafeERC20.safeTransfer(staking.OG_TEMPLE(), account, lockedEntry.amount);
-        ogTempleLocked[account].amount = 0;
     }
 
     /**

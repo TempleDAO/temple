@@ -6,11 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-import "./TempleERC20Token.sol";
-import "./TempleTreasury.sol";
-import "./TreasuryManagementProxy.sol";
-import "./TempleStaking.sol";
-import "./LockedOGTemple.sol";
+import "../TempleERC20Token.sol";
+import "../TempleTreasury.sol";
+import "../TreasuryManagementProxy.sol";
+import "../TempleStaking.sol";
+import "./LockedOGTemple_deprecated.sol";
 
 /**
  * Mint and Stake for those who have quested in the Opening Ceremony
@@ -24,7 +24,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
     TempleTreasury public treasury; // temple treasury
     TreasuryManagementProxy public treasuryManagement; // temple treasury
     TempleStaking public staking; // Staking contract
-    LockedOGTemple public lockedOGTemple; // contract where OG Temple is locked
+    LockedOGTemple_deprecated public lockedOGTemple; // contract where OG Temple is locked
 
     uint256 public unlockDelaySeconds = SECONDS_IN_DAY * 7 * 6; // How long after after buying can templars unlock
     uint256 public mintMultiple = 6; // presale mint multiple
@@ -75,7 +75,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       IERC20 _stablecToken,
       TempleERC20Token _templeToken,
       TempleStaking _staking,
-      LockedOGTemple _lockedOGTemple,
+      LockedOGTemple_deprecated _lockedOGTemple,
       TempleTreasury _treasury,
       TreasuryManagementProxy _treasuryManagement,
       uint256 _harvestThresholdStablec,
