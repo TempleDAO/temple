@@ -44,20 +44,17 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     // Rate at which threshold decays, when AMM price is below the dynamicThresholdPrice
     uint256 public dynamicThresholdDecayPerBlock;
 
+    // Checkpoint for when price fell below threshold
+    uint public priceCrossedBelowDynamicThresholdBlock;
+
     // Percentage (represented as an int from 0 to 100) 
     uint constant public DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR = 10000;
     uint public dynamicThresholdIncreasePct = DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR;
-
-    // Block at which we start calculating the threshold decay when the AMM price is below the 
-    uint256 public decayStartBlock; 
 
     // To decide how much we mint on protocol, we linearly interp between these two price points, only when the 
     // market is trading above the dynamicThresholdPrice;
     Price public interpolateFromPrice;
     Price public interpolateToPrice;
-
-    // Checkpoint for when price fell below threshold
-    uint public checkPointBlock;
 
     // who's allowed to swap on the AMM. Only used if openAccessEnabled is false;
     mapping(address => bool) public allowed;
@@ -68,7 +65,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         _;
     }
 
-    event CheckPointUpdated(uint256 blockNumber);
+    event PriceCrossedBelowDynamicThreshold(uint256 blockNumber);
 
     constructor(
             IUniswapV2Pair _pair,
@@ -92,7 +89,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         interpolateFromPrice = _interpolateFromPrice;
         interpolateToPrice = _interpolateToPrice;
 
-        decayStartBlock = block.number;
+        priceCrossedBelowDynamicThresholdBlock = 0;
 
         _setupRole(DEFAULT_ADMIN_ROLE, owner());
     }
@@ -212,7 +209,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
             uint newDynamicThresholdPriceTemple = (rt * dynamicThresholdPrice.frax * DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR) / (rf * dynamicThresholdIncreasePct);
             if (newDynamicThresholdPriceTemple < dynamicThresholdPrice.temple) {
                 dynamicThresholdPrice.temple = newDynamicThresholdPriceTemple;
-                decayStartBlock = block.number;
+                priceCrossedBelowDynamicThresholdBlock = 0;
             }
         }
     }
@@ -238,21 +235,15 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     ) external virtual ensure(deadline) returns (uint) {
         require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
 
-        (bool priceBelowIV, uint amountOut, uint reserveTemple, uint reserveFrax) = swapExactTempleForFraxQuote(amountIn);
+        (bool priceBelowIV, bool willCrossDynamicThreshold, uint amountOut) = swapExactTempleForFraxQuote(amountIn);
         if (priceBelowIV) {
             require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
             templeToken.burnFrom(msg.sender, amountIn);
             SafeERC20.safeTransfer(fraxToken, to, amountOut);
         } else {
-            (uint thresholdPriceFrax, uint thresholdPriceTemple) = dynamicThresholdPriceWithDecay();
-
-            //If current AMM price above threshold price
-            if (thresholdPriceTemple * reserveFrax > thresholdPriceFrax * reserveTemple) {
-                // If post-sell price moves below threshold
-                if (thresholdPriceTemple * (reserveFrax - amountOut) < thresholdPriceFrax * (reserveTemple + amountIn)) {
-                    checkPointBlock = block.number;
-                    emit CheckPointUpdated(checkPointBlock);
-                }
+            if (willCrossDynamicThreshold) {
+                priceCrossedBelowDynamicThresholdBlock = block.number;
+                emit PriceCrossedBelowDynamicThreshold(priceCrossedBelowDynamicThresholdBlock);
             }
             
             require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
@@ -366,9 +357,10 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     }
 
     function dynamicThresholdPriceWithDecay() public view returns (uint frax, uint temple) {
-        uint thresholdDecay = (block.number - decayStartBlock) * dynamicThresholdDecayPerBlock;
-        if (thresholdDecay > dynamicThresholdPrice.temple) {
-            thresholdDecay = dynamicThresholdPrice.temple;
+        uint thresholdDecay = 0;
+
+        if (priceCrossedBelowDynamicThresholdBlock > 0) {
+            thresholdDecay = (block.number - priceCrossedBelowDynamicThresholdBlock) * dynamicThresholdDecayPerBlock;
         }
 
         return (dynamicThresholdPrice.frax, dynamicThresholdPrice.temple + thresholdDecay);
@@ -401,8 +393,8 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         }
     }
 
-    function swapExactTempleForFraxQuote(uint amountIn) public view returns (bool priceBelowIV, uint amountOut, uint reserveTemple, uint reserveFrax) {
-        ( reserveTemple,  reserveFrax,) = pair.getReserves();
+    function swapExactTempleForFraxQuote(uint amountIn) public view returns (bool priceBelowIV, bool willCrossDynamicThreshold, uint amountOut) {
+        (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
   
         // if AMM is currently trading above target, route some portion to mint on protocol
         (uint256 ivFrax, uint256 ivTemple) = templeTreasury.intrinsicValueRatio();
@@ -412,6 +404,16 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
             amountOut = (amountIn * ivFrax) / ivTemple;
         } else {
             amountOut = getAmountOut(amountIn, reserveTemple, reserveFrax);
+        }
+
+        // Will this sell move the price from above to below the dynamic threshold?
+
+        if (!priceBelowIV) {
+            (uint thresholdPriceFrax, uint thresholdPriceTemple) = dynamicThresholdPriceWithDecay();
+
+            bool currentPriceIsAboveThreshold = thresholdPriceTemple * reserveFrax > thresholdPriceFrax * reserveTemple;
+            bool postSellPrieIsBelowThreshold = thresholdPriceTemple * (reserveFrax - amountOut) < thresholdPriceFrax * (reserveTemple + amountIn);
+            willCrossDynamicThreshold = currentPriceIsAboveThreshold && postSellPrieIsBelowThreshold;
         }
     }
 }

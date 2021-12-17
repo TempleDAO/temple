@@ -45,8 +45,7 @@ contract AmmIncentivisor is Ownable, Pausable {
     }
     mapping(address => LockedEntry) public ogTempleLocked;
 
-    event BuyTheDipComplete(address buyer, uint256 boughtTemple, uint256 faithGranted);
-    event StakeAndLockComplete(address staker, uint256 boughtTemple, uint256 bonusTemple, uint256 mintedOGTemple, uint256 faithGranted);
+    event BuyTheDipComplete(address staker, uint256 boughtTemple, uint256 bonusTemple, uint256 mintedOGTemple, uint256 faithGranted);
 
     constructor(
       IERC20 _stablecToken,
@@ -87,78 +86,61 @@ contract AmmIncentivisor is Ownable, Pausable {
         stakeAndLockMultiplier = _stakeAndLockMultiplier;
     }
 
-     /**
-     * Buy the dip. Incentivize people to buy temple when price below threshold
-     * For doing so the user is rewarded in FAITH
-     */
+    /**
+    * Buy the dip. Incentivize people to buy temple when price below threshold
+    * For doing so the user is rewarded in FAITH
+    */
     function buyTheDip(uint256 amountStablec, uint256 templeOutMin, uint256 deadline) public whenNotPaused {
-          
-          (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
-          (uint thresholdPriceFrax, uint thresholdPriceTemple) = router.dynamicThresholdPriceWithDecay();
-        
-          //TODO: figure out a way to check if price has been less that threshold for x number of blocks
-          if (thresholdPriceTemple * reserveFrax < thresholdPriceFrax * reserveTemple) {
-                uint256 checkPointBlock = router.checkPointBlock();
-                require(block.number - checkPointBlock > numBlocksForUnlockIncentive, "AMM Incentivizor: Not Active");
-                SafeERC20.safeTransferFrom(stablecToken, msg.sender, address(this), amountStablec);
-                SafeERC20.safeIncreaseAllowance(stablecToken, address(router), amountStablec);
-                uint256 templeOut = router.swapExactFraxForTemple(amountStablec, templeOutMin, msg.sender, deadline);
-                //reward some-faith token
-                uint256 faithGranted = buyTheDipMultiplier * templeOut / 1000; 
-                //Reward faith
-                faith.gain(msg.sender, faithGranted);
-                emit BuyTheDipComplete(msg.sender, templeOut, faithGranted);
-          }
+        uint256 priceCrossedBelowDynamicThresholdBlock = router.priceCrossedBelowDynamicThresholdBlock();
+        (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
+        (uint thresholdPriceFrax, uint thresholdPriceTemple) = router.dynamicThresholdPriceWithDecay();
+        bool priceCurrentlyBelowThreshold = thresholdPriceTemple * reserveFrax < thresholdPriceFrax * reserveTemple;
+        require(priceCrossedBelowDynamicThresholdBlock > 0 && priceCurrentlyBelowThreshold, "AMM Incentivizor: Not Active");
+        require(block.number - priceCrossedBelowDynamicThresholdBlock > numBlocksForUnlockIncentive, "AMM Incentivizor: Not Active");
+
+        SafeERC20.safeTransferFrom(stablecToken, msg.sender, address(this), amountStablec);
+        SafeERC20.safeIncreaseAllowance(stablecToken, address(router), amountStablec);
+        uint256 templeOut = router.swapExactFraxForTemple(amountStablec, templeOutMin, msg.sender, deadline);
+        //reward some-faith token
+        uint256 faithGranted = buyTheDipMultiplier * templeOut / 1000; 
+        //Reward faith
+        faith.gain(msg.sender, faithGranted);
+
+        // baseApy * (1 + (L/M)/(N/O))*P 
+        // L = amount of faith you have
+        // M = faith total supply
+        // N = temple locked
+        // O = total temple in circulating supply
+        uint256 circulatingSupply = templeToken.totalSupply() - templeToken.balanceOf(treasury) - templeToken.balanceOf(address(staking)) - templeToken.balanceOf(router.pair()); //TODO: how accurate is this
+        uint256 baseIncrease = (faithGranted * circulatingSupply * PRECISION) / ( faith.totalSupply() * templeOut);
+        int128 epy = staking.epy();
+            
+        // Subtract 1 from epy this staking contract epy is 1 + base
+        // baseApy * (1 + (L/M)/(N/O))*P 
+        int128 bonusEpy = epy.sub(ABDKMath64x64.fromUInt(1)).mul(scalingFactor.mul(ABDKMath64x64.fromUInt(1).add(ABDKMath64x64.div(ABDKMath64x64.fromUInt(baseIncrease), ABDKMath64x64.fromUInt(PRECISION)))));
+
+        // Compute bonus temple from current temple plus currently locked temple
+        uint256 currentOGTempleAmount = ogTempleLocked[msg.sender].amount;
+        uint256 bonusTemple = calculateBonusTemple(staking.balance(currentOGTempleAmount) + templeOut, epy, bonusEpy);
+
+        // Stake both minted and bonus temple. Locking up any OGTemple
+        uint256 totalTemple = templeOut + bonusTemple;
+        SafeERC20.safeIncreaseAllowance(templeToken, address(staking), totalTemple);
+        uint256 amountOgTemple = staking.stake(totalTemple);
+        lock(msg.sender, amountOgTemple + currentOGTempleAmount);
+
+        emit BuyTheDipComplete(msg.sender, templeOut, bonusTemple, amountOgTemple, faithGranted);
     }
 
-    /**
-     * Buy the dip and lock. Incentivize people to buy temple when price below threshold
-     * To do so user will need to stake and lock for a certain period of time
-     */
-    function buyTheDipStakeAndLock(uint256 amountStablec, uint256 templeOutMin, uint256 deadline) public whenNotPaused {
-          //TODO: add once we have the appropriate logic in place
+    function buyTheDipIsActive() external view returns(bool) {
+        uint256 priceCrossedBelowDynamicThresholdBlock = router.priceCrossedBelowDynamicThresholdBlock();
+        (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
+        (uint thresholdPriceFrax, uint thresholdPriceTemple) = router.dynamicThresholdPriceWithDecay();
+        bool priceCurrentlyBelowThreshold = thresholdPriceTemple * reserveFrax < thresholdPriceFrax * reserveTemple;
 
-          (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
-          (uint thresholdPriceFrax, uint thresholdPriceTemple) = router.dynamicThresholdPriceWithDecay();
-        
-          //TODO: figure out a way to check if price has been less that threshold for x number of blocks
-          if (thresholdPriceTemple * reserveFrax < thresholdPriceFrax * reserveTemple) {
-
-                uint256 checkPointBlock = router.checkPointBlock();
-                require(block.number - checkPointBlock > numBlocksForUnlockIncentive, "AMM Incentivizor: Not Active");
-                SafeERC20.safeTransferFrom(stablecToken, msg.sender, address(this), amountStablec);
-                SafeERC20.safeIncreaseAllowance(stablecToken, address(router), amountStablec);
-                uint256 templeOut = router.swapExactFraxForTemple(amountStablec, templeOutMin, address(this), deadline);
-                //reward some-faith token
-                uint256 faithGranted = stakeAndLockMultiplier * templeOut / 1000; 
-                //Reward faith
-                faith.gain(msg.sender, faithGranted);
-
-                // baseApy * (1 + (L/M)/(N/O))*P 
-                // L = amount of faith you have
-                // M = faith total supply
-                // N = temple locked
-                // O = total temple in circulating supply
-                uint256 circulatingSupply = templeToken.totalSupply() - templeToken.balanceOf(treasury) - templeToken.balanceOf(address(staking)) - templeToken.balanceOf(router.pair()); //TODO: how accurate is this
-                uint256 baseIncrease = (faithGranted * circulatingSupply * PRECISION) / ( faith.totalSupply() * templeOut);
-                int128 epy = staking.epy();
-                  
-                // Subtract 1 from epy this staking contract epy is 1 + base
-                // baseApy * (1 + (L/M)/(N/O))*P 
-                int128 bonusEpy = epy.sub(ABDKMath64x64.fromUInt(1)).mul(scalingFactor.mul(ABDKMath64x64.fromUInt(1).add(ABDKMath64x64.div(ABDKMath64x64.fromUInt(baseIncrease), ABDKMath64x64.fromUInt(PRECISION)))));
-
-                // Compute bonus temple from current temple plus currently locked temple
-                uint256 currentOGTempleAmount = ogTempleLocked[msg.sender].amount;
-                uint256 bonusTemple = calculateBonusTemple(staking.balance(currentOGTempleAmount) + templeOut, epy, bonusEpy);
-
-                // Stake both minted and bonus temple. Locking up any OGTemple
-                uint256 totalTemple = templeOut + bonusTemple;
-                SafeERC20.safeIncreaseAllowance(templeToken, address(staking), totalTemple);
-                uint256 amountOgTemple = staking.stake(totalTemple);
-                lock(msg.sender, amountOgTemple + currentOGTempleAmount);
-
-                emit StakeAndLockComplete(msg.sender, templeOut, bonusTemple, amountOgTemple, faithGranted);
-          }
+        return priceCrossedBelowDynamicThresholdBlock > 0 
+                && priceCurrentlyBelowThreshold
+                && (block.number - priceCrossedBelowDynamicThresholdBlock > numBlocksForUnlockIncentive);
     }
 
     function calculateBonusTemple(uint256 totalTempleBalance,  int128 baseEpy,int128 bonusEpy) internal view returns(uint256) {
