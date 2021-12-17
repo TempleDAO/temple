@@ -89,7 +89,7 @@ const _abi = [
         type: "uint256",
       },
     ],
-    name: "loose",
+    name: "lose",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",

@@ -10,7 +10,7 @@ interface IFaith {
     function canManagerFaith(address account) external returns(bool);
     
     function gain(address to, uint256 amount) external;
-    function loose(address to, uint256 amount) external;
+    function lose(address to, uint256 amount) external;
 
     function adManager(address account) external;
 

@@ -24,7 +24,7 @@ contract Faith is Ownable {
         emit Gain(to, amount);
     }
 
-    function loose(address to, uint256 amount) external {
+    function lose(address to, uint256 amount) external {
         require(canManageFaith[msg.sender] == true, "Faith: caller cannot manage faith");
         if (amount > balances[to]) {
             amount = balances[to];
