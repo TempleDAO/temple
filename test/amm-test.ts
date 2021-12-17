@@ -4,10 +4,7 @@ import { expect } from "chai";
 import { FakeERC20, FakeERC20__factory, TempleERC20Token, TempleERC20Token__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTreasury, TempleTreasury__factory, TempleUniswapV2Pair, TempleUniswapV2Pair__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02NoEth, UniswapV2Router02NoEth__factory, AmmIncentivisor, AmmIncentivisor__factory, Faith, Faith__factory, TempleStaking, TempleStaking__factory, ISwapRouter } from "../typechain";
 
 import { BigNumber, Signer } from "ethers";
-import { mineNBlocks, toAtto, shouldThrow, blockTimestamp } from "./helpers";
-
-import { blockTimestamp, fromAtto } from "../scripts/deploys/helpers";
-import { getTsBuildInfoEmitOutputFilePath } from "typescript";
+import { mineNBlocks, toAtto, shouldThrow, blockTimestamp, fromAtto } from "./helpers";
 
 const fmtPricePair = (pair: [BigNumber, BigNumber, number?]): [number, number] => {
   return [fromAtto(pair[0]), fromAtto(pair[1])]

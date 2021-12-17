@@ -138,6 +138,19 @@ const _abi = [
     type: "function",
   },
   {
+    inputs: [],
+    name: "pair",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
     inputs: [
       {
         internalType: "uint256",
