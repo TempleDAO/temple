@@ -36,6 +36,7 @@ const theme: DefaultTheme = {
     brand25: transparentize(0.75, brandColor),
     dark: darkColor,
     dark75: transparentize(0.25, darkColor),
+    grayOpaque: '#1b1919',
     light: '#FFFFFF',
     light50: darken(0.50, '#FFFFFF'),
   },

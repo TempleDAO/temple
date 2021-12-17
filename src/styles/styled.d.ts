@@ -12,6 +12,7 @@ declare module 'styled-components' {
       brand75: string;
       dark: string;
       dark75: string;
+      grayOpaque: string;
       light: string;
       light50: string;
     };
