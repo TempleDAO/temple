@@ -30,8 +30,8 @@ function useCustomRouting(
   }
 
   function back() {
-    const PrevPage = navHistory.pop();
-    setNavHistory((history) => [...history]);
+    const [PrevPage] = navHistory.slice(-1);
+    setNavHistory((history) => [...history.slice(0, -1)]);
     const BackPage = PrevPage ? () => PrevPage : () => BasePageComponent;
     setCurrentPage(BackPage);
   }
