@@ -77,9 +77,8 @@ const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
                   left:
                     bgDimensions.height == window.innerHeight
                       ? `${
-                          bgDimensions.imageWidth * 0.425 -
-                          (bgDimensions.imageWidth - window.innerWidth) / 2 -
-                          136
+                          bgDimensions.width * 0.18 -
+                          (bgDimensions.width - window.innerWidth) / 2
                         }px`
                       : `${0.18 * bgDimensions.width}px`,
                 }}
@@ -94,9 +93,8 @@ const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
                   left:
                     bgDimensions.height == window.innerHeight
                       ? `${
-                          bgDimensions.imageWidth * 0.485 -
-                          (bgDimensions.imageWidth - window.innerWidth) / 2 -
-                          23
+                          bgDimensions.width * 0.439 -
+                          (bgDimensions.width - window.innerWidth) / 2
                         }px`
                       : `${0.439 * bgDimensions.width}px`,
                 }}
@@ -111,9 +109,8 @@ const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
                   left:
                     bgDimensions.height == window.innerHeight
                       ? `${
-                          bgDimensions.imageWidth * 0.545 -
-                          (bgDimensions.imageWidth - window.innerWidth) / 2 +
-                          75
+                          bgDimensions.width * 0.685 -
+                          (bgDimensions.width - window.innerWidth) / 2
                         }px`
                       : `${0.685 * bgDimensions.width}px`,
                 }}
