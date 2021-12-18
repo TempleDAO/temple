@@ -70,10 +70,6 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
     };
   }, []);
 
-  useEffect(() => {
-    updateWallet();
-  }, []);
-
   return (
     <Background id="background" style={{ overflow: 'hidden' }}>
       {bgDimensions != null && (
