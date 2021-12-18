@@ -1,3 +1,4 @@
+import MetamaskButton from 'components/Button/MetamaskButton';
 import React, {
   Dispatch,
   SetStateAction,
@@ -60,6 +61,7 @@ const EnterPage: CustomRoutingPage = ({ routingHelper }) => {
     <Background id="background" style={{ overflow: 'hidden' }}>
       {bgDimensions != null && (
         <>
+          <MetamaskButton />
           <DoorGlow
             src={glowLeft}
             title="Buy"
