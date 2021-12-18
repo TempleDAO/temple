@@ -7,6 +7,7 @@ import React, {
 import styled, { keyframes } from 'styled-components';
 import RitualsPosters from 'components/Pages/RitualsMoviePoster';
 import Portals from 'components/Pages/Portals';
+import DashboardEntrance from 'components/Pages/DashboardEntrance';
 import BackButton from 'components/Button/BackButton';
 import MetamaskButton from 'components/Button/MetamaskButton';
 import foyerImage from 'assets/images/foyer.png';
@@ -95,7 +96,7 @@ const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
             <DoorGlow
               src={rightGlow}
               title="Dashboard"
-              // onClick={() => changePageTo(Portals)} // TODO: Add route
+              onClick={() => changePageTo(DashboardEntrance)}
               style={{
                 transform: `scale(${0.965 * bgDimensions.scaleW}%)`,
                 bottom: `${0.238 * bgDimensions.height}px`,

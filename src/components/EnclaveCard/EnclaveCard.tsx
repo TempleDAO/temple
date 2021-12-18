@@ -46,7 +46,6 @@ const EnclaveCard = ({ enclave, unsetDiscrodData }: EnclaveCardProps) => {
   if (!enclave || !enclaveImages[enclave]) {
     return (
       <Container>
-        <Label>{`Connect to Discord`}</Label>
         <a href={discordAuthUrl}>
           <CardStyled>
             <LoginImage src={discordImage} alt={'discord Enclave'} />
