@@ -615,7 +615,12 @@ const Background = styled.div<BackgroundProps>`
   justify-content: center;
 `;
 
-const OffClickOverlay = styled(OffClick)`
+const OffClickOverlay = styled.div`
+  position: absolute;
+  height: 100vh;
+  width: 100vw;
+  z-index: 0;
+  transition: background 300ms;
   background-color: ${(props) => props.theme.palette.dark75};
   opacity: 0.75;
 `;

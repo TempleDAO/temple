@@ -202,7 +202,7 @@ const DoorGlow = styled.img`
   animation: ${flicker} 3s infinite alternate ease-out;
 `;
 
-export const OffClick = styled.div`
+const OffClick = styled.div`
   position: absolute;
   height: 100vh;
   width: 100vw;
