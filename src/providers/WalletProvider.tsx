@@ -1,7 +1,8 @@
-import { JsonRpcProvider, JsonRpcSigner } from '@ethersproject/providers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
-import { BigNumber, ContractTransaction, ethers } from 'ethers';
+import { JsonRpcProvider, JsonRpcSigner } from '@ethersproject/providers';
 import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
+import { ClaimType } from 'enums/claim-type';
+import { BigNumber, ContractTransaction, ethers } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
 import React, {
   createContext,
@@ -11,19 +12,18 @@ import React, {
   useState,
 } from 'react';
 import {
+  AMMWhitelist__factory,
   ERC20__factory,
   ExitQueue__factory,
   LockedOGTemple__factory,
   OGTemple__factory,
   OpeningCeremony__factory,
   TempleCashback__factory,
-  AMMWhitelist__factory,
+  TempleERC20Token__factory,
   TempleFraxAMMRouter__factory,
   TempleStaking__factory,
   TempleTreasury__factory,
-  TempleERC20Token__factory,
 } from 'types/typechain';
-import { ClaimType } from 'enums/claim-type';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumberNoDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
@@ -40,6 +40,10 @@ export const OG_TEMPLE_TOKEN = '$OGTEMPLE';
 
 // our default deadline is 20 minutes
 const DEADLINE = 20 * 60;
+
+// We want to save gas burn $ for the Templars,
+// so we approving 1M up front, so only 1 approve TXN is required for approve
+const ONE_MILLION = toAtto(1000000);
 
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
@@ -155,7 +159,7 @@ interface WalletState {
 
   sell(amountToSell: BigNumber): void;
 
-  stake(amountToBuy: BigNumber): void;
+  stake(amountToStake: BigNumber): Promise<void>;
 
   mintAndStake(amountToBuy: BigNumber): void;
 
@@ -192,6 +196,8 @@ interface WalletState {
     amountToBuy: BigNumber,
     slippage: number
   ): Promise<BigNumber | void>;
+
+  apy: number;
 }
 
 const INITIAL_STATE: WalletState = {
@@ -231,7 +237,7 @@ const INITIAL_STATE: WalletState = {
   connectWallet: noop,
   changeWalletAddress: noop,
   updateWallet: noop,
-  stake: noop,
+  stake: asyncNoop,
   mintAndStake: noop,
   increaseAllowanceForRitual: noop,
   clearRitual: noop,
@@ -246,6 +252,7 @@ const INITIAL_STATE: WalletState = {
   getJoinQueueData: asyncNoop,
   getSellQuote: asyncNoop,
   getBuyQuote: asyncNoop,
+  apy: 0,
 };
 
 const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
@@ -321,6 +328,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const [exitQueueData, setExitQueueData] = useState<ExitQueueData>(
     INITIAL_STATE.exitQueueData
   );
+  const [apy, setApy] = useState(0);
 
   const { openNotification } = useNotification();
 
@@ -566,6 +574,17 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
+  const getApy = async () => {
+    if (walletAddress && signerState) {
+      const TEMPLE_STAKING = new TempleStaking__factory()
+        .attach(TEMPLE_STAKING_ADDRESS)
+        .connect(signerState);
+      const SCALE_FACTOR = 10000;
+      const epy = (await TEMPLE_STAKING.getEpy(SCALE_FACTOR)).toNumber();
+      setApy(Math.trunc((Math.pow(epy / SCALE_FACTOR + 1, 365.25) - 1) * 100));
+    }
+  };
+
   /**
    * Load new data for the connected wallet
    * @param updateLoading Determines if the `isLoading` state should be updated
@@ -588,6 +607,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await getAllocation();
         await getLockedEntries();
         await getExitQueueData();
+        await getApy();
         if (updateLoading) {
           setIsLoading(false);
         }
@@ -613,7 +633,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .attach(await templeStakingContract.OG_TEMPLE())
         .connect(signerState);
 
-      const templeContract = new OGTemple__factory()
+      const templeContract = new TempleERC20Token__factory()
         .attach(TEMPLE_ADDRESS)
         .connect(signerState);
 
@@ -725,14 +745,8 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .attach(TEMPLE_ADDRESS)
         .connect(signerState);
 
-      console.info(
-        `increaseTokenAllowance: ${fromAtto(
-          amount
-        )} ${allowanceKind} ${ritualKind}`
-      );
       switch (allowanceKind) {
         case 'TEMPLE':
-          console.info(`checkk TEMPLEPELPEL`);
           allowance = await TEMPLE.allowance(
             walletAddress,
             TEMPLE_V2_ROUTER_ADDRESS
@@ -751,12 +765,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           );
           break;
       }
-      console.info(`allowabce :${fromAtto(allowance)}`);
+
       if (allowance.lt(amount)) {
         try {
-          // We want to save gas burn $ for the Templars,
-          // so we approving 1M up front, so only 1 approve TXN is required for approve
-          const ONE_MILLION = toAtto(1000000);
           let approveTXN: ContractTransaction;
           switch (allowanceKind) {
             case 'TEMPLE':
@@ -955,11 +966,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           walletAddress,
           TEMPLE_STAKING_ADDRESS
         );
-        const balance: BigNumber = await OGTContract.balanceOf(walletAddress);
         // ensure user input is not greater than user balance. if greater use all user balance.
         const offering = amount.lte(ogTempleBalance) ? amount : ogTempleBalance;
 
-        console.info(`unstake: ${fromAtto(amount)}`);
         const unstakeTXN = await TEMPLE_STAKING.unstake(offering, {
           gasLimit: 2000000,
         });
@@ -1249,19 +1258,44 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     return BigNumber.from(0);
   };
 
-  const stake = async (amountToBuy: BigNumber) => {
+  const stake = async (amountToStake: BigNumber) => {
     if (walletAddress && signerState) {
+      console.info(`staking START`);
       const TEMPLE_STAKING = new TempleStaking__factory()
         .attach(TEMPLE_STAKING_ADDRESS)
-        .connect(walletAddress);
+        .connect(signerState);
 
-      const stakeTXN = await TEMPLE_STAKING.stake(amountToBuy);
+      const TEMPLE = new TempleERC20Token__factory()
+        .attach(TEMPLE_ADDRESS)
+        .connect(signerState);
 
-      // Show feedback to user
-      openNotification({
-        title: `${TEMPLE_TOKEN} staked`,
-        hash: stakeTXN.hash,
-      });
+      const allowance = await TEMPLE.allowance(
+        walletAddress,
+        TEMPLE_STAKING_ADDRESS
+      );
+
+      if (allowance.lt(amountToStake)) {
+        const approveTXN = await TEMPLE.approve(
+          TEMPLE_STAKING_ADDRESS,
+          ONE_MILLION
+        );
+
+        await approveTXN.wait();
+        // Show feedback to user
+        openNotification({
+          title: `${TEMPLE_TOKEN} Approved`,
+          hash: approveTXN.hash,
+        });
+
+        const stakeTXN = await TEMPLE_STAKING.stake(amountToStake);
+
+        await stakeTXN.wait();
+        // Show feedback to user
+        openNotification({
+          title: `${TEMPLE_TOKEN} staked`,
+          hash: stakeTXN.hash,
+        });
+      }
     }
   };
 
@@ -1343,6 +1377,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         getJoinQueueData,
         getSellQuote,
         getBuyQuote,
+        apy,
       }}
     >
       {children}
