@@ -30,7 +30,7 @@ function capitalizeFirstLetter(string) {
 const EnclaveCard = ({ enclave, unsetDiscrodData }: EnclaveCardProps) => {
   const params = new URLSearchParams({
     client_id: ENV_VARS.VITE_DISCORD_CLIENT_ID,
-    redirect_uri: `${window.location.protocol}//${window.location.host}/account`,
+    redirect_uri: `${window.location.protocol}//${window.location.host}/temple-gates`,
     response_type: 'token',
     scope: 'identify',
   });

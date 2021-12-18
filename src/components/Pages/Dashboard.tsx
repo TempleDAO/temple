@@ -1,12 +1,14 @@
 import React from 'react';
 import styled from 'styled-components';
 import Embed from 'components/Embed/Embed';
+import BackButton from 'components/Button/BackButton';
 import StatsCard from 'components/StatsCard/StatsCard';
 import { PriceChart } from 'components/Charts/PriceChart';
 import { FlexStyled } from 'components/Layout/Flex';
 import { theme } from 'styles/theme';
 import { formatNumber, formatMillions } from 'utils/formatter';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
+import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 
 import texture1 from 'assets/images/texture-1.svg';
 import texture2 from 'assets/images/texture-2.svg';
@@ -97,392 +99,404 @@ const DUNE_RATIO_CHART =
 // const DUNE_RATIO_VALUE =
 //   'https://dune.xyz/embeds/237286/444167/ae8ef580-ef5f-4123-b629-72fc87da465d';
 
-const Dashboard = () => {
+const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
+  const { back } = routingHelper;
+
   const dashboardMetrics = useRefreshableDashboardMetrics();
 
   return (
     <>
-      <h3>Temple Price</h3>
-      <FlexStyled
-        layout={{
-          kind: 'container',
-          direction: 'row',
-          justifyContent: 'flex-start',
-          canWrap: true,
-        }}
-      >
+      <PageWrapper>
+        <h3>Temple Price</h3>
         <FlexStyled
           layout={{
-            kind: 'item',
+            kind: 'container',
+            direction: 'row',
+            justifyContent: 'flex-start',
+            canWrap: true,
           }}
         >
-          <StatsCard
-            label="Temple Price"
-            stat={`$${formatNumber(dashboardMetrics?.templeValue)}`}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture1}
-            half
-          />
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Temple Price"
+              stat={`$${formatNumber(dashboardMetrics?.templeValue)}`}
+              backgroundColor={theme.palette.brand75}
+              backgroundImageUrl={texture1}
+              half
+            />
+          </FlexStyled>
+
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Intrinsic Value"
+              stat={`$${formatNumber(dashboardMetrics?.iv)}`}
+              backgroundColor={theme.palette.brand75}
+              backgroundImageUrl={texture2}
+              half
+            />
+          </FlexStyled>
+        </FlexStyled>
+        <ChartContainer>
+          <PriceChart />
+        </ChartContainer>
+        <h3>Protocol Growth</h3>
+        <FlexStyled
+          layout={{
+            kind: 'container',
+            direction: 'row',
+            justifyContent: 'flex-start',
+            canWrap: true,
+          }}
+        >
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Treasury Value"
+              stat={`$${formatMillions(dashboardMetrics?.treasuryValue)}`}
+              backgroundColor={theme.palette.brand75}
+              backgroundImageUrl={texture3}
+              half
+            />
+          </FlexStyled>
+
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Current Apy (annually)"
+              stat={`${formatNumber(dashboardMetrics?.templeApy)}%`}
+              backgroundColor={theme.palette.brand75}
+              backgroundImageUrl={texture4}
+              half
+            />
+          </FlexStyled>
+        </FlexStyled>
+        <Embed
+          src={DUNE_TREASURY_CHART}
+          minWidth={CHART_EMBED_MIN_WIDTH}
+          height={CHART_EMBED_HEIGHT}
+        />
+        <FlexStyled
+          layout={{
+            kind: 'container',
+            direction: 'row',
+            justifyContent: 'flex-start',
+            canWrap: true,
+          }}
+        >
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCardDim
+              label="Circulating Market Cap"
+              stat={`$${formatMillions(dashboardMetrics?.circMCap)}`}
+              backgroundColor={theme.palette.dark}
+              darken
+              fontColor={theme.palette.light}
+              backgroundImageUrl={background1}
+            />
+          </FlexStyled>
+
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCardDim
+              label="Fully Diluted Valuation"
+              stat={`$${formatMillions(
+                dashboardMetrics?.templeTotalSupply *
+                  dashboardMetrics?.templeValue
+              )}`}
+              backgroundColor={theme.palette.dark}
+              darken
+              fontColor={theme.palette.light}
+              backgroundImageUrl={background2}
+            />
+          </FlexStyled>
+
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCardDim
+              label="Circulating TEMPLE supply"
+              stat={`${formatMillions(dashboardMetrics?.circTempleSupply)}`}
+              backgroundColor={theme.palette.dark}
+              darken
+              fontColor={theme.palette.light}
+              backgroundImageUrl={background3}
+            />
+          </FlexStyled>
+
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCardDim
+              label="Fully Diluted TEMPLE supply"
+              stat={`${formatMillions(dashboardMetrics?.templeTotalSupply)}`}
+              backgroundColor={theme.palette.dark}
+              darken
+              fontColor={theme.palette.light}
+              backgroundImageUrl={background4}
+            />
+          </FlexStyled>
+        </FlexStyled>
+
+        <h3>Compounding Return</h3>
+
+        <FlexStyled
+          layout={{
+            kind: 'container',
+            direction: 'row',
+            justifyContent: 'flex-start',
+            canWrap: true,
+          }}
+        >
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Temple Price"
+              stat={`$${formatNumber(dashboardMetrics?.templeValue)}`}
+              backgroundColor={theme.palette.brand75}
+              backgroundImageUrl={background5}
+            />
+          </FlexStyled>
+
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Current EPY (daily)"
+              stat={`${formatNumber(dashboardMetrics?.templeEpy)}%`}
+              backgroundColor={theme.palette.brand75}
+              backgroundImageUrl={background6}
+            />
+          </FlexStyled>
+
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="OGTemple Price"
+              stat={`$${formatNumber(dashboardMetrics?.ogTemplePrice)}`}
+              backgroundColor={theme.palette.brand75}
+              fontColor={theme.palette.light}
+              backgroundImageUrl={background7}
+            />
+          </FlexStyled>
+
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Temple/OGTemple Ratio"
+              stat={`${formatNumber(dashboardMetrics?.ogTempleRatio)}`}
+              backgroundColor={theme.palette.brand75}
+              fontColor={theme.palette.light}
+              backgroundImageUrl={background8}
+            />
+          </FlexStyled>
         </FlexStyled>
 
         <FlexStyled
           layout={{
-            kind: 'item',
+            kind: 'container',
+            direction: 'row',
+            justifyContent: 'flex-start',
+            canWrap: true,
           }}
         >
-          <StatsCard
-            label="Intrinsic Value"
-            stat={`$${formatNumber(dashboardMetrics?.iv)}`}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture2}
-            half
-          />
-        </FlexStyled>
-      </FlexStyled>
-      <ChartContainer>
-        <PriceChart />
-      </ChartContainer>
-      <h3>Protocol Growth</h3>
-      <FlexStyled
-        layout={{
-          kind: 'container',
-          direction: 'row',
-          justifyContent: 'flex-start',
-          canWrap: true,
-        }}
-      >
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCard
-            label="Treasury Value"
-            stat={`$${formatMillions(dashboardMetrics?.treasuryValue)}`}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture3}
-            half
-          />
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <Embed
+              src={DUNE_OGTEMPLE_CHART}
+              minWidth={CHART_EMBED_MIN_WIDTH}
+              height={CHART_EMBED_HEIGHT}
+            />
+          </FlexStyled>
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <Embed
+              src={DUNE_RATIO_CHART}
+              minWidth={CHART_EMBED_MIN_WIDTH}
+              height={CHART_EMBED_HEIGHT}
+            />
+          </FlexStyled>
         </FlexStyled>
 
+        <h3>Community Growth</h3>
         <FlexStyled
           layout={{
-            kind: 'item',
+            kind: 'container',
+            direction: 'row',
+            justifyContent: 'flex-start',
+            canWrap: true,
           }}
         >
-          <StatsCard
-            label="Current Apy (annually)"
-            stat={`${formatNumber(dashboardMetrics?.templeApy)}%`}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture4}
-            half
-          />
-        </FlexStyled>
-      </FlexStyled>
-      <Embed
-        src={DUNE_TREASURY_CHART}
-        minWidth={CHART_EMBED_MIN_WIDTH}
-        height={CHART_EMBED_HEIGHT}
-      />
-      <FlexStyled
-        layout={{
-          kind: 'container',
-          direction: 'row',
-          justifyContent: 'flex-start',
-          canWrap: true,
-        }}
-      >
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCardDim
-            label="Circulating Market Cap"
-            stat={`$${formatMillions(dashboardMetrics?.circMCap)}`}
-            backgroundColor={theme.palette.dark}
-            darken
-            fontColor={theme.palette.light}
-            backgroundImageUrl={background1}
-          />
-        </FlexStyled>
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Discord Users"
+              stat={dashboardMetrics?.socialMetrics.discord.totalMembers}
+              backgroundColor={theme.palette.brand75}
+              backgroundImageUrl={background9}
+            />
+          </FlexStyled>
 
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCardDim
-            label="Fully Diluted Valuation"
-            stat={`$${formatMillions(
-              dashboardMetrics?.templeTotalSupply *
-                dashboardMetrics?.templeValue
-            )}`}
-            backgroundColor={theme.palette.dark}
-            darken
-            fontColor={theme.palette.light}
-            backgroundImageUrl={background2}
-          />
-        </FlexStyled>
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Twitter Followers"
+              stat={dashboardMetrics?.socialMetrics.twitter_followers_count}
+              backgroundColor={theme.palette.brand75}
+              backgroundImageUrl={background10}
+            />
+          </FlexStyled>
 
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCardDim
-            label="Circulating TEMPLE supply"
-            stat={`${formatMillions(dashboardMetrics?.circTempleSupply)}`}
-            backgroundColor={theme.palette.dark}
-            darken
-            fontColor={theme.palette.light}
-            backgroundImageUrl={background3}
-          />
-        </FlexStyled>
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Number of Enclaves"
+              stat={'5'}
+              backgroundColor={theme.palette.brand75}
+              fontColor={theme.palette.light}
+              backgroundImageUrl={background11}
+            />
+          </FlexStyled>
 
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Members in chaos"
+              stat={dashboardMetrics?.socialMetrics.discord.enclaveChaos}
+              backgroundColor={theme.palette.brand75}
+              fontColor={theme.palette.light}
+              backgroundImageUrl={chaosImage}
+            />
+          </FlexStyled>
+        </FlexStyled>
         <FlexStyled
           layout={{
-            kind: 'item',
+            kind: 'container',
+            direction: 'row',
+            justifyContent: 'flex-start',
+            canWrap: true,
           }}
         >
-          <StatsCardDim
-            label="Fully Diluted TEMPLE supply"
-            stat={`${formatMillions(dashboardMetrics?.templeTotalSupply)}`}
-            backgroundColor={theme.palette.dark}
-            darken
-            fontColor={theme.palette.light}
-            backgroundImageUrl={background4}
-          />
-        </FlexStyled>
-      </FlexStyled>
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Members in Mystery"
+              stat={dashboardMetrics?.socialMetrics.discord.enclaveMystery}
+              backgroundColor={theme.palette.brand75}
+              fontColor={theme.palette.light}
+              backgroundImageUrl={mysteryImage}
+            />
+          </FlexStyled>
 
-      <h3>Compounding Return</h3>
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Members in Logic"
+              stat={dashboardMetrics?.socialMetrics.discord.enclaveLogic}
+              backgroundColor={theme.palette.brand75}
+              fontColor={theme.palette.light}
+              backgroundImageUrl={logicImage}
+            />
+          </FlexStyled>
 
-      <FlexStyled
-        layout={{
-          kind: 'container',
-          direction: 'row',
-          justifyContent: 'flex-start',
-          canWrap: true,
-        }}
-      >
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCard
-            label="Temple Price"
-            stat={`$${formatNumber(dashboardMetrics?.templeValue)}`}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={background5}
-          />
-        </FlexStyled>
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Members in structure"
+              stat={dashboardMetrics?.socialMetrics.discord.enclaveStructure}
+              backgroundColor={theme.palette.brand75}
+              fontColor={theme.palette.light}
+              backgroundImageUrl={structureImage}
+            />
+          </FlexStyled>
 
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCard
-            label="Current EPY (daily)"
-            stat={`${formatNumber(dashboardMetrics?.templeEpy)}%`}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={background6}
-          />
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Members in order"
+              stat={dashboardMetrics?.socialMetrics.discord.enclaveOrder}
+              backgroundColor={theme.palette.brand75}
+              fontColor={theme.palette.light}
+              backgroundImageUrl={orderImage}
+            />
+          </FlexStyled>
         </FlexStyled>
-
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCard
-            label="OGTemple Price"
-            stat={`$${formatNumber(dashboardMetrics?.ogTemplePrice)}`}
-            backgroundColor={theme.palette.brand75}
-            fontColor={theme.palette.light}
-            backgroundImageUrl={background7}
-          />
-        </FlexStyled>
-
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCard
-            label="Temple/OGTemple Ratio"
-            stat={`${formatNumber(dashboardMetrics?.ogTempleRatio)}`}
-            backgroundColor={theme.palette.brand75}
-            fontColor={theme.palette.light}
-            backgroundImageUrl={background8}
-          />
-        </FlexStyled>
-      </FlexStyled>
-
-      <FlexStyled
-        layout={{
-          kind: 'container',
-          direction: 'row',
-          justifyContent: 'flex-start',
-          canWrap: true,
-        }}
-      >
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <Embed
-            src={DUNE_OGTEMPLE_CHART}
-            minWidth={CHART_EMBED_MIN_WIDTH}
-            height={CHART_EMBED_HEIGHT}
-          />
-        </FlexStyled>
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <Embed
-            src={DUNE_RATIO_CHART}
-            minWidth={CHART_EMBED_MIN_WIDTH}
-            height={CHART_EMBED_HEIGHT}
-          />
-        </FlexStyled>
-      </FlexStyled>
-
-      <h3>Community Growth</h3>
-      <FlexStyled
-        layout={{
-          kind: 'container',
-          direction: 'row',
-          justifyContent: 'flex-start',
-          canWrap: true,
-        }}
-      >
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCard
-            label="Discord Users"
-            stat={dashboardMetrics?.socialMetrics.discord.totalMembers}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={background9}
-          />
-        </FlexStyled>
-
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCard
-            label="Twitter Followers"
-            stat={dashboardMetrics?.socialMetrics.twitter_followers_count}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={background10}
-          />
-        </FlexStyled>
-
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCard
-            label="Number of Enclaves"
-            stat={'5'}
-            backgroundColor={theme.palette.brand75}
-            fontColor={theme.palette.light}
-            backgroundImageUrl={background11}
-          />
-        </FlexStyled>
-
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCard
-            label="Members in chaos"
-            stat={dashboardMetrics?.socialMetrics.discord.enclaveChaos}
-            backgroundColor={theme.palette.brand75}
-            fontColor={theme.palette.light}
-            backgroundImageUrl={chaosImage}
-          />
-        </FlexStyled>
-      </FlexStyled>
-      <FlexStyled
-        layout={{
-          kind: 'container',
-          direction: 'row',
-          justifyContent: 'flex-start',
-          canWrap: true,
-        }}
-      >
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCard
-            label="Members in Mystery"
-            stat={dashboardMetrics?.socialMetrics.discord.enclaveMystery}
-            backgroundColor={theme.palette.brand75}
-            fontColor={theme.palette.light}
-            backgroundImageUrl={mysteryImage}
-          />
-        </FlexStyled>
-
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCard
-            label="Members in Logic"
-            stat={dashboardMetrics?.socialMetrics.discord.enclaveLogic}
-            backgroundColor={theme.palette.brand75}
-            fontColor={theme.palette.light}
-            backgroundImageUrl={logicImage}
-          />
-        </FlexStyled>
-
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCard
-            label="Members in structure"
-            stat={dashboardMetrics?.socialMetrics.discord.enclaveStructure}
-            backgroundColor={theme.palette.brand75}
-            fontColor={theme.palette.light}
-            backgroundImageUrl={structureImage}
-          />
-        </FlexStyled>
-
-        <FlexStyled
-          layout={{
-            kind: 'item',
-          }}
-        >
-          <StatsCard
-            label="Members in order"
-            stat={dashboardMetrics?.socialMetrics.discord.enclaveOrder}
-            backgroundColor={theme.palette.brand75}
-            fontColor={theme.palette.light}
-            backgroundImageUrl={orderImage}
-          />
-        </FlexStyled>
-      </FlexStyled>
+      </PageWrapper>
+      <BackButton width={112} height={112} onClick={back} />
     </>
   );
 };
+
+// remove the padding when we are not doing custom routing
+const PageWrapper = styled.div`
+  padding: 3rem 0;
+  max-width: ${(props) => props.theme.metrics.desktop.maxWidth};
+  margin: 0 auto;
+`;
 
 const ChartContainer = styled.div`
   width: 100%;
