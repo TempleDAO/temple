@@ -1,3 +1,5 @@
+//@ts-nocheck
+
 import React from 'react';
 import { transparentize } from 'polished';
 import styled from 'styled-components';
