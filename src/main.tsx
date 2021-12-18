@@ -36,10 +36,10 @@ ReactDOM.render(
                       <Route path="exit" element={<Exit />} />
                       <Route path="rituals" element={<Rituals />} />
                       <Route
-                        path="fire-ritualist-cashback"
+                        path="fire-ritualist-apy-topup"
                         element={<FireRitualistCashback />}
                       />
-                      <Route path="claim" element={<Claim />} />
+                      <Route path="temple-claim" element={<Claim />} />
                       <Route path="/*" element={<Navigate replace to="/" />} />
                     </>
                   ) : (
@@ -49,7 +49,6 @@ ReactDOM.render(
                     </>
                   )
                 }
-                
               </Route>
             </Routes>
           </BrowserRouter>
