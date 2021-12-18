@@ -209,8 +209,11 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
             uint newDynamicThresholdPriceTemple = (rt * dynamicThresholdPrice.frax * DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR) / (rf * dynamicThresholdIncreasePct);
             if (newDynamicThresholdPriceTemple < dynamicThresholdPrice.temple) {
                 dynamicThresholdPrice.temple = newDynamicThresholdPriceTemple;
-                priceCrossedBelowDynamicThresholdBlock = 0;
             }
+
+            // Regardless, if we are minting on protocol that means we are above the threshold price, so stop any
+            // decay of the threshold price
+            priceCrossedBelowDynamicThresholdBlock = 0;
         }
     }
 
@@ -241,7 +244,8 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
             templeToken.burnFrom(msg.sender, amountIn);
             SafeERC20.safeTransfer(fraxToken, to, amountOut);
         } else {
-            if (willCrossDynamicThreshold) {
+            // only set the threshold price decay if we aren't already in decay mode
+            if (willCrossDynamicThreshold && priceCrossedBelowDynamicThresholdBlock == 0) {
                 priceCrossedBelowDynamicThresholdBlock = block.number;
                 emit PriceCrossedBelowDynamicThreshold(priceCrossedBelowDynamicThresholdBlock);
             }
