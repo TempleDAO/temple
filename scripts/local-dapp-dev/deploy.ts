@@ -16,7 +16,7 @@ import {
   TempleFraxAMMRouter__factory,
   TempleStaking__factory,
   TempleTeamPayments__factory,
-  TempleTreasury,
+  LockedOGTempleDeprecated__factory,
   TempleTreasury__factory,
   TempleUniswapV2Pair__factory,
   TreasuryManagementProxy__factory,
@@ -63,7 +63,8 @@ async function main() {
   );
   await templeToken.addMinter(treasury.address);
 
-  const lockedOgTemple = await new LockedOGTemple__factory(owner).deploy(ogTempleToken.address);
+  const lockedOgTemple_old = await new LockedOGTempleDeprecated__factory(owner).deploy(ogTempleToken.address);
+  const lockedOgTemple_new = await new LockedOGTemple__factory(owner).deploy(ogTempleToken.address);
 
   // mint fake stablecToken into all test accounts
   const accounts = await ethers.getSigners();
@@ -97,14 +98,14 @@ async function main() {
     await templeToken.mint(address, toAtto(30000));
     await templeToken.connect(account).increaseAllowance(templeStaking.address, toAtto(20000));
     await templeStaking.connect(account).stake(toAtto(20000)); // stake a bunch, leave some free temple
-    await ogTempleToken.connect(account).increaseAllowance(lockedOgTemple.address, toAtto(10000));
+    await ogTempleToken.connect(account).increaseAllowance(lockedOgTemple_old.address, toAtto(10000));
     await ogTempleToken.connect(account).increaseAllowance(templeStaking.address, toAtto(10000));
     const nOgTemple = (await ogTempleToken.balanceOf(address)).div(2); // only lock half
 
     // Lock temple, and unstake some, so it's in the exit queue
     const lockedUntil = (await blockTimestamp());
     for (let i = 0; i < nLocks; i++) {
-      await lockedOgTemple.connect(account).lock(nOgTemple.div(nLocks).sub(1), lockedUntil + i * 600);
+      await lockedOgTemple_old.connect(account).lock(nOgTemple.div(nLocks).sub(1), lockedUntil + i * 600);
       await templeStaking.connect(account).unstake(nOgTemple.div(nLocks*2));
     }
 
@@ -178,13 +179,14 @@ async function main() {
     templeStaking.address,
     templeRouter.address,
     pair.address,
-    lockedOgTemple.address,
+    lockedOgTemple_new.address,
     treasury.address);
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string; } = {
     'EXIT_QUEUE_ADDRESS': exitQueue.address,
-    'LOCKED_OG_TEMPLE_ADDRESS': lockedOgTemple.address,
+    'LOCKED_OG_TEMPLE_ADDRESS': lockedOgTemple_old.address,
+    'LOCKED_OG_TEMPLE_ADDRESS_NEW': lockedOgTemple_new.address,
     'STABLE_COIN_ADDRESS': stablecToken.address,
     'TEMPLE_ADDRESS': templeToken.address,
     'TEMPLE_STAKING_ADDRESS': templeStaking.address,
