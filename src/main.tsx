@@ -31,7 +31,7 @@ ReactDOM.render(
                 //@ts-ignore
                 window.ethereum ? (
                   <>
-                    <Route path="/temple-gates" element={<AmmSpaRoot />} />
+                    <Route path="/the-temple" element={<AmmSpaRoot />} />
                     <Route path="/" element={<PageLayout />}>
                       <Route path="/" element={<Home />} />
                       <Route path="disclaimer" element={<Disclaimer />} />

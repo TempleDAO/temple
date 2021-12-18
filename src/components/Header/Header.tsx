@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled, { css } from 'styled-components';
 import Image from 'components/Image/Image';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useWallet } from 'providers/WalletProvider';
 import MenuImage from 'assets/images/menu.svg';
 import { Button } from 'components/Button/Button';
@@ -19,42 +19,20 @@ const formatWalletAddress = (address: string | null): string => {
 };
 
 export const Header = () => {
-  const { connectWallet, changeWalletAddress, wallet } = useWallet();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+  const navigate = useNavigate();
   return (
     <HeaderStyled>
       <NavContainer>
-        <Link to="/" onClick={() => setIsMenuOpen(false)}>
+        <Link to="/">
           <h4>TempleDAO</h4>
         </Link>
         <MenuContainer>
-          <HeaderNav isOpen={isMenuOpen}>
-            <ul>
-              <li>
-                <Link to="/enter" onClick={() => setIsMenuOpen(false)}>
-                  enter
-                </Link>
-              </li>
-              <li>
-                <Link to="/exit" onClick={() => setIsMenuOpen(false)}>
-                  exit
-                </Link>
-              </li>
-            </ul>
-          </HeaderNav>
-          <HeaderNavOverlay onClick={() => setIsMenuOpen(false)} />
-          <WalletContainer>
-            <Button
-              label={wallet ? formatWalletAddress(wallet) : 'connect wallet'}
-              onClick={wallet ? changeWalletAddress : connectWallet}
-              isSmall
-              isUppercase
-            />
-          </WalletContainer>
-          <MenuToggle onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            <Image src={MenuImage} alt={'nav menu'} width={32} height={32} />
-          </MenuToggle>
+          <Button
+            label={'enter the temple'}
+            onClick={() => navigate('/the-temple', { replace: true })}
+            isSmall
+            isUppercase
+          />
         </MenuContainer>
       </NavContainer>
     </HeaderStyled>
