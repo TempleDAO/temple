@@ -5,10 +5,10 @@ import React, {
   useState,
 } from 'react';
 import styled, { keyframes } from 'styled-components';
-import RitualsPosters from 'components/Pages/RitualsMoviePoster';
+import Altars, { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
+import MetamaskButton from 'components/Button/MetamaskButton';
 import portalImage from 'assets/images/PortalRoom.png';
-import triangle from 'assets/images/triangle.svg';
 import midGlow from 'assets/images/glow_center.png';
 import leftGlow from 'assets/images/glow_left.png';
 import rightGlow from 'assets/images/glow_right.png';
@@ -32,14 +32,14 @@ enum Pages {
   Right,
 }
 
-const PortalPage = () => {
+const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
     Dispatch<SetStateAction<BgDimension | undefined>>
   ] = useState();
 
-  //   const { back, changePageTo } = routingHelper;
+  const { back, changePageTo } = routingHelper;
 
   // Update bgDimensions state
   function handleResize() {
@@ -63,10 +63,16 @@ const PortalPage = () => {
     <Background id="background" style={{ overflow: 'hidden' }}>
       {bgDimensions != null && (
         <>
+          <MetamaskButton />
           <DoorGlow
             src={leftGlow}
-            title="Enter"
-            // onClick={() => changePageTo(RitualsPosters)}
+            title="Devotion"
+            onClick={() =>
+              changePageTo((props) => (
+                //@ts-ignore
+                <Altars {...props} view={AMMView.EXCHANGE_DEFEND} />
+              ))
+            }
             style={{
               transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${0.405 * bgDimensions.height}px`,
@@ -81,7 +87,13 @@ const PortalPage = () => {
           />
           <DoorGlow
             src={midGlow}
-            title="Devotion"
+            title="Enter"
+            onClick={() =>
+              changePageTo((props) => (
+                //@ts-ignore
+                <Altars {...props} view={AMMView.EXCHANGE_TRADE} />
+              ))
+            }
             style={{
               transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${0.423 * bgDimensions.height}px`,
@@ -97,6 +109,12 @@ const PortalPage = () => {
           <DoorGlow
             src={rightGlow}
             title="Exit"
+            onClick={() =>
+              changePageTo((props) => (
+                //@ts-ignore
+                <Altars {...props} view={AMMView.EXCHANGE_WITHDRAW} />
+              ))
+            }
             style={{
               transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${0.405 * bgDimensions.height}px`,
@@ -126,7 +144,7 @@ const PortalPage = () => {
           />
         </>
       )}
-      {/* <BackButton width={112} height={112} onClick={back} /> */}
+      <BackButton width={112} height={112} onClick={back} />
     </Background>
   );
 };

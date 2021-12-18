@@ -22,8 +22,11 @@ import styled, { css } from 'styled-components';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { getDaysToTimestamp } from 'utils/dates';
 import { formatNumber } from 'utils/formatter';
+import BackButton from 'components/Button/BackButton';
+import MetamaskButton from 'components/Button/MetamaskButton';
+import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 
-enum AMMView {
+export enum AMMView {
   BUY = 'BUY',
   SELL = 'SELL',
   STAKE = 'STAKE',
@@ -37,7 +40,9 @@ enum AMMView {
   EXCHANGE_WITHDRAW = 'WITHDRAW',
 }
 
-const AMMAltars = () => {
+// CustomRoutingPage does not take view as prop
+//@ts-ignore
+const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   const {
     balance,
     claimOgTemple,
@@ -62,7 +67,7 @@ const AMMAltars = () => {
   const [templeAmount, setTempleAmount] = useState<number>(0);
   const [OGTAmount, setOGTAmount] = useState<number>(0);
   const [rewards, setRewards] = useState<number>(0);
-  const [activeAMMView, setActiveAMMView] = useState<AMMView | null>(null);
+  const [activeAMMView, setActiveAMMView] = useState<AMMView | null>(view);
   const [prevAMMView, setPrevAMMView] = useState<AMMView | null>(null);
   const [joinQueueData, setJoinQueueData] = useState<JoinQueueData | null>({
     queueLength: 0,
