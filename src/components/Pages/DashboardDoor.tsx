@@ -5,7 +5,8 @@ import React, {
   useState,
 } from 'react';
 import styled, { keyframes } from 'styled-components';
-import Altars, { AMMView } from 'components/Pages/AmmAltars';
+import Dashboard from 'components/Pages/Dashboard';
+import Account from 'components/Pages/Account';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/dashboardroom_bg2.png';
 import glowLeft from 'assets/images/dashboardroom_glowleft.png';
@@ -21,13 +22,6 @@ type BgDimension = {
   imageWidth: number;
   imageHeight: number;
 };
-
-enum Pages {
-  Foyer,
-  Left,
-  Center,
-  Right,
-}
 
 const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
   // Used to determine door images size and position
@@ -66,12 +60,7 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
           <DoorGlow
             src={glowLeft}
             title="Buy"
-            onClick={() =>
-              changePageTo((props) => (
-                //@ts-ignore
-                <Altars {...props} view={AMMView.BUY} />
-              ))
-            }
+            onClick={() => changePageTo(Dashboard)}
             style={{
               transform: `scale(${0.49 * bgDimensions.scaleW}%)`,
               bottom: `${0.217 * bgDimensions.height}px`,
@@ -87,12 +76,7 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
           <DoorGlow
             src={glowRight}
             title="Stake"
-            onClick={() =>
-              changePageTo((props) => (
-                //@ts-ignore
-                <Altars {...props} view={AMMView.STAKE} />
-              ))
-            }
+            onClick={() => changePageTo(Account)}
             style={{
               transform: `scale(${0.49 * bgDimensions.scaleW}%)`,
               bottom: `${0.22 * bgDimensions.height}px`,

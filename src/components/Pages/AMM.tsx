@@ -7,7 +7,7 @@ import { useHash } from 'hooks/use-query';
 import TempleGates from 'components/Pages/TempleGates';
 import Account from 'components/Pages/Account';
 import Foyer from 'components/Pages/Foyer';
-import DashboardEntrance from 'components/Pages/DashboardEntrance';
+import DashboardDoor from 'components/Pages/DashboardDoor';
 
 const Container = styled.div`
   height: 100vh;
@@ -21,7 +21,7 @@ const AmmSpaRoot = () => {
   const routingHelper = useCustomRouting(
     TempleGates,
     isDiscordRedirect ? Account : TempleGates,
-    isDiscordRedirect ? [TempleGates, Foyer, DashboardEntrance] : []
+    isDiscordRedirect ? [TempleGates, Foyer, DashboardDoor] : []
   );
   const { CurrentPage } = routingHelper;
 
