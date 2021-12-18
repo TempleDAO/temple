@@ -9,7 +9,6 @@ import { DataCard } from 'components/DataCard/DataCard';
 import Image from 'components/Image/Image';
 import { Input } from 'components/Input/Input';
 import { Flex } from 'components/Layout/Flex';
-import { OffClick } from 'components/Pages/Portals';
 import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
 import PercentageBar from 'components/PercentageBar/PercentageBar';
 import Slippage from 'components/Slippage/Slippage';
@@ -65,7 +64,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     apy,
   } = useWallet();
 
-  const { back, changePageTo } = routingHelper;
+  const { back } = routingHelper;
 
   // OGT amount in the user wallet
   const [OGTWalletAmount, setOGTWalletAmount] = useState<number>(0);
@@ -713,7 +712,6 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   return (
     <>
       <Background backgroundUrl={() => getBackgroundImage()}>
-        <MetamaskButton />
         <ConvoFlowContent>
           <ConvoFlowClose
             src={crossImage}

@@ -64,7 +64,6 @@ const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
       <Background id="background">
         {bgDimensions != null && (
           <>
-            <MetamaskButton />
             <DoorGlow
               src={leftGlow}
               title="Rituals"

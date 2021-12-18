@@ -1,3 +1,4 @@
+import MetamaskButton from 'components/Button/MetamaskButton';
 import React from 'react';
 import styled from 'styled-components';
 import useCustomRouting from 'hooks/use-custom-spa-routing';
@@ -26,6 +27,7 @@ const AmmSpaRoot = () => {
 
   return (
     <Container>
+      <MetamaskButton />
       <CurrentPage routingHelper={routingHelper} />
     </Container>
   );
