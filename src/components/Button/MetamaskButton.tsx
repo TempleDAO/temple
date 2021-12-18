@@ -10,7 +10,7 @@ const Container = styled.div`
   right: 0;
   padding: 1rem;
   cursor: pointer;
-  z-index: 10;
+  z-index: ${(props) => props.theme.zIndexes.top};
   &: hover {
     filter: brightness(150%);
   }
