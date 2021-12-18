@@ -80,7 +80,6 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   const [activeAMMView, setActiveAMMView] = useState<AMMView | null>(view);
   // Slippage for TXN minOut
   const [slippage, setSlippage] = useState<number>(1);
-  const [prevAMMView, setPrevAMMView] = useState<AMMView | null>(null);
   const [joinQueueData, setJoinQueueData] = useState<JoinQueueData | null>({
     queueLength: 0,
     processTime: 0,
@@ -109,7 +108,6 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
 
   const handleSetActiveAMMView = (
     view: AMMView | null,
-    prevView: AMMView | null = null,
     shouldUpdateData = true
   ) => {
     if (shouldUpdateData) {
@@ -117,7 +115,6 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     }
     setRewards(0);
     setActiveAMMView(view);
-    setPrevAMMView(prevView);
   };
 
   const handleClaimOgTemple = async (index: number) => {
@@ -241,153 +238,6 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
 
   const renderAMMView = (): ReactNode => {
     switch (activeAMMView) {
-      case AMMView.EXCHANGE_WITHDRAW:
-        return (
-          <>
-            <ConvoFlowTitle>WHAT BRINGS YOU TO THE TEMPLE?</ConvoFlowTitle>
-            <Flex
-              layout={{
-                kind: 'container',
-                justifyContent: 'space-around',
-                canWrap: true,
-                canWrapTablet: false,
-              }}
-            >
-              <Flex
-                layout={{
-                  kind: 'item',
-                  col: 'quarter',
-                  alignItems: 'center',
-                  justifyContent: 'space-around',
-                }}
-              >
-                <Button
-                  label={AMMView.UNLOCK}
-                  isSmall
-                  isUppercase
-                  onClick={() =>
-                    handleSetActiveAMMView(AMMView.UNLOCK, activeAMMView)
-                  }
-                />
-              </Flex>
-              <Flex
-                layout={{
-                  kind: 'item',
-                  col: 'quarter',
-                  alignItems: 'center',
-                  justifyContent: 'space-around',
-                }}
-              >
-                <Button
-                  label={AMMView.JOIN_QUEUE}
-                  isSmall
-                  isUppercase
-                  onClick={() =>
-                    handleSetActiveAMMView(AMMView.JOIN_QUEUE, activeAMMView)
-                  }
-                />
-              </Flex>
-              <Flex
-                layout={{
-                  kind: 'item',
-                  col: 'quarter',
-                  alignItems: 'center',
-                  justifyContent: 'space-around',
-                }}
-              >
-                <Button
-                  label={AMMView.WITHDRAW}
-                  isSmall
-                  isUppercase
-                  onClick={() =>
-                    handleSetActiveAMMView(AMMView.WITHDRAW, activeAMMView)
-                  }
-                />
-              </Flex>
-              <Flex
-                layout={{
-                  kind: 'item',
-                  col: 'quarter',
-                  alignItems: 'center',
-                  justifyContent: 'space-around',
-                }}
-              >
-                <Button
-                  label={AMMView.SELL}
-                  isSmall
-                  isUppercase
-                  onClick={() =>
-                    handleSetActiveAMMView(AMMView.SELL, activeAMMView)
-                  }
-                />
-              </Flex>
-            </Flex>
-          </>
-        );
-      case AMMView.EXCHANGE_TRADE:
-        return (
-          <>
-            <ConvoFlowTitle>DECLARE YOUR INTENT</ConvoFlowTitle>
-            <Flex
-              layout={{
-                kind: 'container',
-                canWrap: true,
-                canWrapTablet: false,
-              }}
-            >
-              <Flex
-                layout={{
-                  kind: 'item',
-                  alignItems: 'center',
-                  justifyContent: 'space-around',
-                }}
-              >
-                <Button
-                  label={AMMView.BUY}
-                  isSmall
-                  isUppercase
-                  onClick={() =>
-                    handleSetActiveAMMView(AMMView.BUY, activeAMMView)
-                  }
-                />
-              </Flex>
-              <Flex
-                layout={{
-                  kind: 'item',
-                  alignItems: 'center',
-                  justifyContent: 'space-around',
-                }}
-              >
-                <Button
-                  label={AMMView.STAKE}
-                  isSmall
-                  isUppercase
-                  onClick={() =>
-                    handleSetActiveAMMView(AMMView.STAKE, activeAMMView)
-                  }
-                />
-              </Flex>
-              <Flex
-                layout={{
-                  kind: 'item',
-                  alignItems: 'center',
-                  justifyContent: 'space-around',
-                }}
-              >
-                {/* TODO: get `disable` from contract */}
-                <Button
-                  label={AMMView.BTFD}
-                  isSmall
-                  isUppercase
-                  onClick={() =>
-                    handleSetActiveAMMView(AMMView.BTFD, activeAMMView)
-                  }
-                  disabled
-                />
-              </Flex>
-            </Flex>
-          </>
-        );
       case AMMView.BUY:
         return (
           <>
