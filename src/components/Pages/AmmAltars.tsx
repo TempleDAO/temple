@@ -7,6 +7,7 @@ import { Input } from 'components/Input/Input';
 import { Flex } from 'components/Layout/Flex';
 import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
 import PercentageBar from 'components/PercentageBar/PercentageBar';
+import Slippage from 'components/Slippage/Slippage';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { BigNumber } from 'ethers';
 import withWallet from 'hoc/withWallet';
@@ -126,28 +127,24 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     void updateJoinQueueData(x);
   };
 
-  const handleUpdateSlippageForBuy = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const x = +event.target.value > 0 ? +event.target.value : 0;
-    setSlippage(x);
+  const handleUpdateSlippageForBuy = async (value: number) => {
+    setSlippage(value);
     setRewards(
       fromAtto(
-        (await getBuyQuote(toAtto(stableCoinAmount), x)) ||
+        (await getBuyQuote(toAtto(stableCoinAmount), value)) ||
           BigNumber.from(0) ||
           0
       )
     );
   };
 
-  const handleUpdateSlippageForSell = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const x = +event.target.value > 0 ? +event.target.value : 0;
-    setSlippage(x);
+  const handleUpdateSlippageForSell = async (value: number) => {
+    setSlippage(value);
     setRewards(
       fromAtto(
-        (await getSellQuote(toAtto(templeAmount), x)) || BigNumber.from(0) || 0
+        (await getSellQuote(toAtto(templeAmount), value)) ||
+          BigNumber.from(0) ||
+          0
       )
     );
   };
@@ -393,22 +390,14 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               placeholder={'0.00'}
             />
             <Input
-              hint={`Balance: ${rewards}`}
+              hint={`Balance: ${formatNumber(templeWalletAmount)}`}
               crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
               type={'number'}
               value={rewards}
               disabled
             />
-
-            <small>Slippage: {slippage}%</small>
-            <Input
-              crypto={{ kind: 'value', value: 'Slippage' }}
-              type={'number'}
-              min={0}
-              value={slippage}
-              onChange={handleUpdateSlippageForBuy}
-            />
-
+            <Slippage value={slippage} onChange={handleUpdateSlippageForBuy} />
+            <br />
             <Button
               label={`sacrifice ${STABLE_COIN_SYMBOL}`}
               isUppercase
@@ -420,7 +409,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
       case AMMView.SELL:
         return (
           <>
-            <ConvoFlowTitle>SELECT {TEMPLE_TOKEN} TO SELL</ConvoFlowTitle>
+            <ConvoFlowTitle>HOW DEDICATED ARE YOU, TEMPLAR?</ConvoFlowTitle>
             <Input
               hint={`Balance: ${templeWalletAmount}`}
               crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
@@ -438,16 +427,10 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               value={formatNumber(rewards)}
               disabled
             />
-            <small>Slippage: {slippage}%</small>
-            <Input
-              crypto={{ kind: 'value', value: 'Slippage' }}
-              type={'number'}
-              min={0}
-              value={slippage}
-              onChange={handleUpdateSlippageForSell}
-            />
+            <Slippage value={slippage} onChange={handleUpdateSlippageForSell} />
+            <br />
             <Button
-              label={`SURRENDER ${TEMPLE_TOKEN}`}
+              label={`RENOUNCE`}
               isUppercase
               onClick={handleSurrenderTemple}
               disabled={templeAmount === 0}
