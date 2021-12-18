@@ -6,6 +6,7 @@ import React, {
 } from 'react';
 import styled, { keyframes } from 'styled-components';
 import RitualsPosters from 'components/Pages/RitualsMoviePoster';
+import Portals from 'components/Pages/Portals';
 import BackButton from 'components/Button/BackButton';
 import MetamaskButton from 'components/Button/MetamaskButton';
 import foyerImage from 'assets/images/foyer.png';
@@ -86,7 +87,7 @@ const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
               <DoorGlow
                 src={midGlow}
                 title="Altars"
-                onClick={() => setVisiblePage(Pages.Center)}
+                onClick={() => changePageTo(Portals)}
                 style={{
                   transform: `scale(${0.97 * bgDimensions.scaleW}%)`,
                   bottom: `${0.448 * bgDimensions.height}px`,
