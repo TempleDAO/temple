@@ -183,7 +183,10 @@ interface WalletState {
 
   getJoinQueueData(ogtAmount: BigNumber): Promise<JoinQueueData | void>;
 
-  getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
+  getSellQuote(
+    amountToSell: BigNumber,
+    slippage: number
+  ): Promise<BigNumber | void>;
 
   getBuyQuote(
     amountToBuy: BigNumber,
@@ -1207,7 +1210,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const getSellQuote = async (amountToSell: BigNumber) => {
+  const getSellQuote = async (amountToSell: BigNumber, slippage: number) => {
     if (walletAddress && signerState) {
       const AMM_ROUTER = new TempleFraxAMMRouter__factory()
         .attach(TEMPLE_V2_ROUTER_ADDRESS)
@@ -1216,7 +1219,12 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const { amountOut } = await AMM_ROUTER.swapExactTempleForFraxQuote(
         amountToSell
       );
-      return amountOut;
+
+      // percent calc of slippage
+      const minSlip = (fromAtto(amountOut) * slippage) / 100;
+      const quote = fromAtto(amountOut) - minSlip;
+
+      return toAtto(quote);
     }
     return BigNumber.from(0);
   };
@@ -1230,19 +1238,12 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const { amountInAMM, amountInProtocol, amountOutAMM, amountOutProtocol } =
         await AMM_ROUTER.swapExactFraxForTempleQuote(amountToBuy);
 
-      console.info(`amountToBuy: ${fromAtto(amountToBuy)}`);
-      console.info(`amountInAMM: ${fromAtto(amountInAMM)}`);
-      console.info(`amountInProtocol: ${fromAtto(amountInProtocol)}`);
-      console.info(`amountOutProtocol: ${fromAtto(amountOutProtocol)}`);
-      console.info(`amountOutAMM: ${fromAtto(amountOutAMM)}`);
-
       const minAmountIn = fromAtto(amountInAMM.add(amountOutAMM));
 
-      const diss = (minAmountIn * slippage) / 100;
-      console.info(`diss ${diss}`);
-      const quote = minAmountIn - diss;
+      // percent calc of slippage
+      const minSlip = (minAmountIn * slippage) / 100;
+      const quote = minAmountIn - minSlip;
 
-      /* TODO: call call contract use slippage */
       return toAtto(quote);
     }
     return BigNumber.from(0);
