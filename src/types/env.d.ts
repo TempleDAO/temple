@@ -18,5 +18,5 @@ interface ImportMetaEnv {
   VITE_ALCHEMY_API_KEY: string;
   VITE_SERVER_PRIVATE_KEY: string;
   VITE_ENV: string;
-  VITE_PUBLIC_CLAIM_GAS_LIMIT: number;
+  VITE_PUBLIC_CLAIM_GAS_LIMIT: string;
 }
