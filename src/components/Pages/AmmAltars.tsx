@@ -126,7 +126,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     void updateJoinQueueData(x);
   };
 
-  const handleUpdateSlippage = async (
+  const handleUpdateSlippageForBuy = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const x = +event.target.value > 0 ? +event.target.value : 0;
@@ -136,6 +136,18 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
         (await getBuyQuote(toAtto(stableCoinAmount), x)) ||
           BigNumber.from(0) ||
           0
+      )
+    );
+  };
+
+  const handleUpdateSlippageForSell = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const x = +event.target.value > 0 ? +event.target.value : 0;
+    setSlippage(x);
+    setRewards(
+      fromAtto(
+        (await getSellQuote(toAtto(templeAmount), x)) || BigNumber.from(0) || 0
       )
     );
   };
@@ -160,7 +172,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     const x = +event.target.value > 0 ? +event.target.value : 0;
     setTempleAmount(x);
     setRewards(
-      fromAtto((await getSellQuote(toAtto(x))) || BigNumber.from(0) || 0)
+      fromAtto(
+        (await getSellQuote(toAtto(x), slippage)) || BigNumber.from(0) || 0
+      )
     );
   };
 
@@ -385,24 +399,16 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               value={rewards}
               disabled
             />
-            <Flex
-              layout={{
-                kind: 'container',
-                justifyContent: 'space-between',
-              }}
-            >
-              <small>Slippage: {slippage}%</small>
-            </Flex>
+
+            <small>Slippage: {slippage}%</small>
             <Input
               crypto={{ kind: 'value', value: 'Slippage' }}
               type={'number'}
               min={0}
               value={slippage}
-              onChange={handleUpdateSlippage}
+              onChange={handleUpdateSlippageForBuy}
             />
 
-            <br />
-            <br />
             <Button
               label={`sacrifice ${STABLE_COIN_SYMBOL}`}
               isUppercase
@@ -432,7 +438,14 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               value={formatNumber(rewards)}
               disabled
             />
-
+            <small>Slippage: {slippage}%</small>
+            <Input
+              crypto={{ kind: 'value', value: 'Slippage' }}
+              type={'number'}
+              min={0}
+              value={slippage}
+              onChange={handleUpdateSlippageForSell}
+            />
             <Button
               label={`SURRENDER ${TEMPLE_TOKEN}`}
               isUppercase
