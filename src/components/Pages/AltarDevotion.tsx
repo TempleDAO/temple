@@ -52,7 +52,10 @@ const DevotionPage: CustomRoutingPage = ({ routingHelper }) => {
     window.onload = () => handleResize();
     window.addEventListener('resize', () => handleResize());
     setTimeout(() => handleResize(), 500);
-    return window.removeEventListener('resize', () => handleResize());
+    return () => {
+      window.removeEventListener('resize', () => handleResize());
+      window.onload = null;
+    };
   }, []);
 
   return (

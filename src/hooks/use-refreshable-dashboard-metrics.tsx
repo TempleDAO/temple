@@ -10,7 +10,6 @@ export default function useRefreshableDashboardMetrics() {
 
   async function refreshMetrics() {
     const dashboardMetrics = await metricsService.getDashboardMetrics();
-    console.log(dashboardMetrics);
     setDashboardMetrics(dashboardMetrics);
   }
 

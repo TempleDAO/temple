@@ -11,6 +11,7 @@ import AltarExit from './AltarExit';
 import AltarDevotion from './AltarDevotion';
 import BackButton from 'components/Button/BackButton';
 import MetamaskButton from 'components/Button/MetamaskButton';
+import { useWallet } from 'providers/WalletProvider';
 import portalImage from 'assets/images/PortalRoom.png';
 import midGlow from 'assets/images/glow_center.png';
 import leftGlow from 'assets/images/glow_left.png';
@@ -42,6 +43,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
     BgDimension | undefined,
     Dispatch<SetStateAction<BgDimension | undefined>>
   ] = useState();
+  const { updateWallet } = useWallet();
 
   // Change visibility of chart component
   const [chartVisible, setChartVisible] = useState(false);
@@ -63,7 +65,14 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
     window.onload = () => handleResize();
     window.addEventListener('resize', () => handleResize());
     setTimeout(() => handleResize(), 500);
-    return window.removeEventListener('resize', () => handleResize());
+    return () => {
+      window.removeEventListener('resize', () => handleResize());
+      window.onload = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    updateWallet();
   }, []);
 
   return (

@@ -93,10 +93,16 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     }
   }, [balance]);
 
-  useEffect(() => {
-    updateWallet();
-    setRewards(0);
-  }, []);
+  /*useEffect(() => {
+    async function onMount() {
+      console.log('onMount');
+      await updateWallet();
+      setRewards(0);
+      console.log('done onMount');
+    }
+
+    onMount();
+  }, []);*/
 
   const updateTempleRewards = async (ogtAmount: number) => {
     setRewards((await getRewardsForOGT(ogtAmount)) || 0);
@@ -111,12 +117,12 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     );
   };
 
-  const handleSetActiveAMMView = (
+  const handleSetActiveAMMView = async (
     view: AMMView | null,
     shouldUpdateData = true
   ) => {
     if (shouldUpdateData) {
-      updateWallet();
+      await updateWallet();
     }
     setRewards(0);
     setActiveAMMView(view);
