@@ -10,6 +10,8 @@ import {
   TempleStaking__factory,
   LockedOGTemple,
   LockedOGTemple__factory,
+  OGTemple,
+  OGTemple__factory,
 } from 'types/typechain';
 import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
@@ -62,7 +64,7 @@ export class MetricsService {
   private readonly signer: Wallet;
   private stableCoinContract: ERC20;
   private templeCoinContract: ERC20;
-  private ogTempleCoinContract: ERC20;
+  private ogTempleCoinContract: OGTemple;
   private treasuryContract: TempleTreasury;
   private templeStakingContract: TempleStaking;
   private lockedOGTempleContract: LockedOGTemple;
@@ -78,7 +80,6 @@ export class MetricsService {
       ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_OG_TEMPLE_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS === undefined
     ) {
       console.info(`
@@ -89,7 +90,6 @@ export class MetricsService {
       VITE_PUBLIC_STABLE_COIN_ADDRESS=${ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS}
       VITE_PUBLIC_TEMPLE_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS}
       VITE_PUBLIC_TEMPLE_STAKING_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS}
-      VITE_PUBLIC_OG_TEMPLE_ADDRESS=${ENV_VARS.VITE_PUBLIC_OG_TEMPLE_ADDRESS}
       VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS=${ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS}
       `);
       throw new Error(`Missing env vars in Metrics Service`);
@@ -97,7 +97,6 @@ export class MetricsService {
 
     const TEMPLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS;
     const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
-    const OG_TEMPLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_OG_TEMPLE_ADDRESS;
     const ALCHEMY_PROVIDER_NETWORK = ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK;
     const ALCHEMY_API_KEY = ENV_VARS.VITE_ALCHEMY_API_KEY;
     const TREASURY_ADDRESS = ENV_VARS.VITE_PUBLIC_TREASURY_ADDRESS;
@@ -124,10 +123,6 @@ export class MetricsService {
 
     this.templeCoinContract = new ERC20__factory()
       .attach(TEMPLE_COIN_ADDRESS)
-      .connect(this.signer);
-
-    this.ogTempleCoinContract = new ERC20__factory()
-      .attach(OG_TEMPLE_COIN_ADDRESS)
       .connect(this.signer);
 
     this.treasuryAddress = TREASURY_ADDRESS;
@@ -160,6 +155,10 @@ export class MetricsService {
   }
 
   async getDashboardMetrics(): Promise<DashboardMetrics> {
+    this.ogTempleCoinContract = new OGTemple__factory()
+      .attach(await this.templeStakingContract.OG_TEMPLE())
+      .connect(this.signer);
+
     const treasuryValue = fromAtto(
       await this.stableCoinContract.balanceOf(this.treasuryAddress)
     );

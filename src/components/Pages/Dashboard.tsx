@@ -376,7 +376,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
           >
             <StatsCard
               label="Discord Users"
-              stat={dashboardMetrics?.socialMetrics.discord.totalMembers}
+              stat={dashboardMetrics?.socialMetrics?.discord?.totalMembers}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={background9}
               heightPercentage={60}
@@ -390,7 +390,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
           >
             <StatsCard
               label="Twitter Followers"
-              stat={dashboardMetrics?.socialMetrics.twitter_followers_count}
+              stat={dashboardMetrics?.socialMetrics?.twitter_followers_count}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={background10}
               heightPercentage={60}
@@ -427,7 +427,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
           >
             <StatsCard
               label="Members in chaos"
-              stat={dashboardMetrics?.socialMetrics.discord.enclaveChaos}
+              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveChaos}
               backgroundColor={theme.palette.dark}
               darken
               fontColor={theme.palette.light}
@@ -441,7 +441,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
           >
             <StatsCard
               label="Members in Mystery"
-              stat={dashboardMetrics?.socialMetrics.discord.enclaveMystery}
+              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveMystery}
               backgroundColor={theme.palette.dark}
               darken
               fontColor={theme.palette.light}
@@ -456,7 +456,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
           >
             <StatsCard
               label="Members in Logic"
-              stat={dashboardMetrics?.socialMetrics.discord.enclaveLogic}
+              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveLogic}
               backgroundColor={theme.palette.dark}
               darken
               fontColor={theme.palette.light}
@@ -471,7 +471,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
           >
             <StatsCard
               label="Members in structure"
-              stat={dashboardMetrics?.socialMetrics.discord.enclaveStructure}
+              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveStructure}
               backgroundColor={theme.palette.dark}
               darken
               fontColor={theme.palette.light}
@@ -486,7 +486,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
           >
             <StatsCard
               label="Members in order"
-              stat={dashboardMetrics?.socialMetrics.discord.enclaveOrder}
+              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveOrder}
               backgroundColor={theme.palette.dark}
               darken
               fontColor={theme.palette.light}
