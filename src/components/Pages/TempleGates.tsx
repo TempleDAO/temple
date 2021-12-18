@@ -31,16 +31,21 @@ const TempleGatesPage: CustomRoutingPage = ({ routingHelper }) => {
   // Check if user is whitelisted already
   const isWhitelisted = async () => {
     if (wallet && signer) {
-      const fraxAMMRouter = new TempleFraxAMMRouter__factory()
-        .attach(TEMPLE_V2_ROUTER_ADDRESS)
-        .connect(signer);
-      const whitelisted = await fraxAMMRouter.allowed(wallet);
-      if (whitelisted) {
-        changePageTo(Foyer);
-      } else {
+      try {
+        const fraxAMMRouter = new TempleFraxAMMRouter__factory()
+          .attach(TEMPLE_V2_ROUTER_ADDRESS)
+          .connect(signer);
+        const whitelisted = await fraxAMMRouter.allowed(wallet);
+        if (whitelisted) {
+          changePageTo(Foyer);
+        } else {
+          setStatus(Status.Start);
+        }
+      } catch (e) {
+        console.error(e);
         setStatus(Status.Start);
       }
-    }
+    } else setStatus(Status.Start);
   };
   useEffect(() => {
     isWhitelisted();
@@ -56,27 +61,25 @@ const TempleGatesPage: CustomRoutingPage = ({ routingHelper }) => {
       return;
     }
     const res = await tx.wait();
+    // TODO: Check the value of res to see if transaction was successful
     isWhitelisted();
   };
 
   return (
     <>
-      {status == Status.Complete ? (
-        <p>Welcome</p> // Load next page
-      ) : (
-        <TempleGatesContainer>
-          <button onClick={() => changePageTo(Foyer)}>HERE</button>
-          <KeyForm onSubmit={submit}>
-            <KeyInput
-              placeholder="Sacred Key"
-              type="text"
-              onChange={(e) => setKey(e.target.value)}
-              value={key}
-            />
-            <EnterButton>{status}</EnterButton>
-          </KeyForm>
-        </TempleGatesContainer>
-      )}
+      <TempleGatesContainer>
+        {/* TODO: Remove bypass button */}
+        <button onClick={() => changePageTo(Foyer)}>BYPASS</button>
+        <KeyForm onSubmit={submit}>
+          <KeyInput
+            placeholder="Sacred Key"
+            type="text"
+            onChange={(e) => setKey(e.target.value)}
+            value={key}
+          />
+          <EnterButton>{status}</EnterButton>
+        </KeyForm>
+      </TempleGatesContainer>
     </>
   );
 };

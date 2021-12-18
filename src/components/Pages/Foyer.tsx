@@ -33,8 +33,6 @@ enum Pages {
 }
 
 const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
-  const [visiblePage, setVisiblePage] = useState(Pages.Foyer);
-
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
@@ -63,70 +61,62 @@ const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
 
   return (
     <>
-      {visiblePage == Pages.Foyer ? (
-        <Background id="background">
-          {bgDimensions != null && (
-            <>
-              <MetamaskButton />
-              <DoorGlow
-                src={leftGlow}
-                title="Rituals"
-                onClick={() => changePageTo(RitualsPosters)}
-                style={{
-                  transform: `scale(${0.965 * bgDimensions.scaleW}%)`,
-                  bottom: `${0.234 * bgDimensions.height}px`,
-                  left:
-                    bgDimensions.height == window.innerHeight
-                      ? `${
-                          bgDimensions.width * 0.18 -
-                          (bgDimensions.width - window.innerWidth) / 2
-                        }px`
-                      : `${0.18 * bgDimensions.width}px`,
-                }}
-              />
-              <DoorGlow
-                src={midGlow}
-                title="Altars"
-                onClick={() => changePageTo(Portals)}
-                style={{
-                  transform: `scale(${0.97 * bgDimensions.scaleW}%)`,
-                  bottom: `${0.448 * bgDimensions.height}px`,
-                  left:
-                    bgDimensions.height == window.innerHeight
-                      ? `${
-                          bgDimensions.width * 0.439 -
-                          (bgDimensions.width - window.innerWidth) / 2
-                        }px`
-                      : `${0.439 * bgDimensions.width}px`,
-                }}
-              />
-              <DoorGlow
-                src={rightGlow}
-                title="Dungeon" // TODO: Update title
-                onClick={() => setVisiblePage(Pages.Right)}
-                style={{
-                  transform: `scale(${0.965 * bgDimensions.scaleW}%)`,
-                  bottom: `${0.238 * bgDimensions.height}px`,
-                  left:
-                    bgDimensions.height == window.innerHeight
-                      ? `${
-                          bgDimensions.width * 0.685 -
-                          (bgDimensions.width - window.innerWidth) / 2
-                        }px`
-                      : `${0.685 * bgDimensions.width}px`,
-                }}
-              />
-            </>
-          )}
-          <BackButton width={112} height={112} onClick={back} />
-        </Background>
-      ) : visiblePage == Pages.Left ? (
-        <p>Left</p>
-      ) : visiblePage == Pages.Center ? (
-        <p>center</p>
-      ) : (
-        <p>right</p>
-      )}
+      <Background id="background">
+        {bgDimensions != null && (
+          <>
+            <MetamaskButton />
+            <DoorGlow
+              src={leftGlow}
+              title="Rituals"
+              onClick={() => changePageTo(RitualsPosters)}
+              style={{
+                transform: `scale(${0.965 * bgDimensions.scaleW}%)`,
+                bottom: `${0.234 * bgDimensions.height}px`,
+                left:
+                  bgDimensions.height == window.innerHeight
+                    ? `${
+                        bgDimensions.width * 0.18 -
+                        (bgDimensions.width - window.innerWidth) / 2
+                      }px`
+                    : `${0.18 * bgDimensions.width}px`,
+              }}
+            />
+            <DoorGlow
+              src={midGlow}
+              title="Altars"
+              onClick={() => changePageTo(Portals)}
+              style={{
+                transform: `scale(${0.97 * bgDimensions.scaleW}%)`,
+                bottom: `${0.448 * bgDimensions.height}px`,
+                left:
+                  bgDimensions.height == window.innerHeight
+                    ? `${
+                        bgDimensions.width * 0.439 -
+                        (bgDimensions.width - window.innerWidth) / 2
+                      }px`
+                    : `${0.439 * bgDimensions.width}px`,
+              }}
+            />
+            <DoorGlow
+              src={rightGlow}
+              title="Dashboard"
+              // onClick={() => changePageTo(Portals)} // TODO: Add route
+              style={{
+                transform: `scale(${0.965 * bgDimensions.scaleW}%)`,
+                bottom: `${0.238 * bgDimensions.height}px`,
+                left:
+                  bgDimensions.height == window.innerHeight
+                    ? `${
+                        bgDimensions.width * 0.685 -
+                        (bgDimensions.width - window.innerWidth) / 2
+                      }px`
+                    : `${0.685 * bgDimensions.width}px`,
+              }}
+            />
+          </>
+        )}
+        <BackButton width={112} height={112} onClick={back} />
+      </Background>
     </>
   );
 };

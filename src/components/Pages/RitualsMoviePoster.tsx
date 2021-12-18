@@ -38,7 +38,7 @@ const RitualsMoviePoster: CustomRoutingPage = ({ routingHelper }) => {
           }}
           isIndented
         >
-          <Flex layout={{ kind: 'container' }}>
+          <Flex layout={{ kind: 'container', justifyContent: 'center' }}>
             <ImageLabelWrapper>
               <ImageLabelOverlay
                 layout={{
@@ -47,17 +47,12 @@ const RitualsMoviePoster: CustomRoutingPage = ({ routingHelper }) => {
                   justifyContent: 'center',
                 }}
               >
-                <ImageLabel>
-                  <h2 className={'color-light align-text-center opaque'}>
-                    Reopening soon
-                  </h2>
-                </ImageLabel>
+                <ImageLabel>Reopening soon</ImageLabel>
               </ImageLabelOverlay>
               <Image src={enclavesImage} alt={''} fillContainer={true} />
             </ImageLabelWrapper>
           </Flex>
-
-          <h3 className={'color-light align-text-center'}>ENCLAVES</h3>
+          <h3 className={'color-brand75 align-text-center'}>ENCLAVES</h3>
         </PosterColumn>
 
         <PosterColumn
@@ -68,7 +63,7 @@ const RitualsMoviePoster: CustomRoutingPage = ({ routingHelper }) => {
             justifyContent: 'center',
           }}
         >
-          <Flex layout={{ kind: 'container' }}>
+          <Flex layout={{ kind: 'container', justifyContent: 'center' }}>
             <ImageLabelWrapper>
               <ImageLabelOverlay
                 layout={{
@@ -77,17 +72,14 @@ const RitualsMoviePoster: CustomRoutingPage = ({ routingHelper }) => {
                   justifyContent: 'center',
                 }}
               >
-                <ImageLabel>
-                  <h2 className={'color-light align-text-center opaque'}>
-                    Opening soon
-                  </h2>
-                </ImageLabel>
+                <ImageLabel>Opening soon</ImageLabel>
               </ImageLabelOverlay>
               <Image src={talismanImage} alt={''} fillContainer={true} />
             </ImageLabelWrapper>
           </Flex>
-          <h3 className={'color-light align-text-center'}>TALISMAN</h3>
+          <h3 className={'color-brand75 align-text-center'}>TALISMAN</h3>
         </PosterColumn>
+
         <PosterColumn
           layout={{
             kind: 'item',
@@ -97,7 +89,7 @@ const RitualsMoviePoster: CustomRoutingPage = ({ routingHelper }) => {
           }}
           isIndented
         >
-          <Flex layout={{ kind: 'container' }}>
+          <Flex layout={{ kind: 'container', justifyContent: 'center' }}>
             <ImageLabelWrapper>
               <ImageLabelOverlay
                 layout={{
@@ -106,16 +98,12 @@ const RitualsMoviePoster: CustomRoutingPage = ({ routingHelper }) => {
                   justifyContent: 'center',
                 }}
               >
-                <ImageLabel>
-                  <h2 className={'color-light align-text-center opaque'}>
-                    Opening soon
-                  </h2>
-                </ImageLabel>
+                <ImageLabel>Opening soon</ImageLabel>
               </ImageLabelOverlay>
               <RedactedSection />
             </ImageLabelWrapper>
           </Flex>
-          <h3 className={'color-light align-text-center'}>REDACTED</h3>
+          <h3 className={'color-brand75 align-text-center'}>REDACTED</h3>
         </PosterColumn>
       </Flex>
       <Flex
@@ -136,7 +124,7 @@ interface PosterColumnProps {
 
 const PosterColumn = styled(Flex)<PosterColumnProps>`
   h3 {
-    margin-top: 4rem;
+    margin-top: 2rem;
   }
   ${(props) =>
     props.isIndented
@@ -150,13 +138,14 @@ const PosterColumn = styled(Flex)<PosterColumnProps>`
 
 const RedactedSection = styled.div`
   background-color: ${({ theme }) => theme.palette.grayOpaque};
-  min-height: 350px;
-  min-width: 350px;
+  min-height: 21rem;
+  min-width: 21rem;
 `;
 
 const ImageLabelWrapper = styled.div`
-  height: 350px;
-  width: 350px;
+  height: 21rem;
+  width: 21rem;
+  position: relative;
 `;
 
 const ImageLabelOverlay = styled(Flex)`
@@ -165,13 +154,10 @@ const ImageLabelOverlay = styled(Flex)`
   width: 100%;
 `;
 
-const ImageLabel = styled.div`
-  margin: 1rem;
-  padding: 1rem 0;
+const ImageLabel = styled.h2`
+  text-align: center;
   background-color: ${({ theme }) => theme.palette.dark75};
-  h2 {
-    margin: 0;
-  }
+  color: ${({ theme }) => theme.palette.light};
 `;
 
 export default RitualsMoviePoster;
