@@ -16,6 +16,7 @@ import leftGlow from 'assets/images/left-glow.png';
 import rightGlow from 'assets/images/right-glow.png';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import DashboardDoorPage from './DashboardDoor';
 
 type BgDimension = {
   width: number;
@@ -96,7 +97,7 @@ const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
             <DoorGlow
               src={rightGlow}
               title="Dashboard"
-              onClick={() => changePageTo(DashboardEntrance)}
+              onClick={() => changePageTo(DashboardDoorPage)}
               style={{
                 transform: `scale(${0.965 * bgDimensions.scaleW}%)`,
                 bottom: `${0.238 * bgDimensions.height}px`,
