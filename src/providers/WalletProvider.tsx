@@ -610,14 +610,16 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         isConnected();
         // await getOCTemplar();
         // await getMaxInvitesPerVerifiedUser();
-        await getCurrentEpoch();
-        await getExchangeRate();
-        await getLockInPeriod();
-        await getBalance();
-        await getAllocation();
-        await getLockedEntries();
-        await getExitQueueData();
-        await getApy();
+        await Promise.all([
+          getCurrentEpoch(),
+          getExchangeRate(),
+          getLockInPeriod(),
+          getBalance(),
+          getAllocation(),
+          getLockedEntries(),
+          getExitQueueData(),
+          getApy(),
+        ]);
 
         if (updateLoading) {
           setIsLoading(false);
