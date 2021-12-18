@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import useInterval from 'use-interval';
 import { MetricsService, AccountMetrics } from 'services/MetricsService';
 
-export default function useRefreshableAccountMetrics(wallet) {
+export default function useRefreshableAccountMetrics(wallet: string) {
   const [AccountMetrics, setAccountMetrics] = useState<AccountMetrics | null>(
     null
   );

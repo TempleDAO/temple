@@ -1,3 +1,5 @@
+//@ts-nocheck
+
 import React, { useEffect, useState } from 'react';
 import BackButton from 'components/Button/BackButton';
 import ProfileHeader from 'components/ProfileHeader/ProfileHeader';

@@ -1,3 +1,5 @@
+//@ts-nocheck
+
 import React, { useCallback } from 'react';
 import styled from 'styled-components';
 import Image from 'components/Image/Image';
