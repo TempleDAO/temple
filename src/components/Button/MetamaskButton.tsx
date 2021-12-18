@@ -10,6 +10,7 @@ const Container = styled.div`
   right: 0;
   padding: 1rem;
   cursor: pointer;
+  z-index: 10;
   &: hover {
     filter: brightness(150%);
   }
