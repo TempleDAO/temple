@@ -12,11 +12,17 @@ type CustomRoutingPageProps = {
   routingHelper: RoutingState;
 };
 
-function useCustomRouting(BasePageComponent: CustomRoutingPage): RoutingState {
+function useCustomRouting(
+  BasePageComponent: CustomRoutingPage,
+  StartingPage?: CustomRoutingPage,
+  StartingNavHistory?: CustomRoutingPage[]
+): RoutingState {
   const [CurrentPage, setCurrentPage] = useState<CustomRoutingPage>(
-    () => BasePageComponent
+    () => StartingPage || BasePageComponent
   );
-  const [navHistory, setNavHistory] = useState<CustomRoutingPage[]>([]);
+  const [navHistory, setNavHistory] = useState<CustomRoutingPage[]>(
+    StartingNavHistory || []
+  );
 
   function changePageTo(PageComponent: CustomRoutingPage) {
     setNavHistory((history) => [...history, CurrentPage]);
@@ -25,7 +31,7 @@ function useCustomRouting(BasePageComponent: CustomRoutingPage): RoutingState {
 
   function back() {
     const PrevPage = navHistory.pop();
-    setNavHistory((history) => [...history.slice(0, -1)]);
+    setNavHistory((history) => [...history]);
     const BackPage = PrevPage ? () => PrevPage : () => BasePageComponent;
     setCurrentPage(BackPage);
   }

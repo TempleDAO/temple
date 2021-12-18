@@ -6,6 +6,7 @@ import React, {
 } from 'react';
 import styled, { keyframes } from 'styled-components';
 import RitualsPosters from 'components/Pages/RitualsMoviePoster';
+import DungeonPoster from 'components/Pages/DungeonPoster';
 import BackButton from 'components/Button/BackButton';
 import foyerImage from 'assets/images/foyer.png';
 import triangle from 'assets/images/triangle.svg';
@@ -103,7 +104,7 @@ const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
               <DoorGlow
                 src={rightGlow}
                 title="Dungeon" // TODO: Update title
-                onClick={() => setVisiblePage(Pages.Right)}
+                onClick={() => changePageTo(DungeonPoster)}
                 style={{
                   transform: `scale(${0.965 * bgDimensions.scaleW}%)`,
                   bottom: `${0.238 * bgDimensions.height}px`,
