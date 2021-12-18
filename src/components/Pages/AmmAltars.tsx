@@ -55,6 +55,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     buy,
     getJoinQueueData,
     getSellQuote,
+    getBuyQuote,
   } = useWallet();
   // OGT amount in the user wallet
   const [OGTWalletAmount, setOGTWalletAmount] = useState<number>(0);
@@ -68,6 +69,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   const [OGTAmount, setOGTAmount] = useState<number>(0);
   const [rewards, setRewards] = useState<number>(0);
   const [activeAMMView, setActiveAMMView] = useState<AMMView | null>(view);
+  // Slippage for TXN minOut
+  const [slippage, setSlippage] = useState<number>(1);
+  const [activeAMMView, setActiveAMMView] = useState<AMMView | null>(null);
   const [prevAMMView, setPrevAMMView] = useState<AMMView | null>(null);
   const [joinQueueData, setJoinQueueData] = useState<JoinQueueData | null>({
     queueLength: 0,
@@ -103,6 +107,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     if (shouldUpdateData) {
       updateWallet();
     }
+    setRewards(0);
     setActiveAMMView(view);
     setPrevAMMView(prevView);
   };
@@ -121,14 +126,32 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     void updateJoinQueueData(x);
   };
 
-  const handleUpdateStableCoinAmount = (
+  const handleUpdateSlippage = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const x = +event.target.value > 0 ? +event.target.value : 0;
+    setSlippage(x);
+    setRewards(
+      fromAtto(
+        (await getBuyQuote(toAtto(stableCoinAmount), x)) ||
+          BigNumber.from(0) ||
+          0
+      )
+    );
+  };
+
+  const handleUpdateStableCoinAmount = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const x = +event.target.value > 0 ? +event.target.value : 0;
     setStableCoinAmount(x);
     console.info(`handleUpdateStableCoinAmount: ${x}`);
     /* TODO: get rewards from contract */
-    void setRewards(x + 5);
+    setRewards(
+      fromAtto(
+        (await getBuyQuote(toAtto(x), slippage)) || BigNumber.from(0) || 0
+      )
+    );
   };
 
   const handleUpdateTempleAmount = async (
@@ -136,7 +159,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   ) => {
     const x = +event.target.value > 0 ? +event.target.value : 0;
     setTempleAmount(x);
-    void setRewards(
+    setRewards(
       fromAtto((await getSellQuote(toAtto(x))) || BigNumber.from(0) || 0)
     );
   };
@@ -355,10 +378,29 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               onChange={handleUpdateStableCoinAmount}
               placeholder={'0.00'}
             />
-            <DataCard
-              title={'TEMPLE REWARDS'}
-              data={formatNumber(rewards) + ''}
+            <Input
+              hint={`Balance: ${rewards}`}
+              crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
+              type={'number'}
+              value={rewards}
+              disabled
             />
+            <Flex
+              layout={{
+                kind: 'container',
+                justifyContent: 'space-between',
+              }}
+            >
+              <small>Slippage: {slippage}%</small>
+            </Flex>
+            <Input
+              crypto={{ kind: 'value', value: 'Slippage' }}
+              type={'number'}
+              min={0}
+              value={slippage}
+              onChange={handleUpdateSlippage}
+            />
+
             <br />
             <br />
             <Button
@@ -390,6 +432,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               value={formatNumber(rewards)}
               disabled
             />
+
             <Button
               label={`SURRENDER ${TEMPLE_TOKEN}`}
               isUppercase

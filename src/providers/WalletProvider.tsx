@@ -185,7 +185,10 @@ interface WalletState {
 
   getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
 
-  getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
+  getBuyQuote(
+    amountToBuy: BigNumber,
+    slippage: number
+  ): Promise<BigNumber | void>;
 }
 
 const INITIAL_STATE: WalletState = {
@@ -1218,14 +1221,29 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     return BigNumber.from(0);
   };
 
-  const getBuyQuote = async (amountToBuy: BigNumber) => {
+  const getBuyQuote = async (amountToBuy: BigNumber, slippage: number) => {
     if (walletAddress && signerState) {
       const AMM_ROUTER = new TempleFraxAMMRouter__factory()
         .attach(TEMPLE_V2_ROUTER_ADDRESS)
         .connect(signerState);
 
+      const { amountInAMM, amountInProtocol, amountOutAMM, amountOutProtocol } =
+        await AMM_ROUTER.swapExactFraxForTempleQuote(amountToBuy);
+
+      console.info(`amountToBuy: ${fromAtto(amountToBuy)}`);
+      console.info(`amountInAMM: ${fromAtto(amountInAMM)}`);
+      console.info(`amountInProtocol: ${fromAtto(amountInProtocol)}`);
+      console.info(`amountOutProtocol: ${fromAtto(amountOutProtocol)}`);
+      console.info(`amountOutAMM: ${fromAtto(amountOutAMM)}`);
+
+      const minAmountIn = fromAtto(amountInAMM.add(amountOutAMM));
+
+      const diss = (minAmountIn * slippage) / 100;
+      console.info(`diss ${diss}`);
+      const quote = minAmountIn - diss;
+
       /* TODO: call call contract use slippage */
-      return BigNumber.from(0);
+      return toAtto(quote);
     }
     return BigNumber.from(0);
   };
