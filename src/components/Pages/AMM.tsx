@@ -19,7 +19,7 @@ const AmmSpaRoot = () => {
 
   const routingHelper = useCustomRouting(
     TempleGates,
-    isDiscordRedirect ? Account : undefined,
+    isDiscordRedirect ? Account : TempleGates,
     isDiscordRedirect ? [TempleGates, Foyer, DungeonPoster] : []
   );
   const { CurrentPage } = routingHelper;
