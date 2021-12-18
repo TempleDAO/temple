@@ -160,7 +160,7 @@ const TempleCashbackPage = () => {
       {claimCount == 0 ? (
         // TODO: Upgrade to new button loader where loading state can be promise
         <CollectButton
-          label="There's not a gift for you."
+          label="Nothing to collect"
           onClick={noop}
           disabled={true}
           ongoingRequest={false}
