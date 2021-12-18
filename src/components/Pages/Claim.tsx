@@ -152,7 +152,7 @@ const TempleCashbackPage = () => {
         <WelcomeImage />
       )}
       <Copy>
-        Not all who attended Opening Ceremony made it through unscathed.
+        Not all who attended the Opening Ceremony made it through unscathed.
         <br />
         <br />
         May this offering aid the wounded.
