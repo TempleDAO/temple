@@ -2,13 +2,14 @@ import '@nomiclabs/hardhat-ethers';
 import { BigNumber } from 'ethers';
 import { ethers, network } from 'hardhat';
 import { ExitQueue, ExitQueue__factory, TempleStaking__factory } from '../../../typechain';
-import { deployAndMine, DEPLOYED_CONTRACTS, mine, toAtto } from '../helpers';
+import { deployAndMine, DEPLOYED_CONTRACTS, expectAddressWithPrivateKey, mine, toAtto } from '../helpers';
 
-const MAX_EXITABLE_PER_ADDRESS = toAtto(112358100000000000000000) ;
-const MAX_EXITABLE_PER_EPOCH   = toAtto(112358100000000000000000) ;
+const MAX_EXITABLE_PER_ADDRESS = BigNumber.from("112358100000000000000000");
+const MAX_EXITABLE_PER_EPOCH   = BigNumber.from("112358100000000000000000");
 const EPOCH_SIZE = 640;
 
 async function main() {
+  expectAddressWithPrivateKey();
   const [owner] = await ethers.getSigners();
 
   let DEPLOYED: {
@@ -41,7 +42,7 @@ async function main() {
   ]
 
   await mine(exitQueue.setOwedTemple(exits.map(x => x[0]), exits.map(x => x[1])));
-  await mine(exitQueue.transferOwnership("0x4D6175d58C5AceEf30F546C0d5A557efFa53A950");
+  await mine(exitQueue.transferOwnership("0x4D6175d58C5AceEf30F546C0d5A557efFa53A950"));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

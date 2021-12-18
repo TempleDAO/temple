@@ -77,7 +77,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
 
     // Active contrats
     TEMPLE: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
-    EXIT_QUEUE: '0xfaeadcd9cb6870a5df09e403e4dcfcf1a6f20a0c', // set to old exit queue. Will update once we deploy new queue contract
+    EXIT_QUEUE: '0x967591888A5e8aED9D2A920fE4cC726e83d2bca9',
     STAKING: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
     LOCKED_OG_TEMPLE: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
     TREASURY: '0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443',
