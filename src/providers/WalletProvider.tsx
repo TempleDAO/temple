@@ -1129,22 +1129,15 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       console.info(`claimAvailableTemple`);
       if (exitQueueData.claimableEpochs.length) {
-        console.info(`Claiming`);
-        /* TODO: update this withdraw call once contract is updated */
-        const exitBalance = await EXIT_QUEUE.currentEpochAllocation(
-          walletAddress,
-          exitQueueData.claimableEpochs[0]
-        );
-        console.info(`exitBalance => ${fromAtto(exitBalance)}`);
-        const withdrawTXN = await EXIT_QUEUE.withdraw(
-          exitQueueData.claimableEpochs[0]
+        const withdrawTXN = await EXIT_QUEUE.withdrawEpochs(
+          exitQueueData.claimableEpochs,
+          exitQueueData.claimableEpochs.length
         );
 
         await withdrawTXN.wait();
-
         // Show feedback to user
         openNotification({
-          title: `Temple claimed`,
+          title: `${TEMPLE_TOKEN} claimed`,
           hash: withdrawTXN.hash,
         });
       }
