@@ -17,7 +17,7 @@ const DungeonPoster: CustomRoutingPage = ({ routingHelper }) => {
       <H1>DUNGEONS</H1>
       <button onClick={() => changePageTo(Dashboard)}>Dashboard</button>
       <button onClick={() => changePageTo(Account)}>Account</button>
-      <BackButton width={112} height={112} onClick={back} />
+      <BackButton onClick={back} />
     </>
   );
 };

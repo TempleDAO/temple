@@ -10,7 +10,6 @@ import AltarEnter from './AltarEnter';
 import AltarExit from './AltarExit';
 import AltarDevotion from './AltarDevotion';
 import BackButton from 'components/Button/BackButton';
-import MetamaskButton from 'components/Button/MetamaskButton';
 import { useWallet } from 'providers/WalletProvider';
 import portalImage from 'assets/images/PortalRoom.png';
 import midGlow from 'assets/images/glow_center.png';
@@ -164,7 +163,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
           </ChartContainer>
         </>
       )}
-      <BackButton width={112} height={112} onClick={back} />
+      <BackButton onClick={back} />
     </Background>
   );
 };

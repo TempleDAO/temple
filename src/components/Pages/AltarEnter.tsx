@@ -107,7 +107,7 @@ const EnterPage: CustomRoutingPage = ({ routingHelper }) => {
           />
         </>
       )}
-      <BackButton width={112} height={112} onClick={back} />
+      <BackButton onClick={back} />
     </Background>
   );
 };
