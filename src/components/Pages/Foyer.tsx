@@ -7,7 +7,6 @@ import React, {
 import styled, { keyframes } from 'styled-components';
 import RitualsPosters from 'components/Pages/RitualsMoviePoster';
 import Portals from 'components/Pages/Portals';
-import DashboardEntrance from 'components/Pages/DashboardEntrance';
 import BackButton from 'components/Button/BackButton';
 import MetamaskButton from 'components/Button/MetamaskButton';
 import foyerImage from 'assets/images/foyer.png';
