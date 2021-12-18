@@ -113,7 +113,7 @@ const RitualsMoviePoster: CustomRoutingPage = ({ routingHelper }) => {
           justifyContent: 'center',
         }}
       ></Flex>
-      <BackButton width={112} height={112} onClick={back} />
+      <BackButton onClick={back} />
     </>
   );
 };

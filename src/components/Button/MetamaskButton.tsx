@@ -6,7 +6,7 @@ import metamaskImage from 'assets/images/metamask-transparent.svg';
 
 const Container = styled.div`
   position: absolute;
-  top: 0;
+  top: -0.5rem;
   right: 0;
   z-index: ${(props) => props.theme.zIndexes.top};
   padding: 1rem;
@@ -24,8 +24,8 @@ const MetamaskButton = () => {
     <Container>
       <Image
         src={metamaskImage}
-        width={97}
-        height={97}
+        width={60}
+        height={60}
         onClick={wallet ? changeWalletAddress : connectWallet}
       />
     </Container>

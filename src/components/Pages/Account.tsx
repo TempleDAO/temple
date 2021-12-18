@@ -205,7 +205,7 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
           </ProfileWrapper>
         </Container>
       </PageWrapper>
-      <BackButton width={112} height={112} onClick={back} />
+      <BackButton onClick={back} />
     </>
   );
 };

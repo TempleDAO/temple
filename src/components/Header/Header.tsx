@@ -1,22 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled, { css } from 'styled-components';
-import Image from 'components/Image/Image';
 import { Link, useNavigate } from 'react-router-dom';
-import { useWallet } from 'providers/WalletProvider';
-import MenuImage from 'assets/images/menu.svg';
 import { Button } from 'components/Button/Button';
-
-const formatWalletAddress = (address: string | null): string => {
-  if (address) {
-    const addressLength = address.length;
-    return `${address.substr(0, 4)}...${address.substr(
-      addressLength - 4,
-      addressLength
-    )}`;
-  }
-
-  return '';
-};
 
 export const Header = () => {
   const navigate = useNavigate();
@@ -64,118 +49,6 @@ const NavContainer = styled.div`
   height: 100%;
 `;
 
-interface HeaderNavProps {
-  isOpen: boolean;
-}
-
-const HeaderNav = styled.nav<HeaderNavProps>`
-  position: fixed;
-  z-index: ${(props) => props.theme.zIndexes.up};
-  top: 0;
-  right: -100%;
-  transition: right 250ms linear;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 90vw;
-  padding-top: ${(props) => props.theme.metrics.headerHeight};
-  background-color: ${(props) => props.theme.palette.dark};
-  box-shadow: ${(props) => props.theme.shadows.base};
-
-  ${(props) =>
-    props.isOpen &&
-    css`
-      right: 0;
-
-      & ~ ${HeaderNavOverlay} {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: ${(props) => props.theme.palette.dark75};
-        z-index: ${(props) => props.theme.zIndexes};
-      }
-    `};
-
-  @media screen and (min-width: 64rem  /* 1024/16 */) {
-    position: relative;
-    top: initial;
-    right: initial;
-    height: initial;
-    width: initial;
-    flex-direction: row;
-    padding-top: 0;
-    box-shadow: none;
-  }
-
-  ul {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    list-style-type: none;
-    margin: 0;
-    padding: 0 2rem;
-
-    li {
-      padding: 0;
-      text-transform: uppercase;
-      ${(props) => props.theme.typography.meta};
-      margin-bottom: 1.5rem;
-      width: 100%;
-      display: flex;
-      text-align: center;
-
-      a {
-        width: 100%;
-        padding: 1rem;
-      }
-    }
-
-    @media screen and (min-width: 64rem  /* 1024/16 */) {
-      flex-direction: row;
-      padding: 0;
-      align-items: center;
-
-      li {
-        margin-bottom: 0;
-        margin-right: 2rem;
-
-        a {
-          padding: 0;
-          background-color: transparent;
-          width: initial;
-        }
-      }
-    }
-  }
-`;
-
-const HeaderNavOverlay = styled.div`
-  @media screen and (min-width: 64rem  /* 1024/16 */) {
-    display: none;
-  }
-`;
-
-const WalletContainer = styled.span`
-  text-transform: none;
-  margin-right: 1rem;
-`;
-
 const MenuContainer = styled.div`
   display: flex;
-`;
-
-const MenuToggle = styled.div`
-  position: relative;
-  cursor: pointer;
-  z-index: ${(props) => props.theme.zIndexes.top};
-  display: flex;
-  align-items: center;
-
-  // hide toggle from table up
-  /* TODO: refactor to reuse @tableUp */
-  @media screen and (min-width: 64rem  /* 1024/16 */) {
-    display: none;
-  }
 `;
