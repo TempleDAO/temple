@@ -3,16 +3,20 @@ import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { blockTimestamp, mineNBlocks } from '../../test/helpers';
 import {
+  AmmIncentivisor__factory,
   AMMWhitelist__factory,
   ExitQueue__factory,
+  Faith__factory,
   FakeERC20__factory,
   LockedOGTemple__factory,
   OGTemple__factory,
   TempleCashback__factory,
   TempleERC20Token__factory,
+  TempleFraxAMMOps__factory,
   TempleFraxAMMRouter__factory,
   TempleStaking__factory,
   TempleTeamPayments__factory,
+  TempleTreasury,
   TempleTreasury__factory,
   TempleUniswapV2Pair__factory,
   TreasuryManagementProxy__factory,
@@ -74,13 +78,12 @@ async function main() {
   await stablecToken.increaseAllowance(treasury.address, 100);
   await treasury.seedMint(100, 1000);
 
-  // XXX(butlerji): Currently not in play, will comment out when it's back in action
-  // // Deploy treasury proxy (used for all treasury management going forward)
-  // const treasuryManagementProxy = await new TreasuryManagementProxy__factory(owner).deploy(
-  //   await owner.getAddress(),
-  //   treasury.address,
-  // );
-  // await treasury.transferOwnership(treasuryManagementProxy.address);
+  // Deploy treasury proxy (used for all treasury management going forward)
+  const treasuryManagementProxy = await new TreasuryManagementProxy__factory(owner).deploy(
+    await owner.getAddress(),
+    treasury.address,
+  );
+  await treasury.transferOwnership(treasuryManagementProxy.address);
 
   const verifier = ethers.Wallet.createRandom();
 
@@ -108,8 +111,8 @@ async function main() {
     nLocks += 1;
   }
 
-  // Mine a couple of epochs forward, to help testing
-  await mineNBlocks((await exitQueue.epochSize()).toNumber() * 2);
+  // // Mine a couple of epochs forward, to help testing
+  // await mineNBlocks((await exitQueue.epochSize()).toNumber() * 2);
 
   // Create 2 versions of the team payment contract (contigent and fixed)
   const teamPaymentsFixed = await new TempleTeamPayments__factory(owner).deploy(templeToken.address);
@@ -127,18 +130,30 @@ async function main() {
   // Setup custom AMM with liquidity
   const pair = await new TempleUniswapV2Pair__factory(owner).deploy(await owner.getAddress(), templeToken.address, stablecToken.address);
   const templeRouter = await new TempleFraxAMMRouter__factory(owner).deploy(
-        pair.address,
-        templeToken.address,
-        stablecToken.address,
-        treasury.address,
-        {frax: 100000, temple: 9000},
-        100, /* threshold decay per block */
-        {frax: 1000000, temple: 1000000},
-        {frax: 1000000, temple: 100000},
-      );
+    pair.address,
+    templeToken.address,
+    stablecToken.address,
+    treasury.address,
+    treasury.address,
+    {frax: 100000, temple: 9000},
+    100, /* threshold decay per block */
+    {frax: 1000000, temple: 1000000},
+    {frax: 1000000, temple: 100000},
+  );
+
+  // Contract where we send frax earned by treasury
+  const ammOps = await new TempleFraxAMMOps__factory(owner).deploy(
+    templeToken.address,
+    templeRouter.address,
+    treasuryManagementProxy.address,
+    stablecToken.address,
+    treasury.address,
+    pair.address,
+  )
 
   await pair.setRouter(templeRouter.address);
   await templeToken.addMinter(templeRouter.address);
+  await templeRouter.setProtocolMintEarningsAccount(ammOps.address);
 
   // Add liquidity to the AMM
   templeToken.mint(owner.address, toAtto(10000000))
@@ -152,6 +167,19 @@ async function main() {
 
   // AMMWhitelist
   const ammWhitelist = await new AMMWhitelist__factory(owner).deploy(templeRouter.address, verifier.address);
+
+  // Buy the Dip
+  const faith = await new Faith__factory(owner).deploy();
+
+  const ammIncentivisor = await new AmmIncentivisor__factory(owner).deploy(
+    stablecToken.address,
+    faith.address,
+    templeToken.address,
+    templeStaking.address,
+    templeRouter.address,
+    pair.address,
+    lockedOgTemple.address,
+    treasury.address);
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string; } = {
