@@ -33,7 +33,6 @@ ReactDOM.render(
                   <>
                     <Route path="/temple-gates" element={<AmmSpaRoot />} />
                     <Route path="/" element={<PageLayout />}>
-                      <Route path="/amm-altars" element={<AmmAltars />} />
                       <Route path="/" element={<Home />} />
                       <Route path="disclaimer" element={<Disclaimer />} />
                       <Route path="enter" element={<Enter />} />
