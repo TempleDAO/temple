@@ -218,11 +218,17 @@ function useTempleCashback() {
     });
   }
 
-  //wallet should always be true here
-  const initialActiveClaim = claims[relevantClaims[0].file][
+  const gasRefundClaims = claims[relevantClaims[0]?.file];
+  const ocClaims = claims[relevantClaims[1]?.file];
+
+  const walletGasRefundClaim =
     //@ts-ignore
-    wallet?.toLocaleLowerCase()
-  ]
+    gasRefundClaims && gasRefundClaims[wallet?.toLocaleLowerCase()];
+  const walletOCClaim =
+    //@ts-ignore
+    ocClaims && ocClaims[wallet?.toLocaleLowerCase()];
+
+  const initialActiveClaim = walletGasRefundClaim
     ? relevantClaims[0].file
     : relevantClaims[1].file;
 
