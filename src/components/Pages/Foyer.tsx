@@ -6,10 +6,9 @@ import React, {
 } from 'react';
 import styled, { keyframes } from 'styled-components';
 import RitualsPosters from 'components/Pages/RitualsMoviePoster';
-import DungeonPoster from 'components/Pages/DungeonPoster';
 import BackButton from 'components/Button/BackButton';
+import MetamaskButton from 'components/Button/MetamaskButton';
 import foyerImage from 'assets/images/foyer.png';
-import triangle from 'assets/images/triangle.svg';
 import midGlow from 'assets/images/mid-glow.png';
 import leftGlow from 'assets/images/left-glow.png';
 import rightGlow from 'assets/images/right-glow.png';
@@ -67,6 +66,7 @@ const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
         <Background id="background">
           {bgDimensions != null && (
             <>
+              <MetamaskButton />
               <DoorGlow
                 src={leftGlow}
                 title="Rituals"
@@ -102,7 +102,7 @@ const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
               <DoorGlow
                 src={rightGlow}
                 title="Dungeon" // TODO: Update title
-                onClick={() => changePageTo(DungeonPoster)}
+                onClick={() => setVisiblePage(Pages.Right)}
                 style={{
                   transform: `scale(${0.965 * bgDimensions.scaleW}%)`,
                   bottom: `${0.238 * bgDimensions.height}px`,
