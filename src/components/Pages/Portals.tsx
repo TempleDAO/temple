@@ -55,7 +55,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
   useLayoutEffect(() => {
     window.onload = () => handleResize();
     window.addEventListener('resize', () => handleResize());
-    setTimeout(() => handleResize(), 200);
+    setTimeout(() => handleResize(), 500);
     return window.removeEventListener('resize', () => handleResize());
   }, []);
 
