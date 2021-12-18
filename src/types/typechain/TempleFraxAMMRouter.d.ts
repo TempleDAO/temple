@@ -27,8 +27,6 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     "addAllowedUser(address)": FunctionFragment;
     "addLiquidity(uint256,uint256,uint256,uint256,address,uint256)": FunctionFragment;
     "allowed(address)": FunctionFragment;
-    "checkPointBlock()": FunctionFragment;
-    "decayStartBlock()": FunctionFragment;
     "dynamicThresholdDecayPerBlock()": FunctionFragment;
     "dynamicThresholdIncreasePct()": FunctionFragment;
     "dynamicThresholdPrice()": FunctionFragment;
@@ -44,6 +42,7 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     "openAccessEnabled()": FunctionFragment;
     "owner()": FunctionFragment;
     "pair()": FunctionFragment;
+    "priceCrossedBelowDynamicThresholdBlock()": FunctionFragment;
     "quote(uint256,uint256,uint256)": FunctionFragment;
     "removeAllowedUser(address)": FunctionFragment;
     "removeLiquidity(uint256,uint256,uint256,address,uint256)": FunctionFragment;
@@ -54,6 +53,7 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     "setDynamicThresholdIncreasePct(uint256)": FunctionFragment;
     "setInterpolateFromPrice(uint256,uint256)": FunctionFragment;
     "setInterpolateToPrice(uint256,uint256)": FunctionFragment;
+    "setProtocolMintEarningsAccount(address)": FunctionFragment;
     "supportsInterface(bytes4)": FunctionFragment;
     "swapExactFraxForTemple(uint256,uint256,address,uint256)": FunctionFragment;
     "swapExactFraxForTempleQuote(uint256)": FunctionFragment;
@@ -93,14 +93,6 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     ]
   ): string;
   encodeFunctionData(functionFragment: "allowed", values: [string]): string;
-  encodeFunctionData(
-    functionFragment: "checkPointBlock",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "decayStartBlock",
-    values?: undefined
-  ): string;
   encodeFunctionData(
     functionFragment: "dynamicThresholdDecayPerBlock",
     values?: undefined
@@ -153,6 +145,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "pair", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "priceCrossedBelowDynamicThresholdBlock",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "quote",
     values: [BigNumberish, BigNumberish, BigNumberish]
   ): string;
@@ -191,6 +187,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "setInterpolateToPrice",
     values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setProtocolMintEarningsAccount",
+    values: [string]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -251,14 +251,6 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "allowed", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "checkPointBlock",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "decayStartBlock",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "dynamicThresholdDecayPerBlock",
     data: BytesLike
   ): Result;
@@ -303,6 +295,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pair", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "priceCrossedBelowDynamicThresholdBlock",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "quote", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "removeAllowedUser",
@@ -335,6 +331,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "setInterpolateToPrice",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setProtocolMintEarningsAccount",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -375,26 +375,28 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   ): Result;
 
   events: {
-    "CheckPointUpdated(uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
+    "PriceCrossedBelowDynamicThreshold(uint256)": EventFragment;
     "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
     "RoleGranted(bytes32,address,address)": EventFragment;
     "RoleRevoked(bytes32,address,address)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: "CheckPointUpdated"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
+  getEvent(
+    nameOrSignatureOrTopic: "PriceCrossedBelowDynamicThreshold"
+  ): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleAdminChanged"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleRevoked"): EventFragment;
 }
 
-export type CheckPointUpdatedEvent = TypedEvent<
-  [BigNumber] & { blockNumber: BigNumber }
->;
-
 export type OwnershipTransferredEvent = TypedEvent<
   [string, string] & { previousOwner: string; newOwner: string }
+>;
+
+export type PriceCrossedBelowDynamicThresholdEvent = TypedEvent<
+  [BigNumber] & { blockNumber: BigNumber }
 >;
 
 export type RoleAdminChangedEvent = TypedEvent<
@@ -482,10 +484,6 @@ export class TempleFraxAMMRouter extends BaseContract {
 
     allowed(arg0: string, overrides?: CallOverrides): Promise<[boolean]>;
 
-    checkPointBlock(overrides?: CallOverrides): Promise<[BigNumber]>;
-
-    decayStartBlock(overrides?: CallOverrides): Promise<[BigNumber]>;
-
     dynamicThresholdDecayPerBlock(
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
@@ -547,6 +545,10 @@ export class TempleFraxAMMRouter extends BaseContract {
 
     pair(overrides?: CallOverrides): Promise<[string]>;
 
+    priceCrossedBelowDynamicThresholdBlock(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     quote(
       amountA: BigNumberish,
       reserveA: BigNumberish,
@@ -606,6 +608,11 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    setProtocolMintEarningsAccount(
+      _protocolMintEarningsAccount: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     supportsInterface(
       interfaceId: BytesLike,
       overrides?: CallOverrides
@@ -643,11 +650,10 @@ export class TempleFraxAMMRouter extends BaseContract {
       amountIn: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [boolean, BigNumber, BigNumber, BigNumber] & {
+      [boolean, boolean, BigNumber] & {
         priceBelowIV: boolean;
+        willCrossDynamicThreshold: boolean;
         amountOut: BigNumber;
-        reserveTemple: BigNumber;
-        reserveFrax: BigNumber;
       }
     >;
 
@@ -689,10 +695,6 @@ export class TempleFraxAMMRouter extends BaseContract {
   ): Promise<ContractTransaction>;
 
   allowed(arg0: string, overrides?: CallOverrides): Promise<boolean>;
-
-  checkPointBlock(overrides?: CallOverrides): Promise<BigNumber>;
-
-  decayStartBlock(overrides?: CallOverrides): Promise<BigNumber>;
 
   dynamicThresholdDecayPerBlock(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -750,6 +752,10 @@ export class TempleFraxAMMRouter extends BaseContract {
   owner(overrides?: CallOverrides): Promise<string>;
 
   pair(overrides?: CallOverrides): Promise<string>;
+
+  priceCrossedBelowDynamicThresholdBlock(
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
   quote(
     amountA: BigNumberish,
@@ -810,6 +816,11 @@ export class TempleFraxAMMRouter extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  setProtocolMintEarningsAccount(
+    _protocolMintEarningsAccount: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   supportsInterface(
     interfaceId: BytesLike,
     overrides?: CallOverrides
@@ -847,11 +858,10 @@ export class TempleFraxAMMRouter extends BaseContract {
     amountIn: BigNumberish,
     overrides?: CallOverrides
   ): Promise<
-    [boolean, BigNumber, BigNumber, BigNumber] & {
+    [boolean, boolean, BigNumber] & {
       priceBelowIV: boolean;
+      willCrossDynamicThreshold: boolean;
       amountOut: BigNumber;
-      reserveTemple: BigNumber;
-      reserveFrax: BigNumber;
     }
   >;
 
@@ -899,10 +909,6 @@ export class TempleFraxAMMRouter extends BaseContract {
     >;
 
     allowed(arg0: string, overrides?: CallOverrides): Promise<boolean>;
-
-    checkPointBlock(overrides?: CallOverrides): Promise<BigNumber>;
-
-    decayStartBlock(overrides?: CallOverrides): Promise<BigNumber>;
 
     dynamicThresholdDecayPerBlock(
       overrides?: CallOverrides
@@ -963,6 +969,10 @@ export class TempleFraxAMMRouter extends BaseContract {
 
     pair(overrides?: CallOverrides): Promise<string>;
 
+    priceCrossedBelowDynamicThresholdBlock(
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     quote(
       amountA: BigNumberish,
       reserveA: BigNumberish,
@@ -1022,6 +1032,11 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    setProtocolMintEarningsAccount(
+      _protocolMintEarningsAccount: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     supportsInterface(
       interfaceId: BytesLike,
       overrides?: CallOverrides
@@ -1059,11 +1074,10 @@ export class TempleFraxAMMRouter extends BaseContract {
       amountIn: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
-      [boolean, BigNumber, BigNumber, BigNumber] & {
+      [boolean, boolean, BigNumber] & {
         priceBelowIV: boolean;
+        willCrossDynamicThreshold: boolean;
         amountOut: BigNumber;
-        reserveTemple: BigNumber;
-        reserveFrax: BigNumber;
       }
     >;
 
@@ -1080,14 +1094,6 @@ export class TempleFraxAMMRouter extends BaseContract {
   };
 
   filters: {
-    "CheckPointUpdated(uint256)"(
-      blockNumber?: null
-    ): TypedEventFilter<[BigNumber], { blockNumber: BigNumber }>;
-
-    CheckPointUpdated(
-      blockNumber?: null
-    ): TypedEventFilter<[BigNumber], { blockNumber: BigNumber }>;
-
     "OwnershipTransferred(address,address)"(
       previousOwner?: string | null,
       newOwner?: string | null
@@ -1103,6 +1109,14 @@ export class TempleFraxAMMRouter extends BaseContract {
       [string, string],
       { previousOwner: string; newOwner: string }
     >;
+
+    "PriceCrossedBelowDynamicThreshold(uint256)"(
+      blockNumber?: null
+    ): TypedEventFilter<[BigNumber], { blockNumber: BigNumber }>;
+
+    PriceCrossedBelowDynamicThreshold(
+      blockNumber?: null
+    ): TypedEventFilter<[BigNumber], { blockNumber: BigNumber }>;
 
     "RoleAdminChanged(bytes32,bytes32,bytes32)"(
       role?: BytesLike | null,
@@ -1185,10 +1199,6 @@ export class TempleFraxAMMRouter extends BaseContract {
 
     allowed(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    checkPointBlock(overrides?: CallOverrides): Promise<BigNumber>;
-
-    decayStartBlock(overrides?: CallOverrides): Promise<BigNumber>;
-
     dynamicThresholdDecayPerBlock(
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -1242,6 +1252,10 @@ export class TempleFraxAMMRouter extends BaseContract {
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     pair(overrides?: CallOverrides): Promise<BigNumber>;
+
+    priceCrossedBelowDynamicThresholdBlock(
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     quote(
       amountA: BigNumberish,
@@ -1299,6 +1313,11 @@ export class TempleFraxAMMRouter extends BaseContract {
     setInterpolateToPrice(
       frax: BigNumberish,
       temple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setProtocolMintEarningsAccount(
+      _protocolMintEarningsAccount: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1380,10 +1399,6 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    checkPointBlock(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    decayStartBlock(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     dynamicThresholdDecayPerBlock(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
@@ -1446,6 +1461,10 @@ export class TempleFraxAMMRouter extends BaseContract {
 
     pair(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    priceCrossedBelowDynamicThresholdBlock(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     quote(
       amountA: BigNumberish,
       reserveA: BigNumberish,
@@ -1502,6 +1521,11 @@ export class TempleFraxAMMRouter extends BaseContract {
     setInterpolateToPrice(
       frax: BigNumberish,
       temple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setProtocolMintEarningsAccount(
+      _protocolMintEarningsAccount: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

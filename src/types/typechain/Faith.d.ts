@@ -24,7 +24,7 @@ interface FaithInterface extends ethers.utils.Interface {
     "addManager(address)": FunctionFragment;
     "balances(address)": FunctionFragment;
     "gain(address,uint256)": FunctionFragment;
-    "loose(address,uint256)": FunctionFragment;
+    "lose(address,uint256)": FunctionFragment;
     "owner()": FunctionFragment;
     "removeManager(address)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
@@ -39,7 +39,7 @@ interface FaithInterface extends ethers.utils.Interface {
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "loose",
+    functionFragment: "lose",
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
@@ -63,7 +63,7 @@ interface FaithInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "addManager", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balances", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "gain", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "loose", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "lose", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "removeManager",
@@ -162,7 +162,7 @@ export class Faith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    loose(
+    lose(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -200,7 +200,7 @@ export class Faith extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  loose(
+  lose(
     to: string,
     amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -235,7 +235,7 @@ export class Faith extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    loose(
+    lose(
       to: string,
       amount: BigNumberish,
       overrides?: CallOverrides
@@ -319,7 +319,7 @@ export class Faith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    loose(
+    lose(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -361,7 +361,7 @@ export class Faith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    loose(
+    lose(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
