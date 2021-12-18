@@ -533,6 +533,12 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       const userData = await EXIT_QUEUE.userData(walletAddress);
       const totalTempleOwned = fromAtto(userData.Amount);
+
+      if (totalTempleOwned === 0) {
+        setExitQueueData(INITIAL_STATE.exitQueueData);
+        return;
+      }
+
       const currentEpoch = (await EXIT_QUEUE.currentEpoch()).toNumber();
       const firstEpoch = userData.FirstExitEpoch.toNumber();
       const lastEpoch = userData.LastExitEpoch.toNumber();
@@ -547,12 +553,16 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const maybeClaimableEpochs: Array<number> = [];
       // stores all epochs with allocations for address
       const claimableEpochs: Array<number> = [];
+      console.log(firstEpoch, currentEpoch, currentEpoch - firstEpoch);
       for (let i = firstEpoch; i < currentEpoch; i++) {
         maybeClaimableEpochs.push(i);
         exitEntryPromises.push(
           EXIT_QUEUE.currentEpochAllocation(walletAddress, i)
         );
       }
+
+      console.log(exitEntryPromises.length);
+      console.log(exitEntryPromises);
 
       const exitEntries = await Promise.all(exitEntryPromises);
       const claimableTemple: number = fromAtto(
@@ -608,6 +618,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await getLockedEntries();
         await getExitQueueData();
         await getApy();
+
         if (updateLoading) {
           setIsLoading(false);
         }
