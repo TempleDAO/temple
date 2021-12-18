@@ -46,9 +46,10 @@ contract LockedOGTemple {
     /** Withdraw a specific locked entry */
     function unlockFor(address _staker, uint256 _amountOGTemple) public {
         LockedEntry storage lockEntry = ogTempleLocked[_staker];
-        require(lockEntry.lockedUntilTimestamp < block.timestamp, "LockedOGTemple: Too soon!");
-        require(_amountOGTemple <= lockEntry.amount, "LockedOGTemple: can't withdraw more than originally locked");
+        require(lockEntry.lockedUntilTimestamp < block.timestamp, "LockedOGTemple: Still Locked");
+        require(_amountOGTemple <= lockEntry.amount, "LockedOGTemple: can't unlock more than originally locked");
 
+        lockEntry.amount -= _amountOGTemple;
         SafeERC20.safeTransfer(ogTempleToken, _staker, _amountOGTemple);
         emit Unlock(_staker, _amountOGTemple);
     }
