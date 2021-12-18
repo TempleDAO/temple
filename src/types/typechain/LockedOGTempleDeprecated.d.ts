@@ -19,16 +19,18 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface LockedOGTempleInterface extends ethers.utils.Interface {
+interface LockedOGTempleDeprecatedInterface extends ethers.utils.Interface {
   functions: {
+    "OG_TEMPLE()": FunctionFragment;
     "lock(uint256,uint256)": FunctionFragment;
     "lockFor(address,uint256,uint256)": FunctionFragment;
-    "ogTempleLocked(address)": FunctionFragment;
-    "ogTempleToken()": FunctionFragment;
-    "unlock(uint256)": FunctionFragment;
-    "unlockFor(address,uint256)": FunctionFragment;
+    "locked(address,uint256)": FunctionFragment;
+    "numLocks(address)": FunctionFragment;
+    "withdraw(uint256)": FunctionFragment;
+    "withdrawFor(address,uint256)": FunctionFragment;
   };
 
+  encodeFunctionData(functionFragment: "OG_TEMPLE", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "lock",
     values: [BigNumberish, BigNumberish]
@@ -38,58 +40,52 @@ interface LockedOGTempleInterface extends ethers.utils.Interface {
     values: [string, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "ogTempleLocked",
-    values: [string]
+    functionFragment: "locked",
+    values: [string, BigNumberish]
   ): string;
+  encodeFunctionData(functionFragment: "numLocks", values: [string]): string;
   encodeFunctionData(
-    functionFragment: "ogTempleToken",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "unlock",
+    functionFragment: "withdraw",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "unlockFor",
+    functionFragment: "withdrawFor",
     values: [string, BigNumberish]
   ): string;
 
+  decodeFunctionResult(functionFragment: "OG_TEMPLE", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "lock", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "lockFor", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "locked", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "numLocks", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "ogTempleLocked",
+    functionFragment: "withdrawFor",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "ogTempleToken",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "unlock", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "unlockFor", data: BytesLike): Result;
 
   events: {
-    "Lock(address,uint256,uint256,uint256)": EventFragment;
-    "Unlock(address,uint256)": EventFragment;
+    "OGTempleLocked(address,uint256,uint256)": EventFragment;
+    "OGTempleWithdraw(address,uint256)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: "Lock"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "Unlock"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "OGTempleLocked"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "OGTempleWithdraw"): EventFragment;
 }
 
-export type LockEvent = TypedEvent<
-  [string, BigNumber, BigNumber, BigNumber] & {
-    staker: string;
-    increasedByOgTemple: BigNumber;
-    totalLockedOgTemple: BigNumber;
-    lockedUntil: BigNumber;
+export type OGTempleLockedEvent = TypedEvent<
+  [string, BigNumber, BigNumber] & {
+    _staker: string;
+    _amount: BigNumber;
+    _lockedUntil: BigNumber;
   }
 >;
 
-export type UnlockEvent = TypedEvent<
-  [string, BigNumber] & { staker: string; amount: BigNumber }
+export type OGTempleWithdrawEvent = TypedEvent<
+  [string, BigNumber] & { _staker: string; _amount: BigNumber }
 >;
 
-export class LockedOGTemple extends BaseContract {
+export class LockedOGTempleDeprecated extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -130,9 +126,11 @@ export class LockedOGTemple extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: LockedOGTempleInterface;
+  interface: LockedOGTempleDeprecatedInterface;
 
   functions: {
+    OG_TEMPLE(overrides?: CallOverrides): Promise<[string]>;
+
     lock(
       _amountOGTemple: BigNumberish,
       _lockedUntilTimestamp: BigNumberish,
@@ -142,33 +140,36 @@ export class LockedOGTemple extends BaseContract {
     lockFor(
       _staker: string,
       _amountOGTemple: BigNumberish,
-      _unlockDelaySeconds: BigNumberish,
+      _lockedUntilTimestamp: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    ogTempleLocked(
+    locked(
       arg0: string,
+      arg1: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
       [BigNumber, BigNumber] & {
-        amount: BigNumber;
-        lockedUntilTimestamp: BigNumber;
+        BalanceOGTemple: BigNumber;
+        LockedUntilTimestamp: BigNumber;
       }
     >;
 
-    ogTempleToken(overrides?: CallOverrides): Promise<[string]>;
+    numLocks(_staker: string, overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    unlock(
-      _amountOGTemple: BigNumberish,
+    withdraw(
+      _idx: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    unlockFor(
+    withdrawFor(
       _staker: string,
-      _amountOGTemple: BigNumberish,
+      _idx: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
+
+  OG_TEMPLE(overrides?: CallOverrides): Promise<string>;
 
   lock(
     _amountOGTemple: BigNumberish,
@@ -179,34 +180,37 @@ export class LockedOGTemple extends BaseContract {
   lockFor(
     _staker: string,
     _amountOGTemple: BigNumberish,
-    _unlockDelaySeconds: BigNumberish,
+    _lockedUntilTimestamp: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  ogTempleLocked(
+  locked(
     arg0: string,
+    arg1: BigNumberish,
     overrides?: CallOverrides
   ): Promise<
     [BigNumber, BigNumber] & {
-      amount: BigNumber;
-      lockedUntilTimestamp: BigNumber;
+      BalanceOGTemple: BigNumber;
+      LockedUntilTimestamp: BigNumber;
     }
   >;
 
-  ogTempleToken(overrides?: CallOverrides): Promise<string>;
+  numLocks(_staker: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-  unlock(
-    _amountOGTemple: BigNumberish,
+  withdraw(
+    _idx: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  unlockFor(
+  withdrawFor(
     _staker: string,
-    _amountOGTemple: BigNumberish,
+    _idx: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
+    OG_TEMPLE(overrides?: CallOverrides): Promise<string>;
+
     lock(
       _amountOGTemple: BigNumberish,
       _lockedUntilTimestamp: BigNumberish,
@@ -216,83 +220,71 @@ export class LockedOGTemple extends BaseContract {
     lockFor(
       _staker: string,
       _amountOGTemple: BigNumberish,
-      _unlockDelaySeconds: BigNumberish,
+      _lockedUntilTimestamp: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
-    ogTempleLocked(
+    locked(
       arg0: string,
+      arg1: BigNumberish,
       overrides?: CallOverrides
     ): Promise<
       [BigNumber, BigNumber] & {
-        amount: BigNumber;
-        lockedUntilTimestamp: BigNumber;
+        BalanceOGTemple: BigNumber;
+        LockedUntilTimestamp: BigNumber;
       }
     >;
 
-    ogTempleToken(overrides?: CallOverrides): Promise<string>;
+    numLocks(_staker: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    unlock(
-      _amountOGTemple: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    withdraw(_idx: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
-    unlockFor(
+    withdrawFor(
       _staker: string,
-      _amountOGTemple: BigNumberish,
+      _idx: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
   };
 
   filters: {
-    "Lock(address,uint256,uint256,uint256)"(
-      staker?: null,
-      increasedByOgTemple?: null,
-      totalLockedOgTemple?: null,
-      lockedUntil?: null
+    "OGTempleLocked(address,uint256,uint256)"(
+      _staker?: null,
+      _amount?: null,
+      _lockedUntil?: null
     ): TypedEventFilter<
-      [string, BigNumber, BigNumber, BigNumber],
-      {
-        staker: string;
-        increasedByOgTemple: BigNumber;
-        totalLockedOgTemple: BigNumber;
-        lockedUntil: BigNumber;
-      }
+      [string, BigNumber, BigNumber],
+      { _staker: string; _amount: BigNumber; _lockedUntil: BigNumber }
     >;
 
-    Lock(
-      staker?: null,
-      increasedByOgTemple?: null,
-      totalLockedOgTemple?: null,
-      lockedUntil?: null
+    OGTempleLocked(
+      _staker?: null,
+      _amount?: null,
+      _lockedUntil?: null
     ): TypedEventFilter<
-      [string, BigNumber, BigNumber, BigNumber],
-      {
-        staker: string;
-        increasedByOgTemple: BigNumber;
-        totalLockedOgTemple: BigNumber;
-        lockedUntil: BigNumber;
-      }
+      [string, BigNumber, BigNumber],
+      { _staker: string; _amount: BigNumber; _lockedUntil: BigNumber }
     >;
 
-    "Unlock(address,uint256)"(
-      staker?: null,
-      amount?: null
+    "OGTempleWithdraw(address,uint256)"(
+      _staker?: null,
+      _amount?: null
     ): TypedEventFilter<
       [string, BigNumber],
-      { staker: string; amount: BigNumber }
+      { _staker: string; _amount: BigNumber }
     >;
 
-    Unlock(
-      staker?: null,
-      amount?: null
+    OGTempleWithdraw(
+      _staker?: null,
+      _amount?: null
     ): TypedEventFilter<
       [string, BigNumber],
-      { staker: string; amount: BigNumber }
+      { _staker: string; _amount: BigNumber }
     >;
   };
 
   estimateGas: {
+    OG_TEMPLE(overrides?: CallOverrides): Promise<BigNumber>;
+
     lock(
       _amountOGTemple: BigNumberish,
       _lockedUntilTimestamp: BigNumberish,
@@ -302,27 +294,33 @@ export class LockedOGTemple extends BaseContract {
     lockFor(
       _staker: string,
       _amountOGTemple: BigNumberish,
-      _unlockDelaySeconds: BigNumberish,
+      _lockedUntilTimestamp: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    ogTempleLocked(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+    locked(
+      arg0: string,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
-    ogTempleToken(overrides?: CallOverrides): Promise<BigNumber>;
+    numLocks(_staker: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    unlock(
-      _amountOGTemple: BigNumberish,
+    withdraw(
+      _idx: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    unlockFor(
+    withdrawFor(
       _staker: string,
-      _amountOGTemple: BigNumberish,
+      _idx: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
+    OG_TEMPLE(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     lock(
       _amountOGTemple: BigNumberish,
       _lockedUntilTimestamp: BigNumberish,
@@ -332,25 +330,29 @@ export class LockedOGTemple extends BaseContract {
     lockFor(
       _staker: string,
       _amountOGTemple: BigNumberish,
-      _unlockDelaySeconds: BigNumberish,
+      _lockedUntilTimestamp: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    ogTempleLocked(
+    locked(
       arg0: string,
+      arg1: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    ogTempleToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+    numLocks(
+      _staker: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
-    unlock(
-      _amountOGTemple: BigNumberish,
+    withdraw(
+      _idx: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    unlockFor(
+    withdrawFor(
       _staker: string,
-      _amountOGTemple: BigNumberish,
+      _idx: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };
