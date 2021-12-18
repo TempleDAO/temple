@@ -331,17 +331,31 @@ function useTemplePrice(data: ChartData, interval: TIME_INTERVAL) {
   const xDomain = [lowerDateThreshold, now];
   const yDomain = [0, upperPriceThreshold];
 
-  const oldestDomainPrice = domainDataPoints.priceDataPoints[0].y;
-  const currentPrice =
-    domainDataPoints.priceDataPoints[
-      domainDataPoints.priceDataPoints.length - 1
-    ].y;
-
-  const priceData = {
-    currentPrice,
-    domainPriceChangePercentage: (currentPrice - oldestDomainPrice) * 100,
-    domainPriceChange: currentPrice - oldestDomainPrice,
+  let priceData: {
+    currentPrice: number;
+    domainPriceChangePercentage: number;
+    domainPriceChange: number;
   };
+
+  if (domainDataPoints.priceDataPoints.length > 0) {
+    const oldestDomainPrice = domainDataPoints.priceDataPoints[0].y;
+    const currentPrice =
+      domainDataPoints.priceDataPoints[
+        domainDataPoints.priceDataPoints.length - 1
+      ].y;
+
+    priceData = {
+      currentPrice,
+      domainPriceChangePercentage: (currentPrice - oldestDomainPrice) * 100,
+      domainPriceChange: currentPrice - oldestDomainPrice,
+    };
+  } else {
+    priceData = {
+      currentPrice: 0,
+      domainPriceChangePercentage: 0,
+      domainPriceChange: 0,
+    };
+  }
 
   return { dataPoints: domainDataPoints, xDomain, yDomain, priceData };
 }

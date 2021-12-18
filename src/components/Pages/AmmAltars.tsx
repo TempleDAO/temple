@@ -507,9 +507,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                   label={'done & chill'}
                   isSmall
                   isUppercase
-                  onClick={() =>
-                    handleSetActiveAMMView(AMMView.EXCHANGE_WITHDRAW)
-                  }
+                  onClick={back}
                 />
               </Flex>
               <Flex

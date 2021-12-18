@@ -1,3 +1,4 @@
+import React from 'react';
 import styled from 'styled-components';
 import { useNotification } from 'providers/NotificationProvider';
 import Notification from 'components/Notification/Notification';
@@ -19,7 +20,7 @@ const Notifications = styled.div`
   display: grid;
   grid-gap: 2rem;
   position: absolute;
-  z-index: ${(props) => props.theme.zIndexes.top};
+  z-index: 101;
   top: calc(${(props) => props.theme.metrics.headerHeight} + 1rem);
   right: 1rem;
   width: 20rem /* 320/16 */;
