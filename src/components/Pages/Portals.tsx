@@ -1,6 +1,7 @@
 import React, {
   Dispatch,
   SetStateAction,
+  useEffect,
   useLayoutEffect,
   useState,
 } from 'react';
@@ -13,6 +14,7 @@ import midGlow from 'assets/images/glow_center.png';
 import leftGlow from 'assets/images/glow_left.png';
 import rightGlow from 'assets/images/glow_right.png';
 import scrollGlow from 'assets/images/glow_scroll.png';
+import { PriceChart } from '../Charts/PriceChart';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 
@@ -38,6 +40,9 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
     BgDimension | undefined,
     Dispatch<SetStateAction<BgDimension | undefined>>
   ] = useState();
+
+  // Change visibility of chart component
+  const [chartVisible, setChartVisible] = useState(false);
 
   const { back, changePageTo } = routingHelper;
 
@@ -130,6 +135,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
           <DoorGlow
             src={scrollGlow}
             title="Scroll"
+            onClick={() => setChartVisible(!chartVisible)}
             style={{
               transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${-0.018 * bgDimensions.height}px`,
@@ -142,6 +148,25 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
                   : `${0.037 * bgDimensions.width}px`,
             }}
           />
+          <OffClick
+            onClick={(e) => {
+              if (chartVisible) {
+                e.preventDefault();
+                e.stopPropagation();
+                setChartVisible(false);
+              }
+            }}
+            style={{
+              backgroundColor: chartVisible ? 'black' : 'transparent',
+            }}
+          />
+          <ChartContainer
+            style={{
+              transform: chartVisible ? 'scale(100%)' : 'scale(0%)',
+            }}
+          >
+            <PriceChart />
+          </ChartContainer>
         </>
       )}
       <BackButton width={112} height={112} onClick={back} />
@@ -182,6 +207,7 @@ const DoorGlow = styled.img`
   transform-origin: bottom left;
   opacity: 0.75;
   transition: opacity 150ms;
+  z-index: 1;
   &:hover {
     opacity: 1;
     cursor: pointer;
@@ -189,4 +215,25 @@ const DoorGlow = styled.img`
   }
   animation: ${flicker} 3s infinite alternate ease-out;
 `;
+
+const OffClick = styled.div`
+  position: absolute;
+  height: 100vh;
+  width: 100vw;
+  z-index: 0;
+  transition: background 300ms;
+  opacity: 0.3;
+`;
+
+const ChartContainer = styled.div`
+  position: absolute;
+  bottom: 0;
+  margin-left: 5vw;
+  width: 90vw;
+  height: 60vh;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 20;
+  transition: transform 150ms;
+`;
+
 export default PortalPage;
