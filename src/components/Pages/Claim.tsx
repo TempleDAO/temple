@@ -219,8 +219,10 @@ function useTempleCashback() {
   }
 
   //wallet should always be true here
-  //@ts-ignore
-  const initialActiveClaim = claims[relevantClaims[0].file][wallet]
+  const initialActiveClaim = claims[relevantClaims[0].file][
+    //@ts-ignore
+    wallet?.toLocaleLowerCase()
+  ]
     ? relevantClaims[0].file
     : relevantClaims[1].file;
 
