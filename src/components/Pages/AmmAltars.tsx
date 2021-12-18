@@ -93,6 +93,11 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     }
   }, [balance]);
 
+  useEffect(() => {
+    updateWallet();
+    setRewards(0);
+  }, []);
+
   const updateTempleRewards = async (ogtAmount: number) => {
     setRewards((await getRewardsForOGT(ogtAmount)) || 0);
   };
