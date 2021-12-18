@@ -5,9 +5,9 @@ import React, {
   useState,
 } from 'react';
 import styled, { keyframes } from 'styled-components';
+import Altars, { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/altar-enter-bg.png';
-import triangle from 'assets/images/triangle.svg';
 import glowLeft from 'assets/images/AMM_leftcut.png';
 import glowRight from 'assets/images/AMM_rightglow.png';
 import { getBgImgDimensions } from 'utils/imageSize';
@@ -29,14 +29,14 @@ enum Pages {
   Right,
 }
 
-const EnterPage = () => {
+const EnterPage: CustomRoutingPage = ({ routingHelper }) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
     Dispatch<SetStateAction<BgDimension | undefined>>
   ] = useState();
 
-  //   const { back, changePageTo } = routingHelper;
+  const { back, changePageTo } = routingHelper;
 
   // Update bgDimensions state
   function handleResize() {
@@ -62,10 +62,15 @@ const EnterPage = () => {
         <>
           <DoorGlow
             src={glowLeft}
-            title="Enter"
-            // onClick={() => changePageTo(RitualsPosters)}
+            title="Buy"
+            onClick={() =>
+              changePageTo((props) => (
+                //@ts-ignore
+                <Altars {...props} view={AMMView.BUY} />
+              ))
+            }
             style={{
-              transform: `scale(${1 * bgDimensions.scaleW}%)`,
+              transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${0.02 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
@@ -78,10 +83,15 @@ const EnterPage = () => {
           />
           <DoorGlow
             src={glowRight}
-            title="Enter"
-            // onClick={() => changePageTo(RitualsPosters)}
+            title="Stake"
+            onClick={() =>
+              changePageTo((props) => (
+                //@ts-ignore
+                <Altars {...props} view={AMMView.STAKE} />
+              ))
+            }
             style={{
-              transform: `scale(${0.98 * bgDimensions.scaleW}%)`,
+              transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${0.042 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
@@ -94,7 +104,7 @@ const EnterPage = () => {
           />
         </>
       )}
-      {/* <BackButton width={112} height={112} onClick={back} /> */}
+      <BackButton width={112} height={112} onClick={back} />
     </Background>
   );
 };

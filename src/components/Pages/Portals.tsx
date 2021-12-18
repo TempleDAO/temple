@@ -6,7 +6,9 @@ import React, {
   useState,
 } from 'react';
 import styled, { keyframes } from 'styled-components';
-import Altars, { AMMView } from 'components/Pages/AmmAltars';
+import AltarEnter from './AltarEnter';
+import AltarExit from './AltarExit';
+import AltarDevotion from './AltarDevotion';
 import BackButton from 'components/Button/BackButton';
 import MetamaskButton from 'components/Button/MetamaskButton';
 import portalImage from 'assets/images/PortalRoom.png';
@@ -72,12 +74,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
           <DoorGlow
             src={leftGlow}
             title="Devotion"
-            onClick={() =>
-              changePageTo((props) => (
-                //@ts-ignore
-                <Altars {...props} view={AMMView.EXCHANGE_DEFEND} />
-              ))
-            }
+            onClick={() => changePageTo(AltarDevotion)}
             style={{
               transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${0.405 * bgDimensions.height}px`,
@@ -93,12 +90,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
           <DoorGlow
             src={midGlow}
             title="Enter"
-            onClick={() =>
-              changePageTo((props) => (
-                //@ts-ignore
-                <Altars {...props} view={AMMView.EXCHANGE_TRADE} />
-              ))
-            }
+            onClick={() => changePageTo(AltarEnter)}
             style={{
               transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${0.423 * bgDimensions.height}px`,
@@ -114,12 +106,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
           <DoorGlow
             src={rightGlow}
             title="Exit"
-            onClick={() =>
-              changePageTo((props) => (
-                //@ts-ignore
-                <Altars {...props} view={AMMView.EXCHANGE_WITHDRAW} />
-              ))
-            }
+            onClick={() => changePageTo(AltarExit)}
             style={{
               transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${0.405 * bgDimensions.height}px`,

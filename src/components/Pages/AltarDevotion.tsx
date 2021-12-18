@@ -5,10 +5,9 @@ import React, {
   useState,
 } from 'react';
 import styled, { keyframes } from 'styled-components';
-import RitualsPosters from 'components/Pages/RitualsMoviePoster';
+import Altars, { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
 import devotionImage from 'assets/images/devotion_bg.png';
-import triangle from 'assets/images/triangle.svg';
 import glow from 'assets/images/devotionglow-4.png';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
@@ -29,14 +28,14 @@ enum Pages {
   Right,
 }
 
-const DevotionPage = () => {
+const DevotionPage: CustomRoutingPage = ({ routingHelper }) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
     Dispatch<SetStateAction<BgDimension | undefined>>
   ] = useState();
 
-  //   const { back, changePageTo } = routingHelper;
+  const { back, changePageTo } = routingHelper;
 
   // Update bgDimensions state
   function handleResize() {
@@ -62,8 +61,13 @@ const DevotionPage = () => {
         <>
           <DoorGlow
             src={glow}
-            title="Enter"
-            // onClick={() => changePageTo(RitualsPosters)}
+            title="Buy the Dip"
+            onClick={() =>
+              changePageTo((props) => (
+                //@ts-ignore
+                <Altars {...props} view={AMMView.BTFD} />
+              ))
+            }
             style={{
               transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${0.39 * bgDimensions.height}px`,
@@ -78,7 +82,7 @@ const DevotionPage = () => {
           />
         </>
       )}
-      {/* <BackButton width={112} height={112} onClick={back} /> */}
+      <BackButton width={112} height={112} onClick={back} />
     </Background>
   );
 };

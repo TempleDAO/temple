@@ -5,10 +5,9 @@ import React, {
   useState,
 } from 'react';
 import styled, { keyframes } from 'styled-components';
-import RitualsPosters from 'components/Pages/RitualsMoviePoster';
+import Altars, { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/unstakequeue_0_unlit.png';
-import triangle from 'assets/images/triangle.svg';
 import glow1 from 'assets/images/1_glow.png';
 import glow2 from 'assets/images/2_glow.png';
 import glow3 from 'assets/images/3_glow.png';
@@ -32,14 +31,14 @@ enum Pages {
   Right,
 }
 
-const ExitPage = () => {
+const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
     Dispatch<SetStateAction<BgDimension | undefined>>
   ] = useState();
 
-  //   const { back, changePageTo } = routingHelper;
+  const { back, changePageTo } = routingHelper;
 
   // Update bgDimensions state
   function handleResize() {
@@ -65,8 +64,13 @@ const ExitPage = () => {
         <>
           <DoorGlow
             src={glow1}
-            title="Enter"
-            // onClick={() => changePageTo(RitualsPosters)}
+            title="Unlock"
+            onClick={() =>
+              changePageTo((props) => (
+                //@ts-ignore
+                <Altars {...props} view={AMMView.UNLOCK} />
+              ))
+            }
             style={{
               transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${-0.04 * bgDimensions.height}px`,
@@ -81,8 +85,13 @@ const ExitPage = () => {
           />
           <DoorGlow
             src={glow2}
-            title="Enter"
-            // onClick={() => changePageTo(RitualsPosters)}
+            title="Join Queue"
+            onClick={() =>
+              changePageTo((props) => (
+                //@ts-ignore
+                <Altars {...props} view={AMMView.JOIN_QUEUE} />
+              ))
+            }
             style={{
               transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${-0.035 * bgDimensions.height}px`,
@@ -97,8 +106,13 @@ const ExitPage = () => {
           />
           <DoorGlow
             src={glow3}
-            title="Enter"
-            // onClick={() => changePageTo(RitualsPosters)}
+            title="Withdraw"
+            onClick={() =>
+              changePageTo((props) => (
+                //@ts-ignore
+                <Altars {...props} view={AMMView.WITHDRAW} />
+              ))
+            }
             style={{
               transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${-0.036 * bgDimensions.height}px`,
@@ -113,8 +127,13 @@ const ExitPage = () => {
           />
           <DoorGlow
             src={glow4}
-            title="Enter"
-            // onClick={() => changePageTo(RitualsPosters)}
+            title="Sell"
+            onClick={() =>
+              changePageTo((props) => (
+                //@ts-ignore
+                <Altars {...props} view={AMMView.SELL} />
+              ))
+            }
             style={{
               transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
               bottom: `${-0.03 * bgDimensions.height}px`,
@@ -129,7 +148,7 @@ const ExitPage = () => {
           />
         </>
       )}
-      {/* <BackButton width={112} height={112} onClick={back} /> */}
+      <BackButton width={112} height={112} onClick={back} />
     </Background>
   );
 };
