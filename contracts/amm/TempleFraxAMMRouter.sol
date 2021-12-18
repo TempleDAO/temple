@@ -128,6 +128,10 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
       allowed[userAddress] = false;
     }
 
+    function setProtocolMintEarningsAccount(address _protocolMintEarningsAccount) external onlyOwner {
+      protocolMintEarningsAccount = _protocolMintEarningsAccount;
+    }
+
     // **** ADD LIQUIDITY ****
     function _addLiquidity(
         uint amountADesired,

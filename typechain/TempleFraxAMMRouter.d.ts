@@ -53,6 +53,7 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     "setDynamicThresholdIncreasePct(uint256)": FunctionFragment;
     "setInterpolateFromPrice(uint256,uint256)": FunctionFragment;
     "setInterpolateToPrice(uint256,uint256)": FunctionFragment;
+    "setProtocolMintEarningsAccount(address)": FunctionFragment;
     "supportsInterface(bytes4)": FunctionFragment;
     "swapExactFraxForTemple(uint256,uint256,address,uint256)": FunctionFragment;
     "swapExactFraxForTempleQuote(uint256)": FunctionFragment;
@@ -186,6 +187,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "setInterpolateToPrice",
     values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setProtocolMintEarningsAccount",
+    values: [string]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -326,6 +331,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "setInterpolateToPrice",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setProtocolMintEarningsAccount",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -599,6 +608,11 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    setProtocolMintEarningsAccount(
+      _protocolMintEarningsAccount: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     supportsInterface(
       interfaceId: BytesLike,
       overrides?: CallOverrides
@@ -799,6 +813,11 @@ export class TempleFraxAMMRouter extends BaseContract {
   setInterpolateToPrice(
     frax: BigNumberish,
     temple: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setProtocolMintEarningsAccount(
+    _protocolMintEarningsAccount: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -1010,6 +1029,11 @@ export class TempleFraxAMMRouter extends BaseContract {
     setInterpolateToPrice(
       frax: BigNumberish,
       temple: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setProtocolMintEarningsAccount(
+      _protocolMintEarningsAccount: string,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1292,6 +1316,11 @@ export class TempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    setProtocolMintEarningsAccount(
+      _protocolMintEarningsAccount: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     supportsInterface(
       interfaceId: BytesLike,
       overrides?: CallOverrides
@@ -1492,6 +1521,11 @@ export class TempleFraxAMMRouter extends BaseContract {
     setInterpolateToPrice(
       frax: BigNumberish,
       temple: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setProtocolMintEarningsAccount(
+      _protocolMintEarningsAccount: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
