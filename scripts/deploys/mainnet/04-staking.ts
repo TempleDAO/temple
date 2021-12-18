@@ -24,7 +24,7 @@ async function main() {
     DEPLOYED.TEMPLE,
     DEPLOYED.EXIT_QUEUE,
     EPOCH_SIZE,
-    START_TIMESTAMP, // TODO: Should make it now
+    Math.round(Date.now()/1000.0) - 2,
   );
 }
 
