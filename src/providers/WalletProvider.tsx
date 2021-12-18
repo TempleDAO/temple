@@ -770,7 +770,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         signature,
         tokenAddress,
         tokenQuantity,
-        nonce
+        nonce,
+        {
+          gasLimit: ENV_VARS.VITE_PUBLIC_CLAIM_GAS_LIMIT || 100000,
+        }
       );
 
       return tx.wait();
