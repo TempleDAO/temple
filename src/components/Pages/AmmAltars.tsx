@@ -1,7 +1,7 @@
 import EnterBgImage from 'assets/images/altar-enter-bg.png';
-import ExitBgImage from 'assets/images/unstakequeue_0_unlit.png';
-import DevotionBgImage from 'assets/images/devotion_bg.png';
 import crossImage from 'assets/images/cross.svg';
+import DevotionBgImage from 'assets/images/devotion_bg.png';
+import ExitBgImage from 'assets/images/unstakequeue_0_unlit.png';
 import ClaimOGTemple from 'components/AMM/ClaimOGTemple';
 import { Button } from 'components/Button/Button';
 import MetamaskButton from 'components/Button/MetamaskButton';
@@ -25,7 +25,7 @@ import {
   useWallet,
 } from 'providers/WalletProvider';
 import React, { ReactNode, useEffect, useState } from 'react';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { getDaysToTimestamp } from 'utils/dates';
 import { formatNumber } from 'utils/formatter';
@@ -682,6 +682,10 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
             />
           </>
         );
+      case AMMView.BTFD:
+        return (
+          <h4>This Altar room is quiet for now. You feel a sense of peace.</h4>
+        );
       default:
         return null;
     }
@@ -708,8 +712,8 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   };
   return (
     <>
-      <MetamaskButton />
       <Background backgroundUrl={() => getBackgroundImage()}>
+        <MetamaskButton />
         <ConvoFlowContent>
           <ConvoFlowClose
             src={crossImage}
