@@ -70,7 +70,6 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
     <Background id="background" style={{ overflow: 'hidden' }}>
       {bgDimensions != null && (
         <>
-          <MetamaskButton />
           <DoorGlow
             src={leftGlow}
             title="Devotion"
