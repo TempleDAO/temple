@@ -8,7 +8,9 @@ import Enter from 'components/Pages/Enter';
 import Exit from 'components/Pages/Exit';
 import Home from 'components/Pages/Home';
 import Rituals from 'components/Pages/Rituals';
+import Claim from 'components/Pages/Claim';
 import MetamaskError from 'components/Pages/MetamaskError';
+import FireRitualistCashback from 'components/Pages/FireRitualistCashback';
 import NotificationManager from 'components/Notification/NotificationManager';
 import { NotificationProvider } from 'providers/NotificationProvider';
 import { WalletProvider } from 'providers/WalletProvider';
@@ -33,6 +35,11 @@ ReactDOM.render(
                       <Route path="enter" element={<Enter />} />
                       <Route path="exit" element={<Exit />} />
                       <Route path="rituals" element={<Rituals />} />
+                      <Route
+                        path="fire-ritualist-apy-topup"
+                        element={<FireRitualistCashback />}
+                      />
+                      <Route path="temple-claim" element={<Claim />} />
                       <Route path="/*" element={<Navigate replace to="/" />} />
                     </>
                   ) : (
