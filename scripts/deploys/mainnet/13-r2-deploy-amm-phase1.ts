@@ -18,9 +18,6 @@ async function main() {
   
   const daoMultisig = "0x4D6175d58C5AceEf30F546C0d5A557efFa53A950";
 
-  // TODO: Update to actual verifier wallet
-  const verifierPublicKey = "0x5fc43464209bd9b0f7Bf8e738E427D41C6d2C87a" // generated and owned by XAV
-
   // Setup custom AMM
   const pairFactory = new TempleUniswapV2Pair__factory(owner);
   const pair: TempleUniswapV2Pair = await deployAndMine(
@@ -30,7 +27,7 @@ async function main() {
     DEPLOYED.FRAX);
 
   const templeRouterFactory = new TempleFraxAMMRouter__factory(owner);
-  const templeRouter: TempleFraxAMMRouter = await deployAndMine(
+  await deployAndMine(
     'TEMPLE_V2_ROUTER', templeRouterFactory, templeRouterFactory.deploy,
      pair.address,
      DEPLOYED.TEMPLE,
@@ -49,46 +46,11 @@ async function main() {
 
   // re-create the treasury management protocol
   const treasuryManagementProxyFactory = new TreasuryManagementProxy__factory(owner);
-  const treasuryManagementProxy = await deployAndMine(
+  await deployAndMine(
     'TREASURY_MANAGEMENT_PROXY', treasuryManagementProxyFactory, treasuryManagementProxyFactory.deploy,
     daoMultisig,
     DEPLOYED.TREASURY,
   )
-
-  // Contract where we send frax earned by treasury
-  const templeAmmOps: TempleFraxAMMOps = await new TempleFraxAMMOps__factory(owner).deploy(
-    DEPLOYED.TEMPLE,
-    templeRouter.address,
-    treasuryManagementProxy.address,
-    DEPLOYED.FRAX,
-    DEPLOYED.TREASURY,
-    pair.address,
-  )
-
-  await mine(templeRouter.setProtocolMintEarningsAccount(templeAmmOps.address));
-
-  // NOTE: This is how we'd add liquidity (will be done manually)
-  // await templeToken.increaseAllowance(templeRouter.address, toAtto(10000000));
-  // await stablecToken.increaseAllowance(templeRouter.address, toAtto(10000000));
-  // await templeRouter.addLiquidity(toAtto(100000), toAtto(1000000), 1, 1, await owner.getAddress(),  (await blockTimestamp()) + 900);
-
-  // AMMWhitelist
-  const ammWhitelistFactory = new AMMWhitelist__factory(owner);
-  const ammWhiteList: AMMWhitelist = await deployAndMine(
-    'AMM_WHITELIST', ammWhitelistFactory, ammWhitelistFactory.deploy,
-    templeRouter.address,
-    verifierPublicKey);
-
-
-  // change owner to multisig
-  await mine(templeRouter.transferOwnership(daoMultisig));
-  await mine(templeAmmOps.transferOwnership(daoMultisig));
-  await mine(ammWhiteList.transferOwnership(daoMultisig));
-
-  // NOTE: This is how we'd add liquidity (will be done manually)
-  // await templeToken.increaseAllowance(templeRouter.address, toAtto(10000000));
-  // await stablecToken.increaseAllowance(templeRouter.address, toAtto(10000000));
-  // await templeRouter.addLiquidity(toAtto(100000), toAtto(1000000), 1, 1, await owner.getAddress(),  (await blockTimestamp()) + 900);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
