@@ -218,6 +218,7 @@ const ChartContainer = styled.div`
   margin-left: 5vw;
   width: 90vw;
   height: 60vh;
+  /* TODO: user existing or add this as new theme color */
   background: rgba(0, 0, 0, 0.95);
   z-index: 20;
   transition: transform 150ms;
