@@ -26,7 +26,9 @@ async function main() {
   const treasuryManagementProxy = new TreasuryManagementProxy__factory(owner).attach(DEPLOYED.TREASURY_MANAGEMENT);
 
   // Contract where we send frax earned by treasury
-  const templeAmmOps: TempleFraxAMMOps = await new TempleFraxAMMOps__factory(owner).deploy(
+  const templeFraxAMMOpsFactory = await new TempleFraxAMMOps__factory(owner);
+  const templeAmmOps: TempleFraxAMMOps = await deployAndMine(
+    'TEMPLE_AMM_OPS',templeFraxAMMOpsFactory, templeFraxAMMOpsFactory.deploy,
     DEPLOYED.TEMPLE,
     templeRouter.address,
     treasuryManagementProxy.address,
