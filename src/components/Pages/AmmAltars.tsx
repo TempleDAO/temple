@@ -1,16 +1,22 @@
+import EnterBgImage from 'assets/images/altar-enter-bg.png';
+import ExitBgImage from 'assets/images/unstakequeue_0_unlit.png';
+import DevotionBgImage from 'assets/images/devotion_bg.png';
 import crossImage from 'assets/images/cross.svg';
 import ClaimOGTemple from 'components/AMM/ClaimOGTemple';
 import { Button } from 'components/Button/Button';
+import MetamaskButton from 'components/Button/MetamaskButton';
 import { DataCard } from 'components/DataCard/DataCard';
 import Image from 'components/Image/Image';
 import { Input } from 'components/Input/Input';
 import { Flex } from 'components/Layout/Flex';
+import { OffClick } from 'components/Pages/Portals';
 import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
 import PercentageBar from 'components/PercentageBar/PercentageBar';
 import Slippage from 'components/Slippage/Slippage';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { BigNumber } from 'ethers';
 import withWallet from 'hoc/withWallet';
+import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 import {
   JoinQueueData,
   OG_TEMPLE_TOKEN,
@@ -23,19 +29,17 @@ import styled, { css } from 'styled-components';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { getDaysToTimestamp } from 'utils/dates';
 import { formatNumber } from 'utils/formatter';
-import BackButton from 'components/Button/BackButton';
-import MetamaskButton from 'components/Button/MetamaskButton';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 
 export enum AMMView {
   BUY = 'BUY',
-  SELL = 'SELL',
   STAKE = 'STAKE',
-  BTFD = 'BTFD',
-  DEFEND = 'DEFEND',
+
   UNLOCK = 'UNLOCK OG TEMPLE',
   JOIN_QUEUE = 'JOIN QUEUE',
   WITHDRAW = 'WITHDRAW TEMPLE',
+  SELL = 'SELL',
+  BTFD = 'BTFD',
+
   EXCHANGE_TRADE = 'TRADE',
   EXCHANGE_DEFEND = 'DEFEND',
   EXCHANGE_WITHDRAW = 'WITHDRAW',
@@ -60,6 +64,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     stake,
     apy,
   } = useWallet();
+
+  const { back, changePageTo } = routingHelper;
+
   // OGT amount in the user wallet
   const [OGTWalletAmount, setOGTWalletAmount] = useState<number>(0);
   // StableCoin in the user wallet (Frax)
@@ -74,7 +81,6 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   const [activeAMMView, setActiveAMMView] = useState<AMMView | null>(view);
   // Slippage for TXN minOut
   const [slippage, setSlippage] = useState<number>(1);
-  const [activeAMMView, setActiveAMMView] = useState<AMMView | null>(null);
   const [prevAMMView, setPrevAMMView] = useState<AMMView | null>(null);
   const [joinQueueData, setJoinQueueData] = useState<JoinQueueData | null>({
     queueLength: 0,
@@ -472,12 +478,6 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
             </>
           </>
         );
-      case AMMView.DEFEND:
-        return (
-          <>
-            <pre>{AMMView.DEFEND}</pre>
-          </>
-        );
       case AMMView.UNLOCK:
         return (
           <>
@@ -689,76 +689,49 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     }
   };
 
+  const getBackgroundImage = () => {
+    let bgImage = '';
+    if (activeAMMView === 'BUY' || activeAMMView === 'STAKE') {
+      bgImage = EnterBgImage;
+    }
+    if (
+      activeAMMView === 'UNLOCK OG TEMPLE' ||
+      activeAMMView === 'JOIN QUEUE' ||
+      activeAMMView === 'WITHDRAW TEMPLE' ||
+      activeAMMView === 'SELL'
+    ) {
+      bgImage = ExitBgImage;
+    }
+    if (activeAMMView === 'BTFD') {
+      bgImage = DevotionBgImage;
+    }
+
+    return bgImage;
+  };
   return (
     <>
-      <h1>EXCHANGE</h1>
-      <Flex
-        layout={{
-          kind: 'container',
-          canWrap: true,
-          canWrapTablet: false,
-        }}
-      >
-        <Flex
-          layout={{
-            kind: 'item',
-            col: 'third',
-          }}
-        >
-          <h2 className={'margin-remove'}>Temple(TMPL)</h2>
-        </Flex>
-        <Flex
-          layout={{
-            kind: 'item',
-            col: 'three-quarter',
-            alignItems: 'center',
-            justifyContent: 'space-around',
-          }}
-        >
-          <Button
-            label={AMMView.EXCHANGE_TRADE}
-            isSmall
-            isUppercase
-            onClick={() =>
-              handleSetActiveAMMView(AMMView.EXCHANGE_TRADE, null, false)
-            }
-            isActive={activeAMMView === AMMView.EXCHANGE_TRADE}
-            autoWidth
-          />
-          <Button
-            label={AMMView.EXCHANGE_WITHDRAW}
-            isSmall
-            isUppercase
-            onClick={() =>
-              handleSetActiveAMMView(AMMView.EXCHANGE_WITHDRAW, null, false)
-            }
-            isActive={activeAMMView === AMMView.EXCHANGE_WITHDRAW}
-            autoWidth
-          />
-          <Button
-            label={AMMView.EXCHANGE_DEFEND}
-            isSmall
-            isUppercase
-            onClick={() =>
-              handleSetActiveAMMView(AMMView.EXCHANGE_DEFEND, null, false)
-            }
-            isActive={activeAMMView === AMMView.EXCHANGE_DEFEND}
-            autoWidth
-          />
-        </Flex>
-      </Flex>
-      <ConvoFlowOverlay isOpen={activeAMMView !== null}>
+      <MetamaskButton />
+      <Background backgroundUrl={() => getBackgroundImage()}>
         <ConvoFlowContent>
           <ConvoFlowClose
             src={crossImage}
             alt={'Close notification'}
             width={24}
             height={24}
-            onClick={() => handleSetActiveAMMView(prevAMMView, null, false)}
+            onClick={back}
           />
           {renderAMMView()}
         </ConvoFlowContent>
-      </ConvoFlowOverlay>
+        <OffClickOverlay
+          onClick={(e) => {
+            if (activeAMMView) {
+              e.preventDefault();
+              e.stopPropagation();
+              back();
+            }
+          }}
+        />
+      </Background>
     </>
   );
 };
@@ -774,37 +747,27 @@ const TitleWrapper = styled.div`
   }
 `;
 
-interface ConvoFlowProps {
-  isOpen: boolean;
+interface BackgroundProps {
+  backgroundUrl(): string;
 }
 
-const ConvoFlowOverlay = styled.div<ConvoFlowProps>`
-  position: fixed;
-  top: 110vh;
-  left: 0;
-  z-index: ${(props) => props.theme.zIndexes.top};
-  width: 100vw;
+const Background = styled.div<BackgroundProps>`
   height: 100vh;
+  width: 100vw;
+  background-image: url(${(props) => props.backgroundUrl});
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center bottom;
+
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: top 450ms ease-in-out;
+`;
 
-  ${({ isOpen }: ConvoFlowProps) =>
-    isOpen &&
-    css`
-      top: 0;
-    `}
-  :before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: ${(props) => props.theme.palette.dark75};
-    backdrop-filter: blur(0.1rem);
-  }
+const OffClickOverlay = styled(OffClick)`
+  background-color: ${(props) => props.theme.palette.dark75};
+  opacity: 0.75;
 `;
 
 const ConvoFlowContent = styled.div`
