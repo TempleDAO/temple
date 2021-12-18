@@ -128,7 +128,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               stat={`$${formatNumber(dashboardMetrics?.templeValue)}`}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={texture1}
-              half
+              heightPercentage={35}
             />
           </FlexStyled>
 
@@ -142,7 +142,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               stat={`$${formatNumber(dashboardMetrics?.iv)}`}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={texture2}
-              half
+              heightPercentage={35}
             />
           </FlexStyled>
         </FlexStyled>
@@ -168,7 +168,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               stat={`$${formatMillions(dashboardMetrics?.treasuryValue)}`}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={texture3}
-              half
+              heightPercentage={35}
             />
           </FlexStyled>
 
@@ -178,11 +178,11 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             }}
           >
             <StatsCard
-              label="Current Apy (annually)"
+              label="Current Apy (EXCLUDING FAITH BONUS)"
               stat={`${formatNumber(dashboardMetrics?.templeApy)}%`}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={texture4}
-              half
+              heightPercentage={35}
             />
           </FlexStyled>
         </FlexStyled>
@@ -204,7 +204,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               kind: 'item',
             }}
           >
-            <StatsCardDim
+            <StatsCard
               label="Circulating Market Cap"
               stat={`$${formatMillions(dashboardMetrics?.circMCap)}`}
               backgroundColor={theme.palette.dark}
@@ -219,7 +219,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               kind: 'item',
             }}
           >
-            <StatsCardDim
+            <StatsCard
               label="Fully Diluted Valuation"
               stat={`$${formatMillions(
                 dashboardMetrics?.templeTotalSupply *
@@ -237,7 +237,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               kind: 'item',
             }}
           >
-            <StatsCardDim
+            <StatsCard
               label="Circulating TEMPLE supply"
               stat={`${formatMillions(dashboardMetrics?.circTempleSupply)}`}
               backgroundColor={theme.palette.dark}
@@ -252,7 +252,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               kind: 'item',
             }}
           >
-            <StatsCardDim
+            <StatsCard
               label="Fully Diluted TEMPLE supply"
               stat={`${formatMillions(dashboardMetrics?.templeTotalSupply)}`}
               backgroundColor={theme.palette.dark}
@@ -379,6 +379,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               stat={dashboardMetrics?.socialMetrics.discord.totalMembers}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={background9}
+              heightPercentage={60}
             />
           </FlexStyled>
 
@@ -392,6 +393,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               stat={dashboardMetrics?.socialMetrics.twitter_followers_count}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={background10}
+              heightPercentage={60}
             />
           </FlexStyled>
 
@@ -406,20 +408,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               backgroundColor={theme.palette.brand75}
               fontColor={theme.palette.light}
               backgroundImageUrl={background11}
-            />
-          </FlexStyled>
-
-          <FlexStyled
-            layout={{
-              kind: 'item',
-            }}
-          >
-            <StatsCard
-              label="Members in chaos"
-              stat={dashboardMetrics?.socialMetrics.discord.enclaveChaos}
-              backgroundColor={theme.palette.brand75}
-              fontColor={theme.palette.light}
-              backgroundImageUrl={chaosImage}
+              heightPercentage={60}
             />
           </FlexStyled>
         </FlexStyled>
@@ -437,9 +426,24 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             }}
           >
             <StatsCard
+              label="Members in chaos"
+              stat={dashboardMetrics?.socialMetrics.discord.enclaveChaos}
+              backgroundColor={theme.palette.dark}
+              darken
+              fontColor={theme.palette.light}
+              backgroundImageUrl={chaosImage}
+            />
+          </FlexStyled>
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
               label="Members in Mystery"
               stat={dashboardMetrics?.socialMetrics.discord.enclaveMystery}
-              backgroundColor={theme.palette.brand75}
+              backgroundColor={theme.palette.dark}
+              darken
               fontColor={theme.palette.light}
               backgroundImageUrl={mysteryImage}
             />
@@ -453,7 +457,8 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             <StatsCard
               label="Members in Logic"
               stat={dashboardMetrics?.socialMetrics.discord.enclaveLogic}
-              backgroundColor={theme.palette.brand75}
+              backgroundColor={theme.palette.dark}
+              darken
               fontColor={theme.palette.light}
               backgroundImageUrl={logicImage}
             />
@@ -467,7 +472,8 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             <StatsCard
               label="Members in structure"
               stat={dashboardMetrics?.socialMetrics.discord.enclaveStructure}
-              backgroundColor={theme.palette.brand75}
+              backgroundColor={theme.palette.dark}
+              darken
               fontColor={theme.palette.light}
               backgroundImageUrl={structureImage}
             />
@@ -481,7 +487,8 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             <StatsCard
               label="Members in order"
               stat={dashboardMetrics?.socialMetrics.discord.enclaveOrder}
-              backgroundColor={theme.palette.brand75}
+              backgroundColor={theme.palette.dark}
+              darken
               fontColor={theme.palette.light}
               backgroundImageUrl={orderImage}
             />
@@ -504,7 +511,5 @@ const ChartContainer = styled.div`
   width: 100%;
   height: ${CHART_HEIGHT}px;
 `;
-
-const StatsCardDim = styled(StatsCard)``;
 
 export default Dashboard;

@@ -43,7 +43,7 @@ export interface AccountMetrics {
   ogTemplePrice: number;
   ogTempleRatio: number;
   lockedOGTempleBalance: number;
-  OGTempleBalance: number;
+  unClaimedOGTempleBalance: number;
   totalSacrificed: number;
   templeApy: number;
 }
@@ -246,7 +246,8 @@ export class MetricsService {
       0
     );
 
-    const OGTempleBalance = OGTempleBalanceStaked - OGTempleBalanceUnstaked;
+    const unClaimedOGTempleBalance =
+      OGTempleBalanceStaked - OGTempleBalanceUnstaked;
 
     const epy =
       Number(await this.templeStakingContract.getEpy(10000000)) / 10000000;
@@ -257,7 +258,7 @@ export class MetricsService {
       ogTemplePrice: templeValue * ogTempleRatio,
       ogTempleRatio,
       lockedOGTempleBalance,
-      OGTempleBalance,
+      unClaimedOGTempleBalance,
       totalSacrificed,
       templeApy: this.getTempleApy(epy),
     };

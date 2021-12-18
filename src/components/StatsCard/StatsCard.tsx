@@ -13,7 +13,7 @@ interface StatsCardProps {
   backgroundImageUrl?: string;
   description?: ReactChild;
   darken?: boolean;
-  half?: boolean;
+  heightPercentage?: number;
 }
 
 const StatsCard = ({
@@ -26,7 +26,7 @@ const StatsCard = ({
   backgroundImageUrl,
   description,
   darken,
-  half,
+  heightPercentage,
 }: StatsCardProps) => {
   const deltaLabel = `${statDelta >= 0 ? '▲' : '▼'} ${(statDelta * 100).toFixed(
     2
@@ -34,7 +34,7 @@ const StatsCard = ({
 
   return (
     <FlexCol className={className}>
-      <SquareWrapper half={half}>
+      <SquareWrapper heightPercentage={heightPercentage}>
         <CardStyled
           backgroundColor={backgroundColor}
           backgroundImageUrl={backgroundImageUrl}
@@ -96,7 +96,7 @@ const CardStyled = styled.div<CardWrapperProps>`
 const SquareWrapper = styled.div`
   position: relative;
   width: 100%;
-  padding-bottom: ${(props) => (props.half ? '35' : '100')}%;
+  padding-bottom: ${(props) => props.heightPercentage || '100'}%;
 `;
 
 const Pill = styled.div`
