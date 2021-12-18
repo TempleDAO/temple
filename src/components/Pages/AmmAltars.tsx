@@ -57,6 +57,8 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     getJoinQueueData,
     getSellQuote,
     getBuyQuote,
+    stake,
+    apy,
   } = useWallet();
   // OGT amount in the user wallet
   const [OGTWalletAmount, setOGTWalletAmount] = useState<number>(0);
@@ -175,6 +177,13 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     );
   };
 
+  const handleUpdateTempleAmountForStake = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const x = +event.target.value > 0 ? +event.target.value : 0;
+    setTempleAmount(x);
+  };
+
   const handleUnlockOGT = async () => {
     try {
       if (OGTAmount) {
@@ -193,8 +202,6 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   const handleSacrificeStableCoin = async () => {
     try {
       if (stableCoinAmount) {
-        console.info(`handleSacrificeStableCoin => ${stableCoinAmount}`);
-        /* TODO: implement contract interaction */
         await buy(toAtto(stableCoinAmount));
       }
     } catch (e) {
@@ -220,6 +227,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     try {
       if (templeAmount) {
         console.info(`handleSurrenderTemple => ${templeAmount}`);
+        await stake(toAtto(templeAmount));
       }
     } catch (e) {
       console.info(e);
@@ -380,7 +388,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
           <>
             <ConvoFlowTitle>HOW MUCH YOU WANT TO SACRIFICE</ConvoFlowTitle>
             <Input
-              hint={`Balance: ${stableCoinWalletAmount}`}
+              hint={`Balance: ${formatNumber(stableCoinWalletAmount)}`}
               crypto={{ kind: 'value', value: STABLE_COIN_SYMBOL }}
               type={'number'}
               max={stableCoinWalletAmount}
@@ -421,7 +429,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               placeholder={'0.00'}
             />
             <Input
-              hint={`BALANCE: ${templeWalletAmount}`}
+              hint={`BALANCE: ${formatNumber(stableCoinWalletAmount)}`}
               crypto={{ kind: 'value', value: STABLE_COIN_SYMBOL }}
               type={'number'}
               value={formatNumber(rewards)}
@@ -449,13 +457,10 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 max={templeWalletAmount}
                 min={0}
                 value={templeAmount}
-                onChange={handleUpdateTempleAmount}
+                onChange={handleUpdateTempleAmountForStake}
                 placeholder={'0.00'}
               />
-              <DataCard
-                title={`${STABLE_COIN_SYMBOL} REWARDS`}
-                data={formatNumber(rewards) + ''}
-              />
+              <DataCard title={`APY`} data={formatNumber(apy || 0) + '%'} />
               <br />
               <br />
               <Button
@@ -806,7 +811,7 @@ const ConvoFlowContent = styled.div`
   position: relative;
   z-index: 100;
   width: 100%;
-  max-width: ${(props) => props.theme.metrics.desktop.maxWidth};
+  max-width: 48.75rem /* 780/16 */;
   background-color: ${(props) => props.theme.palette.dark};
   padding: 2rem;
   border: 0.0625rem /* 1/16 */ solid ${(props) => props.theme.palette.brand};
