@@ -62,6 +62,7 @@ declare module 'styled-components' {
       base: number;
       up: number;
       top: number;
+      max: number;
     };
   }
 }

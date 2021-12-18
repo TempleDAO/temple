@@ -20,7 +20,7 @@ const Notifications = styled.div`
   display: grid;
   grid-gap: 2rem;
   position: absolute;
-  z-index: 101;
+  z-index: ${(props) => props.theme.zIndexes.max};
   top: calc(${(props) => props.theme.metrics.headerHeight} + 1rem);
   right: 1rem;
   width: 20rem /* 320/16 */;

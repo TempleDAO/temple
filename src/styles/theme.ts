@@ -109,6 +109,7 @@ const theme: DefaultTheme = {
     base: 0,
     up: 1,
     top: 10,
+    max: 101,
   },
 };
 
