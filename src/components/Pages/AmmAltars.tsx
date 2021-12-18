@@ -202,7 +202,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   const handleSacrificeStableCoin = async () => {
     try {
       if (stableCoinAmount) {
-        await buy(toAtto(stableCoinAmount));
+        await buy(toAtto(stableCoinAmount), toAtto(slippage));
       }
     } catch (e) {
       console.info(e);

@@ -15,7 +15,7 @@ import {
   AMMWhitelist__factory,
   ERC20__factory,
   ExitQueue__factory,
-  LockedOGTemple__factory,
+  LockedOGTempleDeprecated__factory,
   OGTemple__factory,
   OpeningCeremony__factory,
   TempleCashback__factory,
@@ -155,7 +155,7 @@ interface WalletState {
 
   updateWallet(): Promise<void> | void;
 
-  buy(amountToBuy: BigNumber): void;
+  buy(amountToBuy: BigNumber, minAmountIn: BigNumber): void;
 
   sell(amountToSell: BigNumber): void;
 
@@ -497,7 +497,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getLockedEntries = async () => {
     if (walletAddress && signerState) {
-      const ogLockedTemple = new LockedOGTemple__factory()
+      const ogLockedTemple = new LockedOGTempleDeprecated__factory()
         .attach(LOCKED_OG_TEMPLE_ADDRESS)
         .connect(signerState);
 
@@ -621,7 +621,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .attach(STABLE_COIN_ADDRESS)
         .connect(signerState);
 
-      const ogLockedTemple = new LockedOGTemple__factory()
+      const ogLockedTemple = new LockedOGTempleDeprecated__factory()
         .attach(LOCKED_OG_TEMPLE_ADDRESS)
         .connect(signerState);
 
@@ -1095,7 +1095,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const claimOgTemple = async (lockedEntryIndex: number) => {
     if (walletAddress && signerState) {
-      const lockedOGTempleContract = new LockedOGTemple__factory()
+      const lockedOGTempleContract = new LockedOGTempleDeprecated__factory()
         .attach(LOCKED_OG_TEMPLE_ADDRESS)
         .connect(signerState);
 
@@ -1151,38 +1151,53 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const buy = async (amountToBuy: BigNumber) => {
+  const buy = async (amountToBuy: BigNumber, minAmountIn: BigNumber) => {
     if (walletAddress && signerState) {
       const AMM_ROUTER = new TempleFraxAMMRouter__factory()
         .attach(TEMPLE_V2_ROUTER_ADDRESS)
         .connect(signerState);
+      const STABLE_TOKEN = new ERC20__factory()
+        .attach(STABLE_COIN_ADDRESS)
+        .connect(signerState);
 
-      const { amountInAMM, amountInProtocol, amountOutAMM, amountOutProtocol } =
-        await AMM_ROUTER.swapExactFraxForTempleQuote(amountToBuy);
-
-      console.info(`amountToBuy: ${fromAtto(amountToBuy)}`);
-      console.info(`amountInAMM: ${fromAtto(amountInAMM)}`);
-      console.info(`amountInProtocol: ${fromAtto(amountInProtocol)}`);
-      console.info(`amountOutProtocol: ${fromAtto(amountOutProtocol)}`);
-      console.info(`amountOutAMM: ${fromAtto(amountOutAMM)}`);
-
-      const minAmountIn = amountInAMM.add(amountOutAMM);
-      console.info(`minAmountIn: ${fromAtto(minAmountIn)}`);
-      const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
-      console.info(`deadline: ${deadline}`);
-      const buyTXN = await AMM_ROUTER.swapExactFraxForTemple(
-        amountToBuy,
-        minAmountIn,
+      const allowance = await STABLE_TOKEN.allowance(
         walletAddress,
-        deadline
+        TEMPLE_V2_ROUTER_ADDRESS
       );
-      await buyTXN.wait();
 
-      // Show feedback to user
-      openNotification({
-        title: `Sacrificed ${STABLE_COIN_SYMBOL}`,
-        hash: buyTXN.hash,
-      });
+      let allowanceApproved = !allowance.lt(amountToBuy);
+      if (!allowanceApproved) {
+        // increase allowance
+        const approveTXN = await STABLE_TOKEN.approve(
+          TEMPLE_V2_ROUTER_ADDRESS,
+          ONE_MILLION
+        );
+
+        await approveTXN.wait();
+        // Show feedback to user
+        openNotification({
+          title: `${TEMPLE_TOKEN} Approved`,
+          hash: approveTXN.hash,
+        });
+        allowanceApproved = true;
+      }
+
+      if (allowanceApproved) {
+        const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
+
+        const buyTXN = await AMM_ROUTER.swapExactFraxForTemple(
+          amountToBuy,
+          minAmountIn,
+          walletAddress,
+          deadline
+        );
+        await buyTXN.wait();
+        // Show feedback to user
+        openNotification({
+          title: `Sacrificed ${STABLE_COIN_SYMBOL}`,
+          hash: buyTXN.hash,
+        });
+      }
     }
   };
 
