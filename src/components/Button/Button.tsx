@@ -40,6 +40,7 @@ export const Button = ({
       await onClick();
     } catch (err) {
       /* TODO: Handle JSON-RPC errors better */
+      // @ts-ignore
       if (err.code === 4001) {
         console.info(`Cancelled by user`);
       } else {
