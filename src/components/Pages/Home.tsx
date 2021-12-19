@@ -50,7 +50,7 @@ const Home = () => {
                 col: 'half',
               }}
             >
-              <Link to={'/rituals'}>
+              <Link to={'/the-temple'}>
                 <Button label={'enter temple'} isUppercase showArrow isSmall />
               </Link>
             </Flex>
