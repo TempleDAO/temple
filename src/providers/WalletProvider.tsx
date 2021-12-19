@@ -13,6 +13,7 @@ import React, {
 } from 'react';
 import {
   AMMWhitelist__factory,
+  ERC20,
   ERC20__factory,
   ExitQueue__factory,
   LockedOGTempleDeprecated__factory,
@@ -731,6 +732,39 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
+  /**
+   * Always use this to increase allowance for TOKENS
+   * @param tokenName
+   * @param token
+   * @param spender
+   * @param minAllowance
+   */
+  const ensureAllowance = async (
+    tokenName: string,
+    token: ERC20,
+    spender: string,
+    minAllowance: BigNumber
+  ) => {
+    // pre-condition
+    if (!walletAddress) {
+      throw new Error('precondition failed: No connected wallet');
+    }
+
+    const allowance = await token.allowance(walletAddress, spender);
+
+    if (allowance.lt(minAllowance)) {
+      // increase allowance
+      const approveTXN = await token.approve(spender, DEFAULT_ALLOWANCE);
+      await approveTXN.wait();
+
+      // Show feedback to user
+      openNotification({
+        title: `${tokenName} allowance approved`,
+        hash: approveTXN.hash,
+      });
+    }
+  };
+
   const increaseTokenAllowance = async (
     amount: BigNumber,
     ritualKind: RitualKind,
@@ -1160,44 +1194,27 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .attach(STABLE_COIN_ADDRESS)
         .connect(signerState);
 
-      const allowance = await STABLE_TOKEN.allowance(
-        walletAddress,
-        TEMPLE_V2_ROUTER_ADDRESS
+      await ensureAllowance(
+        STABLE_COIN_SYMBOL,
+        STABLE_TOKEN,
+        TEMPLE_V2_ROUTER_ADDRESS,
+        amountInFrax
       );
 
-      let allowanceApproved = !allowance.lt(amountInFrax);
-      if (!allowanceApproved) {
-        // increase allowance
-        const approveTXN = await STABLE_TOKEN.approve(
-          TEMPLE_V2_ROUTER_ADDRESS,
-          DEFAULT_ALLOWANCE
-        );
+      const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
 
-        await approveTXN.wait();
-        // Show feedback to user
-        openNotification({
-          title: `${TEMPLE_TOKEN} Approved`,
-          hash: approveTXN.hash,
-        });
-        allowanceApproved = true;
-      }
-
-      if (allowanceApproved) {
-        const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
-
-        const buyTXN = await AMM_ROUTER.swapExactFraxForTemple(
-          amountInFrax,
-          minAmountOutTemple,
-          walletAddress,
-          deadline
-        );
-        await buyTXN.wait();
-        // Show feedback to user
-        openNotification({
-          title: `Sacrificed ${STABLE_COIN_SYMBOL}`,
-          hash: buyTXN.hash,
-        });
-      }
+      const buyTXN = await AMM_ROUTER.swapExactFraxForTemple(
+        amountInFrax,
+        minAmountOutTemple,
+        walletAddress,
+        deadline
+      );
+      await buyTXN.wait();
+      // Show feedback to user
+      openNotification({
+        title: `Sacrificed ${STABLE_COIN_SYMBOL}`,
+        hash: buyTXN.hash,
+      });
     }
   };
 
@@ -1218,45 +1235,28 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .attach(TEMPLE_ADDRESS)
         .connect(signerState);
 
-      // check allowance
-      const allowance = await TEMPLE.allowance(
-        walletAddress,
-        TEMPLE_V2_ROUTER_ADDRESS
+      await ensureAllowance(
+        TEMPLE_TOKEN,
+        TEMPLE,
+        TEMPLE_V2_ROUTER_ADDRESS,
+        amountInTemple
       );
 
-      let allowanceApproved = !allowance.lt(amountInTemple);
-      // Get allowance if current allowance is less than `amountToSell`
-      if (!allowanceApproved) {
-        const approveTXN = await TEMPLE.approve(
-          TEMPLE_V2_ROUTER_ADDRESS,
-          DEFAULT_ALLOWANCE
-        );
+      const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
 
-        // Show feedback to user
-        openNotification({
-          title: `${TEMPLE_TOKEN} Approved`,
-          hash: approveTXN.hash,
-        });
-        allowanceApproved = true;
-      }
+      const sellTXN = await AMM_ROUTER.swapExactTempleForFrax(
+        amountInTemple,
+        minAmountOutFrax,
+        walletAddress,
+        deadline
+      );
+      await sellTXN.wait();
 
-      if (allowanceApproved) {
-        const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
-
-        const sellTXN = await AMM_ROUTER.swapExactTempleForFrax(
-          amountInTemple,
-          minAmountOutFrax,
-          walletAddress,
-          deadline
-        );
-        await sellTXN.wait();
-
-        // Show feedback to user
-        openNotification({
-          title: `${TEMPLE_TOKEN} renounced`,
-          hash: sellTXN.hash,
-        });
-      }
+      // Show feedback to user
+      openNotification({
+        title: `${TEMPLE_TOKEN} renounced`,
+        hash: sellTXN.hash,
+      });
     }
   };
 
@@ -1300,33 +1300,20 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .attach(TEMPLE_ADDRESS)
         .connect(signerState);
 
-      const allowance = await TEMPLE.allowance(
-        walletAddress,
-        TEMPLE_STAKING_ADDRESS
+      await ensureAllowance(
+        TEMPLE_TOKEN,
+        TEMPLE,
+        TEMPLE_STAKING_ADDRESS,
+        amountToStake
       );
+      const stakeTXN = await TEMPLE_STAKING.stake(amountToStake);
+      await stakeTXN.wait();
 
-      if (allowance.lt(amountToStake)) {
-        const approveTXN = await TEMPLE.approve(
-          TEMPLE_STAKING_ADDRESS,
-          DEFAULT_ALLOWANCE
-        );
-
-        await approveTXN.wait();
-        // Show feedback to user
-        openNotification({
-          title: `${TEMPLE_TOKEN} Approved`,
-          hash: approveTXN.hash,
-        });
-
-        const stakeTXN = await TEMPLE_STAKING.stake(amountToStake);
-
-        await stakeTXN.wait();
-        // Show feedback to user
-        openNotification({
-          title: `${TEMPLE_TOKEN} staked`,
-          hash: stakeTXN.hash,
-        });
-      }
+      // Show feedback to user
+      openNotification({
+        title: `${TEMPLE_TOKEN} staked`,
+        hash: stakeTXN.hash,
+      });
     }
   };
 
