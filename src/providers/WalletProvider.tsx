@@ -538,7 +538,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const firstEpoch = userData.FirstExitEpoch.toNumber();
       const lastEpoch = userData.LastExitEpoch.toNumber();
       const today = new Date();
-      const daysUntilClaimable = await exitQueueEpochsToDays(
+      const daysUntilClaimable = await epochsToDays(
         lastEpoch - currentEpoch + 1
       );
       const claimableAt = today.setDate(today.getDate() + daysUntilClaimable);
@@ -1317,16 +1317,17 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const exitQueueEpochsToDays = async (epochs: number) => {
+  const epochsToDays = async (epochs: number) => {
     if (signerState) {
       const EXIT_QUEUE = new ExitQueue__factory()
         .attach(EXIT_QUEUE_ADDRESS)
         .connect(signerState);
+
       const MAINNET_APROX_BLOCKS_PER_DAY = 6400;
-      return formatNumberNoDecimals(
-        ((await EXIT_QUEUE.epochSize()).toNumber() * epochs) /
-          MAINNET_APROX_BLOCKS_PER_DAY
-      );
+      const epochSizeInBlocks = (await EXIT_QUEUE.epochSize()).toNumber();
+      const epochsPerDay = MAINNET_APROX_BLOCKS_PER_DAY / epochSizeInBlocks;
+
+      return formatNumberNoDecimals(epochs / epochsPerDay);
     }
     return 0;
   };
@@ -1343,18 +1344,26 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .connect(signerState);
 
       const maxPerAddress = await EXIT_QUEUE.maxPerAddress();
+      const maxPerEpoch = await EXIT_QUEUE.maxPerEpoch();
+      const maxPerAddressPerEpoch = maxPerAddress.lt(maxPerEpoch)
+        ? maxPerAddress
+        : maxPerEpoch;
 
       const nextUnallocatedEpoch = await EXIT_QUEUE.nextUnallocatedEpoch();
       const currentEpoch = await EXIT_QUEUE.currentEpoch();
       const amountTemple = await STAKING.balance(ogtAmount);
 
-      const queueLength = nextUnallocatedEpoch.sub(currentEpoch).toNumber();
-
-      const processTime = amountTemple.div(maxPerAddress).toNumber() + 1;
+      const queueLengthEpochs = nextUnallocatedEpoch
+        .sub(currentEpoch)
+        .toNumber();
+      // number of blocks to process, always rounding up
+      const processTimeEpochs =
+        amountTemple.div(maxPerAddressPerEpoch).toNumber() +
+        (amountTemple.mod(maxPerAddressPerEpoch).eq(0) ? 0 : 1);
 
       return {
-        queueLength: await exitQueueEpochsToDays(queueLength),
-        processTime: await exitQueueEpochsToDays(processTime),
+        queueLength: await epochsToDays(queueLengthEpochs),
+        processTime: await epochsToDays(processTimeEpochs),
       };
     }
   };
