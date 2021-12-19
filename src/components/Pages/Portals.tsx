@@ -1,17 +1,10 @@
-import React, {
-  Dispatch,
-  SetStateAction,
-  useEffect,
-  useLayoutEffect,
-  useState,
-} from 'react';
-import styled, { keyframes } from 'styled-components';
+import React, { Dispatch, SetStateAction, useState } from 'react';
+import styled from 'styled-components';
 import AltarEnter from './AltarEnter';
 import AltarExit from './AltarExit';
 import AltarDevotion from './AltarDevotion';
 import BackButton from 'components/Button/BackButton';
-import { useWallet } from 'providers/WalletProvider';
-import portalImage from 'assets/images/PortalRoom.jpg';
+import bgImage from 'assets/images/PortalRoom.jpg';
 import midGlow from 'assets/images/glow_center.png';
 import leftGlow from 'assets/images/glow_left.png';
 import rightGlow from 'assets/images/glow_right.png';
@@ -19,6 +12,8 @@ import scrollGlow from 'assets/images/glow_scroll.png';
 import { PriceChart } from '../Charts/PriceChart';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
+import { Background } from 'components/BackgroundItem/Background';
 
 type BgDimension = {
   width: number;
@@ -42,31 +37,31 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
   const { back, changePageTo } = routingHelper;
 
   // Update bgDimensions state
-  function handleResize() {
-    const backgroundDimensions = getBgImgDimensions(
-      document.querySelector('#background'),
-      portalImage
-    );
+  function handleResize(
+    container: EventTarget & HTMLImageElement,
+    src: string
+  ) {
+    const backgroundDimensions = getBgImgDimensions(container, src);
     if (!backgroundDimensions) return;
     setBgDimensions(backgroundDimensions);
   }
 
-  // Set event listeners for load and resize to handleResize()
-  useLayoutEffect(() => {
-    window.onload = () => handleResize();
-    window.addEventListener('resize', () => handleResize());
-    setTimeout(() => handleResize(), 500);
-    return () => {
-      window.removeEventListener('resize', () => handleResize());
-      window.onload = null;
-    };
-  }, []);
-
   return (
-    <Background id="background" style={{ overflow: 'hidden' }}>
+    <div
+      style={{
+        height: '100vh',
+        width: '100vw',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <Background
+        src={bgImage}
+        onLoad={(e) => handleResize(e.currentTarget, bgImage)}
+      />
       {bgDimensions != null && (
         <>
-          <DoorGlow
+          <BackgroundItem
             src={leftGlow}
             title="Devotion"
             onClick={() => changePageTo(AltarDevotion)}
@@ -82,7 +77,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
                   : `${0.17 * bgDimensions.width}px`,
             }}
           />
-          <DoorGlow
+          <BackgroundItem
             src={midGlow}
             title="Enter"
             onClick={() => changePageTo(AltarEnter)}
@@ -98,7 +93,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
                   : `${0.416 * bgDimensions.width}px`,
             }}
           />
-          <DoorGlow
+          <BackgroundItem
             src={rightGlow}
             title="Exit"
             onClick={() => changePageTo(AltarExit)}
@@ -114,7 +109,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
                   : `${0.661 * bgDimensions.width}px`,
             }}
           />
-          <DoorGlow
+          <BackgroundItem
             src={scrollGlow}
             title="Scroll"
             onClick={() => setChartVisible(!chartVisible)}
@@ -152,51 +147,9 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
         </>
       )}
       <BackButton onClick={back} />
-    </Background>
+    </div>
   );
 };
-
-const Background = styled.div`
-  height: 100vh;
-  width: 100vw;
-  background-image: url(${portalImage});
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center bottom;
-  position: relative;
-`;
-
-const flicker = keyframes`
-    0% {
-      opacity: 0.3;
-    }
-
-    33% {
-      opacity: 0.6;
-    }
-
-    60% {
-      opacity: 0.4;
-    }
-
-    100% {
-      opacity: 0.8;
-    }
-  `;
-
-const DoorGlow = styled.img`
-  position: absolute;
-  transform-origin: bottom left;
-  opacity: 0.75;
-  transition: opacity 150ms;
-  z-index: 1;
-  &:hover {
-    opacity: 1;
-    cursor: pointer;
-    animation: none;
-  }
-  animation: ${flicker} 3s infinite alternate ease-out;
-`;
 
 const OffClick = styled.div`
   position: absolute;
