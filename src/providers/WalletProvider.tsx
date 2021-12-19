@@ -1010,15 +1010,14 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         const unstakeTXN = await TEMPLE_STAKING.unstake(offering, {
           gasLimit: 2000000,
         });
-        console.info(`unstake: ${unstakeTXN.hash}`);
 
+        await unstakeTXN.wait();
         // Show feedback to user
         openNotification({
-          title: `Incense burned`,
+          title: `Queue joined`,
           hash: unstakeTXN.hash,
         });
 
-        await unstakeTXN.wait();
         setRitual(
           new Map(
             ritual.set(RitualKind.OGT_UNLOCK, {
