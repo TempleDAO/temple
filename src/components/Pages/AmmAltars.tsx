@@ -147,11 +147,12 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     updateWallet();
   };
 
-  const handleUpdateOGT = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const x = +event.target.value > 0 ? +event.target.value : 0;
-    setOGTAmount(x);
-    void updateTempleRewards(x);
-    void updateJoinQueueData(x);
+  const handleUpdateOGT = (value: number) => {
+    setOGTAmount(value);
+    if (value) {
+      void updateTempleRewards(value);
+      void updateJoinQueueData(value);
+    }
   };
 
   const handleUpdateSlippageForBuy = async (value: number) => {
@@ -162,31 +163,22 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     setSlippage(value);
   };
 
-  const handleUpdateStableCoinAmount = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const x = +event.target.value > 0 ? +event.target.value : 0;
-    setStableCoinAmount(x);
-    setRewards(
-      fromAtto((await getBuyQuote(toAtto(x))) || BigNumber.from(0) || 0)
-    );
+  const handleUpdateStableCoinAmount = async (value: number) => {
+    setStableCoinAmount(value);
+    if (value) {
+      setRewards(
+        fromAtto((await getBuyQuote(toAtto(value))) || BigNumber.from(0) || 0)
+      );
+    }
   };
 
-  const handleUpdateTempleAmount = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const x = +event.target.value > 0 ? +event.target.value : 0;
-    setTempleAmount(x);
-    setRewards(
-      fromAtto((await getSellQuote(toAtto(x))) || BigNumber.from(0) || 0)
-    );
-  };
-
-  const handleUpdateTempleAmountForStake = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const x = +event.target.value > 0 ? +event.target.value : 0;
-    setTempleAmount(x);
+  const handleUpdateTempleAmount = async (value: number) => {
+    setTempleAmount(value);
+    if (value) {
+      setRewards(
+        fromAtto((await getSellQuote(toAtto(value))) || BigNumber.from(0) || 0)
+      );
+    }
   };
 
   const handleUnlockOGT = async () => {
@@ -263,8 +255,11 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               max={stableCoinWalletAmount}
               min={0}
               value={stableCoinAmount}
-              onChange={handleUpdateStableCoinAmount}
+              handleChange={handleUpdateStableCoinAmount}
               placeholder={'0.00'}
+              onHintClick={async () => {
+                await handleUpdateStableCoinAmount(stableCoinWalletAmount);
+              }}
             />
             <Input
               hint={`Balance: ${formatNumber(templeWalletAmount)}`}
@@ -283,7 +278,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               }
               isUppercase
               onClick={handleSacrificeStableCoin}
-              disabled={stableCoinAmount === 0}
+              disabled={stableCoinAmount === 0 || stableCoinWalletAmount === 0}
             />
           </>
         );
@@ -298,8 +293,11 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               max={templeWalletAmount}
               min={0}
               value={templeAmount}
-              onChange={handleUpdateTempleAmount}
+              handleChange={handleUpdateTempleAmount}
               placeholder={'0.00'}
+              onHintClick={async () => {
+                await handleUpdateTempleAmount(templeWalletAmount);
+              }}
             />
             <Input
               hint={`BALANCE: ${formatNumber(stableCoinWalletAmount)}`}
@@ -330,8 +328,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 max={templeWalletAmount}
                 min={0}
                 value={templeAmount}
-                onChange={handleUpdateTempleAmountForStake}
+                handleChange={setTempleAmount}
                 placeholder={'0.00'}
+                onHintClick={() => setTempleAmount(templeWalletAmount)}
               />
               <DataCard title={`APY`} data={formatNumber(apy || 0) + '%'} />
               <br />
@@ -428,8 +427,11 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               max={OGTWalletAmount}
               min={0}
               value={OGTAmount}
-              onChange={handleUpdateOGT}
+              handleChange={handleUpdateOGT}
               placeholder={'0.00'}
+              onHintClick={async () => {
+                handleUpdateOGT(OGTWalletAmount);
+              }}
             />
             <Flex
               layout={{

@@ -48,6 +48,7 @@ const DEADLINE = 20 * 60;
 // so we approving 1M up front, so only 1 approve TXN is required for approve
 const DEFAULT_ALLOWANCE = toAtto(100000000);
 
+// @Deprecated this was used on FIRE_RITUAL and OC, don't use.
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
   OGT_UNLOCK = 'OGT_UNLOCK',

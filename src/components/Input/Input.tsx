@@ -29,14 +29,17 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   crypto?: CryptoSelector | CryptoValue;
 
   // Callback for input value change
-  onChange?(e: React.ChangeEvent<HTMLInputElement>): void;
+  handleChange?(value: number): void;
+
+  onHintClick?(): void;
 }
 
 /**
  * Primary UI component for user interaction
  */
 export const Input = ({
-  onChange,
+  handleChange,
+  onHintClick,
   hint,
   crypto,
   type,
@@ -66,17 +69,33 @@ export const Input = ({
     return null;
   };
 
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const x = +event.target.value > 0 ? +event.target.value : 0;
+    if (handleChange) {
+      handleChange(x);
+    }
+  };
+
   return (
     <InputWrapper isDisabled={disabled}>
       <InputStyled
-        onChange={onChange}
+        onChange={handleInputChange}
         type={type}
         value={type === 'number' && value ? formatNumber(+value) : value}
         disabled={disabled}
         {...props}
       />
       <InputCrypto>{renderCrypto()}</InputCrypto>
-      {hint && <InputHint>{hint}</InputHint>}
+      {hint && (
+        <InputHint
+          hasAction={!!onHintClick}
+          onClick={() => {
+            if (onHintClick) onHintClick();
+          }}
+        >
+          {hint}
+        </InputHint>
+      )}
     </InputWrapper>
   );
 };
@@ -124,11 +143,23 @@ export const InputCrypto = styled.div`
   }
 `;
 
-export const InputHint = styled.small`
+interface InputHintProps {
+  hasAction: boolean;
+}
+
+export const InputHint = styled.small<InputHintProps>`
   position: absolute;
   bottom: 0.75rem /* 12/16 */;
   left: 2rem;
   color: ${(props) => props.theme.palette.light};
+  ${(props) =>
+    props.hasAction &&
+    css`
+      background-color: ${(props) => props.theme.palette.brand50};
+      padding: 0.0625rem /* 1/16 */ 0.25rem /* 4/16 */;
+      border-radius: 0.25em;
+      cursor: pointer;
+    `}
 `;
 
 export const InputStyled = styled.input`
