@@ -1,7 +1,8 @@
 pragma solidity ^0.8.4; // SPDX-License-Identifier: GPL-3.0-or-later
 
 import "./TempleTreasury.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+
 
 /**
  * Proxy all treasury management methods
@@ -9,15 +10,22 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * Intention is to be deployed as the new treasury owner, a workaround required
  * to make harvest publically callable.
  */
-contract TreasuryManagementProxy is Ownable {
+contract TreasuryManagementProxy {
     TempleTreasury public treasury;
 
     bool public harvestEnabled = true;
+    address public owner;
 
     uint256 public harvestDistributionPercentage = 80;
 
-    constructor(address _treasury) {
+    constructor(address _owner, address _treasury) {
+        owner = _owner;
         treasury = TempleTreasury(_treasury);
+    }
+
+    modifier onlyOwner() {
+       require(owner == msg.sender, "caller is not the owner");
+       _;
     }
 
     function harvest() external {
@@ -76,7 +84,7 @@ contract TreasuryManagementProxy is Ownable {
     }
 
     // If we want to transfer ownership way from proxy
-    function transferTreasuryOwnership(address newOwner) external onlyOwner {
+    function transferOwnership(address newOwner) external onlyOwner {
         treasury.transferOwnership(newOwner);
     }
 }

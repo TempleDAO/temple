@@ -9,6 +9,9 @@ import { mineNBlocks, toAtto, shouldThrow, blockTimestamp, fromAtto } from "./he
 const fmtPricePair = (pair: [BigNumber, BigNumber, number?]): [number, number] => {
   return [fromAtto(pair[0]), fromAtto(pair[1])]
 }
+const fmtTemplePrice = (pair: [BigNumber, BigNumber, number?]): number => {
+  return fromAtto(pair[1])/fromAtto(pair[0]);
+}
 
 describe("AMM", async () => {
     let templeToken: TempleERC20Token;
@@ -56,7 +59,7 @@ describe("AMM", async () => {
         treasury.address,
         treasury.address, // for testing, make the earning account treasury
         {frax: 100000, temple: 9000},
-        1, /* threshold decay per block */
+        5, /* threshold decay per block */
         {frax: 1000000, temple: 1000000},
         {frax: 1000000, temple: 100000},
       );
@@ -82,11 +85,11 @@ describe("AMM", async () => {
       await templeRouter.toggleOpenAccess();
     })
 
-    describe.only("Buy", async() => {
+    describe("Buy", async() => {
       
       it("Below dynamic threshold should be same as AMM buy", async() => {
         // confirm price is below dynamic threshold (test case pre-condition)
-        const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
+        const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
         const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
         expect(rFrax / rTemple).lt(dtpFrax / dtpTemple);
 
@@ -106,7 +109,7 @@ describe("AMM", async () => {
       it("Above dynamic threshold should have some portion of buy minted on protocol", async() => {
         // Price should start below the dynamic threshold
         {
-          const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
+          const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
           const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
           expect(rFrax / rTemple).lt(dtpFrax / dtpTemple);
         }
@@ -126,7 +129,7 @@ describe("AMM", async () => {
           .eq(fromAtto(await templeToken.balanceOf(await ben.getAddress())))
 
         // Expect price to be above dynamic threshold
-        const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
+        const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
         const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
         expect(rFrax / rTemple).gte(dtpFrax / dtpTemple);
 
@@ -135,7 +138,7 @@ describe("AMM", async () => {
         await uniswapRouter.swapExactTokensForTokens(toAtto(10000), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
         await templeRouter.swapExactFraxForTemple(toAtto(10000), 1, await alan.getAddress(), expiryDate());
 
-        const [dtpFraxNew, dtpTempleNew] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
+        const [dtpFraxNew, dtpTempleNew] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
         const [rTempleCustomAMM, rFraxCustomAMM] = fmtPricePair(await pair.getReserves());
         const [rTempleUniswapAMM, rFraxUniswapAMM] = fmtPricePair(await uniswapRouter.getReserves(templeToken.address, fraxToken.address));
 
@@ -150,7 +153,7 @@ describe("AMM", async () => {
         {
         await templeRouter.swapExactFraxForTemple(toAtto(10000), 1, await alan.getAddress(), expiryDate());
         const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
-        const [dtpFraxNew, dtpTempleNew] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
+        const [dtpFraxNew, dtpTempleNew] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
 
         // The DTP Price only moves up
         expect(rFrax / rTemple).gt(dtpFraxNew / dtpTempleNew);
@@ -174,10 +177,10 @@ describe("AMM", async () => {
         }
       })
 
-      it("Above dynamic threshold and toPrice should have 100% of buy minted on protocol", async() => {
+      it("Above dynamic threshold and toPrice should have 80% of buy minted on protocol", async() => {
         // Price should start below the dynamic threshold
         {
-          const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
+          const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
           const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
           expect(rFrax / rTemple).lt(dtpFrax / dtpTemple);
         }
@@ -195,18 +198,15 @@ describe("AMM", async () => {
           .eq(fromAtto(await templeToken.balanceOf(await ben.getAddress())))
 
         // Expect price to be above dynamic threshold
-        const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
+        const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
         const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
         expect(rFrax / rTemple).gte(dtpFrax / dtpTemple);
 
         // Now, if we mint again, we expect less slippage on AMM, and the dtp price to be the start price of the last buy
         const quote = await templeRouter.swapExactFraxForTempleQuote(toAtto(1000000));
-        const balanceFrax = fromAtto(await fraxToken.balanceOf(await owner.getAddress()));
         await templeRouter.swapExactFraxForTemple(toAtto(1000000), 1, await carol.getAddress(), expiryDate());
-        expect(fmtPricePair(await pair.getReserves()))
-          .eql([rTemple, rFrax]);
-        expect(fromAtto(await templeToken.balanceOf(await carol.getAddress()))).eq(fromAtto(quote.amountOutProtocol));
-        expect(fromAtto(await fraxToken.balanceOf(await owner.getAddress()))).eq(balanceFrax - fromAtto(quote.amountInProtocol));
+        expect(fmtPricePair(await pair.getReserves())[1]).eq(rFrax + (1000000 * 0.2));
+        expect(fromAtto(await templeToken.balanceOf(await carol.getAddress()))).eq(fromAtto(quote.amountOutProtocol.add(quote.amountOutAMM)));
       })
 
       it("AMM buy with deadline in the past should fail", async() => {
@@ -267,6 +267,52 @@ describe("AMM", async () => {
       })
     });
 
+    describe("Dynamic Threshold Price", async() => {
+      // pre-conditions
+      beforeEach(async () => {
+        const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
+        expect(rFrax / rTemple).lt(dtpFrax / dtpTemple);
+
+        await templeRouter.setDynamicThresholdIncreasePct(9800)
+        await templeRouter.setInterpolateToPrice(1000000, 10000)
+      })
+      
+      it("Crossing DTP should kick of DTP decay", async() => {
+        // move price above DTP. Shouldn't change DTP yet
+        const [dtpFrax0, dtpTemple0] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        await templeRouter.swapExactFraxForTemple(toAtto(100000), 1, await alan.getAddress(), expiryDate());
+        const [dtpFrax1, dtpTemple1] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        const [rTemple1, rFrax1] = fmtPricePair(await pair.getReserves());
+        expect(rFrax1 / rTemple1).gte(dtpFrax1 / dtpTemple1);
+        expect(dtpFrax0 / dtpTemple0).eq(dtpFrax1 / dtpTemple1);
+
+        // Now, buy a bit - should move DTP price up 
+        await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await alan.getAddress(), expiryDate());
+        const [dtpFrax2, dtpTemple2] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        expect(dtpFrax2 / dtpTemple2).gte(dtpFrax1 / dtpTemple1);
+
+        // Now sell below dtp, should kick off price decay
+        expect(await templeRouter.priceCrossedBelowDynamicThresholdBlock()).eq(0);
+        const [_1,_2, amountFrax]: [boolean, boolean, BigNumber] = await templeRouter.swapExactTempleForFraxQuote(toAtto(1000));
+        await templeRouter.swapExactTempleForFrax(toAtto(1000), 1, await alan.getAddress(), expiryDate());
+        expect((await templeRouter.priceCrossedBelowDynamicThresholdBlock()).toNumber()).gt(0);
+        const [dtpFrax3, dtpTemple3] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+
+        // mine N blocks, price should decay further
+        await mineNBlocks(10);
+        const [dtpFrax4, dtpTemple4] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        expect(dtpFrax4 / dtpTemple4).lt(dtpFrax3 / dtpTemple3);
+
+        // finally, buying back above DTP should stop decay and set new DTP price
+        await templeRouter.swapExactFraxForTemple(amountFrax, 1, await alan.getAddress(), expiryDate());
+        const [dtpFrax5, dtpTemple5] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
+        expect(await templeRouter.priceCrossedBelowDynamicThresholdBlock()).eq(0);
+        expect(dtpFrax5 / dtpTemple5).gt(dtpFrax4 / dtpTemple4);
+        expect(dtpFrax5 / dtpTemple5).lt(dtpFrax2 / dtpTemple2);
+      })
+    })
+
     describe("Liquidity", async() => {
       it("add", async () => {
         // Expect reserves to match before/after adding liquidity
@@ -312,8 +358,8 @@ describe("AMM", async () => {
       const cases: [string, number, number, number][] = [
         ["spot just below from price", 1000000, 1000001, 0],
         ["spot well below from price", 1000000, 2000000, 0],
-        ["spot just above to price", 1000000, 99999, 1],
-        ["spot well above to price", 1000000, 1000, 1],
+        ["spot just above to price", 1000000, 99999, 0.8],
+        ["spot well above to price", 1000000, 1000, 0.8],
       ]
 
       // add cases across the range
@@ -321,7 +367,7 @@ describe("AMM", async () => {
       const toPrice = 10;
       for (let i = 0; i < 10; i += 2) {
         const spot = 1+i;
-        cases.push([`Ratio at $${spot} for price range (1,10)`, 1+i,1, (spot - fromPrice) / (toPrice - fromPrice)]);
+        cases.push([`Ratio at $${spot} for price range (1,10)`, 1+i,1, Math.min((spot - fromPrice) / (toPrice - fromPrice), 0.8)]);
       }
 
       for (const [name, frax, temple, expectedRatio] of cases) {
@@ -654,7 +700,7 @@ describe("AMM", async () => {
 
         // Price should start below the dynamic threshold
         {
-          const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPrice());
+          const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
           const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
           expect(rFrax / rTemple).lt(dtpFrax / dtpTemple);
         }

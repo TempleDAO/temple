@@ -28,6 +28,7 @@ interface TreasuryManagementProxyInterface extends ethers.utils.Interface {
     "harvestDistributionPercentage()": FunctionFragment;
     "harvestEnabled()": FunctionFragment;
     "mintAndAllocateTemple(address,uint256)": FunctionFragment;
+    "owner()": FunctionFragment;
     "removePool(uint256,address)": FunctionFragment;
     "resetIV()": FunctionFragment;
     "setHarvestDistributionPercentage(uint256)": FunctionFragment;
@@ -65,6 +66,7 @@ interface TreasuryManagementProxyInterface extends ethers.utils.Interface {
     functionFragment: "mintAndAllocateTemple",
     values: [string, BigNumberish]
   ): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "removePool",
     values: [BigNumberish, string]
@@ -122,6 +124,7 @@ interface TreasuryManagementProxyInterface extends ethers.utils.Interface {
     functionFragment: "mintAndAllocateTemple",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "removePool", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "resetIV", data: BytesLike): Result;
   decodeFunctionResult(
@@ -226,6 +229,8 @@ export class TreasuryManagementProxy extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    owner(overrides?: CallOverrides): Promise<[string]>;
+
     removePool(
       idx: BigNumberish,
       _contract: string,
@@ -303,6 +308,8 @@ export class TreasuryManagementProxy extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  owner(overrides?: CallOverrides): Promise<string>;
+
   removePool(
     idx: BigNumberish,
     _contract: string,
@@ -378,6 +385,8 @@ export class TreasuryManagementProxy extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    owner(overrides?: CallOverrides): Promise<string>;
+
     removePool(
       idx: BigNumberish,
       _contract: string,
@@ -452,6 +461,8 @@ export class TreasuryManagementProxy extends BaseContract {
       amountTemple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
+
+    owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     removePool(
       idx: BigNumberish,
@@ -532,6 +543,8 @@ export class TreasuryManagementProxy extends BaseContract {
       amountTemple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
+
+    owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     removePool(
       idx: BigNumberish,
