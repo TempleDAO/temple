@@ -205,7 +205,10 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
         const minAmountOut =
           (stableCoinAmount / templePrice) * (1 - slippage / 100);
         setMinAmountOut(minAmountOut);
-        if (minAmountOut <= rewards) {
+        if (
+          minAmountOut <= rewards &&
+          toAtto(stableCoinAmount).lt(stableCoinWalletAmount)
+        ) {
           await buy(toAtto(stableCoinAmount), toAtto(minAmountOut));
           getBalance();
         }
@@ -221,7 +224,10 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
         // ( 'current price' * 'FRAX sacrificing' )  * (1 - SlippageSetting )
         const minAmountOut = templeAmount * templePrice * (1 - slippage / 100);
         setMinAmountOut(minAmountOut);
-        if (minAmountOut <= rewards) {
+        if (
+          minAmountOut <= rewards &&
+          toAtto(templeAmount).lt(templeWalletAmount)
+        ) {
           await sell(toAtto(templeAmount), toAtto(minAmountOut));
           getBalance();
         }
