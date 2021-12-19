@@ -43,7 +43,7 @@ const DEADLINE = 20 * 60;
 
 // We want to save gas burn $ for the Templars,
 // so we approving 1M up front, so only 1 approve TXN is required for approve
-const ONE_MILLION = toAtto(1000000);
+const DEFAULT_ALLOWANCE = toAtto(100000000);
 
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
@@ -155,9 +155,9 @@ interface WalletState {
 
   updateWallet(): Promise<void> | void;
 
-  buy(amountToBuy: BigNumber, minAmountIn: BigNumber): void;
+  buy(amountInFrax: BigNumber, minAmountOutTemple: BigNumber): void;
 
-  sell(amountToSell: BigNumber): void;
+  sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber): void;
 
   stake(amountToStake: BigNumber): Promise<void>;
 
@@ -187,15 +187,9 @@ interface WalletState {
 
   getJoinQueueData(ogtAmount: BigNumber): Promise<JoinQueueData | void>;
 
-  getSellQuote(
-    amountToSell: BigNumber,
-    slippage: number
-  ): Promise<BigNumber | void>;
+  getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
 
-  getBuyQuote(
-    amountToBuy: BigNumber,
-    slippage: number
-  ): Promise<BigNumber | void>;
+  getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
 
   apy: number;
 }
@@ -789,19 +783,19 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
               );
               approveTXN = await TEMPLE.approve(
                 TEMPLE_V2_ROUTER_ADDRESS,
-                ONE_MILLION
+                DEFAULT_ALLOWANCE
               );
               break;
             case 'FRAX':
               approveTXN = await stableCoinContract.approve(
                 OPENING_CEREMONY_ADDRESS,
-                ONE_MILLION
+                DEFAULT_ALLOWANCE
               );
               break;
             case 'OGT':
               approveTXN = await OGTContract.approve(
                 TEMPLE_STAKING_ADDRESS,
-                ONE_MILLION
+                DEFAULT_ALLOWANCE
               );
               break;
           }
@@ -874,9 +868,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
             break;
           case RitualKind.OGT_UNLOCK:
             await unstake(amount);
-            break;
-          case RitualKind.SURRENDER:
-            await sell(amount);
             break;
           default:
             console.error(`Unknown ritual: ${ritualKind}`);
@@ -1157,7 +1148,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const buy = async (amountToBuy: BigNumber, minAmountIn: BigNumber) => {
+  const buy = async (
+    amountInFrax: BigNumber,
+    minAmountOutTemple: BigNumber
+  ) => {
     if (walletAddress && signerState) {
       const AMM_ROUTER = new TempleFraxAMMRouter__factory()
         .attach(TEMPLE_V2_ROUTER_ADDRESS)
@@ -1171,12 +1165,12 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         TEMPLE_V2_ROUTER_ADDRESS
       );
 
-      let allowanceApproved = !allowance.lt(amountToBuy);
+      let allowanceApproved = !allowance.lt(amountInFrax);
       if (!allowanceApproved) {
         // increase allowance
         const approveTXN = await STABLE_TOKEN.approve(
           TEMPLE_V2_ROUTER_ADDRESS,
-          ONE_MILLION
+          DEFAULT_ALLOWANCE
         );
 
         await approveTXN.wait();
@@ -1192,8 +1186,8 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
 
         const buyTXN = await AMM_ROUTER.swapExactFraxForTemple(
-          amountToBuy,
-          minAmountIn,
+          amountInFrax,
+          minAmountOutTemple,
           walletAddress,
           deadline
         );
@@ -1207,40 +1201,66 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const sell = async (amountToSell: BigNumber) => {
+  /**
+   * AMM Sell
+   * @param amountInTemple: Amount of $TEMPLE user wants to sell
+   * @param minAmountOutFrax: % user is giving as slippage
+   */
+  const sell = async (
+    amountInTemple: BigNumber,
+    minAmountOutFrax: BigNumber
+  ) => {
     if (walletAddress && signerState) {
       const AMM_ROUTER = new TempleFraxAMMRouter__factory()
         .attach(TEMPLE_V2_ROUTER_ADDRESS)
         .connect(signerState);
+      const TEMPLE = new TempleERC20Token__factory()
+        .attach(TEMPLE_ADDRESS)
+        .connect(signerState);
 
-      const { amountOut } = await AMM_ROUTER.swapExactTempleForFraxQuote(
-        amountToSell
-      );
-
-      console.info(`amountToSell: ${fromAtto(amountToSell)}`);
-      console.info(`amountOut: ${fromAtto(amountOut)}`);
-
-      const deadline = formatNumberNoDecimals(
-        Date.now() / 1000 + DEADLINE * 100
-      );
-      console.info(`deadline: ${deadline}`);
-      const sellTXN = await AMM_ROUTER.swapExactTempleForFrax(
-        amountToSell,
-        amountOut,
+      // check allowance
+      const allowance = await TEMPLE.allowance(
         walletAddress,
-        deadline
+        TEMPLE_V2_ROUTER_ADDRESS
       );
-      await sellTXN.wait();
 
-      // Show feedback to user
-      openNotification({
-        title: `${TEMPLE_TOKEN} sold`,
-        hash: sellTXN.hash,
-      });
+      let allowanceApproved = !allowance.lt(amountInTemple);
+      // Get allowance if current allowance is less than `amountToSell`
+      if (!allowanceApproved) {
+        const approveTXN = await TEMPLE.approve(
+          TEMPLE_V2_ROUTER_ADDRESS,
+          DEFAULT_ALLOWANCE
+        );
+
+        // Show feedback to user
+        openNotification({
+          title: `${TEMPLE_TOKEN} Approved`,
+          hash: approveTXN.hash,
+        });
+        allowanceApproved = true;
+      }
+
+      if (allowanceApproved) {
+        const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
+
+        const sellTXN = await AMM_ROUTER.swapExactTempleForFrax(
+          amountInTemple,
+          minAmountOutFrax,
+          walletAddress,
+          deadline
+        );
+        await sellTXN.wait();
+
+        // Show feedback to user
+        openNotification({
+          title: `${TEMPLE_TOKEN} renounced`,
+          hash: sellTXN.hash,
+        });
+      }
     }
   };
 
-  const getSellQuote = async (amountToSell: BigNumber, slippage: number) => {
+  const getSellQuote = async (amountToSell: BigNumber) => {
     if (walletAddress && signerState) {
       const AMM_ROUTER = new TempleFraxAMMRouter__factory()
         .attach(TEMPLE_V2_ROUTER_ADDRESS)
@@ -1250,31 +1270,21 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         amountToSell
       );
 
-      // percent calc of slippage
-      const minSlip = (fromAtto(amountOut) * slippage) / 100;
-      const quote = fromAtto(amountOut) - minSlip;
-
-      return toAtto(quote);
+      return amountOut;
     }
     return BigNumber.from(0);
   };
 
-  const getBuyQuote = async (amountToBuy: BigNumber, slippage: number) => {
+  const getBuyQuote = async (fraxIn: BigNumber): Promise<BigNumber> => {
     if (walletAddress && signerState) {
       const AMM_ROUTER = new TempleFraxAMMRouter__factory()
         .attach(TEMPLE_V2_ROUTER_ADDRESS)
         .connect(signerState);
 
-      const { amountInAMM, amountInProtocol, amountOutAMM, amountOutProtocol } =
-        await AMM_ROUTER.swapExactFraxForTempleQuote(amountToBuy);
+      const { amountOutAMM, amountOutProtocol } =
+        await AMM_ROUTER.swapExactFraxForTempleQuote(fraxIn);
 
-      const minAmountIn = fromAtto(amountInAMM.add(amountOutAMM));
-
-      // percent calc of slippage
-      const minSlip = (minAmountIn * slippage) / 100;
-      const quote = minAmountIn - minSlip;
-
-      return toAtto(quote);
+      return amountOutAMM.add(amountOutProtocol);
     }
     return BigNumber.from(0);
   };
@@ -1298,7 +1308,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       if (allowance.lt(amountToStake)) {
         const approveTXN = await TEMPLE.approve(
           TEMPLE_STAKING_ADDRESS,
-          ONE_MILLION
+          DEFAULT_ALLOWANCE
         );
 
         await approveTXN.wait();
