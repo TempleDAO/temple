@@ -59,7 +59,7 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
         <>
           <DoorGlow
             src={glowLeft}
-            title="Buy"
+            title="Dashboard"
             onClick={() => changePageTo(Dashboard)}
             style={{
               transform: `scale(${0.49 * bgDimensions.scaleW}%)`,
@@ -75,7 +75,7 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
           />
           <DoorGlow
             src={glowRight}
-            title="Stake"
+            title="Account"
             onClick={() => changePageTo(Account)}
             style={{
               transform: `scale(${0.49 * bgDimensions.scaleW}%)`,
