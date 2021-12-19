@@ -1,5 +1,6 @@
-import MetamaskButton from 'components/Button/MetamaskButton';
 import React from 'react';
+import MetamaskButton from 'components/Button/MetamaskButton';
+import DevotionCTA from 'components/Accessories/DevotionCTA';
 import styled from 'styled-components';
 import useCustomRouting from 'hooks/use-custom-spa-routing';
 import { useHash } from 'hooks/use-query';
@@ -27,6 +28,7 @@ const AmmSpaRoot = () => {
 
   return (
     <Container>
+      <DevotionCTA />
       <MetamaskButton />
       <CurrentPage routingHelper={routingHelper} />
     </Container>
