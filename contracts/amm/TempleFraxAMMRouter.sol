@@ -211,14 +211,12 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
 
             // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant
             (uint rt, uint rf,) = pair.getReserves();
-
             uint newDynamicThresholdPriceTemple = (rt * dynamicThresholdPrice.frax * DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR) / (rf * dynamicThresholdIncreasePct);
 
-            if (priceCrossedBelowDynamicThresholdBlock > 0) { // decay mode
+            (,uint dynamicThresholdPriceTemple) = dynamicThresholdPriceWithDecay();
+            if (newDynamicThresholdPriceTemple < dynamicThresholdPriceTemple) { // when not decaying, ensure DTP only ever increases
                 dynamicThresholdPrice.temple = newDynamicThresholdPriceTemple;
                 priceCrossedBelowDynamicThresholdBlock = 0;
-            } else if (newDynamicThresholdPriceTemple < dynamicThresholdPrice.temple) { // when not decaying, ensure DTP only ever increases
-                dynamicThresholdPrice.temple = newDynamicThresholdPriceTemple;
                 emit DynamicThresholdChange(newDynamicThresholdPriceTemple);
             }
         }
