@@ -267,7 +267,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               placeholder={'0.00'}
               onHintClick={async () => {
                 await handleUpdateStableCoinAmount(
-                  stableCoinWalletAmount - 100 // Subtract 100 wei from total amount
+                  stableCoinWalletAmount - 100000000000000000 // Subtract .1 from total amount
                 );
               }}
             />
@@ -313,7 +313,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               placeholder={'0.00'}
               onHintClick={async () => {
                 await handleUpdateTempleAmount(
-                  templeWalletAmount - 100 // Subtract 100 wei from total amount
+                  templeWalletAmount - 100000000000000000 // Subtract .1 from total amount
                 );
               }}
             />
