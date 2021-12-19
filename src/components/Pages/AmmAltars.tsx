@@ -109,7 +109,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
 
   useEffect(() => {
     function onKeyup(e: KeyboardEvent) {
-      if (e.key === 'Esc') back();
+      if (e.key === 'Escape') back();
     }
 
     window.addEventListener('keyup', onKeyup);
