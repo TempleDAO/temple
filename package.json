@@ -16,8 +16,9 @@
     "version:prerelease": "standard-version --prerelease beta"
   },
   "dependencies": {
-    "d3-shape": "^3.0.1",
     "axios": "^0.24.0",
+    "d3-shape": "^3.0.1",
+    "dateformat": "^5.0.2",
     "ethers": "^5.4.3",
     "howler": "^2.2.3",
     "polished": "^4.1.3",
@@ -43,6 +44,7 @@
     "@typechain/ethers-v5": "^7.0.1",
     "@types/babel__core": "^7.1.16",
     "@types/d3-shape": "^3.0.2",
+    "@types/dateformat": "^5.0.0",
     "@types/howler": "^2.2.4",
     "@types/node": "^16.11.10",
     "@types/react": "^17.0.0",

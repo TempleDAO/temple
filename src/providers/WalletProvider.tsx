@@ -28,7 +28,7 @@ import {
   UniswapV2Pair__factory,
 } from 'types/typechain';
 import { fromAtto, toAtto } from 'utils/bigNumber';
-import { formatNumberNoDecimals } from 'utils/formatter';
+import { formatNumber, formatNumberNoDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
 
 /**
@@ -1048,7 +1048,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
               inviteFriendTransaction: RitualStatus.NO_STATUS,
               completedTransaction: RitualStatus.COMPLETED,
               verifyingTransaction: RitualStatus.NO_STATUS,
-              ritualMessage: 'OGT Unlocked',
+              ritualMessage: `${OG_TEMPLE_TOKEN} Unlocked`,
             })
           )
         );
@@ -1350,7 +1350,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const epochSizeInBlocks = (await EXIT_QUEUE.epochSize()).toNumber();
       const epochsPerDay = MAINNET_APROX_BLOCKS_PER_DAY / epochSizeInBlocks;
 
-      return formatNumberNoDecimals(epochs / epochsPerDay);
+      return formatNumber(epochs / epochsPerDay);
     }
     return 0;
   };

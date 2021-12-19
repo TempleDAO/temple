@@ -106,7 +106,7 @@ interface InputWrapperProps {
 
 export const InputWrapper = styled.div<InputWrapperProps>`
   position: relative;
-  margin-bottom: 2rem;
+  margin-bottom: 0.5rem;
   padding: 0 2rem /* 12/16 */;
   background-color: ${(props) => props.theme.palette.brand25};
   height: 4.75rem /* 76/16 */;

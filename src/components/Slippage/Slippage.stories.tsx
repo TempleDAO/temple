@@ -19,5 +19,6 @@ const Template: ComponentStory<typeof Slippage> = (args) => (
 export const Default = Template.bind({});
 Default.args = {
   value: 1,
+  label: '$TEMPLE: ($6.90)',
   onChange: action('onChange'),
 };

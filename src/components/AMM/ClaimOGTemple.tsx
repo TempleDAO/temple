@@ -1,3 +1,4 @@
+import dateFormat from 'dateformat';
 import React from 'react';
 import styled from 'styled-components';
 import { LockedEntry } from 'providers/WalletProvider';
@@ -15,28 +16,30 @@ const ClaimOGTemple = ({ lockedEntries, onClaim }: ClaimOGTempleProps) => {
     <>
       {lockedEntries.length > 0 ? (
         <>
-          <Flex
-            layout={{
-              kind: 'container',
-            }}
-          >
+          <Header>
             <Flex
               layout={{
-                kind: 'item',
-                col: 'half',
+                kind: 'container',
               }}
             >
-              <strong className={'color-brand'}>CLAIMABLE AT</strong>
+              <Flex
+                layout={{
+                  kind: 'item',
+                  col: 'half',
+                }}
+              >
+                <strong className={'color-dark'}>CLAIMABLE AT</strong>
+              </Flex>
+              <Flex
+                layout={{
+                  kind: 'item',
+                  col: 'half',
+                }}
+              >
+                <strong className={'color-dark'}>$OG TEMPLE AMOUNT</strong>
+              </Flex>
             </Flex>
-            <Flex
-              layout={{
-                kind: 'item',
-                col: 'half',
-              }}
-            >
-              <strong className={'color-brand'}>$OG TEMPLE AMOUNT</strong>
-            </Flex>
-          </Flex>
+          </Header>
           {lockedEntries.map((le) => (
             <>
               <Flex
@@ -51,8 +54,9 @@ const ClaimOGTemple = ({ lockedEntries, onClaim }: ClaimOGTempleProps) => {
                     col: 'half',
                   }}
                 >
+                  <Indent />
                   <p className={'color-brand'}>
-                    {new Date(le.lockedUntilTimestamp).toLocaleString()}
+                    {dateFormat(le.lockedUntilTimestamp)}
                   </p>
                 </Flex>
                 <Flex
@@ -63,10 +67,10 @@ const ClaimOGTemple = ({ lockedEntries, onClaim }: ClaimOGTempleProps) => {
                     alignItems: 'center',
                   }}
                 >
-                  <TempleValue className={'color-brand'}>
+                  <strong className={'color-brand'}>
                     {le.balanceOGTemple}
-                  </TempleValue>
-                  <Button
+                  </strong>
+                  <ButtonClaim
                     label={'claim'}
                     isSmall
                     isUppercase
@@ -86,8 +90,18 @@ const ClaimOGTemple = ({ lockedEntries, onClaim }: ClaimOGTempleProps) => {
   );
 };
 
-const TempleValue = styled.strong`
-  margin-right: 2rem;
+const ButtonClaim = styled(Button)`
+  margin-right: 1rem;
+  background-color: ${(props) => props.theme.palette.brand25};
+`;
+
+const Header = styled.div`
+  background-color: ${(props) => props.theme.palette.brand};
+  padding-left: 1rem;
+`;
+
+const Indent = styled.div`
+  padding-left: 1rem;
 `;
 
 export default ClaimOGTemple;
