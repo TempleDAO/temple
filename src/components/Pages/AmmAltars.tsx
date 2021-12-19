@@ -51,6 +51,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     claimOgTemple,
     claimAvailableTemple,
     exitQueueData,
+    getBalance,
     getRewardsForOGT,
     increaseAllowanceForRitual,
     lockedEntries,
@@ -192,6 +193,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
           RitualKind.OGT_UNLOCK,
           'OGT'
         );
+        getBalance();
       }
     } catch (e) {
       console.info(e);
@@ -203,6 +205,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
       if (stableCoinAmount) {
         const minAmountOut = rewards * (1 - slippage / 100);
         await buy(toAtto(stableCoinAmount), toAtto(minAmountOut));
+        getBalance();
       }
     } catch (e) {
       console.info(e);
@@ -214,6 +217,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
       if (templeAmount) {
         const minAmountOut = rewards * (1 - slippage / 100);
         await sell(toAtto(templeAmount), toAtto(minAmountOut));
+        getBalance();
       }
     } catch (e) {
       console.info(e);
@@ -224,6 +228,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     try {
       if (templeAmount) {
         await stake(toAtto(templeAmount));
+        getBalance();
       }
     } catch (e) {
       console.info(e);

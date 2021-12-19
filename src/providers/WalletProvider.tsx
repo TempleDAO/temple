@@ -192,6 +192,8 @@ interface WalletState {
 
   getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
 
+  getBalance(): Promise<Balance | void>;
+
   apy: number;
 }
 
@@ -247,6 +249,7 @@ const INITIAL_STATE: WalletState = {
   getJoinQueueData: asyncNoop,
   getSellQuote: asyncNoop,
   getBuyQuote: asyncNoop,
+  getBalance: asyncNoop,
   apy: 0,
 };
 
@@ -1178,6 +1181,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           hash: withdrawTXN.hash,
         });
       }
+      getBalance();
     }
   };
 
@@ -1403,6 +1407,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         getJoinQueueData,
         getSellQuote,
         getBuyQuote,
+        getBalance,
         apy,
       }}
     >
