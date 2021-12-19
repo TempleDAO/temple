@@ -211,15 +211,16 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
 
             // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant
             (uint rt, uint rf,) = pair.getReserves();
+
             uint newDynamicThresholdPriceTemple = (rt * dynamicThresholdPrice.frax * DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR) / (rf * dynamicThresholdIncreasePct);
-            if (newDynamicThresholdPriceTemple < dynamicThresholdPrice.temple) {
+
+            if (priceCrossedBelowDynamicThresholdBlock > 0) { // decay mode
+                dynamicThresholdPrice.temple = newDynamicThresholdPriceTemple;
+                priceCrossedBelowDynamicThresholdBlock = 0;
+            } else if (newDynamicThresholdPriceTemple < dynamicThresholdPrice.temple) { // when not decaying, ensure DTP only ever increases
                 dynamicThresholdPrice.temple = newDynamicThresholdPriceTemple;
                 emit DynamicThresholdChange(newDynamicThresholdPriceTemple);
             }
-
-            // Regardless, if we are minting on protocol that means we are above the threshold price, so stop any
-            // decay of the threshold price
-            priceCrossedBelowDynamicThresholdBlock = 0;
         }
     }
 
@@ -359,8 +360,8 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         numerator = (n1 - n2) * t2;
         denominator = (f2*t1 - f1*t2) * ts; // pre-condition, no overflow as fromPrice will be < toPrice
 
-        if (numerator >= denominator) {
-            return (1,1); // once we are above the interpolateToPrice, we 100% mint on protocol
+        if ((numerator * 1000 / 800) >= denominator) {
+            return (800,1000); // once we are above the interpolateToPrice, we 100% mint on protocol
         } else {
             return (numerator, denominator);
         }

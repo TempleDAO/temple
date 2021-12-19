@@ -27,7 +27,7 @@ describe("Temple Staked Lock Mechanics", async () => {
     await ogTempleToken.connect(owner).increaseAllowance(lockedOGTemple.address, toAtto(100000));
   })
 
-  it.only("Simple lock/unlock checks", async () => {
+  it("Simple lock/unlock checks", async () => {
     await lockedOGTemple.connect(user).lock(toAtto(100), 10);
     const initialLock = (await lockedOGTemple.ogTempleLocked(await user.getAddress())).lockedUntilTimestamp;
     await shouldThrow(lockedOGTemple.connect(user).unlock(0), stillLockedErr)
