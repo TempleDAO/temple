@@ -1015,6 +1015,11 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const OGTContract = new OGTemple__factory()
         .attach(await TEMPLE_STAKING.OG_TEMPLE())
         .connect(signerState);
+
+      const EXIT_QUEUE = new ExitQueue__factory()
+        .attach(EXIT_QUEUE_ADDRESS)
+        .connect(signerState);
+
       try {
         setRitual(
           new Map(
@@ -1032,9 +1037,19 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         );
         // ensure user input is not greater than user balance. if greater use all user balance.
         const offering = amount.lte(ogTempleBalance) ? amount : ogTempleBalance;
+        const baseGas =
+          ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT || 55000;
+        const gasPerEpoch =
+          ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_PER_EPOCH_GAS_LIMIT ||
+          20000;
+        const accFactor = await TEMPLE_STAKING.accumulationFactor();
+        const maxPerEpoch = await EXIT_QUEUE.maxPerEpoch();
+        const epochs = offering.mul(accFactor).div(maxPerEpoch);
+        const recommendedGas =
+          Number(baseGas) + Number(gasPerEpoch) * epochs.toNumber();
 
         const unstakeTXN = await TEMPLE_STAKING.unstake(offering, {
-          gasLimit: 2000000,
+          gasLimit: recommendedGas,
         });
 
         await unstakeTXN.wait();
@@ -1163,13 +1178,18 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .connect(signerState);
 
       const withdrawTXN = await lockedOGTempleContract.withdraw(
-        lockedEntryIndex
+        lockedEntryIndex,
+        {
+          gasLimit: ENV_VARS.VITE_PUBLIC_CLAIM_OGTEMPLE_GAS_LIMIT || 50000,
+        }
       );
+
+      await withdrawTXN.wait();
+
       openNotification({
         title: `${OG_TEMPLE_TOKEN} claimed`,
         hash: withdrawTXN.hash,
       });
-      await withdrawTXN.wait();
     }
   };
 
@@ -1190,11 +1210,21 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .attach(EXIT_QUEUE_ADDRESS)
         .connect(signerState);
 
-      console.info(`claimAvailableTemple`);
       if (exitQueueData.claimableEpochs.length) {
+        const baseCase =
+          ENV_VARS.VITE_PUBLIC_WITHDRAW_EPOCHS_BASE_GAS_LIMIT || 60000;
+        const perEpoch =
+          ENV_VARS.VITE_PUBLIC_WITHDRAW_EPOCHS_PER_EPOCH_GAS_LIMIT || 15000;
+        const recommendedGas =
+          Number(baseCase) +
+          Number(perEpoch) * exitQueueData.claimableEpochs.length;
+
         const withdrawTXN = await EXIT_QUEUE.withdrawEpochs(
           exitQueueData.claimableEpochs,
-          exitQueueData.claimableEpochs.length
+          exitQueueData.claimableEpochs.length,
+          {
+            gasLimit: recommendedGas || 150000,
+          }
         );
 
         await withdrawTXN.wait();
@@ -1233,7 +1263,11 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         amountInFrax,
         minAmountOutTemple,
         walletAddress,
-        deadline
+        deadline,
+        {
+          gasLimit:
+            ENV_VARS.VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT || 150000,
+        }
       );
       await buyTXN.wait();
       // Show feedback to user
@@ -1274,7 +1308,11 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         amountInTemple,
         minAmountOutFrax,
         walletAddress,
-        deadline
+        deadline,
+        {
+          gasLimit:
+            ENV_VARS.VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 175000,
+        }
       );
       await sellTXN.wait();
 
@@ -1332,7 +1370,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         TEMPLE_STAKING_ADDRESS,
         amountToStake
       );
-      const stakeTXN = await TEMPLE_STAKING.stake(amountToStake);
+      const stakeTXN = await TEMPLE_STAKING.stake(amountToStake, {
+        gasLimit: ENV_VARS.VITE_PUBLIC_STAKE_GAS_LIMIT || 80000,
+      });
       await stakeTXN.wait();
 
       // Show feedback to user
