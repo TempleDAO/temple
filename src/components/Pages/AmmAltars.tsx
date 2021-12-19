@@ -4,7 +4,6 @@ import DevotionBgImage from 'assets/images/devotion_bg.png';
 import ExitBgImage from 'assets/images/unstakequeue_0_unlit.png';
 import ClaimOGTemple from 'components/AMM/ClaimOGTemple';
 import { Button } from 'components/Button/Button';
-import MetamaskButton from 'components/Button/MetamaskButton';
 import { DataCard } from 'components/DataCard/DataCard';
 import Image from 'components/Image/Image';
 import { Input } from 'components/Input/Input';
@@ -57,6 +56,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     lockedEntries,
     updateWallet,
     buy,
+    sell,
     getJoinQueueData,
     getSellQuote,
     getBuyQuote,
@@ -142,24 +142,10 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
 
   const handleUpdateSlippageForBuy = async (value: number) => {
     setSlippage(value);
-    setRewards(
-      fromAtto(
-        (await getBuyQuote(toAtto(stableCoinAmount), value)) ||
-          BigNumber.from(0) ||
-          0
-      )
-    );
   };
 
   const handleUpdateSlippageForSell = async (value: number) => {
     setSlippage(value);
-    setRewards(
-      fromAtto(
-        (await getSellQuote(toAtto(templeAmount), value)) ||
-          BigNumber.from(0) ||
-          0
-      )
-    );
   };
 
   const handleUpdateStableCoinAmount = async (
@@ -167,12 +153,8 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   ) => {
     const x = +event.target.value > 0 ? +event.target.value : 0;
     setStableCoinAmount(x);
-    console.info(`handleUpdateStableCoinAmount: ${x}`);
-    /* TODO: get rewards from contract */
     setRewards(
-      fromAtto(
-        (await getBuyQuote(toAtto(x), slippage)) || BigNumber.from(0) || 0
-      )
+      fromAtto((await getBuyQuote(toAtto(x))) || BigNumber.from(0) || 0)
     );
   };
 
@@ -182,9 +164,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     const x = +event.target.value > 0 ? +event.target.value : 0;
     setTempleAmount(x);
     setRewards(
-      fromAtto(
-        (await getSellQuote(toAtto(x), slippage)) || BigNumber.from(0) || 0
-      )
+      fromAtto((await getSellQuote(toAtto(x))) || BigNumber.from(0) || 0)
     );
   };
 
@@ -213,7 +193,8 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   const handleSacrificeStableCoin = async () => {
     try {
       if (stableCoinAmount) {
-        await buy(toAtto(stableCoinAmount), toAtto(slippage));
+        const minAmountOut = rewards * (1 - slippage / 100);
+        await buy(toAtto(stableCoinAmount), toAtto(minAmountOut));
       }
     } catch (e) {
       console.info(e);
@@ -223,11 +204,8 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   const handleSurrenderTemple = async () => {
     try {
       if (templeAmount) {
-        await increaseAllowanceForRitual(
-          toAtto(templeAmount),
-          RitualKind.SURRENDER,
-          'TEMPLE'
-        );
+        const minAmountOut = rewards * (1 - slippage / 100);
+        await sell(toAtto(templeAmount), toAtto(minAmountOut));
       }
     } catch (e) {
       console.info(e);
