@@ -63,6 +63,7 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     "templeTreasury()": FunctionFragment;
     "toggleOpenAccess()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
+    "withdraw(address,address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -228,6 +229,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     functionFragment: "transferOwnership",
     values: [string]
   ): string;
+  encodeFunctionData(
+    functionFragment: "withdraw",
+    values: [string, string, BigNumberish]
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "CAN_ADD_ALLOWED_USER",
@@ -373,8 +378,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
   events: {
+    "DynamicThresholdChange(uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
     "PriceCrossedBelowDynamicThreshold(uint256)": EventFragment;
     "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
@@ -382,6 +389,7 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
     "RoleRevoked(bytes32,address,address)": EventFragment;
   };
 
+  getEvent(nameOrSignatureOrTopic: "DynamicThresholdChange"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(
     nameOrSignatureOrTopic: "PriceCrossedBelowDynamicThreshold"
@@ -390,6 +398,10 @@ interface TempleFraxAMMRouterInterface extends ethers.utils.Interface {
   getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleRevoked"): EventFragment;
 }
+
+export type DynamicThresholdChangeEvent = TypedEvent<
+  [BigNumber] & { currDynamicThresholdTemple: BigNumber }
+>;
 
 export type OwnershipTransferredEvent = TypedEvent<
   [string, string] & { previousOwner: string; newOwner: string }
@@ -669,6 +681,13 @@ export class TempleFraxAMMRouter extends BaseContract {
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    withdraw(
+      token: string,
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
   };
 
   CAN_ADD_ALLOWED_USER(overrides?: CallOverrides): Promise<string>;
@@ -875,6 +894,13 @@ export class TempleFraxAMMRouter extends BaseContract {
 
   transferOwnership(
     newOwner: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  withdraw(
+    token: string,
+    to: string,
+    amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -1091,9 +1117,24 @@ export class TempleFraxAMMRouter extends BaseContract {
       newOwner: string,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    withdraw(
+      token: string,
+      to: string,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
   filters: {
+    "DynamicThresholdChange(uint256)"(
+      currDynamicThresholdTemple?: null
+    ): TypedEventFilter<[BigNumber], { currDynamicThresholdTemple: BigNumber }>;
+
+    DynamicThresholdChange(
+      currDynamicThresholdTemple?: null
+    ): TypedEventFilter<[BigNumber], { currDynamicThresholdTemple: BigNumber }>;
+
     "OwnershipTransferred(address,address)"(
       previousOwner?: string | null,
       newOwner?: string | null
@@ -1364,6 +1405,13 @@ export class TempleFraxAMMRouter extends BaseContract {
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
+
+    withdraw(
+      token: string,
+      to: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -1570,6 +1618,13 @@ export class TempleFraxAMMRouter extends BaseContract {
 
     transferOwnership(
       newOwner: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    withdraw(
+      token: string,
+      to: string,
+      amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };
