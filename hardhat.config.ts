@@ -66,7 +66,7 @@ module.exports = {
       // whitelisted to a single deployment address.
       url: "https://eth-mainnet.alchemyapi.io/v2/YDQ_EDc7dwxDWf_U8LOgCXRFgKiQOa3K",
       accounts: (process.env.MAINNET_ADDRESS_PRIVATE_KEY) ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY] : [],
-      gasPrice: 55000000000,
+      gasPrice: 85000000000,
     },
     matic: {
       url: "https://rpc-mainnet.maticvigil.com",
