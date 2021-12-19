@@ -24,6 +24,8 @@ import {
   TempleFraxAMMRouter__factory,
   TempleStaking__factory,
   TempleTreasury__factory,
+  TempleUniswapV2Pair__factory,
+  UniswapV2Pair__factory,
 } from 'types/typechain';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumberNoDecimals } from 'utils/formatter';
@@ -137,7 +139,7 @@ interface WalletState {
   wallet: string | null;
   // current
   balance: Balance;
-
+  templePrice: number;
   exchangeRate: number;
   allocation: Allocation;
   ritual: RitualMapping;
@@ -212,6 +214,7 @@ const INITIAL_STATE: WalletState = {
   ritual: new Map(),
   lockInPeriod: 0,
   currentEpoch: -1,
+  templePrice: 0,
   isLoading: true,
   ocTemplar: {
     isGuest: false,
@@ -264,6 +267,7 @@ const VERIFY_QUEST_ADDRESS = ENV_VARS.VITE_PUBLIC_VERIFY_QUEST_ADDRESS;
 const TEMPLE_CASHBACK_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_CASHBACK_ADDRESS;
 const AMM_WHITELIST_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_ROUTER_WHITELIST;
 const TEMPLE_V2_ROUTER_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS;
+const TEMPLE_V2_PAIR_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS;
 
 if (
   STABLE_COIN_ADDRESS === undefined ||
@@ -275,7 +279,8 @@ if (
   OPENING_CEREMONY_ADDRESS === undefined ||
   VERIFY_QUEST_ADDRESS === undefined ||
   TEMPLE_CASHBACK_ADDRESS === undefined ||
-  TEMPLE_V2_ROUTER_ADDRESS === undefined
+  TEMPLE_V2_ROUTER_ADDRESS === undefined ||
+  TEMPLE_V2_PAIR_ADDRESS === undefined
 ) {
   console.info(`
 STABLE_COIN_ADDRESS=${STABLE_COIN_ADDRESS}
@@ -287,7 +292,8 @@ EXIT_QUEUE_ADDRESS=${EXIT_QUEUE_ADDRESS}
 OPENING_CEREMONY_ADDRESS=${OPENING_CEREMONY_ADDRESS}
 VERIFY_QUEST_ADDRESS=${VERIFY_QUEST_ADDRESS}
 TEMPLE_CASHBACK_ADDRESS=${TEMPLE_CASHBACK_ADDRESS}
-TEMPLE_ROUTER_ADDRESS=${TEMPLE_V2_ROUTER_ADDRESS}
+TEMPLE_V2_ROUTER_ADDRESS=${TEMPLE_V2_ROUTER_ADDRESS}
+TEMPLE_V2_PAIR_ADDRESS=${TEMPLE_V2_PAIR_ADDRESS}
 `);
   throw new Error(`Missing contract address from .env`);
 }
@@ -327,6 +333,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     INITIAL_STATE.exitQueueData
   );
   const [apy, setApy] = useState(0);
+  const [templePrice, setTemplePrice] = useState(INITIAL_STATE.templePrice);
 
   const { openNotification } = useNotification();
 
@@ -593,6 +600,17 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
+  const getTemplePrice = async () => {
+    if (walletAddress && signerState) {
+      const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory()
+        .attach(TEMPLE_V2_PAIR_ADDRESS)
+        .connect(signerState);
+
+      const { _reserve0, _reserve1 } =
+        await TEMPLE_UNISWAP_V2_PAIR.getReserves();
+      setTemplePrice(fromAtto(_reserve1) / fromAtto(_reserve0));
+    }
+  };
   /**
    * Load new data for the connected wallet
    * @param updateLoading Determines if the `isLoading` state should be updated
@@ -609,6 +627,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         // await getOCTemplar();
         // await getMaxInvitesPerVerifiedUser();
         await Promise.all([
+          getTemplePrice(),
           getCurrentEpoch(),
           getExchangeRate(),
           getLockInPeriod(),
@@ -1384,6 +1403,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         currentEpoch,
         isLoading,
         ocTemplar,
+        templePrice,
         buy,
         sell,
         connectWallet,
