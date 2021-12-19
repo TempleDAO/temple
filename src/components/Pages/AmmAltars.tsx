@@ -271,7 +271,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               disabled
             />
             <Slippage
-              label={`${TEMPLE_TOKEN}: (${templePrice})`}
+              label={`${TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
               value={slippage}
               onChange={handleUpdateSlippageForBuy}
             />
@@ -315,7 +315,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               disabled
             />
             <Slippage
-              label={`${TEMPLE_TOKEN}: (${templePrice})`}
+              label={`${TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
               value={slippage}
               onChange={handleUpdateSlippageForSell}
             />
