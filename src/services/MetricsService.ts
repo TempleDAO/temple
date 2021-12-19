@@ -54,8 +54,6 @@ const ENV_VARS = import.meta.env;
 
 // Temple MintMultiple is fixed tp 6
 const MINT_MULTIPLE = 6.0;
-// Temple EPY is now fixed to 1%
-const TEMPLE_EPY = 1 / 100;
 
 /**
  * Service to get the Temple Metrics
@@ -149,7 +147,7 @@ export class MetricsService {
 
     return {
       treasuryValue,
-      templeApy: this.getTempleApy(),
+      templeApy: await this.getTempleApy(),
       templeValue: await this.getTempleValue(),
     };
   }
@@ -191,7 +189,7 @@ export class MetricsService {
       treasuryTempleValue,
       templeTotalSupply,
       templeEpy: epy * 100,
-      templeApy: this.getTempleApy(epy),
+      templeApy: await this.getTempleApy(epy),
       templeValue,
       circTempleSupply: ogTempleTotalSupply * ogTempleRatio,
       circMCap: ogTempleTotalSupply * ogTempleRatio * templeValue,
@@ -259,7 +257,7 @@ export class MetricsService {
       lockedOGTempleBalance,
       unClaimedOGTempleBalance,
       totalSacrificed,
-      templeApy: this.getTempleApy(epy),
+      templeApy: await this.getTempleApy(epy),
     };
   }
 
@@ -276,7 +274,11 @@ export class MetricsService {
   /**
    * Helper to calculate the APY
    */
-  private getTempleApy = (epy = TEMPLE_EPY): number => {
+  private getTempleApy = async (epy): number => {
+    if (!epy)
+      epy =
+        (await this.templeStakingContract.getEpy(10000000)).toNumber() /
+        10000000;
     return Math.trunc((Math.pow(epy + 1, 365.25) - 1) * 100);
   };
 
