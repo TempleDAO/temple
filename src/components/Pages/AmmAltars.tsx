@@ -215,7 +215,6 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   const handleTempleStake = async () => {
     try {
       if (templeAmount) {
-        console.info(`handleSurrenderTemple => ${templeAmount}`);
         await stake(toAtto(templeAmount));
       }
     } catch (e) {
