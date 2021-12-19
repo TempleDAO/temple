@@ -1,7 +1,7 @@
 import EnterBgImage from 'assets/images/altar-enter-bg.jpg';
+import ExitBgImage from 'assets/images/altar-exit.jpg';
 import crossImage from 'assets/images/cross.svg';
 import DevotionBgImage from 'assets/images/devotion_bg.jpg';
-import ExitBgImage from 'assets/images/altar-exit.jpg';
 import ClaimOGTemple from 'components/AMM/ClaimOGTemple';
 import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
@@ -63,6 +63,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     getBuyQuote,
     stake,
     apy,
+    templePrice,
   } = useWallet();
 
   const { back } = routingHelper;
@@ -81,6 +82,8 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   const [activeAMMView, setActiveAMMView] = useState<AMMView | null>(view);
   // Slippage for TXN minOut
   const [slippage, setSlippage] = useState<number>(1);
+  // used to disable contract interaction if greater than amount out
+  const [minAmountOut, setMinAmountOut] = useState<number>(0);
   const [joinQueueData, setJoinQueueData] = useState<JoinQueueData | null>({
     queueLength: 0,
     processTime: 0,
@@ -98,6 +101,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     async function onMount() {
       await updateWallet();
       setRewards(0);
+      setMinAmountOut(0);
     }
 
     onMount();
@@ -107,6 +111,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     function onKeyup(e: KeyboardEvent) {
       if (e.key === 'Esc') back();
     }
+
     window.addEventListener('keyup', onKeyup);
     return () => window.removeEventListener('keyup', onKeyup);
   }, [back]);
@@ -203,9 +208,15 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   const handleSacrificeStableCoin = async () => {
     try {
       if (stableCoinAmount) {
-        const minAmountOut = rewards * (1 - slippage / 100);
-        await buy(toAtto(stableCoinAmount), toAtto(minAmountOut));
-        getBalance();
+        console.info(`PRICE: ${templePrice}`);
+        // ( 'FRAX sacrificing' / 'current price' )  * (1 - SlippageSetting )
+        const minAmountOut =
+          (stableCoinAmount / templePrice) * (1 - slippage / 100);
+        setMinAmountOut(minAmountOut);
+        if (minAmountOut <= rewards) {
+          await buy(toAtto(stableCoinAmount), toAtto(minAmountOut));
+          getBalance();
+        }
       }
     } catch (e) {
       console.info(e);
@@ -215,9 +226,13 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   const handleSurrenderTemple = async () => {
     try {
       if (templeAmount) {
-        const minAmountOut = rewards * (1 - slippage / 100);
-        await sell(toAtto(templeAmount), toAtto(minAmountOut));
-        getBalance();
+        // ( 'current price' * 'FRAX sacrificing' )  * (1 - SlippageSetting )
+        const minAmountOut = templeAmount * templePrice * (1 - slippage / 100);
+        setMinAmountOut(minAmountOut);
+        if (minAmountOut <= rewards) {
+          await sell(toAtto(templeAmount), toAtto(minAmountOut));
+          getBalance();
+        }
       }
     } catch (e) {
       console.info(e);
@@ -261,7 +276,11 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
             <Slippage value={slippage} onChange={handleUpdateSlippageForBuy} />
             <br />
             <Button
-              label={`sacrifice ${STABLE_COIN_SYMBOL}`}
+              label={
+                minAmountOut > rewards
+                  ? 'increase slippage'
+                  : `sacrifice ${STABLE_COIN_SYMBOL}`
+              }
               isUppercase
               onClick={handleSacrificeStableCoin}
               disabled={stableCoinAmount === 0}
@@ -292,7 +311,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
             <Slippage value={slippage} onChange={handleUpdateSlippageForSell} />
             <br />
             <Button
-              label={`RENOUNCE`}
+              label={minAmountOut > rewards ? 'increase slippage' : `RENOUNCE`}
               isUppercase
               onClick={handleSurrenderTemple}
               disabled={templeAmount === 0}
