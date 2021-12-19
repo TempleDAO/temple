@@ -66,6 +66,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     }
 
     event PriceCrossedBelowDynamicThreshold(uint256 blockNumber);
+    event DynamicThresholdChange(uint256 currDynamicThresholdTemple);
 
     constructor(
             IUniswapV2Pair _pair,
@@ -213,6 +214,7 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
             uint newDynamicThresholdPriceTemple = (rt * dynamicThresholdPrice.frax * DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR) / (rf * dynamicThresholdIncreasePct);
             if (newDynamicThresholdPriceTemple < dynamicThresholdPrice.temple) {
                 dynamicThresholdPrice.temple = newDynamicThresholdPriceTemple;
+                emit DynamicThresholdChange(newDynamicThresholdPriceTemple);
             }
 
             // Regardless, if we are minting on protocol that means we are above the threshold price, so stop any
