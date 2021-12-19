@@ -17,6 +17,7 @@ describe("AMM", async () => {
     let owner: Signer;
     let alan: Signer;
     let ben: Signer
+    let carol: Signer
     let pair: TempleUniswapV2Pair;
     let templeRouter: TempleFraxAMMRouter;
     let uniswapFactory: UniswapV2Factory;
@@ -27,7 +28,7 @@ describe("AMM", async () => {
     const expiryDate = (): number =>  Math.floor(Date.now() / 1000) + 900;
    
     beforeEach(async () => {
-      [owner, alan, ben] = await ethers.getSigners();
+      [owner, alan, ben, carol] = await ethers.getSigners();
 
       templeToken = await new TempleERC20Token__factory(owner).deploy();
       fraxToken = await new FakeERC20__factory(owner).deploy("STABLEC", "STABLEC");
@@ -81,7 +82,7 @@ describe("AMM", async () => {
       await templeRouter.toggleOpenAccess();
     })
 
-    describe("Buy", async() => {
+    describe.only("Buy", async() => {
       
       it("Below dynamic threshold should be same as AMM buy", async() => {
         // confirm price is below dynamic threshold (test case pre-condition)
@@ -158,6 +159,19 @@ describe("AMM", async () => {
         expect(rFrax / rTemple * 0.9).approximately(dtpFraxNew / dtpTempleNew, 1e-2);
         }
 
+        // Confirm values line up for what's printed on protocol vs bought on AMM
+        {
+        const quote = await templeRouter.swapExactFraxForTempleQuote(toAtto(100));
+        const [rTemple0, rFrax0] = fmtPricePair(await pair.getReserves());
+        const balanceFrax = fromAtto(await fraxToken.balanceOf(await owner.getAddress()));
+        await templeRouter.swapExactFraxForTemple(toAtto(100), 1, await carol.getAddress(), expiryDate());
+        const [rTemple1, rFrax1] = fmtPricePair(await pair.getReserves());
+        
+        // Check values minted on protocol and bought on AMM vs quoted values
+        expect(rFrax1 / rTemple1).approximately((rFrax0 + fromAtto(quote.amountInAMM))/(rTemple0 - fromAtto(quote.amountOutAMM)), 1e-3);
+        expect(fromAtto(await templeToken.balanceOf(await carol.getAddress()))).eq(fromAtto(quote.amountOutProtocol.add(quote.amountOutAMM)));
+        expect(fromAtto(await fraxToken.balanceOf(await owner.getAddress()))).eq(balanceFrax - fromAtto(quote.amountInProtocol.add(quote.amountInAMM)));
+        }
       })
 
       it("Above dynamic threshold and toPrice should have 100% of buy minted on protocol", async() => {
@@ -186,9 +200,13 @@ describe("AMM", async () => {
         expect(rFrax / rTemple).gte(dtpFrax / dtpTemple);
 
         // Now, if we mint again, we expect less slippage on AMM, and the dtp price to be the start price of the last buy
-        await templeRouter.swapExactFraxForTemple(toAtto(1000), 1, await alan.getAddress(), expiryDate());
+        const quote = await templeRouter.swapExactFraxForTempleQuote(toAtto(1000000));
+        const balanceFrax = fromAtto(await fraxToken.balanceOf(await owner.getAddress()));
+        await templeRouter.swapExactFraxForTemple(toAtto(1000000), 1, await carol.getAddress(), expiryDate());
         expect(fmtPricePair(await pair.getReserves()))
           .eql([rTemple, rFrax]);
+        expect(fromAtto(await templeToken.balanceOf(await carol.getAddress()))).eq(fromAtto(quote.amountOutProtocol));
+        expect(fromAtto(await fraxToken.balanceOf(await owner.getAddress()))).eq(balanceFrax - fromAtto(quote.amountInProtocol));
       })
 
       it("AMM buy with deadline in the past should fail", async() => {

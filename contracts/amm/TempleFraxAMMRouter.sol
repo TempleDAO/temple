@@ -205,8 +205,8 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
 
         // Mint on protocol
         if (amountInProtocol > 0) {
-            SafeERC20.safeTransferFrom(fraxToken, msg.sender, protocolMintEarningsAccount, amountInAMM);
-            templeToken.mint(to, amountOutAMM);
+            SafeERC20.safeTransferFrom(fraxToken, msg.sender, protocolMintEarningsAccount, amountInProtocol);
+            templeToken.mint(to, amountOutProtocol);
 
             // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant
             (uint rt, uint rf,) = pair.getReserves();
