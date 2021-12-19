@@ -102,6 +102,14 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     onMount();
   }, []);
 
+  useEffect(() => {
+    function onKeyup(e: KeyboardEvent) {
+      if (e.key === 'Esc') back();
+    }
+    window.addEventListener('keyup', onKeyup);
+    return () => window.removeEventListener('keyup', onKeyup);
+  }, [back]);
+
   const updateTempleRewards = async (ogtAmount: number) => {
     setRewards((await getRewardsForOGT(ogtAmount)) || 0);
   };
