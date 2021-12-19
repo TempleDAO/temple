@@ -35,6 +35,10 @@ const Username = styled.div`
   background-size: cover;
   background-position: center;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0rem 2.125rem;
 `;
 
 const SemiCircle = styled.div`
