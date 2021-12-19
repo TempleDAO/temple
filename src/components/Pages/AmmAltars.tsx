@@ -265,11 +265,6 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               value={stableCoinAmount}
               handleChange={handleUpdateStableCoinAmount}
               placeholder={'0.00'}
-              onHintClick={async () => {
-                await handleUpdateStableCoinAmount(
-                  stableCoinWalletAmount - 100000000000000000 // Subtract .1 from total amount
-                );
-              }}
             />
             <Input
               hint={`Balance: ${formatNumber(templeWalletAmount)}`}
@@ -311,11 +306,6 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               value={templeAmount}
               handleChange={handleUpdateTempleAmount}
               placeholder={'0.00'}
-              onHintClick={async () => {
-                await handleUpdateTempleAmount(
-                  templeWalletAmount - 100000000000000000 // Subtract .1 from total amount
-                );
-              }}
             />
             <Input
               hint={`BALANCE: ${formatNumber(stableCoinWalletAmount)}`}
@@ -369,7 +359,6 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 value={templeAmount}
                 handleChange={setTempleAmount}
                 placeholder={'0.00'}
-                onHintClick={() => setTempleAmount(templeWalletAmount)}
               />
               <DataCard title={`APY`} data={formatNumber(apy || 0) + '%'} />
               <br />
@@ -479,9 +468,6 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               value={OGTAmount}
               handleChange={handleUpdateOGT}
               placeholder={'0.00'}
-              onHintClick={async () => {
-                handleUpdateOGT(OGTWalletAmount);
-              }}
             />
             <Flex
               layout={{
