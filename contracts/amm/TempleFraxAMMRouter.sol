@@ -427,4 +427,17 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
             willCrossDynamicThreshold = currentPriceIsAboveThreshold && postSellPrieIsBelowThreshold;
         }
     }
+
+  /**
+   * transfer out amount of token to provided address
+   */
+  function withdraw(address token, address to, uint256 amount) external onlyOwner {
+    require(to != address(0), "to address zero");
+    if (token == address(0)) {
+      (bool sent,) = payable(to).call{value: amount}("");
+      require(sent, "send failed");
+    } else {
+      SafeERC20.safeTransfer(IERC20(token), to, amount);
+    }
+  }
 }
