@@ -1,10 +1,4 @@
-import React, {
-  Dispatch,
-  SetStateAction,
-  useLayoutEffect,
-  useState,
-} from 'react';
-import styled, { keyframes } from 'styled-components';
+import React, { Dispatch, SetStateAction, useState } from 'react';
 import Altars, { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/altar-exit.jpg';
@@ -14,6 +8,8 @@ import glow3 from 'assets/images/3_glow.png';
 import glow4 from 'assets/images/4_glow.png';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
+import { Background } from 'components/BackgroundItem/Background';
 
 type BgDimension = {
   width: number;
@@ -41,31 +37,24 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
   const { back, changePageTo } = routingHelper;
 
   // Update bgDimensions state
-  function handleResize() {
-    const backgroundDimensions = getBgImgDimensions(
-      document.querySelector('#background'),
-      bgImage
-    );
+  function handleResize(
+    container: EventTarget & HTMLImageElement,
+    src: string
+  ) {
+    const backgroundDimensions = getBgImgDimensions(container, src);
     if (!backgroundDimensions) return;
     setBgDimensions(backgroundDimensions);
   }
 
-  // Set event listeners for load and resize to handleResize()
-  useLayoutEffect(() => {
-    window.onload = () => handleResize();
-    window.addEventListener('resize', () => handleResize());
-    setTimeout(() => handleResize(), 500);
-    return () => {
-      window.removeEventListener('resize', () => handleResize());
-      window.onload = null;
-    };
-  }, []);
-
   return (
-    <Background id="background" style={{ overflow: 'hidden' }}>
+    <>
+      <Background
+        src={bgImage}
+        onLoad={(e) => handleResize(e.currentTarget, bgImage)}
+      />
       {bgDimensions != null && (
         <>
-          <DoorGlow
+          <BackgroundItem
             src={glow1}
             title="Unlock"
             onClick={() =>
@@ -86,7 +75,7 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
                   : `${0.151 * bgDimensions.width}px`,
             }}
           />
-          <DoorGlow
+          <BackgroundItem
             src={glow2}
             title="Join Queue"
             onClick={() =>
@@ -107,7 +96,7 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
                   : `${0.309 * bgDimensions.width}px`,
             }}
           />
-          <DoorGlow
+          <BackgroundItem
             src={glow3}
             title="Withdraw"
             onClick={() =>
@@ -128,7 +117,7 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
                   : `${0.54 * bgDimensions.width}px`,
             }}
           />
-          <DoorGlow
+          <BackgroundItem
             src={glow4}
             title="Sell"
             onClick={() =>
@@ -152,48 +141,8 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
         </>
       )}
       <BackButton onClick={back} />
-    </Background>
+    </>
   );
 };
 
-const Background = styled.div`
-  height: 100vh;
-  width: 100vw;
-  background-image: url(${bgImage});
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center bottom;
-  position: relative;
-`;
-
-const flicker = keyframes`
-        0% {
-          opacity: 0.3;
-        }
-
-        33% {
-          opacity: 0.6;
-        }
-
-        60% {
-          opacity: 0.4;
-        }
-
-        100% {
-          opacity: 0.8;
-        }
-      `;
-
-const DoorGlow = styled.img`
-  position: absolute;
-  transform-origin: bottom left;
-  opacity: 0.75;
-  transition: opacity 150ms;
-  &:hover {
-    opacity: 1;
-    cursor: pointer;
-    animation: none;
-  }
-  animation: ${flicker} 3s infinite alternate ease-out;
-`;
 export default ExitPage;
