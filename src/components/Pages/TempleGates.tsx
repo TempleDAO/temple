@@ -69,7 +69,16 @@ const TempleGatesPage: CustomRoutingPage = ({ routingHelper }) => {
     <>
       <TempleGatesContainer>
         {ENV_VARS.VITE_ENV !== 'production' && (
-          <button onClick={() => changePageTo(Foyer)}>BYPASS</button>
+          <button
+            style={{
+              position: 'fixed',
+              left: '1rem',
+              bottom: '1rem',
+            }}
+            onClick={() => changePageTo(Foyer)}
+          >
+            BYPASS
+          </button>
         )}
         <KeyForm onSubmit={submit}>
           <KeyInput
