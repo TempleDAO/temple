@@ -7,7 +7,7 @@ import React, {
 import styled, { keyframes } from 'styled-components';
 import Altars, { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
-import bgImage from 'assets/images/altar-enter-bg.png';
+import bgImage from 'assets/images/altar-enter-bg.jpg';
 import glowLeft from 'assets/images/AMM_leftcut.png';
 import glowRight from 'assets/images/AMM_rightglow.png';
 import { getBgImgDimensions } from 'utils/imageSize';
@@ -73,7 +73,7 @@ const EnterPage: CustomRoutingPage = ({ routingHelper }) => {
               ))
             }
             style={{
-              transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
+              transform: `scale(${1 * bgDimensions.scaleW}%)`,
               bottom: `${0.02 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
@@ -94,7 +94,7 @@ const EnterPage: CustomRoutingPage = ({ routingHelper }) => {
               ))
             }
             style={{
-              transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
+              transform: `scale(${1 * bgDimensions.scaleW}%)`,
               bottom: `${0.042 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight

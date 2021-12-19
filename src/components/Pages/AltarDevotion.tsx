@@ -7,7 +7,7 @@ import React, {
 import styled, { keyframes } from 'styled-components';
 import Altars, { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
-import devotionImage from 'assets/images/devotion_bg.png';
+import devotionImage from 'assets/images/devotion_bg.jpg';
 import glow from 'assets/images/devotion_glow.png';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
@@ -73,14 +73,14 @@ const DevotionPage: CustomRoutingPage = ({ routingHelper }) => {
             }
             style={{
               transform: `scale(${0.99 * bgDimensions.scaleW}%)`,
-              bottom: `${0.415 * bgDimensions.height}px`,
+              bottom: `${0.391 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
                   ? `${
-                      bgDimensions.width * 0.199 -
+                      bgDimensions.width * 0.197 -
                       (bgDimensions.width - window.innerWidth) / 2
                     }px`
-                  : `${0.199 * bgDimensions.width}px`,
+                  : `${0.197 * bgDimensions.width}px`,
             }}
           />
         </>

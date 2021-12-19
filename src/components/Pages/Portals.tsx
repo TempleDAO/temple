@@ -11,7 +11,7 @@ import AltarExit from './AltarExit';
 import AltarDevotion from './AltarDevotion';
 import BackButton from 'components/Button/BackButton';
 import { useWallet } from 'providers/WalletProvider';
-import portalImage from 'assets/images/PortalRoom.png';
+import portalImage from 'assets/images/PortalRoom.jpg';
 import midGlow from 'assets/images/glow_center.png';
 import leftGlow from 'assets/images/glow_left.png';
 import rightGlow from 'assets/images/glow_right.png';
@@ -29,20 +29,12 @@ type BgDimension = {
   imageHeight: number;
 };
 
-enum Pages {
-  Foyer,
-  Left,
-  Center,
-  Right,
-}
-
 const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
     Dispatch<SetStateAction<BgDimension | undefined>>
   ] = useState();
-  const { updateWallet } = useWallet();
 
   // Change visibility of chart component
   const [chartVisible, setChartVisible] = useState(false);
@@ -79,8 +71,8 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
             title="Devotion"
             onClick={() => changePageTo(AltarDevotion)}
             style={{
-              transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
-              bottom: `${0.405 * bgDimensions.height}px`,
+              transform: `scale(${0.99 * bgDimensions.scaleW}%)`,
+              bottom: `${0.443 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
                   ? `${
@@ -95,12 +87,12 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
             title="Enter"
             onClick={() => changePageTo(AltarEnter)}
             style={{
-              transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
-              bottom: `${0.423 * bgDimensions.height}px`,
+              transform: `scale(${0.99 * bgDimensions.scaleW}%)`,
+              bottom: `${0.466 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
                   ? `${
-                      bgDimensions.width * 0.415 -
+                      bgDimensions.width * 0.416 -
                       (bgDimensions.width - window.innerWidth) / 2
                     }px`
                   : `${0.416 * bgDimensions.width}px`,
@@ -111,12 +103,12 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
             title="Exit"
             onClick={() => changePageTo(AltarExit)}
             style={{
-              transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
-              bottom: `${0.405 * bgDimensions.height}px`,
+              transform: `scale(${0.99 * bgDimensions.scaleW}%)`,
+              bottom: `${0.443 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
                   ? `${
-                      bgDimensions.width * 0.66 -
+                      bgDimensions.width * 0.661 -
                       (bgDimensions.width - window.innerWidth) / 2
                     }px`
                   : `${0.661 * bgDimensions.width}px`,
@@ -127,12 +119,12 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
             title="Scroll"
             onClick={() => setChartVisible(!chartVisible)}
             style={{
-              transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
+              transform: `scale(${1 * bgDimensions.scaleW}%)`,
               bottom: `${-0.018 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
                   ? `${
-                      bgDimensions.width * 0.04 -
+                      bgDimensions.width * 0.037 -
                       (bgDimensions.width - window.innerWidth) / 2
                     }px`
                   : `${0.037 * bgDimensions.width}px`,

@@ -1,7 +1,7 @@
-import EnterBgImage from 'assets/images/altar-enter-bg.png';
+import EnterBgImage from 'assets/images/altar-enter-bg.jpg';
 import crossImage from 'assets/images/cross.svg';
-import DevotionBgImage from 'assets/images/devotion_bg.png';
-import ExitBgImage from 'assets/images/unstakequeue_0_unlit.png';
+import DevotionBgImage from 'assets/images/devotion_bg.jpg';
+import ExitBgImage from 'assets/images/altar-exit.jpg';
 import ClaimOGTemple from 'components/AMM/ClaimOGTemple';
 import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
