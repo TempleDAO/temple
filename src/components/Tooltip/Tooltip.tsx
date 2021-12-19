@@ -113,8 +113,8 @@ export const TooltipIcon = styled.small`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1rem;
+  height: 1rem;
   border-radius: 100%;
   color: ${(props) => props.theme.palette.brand};
   background-color: ${(props) => props.theme.palette.dark};
@@ -125,6 +125,7 @@ export const TooltipIcon = styled.small`
     position: absolute;
     top: 0;
     font-weight: bold;
+    font-size: 0.75rem;
   }
 `;
 

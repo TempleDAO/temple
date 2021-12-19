@@ -154,6 +154,10 @@ export const GlobalStyle = createGlobalStyle`
     &-brand {
       color: ${theme.palette.brand};
     }
+    
+    &-dark {
+      color: ${theme.palette.dark};
+    }
 
     &-light {
       color: ${theme.palette.light};

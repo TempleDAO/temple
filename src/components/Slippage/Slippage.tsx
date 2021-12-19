@@ -5,16 +5,16 @@ import styled, { css } from 'styled-components';
 
 interface SlippageProps {
   value: number;
-
+  label?: string;
   onChange(newValue: number): void;
 }
 
-const Slippage = ({ onChange, value }: SlippageProps) => {
+const Slippage = ({ onChange, value, label }: SlippageProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [valueState, setValueState] = useState(value);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const x = +event.target.value > 0 ? +event.target.value : 0;
+    const x = +event.target.value > 0.5 ? +event.target.value : 0.5;
     setValueState(x);
     onChange(x);
   };
@@ -22,12 +22,15 @@ const Slippage = ({ onChange, value }: SlippageProps) => {
   return (
     <Container isOpen={isOpen}>
       <ContainerHeader onClick={() => setIsOpen(!isOpen)}>
-        <small>MAX SLIPPAGE: ({valueState}%)</small>
+        {label && <small>{label}</small>}
+        <Value>
+          {label && '--'}SLIPPAGE: ({valueState}%)
+        </Value>
         <Indicator isOpen={isOpen} />
       </ContainerHeader>
       <ContainerContent>
         <Button
-          label={'AUTO'}
+          label={'DEFAULT'}
           isActive
           onClick={() => {
             onChange(1);
@@ -50,6 +53,11 @@ interface StyledProps {
   isOpen: boolean;
 }
 
+const Value = styled.small`
+  margin-left: 0.5em;
+  color: ${(props) => props.theme.palette.brand50};
+`;
+
 const Container = styled.div<StyledProps>`
   display: flex;
   flex-direction: column;
@@ -71,7 +79,6 @@ const Container = styled.div<StyledProps>`
 const ContainerHeader = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
   height: 3rem /* 45/16 */;
 `;
@@ -101,6 +108,7 @@ const SlippageInput = styled(InputStyled)`
 `;
 
 const Indicator = styled.div<StyledProps>`
+  margin-left: auto;
   width: 0;
   height: 0;
   border-left: 0.75rem solid transparent;

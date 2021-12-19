@@ -12,6 +12,7 @@ import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
 import PercentageBar from 'components/PercentageBar/PercentageBar';
 import Slippage from 'components/Slippage/Slippage';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
+import dateFormat from 'dateformat';
 import { BigNumber } from 'ethers';
 import withWallet from 'hoc/withWallet';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
@@ -23,9 +24,8 @@ import {
   useWallet,
 } from 'providers/WalletProvider';
 import React, { ReactNode, useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { fromAtto, toAtto } from 'utils/bigNumber';
-import { getDaysToTimestamp } from 'utils/dates';
 import { formatNumber } from 'utils/formatter';
 
 export enum AMMView {
@@ -247,7 +247,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
       case AMMView.BUY:
         return (
           <>
-            <ConvoFlowTitle>HOW MUCH YOU WANT TO SACRIFICE</ConvoFlowTitle>
+            <TitleWrapper>
+              <ConvoFlowTitle>HOW DEDICATED ARE YOU, TEMPLAR?</ConvoFlowTitle>
+            </TitleWrapper>
             <Input
               hint={`Balance: ${formatNumber(stableCoinWalletAmount)}`}
               crypto={{ kind: 'value', value: STABLE_COIN_SYMBOL }}
@@ -268,8 +270,12 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               value={rewards}
               disabled
             />
-            <Slippage value={slippage} onChange={handleUpdateSlippageForBuy} />
-            <br />
+            <Slippage
+              label={`${TEMPLE_TOKEN}: (${templePrice})`}
+              value={slippage}
+              onChange={handleUpdateSlippageForBuy}
+            />
+            <Spacer />
             <Button
               label={
                 minAmountOut > rewards
@@ -285,9 +291,11 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
       case AMMView.SELL:
         return (
           <>
-            <ConvoFlowTitle>HOW DEDICATED ARE YOU, TEMPLAR?</ConvoFlowTitle>
+            <TitleWrapper>
+              <ConvoFlowTitle>ARE YOU SURE, TEMPLAR?</ConvoFlowTitle>
+            </TitleWrapper>
             <Input
-              hint={`Balance: ${templeWalletAmount}`}
+              hint={`Balance: ${formatNumber(templeWalletAmount)}`}
               crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
               type={'number'}
               max={templeWalletAmount}
@@ -306,10 +314,18 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               value={formatNumber(rewards)}
               disabled
             />
-            <Slippage value={slippage} onChange={handleUpdateSlippageForSell} />
+            <Slippage
+              label={`${TEMPLE_TOKEN}: (${templePrice})`}
+              value={slippage}
+              onChange={handleUpdateSlippageForSell}
+            />
             <br />
             <Button
-              label={minAmountOut > rewards ? 'increase slippage' : `RENOUNCE`}
+              label={
+                minAmountOut > rewards
+                  ? 'increase slippage'
+                  : `RENOUNCE YOUR ${TEMPLE_TOKEN}`
+              }
               isUppercase
               onClick={handleSurrenderTemple}
               disabled={templeAmount === 0}
@@ -320,9 +336,22 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
         return (
           <>
             <>
-              <ConvoFlowTitle>SELECT {TEMPLE_TOKEN} STAKE</ConvoFlowTitle>
+              <TitleWrapper>
+                <ConvoFlowTitle>PLEDGE YOUR {TEMPLE_TOKEN}</ConvoFlowTitle>
+                <Tooltip
+                  content={
+                    <small>
+                      You will receive $ogtemple when you pledge your $temple to
+                      the staking contract
+                    </small>
+                  }
+                  position={'top'}
+                >
+                  <TooltipIcon />
+                </Tooltip>
+              </TitleWrapper>
               <Input
-                hint={`Balance: ${templeWalletAmount}`}
+                hint={`Balance: ${formatNumber(templeWalletAmount)}`}
                 crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
                 type={'number'}
                 max={templeWalletAmount}
@@ -336,7 +365,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               <br />
               <br />
               <Button
-                label={`STAKE ${TEMPLE_TOKEN}`}
+                label={`PLEDGE`}
                 isUppercase
                 onClick={handleTempleStake}
                 disabled={templeAmount === 0}
@@ -347,11 +376,21 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
       case AMMView.UNLOCK:
         return (
           <>
-            <ConvoFlowTitle>CLAIM YOUR $OG TEMPLE</ConvoFlowTitle>
-            <p className={'align-text-center'}>
-              $OG TEMPLE CAN BE UNLOCKED ACCORDING TO THE TIME OF STAKING
-            </p>
-            <br />
+            <TitleWrapper>
+              <ConvoFlowTitle>CLAIM YOUR {OG_TEMPLE_TOKEN}</ConvoFlowTitle>
+              <Tooltip
+                content={
+                  <small>
+                    All your $OGTEMPLE in the locking contract are represented
+                    here. if your $OGTEMPLE have unlocked, they will be able to
+                    be claimed.
+                  </small>
+                }
+                position={'top'}
+              >
+                <TooltipIcon />
+              </Tooltip>
+            </TitleWrapper>
             <ClaimOGTemple
               lockedEntries={lockedEntries}
               onClaim={handleClaimOgTemple}
@@ -370,7 +409,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 }}
               >
                 <Button
-                  label={'done & chill'}
+                  label={'RETURN TO ALTAR'}
                   isSmall
                   isUppercase
                   onClick={back}
@@ -383,7 +422,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 }}
               >
                 <Button
-                  label={'continue to exit'}
+                  label={'PROCEED TO EXIT QUEUE'}
                   isSmall
                   isUppercase
                   onClick={() => handleSetActiveAMMView(AMMView.JOIN_QUEUE)}
@@ -402,9 +441,10 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               <Tooltip
                 content={
                   <small>
-                    All unstaking occurs by joining an exit queue, which smooths
-                    the rate at which $TEMPLE tokens can be withdrawn. This
-                    supports price stability. See GitBooks for mechanics.
+                    Your $TEMPLE tokens are unstaked by burning your $ogtemple
+                    and joining the exit queue. the queue is processed first in,
+                    first out. once you are processed you will be able to claim
+                    your $temple tokens.
                   </small>
                 }
                 position={'top'}
@@ -421,7 +461,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
             </TitleWrapper>
 
             <Input
-              hint={`Balance: ${OGTWalletAmount}`}
+              hint={`Balance: ${formatNumber(OGTWalletAmount)}`}
               crypto={{ kind: 'value', value: 'OGT' }}
               type={'number'}
               max={OGTWalletAmount}
@@ -449,6 +489,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 <DataCard
                   title={'TEMPLE + REWARDS'}
                   data={formatNumber(rewards) + ''}
+                  tooltipContent={
+                    'Amount of $TEMPLE received once you exit the queue'
+                  }
                 />
               </Flex>
               <Flex
@@ -460,6 +503,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 <DataCard
                   title={'QUEUE LENGTH'}
                   data={joinQueueData?.queueLength + ' DAYS'}
+                  tooltipContent={
+                    'The current length of the queue due to other templars waiting to be processed in front of you.'
+                  }
                 />
               </Flex>
               <Flex
@@ -471,6 +517,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 <DataCard
                   title={'PROCESS TIME'}
                   data={`+ ${joinQueueData?.processTime} DAYS`}
+                  tooltipContent={
+                    'Amount of time it takes to process the $OGTEMPLE that you have selected. your processing will begin in the number of days specified in the current ‘queue length’.'
+                  }
                 />
               </Flex>
             </Flex>
@@ -486,9 +535,23 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
       case AMMView.WITHDRAW:
         return (
           <>
-            <ConvoFlowTitle>
-              YOU HAVE {exitQueueData.totalTempleOwned} {TEMPLE_TOKEN} IN QUEUE
-            </ConvoFlowTitle>
+            <TitleWrapper>
+              <ConvoFlowTitle>
+                YOU HAVE {exitQueueData.totalTempleOwned} {TEMPLE_TOKEN} IN
+                QUEUE
+              </ConvoFlowTitle>
+              <Tooltip
+                content={
+                  <small>
+                    the exit queue is used to provide an orderly unstaking
+                    process from the temple
+                  </small>
+                }
+                position={'top'}
+              >
+                <TooltipIcon />
+              </Tooltip>
+            </TitleWrapper>
             <PercentageBar
               total={exitQueueData.totalTempleOwned}
               processed={exitQueueData.claimableTemple}
@@ -509,6 +572,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 <DataCard
                   title={'AVAILABLE TO CLAIM'}
                   data={formatNumber(exitQueueData.claimableTemple) + ''}
+                  tooltipContent={
+                    'Amount of $TEMPLE that has been processed and is available for withdrawal'
+                  }
                 />
               </Flex>
               <Flex
@@ -525,6 +591,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                         exitQueueData.claimableTemple
                     ) + ''
                   }
+                  tooltipContent={
+                    'Amount of $TEMPLE yet to be processed through the queue'
+                  }
                 />
               </Flex>
               <Flex
@@ -534,18 +603,21 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 }}
               >
                 <DataCard
-                  title={'QUEUE PROCESSED'}
-                  data={`+${getDaysToTimestamp(
-                    exitQueueData.claimableAt
-                  )} DAYS`}
+                  title={'QUEUE PROCESSED BY'}
+                  data={`${dateFormat(
+                    exitQueueData.claimableAt,
+                    'dd, mmm h:MM TT'
+                  )}`}
+                  tooltipContent={
+                    'The time at which all of your $temple will be available to withdraw'
+                  }
                 />
               </Flex>
             </Flex>
             <br />
             <Button
-              label={'claim available temple'}
+              label={'withdraw available temple'}
               onClick={claimAvailableTemple}
-              isSmall
               isUppercase
               disabled={exitQueueData.claimableTemple === 0}
             />
@@ -579,10 +651,17 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
 
     return bgImage;
   };
+
   return (
     <>
       <Background backgroundUrl={() => getBackgroundImage()}>
-        <ConvoFlowContent>
+        <ConvoFlowContent
+          isSmall={
+            activeAMMView === 'BUY' ||
+            activeAMMView === 'STAKE' ||
+            activeAMMView === 'SELL'
+          }
+        >
           <ConvoFlowClose
             src={crossImage}
             alt={'Close notification'}
@@ -611,6 +690,7 @@ const TitleWrapper = styled.div`
   align-items: center;
   justify-content: center;
   width: 100%;
+  margin-bottom: 2rem;
 
   ${TooltipIcon} {
     margin-left: 2rem;
@@ -645,11 +725,22 @@ const OffClickOverlay = styled.div`
   opacity: 0.75;
 `;
 
-const ConvoFlowContent = styled.div`
+interface ConvoFlowContentProps {
+  isSmall?: boolean;
+}
+
+const ConvoFlowContent = styled.div<ConvoFlowContentProps>`
   position: relative;
   z-index: 100;
   width: 100%;
   max-width: 48.75rem /* 780/16 */;
+
+  ${(props) =>
+    props.isSmall &&
+    css`
+      max-width: 35rem /* 485/16 */;
+    `}
+
   background-color: ${(props) => props.theme.palette.dark};
   padding: 2rem;
   border: 0.0625rem /* 1/16 */ solid ${(props) => props.theme.palette.brand};
@@ -659,7 +750,7 @@ const ConvoFlowTitle = styled.p`
   text-align: center;
   color: ${(props) => props.theme.palette.brand};
   text-transform: uppercase;
-  margin-bottom: 2rem;
+  margin: 0;
 `;
 
 const ConvoFlowClose = styled(Image)`
@@ -667,6 +758,11 @@ const ConvoFlowClose = styled(Image)`
   top: 1rem;
   right: 1rem;
   cursor: pointer;
+`;
+
+/* TODO: move this to a common component so it can be reused */
+const Spacer = styled.div`
+  height: 2rem;
 `;
 
 export default withWallet(AMMAltars);

@@ -17,7 +17,7 @@ export const DataCard = ({ title, data, tooltipContent }: DataCardProps) => {
       <TitleContainer>
         <small>{title}</small>
         {tooltipContent && (
-          <Tooltip content={tooltipContent} position={'left'}>
+          <Tooltip content={tooltipContent} position={'top'}>
             <TooltipIcon />
           </Tooltip>
         )}

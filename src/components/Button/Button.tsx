@@ -91,7 +91,7 @@ export const ButtonStyled = styled.button<ButtonStyledProps>`
   color: ${(props) => props.theme.palette.brand};
   border: 0.0625rem /* 1/16 */ solid currentColor;
   height: 4.75rem /* 76/16 */;
-  ${(props) => props.theme.typography.meta};
+  ${(props) => props.theme.typography.h4};
   display: flex;
   justify-content: center;
   align-items: center;
@@ -106,6 +106,7 @@ export const ButtonStyled = styled.button<ButtonStyledProps>`
   ${(props) =>
     props.isSmall &&
     css`
+      ${(props) => props.theme.typography.meta};
       height: 2.625rem /* 42/16 */;
     `}
   ${(props) =>
