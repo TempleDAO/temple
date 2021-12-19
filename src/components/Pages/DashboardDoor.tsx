@@ -8,7 +8,7 @@ import styled, { keyframes } from 'styled-components';
 import Dashboard from 'components/Pages/Dashboard';
 import Account from 'components/Pages/Account';
 import BackButton from 'components/Button/BackButton';
-import bgImage from 'assets/images/dashboardroom_bg2.png';
+import bgImage from 'assets/images/dashboardroom_bg.jpg';
 import glowLeft from 'assets/images/dashboardroom_glowleft.png';
 import glowRight from 'assets/images/dashboardroom_glowright.png';
 import { getBgImgDimensions } from 'utils/imageSize';
@@ -62,7 +62,7 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
             title="Dashboard"
             onClick={() => changePageTo(Dashboard)}
             style={{
-              transform: `scale(${0.49 * bgDimensions.scaleW}%)`,
+              transform: `scale(${0.98 * bgDimensions.scaleW}%)`,
               bottom: `${0.217 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
@@ -78,7 +78,7 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
             title="Account"
             onClick={() => changePageTo(Account)}
             style={{
-              transform: `scale(${0.49 * bgDimensions.scaleW}%)`,
+              transform: `scale(${0.98 * bgDimensions.scaleW}%)`,
               bottom: `${0.22 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight

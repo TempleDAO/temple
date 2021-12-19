@@ -7,7 +7,7 @@ import React, {
 import styled, { keyframes } from 'styled-components';
 import Altars, { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
-import bgImage from 'assets/images/unstakequeue_0_unlit.png';
+import bgImage from 'assets/images/altar-exit.jpg';
 import glow1 from 'assets/images/1_glow.png';
 import glow2 from 'assets/images/2_glow.png';
 import glow3 from 'assets/images/3_glow.png';
@@ -75,7 +75,7 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
               ))
             }
             style={{
-              transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
+              transform: `scale(${1 * bgDimensions.scaleW}%)`,
               bottom: `${-0.04 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
@@ -96,7 +96,7 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
               ))
             }
             style={{
-              transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
+              transform: `scale(${1 * bgDimensions.scaleW}%)`,
               bottom: `${-0.035 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
@@ -117,7 +117,7 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
               ))
             }
             style={{
-              transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
+              transform: `scale(${1 * bgDimensions.scaleW}%)`,
               bottom: `${-0.036 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
@@ -138,7 +138,7 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
               ))
             }
             style={{
-              transform: `scale(${0.5 * bgDimensions.scaleW}%)`,
+              transform: `scale(${1 * bgDimensions.scaleW}%)`,
               bottom: `${-0.03 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
