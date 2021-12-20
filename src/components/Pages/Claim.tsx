@@ -195,7 +195,7 @@ const TempleCashbackPage = () => {
           />
         </>
       )}
-      {activeClaim.includes('gas-refund-oc') && (
+      {(activeClaim.includes('gas-refund-oc') || claimCount == 0) && (
         <p
           style={{ paddingTop: '2rem', maxWidth: '56rem', textAlign: 'center' }}
         >
