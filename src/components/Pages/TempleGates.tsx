@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import Foyer from 'components/Pages/Foyer';
-import gatesImage from 'assets/images/EnterTheGates.png';
+import gatesImage from 'assets/images/EnterTheGates.jpg';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 import withWallet from 'hoc/withWallet';
 
