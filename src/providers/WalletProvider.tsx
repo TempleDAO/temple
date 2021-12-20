@@ -1045,8 +1045,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         const accFactor = await TEMPLE_STAKING.accumulationFactor();
         const maxPerEpoch = await EXIT_QUEUE.maxPerEpoch();
         const epochs = offering.mul(accFactor).div(maxPerEpoch);
-        const recommendedGas =
-          Number(baseGas) + Number(gasPerEpoch) * epochs.toNumber();
+        const recommendedGas = BigNumber.from(baseGas).add(
+          BigNumber.from(gasPerEpoch).mul(epochs)
+        );
 
         const unstakeTXN = await TEMPLE_STAKING.unstake(offering, {
           gasLimit: recommendedGas,
@@ -1257,10 +1258,15 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         amountInFrax
       );
 
+      const balance = await STABLE_TOKEN.balanceOf(walletAddress);
+      const verifiedAmountInFrax = amountInFrax.lt(balance)
+        ? amountInFrax
+        : balance;
+
       const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
 
       const buyTXN = await AMM_ROUTER.swapExactFraxForTemple(
-        amountInFrax,
+        verifiedAmountInFrax,
         minAmountOutTemple,
         walletAddress,
         deadline,
@@ -1302,10 +1308,15 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         amountInTemple
       );
 
+      const balance = await TEMPLE.balanceOf(walletAddress);
+      const verifiedAmountInTemple = amountInTemple.lt(balance)
+        ? amountInTemple
+        : balance;
+
       const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
 
       const sellTXN = await AMM_ROUTER.swapExactTempleForFrax(
-        amountInTemple,
+        verifiedAmountInTemple,
         minAmountOutFrax,
         walletAddress,
         deadline,
@@ -1370,7 +1381,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         TEMPLE_STAKING_ADDRESS,
         amountToStake
       );
-      const stakeTXN = await TEMPLE_STAKING.stake(amountToStake, {
+
+      const balance = await TEMPLE.balanceOf(walletAddress);
+      const verifiedAmountToStake = amountToStake.lt(balance)
+        ? amountToStake
+        : balance;
+
+      const stakeTXN = await TEMPLE_STAKING.stake(verifiedAmountToStake, {
         gasLimit: ENV_VARS.VITE_PUBLIC_STAKE_GAS_LIMIT || 80000,
       });
       await stakeTXN.wait();
