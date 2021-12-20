@@ -78,7 +78,8 @@ export class MetricsService {
       ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS === undefined
+      ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS === undefined ||
+      ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS === undefined
     ) {
       console.info(`
       VITE_ALCHEMY_PROVIDER_NETWORK=${ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK}
@@ -89,6 +90,7 @@ export class MetricsService {
       VITE_PUBLIC_TEMPLE_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS}
       VITE_PUBLIC_TEMPLE_STAKING_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS}
       VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS=${ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS}
+      VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS}
       `);
       throw new Error(`Missing env vars in Metrics Service`);
     }
@@ -100,6 +102,7 @@ export class MetricsService {
     const TREASURY_ADDRESS = ENV_VARS.VITE_PUBLIC_TREASURY_ADDRESS;
     const SERVER_PRIVATE_KEY = ENV_VARS.VITE_SERVER_PRIVATE_KEY;
     const TEMPLE_STAKING_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS;
+    const PAIR_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS;
     const LOCKED_OG_TEMPLE_ADDRESS =
       ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS;
     const ENV = ENV_VARS.VITE_ENV;
@@ -123,6 +126,7 @@ export class MetricsService {
       .attach(TEMPLE_COIN_ADDRESS)
       .connect(this.signer);
 
+    this.pairAddress = PAIR_ADDRESS;
     this.treasuryAddress = TREASURY_ADDRESS;
     this.treasuryContract = new TempleTreasury__factory()
       .attach(TREASURY_ADDRESS)
@@ -141,9 +145,9 @@ export class MetricsService {
    * Gets Temple Treasury Metrics
    */
   async getTreasuryMetrics(): Promise<TreasuryMetrics> {
-    const treasuryValue = fromAtto(
-      await this.stableCoinContract.balanceOf(this.treasuryAddress)
-    );
+    const treasuryValue =
+      fromAtto(await this.stableCoinContract.balanceOf(this.treasuryAddress)) +
+      fromAtto(await this.stableCoinContract.balanceOf(this.pairAddress));
 
     return {
       treasuryValue,
@@ -157,9 +161,9 @@ export class MetricsService {
       .attach(await this.templeStakingContract.OG_TEMPLE())
       .connect(this.signer);
 
-    const treasuryValue = fromAtto(
-      await this.stableCoinContract.balanceOf(this.treasuryAddress)
-    );
+    const treasuryValue =
+      fromAtto(await this.stableCoinContract.balanceOf(this.treasuryAddress)) +
+      fromAtto(await this.stableCoinContract.balanceOf(this.pairAddress));
     const treasuryTempleValue = fromAtto(
       await this.templeCoinContract.balanceOf(this.treasuryAddress)
     );
@@ -201,7 +205,7 @@ export class MetricsService {
   }
 
   async getAccountMetrics(walletAddress: string): Promise<AccountMetrics> {
-    const templeValue = await this.getTempleValue();
+    const templeValue = await this.getTempleValueSubgraph();
     const currentTime = Date.now();
 
     const templeBalance = fromAtto(

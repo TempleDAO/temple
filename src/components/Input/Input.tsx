@@ -182,4 +182,5 @@ export const InputStyled = styled.input`
     appearance: none;
     margin: 0;
   }
+  -moz-appearance: textfield;
 `;
