@@ -195,6 +195,17 @@ const TempleCashbackPage = () => {
           />
         </>
       )}
+      {activeClaim.includes('gas-refund-oc') && (
+        <p
+          style={{ paddingTop: '2rem', maxWidth: '56rem', textAlign: 'center' }}
+        >
+          Templars who were forced to make multiple transactions instead of a
+          single transaction to buy their $30K allotment on Day 1 of the Opening
+          Ceremony are eligible for a small gas cost reimbursement. This refund
+          does NOT cover high gas costs of other transactions that were due to
+          network congestion.
+        </p>
+      )}
     </Flex>
   );
 };
