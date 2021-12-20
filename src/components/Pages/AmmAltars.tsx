@@ -518,7 +518,10 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               label={'BURN $OG TEMPLE & JOIN QUEUE'}
               onClick={handleUnlockOGT}
               isUppercase
-              disabled={OGTAmount === 0}
+              disabled={
+                OGTAmount === 0 ||
+                (balance != undefined && OGTAmount > balance.ogTemple)
+              }
             />
           </>
         );
