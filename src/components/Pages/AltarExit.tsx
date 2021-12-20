@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useState } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import Altars, { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/altar-exit.jpg';
@@ -37,20 +37,29 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
   const { back, changePageTo } = routingHelper;
 
   // Update bgDimensions state
-  function handleResize(
-    container: EventTarget & HTMLImageElement,
-    src: string
-  ) {
-    const backgroundDimensions = getBgImgDimensions(container, src);
+  function handleResize(container: EventTarget & HTMLImageElement) {
+    const backgroundDimensions = getBgImgDimensions(container, container.src);
     if (!backgroundDimensions) return;
     setBgDimensions(backgroundDimensions);
   }
+
+  useEffect(() => {
+    return () => {
+      window.onresize = null;
+    };
+  }, []);
 
   return (
     <>
       <Background
         src={bgImage}
-        onLoad={(e) => handleResize(e.currentTarget, bgImage)}
+        onLoad={(e) => {
+          const el = e.currentTarget;
+          window.onresize = () => {
+            handleResize(el);
+          };
+          handleResize(el);
+        }}
       />
       {bgDimensions != null && (
         <>

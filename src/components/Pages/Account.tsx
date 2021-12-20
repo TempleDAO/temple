@@ -54,18 +54,12 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
     accountMetrics?.templeBalance * accountMetrics?.templeValue;
   const exitQueueValue =
     exitQueueData?.totalTempleOwned * accountMetrics?.templeValue;
-  const ogTempleWalletValue = balance?.ogTemple * accountMetrics?.templeValue;
+  const ogTempleWalletValue = balance?.ogTemple * accountMetrics?.ogTemplePrice;
   const lockedOGTempleValue =
-    accountMetrics?.lockedOGTempleBalance * accountMetrics?.ogTemplePrice;
-  const unclaimedOGTempleValue =
-    accountMetrics?.unClaimedOGTempleBalance * accountMetrics?.ogTemplePrice;
+    balance?.ogTempleLocked * accountMetrics?.ogTemplePrice;
 
   const netWorth =
-    unclaimedOGTempleValue +
-    lockedOGTempleValue +
-    walletValue +
-    ogTempleWalletValue +
-    exitQueueValue;
+    lockedOGTempleValue + walletValue + ogTempleWalletValue + exitQueueValue;
 
   return (
     <>
@@ -132,18 +126,9 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
                       </div>
                       <div>
                         <ProfileMetric
-                          label={`not claimed`}
-                          value={`${formatNumberWithCommas(
-                            accountMetrics?.unClaimedOGTempleBalance
-                          )} OGTEMPLE`}
-                          detail={`$${formatNumberWithCommas(
-                            unclaimedOGTempleValue
-                          )}`}
-                        />
-                        <ProfileMetric
                           label={`Locked`}
                           value={`${formatNumberWithCommas(
-                            accountMetrics?.lockedOGTempleBalance
+                            balance?.ogTempleLocked
                           )} OGTEMPLE`}
                           detail={`$${formatNumberWithCommas(
                             lockedOGTempleValue

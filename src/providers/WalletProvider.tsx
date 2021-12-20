@@ -1037,17 +1037,17 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         );
         // ensure user input is not greater than user balance. if greater use all user balance.
         const offering = amount.lte(ogTempleBalance) ? amount : ogTempleBalance;
-        const baseGas =
-          ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT || 55000;
-        const gasPerEpoch =
+        const baseGas = Number(
+          ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT || 55000
+        );
+        const gasPerEpoch = Number(
           ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_PER_EPOCH_GAS_LIMIT ||
-          20000;
+            20000
+        );
         const accFactor = await TEMPLE_STAKING.accumulationFactor();
         const maxPerEpoch = await EXIT_QUEUE.maxPerEpoch();
-        const epochs = offering.mul(accFactor).div(maxPerEpoch);
-        const recommendedGas = BigNumber.from(baseGas).add(
-          BigNumber.from(gasPerEpoch).mul(epochs)
-        );
+        const epochs = fromAtto(offering.mul(accFactor).div(maxPerEpoch));
+        const recommendedGas = Math.ceil(baseGas + gasPerEpoch * epochs);
 
         const unstakeTXN = await TEMPLE_STAKING.unstake(offering, {
           gasLimit: recommendedGas,
