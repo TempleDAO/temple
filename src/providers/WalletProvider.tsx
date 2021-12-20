@@ -1038,7 +1038,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         // ensure user input is not greater than user balance. if greater use all user balance.
         const offering = amount.lte(ogTempleBalance) ? amount : ogTempleBalance;
         const baseGas = Number(
-          ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT || 55000
+          ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT || 300000
         );
         const gasPerEpoch = Number(
           ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_PER_EPOCH_GAS_LIMIT ||
@@ -1050,7 +1050,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         const recommendedGas = Math.ceil(baseGas + gasPerEpoch * epochs);
 
         const unstakeTXN = await TEMPLE_STAKING.unstake(offering, {
-          gasLimit: recommendedGas,
+          gasLimit: recommendedGas < 30000000 ? recommendedGas : 30000000,
         });
 
         await unstakeTXN.wait();
@@ -1181,7 +1181,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const withdrawTXN = await lockedOGTempleContract.withdraw(
         lockedEntryIndex,
         {
-          gasLimit: ENV_VARS.VITE_PUBLIC_CLAIM_OGTEMPLE_GAS_LIMIT || 50000,
+          gasLimit: ENV_VARS.VITE_PUBLIC_CLAIM_OGTEMPLE_GAS_LIMIT || 100000,
         }
       );
 
@@ -1272,7 +1272,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         deadline,
         {
           gasLimit:
-            ENV_VARS.VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT || 150000,
+            ENV_VARS.VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT || 300000,
         }
       );
       await buyTXN.wait();
@@ -1322,7 +1322,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         deadline,
         {
           gasLimit:
-            ENV_VARS.VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 175000,
+            ENV_VARS.VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
         }
       );
       await sellTXN.wait();
@@ -1388,7 +1388,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         : balance;
 
       const stakeTXN = await TEMPLE_STAKING.stake(verifiedAmountToStake, {
-        gasLimit: ENV_VARS.VITE_PUBLIC_STAKE_GAS_LIMIT || 80000,
+        gasLimit: ENV_VARS.VITE_PUBLIC_STAKE_GAS_LIMIT || 150000,
       });
       await stakeTXN.wait();
 
