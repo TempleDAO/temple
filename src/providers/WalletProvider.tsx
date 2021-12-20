@@ -1031,9 +1031,8 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
             })
           )
         );
-        const ogTempleBalance: BigNumber = await OGTContract.allowance(
-          walletAddress,
-          TEMPLE_STAKING_ADDRESS
+        const ogTempleBalance: BigNumber = await OGTContract.balanceOf(
+          walletAddress
         );
         // ensure user input is not greater than user balance. if greater use all user balance.
         const offering = amount.lte(ogTempleBalance) ? amount : ogTempleBalance;
