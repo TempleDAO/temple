@@ -338,15 +338,16 @@ function useTemplePrice(data: ChartData, interval: TIME_INTERVAL) {
   };
 
   if (domainDataPoints.priceDataPoints.length > 0) {
-    const oldestDomainPrice = domainDataPoints.priceDataPoints[0].y;
-    const currentPrice =
+    const currentPrice = domainDataPoints.priceDataPoints[0].y;
+    const oldestDomainPrice =
       domainDataPoints.priceDataPoints[
         domainDataPoints.priceDataPoints.length - 1
       ].y;
 
     priceData = {
       currentPrice,
-      domainPriceChangePercentage: (currentPrice - oldestDomainPrice) * 100,
+      domainPriceChangePercentage:
+        ((currentPrice - oldestDomainPrice) / oldestDomainPrice) * 100,
       domainPriceChange: currentPrice - oldestDomainPrice,
     };
   } else {
