@@ -24,16 +24,17 @@ export default function useRefreshablePriceMetrics(
         },
         body: JSON.stringify({
           query: `{
-                protocolMetrics {
-                    templePrice
-                    timestamp
-                    treasuryStables
-                    templeSupply
-                }
-        }`,
+            protocolMetrics(orderDirection: desc, orderBy: timestamp) {
+              timestamp
+              templeSupply
+              templePrice
+              treasuryStables
+            }
+          }`,
         }),
       }
     );
+
     const metrics = await result.json();
     setPriceMetrics(metrics?.data?.protocolMetrics ?? []);
   }
