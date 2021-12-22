@@ -53,6 +53,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     balance,
     claimOgTemple,
     claimAvailableTemple,
+    restakeAvailableTemple,
     exitQueueData,
     getBalance,
     getRewardsForOGT,
@@ -641,13 +642,40 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 />
               </Flex>
             </Flex>
-            <br />
-            <Button
-              label={'withdraw available temple'}
-              onClick={claimAvailableTemple}
-              isUppercase
-              disabled={exitQueueData.claimableTemple === 0}
-            />
+            <Flex
+              layout={{
+                kind: 'container',
+                canWrap: true,
+                canWrapTablet: false,
+              }}
+            >
+              <Flex
+                layout={{
+                  kind: 'item',
+                  col: 'half',
+                }}
+              >
+                <Button
+                  label={'RESTAKE available temple'}
+                  onClick={restakeAvailableTemple}
+                  isUppercase
+                  disabled={exitQueueData.claimableTemple === 0}
+                />
+              </Flex>
+              <Flex
+                layout={{
+                  kind: 'item',
+                  col: 'half',
+                }}
+              >
+                <Button
+                  label={'withdraw available temple'}
+                  onClick={claimAvailableTemple}
+                  isUppercase
+                  disabled={exitQueueData.claimableTemple === 0}
+                />
+              </Flex>
+            </Flex>
           </>
         );
       case AMMView.BTFD:

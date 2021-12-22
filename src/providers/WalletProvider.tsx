@@ -12,6 +12,7 @@ import React, {
   useState,
 } from 'react';
 import {
+  AcceleratedExitQueue__factory,
   AMMWhitelist__factory,
   ERC20,
   ERC20__factory,
@@ -25,7 +26,6 @@ import {
   TempleStaking__factory,
   TempleTreasury__factory,
   TempleUniswapV2Pair__factory,
-  UniswapV2Pair__factory,
 } from 'types/typechain';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumber, formatNumberNoDecimals } from 'utils/formatter';
@@ -187,6 +187,8 @@ interface WalletState {
 
   claimAvailableTemple(): Promise<void>;
 
+  restakeAvailableTemple(): Promise<void>;
+
   getRewardsForOGT(ogtAmount: number): Promise<number | void>;
 
   getJoinQueueData(ogtAmount: BigNumber): Promise<JoinQueueData | void>;
@@ -250,6 +252,7 @@ const INITIAL_STATE: WalletState = {
   claimOgTemple: asyncNoop,
   getRewardsForOGT: asyncNoop,
   claimAvailableTemple: asyncNoop,
+  restakeAvailableTemple: asyncNoop,
   getJoinQueueData: asyncNoop,
   getSellQuote: asyncNoop,
   getBuyQuote: asyncNoop,
@@ -269,6 +272,8 @@ const TEMPLE_CASHBACK_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_CASHBACK_ADDRESS;
 const AMM_WHITELIST_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_ROUTER_WHITELIST;
 const TEMPLE_V2_ROUTER_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS;
 const TEMPLE_V2_PAIR_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS;
+const ACCELERATED_EXIT_QUEUE_ADDRESS =
+  ENV_VARS.VITE_PUBLIC_ACCELERATED_EXIT_QUEUE_ADDRESS;
 
 if (
   STABLE_COIN_ADDRESS === undefined ||
@@ -281,7 +286,8 @@ if (
   VERIFY_QUEST_ADDRESS === undefined ||
   TEMPLE_CASHBACK_ADDRESS === undefined ||
   TEMPLE_V2_ROUTER_ADDRESS === undefined ||
-  TEMPLE_V2_PAIR_ADDRESS === undefined
+  TEMPLE_V2_PAIR_ADDRESS === undefined ||
+  ACCELERATED_EXIT_QUEUE_ADDRESS === undefined
 ) {
   console.info(`
 STABLE_COIN_ADDRESS=${STABLE_COIN_ADDRESS}
@@ -295,6 +301,7 @@ VERIFY_QUEST_ADDRESS=${VERIFY_QUEST_ADDRESS}
 TEMPLE_CASHBACK_ADDRESS=${TEMPLE_CASHBACK_ADDRESS}
 TEMPLE_V2_ROUTER_ADDRESS=${TEMPLE_V2_ROUTER_ADDRESS}
 TEMPLE_V2_PAIR_ADDRESS=${TEMPLE_V2_PAIR_ADDRESS}
+ACCELERATED_EXIT_QUEUE_ADDRESS=${ACCELERATED_EXIT_QUEUE_ADDRESS}
 `);
   throw new Error(`Missing contract address from .env`);
 }
@@ -1235,6 +1242,40 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
+  const restakeAvailableTemple = async (): Promise<void> => {
+    if (walletAddress && signerState) {
+      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory()
+        .attach(ACCELERATED_EXIT_QUEUE_ADDRESS)
+        .connect(signerState);
+
+      if (exitQueueData.claimableEpochs.length) {
+        const baseCase =
+          ENV_VARS.VITE_PUBLIC_RESTAKE_EPOCHS_BASE_GAS_LIMIT || 175000;
+        const perEpoch =
+          ENV_VARS.VITE_PUBLIC_RESTAKE_EPOCHS_PER_EPOCH_GAS_LIMIT || 20000;
+        const recommendedGas =
+          Number(baseCase) +
+          Number(perEpoch) * exitQueueData.claimableEpochs.length;
+
+        const restakeTXN = await ACCELERATED_EXIT_QUEUE.restake(
+          exitQueueData.claimableEpochs,
+          exitQueueData.claimableEpochs.length,
+          {
+            gasLimit: recommendedGas || 500000,
+          }
+        );
+
+        await restakeTXN.wait();
+        // Show feedback to user
+        openNotification({
+          title: `${TEMPLE_TOKEN} restaked`,
+          hash: restakeTXN.hash,
+        });
+      }
+      getBalance();
+    }
+  };
+
   const buy = async (
     amountInFrax: BigNumber,
     minAmountOutTemple: BigNumber
@@ -1486,6 +1527,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         getBuyQuote,
         getBalance,
         apy,
+        restakeAvailableTemple,
       }}
     >
       {children}
