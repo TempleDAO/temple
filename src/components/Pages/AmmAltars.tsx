@@ -27,6 +27,9 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import styled, { css } from 'styled-components';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
+import { noop } from 'utils/helpers';
+
+const ENV_VARS = import.meta.env;
 
 export enum AMMView {
   BUY = 'BUY',
@@ -257,7 +260,11 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               max={stableCoinWalletAmount}
               min={0}
               value={stableCoinAmount}
-              handleChange={handleUpdateStableCoinAmount}
+              handleChange={
+                ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true'
+                  ? noop
+                  : handleUpdateStableCoinAmount
+              }
               placeholder={'0.00'}
             />
             <Input
@@ -270,7 +277,11 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
             <Slippage
               label={`${TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
               value={slippage}
-              onChange={handleUpdateSlippageForBuy}
+              onChange={
+                ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true'
+                  ? noop
+                  : handleUpdateSlippageForBuy
+              }
             />
             <Spacer />
             <Button
@@ -280,8 +291,16 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                   : `sacrifice ${STABLE_COIN_SYMBOL}`
               }
               isUppercase
-              onClick={handleSacrificeStableCoin}
-              disabled={stableCoinAmount === 0 || stableCoinWalletAmount === 0}
+              onClick={
+                ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true'
+                  ? noop
+                  : handleSacrificeStableCoin
+              }
+              disabled={
+                ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true' ||
+                stableCoinAmount === 0 ||
+                stableCoinWalletAmount === 0
+              }
             />
           </>
         );
@@ -298,7 +317,11 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               max={templeWalletAmount}
               min={0}
               value={templeAmount}
-              handleChange={handleUpdateTempleAmount}
+              handleChange={
+                ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true'
+                  ? noop
+                  : handleUpdateTempleAmount
+              }
               placeholder={'0.00'}
             />
             <Input
@@ -311,7 +334,11 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
             <Slippage
               label={`${TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
               value={slippage}
-              onChange={handleUpdateSlippageForSell}
+              onChange={
+                ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true'
+                  ? noop
+                  : handleUpdateSlippageForSell
+              }
             />
             <br />
             <Button
@@ -321,8 +348,15 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                   : `RENOUNCE YOUR ${TEMPLE_TOKEN}`
               }
               isUppercase
-              onClick={handleSurrenderTemple}
-              disabled={templeAmount === 0}
+              onClick={
+                ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true'
+                  ? noop
+                  : handleSurrenderTemple
+              }
+              disabled={
+                ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true' ||
+                templeAmount === 0
+              }
             />
           </>
         );
@@ -654,6 +688,10 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
             activeAMMView === 'STAKE' ||
             activeAMMView === 'SELL'
           }
+          isDisabled={
+            ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true' &&
+            (activeAMMView === 'BUY' || activeAMMView === 'SELL')
+          }
         >
           <ConvoFlowClose
             src={crossImage}
@@ -720,6 +758,7 @@ const OffClickOverlay = styled.div`
 
 interface ConvoFlowContentProps {
   isSmall?: boolean;
+  isDisabled?: boolean;
 }
 
 const ConvoFlowContent = styled.div<ConvoFlowContentProps>`
@@ -732,6 +771,14 @@ const ConvoFlowContent = styled.div<ConvoFlowContentProps>`
     props.isSmall &&
     css`
       max-width: 35rem /* 485/16 */;
+    `}
+
+  ${(props) =>
+    props.isDisabled &&
+    css`
+      filter: grayscale(1);
+      pointer-events: none;
+      cursor: not-allowed;
     `}
 
   background-color: ${(props) => props.theme.palette.dark};
