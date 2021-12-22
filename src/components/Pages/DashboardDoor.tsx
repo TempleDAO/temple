@@ -1,4 +1,5 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { Howl } from 'howler';
 import Dashboard from 'components/Pages/Dashboard';
 import Account from 'components/Pages/Account';
 import BackButton from 'components/Button/BackButton';
@@ -7,6 +8,8 @@ import glowLeft from 'assets/images/dashboardroom_glowleft.png';
 import glowRight from 'assets/images/dashboardroom_glowright.png';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import useCancellableTrack from 'hooks/use-cancellable-track';
+import doorwayToDashboardsTrack from 'assets/sounds/doorway-to-dashboards-bg-track.mp3';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 import { Background } from 'components/BackgroundItem/Background';
 
@@ -18,6 +21,12 @@ type BgDimension = {
   imageWidth: number;
   imageHeight: number;
 };
+
+const track = new Howl({
+  src: [doorwayToDashboardsTrack],
+  loop: true,
+  volume: 0.15,
+});
 
 const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
   // Used to determine door images size and position
@@ -34,6 +43,8 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
     if (!backgroundDimensions) return;
     setBgDimensions(backgroundDimensions);
   }
+
+  const stopTrack = useCancellableTrack(track);
 
   useEffect(() => {
     return () => {
@@ -61,14 +72,14 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
             onClick={() => changePageTo(Dashboard)}
             style={{
               transform: `scale(${0.98 * bgDimensions.scaleW}%)`,
-              bottom: `${0.217 * bgDimensions.height}px`,
+              bottom: `${0.152 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
                   ? `${
-                      bgDimensions.width * 0.172 -
+                      bgDimensions.width * 0.174 -
                       (bgDimensions.width - window.innerWidth) / 2
                     }px`
-                  : `${0.172 * bgDimensions.width}px`,
+                  : `${0.174 * bgDimensions.width}px`,
             }}
           />
           <BackgroundItem
@@ -77,7 +88,7 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
             onClick={() => changePageTo(Account)}
             style={{
               transform: `scale(${0.98 * bgDimensions.scaleW}%)`,
-              bottom: `${0.22 * bgDimensions.height}px`,
+              bottom: `${0.155 * bgDimensions.height}px`,
               left:
                 bgDimensions.height == window.innerHeight
                   ? `${
@@ -89,7 +100,14 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
           />
         </>
       )}
-      <BackButton width={112} height={112} onClick={back} />
+      <BackButton
+        width={112}
+        height={112}
+        onClick={() => {
+          stopTrack();
+          back();
+        }}
+      />
     </>
   );
 };

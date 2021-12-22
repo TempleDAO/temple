@@ -1,14 +1,16 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
-import styled, { keyframes } from 'styled-components';
+import { Howl } from 'howler';
 import Altars, { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/altar-enter-bg.jpg';
 import glowLeft from 'assets/images/AMM_leftcut.png';
 import glowRight from 'assets/images/AMM_rightglow.png';
+import enterAltarTrack from 'assets/sounds/enter-altar-bg-track.mp3';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 import { Background } from 'components/BackgroundItem/Background';
+import useCancellableTrack from 'hooks/use-cancellable-track';
 
 type BgDimension = {
   width: number;
@@ -19,12 +21,11 @@ type BgDimension = {
   imageHeight: number;
 };
 
-enum Pages {
-  Foyer,
-  Left,
-  Center,
-  Right,
-}
+const soundscape = new Howl({
+  src: [enterAltarTrack],
+  loop: true,
+  volume: 0.15,
+});
 
 const EnterPage: CustomRoutingPage = ({ routingHelper }) => {
   // Used to determine door images size and position
@@ -41,6 +42,8 @@ const EnterPage: CustomRoutingPage = ({ routingHelper }) => {
     if (!backgroundDimensions) return;
     setBgDimensions(backgroundDimensions);
   }
+
+  const stopTrack = useCancellableTrack(soundscape);
 
   useEffect(() => {
     return () => {
@@ -106,7 +109,12 @@ const EnterPage: CustomRoutingPage = ({ routingHelper }) => {
           />
         </>
       )}
-      <BackButton onClick={back} />
+      <BackButton
+        onClick={() => {
+          stopTrack();
+          back();
+        }}
+      />
     </>
   );
 };

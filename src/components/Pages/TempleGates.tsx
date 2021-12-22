@@ -1,12 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
+import { Howl } from 'howler';
 import Foyer from 'components/Pages/Foyer';
-import gatesImage from 'assets/images/EnterTheGates.jpg';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import useUnmountableTrack from 'hooks/use-unmountable-track';
 import withWallet from 'hoc/withWallet';
+import templeGatesTrack from 'assets/sounds/temple-gates-bg-track.mp3';
+import gatesImage from 'assets/images/EnterTheGates.jpg';
+
+const track = new Howl({
+  src: [templeGatesTrack],
+  loop: true,
+  volume: 0.15,
+});
 
 const TempleGatesPage: CustomRoutingPage = ({ routingHelper }) => {
   const { changePageTo } = routingHelper;
+
+  useUnmountableTrack(track);
 
   return (
     <TempleGatesContainer>

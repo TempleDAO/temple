@@ -1,10 +1,13 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { Howl } from 'howler';
 import Altars, { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/devotion_bg.jpg';
 import glow from 'assets/images/devotion_glow.png';
+import devotionAltarTrack from 'assets/sounds/devotion-altar-bg-track.mp3';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import useCancellableTrack from 'hooks/use-cancellable-track';
 import { Background } from 'components/BackgroundItem/Background';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 
@@ -17,12 +20,11 @@ type BgDimension = {
   imageHeight: number;
 };
 
-enum Pages {
-  Foyer,
-  Left,
-  Center,
-  Right,
-}
+const soundscape = new Howl({
+  src: [devotionAltarTrack],
+  loop: true,
+  volume: 0.15,
+});
 
 const DevotionPage: CustomRoutingPage = ({ routingHelper }) => {
   // Used to determine door images size and position
@@ -39,6 +41,8 @@ const DevotionPage: CustomRoutingPage = ({ routingHelper }) => {
     if (!backgroundDimensions) return;
     setBgDimensions(backgroundDimensions);
   }
+
+  const stopTrack = useCancellableTrack(soundscape);
 
   useEffect(() => {
     return () => {
@@ -81,7 +85,12 @@ const DevotionPage: CustomRoutingPage = ({ routingHelper }) => {
           }}
         />
       )}
-      <BackButton onClick={back} />
+      <BackButton
+        onClick={() => {
+          stopTrack();
+          back();
+        }}
+      />
     </>
   );
 };

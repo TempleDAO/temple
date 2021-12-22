@@ -23,7 +23,7 @@ const Metrics = ({ treasuryMetrics, isHome }: MetricsProps) => {
     >
       <Apy
         cryptoName={'$TEMPLE'}
-        value={`$${templeValue}`}
+        value={`$${formatNumber(templeValue)}`}
         imageData={{
           imageUrl: cashImage,
           alt: '',

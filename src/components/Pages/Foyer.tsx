@@ -1,14 +1,17 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { Howl } from 'howler';
 import RitualsPosters from 'components/Pages/RitualsMoviePoster';
 import Portals from 'components/Pages/Portals';
 import BackButton from 'components/Button/BackButton';
+import useUnmountableTrack from 'hooks/use-unmountable-track';
 import bgImage from 'assets/images/foyer.jpg';
 import midGlow from 'assets/images/mid-glow.png';
 import leftGlow from 'assets/images/left-glow.png';
 import rightGlow from 'assets/images/right-glow.png';
+import foyerTrack from 'assets/sounds/foyer-bg-track.mp3';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
-import DashboardDoorPage from './DashboardDoor';
+import DashboardDoorPage from 'components/Pages/DashboardDoor';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 import { Background } from 'components/BackgroundItem/Background';
 
@@ -21,6 +24,12 @@ type BgDimension = {
   imageHeight: number;
 };
 
+const track = new Howl({
+  src: [foyerTrack],
+  loop: true,
+  volume: 0.15,
+});
+
 const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
@@ -29,6 +38,8 @@ const FoyerPage: CustomRoutingPage = ({ routingHelper }) => {
   ] = useState();
 
   const { back, changePageTo } = routingHelper;
+
+  useUnmountableTrack(track);
 
   // Update bgDimensions state
   function handleResize(container: EventTarget & HTMLImageElement) {

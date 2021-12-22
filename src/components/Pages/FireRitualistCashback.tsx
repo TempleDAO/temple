@@ -4,7 +4,6 @@ import { Howl } from 'howler';
 import styled, { keyframes } from 'styled-components';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
-import Loader from 'components/Loader/Loader';
 import { ProgressAnimation } from 'components/Loader/ProgressAnimation';
 import withWallet from 'hoc/withWallet';
 import { useWallet } from 'providers/WalletProvider';
@@ -188,6 +187,11 @@ function useBackgroundNoise() {
   useEffect(() => {
     bonfire.play();
     chanting.play();
+
+    return () => {
+      bonfire.stop();
+      chanting.stop();
+    };
   }, []);
 }
 

@@ -1,8 +1,11 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { Howl } from 'howler';
 import styled from 'styled-components';
-import AltarEnter from './AltarEnter';
-import AltarExit from './AltarExit';
-import AltarDevotion from './AltarDevotion';
+import AltarEnter from 'components/Pages/AltarEnter';
+import AltarExit from 'components/Pages/AltarExit';
+import AltarDevotion from 'components/Pages/AltarDevotion';
+import useUnmountableTrack from 'hooks/use-unmountable-track';
+import doorwaysToAltarsTrack from 'assets/sounds/doorways-to-altars-bg-track.mp3';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/PortalRoom.jpg';
 import midGlow from 'assets/images/glow_center.png';
@@ -24,6 +27,12 @@ type BgDimension = {
   imageHeight: number;
 };
 
+const track = new Howl({
+  src: [doorwaysToAltarsTrack],
+  loop: true,
+  volume: 0.15,
+});
+
 const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
@@ -42,6 +51,8 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
     if (!backgroundDimensions) return;
     setBgDimensions(backgroundDimensions);
   }
+
+  useUnmountableTrack(track);
 
   useEffect(() => {
     return () => {
