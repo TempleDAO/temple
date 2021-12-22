@@ -152,7 +152,7 @@ export class MetricsService {
     return {
       treasuryValue,
       templeApy: await this.getTempleApy(),
-      templeValue: await this.getTempleValue(),
+      templeValue: await this.getTempleValueSubgraph(),
     };
   }
 
@@ -181,6 +181,7 @@ export class MetricsService {
     const epy = Number(stakingContractApy) / 10000000;
 
     const templeValue = await this.getTempleValueSubgraph();
+    const iv = await this.getIV();
 
     const ogTempleRatio =
       Number(await this.templeStakingContract.balance(1000)) / 1000;
@@ -200,7 +201,7 @@ export class MetricsService {
       ogTempleTotalSupply,
       ogTemplePrice: templeValue * ogTempleRatio,
       ogTempleRatio,
-      iv: templeValue / 6,
+      iv,
     };
   }
 
@@ -263,13 +264,13 @@ export class MetricsService {
   }
 
   /**
-   * Helper to get the Temple Value
+   * Helper to get the Temple IV
    */
-  private getTempleValue = async (): Promise<number> => {
+  private getIV = async (): Promise<number> => {
     const iv = await this.treasuryContract.intrinsicValueRatio();
     const { temple, stablec } = iv;
-    const rate = fromAtto(temple) / fromAtto(stablec) / MINT_MULTIPLE;
-    return formatNumber(1 / rate);
+    const rate = fromAtto(stablec) / fromAtto(temple);
+    return formatNumber(rate);
   };
 
   /**

@@ -1,4 +1,5 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { Howl } from 'howler';
 import Altars, { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/altar-exit.jpg';
@@ -6,10 +7,12 @@ import glow1 from 'assets/images/1_glow.png';
 import glow2 from 'assets/images/2_glow.png';
 import glow3 from 'assets/images/3_glow.png';
 import glow4 from 'assets/images/4_glow.png';
+import exitAltarTrack from 'assets/sounds/exit-altar-bg-track.mp3';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 import { Background } from 'components/BackgroundItem/Background';
+import useCancellableTrack from 'hooks/use-cancellable-track';
 
 type BgDimension = {
   width: number;
@@ -20,12 +23,11 @@ type BgDimension = {
   imageHeight: number;
 };
 
-enum Pages {
-  Foyer,
-  Left,
-  Center,
-  Right,
-}
+const soundscape = new Howl({
+  src: [exitAltarTrack],
+  loop: true,
+  volume: 0.15,
+});
 
 const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
   // Used to determine door images size and position
@@ -43,6 +45,8 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
     setBgDimensions(backgroundDimensions);
   }
 
+  const stopTrack = useCancellableTrack(soundscape);
+
   useEffect(() => {
     return () => {
       window.onresize = null;
@@ -50,7 +54,14 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
   }, []);
 
   return (
-    <>
+    <div
+      style={{
+        height: '100vh',
+        width: '100vw',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
       <Background
         src={bgImage}
         onLoad={(e) => {
@@ -149,8 +160,13 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
           />
         </>
       )}
-      <BackButton onClick={back} />
-    </>
+      <BackButton
+        onClick={() => {
+          stopTrack();
+          back();
+        }}
+      />
+    </div>
   );
 };
 
