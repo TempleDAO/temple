@@ -251,6 +251,9 @@ export class MetricsService {
     const unClaimedOGTempleBalance =
       OGTempleBalanceStaked - OGTempleBalanceUnstaked;
 
+    const epy =
+      Number(await this.templeStakingContract.getEpy(10000000)) / 10000000;
+
     return {
       templeBalance,
       templeValue,
@@ -259,7 +262,7 @@ export class MetricsService {
       lockedOGTempleBalance,
       unClaimedOGTempleBalance,
       totalSacrificed,
-      templeApy: await this.getTempleApy(),
+      templeApy: await this.getTempleApy(epy),
     };
   }
 
@@ -276,13 +279,11 @@ export class MetricsService {
   /**
    * Helper to calculate the APY
    */
-  private getTempleApy = async (): number => {
-    /* TODO: update this back to read from contract once we decide */
-    // epy =
-    //     (await this.templeStakingContract.getEpy(10000000)).toNumber() /
-    //     10000000;
-
-    const epy = 0.01;
+  private getTempleApy = async (epy): number => {
+    if (!epy)
+      epy =
+        (await this.templeStakingContract.getEpy(10000000)).toNumber() /
+        10000000;
     return Math.trunc((Math.pow(epy + 1, 365.25) - 1) * 100);
   };
 
