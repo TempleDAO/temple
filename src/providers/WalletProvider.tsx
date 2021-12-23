@@ -58,7 +58,7 @@ export enum RitualKind {
   INVITE_FRIEND = 'INVITE_FRIEND',
 }
 
-type COIN_TYPE = 'FRAX' | 'OGT' | 'TEMPLE';
+type COIN_TYPE = 'FRAX' | 'OGTEMPLE' | 'TEMPLE';
 
 enum ETH_ACTIONS {
   REQUEST_ACCOUNTS = 'eth_requestAccounts',
@@ -829,7 +829,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
             OPENING_CEREMONY_ADDRESS
           );
           break;
-        case 'OGT':
+        case 'OGTEMPLE':
           allowance = await OGTContract.allowance(
             walletAddress,
             TEMPLE_STAKING_ADDRESS
@@ -856,7 +856,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
                 DEFAULT_ALLOWANCE
               );
               break;
-            case 'OGT':
+            case 'OGTEMPLE':
               approveTXN = await OGTContract.approve(
                 TEMPLE_STAKING_ADDRESS,
                 DEFAULT_ALLOWANCE
