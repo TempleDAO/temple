@@ -592,15 +592,12 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getApy = async () => {
     if (walletAddress && signerState) {
-      // const TEMPLE_STAKING = new TempleStaking__factory()
-      //   .attach(TEMPLE_STAKING_ADDRESS)
-      //   .connect(signerState);
-      // const SCALE_FACTOR = 10000;
-      /* TODO: update this back to read from contract once we decide */
-      // const epy = (await TEMPLE_STAKING.getEpy(SCALE_FACTOR)).toNumber();
-      // setApy(Math.trunc((Math.pow(epy / SCALE_FACTOR + 1, 365.25) - 1) * 100));
-      const epy = 0.01;
-      setApy(Math.trunc((Math.pow(epy + 1, 365.25) - 1) * 100));
+      const TEMPLE_STAKING = new TempleStaking__factory()
+        .attach(TEMPLE_STAKING_ADDRESS)
+        .connect(signerState);
+      const SCALE_FACTOR = 10000;
+      const epy = (await TEMPLE_STAKING.getEpy(SCALE_FACTOR)).toNumber();
+      setApy(Math.trunc((Math.pow(epy / SCALE_FACTOR + 1, 365.25) - 1) * 100));
     }
   };
 
