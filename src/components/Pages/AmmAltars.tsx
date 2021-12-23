@@ -35,7 +35,7 @@ export enum AMMView {
   BUY = 'BUY',
   STAKE = 'STAKE',
 
-  UNLOCK = 'UNLOCK OG TEMPLE',
+  UNLOCK = 'UNLOCK OGTEMPLE',
   JOIN_QUEUE = 'JOIN QUEUE',
   WITHDRAW = 'WITHDRAW TEMPLE',
   SELL = 'SELL',
@@ -192,7 +192,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
         await increaseAllowanceForRitual(
           toAtto(OGTAmount),
           RitualKind.OGT_UNLOCK,
-          'OGT'
+          'OGTEMPLE'
         );
         getBalance();
       }
@@ -370,8 +370,8 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 <Tooltip
                   content={
                     <small>
-                      You will receive $ogtemple when you pledge your $temple to
-                      the staking contract
+                      You will receive $OGTEMPLE when you pledge your $TEMPLE to
+                      the staking contract.
                     </small>
                   }
                   position={'top'}
@@ -469,10 +469,10 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               <Tooltip
                 content={
                   <small>
-                    Your $TEMPLE tokens are unstaked by burning your $ogtemple
-                    and joining the exit queue. the queue is processed first in,
-                    first out. once you are processed you will be able to claim
-                    your $temple tokens.
+                    Your $TEMPLE tokens are unstaked by burning your $OGTEMPLE
+                    and joining the exit queue. The queue is processed first in,
+                    first out. Once you are processed you will be able to claim
+                    your $TEMPLE tokens.
                   </small>
                 }
                 position={'top'}
@@ -490,7 +490,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
 
             <Input
               hint={`Balance: ${formatNumber(OGTWalletAmount)}`}
-              crypto={{ kind: 'value', value: 'OGT' }}
+              crypto={{ kind: 'value', value: 'OGTEMPLE' }}
               type={'number'}
               max={OGTWalletAmount}
               min={0}
@@ -696,7 +696,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
       bgImage = EnterBgImage;
     }
     if (
-      activeAMMView === 'UNLOCK OG TEMPLE' ||
+      activeAMMView === 'UNLOCK OGTEMPLE' ||
       activeAMMView === 'JOIN QUEUE' ||
       activeAMMView === 'WITHDRAW TEMPLE' ||
       activeAMMView === 'SELL'
