@@ -113,6 +113,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ISwapRouter__factory>;
     getContractFactory(
+      name: "AcceleratedExitQueue",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AcceleratedExitQueue__factory>;
+    getContractFactory(
       name: "AmmIncentivisor",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.AmmIncentivisor__factory>;
@@ -370,6 +374,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ISwapRouter>;
+    getContractAt(
+      name: "AcceleratedExitQueue",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AcceleratedExitQueue>;
     getContractAt(
       name: "AmmIncentivisor",
       address: string,
