@@ -79,7 +79,9 @@ export class MetricsService {
       ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS === undefined
+      ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS === undefined ||
+      ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS === undefined ||
+      ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS === undefined
     ) {
       console.info(`
       VITE_ALCHEMY_PROVIDER_NETWORK=${ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK}
@@ -91,6 +93,8 @@ export class MetricsService {
       VITE_PUBLIC_TEMPLE_STAKING_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS}
       VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS=${ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS}
       VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS}
+      VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS}
+      VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS}
       `);
       throw new Error(`Missing env vars in Metrics Service`);
     }
@@ -103,6 +107,8 @@ export class MetricsService {
     const SERVER_PRIVATE_KEY = ENV_VARS.VITE_SERVER_PRIVATE_KEY;
     const TEMPLE_STAKING_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS;
     const PAIR_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS;
+    const ROUTER_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS;
+    const AMM_OPS_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS;
     const LOCKED_OG_TEMPLE_ADDRESS =
       ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS;
     const ENV = ENV_VARS.VITE_ENV;
@@ -128,6 +134,13 @@ export class MetricsService {
 
     this.pairAddress = PAIR_ADDRESS;
     this.treasuryAddress = TREASURY_ADDRESS;
+    this.treasuryAddresses = [
+      TREASURY_ADDRESS,
+      AMM_OPS_ADDRESS,
+      ROUTER_ADDRESS,
+      PAIR_ADDRESS,
+    ];
+
     this.treasuryContract = new TempleTreasury__factory()
       .attach(TREASURY_ADDRESS)
       .connect(this.signer);
@@ -145,9 +158,7 @@ export class MetricsService {
    * Gets Temple Treasury Metrics
    */
   async getTreasuryMetrics(): Promise<TreasuryMetrics> {
-    const treasuryValue =
-      fromAtto(await this.stableCoinContract.balanceOf(this.treasuryAddress)) +
-      fromAtto(await this.stableCoinContract.balanceOf(this.pairAddress));
+    const treasuryValue = await this.getTreasuryValue();
 
     return {
       treasuryValue,
@@ -161,9 +172,7 @@ export class MetricsService {
       .attach(await this.templeStakingContract.OG_TEMPLE())
       .connect(this.signer);
 
-    const treasuryValue =
-      fromAtto(await this.stableCoinContract.balanceOf(this.treasuryAddress)) +
-      fromAtto(await this.stableCoinContract.balanceOf(this.pairAddress));
+    const treasuryValue = await this.getTreasuryValue();
     const treasuryTempleValue = fromAtto(
       await this.templeCoinContract.balanceOf(this.treasuryAddress)
     );
@@ -265,6 +274,19 @@ export class MetricsService {
       templeApy: await this.getTempleApy(epy),
     };
   }
+
+  /**
+   * Helper to get the Treasury value
+   */
+  private getTreasuryValue = async (): Promise<number> => {
+    let treasuryValue = 0;
+    for (const address of this.treasuryAddresses) {
+      treasuryValue += fromAtto(
+        await this.stableCoinContract.balanceOf(address)
+      );
+    }
+    return treasuryValue;
+  };
 
   /**
    * Helper to get the Temple IV
