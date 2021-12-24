@@ -9,7 +9,10 @@ import { curveCatmullRom } from 'd3-shape';
 import { FlexibleXYPlot, XAxis, YAxis, LineSeries, Crosshair } from 'react-vis';
 import { formatNumber } from 'utils/formatter';
 import Image from 'components/Image/Image';
-import useRefreshablePriceMetrics from 'hooks/use-refreshable-price-metrics';
+import Loader from 'components/Loader/Loader';
+import useRefreshablePriceMetrics, {
+  PriceMetrics,
+} from 'hooks/use-refreshable-price-metrics';
 import sunImage from 'assets/images/sun-art.svg';
 import 'react-vis/dist/style.css';
 
@@ -30,7 +33,6 @@ export enum TIME_INTERVAL {
 }
 
 const availableIntervals = [
-  { interval: TIME_INTERVAL.ONE_HOUR, label: '1H' },
   { interval: TIME_INTERVAL.ONE_DAY, label: '1D' },
   { interval: TIME_INTERVAL.ONE_WEEK, label: '1W' },
   { interval: TIME_INTERVAL.ONE_MONTH, label: '1M' },
@@ -41,6 +43,7 @@ const availableIntervals = [
 export type ChartData = {
   priceDataPoints: DataPoint[];
   ivDataPoints: DataPoint[];
+  templeThresholdDataPoints: DataPoint[];
 };
 
 export type DataPoint = {
@@ -134,12 +137,20 @@ const NotEnoughData = styled.div`
   height: 100%;
 `;
 
+const LoaderContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+`;
+
 export const PriceChart = ({
   timeInterval = TIME_INTERVAL.ONE_WEEK,
 }: LineChartProps) => {
   const [selectedInterval, setSelectedInterval] = useState(timeInterval);
   const [loading, setLoading] = useState(true);
-  const data = useProtocolMetrics();
+  const data = useProtocolMetrics(selectedInterval);
 
   const { dataPoints, xDomain, yDomain, priceData } = useTemplePrice(
     data,
@@ -155,7 +166,16 @@ export const PriceChart = ({
     if (data.priceDataPoints.length && loading) {
       setLoading(false);
     }
-  }, [data, loading, setLoading]);
+  }, [data]);
+
+  if (loading) {
+    return (
+      <LoaderContainer>
+        <Loader iconSize={72} />
+        Reading the scriptures...
+      </LoaderContainer>
+    );
+  }
 
   return (
     <Container>
@@ -218,6 +238,16 @@ export const PriceChart = ({
               curve={curveCatmullRom}
               //this prop exists, typedef must be outdated
               //@ts-ignore
+              strokeWidth={3}
+              strokeStyle="dashed"
+              onNearestX={onNearestX}
+            />
+            <LineSeries
+              data={dataPoints.templeThresholdDataPoints}
+              color={'#7D4D2C'}
+              curve={curveCatmullRom}
+              //this prop exists, typedef must be outdated
+              //@ts-ignore
               strokeWidth={2}
               strokeStyle="dashed"
               onNearestX={onNearestX}
@@ -228,10 +258,9 @@ export const PriceChart = ({
               curve={curveCatmullRom}
               //this prop exists, typedef must be outdated
               //@ts-ignore
-              strokeWidth={5}
+              strokeWidth={2}
               onNearestX={onNearestX}
             />
-            {/* array of x values per index */}
             <Crosshair
               values={crosshairValues}
               titleFormat={(d) => ({
@@ -241,6 +270,12 @@ export const PriceChart = ({
               itemsFormat={(d) => [
                 { title: 'price', value: `$${+Number(d[0].y).toFixed(4)}` },
                 { title: 'IV', value: `$${+Number(d[1].y).toFixed(4)}` },
+                {
+                  title: 'threshold',
+                  value: `${
+                    isNaN(d[2].y) ? 'N/A' : '$' + +Number(d[2].y).toFixed(4)
+                  }`,
+                },
               ]}
             />
           </FlexibleXYPlot>
@@ -257,32 +292,37 @@ export const PriceChart = ({
   );
 };
 
-function useProtocolMetrics() {
-  const metrics = useRefreshablePriceMetrics();
-  let data: ChartData = {
+function useProtocolMetrics(timeInterval: TIME_INTERVAL) {
+  const { hourlyPriceMetrics, dailyPriceMetrics } =
+    useRefreshablePriceMetrics();
+
+  let hourlyData: ChartData = {
     priceDataPoints: [],
     ivDataPoints: [],
+    templeThresholdDataPoints: [],
   };
 
-  if (metrics.length) {
-    const priceDataPoints = metrics.map((dataPoint) => ({
-      x: Number(dataPoint.timestamp) * 1000,
-      y: Number(dataPoint.templePrice),
-    }));
+  let dailyData: ChartData = {
+    priceDataPoints: [],
+    ivDataPoints: [],
+    templeThresholdDataPoints: [],
+  };
 
-    const ivDataPoints = metrics.map((dataPoint) => ({
-      x: Number(dataPoint.timestamp) * 1000,
-      y: Number(dataPoint.treasuryStables) / Number(dataPoint.templeSupply),
-    }));
-
-    data = { priceDataPoints, ivDataPoints };
+  if (dailyPriceMetrics.length && hourlyPriceMetrics.length) {
+    hourlyData = formatMetrics(hourlyPriceMetrics);
+    dailyData = formatMetrics(dailyPriceMetrics);
   }
 
-  return data;
+  return timeInterval <= TIME_INTERVAL.ONE_WEEK ? hourlyData : dailyData;
 }
 
 function useCrosshairs(data: ChartData) {
-  const dataArr = [data.priceDataPoints, data.ivDataPoints];
+  const dataArr = [
+    data.priceDataPoints,
+    data.ivDataPoints,
+    data.templeThresholdDataPoints,
+  ];
+
   const [crosshairValues, setCrosshairValues] = useState<CrosshairData[]>([]);
 
   function curateValue(dataPoint: DataPoint): CrosshairData {
@@ -308,7 +348,11 @@ function useCrosshairs(data: ChartData) {
 function useTemplePrice(data: ChartData, interval: TIME_INTERVAL) {
   if (!data?.priceDataPoints?.length) {
     return {
-      dataPoints: { priceDataPoints: [], ivDataPoints: [] },
+      dataPoints: {
+        priceDataPoints: [],
+        ivDataPoints: [],
+        templeThresholdDataPoints: [],
+      },
       xDomain: [],
       yDomain: [],
       priceData: { currentPrice: 0, domainPriceChangePercentage: 0 },
@@ -322,6 +366,8 @@ function useTemplePrice(data: ChartData, interval: TIME_INTERVAL) {
   const domainDataPoints: ChartData = {
     priceDataPoints: data.priceDataPoints.filter(domainFilter),
     ivDataPoints: data.ivDataPoints.filter(domainFilter),
+    templeThresholdDataPoints:
+      data.templeThresholdDataPoints.filter(domainFilter),
   };
 
   const upperPriceThreshold = Math.abs(
@@ -359,6 +405,47 @@ function useTemplePrice(data: ChartData, interval: TIME_INTERVAL) {
   }
 
   return { dataPoints: domainDataPoints, xDomain, yDomain, priceData };
+}
+
+function formatMetrics(metrics: PriceMetrics[]) {
+  type ReducerState = {
+    priceDataPoints: DataPoint[];
+    ivDataPoints: DataPoint[];
+    templeThresholdDataPoints: DataPoint[];
+  };
+
+  const initialReducerState: ReducerState = {
+    priceDataPoints: [],
+    ivDataPoints: [],
+    templeThresholdDataPoints: [],
+  };
+
+  const { priceDataPoints, ivDataPoints, templeThresholdDataPoints } =
+    metrics.reduce((acc, dataPoint) => {
+      const utcTimestamp = Number(dataPoint.timestamp) * 1000;
+
+      acc.priceDataPoints.push({
+        x: utcTimestamp,
+        y: Number(dataPoint.templePrice),
+      });
+
+      acc.ivDataPoints.push({
+        x: utcTimestamp,
+        y: Number(dataPoint.treasuryStables) / Number(dataPoint.templeSupply),
+      });
+
+      const threshold = Number(dataPoint.thresholdTemplePrice);
+      acc.templeThresholdDataPoints.push({
+        x: utcTimestamp,
+        // threshold being 0 means the subgraph has no data for it at this timestamp
+        // so we use NaN as a fallback and manipulate the tooltip in Crosshair props
+        y: threshold === 0 ? NaN : threshold,
+      });
+
+      return acc;
+    }, initialReducerState);
+
+  return { priceDataPoints, ivDataPoints, templeThresholdDataPoints };
 }
 
 function formatDate(utcDate: Date) {
