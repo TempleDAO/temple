@@ -1248,18 +1248,49 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .attach(ACCELERATED_EXIT_QUEUE_ADDRESS)
         .connect(signerState);
 
-      if (exitQueueData.claimableEpochs.length) {
+      const EXIT_QUEUE = new ExitQueue__factory()
+        .attach(EXIT_QUEUE_ADDRESS)
+        .connect(signerState);
+
+      const userData = await EXIT_QUEUE.userData(walletAddress);
+
+      const currentEpoch = (await EXIT_QUEUE.currentEpoch()).toNumber();
+      const firstEpoch = userData.FirstExitEpoch.toNumber();
+      const lastEpoch = userData.LastExitEpoch.toNumber();
+      const exitEntryPromises = [];
+
+      // stores all epochs address has in the ExitQueue.sol, some might have Allocation 0
+      const maybeClaimableEpochs: Array<number> = [];
+      // stores all epochs with allocations for address
+      const claimableEpochs: Array<number> = [];
+
+      for (let i = firstEpoch; i < lastEpoch; i++) {
+        maybeClaimableEpochs.push(i);
+        exitEntryPromises.push(
+          EXIT_QUEUE.currentEpochAllocation(walletAddress, i)
+        );
+      }
+
+      const exitEntries = await Promise.all(exitEntryPromises);
+      exitEntries.reduce((prev, curr, index) => {
+        // the contract is not removing the user.Exits[epoch], so we only get the ones with a claimable amount(anything above 0)
+        if (fromAtto(curr) > 0) {
+          claimableEpochs.push(maybeClaimableEpochs[index]);
+        }
+        return prev.add(curr);
+      }, BigNumber.from(0));
+
+      if (claimableEpochs.length) {
         const baseCase =
           ENV_VARS.VITE_PUBLIC_RESTAKE_EPOCHS_BASE_GAS_LIMIT || 175000;
         const perEpoch =
           ENV_VARS.VITE_PUBLIC_RESTAKE_EPOCHS_PER_EPOCH_GAS_LIMIT || 20000;
         const recommendedGas =
-          Number(baseCase) +
-          Number(perEpoch) * exitQueueData.claimableEpochs.length;
+          Number(baseCase) + Number(perEpoch) * claimableEpochs.length;
 
         const restakeTXN = await ACCELERATED_EXIT_QUEUE.restake(
-          exitQueueData.claimableEpochs,
-          exitQueueData.claimableEpochs.length,
+          claimableEpochs,
+          claimableEpochs.length,
           {
             gasLimit: recommendedGas || 500000,
           }
