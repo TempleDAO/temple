@@ -1442,13 +1442,32 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const EXIT_QUEUE = new ExitQueue__factory()
         .attach(EXIT_QUEUE_ADDRESS)
         .connect(signerState);
+      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory()
+        .attach(ACCELERATED_EXIT_QUEUE_ADDRESS)
+        .connect(signerState);
 
       const MAINNET_APROX_BLOCKS_PER_DAY = 6400;
       const epochSizeInBlocks = (await EXIT_QUEUE.epochSize()).toNumber();
       const epochsPerDay = MAINNET_APROX_BLOCKS_PER_DAY / epochSizeInBlocks;
 
-      return formatNumber(epochs / epochsPerDay);
+      const accelerationStartEpoch =
+        await ACCELERATED_EXIT_QUEUE.accelerationStartAtEpoch();
+      const currentEpoch = await ACCELERATED_EXIT_QUEUE.currentEpoch();
+
+      const epochsToDays = epochs / epochsPerDay;
+      // Calculate accelerated days
+      if (accelerationStartEpoch.lte(currentEpoch)) {
+        const num =
+          await ACCELERATED_EXIT_QUEUE.epochAccelerationFactorNumerator();
+        const den =
+          await ACCELERATED_EXIT_QUEUE.epochAccelerationFactorDenominator();
+        const acceleratedDays = epochsToDays / (1 + num.div(den).toNumber());
+        return formatNumber(acceleratedDays);
+      }
+
+      return formatNumber(epochsToDays);
     }
+
     return 0;
   };
 
