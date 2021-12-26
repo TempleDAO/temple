@@ -656,10 +656,13 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 }}
               >
                 <Button
-                  label={'RESTAKE available temple'}
+                  label={'restake all temple'}
                   onClick={restakeAvailableTemple}
                   isUppercase
-                  disabled={exitQueueData.claimableTemple === 0}
+                  disabled={
+                    exitQueueData.totalTempleOwned === 0 &&
+                    exitQueueData.claimableTemple === 0
+                  }
                 />
               </Flex>
               <Flex
