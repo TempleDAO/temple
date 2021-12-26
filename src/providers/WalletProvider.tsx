@@ -1210,8 +1210,8 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const claimAvailableTemple = async (): Promise<void> => {
     if (walletAddress && signerState) {
-      const EXIT_QUEUE = new ExitQueue__factory()
-        .attach(EXIT_QUEUE_ADDRESS)
+      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory()
+        .attach(ACCELERATED_EXIT_QUEUE_ADDRESS)
         .connect(signerState);
 
       if (exitQueueData.claimableEpochs.length) {
@@ -1223,7 +1223,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           Number(baseCase) +
           Number(perEpoch) * exitQueueData.claimableEpochs.length;
 
-        const withdrawTXN = await EXIT_QUEUE.withdrawEpochs(
+        const withdrawTXN = await ACCELERATED_EXIT_QUEUE.withdrawEpochs(
           exitQueueData.claimableEpochs,
           exitQueueData.claimableEpochs.length,
           {
