@@ -637,7 +637,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                     'dd, mmm h:MM TT'
                   )}`}
                   tooltipContent={
-                    'The time at which all of your $temple will be available to withdraw'
+                    'The time at which all of your $TEMPLE will be available to withdraw'
                   }
                 />
               </Flex>
