@@ -1264,7 +1264,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       // stores all epochs with allocations for address
       const claimableEpochs: Array<number> = [];
 
-      for (let i = firstEpoch; i < lastEpoch; i++) {
+      for (let i = firstEpoch; i <= lastEpoch; i++) {
         maybeClaimableEpochs.push(i);
         exitEntryPromises.push(
           EXIT_QUEUE.currentEpochAllocation(walletAddress, i)
