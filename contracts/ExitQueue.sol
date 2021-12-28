@@ -8,6 +8,11 @@ import "./TempleERC20Token.sol";
 
 // import "hardhat/console.sol";
 
+// Assumption, any new unstake queue will have the same interface
+interface IExitQueue {
+    function join(address _exiter, uint256 _amount) external;
+}
+
 /**
  * How all exit of TEMPLE rewards are managed.
  */
@@ -117,7 +122,7 @@ contract ExitQueue is Ownable {
         }
 
         if (nextUnallocatedEpoch < currentEpoch()) {
-            nextUnallocatedEpoch = currentEpoch();
+            nextUnallocatedEpoch = currentEpoch() + 1;
         }
 
         User storage user = userData[_exiter];
@@ -167,27 +172,48 @@ contract ExitQueue is Ownable {
     }
 
     /**
-     * Withdraw processed allowance from a specific epoch
+     * Withdraw internal per epoch
      */
-    function withdraw(uint256 epoch) external {
-        require(epoch < currentEpoch(), "Can only withdraw from past epochs");
+    function withdrawInternal(uint256 epoch, address sender, bool isMigration) internal returns (uint256 amount) {
+        require(epoch < currentEpoch() || isMigration, "Can only withdraw from past epochs");
 
-        User storage user = userData[msg.sender];
-
-        uint256 amount = user.Exits[epoch];
+        User storage user = userData[sender];
+        amount = user.Exits[epoch];
         delete user.Exits[epoch];
-        totalPerEpoch[epoch] -= amount; // TODO: WHen this goes to 0, is it the same as the data being removed?
+        totalPerEpoch[epoch] -= amount;
         user.Amount -= amount;
-
-        // Once all allocations on queue have been claimed, reset user state
         if (user.Amount == 0) {
-            // NOTE: triggers ExitQueue.withdraw(uint256) (contracts/ExitQueue.sol #150-167) deletes ExitQueue.User (contracts/ExitQueue.sol#15-27) which contains a mapping
-            //        This is okay as if Amount is 0, we'd expect user.Exits to be empty as well
-            //        TODO: Confirm this via tests
-            delete userData[msg.sender];
+            delete userData[sender];
         }
+    }
 
-        SafeERC20.safeTransfer(TEMPLE, msg.sender, amount);
-        emit Withdrawal(msg.sender, amount);    
+    /**
+     * Withdraw processed allowance from multiple epochs
+     */
+    function withdrawEpochs(uint256[] calldata epochs, uint256 length) external {
+        uint256 totalAmount;
+        for (uint i = 0; i < length; i++) {
+            if (userData[msg.sender].Amount > 0) {
+                uint256 amount = withdrawInternal(epochs[i], msg.sender, false);
+                totalAmount += amount;
+            } 
+        }
+        SafeERC20.safeTransfer(TEMPLE, msg.sender, totalAmount);
+        emit Withdrawal(msg.sender, totalAmount);
+    }
+
+    /**
+     * Owner only, migrate users between exit queue implementations
+     */
+    function migrate(address exiter, uint256[] calldata epochs, uint256 length, IExitQueue newExitQueue) external onlyOwner {
+        uint256 totalAmount;
+        for (uint i = 0; i < length; i++) {
+            if (userData[exiter].Amount > 0) {
+                uint256 amount = withdrawInternal(epochs[i], exiter, true);
+                totalAmount += amount;
+            } 
+        }
+        SafeERC20.safeIncreaseAllowance(TEMPLE, address(newExitQueue), totalAmount);
+        newExitQueue.join(exiter, totalAmount);
     }
 }

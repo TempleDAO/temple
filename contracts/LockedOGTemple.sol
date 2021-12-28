@@ -10,35 +10,33 @@ import "./OGTemple.sol";
 contract LockedOGTemple {
     struct LockedEntry {
         // How many tokens are locked
-        uint256 BalanceOGTemple;
+        uint256 amount;
 
         // WHen can the user unlock these tokens
-        uint256 LockedUntilTimestamp;
+        uint256 lockedUntilTimestamp;
     }
 
     // All temple locked for any given user
-    mapping(address => LockedEntry[]) public locked;
+    mapping(address => LockedEntry) public ogTempleLocked;
 
-    OGTemple public OG_TEMPLE; // The token being staked, for which TEMPLE rewards are generated
+    OGTemple public ogTempleToken;
 
-    event OGTempleLocked(address _staker, uint256 _amount, uint256 _lockedUntil);
-    event OGTempleWithdraw(address _staker, uint256 _amount);
+    event Lock(address staker, uint256 increasedByOgTemple, uint256 totalLockedOgTemple, uint256 lockedUntil);
+    event Unlock(address staker, uint256 amount);
 
-    constructor(OGTemple _OG_TEMPLE) {
-        OG_TEMPLE = _OG_TEMPLE;
-    }
-
-    function numLocks(address _staker) external view returns(uint256) {
-        return locked[_staker].length;
+    constructor(OGTemple _ogTempleToken) {
+        ogTempleToken = _ogTempleToken;
     }
 
     /** lock up OG */
-    function lockFor(address _staker, uint256 _amountOGTemple, uint256 _lockedUntilTimestamp) public {
-        LockedEntry memory lockEntry = LockedEntry({BalanceOGTemple: _amountOGTemple, LockedUntilTimestamp: _lockedUntilTimestamp});
-        locked[_staker].push(lockEntry);
+    function lockFor(address _staker, uint256 _amountOGTemple, uint256 _unlockDelaySeconds) public {
+        LockedEntry storage lockEntry = ogTempleLocked[_staker];
+        
+        lockEntry.amount += _amountOGTemple;
+        lockEntry.lockedUntilTimestamp = block.timestamp + _unlockDelaySeconds;
 
-        SafeERC20.safeTransferFrom(OG_TEMPLE, msg.sender, address(this), _amountOGTemple);
-        emit OGTempleLocked(_staker, _amountOGTemple, _lockedUntilTimestamp);
+        SafeERC20.safeTransferFrom(ogTempleToken, msg.sender, address(this), _amountOGTemple);
+        emit Lock(_staker, _amountOGTemple, lockEntry.amount, lockEntry.lockedUntilTimestamp);
     }
 
     function lock(uint256 _amountOGTemple, uint256 _lockedUntilTimestamp) external {
@@ -46,22 +44,17 @@ contract LockedOGTemple {
     }
 
     /** Withdraw a specific locked entry */
-    function withdrawFor(address _staker, uint256 _idx) public {
-        LockedEntry[] storage lockedEntries = locked[_staker];
+    function unlockFor(address _staker, uint256 _amountOGTemple) public {
+        LockedEntry storage lockEntry = ogTempleLocked[_staker];
+        require(lockEntry.lockedUntilTimestamp < block.timestamp, "LockedOGTemple: Still Locked");
+        require(_amountOGTemple <= lockEntry.amount, "LockedOGTemple: can't unlock more than originally locked");
 
-        require(_idx < lockedEntries.length, "No lock entry at the specified index");
-        require(lockedEntries[_idx].LockedUntilTimestamp < block.timestamp, "Specified entry is still locked");
-
-        LockedEntry memory entry = lockedEntries[_idx];
-
-        lockedEntries[_idx] = lockedEntries[lockedEntries.length-1];
-        lockedEntries.pop();
-
-        SafeERC20.safeTransfer(OG_TEMPLE, _staker, entry.BalanceOGTemple);
-        emit OGTempleWithdraw(_staker, entry.BalanceOGTemple);
+        lockEntry.amount -= _amountOGTemple;
+        SafeERC20.safeTransfer(ogTempleToken, _staker, _amountOGTemple);
+        emit Unlock(_staker, _amountOGTemple);
     }
 
-    function withdraw(uint256 _idx) external {
-        withdrawFor(msg.sender, _idx);
+    function unlock(uint256 _amountOGTemple) external {
+        unlockFor(msg.sender, _amountOGTemple);
     }
 }

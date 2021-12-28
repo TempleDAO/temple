@@ -8,8 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./TempleERC20Token.sol";
 import "./TempleTreasury.sol";
 import "./TempleStaking.sol";
-import "./LockedOGTemple.sol";
-import "./OpeningCeremony.sol";
+import "./deprecated/OpeningCeremony.sol";
 
 // USDC/USDT/DAI/ETH Zaps
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
@@ -24,7 +23,6 @@ interface IUniswapRouter is ISwapRouter {
  */
 contract Zap is Ownable {
     OpeningCeremony public openingCeremonyContract;
-    SandalwoodToken public sandalwoodToken;
     
     IERC20 public stablecToken; // ERC20 exchanged for temple
 
@@ -37,13 +35,11 @@ contract Zap is Ownable {
 
     constructor(
       OpeningCeremony _openingCeremonyContract,
-      SandalwoodToken _sandalwoodToken,
       IERC20 _stablecToken,
       IUniswapRouter _uniswapRouter,
       IQuoter _quoter) {
 
       openingCeremonyContract = _openingCeremonyContract;
-      sandalwoodToken = _sandalwoodToken;
       stablecToken = _stablecToken;
       uniswapRouter = _uniswapRouter;
       quoter = _quoter;

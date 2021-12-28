@@ -1,14 +1,7 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers, network } from 'hardhat';
 import { ERC20__factory, TempleTreasury__factory } from '../../../typechain';
-import { deployAndMine, DeployedContracts, DEPLOYED_CONTRACTS, fromAtto, toAtto } from '../helpers';
-
-const EPOCH_SIZE = 24 * 60 * 60;
-const START_TIMESTAMP = 1632880800; // Wednesday, September 29, 2021 2:00:00 AM UTC
-const UNLOCK_TIMESTAMP = 1637236800; // Thursday, November 18, 2021 12:00:00 PM UTC
-const MAX_EXITABLE_PER_ADDRESS = toAtto(1000) ;
-const MAX_EXITABLE_PER_EPOCH = toAtto(1000) ;
-const MINT_MULTIPLE = 6;
+import { deployAndMine, DeployedContracts, DEPLOYED_CONTRACTS } from '../helpers';
 
 async function main() {
   const [owner] = await ethers.getSigners();
