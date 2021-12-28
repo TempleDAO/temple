@@ -7,6 +7,7 @@ export interface DeployedContracts {
   TEMPLE: string
   OLD_EXIT_QUEUE: string
   EXIT_QUEUE: string
+  ACCELERATED_EXIT_QUEUE: string
   STAKING: string
   LOCKED_OG_TEMPLE: string,
   TREASURY: string,
@@ -55,6 +56,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     // Active contrats
     TEMPLE: '0x7fC7560Ee3b0a1262ab40B6bA7Bfa490AFD83192',
     EXIT_QUEUE: '0xebf907651D90C97518C08cf28E6264931a6afd7F',
+    ACCELERATED_EXIT_QUEUE: '0x64F1102F99E65dB18566a8A4dEB005D23B73776f',
     STAKING: '0x23cA32f59384a4B954Bb29932F499a4842F154Dd',
     LOCKED_OG_TEMPLE: '0x2Ad6671bCAd84A2a12BeB5da2d1C490aA00dcBEC',
     TREASURY: '0x0c8Ae2793F5ED0479084f92284BfF8f8E587F8BC',
@@ -85,6 +87,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     // Active contrats
     TEMPLE: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     EXIT_QUEUE: '0x967591888A5e8aED9D2A920fE4cC726e83d2bca9',
+    ACCELERATED_EXIT_QUEUE: '0xC6d556C34a179a224AEBE42e77c6e76594148B97',
     STAKING: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
     LOCKED_OG_TEMPLE: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
     TREASURY: '0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443',
@@ -112,6 +115,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     // Active contrats
     TEMPLE: process.env.TEMPLE || '',
     EXIT_QUEUE: process.env.EXIT_QUEUE || '',
+    ACCELERATED_EXIT_QUEUE: process.env.ACCELERATED_EXIT_QUEUE || '',
     STAKING: process.env.STAKING || '',
     LOCKED_OG_TEMPLE: process.env.LOCKED_OG_TEMPLE || '',
     TREASURY: process.env.TREASURY || '',

@@ -20,6 +20,8 @@ import {
   TempleTreasury__factory,
   TempleUniswapV2Pair__factory,
   TreasuryManagementProxy__factory,
+  AcceleratedExitQueue,
+  AcceleratedExitQueue__factory,
 } from '../../typechain';
 
 function toAtto(n: number) {
@@ -172,6 +174,13 @@ async function main() {
   // Buy the Dip
   const faith = await new Faith__factory(owner).deploy();
 
+  const acceleratedExitQueue = await new AcceleratedExitQueue__factory(owner).deploy(
+    templeToken.address,
+    exitQueue.address,
+    templeStaking.address
+  );
+  await exitQueue.transferOwnership(acceleratedExitQueue.address);
+
   const ammIncentivisor = await new AmmIncentivisor__factory(owner).deploy(
     stablecToken.address,
     faith.address,
@@ -198,6 +207,7 @@ async function main() {
     'TEMPLE_V2_PAIR_ADDRESS': pair.address,
     'TEMPLE_V2_ROUTER_ADDRESS': templeRouter.address,
     'TEMPLE_ROUTER_WHITELIST': ammWhitelist.address,
+    'ACCELERATED_EXIT_QUEUE': acceleratedExitQueue.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys
