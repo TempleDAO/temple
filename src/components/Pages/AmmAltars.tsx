@@ -633,7 +633,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 <DataCard
                   title={'QUEUE PROCESSED BY'}
                   data={`${dateFormat(
-                    exitQueueData.claimableAt,
+                    exitQueueData.lastClaimableEpochAt,
                     'dd, mmm h:MM TT'
                   )}`}
                   tooltipContent={
