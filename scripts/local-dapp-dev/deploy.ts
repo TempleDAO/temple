@@ -45,7 +45,7 @@ async function main() {
       templeToken.address,
       toAtto(50), /* max per epoch */
       toAtto(1000), /* max per address per epoch */
-      10, /* epoch size, in blocks */
+      640, /* epoch size, in blocks */
   );
 
   const templeStaking = await new TempleStaking__factory(owner).deploy(
