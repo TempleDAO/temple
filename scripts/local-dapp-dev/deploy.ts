@@ -219,7 +219,7 @@ async function main() {
   console.log('=========================================');
   console.log('*** Copy/pasta into .env.local for dApp dev\n\n');
   for (let envvar in contract_address) {
-    console.log(`NEXT_PUBLIC_${envvar}=${contract_address[envvar]}`);
+    console.log(`VITE_PUBLIC_${envvar}=${contract_address[envvar]}`);
   }
 
   console.log();
