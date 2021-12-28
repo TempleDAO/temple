@@ -45,6 +45,11 @@ contract TempleTeamPayments is Ownable {
         }
     }
 
+    function setAllocation(address _address, uint256 _amount) external onlyOwner {
+        require(_address != address(0), "TempleTeamPayments: Address cannot be 0x0");
+        allocation[_address] = _amount;
+    }
+
     function pauseMember(address _address)
         external
         onlyOwner

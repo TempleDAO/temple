@@ -1,6 +1,6 @@
 import { ethers, network } from "hardhat";
 import { Signer } from "ethers";
-import { expect } from "chai";
+import { expect, should } from "chai";
 
 import { mineNBlocks, shouldThrow } from "./helpers";
 
@@ -178,7 +178,8 @@ describe("Exit Queue", async () => {
         [3, 'clint', 100],
         [3, 'amanda', 100],
       [4, 'amanda', 100],
-        [6, 'ben', 50],
+        [6, 'ben', 0],
+        [7, 'ben', 50],
     );
   });
 
@@ -193,22 +194,24 @@ describe("Exit Queue", async () => {
       'clint': clint,
     }
 
-    const checkExit = async (expectedEpoch: number, epoch: number, expected: {[key: string]: number}) => {
+    const checkExitMultiple = async (expectedEpoch: number, epochs: Array<number>, expected: {[key: string]: number}) => {
       expect(await EXIT_QUEUE.currentEpoch(), "Expected epoch").eq(expectedEpoch);
 
-      if (epoch >= expectedEpoch) {
-        for (let name in expected) {
-          const exiter = users[name]
-          await shouldThrow(EXIT_QUEUE.connect(exiter).withdraw(epoch), /Can only withdraw from past epoch/);
+      for (let epoch of epochs) {
+        if (epoch >= expectedEpoch) {
+          for (let name in expected) {
+            const exiter = users[name]
+            await shouldThrow(EXIT_QUEUE.connect(exiter).withdrawEpochs([epoch], 1), /Can only withdraw from past epoch/);
+          }
+          return
         }
-        return
       }
 
       for (let name in expected) {
         const expectedWithdrawal = expected[name]
         const exiter = users[name]
         const preWithdrawBalance = (await TEMPLE.balanceOf(await exiter.getAddress())).toNumber()
-        await EXIT_QUEUE.connect(exiter).withdraw(epoch)
+        await EXIT_QUEUE.connect(exiter).withdrawEpochs(epochs, epochs.length)
         expect((await TEMPLE.balanceOf(await exiter.getAddress())).toNumber() - preWithdrawBalance, `${name} expected withdrawal`).eq(expectedWithdrawal)
       }
     }
@@ -216,7 +219,7 @@ describe("Exit Queue", async () => {
     // No exit even after a few joins (still in first block)
     await join(amanda, 100);
     await join(ben, 50);
-    await shouldThrow(EXIT_QUEUE.connect(amanda).withdraw(0), /Can only withdraw from past epoch/);
+    await shouldThrow(EXIT_QUEUE.connect(amanda).withdrawEpochs([0], 1), /Can only withdraw from past epoch/);
 
     // Do a bunch of joins, after which users can exit their 0th epoch allocation
      await join(clint, 200);
@@ -225,24 +228,43 @@ describe("Exit Queue", async () => {
      await join(amanda, 50);
      await join(amanda, 100);
      await join(amanda, 50);
-     await shouldThrow(EXIT_QUEUE.connect(amanda).withdraw(1), /Can only withdraw from past epoch/);
-     await shouldThrow(EXIT_QUEUE.connect(amanda).withdraw(2), /Can only withdraw from past epoch/);
-     await shouldThrow(EXIT_QUEUE.connect(amanda).withdraw(3), /Can only withdraw from past epoch/);
-     await checkExit(1, 0, {'amanda': 100, 'ben': 50, 'clint': 50})
+     await shouldThrow(EXIT_QUEUE.connect(amanda).withdrawEpochs([1], 1), /Can only withdraw from past epoch/);
+     await shouldThrow(EXIT_QUEUE.connect(amanda).withdrawEpochs([2], 1), /Can only withdraw from past epoch/);
+     await shouldThrow(EXIT_QUEUE.connect(amanda).withdrawEpochs([3], 1), /Can only withdraw from past epoch/);
+     await checkExitMultiple(1, [0], {'amanda': 100, 'ben': 50, 'clint': 50})
 
      // roll forward an epoch, then everyone can exit epoch 1
      mineNBlocks(10);
-     await shouldThrow(EXIT_QUEUE.connect(ben).withdraw(2), /Can only withdraw from past epoch/);
-     await checkExit(2, 0, {'amanda': 0, 'ben': 0, 'clint': 0})
-     await checkExit(2, 1, {'amanda': 0, 'ben': 100, 'clint': 100})
+     await shouldThrow(EXIT_QUEUE.connect(ben).withdrawEpochs([2], 1), /Can only withdraw from past epoch/);
+     await checkExitMultiple(2, [0], {'amanda': 0, 'ben': 0, 'clint': 0})
+     await checkExitMultiple(2, [1], {'amanda': 0, 'ben': 100, 'clint': 100})
 
      // roll forward enough epochs, s.t users can exit all temple
      mineNBlocks(10*3);
-     await checkExit(6, 1, {'amanda': 0, 'ben': 0, 'clint': 0})
-     await checkExit(6, 2, {'amanda': 50, 'ben': 50, 'clint': 100})
-     await checkExit(6, 3, {'amanda': 100, 'ben': 0, 'clint': 50})
-     await checkExit(6, 4, {'amanda': 50, 'ben': 0, 'clint': 0})
-     await checkExit(7, 5, {'amanda': 0, 'ben': 0, 'clint': 0})
+     await checkExitMultiple(6, [1], {'amanda': 0, 'ben': 0, 'clint': 0})
+     await checkExitMultiple(6, [2], {'amanda': 50, 'ben': 50, 'clint': 100})
+     await checkExitMultiple(6, [3], {'amanda': 100, 'ben': 0, 'clint': 50})
+     await checkExitMultiple(6, [4], {'amanda': 50, 'ben': 0, 'clint': 0})
+     await checkExitMultiple(7, [5], {'amanda': 0, 'ben': 0, 'clint': 0})
+
+     // multiple epoch withdrawals
+     await join(amanda, 200);
+     await join(amanda, 150);
+     await join(clint, 100);
+     await join(ben, 50);
+     await join(clint, 50);
+     await join(amanda, 100);
+     await checkExitMultiple(8, [5,6], {'amanda': 0, 'ben': 0, 'clint': 0});
+     await checkExitMultiple(8, [6,7], {'amanda': 0, 'ben': 0, 'clint': 0});
+     await shouldThrow(EXIT_QUEUE.connect(ben).withdrawEpochs([7,8], 2), /Can only withdraw from past epoch/);
+     
+     mineNBlocks(10);
+     await checkExitMultiple(9, [6,7,8], {'amanda': 100, 'ben': 0, 'clint': 100});
+     // shouldn't be able to claim twice from already claimed epoch
+     await checkExitMultiple(10, [6,7,8], {'amanda': 0, 'ben': 0, 'clint': 0});
+     // mine enough blocks for everyone to exit
+     mineNBlocks(10*3);
+     await checkExitMultiple(13, [9,10,11,12], {'amanda': 350, 'clint': 50, 'ben': 50});
   });
 
   it("captures first/last block correctly per exiter", async () => {
@@ -268,7 +290,7 @@ describe("Exit Queue", async () => {
       ['amanda', 50, 0, 4],
 
       // Ben joins after a long wait
-      ['ben', 50, 0, 6, 10*5],
+      ['ben', 50, 0, 7, 10*5],
     ]
 
     for (let idx in testCases) {
@@ -286,6 +308,81 @@ describe("Exit Queue", async () => {
     }
   });
 
+  it("Only owner can migrate exiters", async () => {
+    await shouldThrow(EXIT_QUEUE.connect(amanda).migrate(await amanda.getAddress(), [0], 1, EXIT_QUEUE.address), /Ownable: caller is not the owner/);
+  });
+
+  it("Can migrate entire active exit queue, if required (owner only)", async () => {
+    // Create a new exit queue. For testing purposes it's identical to our current implementation
+    const NEW_EXIT_QUEUE = await new ExitQueue__factory(owner).deploy(
+      TEMPLE.address,
+      await EXIT_QUEUE.maxPerEpoch(),
+      await EXIT_QUEUE.maxPerAddress(),
+      await EXIT_QUEUE.epochSize(),
+    )
+    
+    const users: {[key: string]: Signer} = {
+      'amanda': amanda,
+      'ben': ben,
+      'clint': clint,
+    }
+
+    // || who | exitAmount
+    const testCases : [string, number][] = [
+      ['amanda', 100],
+      ['ben', 50],
+      ['clint', 250],
+      ['clint', 100],
+      ['ben', 150],
+      ['amanda', 50],
+      ['amanda', 100],
+      ['amanda', 50],
+      ['amanda', 50],
+      ['ben', 50],
+    ]
+
+    // Simulate users joining queue, capture balance per user
+    const oldBalances: {[key: string]: number} = {
+      'amanda': 0,
+      'ben': 0,
+      'clint': 0,
+    }
+
+    for (let idx in testCases) {
+      const [who, amount] = testCases[idx];
+
+      const exiterAddress = await users[who].getAddress();
+      await EXIT_QUEUE.connect(users[who]).join(exiterAddress, amount);
+      oldBalances[who] += amount;
+    }
+
+    // Migrate everyone to the new queue
+    for (const exiter of [amanda, ben, clint]) {
+      const exitData = await EXIT_QUEUE.userData(await exiter.getAddress());
+
+      // get epochs where user has some temple.
+      const epochs = []
+      for (let i = exitData.FirstExitEpoch.toNumber(); i < exitData.LastExitEpoch.toNumber()+1; i++) {
+        epochs.push(i);
+      }
+      await EXIT_QUEUE.migrate(await exiter.getAddress(), epochs, epochs.length, NEW_EXIT_QUEUE.address);
+    }
+
+    // Compare total exit amount, it should be the same (NOTE: test hasn't been written to preserve ordering.
+    // it's assumed that will be the remit of the dev who writes the migration script)
+    for (const exiterName of ['amanda', 'ben', 'clint']) {
+      const exiter = users[exiterName];
+      const exitDataNew = await NEW_EXIT_QUEUE.userData(await exiter.getAddress());
+
+      let newBalance = 0;      
+      for (let i = exitDataNew.FirstExitEpoch.toNumber(); i < exitDataNew.LastExitEpoch.toNumber()+1; i++) {
+        newBalance += (await NEW_EXIT_QUEUE.currentEpochAllocation(await exiter.getAddress(), i)).toNumber();
+      }
+
+      expect(oldBalances[exiterName], `Balance for ${exiterName} doesn't reconcile`).eq(newBalance);
+    }
+  });
+
   it("ensures owed temple is burned and user joins exit queue with new amount", async () => {
     const addressZero = "0x0000000000000000000000000000000000000000";
     const join = async (staker: Signer, amount: number) => {
@@ -298,22 +395,24 @@ describe("Exit Queue", async () => {
       'clint': clint,
     }
 
-    const checkExit = async (expectedEpoch: number, epoch: number, expected: {[key: string]: number}) => {
+    const checkExitMultiple = async (expectedEpoch: number, epochs: Array<number>, expected: {[key: string]: number}) => {
       expect(await EXIT_QUEUE.currentEpoch(), "Expected epoch").eq(expectedEpoch);
 
-      if (epoch >= expectedEpoch) {
-        for (let name in expected) {
-          const exiter = users[name]
-          await shouldThrow(EXIT_QUEUE.connect(exiter).withdraw(epoch), /Can only withdraw from past epoch/);
+      for (let epoch of epochs) {
+        if (epoch >= expectedEpoch) {
+          for (let name in expected) {
+            const exiter = users[name]
+            await shouldThrow(EXIT_QUEUE.connect(exiter).withdrawEpochs([epoch], 1), /Can only withdraw from past epoch/);
+          }
+          return
         }
-        return
       }
 
       for (let name in expected) {
         const expectedWithdrawal = expected[name]
         const exiter = users[name]
         const preWithdrawBalance = (await TEMPLE.balanceOf(await exiter.getAddress())).toNumber()
-        await EXIT_QUEUE.connect(exiter).withdraw(epoch)
+        await EXIT_QUEUE.connect(exiter).withdrawEpochs(epochs, epochs.length)
         expect((await TEMPLE.balanceOf(await exiter.getAddress())).toNumber() - preWithdrawBalance, `${name} expected withdrawal`).eq(expectedWithdrawal)
       }
     }
@@ -329,15 +428,15 @@ describe("Exit Queue", async () => {
     await join(clint, 100);
     // roll over
     mineNBlocks(10);
-    await checkExit(1, 0, {'amanda': 100, 'ben': 20, 'clint': 80});
+    //await checkExit(1, 0, {'amanda': 100, 'ben': 20, 'clint': 80});
+    await checkExitMultiple(1, [0], {'amanda': 100, 'ben': 20, 'clint': 80});
 
     // (formerly owing) user can exit again and receive amount without another burn
     await join(amanda, 10);
     await join(ben, 150);
     await join(clint, 60);
-    mineNBlocks(10*2);
-    await checkExit(4, 1, {'amanda': 0, 'ben': 0, 'clint': 20});
-    await checkExit(4, 2, {'amanda': 10, 'ben': 100, 'clint': 60});
-    await checkExit(4, 3, {'amanda': 0, 'ben': 50, 'clint': 0});
+    mineNBlocks(10*3);
+    await checkExitMultiple(5, [1], {'amanda': 0, 'ben': 0, 'clint': 20});
+    await checkExitMultiple(5, [2,3,4], {'amanda': 10, 'ben': 150, 'clint': 60});
   });
 });

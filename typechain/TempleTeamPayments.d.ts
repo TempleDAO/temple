@@ -32,6 +32,7 @@ interface TempleTeamPaymentsInterface extends ethers.utils.Interface {
     "renounceOwnership()": FunctionFragment;
     "roundEndDate()": FunctionFragment;
     "roundStartDate()": FunctionFragment;
+    "setAllocation(address,uint256)": FunctionFragment;
     "setAllocations(address[],uint256[])": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
     "withdrawTempleBalance(address,uint256)": FunctionFragment;
@@ -62,6 +63,10 @@ interface TempleTeamPaymentsInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "roundStartDate",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setAllocation",
+    values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "setAllocations",
@@ -103,6 +108,10 @@ interface TempleTeamPaymentsInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "roundStartDate",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setAllocation",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -215,6 +224,12 @@ export class TempleTeamPayments extends BaseContract {
 
     roundStartDate(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    setAllocation(
+      _address: string,
+      _amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     setAllocations(
       _addresses: string[],
       _amounts: BigNumberish[],
@@ -269,6 +284,12 @@ export class TempleTeamPayments extends BaseContract {
 
   roundStartDate(overrides?: CallOverrides): Promise<BigNumber>;
 
+  setAllocation(
+    _address: string,
+    _amount: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   setAllocations(
     _addresses: string[],
     _amounts: BigNumberish[],
@@ -315,6 +336,12 @@ export class TempleTeamPayments extends BaseContract {
     roundEndDate(overrides?: CallOverrides): Promise<BigNumber>;
 
     roundStartDate(overrides?: CallOverrides): Promise<BigNumber>;
+
+    setAllocation(
+      _address: string,
+      _amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     setAllocations(
       _addresses: string[],
@@ -405,6 +432,12 @@ export class TempleTeamPayments extends BaseContract {
 
     roundStartDate(overrides?: CallOverrides): Promise<BigNumber>;
 
+    setAllocation(
+      _address: string,
+      _amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     setAllocations(
       _addresses: string[],
       _amounts: BigNumberish[],
@@ -465,6 +498,12 @@ export class TempleTeamPayments extends BaseContract {
     roundEndDate(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     roundStartDate(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    setAllocation(
+      _address: string,
+      _amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
 
     setAllocations(
       _addresses: string[],

@@ -14,7 +14,7 @@ contract TreasuryManagementProxy {
     TempleTreasury public treasury;
 
     bool public harvestEnabled = true;
-    address owner;
+    address public owner;
 
     uint256 public harvestDistributionPercentage = 80;
 

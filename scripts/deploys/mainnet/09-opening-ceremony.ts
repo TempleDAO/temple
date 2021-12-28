@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers, network } from 'hardhat';
-import { OpeningCeremony, OpeningCeremony__factory, Presale__factory, TempleERC20Token__factory, TempleStaking__factory, TempleTreasury__factory, TreasuryManagementProxy__factory } from '../../../typechain';
+import { OpeningCeremony, OpeningCeremony__factory, TempleERC20Token__factory, TempleStaking__factory, TempleTreasury__factory, TreasuryManagementProxy__factory } from '../../../typechain';
 import { deployAndMine, DeployedContracts, DEPLOYED_CONTRACTS, fromAtto, toAtto } from '../helpers';
 
 const EPOCH_SIZE = 24 * 60 * 60;

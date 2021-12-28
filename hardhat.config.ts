@@ -6,9 +6,8 @@ import "@nomiclabs/hardhat-ganache";  // for testing
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-etherscan";
 
-import "./tasks/query";
-// import "./tasks/management";
-import "./tasks/on-chain-ops";
+// NOTE: Any tasks that depend on the generated typechain makes the build flaky.
+//       Favour scripts instead
 
 if (!process.env.ETHERSCAN_API_KEY) {
   console.log("NOTE: environment variable ETHERSCAN_API_KEY isn't set. tasks that interact with etherscan won't work");
@@ -22,19 +21,52 @@ if (!process.env.ETHERSCAN_API_KEY) {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.8.4",
+  solidity: {
+    compilers: [
+      {
+        version: "0.8.4",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 999999,
+          }
+        },
+      },
+      {
+        version: "0.5.16",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 999999,
+          }
+        },
+      },
+      {
+        version: "0.6.6",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 999999,
+          }
+        },
+      },
+    ],
+  },
   typechain: {
     target: "ethers-v5",
   },
   networks: {
     rinkeby: {
+      // whitelisted to a single deployment address.
       url: "https://eth-rinkeby.alchemyapi.io/v2/QqeiqrSzcuz0ZEcK3i01eL5gPmFgQRfu",
       accounts: (process.env.RINKEBY_ADDRESS_PRIVATE_KEY) ? [process.env.RINKEBY_ADDRESS_PRIVATE_KEY] : [],
+      gasPrice: 20000000000,
     },
     mainnet: {
-      url: "https://eth-mainnet.alchemyapi.io/v2/wMu8LWhZqh3KFpNCQZH4EVgNuF7qcrw9",
+      // whitelisted to a single deployment address.
+      url: "https://eth-mainnet.alchemyapi.io/v2/YDQ_EDc7dwxDWf_U8LOgCXRFgKiQOa3K",
       accounts: (process.env.MAINNET_ADDRESS_PRIVATE_KEY) ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY] : [],
-      gasPrice: 100000000000,
+      gasPrice: 85000000000,
     },
     matic: {
       url: "https://rpc-mainnet.maticvigil.com",
