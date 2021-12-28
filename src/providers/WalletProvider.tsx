@@ -121,7 +121,7 @@ export interface ExitQueueData {
   // amount that can be claimed now
   claimableTemple: number;
   // timestamp in milliseconds of the last exit
-  claimableAt: number;
+  lastClaimableEpochAt: number;
   // list of epochs with a claimable amount
   claimableEpochs: Array<number>;
 }
@@ -230,7 +230,7 @@ const INITIAL_STATE: WalletState = {
   maxInvitesPerVerifiedUser: 0,
   lockedEntries: [],
   exitQueueData: {
-    claimableAt: 0,
+    lastClaimableEpochAt: 0,
     claimableTemple: 0,
     totalTempleOwned: 0,
     claimableEpochs: [],
@@ -267,7 +267,6 @@ const TEMPLE_STAKING_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS;
 const TREASURY_ADDRESS = ENV_VARS.VITE_PUBLIC_TREASURY_ADDRESS;
 const EXIT_QUEUE_ADDRESS = ENV_VARS.VITE_PUBLIC_EXIT_QUEUE_ADDRESS;
 const OPENING_CEREMONY_ADDRESS = ENV_VARS.VITE_PUBLIC_OPENING_CEREMONY_ADDRESS;
-const VERIFY_QUEST_ADDRESS = ENV_VARS.VITE_PUBLIC_VERIFY_QUEST_ADDRESS;
 const TEMPLE_CASHBACK_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_CASHBACK_ADDRESS;
 const AMM_WHITELIST_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_ROUTER_WHITELIST;
 const TEMPLE_V2_ROUTER_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS;
@@ -283,7 +282,6 @@ if (
   LOCKED_OG_TEMPLE_ADDRESS === undefined ||
   EXIT_QUEUE_ADDRESS === undefined ||
   OPENING_CEREMONY_ADDRESS === undefined ||
-  VERIFY_QUEST_ADDRESS === undefined ||
   TEMPLE_CASHBACK_ADDRESS === undefined ||
   TEMPLE_V2_ROUTER_ADDRESS === undefined ||
   TEMPLE_V2_PAIR_ADDRESS === undefined ||
@@ -297,7 +295,6 @@ TREASURY_ADDRESS=${TREASURY_ADDRESS}
 LOCKED_OG_TEMPLE_ADDRESS=${LOCKED_OG_TEMPLE_ADDRESS}
 EXIT_QUEUE_ADDRESS=${EXIT_QUEUE_ADDRESS}
 OPENING_CEREMONY_ADDRESS=${OPENING_CEREMONY_ADDRESS}
-VERIFY_QUEST_ADDRESS=${VERIFY_QUEST_ADDRESS}
 TEMPLE_CASHBACK_ADDRESS=${TEMPLE_CASHBACK_ADDRESS}
 TEMPLE_V2_ROUTER_ADDRESS=${TEMPLE_V2_ROUTER_ADDRESS}
 TEMPLE_V2_PAIR_ADDRESS=${TEMPLE_V2_PAIR_ADDRESS}
@@ -544,6 +541,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .attach(EXIT_QUEUE_ADDRESS)
         .connect(signerState);
 
+      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory()
+        .attach(ACCELERATED_EXIT_QUEUE_ADDRESS)
+        .connect(signerState);
+
       const userData = await EXIT_QUEUE.userData(walletAddress);
       const totalTempleOwned = fromAtto(userData.Amount);
 
@@ -552,30 +553,30 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         return;
       }
 
-      const currentEpoch = (await EXIT_QUEUE.currentEpoch()).toNumber();
+      const currentEpoch = (
+        await ACCELERATED_EXIT_QUEUE.currentEpoch()
+      ).toNumber();
       const firstEpoch = userData.FirstExitEpoch.toNumber();
       const lastEpoch = userData.LastExitEpoch.toNumber();
       const today = new Date();
-      const daysUntilClaimable = await epochsToDays(
+      const daysUntilLastClaimableEpoch = await epochsToDays(
         lastEpoch - currentEpoch + 1
       );
-      const claimableAt = today.setDate(today.getDate() + daysUntilClaimable);
+      const lastClaimableEpochAt = today.setDate(
+        today.getDate() + daysUntilLastClaimableEpoch
+      );
       const exitEntryPromises = [];
 
       // stores all epochs address has in the ExitQueue.sol, some might have Allocation 0
       const maybeClaimableEpochs: Array<number> = [];
       // stores all epochs with allocations for address
       const claimableEpochs: Array<number> = [];
-      console.log(firstEpoch, currentEpoch, currentEpoch - firstEpoch);
       for (let i = firstEpoch; i < currentEpoch; i++) {
         maybeClaimableEpochs.push(i);
         exitEntryPromises.push(
           EXIT_QUEUE.currentEpochAllocation(walletAddress, i)
         );
       }
-
-      console.log(exitEntryPromises.length);
-      console.log(exitEntryPromises);
 
       const exitEntries = await Promise.all(exitEntryPromises);
       const claimableTemple: number = fromAtto(
@@ -589,7 +590,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       setExitQueueData({
-        claimableAt,
+        lastClaimableEpochAt,
         claimableTemple,
         totalTempleOwned,
         claimableEpochs,
