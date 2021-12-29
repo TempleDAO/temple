@@ -27,6 +27,9 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   hint?: string;
   // options for the crypto in the input
   crypto?: CryptoSelector | CryptoValue;
+  // set our own type=number since we need type to be string
+  // for proper display and input masking
+  isNumber?: boolean;
 
   // Callback for input value change
   handleChange?(value: number): void;
@@ -42,6 +45,7 @@ export const Input = ({
   onHintClick,
   hint,
   crypto,
+  isNumber,
   type,
   value,
   disabled,
@@ -70,9 +74,36 @@ export const Input = ({
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const x = +event.target.value > 0 ? +event.target.value : 0;
-    if (handleChange) {
-      handleChange(x);
+    if (!handleChange) return;
+
+    const val = event.target.value;
+
+    // We need this extra validation here to catch multiple, or ending, dots
+    if (isNumber) {
+      const multiplePeriods = val.indexOf('.') != val.lastIndexOf('.');
+      const endPeriod = val.charAt(val.length - 1) === '.';
+
+      if (multiplePeriods) {
+        event.preventDefault();
+        return;
+      }
+
+      if (endPeriod) {
+        // @ts-ignore  because here val ends in a dot, ex "12."
+        handleChange(val);
+        return;
+      }
+    }
+
+    // @ts-ignore
+    handleChange(val);
+  };
+
+  // we're using this for onKeyPress, instead of onChange otherwise
+  // the currsor jumps around if someone is editing in the middle
+  const numbersOnly = (event: KeyboardEventHandler<HTMLInputElement>) => {
+    if (!/\.|\d/.test(event.key)) {
+      event.preventDefault();
     }
   };
 
@@ -80,8 +111,9 @@ export const Input = ({
     <InputWrapper isDisabled={disabled}>
       <InputStyled
         onChange={handleInputChange}
+        onKeyPress={isNumber ? numbersOnly : undefined}
         type={type}
-        value={type === 'number' && value ? formatNumber(+value) : value}
+        value={value}
         disabled={disabled}
         {...props}
       />
@@ -164,7 +196,6 @@ export const InputHint = styled.small<InputHintProps>`
 
 export const InputStyled = styled.input`
   // common
-  cursor: pointer;
   color: ${(props) => props.theme.palette.light};
   background-color: transparent;
   border: none;
