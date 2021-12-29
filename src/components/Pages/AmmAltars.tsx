@@ -5,7 +5,7 @@ import DevotionBgImage from 'assets/images/devotion_bg.jpg';
 import ClaimOGTemple from 'components/AMM/ClaimOGTemple';
 import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
-import Image from 'components/Image/Image';
+import Image, { ImageProps } from 'components/Image/Image';
 import { Input } from 'components/Input/Input';
 import { Flex } from 'components/Layout/Flex';
 import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
@@ -28,6 +28,7 @@ import styled, { css } from 'styled-components';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { noop } from 'utils/helpers';
+import swapSvg from 'assets/icons/arrows.svg';
 
 const ENV_VARS = import.meta.env;
 
@@ -289,6 +290,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               }
               placeholder={'0.00'}
             />
+            <SwapArrows
+              onClick={() => handleSetActiveAMMView(AMMView.SELL, false)}
+            />
             <Input
               hint={`Balance: ${formatNumber(templeWalletAmount)}`}
               crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
@@ -350,6 +354,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               }
               placeholder={'0.00'}
               isNumber
+            />
+            <SwapArrows
+              onClick={() => handleSetActiveAMMView(AMMView.BUY, false)}
             />
             <Input
               hint={`BALANCE: ${formatNumber(stableCoinWalletAmount)}`}
@@ -865,6 +872,22 @@ const ConvoFlowClose = styled(Image)`
 /* TODO: move this to a common component so it can be reused */
 const Spacer = styled.div`
   height: 2rem;
+`;
+
+const SwapArrows = styled(Image).attrs(() => ({
+  src: swapSvg,
+}))<ImageProps>`
+  position: relative;
+  width: 30px;
+  left: calc(50% - 15px);
+  cursor: pointer;
+  -webkit-filter: brightness(90%);
+  filter: brightness(90%);
+  margin: 10px 0px;
+
+  &:hover {
+    filter: brightness(110%);
+  }
 `;
 
 export default withWallet(AMMAltars);
