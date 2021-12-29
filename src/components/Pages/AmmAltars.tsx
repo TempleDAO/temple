@@ -77,12 +77,12 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   // StableCoin in the user wallet (Frax)
   const [stableCoinWalletAmount, setStableCoinWalletAmount] =
     useState<number>(0);
-  const [stableCoinAmount, setStableCoinAmount] = useState<number>(0);
+  const [stableCoinAmount, setStableCoinAmount] = useState<number | ''>('');
   // $TEMPLE in the user wallet
   const [templeWalletAmount, setTempleWalletAmount] = useState<number>(0);
-  const [templeAmount, setTempleAmount] = useState<number>(0);
-  const [OGTAmount, setOGTAmount] = useState<number>(0);
-  const [rewards, setRewards] = useState<number>(0);
+  const [templeAmount, setTempleAmount] = useState<number | ''>('');
+  const [OGTAmount, setOGTAmount] = useState<number | ''>('');
+  const [rewards, setRewards] = useState<number | ''>('');
   const [activeAMMView, setActiveAMMView] = useState<AMMView | null>(view);
   // Slippage for TXN minOut
   const [slippage, setSlippage] = useState<number>(1);
@@ -104,7 +104,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
   useEffect(() => {
     async function onMount() {
       await updateWallet();
-      setRewards(0);
+      setRewards('');
       setMinAmountOut(0);
     }
 
@@ -151,12 +151,11 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     updateWallet();
   };
 
-  const handleUpdateOGT = (value: number) => {
-    setOGTAmount(value);
-    if (value) {
-      void updateTempleRewards(value);
-      void updateJoinQueueData(value);
-    }
+  const handleUpdateOGT = (value: number | '') => {
+    setOGTAmount(value === 0 ? '' : value);
+
+    void updateTempleRewards(value === '' ? 0 : value);
+    void updateJoinQueueData(value === '' ? 0 : value);
   };
 
   const handleUpdateSlippageForBuy = async (value: number) => {
@@ -167,21 +166,31 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     setSlippage(value);
   };
 
-  const handleUpdateStableCoinAmount = async (value: number) => {
-    setStableCoinAmount(value);
+  const handleUpdateStableCoinAmount = async (value: number | '') => {
+    setStableCoinAmount(value === 0 ? '' : value);
     if (value) {
       setRewards(
         fromAtto((await getBuyQuote(toAtto(value))) || BigNumber.from(0) || 0)
       );
+    } else {
+      setRewards('');
     }
   };
 
-  const handleUpdateTempleAmount = async (value: number) => {
-    setTempleAmount(value);
+  const handleUpdateTempleAmmount = async (value: number) => {
+    setTempleAmount(value === 0 ? '' : value);
+  };
+
+  const handleUpdateTempleAmount = async (value: number | '') => {
+    setTempleAmount(value === 0 ? '' : value);
+    console.log('val', value);
     if (value) {
       setRewards(
         fromAtto((await getSellQuote(toAtto(value))) || BigNumber.from(0) || 0)
       );
+    } else {
+      console.log(`here`);
+      setRewards('');
     }
   };
 
@@ -246,6 +255,12 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     }
   };
 
+  const copyBalance = (value: number, fn: (value: number) => void) => {
+    if (value > 0) {
+      fn(value);
+    }
+  };
+
   const renderAMMView = (): ReactNode => {
     switch (activeAMMView) {
       case AMMView.BUY:
@@ -256,8 +271,14 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
             </TitleWrapper>
             <Input
               hint={`Balance: ${formatNumber(stableCoinWalletAmount)}`}
+              onHintClick={() =>
+                copyBalance(
+                  stableCoinWalletAmount,
+                  handleUpdateStableCoinAmount
+                )
+              }
               crypto={{ kind: 'value', value: STABLE_COIN_SYMBOL }}
-              type={'number'}
+              isNumber
               max={stableCoinWalletAmount}
               min={0}
               value={stableCoinAmount}
@@ -272,7 +293,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               hint={`Balance: ${formatNumber(templeWalletAmount)}`}
               crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
               type={'number'}
-              value={rewards}
+              value={formatNumber(rewards as number)}
+              placeholder={'0.00'}
+              isNumber
               disabled
             />
             <Slippage
@@ -313,8 +336,10 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
             </TitleWrapper>
             <Input
               hint={`Balance: ${formatNumber(templeWalletAmount)}`}
+              onHintClick={() =>
+                copyBalance(templeWalletAmount, handleUpdateTempleAmount)
+              }
               crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
-              type={'number'}
               max={templeWalletAmount}
               min={0}
               value={templeAmount}
@@ -324,12 +349,14 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                   : handleUpdateTempleAmount
               }
               placeholder={'0.00'}
+              isNumber
             />
             <Input
               hint={`BALANCE: ${formatNumber(stableCoinWalletAmount)}`}
               crypto={{ kind: 'value', value: STABLE_COIN_SYMBOL }}
-              type={'number'}
-              value={formatNumber(rewards)}
+              isNumber
+              value={formatNumber(rewards as number)}
+              placeholder={'0.00'}
               disabled
             />
             <Slippage
@@ -381,12 +408,15 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               </TitleWrapper>
               <Input
                 hint={`Balance: ${formatNumber(templeWalletAmount)}`}
+                onHintClick={() =>
+                  copyBalance(templeWalletAmount, setTempleAmount)
+                }
                 crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
-                type={'number'}
+                isNumber
                 max={templeWalletAmount}
                 min={0}
                 value={templeAmount}
-                handleChange={setTempleAmount}
+                handleChange={handleUpdateTempleAmmount}
                 placeholder={'0.00'}
               />
               <DataCard title={`APY`} data={formatNumber(apy || 0) + '%'} />
@@ -490,8 +520,9 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
 
             <Input
               hint={`Balance: ${formatNumber(OGTWalletAmount)}`}
+              onHintClick={() => copyBalance(OGTWalletAmount, handleUpdateOGT)}
               crypto={{ kind: 'value', value: 'OGTEMPLE' }}
-              type={'number'}
+              isNumber
               max={OGTWalletAmount}
               min={0}
               value={OGTAmount}
@@ -513,7 +544,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               >
                 <DataCard
                   title={'TEMPLE + REWARDS'}
-                  data={formatNumber(rewards) + ''}
+                  data={formatNumber(rewards as number) + ''}
                   tooltipContent={
                     'Amount of $TEMPLE received once you exit the queue'
                   }
