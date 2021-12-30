@@ -1527,6 +1527,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const STAKING = new TempleStaking__factory()
         .attach(TEMPLE_STAKING_ADDRESS)
         .connect(signerState);
+      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory()
+        .attach(ACCELERATED_EXIT_QUEUE_ADDRESS)
+        .connect(signerState);
 
       const maxPerAddress = await EXIT_QUEUE.maxPerAddress();
       const maxPerEpoch = await EXIT_QUEUE.maxPerEpoch();
@@ -1535,19 +1538,22 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         : maxPerEpoch;
 
       const nextUnallocatedEpoch = await EXIT_QUEUE.nextUnallocatedEpoch();
-      const currentEpoch = await EXIT_QUEUE.currentEpoch();
+      const currentEpoch = await ACCELERATED_EXIT_QUEUE.currentEpoch();
       const amountTemple = await STAKING.balance(ogtAmount);
 
       const queueLengthEpochs = nextUnallocatedEpoch
         .sub(currentEpoch)
         .toNumber();
+
       // number of blocks to process, always rounding up
       const processTimeEpochs =
         amountTemple.div(maxPerAddressPerEpoch).toNumber() +
         (amountTemple.mod(maxPerAddressPerEpoch).eq(0) ? 0 : 1);
 
       return {
-        queueLength: await epochsToDays(queueLengthEpochs),
+        queueLength: await epochsToDays(
+          queueLengthEpochs >= 0 ? queueLengthEpochs : 0
+        ),
         processTime: await epochsToDays(processTimeEpochs),
       };
     }
