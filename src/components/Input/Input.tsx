@@ -1,6 +1,5 @@
-import React, { InputHTMLAttributes } from 'react';
+import React, { InputHTMLAttributes, KeyboardEvent } from 'react';
 import styled, { css } from 'styled-components';
-import { formatNumber } from 'utils/formatter';
 import {
   InputSelect,
   Option,
@@ -100,8 +99,8 @@ export const Input = ({
   };
 
   // we're using this for onKeyPress, instead of onChange otherwise
-  // the currsor jumps around if someone is editing in the middle
-  const numbersOnly = (event: KeyboardEventHandler<HTMLInputElement>) => {
+  // the cursor jumps around if someone is editing in the middle
+  const numbersOnly = (event: KeyboardEvent<HTMLInputElement>) => {
     if (!/\.|\d/.test(event.key)) {
       event.preventDefault();
     }
