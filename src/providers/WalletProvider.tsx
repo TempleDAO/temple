@@ -558,13 +558,14 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       ).toNumber();
       const firstEpoch = userData.FirstExitEpoch.toNumber();
       const lastEpoch = userData.LastExitEpoch.toNumber();
-      const today = new Date();
+      const todayInMs = new Date().getTime();
+      const dayInMs = 8.64e7;
       const daysUntilLastClaimableEpoch = await epochsToDays(
         lastEpoch - currentEpoch + 1
       );
-      const lastClaimableEpochAt = today.setDate(
-        today.getDate() + daysUntilLastClaimableEpoch
-      );
+      const lastClaimableEpochAt =
+        todayInMs + daysUntilLastClaimableEpoch * dayInMs;
+
       const exitEntryPromises = [];
 
       // stores all epochs address has in the ExitQueue.sol, some might have Allocation 0
