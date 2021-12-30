@@ -21,6 +21,8 @@ const CHART_SIZE = {
   height: 300,
 };
 
+const CORRUPTED_TIMESTAMPS = [1640696724000, 1640700414000];
+
 export enum TIME_INTERVAL {
   ONE_HOUR = 60 * 60 * 1000,
   ONE_DAY = 24 * ONE_HOUR,
@@ -424,6 +426,10 @@ function formatMetrics(metrics: PriceMetrics[]) {
     metrics.reduce((acc, dataPoint) => {
       const utcTimestamp = Number(dataPoint.timestamp) * 1000;
 
+      if (CORRUPTED_TIMESTAMPS.includes(utcTimestamp)) {
+        return acc;
+      }
+
       acc.priceDataPoints.push({
         x: utcTimestamp,
         y: Number(dataPoint.templePrice),
@@ -435,6 +441,7 @@ function formatMetrics(metrics: PriceMetrics[]) {
       });
 
       const threshold = Number(dataPoint.thresholdTemplePrice);
+
       acc.templeThresholdDataPoints.push({
         x: utcTimestamp,
         // threshold being 0 means the subgraph has no data for it at this timestamp
