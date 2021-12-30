@@ -401,17 +401,19 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
             <>
               <TitleWrapper>
                 <ConvoFlowTitle>PLEDGE YOUR {TEMPLE_TOKEN}</ConvoFlowTitle>
-                <Tooltip
-                  content={
-                    <small>
-                      You will receive $OGTEMPLE when you pledge your $TEMPLE to
-                      the staking contract.
-                    </small>
-                  }
-                  position={'top'}
-                >
-                  <TooltipIcon />
-                </Tooltip>
+                <TooltipPadding>
+                  <Tooltip
+                    content={
+                      <small>
+                        You will receive $ogtemple when you pledge your $temple
+                        to the staking contract
+                      </small>
+                    }
+                    position={'top'}
+                  >
+                    <TooltipIcon />
+                  </Tooltip>
+                </TooltipPadding>
               </TitleWrapper>
               <Input
                 hint={`Balance: ${formatNumber(templeWalletAmount)}`}
@@ -443,18 +445,20 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
           <>
             <TitleWrapper>
               <ConvoFlowTitle>CLAIM YOUR {OG_TEMPLE_TOKEN}</ConvoFlowTitle>
-              <Tooltip
-                content={
-                  <small>
-                    All your $OGTEMPLE in the locking contract are represented
-                    here. if your $OGTEMPLE have unlocked, they will be able to
-                    be claimed.
-                  </small>
-                }
-                position={'top'}
-              >
-                <TooltipIcon />
-              </Tooltip>
+              <TooltipPadding>
+                <Tooltip
+                  content={
+                    <small>
+                      All your $OGTEMPLE in the locking contract are represented
+                      here. if your $OGTEMPLE have unlocked, they will be able
+                      to be claimed.
+                    </small>
+                  }
+                  position={'top'}
+                >
+                  <TooltipIcon />
+                </Tooltip>
+              </TooltipPadding>
             </TitleWrapper>
             <ClaimOGTemple
               lockedEntries={lockedEntries}
@@ -503,26 +507,28 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
               <ConvoFlowTitle>
                 SELECT {OG_TEMPLE_TOKEN} TO UNSTAKE VIA QUEUE
               </ConvoFlowTitle>
-              <Tooltip
-                content={
-                  <small>
-                    Your $TEMPLE tokens are unstaked by burning your $OGTEMPLE
-                    and joining the exit queue. The queue is processed first in,
-                    first out. Once you are processed you will be able to claim
-                    your $TEMPLE tokens.
-                  </small>
-                }
-                position={'top'}
-              >
-                <a
-                  className={'color-dark'}
-                  target={'_blank'}
-                  href="https://docs.templedao.link/templedao/temple-mechanics"
-                  rel="noreferrer"
+              <TooltipPadding>
+                <Tooltip
+                  content={
+                    <small>
+                      Your $TEMPLE tokens are unstaked by burning your $ogtemple
+                      and joining the exit queue. the queue is processed first
+                      in, first out. once you are processed you will be able to
+                      claim your $temple tokens.
+                    </small>
+                  }
+                  position={'top'}
                 >
-                  <TooltipIcon />
-                </a>
-              </Tooltip>
+                  <a
+                    className={'color-dark'}
+                    target={'_blank'}
+                    href="https://docs.templedao.link/templedao/temple-mechanics"
+                    rel="noreferrer"
+                  >
+                    <TooltipIcon />
+                  </a>
+                </Tooltip>
+              </TooltipPadding>
             </TitleWrapper>
 
             <Input
@@ -606,17 +612,19 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
                 YOU HAVE {exitQueueData.totalTempleOwned} {TEMPLE_TOKEN} IN
                 QUEUE
               </ConvoFlowTitle>
-              <Tooltip
-                content={
-                  <small>
-                    the exit queue is used to provide an orderly unstaking
-                    process from the temple
-                  </small>
-                }
-                position={'top'}
-              >
-                <TooltipIcon />
-              </Tooltip>
+              <TooltipPadding>
+                <Tooltip
+                  content={
+                    <small>
+                      the exit queue is used to provide an orderly unstaking
+                      process from the temple
+                    </small>
+                  }
+                  position={'top'}
+                >
+                  <TooltipIcon />
+                </Tooltip>
+              </TooltipPadding>
             </TitleWrapper>
             <PercentageBar
               total={exitQueueData.totalTempleOwned}
@@ -791,10 +799,10 @@ const TitleWrapper = styled.div`
   justify-content: center;
   width: 100%;
   margin-bottom: 2rem;
+`;
 
-  ${TooltipIcon} {
-    margin-left: 2rem;
-  }
+const TooltipPadding = styled.div`
+  margin-left: 2rem;
 `;
 
 interface BackgroundProps {
