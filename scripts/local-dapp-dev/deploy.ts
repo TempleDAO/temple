@@ -201,13 +201,14 @@ async function main() {
     'TEMPLE_STAKING_ADDRESS': templeStaking.address,
     'TREASURY_ADDRESS': treasury.address,
     'TREASURY_MANAGEMENT_ADDRESS': treasuryManagementProxy.address,
+    'TEMPLE_AMM_OPS_ADDRESS': ammOps.address,
     'TEMPLE_CASHBACK_ADDRESS': templeCashback.address,
     'TEMPLE_TEAM_FIXED_PAYMENTS_ADDRESS': teamPaymentsFixed.address,
     'TEMPLE_TEAM_CONTIGENT_PAYMENTS_ADDRESS': teamPaymentsContigent.address,
     'TEMPLE_V2_PAIR_ADDRESS': pair.address,
     'TEMPLE_V2_ROUTER_ADDRESS': templeRouter.address,
     'TEMPLE_ROUTER_WHITELIST': ammWhitelist.address,
-    'ACCELERATED_EXIT_QUEUE': acceleratedExitQueue.address,
+    'ACCELERATED_EXIT_QUEUE_ADDRESS': acceleratedExitQueue.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys
