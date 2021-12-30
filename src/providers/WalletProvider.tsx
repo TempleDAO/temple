@@ -1076,6 +1076,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
             })
           )
         );
+        getExitQueueData();
         await updateWallet(false);
       } catch (e) {
         /* TODO: Set a notification transaction has failed */
