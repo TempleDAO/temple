@@ -1,4 +1,4 @@
-# templeDOA
+# TempleDOA Protocol
 
 ## Dev Setup
 nvm use
