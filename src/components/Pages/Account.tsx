@@ -168,7 +168,7 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
                 >
                   <RightAlign>
                     <EnclaveCard
-                      enclave={discordData?.enclave.toLocaleLowerCase()}
+                      enclave={discordData?.enclave?.toLowerCase()}
                       unsetDiscrodData={() => setDiscordData(null)}
                     />
                   </RightAlign>
@@ -197,7 +197,7 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
             >
               <ProfileHeader username={discordData?.guild_name} />
               <AccessoriesTemplate
-                enclave={discordData?.enclave.toLocaleLowerCase()}
+                enclave={discordData?.enclave?.toLowerCase()}
               />
             </FlexStyled>
           </ProfileWrapper>
