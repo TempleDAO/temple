@@ -41,11 +41,11 @@ const CHART_EMBED_HEIGHT = 400;
 const CHART_HEIGHT = 500;
 
 const DUNE_TREASURY_CHART =
-  'https://dune.xyz/embeds/300480/570466/8eadfb11-1c62-40fc-9db0-c8e8aac05342';
+  'https://dune.xyz/embeds/321490/612067/621fe92e-859a-4525-be32-33631910b83c';
 const DUNE_OGTEMPLE_CHART =
-  'https://dune.xyz/embeds/300480/570489/463f46dc-a1cb-4d88-87c5-1d2e13265019';
+  'https://dune.xyz/embeds/321944/612832/822318f7-5c30-4a12-8688-3fea73e3f3ea';
 const DUNE_RATIO_CHART =
-  'https://dune.xyz/embeds/300480/570478/c223bd29-b827-4df5-8719-bdacacd994a9';
+  'https://dune.xyz/embeds/321528/612129/a6738355-8078-4cfd-b12d-b142559e1ab0';
 
 // const VALUE_EMBED_MIN_WIDTH = 320;
 // const VALUE_EMBED_HEIGHT = 200;
