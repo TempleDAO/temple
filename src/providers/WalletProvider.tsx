@@ -1,5 +1,9 @@
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
-import { JsonRpcProvider, JsonRpcSigner } from '@ethersproject/providers';
+import {
+  JsonRpcProvider,
+  JsonRpcSigner,
+  Network,
+} from '@ethersproject/providers';
 import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
 import { ClaimType } from 'enums/claim-type';
 import { BigNumber, ContractTransaction, ethers } from 'ethers';
@@ -150,6 +154,7 @@ interface WalletState {
   ocTemplar: OpeningCeremonyUser;
   maxInvitesPerVerifiedUser: number;
   signer: JsonRpcSigner | null;
+  network: Network | null;
   lockedEntries: Array<LockedEntry>;
   exitQueueData: ExitQueueData;
 
@@ -249,6 +254,7 @@ const INITIAL_STATE: WalletState = {
   claim: asyncNoop,
   verifyAMMWhitelist: asyncNoop,
   signer: null,
+  network: null,
   claimOgTemple: asyncNoop,
   getRewardsForOGT: asyncNoop,
   claimAvailableTemple: asyncNoop,
@@ -308,6 +314,7 @@ const WalletContext = createContext<WalletState>(INITIAL_STATE);
 export const WalletProvider = (props: PropsWithChildren<any>) => {
   const { children } = props;
   const [provider, setProvider] = useState<JsonRpcProvider | null>(null);
+  const [network, setNetwork] = useState<Network | null>(null);
   const [signerState, setSignerState] = useState<JsonRpcSigner | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isConnectedState, setIsConnectedState] = useState(false);
@@ -352,10 +359,14 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         ethereum.on('accountsChanged', () => {
           window.location.reload();
         });
+        ethereum.on('networkChanged', () => {
+          window.location.reload();
+        });
       }
 
       return () => {
         ethereum.removeListener('accountsChanged');
+        ethereum.removeListener('networkChanged');
       };
     }
   }, []);
@@ -387,6 +398,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           const wallet: string = await signer.getAddress();
           setSignerState(signer);
           setProvider(provider);
+          setNetwork(await provider.getNetwork());
           setWalletAddress(wallet);
           await updateWallet();
         }
@@ -1570,6 +1582,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         maxInvitesPerVerifiedUser,
         claim,
         signer: signerState,
+        network,
         claimOgTemple,
         getRewardsForOGT,
         claimAvailableTemple,
