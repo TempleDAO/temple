@@ -35,7 +35,7 @@ export enum TIME_INTERVAL {
 }
 
 const availableIntervals = [
-  { interval: TIME_INTERVAL.ONE_DAY, label: '1D' },
+  { interval: TIME_INTERVAL.ONE_DAY, label: '24H' },
   { interval: TIME_INTERVAL.ONE_WEEK, label: '1W' },
   { interval: TIME_INTERVAL.ONE_MONTH, label: '1M' },
   { interval: TIME_INTERVAL.SIX_MONTHS, label: '6M' },
@@ -437,7 +437,7 @@ function formatMetrics(metrics: PriceMetrics[]) {
 
       acc.ivDataPoints.push({
         x: utcTimestamp,
-        y: Number(dataPoint.treasuryStables) / Number(dataPoint.templeSupply),
+        y: Number(dataPoint.intrinsicValue),
       });
 
       const threshold = Number(dataPoint.thresholdTemplePrice);
