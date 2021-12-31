@@ -2,11 +2,10 @@ import { useState } from 'react';
 import useInterval from 'use-interval';
 
 export type PriceMetrics = {
-  templePrice: string;
   timestamp: number;
-  treasuryStables: number;
+  intrinsicValue: number;
+  templePrice: string;
   thresholdTemplePrice: number;
-  templeSupply: number;
 };
 
 export default function useRefreshablePriceMetrics(intervalMinutes = 20) {
@@ -31,10 +30,9 @@ export default function useRefreshablePriceMetrics(intervalMinutes = 20) {
           query: `{
             protocolMetrics(orderDirection: desc, orderBy: timestamp) {
               timestamp
-              templeSupply
+              intrinsicValue
               templePrice
               thresholdTemplePrice
-              treasuryStables
             }
           }`,
         }),
@@ -53,10 +51,9 @@ export default function useRefreshablePriceMetrics(intervalMinutes = 20) {
           query: `{
             dayProtocolMetrics(orderDirection: desc, orderBy: timestamp) {
               timestamp
-              templeSupply
+              intrinsicValue
               templePrice
               thresholdTemplePrice
-              treasuryStables
           }
           }`,
         }),
