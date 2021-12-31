@@ -138,6 +138,20 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             }}
           >
             <StatsCard
+              label="Risk Free Value"
+              stat={`$${formatNumber(dashboardMetrics?.riskFreeValue)}`}
+              backgroundColor={theme.palette.brand75}
+              backgroundImageUrl={texture4}
+              heightPercentage={35}
+            />
+          </FlexStyled>
+
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
               label="Intrinsic Value"
               stat={`$${formatNumber(dashboardMetrics?.iv)}`}
               backgroundColor={theme.palette.brand75}

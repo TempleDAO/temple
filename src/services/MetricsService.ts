@@ -18,6 +18,12 @@ import { formatNumber } from 'utils/formatter';
 import { fetchSubgraph } from 'utils/subgraph';
 import axios from 'axios';
 
+export interface ProtocolMetrics {
+  templeValue: number;
+  circulatingSupply: number;
+  riskFreeValue: number;
+}
+
 export interface TreasuryMetrics {
   treasuryValue: number;
   templeApy: number;
@@ -37,6 +43,7 @@ export interface DashboardMetrics {
   circMCap: number;
   circTempleSupply: number;
   socialMetrics: unknown;
+  templeRFV: number;
 }
 
 export interface AccountMetrics {
@@ -158,12 +165,16 @@ export class MetricsService {
    * Gets Temple Treasury Metrics
    */
   async getTreasuryMetrics(): Promise<TreasuryMetrics> {
-    const treasuryValue = await this.getTreasuryValue();
+    const [treasuryValue, { templeValue }, templeApy] = await Promise.all([
+      this.getTreasuryValue(),
+      this.getProtocolMetrics(),
+      this.getTempleApy(),
+    ]);
 
     return {
       treasuryValue,
-      templeApy: await this.getTempleApy(),
-      templeValue: await this.getTempleValueSubgraph(),
+      templeApy,
+      templeValue,
     };
   }
 
@@ -189,7 +200,8 @@ export class MetricsService {
 
     const epy = Number(stakingContractApy) / 10000000;
 
-    const templeValue = await this.getTempleValueSubgraph();
+    const { templeValue, circulatingSupply, riskFreeValue } =
+      await this.getProtocolMetrics();
     const iv = await this.getIV();
 
     const ogTempleRatio =
@@ -205,17 +217,18 @@ export class MetricsService {
       templeEpy: epy * 100,
       templeApy: await this.getTempleApy(epy),
       templeValue,
-      circTempleSupply: ogTempleTotalSupply * ogTempleRatio,
-      circMCap: ogTempleTotalSupply * ogTempleRatio * templeValue,
+      circTempleSupply: circulatingSupply,
+      circMCap: circulatingSupply * templeValue,
       ogTempleTotalSupply,
       ogTemplePrice: templeValue * ogTempleRatio,
       ogTempleRatio,
       iv,
+      riskFreeValue,
     };
   }
 
   async getAccountMetrics(walletAddress: string): Promise<AccountMetrics> {
-    const templeValue = await this.getTempleValueSubgraph();
+    const { templeValue } = await this.getProtocolMetrics();
     const currentTime = Date.now();
 
     const templeBalance = fromAtto(
@@ -345,17 +358,24 @@ export class MetricsService {
     return response?.data ?? { stakes: [], unstakes: [] };
   };
 
-  private getTempleValueSubgraph = async (): Promise<number> => {
+  private getProtocolMetrics = async (): Promise<ProtocolMetrics> => {
     const response = await fetchSubgraph(
       `{
         protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
           templePrice
+          templeCirculatingSupply
+          riskFreeValue
         }
       }`
     );
-    return response?.data?.protocolMetrics?.length > 0
-      ? parseFloat(response?.data?.protocolMetrics[0]?.templePrice)
-      : 0;
+
+    const data = response?.data?.protocolMetrics?.[0] || {};
+
+    return {
+      templeValue: parseFloat(data.templePrice),
+      circulatingSupply: parseFloat(data.templeCirculatingSupply),
+      riskFreeValue: parseFloat(data.riskFreeValue),
+    };
   };
 
   private getSocialMetrics = async () => {
