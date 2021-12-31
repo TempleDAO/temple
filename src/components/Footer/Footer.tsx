@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { Flex } from 'components/Layout/Flex';
 import socialDiscordIcon from 'assets/images/social-discord.png';
 import socialDocsIcon from 'assets/images/social-docs.png';
+import socialCodexIcon from 'assets/images/social-codex.png';
 import socialMediumIcon from 'assets/images/social-medium.png';
 import socialMessageIcon from 'assets/images/social-twitter.png';
 import socialTelegramIcon from 'assets/images/social-telegram.png';
@@ -111,6 +112,21 @@ export const Footer = () => {
                       height={24}
                     />
                     <strong>Telegram</strong>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={'https://templecodex.link'}
+                    target={'_blank'}
+                    rel="noreferrer"
+                  >
+                    <Image
+                      src={socialCodexIcon}
+                      alt={''}
+                      width={24}
+                      height={24}
+                    />
+                    <strong>Codex</strong>
                   </a>
                 </li>
               </ul>
