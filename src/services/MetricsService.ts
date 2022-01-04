@@ -118,6 +118,7 @@ export class MetricsService {
     const AMM_OPS_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS;
     const LOCKED_OG_TEMPLE_ADDRESS =
       ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS;
+    const FARMING_WALLET_ADDRESS = ENV_VARS.VITE_PUBLIC_FARMING_WALLET_ADDRESS;
     const ENV = ENV_VARS.VITE_ENV;
 
     this.provider =
@@ -146,6 +147,7 @@ export class MetricsService {
       AMM_OPS_ADDRESS,
       ROUTER_ADDRESS,
       PAIR_ADDRESS,
+      FARMING_WALLET_ADDRESS,
     ];
 
     this.treasuryContract = new TempleTreasury__factory()
