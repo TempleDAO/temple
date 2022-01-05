@@ -154,20 +154,21 @@ export class MetricsService {
       .attach(TEMPLE_COIN_ADDRESS)
       .connect(this.signer);
 
+    console.log(FRAX3CRV_F_REWARDS_ADDRESS, FRAX3CRV_F_ADDRESS);
     //TODO: remove once this is setup in rinkeby + locally
-    if (FRAX3CRV_F_REWARDS_ADDRESS && FRAX3CRV_F_ADDRESS) {
-      this.frax3crv_fCoinContract = new ethers.Contract(
-        FRAX3CRV_F_ADDRESS,
-        frax3crv_fABI,
-        this.signer
-      );
+    //if (FRAX3CRV_F_REWARDS_ADDRESS && FRAX3CRV_F_ADDRESS) {
+    this.frax3crv_fCoinContract = new ethers.Contract(
+      FRAX3CRV_F_ADDRESS,
+      frax3crv_fABI,
+      this.signer
+    );
 
-      this.frax3crv_fRewardsContract = new ethers.Contract(
-        FRAX3CRV_F_REWARDS_ADDRESS,
-        frax3crv_fRewardsABI,
-        this.signer
-      );
-    }
+    this.frax3crv_fRewardsContract = new ethers.Contract(
+      FRAX3CRV_F_REWARDS_ADDRESS,
+      frax3crv_fRewardsABI,
+      this.signer
+    );
+    //}
 
     this.pairAddress = PAIR_ADDRESS;
     this.treasuryAddress = TREASURY_ADDRESS;
