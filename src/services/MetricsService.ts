@@ -95,9 +95,9 @@ export class MetricsService {
       ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS === undefined ||
+      ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS === undefined /*||
       ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS === undefined
+      ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS*/
     ) {
       console.info(`
       VITE_ALCHEMY_PROVIDER_NETWORK=${ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK}
@@ -154,17 +154,17 @@ export class MetricsService {
       .attach(TEMPLE_COIN_ADDRESS)
       .connect(this.signer);
 
-    this.frax3crv_fCoinContract = new ethers.Contract(
-      FRAX3CRV_F_ADDRESS,
-      frax3crv_fABI,
-      this.signer
-    );
+    this.frax3crv_fCoinContract =
+      FRAX3CRV_F_ADDRESS &&
+      new ethers.Contract(FRAX3CRV_F_ADDRESS, frax3crv_fABI, this.signer);
 
-    this.frax3crv_fRewardsContract = new ethers.Contract(
-      FRAX3CRV_F_REWARDS_ADDRESS,
-      frax3crv_fRewardsABI,
-      this.signer
-    );
+    this.frax3crv_fRewardsContract =
+      FRAX3CRV_F_REWARDS_ADDRESS &&
+      new ethers.Contract(
+        FRAX3CRV_F_REWARDS_ADDRESS,
+        frax3crv_fRewardsABI,
+        this.signer
+      );
 
     this.pairAddress = PAIR_ADDRESS;
     this.treasuryAddress = TREASURY_ADDRESS;
@@ -327,21 +327,14 @@ export class MetricsService {
       );
     }
 
-    console.log('addresses', FRAX3CRV_F_REWARDS_ADDRESS, FRAX3CRV_F_ADDRESS);
-    console.log(
-      'contracts',
-      this.frax3crv_fCoinContract,
-      this.frax3crv_fRewardsContract
-    );
-    //TODO: remove once this is setup in rinkeby + locally
-    /*if (FRAX3CRV_F_REWARDS_ADDRESS && FRAX3CRV_F_ADDRESS) {
+    if (this.frax3crv_fCoinContract && this.frax3crv_fRewardsContract) {
       const [frax3crv_f, virtualPrice] = await Promise.all([
         this.frax3crv_fRewardsContract.balanceOf(FARMING_WALLET_ADDRESS),
         this.frax3crv_fCoinContract.get_virtual_price(),
       ]);
 
       treasuryValue += fromAtto(frax3crv_f) * fromAtto(virtualPrice);
-    }*/
+    }
 
     return treasuryValue;
   };
