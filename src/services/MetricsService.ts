@@ -81,6 +81,7 @@ export class MetricsService {
   private lockedOGTempleContract: LockedOGTemple;
   private readonly treasuryAddress: string;
   private provider;
+  private farmingWalletAddress: string;
 
   constructor() {
     //TODO: remove comments when we can have CVX contract addresses on rinkeby + locally
@@ -175,6 +176,8 @@ export class MetricsService {
       PAIR_ADDRESS,
       FARMING_WALLET_ADDRESS,
     ];
+
+    this.farmingWalletAddress = FARMING_WALLET_ADDRESS;
 
     this.treasuryContract = new TempleTreasury__factory()
       .attach(TREASURY_ADDRESS)
@@ -329,7 +332,7 @@ export class MetricsService {
 
     if (this.frax3crv_fCoinContract && this.frax3crv_fRewardsContract) {
       const [frax3crv_f, virtualPrice] = await Promise.all([
-        this.frax3crv_fRewardsContract.balanceOf(FARMING_WALLET_ADDRESS),
+        this.frax3crv_fRewardsContract.balanceOf(this.farmingWalletAddress),
         this.frax3crv_fCoinContract.get_virtual_price(),
       ]);
 
