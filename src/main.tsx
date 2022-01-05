@@ -1,4 +1,3 @@
-import AmmAltars from 'components/Pages/AmmAltars';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -10,7 +9,6 @@ import Exit from 'components/Pages/Exit';
 import Home from 'components/Pages/Home';
 import Claim from 'components/Pages/Claim';
 import AmmSpaRoot from 'components/Pages/AMM';
-import TempleGates from 'components/Pages/TempleGates';
 import MetamaskError from 'components/Pages/MetamaskError';
 import FireRitualistCashback from 'components/Pages/FireRitualistCashback';
 import NotificationManager from 'components/Notification/NotificationManager';
