@@ -97,7 +97,7 @@ export class MetricsService {
       ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS
+      ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS === undefined
     ) {
       console.info(`
       VITE_ALCHEMY_PROVIDER_NETWORK=${ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK}
@@ -114,7 +114,7 @@ export class MetricsService {
       VITE_PUBLIC_FRAX3CRV_F_ADDRESS=${ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS}
       VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS=${ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS}
       `);
-      throw new Error(`Missing env vars in Metrics Service`);
+      //throw new Error(`Missing env vars in Metrics Service`);
     }
 
     const TEMPLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS;
