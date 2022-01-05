@@ -154,9 +154,6 @@ export class MetricsService {
       .attach(TEMPLE_COIN_ADDRESS)
       .connect(this.signer);
 
-    console.log(FRAX3CRV_F_REWARDS_ADDRESS, FRAX3CRV_F_ADDRESS);
-    //TODO: remove once this is setup in rinkeby + locally
-    //if (FRAX3CRV_F_REWARDS_ADDRESS && FRAX3CRV_F_ADDRESS) {
     this.frax3crv_fCoinContract = new ethers.Contract(
       FRAX3CRV_F_ADDRESS,
       frax3crv_fABI,
@@ -168,7 +165,6 @@ export class MetricsService {
       frax3crv_fRewardsABI,
       this.signer
     );
-    //}
 
     this.pairAddress = PAIR_ADDRESS;
     this.treasuryAddress = TREASURY_ADDRESS;
@@ -331,16 +327,21 @@ export class MetricsService {
       );
     }
 
-    console.log(FRAX3CRV_F_REWARDS_ADDRESS, FRAX3CRV_F_ADDRESS);
+    console.log('addresses', FRAX3CRV_F_REWARDS_ADDRESS, FRAX3CRV_F_ADDRESS);
+    console.log(
+      'contracts',
+      this.frax3crv_fCoinContract,
+      this.frax3crv_fRewardsContract
+    );
     //TODO: remove once this is setup in rinkeby + locally
-    if (FRAX3CRV_F_REWARDS_ADDRESS && FRAX3CRV_F_ADDRESS) {
-      /*const [frax3crv_f, virtualPrice] = await Promise.all([
+    /*if (FRAX3CRV_F_REWARDS_ADDRESS && FRAX3CRV_F_ADDRESS) {
+      const [frax3crv_f, virtualPrice] = await Promise.all([
         this.frax3crv_fRewardsContract.balanceOf(FARMING_WALLET_ADDRESS),
         this.frax3crv_fCoinContract.get_virtual_price(),
       ]);
 
-      treasuryValue += fromAtto(frax3crv_f) * fromAtto(virtualPrice);*/
-    }
+      treasuryValue += fromAtto(frax3crv_f) * fromAtto(virtualPrice);
+    }*/
 
     return treasuryValue;
   };
