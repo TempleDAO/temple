@@ -446,7 +446,11 @@ function formatMetrics(metrics: PriceMetrics[]) {
         x: utcTimestamp,
         // threshold being 0 means the subgraph has no data for it at this timestamp
         // so we use NaN as a fallback and manipulate the tooltip in Crosshair props
-        y: threshold === 0 ? NaN : threshold,
+        y:
+          threshold === 0
+            ? NaN
+            : //TODO: revert after threshold decay is fixed on the contract
+              Math.max(0.98 * Number(dataPoint.templePrice), threshold),
       });
 
       return acc;
