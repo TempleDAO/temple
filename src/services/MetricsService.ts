@@ -13,6 +13,8 @@ import {
   OGTemple,
   OGTemple__factory,
 } from 'types/typechain';
+import frax3crv_fABI from 'data/abis/frax3crv-f';
+import frax3crv_fRewardsABI from 'data/abis/frax3crv-fRewardPool';
 import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { fetchSubgraph } from 'utils/subgraph';
@@ -70,6 +72,10 @@ export class MetricsService {
   private stableCoinContract: ERC20;
   private templeCoinContract: ERC20;
   private ogTempleCoinContract: OGTemple;
+  //no type since this is a Vyper contract and we have no typechain type def for it atm
+  private frax3crv_fCoinContract;
+  //TODO: add this contract to protocol repo and get typechain type def as opposed to ABI
+  private frax3crv_fRewardsContract;
   private treasuryContract: TempleTreasury;
   private templeStakingContract: TempleStaking;
   private lockedOGTempleContract: LockedOGTemple;
@@ -77,6 +83,7 @@ export class MetricsService {
   private provider;
 
   constructor() {
+    //TODO: remove comments when we can have CVX contract addresses on rinkeby + locally
     if (
       ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK === undefined ||
       ENV_VARS.VITE_ALCHEMY_API_KEY === undefined ||
@@ -88,7 +95,9 @@ export class MetricsService {
       ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS === undefined
+      ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS === undefined /*||
+      ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS === undefined ||
+      ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS*/
     ) {
       console.info(`
       VITE_ALCHEMY_PROVIDER_NETWORK=${ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK}
@@ -102,6 +111,8 @@ export class MetricsService {
       VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS}
       VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS}
       VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS}
+      VITE_PUBLIC_FRAX3CRV_F_ADDRESS=${ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS}
+      VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS=${ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS}
       `);
       throw new Error(`Missing env vars in Metrics Service`);
     }
@@ -118,6 +129,9 @@ export class MetricsService {
     const AMM_OPS_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS;
     const LOCKED_OG_TEMPLE_ADDRESS =
       ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS;
+    const FRAX3CRV_F_ADDRESS = ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS;
+    const FRAX3CRV_F_REWARDS_ADDRESS =
+      ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS;
     const FARMING_WALLET_ADDRESS = ENV_VARS.VITE_PUBLIC_FARMING_WALLET_ADDRESS;
     const ENV = ENV_VARS.VITE_ENV;
 
@@ -139,6 +153,21 @@ export class MetricsService {
     this.templeCoinContract = new ERC20__factory()
       .attach(TEMPLE_COIN_ADDRESS)
       .connect(this.signer);
+
+    //TODO: remove once this is setup in rinkeby + locally
+    if (FRAX3CRV_F_REWARDS_ADDRESS && FRAX3CRV_F_ADDRESS) {
+      this.frax3crv_fCoinContract = new ethers.Contract(
+        FRAX3CRV_F_ADDRESS,
+        frax3crv_fABI,
+        this.signer
+      );
+
+      this.frax3crv_fRewardsContract = new ethers.Contract(
+        FRAX3CRV_F_REWARDS_ADDRESS,
+        frax3crv_fRewardsABI,
+        this.signer
+      );
+    }
 
     this.pairAddress = PAIR_ADDRESS;
     this.treasuryAddress = TREASURY_ADDRESS;
@@ -300,6 +329,17 @@ export class MetricsService {
         await this.stableCoinContract.balanceOf(address)
       );
     }
+
+    //TODO: remove once this is setup in rinkeby + locally
+    if (FRAX3CRV_F_REWARDS_ADDRESS && FRAX3CRV_F_ADDRESS) {
+      const [frax3crv_f, virtualPrice] = await Promise.all([
+        this.frax3crv_fRewardsContract.balanceOf(FARMING_WALLET_ADDRESS),
+        this.frax3crv_fCoinContract.get_virtual_price(),
+      ]);
+
+      treasuryValue += fromAtto(frax3crv_f) * fromAtto(virtualPrice);
+    }
+
     return treasuryValue;
   };
 
