@@ -1,0 +1,4 @@
+export enum TEAM_PAYMENTS_TYPES {
+  FIXED,
+  CONTINGENT,
+}

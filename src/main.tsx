@@ -9,6 +9,7 @@ import Exit from 'components/Pages/Exit';
 import Home from 'components/Pages/Home';
 import Claim from 'components/Pages/Claim';
 import AmmSpaRoot from 'components/Pages/AMM';
+import TeamPayments from 'components/Pages/TeamPayments';
 import MetamaskError from 'components/Pages/MetamaskError';
 import FireRitualistCashback from 'components/Pages/FireRitualistCashback';
 import NotificationManager from 'components/Notification/NotificationManager';
@@ -40,6 +41,7 @@ ReactDOM.render(
                         element={<FireRitualistCashback />}
                       />
                       <Route path="temple-claim" element={<Claim />} />
+                      <Route path="team-payments" element={<TeamPayments />} />
                       <Route path="/*" element={<Navigate replace to="/" />} />
                     </Route>
                   </>
