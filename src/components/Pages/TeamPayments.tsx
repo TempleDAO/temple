@@ -232,10 +232,6 @@ function useTempleTeamPayments(): TeamPaymentsState {
           .attach(TEAM_FIXED_PAYMENTS_ADDRESS)
           .connect(signer);
 
-        const contingentTeamPayments = new TempleTeamPayments__factory()
-          .attach(TEAM_CONTINGENT_PAYMENTS_ADDRESS)
-          .connect(signer);
-
         const fixedAllocation = await fixedTeamPayments.allocation(wallet);
         const fixedClaimedAmount = await fixedTeamPayments.claimed(wallet);
         const convertedFixedAlloc = fromAtto(fixedAllocation);
@@ -255,26 +251,36 @@ function useTempleTeamPayments(): TeamPaymentsState {
           setClaimableFixed(convertedFixedClaimable);
         }
 
-        const contingentAllocation = await contingentTeamPayments.allocation(
-          wallet
-        );
-        const convertedContingentAlloc = fromAtto(contingentAllocation);
-        const contingentClaimedAmount = await fixedTeamPayments.claimed(wallet);
-        setRemainingAllocationContingent(
-          fromAtto(contingentAllocation.sub(contingentClaimedAmount))
-        );
+        if (TEAM_CONTINGENT_PAYMENTS_ADDRESS) {
+          const contingentTeamPayments = new TempleTeamPayments__factory()
+            .attach(TEAM_CONTINGENT_PAYMENTS_ADDRESS)
+            .connect(signer);
 
-        setAllocationContingent(convertedContingentAlloc);
+          const contingentAllocation = await contingentTeamPayments.allocation(
+            wallet
+          );
+          const convertedContingentAlloc = fromAtto(contingentAllocation);
+          const contingentClaimedAmount = await fixedTeamPayments.claimed(
+            wallet
+          );
+          setRemainingAllocationContingent(
+            fromAtto(contingentAllocation.sub(contingentClaimedAmount))
+          );
 
-        if (convertedContingentAlloc > 0) {
-          const contingentClaimable =
-            await contingentTeamPayments.calculateClaimable(wallet);
-          const convertedContingentClaimable = fromAtto(contingentClaimable);
+          setAllocationContingent(convertedContingentAlloc);
 
-          setClaimableContingent(convertedContingentClaimable);
+          if (convertedContingentAlloc > 0) {
+            const contingentClaimable =
+              await contingentTeamPayments.calculateClaimable(wallet);
+            const convertedContingentClaimable = fromAtto(contingentClaimable);
 
-          convertedContingentClaimable > 0 &&
-            dispatch({ type: 'default-contingent' });
+            setClaimableContingent(convertedContingentClaimable);
+
+            convertedContingentClaimable > 0 &&
+              dispatch({ type: 'default-contingent' });
+          }
+        } else {
+          setClaimableContingent(0);
         }
       }
     };
