@@ -7,9 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./TempleERC20Token.sol";
 
 contract TempleTeamPayments is Ownable {
-    // Based on an average of 30.44 days per month
-    uint256 constant SECONDS_IN_10_MONTHS = 26300000;
-
     uint256 public immutable roundStartDate;
     uint256 public immutable roundEndDate;
     TempleERC20Token public immutable TEMPLE;
@@ -19,9 +16,9 @@ contract TempleTeamPayments is Ownable {
 
     event Claimed(address indexed member, uint256 amount);
 
-    constructor(TempleERC20Token _TEMPLE) {
-        roundStartDate = block.timestamp;
-        roundEndDate = block.timestamp + SECONDS_IN_10_MONTHS;
+    constructor(TempleERC20Token _TEMPLE, uint256 paymentPeriodInSeconds, uint256 startTimestamp) {
+        roundStartDate = startTimestamp;
+        roundEndDate = startTimestamp + paymentPeriodInSeconds;
         TEMPLE = _TEMPLE;
     }
 

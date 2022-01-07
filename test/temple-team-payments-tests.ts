@@ -8,7 +8,7 @@ import {
   TempleERC20Token__factory,
   TempleTeamPayments__factory,
 } from '../typechain';
-import { shouldThrow } from './helpers';
+import { shouldThrow, blockTimestamp } from './helpers';
 
 const SECONDS_IN_1_MONTH = 2630000;
 const ARITHMETIC_ERROR = /Arithmetic operation underflowed or overflowed outside of an unchecked block/;
@@ -17,6 +17,8 @@ const ONLY_OWNER_ERROR = /Ownable: caller is not the owner/;
 const ADDRESS_ZERO_SET_ERROR = /TempleTeamPayments: Address cannot be 0x0/;
 
 describe('TempleTeamPayments', function () {
+  const SECONDS_IN_10_MONTHS = 26300000;
+
   let PAYMENTS: TempleTeamPayments;
   let owner: Signer;
   let member0: Signer;
@@ -39,7 +41,11 @@ describe('TempleTeamPayments', function () {
     TEMPLE = await new TempleERC20Token__factory(owner).deploy();
     await TEMPLE.addMinter(await owner.getAddress());
 
-    PAYMENTS = await new TempleTeamPayments__factory(owner).deploy(TEMPLE.address);
+    PAYMENTS = await new TempleTeamPayments__factory(owner).deploy(
+      TEMPLE.address,
+      SECONDS_IN_10_MONTHS,
+      await blockTimestamp(),
+    );
     await PAYMENTS.setAllocations([member0Address, member1Address], [allocation100K, allocation100K]);
 
     await TEMPLE.mint(PAYMENTS.address, 1000000);
