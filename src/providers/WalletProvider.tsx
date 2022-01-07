@@ -6,6 +6,7 @@ import {
 } from '@ethersproject/providers';
 import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
 import { ClaimType } from 'enums/claim-type';
+import { TEAM_PAYMENTS_TYPES } from 'enums/team-payment-type';
 import { BigNumber, ContractTransaction, ethers } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
 import React, {
@@ -28,6 +29,7 @@ import {
   TempleERC20Token__factory,
   TempleFraxAMMRouter__factory,
   TempleStaking__factory,
+  TempleTeamPayments__factory,
   TempleTreasury__factory,
   TempleUniswapV2Pair__factory,
 } from 'types/typechain';
@@ -204,6 +206,10 @@ interface WalletState {
 
   getBalance(): Promise<Balance | void>;
 
+  collectTempleTeamPayment(
+    paymentType: TEAM_PAYMENTS_TYPES
+  ): Promise<void | TransactionReceipt>;
+
   apy: number;
 }
 
@@ -263,6 +269,7 @@ const INITIAL_STATE: WalletState = {
   getSellQuote: asyncNoop,
   getBuyQuote: asyncNoop,
   getBalance: asyncNoop,
+  collectTempleTeamPayment: asyncNoop,
   apy: 0,
 };
 
@@ -279,6 +286,10 @@ const TEMPLE_V2_ROUTER_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS;
 const TEMPLE_V2_PAIR_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS;
 const ACCELERATED_EXIT_QUEUE_ADDRESS =
   ENV_VARS.VITE_PUBLIC_ACCELERATED_EXIT_QUEUE_ADDRESS;
+const TEMPLE_TEAM_FIXED_PAYMENTS_ADDRESS =
+  ENV_VARS.VITE_PUBLIC_TEMPLE_R1_TEAM_FIXED_PAYMENTS_ADDRESS;
+const TEMPLE_TEAM_CONTINGENT_PAYMENTS_ADDRESS =
+  ENV_VARS.VITE_PUBLIC_TEMPLE_R1_TEAM_CONTINGENT_PAYMENTS_ADDRESS;
 
 if (
   STABLE_COIN_ADDRESS === undefined ||
@@ -1559,6 +1570,31 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
+  const collectTempleTeamPayment = async (paymentType: TEAM_PAYMENTS_TYPES) => {
+    if (walletAddress && signerState) {
+      const templeTeamPaymentContract = new TempleTeamPayments__factory()
+        .attach(
+          paymentType === TEAM_PAYMENTS_TYPES.FIXED
+            ? TEMPLE_TEAM_FIXED_PAYMENTS_ADDRESS
+            : TEMPLE_TEAM_CONTINGENT_PAYMENTS_ADDRESS
+        )
+        .connect(signerState);
+
+      const collectTxn = await templeTeamPaymentContract.claim();
+
+      const txnReceipt = await collectTxn.wait();
+
+      openNotification({
+        title: `${TEMPLE_TOKEN} claimed`,
+        hash: collectTxn.hash,
+      });
+
+      return txnReceipt;
+    } else {
+      console.error('Missing wallet address');
+    }
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -1600,6 +1636,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         getBalance,
         apy,
         restakeAvailableTemple,
+        collectTempleTeamPayment,
       }}
     >
       {children}
