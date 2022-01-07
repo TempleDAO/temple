@@ -251,6 +251,8 @@ export class MetricsService {
       circTempleSupply: circulatingSupply,
       circMCap: circulatingSupply * templeValue,
       ogTempleTotalSupply,
+      percentageStaked:
+        (ogTempleTotalSupply * ogTempleRatio) / circulatingSupply,
       ogTemplePrice: templeValue * ogTempleRatio,
       ogTempleRatio,
       iv,
