@@ -6,6 +6,9 @@ import {
   SelectTempleDaoOptions,
 } from '../InputSelect/InputSelect';
 
+interface SizeProps {
+  small?: boolean;
+}
 interface CryptoSelector {
   kind: 'select';
   // A selector for the crypto, must provide onCryptoChange
@@ -21,7 +24,7 @@ interface CryptoValue {
   value: string;
 }
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends SizeProps, InputHTMLAttributes<HTMLInputElement> {
   // extra information for the input
   hint?: string;
   // options for the crypto in the input
@@ -34,6 +37,11 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   handleChange?(value: number): void;
 
   onHintClick?(): void;
+
+  // Sets styling for the two inputs that are paired
+  // in the buy/sell amm
+  pairTop?: boolean;
+  pairBottom?: boolean;
 }
 
 /**
@@ -48,6 +56,9 @@ export const Input = ({
   type,
   value,
   disabled,
+  small,
+  pairTop,
+  pairBottom,
   ...props
 }: InputProps) => {
   const renderCrypto = () => {
@@ -56,7 +67,7 @@ export const Input = ({
     }
 
     if (crypto.kind === 'value') {
-      return <h3>{crypto.value}</h3>;
+      return <Ticker small={small}>{crypto.value}</Ticker>;
     }
     if (crypto.kind === 'select') {
       const { cryptoOptions, defaultValue, onCryptoChange } = crypto;
@@ -107,8 +118,14 @@ export const Input = ({
   };
 
   return (
-    <InputWrapper isDisabled={disabled}>
+    <InputWrapper
+      isDisabled={disabled}
+      small={small}
+      pairTop={pairTop}
+      pairBottom={pairBottom}
+    >
       <InputStyled
+        small={small}
         onChange={handleInputChange}
         onKeyPress={isNumber ? numbersOnly : undefined}
         type={type}
@@ -131,19 +148,35 @@ export const Input = ({
   );
 };
 
-interface InputWrapperProps {
+interface InputWrapperProps extends SizeProps {
   isDisabled?: boolean;
+  pairTop?: boolean;
+  pairBottom?: boolean;
 }
 
 export const InputWrapper = styled.div<InputWrapperProps>`
   position: relative;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.2rem;
   padding: 0 2rem /* 12/16 */;
   background-color: ${(props) => props.theme.palette.brand25};
-  height: 4.75rem /* 76/16 */;
+  height: ${({ small }) => (small ? '4' : '4.75')}rem;
   border: 0.0625rem /* 1/16 */ solid ${(props) => props.theme.palette.brand};
   // width will be manage by layout case by case
   width: 100%;
+  ${(props) => {
+    if (props.pairTop) {
+      return css`
+        margin-bottom: -13px;
+        color: pink;
+      `;
+    }
+    if (props.pairBottom) {
+      return css`
+        margin-top: -13px;
+        color: blue;
+      `;
+    }
+  }}}
 
   ${(props) =>
     props.isDisabled &&
@@ -193,7 +226,7 @@ export const InputHint = styled.small<InputHintProps>`
     `}
 `;
 
-export const InputStyled = styled.input`
+export const InputStyled = styled.input<SizeProps>`
   // common
   color: ${(props) => props.theme.palette.light};
   background-color: transparent;
@@ -203,14 +236,18 @@ export const InputStyled = styled.input`
   width: 100%;
   height: 100%;
   text-align: right;
+  ${({ small }) => small && `font-size: 1.5rem`};
 
   // remove input number controls ^ v
   &[type='number']::-webkit-inner-spin-button,
   &[type='number']::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    -moz-appearance: none;
     appearance: none;
     margin: 0;
   }
-  -moz-appearance: textfield;
+  appearance: textfield;
+`;
+
+const Ticker = styled.h3<SizeProps>`
+  display: inline-block;
+  ${({ small }) => small && 'font-size: 1.2rem'};
 `;

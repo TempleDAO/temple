@@ -47,7 +47,7 @@ export const Button = ({
         console.info(`Error: ${JSON.stringify(err, null, 2)}`);
       }
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   };
 

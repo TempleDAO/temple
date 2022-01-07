@@ -12,7 +12,7 @@ import midGlow from 'assets/images/glow_center.png';
 import leftGlow from 'assets/images/glow_left.png';
 import rightGlow from 'assets/images/glow_right.png';
 import scrollGlow from 'assets/images/glow_scroll.png';
-import { PriceChart } from '../Charts/PriceChart';
+import { PriceChart } from 'components/Charts/PriceChart';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
