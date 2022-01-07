@@ -128,7 +128,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               stat={`$${formatNumber(dashboardMetrics?.templeValue)}`}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={texture1}
-              heightPercentage={35}
+              heightPercentage={50}
             />
           </FlexStyled>
 
@@ -142,7 +142,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               stat={`$${formatNumber(dashboardMetrics?.riskFreeValue)}`}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={texture4}
-              heightPercentage={35}
+              heightPercentage={50}
             />
           </FlexStyled>
 
@@ -156,7 +156,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               stat={`$${formatNumber(dashboardMetrics?.iv)}`}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={texture2}
-              heightPercentage={35}
+              heightPercentage={50}
             />
           </FlexStyled>
         </FlexStyled>
@@ -296,20 +296,8 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               label="Temple Price"
               stat={`$${formatNumber(dashboardMetrics?.templeValue)}`}
               backgroundColor={theme.palette.brand75}
-              backgroundImageUrl={background5}
-            />
-          </FlexStyled>
-
-          <FlexStyled
-            layout={{
-              kind: 'item',
-            }}
-          >
-            <StatsCard
-              label="Current EPY (daily)"
-              stat={`${formatNumber(dashboardMetrics?.templeEpy)}%`}
-              backgroundColor={theme.palette.brand75}
-              backgroundImageUrl={background6}
+              backgroundImageUrl={texture2}
+              heightPercentage={35}
             />
           </FlexStyled>
 
@@ -323,21 +311,8 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               stat={`$${formatNumber(dashboardMetrics?.ogTemplePrice)}`}
               backgroundColor={theme.palette.brand75}
               fontColor={theme.palette.light}
-              backgroundImageUrl={background7}
-            />
-          </FlexStyled>
-
-          <FlexStyled
-            layout={{
-              kind: 'item',
-            }}
-          >
-            <StatsCard
-              label="Temple/OGTemple Ratio"
-              stat={`${formatNumber(dashboardMetrics?.ogTempleRatio)}`}
-              backgroundColor={theme.palette.brand75}
-              fontColor={theme.palette.light}
-              backgroundImageUrl={background8}
+              backgroundImageUrl={texture1}
+              heightPercentage={35}
             />
           </FlexStyled>
         </FlexStyled>
@@ -374,6 +349,64 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
           </FlexStyled>
         </FlexStyled>
 
+        <FlexStyled
+          layout={{
+            kind: 'container',
+            direction: 'row',
+            justifyContent: 'flex-start',
+            canWrap: true,
+          }}
+        >
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Current EPY (daily)"
+              stat={`${formatNumber(dashboardMetrics?.templeEpy)}%`}
+              backgroundColor={theme.palette.dark}
+              backgroundImageUrl={background9}
+              fontColor={theme.palette.light}
+              darken
+              heightPercentage={50}
+            />
+          </FlexStyled>
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="Temple/OGTemple Ratio"
+              stat={`${formatNumber(dashboardMetrics?.ogTempleRatio)}`}
+              backgroundColor={theme.palette.dark}
+              fontColor={theme.palette.light}
+              backgroundImageUrl={background8}
+              darken
+              heightPercentage={50}
+            />
+          </FlexStyled>
+
+          <FlexStyled
+            layout={{
+              kind: 'item',
+            }}
+          >
+            <StatsCard
+              label="percentage of TEMPLE staked"
+              stat={`${formatNumber(
+                dashboardMetrics?.percentageStaked * 100
+              )}%`}
+              backgroundColor={theme.palette.dark}
+              darken
+              fontColor={theme.palette.light}
+              backgroundImageUrl={background4}
+              heightPercentage={50}
+            />
+          </FlexStyled>
+        </FlexStyled>
+
         <h3>Community Growth</h3>
         <FlexStyled
           layout={{
@@ -393,7 +426,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               stat={dashboardMetrics?.socialMetrics?.discord?.totalMembers}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={background9}
-              heightPercentage={60}
+              heightPercentage={50}
             />
           </FlexStyled>
 
@@ -407,7 +440,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               stat={dashboardMetrics?.socialMetrics?.twitter_followers_count}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={background10}
-              heightPercentage={60}
+              heightPercentage={50}
             />
           </FlexStyled>
 
@@ -422,7 +455,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               backgroundColor={theme.palette.brand75}
               fontColor={theme.palette.light}
               backgroundImageUrl={background11}
-              heightPercentage={60}
+              heightPercentage={50}
             />
           </FlexStyled>
         </FlexStyled>
