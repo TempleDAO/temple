@@ -60,6 +60,7 @@ type CrosshairData = {
 
 type LineChartProps = {
   timeInterval?: TIME_INTERVAL;
+  noTicks?: boolean;
 };
 
 const Container = styled.div`
@@ -68,8 +69,8 @@ const Container = styled.div`
   align-items: center;
   //not using rem as not to have the value hardcoded
   //see <FlexibleXYPlot> component usage below
-  min-width: ${CHART_SIZE.width}px;
-  min-height: ${CHART_SIZE.height}px;
+  //min-width: ${CHART_SIZE.width}px;
+  //min-height: ${CHART_SIZE.height}px;
   width: 100%;
   height: 100%;
   * {
@@ -149,6 +150,7 @@ const LoaderContainer = styled.div`
 
 export const PriceChart = ({
   timeInterval = TIME_INTERVAL.ONE_WEEK,
+  noTicks,
 }: LineChartProps) => {
   const [selectedInterval, setSelectedInterval] = useState(timeInterval);
   const [loading, setLoading] = useState(true);
@@ -225,7 +227,7 @@ export const PriceChart = ({
                   fontSize: 10,
                 },
               }}
-              tickTotal={10}
+              tickTotal={noTicks ? 0 : 10}
             />
             <YAxis
               style={{
@@ -233,6 +235,7 @@ export const PriceChart = ({
                 ticks: { stroke: '#6b6b76' },
                 text: { stroke: 'none', fill: '#6b6b76', fontWeight: 600 },
               }}
+              //{...(noTicks ? { tickTotal: 0 } : {})}
             />
             <LineSeries
               data={dataPoints.ivDataPoints}

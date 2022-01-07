@@ -14,9 +14,16 @@ export const Header = () => {
         <MenuContainer>
           <Button
             label={'enter the temple'}
-            onClick={() => navigate('/the-temple', { replace: true })}
+            onClick={() => navigate('/the-temple')}
             isSmall
             isUppercase
+          />
+          <Button
+            label={'launch app'}
+            onClick={() => navigate('/app')}
+            isSmall
+            isUppercase
+            isActive
           />
         </MenuContainer>
       </NavContainer>
@@ -51,4 +58,5 @@ const NavContainer = styled.div`
 
 const MenuContainer = styled.div`
   display: flex;
+  width: 350px;
 `;

@@ -17,6 +17,7 @@ import { NotificationProvider } from 'providers/NotificationProvider';
 import { WalletProvider } from 'providers/WalletProvider';
 import { GlobalStyle } from 'styles/GlobalStyle';
 import { theme } from 'styles/theme';
+import DAppRoot from 'components/Pages/DAppRoot';
 
 ReactDOM.render(
   <React.StrictMode>
@@ -31,6 +32,7 @@ ReactDOM.render(
                 window.ethereum ? (
                   <>
                     <Route path="/the-temple" element={<AmmSpaRoot />} />
+                    <Route path="/app" element={<DAppRoot />} />
                     <Route path="/" element={<PageLayout />}>
                       <Route path="/" element={<Home />} />
                       <Route path="disclaimer" element={<Disclaimer />} />

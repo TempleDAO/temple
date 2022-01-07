@@ -5,19 +5,27 @@ import { formatNumber } from 'utils/formatter';
 
 type AppColors = keyof typeof theme.palette;
 
-interface PercentageBarProps {
+interface SizeProps {
+  small?: boolean;
+}
+
+interface PercentageBarProps extends SizeProps {
   total: number;
   processed: number;
 }
 
-export const PercentageBar = ({ total, processed }: PercentageBarProps) => {
+export const PercentageBar = ({
+  total,
+  processed,
+  small,
+}: PercentageBarProps) => {
   const getItemPercentage = (value: number) => {
     return formatNumber((value * 100) / total);
   };
 
   return (
     <>
-      <Bar>
+      <Bar small={small}>
         <BarItem value={getItemPercentage(processed)} color={'brand'} />
       </Bar>
       <Legend>
@@ -34,9 +42,9 @@ export const PercentageBar = ({ total, processed }: PercentageBarProps) => {
   );
 };
 
-const Bar = styled.div`
+const Bar = styled.div<SizeProps>`
   position: relative;
-  height: 2rem;
+  height: ${({ small }) => (small ? '1' : '2')}rem;
   width: 100%;
   border-radius: 1rem;
   background-color: ${(props) => props.theme.palette.brand25};
