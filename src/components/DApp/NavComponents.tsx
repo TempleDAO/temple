@@ -153,8 +153,6 @@ export const Container = styled.div`
   padding-bottom: 20px;
 
   background-color: ${(props) => props.theme.palette.dark};
-
-  overflow: hidden;
 `;
 
 export const Main = styled.div`
