@@ -139,7 +139,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
           <DataCard
             small={small}
             title={'TEMPLE + REWARDS'}
-            data={formatNumber(rewards as number) + ''}
+            data={formatNumber(rewards as number) + '' || '0'}
             tooltipContent={
               'Amount of $TEMPLE received once you exit the queue'
             }
