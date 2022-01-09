@@ -58,5 +58,5 @@ const NavContainer = styled.div`
 
 const MenuContainer = styled.div`
   display: flex;
-  width: 350px;
+  width: 10.9375rem; //350px;
 `;
