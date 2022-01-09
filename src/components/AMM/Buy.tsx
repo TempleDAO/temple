@@ -138,7 +138,11 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         label={
           minAmountOut > rewards
             ? 'increase slippage'
-            : `${small ? 'buy with' : 'sacrifice'} ${STABLE_COIN_SYMBOL}`
+            : `${
+                small
+                  ? 'EXCHANGE $FRAX FOR $TEMPLE'
+                  : `sacrifice ${STABLE_COIN_SYMBOL}`
+              } `
         }
         isUppercase
         isSmall={small}

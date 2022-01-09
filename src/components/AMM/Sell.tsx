@@ -138,7 +138,11 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         label={
           minAmountOut > rewards
             ? 'increase slippage'
-            : `${small ? 'SELL' : 'RENOUNCE'} YOUR ${TEMPLE_TOKEN}`
+            : `${
+                small
+                  ? 'EXCHANGE $TEMPLE FOR $FRAX'
+                  : `RENOUNCE YOUR ${TEMPLE_TOKEN}`
+              }`
         }
         isUppercase
         onClick={
