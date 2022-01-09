@@ -22,7 +22,7 @@ const Notifications = styled.div`
   position: absolute;
   z-index: ${(props) => props.theme.zIndexes.max};
   top: calc(${(props) => props.theme.metrics.headerHeight} + 1rem);
-  right: 1rem;
+  right: 2rem;
   width: 20rem /* 320/16 */;
 `;
 

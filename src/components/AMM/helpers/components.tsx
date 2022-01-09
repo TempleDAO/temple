@@ -49,6 +49,9 @@ interface SpacerProps {
 export const Spacer = styled.div<SpacerProps>`
   height: ${({ small }) => (small ? '1' : '2')}rem;
 `;
+export const SpacerWidth = styled.div<SpacerProps>`
+  width: ${({ small }) => (small ? '1' : '2')}rem;
+`;
 
 export const TooltipPadding = styled.div`
   margin-left: 2rem;
@@ -56,5 +59,5 @@ export const TooltipPadding = styled.div`
 export const ViewContainer = styled.div`
   display: flex;
   flex-direction: column;
-  //width: 85%;
+  min-width: 90%;
 `;

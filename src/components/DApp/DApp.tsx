@@ -1,4 +1,4 @@
-import React, { FC, useContext, useState } from 'react';
+import React, { FC, useContext, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { Buy } from 'components/AMM/Buy';
 import { Queue } from 'components/AMM/Queue';
@@ -21,8 +21,23 @@ interface DAppProps {
 }
 
 export const DApp: FC<DAppProps> = ({ small }) => {
+  const ref = useRef();
   const { activeView, setView } = useContext(NavContext);
   const [menuVisible, setMenuVisible] = useState(false);
+
+  useEffect(() => {
+    const checkIfClickedOutside = (e) => {
+      if (menuVisible && ref.current && !ref.current.contains(e.target)) {
+        setMenuVisible(false);
+      }
+    };
+
+    document.addEventListener('mousedown', checkIfClickedOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', checkIfClickedOutside);
+    };
+  }, [menuVisible]);
 
   let CurrentView;
 
@@ -49,7 +64,7 @@ export const DApp: FC<DAppProps> = ({ small }) => {
   }
 
   return small ? (
-    <MobileContainer>
+    <MobileContainer ref={ref}>
       {menuVisible && <Nav small onClose={() => setMenuVisible(false)} />}
       <MenuBar>
         <MenuImage onClick={() => setMenuVisible(true)} />

@@ -87,7 +87,9 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   return (
     <ViewContainer>
       <TitleWrapper>
-        <ConvoFlowTitle>HOW DEDICATED ARE YOU, TEMPLAR?</ConvoFlowTitle>
+        <ConvoFlowTitle>
+          {small ? 'BUY $TEMPLE' : 'HOW DEDICATED ARE YOU, TEMPLAR?'}
+        </ConvoFlowTitle>
       </TitleWrapper>
       <Input
         small={small}

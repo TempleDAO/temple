@@ -164,15 +164,16 @@ export const InputWrapper = styled.div<InputWrapperProps>`
   // width will be manage by layout case by case
   width: 100%;
   ${(props) => {
+    const margin = props.small ? '-13px' : '-18px';
     if (props.pairTop) {
       return css`
-        margin-bottom: -13px;
+        margin-bottom: ${margin};
         color: pink;
       `;
     }
     if (props.pairBottom) {
       return css`
-        margin-top: -13px;
+        margin-top: ${margin};
         color: blue;
       `;
     }
