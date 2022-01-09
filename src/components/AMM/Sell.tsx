@@ -90,7 +90,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
     <ViewContainer>
       <TitleWrapper>
         <ConvoFlowTitle>
-          {small ? 'SELL YOUR $TEMPLE' : 'ARE YOU SURE, TEMPLAR?'}
+          {small ? 'EXCHANGE $TEMPLE FOR $FRAX' : 'ARE YOU SURE, TEMPLAR?'}
         </ConvoFlowTitle>
       </TitleWrapper>
       <Input
