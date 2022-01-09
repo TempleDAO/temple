@@ -107,10 +107,10 @@ export const Queue: FC<QueueProps> = ({ small }) => {
           <Tooltip
             content={
               <small>
-                Your $TEMPLE tokens are unstaked by burning your $ogtemple and
+                Your $TEMPLE tokens are unstaked by burning your $OGTEMPLE and
                 joining the exit queue. the queue is processed first in, first
                 out. once you are processed you will be able to claim your
-                $temple tokens.
+                $TEMPLE tokens.
               </small>
             }
             position={small && repositionTopTooltip ? 'left' : 'top'}
