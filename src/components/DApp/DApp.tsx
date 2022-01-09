@@ -1,5 +1,14 @@
-import React, { FC, useContext, useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
+import React, {
+  FC,
+  MouseEvent,
+  MouseEventHandler,
+  MutableRefObject,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import styled, { DefaultTheme, StyledComponent } from 'styled-components';
 import { Buy } from 'components/AMM/Buy';
 import { Queue } from 'components/AMM/Queue';
 import { Sell } from 'components/AMM/Sell';
@@ -21,13 +30,17 @@ interface DAppProps {
 }
 
 export const DApp: FC<DAppProps> = ({ small }) => {
-  const ref = useRef();
+  const ref = useRef() as React.MutableRefObject<HTMLInputElement>;
   const { activeView, setView } = useContext(NavContext);
   const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
-    const checkIfClickedOutside = (e) => {
-      if (menuVisible && ref.current && !ref.current.contains(e.target)) {
+    const checkIfClickedOutside = (e: globalThis.MouseEvent) => {
+      if (
+        menuVisible &&
+        ref.current &&
+        !ref.current.contains(e.target as Node)
+      ) {
         setMenuVisible(false);
       }
     };
