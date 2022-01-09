@@ -29,6 +29,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
     claimAvailableTemple,
   } = useWallet();
   const repositionTooltip = useMediaQuery({ query: '(max-width: 980px)' });
+  const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
 
   useEffect(() => {
     async function onMount() {
@@ -52,7 +53,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
                 from the temple
               </small>
             }
-            position={'top'}
+            position={isSmallOrMediumScreen ? 'left' : 'top'}
           >
             <TooltipIcon />
           </Tooltip>
@@ -66,6 +67,8 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
       <CardGroup>
         <CardContainer>
           <StyledDataCard
+            //@ts-ignore
+            tooltipPosition={isSmallOrMediumScreen ? 'right' : 'top'}
             title={'AVAILABLE TO CLAIM'}
             data={formatNumber(exitQueueData.claimableTemple) + ''}
             tooltipContent={

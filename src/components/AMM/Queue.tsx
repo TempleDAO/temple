@@ -45,6 +45,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
   const repositionProcessTimeTooltip = useMediaQuery({
     query: '(max-width: 970px)',
   });
+  const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
 
   const updateTempleRewards = async (ogtAmount: number) => {
     setRewards((await getRewardsForOGT(ogtAmount)) || 0);
@@ -147,6 +148,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
             tooltipContent={
               'Amount of $TEMPLE received once you exit the queue'
             }
+            //@ts-ignore
+            tooltipPosition={isSmallOrMediumScreen ? 'right' : 'top'}
           />
         </CardContainer>
         <CardContainer>
