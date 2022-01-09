@@ -64,9 +64,9 @@ export const Stake: FC<StakeProps> = ({ small }) => {
           <Tooltip
             content={
               <small>
-                {`You will receive $ogtemple when you ${
+                {`You will receive $OGTEMPLE when you ${
                   small ? 'stake' : 'pledge'
-                } your $temple to the
+                } your $TEMPLE to the
                 staking contract`}
               </small>
             }
