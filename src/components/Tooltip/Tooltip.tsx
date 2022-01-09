@@ -30,7 +30,7 @@ const TooltipContent = styled.p<TooltipContentProps>`
   margin: 0;
   line-height: 1;
   padding: 0.5rem;
-  width: 90vw;
+  width: 50vw;
   max-width: 20rem /* 320/16 */;
   background-color: ${(props) => props.theme.palette.brand};
 
@@ -106,6 +106,7 @@ const TooltipStyled = styled.div`
     ${TooltipContent} {
       opacity: 1;
     }
+    z-index: 999;
   }
 `;
 
