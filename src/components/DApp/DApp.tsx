@@ -1,22 +1,9 @@
-import React, {
-  FC,
-  MouseEvent,
-  MouseEventHandler,
-  MutableRefObject,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
-import styled, { DefaultTheme, StyledComponent } from 'styled-components';
 import { Buy } from 'components/AMM/Buy';
 import { Queue } from 'components/AMM/Queue';
 import { Sell } from 'components/AMM/Sell';
 import { Stake } from 'components/AMM/Stake';
 import { Withdraw } from 'components/AMM/Withdraw';
-import { NavContext } from 'components/DApp/NavContext';
 import { Nav } from 'components/DApp/Nav';
-import { DAppView } from 'enums/dapp-view';
 import {
   Container,
   Main,
@@ -24,13 +11,16 @@ import {
   MenuImage,
   MobileContainer,
 } from 'components/DApp/NavComponents';
+import { NavContext } from 'components/DApp/NavContext';
+import { DAppView } from 'enums/dapp-view';
+import React, { FC, useContext, useEffect, useRef, useState } from 'react';
 
 interface DAppProps {
   small?: boolean;
 }
 
 export const DApp: FC<DAppProps> = ({ small }) => {
-  const ref = useRef() as React.MutableRefObject<HTMLInputElement>;
+  const menuRef = useRef() as React.MutableRefObject<HTMLElement>;
   const { activeView, setView } = useContext(NavContext);
   const [menuVisible, setMenuVisible] = useState(false);
 
@@ -38,8 +28,8 @@ export const DApp: FC<DAppProps> = ({ small }) => {
     const checkIfClickedOutside = (e: globalThis.MouseEvent) => {
       if (
         menuVisible &&
-        ref.current &&
-        !ref.current.contains(e.target as Node)
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node)
       ) {
         setMenuVisible(false);
       }
@@ -77,8 +67,10 @@ export const DApp: FC<DAppProps> = ({ small }) => {
   }
 
   return small ? (
-    <MobileContainer ref={ref}>
-      {menuVisible && <Nav small onClose={() => setMenuVisible(false)} />}
+    <MobileContainer>
+      {menuVisible && (
+        <Nav ref={menuRef} small onClose={() => setMenuVisible(false)} />
+      )}
       <MenuBar>
         <MenuImage onClick={() => setMenuVisible(true)} />
         <h4>TempleDAO</h4>
