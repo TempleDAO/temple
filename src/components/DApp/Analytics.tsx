@@ -1,29 +1,77 @@
 //@ts-nocheck
-import React, { FC } from 'react';
+import React, { FC, useEffect } from 'react';
 import styled from 'styled-components';
 import { Card } from 'components/DApp/Card';
+// import { DataCard } from 'components/DataCard/DataCard';
 import { PriceChart } from 'components/Charts/PriceChart';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
-import { formatNumber } from 'utils/formatter';
+import {
+  formatNumber,
+  formatMillions,
+  // formatNumberWithCommas,
+} from 'utils/formatter';
+// import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
+import { useWallet } from 'providers/WalletProvider';
 
 export const Analytics: FC = () => {
+  const { wallet, balance, exitQueueData } = useWallet();
+  // const accountMetrics = useRefreshableAccountMetrics(wallet);
   const dashboardMetrics = useRefreshableDashboardMetrics();
+  // const walletValue =
+  //   accountMetrics?.templeBalance * accountMetrics?.templeValue;
+  // const exitQueueValue =
+  //   exitQueueData?.totalTempleOwned * accountMetrics?.templeValue;
+  // const ogTempleWalletValue = balance?.ogTemple * accountMetrics?.ogTemplePrice;
+  // const lockedOGTempleValue =
+  //   balance?.ogTempleLocked * accountMetrics?.ogTemplePrice;
+
+  // const netWorth =
+  //   lockedOGTempleValue + walletValue + ogTempleWalletValue + exitQueueValue;
 
   return (
     <Container>
+      {/* <CardsContainer>
+        <DataCard
+          title={`Net Worth`}
+          data={`$${formatNumberWithCommas(netWorth) || '-'}`}
+          small
+        />
+        <DataCard
+          title={`Staked`}
+          data={`$OGT ${formatNumberWithCommas(balance?.ogTemple || 0)}`}
+          small
+        />
+        <DataCard
+          title={`Exit Queue`}
+          data={`$T ${formatNumberWithCommas(
+            exitQueueData?.totalTempleOwned || 0
+          )}`}
+          small
+        />
+        <DataCard
+          title={`Wallet`}
+          data={`$T ${formatNumberWithCommas(
+            accountMetrics?.templeBalance || 0
+          )}`}
+          small
+        />
+      </CardsContainer> */}
       <CardsContainer>
         <Card
-          label="price"
-          value={`$${formatNumber(dashboardMetrics?.templeValue)}`}
+          label="apy"
+          value={`${formatNumber(dashboardMetrics?.templeApy || 0)}%`}
         />
         <Card
-          label="apy"
-          value={`${formatNumber(dashboardMetrics?.templeApy)}%`}
+          label="IV"
+          value={`${formatNumber(dashboardMetrics?.iv || 0)}%`}
         />
-        <Card label="IV" value={`${formatNumber(dashboardMetrics?.iv)}%`} />
         <Card
           label="Ratio"
-          value={`${formatNumber(dashboardMetrics?.ogTempleRatio)}`}
+          value={`${formatNumber(dashboardMetrics?.ogTempleRatio || 0)}`}
+        />
+        <Card
+          label="Treasury"
+          value={`$${formatMillions(dashboardMetrics?.treasuryValue || 0)}`}
         />
       </CardsContainer>
       <ChartContainer>
@@ -37,25 +85,22 @@ export const Analytics: FC = () => {
 
 const Container = styled.div`
   display: flex;
-  flex-wrap: wrap;
-  flex-basis: 477px;
-  flex-grow: 1;
-  width: 50rem;
-  height: 100%;
-  gap: 5px 0px;
-  justify-content: space-between;
+  flex-direction: column;
 `;
 
 const CardsContainer = styled.div`
+  // border: 1px solid yellow;
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
-  width: 100%;
+  justify-content: stretch;
+  margin-top: 20px;
+  gap: 20px;
 `;
 
 const ChartContainer = styled.div`
   border: 1px solid #bd7b4f;
   box-sizing: border-box;
+  margin-top: 20px;
   padding-bottom: 1rem;
   width: 100%;
   height: auto;

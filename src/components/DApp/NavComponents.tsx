@@ -46,7 +46,7 @@ const UL = styled.ul`
 `;
 
 const Text = styled.a<TextProps>`
-  color: #fff;
+  color: ${({ isActive }) => (isActive ? '#fff' : '#b6b6b6')};
   text-decoration: ${({ isActive }) => (isActive ? 'underline' : 'none')};
   cursor: pointer;
 `;
@@ -141,23 +141,19 @@ export const MenuBar = styled.div`
 `;
 
 export const Container = styled.div`
+  display: flex;
+  justifiy-content: center;
   border: 1px solid #bd7b4f;
   box-sizing: border-box;
-
+  min-height: 378px;
   display: flex;
   flex-wrap: nowrap;
-  flex-basis: 37.8125rem;
   flex-grow: 1;
-
-  width: max-content;
-  padding-bottom: 20px;
-
   background-color: ${(props) => props.theme.palette.dark};
 `;
 
 export const Main = styled.div`
   display: flex;
-  // align-items: center;
   justify-content: center;
   flex-grow: 2;
   padding-top: 30px;

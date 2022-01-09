@@ -14,7 +14,7 @@ interface SizeProps {
 }
 
 const DAppRoot = () => {
-  const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 950px)' });
+  const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
   const [activeView, setView] = useState(DAppView.BUY);
   const navContext = { activeView, setView };
 
@@ -57,18 +57,21 @@ const Background = styled.div`
 
   position: relative;
   display: flex;
-  align-items: center;
   justify-content: center;
 `;
 
 const Container = styled.div<SizeProps>`
+  // border: 1px solid red;
+  margin-top: ${({ small }) => (small ? '0px' : '5%')};
   display: flex;
   flex-wrap: wrap;
-  gap: 25px 25px;
   width: ${({ small }) => (small ? '100%' : '50rem')};
-  min-height: 25.3125rem;
   background-color: ${(props) => props.theme.palette.dark};
   box-sizing: border-box;
+  flex-direction: column;
+  align-items: stretch;
+  height: fit-content;
+  outline: 20px solid black;
 `;
 
 const Frame = styled.div`

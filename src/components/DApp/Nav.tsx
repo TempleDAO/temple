@@ -45,4 +45,5 @@ const NavMobileContainer = styled.div`
   left: 0px;
   bottom: 0px;
   width: 200px;
+  text-align: left;
 `;

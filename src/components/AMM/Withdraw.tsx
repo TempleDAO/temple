@@ -10,6 +10,8 @@ import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
 import { formatNumber } from 'utils/formatter';
 import {
   ConvoFlowTitle,
+  Spacer,
+  SpacerWidth,
   TitleWrapper,
   TooltipPadding,
   ViewContainer,
@@ -108,8 +110,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
               exitQueueData.claimableTemple === 0
             }
           />
-        </ButtonContainer>
-        <ButtonContainer>
+          <SpacerWidth small />
           <Button
             isSmall={small}
             label={'withdraw available temple'}

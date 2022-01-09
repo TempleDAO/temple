@@ -18,13 +18,13 @@ export const Header = () => {
             isSmall
             isUppercase
           />
-          <Button
+          {/* <Button
             label={'launch app'}
             onClick={() => navigate('/app')}
             isSmall
             isUppercase
             isActive
-          />
+          /> */}
         </MenuContainer>
       </NavContainer>
     </HeaderStyled>
