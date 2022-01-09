@@ -1,6 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
-import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
+import Tooltip, {
+  TooltipIcon,
+  TooltipContentProps,
+} from 'components/Tooltip/Tooltip';
 
 interface SizeProps {
   small?: boolean;
@@ -10,6 +13,7 @@ interface DataCardProps extends SizeProps {
   title: string;
   data: string;
   tooltipContent?: string;
+  tooltipPosition?: TooltipContentProps;
   className?: string;
 }
 
@@ -20,6 +24,7 @@ export const DataCard = ({
   title,
   data,
   tooltipContent,
+  tooltipPosition,
   small,
   className,
 }: DataCardProps) => {
@@ -28,7 +33,8 @@ export const DataCard = ({
       <TitleContainer>
         <Title hasTooltip={!!tooltipContent}>{title}</Title>
         {tooltipContent && (
-          <Tooltip content={tooltipContent} position={'top'}>
+          //@ts-ignore
+          <Tooltip content={tooltipContent} position={tooltipPosition || 'top'}>
             <TooltipIcon />
           </Tooltip>
         )}

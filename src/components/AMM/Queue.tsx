@@ -1,9 +1,9 @@
 import React, { FC, useEffect, useState } from 'react';
 import styled from 'styled-components';
+import { useMediaQuery } from 'react-responsive';
 import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
-import { Flex } from 'components/Layout/Flex';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import {
   JoinQueueData,
@@ -41,6 +41,10 @@ export const Queue: FC<QueueProps> = ({ small }) => {
     processTime: 0,
   });
   const [rewards, setRewards] = useState<number | ''>('');
+  const repositionTopTooltip = useMediaQuery({ query: '(max-width: 1235px)' });
+  const repositionProcessTimeTooltip = useMediaQuery({
+    query: '(max-width: 970px)',
+  });
 
   const updateTempleRewards = async (ogtAmount: number) => {
     setRewards((await getRewardsForOGT(ogtAmount)) || 0);
@@ -108,7 +112,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
                 $temple tokens.
               </small>
             }
-            position={'top'}
+            position={small && repositionTopTooltip ? 'left' : 'top'}
           >
             <a
               className={'color-dark'}
@@ -158,6 +162,10 @@ export const Queue: FC<QueueProps> = ({ small }) => {
         <CardContainer>
           <DataCard
             small={small}
+            //@ts-ignore
+            tooltipPosition={
+              small && repositionProcessTimeTooltip ? 'left' : 'top'
+            }
             title={'PROCESS TIME'}
             data={`+ ${joinQueueData?.processTime} DAYS`}
             tooltipContent={

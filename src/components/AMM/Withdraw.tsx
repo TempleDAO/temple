@@ -1,8 +1,8 @@
 import React, { FC, useEffect } from 'react';
 import styled from 'styled-components';
+import { useMediaQuery } from 'react-responsive';
 import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
-import { Flex } from 'components/Layout/Flex';
 import PercentageBar from 'components/PercentageBar/PercentageBar';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import dateFormat from 'dateformat';
@@ -28,6 +28,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
     restakeAvailableTemple,
     claimAvailableTemple,
   } = useWallet();
+  const repositionTooltip = useMediaQuery({ query: '(max-width: 980px)' });
 
   useEffect(() => {
     async function onMount() {
@@ -47,7 +48,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
           <Tooltip
             content={
               <small>
-                the exit queue is used to provide an orderly unstaking process
+                The exit queue is used to provide an orderly unstaking process
                 from the temple
               </small>
             }
@@ -88,6 +89,8 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
         <CardContainer>
           <StyledDataCard
             title={'QUEUE PROCESSED BY'}
+            //@ts-ignore
+            tooltipPosition={small && repositionTooltip ? 'left' : 'top'}
             data={`${dateFormat(
               exitQueueData.lastClaimableEpochAt,
               'dd, mmm h:MM TT'
