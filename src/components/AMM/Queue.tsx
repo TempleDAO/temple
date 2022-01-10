@@ -131,7 +131,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
         small={small}
         hint={`Balance: ${formatNumber(OGTWalletAmount)}`}
         onHintClick={() => copyBalance(OGTWalletAmount, handleUpdateOGT)}
-        crypto={{ kind: 'value', value: 'OGTEMPLE' }}
+        crypto={{ kind: 'value', value: '$OGTEMPLE' }}
         isNumber
         max={OGTWalletAmount}
         min={0}
@@ -180,7 +180,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
       <br />
       <Button
         isSmall={small}
-        label={'BURN $OG TEMPLE & JOIN QUEUE'}
+        label={'BURN $OGTEMPLE & JOIN QUEUE'}
         onClick={handleUnlockOGT}
         isUppercase
         disabled={

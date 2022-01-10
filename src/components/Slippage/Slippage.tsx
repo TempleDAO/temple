@@ -30,6 +30,8 @@ const Slippage = ({ onChange, value, label }: SlippageProps) => {
       </ContainerHeader>
       <ContainerContent>
         <Button
+          //@ts-ignore
+          tabIndex="-1"
           label={'DEFAULT'}
           isActive
           onClick={() => {
@@ -40,6 +42,8 @@ const Slippage = ({ onChange, value, label }: SlippageProps) => {
           isSmall
         />
         <SlippageInput
+          //@ts-ignore
+          tabIndex="-1"
           value={valueState}
           type={'number'}
           onChange={handleInputChange}

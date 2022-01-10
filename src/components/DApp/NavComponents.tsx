@@ -157,4 +157,5 @@ export const Main = styled.div`
   justify-content: center;
   flex-grow: 2;
   padding-top: 30px;
+  padding-bottom: 20px;
 `;
