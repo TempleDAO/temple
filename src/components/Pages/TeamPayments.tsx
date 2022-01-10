@@ -1,23 +1,28 @@
-import React, { useEffect, useState, useReducer, useRef } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useReducer,
+  useRef,
+  SetStateAction,
+} from 'react';
 import styled from 'styled-components';
+
+import { TempleTeamPayments__factory } from 'types/typechain';
+import {
+  TEAM_PAYMENTS_CONTINGENT_ADDRESSES_BY_EPOCH,
+  TEAM_PAYMENTS_EPOCHS,
+  TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH,
+  TEAM_PAYMENTS_TYPES,
+} from 'enums/team-payment-type';
+import { fromAtto } from 'utils/bigNumber';
+import withWallet from 'hoc/withWallet';
+import { useWallet } from 'providers/WalletProvider';
 
 import Image from 'components/Image/Image';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
-
+import { InputSelect } from 'components/InputSelect/InputSelect';
 import eyeImage from 'assets/images/no-pupil-eye.png';
-
-import { TempleTeamPayments__factory } from 'types/typechain';
-import withWallet from 'hoc/withWallet';
-import { useWallet } from 'providers/WalletProvider';
-import { TEAM_PAYMENTS_TYPES } from 'enums/team-payment-type';
-import { fromAtto } from 'utils/bigNumber';
-
-const ENV_VARS = import.meta.env;
-const TEAM_FIXED_PAYMENTS_ADDRESS =
-  ENV_VARS.VITE_PUBLIC_TEMPLE_R1_TEAM_FIXED_PAYMENTS_ADDRESS;
-const TEAM_CONTINGENT_PAYMENTS_ADDRESS =
-  ENV_VARS.VITE_PUBLIC_TEMPLE_R1_TEAM_CONTINGENT_PAYMENTS_ADDRESS;
 
 type ReducerState = {
   collectingFixed: boolean;
@@ -33,6 +38,7 @@ type TeamPaymentsState = ReducerState & {
   claimableContingent: number;
   remainingAllocationFixed: number;
   remainingAllocationContingent: number;
+  setSelectedEpoch: React.Dispatch<SetStateAction<number>>;
   onCollectTeamFixedPayment(): void;
   onCollectTeamContingentPayment(): void;
 };
@@ -66,6 +72,7 @@ const TeamPayments = () => {
     claimableContingent,
     remainingAllocationFixed,
     remainingAllocationContingent,
+    setSelectedEpoch,
     onCollectTeamFixedPayment,
     onCollectTeamContingentPayment,
   }: TeamPaymentsState = useTempleTeamPayments();
@@ -76,6 +83,11 @@ const TeamPayments = () => {
   const pupilStyle = {
     transform: getPupilTransform(imageRef, cursorCoords),
   };
+
+  const dropdownOptions = [
+    { value: TEAM_PAYMENTS_EPOCHS.R1, label: 'Epoch 1' },
+    { value: TEAM_PAYMENTS_EPOCHS.R2, label: 'Epoch 2' },
+  ];
 
   return (
     <div onMouseMove={(e) => setCursorCoords([e.clientX, e.clientY])}>
@@ -109,9 +121,13 @@ const TeamPayments = () => {
           </EyeArea>
         </div>
 
-        <TotalAllocation>
-          Total epoch allocation: {allocationFixed + allocationContingent}{' '}
-          $TEMPLE
+        <TotalAllocation
+          title={`Total epoch allocation: ${
+            allocationFixed + allocationContingent
+          } $TEMPLE`}
+        >
+          Total epoch allocation:{' '}
+          {(allocationFixed + allocationContingent).toLocaleString()} $TEMPLE
         </TotalAllocation>
 
         <ButtonArea>
@@ -121,8 +137,12 @@ const TeamPayments = () => {
               justifyContent: 'space-between',
             }}
           >
-            <label>Collectable: {claimableFixed} $TEMPLE</label>
-            <label>Vested: {remainingAllocationFixed} $TEMPLE</label>
+            <label title={`Collectable: ${claimableFixed} $TEMPLE`}>
+              Collectable: {claimableFixed.toLocaleString()} $TEMPLE
+            </label>
+            <label title={`Vested: ${remainingAllocationFixed} $TEMPLE`}>
+              Vested: {remainingAllocationFixed.toLocaleString()} $TEMPLE
+            </label>
           </CollectionValues>
           <Button
             label={labelFixed}
@@ -137,8 +157,12 @@ const TeamPayments = () => {
               justifyContent: 'space-between',
             }}
           >
-            <label>Collectable: {claimableContingent}$TEMPLE</label>
-            <label>Vested: {remainingAllocationContingent}$TEMPLE</label>
+            <label title={`Collectable: ${claimableContingent} $TEMPLE`}>
+              Collectable: {claimableContingent.toLocaleString()} $TEMPLE
+            </label>
+            <label title={`Vested: ${remainingAllocationContingent} $TEMPLE`}>
+              Vested: {remainingAllocationContingent.toLocaleString()} $TEMPLE
+            </label>
           </CollectionValues>
           <Button
             label={labelContingent}
@@ -147,6 +171,15 @@ const TeamPayments = () => {
             disabled={collectingContingent || claimableContingent <= 0}
           />
         </ButtonArea>
+        {TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[TEAM_PAYMENTS_EPOCHS.R2] && (
+          <EpochDropdownContainer>
+            <InputSelect
+              options={dropdownOptions}
+              defaultValue={dropdownOptions[0]}
+              onChange={(e) => setSelectedEpoch(e.value)}
+            ></InputSelect>
+          </EpochDropdownContainer>
+        )}
       </Flex>
     </div>
   );
@@ -156,6 +189,8 @@ function useTempleTeamPayments(): TeamPaymentsState {
   const { wallet, signer, collectTempleTeamPayment } = useWallet();
 
   const [state, dispatch] = useReducer(reducer, { ...reducerInitialState });
+
+  const [selectedEpoch, setSelectedEpoch] = useState(TEAM_PAYMENTS_EPOCHS.R1);
 
   const [claimableFixed, setClaimableFixed] = useState(0);
 
@@ -228,8 +263,15 @@ function useTempleTeamPayments(): TeamPaymentsState {
   useEffect(() => {
     const getAllocationAndClaimableAmounts = async () => {
       if (wallet && signer) {
+        // Get addresses based on selected epoch
+        const fixedTeamPaymentAddress =
+          TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[selectedEpoch];
+        const contingentTeamPaymentAddress =
+          TEAM_PAYMENTS_CONTINGENT_ADDRESSES_BY_EPOCH[selectedEpoch];
+
+        // Retrieve fixed allocation & claimable amounts
         const fixedTeamPayments = new TempleTeamPayments__factory()
-          .attach(TEAM_FIXED_PAYMENTS_ADDRESS)
+          .attach(fixedTeamPaymentAddress)
           .connect(signer);
 
         const fixedAllocation = await fixedTeamPayments.allocation(wallet);
@@ -249,11 +291,12 @@ function useTempleTeamPayments(): TeamPaymentsState {
 
           convertedFixedClaimable > 0 && dispatch({ type: 'default-fixed' });
           setClaimableFixed(convertedFixedClaimable);
-        }
+        } else setClaimableFixed(0);
 
-        if (TEAM_CONTINGENT_PAYMENTS_ADDRESS) {
+        // Retrieve contingent allocation and claimable amounts
+        if (contingentTeamPaymentAddress) {
           const contingentTeamPayments = new TempleTeamPayments__factory()
-            .attach(TEAM_CONTINGENT_PAYMENTS_ADDRESS)
+            .attach(contingentTeamPaymentAddress)
             .connect(signer);
 
           const contingentAllocation = await contingentTeamPayments.allocation(
@@ -286,12 +329,15 @@ function useTempleTeamPayments(): TeamPaymentsState {
     };
 
     getAllocationAndClaimableAmounts();
-  }, [claimed]);
+  }, [claimed, selectedEpoch]);
 
   async function onCollectTeamFixedPayment() {
     dispatch({ type: 'collect-fixed' });
 
-    const tx = await collectTempleTeamPayment(TEAM_PAYMENTS_TYPES.FIXED);
+    const tx = await collectTempleTeamPayment(
+      TEAM_PAYMENTS_TYPES.FIXED,
+      selectedEpoch
+    );
 
     if (tx) {
       setClaimed(!claimed);
@@ -305,7 +351,10 @@ function useTempleTeamPayments(): TeamPaymentsState {
   async function onCollectTeamContingentPayment() {
     dispatch({ type: 'collect-contingent' });
 
-    const tx = await collectTempleTeamPayment(TEAM_PAYMENTS_TYPES.CONTINGENT);
+    const tx = await collectTempleTeamPayment(
+      TEAM_PAYMENTS_TYPES.CONTINGENT,
+      selectedEpoch
+    );
 
     if (tx) {
       setClaimed(!claimed);
@@ -327,6 +376,7 @@ function useTempleTeamPayments(): TeamPaymentsState {
     remainingAllocationContingent,
     allocationFixed,
     allocationContingent,
+    setSelectedEpoch,
     onCollectTeamContingentPayment,
     onCollectTeamFixedPayment,
   };
@@ -397,6 +447,12 @@ const TotalAllocation = styled.div`
   color: ${({ theme }) => theme.palette.brand};
   font-size: 1.5rem;
   padding-top: 0.5rem;
+`;
+
+const EpochDropdownContainer = styled.div`
+  position: absolute;
+  right: 0;
+  width: 12rem;
 `;
 
 export default withWallet(TeamPayments);
