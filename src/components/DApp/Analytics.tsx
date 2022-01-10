@@ -63,7 +63,7 @@ export const Analytics: FC = () => {
         />
         <Card
           label="IV"
-          value={`${formatNumber(dashboardMetrics?.iv || 0)}$`}
+          value={`$${formatNumber(dashboardMetrics?.iv || 0)}`}
         />
         <Card
           label="Ratio"
