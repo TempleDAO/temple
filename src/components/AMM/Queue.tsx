@@ -184,7 +184,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
         onClick={handleUnlockOGT}
         isUppercase
         disabled={
-          OGTAmount === 0 ||
+          OGTAmount == 0 ||
+          OGTAmount == '' ||
           (balance != undefined && OGTAmount > balance.ogTemple)
         }
       />
