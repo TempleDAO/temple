@@ -109,7 +109,7 @@ const TemplePrice = styled.span`
 
 const PriceChange = styled.span`
   display: inline-block;
-  font-size: 0.7rem;
+  font-size: 0.9rem;
   color: ${({ theme }) => theme.palette.brand};
   font-weight: bold;
 `;
@@ -128,6 +128,7 @@ const Toggle = styled.span<ToggleProps>`
   &:hover {
     color: white;
   }
+  font-size: 1rem;
   font-weight: bold;
 `;
 
@@ -236,6 +237,7 @@ export const PriceChart = ({
                 text: { stroke: 'none', fill: '#6b6b76', fontWeight: 600 },
               }}
               //{...(noTicks ? { tickTotal: 0 } : {})}
+              tickFormat={(v) => `$${v}`}
             />
             <LineSeries
               data={dataPoints.ivDataPoints}

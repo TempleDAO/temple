@@ -151,7 +151,9 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
             : handleSurrenderTemple
         }
         disabled={
-          ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true' || templeAmount === 0
+          ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true' ||
+          templeAmount == 0 ||
+          templeAmount == ''
         }
       />
     </ViewContainer>

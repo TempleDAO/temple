@@ -108,7 +108,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
         <ButtonContainer>
           <Button
             isSmall={small}
-            label={'restake all $TEMPLE'}
+            label={'restake pending $TEMPLE'}
             onClick={restakeAvailableTemple}
             isUppercase
             disabled={
@@ -122,7 +122,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
             label={'withdraw available $TEMPLE'}
             onClick={claimAvailableTemple}
             isUppercase
-            disabled={exitQueueData.claimableTemple === 0}
+            disabled={exitQueueData.claimableTemple == 0}
           />
         </ButtonContainer>
       </ButtonGroup>

@@ -99,7 +99,7 @@ export const Stake: FC<StakeProps> = ({ small }) => {
         label={small ? 'stake' : 'PLEDGE'}
         isUppercase
         onClick={handleTempleStake}
-        disabled={templeAmount === 0}
+        disabled={templeAmount == 0 || templeAmount == ''}
       />
     </ViewContainer>
   );
