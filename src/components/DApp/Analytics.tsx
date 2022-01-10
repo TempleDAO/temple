@@ -86,6 +86,7 @@ export const Analytics: FC = () => {
 const Container = styled.div`
   display: flex;
   flex-direction: column;
+  background-color: ${(props) => props.theme.palette.dark};
 `;
 
 const CardsContainer = styled.div`
@@ -108,4 +109,5 @@ const ChartContainer = styled.div`
 
 const Frame = styled.div`
   height: 15.625rem;
+  padding: 0 15px;
 `;
