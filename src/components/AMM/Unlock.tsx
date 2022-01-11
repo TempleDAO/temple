@@ -40,7 +40,7 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
             content={
               <small>
                 All your $OGTEMPLE in the locking contract are represented here.
-                if your $OGTEMPLE have unlocked, they will be able to be
+                If your $OGTEMPLE have unlocked, they will be able to be
                 claimed.
               </small>
             }

@@ -50,7 +50,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
             content={
               <small>
                 The exit queue is used to provide an orderly unstaking process
-                from the temple
+                from the temple.
               </small>
             }
             position={isSmallOrMediumScreen ? 'left' : 'top'}
@@ -72,7 +72,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
             title={'AVAILABLE TO CLAIM'}
             data={formatNumber(exitQueueData.claimableTemple) + ''}
             tooltipContent={
-              'Amount of $TEMPLE that has been processed and is available for withdrawal'
+              'Amount of $TEMPLE that has been processed and is available for withdrawal.'
             }
           />
         </CardContainer>
@@ -85,7 +85,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
               ) + ''
             }
             tooltipContent={
-              'Amount of $TEMPLE yet to be processed through the queue'
+              'Amount of $TEMPLE yet to be processed through the queue.'
             }
           />
         </CardContainer>
@@ -99,7 +99,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
               'dd, mmm h:MM TT'
             )}`}
             tooltipContent={
-              'The time at which all of your $TEMPLE will be available to withdraw'
+              'The time at which all of your $TEMPLE will be available to withdraw.'
             }
           />
         </CardContainer>
