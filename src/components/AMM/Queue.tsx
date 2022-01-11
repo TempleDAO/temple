@@ -108,8 +108,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
             content={
               <small>
                 Your $TEMPLE tokens are unstaked by burning your $OGTEMPLE and
-                joining the exit queue. the queue is processed first in, first
-                out. once you are processed you will be able to claim your
+                joining the exit queue. The queue is processed first in, first
+                out. Once you are processed, you will be able to claim your
                 $TEMPLE tokens.
               </small>
             }
@@ -146,7 +146,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
             title={'TEMPLE + REWARDS'}
             data={formatNumber(rewards as number) + '' || '0'}
             tooltipContent={
-              'Amount of $TEMPLE received once you exit the queue'
+              'Amount of $TEMPLE received once you exit the queue.'
             }
             //@ts-ignore
             tooltipPosition={isSmallOrMediumScreen ? 'right' : 'top'}
@@ -172,7 +172,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
             title={'PROCESS TIME'}
             data={`+ ${joinQueueData?.processTime} DAYS`}
             tooltipContent={
-              'Amount of time it takes to process the $OGTEMPLE that you have selected. your processing will begin in the number of days specified in the current ‘queue length’.'
+              'Amount of time it takes to process the $OGTEMPLE that you have selected. Your processing will begin in the number of days specified in the current ‘queue length’.'
             }
           />
         </CardContainer>

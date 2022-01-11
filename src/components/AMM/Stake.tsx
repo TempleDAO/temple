@@ -67,7 +67,7 @@ export const Stake: FC<StakeProps> = ({ small }) => {
                 {`You will receive $OGTEMPLE when you ${
                   small ? 'stake' : 'pledge'
                 } your $TEMPLE to the
-                staking contract`}
+                staking contract.`}
               </small>
             }
             position={'top'}
