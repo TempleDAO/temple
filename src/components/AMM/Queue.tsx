@@ -76,6 +76,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
           'OGTEMPLE'
         );
         getBalance();
+        handleUpdateOGT(0);
       }
     } catch (e) {
       console.info(e);

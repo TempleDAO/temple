@@ -34,6 +34,7 @@ export const Stake: FC<StakeProps> = ({ small }) => {
       if (templeAmount) {
         await stake(toAtto(templeAmount));
         getBalance();
+        handleUpdateTempleAmmount(0);
       }
     } catch (e) {
       console.info(e);

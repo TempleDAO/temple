@@ -62,6 +62,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         if (minAmountOut <= rewards) {
           await sell(toAtto(templeAmount), toAtto(minAmountOut));
           getBalance();
+          handleUpdateTempleAmount(0);
         }
       }
     } catch (e) {

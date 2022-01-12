@@ -60,6 +60,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         if (minAmountOut <= rewards) {
           await buy(toAtto(stableCoinAmount), toAtto(minAmountOut));
           getBalance();
+          handleUpdateStableCoinAmount('');
         }
       }
     } catch (e) {
