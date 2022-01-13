@@ -1,9 +1,10 @@
+import React, { FC, useEffect, useState } from 'react';
 import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
-import React, { FC, useEffect, useState } from 'react';
+import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
 import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import {
@@ -20,7 +21,8 @@ interface StakeProps {
 }
 
 export const Stake: FC<StakeProps> = ({ small }) => {
-  const { balance, getBalance, updateWallet, stake, apy } = useWallet();
+  const { balance, getBalance, updateWallet, stake } = useWallet();
+  const dashboardMetrics = useRefreshableDashboardMetrics();
 
   const [templeAmount, setTempleAmount] = useState<number | ''>('');
   const [templeWalletAmount, setTempleWalletAmount] = useState<number>(0);
@@ -91,7 +93,7 @@ export const Stake: FC<StakeProps> = ({ small }) => {
       />
       <DataCard
         title={`APY`}
-        data={formatNumber(apy || 0) + '%'}
+        data={formatNumber(dashboardMetrics?.templeApy || 0) + '%'}
         small={small}
       />
       <Spacer small />
