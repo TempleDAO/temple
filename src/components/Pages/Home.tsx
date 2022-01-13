@@ -44,31 +44,22 @@ const Home = () => {
               kind: 'container',
             }}
           >
-            <Flex
-              layout={{
-                kind: 'item',
-                col: 'half',
-              }}
-            >
-              <Link to={'/the-temple'}>
-                <Button label={'enter temple'} isUppercase showArrow isSmall />
-              </Link>
-            </Flex>
-            <Flex
-              layout={{
-                kind: 'item',
-                col: 'half',
-                alignItems: 'center',
-              }}
-            >
-              <a
-                href={'https://templedao.medium.com'}
-                target={'_blank'}
-                rel={'noreferrer'}
-              >
-                LEARN MORE
-              </a>
-            </Flex>
+            <ButtonGroup>
+              <ButtonContainer>
+                <Link to={'/the-temple'}>
+                  <StyledButton
+                    label={`enter temple ${String.fromCharCode(10146)}`}
+                    isUppercase
+                    isSmall
+                  />
+                </Link>
+              </ButtonContainer>
+              <ButtonContainer>
+                <Link to={'/dapp'}>
+                  <StyledButton label={'buy now $'} isUppercase isSmall />
+                </Link>
+              </ButtonContainer>
+            </ButtonGroup>
           </Flex>
           <br />
           <br />
@@ -334,6 +325,22 @@ const CircleBgWrapper = styled.div<CircleBgWrapperProps>`
       right: 0;
       transform: translateX(50%);
     `}
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 24.0625rem;
+`;
+
+const ButtonContainer = styled.div`
+  width: 9.6875rem;
+`;
+
+const StyledButton = styled(Button)`
+  width: 100%;
 `;
 
 export default Home;
