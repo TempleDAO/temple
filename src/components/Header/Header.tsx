@@ -18,13 +18,13 @@ export const Header = () => {
             isSmall
             isUppercase
           />
-          {/* <Button
-            label={'launch app'}
-            onClick={() => navigate('/app')}
+          <DAppButton
+            label={'launch dapp'}
+            onClick={() => navigate('/dapp')}
             isSmall
             isUppercase
             isActive
-          /> */}
+          />
         </MenuContainer>
       </NavContainer>
     </HeaderStyled>
@@ -58,5 +58,10 @@ const NavContainer = styled.div`
 
 const MenuContainer = styled.div`
   display: flex;
-  width: 10.9375rem; //350px;
+  width: 20rem;
+`;
+
+const DAppButton = styled(Button)`
+  border: none;
+  color: ${({ theme }) => theme.palette.dark};
 `;
