@@ -3,7 +3,7 @@ import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { blockTimestamp, mineNBlocks } from '../../test/helpers';
 import {
-  AmmIncentivisor__factory,
+  Devotion__factory,
   AMMWhitelist__factory,
   ExitQueue__factory,
   Faith__factory,
@@ -181,15 +181,15 @@ async function main() {
   );
   await exitQueue.transferOwnership(acceleratedExitQueue.address);
 
-  const ammIncentivisor = await new AmmIncentivisor__factory(owner).deploy(
-    stablecToken.address,
-    faith.address,
-    templeToken.address,
-    templeStaking.address,
-    templeRouter.address,
-    pair.address,
-    lockedOgTemple_new.address,
-    treasury.address);
+  const devotion = await new Devotion__factory(owner).deploy(
+      templeToken.address,
+      faith.address,
+      pair.address,
+      lockedOgTemple_new.address,
+      templeStaking.address,
+      60 // 60 seconds
+  );
+
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string; } = {
@@ -209,6 +209,7 @@ async function main() {
     'TEMPLE_V2_ROUTER_ADDRESS': templeRouter.address,
     'TEMPLE_ROUTER_WHITELIST': ammWhitelist.address,
     'ACCELERATED_EXIT_QUEUE_ADDRESS': acceleratedExitQueue.address,
+    'TEMPLE_DEVOTION': devotion.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys

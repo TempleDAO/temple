@@ -71,3 +71,16 @@ export function toAtto(n: number): BigNumber {
 export function fromAtto(n: BigNumber): number {
   return Number.parseFloat(ethers.utils.formatUnits(n, 18));
 }
+
+export function fromFixedPoint112x112(n: BigNumber): number {
+
+  // Get last 112 bit of number (n & ((1 << 112) - 1))
+  let numToBin = Number.parseInt(n.and(BigNumber.from(1).shl(112).sub(1)).toString(), 10)
+  let bin = numToBin.toString(2).padStart(112, "0")
+  let fractionalPart = 0
+  for (let i = 0; i < bin.length; i++) {
+     let bit =  parseInt(bin[i])
+     fractionalPart += (bit) * (2 ** (-1 * (i + 1)))
+  }
+  return Number.parseFloat(n.shr(112).toString()) + fractionalPart;
+}

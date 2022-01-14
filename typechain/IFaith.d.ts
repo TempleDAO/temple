@@ -21,16 +21,16 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface IFaithInterface extends ethers.utils.Interface {
   functions: {
-    "adManager(address)": FunctionFragment;
+    "addManager(address)": FunctionFragment;
     "balances(address)": FunctionFragment;
     "canManagerFaith(address)": FunctionFragment;
-    "gain(address,uint256)": FunctionFragment;
-    "lose(address,uint256)": FunctionFragment;
+    "gain(address,uint112)": FunctionFragment;
+    "redeem(address,uint112)": FunctionFragment;
     "removeManager(address)": FunctionFragment;
     "totalSupply()": FunctionFragment;
   };
 
-  encodeFunctionData(functionFragment: "adManager", values: [string]): string;
+  encodeFunctionData(functionFragment: "addManager", values: [string]): string;
   encodeFunctionData(functionFragment: "balances", values: [string]): string;
   encodeFunctionData(
     functionFragment: "canManagerFaith",
@@ -41,7 +41,7 @@ interface IFaithInterface extends ethers.utils.Interface {
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "lose",
+    functionFragment: "redeem",
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
@@ -53,14 +53,14 @@ interface IFaithInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
 
-  decodeFunctionResult(functionFragment: "adManager", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "addManager", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balances", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "canManagerFaith",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "gain", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "lose", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "redeem", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "removeManager",
     data: BytesLike
@@ -117,15 +117,15 @@ export class IFaith extends BaseContract {
   interface: IFaithInterface;
 
   functions: {
-    adManager(
+    addManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     balances(
       account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber]>;
 
     canManagerFaith(
       account: string,
@@ -138,7 +138,7 @@ export class IFaith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    lose(
+    redeem(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -149,20 +149,18 @@ export class IFaith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    totalSupply(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
+    totalSupply(overrides?: CallOverrides): Promise<[BigNumber]>;
   };
 
-  adManager(
+  addManager(
     account: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   balances(
     account: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
+    overrides?: CallOverrides
+  ): Promise<[BigNumber, BigNumber]>;
 
   canManagerFaith(
     account: string,
@@ -175,7 +173,7 @@ export class IFaith extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  lose(
+  redeem(
     to: string,
     amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -186,14 +184,15 @@ export class IFaith extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  totalSupply(
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
+  totalSupply(overrides?: CallOverrides): Promise<BigNumber>;
 
   callStatic: {
-    adManager(account: string, overrides?: CallOverrides): Promise<void>;
+    addManager(account: string, overrides?: CallOverrides): Promise<void>;
 
-    balances(account: string, overrides?: CallOverrides): Promise<BigNumber>;
+    balances(
+      account: string,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber]>;
 
     canManagerFaith(
       account: string,
@@ -206,7 +205,7 @@ export class IFaith extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    lose(
+    redeem(
       to: string,
       amount: BigNumberish,
       overrides?: CallOverrides
@@ -220,15 +219,12 @@ export class IFaith extends BaseContract {
   filters: {};
 
   estimateGas: {
-    adManager(
+    addManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    balances(
-      account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
+    balances(account: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     canManagerFaith(
       account: string,
@@ -241,7 +237,7 @@ export class IFaith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    lose(
+    redeem(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -252,20 +248,18 @@ export class IFaith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    totalSupply(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
+    totalSupply(overrides?: CallOverrides): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    adManager(
+    addManager(
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     balances(
       account: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     canManagerFaith(
@@ -279,7 +273,7 @@ export class IFaith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    lose(
+    redeem(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -290,8 +284,6 @@ export class IFaith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    totalSupply(
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
+    totalSupply(overrides?: CallOverrides): Promise<PopulatedTransaction>;
   };
 }
