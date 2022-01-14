@@ -33,7 +33,10 @@ contract LockedOGTemple {
         LockedEntry storage lockEntry = ogTempleLocked[_staker];
         
         lockEntry.amount += _amountOGTemple;
-        lockEntry.lockedUntilTimestamp = block.timestamp + _unlockDelaySeconds;
+        uint256 newLockedUntilTimestamp = block.timestamp + _unlockDelaySeconds;
+        if (newLockedUntilTimestamp > lockEntry.lockedUntilTimestamp) {
+            lockEntry.lockedUntilTimestamp = newLockedUntilTimestamp;
+        }
 
         SafeERC20.safeTransferFrom(ogTempleToken, msg.sender, address(this), _amountOGTemple);
         emit Lock(_staker, _amountOGTemple, lockEntry.amount, lockEntry.lockedUntilTimestamp);
