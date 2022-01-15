@@ -2,19 +2,11 @@ name: Deploy Dapp to PR Preview
 
 on:
   pull_request:
-    types:
-      - opened
     branches:    
       - '!main'
     paths:
       - "apps/dapp/**"
-      - ".github/workflows/dapp.yaml"
-  # push:
-  #   branches:    
-  #     - 'main'
-  #   paths:
-  #     - "apps/dapp/**"
-  #     - ".github/workflows/prod-dapp-main.yaml"
+      - ".github/workflows/pr-dapp-main.yaml"
 
 jobs:
   deploy:
