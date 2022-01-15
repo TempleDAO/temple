@@ -24,7 +24,7 @@ jobs:
       - uses: amondnet/vercel-action@v20
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }} # Required
-          vercel-args: '--prod -A apps/dapp/vercel.json' #Optional
+          vercel-args: '--prod -A apps/analytics-api/vercel.json' #Optional
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}  #Required
           vercel-project-id: ${{ secrets.ANALYTICSAPI_PROJECT_ID}} #Required 
           alias-domains: | #Optional
