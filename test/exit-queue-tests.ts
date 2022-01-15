@@ -55,7 +55,7 @@ describe("Exit Queue", async () => {
     await EXIT_QUEUE.setEpochSize(20);
     expect(await EXIT_QUEUE.epochSize()).eq(20);
 
-    await shouldThrow(EXIT_QUEUE.setStartingBlock(1000), /Can only move start block back, not forward/);
+    await shouldThrow(EXIT_QUEUE.setStartingBlock(10000), /Can only move start block back, not forward/);
     await EXIT_QUEUE.setStartingBlock(1);
     expect(await EXIT_QUEUE.firstBlock()).eq(1);
 

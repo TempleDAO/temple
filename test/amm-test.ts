@@ -1,7 +1,30 @@
 import { ethers, hardhatArguments } from "hardhat";
 import { expect } from "chai";
 
-import { FakeERC20, FakeERC20__factory, TempleERC20Token, TempleERC20Token__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTreasury, TempleTreasury__factory, TempleUniswapV2Pair, TempleUniswapV2Pair__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02NoEth, UniswapV2Router02NoEth__factory, AmmIncentivisor, AmmIncentivisor__factory, Faith, Faith__factory, TempleStaking, TempleStaking__factory, ISwapRouter, LockedOGTemple, LockedOGTemple__factory } from "../typechain";
+import {
+  FakeERC20,
+  FakeERC20__factory,
+  TempleERC20Token,
+  TempleERC20Token__factory,
+  TempleFraxAMMRouter,
+  TempleFraxAMMRouter__factory,
+  TempleTreasury,
+  TempleTreasury__factory,
+  TempleUniswapV2Pair,
+  TempleUniswapV2Pair__factory,
+  UniswapV2Factory,
+  UniswapV2Factory__factory,
+  UniswapV2Pair,
+  UniswapV2Pair__factory,
+  UniswapV2Router02NoEth,
+  UniswapV2Router02NoEth__factory,
+  Faith,
+  Faith__factory,
+  TempleStaking,
+  TempleStaking__factory,
+  LockedOGTemple,
+  LockedOGTemple__factory
+} from "../typechain";
 
 import { BigNumber, Signer } from "ethers";
 import { mineNBlocks, toAtto, shouldThrow, blockTimestamp, fromAtto } from "./helpers";
@@ -26,9 +49,8 @@ describe("AMM", async () => {
     let uniswapFactory: UniswapV2Factory;
     let uniswapRouter: UniswapV2Router02NoEth;
     let uniswapPair: UniswapV2Pair;
-    let ammIncentivisor: AmmIncentivisor;
 
-    const expiryDate = (): number =>  Math.floor(Date.now() / 1000) + 900;
+    const expiryDate = (): number =>  Math.floor(Date.now() / 1000) + 9000;
    
     beforeEach(async () => {
       [owner, alan, ben, carol] = await ethers.getSigners();
@@ -655,102 +677,4 @@ describe("AMM", async () => {
         );
       });
     })
-
-    describe("AMM Incenstivisor", async() => {
-      let faith: Faith;
-      let staking: TempleStaking;
-      let lockedOGTemple: LockedOGTemple;
-
-      beforeEach(async () => {
-        faith = await new Faith__factory(owner).deploy();
-        staking = await new TempleStaking__factory(owner).deploy(
-            templeToken.address,
-            fraxToken.address,
-            86400, /* epoch size, in seconds */
-           (await blockTimestamp()) - 1,
-         );
-
-        await staking.setEpy(7000, 1000000);
-
-        lockedOGTemple = await new LockedOGTemple__factory(owner).deploy(await staking.OG_TEMPLE());
-
-        ammIncentivisor = await new AmmIncentivisor__factory(owner).deploy(
-          fraxToken.address,
-          faith.address,
-          templeToken.address,
-          staking.address,
-          templeRouter.address,
-          uniswapPair.address,
-          lockedOGTemple.address,
-          treasury.address,
-        )
-        await ammIncentivisor.SetStakeAndLockMultiplier(1500) // 1.5 multplier
-        await ammIncentivisor.setBuyTheDipMultiplier(1200) // 1.2 multiplier
-        await ammIncentivisor.setNumBlocksForUnlockIncentive(5)
-
-        // Set scalling factory to adjust for the high inbalance in circulating supply and faith total supply
-        await ammIncentivisor.setScalingFactor(1, 70000);
-
-        await faith.addManager(ammIncentivisor.address)
-        await templeToken.mint(ammIncentivisor.address, toAtto(1000000)); // seed contract with bonus temple
-    })
-
-    describe("Incentive active", async() => {
-      beforeEach(async () => {
-
-        // Price should start below the dynamic threshold
-        {
-          const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
-          const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
-          expect(rFrax / rTemple).lt(dtpFrax / dtpTemple);
-        }
-
-        // Until we pass dynamic threshold, buys are on AMM
-        await templeRouter.setInterpolateToPrice(1000000, 10000)
-        await templeRouter.setDynamicThresholdIncreasePct(9000)
-        await templeRouter.swapExactFraxForTemple(toAtto(100000), 1, await alan.getAddress(), expiryDate());
-
-        // Expect price to be above dynamic threshold
-        const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
-        const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
-        expect(rFrax / rTemple).gte(dtpFrax / dtpTemple);
-
-        expect(await templeRouter.priceCrossedBelowDynamicThresholdBlock()).to.eq(0)
-
-          // First, sell enough temple to bring price below threshold
-        await templeRouter.swapExactTempleForFrax(toAtto(9000), 1, await owner.getAddress(), expiryDate());
-          {
-          const [dtpFrax, dtpTemple] = fmtPricePair(await templeRouter.dynamicThresholdPriceWithDecay());
-          const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
-            expect(rFrax / rTemple).lte(dtpFrax / dtpTemple);
-          }
-          expect(await templeRouter.priceCrossedBelowDynamicThresholdBlock()).to.eq(await ethers.provider.getBlockNumber())
-      })
-
-      it("buy the dip stack", async() => {
-
-        let amountIn = toAtto(10000)
-        let quoted = await templeRouter.swapExactFraxForTempleQuote(amountIn)
-        let templeAmoutOut = fromAtto(quoted[2]) + fromAtto(quoted[3])
-        await fraxToken.connect(owner).increaseAllowance(ammIncentivisor.address, amountIn);
-
-        await shouldThrow(ammIncentivisor.connect(owner).buyTheDip(amountIn, 1, expiryDate()), /AMM Incentivizor: Not Active/);
-
-        await mineNBlocks(6);
-        await ammIncentivisor.connect(owner).buyTheDip(amountIn, 1, expiryDate());
-
-        const event = await ammIncentivisor.queryFilter(ammIncentivisor.filters.BuyTheDipComplete())
-        const stakeEvent = await staking.queryFilter(staking.filters.StakeCompleted())
-        
-        let computedBonusTemple = 21.71
-        expect(fromAtto(event[0].args.bonusTemple)).approximately(computedBonusTemple, 1) // Computed off-chain
-        expect(fromAtto(event[0].args.faithGranted)).approximately(templeAmoutOut * 1.5, 1);
-        let amountOgLocked = await lockedOGTemple.ogTempleLocked(await owner.getAddress());
-        expect(event[0].args.mintedOGTemple).eq(amountOgLocked.amount)
-        expect(event[0].args.staker).eq(await owner.getAddress())
-        expect(fromAtto(stakeEvent[0].args._amount)).approximately( templeAmoutOut+ computedBonusTemple, 1)
-        
-      })
-    })
-  })
 })
