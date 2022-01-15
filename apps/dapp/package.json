@@ -1,5 +1,5 @@
 {
-  "name": "@templedao/dapp",
+  "name": "@temple/dapp",
   "version": "0.1.1",
   "engines": {
     "node": ">=14.18.1"
@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "vercel-build": "node vercel-build && tsc && vite build",
+    "vercel-build": "tsc && vite build",
     "serve": "vite preview",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
