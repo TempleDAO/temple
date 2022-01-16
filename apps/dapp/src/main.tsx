@@ -19,7 +19,7 @@ import { GlobalStyle } from 'styles/GlobalStyle';
 import { theme } from 'styles/theme';
 import DAppRoot from 'components/Pages/DAppRoot';
 
-console.log('just a test')
+console.log('another test')
 
 ReactDOM.render(
   <React.StrictMode>
