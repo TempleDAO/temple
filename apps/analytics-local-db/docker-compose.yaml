@@ -1,0 +1,26 @@
+version: "3.7"
+services:
+  templedb:
+    image: postgres:14-alpine
+    container_name: templedb
+    networks:
+      - templenet
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=temple
+      - PGDATA=/data
+    ports:
+      - "54321:5432"
+    volumes:
+      - ./pgdata:/data
+      - ./:/tmp/storage
+
+networks:
+  templenet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.69.0.0/24
