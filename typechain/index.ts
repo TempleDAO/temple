@@ -39,6 +39,8 @@ export type { LockedOGTempleDeprecated } from "./LockedOGTempleDeprecated";
 export type { OpeningCeremony } from "./OpeningCeremony";
 export type { Devotion } from "./Devotion";
 export type { Faith } from "./Faith";
+export type { FaithMerkleAirdrop } from "./FaithMerkleAirdrop";
+export type { IMerkleDistributor } from "./IMerkleDistributor";
 export type { IFaith } from "./IFaith";
 export type { ExitQueue } from "./ExitQueue";
 export type { IExitQueue } from "./IExitQueue";
@@ -96,6 +98,8 @@ export { LockedOGTempleDeprecated__factory } from "./factories/LockedOGTempleDep
 export { OpeningCeremony__factory } from "./factories/OpeningCeremony__factory";
 export { Devotion__factory } from "./factories/Devotion__factory";
 export { Faith__factory } from "./factories/Faith__factory";
+export { FaithMerkleAirdrop__factory } from "./factories/FaithMerkleAirdrop__factory";
+export { IMerkleDistributor__factory } from "./factories/IMerkleDistributor__factory";
 export { IFaith__factory } from "./factories/IFaith__factory";
 export { ExitQueue__factory } from "./factories/ExitQueue__factory";
 export { IExitQueue__factory } from "./factories/IExitQueue__factory";

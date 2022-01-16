@@ -177,6 +177,14 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Faith__factory>;
     getContractFactory(
+      name: "FaithMerkleAirdrop",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.FaithMerkleAirdrop__factory>;
+    getContractFactory(
+      name: "IMerkleDistributor",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IMerkleDistributor__factory>;
+    getContractFactory(
       name: "IFaith",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IFaith__factory>;
@@ -454,6 +462,16 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Faith>;
+    getContractAt(
+      name: "FaithMerkleAirdrop",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.FaithMerkleAirdrop>;
+    getContractAt(
+      name: "IMerkleDistributor",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IMerkleDistributor>;
     getContractAt(
       name: "IFaith",
       address: string,
