@@ -28,7 +28,7 @@ export default function useRefreshablePriceMetrics(intervalMinutes = 20) {
         },
         body: JSON.stringify({
           query: `{
-            protocolMetrics(orderDirection: desc, orderBy: timestamp) {
+            protocolMetrics(first: 168, orderDirection: desc, orderBy: timestamp) {
               timestamp
               intrinsicValue
               templePrice
@@ -49,7 +49,7 @@ export default function useRefreshablePriceMetrics(intervalMinutes = 20) {
         },
         body: JSON.stringify({
           query: `{
-            dayProtocolMetrics(orderDirection: desc, orderBy: timestamp) {
+            dayProtocolMetrics(first: 365, orderDirection: desc, orderBy: timestamp) {
               timestamp
               intrinsicValue
               templePrice
