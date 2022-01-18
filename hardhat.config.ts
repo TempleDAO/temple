@@ -57,25 +57,20 @@ module.exports = {
   },
   networks: {
     rinkeby: {
-      // whitelisted to a single deployment address.
-      url: "https://eth-rinkeby.alchemyapi.io/v2/QqeiqrSzcuz0ZEcK3i01eL5gPmFgQRfu",
+      url: process.env.RINKEBY_RPC_URL || '',
       accounts: (process.env.RINKEBY_ADDRESS_PRIVATE_KEY) ? [process.env.RINKEBY_ADDRESS_PRIVATE_KEY] : [],
-      gasPrice: 20000000000,
+      gasPrice: 2000000000,
     },
     mainnet: {
-      // whitelisted to a single deployment address.
-      url: "https://eth-mainnet.alchemyapi.io/v2/YDQ_EDc7dwxDWf_U8LOgCXRFgKiQOa3K",
+      url: process.env.MAINNET_RPC_URL || '',
       accounts: (process.env.MAINNET_ADDRESS_PRIVATE_KEY) ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY] : [],
-      gasPrice: 85000000000,
+      gasPrice: 12000000000,
     },
     matic: {
-      url: "https://rpc-mainnet.maticvigil.com",
-      accounts: (process.env.MAINNET_ADDRESS_PRIVATE_KEY) ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY] : [],
+      url: process.env.MATIC_RPC_URL || '',
+      accounts: (process.env.MATIC_ADDRESS_PRIVATE_KEY) ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY] : [],
       gasPrice: 40000000000,
     },
-    hardhat: {
-      chainId: 1337
-    }
   },
   etherscan: {
     // Your API key for Etherscan

@@ -9,7 +9,7 @@ export interface DeployedContracts {
   EXIT_QUEUE: string
   ACCELERATED_EXIT_QUEUE: string
   STAKING: string
-  LOCKED_OG_TEMPLE: string,
+  LEGACY_LOCKED_OG_TEMPLE: string,
   TREASURY: string,
   PRESALE: string,
   SANDALWOOD_TOKEN: string,
@@ -24,6 +24,10 @@ export interface DeployedContracts {
   TEMPLE_AMM_OPS: string,
   AMM_WHITELIST: string,
   TEMPLE_CASHBACK: string,
+
+  FAITH: string,
+  LOCKED_OG_TEMPLE: string,
+  DEVOTION: string,
 
   MULTISIG: string,
 }
@@ -49,27 +53,34 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     OPENING_CEREMONY: '0x16e3cD38C1ddf24E758B2f3a69a8042d96c220b1',
     OPENING_CEREMONY_VERIFIER: '0x91828143801899e82D1eD6B0Be92ebe61B1D299E',
     OLD_EXIT_QUEUE: '0x4caA5F5e306f99d07DDB6c17ce9AE5Af3c9B0B1a',
+    AMM_WHITELIST: '0x412326Afc6d8E27467e979dc1Ac404887802018a',
 
     // From network/environment
     FRAX: '0x5eD8BD53B0c3fa3dEaBd345430B1A3a6A4e8BD7C',
 
     // Active contrats
-    TEMPLE: '0x7fC7560Ee3b0a1262ab40B6bA7Bfa490AFD83192',
-    EXIT_QUEUE: '0xebf907651D90C97518C08cf28E6264931a6afd7F',
-    ACCELERATED_EXIT_QUEUE: '0x64F1102F99E65dB18566a8A4dEB005D23B73776f',
-    STAKING: '0x23cA32f59384a4B954Bb29932F499a4842F154Dd',
-    LOCKED_OG_TEMPLE: '0x2Ad6671bCAd84A2a12BeB5da2d1C490aA00dcBEC',
-    TREASURY: '0x0c8Ae2793F5ED0479084f92284BfF8f8E587F8BC',
-    TREASURY_MANAGEMENT: '0x7b7672E1d3ca66c32876842A9E89A04D06F8AB6d',
-    TEMPLE_TEAM_FIXED_PAYMENTS: '0x7a770591f202D18e893DeC115f16DAE9d28686a8',
-    TEMPLE_TEAM_CONTIGENT_PAYMENTS: '0xB909238BcBF965CE0114bDE814F2A584F69c0445',
-    TEMPLE_V2_PAIR: '0xA9BA3038EBb98097d2f0B746024E1A38c26E8ab6',
-    TEMPLE_V2_ROUTER: '0x7a6b37DB5dF68f6F2FeE99CFA9214C136394EE93',
-    TEMPLE_AMM_OPS: '0xd2bA481623F1Dd2D62A004EE822229Cd45be63eF',
-    AMM_WHITELIST: '0x412326Afc6d8E27467e979dc1Ac404887802018a',
-    TEMPLE_CASHBACK: '0x043AF20EE047D40C474f7294fCC3338A5B0067c9',
+    TEMPLE: '0x359655dcB8A32479680Af81Eb38eA3Bb2B42Af54',
+    EXIT_QUEUE: '0x5B1ccC64cc9e39BA8d6395fA6Cb4FFCaB3e3069f',
+    ACCELERATED_EXIT_QUEUE: '0x75a89f50cb40aec7Ed237F1Bfab562A60023ebE6',
+    STAKING: '0xfF8D8342DC367D66BA20403216d55B1fcC1f284e',
+    LEGACY_LOCKED_OG_TEMPLE: '0x564462C807600684965d8A8f57eA190F2F66169C',
+    TREASURY: '0xA443355cE4F9c1AA6d68e057a962E86E071B0ed3',
 
-    MULTISIG: '0x95e93Be4DfAceEe347C14feF694ca97fff7F0bF0',
+    // currently not configured, need to swap treasury owner via
+    // multisig. Test on rinkeby before doing the same on mainnet
+    TREASURY_MANAGEMENT: '0xB9A7F07f5D0ea3AFa454486cffe39ceFec8e136C', 
+    TEMPLE_TEAM_FIXED_PAYMENTS: '',
+    TEMPLE_TEAM_CONTIGENT_PAYMENTS: '',
+    TEMPLE_V2_PAIR: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
+    TEMPLE_V2_ROUTER: '0xb50341AF85763d2D997F4ba764EbBdfAeeC0E07d',
+    TEMPLE_AMM_OPS: '0xe04D90A6d408D25c96Aea5Be018853c604bE794a',
+    TEMPLE_CASHBACK: '0x2FDac592c53A8d64183f727ee125c9bB997484D9',
+
+    FAITH: '0x9B77fD481EdDF1123e8E23BB4e9003C4d8D82AD4',
+    LOCKED_OG_TEMPLE: '0xAd64485CB2ea79B50C114378a5d5B490EA924f7e',
+    DEVOTION: '0xDcf8F296Fa85719536bF50d415D3ca1468e5D396',
+
+    MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
   },
   mainnet: {
     // No longer active/unused
@@ -89,9 +100,14 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     EXIT_QUEUE: '0x967591888A5e8aED9D2A920fE4cC726e83d2bca9',
     ACCELERATED_EXIT_QUEUE: '0xC6d556C34a179a224AEBE42e77c6e76594148B97',
     STAKING: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
-    LOCKED_OG_TEMPLE: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
+    LEGACY_LOCKED_OG_TEMPLE: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
     TREASURY: '0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443',
-    TREASURY_MANAGEMENT: '0x20bEB455c3b7b0D84091b84c25f51Bc002d92f05',
+
+    // currently not configured, need to swap treasury owner via
+    // multisig. Test on rinkeby and carefully verifiy everything
+    // before making the change.
+    // NOTE: Probably better to just migrate treasury instead
+    TREASURY_MANAGEMENT: '0x20bEB455c3b7b0D84091b84c25f51Bc002d92f05', // currently unused
     TEMPLE_TEAM_FIXED_PAYMENTS: '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
     TEMPLE_TEAM_CONTIGENT_PAYMENTS: '',
     TEMPLE_V2_PAIR: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
@@ -99,6 +115,10 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_AMM_OPS: '0xc8c3C72d667196bAd40dE3e5eaDC29E74431257B',
     AMM_WHITELIST: '0x3fAEb34Ab68709DCa02D6B48A03256317b338896',
     TEMPLE_CASHBACK: '0x72e9fa8eD38ddbdA4b044E95A206EDaA509FdF72',
+
+    FAITH: '',
+    LOCKED_OG_TEMPLE: '',
+    DEVOTION: '',
   },
   localhost: {
     // No longer active/unused
@@ -117,7 +137,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     EXIT_QUEUE: process.env.EXIT_QUEUE || '',
     ACCELERATED_EXIT_QUEUE: process.env.ACCELERATED_EXIT_QUEUE || '',
     STAKING: process.env.STAKING || '',
-    LOCKED_OG_TEMPLE: process.env.LOCKED_OG_TEMPLE || '',
+    LEGACY_LOCKED_OG_TEMPLE: process.env.LEGACY_LOCKED_OG_TEMPLE || '',
     TREASURY: process.env.TREASURY || '',
     TREASURY_MANAGEMENT: process.env.TREASURY_MANAGEMENT || '',
     TEMPLE_TEAM_FIXED_PAYMENTS: process.env.TEMPLE_TEAM_FIXED_PAYMENTS || '',
@@ -127,6 +147,10 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_AMM_OPS: process.env.TEMPLE_AMM_OPS || '',
     AMM_WHITELIST: process.env.AMM_WHITELIST || '',
     TEMPLE_CASHBACK: process.env.TEMPLE_CASHBACK || '',
+
+    FAITH: process.env.FAITH || '',
+    LOCKED_OG_TEMPLE: process.env.LOCKED_OG_TEMPLE || '',
+    DEVOTION: process.env.DEVOTION || '',
 
     MULTISIG: '',
   }
@@ -193,5 +217,28 @@ export function expectAddressWithPrivateKey() {
 
   if (network.name == 'rinkeby' && !process.env.RINKEBY_ADDRESS_PRIVATE_KEY) {
     throw new Error("Missing environment variable RINKEBY_ADDRESS_PRIVATE_KEY. A mainnet address private key with eth is required to deploy/manage contracts");
+  }
+}
+
+const expectedEnvvars: {[key: string]: string[]} = {
+  mainnet: ['MAINNET_ADDRESS_PRIVATE_KEY', 'MAINNET_RPC_URL'],
+  rinkeby: ['RINKEBY_ADDRESS_PRIVATE_KEY', 'RINKEBY_RPC_URL'],
+  matic: ['MATIC_ADDRESS_PRIVATE_KEY', 'MATIC_RPC_URL'],
+}
+
+/**
+ * Check if the required environment variables exist
+ */
+export function ensureExpectedEnvvars() {
+  let hasAllExpectedEnvVars = true;
+  for (const envvarName of expectedEnvvars[network.name]) {
+    if (!process.env[envvarName]) {
+      console.error(`Missing environment variable ${envvarName}`);
+      hasAllExpectedEnvVars = false;
+    }
+  }
+
+  if (!hasAllExpectedEnvVars) {
+    throw new Error(`Expected envvars missing`);
   }
 }
