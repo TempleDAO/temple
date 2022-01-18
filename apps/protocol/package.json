@@ -1,5 +1,5 @@
 {
-  "name": "temple",
+  "name": "@temple/protocol",
   "version": "1.0.0",
   "description": "temple DOA smart contracts",
   "main": "index.js",

@@ -1,0 +1,11 @@
+# Code owners
+
+# Globa setting, everyone in core-devs team
+*                       @TempleDAO/core-devs
+
+
+# if we need to give people CO rights at more granular level
+# we can use the below. Note, these teams don't exist yet
+# /apps/dapp/*            @TempleDAO/co-dapp
+# /apps/protocol/*        @TempleDAO/co-protocol
+# /apps/analytics-api/*   @TempleDAO/co-analytics-api
