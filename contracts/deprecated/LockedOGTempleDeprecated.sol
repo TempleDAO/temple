@@ -7,7 +7,7 @@ import "../OGTemple.sol";
 /**
  * Bookkeeping for OGTemple that's locked
  */
-contract LockedOGTemple_deprecated {
+contract LockedOGTempleDeprecated {
     struct LockedEntry {
         // How many tokens are locked
         uint256 BalanceOGTemple;

@@ -10,7 +10,7 @@ import "../TempleERC20Token.sol";
 import "../TempleTreasury.sol";
 import "../TreasuryManagementProxy.sol";
 import "../TempleStaking.sol";
-import "./LockedOGTemple_deprecated.sol";
+import "./LockedOGTempleDeprecated.sol";
 
 /**
  * Mint and Stake for those who have quested in the Opening Ceremony
@@ -24,7 +24,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
     TempleTreasury public treasury; // temple treasury
     TreasuryManagementProxy public treasuryManagement; // temple treasury
     TempleStaking public staking; // Staking contract
-    LockedOGTemple_deprecated public lockedOGTemple; // contract where OG Temple is locked
+    LockedOGTempleDeprecated public lockedOGTemple; // contract where OG Temple is locked
 
     uint256 public unlockDelaySeconds = SECONDS_IN_DAY * 7 * 6; // How long after after buying can templars unlock
     uint256 public mintMultiple = 6; // presale mint multiple
@@ -75,7 +75,7 @@ contract OpeningCeremony is Ownable, Pausable, AccessControl {
       IERC20 _stablecToken,
       TempleERC20Token _templeToken,
       TempleStaking _staking,
-      LockedOGTemple_deprecated _lockedOGTemple,
+      LockedOGTempleDeprecated _lockedOGTemple,
       TempleTreasury _treasury,
       TreasuryManagementProxy _treasuryManagement,
       uint256 _harvestThresholdStablec,
