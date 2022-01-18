@@ -185,13 +185,8 @@ contract Devotion is Ownable {
 
         // If relocking new OG-Temple
         uint256 lockedUntilTimestamp = block.timestamp + minimumLockPeriod;
-        SafeERC20.safeTransferFrom(templeStaking.OG_TEMPLE(), msg.sender, address(this), amountOGTemple);
-        SafeERC20.safeIncreaseAllowance(templeStaking.OG_TEMPLE(), address(lockedOGTemple), amountOGTemple);
         lockedOGTemple.lockFor(msg.sender, amountOGTemple, lockedUntilTimestamp); // If already locked for longer will use the Max
-
         (uint256 lockedOGTempleAmount,  uint256 newLockedUntilTimestamp) = lockedOGTemple.ogTempleLocked(msg.sender);
-
-
         uint256 claimableFaith = lockedOGTempleAmount / 10**18; // Will round out
         require(claimableFaith > 0, "NO CLAIMABLE FAITH");
         faith.gain(msg.sender, uint112(claimableFaith));
