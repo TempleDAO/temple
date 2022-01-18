@@ -53,15 +53,15 @@ contract Devotion is Ownable {
 
     // Info on game rounds (key is the round number)
     mapping(uint8 => RoundStats) public roundStatus;
-    mapping(uint8 => mapping(address => bool)) verifiedFaith;
+    mapping(uint8 => mapping(address => bool)) public verifiedFaith;
 
     // Logs
     event StartDevotion(uint256 targetPriceNum, uint256 targetPriceDenom, uint8 currentRound);
     event InitiateFinalHour(uint256 templePriceCumulativeLast, uint256 blockTimeStampLast, uint8 currentRound);
     event EndDevotion(uint256 templePriceAverage, bool GameWon);
-    event VerifyFaith(address account, uint256 faithAmount, uint256 lockedOgTempleAmount, uint256 lockedUntilTimeStamp); 
-    event LockAndVerifyFaith(address account, uint256 faithAmount, uint256 lockedOgTempleAmount, uint256 lockedUntilTimeStamp); 
-    event ClaimTempleRewards(address account, uint256 faithUsed, uint256 templeRewarded); 
+    event VerifyFaith(address account, uint256 faithAmount, uint256 lockedOgTempleAmount, uint256 lockedUntilTimeStamp);
+    event LockAndVerifyFaith(address account, uint256 faithAmount, uint256 lockedOgTempleAmount, uint256 lockedUntilTimeStamp);
+    event ClaimTempleRewards(address account, uint256 faithUsed, uint256 templeRewarded);
 
     // Current Devotion Game Round
     uint8 public currentRound;
@@ -106,7 +106,7 @@ contract Devotion is Ownable {
     function removeDevotionMaster(address _account) external onlyOwner {
         devotionMaster[_account] = false;
     }
-    
+
     /*
      * Start a diffent round of devotion with a traget price
      */
@@ -121,7 +121,7 @@ contract Devotion is Ownable {
 
         emit StartDevotion(targetPriceNum, targetPriceDenom, currentRound);
     }
-    
+
     /*
      * Intiate Final hour for current devotion round
      * Assumes startDevotion has run before this call
@@ -133,14 +133,14 @@ contract Devotion is Ownable {
         // Register the current cumulative price
         (uint256 templePriceCumulative, , uint256 blockTimestamp) = UniswapV2OracleLibrary.currentCumulativePrices(address(pair));
         priceCumulativeLastTemple = templePriceCumulative;
-        priceCumulativeLastTimestamp = blockTimestamp; 
+        priceCumulativeLastTimestamp = blockTimestamp;
         roundStatus[currentRound].stage = Stage.FinalHour;
 
         emit InitiateFinalHour(priceCumulativeLastTemple, priceCumulativeLastTimestamp, currentRound);
     }
 
     /*
-     * End the current Round. 
+     * End the current Round.
      * Decide wheather the current game is won or not
      * Assumes initiateDevotionFinalHour has been run before
      */
@@ -149,13 +149,13 @@ contract Devotion is Ownable {
         require(roundStatus[currentRound].stage == Stage.FinalHour, "Devotion: can only transition from Final Hour to end round");
 
         (uint256 templePriceCumulative, , uint256 blockTimestamp) = UniswapV2OracleLibrary.currentCumulativePrices(address(pair));
-        uint256 timeElapsed = blockTimestamp - priceCumulativeLastTimestamp; 
+        uint256 timeElapsed = blockTimestamp - priceCumulativeLastTimestamp;
         uint256 templePriceAverage = (templePriceCumulative - priceCumulativeLastTemple) / timeElapsed;
-         
+
         if (templePriceAverage > targetPriceAverageTemple) {
             // The game has been won
             roundStatus[currentRound].isWon = true;
-        } 
+        }
         roundStatus[currentRound].stage = Stage.Finished;
         emit EndDevotion(templePriceAverage,  roundStatus[currentRound].isWon);
     }
@@ -167,7 +167,7 @@ contract Devotion is Ownable {
         require(roundStatus[currentRound].stage < Stage.Finished, "!VERIFY: UNAVAILABLE"); // as long as game hasn't ended
         require(verifiedFaith[currentRound][msg.sender] == false, "!VERIFY: ALREADY CLAIMED");
         (uint256 lockedOGTempleAmount,  uint256 lockedUntilTimestamp) = lockedOGTemple.ogTempleLocked(msg.sender);
-        
+
         require(lockedUntilTimestamp > block.timestamp + minimumLockPeriod, "!VERIFY: LOCK NOT ENOUGH");
 
         uint256 claimableFaith = lockedOGTempleAmount / 10**18; // Will round out
@@ -178,7 +178,7 @@ contract Devotion is Ownable {
 
     /*
      * Used this to autolock new  OGTemple and verify faith
-     */    
+     */
     function lockAndVerify(uint256 amountOGTemple) external {
         require(roundStatus[currentRound].stage < Stage.Finished, "!VERIFY: UNAVAILABLE"); // as long as game hasn't ended
         require(verifiedFaith[currentRound][msg.sender] == false, "!VERIFY: ALREADY CLAIMED");
@@ -188,9 +188,9 @@ contract Devotion is Ownable {
         SafeERC20.safeTransferFrom(templeStaking.OG_TEMPLE(), msg.sender, address(this), amountOGTemple);
         SafeERC20.safeIncreaseAllowance(templeStaking.OG_TEMPLE(), address(lockedOGTemple), amountOGTemple);
         lockedOGTemple.lockFor(msg.sender, amountOGTemple, lockedUntilTimestamp); // If already locked for longer will use the Max
-        
+
         (uint256 lockedOGTempleAmount,  uint256 newLockedUntilTimestamp) = lockedOGTemple.ogTempleLocked(msg.sender);
-   
+
 
         uint256 claimableFaith = lockedOGTempleAmount / 10**18; // Will round out
         require(claimableFaith > 0, "NO CLAIMABLE FAITH");
@@ -206,23 +206,23 @@ contract Devotion is Ownable {
         require(roundStatus[currentRound].isWon, "!VERIFY: UNAVAILABLE");
 
         uint256 faithTotalSupply = faith.totalSupply();
-        uint256 templePrizePool = templeToken.balanceOf(address(this)); 
+        uint256 templePrizePool = templeToken.balanceOf(address(this));
 
-        uint256 claimableTempleReward = (amountFaith * templePrizePool) / faithTotalSupply; 
+        uint256 claimableTempleReward = (amountFaith * templePrizePool) / faithTotalSupply;
         faith.redeem(msg.sender, uint112(amountFaith));
         SafeERC20.safeIncreaseAllowance(templeToken, address(templeStaking), claimableTempleReward);
         amountOgTempleRewarded =  templeStaking.stakeFor(msg.sender, claimableTempleReward);
 
         emit ClaimTempleRewards(msg.sender, amountFaith, claimableTempleReward);
     }
-    
+
     /*
      * Quote how much temple reward available for a give amount of faith
      */
     function claimableTempleRewardQuote(uint256 amountFaith) external view returns(uint256) {
         uint256 faithTotalSupply = faith.totalSupply();
-        uint256 templePrizePool = templeToken.balanceOf(address(this)); 
-        return (amountFaith * templePrizePool) / faithTotalSupply; 
+        uint256 templePrizePool = templeToken.balanceOf(address(this));
+        return (amountFaith * templePrizePool) / faithTotalSupply;
     }
 
     /*
@@ -242,7 +242,7 @@ contract Devotion is Ownable {
     // }
 
     // function canClaimTempleRewards() external view returns(bool) {
-    //     return roundStatus[currentRound].isWon == true; 
+    //     return roundStatus[currentRound].isWon == true;
     // }
 
     // function getDevotionIsActive() external view returns(bool) {

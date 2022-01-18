@@ -45,6 +45,7 @@ interface DevotionInterface extends ethers.utils.Interface {
     "templeStaking()": FunctionFragment;
     "templeToken()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
+    "verifiedFaith(uint8,address)": FunctionFragment;
     "verifyFaith()": FunctionFragment;
     "verifyFaithQuote(address)": FunctionFragment;
     "withdrawBalance(address,address,uint256)": FunctionFragment;
@@ -136,6 +137,10 @@ interface DevotionInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "verifiedFaith",
+    values: [BigNumberish, string]
   ): string;
   encodeFunctionData(
     functionFragment: "verifyFaith",
@@ -235,6 +240,10 @@ interface DevotionInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "verifiedFaith",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -447,6 +456,12 @@ export class Devotion extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    verifiedFaith(
+      arg0: BigNumberish,
+      arg1: string,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
+
     verifyFaith(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -548,6 +563,12 @@ export class Devotion extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  verifiedFaith(
+    arg0: BigNumberish,
+    arg1: string,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
+
   verifyFaith(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -642,6 +663,12 @@ export class Devotion extends BaseContract {
       newOwner: string,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    verifiedFaith(
+      arg0: BigNumberish,
+      arg1: string,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
 
     verifyFaith(overrides?: CallOverrides): Promise<void>;
 
@@ -907,6 +934,12 @@ export class Devotion extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    verifiedFaith(
+      arg0: BigNumberish,
+      arg1: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     verifyFaith(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -1014,6 +1047,12 @@ export class Devotion extends BaseContract {
     transferOwnership(
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    verifiedFaith(
+      arg0: BigNumberish,
+      arg1: string,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     verifyFaith(
