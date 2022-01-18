@@ -261,9 +261,10 @@ describe("Devotion", async () => {
         await templeStaking.stake(toAtto(100));
 
         let amountOgTemple = await ogTemple.balanceOf(await owner.getAddress())
-        await ogTemple.increaseAllowance(devotion.address, amountOgTemple)
+        await ogTemple.increaseAllowance(lockedOGTemple.address, amountOgTemple)
     
         await devotion.lockAndVerify(amountOgTemple);
+
         let faithBalance = await faith.balances(await owner.getAddress())
         expect(faithBalance.lifeTimeFaith).eq(fromAtto(amountOgTemple))
         expect(faithBalance.usableFaith).eq(fromAtto(amountOgTemple))

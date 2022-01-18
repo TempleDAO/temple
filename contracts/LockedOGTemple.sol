@@ -38,7 +38,7 @@ contract LockedOGTemple {
             lockEntry.lockedUntilTimestamp = newLockedUntilTimestamp;
         }
 
-        SafeERC20.safeTransferFrom(ogTempleToken, msg.sender, address(this), _amountOGTemple);
+        SafeERC20.safeTransferFrom(ogTempleToken, _staker, address(this), _amountOGTemple);
         emit Lock(_staker, _amountOGTemple, lockEntry.amount, lockEntry.lockedUntilTimestamp);
     }
 
