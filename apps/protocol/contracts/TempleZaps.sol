@@ -42,14 +42,8 @@ contract TempleZaps is ZapBaseV2_2 {
   constructor(address _olympusDAO) ZapBaseV2_2() {
     // 0x Proxy
     approvedTargets[0xDef1C0ded9bec7F1a1670819833240f027b25EfF] = true;
-    // Zapper Sushiswap Zap In
-    approvedTargets[0x5abfbE56553a5d794330EACCF556Ca1d2a55647C] = true;
-    // Zapper Uniswap V2 Zap In
-    approvedTargets[0x6D9893fa101CD2b1F8D1A12DE3189ff7b80FdC10] = true;
 
     olympusDAO = _olympusDAO;
-
-    transferOwnership(ZapperAdmin);
   }
 
   /**

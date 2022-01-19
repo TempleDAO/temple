@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
@@ -18,9 +17,6 @@ abstract contract ZapBaseV2_2 is Ownable {
 
   address internal constant ETHAddress =
     0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-
-  address internal constant ZapperAdmin =
-    0x3CE37278de6388532C3949ce4e886F365B14fB56;
 
   // circuit breaker modifiers
   modifier stopInEmergency() {
