@@ -7,7 +7,7 @@ contract TempleZaps {
 
 }
 
-import "../_base/ZapBaseV2_2.sol";
+import "./ZapBaseV2_2.sol";
 
 contract Olympus_Zap_V2 is ZapBaseV2_2 {
     using SafeERC20 for IERC20;
@@ -34,16 +34,14 @@ contract Olympus_Zap_V2 is ZapBaseV2_2 {
     event zapIn(
         address sender,
         address token,
-        uint256 tokensRec,
-        address affiliate
+        uint256 tokensRec
     );
 
     // Emitted when `sender` Zaps Out
     event zapOut(
         address sender,
         address token,
-        uint256 tokensRec,
-        address affiliate
+        uint256 tokensRec
     );
 
     /////////////// Modifiers ///////////////
@@ -56,10 +54,8 @@ contract Olympus_Zap_V2 is ZapBaseV2_2 {
     /////////////// Construction ///////////////
 
     constructor(
-        uint256 _goodwill,
-        uint256 _affiliateSplit,
         address _olympusDAO
-    ) ZapBaseV2_2(_goodwill, _affiliateSplit) {
+    ) ZapBaseV2_2() {
         // 0x Proxy
         approvedTargets[0xDef1C0ded9bec7F1a1670819833240f027b25EfF] = true;
         // Zapper Sushiswap Zap In
@@ -81,7 +77,6 @@ contract Olympus_Zap_V2 is ZapBaseV2_2 {
      * or wsOHM or principal tokens to receive. Reverts otherwise
      * @param swapTarget Excecution target for the swap or zap
      * @param swapData DEX or Zap data. Must swap to ibToken underlying address
-     * @param affiliate Affiliate address
      * @param maxBondPrice Max price for a bond denominated in toToken/principal. Ignored if not bonding.
      * @param bond if toToken is being used to purchase a bond.
      * @return OHMRec quantity of sOHM or wsOHM  received (depending on toToken)
@@ -94,7 +89,6 @@ contract Olympus_Zap_V2 is ZapBaseV2_2 {
         uint256 minToToken,
         address swapTarget,
         bytes calldata swapData,
-        address affiliate,
         address bondPayoutToken, // ignored if not bonding
         uint256 maxBondPrice, // ignored if not bonding
         bool bond
@@ -102,7 +96,7 @@ contract Olympus_Zap_V2 is ZapBaseV2_2 {
         if (bond) {
             // pull users fromToken
             uint256 toInvest =
-                _pullTokens(fromToken, amountIn, affiliate, true);
+                _pullTokens1(fromToken, amountIn);
 
             // swap fromToken -> toToken
             uint256 tokensBought =
@@ -121,7 +115,7 @@ contract Olympus_Zap_V2 is ZapBaseV2_2 {
             );
 
             // emit zapIn
-            emit zapIn(msg.sender, toToken, OHMRec, affiliate);
+            emit zapIn(msg.sender, toToken, OHMRec);
         } else {
             require(
                 toToken == sOHM || toToken == wsOHM,
@@ -129,7 +123,7 @@ contract Olympus_Zap_V2 is ZapBaseV2_2 {
             );
 
             uint256 toInvest =
-                _pullTokens(fromToken, amountIn, affiliate, true);
+                _pullTokens1(fromToken, amountIn);
 
             uint256 tokensBought =
                 _fillQuote(fromToken, OHM, toInvest, swapTarget, swapData);
@@ -137,7 +131,7 @@ contract Olympus_Zap_V2 is ZapBaseV2_2 {
             OHMRec = _enterOlympus(tokensBought, toToken);
             require(OHMRec > minToToken, "High Slippage");
 
-            emit zapIn(msg.sender, sOHM, OHMRec, affiliate);
+            emit zapIn(msg.sender, sOHM, OHMRec);
         }
     }
 
@@ -149,7 +143,6 @@ contract Olympus_Zap_V2 is ZapBaseV2_2 {
      * @param minToTokens The minimum acceptable quantity of tokens to receive. Reverts otherwise
      * @param swapTarget Excecution target for the swap or zap
      * @param swapData DEX or Zap data
-     * @param affiliate Affiliate address
      * @return tokensRec Quantity of aTokens received
      */
     function ZapOut(
@@ -158,47 +151,31 @@ contract Olympus_Zap_V2 is ZapBaseV2_2 {
         address toToken,
         uint256 minToTokens,
         address swapTarget,
-        bytes calldata swapData,
-        address affiliate
+        bytes calldata swapData
     ) external stopInEmergency returns (uint256 tokensRec) {
         require(
             fromToken == sOHM || fromToken == wsOHM,
             "fromToken must be sOHM or wsOHM"
         );
 
-        amountIn = _pullTokens(fromToken, amountIn);
+        amountIn = _pullTokens2(fromToken, amountIn);
 
         uint256 OHMRec = _exitOlympus(fromToken, amountIn);
 
         tokensRec = _fillQuote(OHM, toToken, OHMRec, swapTarget, swapData);
         require(tokensRec >= minToTokens, "High Slippage");
 
-        uint256 totalGoodwillPortion;
         if (toToken == address(0)) {
-            totalGoodwillPortion = _subtractGoodwill(
-                ETHAddress,
-                tokensRec,
-                affiliate,
-                true
-            );
-
-            payable(msg.sender).transfer(tokensRec - totalGoodwillPortion);
+            payable(msg.sender).transfer(tokensRec);
         } else {
-            totalGoodwillPortion = _subtractGoodwill(
-                toToken,
-                tokensRec,
-                affiliate,
-                true
-            );
-
             IERC20(toToken).safeTransfer(
                 msg.sender,
-                tokensRec - totalGoodwillPortion
+                tokensRec
             );
         }
-        tokensRec = tokensRec - totalGoodwillPortion;
+        tokensRec = tokensRec;
 
-        emit zapOut(msg.sender, toToken, tokensRec, affiliate);
+        emit zapOut(msg.sender, toToken, tokensRec);
     }
 
     function _enterOlympus(uint256 amount, address toToken)
