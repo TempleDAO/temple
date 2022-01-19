@@ -19,9 +19,6 @@ contract TempleZaps is ZapBaseV2_2 {
 
   address public wsOHM = 0xCa76543Cf381ebBB277bE79574059e32108e3E65;
 
-  // IE DAI => wanted payout token (IE OHM) => bond depo
-  mapping(address => mapping(address => address)) public principalToDepository;
-
   /////////////// Events ///////////////
 
   // Emitted when `sender` Zaps In
@@ -55,10 +52,7 @@ contract TempleZaps is ZapBaseV2_2 {
    * or wsOHM or principal tokens to receive. Reverts otherwise
    * @param swapTarget Excecution target for the swap or zap
    * @param swapData DEX or Zap data. Must swap to ibToken underlying address
-   * @param maxBondPrice Max price for a bond denominated in toToken/principal. Ignored if not bonding.
-   * @param bond if toToken is being used to purchase a bond.
    * @return OHMRec quantity of sOHM or wsOHM  received (depending on toToken)
-   * or the quantity OHM vesting (if bond is true)
    */
   function ZapIn(
     address fromToken,
@@ -66,59 +60,27 @@ contract TempleZaps is ZapBaseV2_2 {
     address toToken,
     uint256 minToToken,
     address swapTarget,
-    bytes calldata swapData,
-    address bondPayoutToken, // ignored if not bonding
-    uint256 maxBondPrice, // ignored if not bonding
-    bool bond
+    bytes calldata swapData
   ) external payable stopInEmergency returns (uint256 OHMRec) {
-    if (bond) {
-      // pull users fromToken
-      uint256 toInvest = _pullTokens1(fromToken, amountIn);
+    require(
+      toToken == sOHM || toToken == wsOHM,
+      'toToken must be sOHM or wsOHM'
+    );
 
-      // swap fromToken -> toToken
-      uint256 tokensBought = _fillQuote(
-        fromToken,
-        toToken,
-        toInvest,
-        swapTarget,
-        swapData
-      );
-      require(tokensBought >= minToToken, 'High Slippage');
+    uint256 toInvest = _pullTokens1(fromToken, amountIn);
 
-      // get depo address
-      address depo = principalToDepository[toToken][bondPayoutToken];
-      require(depo != address(0), "Bond depo doesn't exist");
+    uint256 tokensBought = _fillQuote(
+      fromToken,
+      OHM,
+      toInvest,
+      swapTarget,
+      swapData
+    );
 
-      // deposit bond on behalf of user, and return OHMRec
-      OHMRec = IBondDepository(depo).deposit(
-        tokensBought,
-        maxBondPrice,
-        msg.sender
-      );
+    OHMRec = _enterOlympus(tokensBought, toToken);
+    require(OHMRec > minToToken, 'High Slippage');
 
-      // emit zapIn
-      emit zapIn(msg.sender, toToken, OHMRec);
-    } else {
-      require(
-        toToken == sOHM || toToken == wsOHM,
-        'toToken must be sOHM or wsOHM'
-      );
-
-      uint256 toInvest = _pullTokens1(fromToken, amountIn);
-
-      uint256 tokensBought = _fillQuote(
-        fromToken,
-        OHM,
-        toInvest,
-        swapTarget,
-        swapData
-      );
-
-      OHMRec = _enterOlympus(tokensBought, toToken);
-      require(OHMRec > minToToken, 'High Slippage');
-
-      emit zapIn(msg.sender, sOHM, OHMRec);
-    }
+    emit zapIn(msg.sender, sOHM, OHMRec);
   }
 
   /**
@@ -237,33 +199,5 @@ contract TempleZaps is ZapBaseV2_2 {
 
   function update_wsOHM(address _wsOHM) external onlyOlympusDAO {
     wsOHM = _wsOHM;
-  }
-
-  function update_BondDepos(
-    address[] calldata principals,
-    address[] calldata payoutTokens,
-    address[] calldata depos
-  ) external onlyOlympusDAO {
-    require(
-      principals.length == depos.length && depos.length == payoutTokens.length,
-      'array param lengths must match'
-    );
-    // update depos for each principal
-    for (uint256 i; i < principals.length; i++) {
-      principalToDepository[principals[i]][payoutTokens[i]] = depos[i];
-
-      // max approve depo to save on gas
-      _approveToken(principals[i], depos[i]);
-    }
-  }
-
-  function bondPrice(address principal, address payoutToken)
-    external
-    view
-    returns (uint256)
-  {
-    return
-      IBondDepository(principalToDepository[principal][payoutToken])
-        .bondPrice();
   }
 }
