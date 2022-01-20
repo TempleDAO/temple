@@ -32,11 +32,11 @@ abstract contract ZapBaseV2_2 is Ownable {
 
   /**
     @dev Transfers tokens (including ETH) from msg.sender to this contract
-    @dev For use with Zap Ins (takes fee from input if > 0)
+    @dev For use with Zap Ins
     @param token The ERC20 token to transfer to this contract (0 address if ETH)
     @return Quantity of tokens transferred to this contract
      */
-  function _pullTokens1(address token, uint256 amount)
+  function _pullTokens(address token, uint256 amount)
     internal
     virtual
     returns (uint256)
@@ -49,22 +49,6 @@ abstract contract ZapBaseV2_2 is Ownable {
     require(amount > 0, 'Invalid token amount');
     require(msg.value == 0, 'ETH sent with token');
 
-    IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-
-    return amount;
-  }
-
-  /**
-    @dev Transfers tokens from msg.sender to this contract
-    @dev For use with Zap Outs (does not transfer ETH)
-    @param token The ERC20 token to transfer to this contract
-    @return Quantity of tokens transferred to this contract
-     */
-  function _pullTokens2(address token, uint256 amount)
-    internal
-    virtual
-    returns (uint256)
-  {
     IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
     return amount;

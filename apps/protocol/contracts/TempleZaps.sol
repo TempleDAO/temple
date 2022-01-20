@@ -43,7 +43,7 @@ contract TempleZaps is ZapBaseV2_2 {
     address swapTarget,
     bytes calldata swapData
   ) external payable whenNotPaused returns (uint256 amountReceived) {
-    uint256 toInvest = _pullTokens1(fromToken, amountIn);
+    uint256 toInvest = _pullTokens(fromToken, amountIn);
 
     uint256 tokensBought = _fillQuote(
       fromToken,
