@@ -13,7 +13,7 @@ interface IWETH {
 
 abstract contract ZapBaseV2_2 is Ownable {
   using SafeERC20 for IERC20;
-  bool public stopped;
+  bool public paused;
 
   address private constant wethTokenAddress =
     0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -25,8 +25,8 @@ abstract contract ZapBaseV2_2 is Ownable {
     0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
   // circuit breaker modifiers
-  modifier stopInEmergency() {
-    require(!stopped, 'Paused');
+  modifier whenNotPaused() {
+    require(!paused, 'Paused');
     _;
   }
 
@@ -179,7 +179,7 @@ abstract contract ZapBaseV2_2 is Ownable {
     @dev Toggles the contract's active state
      */
   function toggleContractActive() public onlyOwner {
-    stopped = !stopped;
+    paused = !paused;
   }
 
   receive() external payable {
