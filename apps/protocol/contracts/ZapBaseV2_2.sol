@@ -5,6 +5,12 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
+interface IWETH {
+  function deposit() external payable;
+
+  function withdraw(uint256 wad) external;
+}
+
 abstract contract ZapBaseV2_2 is Ownable {
   using SafeERC20 for IERC20;
   bool public stopped;

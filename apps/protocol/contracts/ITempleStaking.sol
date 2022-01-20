@@ -2,9 +2,7 @@
 pragma solidity ^0.8.4;
 
 interface ITempleStaking {
-  function stake(uint256 _amountTemple)
+  function stakeFor(address _staker, uint256 _amountTemple)
     external
     returns (uint256 amountOgTemple);
-
-  function unstake(uint256 _amountOgTemple) external;
 }
