@@ -21,9 +21,6 @@ abstract contract ZapBaseV2_2 is Ownable {
   // swapTarget => approval status
   mapping(address => bool) public approvedTargets;
 
-  address internal constant ETHAddress =
-    0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-
   // circuit breaker modifiers
   modifier whenNotPaused() {
     require(!paused, 'Paused');
