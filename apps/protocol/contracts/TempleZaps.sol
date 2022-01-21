@@ -59,7 +59,7 @@ contract TempleZaps is ZapBaseV2_2 {
       swapTarget,
       swapData
     );
-    console.log('fraxBought: ', fraxBought);
+    console.log('fraxBought:', fraxBought / 1e18);
 
     amountOGTemple = _enterTemple(fraxBought, minTempleReceived);
 
@@ -80,7 +80,7 @@ contract TempleZaps is ZapBaseV2_2 {
         block.timestamp + TEMPLE_AMM_DEADLINE
       );
 
-    console.log('amountTempleReceived: ', amountTempleReceived);
+    console.log('amountTempleReceived:', amountTempleReceived / 1e18);
 
     _approveToken(TEMPLE, TEMPLE_STAKING, amountTempleReceived);
 
@@ -89,7 +89,7 @@ contract TempleZaps is ZapBaseV2_2 {
       amountTempleReceived
     );
 
-    console.log('amountOGTemple: ', amountOGTemple);
+    console.log('amountOGTemple:', amountOGTemple / 1e18);
   }
 
   ///////////// Owner only /////////////
