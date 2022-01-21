@@ -26,6 +26,7 @@ export interface DeployedContracts {
   TEMPLE_CASHBACK: string,
 
   FAITH: string,
+  FAITH_AIRDROP: string,
   LOCKED_OG_TEMPLE: string,
   DEVOTION: string,
 
@@ -68,7 +69,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
 
     // currently not configured, need to swap treasury owner via
     // multisig. Test on rinkeby before doing the same on mainnet
-    TREASURY_MANAGEMENT: '0xB9A7F07f5D0ea3AFa454486cffe39ceFec8e136C', 
+    TREASURY_MANAGEMENT: '0xB9A7F07f5D0ea3AFa454486cffe39ceFec8e136C',
     TEMPLE_TEAM_FIXED_PAYMENTS: '',
     TEMPLE_TEAM_CONTIGENT_PAYMENTS: '',
     TEMPLE_V2_PAIR: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
@@ -76,9 +77,10 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_AMM_OPS: '0xe04D90A6d408D25c96Aea5Be018853c604bE794a',
     TEMPLE_CASHBACK: '0x2FDac592c53A8d64183f727ee125c9bB997484D9',
 
-    FAITH: '0x9B77fD481EdDF1123e8E23BB4e9003C4d8D82AD4',
-    LOCKED_OG_TEMPLE: '0xAd64485CB2ea79B50C114378a5d5B490EA924f7e',
-    DEVOTION: '0x7BF813CDbA5e400FbC1687194A60CF85FAB3747a',
+    FAITH: '0xEfE48F73A78BFeBE56F3baF6Ea3Bf2827CF0041b',
+    FAITH_AIRDROP: '0x1611A33FCf72e7a408bb40E354fF20613a46cC7f',
+    LOCKED_OG_TEMPLE: '0x672c4D6719Ab28C48e4096CF8AE8FF68b8a1f3b1',
+    DEVOTION: '0x627832c23F06597d4c07db64C1704AC431DE5f9f',
 
     MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
   },
@@ -117,6 +119,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_CASHBACK: '0x72e9fa8eD38ddbdA4b044E95A206EDaA509FdF72',
 
     FAITH: '',
+    FAITH_AIRDROP: '',
     LOCKED_OG_TEMPLE: '',
     DEVOTION: '',
   },
@@ -149,6 +152,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_CASHBACK: process.env.TEMPLE_CASHBACK || '',
 
     FAITH: process.env.FAITH || '',
+    FAITH_AIRDROP: process.env.FAITH_AIRDROP || '',
     LOCKED_OG_TEMPLE: process.env.LOCKED_OG_TEMPLE || '',
     DEVOTION: process.env.DEVOTION || '',
 
