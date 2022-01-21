@@ -31,7 +31,7 @@ async function main() {
     faithMerkleAirdropFactory,
     faithMerkleAirdropFactory.deploy,
     DEPLOYED.FAITH,
-    [] // Assume this is the Merkle Root, how do I get this?
+    '0xb3eaf69f1855467d3674cf62da4ed13cdbc713309b844a2c71265d8c9ff59a64'
   );
 
   await mine(faithMerkleAirdrop.setOwner(DEPLOYED.MULTISIG));
