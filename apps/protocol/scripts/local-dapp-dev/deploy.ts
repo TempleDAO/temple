@@ -309,6 +309,8 @@ async function main() {
     TEMPLE_ROUTER_WHITELIST: ammWhitelist.address,
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
     TEMPLE_DEVOTION: devotion.address,
+    TEMPLE_FAITH_ADDRESS: faith.address,
+    LOCKED_OG_TEMPLE_DEVOTION_ADDRESS: OG_TEMPLE.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys
@@ -319,7 +321,7 @@ async function main() {
   console.log();
   console.log("=========================================");
   console.log("*** Copy/pasta into .env.local for dApp dev\n\n");
-  for (let envvar in contract_address) {
+  for (const envvar in contract_address) {
     console.log(`VITE_PUBLIC_${envvar}=${contract_address[envvar]}`);
   }
 
@@ -328,7 +330,7 @@ async function main() {
   console.log(
     "*** Copy/pasta into terminal to use with scripts like metrics/test-temple interactions etc\n\n"
   );
-  for (let envvar in contract_address) {
+  for (const envvar in contract_address) {
     console.log(`EXPORT ${envvar}=${contract_address[envvar]}`);
   }
 }

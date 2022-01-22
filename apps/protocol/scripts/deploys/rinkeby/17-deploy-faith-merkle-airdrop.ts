@@ -31,7 +31,7 @@ async function main() {
     faithMerkleAirdropFactory,
     faithMerkleAirdropFactory.deploy,
     DEPLOYED.FAITH,
-    '0xb3eaf69f1855467d3674cf62da4ed13cdbc713309b844a2c71265d8c9ff59a64'
+    '0x8830310c2e453ae0baaf74a86658542792c3209d6c5d41621a3a83650a0555cd'
   );
 
   await mine(faithMerkleAirdrop.setOwner(DEPLOYED.MULTISIG));
