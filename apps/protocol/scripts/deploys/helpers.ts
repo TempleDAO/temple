@@ -26,6 +26,7 @@ export interface DeployedContracts {
   TEMPLE_CASHBACK: string,
 
   FAITH: string,
+  FAITH_AIRDROP: string,
   LOCKED_OG_TEMPLE: string,
   DEVOTION: string,
 
@@ -68,7 +69,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
 
     // currently not configured, need to swap treasury owner via
     // multisig. Test on rinkeby before doing the same on mainnet
-    TREASURY_MANAGEMENT: '0xB9A7F07f5D0ea3AFa454486cffe39ceFec8e136C', 
+    TREASURY_MANAGEMENT: '0xB9A7F07f5D0ea3AFa454486cffe39ceFec8e136C',
     TEMPLE_TEAM_FIXED_PAYMENTS: '',
     TEMPLE_TEAM_CONTIGENT_PAYMENTS: '',
     TEMPLE_V2_PAIR: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
@@ -77,6 +78,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_CASHBACK: '0x2FDac592c53A8d64183f727ee125c9bB997484D9',
 
     FAITH: '0x727d442f05cf22f3A60b787913623f406f9E94bA',
+    FAITH_AIRDROP: '0xc101ca108be832a4c44f1F0d9872E33A118317b7',
     LOCKED_OG_TEMPLE: '0x3C777c4F6fF2bdDD1394De9D4d6ddAB980d47Ed8',
     DEVOTION: '0x262Eb109183B7f1b4Aa36c136C6A27e9a0c9210F',
 
@@ -117,6 +119,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_CASHBACK: '0x72e9fa8eD38ddbdA4b044E95A206EDaA509FdF72',
 
     FAITH: '',
+    FAITH_AIRDROP: '',
     LOCKED_OG_TEMPLE: '',
     DEVOTION: '',
   },
@@ -149,6 +152,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_CASHBACK: process.env.TEMPLE_CASHBACK || '',
 
     FAITH: process.env.FAITH || '',
+    FAITH_AIRDROP: process.env.FAITH_AIRDROP || '',
     LOCKED_OG_TEMPLE: process.env.LOCKED_OG_TEMPLE || '',
     DEVOTION: process.env.DEVOTION || '',
 
