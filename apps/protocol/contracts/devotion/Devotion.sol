@@ -184,8 +184,7 @@ contract Devotion is Ownable {
         require(verifiedFaith[currentRound][msg.sender] == false, "!VERIFY: ALREADY CLAIMED");
 
         // If relocking new OG-Temple
-        uint256 lockedUntilTimestamp = block.timestamp + minimumLockPeriod;
-        lockedOGTemple.lockFor(msg.sender, amountOGTemple, lockedUntilTimestamp); // If already locked for longer will use the Max
+        lockedOGTemple.lockFor(msg.sender, amountOGTemple, minimumLockPeriod); // If already locked for longer will use the Max
         (uint256 lockedOGTempleAmount,  uint256 newLockedUntilTimestamp) = lockedOGTemple.ogTempleLocked(msg.sender);
         uint256 claimableFaith = lockedOGTempleAmount / 10**18; // Will round out
         require(claimableFaith > 0, "NO CLAIMABLE FAITH");
