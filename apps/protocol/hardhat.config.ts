@@ -64,7 +64,7 @@ module.exports = {
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
       accounts: (process.env.MAINNET_ADDRESS_PRIVATE_KEY) ? [process.env.MAINNET_ADDRESS_PRIVATE_KEY] : [],
-      gasPrice: 12000000000,
+      gasPrice: 100000000000,
     },
     matic: {
       url: process.env.MATIC_RPC_URL || '',
