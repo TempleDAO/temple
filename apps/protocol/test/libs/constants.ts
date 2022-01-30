@@ -1,0 +1,14 @@
+const addresses = {
+  tokens: {
+    LINK: '0x514910771af9ca656af840dff83e8264ecf986ca',
+    USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    FRAX: '0x853d955acef822db058eb8505911ed77f175b99e',
+    WETH: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+    ETH: '0x0000000000000000000000000000000000000000',
+  },
+  temple: {
+    OG_TEMPLE: '0x654590F810f01B51dc7B86915D4632977e49EA33',
+  },
+};
+
+export default addresses;

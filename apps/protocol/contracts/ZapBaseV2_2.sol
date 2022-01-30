@@ -5,8 +5,6 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
-import 'hardhat/console.sol';
-
 interface IWETH {
   function deposit() external payable;
 
@@ -93,17 +91,10 @@ abstract contract ZapBaseV2_2 is Ownable {
     uint256 initialBalance = _getBalance(toToken);
 
     require(approvedTargets[swapTarget], 'Target not Authorized');
-    (bool success, bytes memory data) = swapTarget.call{value: valueToSend}(
-      swapData
-    );
-
-    console.log('0x result data');
-    console.logBytes(data);
-
+    (bool success, ) = swapTarget.call{value: valueToSend}(swapData);
     require(success, 'Error Swapping Tokens');
 
     amountBought = _getBalance(toToken) - initialBalance;
-
     require(amountBought > 0, 'Swapped To Invalid Token');
   }
 

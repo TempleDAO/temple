@@ -1,11 +1,23 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity ^0.8.11;
-
-import './ITempleStaking.sol';
-import './amm/ITempleFraxAMMRouter.sol';
+pragma solidity ^0.8.4;
 
 import './ZapBaseV2_2.sol';
 import 'hardhat/console.sol';
+
+interface ITempleFraxAMMRouter {
+  function swapExactFraxForTemple(
+    uint256 amountIn,
+    uint256 amountOutMin,
+    address to,
+    uint256 deadline
+  ) external returns (uint256 amountOut);
+}
+
+interface ITempleStaking {
+  function stakeFor(address _staker, uint256 _amountTemple)
+    external
+    returns (uint256 amountOgTemple);
+}
 
 contract TempleZaps is ZapBaseV2_2 {
   /////////////// STORAGE ///////////////
@@ -23,7 +35,7 @@ contract TempleZaps is ZapBaseV2_2 {
   /////////////// EVENTS ///////////////
 
   // Emitted when `sender` Zaps In
-  event zapIn(address sender, address token, uint256 amountReceived);
+  event zappedIn(address sender, address token, uint256 amountReceived);
 
   /////////////// CONSTRUCTOR ///////////////
 
@@ -43,7 +55,7 @@ contract TempleZaps is ZapBaseV2_2 {
    * @param swapData DEX data
    * @return amountOGTemple quantity of OGTemple received
    */
-  function ZapIn(
+  function zapIn(
     address fromToken,
     uint256 fromAmount,
     uint256 minTempleReceived,
@@ -63,18 +75,28 @@ contract TempleZaps is ZapBaseV2_2 {
 
     amountOGTemple = _enterTemple(fraxBought, minTempleReceived);
 
-    emit zapIn(msg.sender, OG_TEMPLE, amountOGTemple);
+    emit zappedIn(msg.sender, OG_TEMPLE, amountOGTemple);
   }
 
-  function _enterTemple(uint256 amountFrax, uint256 minTempleReceived)
+  function zapInFRAX(uint256 amountFRAX, uint256 minTempleReceived)
+    external
+    whenNotPaused
+    returns (uint256 amountOGTemple)
+  {
+    _pullTokens(FRAX, amountFRAX);
+    amountOGTemple = _enterTemple(amountFRAX, minTempleReceived);
+    emit zappedIn(msg.sender, OG_TEMPLE, amountOGTemple);
+  }
+
+  function _enterTemple(uint256 amountFRAX, uint256 minTempleReceived)
     internal
     returns (uint256 amountOGTemple)
   {
-    _approveToken(FRAX, TEMPLE_FRAX_AMM_ROUTER, amountFrax);
+    _approveToken(FRAX, TEMPLE_FRAX_AMM_ROUTER, amountFRAX);
 
     uint256 amountTempleReceived = ITempleFraxAMMRouter(TEMPLE_FRAX_AMM_ROUTER)
       .swapExactFraxForTemple(
-        amountFrax,
+        amountFRAX,
         minTempleReceived,
         address(this),
         block.timestamp + TEMPLE_AMM_DEADLINE

@@ -1,6 +1,9 @@
 import { network, ethers } from "hardhat";
-import { BigNumber, ContractFactory, Signer } from "ethers";
+import { BigNumber } from "ethers";
 import { expect } from "chai";
+
+import { IERC20 } from "../typechain";
+import FakeERC20 from '../artifacts/contracts/fakes/FakeERC20.sol/FakeERC20.json';
 
 export async function shouldThrow(p: Promise<any>, matches: RegExp) {
   try {
@@ -84,3 +87,17 @@ export function fromFixedPoint112x112(n: BigNumber): number {
   }
   return Number.parseFloat(n.shr(112).toString()) + fractionalPart;
 }
+
+export const getBalance = async (token: IERC20 | string, owner: string) => {
+  if (typeof token === "string") {
+    token = await getToken(token);
+  }
+  return await token.balanceOf(owner);
+};
+
+const getToken = async (tokenAddress: string) => {
+  return (await ethers.getContractAt(
+    FakeERC20.abi,
+    tokenAddress,
+  )) as IERC20;
+};
