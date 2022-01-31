@@ -5,6 +5,7 @@ import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ganache'; // for testing
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
+import "hardhat-gas-reporter";
 
 // NOTE: Any tasks that depend on the generated typechain makes the build flaky.
 //       Favour scripts instead
@@ -93,6 +94,10 @@ module.exports = {
     apiKey: process.env.ETHERSCAN_API_KEY,
   },
   mocha: {
-    timeout: 120000,
+    timeout: 120000
   },
+  gasReporter: {
+    currency: 'USD',
+    coinmarketcap: process.env.COINMARKETCAP_API_KEY,
+  }
 };
