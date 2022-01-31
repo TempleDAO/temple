@@ -20,9 +20,20 @@ interface ITempleStaking {
     returns (uint256 amountOgTemple);
 }
 
-contract TempleZaps is ZapBaseV2_2 {
-  /////////////// STORAGE ///////////////
+interface DAI {
+  function permit(
+    address holder,
+    address spender,
+    uint256 nonce,
+    uint256 expiry,
+    bool allowed,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external;
+}
 
+contract TempleZaps is ZapBaseV2_2 {
   uint256 public constant TEMPLE_AMM_DEADLINE = 1200; // 20 minutes
 
   address public constant FRAX = 0x853d955aCEf822Db058eb8505911ED77F175b99e;
@@ -33,25 +44,40 @@ contract TempleZaps is ZapBaseV2_2 {
   address public TEMPLE_FRAX_AMM_ROUTER =
     0x8A5058100E60e8F7C42305eb505B12785bbA3BcA;
 
-  /////////////// EVENTS ///////////////
+  struct StandardPermit {
+    address owner;
+    address spender;
+    uint256 value;
+    uint256 deadline;
+    uint8 v;
+    bytes32 r;
+    bytes32 s;
+  }
+
+  struct DAIPermit {
+    address holder;
+    address spender;
+    uint256 nonce;
+    uint256 expiry;
+    bool allowed;
+    uint8 v;
+    bytes32 r;
+    bytes32 s;
+  }
 
   // Emitted when `sender` Zaps In
   event zappedIn(address sender, address token, uint256 amountReceived);
-
-  /////////////// CONSTRUCTOR ///////////////
 
   constructor() ZapBaseV2_2() {
     // 0x: Exchange Proxy
     approvedTargets[0xDef1C0ded9bec7F1a1670819833240f027b25EfF] = true;
   }
 
-  /////////////// LOGIC ///////////////
-
   /**
-   * @notice This function deposits assets into TempleDAO with ETH or ERC20 tokens
+   * @notice This function deposits ETH and ERC20 tokens
    * @param fromToken The token used for entry (address(0) if ether)
    * @param fromAmount The amount of fromToken to invest
-   * @param minTempleReceived The minimum acceptable quantity of Temple to receive. Reverts otherwise.
+   * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive. Reverts otherwise.
    * @param swapTarget Excecution target for the swap
    * @param swapData DEX data
    * @return amountOGTemple quantity of OGTemple received
@@ -62,7 +88,7 @@ contract TempleZaps is ZapBaseV2_2 {
     uint256 minTempleReceived,
     address swapTarget,
     bytes calldata swapData
-  ) external payable whenNotPaused returns (uint256 amountOGTemple) {
+  ) public payable whenNotPaused returns (uint256 amountOGTemple) {
     _pullTokens(fromToken, fromAmount);
 
     uint256 fraxBought = _fillQuote(
@@ -75,7 +101,6 @@ contract TempleZaps is ZapBaseV2_2 {
     console.log('fraxBought:', fraxBought / 1e18);
 
     amountOGTemple = _enterTemple(fraxBought, minTempleReceived);
-
     emit zappedIn(msg.sender, OG_TEMPLE, amountOGTemple);
   }
 
@@ -87,6 +112,54 @@ contract TempleZaps is ZapBaseV2_2 {
     _pullTokens(FRAX, amountFRAX);
     amountOGTemple = _enterTemple(amountFRAX, minTempleReceived);
     emit zappedIn(msg.sender, OG_TEMPLE, amountOGTemple);
+  }
+
+  function zapInDAIWithPermit(
+    address fromToken,
+    uint256 fromAmount,
+    uint256 minTempleReceived,
+    address swapTarget,
+    bytes calldata swapData,
+    DAIPermit calldata permit
+  ) external whenNotPaused returns (uint256 amountOGTemple) {
+    DAI dai = DAI(fromToken);
+    dai.permit(
+      permit.holder,
+      permit.spender,
+      permit.nonce,
+      permit.expiry,
+      permit.allowed,
+      permit.v,
+      permit.r,
+      permit.s
+    );
+    return
+      zapIn(fromToken, fromAmount, minTempleReceived, swapTarget, swapData);
+  }
+
+  /**
+   * @notice This function deposits EIP-2612 compliant tokens
+   */
+  function zapInWithPermit(
+    address fromToken,
+    uint256 fromAmount,
+    uint256 minTempleReceived,
+    address swapTarget,
+    bytes calldata swapData,
+    StandardPermit calldata permit
+  ) external whenNotPaused returns (uint256 amountOGTemple) {
+    ERC20 token = ERC20(fromToken); // Solmate ERC20 implements EIP-2612
+    token.permit(
+      permit.owner,
+      permit.spender,
+      permit.value,
+      permit.deadline,
+      permit.v,
+      permit.r,
+      permit.s
+    );
+    return
+      zapIn(fromToken, fromAmount, minTempleReceived, swapTarget, swapData);
   }
 
   function _enterTemple(uint256 amountFRAX, uint256 minTempleReceived)
@@ -116,6 +189,19 @@ contract TempleZaps is ZapBaseV2_2 {
   }
 
   ///////////// Owner only /////////////
+
+  function withdraw(
+    address token,
+    address to,
+    uint256 amount
+  ) external onlyOwner {
+    require(to != address(0), 'to address zero');
+    if (token == address(0)) {
+      SafeTransferLib.safeTransferETH(to, amount);
+    } else {
+      SafeTransferLib.safeTransfer(ERC20(token), to, amount);
+    }
+  }
 
   function updateTemple(address _temple) external onlyOwner {
     TEMPLE = _temple;

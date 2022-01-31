@@ -70,7 +70,7 @@ module.exports = {
     hardhat: {
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-        blockNumber: 14108863,
+        blockNumber: 14114635,
       }
     },
     mainnet: {
@@ -99,5 +99,6 @@ module.exports = {
   gasReporter: {
     currency: 'USD',
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
+    gasPrice: 135,
   }
 };
