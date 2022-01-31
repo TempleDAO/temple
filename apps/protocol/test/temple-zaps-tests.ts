@@ -5,7 +5,7 @@ import axios from 'axios';
 
 import FakeERC20 from '../artifacts/contracts/fakes/FakeERC20.sol/FakeERC20.json';
 import { TempleZaps, TempleZaps__factory } from '../typechain';
-import { shouldThrow, blockTimestamp, getBalance } from './helpers';
+import { shouldThrow, getBalance } from './helpers';
 import addresses from './libs/constants';
 
 const BINANCE_ACCOUNT_8 = '0xF977814e90dA44bFA03b6295A0616a897441aceC';
@@ -15,6 +15,9 @@ const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
 
 const { OG_TEMPLE } = addresses.temple;
 const { WETH, USDC, FRAX, ETH } = addresses.tokens;
+
+const NOT_OWNER = /Ownable: caller is not the owner/;
+const PAUSED = /Paused/;
 
 let TEMPLE_ZAPS: TempleZaps;
 let owner: Signer;
@@ -36,21 +39,11 @@ describe('TempleZaps', async () => {
   });
 
   describe('Deployment', function () {
-    it('should set the right owner', async function () {
+    it('should set the right owner', async () => {
       expect(await TEMPLE_ZAPS.owner()).to.equal(ownerAddress);
     });
 
-    it('should allow owner to renounce', async function () {
-      await TEMPLE_ZAPS.renounceOwnership();
-      expect(await TEMPLE_ZAPS.owner()).to.equal(ethers.constants.AddressZero);
-    });
-
-    it('should allow owner to transfer ownership', async function () {
-      await TEMPLE_ZAPS.transferOwnership(aliceAddress);
-      expect(await TEMPLE_ZAPS.owner()).to.equal(aliceAddress);
-    });
-
-    it('should have 0x exchange proxy as an approved target', async function () {
+    it('should have 0x exchange proxy as an approved target', async () => {
       expect(await TEMPLE_ZAPS.approvedTargets(ZEROEX_EXCHANGE_PROXY)).to.be
         .true;
     });
@@ -115,6 +108,127 @@ describe('TempleZaps', async () => {
         tokenAmount,
         minTempleReceived
       );
+    });
+  });
+
+  describe('Security', async () => {
+    describe('Authorization', async () => {
+      it('only owner can call onlyOwner functions', async () => {
+        // connect owner to TEMPLE_ZAPS
+        const ownerConnect = TEMPLE_ZAPS.connect(owner);
+        const aliceConnect = TEMPLE_ZAPS.connect(alice);
+
+        const addrZero = ethers.constants.AddressZero;
+        const targets = [addrZero];
+        const isApproved = [true];
+
+        await shouldThrow(aliceConnect.updateTemple(addrZero), NOT_OWNER);
+        await shouldThrow(aliceConnect.updateOGTemple(addrZero), NOT_OWNER);
+        await shouldThrow(aliceConnect.updateStaking(addrZero), NOT_OWNER);
+        await shouldThrow(aliceConnect.updateAMMRouter(addrZero), NOT_OWNER);
+        await shouldThrow(
+          aliceConnect.setApprovedTargets(targets, isApproved),
+          NOT_OWNER
+        );
+        await shouldThrow(aliceConnect.toggleContractActive(), NOT_OWNER);
+
+        await ownerConnect.updateTemple(addrZero);
+        await ownerConnect.updateOGTemple(addrZero);
+        await ownerConnect.updateStaking(addrZero);
+        await ownerConnect.updateAMMRouter(addrZero);
+        await ownerConnect.setApprovedTargets(targets, isApproved);
+        await ownerConnect.toggleContractActive();
+      });
+
+      it('should disable zapIn when paused', async () => {
+        // Pause
+        const ownerConnect = TEMPLE_ZAPS.connect(owner);
+        await ownerConnect.toggleContractActive();
+
+        // Zap in USDC
+        const usdcAddr = USDC;
+        const usdcAmount = '10000';
+        const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
+        await shouldThrow(
+          zapIn(
+            binanceSigner,
+            TEMPLE_ZAPS,
+            usdcAddr,
+            usdcAmount,
+            minTempleReceived
+          ),
+          PAUSED
+        );
+
+        // Zap in FRAX
+        const fraxAddr = FRAX;
+        const fraxAmount = '10000';
+        await shouldThrow(
+          zapIn(
+            fraxSigner,
+            TEMPLE_ZAPS,
+            fraxAddr,
+            fraxAmount,
+            minTempleReceived
+          ),
+          PAUSED
+        );
+
+        // Unpause
+        await ownerConnect.toggleContractActive();
+        await zapIn(
+          binanceSigner,
+          TEMPLE_ZAPS,
+          usdcAddr,
+          usdcAmount,
+          minTempleReceived
+        );
+      });
+    });
+
+    describe('Management', async () => {
+      it('should allow owner to renounce', async () => {
+        await TEMPLE_ZAPS.renounceOwnership();
+        expect(await TEMPLE_ZAPS.owner()).to.equal(
+          ethers.constants.AddressZero
+        );
+      });
+
+      it('should allow owner to transfer ownership', async () => {
+        await TEMPLE_ZAPS.transferOwnership(aliceAddress);
+        expect(await TEMPLE_ZAPS.owner()).to.equal(aliceAddress);
+      });
+
+      it('should update addresses', async () => {
+        const ownerConnect = TEMPLE_ZAPS.connect(owner);
+
+        await ownerConnect.updateTemple(ethers.constants.AddressZero);
+        expect(await TEMPLE_ZAPS.TEMPLE()).to.equal(
+          ethers.constants.AddressZero
+        );
+
+        await ownerConnect.updateOGTemple(ethers.constants.AddressZero);
+        expect(await TEMPLE_ZAPS.OG_TEMPLE()).to.equal(
+          ethers.constants.AddressZero
+        );
+
+        await ownerConnect.updateStaking(ethers.constants.AddressZero);
+        expect(await TEMPLE_ZAPS.TEMPLE_STAKING()).to.equal(
+          ethers.constants.AddressZero
+        );
+
+        await ownerConnect.updateAMMRouter(ethers.constants.AddressZero);
+        expect(await TEMPLE_ZAPS.TEMPLE_FRAX_AMM_ROUTER()).to.equal(
+          ethers.constants.AddressZero
+        );
+      });
+
+      it('should set approved targets', async () => {
+        const targets = [ethers.constants.AddressZero];
+        const isApproved = [true];
+        await TEMPLE_ZAPS.setApprovedTargets(targets, isApproved);
+        expect(await TEMPLE_ZAPS.approvedTargets(targets[0])).to.be.true;
+      });
     });
   });
 });

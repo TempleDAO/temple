@@ -11,6 +11,7 @@
     "@openzeppelin/contracts": "^4.4.2",
     "@typechain/ethers-v5": "^9.0.0",
     "@typechain/hardhat": "^4.0.0",
+    "@rari-capital/solmate": "^6.2.0",
     "@types/chai": "^4.2.19",
     "@types/mocha": "^8.2.2",
     "@types/node": "^15.12.5",

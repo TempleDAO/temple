@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.0;
 
+import '@rari-capital/solmate/src/utils/SafeTransferLib.sol';
+import '@rari-capital/solmate/src/tokens/ERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 
 interface IWETH {
   function deposit() external payable;
@@ -12,7 +12,6 @@ interface IWETH {
 }
 
 abstract contract ZapBaseV2_2 is Ownable {
-  using SafeERC20 for IERC20;
   bool public paused;
 
   address private constant wethTokenAddress =
@@ -46,7 +45,12 @@ abstract contract ZapBaseV2_2 is Ownable {
     require(amount > 0, 'Invalid token amount');
     require(msg.value == 0, 'ETH sent with token');
 
-    IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+    SafeTransferLib.safeTransferFrom(
+      ERC20(token),
+      msg.sender,
+      address(this),
+      amount
+    );
 
     return amount;
   }
@@ -107,7 +111,7 @@ abstract contract ZapBaseV2_2 is Ownable {
     if (token == address(0)) {
       balance = address(this).balance;
     } else {
-      balance = IERC20(token).balanceOf(address(this));
+      balance = ERC20(token).balanceOf(address(this));
     }
   }
 
@@ -117,10 +121,10 @@ abstract contract ZapBaseV2_2 is Ownable {
     @param spender The spender of the token
      */
   function _approveToken(address token, address spender) internal {
-    IERC20 _token = IERC20(token);
+    ERC20 _token = ERC20(token);
     if (_token.allowance(address(this), spender) > 0) return;
     else {
-      _token.safeApprove(spender, type(uint256).max);
+      SafeTransferLib.safeApprove(_token, spender, type(uint256).max);
     }
   }
 
@@ -135,8 +139,8 @@ abstract contract ZapBaseV2_2 is Ownable {
     address spender,
     uint256 amount
   ) internal {
-    IERC20(token).safeApprove(spender, 0);
-    IERC20(token).safeApprove(spender, amount);
+    SafeTransferLib.safeApprove(ERC20(token), spender, 0);
+    SafeTransferLib.safeApprove(ERC20(token), spender, amount);
   }
 
   /**
