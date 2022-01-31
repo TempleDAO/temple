@@ -109,12 +109,28 @@ describe('TempleZaps', async () => {
         minTempleReceived
       );
     });
+
+    it('should revert when slippage is too high', async () => {
+      const tokenAddr = ETH;
+      const tokenAmount = '1';
+      const minTempleReceived = ethers.utils.parseUnits('5000', 18).toString();
+
+      await shouldThrow(
+        zapIn(
+          binanceSigner,
+          TEMPLE_ZAPS,
+          tokenAddr,
+          tokenAmount,
+          minTempleReceived
+        ),
+        /'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT\'/
+      );
+    });
   });
 
   describe('Security', async () => {
     describe('Authorization', async () => {
       it('only owner can call onlyOwner functions', async () => {
-        // connect owner to TEMPLE_ZAPS
         const ownerConnect = TEMPLE_ZAPS.connect(owner);
         const aliceConnect = TEMPLE_ZAPS.connect(alice);
 
