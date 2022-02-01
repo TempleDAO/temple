@@ -5,7 +5,7 @@ on:
       - 'main'
     paths:
       - "apps/dapp/**"
-      - ".github/workflows/prod-dapp-main.yaml"
+      - ".github/workflows/dapp-prod.yaml"
 
 jobs:
   deploy:
@@ -18,6 +18,6 @@ jobs:
           vercel-args: '--prod -A apps/dapp/vercel.json' #Optional
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}  #Required
           vercel-project-id: ${{ secrets.DAPP_PROJECT_ID}} #Required 
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.CI_TOKEN }}
           alias-domains: | #Optional
-            temple.start.dev
+            prod-temp.templedao.link
