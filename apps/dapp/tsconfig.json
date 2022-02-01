@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "allowJs": true,
+    "skipLibCheck": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": "src",
+    "paths": {
+      "components/*": ["./components/*"],
+      "providers/*": ["./providers/*"],
+      "assets/*": ["./assets/*"],
+      "styles/*": ["./styles/*"],
+      "utils/*": ["./utils/*"],
+      "hooks/*": ["./hooks/*"],
+      "services/*": ["./services/*"],
+      "hoc/*": ["./hoc/*"],
+      "enums/*": ["./enums/*"],
+      "data/*": ["./data/*"],
+      "types/*": ["./types/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}
