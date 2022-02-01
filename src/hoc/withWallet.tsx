@@ -2,6 +2,7 @@ import React, { ComponentType } from 'react';
 import styled from 'styled-components';
 import { Button } from 'components/Button/Button';
 import { useWallet } from 'providers/WalletProvider';
+import MetamaskErrorPage from 'components/MetamaskError/MetamaskError';
 
 const ENV_VARS = import.meta.env;
 const ENVIRONMENT = ENV_VARS.VITE_ENV;
@@ -14,49 +15,54 @@ export function withWallet<T>(WrappedComponent: ComponentType<T>) {
       ENVIRONMENT == 'development' || network?.chainId == 1;
 
     return (
-      <>
-        {wallet && isValidNetwork() ? (
-          <WrappedComponent {...props} />
-        ) : wallet && !isValidNetwork() ? (
-          <WithWalletContainer>
-            <h4>Switch to Mainnet to access the Temple</h4>
-            <br />
-            <br />
-            <span>
-              <Button
-                label={'Change network'}
-                onClick={() => {
-                  // Ignore warning that window.ethereum may not exist
-                  // @ts-ignore
-                  const { ethereum } = window;
-                  if (ethereum) {
-                    ethereum.request({
-                      method: 'wallet_switchEthereumChain',
-                      params: [{ chainId: '0x1' }],
-                    });
-                  }
-                }}
-                isSmall
-                isUppercase
-              />
-            </span>
-          </WithWalletContainer>
-        ) : (
-          <WithWalletContainer>
-            <h4>Who knocks on the Temple gates?</h4>
-            <br />
-            <br />
-            <span>
-              <Button
-                label={'connect metamask'}
-                onClick={connectWallet}
-                isSmall
-                isUppercase
-              />
-            </span>
-          </WithWalletContainer>
-        )}
-      </>
+      //@ts-ignore
+      window.ethereum ? (
+        <>
+          {wallet && isValidNetwork() ? (
+            <WrappedComponent {...props} />
+          ) : wallet && !isValidNetwork() ? (
+            <WithWalletContainer>
+              <h4>Switch to Mainnet to access the Temple</h4>
+              <br />
+              <br />
+              <span>
+                <Button
+                  label={'Change network'}
+                  onClick={() => {
+                    // Ignore warning that window.ethereum may not exist
+                    // @ts-ignore
+                    const { ethereum } = window;
+                    if (ethereum) {
+                      ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0x1' }],
+                      });
+                    }
+                  }}
+                  isSmall
+                  isUppercase
+                />
+              </span>
+            </WithWalletContainer>
+          ) : (
+            <WithWalletContainer>
+              <h4>Who knocks on the Temple gates?</h4>
+              <br />
+              <br />
+              <span>
+                <Button
+                  label={'connect metamask'}
+                  onClick={connectWallet}
+                  isSmall
+                  isUppercase
+                />
+              </span>
+            </WithWalletContainer>
+          )}
+        </>
+      ) : (
+        <MetamaskErrorPage />
+      )
     );
   };
 

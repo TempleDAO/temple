@@ -1,7 +1,7 @@
 import dateFormat from 'dateformat';
 import React from 'react';
 import styled from 'styled-components';
-import { LockedEntry } from 'providers/WalletProvider';
+import { LockedEntry, OG_TEMPLE_TOKEN } from 'providers/WalletProvider';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
 
@@ -36,7 +36,9 @@ const ClaimOGTemple = ({ lockedEntries, onClaim }: ClaimOGTempleProps) => {
                   col: 'half',
                 }}
               >
-                <strong className={'color-dark'}>$OG TEMPLE AMOUNT</strong>
+                <strong className={'color-dark'}>
+                  ${OG_TEMPLE_TOKEN} AMOUNT
+                </strong>
               </Flex>
             </Flex>
           </Header>
@@ -98,6 +100,7 @@ const ButtonClaim = styled(Button)`
 const Header = styled.div`
   background-color: ${(props) => props.theme.palette.brand};
   padding-left: 1rem;
+  width: 100%;
 `;
 
 const Indent = styled.div`

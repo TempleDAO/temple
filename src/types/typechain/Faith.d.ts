@@ -23,9 +23,9 @@ interface FaithInterface extends ethers.utils.Interface {
   functions: {
     "addManager(address)": FunctionFragment;
     "balances(address)": FunctionFragment;
-    "gain(address,uint256)": FunctionFragment;
-    "lose(address,uint256)": FunctionFragment;
+    "gain(address,uint112)": FunctionFragment;
     "owner()": FunctionFragment;
+    "redeem(address,uint112)": FunctionFragment;
     "removeManager(address)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "totalSupply()": FunctionFragment;
@@ -38,11 +38,11 @@ interface FaithInterface extends ethers.utils.Interface {
     functionFragment: "gain",
     values: [string, BigNumberish]
   ): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "lose",
+    functionFragment: "redeem",
     values: [string, BigNumberish]
   ): string;
-  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "removeManager",
     values: [string]
@@ -63,8 +63,8 @@ interface FaithInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "addManager", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balances", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "gain", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "lose", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "redeem", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "removeManager",
     data: BytesLike
@@ -154,7 +154,15 @@ export class Faith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    balances(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
+    balances(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber] & {
+        lifeTimeFaith: BigNumber;
+        usableFaith: BigNumber;
+      }
+    >;
 
     gain(
       to: string,
@@ -162,13 +170,13 @@ export class Faith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    lose(
+    owner(overrides?: CallOverrides): Promise<[string]>;
+
+    redeem(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-
-    owner(overrides?: CallOverrides): Promise<[string]>;
 
     removeManager(
       account: string,
@@ -192,7 +200,15 @@ export class Faith extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  balances(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+  balances(
+    arg0: string,
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber, BigNumber] & {
+      lifeTimeFaith: BigNumber;
+      usableFaith: BigNumber;
+    }
+  >;
 
   gain(
     to: string,
@@ -200,13 +216,13 @@ export class Faith extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  lose(
+  owner(overrides?: CallOverrides): Promise<string>;
+
+  redeem(
     to: string,
     amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
-
-  owner(overrides?: CallOverrides): Promise<string>;
 
   removeManager(
     account: string,
@@ -227,7 +243,15 @@ export class Faith extends BaseContract {
   callStatic: {
     addManager(account: string, overrides?: CallOverrides): Promise<void>;
 
-    balances(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+    balances(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber] & {
+        lifeTimeFaith: BigNumber;
+        usableFaith: BigNumber;
+      }
+    >;
 
     gain(
       to: string,
@@ -235,13 +259,13 @@ export class Faith extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    lose(
+    owner(overrides?: CallOverrides): Promise<string>;
+
+    redeem(
       to: string,
       amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
-
-    owner(overrides?: CallOverrides): Promise<string>;
 
     removeManager(account: string, overrides?: CallOverrides): Promise<void>;
 
@@ -319,13 +343,13 @@ export class Faith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    lose(
+    owner(overrides?: CallOverrides): Promise<BigNumber>;
+
+    redeem(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
-
-    owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     removeManager(
       account: string,
@@ -361,13 +385,13 @@ export class Faith extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    lose(
+    owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    redeem(
       to: string,
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
-
-    owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     removeManager(
       account: string,

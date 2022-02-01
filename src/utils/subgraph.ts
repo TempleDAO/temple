@@ -1,6 +1,6 @@
 export const fetchSubgraph = async (query: string) => {
   const result = await fetch(
-    'https://api.thegraph.com/subgraphs/name/medariox/temple-balances',
+    'https://api.thegraph.com/subgraphs/name/templedao/templedao-balances',
     {
       method: 'POST',
       headers: {

@@ -69,7 +69,7 @@ const DevotionPage: CustomRoutingPage = ({ routingHelper }) => {
           onClick={() =>
             changePageTo((props) => (
               //@ts-ignore
-              <Altars {...props} view={AMMView.BTFD} />
+              <Altars {...props} view={AMMView.DEVOTION} />
             ))
           }
           style={{

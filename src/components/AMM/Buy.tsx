@@ -155,7 +155,8 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         disabled={
           ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true' ||
           stableCoinAmount == 0 ||
-          stableCoinWalletAmount == 0
+          stableCoinWalletAmount == 0 ||
+          stableCoinAmount > stableCoinWalletAmount
         }
       />
     </ViewContainer>

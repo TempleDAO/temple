@@ -1,133 +1,75 @@
-import React, { PropsWithChildren, ReactChild } from 'react';
-import styled, { css } from 'styled-components';
+import React, { PropsWithChildren } from 'react';
+import styled from 'styled-components';
 
-export interface TooltipProps extends TooltipContentProps {
-  content: ReactChild;
+import Tippy from '@tippyjs/react';
+import { roundArrow, Placement } from 'tippy.js';
+import 'tippy.js/animations/scale-subtle.css';
+import 'tippy.js/dist/svg-arrow.css';
+
+export interface TooltipProps {
+  content: React.ReactNode;
+  position?: Placement;
+  trigger?: string;
+  delay?: number;
+  offset?: [number, number];
+  animationDuration?: number;
 }
 
 const Tooltip = ({
   content,
   position,
+  trigger,
+  delay,
+  offset,
+  animationDuration,
   children,
 }: PropsWithChildren<TooltipProps>) => {
   return (
-    <TooltipStyled>
-      {children}
-      <TooltipContent position={position}>{content}</TooltipContent>
-    </TooltipStyled>
+    <TippyStyled
+      content={content}
+      animation={'scale-subtle'}
+      trigger={trigger}
+      delay={delay}
+      duration={animationDuration ? animationDuration : 250}
+      offset={offset}
+      arrow={roundArrow}
+      placement={position}
+    >
+      <ChildrenWrapper>{children}</ChildrenWrapper>
+    </TippyStyled>
   );
 };
 
-export interface TooltipContentProps {
-  position: 'top' | 'bottom' | 'left' | 'right';
-}
+export const TooltipIcon = () => {
+  return <TooltipIconStyled>¡</TooltipIconStyled>;
+};
 
-const TooltipContent = styled.p<TooltipContentProps>`
-  position: absolute;
-  opacity: 0;
-  transition: opacity 250ms linear;
+const TippyStyled = styled(Tippy)`
   ${(props) => props.theme.typography.meta};
-  margin: 0;
-  line-height: 1;
+  background: ${({ theme }) => theme.palette.brand};
   padding: 0.5rem;
-  width: 50vw;
-  max-width: 20rem /* 320/16 */;
-  background-color: ${(props) => props.theme.palette.brand};
-
-  :before {
-    content: '';
-    position: absolute;
-    background-color: ${(props) => props.theme.palette.brand};
-    width: 1rem;
-    height: 1rem;
-    z-index: ${(props) => props.theme.zIndexes.below};
-  }
-
-  ${(props) =>
-    props.position === 'top' &&
-    css`
-      bottom: calc(100% + 1rem);
-      left: 50%;
-      transform: translateX(-50%);
-
-      :before {
-        bottom: -0.5rem /* -8/16 */;
-        left: 50%;
-        transform: translateX(-50%) rotate(45deg);
-      }
-    `}
-  ${(props) =>
-    props.position === 'bottom' &&
-    css`
-      top: calc(100% + 1rem);
-      left: 50%;
-      transform: translateX(-50%);
-
-      :before {
-        top: -0.5rem /* -8/16 */;
-        left: 50%;
-        transform: translateX(-50%) rotate(45deg);
-      }
-    `}
-  ${(props) =>
-    props.position === 'left' &&
-    css`
-      right: calc(100% + 1rem);
-      top: 50%;
-      transform: translateY(-50%);
-
-      :before {
-        top: 50%;
-        right: -0.5rem /* -8/16 */;
-        transform: translateY(-50%) rotate(45deg);
-      }
-    `}
-  ${(props) =>
-    props.position === 'right' &&
-    css`
-      left: calc(100% + 1rem);
-      top: 50%;
-      transform: translateY(-50%);
-
-      :before {
-        top: 50%;
-        left: -0.5rem /* -8/16 */;
-        transform: translateY(-50%) rotate(45deg);
-      }
-    `}
-`;
-
-const TooltipStyled = styled.div`
-  position: relative;
-  overflow: hidden;
-
-  &:hover {
-    overflow: visible;
-    ${TooltipContent} {
-      opacity: 1;
-    }
-    z-index: 999;
+  svg {
+    fill: ${({ theme }) => theme.palette.brand};
   }
 `;
 
-export const TooltipIcon = styled.small`
+const TooltipIconStyled = styled.small`
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   width: 1rem;
   height: 1rem;
   border-radius: 100%;
   color: ${(props) => props.theme.palette.brand};
   background-color: ${(props) => props.theme.palette.dark};
   border: 0.125rem /* 2/16 */ solid ${(props) => props.theme.palette.brand};
+  user-select: none;
+  cursor: help;
+`;
 
-  :before {
-    content: '¡';
-    position: absolute;
-    top: 0;
-    font-weight: bold;
-    font-size: 0.75rem;
-  }
+const ChildrenWrapper = styled.div`
+  display: flex;
 `;
 
 export default Tooltip;

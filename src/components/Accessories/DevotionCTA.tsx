@@ -1,19 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
-import Image from 'components/Image/Image';
-import { useWallet } from 'providers/WalletProvider';
+import { JsonRpcSigner } from '@ethersproject/providers';
 import devotionImage from 'assets/images/DEVOTION.svg';
 import growthImage from 'assets/images/GROWTH.svg';
-import {
-  TempleFraxAMMRouter__factory,
-  AmmIncentivisor__factory,
-} from 'types/typechain';
-import { JsonRpcSigner } from '@ethersproject/providers';
-import { fromAtto } from 'utils/bigNumber';
+import Image from 'components/Image/Image';
+import { useWallet } from 'providers/WalletProvider';
+import React, { useEffect, useState } from 'react';
+import styled from 'styled-components';
+import { Devotion__factory } from 'types/typechain';
 
 const ENV_VARS = import.meta.env;
-const TEMPLE_V2_ROUTER_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS;
-const AMM_INCENTIVISOR_ADDRESS = ENV_VARS.VITE_PUBLIC_AMM_INCENTIVISOR_ADDRESS;
+const TEMPLE_DEVOTION_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ADDRESS;
 
 const Container = styled.div`
   position: absolute;
@@ -21,30 +16,26 @@ const Container = styled.div`
   left: 0;
   padding: 1rem;
   z-index: ${(props) => props.theme.zIndexes.top};
+
   &:hover {
     filter: brightness(150%);
   }
 `;
 
+/* TODO: When to show Growth Image see => https://github.com/TempleDAO/dapp/issues/258 */
 const DevotionCTA = () => {
-  const { claim, signer } = useWallet();
-  const [blocksForIncentive, setBlocksForIncentive] = useState(0);
-  const [priceBelowBlock, setPriceBelowBlock] = useState(0);
+  const { signer } = useWallet();
+  const [devotionActive, setDevotionActive] = useState(false);
 
   const getStatus = async (signer: JsonRpcSigner) => {
-    const AMMRouter = new TempleFraxAMMRouter__factory()
-      .attach(TEMPLE_V2_ROUTER_ADDRESS)
+    const DEVOTION = new Devotion__factory()
+      .attach(TEMPLE_DEVOTION_ADDRESS)
       .connect(signer);
-    const AMMIncentivisor = new AmmIncentivisor__factory()
-      .attach(AMM_INCENTIVISOR_ADDRESS)
-      .connect(signer);
+    const devotionRound = await DEVOTION.currentRound();
+    const roundStatus = await DEVOTION.roundStatus(devotionRound);
 
-    setBlocksForIncentive(
-      fromAtto(await AMMRouter.priceCrossedBelowDynamicThresholdBlock())
-    );
-    setPriceBelowBlock(
-      fromAtto(await AMMIncentivisor.numBlocksForUnlockIncentive())
-    );
+    // After devotion is started for the first time `currentRound` will be 1
+    setDevotionActive(roundStatus.stage !== 2 && devotionRound !== 0);
   };
 
   useEffect(() => {
@@ -53,11 +44,7 @@ const DevotionCTA = () => {
 
   return (
     <>
-      {priceBelowBlock == 0 ? (
-        <Container>
-          <Image src={growthImage} width={60} height={60} />
-        </Container>
-      ) : priceBelowBlock >= blocksForIncentive ? (
+      {devotionActive ? (
         <Container>
           <Image src={devotionImage} width={60} height={60} />
         </Container>

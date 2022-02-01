@@ -1,9 +1,12 @@
 import { Buy } from 'components/AMM/Buy';
+import Devotion from 'components/AMM/Devotion';
 import { Queue } from 'components/AMM/Queue';
 import { Sell } from 'components/AMM/Sell';
 import { Stake } from 'components/AMM/Stake';
 import { Withdraw } from 'components/AMM/Withdraw';
+import { Unlock } from 'components/AMM/Unlock';
 import { Nav } from 'components/DApp/Nav';
+import { Profile } from 'components/DApp/Profile';
 import {
   Container,
   Main,
@@ -63,6 +66,15 @@ export const DApp: FC<DAppProps> = ({ small }) => {
       CurrentView = (
         <Sell onSwapArrowClick={() => setView(DAppView.BUY)} small />
       );
+      break;
+    case DAppView.DEVOTION:
+      CurrentView = <Devotion />;
+      break;
+    case DAppView.UNLOCK:
+      CurrentView = <Unlock />;
+      break;
+    case DAppView.PROFILE:
+      CurrentView = <Profile />;
       break;
   }
 

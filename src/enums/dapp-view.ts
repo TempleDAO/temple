@@ -4,4 +4,7 @@ export enum DAppView {
   QUEUE = 'Unstake',
   WITHDRAW = 'Withdraw',
   SELL = 'Sell',
+  DEVOTION = 'Devotion',
+  UNLOCK = 'Unlock',
+  PROFILE = 'Profile',
 }

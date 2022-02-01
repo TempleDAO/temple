@@ -3,6 +3,7 @@ import ExitBgImage from 'assets/images/altar-exit.jpg';
 import crossImage from 'assets/images/cross.svg';
 import DevotionBgImage from 'assets/images/devotion_bg.jpg';
 import { Buy } from 'components/AMM/Buy';
+import Devotion from 'components/AMM/Devotion';
 import { Queue } from 'components/AMM/Queue';
 import { Sell } from 'components/AMM/Sell';
 import { Stake } from 'components/AMM/Stake';
@@ -24,7 +25,7 @@ export enum AMMView {
   JOIN_QUEUE = 'JOIN QUEUE',
   WITHDRAW = 'WITHDRAW TEMPLE',
   SELL = 'SELL',
-  BTFD = 'BTFD',
+  DEVOTION = 'DEVOTION',
 
   EXCHANGE_TRADE = 'TRADE',
   EXCHANGE_DEFEND = 'DEFEND',
@@ -66,9 +67,11 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
         return <Queue />;
       case AMMView.WITHDRAW:
         return <Withdraw />;
-      case AMMView.BTFD:
-        return (
-          <h4>This Altar room is quiet for now. You feel a sense of peace.</h4>
+      case AMMView.DEVOTION:
+        return ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ENGAGED ? (
+          <Devotion />
+        ) : (
+          <h4>The Altar room is quiet for now. You feel a sense of peace.</h4>
         );
       default:
         return null;
@@ -88,7 +91,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
     ) {
       bgImage = ExitBgImage;
     }
-    if (activeAMMView === 'BTFD') {
+    if (activeAMMView === 'DEVOTION') {
       bgImage = DevotionBgImage;
     }
 
@@ -167,9 +170,12 @@ interface ConvoFlowContentProps {
 
 const ConvoFlowContent = styled.div<ConvoFlowContentProps>`
   position: relative;
-  z-index: 100;
+  z-index: ${(props) => props.theme.zIndexes.max};
   width: 100%;
   max-width: 48.75rem /* 780/16 */;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 
   ${(props) =>
     props.isSmall &&

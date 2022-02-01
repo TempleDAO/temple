@@ -10,7 +10,7 @@ import Home from 'components/Pages/Home';
 import Claim from 'components/Pages/Claim';
 import AmmSpaRoot from 'components/Pages/AMM';
 import TeamPayments from 'components/Pages/TeamPayments';
-import MetamaskError from 'components/Pages/MetamaskError';
+import FaithAirdrop from 'components/Pages/FaithAirdrop';
 import FireRitualistCashback from 'components/Pages/FireRitualistCashback';
 import NotificationManager from 'components/Notification/NotificationManager';
 import { NotificationProvider } from 'providers/NotificationProvider';
@@ -27,33 +27,24 @@ ReactDOM.render(
         <ThemeProvider theme={theme}>
           <BrowserRouter>
             <Routes>
-              {
-                //@ts-ignore
-                window.ethereum ? (
-                  <>
-                    <Route path="/the-temple" element={<AmmSpaRoot />} />
-                    <Route path="/dapp" element={<DAppRoot />} />
-                    <Route path="/" element={<PageLayout />}>
-                      <Route path="/" element={<Home />} />
-                      <Route path="disclaimer" element={<Disclaimer />} />
-                      <Route path="enter" element={<Enter />} />
-                      <Route path="exit" element={<Exit />} />
-                      <Route
-                        path="fire-ritualist-apy-topup"
-                        element={<FireRitualistCashback />}
-                      />
-                      <Route path="temple-claim" element={<Claim />} />
-                      <Route path="team-payments" element={<TeamPayments />} />
-                      <Route path="/*" element={<Navigate replace to="/" />} />
-                    </Route>
-                  </>
-                ) : (
-                  <>
-                    <Route path="/" element={<MetamaskError />} />
-                    <Route path="/*" element={<Navigate replace to="/" />} />
-                  </>
-                )
-              }
+              <>
+                <Route path="/the-temple" element={<AmmSpaRoot />} />
+                <Route path="/dapp" element={<DAppRoot />} />
+                <Route path="/" element={<PageLayout />}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="disclaimer" element={<Disclaimer />} />
+                  <Route path="enter" element={<Enter />} />
+                  <Route path="exit" element={<Exit />} />
+                  <Route path="faith-airdrop" element={<FaithAirdrop />} />
+                  <Route
+                    path="fire-ritualist-apy-topup"
+                    element={<FireRitualistCashback />}
+                  />
+                  <Route path="temple-claim" element={<Claim />} />
+                  <Route path="team-payments" element={<TeamPayments />} />
+                  <Route path="/*" element={<Navigate replace to="/" />} />
+                </Route>
+              </>
             </Routes>
           </BrowserRouter>
           <NotificationManager />

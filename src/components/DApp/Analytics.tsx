@@ -1,61 +1,15 @@
-//@ts-nocheck
-import React, { FC, useEffect } from 'react';
+import React, { FC } from 'react';
 import styled from 'styled-components';
 import { Card } from 'components/DApp/Card';
-// import { DataCard } from 'components/DataCard/DataCard';
 import { PriceChart } from 'components/Charts/PriceChart';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
-import {
-  formatNumber,
-  formatMillions,
-  // formatNumberWithCommas,
-} from 'utils/formatter';
-// import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
-import { useWallet } from 'providers/WalletProvider';
+import { formatNumber, formatMillions } from 'utils/formatter';
 
 export const Analytics: FC = () => {
-  const { wallet, balance, exitQueueData } = useWallet();
-  // const accountMetrics = useRefreshableAccountMetrics(wallet);
   const dashboardMetrics = useRefreshableDashboardMetrics();
-  // const walletValue =
-  //   accountMetrics?.templeBalance * accountMetrics?.templeValue;
-  // const exitQueueValue =
-  //   exitQueueData?.totalTempleOwned * accountMetrics?.templeValue;
-  // const ogTempleWalletValue = balance?.ogTemple * accountMetrics?.ogTemplePrice;
-  // const lockedOGTempleValue =
-  //   balance?.ogTempleLocked * accountMetrics?.ogTemplePrice;
-
-  // const netWorth =
-  //   lockedOGTempleValue + walletValue + ogTempleWalletValue + exitQueueValue;
 
   return (
     <Container>
-      {/* <CardsContainer>
-        <DataCard
-          title={`Net Worth`}
-          data={`$${formatNumberWithCommas(netWorth) || '-'}`}
-          small
-        />
-        <DataCard
-          title={`Staked`}
-          data={`$OGT ${formatNumberWithCommas(balance?.ogTemple || 0)}`}
-          small
-        />
-        <DataCard
-          title={`Exit Queue`}
-          data={`$T ${formatNumberWithCommas(
-            exitQueueData?.totalTempleOwned || 0
-          )}`}
-          small
-        />
-        <DataCard
-          title={`Wallet`}
-          data={`$T ${formatNumberWithCommas(
-            accountMetrics?.templeBalance || 0
-          )}`}
-          small
-        />
-      </CardsContainer> */}
       <CardsContainer>
         <Card
           label="apy"

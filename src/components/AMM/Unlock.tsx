@@ -8,6 +8,7 @@ import {
   ConvoFlowTitle,
   TitleWrapper,
   TooltipPadding,
+  ViewContainer,
 } from 'components/AMM/helpers/components';
 
 interface UnlockProps {
@@ -32,7 +33,7 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
   }, []);
 
   return (
-    <>
+    <ViewContainer>
       <TitleWrapper>
         <ConvoFlowTitle>CLAIM YOUR {OG_TEMPLE_TOKEN}</ConvoFlowTitle>
         <TooltipPadding>
@@ -92,6 +93,6 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
           </Flex>
         )}
       </Flex>
-    </>
+    </ViewContainer>
   );
 };
