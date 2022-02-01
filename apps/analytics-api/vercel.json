@@ -4,8 +4,5 @@
     "silent": false,
     "enabled": false,
     "autoJobCancelation": true
-  },
-  "env": {
-    "FOO": "foobar"
   }
 }
