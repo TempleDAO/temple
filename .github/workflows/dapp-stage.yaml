@@ -15,8 +15,9 @@ jobs:
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }} # Required
           vercel-args: '-A apps/dapp/vercel.json' #Optional
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}  #Required
-          vercel-project-id: ${{ secrets.DAPP_PROJECT_ID}} #Required 
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}  #Required
+          vercel-project-id: ${{ secrets.DAPP_PROJECT_ID }} #Required 
           github-token: ${{ secrets.CI_TOKEN }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
           alias-domains: | #Optional
             stage.templedao.link
