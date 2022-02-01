@@ -1,20 +1,20 @@
 //@ts-nocheck
 
-import React, { useEffect, useState } from 'react';
-import BackButton from 'components/Button/BackButton';
-import ProfileHeader from 'components/ProfileHeader/ProfileHeader';
-import AccessoriesTemplate from 'components/Accessories/AccessoriesTemplate';
-import ProfileMetric from 'components/ProfileMetric/ProfileMetric';
-import EnclaveCard from 'components/EnclaveCard/EnclaveCard';
-import styled from 'styled-components';
-import { FlexStyled } from 'components/Layout/Flex';
-import withWallet from 'hoc/withWallet';
-import { useWallet } from 'providers/WalletProvider';
-import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
-import useFetchStoreDiscordUser from 'hooks/use-fetch-store-discord-user';
-import { formatNumberWithCommas } from 'utils/formatter';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 import axios from 'axios';
+import AccessoriesTemplate from 'components/Accessories/AccessoriesTemplate';
+import BackButton from 'components/Button/BackButton';
+import EnclaveCard from 'components/EnclaveCard/EnclaveCard';
+import { FlexStyled } from 'components/Layout/Flex';
+import ProfileHeader from 'components/ProfileHeader/ProfileHeader';
+import ProfileMetric from 'components/ProfileMetric/ProfileMetric';
+import withWallet from 'hoc/withWallet';
+import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import useFetchStoreDiscordUser from 'hooks/use-fetch-store-discord-user';
+import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
+import { FAITH_TOKEN, useWallet } from 'providers/WalletProvider';
+import React, { useEffect, useState } from 'react';
+import styled from 'styled-components';
+import { formatNumberWithCommas } from 'utils/formatter';
 
 export interface DiscordUser {
   user_id: string;
@@ -30,10 +30,10 @@ export interface DiscordUser {
 const Account: CustomRoutingPage = ({ routingHelper }) => {
   const { back } = routingHelper;
 
-  const { wallet, balance, exitQueueData } = useWallet();
+  const { faith } = useWallet();
   const [discordData, setDiscordData] = useState<DiscordUser>();
   const discordId = useFetchStoreDiscordUser();
-  const accountMetrics = useRefreshableAccountMetrics(wallet, discordId);
+  const accountMetrics = useRefreshableAccountMetrics();
 
   useEffect(() => {
     const getDiscordUser = async (
@@ -49,17 +49,6 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
     };
     getDiscordUser(discordId);
   }, [discordId, setDiscordData]);
-
-  const walletValue =
-    accountMetrics?.templeBalance * accountMetrics?.templeValue;
-  const exitQueueValue =
-    exitQueueData?.totalTempleOwned * accountMetrics?.templeValue;
-  const ogTempleWalletValue = balance?.ogTemple * accountMetrics?.ogTemplePrice;
-  const lockedOGTempleValue =
-    balance?.ogTempleLocked * accountMetrics?.ogTemplePrice;
-
-  const netWorth =
-    lockedOGTempleValue + walletValue + ogTempleWalletValue + exitQueueValue;
 
   return (
     <>
@@ -88,7 +77,9 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
                       <div>
                         <ProfileMetric
                           label={'net worth'}
-                          value={`$${formatNumberWithCommas(netWorth)}`}
+                          value={`$${formatNumberWithCommas(
+                            accountMetrics.netWorth
+                          )}`}
                           fontSize={1.5}
                         />
                       </div>
@@ -97,30 +88,34 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
                         <ProfileMetric
                           label={'wallet'}
                           value={`${formatNumberWithCommas(
-                            accountMetrics?.templeBalance
+                            accountMetrics.templeBalance
                           )} TEMPLE`}
-                          detail={`$${formatNumberWithCommas(walletValue)}`}
+                          detail={`$${formatNumberWithCommas(
+                            accountMetrics.walletValue
+                          )}`}
                         />
                         <ProfileMetric
                           label={`Exit Queue`}
                           value={`${formatNumberWithCommas(
-                            exitQueueData?.totalTempleOwned
+                            accountMetrics.exitQueueTotal
                           )} TEMPLE`}
-                          detail={`$${formatNumberWithCommas(exitQueueValue)}`}
+                          detail={`$${formatNumberWithCommas(
+                            accountMetrics.exitQueueValue
+                          )}`}
                         />
                       </div>
                     </div>
                     <div>
                       <SectionHeader>Staked (OGTEMPLE)</SectionHeader>
-                      <LeftMargin>{`(${accountMetrics?.templeApy}% APY)`}</LeftMargin>
+                      <LeftMargin>{`(${accountMetrics.templeApy}% APY)`}</LeftMargin>
                       <div>
                         <ProfileMetric
                           label={'wallet'}
                           value={`${formatNumberWithCommas(
-                            balance?.ogTemple
+                            accountMetrics.ogTempleWallet
                           )} OGTEMPLE`}
                           detail={`$${formatNumberWithCommas(
-                            ogTempleWalletValue
+                            accountMetrics.ogTempleWalletValue
                           )}`}
                         />
                       </div>
@@ -128,10 +123,10 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
                         <ProfileMetric
                           label={`Locked`}
                           value={`${formatNumberWithCommas(
-                            balance?.ogTempleLocked
+                            accountMetrics.lockedOGTemple
                           )} OGTEMPLE`}
                           detail={`$${formatNumberWithCommas(
-                            lockedOGTempleValue
+                            accountMetrics.lockedOGTempleValue
                           )}`}
                         />
                       </div>
@@ -152,11 +147,20 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
               >
                 <div>
                   <RightAlign>
-                    <ProfileMetric label={'faith share'} value={`0%`} />
-                    <ProfileMetric label={'temple share'} value={`0%`} />
+                    <ProfileMetric label={'faith'} value={''} fontSize={1.5} />
                   </RightAlign>
                   <RightAlign>
-                    <ProfileMetric label={'faith'} value={`0 FAITH`} />
+                    <ProfileMetric
+                      label={`lifetime`}
+                      value={`${faith.lifeTimeFaith}  ${FAITH_TOKEN}`}
+                    />
+                    <ProfileMetric
+                      label={`usable`}
+                      value={`${faith.usableFaith} ${FAITH_TOKEN}`}
+                    />
+                  </RightAlign>
+                  <RightAlign>
+                    <ProfileMetric label={`share`} value={` ${faith.share}%`} />
                   </RightAlign>
                 </div>
                 <DiscordMetricsContainer

@@ -24,9 +24,13 @@ import React, {
 import {
   AcceleratedExitQueue__factory,
   AMMWhitelist__factory,
+  Devotion__factory,
   ERC20,
   ERC20__factory,
   ExitQueue__factory,
+  FaithMerkleAirdrop__factory,
+  Faith__factory,
+  LockedOGTemple__factory,
   LockedOGTempleDeprecated__factory,
   OGTemple__factory,
   OpeningCeremony__factory,
@@ -51,6 +55,7 @@ const ENV_VARS = import.meta.env;
 /* TODO: Move this to a common place */
 export const TEMPLE_TOKEN = '$TEMPLE';
 export const OG_TEMPLE_TOKEN = '$OGTEMPLE';
+export const FAITH_TOKEN = 'FAITH';
 
 // our default deadline is 20 minutes
 const DEADLINE = 20 * 60;
@@ -80,8 +85,16 @@ export type Balance = {
   stableCoin: number;
   temple: number;
   ogTempleLocked: number;
+  ogTempleLockedClaimable: number;
   ogTemple: number;
-} | null;
+};
+
+export type FaithBalance = {
+  lifeTimeFaith: number;
+  usableFaith: number;
+  totalSupply: number;
+  share: number;
+};
 
 export type Allocation = {
   amount: number;
@@ -144,6 +157,11 @@ export interface JoinQueueData {
   processTime: number;
 }
 
+export interface FaithQuote {
+  canClaim: boolean;
+  claimableFaith: number;
+}
+
 interface WalletState {
   // has the user connected a wallet to the dapp
   isConnected: boolean;
@@ -151,6 +169,7 @@ interface WalletState {
   wallet: string | null;
   // current
   balance: Balance;
+  faith: FaithBalance;
   templePrice: number;
   exchangeRate: number;
   allocation: Allocation;
@@ -193,6 +212,13 @@ interface WalletState {
 
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
 
+  claimFaithAirdrop(
+    index: number,
+    address: string,
+    amount: BigNumber,
+    proof: string[]
+  ): Promise<TransactionReceipt | void>;
+
   verifyAMMWhitelist(signature: string): Promise<ContractTransaction | void>;
 
   claimOgTemple(lockedEntryIndex: number): Promise<void>;
@@ -217,10 +243,30 @@ interface WalletState {
   ): Promise<void | TransactionReceipt>;
 
   apy: number;
+
+  verifyFaith(lockingPeriod?: number): Promise<void>;
+
+  redeemFaith(faithAmount: BigNumber): Promise<BigNumber | void>;
+
+  getTempleFaithReward(faithAmount: BigNumber): Promise<BigNumber | void>;
+
+  getFaithQuote(): Promise<FaithQuote | void>;
 }
 
 const INITIAL_STATE: WalletState = {
-  balance: null,
+  balance: {
+    stableCoin: 0,
+    temple: 0,
+    ogTempleLocked: 0,
+    ogTempleLockedClaimable: 0,
+    ogTemple: 0,
+  },
+  faith: {
+    usableFaith: 0,
+    lifeTimeFaith: 0,
+    totalSupply: 0,
+    share: 0,
+  },
   // Fallback when user has not connected wallet, we can update this from Vercel and redeploy
   exchangeRate: ENV_VARS.NEXT_PUBLIC_EXCHANGE_RATE_VALUE
     ? +ENV_VARS.NEXT_PUBLIC_EXCHANGE_RATE_VALUE
@@ -264,6 +310,7 @@ const INITIAL_STATE: WalletState = {
   //verifyQuest: noop,
   inviteFriend: noop,
   claim: asyncNoop,
+  claimFaithAirdrop: asyncNoop,
   verifyAMMWhitelist: asyncNoop,
   signer: null,
   network: null,
@@ -277,11 +324,17 @@ const INITIAL_STATE: WalletState = {
   getBalance: asyncNoop,
   collectTempleTeamPayment: asyncNoop,
   apy: 0,
+  verifyFaith: asyncNoop,
+  redeemFaith: asyncNoop,
+  getTempleFaithReward: asyncNoop,
+  getFaithQuote: asyncNoop,
 };
 
 const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
 const TEMPLE_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS;
 const LOCKED_OG_TEMPLE_ADDRESS = ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS;
+const LOCKED_OG_TEMPLE_DEVOTION_ADDRESS =
+  ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_DEVOTION_ADDRESS;
 const TEMPLE_STAKING_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS;
 const TREASURY_ADDRESS = ENV_VARS.VITE_PUBLIC_TREASURY_ADDRESS;
 const EXIT_QUEUE_ADDRESS = ENV_VARS.VITE_PUBLIC_EXIT_QUEUE_ADDRESS;
@@ -292,7 +345,14 @@ const TEMPLE_V2_ROUTER_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS;
 const TEMPLE_V2_PAIR_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS;
 const ACCELERATED_EXIT_QUEUE_ADDRESS =
   ENV_VARS.VITE_PUBLIC_ACCELERATED_EXIT_QUEUE_ADDRESS;
+const FAITH_AIRDROP_ADDRESS = ENV_VARS.VITE_PUBLIC_FAITH_AIRDROP_ADDRESS;
 
+const TEMPLE_TEAM_FIXED_PAYMENTS_ADDRESS =
+  ENV_VARS.VITE_PUBLIC_TEMPLE_R1_TEAM_FIXED_PAYMENTS_ADDRESS;
+const TEMPLE_TEAM_CONTINGENT_PAYMENTS_ADDRESS =
+  ENV_VARS.VITE_PUBLIC_TEMPLE_R1_TEAM_CONTINGENT_PAYMENTS_ADDRESS;
+const TEMPLE_DEVOTION_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ADDRESS;
+const TEMPLE_FAITH_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_FAITH_ADDRESS;
 if (
   STABLE_COIN_ADDRESS === undefined ||
   TEMPLE_ADDRESS === undefined ||
@@ -304,7 +364,11 @@ if (
   TEMPLE_CASHBACK_ADDRESS === undefined ||
   TEMPLE_V2_ROUTER_ADDRESS === undefined ||
   TEMPLE_V2_PAIR_ADDRESS === undefined ||
-  ACCELERATED_EXIT_QUEUE_ADDRESS === undefined
+  ACCELERATED_EXIT_QUEUE_ADDRESS === undefined ||
+  FAITH_AIRDROP_ADDRESS === undefined ||
+  TEMPLE_DEVOTION_ADDRESS === undefined ||
+  TEMPLE_FAITH_ADDRESS === undefined ||
+  LOCKED_OG_TEMPLE_DEVOTION_ADDRESS === undefined
 ) {
   console.info(`
 STABLE_COIN_ADDRESS=${STABLE_COIN_ADDRESS}
@@ -318,6 +382,10 @@ TEMPLE_CASHBACK_ADDRESS=${TEMPLE_CASHBACK_ADDRESS}
 TEMPLE_V2_ROUTER_ADDRESS=${TEMPLE_V2_ROUTER_ADDRESS}
 TEMPLE_V2_PAIR_ADDRESS=${TEMPLE_V2_PAIR_ADDRESS}
 ACCELERATED_EXIT_QUEUE_ADDRESS=${ACCELERATED_EXIT_QUEUE_ADDRESS}
+FAITH_AIRDROP_ADDRESS=${FAITH_AIRDROP_ADDRESS}
+TEMPLE_DEVOTION_ADDRESS=${TEMPLE_DEVOTION_ADDRESS}
+LOCKED_OG_TEMPLE_DEVOTION_ADDRESS=${LOCKED_OG_TEMPLE_DEVOTION_ADDRESS}
+TEMPLE_FAITH_ADDRESS=${TEMPLE_FAITH_ADDRESS}
 `);
   throw new Error(`Missing contract address from .env`);
 }
@@ -331,7 +399,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const [signerState, setSignerState] = useState<JsonRpcSigner | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isConnectedState, setIsConnectedState] = useState(false);
-  const [balanceState, setBalanceState] = useState<Balance>(null);
+  const [balanceState, setBalanceState] = useState<Balance>(
+    INITIAL_STATE.balance
+  );
   const [exchangeRateState, setExchangeRateState] = useState<number>(
     INITIAL_STATE.exchangeRate
   );
@@ -359,6 +429,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   );
   const [apy, setApy] = useState(0);
   const [templePrice, setTemplePrice] = useState(INITIAL_STATE.templePrice);
+  const [faith, setFaith] = useState(INITIAL_STATE.faith);
 
   const { openNotification } = useNotification();
 
@@ -372,7 +443,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         ethereum.on('accountsChanged', () => {
           window.location.reload();
         });
-        ethereum.on('networkChanged', () => {
+        ethereum.on('chainChanged', () => {
           window.location.reload();
         });
       }
@@ -556,6 +627,18 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         }
       );
 
+      // get ogTempleLocked from new Contract
+      const ogLockedTempleNew = new LockedOGTemple__factory()
+        .attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS)
+        .connect(signerState);
+
+      const newEntry = await ogLockedTempleNew.ogTempleLocked(walletAddress);
+      lockedEntriesVals.push({
+        balanceOGTemple: fromAtto(newEntry.amount),
+        lockedUntilTimestamp: newEntry.lockedUntilTimestamp.toNumber() * 1000,
+        index: lockedEntriesVals.length,
+      });
+
       setLockedEntries([...lockedEntriesVals]);
     }
   };
@@ -646,6 +729,26 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       setTemplePrice(fromAtto(_reserve1) / fromAtto(_reserve0));
     }
   };
+
+  const getFaith = async () => {
+    if (walletAddress && signerState) {
+      const FAITH = new Faith__factory()
+        .attach(TEMPLE_FAITH_ADDRESS)
+        .connect(signerState);
+
+      const faithBalances = await FAITH.balances(walletAddress);
+      const totalSupply = (await FAITH.totalSupply()).toNumber();
+      const lifeTimeFaith = faithBalances.lifeTimeFaith.toNumber();
+      const usableFaith = faithBalances.usableFaith.toNumber();
+      setFaith({
+        lifeTimeFaith: lifeTimeFaith,
+        usableFaith: usableFaith,
+        totalSupply: totalSupply,
+        share: formatNumber((usableFaith * 100) / totalSupply),
+      });
+    }
+  };
+
   /**
    * Load new data for the connected wallet
    * @param updateLoading Determines if the `isLoading` state should be updated
@@ -667,6 +770,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           getExchangeRate(),
           getLockInPeriod(),
           getBalance(),
+          getFaith(),
           getAllocation(),
           getLockedEntries(),
           getExitQueueData(),
@@ -680,7 +784,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const getBalance = async (): Promise<Balance> => {
+  const getBalance = async () => {
     if (walletAddress && signerState) {
       const stableCoinContract = new ERC20__factory()
         .attach(STABLE_COIN_ADDRESS)
@@ -688,6 +792,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       const ogLockedTemple = new LockedOGTempleDeprecated__factory()
         .attach(LOCKED_OG_TEMPLE_ADDRESS)
+        .connect(signerState);
+
+      const OGTEMPLE_LOCKED_DEVOTION = new LockedOGTemple__factory()
+        .attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS)
         .connect(signerState);
 
       const templeStakingContract = new TempleStaking__factory()
@@ -711,30 +819,39 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await ogLockedTemple.numLocks(walletAddress)
       ).toNumber();
       let ogTempleLocked = 0;
+      let ogTempleLockedClaimable = 0;
       const templeLockedPromises = [];
       for (let i = 0; i < lockedNum; i++) {
         templeLockedPromises.push(ogLockedTemple.locked(walletAddress, i));
       }
 
+      const now = formatNumberNoDecimals(Date.now() / 1000);
       const templeLocked = await Promise.all(templeLockedPromises);
       templeLocked.map((x) => {
         ogTempleLocked += fromAtto(x.BalanceOGTemple);
+        if (x.LockedUntilTimestamp.lte(BigNumber.from(now))) {
+          ogTempleLockedClaimable += fromAtto(x.BalanceOGTemple);
+        }
       });
 
       const ogTemple = fromAtto(
         await OG_TEMPLE_CONTRACT.balanceOf(walletAddress)
       );
       const temple = fromAtto(await templeContract.balanceOf(walletAddress));
+
+      const lockedOGTempleEntry = await OGTEMPLE_LOCKED_DEVOTION.ogTempleLocked(
+        walletAddress
+      );
+
       const balance: Balance = {
         stableCoin: fromAtto(stableCoinBalance),
         temple: temple,
-        ogTempleLocked: ogTempleLocked,
-        ogTemple: ogTemple,
+        ogTempleLocked: ogTempleLocked + fromAtto(lockedOGTempleEntry.amount),
+        ogTemple: ogTemple >= 1 ? ogTemple : 0,
+        ogTempleLockedClaimable: ogTempleLockedClaimable,
       };
       setBalanceState(balance);
-      return balance;
     }
-    return null;
   };
 
   const getExchangeRate = async (): Promise<void> => {
@@ -1184,6 +1301,27 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
+  const claimFaithAirdrop = async (
+    index: number,
+    address: string,
+    amount: BigNumber,
+    proof: string[]
+  ): Promise<TransactionReceipt | void> => {
+    if (signerState) {
+      const faithAirdrop = new FaithMerkleAirdrop__factory()
+        .attach(FAITH_AIRDROP_ADDRESS)
+        .connect(signerState);
+
+      const tx = await faithAirdrop.claim(index, address, amount, proof, {
+        gasLimit: ENV_VARS.VITE_PUBLIC_CLAIM_FAITH_GAS_LIMIT || 100000,
+      });
+
+      return tx.wait();
+    } else {
+      console.error('Missing wallet address');
+    }
+  };
+
   const verifyAMMWhitelist = async (
     signature: string
   ): Promise<ethers.ContractTransaction | void> => {
@@ -1605,6 +1743,92 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
+  const verifyFaith = async () => {
+    if (walletAddress && signerState) {
+      const DEVOTION = new Devotion__factory()
+        .attach(TEMPLE_DEVOTION_ADDRESS)
+        .connect(signerState);
+
+      const TEMPLE_STAKING = new TempleStaking__factory()
+        .attach(TEMPLE_STAKING_ADDRESS)
+        .connect(signerState);
+
+      const OG_TEMPLE = new OGTemple__factory()
+        .attach(await TEMPLE_STAKING.OG_TEMPLE())
+        .connect(signerState);
+
+      const walletOGTEMPLE = await OG_TEMPLE.balanceOf(walletAddress);
+      await ensureAllowance(
+        OG_TEMPLE_TOKEN,
+        OG_TEMPLE,
+        LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
+        walletOGTEMPLE
+      );
+
+      const faithVerificationTXN = await DEVOTION.lockAndVerify(
+        walletOGTEMPLE,
+        {
+          gasLimit:
+            ENV_VARS.VITE_PUBLIC_DEVOTION_LOCK_AND_VERIFY_GAS_LIMIT || 250000,
+        }
+      );
+      await faithVerificationTXN.wait();
+
+      openNotification({
+        title: `${FAITH_TOKEN} verified`,
+        hash: faithVerificationTXN.hash,
+      });
+    } else {
+      console.error('Missing wallet address');
+    }
+  };
+
+  const redeemFaith = async (faithAmount: BigNumber) => {
+    if (walletAddress && signerState) {
+      const DEVOTION = new Devotion__factory()
+        .attach(TEMPLE_DEVOTION_ADDRESS)
+        .connect(signerState);
+
+      const faithClaimTXN = await DEVOTION.claimTempleReward(faithAmount);
+      await faithClaimTXN.wait();
+
+      openNotification({
+        title: `${FAITH_TOKEN} redeemed`,
+        hash: faithClaimTXN.hash,
+      });
+    } else {
+      console.error('Missing wallet address');
+    }
+  };
+
+  const getTempleFaithReward = async (faithAmount: BigNumber) => {
+    if (walletAddress && signerState) {
+      const DEVOTION = new Devotion__factory()
+        .attach(TEMPLE_DEVOTION_ADDRESS)
+        .connect(signerState);
+
+      return await DEVOTION.claimableTempleRewardQuote(faithAmount);
+    } else {
+      console.error('Missing wallet address');
+    }
+  };
+
+  const getFaithQuote = async () => {
+    if (walletAddress && signerState) {
+      const DEVOTION = new Devotion__factory()
+        .attach(TEMPLE_DEVOTION_ADDRESS)
+        .connect(signerState);
+
+      const faithQuote = await DEVOTION.verifyFaithQuote(walletAddress);
+      return {
+        canClaim: faithQuote.canClaim,
+        claimableFaith: faithQuote.claimableFaith.toNumber(),
+      };
+    } else {
+      console.error('Missing wallet address');
+    }
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -1633,6 +1857,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         verifyAMMWhitelist,
         maxInvitesPerVerifiedUser,
         claim,
+        claimFaithAirdrop,
         signer: signerState,
         network,
         claimOgTemple,
@@ -1647,6 +1872,11 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         apy,
         restakeAvailableTemple,
         collectTempleTeamPayment,
+        verifyFaith,
+        redeemFaith,
+        getTempleFaithReward,
+        getFaithQuote,
+        faith,
       }}
     >
       {children}

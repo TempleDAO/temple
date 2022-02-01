@@ -34,7 +34,14 @@ export const NavItem: FC<ItemProps> = ({ close, view }) => {
 
   return (
     <ListItem isActive={isActive}>
-      <Text onClick={click} isActive={isActive}>
+      <Text
+        tabIndex={0}
+        onClick={click}
+        isActive={isActive}
+        onKeyPress={(e) => {
+          e.key === 'Enter' && click();
+        }}
+      >
         {view}
       </Text>
     </ListItem>

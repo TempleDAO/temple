@@ -116,7 +116,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       <SwapArrows onClick={onSwapArrowClick} small />
       <Input
         small={small}
-        hint={`BALANCE: ${formatNumber(stableCoinWalletAmount)}`}
+        hint={`Balance: ${formatNumber(stableCoinWalletAmount)}`}
         crypto={{ kind: 'value', value: STABLE_COIN_SYMBOL }}
         isNumber
         value={formatNumber(rewards as number)}
@@ -154,7 +154,8 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         disabled={
           ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true' ||
           templeAmount == 0 ||
-          templeAmount == ''
+          templeAmount == '' ||
+          templeAmount > templeWalletAmount
         }
       />
     </ViewContainer>

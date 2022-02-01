@@ -149,8 +149,6 @@ export const Queue: FC<QueueProps> = ({ small }) => {
             tooltipContent={
               'Amount of $TEMPLE received once you exit the queue.'
             }
-            //@ts-ignore
-            tooltipPosition={isSmallOrMediumScreen ? 'right' : 'top'}
           />
         </CardContainer>
         <CardContainer>
@@ -166,10 +164,6 @@ export const Queue: FC<QueueProps> = ({ small }) => {
         <CardContainer>
           <DataCard
             small={small}
-            //@ts-ignore
-            tooltipPosition={
-              small && repositionProcessTimeTooltip ? 'left' : 'top'
-            }
             title={'PROCESS TIME'}
             data={`+ ${joinQueueData?.processTime} DAYS`}
             tooltipContent={

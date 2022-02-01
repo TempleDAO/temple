@@ -3,11 +3,17 @@ import Image, { ImageProps } from 'components/Image/Image';
 import swapSvg from 'assets/icons/amm-arrow.svg';
 
 export const TitleWrapper = styled.div`
-  display: inline-flex;
+  position: relative;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+`;
+
+export const TooltipTitle = styled.div`
+  position: absolute;
+  right: 0;
 `;
 
 export const ConvoFlowTitle = styled.p`

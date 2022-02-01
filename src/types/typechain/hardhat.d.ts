@@ -117,10 +117,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.AcceleratedExitQueue__factory>;
     getContractFactory(
-      name: "AmmIncentivisor",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.AmmIncentivisor__factory>;
-    getContractFactory(
       name: "ITempleFraxAMMRouter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ITempleFraxAMMRouter__factory>;
@@ -173,6 +169,26 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.OpeningCeremony__factory>;
     getContractFactory(
+      name: "Devotion",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Devotion__factory>;
+    getContractFactory(
+      name: "Faith",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Faith__factory>;
+    getContractFactory(
+      name: "FaithMerkleAirdrop",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.FaithMerkleAirdrop__factory>;
+    getContractFactory(
+      name: "IMerkleDistributor",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IMerkleDistributor__factory>;
+    getContractFactory(
+      name: "IFaith",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IFaith__factory>;
+    getContractFactory(
       name: "ExitQueue",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ExitQueue__factory>;
@@ -180,10 +196,6 @@ declare module "hardhat/types/runtime" {
       name: "IExitQueue",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IExitQueue__factory>;
-    getContractFactory(
-      name: "Faith",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Faith__factory>;
     getContractFactory(
       name: "FakeERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -196,10 +208,6 @@ declare module "hardhat/types/runtime" {
       name: "UniswapV2Router02NoEth",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.UniswapV2Router02NoEth__factory>;
-    getContractFactory(
-      name: "IFaith",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IFaith__factory>;
     getContractFactory(
       name: "ITreasuryAllocation",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -380,11 +388,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.AcceleratedExitQueue>;
     getContractAt(
-      name: "AmmIncentivisor",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.AmmIncentivisor>;
-    getContractAt(
       name: "ITempleFraxAMMRouter",
       address: string,
       signer?: ethers.Signer
@@ -450,6 +453,31 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.OpeningCeremony>;
     getContractAt(
+      name: "Devotion",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Devotion>;
+    getContractAt(
+      name: "Faith",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Faith>;
+    getContractAt(
+      name: "FaithMerkleAirdrop",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.FaithMerkleAirdrop>;
+    getContractAt(
+      name: "IMerkleDistributor",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IMerkleDistributor>;
+    getContractAt(
+      name: "IFaith",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IFaith>;
+    getContractAt(
       name: "ExitQueue",
       address: string,
       signer?: ethers.Signer
@@ -459,11 +487,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IExitQueue>;
-    getContractAt(
-      name: "Faith",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Faith>;
     getContractAt(
       name: "FakeERC20",
       address: string,
@@ -479,11 +502,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.UniswapV2Router02NoEth>;
-    getContractAt(
-      name: "IFaith",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IFaith>;
     getContractAt(
       name: "ITreasuryAllocation",
       address: string,

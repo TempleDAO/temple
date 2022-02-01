@@ -1,9 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import Tooltip, {
-  TooltipIcon,
-  TooltipContentProps,
-} from 'components/Tooltip/Tooltip';
+import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 
 interface SizeProps {
   small?: boolean;
@@ -13,7 +10,6 @@ interface DataCardProps extends SizeProps {
   title: string;
   data: string;
   tooltipContent?: string;
-  tooltipPosition?: TooltipContentProps;
   className?: string;
 }
 
@@ -24,7 +20,6 @@ export const DataCard = ({
   title,
   data,
   tooltipContent,
-  tooltipPosition,
   small,
   className,
 }: DataCardProps) => {
@@ -33,8 +28,7 @@ export const DataCard = ({
       <TitleContainer>
         <Title hasTooltip={!!tooltipContent}>{title}</Title>
         {tooltipContent && (
-          //@ts-ignore
-          <Tooltip content={tooltipContent} position={tooltipPosition || 'top'}>
+          <Tooltip content={tooltipContent}>
             <TooltipIcon />
           </Tooltip>
         )}
@@ -85,5 +79,6 @@ interface TitleProps {
 }
 
 const Title = styled.small<TitleProps>`
-  ${({ hasTooltip }) => hasTooltip && 'width: 80%;'}
+  ${({ hasTooltip }) => hasTooltip && 'width: 80%;'};
+  text-transform: uppercase;
 `;

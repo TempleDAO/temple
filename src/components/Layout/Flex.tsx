@@ -82,7 +82,7 @@ export const FlexStyled = styled.div<PropsWithChildren<FlexProps>>`
   ${(props) =>
     props.layout.kind === 'item' &&
     css`
-      margin: 1rem 2rem;
+      margin: 1rem;
       flex: 1;
 
       & + &,

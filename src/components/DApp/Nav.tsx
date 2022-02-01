@@ -3,6 +3,7 @@ import { DAppView } from 'enums/dapp-view';
 import React from 'react';
 import styled from 'styled-components';
 
+const ENV_VARS = import.meta.env;
 interface NavProps {
   small?: boolean;
   onClose?: () => void;
@@ -19,10 +20,19 @@ export const Nav = React.forwardRef<HTMLElement, NavProps>(
           <NavItem close={onClose} view={DAppView.BUY} />
           <NavItem close={onClose} view={DAppView.STAKE} />
         </NavGroup>
+        {ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ENGAGED && (
+          <NavGroup>
+            <NavItem close={onClose} view={DAppView.DEVOTION} />
+          </NavGroup>
+        )}
         <NavGroup>
+          <NavItem close={onClose} view={DAppView.UNLOCK} />
           <NavItem close={onClose} view={DAppView.QUEUE} />
           <NavItem close={onClose} view={DAppView.WITHDRAW} />
           <NavItem close={onClose} view={DAppView.SELL} />
+        </NavGroup>
+        <NavGroup>
+          <NavItem close={onClose} view={DAppView.PROFILE} />
         </NavGroup>
       </Container>
     );
