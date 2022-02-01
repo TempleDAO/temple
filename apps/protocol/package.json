@@ -22,6 +22,7 @@
     "commander": "^8.3.0",
     "csv-parse": "^4.16.3",
     "dotenv": "^10.0.0",
+    "eth-permit": "^0.2.1",
     "ethereumjs-util": "^7.1.3",
     "lodash": "^4.17.21",
     "ts-generator": "^0.1.1",
@@ -50,7 +51,7 @@
     "hardhat:mainnet": "hardhat --network mainnet",
     "hardhat:matic": "hardhat --network matic",
     "local-metrics": "hardhat run --network localhost scripts/metrics.ts",
-    "local-fork": "hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/5uWfALq4t1xR49V3EW5bBZEE4xh97l-A --fork-block-number 13205117"
+    "local-fork": "hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/WSZBeCmhwfAIs0CSoM_pBxi-DbsliQCe --fork-block-number 14118614"
   },
   "engines": {
     "node": "14.x"

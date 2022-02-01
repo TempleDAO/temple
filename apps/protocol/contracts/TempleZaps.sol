@@ -36,13 +36,19 @@ interface DAI {
 contract TempleZaps is ZapBaseV2_2 {
   uint256 public constant TEMPLE_AMM_DEADLINE = 1200; // 20 minutes
 
-  address public constant FRAX = 0x853d955aCEf822Db058eb8505911ED77F175b99e;
+  address public constant FRAX_ADDR =
+    0x853d955aCEf822Db058eb8505911ED77F175b99e;
+  address public constant DAI_ADDR = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+  address public constant USDC_ADDR = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+
   address public TEMPLE = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
   address public OG_TEMPLE = 0x654590F810f01B51dc7B86915D4632977e49EA33;
 
   address public TEMPLE_STAKING = 0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77;
   address public TEMPLE_FRAX_AMM_ROUTER =
     0x8A5058100E60e8F7C42305eb505B12785bbA3BcA;
+
+  mapping(address => bool) permitTokens;
 
   struct StandardPermit {
     address owner;
@@ -65,12 +71,16 @@ contract TempleZaps is ZapBaseV2_2 {
     bytes32 s;
   }
 
+  DAI public dai;
+
   // Emitted when `sender` Zaps In
   event zappedIn(address sender, address token, uint256 amountReceived);
 
   constructor() ZapBaseV2_2() {
     // 0x: Exchange Proxy
     approvedTargets[0xDef1C0ded9bec7F1a1670819833240f027b25EfF] = true;
+    dai = DAI(DAI_ADDR);
+    permitTokens[USDC_ADDR] = true;
   }
 
   /**
@@ -93,7 +103,7 @@ contract TempleZaps is ZapBaseV2_2 {
 
     uint256 fraxBought = _fillQuote(
       fromToken,
-      FRAX,
+      FRAX_ADDR,
       fromAmount,
       swapTarget,
       swapData
@@ -109,32 +119,29 @@ contract TempleZaps is ZapBaseV2_2 {
     whenNotPaused
     returns (uint256 amountOGTemple)
   {
-    _pullTokens(FRAX, amountFRAX);
+    _pullTokens(FRAX_ADDR, amountFRAX);
     amountOGTemple = _enterTemple(amountFRAX, minTempleReceived);
     emit zappedIn(msg.sender, OG_TEMPLE, amountOGTemple);
   }
 
   function zapInDAIWithPermit(
-    address fromToken,
     uint256 fromAmount,
     uint256 minTempleReceived,
     address swapTarget,
     bytes calldata swapData,
     DAIPermit calldata permit
   ) external whenNotPaused returns (uint256 amountOGTemple) {
-    DAI dai = DAI(fromToken);
     dai.permit(
-      permit.holder,
-      permit.spender,
+      msg.sender,
+      address(this),
       permit.nonce,
       permit.expiry,
-      permit.allowed,
+      true,
       permit.v,
       permit.r,
       permit.s
     );
-    return
-      zapIn(fromToken, fromAmount, minTempleReceived, swapTarget, swapData);
+    return zapIn(DAI_ADDR, fromAmount, minTempleReceived, swapTarget, swapData);
   }
 
   /**
@@ -148,10 +155,14 @@ contract TempleZaps is ZapBaseV2_2 {
     bytes calldata swapData,
     StandardPermit calldata permit
   ) external whenNotPaused returns (uint256 amountOGTemple) {
-    ERC20 token = ERC20(fromToken); // Solmate ERC20 implements EIP-2612
+    require(
+      permitTokens[fromToken],
+      'TZ: token not allowed'
+    );
+    ERC20 token = ERC20(fromToken);
     token.permit(
-      permit.owner,
-      permit.spender,
+      msg.sender,
+      address(this),
       permit.value,
       permit.deadline,
       permit.v,
@@ -166,7 +177,7 @@ contract TempleZaps is ZapBaseV2_2 {
     internal
     returns (uint256 amountOGTemple)
   {
-    _approveToken(FRAX, TEMPLE_FRAX_AMM_ROUTER, amountFRAX);
+    _approveToken(FRAX_ADDR, TEMPLE_FRAX_AMM_ROUTER, amountFRAX);
 
     uint256 amountTempleReceived = ITempleFraxAMMRouter(TEMPLE_FRAX_AMM_ROUTER)
       .swapExactFraxForTemple(
@@ -195,7 +206,7 @@ contract TempleZaps is ZapBaseV2_2 {
     address to,
     uint256 amount
   ) external onlyOwner {
-    require(to != address(0), 'to address zero');
+    require(to != address(0), 'TZ: to address zero');
     if (token == address(0)) {
       SafeTransferLib.safeTransferETH(to, amount);
     } else {
