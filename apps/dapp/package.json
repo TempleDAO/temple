@@ -1,22 +1,22 @@
 {
-  "name": "@templedao/dapp",
+  "name": "@temple/dapp",
   "version": "0.1.1",
   "engines": {
     "node": ">=14.18.1"
   },
   "scripts": {
     "dev": "vite",
+    "compile": "tsc",
+    "vite:build": "vite build",
     "build": "tsc && vite build",
-    "vercel-build": "node vercel-build && tsc && vite build",
+    "vercel-build": "tsc && vite build",
     "serve": "vite preview",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
-    "prepare": "husky install",
     "version:release": "standard-version",
     "version:prerelease": "standard-version --prerelease beta"
   },
   "dependencies": {
-    "@tippyjs/react": "^4.2.6",
     "axios": "^0.24.0",
     "d3-shape": "^3.0.1",
     "dateformat": "^5.0.2",
@@ -64,7 +64,6 @@
     "eslint": "^8.3.0",
     "eslint-plugin-react": "^7.27.1",
     "eslint-plugin-react-hooks": "^4.3.0",
-    "husky": "^7.0.4",
     "lint-staged": ">=10",
     "prettier": "^2.5.0",
     "standard-version": "^9.3.2",

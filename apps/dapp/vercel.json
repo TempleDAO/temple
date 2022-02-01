@@ -1,6 +1,8 @@
 {
   "rewrites": [{ "source": "/(.*)", "destination": "/" }],
   "github": {
-    "silent": true
+    "silent": false,
+    "enabled": false,
+    "autoJobCancelation": true
   }
 }
