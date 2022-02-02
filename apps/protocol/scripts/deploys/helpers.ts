@@ -228,6 +228,7 @@ const expectedEnvvars: {[key: string]: string[]} = {
   mainnet: ['MAINNET_ADDRESS_PRIVATE_KEY', 'MAINNET_RPC_URL'],
   rinkeby: ['RINKEBY_ADDRESS_PRIVATE_KEY', 'RINKEBY_RPC_URL'],
   matic: ['MATIC_ADDRESS_PRIVATE_KEY', 'MATIC_RPC_URL'],
+  localhost: [],
 }
 
 /**
