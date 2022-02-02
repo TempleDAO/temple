@@ -34,6 +34,11 @@ async function main() {
     '0x498ead89fe8c85c57dcd313f5f1483fd682bcdd8b92269d84e837d26c159e9d8'
   );
 
+  // start claim period 30 seconds ago, end in a week
+  await mine(faithMerkleAirdrop.setClaimStartTime(Math.round(Date.now() / 1000 + 100)));
+  await mine(faithMerkleAirdrop.setClaimEndTime(Math.round(Date.now() / 1000 + 604800)));
+
+  // change owner to multisig
   await mine(faithMerkleAirdrop.setOwner(DEPLOYED.MULTISIG));
 }
 
