@@ -156,7 +156,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     LOCKED_OG_TEMPLE: process.env.LOCKED_OG_TEMPLE || '',
     DEVOTION: process.env.DEVOTION || '',
 
-    MULTISIG: '',
+    MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
   }
 }
 
