@@ -3,6 +3,8 @@ import { ethers, network } from 'hardhat';
 import { BigNumber, Signer, Wallet } from 'ethers';
 import axios from 'axios';
 import { signDaiPermit, signERC2612Permit } from 'eth-permit';
+// import { signDaiPermit } from 'eth-permit';
+// import { signERC2612Permit } from '@solidstate/library';
 
 import FakeERC20 from '../artifacts/contracts/fakes/FakeERC20.sol/FakeERC20.json';
 import { TempleZaps, TempleZaps__factory } from '../typechain';
@@ -16,7 +18,7 @@ const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
 const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
 
 const { OG_TEMPLE } = addresses.temple;
-const { WETH, USDC, DAI, FRAX, ETH } = addresses.tokens;
+const { WETH, USDC, DAI, UNI, FRAX, ETH } = addresses.tokens;
 
 const NOT_OWNER = /Ownable: caller is not the owner/;
 const PAUSED = /Paused/;
@@ -33,7 +35,9 @@ let aliceAddress: string;
 describe('TempleZaps', async () => {
   beforeEach(async () => {
     [owner] = await ethers.getSigners();
-    alice = ethers.Wallet.createRandom().connect(new ethers.providers.JsonRpcProvider());
+    alice = ethers.Wallet.createRandom().connect(
+      new ethers.providers.JsonRpcProvider()
+    );
 
     binanceSigner = await impersonateAddress(BINANCE_ACCOUNT_8);
     fraxSigner = await impersonateAddress(FRAX_WHALE);
@@ -134,20 +138,20 @@ describe('TempleZaps', async () => {
     });
 
     it('should zap with permit USDC to OGTemple', async () => {
-      const tokenAddr = USDC;
+      const tokenAddr = UNI;
       const tokenAmount = '10000';
       const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
 
-      // send some USDC from binance8 to alice - workaround for unknown account error
-      const usdcContract = new ethers.Contract(
-        USDC,
+      // send some USDC from binance8 to alice since a Wallet is needed
+      const tokenContract = new ethers.Contract(
+        tokenAddr,
         FakeERC20.abi,
         binanceSigner
       );
-      
+
       const amount = ethers.utils.parseUnits(tokenAmount, 6).toString();
-      await usdcContract.approve(aliceAddress, amount);
-      await usdcContract.transfer(aliceAddress, amount);
+      await tokenContract.approve(aliceAddress, amount);
+      await tokenContract.transfer(aliceAddress, amount);
 
       await zapIn(
         alice,
@@ -160,24 +164,24 @@ describe('TempleZaps', async () => {
     });
 
     xit('should zap with permit DAI to OGTemple', async () => {
-      const tokenAddr = DAI;
-      const tokenAmount = '10000';
-      const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
+      // const tokenAddr = DAI;
+      // const tokenAmount = '10000';
+      // const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
 
-      const daiContract = new ethers.Contract(DAI, FakeERC20.abi, daiSigner);
+      // const daiContract = new ethers.Contract(DAI, FakeERC20.abi, daiSigner);
 
-      const amount = ethers.utils.parseUnits(tokenAmount, 18).toString();
-      await daiContract.approve(aliceAddress, amount);
-      await daiContract.transfer(aliceAddress, amount);
+      // const amount = ethers.utils.parseUnits(tokenAmount, 18).toString();
+      // await daiContract.approve(aliceAddress, amount);
+      // await daiContract.transfer(aliceAddress, amount);
 
-      await zapIn(
-        alice,
-        TEMPLE_ZAPS,
-        tokenAddr,
-        tokenAmount,
-        minTempleReceived,
-        true
-      );
+      // await zapIn(
+      //   alice,
+      //   TEMPLE_ZAPS,
+      //   tokenAddr,
+      //   tokenAmount,
+      //   minTempleReceived,
+      //   true
+      // );
     });
   });
 
@@ -371,53 +375,53 @@ async function zapIn(
   if (tokenAddr === FRAX) {
     await zapsConnect.zapInFRAX(sellAmount, minTempleReceived);
   } else if (usePermit && tokenAddr === DAI) {
-    const message = await signDaiPermit(
-      signer,
-      tokenAddr,
-      signerAddress,
-      TEMPLE_ZAPS.address
-    );
-    console.log(message);
-    await zapsConnect.zapInDAIWithPermit(
-      sellAmount,
-      minTempleReceived,
-      ZEROEX_EXCHANGE_PROXY,
-      swapCallData,
-      {
-        holder: signerAddress,
-        spender: TEMPLE_ZAPS.address,
-        nonce: message.nonce,
-        expiry: message.expiry,
-        allowed: true,
-        v: message.v,
-        r: message.r,
-        s: message.s,
-      }
-    );
+    // const message = await signDaiPermit(
+    //   signer,
+    //   tokenAddr,
+    //   signerAddress,
+    //   TEMPLE_ZAPS.address
+    // );
+    // console.log(message);
+    // await zapsConnect.zapInDAIWithPermit(
+    //   sellAmount,
+    //   minTempleReceived,
+    //   ZEROEX_EXCHANGE_PROXY,
+    //   swapCallData,
+    //   {
+    //     holder: signerAddress,
+    //     spender: TEMPLE_ZAPS.address,
+    //     nonce: message.nonce,
+    //     expiry: message.expiry,
+    //     allowed: true,
+    //     v: message.v,
+    //     r: message.r,
+    //     s: message.s,
+    //   }
+    // );
   } else if (usePermit) {
-    // console.log('signer', signer);
     console.log('tokenAddr', tokenAddr);
     console.log('signerAddress', signerAddress);
     console.log('TEMPLE_ZAPS.address', TEMPLE_ZAPS.address);
     console.log('sellAmount', sellAmount);
 
-    const message = await signERC2612Permit(
+    const { deadline, v, r, s } = await signERC2612Permit(
       signer,
       tokenAddr,
       signerAddress,
       TEMPLE_ZAPS.address,
       sellAmount
     );
-    console.log(message);
+
     await zapsConnect.zapInWithPermit(
       tokenAddr,
       sellAmount,
       minTempleReceived,
       ZEROEX_EXCHANGE_PROXY,
       swapCallData,
-      {
-        ...message,
-      }
+      deadline,
+      v,
+      r,
+      s
     );
   } else {
     await zapsConnect.zapIn(

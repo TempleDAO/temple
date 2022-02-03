@@ -33,13 +33,28 @@ interface DAI {
   ) external;
 }
 
+// TODO: Remove this
+interface Usdc {
+  function permit(
+    address owner,
+    address spender,
+    uint256 value,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external;
+}
+
 contract TempleZaps is ZapBaseV2_2 {
   uint256 public constant TEMPLE_AMM_DEADLINE = 1200; // 20 minutes
 
   address public constant FRAX_ADDR =
     0x853d955aCEf822Db058eb8505911ED77F175b99e;
   address public constant DAI_ADDR = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-  address public constant USDC_ADDR = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+  address public constant USDC_ADDR =
+    0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+  address public constant UNI_ADDR = 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984;
 
   address public TEMPLE = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
   address public OG_TEMPLE = 0x654590F810f01B51dc7B86915D4632977e49EA33;
@@ -49,16 +64,6 @@ contract TempleZaps is ZapBaseV2_2 {
     0x8A5058100E60e8F7C42305eb505B12785bbA3BcA;
 
   mapping(address => bool) permitTokens;
-
-  struct StandardPermit {
-    address owner;
-    address spender;
-    uint256 value;
-    uint256 deadline;
-    uint8 v;
-    bytes32 r;
-    bytes32 s;
-  }
 
   struct DAIPermit {
     address holder;
@@ -81,6 +86,7 @@ contract TempleZaps is ZapBaseV2_2 {
     approvedTargets[0xDef1C0ded9bec7F1a1670819833240f027b25EfF] = true;
     dai = DAI(DAI_ADDR);
     permitTokens[USDC_ADDR] = true;
+    permitTokens[UNI_ADDR] = true;
   }
 
   /**
@@ -153,24 +159,17 @@ contract TempleZaps is ZapBaseV2_2 {
     uint256 minTempleReceived,
     address swapTarget,
     bytes calldata swapData,
-    StandardPermit calldata permit
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
   ) external whenNotPaused returns (uint256 amountOGTemple) {
-    require(
-      permitTokens[fromToken],
-      'TZ: token not allowed'
-    );
+    require(permitTokens[fromToken], 'TZ: token not allowed');
+
     ERC20 token = ERC20(fromToken);
-    token.permit(
-      msg.sender,
-      address(this),
-      permit.value,
-      permit.deadline,
-      permit.v,
-      permit.r,
-      permit.s
-    );
-    return
-      zapIn(fromToken, fromAmount, minTempleReceived, swapTarget, swapData);
+    token.permit(msg.sender, address(this), fromAmount, deadline, v, r, s);
+
+    return zapIn(fromToken, fromAmount, minTempleReceived, swapTarget, swapData);
   }
 
   function _enterTemple(uint256 amountFRAX, uint256 minTempleReceived)
