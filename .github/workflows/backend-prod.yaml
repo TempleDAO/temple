@@ -1,11 +1,11 @@
-name: analytics-api => prod
+name: backend => prod
 on:
   push:
     branches:    
       - 'main'
     paths:
-      - "apps/analytics-api/**"
-      - ".github/workflows/analytics-api-prod.yaml"
+      - "apps/backend/**"
+      - ".github/workflows/backend-prod.yaml"
 
 jobs:
   deploy:
@@ -15,9 +15,9 @@ jobs:
       - uses: amondnet/vercel-action@v20
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }} # Required
-          vercel-args: '--prod -A apps/analytics-api/vercel.json' #Optional
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}  #Required
-          vercel-project-id: ${{ secrets.BACKEND_PROJECT_ID }} #Required 
+          vercel-args: '--prod -A apps/backend/vercel.json' #Optional
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}  #Required
+          vercel-project-id: ${{ secrets.BACKEND_PROJECT_ID}} #Required 
           github-token: ${{ secrets.CI_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
           alias-domains: | #Optional
