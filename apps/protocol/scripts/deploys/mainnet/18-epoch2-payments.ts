@@ -16,13 +16,14 @@ async function main() {
   } else {
     DEPLOYED = DEPLOYED_CONTRACTS[network.name];
   }
-
+  
+  const ONE_MONTH_IN_SECONDS = 2629800;
   const templeTeamPaymentsFactory = new TempleTeamPayments__factory(owner);
   const templeTeamFixedPayments: TempleTeamPayments = await deployAndMine(
     'TEMPLE_TEAM_EPOCH_2', templeTeamPaymentsFactory, templeTeamPaymentsFactory.deploy,
     DEPLOYED.TEMPLE,
-    7889400, // 3 months in seconds
-    Math.round(Date.now()/1000 - 100) // start now
+    ONE_MONTH_IN_SECONDS * 3,
+    Math.round(Date.now()/1000 - ONE_MONTH_IN_SECONDS)
   )
 
   const allocs : [string, number][] = [
