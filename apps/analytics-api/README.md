@@ -46,3 +46,5 @@ const res = await pool.query('select * from discord_users');
 console.log(res.rows[0]);
 await pool.end();
 ```
+
+.
