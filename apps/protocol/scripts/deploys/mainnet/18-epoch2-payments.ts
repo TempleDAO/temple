@@ -1,7 +1,6 @@
 import '@nomiclabs/hardhat-ethers';
-import { BigNumber } from 'ethers';
 import { ethers, network } from 'hardhat';
-import { AcceleratedExitQueue__factory, AMMWhitelist, AMMWhitelist__factory, ExitQueue, ExitQueue__factory, TempleERC20Token__factory, TempleFraxAMMOps, TempleFraxAMMOps__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTeamPayments, TempleTeamPayments__factory, TempleUniswapV2Pair, TempleUniswapV2Pair__factory, TreasuryManagementProxy__factory } from '../../../typechain';
+import { TempleTeamPayments, TempleTeamPayments__factory } from '../../../typechain';
 import { deployAndMine, DeployedContracts, DEPLOYED_CONTRACTS, expectAddressWithPrivateKey, fromAtto, mine, toAtto } from '../helpers';
 
 async function main() {
