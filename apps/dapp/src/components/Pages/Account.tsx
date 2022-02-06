@@ -28,7 +28,7 @@ export interface DiscordUser {
 }
 
 const ENV_VARS = import.meta.env;
-const backendUrl = ENV_VARS.VITE_BACKEND_URL
+const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL
 
 const Account: CustomRoutingPage = ({ routingHelper }) => {
   const { back } = routingHelper;
@@ -46,7 +46,7 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
         return;
       }
       const response = await axios({
-        url: `${backendUrl}/api/discord/members/${userId}`,
+        url: `${BACKEND_URL}/api/discord/members/${userId}`,
       });
       setDiscordData(response?.data);
     };
