@@ -44,6 +44,21 @@ import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
 
+import {
+  OpeningCeremonyUser,
+  WalletState,
+  Balance,
+  Allocation,
+  RitualMapping,
+  LockedEntry,
+  ExitQueueData,
+  ETH_ACTIONS,
+  COIN_TYPE,
+  RitualKind,
+  JoinQueueData,
+  RitualStatus,
+} from './types';
+
 /* TODO: Move this to a common place */
 export const TEMPLE_TOKEN = '$TEMPLE';
 export const OG_TEMPLE_TOKEN = '$OGTEMPLE';
