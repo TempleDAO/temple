@@ -739,8 +739,8 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const faithBalances = await FAITH.balances(walletAddress);
       const totalSupply = await FAITH.totalSupply();
       const totalFaithSupply = fromAtto(totalSupply);
-      const lifeTimeFaith = faithBalances.lifeTimeFaith.toNumber();
-      const usableFaith = faithBalances.usableFaith.toNumber();
+      const lifeTimeFaith = fromAtto(faithBalances.lifeTimeFaith);
+      const usableFaith = fromAtto(faithBalances.usableFaith);
       setFaith({
         lifeTimeFaith: lifeTimeFaith,
         usableFaith: usableFaith,
