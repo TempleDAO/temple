@@ -1,3 +1,10 @@
+import React, {
+  createContext,
+  PropsWithChildren,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import {
   JsonRpcProvider,
@@ -12,13 +19,6 @@ import {
 } from 'enums/team-payment';
 import { BigNumber, ContractTransaction, ethers } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
-import React, {
-  createContext,
-  PropsWithChildren,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
 import {
   AcceleratedExitQueue__factory,
   AMMWhitelist__factory,
@@ -74,6 +74,23 @@ import {
   TEMPLE_DEVOTION_ADDRESS,
   LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
   NEXT_PUBLIC_EXCHANGE_RATE_VALUE,
+  TEMPLE_FAITH_ADDRESS,
+  TREASURY_ADDRESS,
+  TEMPLE_V2_PAIR_ADDRESS,
+  VITE_PUBLIC_MINT_AND_STAKE_GAS_LIMIT,
+  VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT,
+  VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_PER_EPOCH_GAS_LIMIT,
+  VITE_PUBLIC_CLAIM_GAS_LIMIT,
+  VITE_PUBLIC_CLAIM_FAITH_GAS_LIMIT,
+  VITE_PUBLIC_WITHDRAW_EPOCHS_BASE_GAS_LIMIT,
+  VITE_PUBLIC_WITHDRAW_EPOCHS_PER_EPOCH_GAS_LIMIT,
+  VITE_PUBLIC_RESTAKE_EPOCHS_BASE_GAS_LIMIT,
+  VITE_PUBLIC_RESTAKE_EPOCHS_PER_EPOCH_GAS_LIMIT,
+  VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT,
+  VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT,
+  VITE_PUBLIC_CLAIM_OGTEMPLE_GAS_LIMIT,
+  VITE_PUBLIC_STAKE_GAS_LIMIT,
+  VITE_PUBLIC_DEVOTION_LOCK_AND_VERIFY_GAS_LIMIT,
 } from './env';
 
 /* TODO: Move this to a common place */
@@ -897,7 +914,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           : stableCoinBalance;
         const mintAndStakeTransaction =
           await openingCeremonyContract.mintAndStake(offering, {
-            gasLimit: ENV_VARS.VITE_PUBLIC_MINT_AND_STAKE_GAS_LIMIT || 500000,
+            gasLimit: VITE_PUBLIC_MINT_AND_STAKE_GAS_LIMIT || 500000,
           });
 
         // Show feedback to user
@@ -967,10 +984,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         // ensure user input is not greater than user balance. if greater use all user balance.
         const offering = amount.lte(ogTempleBalance) ? amount : ogTempleBalance;
         const baseGas = Number(
-          ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT || 300000
+          VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT || 300000
         );
         const gasPerEpoch = Number(
-          ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_PER_EPOCH_GAS_LIMIT ||
+          VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_PER_EPOCH_GAS_LIMIT ||
             20000
         );
         const accFactor = await TEMPLE_STAKING.accumulationFactor();
@@ -1073,7 +1090,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         tokenQuantity,
         nonce,
         {
-          gasLimit: ENV_VARS.VITE_PUBLIC_CLAIM_GAS_LIMIT || 100000,
+          gasLimit: VITE_PUBLIC_CLAIM_GAS_LIMIT || 100000,
         }
       );
 
@@ -1095,7 +1112,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       const tx = await faithAirdrop.claim(index, address, amount, proof, {
-        gasLimit: ENV_VARS.VITE_PUBLIC_CLAIM_FAITH_GAS_LIMIT || 100000,
+        gasLimit: VITE_PUBLIC_CLAIM_FAITH_GAS_LIMIT || 100000,
       });
 
       return tx.wait();
@@ -1132,7 +1149,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const withdrawTXN = await lockedOGTempleContract.withdraw(
         lockedEntryIndex,
         {
-          gasLimit: ENV_VARS.VITE_PUBLIC_CLAIM_OGTEMPLE_GAS_LIMIT || 100000,
+          gasLimit: VITE_PUBLIC_CLAIM_OGTEMPLE_GAS_LIMIT || 100000,
         }
       );
 
@@ -1164,9 +1181,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       if (exitQueueData.claimableEpochs.length) {
         const baseCase =
-          ENV_VARS.VITE_PUBLIC_WITHDRAW_EPOCHS_BASE_GAS_LIMIT || 60000;
+          VITE_PUBLIC_WITHDRAW_EPOCHS_BASE_GAS_LIMIT || 60000;
         const perEpoch =
-          ENV_VARS.VITE_PUBLIC_WITHDRAW_EPOCHS_PER_EPOCH_GAS_LIMIT || 15000;
+          VITE_PUBLIC_WITHDRAW_EPOCHS_PER_EPOCH_GAS_LIMIT || 15000;
         const recommendedGas =
           Number(baseCase) +
           Number(perEpoch) * exitQueueData.claimableEpochs.length;
@@ -1230,9 +1247,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       if (claimableEpochs.length) {
         const baseCase =
-          ENV_VARS.VITE_PUBLIC_RESTAKE_EPOCHS_BASE_GAS_LIMIT || 175000;
+          VITE_PUBLIC_RESTAKE_EPOCHS_BASE_GAS_LIMIT || 175000;
         const perEpoch =
-          ENV_VARS.VITE_PUBLIC_RESTAKE_EPOCHS_PER_EPOCH_GAS_LIMIT || 20000;
+          VITE_PUBLIC_RESTAKE_EPOCHS_PER_EPOCH_GAS_LIMIT || 20000;
         const recommendedGas =
           Number(baseCase) + Number(perEpoch) * claimableEpochs.length;
 
@@ -1290,8 +1307,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         walletAddress,
         deadline,
         {
-          gasLimit:
-            ENV_VARS.VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT || 300000,
+          gasLimit: VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT || 300000,
         }
       );
       await buyTXN.wait();
@@ -1343,8 +1359,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         walletAddress,
         deadline,
         {
-          gasLimit:
-            ENV_VARS.VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
+          gasLimit: VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
         }
       );
       await sellTXN.wait();
@@ -1410,7 +1425,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         : balance;
 
       const stakeTXN = await TEMPLE_STAKING.stake(verifiedAmountToStake, {
-        gasLimit: ENV_VARS.VITE_PUBLIC_STAKE_GAS_LIMIT || 150000,
+        gasLimit: VITE_PUBLIC_STAKE_GAS_LIMIT || 150000,
       });
       await stakeTXN.wait();
 
@@ -1547,8 +1562,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const faithVerificationTXN = await DEVOTION.lockAndVerify(
         walletOGTEMPLE,
         {
-          gasLimit:
-            ENV_VARS.VITE_PUBLIC_DEVOTION_LOCK_AND_VERIFY_GAS_LIMIT || 250000,
+          gasLimit: VITE_PUBLIC_DEVOTION_LOCK_AND_VERIFY_GAS_LIMIT || 250000,
         }
       );
       await faithVerificationTXN.wait();
