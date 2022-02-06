@@ -148,8 +148,6 @@ export interface WalletState {
 
   clearRitual(ritualKind: RitualKind): void;
 
-  //verifyQuest(sandalWoodToken: string, ritualKind: RitualKind): void;
-
   inviteFriend(sandalWoodToken: string, ritualKind: RitualKind): void;
 
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
