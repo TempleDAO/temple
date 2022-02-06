@@ -32,7 +32,7 @@ import { formatNumber, formatNumberNoDecimals } from 'utils/formatter';
 
 import {
   TEMPLE_V2_PAIR_ADDRESS,
-  // TEMPLE_FAITH_ADDRESS,
+  TEMPLE_FAITH_ADDRESS,
   // OPENING_CEREMONY_ADDRESS,
   TREASURY_ADDRESS,
   TEMPLE_STAKING_ADDRESS,
@@ -161,4 +161,30 @@ export const getBalance = async (walletAddress: string, signerState: JsonRpcSign
     ogTemple: ogTemple >= 1 ? ogTemple : 0,
     ogTempleLockedClaimable: ogTempleLockedClaimable,
   };
-}
+};
+
+export const getFaith = async (
+  walletAddress: string,
+  signerState: JsonRpcSigner
+) => {
+  if (!walletAddress) {
+    throw new NoWalletAddressError();
+  }
+
+  const FAITH = new Faith__factory()
+    .attach(TEMPLE_FAITH_ADDRESS)
+    .connect(signerState);
+
+  const faithBalances = await FAITH.balances(walletAddress);
+  const totalSupply = await FAITH.totalSupply();
+  const totalFaithSupply = fromAtto(totalSupply);
+  const lifeTimeFaith = fromAtto(faithBalances.lifeTimeFaith);
+  const usableFaith = fromAtto(faithBalances.usableFaith);
+
+  return {
+    lifeTimeFaith: lifeTimeFaith,
+    usableFaith: usableFaith,
+    totalSupply: totalFaithSupply,
+    share: formatNumber((usableFaith * 100) / totalFaithSupply),
+  };
+};

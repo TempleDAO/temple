@@ -51,6 +51,7 @@ import {
   getCurrentEpoch,
   getExchangeRate,
   getBalance,
+  getFaith,
 } from './util';
 
 import {
@@ -493,24 +494,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     setTemplePrice(price);
   };
 
-  const getFaith = async () => {
-    if (walletAddress && signerState) {
-      const FAITH = new Faith__factory()
-        .attach(TEMPLE_FAITH_ADDRESS)
-        .connect(signerState);
-
-      const faithBalances = await FAITH.balances(walletAddress);
-      const totalSupply = await FAITH.totalSupply();
-      const totalFaithSupply = fromAtto(totalSupply);
-      const lifeTimeFaith = fromAtto(faithBalances.lifeTimeFaith);
-      const usableFaith = fromAtto(faithBalances.usableFaith);
-      setFaith({
-        lifeTimeFaith: lifeTimeFaith,
-        usableFaith: usableFaith,
-        totalSupply: totalFaithSupply,
-        share: formatNumber((usableFaith * 100) / totalFaithSupply),
-      });
+  const updateFaith = async () => {
+    if (!walletAddress || !signerState) {
+      return;
     }
+
+    const faith = await getFaith(walletAddress, signerState);
+    setFaith(faith);
   };
 
   /**
@@ -532,7 +522,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           updateCurrentEpoch(),
           updateExchangeRate(),
           updateBalance(),
-          getFaith(),
+          updateFaith(),
           getAllocation(),
           getLockedEntries(),
           getExitQueueData(),
