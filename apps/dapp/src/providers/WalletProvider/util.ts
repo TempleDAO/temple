@@ -35,11 +35,11 @@ import {
   // TEMPLE_FAITH_ADDRESS,
   // OPENING_CEREMONY_ADDRESS,
   TREASURY_ADDRESS,
-  // TEMPLE_STAKING_ADDRESS,
-  // STABLE_COIN_ADDRESS,
-  // LOCKED_OG_TEMPLE_ADDRESS,
-  // LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
-  // TEMPLE_ADDRESS,
+  TEMPLE_STAKING_ADDRESS,
+  STABLE_COIN_ADDRESS,
+  LOCKED_OG_TEMPLE_ADDRESS,
+  LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
+  TEMPLE_ADDRESS,
   // EXIT_QUEUE_ADDRESS,
   // ACCELERATED_EXIT_QUEUE_ADDRESS,
 } from './env';
@@ -91,3 +91,74 @@ export const getExchangeRate = async (
   const rate = fromAtto(temple) / fromAtto(stablec) / mintMultiple;
   return rate;
 };
+
+export const getBalance = async (walletAddress: string, signerState: JsonRpcSigner) => {
+  if (!walletAddress) {
+    throw new NoWalletAddressError();
+  }
+
+  const stableCoinContract = new ERC20__factory()
+    .attach(STABLE_COIN_ADDRESS)
+    .connect(signerState);
+
+  const ogLockedTemple = new LockedOGTempleDeprecated__factory()
+    .attach(LOCKED_OG_TEMPLE_ADDRESS)
+    .connect(signerState);
+
+  const OGTEMPLE_LOCKED_DEVOTION = new LockedOGTemple__factory()
+    .attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS)
+    .connect(signerState);
+
+  const templeStakingContract = new TempleStaking__factory()
+    .attach(TEMPLE_STAKING_ADDRESS)
+    .connect(signerState);
+
+  const OG_TEMPLE_CONTRACT = new OGTemple__factory()
+    .attach(await templeStakingContract.OG_TEMPLE())
+    .connect(signerState);
+
+  const templeContract = new TempleERC20Token__factory()
+    .attach(TEMPLE_ADDRESS)
+    .connect(signerState);
+
+  const stableCoinBalance: BigNumber = await stableCoinContract.balanceOf(
+    walletAddress
+  );
+
+  // get the locked OG temple
+  const lockedNum = (
+    await ogLockedTemple.numLocks(walletAddress)
+  ).toNumber();
+  let ogTempleLocked = 0;
+  let ogTempleLockedClaimable = 0;
+  const templeLockedPromises = [];
+  for (let i = 0; i < lockedNum; i++) {
+    templeLockedPromises.push(ogLockedTemple.locked(walletAddress, i));
+  }
+
+  const now = formatNumberNoDecimals(Date.now() / 1000);
+  const templeLocked = await Promise.all(templeLockedPromises);
+  templeLocked.map((x) => {
+    ogTempleLocked += fromAtto(x.BalanceOGTemple);
+    if (x.LockedUntilTimestamp.lte(BigNumber.from(now))) {
+      ogTempleLockedClaimable += fromAtto(x.BalanceOGTemple);
+    }
+  });
+
+  const ogTemple = fromAtto(
+    await OG_TEMPLE_CONTRACT.balanceOf(walletAddress)
+  );
+  const temple = fromAtto(await templeContract.balanceOf(walletAddress));
+
+  const lockedOGTempleEntry = await OGTEMPLE_LOCKED_DEVOTION.ogTempleLocked(
+    walletAddress
+  );
+
+  return {
+    stableCoin: fromAtto(stableCoinBalance),
+    temple: temple,
+    ogTempleLocked: ogTempleLocked + fromAtto(lockedOGTempleEntry.amount),
+    ogTemple: ogTemple >= 1 ? ogTemple : 0,
+    ogTempleLockedClaimable: ogTempleLockedClaimable,
+  };
+}
