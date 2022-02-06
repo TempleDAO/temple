@@ -34,7 +34,7 @@ import {
   TEMPLE_V2_PAIR_ADDRESS,
   // TEMPLE_FAITH_ADDRESS,
   // OPENING_CEREMONY_ADDRESS,
-  // TREASURY_ADDRESS,
+  TREASURY_ADDRESS,
   // TEMPLE_STAKING_ADDRESS,
   // STABLE_COIN_ADDRESS,
   // LOCKED_OG_TEMPLE_ADDRESS,
@@ -71,4 +71,23 @@ export const getCurrentEpoch = async (provider: JsonRpcProvider) => {
   const currentBlockTimestamp = (await provider.getBlock(blockNumber)).timestamp;
   // block timestamps are in seconds no ms
   return currentBlockTimestamp * 1000;
+};
+
+export const getExchangeRate = async (
+  walletAddress: string,
+  signerState: JsonRpcSigner
+) => {
+  if (!walletAddress) {
+    throw new NoWalletAddressError();
+  }
+
+  const treasury = new TempleTreasury__factory()
+    .attach(TREASURY_ADDRESS)
+    .connect(signerState);
+
+  const iv = await treasury.intrinsicValueRatio();
+  const { temple, stablec } = iv;
+  const mintMultiple = 6.0;
+  const rate = fromAtto(temple) / fromAtto(stablec) / mintMultiple;
+  return rate;
 };
