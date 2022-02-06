@@ -152,11 +152,11 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
                   <RightAlign>
                     <ProfileMetric
                       label={`lifetime`}
-                      value={`${faith.lifeTimeFaith}  ${FAITH_TOKEN}`}
+                      value={`${formatNumberWithCommas(faith.lifeTimeFaith)}  ${FAITH_TOKEN}`}
                     />
                     <ProfileMetric
                       label={`usable`}
-                      value={`${faith.usableFaith} ${FAITH_TOKEN}`}
+                      value={`${formatNumberWithCommas(faith.usableFaith)} ${FAITH_TOKEN}`}
                     />
                   </RightAlign>
                   <RightAlign>

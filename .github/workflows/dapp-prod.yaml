@@ -21,4 +21,4 @@ jobs:
           github-token: ${{ secrets.CI_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
           alias-domains: | #Optional
-            prod-temp.templedao.link
+            templedao.link
