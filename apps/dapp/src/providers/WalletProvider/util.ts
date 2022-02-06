@@ -33,7 +33,7 @@ import { formatNumber, formatNumberNoDecimals } from 'utils/formatter';
 import {
   TEMPLE_V2_PAIR_ADDRESS,
   TEMPLE_FAITH_ADDRESS,
-  // OPENING_CEREMONY_ADDRESS,
+  OPENING_CEREMONY_ADDRESS,
   TREASURY_ADDRESS,
   TEMPLE_STAKING_ADDRESS,
   STABLE_COIN_ADDRESS,
@@ -186,5 +186,35 @@ export const getFaith = async (
     usableFaith: usableFaith,
     totalSupply: totalFaithSupply,
     share: formatNumber((usableFaith * 100) / totalFaithSupply),
+  };
+};
+
+export const getAllocation = async (
+  walletAddress: string,
+  signerState: JsonRpcSigner,
+  ocTemplar: OpeningCeremonyUser
+) => {
+  if (!walletAddress) {
+    throw new NoWalletAddressError();
+  }
+
+  const openingCeremony = new OpeningCeremony__factory()
+    .attach(OPENING_CEREMONY_ADDRESS)
+    .connect(signerState);
+
+  const allocation: number = ocTemplar.isVerified
+    ? fromAtto(
+        await openingCeremony.maxSacrificableStablec(
+          ocTemplar.doublingIndexAtVerification
+        )
+      )
+    : ocTemplar.isGuest
+    ? 10000
+    : 0;
+
+  return {
+    amount: allocation - ocTemplar.totalSacrificedStablec,
+    //they can start right away once verified
+    startEpoch: 1,
   };
 };
