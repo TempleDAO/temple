@@ -41,6 +41,7 @@ import {
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumberNoDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
+import { NoWalletAddressError } from './errors';
 
 import {
   getTemplePrice,
@@ -498,7 +499,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   ) => {
     // pre-condition
     if (!walletAddress) {
-      throw new Error('precondition failed: No connected wallet');
+      throw new NoWalletAddressError();
     }
 
     const allowance = await token.allowance(walletAddress, spender);
