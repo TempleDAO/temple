@@ -45,6 +45,10 @@ import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
 
 import {
+  getTemplePrice,
+} from './util';
+
+import {
   OpeningCeremonyUser,
   WalletState,
   Balance,
@@ -514,16 +518,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const getTemplePrice = async () => {
-    if (walletAddress && signerState) {
-      const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory(
-        signerState
-      ).attach(TEMPLE_V2_PAIR_ADDRESS);
-
-      const { _reserve0, _reserve1 } =
-        await TEMPLE_UNISWAP_V2_PAIR.getReserves();
-      setTemplePrice(fromAtto(_reserve1) / fromAtto(_reserve0));
+  const updateTemplePrice = async () => {
+    if (!walletAddress || !signerState) {
+      return;
     }
+
+    const price = await getTemplePrice(walletAddress, signerState);
+    setTemplePrice(price);
   };
 
   const getFaith = async () => {
@@ -565,7 +566,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         // await getOCTemplar();
         // await getMaxInvitesPerVerifiedUser();
         await Promise.all([
-          getTemplePrice(),
+          updateTemplePrice(),
           getCurrentEpoch(),
           getExchangeRate(),
           getLockInPeriod(),
