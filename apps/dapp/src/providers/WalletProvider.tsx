@@ -737,14 +737,15 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .connect(signerState);
 
       const faithBalances = await FAITH.balances(walletAddress);
-      const totalSupply = (await FAITH.totalSupply()).toNumber();
+      const totalSupply = await FAITH.totalSupply();
+      const totalFaithSupply = fromAtto(totalSupply);
       const lifeTimeFaith = faithBalances.lifeTimeFaith.toNumber();
       const usableFaith = faithBalances.usableFaith.toNumber();
       setFaith({
         lifeTimeFaith: lifeTimeFaith,
         usableFaith: usableFaith,
-        totalSupply: totalSupply,
-        share: formatNumber((usableFaith * 100) / totalSupply),
+        totalSupply: totalFaithSupply,
+        share: formatNumber((usableFaith * 100) / totalFaithSupply),
       });
     }
   };

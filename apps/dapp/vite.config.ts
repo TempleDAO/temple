@@ -6,6 +6,9 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), legacy()],
+  build: {
+    sourcemap: process.env.VITE_ENV === 'development',
+  },
   resolve: {
     alias: {
       components: path.resolve(__dirname, 'src/components'),
