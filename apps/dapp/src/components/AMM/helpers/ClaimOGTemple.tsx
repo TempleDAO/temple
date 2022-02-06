@@ -1,7 +1,8 @@
 import dateFormat from 'dateformat';
 import React from 'react';
 import styled from 'styled-components';
-import { LockedEntry, OG_TEMPLE_TOKEN } from 'providers/WalletProvider';
+import { OG_TEMPLE_TOKEN } from 'providers/WalletProvider';
+import { LockedEntry } from 'providers/WalletProvider/types';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
 
