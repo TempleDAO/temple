@@ -6,11 +6,10 @@ import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import {
-  JoinQueueData,
   OG_TEMPLE_TOKEN,
-  RitualKind,
   useWallet,
 } from 'providers/WalletProvider';
+import { RitualKind, JoinQueueData } from 'providers/WalletProvider/types';
 import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import {

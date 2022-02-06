@@ -16,10 +16,10 @@ import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { BigNumber } from 'ethers';
 import {
   FAITH_TOKEN,
-  FaithBalance,
   OG_TEMPLE_TOKEN,
   useWallet,
 } from 'providers/WalletProvider';
+import { FaithBalance } from 'providers/WalletProvider/types';
 import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Devotion__factory } from 'types/typechain';
