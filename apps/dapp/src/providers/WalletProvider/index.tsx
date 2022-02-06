@@ -535,7 +535,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           updateTemplePrice(),
           updateCurrentEpoch(),
           updateExchangeRate(),
-          getLockInPeriod(),
           getBalance(),
           getFaith(),
           getAllocation(),
@@ -995,21 +994,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         );
       }
     }
-  };
-
-  //TODO: purge?
-  const getLockInPeriod = async () => {
-    // if (walletAddress && signerState) {
-    //   const presaleContract = new Presale__factory(signerState)
-    //       .attach(PRESALE_ADDRESS)
-    //
-    //   const unlockTimestamp = (await presaleContract.unlockTimestamp()).toNumber();
-    //   const now = Date.now();
-    //   const diff = unlockTimestamp - now;
-    //   // Transform ms to days
-    //   const lip = diff / 1000 / 60 / 60 / 24;
-    //   setLockInPeriod(Math.ceil(lip));
-    // }
   };
 
   const clearRitual = (ritualKind: RitualKind) => {
