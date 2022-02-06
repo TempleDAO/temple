@@ -50,6 +50,7 @@ import {
   getExchangeRate,
   getBalance,
   getFaith,
+  getAllocation,
 } from './util';
 
 import {
@@ -524,7 +525,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           updateExchangeRate(),
           updateBalance(),
           updateFaith(),
-          getAllocation(),
+          updateAllocation(),
           getLockedEntries(),
           getExitQueueData(),
           getApy(),
@@ -566,28 +567,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     setCurrentEpoch(epoch);
   };
 
-  const getAllocation = async (): Promise<void> => {
-    if (walletAddress && signerState && ocTemplar) {
-      const openingCeremony = new OpeningCeremony__factory(signerState).attach(
-        OPENING_CEREMONY_ADDRESS
-      );
-
-      const allocation: number = ocTemplar.isVerified
-        ? fromAtto(
-            await openingCeremony.maxSacrificableStablec(
-              ocTemplar.doublingIndexAtVerification
-            )
-          )
-        : ocTemplar.isGuest
-        ? 10000
-        : 0;
-
-      setAllocation({
-        amount: allocation - ocTemplar.totalSacrificedStablec,
-        //they can start right away once verified
-        startEpoch: 1,
-      });
+  const updateAllocation = async (): Promise<void> => {
+    if (!walletAddress || !signerState || !ocTemplar) {
+      return;
     }
+
+    const allocation = await getAllocation(walletAddress, signerState, ocTemplar);
+    setAllocation(allocation);
   };
 
   /**
