@@ -389,18 +389,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const getMaxInvitesPerVerifiedUser = async () => {
-    if (walletAddress && signerState) {
-      const openingCeremony = new OpeningCeremony__factory(signerState).attach(
-        OPENING_CEREMONY_ADDRESS
-      );
-
-      const ocMaxInvitesPerVerifiedUser =
-        await openingCeremony.maxInvitesPerVerifiedUser();
-      setMaxInvitesPerVerifiedUser(ocMaxInvitesPerVerifiedUser.toNumber());
-    }
-  };
-
   const getLockedEntries = async () => {
     if (walletAddress && signerState) {
       const ogLockedTemple = new LockedOGTempleDeprecated__factory(
