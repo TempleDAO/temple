@@ -356,3 +356,16 @@ export const getEpochsToDays = async (
 
   return formatNumber(epochsToDays);
 };
+
+export const getApy = async (walletAddress: string, signerState: JsonRpcSigner) => {
+  if (!walletAddress) {
+    throw new NoWalletAddressError();
+  }
+
+  const TEMPLE_STAKING = new TempleStaking__factory(signerState)
+    .attach(TEMPLE_STAKING_ADDRESS);
+
+  const SCALE_FACTOR = 10000;
+  const epy = (await TEMPLE_STAKING.getEpy(SCALE_FACTOR)).toNumber();
+  return Math.trunc((Math.pow(epy / SCALE_FACTOR + 1, 365.25) - 1) * 100);
+}

@@ -54,6 +54,7 @@ import {
   getLockedEntries,
   getExitQueueData,
   getEpochsToDays,
+  getApy,
 } from './util';
 
 import {
@@ -389,15 +390,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     setExitQueueData(exitQueueData);
   };
 
-  const getApy = async () => {
-    if (walletAddress && signerState) {
-      const TEMPLE_STAKING = new TempleStaking__factory(signerState).attach(
-        TEMPLE_STAKING_ADDRESS
-      );
-      const SCALE_FACTOR = 10000;
-      const epy = (await TEMPLE_STAKING.getEpy(SCALE_FACTOR)).toNumber();
-      setApy(Math.trunc((Math.pow(epy / SCALE_FACTOR + 1, 365.25) - 1) * 100));
+  const updateApy = async () => {
+    if (!walletAddress || !signerState) {
+      return;
     }
+
+    const apy = await getApy(walletAddress, signerState);
+    setApy(apy);
   };
 
   const updateTemplePrice = async () => {
@@ -441,7 +440,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           updateAllocation(),
           updateLockedEntries(),
           updateExitQueueData(),
-          getApy(),
+          updateApy(),
         ]);
 
         if (updateLoading) {
