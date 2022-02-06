@@ -60,7 +60,7 @@ export interface AccountMetrics {
 }
 
 const ENV_VARS = import.meta.env;
-const BACKEND_URL =  ENV_VARS.VITE_BACKEND_URL
+const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL;
 
 // Temple MintMultiple is fixed tp 6
 const MINT_MULTIPLE = 6.0;
@@ -138,6 +138,7 @@ export class MetricsService {
       ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS;
     const FARMING_WALLET_ADDRESS = ENV_VARS.VITE_PUBLIC_FARMING_WALLET_ADDRESS;
     const ENV = ENV_VARS.VITE_ENV;
+    const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL;
 
     this.provider =
       ENV === 'development'
@@ -425,7 +426,6 @@ export class MetricsService {
   };
 
   private getSocialMetrics = async () => {
-  
     const twitter_response = await axios({
       url: `${BACKEND_URL}/api/twitter/summary`,
     });
