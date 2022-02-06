@@ -1,32 +1,24 @@
 import {
   JsonRpcProvider,
   JsonRpcSigner,
-  Network,
 } from '@ethersproject/providers';
 
 import {
   AcceleratedExitQueue__factory,
-  AMMWhitelist__factory,
-  Devotion__factory,
-  ERC20,
   ERC20__factory,
   ExitQueue__factory,
-  FaithMerkleAirdrop__factory,
   Faith__factory,
   LockedOGTemple__factory,
   LockedOGTempleDeprecated__factory,
   OGTemple__factory,
   OpeningCeremony__factory,
-  TempleCashback__factory,
   TempleERC20Token__factory,
-  TempleFraxAMMRouter__factory,
   TempleStaking__factory,
-  TempleTeamPayments__factory,
   TempleTreasury__factory,
   TempleUniswapV2Pair__factory,
 } from 'types/typechain';
 
-import { BigNumber, ContractTransaction, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumber, formatNumberNoDecimals } from 'utils/formatter';
 
@@ -44,7 +36,7 @@ import {
   ACCELERATED_EXIT_QUEUE_ADDRESS,
 } from './env';
 
-import { OpeningCeremonyUser, Balance, LockedEntry } from './types';
+import { OpeningCeremonyUser, LockedEntry } from './types';
 
 import { NoWalletAddressError } from './errors';
 import { Nullable } from 'types/util';
@@ -381,4 +373,19 @@ export const getApy = async (walletAddress: string, signerState: JsonRpcSigner) 
   const SCALE_FACTOR = 10000;
   const epy = (await TEMPLE_STAKING.getEpy(SCALE_FACTOR)).toNumber();
   return Math.trunc((Math.pow(epy / SCALE_FACTOR + 1, 365.25) - 1) * 100);
-}
+};
+
+export const getRewardsForOGTemple = async (
+  walletAddress: string,
+  signerState: JsonRpcSigner,
+  ogtAmount: number
+) => {
+  if (!walletAddress) {
+    throw new NoWalletAddressError();
+  }
+
+  const STAKING = new TempleStaking__factory()
+    .attach(TEMPLE_STAKING_ADDRESS)
+    .connect(signerState);
+  return fromAtto(await STAKING.balance(toAtto(ogtAmount)));
+};
