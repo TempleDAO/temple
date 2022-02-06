@@ -53,6 +53,7 @@ import {
   getBalance,
   getFaith,
   getAllocation,
+  getLockedEntries,
 } from './util';
 
 import {
@@ -370,46 +371,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const getLockedEntries = async () => {
-    if (walletAddress && signerState) {
-      const ogLockedTemple = new LockedOGTempleDeprecated__factory()
-        .attach(LOCKED_OG_TEMPLE_ADDRESS)
-        .connect(signerState);
-
-      const lockedNum = (
-        await ogLockedTemple.numLocks(walletAddress)
-      ).toNumber();
-      const lockedEntriesPromises = [];
-      for (let i = 0; i < lockedNum; i++) {
-        lockedEntriesPromises.push(ogLockedTemple.locked(walletAddress, i));
-      }
-
-      const lockedEntries = await Promise.all(lockedEntriesPromises);
-      const lockedEntriesVals: Array<LockedEntry> = lockedEntries.map(
-        (entry, index) => {
-          return {
-            // chain timestamp is in second => we need milli
-            lockedUntilTimestamp: entry.LockedUntilTimestamp.toNumber() * 1000,
-            balanceOGTemple: fromAtto(entry.BalanceOGTemple),
-            index,
-          };
-        }
-      );
-
-      // get ogTempleLocked from new Contract
-      const ogLockedTempleNew = new LockedOGTemple__factory()
-        .attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS)
-        .connect(signerState);
-
-      const newEntry = await ogLockedTempleNew.ogTempleLocked(walletAddress);
-      lockedEntriesVals.push({
-        balanceOGTemple: fromAtto(newEntry.amount),
-        lockedUntilTimestamp: newEntry.lockedUntilTimestamp.toNumber() * 1000,
-        index: lockedEntriesVals.length,
-      });
-
-      setLockedEntries([...lockedEntriesVals]);
+  const updateLockedEntries = async () => {
+    if (!walletAddress || !signerState) {
+      return;
     }
+
+    const lockedEntries = await getLockedEntries(walletAddress, signerState);
+    setLockedEntries(lockedEntries);
   };
 
   const getExitQueueData = async () => {
@@ -525,7 +493,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           updateBalance(),
           updateFaith(),
           updateAllocation(),
-          getLockedEntries(),
+          updateLockedEntries(),
           getExitQueueData(),
           getApy(),
         ]);
