@@ -60,6 +60,7 @@ export interface AccountMetrics {
 }
 
 const ENV_VARS = import.meta.env;
+const BACKEND_URL =  ENV_VARS.VITE_BACKEND_URL
 
 // Temple MintMultiple is fixed tp 6
 const MINT_MULTIPLE = 6.0;
@@ -115,7 +116,7 @@ export class MetricsService {
       VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS}
       VITE_PUBLIC_FRAX3CRV_F_ADDRESS=${ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS}
       VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS=${ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS}
-      ENV_VARS.BACKEND_URL=${ENV_VARS.VITE_BACKEND_URL}
+      VITE_BACKEND_URL=${ENV_VARS.VITE_BACKEND_URL}
       `);
       //throw new Error(`Missing env vars in Metrics Service`);
     }
@@ -137,7 +138,6 @@ export class MetricsService {
       ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS;
     const FARMING_WALLET_ADDRESS = ENV_VARS.VITE_PUBLIC_FARMING_WALLET_ADDRESS;
     const ENV = ENV_VARS.VITE_ENV;
-    const BACKEND_URL =  ENV_VARS.VITE_BACKEND_URL
 
     this.provider =
       ENV === 'development'
