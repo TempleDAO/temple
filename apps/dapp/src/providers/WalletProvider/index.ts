@@ -59,6 +59,23 @@ import {
   RitualStatus,
 } from './types';
 
+import {
+  EXIT_QUEUE_ADDRESS,
+  AMM_WHITELIST_ADDRESS,
+  ACCELERATED_EXIT_QUEUE_ADDRESS,
+  LOCKED_OG_TEMPLE_ADDRESS,
+  TEMPLE_STAKING_ADDRESS,
+  OPENING_CEREMONY_ADDRESS,
+  TEMPLE_ADDRESS,
+  STABLE_COIN_ADDRESS,
+  TEMPLE_V2_ROUTER_ADDRESS,
+  FAITH_AIRDROP_ADDRESS,
+  TEMPLE_CASHBACK_ADDRESS,
+  TEMPLE_DEVOTION_ADDRESS,
+  LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
+  NEXT_PUBLIC_EXCHANGE_RATE_VALUE,
+} from './env';
+
 /* TODO: Move this to a common place */
 export const TEMPLE_TOKEN = '$TEMPLE';
 export const OG_TEMPLE_TOKEN = '$OGTEMPLE';
@@ -88,8 +105,8 @@ const INITIAL_STATE: WalletState = {
     share: 0,
   },
   // Fallback when user has not connected wallet, we can update this from Vercel and redeploy
-  exchangeRate: ENV_VARS.NEXT_PUBLIC_EXCHANGE_RATE_VALUE
-    ? +ENV_VARS.NEXT_PUBLIC_EXCHANGE_RATE_VALUE
+  exchangeRate: NEXT_PUBLIC_EXCHANGE_RATE_VALUE
+    ? +NEXT_PUBLIC_EXCHANGE_RATE_VALUE
     : 0.9,
   allocation: {
     amount: 0,
