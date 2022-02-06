@@ -27,6 +27,9 @@ export interface DiscordUser {
   roles: string[];
 }
 
+const ENV_VARS = import.meta.env;
+const backendUrl = ENV_VARS.VITE_BACKEND_URL
+
 const Account: CustomRoutingPage = ({ routingHelper }) => {
   const { back } = routingHelper;
 
@@ -43,7 +46,7 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
         return;
       }
       const response = await axios({
-        url: `https://temple-analytics.vercel.app/api/discord/members/${userId}`,
+        url: `${backendUrl}/api/discord/members/${userId}`,
       });
       setDiscordData(response?.data);
     };

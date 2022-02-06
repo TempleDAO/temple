@@ -96,7 +96,8 @@ export class MetricsService {
       ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS === undefined /*||
+      ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS === undefined ||
+      ENV_VARS.VITE_BACKEND_URL === undefined /*||
       ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS === undefined ||
       ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS*/
     ) {
@@ -114,6 +115,7 @@ export class MetricsService {
       VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS}
       VITE_PUBLIC_FRAX3CRV_F_ADDRESS=${ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS}
       VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS=${ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS}
+      ENV_VARS.BACKEND_URL=${ENV_VARS.VITE_BACKEND_URL}
       `);
       //throw new Error(`Missing env vars in Metrics Service`);
     }
@@ -135,6 +137,7 @@ export class MetricsService {
       ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS;
     const FARMING_WALLET_ADDRESS = ENV_VARS.VITE_PUBLIC_FARMING_WALLET_ADDRESS;
     const ENV = ENV_VARS.VITE_ENV;
+    const BACKEND_URL =  ENV_VARS.VITE_BACKEND_URL
 
     this.provider =
       ENV === 'development'
@@ -422,13 +425,14 @@ export class MetricsService {
   };
 
   private getSocialMetrics = async () => {
+  
     const twitter_response = await axios({
-      url: `https://temple-analytics.vercel.app/api/twitter/summary`,
+      url: `${BACKEND_URL}/api/twitter/summary`,
     });
     const twitter_followers_count = twitter_response?.data?.followers_count;
 
     const response = await axios({
-      url: `https://temple-analytics.vercel.app/api/discord/members/summary`,
+      url: `${BACKEND_URL}/api/discord/members/summary`,
     });
     const discord_metrics = response?.data;
 
