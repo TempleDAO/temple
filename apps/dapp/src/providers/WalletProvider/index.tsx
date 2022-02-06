@@ -368,29 +368,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  /**
-   * updates the Templar data from OC Contract
-   */
-  const getOCTemplar = async () => {
-    if (walletAddress && signerState) {
-      const openingCeremony = new OpeningCeremony__factory()
-        .attach(OPENING_CEREMONY_ADDRESS)
-        .connect(signerState);
-
-      const ocTemplarData = await openingCeremony.users(walletAddress);
-
-      setOcTemplar({
-        doublingIndexAtVerification:
-          ocTemplarData.doublingIndexAtVerification.toNumber(),
-        isGuest: ocTemplarData.isGuest,
-        isVerified: ocTemplarData.isVerified,
-        numInvited: ocTemplarData.numInvited,
-        totalSacrificedStablec: fromAtto(ocTemplarData.totalSacrificedStablec),
-        totalSacrificedTemple: fromAtto(ocTemplarData.totalSacrificedTemple),
-      });
-    }
-  };
-
   const getLockedEntries = async () => {
     if (walletAddress && signerState) {
       const ogLockedTemple = new LockedOGTempleDeprecated__factory()
