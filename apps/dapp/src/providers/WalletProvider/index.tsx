@@ -46,6 +46,7 @@ import { asyncNoop, noop } from 'utils/helpers';
 
 import {
   getTemplePrice,
+  getCurrentEpoch,
 } from './util';
 
 import {
@@ -563,11 +564,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const ethereum = window.ethereum;
       if (ethereum) {
         isConnected();
-        // await getOCTemplar();
-        // await getMaxInvitesPerVerifiedUser();
+
         await Promise.all([
           updateTemplePrice(),
-          getCurrentEpoch(),
+          updateCurrentEpoch(),
           getExchangeRate(),
           getLockInPeriod(),
           getBalance(),
@@ -673,14 +673,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const getCurrentEpoch = async (): Promise<void> => {
-    if (provider) {
-      const blockNumber = await provider.getBlockNumber();
-      const currentBlockTimestamp = (await provider.getBlock(blockNumber))
-        .timestamp;
-      // block timestamps are in seconds no ms
-      setCurrentEpoch(currentBlockTimestamp * 1000);
+  const updateCurrentEpoch = async (): Promise<void> => {
+    if (!provider) {
+      return;
     }
+
+    const epoch = await getCurrentEpoch(provider);
+    setCurrentEpoch(epoch);
   };
 
   const getAllocation = async (): Promise<void> => {

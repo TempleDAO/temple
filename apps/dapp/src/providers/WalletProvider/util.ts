@@ -65,3 +65,10 @@ export const getTemplePrice = async (
 
   return fromAtto(_reserve1) / fromAtto(_reserve0);
 };
+
+export const getCurrentEpoch = async (provider: JsonRpcProvider) => {
+  const blockNumber = await provider.getBlockNumber();
+  const currentBlockTimestamp = (await provider.getBlock(blockNumber)).timestamp;
+  // block timestamps are in seconds no ms
+  return currentBlockTimestamp * 1000;
+};
