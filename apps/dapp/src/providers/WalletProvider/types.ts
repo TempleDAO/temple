@@ -1,3 +1,12 @@
+import { JsonRpcSigner, Network } from '@ethersproject/providers';
+import { BigNumber, ContractTransaction } from 'ethers';
+import { ClaimType } from 'enums/claim-type';
+import { TransactionReceipt } from '@ethersproject/abstract-provider';
+import {
+  TEAM_PAYMENTS_EPOCHS,
+  TEAM_PAYMENTS_TYPES,
+} from 'enums/team-payment-type';
+
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
   OGT_UNLOCK = 'OGT_UNLOCK',
@@ -7,9 +16,9 @@ export enum RitualKind {
   INVITE_FRIEND = 'INVITE_FRIEND',
 }
 
-type COIN_TYPE = 'FRAX' | 'OGTEMPLE' | 'TEMPLE';
+export type COIN_TYPE = 'FRAX' | 'OGTEMPLE' | 'TEMPLE';
 
-enum ETH_ACTIONS {
+export enum ETH_ACTIONS {
   REQUEST_ACCOUNTS = 'eth_requestAccounts',
   REQUEST_PERMISSIONS = 'wallet_requestPermissions',
 }
@@ -43,7 +52,7 @@ export enum RitualStatus {
   FAILED,
 }
 
-type RitualMapping = Map<
+export type RitualMapping = Map<
   RitualKind,
   {
     completedBalanceApproval: RitualStatus;
@@ -54,7 +63,7 @@ type RitualMapping = Map<
   }
 >;
 
-interface OpeningCeremonyUser {
+export interface OpeningCeremonyUser {
   isVerified: boolean;
   isGuest: boolean;
   numInvited: number;
@@ -95,7 +104,7 @@ export interface FaithQuote {
   claimableFaith: number;
 }
 
-interface WalletState {
+export interface WalletState {
   // has the user connected a wallet to the dapp
   isConnected: boolean;
 
