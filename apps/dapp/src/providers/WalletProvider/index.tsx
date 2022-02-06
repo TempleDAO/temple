@@ -27,8 +27,6 @@ import {
   ERC20__factory,
   ExitQueue__factory,
   FaithMerkleAirdrop__factory,
-  Faith__factory,
-  LockedOGTemple__factory,
   LockedOGTempleDeprecated__factory,
   OGTemple__factory,
   OpeningCeremony__factory,
@@ -37,11 +35,13 @@ import {
   TempleFraxAMMRouter__factory,
   TempleStaking__factory,
   TempleTeamPayments__factory,
-  TempleTreasury__factory,
-  TempleUniswapV2Pair__factory,
 } from 'types/typechain';
 import { fromAtto, toAtto } from 'utils/bigNumber';
+<<<<<<< HEAD
 import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
+=======
+import { formatNumberNoDecimals } from 'utils/formatter';
+>>>>>>> d3a2604 (wip: move getRewardsForOGTemple to util, delete unused variables)
 import { asyncNoop, noop } from 'utils/helpers';
 
 import {
@@ -55,6 +55,7 @@ import {
   getExitQueueData,
   getEpochsToDays,
   getApy,
+  getRewardsForOGTemple,
 } from './util';
 
 import {
@@ -87,9 +88,6 @@ import {
   TEMPLE_DEVOTION_ADDRESS,
   LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
   NEXT_PUBLIC_EXCHANGE_RATE_VALUE,
-  TEMPLE_FAITH_ADDRESS,
-  TREASURY_ADDRESS,
-  TEMPLE_V2_PAIR_ADDRESS,
   VITE_PUBLIC_MINT_AND_STAKE_GAS_LIMIT,
   VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT,
   VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_PER_EPOCH_GAS_LIMIT,
@@ -931,12 +929,16 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const getRewardsForOGT = async (
     ogtAmount: number
   ): Promise<number | void> => {
-    if (walletAddress && signerState) {
-      const STAKING = new TempleStaking__factory(signerState).attach(
-        TEMPLE_STAKING_ADDRESS
-      );
-      return fromAtto(await STAKING.balance(toAtto(ogtAmount)));
+    if (!walletAddress || !signerState) {
+      return;
     }
+
+    const rewards = await getRewardsForOGTemple(
+      walletAddress,
+      signerState,
+      ogtAmount
+    );
+    return rewards;
   };
 
   const claimAvailableTemple = async (): Promise<void> => {
