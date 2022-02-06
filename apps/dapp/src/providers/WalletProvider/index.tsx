@@ -48,6 +48,7 @@ import {
   getTemplePrice,
   getCurrentEpoch,
   getExchangeRate,
+  getBalance,
 } from './util';
 
 import {
@@ -534,7 +535,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           updateTemplePrice(),
           updateCurrentEpoch(),
           updateExchangeRate(),
-          getBalance(),
+          updateBalance(),
           getFaith(),
           getAllocation(),
           getLockedEntries(),
@@ -549,74 +550,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const getBalance = async () => {
-    if (walletAddress && signerState) {
-      const stableCoinContract = new ERC20__factory(signerState).attach(
-        STABLE_COIN_ADDRESS
-      );
-
-      const ogLockedTemple = new LockedOGTempleDeprecated__factory(
-        signerState
-      ).attach(LOCKED_OG_TEMPLE_ADDRESS);
-
-      const OGTEMPLE_LOCKED_DEVOTION = new LockedOGTemple__factory(
-        signerState
-      ).attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS);
-
-      const templeStakingContract = new TempleStaking__factory(
-        signerState
-      ).attach(TEMPLE_STAKING_ADDRESS);
-
-      const OG_TEMPLE_CONTRACT = new OGTemple__factory(signerState).attach(
-        await templeStakingContract.OG_TEMPLE()
-      );
-
-      const templeContract = new TempleERC20Token__factory(signerState).attach(
-        TEMPLE_ADDRESS
-      );
-
-      const stableCoinBalance: BigNumber = await stableCoinContract.balanceOf(
-        walletAddress
-      );
-
-      // get the locked OG temple
-      const lockedNum = (
-        await ogLockedTemple.numLocks(walletAddress)
-      ).toNumber();
-      let ogTempleLocked = 0;
-      let ogTempleLockedClaimable = 0;
-      const templeLockedPromises = [];
-      for (let i = 0; i < lockedNum; i++) {
-        templeLockedPromises.push(ogLockedTemple.locked(walletAddress, i));
-      }
-
-      const now = formatNumberFixedDecimals(Date.now() / 1000, 0);
-      const templeLocked = await Promise.all(templeLockedPromises);
-      templeLocked.map((x) => {
-        ogTempleLocked += fromAtto(x.BalanceOGTemple);
-        if (x.LockedUntilTimestamp.lte(BigNumber.from(now))) {
-          ogTempleLockedClaimable += fromAtto(x.BalanceOGTemple);
-        }
-      });
-
-      const ogTemple = fromAtto(
-        await OG_TEMPLE_CONTRACT.balanceOf(walletAddress)
-      );
-      const temple = fromAtto(await templeContract.balanceOf(walletAddress));
-
-      const lockedOGTempleEntry = await OGTEMPLE_LOCKED_DEVOTION.ogTempleLocked(
-        walletAddress
-      );
-
-      const balance: Balance = {
-        stableCoin: fromAtto(stableCoinBalance),
-        temple: temple,
-        ogTempleLocked: ogTempleLocked + fromAtto(lockedOGTempleEntry.amount),
-        ogTemple: ogTemple >= 1 ? ogTemple : 0,
-        ogTempleLockedClaimable: ogTempleLockedClaimable,
-      };
-      setBalanceState(balance);
+  const updateBalance = async () => {
+    if (!walletAddress || !signerState) {
+      return;
     }
+
+    const balance = await getBalance(walletAddress, signerState);
+    setBalanceState(balance);
   };
 
   const updateExchangeRate = async (): Promise<void> => {
@@ -945,8 +885,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT || 300000
         );
         const gasPerEpoch = Number(
-          VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_PER_EPOCH_GAS_LIMIT ||
-            20000
+          VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_PER_EPOCH_GAS_LIMIT || 20000
         );
         const accFactor = await TEMPLE_STAKING.accumulationFactor();
         const maxPerEpoch = await EXIT_QUEUE.maxPerEpoch();
@@ -1123,8 +1062,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       ).attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
 
       if (exitQueueData.claimableEpochs.length) {
-        const baseCase =
-          VITE_PUBLIC_WITHDRAW_EPOCHS_BASE_GAS_LIMIT || 60000;
+        const baseCase = VITE_PUBLIC_WITHDRAW_EPOCHS_BASE_GAS_LIMIT || 60000;
         const perEpoch =
           VITE_PUBLIC_WITHDRAW_EPOCHS_PER_EPOCH_GAS_LIMIT || 15000;
         const recommendedGas =
@@ -1146,7 +1084,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           hash: withdrawTXN.hash,
         });
       }
-      getBalance();
+      updateBalance();
     }
   };
 
@@ -1189,8 +1127,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       }, BigNumber.from(0));
 
       if (claimableEpochs.length) {
-        const baseCase =
-          VITE_PUBLIC_RESTAKE_EPOCHS_BASE_GAS_LIMIT || 175000;
+        const baseCase = VITE_PUBLIC_RESTAKE_EPOCHS_BASE_GAS_LIMIT || 175000;
         const perEpoch =
           VITE_PUBLIC_RESTAKE_EPOCHS_PER_EPOCH_GAS_LIMIT || 20000;
         const recommendedGas =
@@ -1211,7 +1148,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           hash: restakeTXN.hash,
         });
       }
-      getBalance();
+      updateBalance();
     }
   };
 
@@ -1604,7 +1541,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         getJoinQueueData,
         getSellQuote,
         getBuyQuote,
-        getBalance,
+        getBalance: updateBalance,
         apy,
         restakeAvailableTemple,
         collectTempleTeamPayment,
