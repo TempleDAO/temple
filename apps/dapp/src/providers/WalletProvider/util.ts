@@ -40,8 +40,8 @@ import {
   LOCKED_OG_TEMPLE_ADDRESS,
   LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
   TEMPLE_ADDRESS,
-  // EXIT_QUEUE_ADDRESS,
-  // ACCELERATED_EXIT_QUEUE_ADDRESS,
+  EXIT_QUEUE_ADDRESS,
+  ACCELERATED_EXIT_QUEUE_ADDRESS,
 } from './env';
 
 import { OpeningCeremonyUser, Balance, LockedEntry } from './types';
@@ -251,4 +251,108 @@ export const getLockedEntries = async (walletAddress: string, signerState: JsonR
   });
 
   return lockedEntriesVals;
-}
+};
+
+export const getExitQueueData = async (walletAddress: string, signerState: JsonRpcSigner) => {
+  if (!walletAddress) {
+    throw new NoWalletAddressError();
+  }
+
+  const EXIT_QUEUE = new ExitQueue__factory(signerState)
+    .attach(EXIT_QUEUE_ADDRESS);
+
+  const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(signerState)
+    .attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
+
+  const userData = await EXIT_QUEUE.userData(walletAddress);
+  const totalTempleOwned = fromAtto(userData.Amount);
+
+  if (totalTempleOwned === 0) {
+    return {
+      lastClaimableEpochAt: 0,
+      claimableTemple: 0,
+      totalTempleOwned: 0,
+      claimableEpochs: [],
+    }
+  }
+
+  const currentEpoch = (
+    await ACCELERATED_EXIT_QUEUE.currentEpoch()
+  ).toNumber();
+  const firstEpoch = userData.FirstExitEpoch.toNumber();
+  const lastEpoch = userData.LastExitEpoch.toNumber();
+  const todayInMs = new Date().getTime();
+  const dayInMs = 8.64e7;
+  const daysUntilLastClaimableEpoch = await getEpochsToDays(
+    lastEpoch - currentEpoch + 1,
+    signerState
+  );
+  const lastClaimableEpochAt =
+    todayInMs + daysUntilLastClaimableEpoch * dayInMs;
+
+  const exitEntryPromises = [];
+
+  // stores all epochs address has in the ExitQueue.sol, some might have Allocation 0
+  const maybeClaimableEpochs: Array<number> = [];
+  // stores all epochs with allocations for address
+  const claimableEpochs: Array<number> = [];
+  for (let i = firstEpoch; i < currentEpoch; i++) {
+    maybeClaimableEpochs.push(i);
+    exitEntryPromises.push(
+      EXIT_QUEUE.currentEpochAllocation(walletAddress, i)
+    );
+  }
+
+  const exitEntries = await Promise.all(exitEntryPromises);
+  const claimableTemple: number = fromAtto(
+    exitEntries.reduce((prev, curr, index) => {
+      // the contract is not removing the user.Exits[epoch], so we only get the ones with a claimable amount(anything above 0)
+      if (fromAtto(curr) > 0) {
+        claimableEpochs.push(maybeClaimableEpochs[index]);
+      }
+      return prev.add(curr);
+    }, BigNumber.from(0))
+  );
+
+  return {
+    lastClaimableEpochAt,
+    claimableTemple,
+    totalTempleOwned,
+    claimableEpochs,
+  };
+};
+
+export const getEpochsToDays = async (
+  epochs: number,
+  signerState: Nullable<JsonRpcSigner>
+) => {
+  if (!signerState) {
+    return 0;
+  }
+
+  const EXIT_QUEUE = new ExitQueue__factory(signerState)
+    .attach(EXIT_QUEUE_ADDRESS);
+
+  const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(signerState)
+    .attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
+
+  const MAINNET_APROX_BLOCKS_PER_DAY = 6400;
+  const epochSizeInBlocks = (await EXIT_QUEUE.epochSize()).toNumber();
+  const epochsPerDay = MAINNET_APROX_BLOCKS_PER_DAY / epochSizeInBlocks;
+
+  const accelerationStartEpoch =
+    await ACCELERATED_EXIT_QUEUE.accelerationStartAtEpoch();
+  const currentEpoch = await ACCELERATED_EXIT_QUEUE.currentEpoch();
+
+  const epochsToDays = epochs / epochsPerDay;
+  // Calculate accelerated days
+  if (accelerationStartEpoch.lte(currentEpoch)) {
+    const num = await ACCELERATED_EXIT_QUEUE.epochAccelerationFactorNumerator();
+    const den =
+      await ACCELERATED_EXIT_QUEUE.epochAccelerationFactorDenominator();
+    const acceleratedDays = epochsToDays / (1 + num.div(den).toNumber());
+    return formatNumber(acceleratedDays);
+  }
+
+  return formatNumber(epochsToDays);
+};
