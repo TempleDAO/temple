@@ -47,6 +47,7 @@ import { asyncNoop, noop } from 'utils/helpers';
 import {
   getTemplePrice,
   getCurrentEpoch,
+  getExchangeRate,
 } from './util';
 
 import {
@@ -568,7 +569,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await Promise.all([
           updateTemplePrice(),
           updateCurrentEpoch(),
-          getExchangeRate(),
+          updateExchangeRate(),
           getLockInPeriod(),
           getBalance(),
           getFaith(),
@@ -655,21 +656,14 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const getExchangeRate = async (): Promise<void> => {
-    if (walletAddress && signerState) {
-      const treasury = new TempleTreasury__factory(signerState).attach(
-        TREASURY_ADDRESS
-      );
+  const updateExchangeRate = async (): Promise<void> => {
+    if (!walletAddress || !signerState) {
+      return;
+    }
 
-      const iv = await treasury.intrinsicValueRatio();
-      const { temple, stablec } = iv;
-      const mintMultiple = 6.0;
-      const rate = fromAtto(temple) / fromAtto(stablec) / mintMultiple;
-      // Only change the value if contract has valid data
-
-      if (rate > 0) {
-        setExchangeRateState(rate);
-      }
+    const rate = await getExchangeRate(walletAddress, signerState);
+    if (rate > 0) {
+      setExchangeRateState(rate);
     }
   };
 
