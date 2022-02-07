@@ -15,7 +15,7 @@ interface ITempleFraxAMMRouter {
 }
 
 interface ITempleStaking {
-  function stakeFor(address _staker, uint256 _amountTemple)
+  function stakeFor(address staker, uint256 amountTemple)
     external
     returns (uint256 amountOgTemple);
 }
@@ -27,19 +27,6 @@ interface DAI {
     uint256 nonce,
     uint256 expiry,
     bool allowed,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  ) external;
-}
-
-// TODO: Remove this
-interface Usdc {
-  function permit(
-    address owner,
-    address spender,
-    uint256 value,
-    uint256 deadline,
     uint8 v,
     bytes32 r,
     bytes32 s
@@ -63,7 +50,7 @@ contract TempleZaps is ZapBaseV2_2 {
   address public TEMPLE_FRAX_AMM_ROUTER =
     0x8A5058100E60e8F7C42305eb505B12785bbA3BcA;
 
-  mapping(address => bool) permitTokens;
+  mapping(address => bool) permittableTokens;
 
   struct DAIPermit {
     address holder;
@@ -85,8 +72,8 @@ contract TempleZaps is ZapBaseV2_2 {
     // 0x: Exchange Proxy
     approvedTargets[0xDef1C0ded9bec7F1a1670819833240f027b25EfF] = true;
     dai = DAI(DAI_ADDR);
-    permitTokens[USDC_ADDR] = true;
-    permitTokens[UNI_ADDR] = true;
+    permittableTokens[USDC_ADDR] = true;
+    permittableTokens[UNI_ADDR] = true;
   }
 
   /**
@@ -164,12 +151,35 @@ contract TempleZaps is ZapBaseV2_2 {
     bytes32 r,
     bytes32 s
   ) external whenNotPaused returns (uint256 amountOGTemple) {
-    require(permitTokens[fromToken], 'TZ: token not allowed');
+    require(permittableTokens[fromToken], 'TZ: token not allowed');
 
     ERC20 token = ERC20(fromToken);
     token.permit(msg.sender, address(this), fromAmount, deadline, v, r, s);
-
     return zapIn(fromToken, fromAmount, minTempleReceived, swapTarget, swapData);
+  }
+
+  // TODO: REMOVE THIS
+  function REMOVE_THIS_permitUSDC(
+    address fromToken,
+    uint256 fromAmount,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external whenNotPaused returns (uint256 amountOGTemple) {
+    ERC20 token = ERC20(fromToken);
+
+    console.log('fromToken', fromToken);
+    console.log('owner', msg.sender);
+    console.log('spender', address(this));
+    console.log('value', fromAmount);
+    console.log('deadline', deadline);
+    console.log('v', v);
+    console.logBytes32(r);
+    console.logBytes32(s);
+
+    token.permit(msg.sender, address(this), fromAmount, deadline, v, r, s);
+    return 1;
   }
 
   function _enterTemple(uint256 amountFRAX, uint256 minTempleReceived)

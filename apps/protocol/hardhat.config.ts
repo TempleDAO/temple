@@ -53,6 +53,15 @@ module.exports = {
           },
         },
       },
+      {
+        version: "0.6.12",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 999999,
+          }
+        },
+      },
     ],
   },
   typechain: {
@@ -70,7 +79,7 @@ module.exports = {
     hardhat: {
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-        blockNumber: 14118614,
+        blockNumber: 14159700,
       }
     },
     mainnet: {
