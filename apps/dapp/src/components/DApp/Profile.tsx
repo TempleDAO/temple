@@ -2,7 +2,7 @@
 import React, { FC } from 'react';
 import styled from 'styled-components';
 import { DataCard } from 'components/DataCard/DataCard';
-import { formatNumberWithCommas } from 'utils/formatter';
+import { formatNumber, formatNumberWithCommas } from 'utils/formatter';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
 import { Flex } from 'components/Layout/Flex';
 import {
@@ -107,20 +107,26 @@ export const Profile: FC = () => {
       >
         <Flex layout={{ kind: 'item' }}>
           <DataCard
-            title={`USABLE FAITH`}
-            data={`${faith.usableFaith} ${FAITH_TOKEN}`}
+            title={`USABLE ${FAITH_TOKEN}`}
+            data={`${formatNumberWithCommas(faith.usableFaith)} ${FAITH_TOKEN}`}
             small
           />
         </Flex>
         <Flex layout={{ kind: 'item' }}>
           <DataCard
-            title={`LIFETIME FAITH`}
-            data={`${faith.lifeTimeFaith}  ${FAITH_TOKEN}`}
+            title={`LIFETIME ${FAITH_TOKEN}`}
+            data={`${formatNumberWithCommas(
+              faith.lifeTimeFaith
+            )}  ${FAITH_TOKEN}`}
             small
           />
         </Flex>
         <Flex layout={{ kind: 'item' }}>
-          <DataCard title={`FAITH SHARE`} data={`${faith.share}%`} small />
+          <DataCard
+            title={`${FAITH_TOKEN} SHARE`}
+            data={`${faith.share}%`}
+            small
+          />
         </Flex>
       </Flex>
     </Container>
