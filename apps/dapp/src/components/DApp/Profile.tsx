@@ -27,7 +27,6 @@ export const Profile: FC = () => {
         layout={{
           kind: 'container',
           direction: 'row',
-          justifyContent: 'left',
         }}
       >
         <Flex layout={{ kind: 'item' }}>
@@ -46,7 +45,6 @@ export const Profile: FC = () => {
         layout={{
           kind: 'container',
           direction: 'row',
-          justifyContent: 'left',
         }}
       >
         <Flex layout={{ kind: 'item' }}>
@@ -76,7 +74,6 @@ export const Profile: FC = () => {
         layout={{
           kind: 'container',
           direction: 'row',
-          justifyContent: 'left',
         }}
       >
         <Flex layout={{ kind: 'item' }}>
@@ -106,7 +103,6 @@ export const Profile: FC = () => {
         layout={{
           kind: 'container',
           direction: 'row',
-          justifyContent: 'left',
         }}
       >
         <Flex layout={{ kind: 'item' }}>
@@ -133,4 +129,5 @@ export const Profile: FC = () => {
 
 const Container = styled(Flex)`
   width: 90%;
+  height: 0;
 `;
