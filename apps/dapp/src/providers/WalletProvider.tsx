@@ -639,7 +639,12 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         index: lockedEntriesVals.length,
       });
 
-      setLockedEntries([...lockedEntriesVals]);
+      // new contract can contain entries with all 0 values, so we need to filter them
+      setLockedEntries(
+        [...lockedEntriesVals].filter(
+          (entry) => entry.lockedUntilTimestamp !== 0
+        )
+      );
     }
   };
 

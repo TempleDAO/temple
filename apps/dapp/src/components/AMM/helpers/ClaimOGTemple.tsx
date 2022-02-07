@@ -37,7 +37,7 @@ const ClaimOGTemple = ({ lockedEntries, onClaim }: ClaimOGTempleProps) => {
                 }}
               >
                 <strong className={'color-dark'}>
-                  ${OG_TEMPLE_TOKEN} AMOUNT
+                  {OG_TEMPLE_TOKEN} AMOUNT
                 </strong>
               </Flex>
             </Flex>
