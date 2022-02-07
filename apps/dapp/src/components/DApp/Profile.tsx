@@ -2,7 +2,7 @@
 import React, { FC } from 'react';
 import styled from 'styled-components';
 import { DataCard } from 'components/DataCard/DataCard';
-import { formatNumber, formatNumberWithCommas } from 'utils/formatter';
+import { formatNumberWithCommas } from 'utils/formatter';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
 import { Flex } from 'components/Layout/Flex';
 import {
