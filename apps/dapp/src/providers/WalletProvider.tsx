@@ -742,9 +742,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const lifeTimeFaith = fromAtto(faithBalances.lifeTimeFaith);
       const usableFaith = fromAtto(faithBalances.usableFaith);
       setFaith({
-        lifeTimeFaith: lifeTimeFaith,
-        usableFaith: usableFaith,
-        totalSupply: totalFaithSupply,
+        lifeTimeFaith: formatNumber(lifeTimeFaith),
+        usableFaith: formatNumber(usableFaith),
+        totalSupply: formatNumber(totalFaithSupply),
         share: formatNumber((usableFaith * 100) / totalFaithSupply),
       });
     }
