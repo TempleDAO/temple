@@ -276,10 +276,10 @@ async function main() {
   await mineNBlocks(3);
   await devotion.connect(account1);
   // lock verify account1 OGT
-  const DEVOTION = new Devotion__factory()
+  const DEVOTION = new Devotion__factory(owner)
     .attach(devotion.address)
     .connect(account1);
-  const OG_TEMPLE = new OGTemple__factory()
+  const OG_TEMPLE = new OGTemple__factory(owner)
     .attach(await templeStaking.OG_TEMPLE())
     .connect(account1);
   await OG_TEMPLE.approve(devotion.address, toAtto(1000000));
