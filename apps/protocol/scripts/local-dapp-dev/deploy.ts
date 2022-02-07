@@ -276,13 +276,13 @@ async function main() {
   await mineNBlocks(3);
   await devotion.connect(account1);
   // lock verify account1 OGT
-  const DEVOTION = new Devotion__factory()
+  const DEVOTION = new Devotion__factory(owner)
     .attach(devotion.address)
     .connect(account1);
-  const OG_TEMPLE = new OGTemple__factory()
+  const OG_TEMPLE = new OGTemple__factory(owner)
     .attach(await templeStaking.OG_TEMPLE())
     .connect(account1);
-  await OG_TEMPLE.approve(devotion.address, toAtto(1000000));
+  await OG_TEMPLE.approve(lockedOgTemple_new.address, toAtto(1000000));
   const amountOGTemple1 = await ogTempleToken.balanceOf(account1.address);
   console.info(`amountOGTemple1: ${fromAtto(amountOGTemple1)}`);
   await DEVOTION.lockAndVerify(amountOGTemple1);
@@ -310,7 +310,7 @@ async function main() {
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
     TEMPLE_DEVOTION: devotion.address,
     TEMPLE_FAITH_ADDRESS: faith.address,
-    LOCKED_OG_TEMPLE_DEVOTION_ADDRESS: OG_TEMPLE.address,
+    LOCKED_OG_TEMPLE_DEVOTION_ADDRESS: lockedOgTemple_new.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys
