@@ -51,7 +51,7 @@
     "hardhat:mainnet": "hardhat --network mainnet",
     "hardhat:matic": "hardhat --network matic",
     "local-metrics": "hardhat run --network localhost scripts/metrics.ts",
-    "local-fork": "hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/WSZBeCmhwfAIs0CSoM_pBxi-DbsliQCe --fork-block-number 14159700"
+    "local-fork": "hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/WSZBeCmhwfAIs0CSoM_pBxi-DbsliQCe --fork-block-number 14167662"
   },
   "engines": {
     "node": "14.x"

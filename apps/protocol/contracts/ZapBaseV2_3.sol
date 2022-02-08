@@ -11,11 +11,10 @@ interface IWETH {
   function withdraw(uint256 wad) external;
 }
 
-abstract contract ZapBaseV2_2 is Ownable {
+abstract contract ZapBaseV2_3 is Ownable {
   bool public paused;
 
-  address private constant wethTokenAddress =
-    0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+  address private constant wethTokenAddress = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
   // swapTarget => approval status
   mapping(address => bool) public approvedTargets;

@@ -5,13 +5,8 @@ import axios from 'axios';
 import { signDaiPermit, signERC2612Permit } from 'eth-permit';
 
 import FakeERC20 from '../artifacts/contracts/fakes/FakeERC20.sol/FakeERC20.json';
-import USDCToken from '../artifacts/contracts/fakes/USDC.sol/FiatTokenV2_1.json';
-import {
-  TempleZaps,
-  TempleZaps__factory,
-  FiatTokenV21,
-  FiatTokenV21__factory,
-} from '../typechain';
+import FakeUSDC from '../artifacts/contracts/fakes/FakeUSDC.sol/FiatTokenV2_1.json';
+import { TempleZaps, TempleZaps__factory } from '../typechain';
 import { shouldThrow, getBalance } from './helpers';
 import addresses from './libs/constants';
 
@@ -22,13 +17,12 @@ const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
 const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
 
 const { OG_TEMPLE } = addresses.temple;
-const { WETH, USDC, DAI, FRAX, ETH } = addresses.tokens;
+const { WETH, UNI, USDC, DAI, FRAX, ETH } = addresses.tokens;
 
 const NOT_OWNER = /Ownable: caller is not the owner/;
 const PAUSED = /Paused/;
 
 let TEMPLE_ZAPS: TempleZaps;
-let FAKE_USDC: FiatTokenV21;
 let owner: Signer;
 let alice: Signer;
 let binanceSigner: Signer;
@@ -49,24 +43,6 @@ describe('TempleZaps', async () => {
     aliceAddress = await alice.getAddress();
 
     TEMPLE_ZAPS = await new TempleZaps__factory(owner).deploy();
-
-    FAKE_USDC = await new FiatTokenV21__factory(owner).deploy();
-    await FAKE_USDC.initialize(
-      'USDC',
-      'USDC',
-      'USDC',
-      6,
-      ownerAddress,
-      ownerAddress,
-      ownerAddress,
-      ownerAddress
-    );
-    await FAKE_USDC.initializeV2('USDC');
-    await FAKE_USDC.configureMinter(
-      ownerAddress,
-      ethers.utils.parseUnits('100000', 6)
-    );
-    await FAKE_USDC.mint(ownerAddress, ethers.utils.parseUnits('100000', 6));
   });
 
   describe('Deployment', function () {
@@ -77,6 +53,11 @@ describe('TempleZaps', async () => {
     it('should have 0x exchange proxy as an approved target', async () => {
       expect(await TEMPLE_ZAPS.approvedTargets(ZEROEX_EXCHANGE_PROXY)).to.be
         .true;
+    });
+
+    it('should set permittable tokens UNI and USDC', async () => {
+      expect(await TEMPLE_ZAPS.permittableTokens(UNI)).to.be.true;
+      expect(await TEMPLE_ZAPS.permittableTokens(USDC)).to.be.true;
     });
   });
 
@@ -159,10 +140,54 @@ describe('TempleZaps', async () => {
     });
 
     it('should zap with permit USDC to OGTemple', async () => {
-      const tokenAddr = FAKE_USDC.address;
+      const tokenAddr = USDC;
       const tokenAmount = '5000';
+      const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
 
-      await testUSDCPermit(owner, TEMPLE_ZAPS, tokenAddr, tokenAmount);
+      // send some USDC from binance8 to alice (impersonated accounts don't work with permit signing)
+      const tokenContract = new ethers.Contract(
+        tokenAddr,
+        FakeERC20.abi,
+        binanceSigner
+      );
+
+      const decimals = await tokenContract.decimals();
+      const amount = ethers.utils.parseUnits(tokenAmount, decimals).toString();
+      await tokenContract.approve(aliceAddress, amount);
+      await tokenContract.transfer(aliceAddress, amount);
+
+      await zapWithPermit(
+        alice,
+        TEMPLE_ZAPS,
+        tokenAddr,
+        tokenAmount,
+        minTempleReceived
+      );
+    });
+
+    it('should zap with permit DAI to OGTemple', async () => {
+      const tokenAddr = DAI;
+      const tokenAmount = '5000';
+      const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
+
+      const tokenContract = new ethers.Contract(
+        tokenAddr,
+        FakeERC20.abi,
+        daiSigner
+      );
+
+      const decimals = await tokenContract.decimals();
+      const amount = ethers.utils.parseUnits(tokenAmount, decimals).toString();
+      await tokenContract.approve(aliceAddress, amount);
+      await tokenContract.transfer(aliceAddress, amount);
+
+      await zapWithPermit(
+        alice,
+        TEMPLE_ZAPS,
+        tokenAddr,
+        tokenAmount,
+        minTempleReceived
+      );
     });
   });
 
@@ -253,7 +278,7 @@ describe('TempleZaps', async () => {
         expect(await TEMPLE_ZAPS.owner()).to.equal(aliceAddress);
       });
 
-      it('should update addresses', async () => {
+      it('should update Temple contracts', async () => {
         const ownerConnect = TEMPLE_ZAPS.connect(owner);
 
         await ownerConnect.updateTemple(ethers.constants.AddressZero);
@@ -282,6 +307,13 @@ describe('TempleZaps', async () => {
         const isApproved = [true];
         await TEMPLE_ZAPS.setApprovedTargets(targets, isApproved);
         expect(await TEMPLE_ZAPS.approvedTargets(targets[0])).to.be.true;
+      });
+
+      it('should set permittable tokens', async () => {
+        await TEMPLE_ZAPS.setPermittableToken(WETH, true);
+        expect(await TEMPLE_ZAPS.permittableTokens(WETH)).to.be.true;
+        await TEMPLE_ZAPS.setPermittableToken(WETH, false);
+        expect(await TEMPLE_ZAPS.permittableTokens(WETH)).to.be.false;
       });
     });
   });
@@ -350,7 +382,7 @@ async function zapIn(
   const zapsConnect = zaps.connect(signer);
   const overrides: { value?: BigNumber } = {};
   if (tokenAddr === ETH) {
-    overrides.value = ethers.utils.parseEther("1");
+    overrides.value = ethers.utils.parseEther(tokenAmount);
   }
 
   if (tokenAddr === FRAX) {
@@ -374,52 +406,97 @@ async function zapIn(
   expect(balanceAfter.gt(balanceBefore)).to.be.true;
 }
 
-async function testUSDCPermit(
+async function zapWithPermit(
   signer: Signer,
   zaps: TempleZaps,
   tokenAddr: string,
-  tokenAmount: string
+  tokenAmount: string,
+  minTempleReceived: string
 ) {
-  const tokenContract = new ethers.Contract(tokenAddr, USDCToken.abi, signer);
+  const tokenContract = new ethers.Contract(tokenAddr, FakeUSDC.abi, signer);
   const signerAddress = await signer.getAddress();
 
+  const symbol = await tokenContract.symbol();
+  const sellToken = tokenAddr;
   const decimals = await tokenContract.decimals();
 
   const zapsConnect = zaps.connect(signer);
   const permitDomain = {
     name: await tokenContract.name(),
     version: await tokenContract.version(),
-    chainId: (await ethers.provider.getNetwork()).chainId,
+    chainId: 1, // don't use (await ethers.provider.getNetwork()).chainId on forked mainnet
     verifyingContract: tokenAddr,
   };
-  console.log('permitDomain', permitDomain);
+  // console.log('permitDomain', permitDomain);
   const sellAmount = ethers.utils.parseUnits(tokenAmount, decimals).toString();
 
-  expect(
-    await tokenContract.allowance(signerAddress, TEMPLE_ZAPS.address)
-  ).to.be.equal('0');
-
-  const signature = await signERC2612Permit(
-    owner.provider,
-    permitDomain,
-    signerAddress,
-    TEMPLE_ZAPS.address,
-    sellAmount
+  const balanceBefore = await getBalance(OG_TEMPLE, signerAddress);
+  console.log(
+    `Starting OGTemple: ${ethers.utils.formatUnits(balanceBefore, 18)}`
   );
 
-  const { deadline, v, r, s } = signature;
-  console.log('signature', signature);
-  await zapsConnect.REMOVE_THIS_permitUSDC(
-    tokenAddr,
-    sellAmount,
-    deadline,
-    v,
-    r,
-    s
-  );
+  // Get quote from 0x API
+  let swapCallData, price, guaranteedPrice, gas, estimatedGas;
+
+  const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${FRAX}`;
+  const response = await axios.get(url);
+  ({
+    data: { data: swapCallData, price, guaranteedPrice, gas, estimatedGas },
+  } = response);
+
+  console.log(`Price of ${symbol} in FRAX: ${price}`);
+  console.log(`Guaranteed price: ${guaranteedPrice}`);
+
+  // Confirm allowance is 0 so we know permit actually increased allowance
   expect(
     await tokenContract.allowance(signerAddress, TEMPLE_ZAPS.address)
-  ).to.be.equal(sellAmount);
+  ).to.be.equal(0);
+
+  if (tokenAddr === DAI) {
+    const { nonce, expiry, v, r, s } = await signDaiPermit(
+      owner.provider,
+      permitDomain,
+      signerAddress,
+      TEMPLE_ZAPS.address
+    );
+
+    await zapsConnect.zapInDAIWithPermit(
+      sellAmount,
+      minTempleReceived,
+      ZEROEX_EXCHANGE_PROXY,
+      swapCallData,
+      nonce,
+      expiry,
+      v,
+      r,
+      s
+    );
+  } else {
+    const { deadline, v, r, s } = await signERC2612Permit(
+      owner.provider,
+      permitDomain,
+      signerAddress,
+      TEMPLE_ZAPS.address,
+      sellAmount
+    );
+
+    await zapsConnect.zapInWithPermit(
+      tokenAddr,
+      sellAmount,
+      minTempleReceived,
+      ZEROEX_EXCHANGE_PROXY,
+      swapCallData,
+      deadline,
+      v,
+      r,
+      s
+    );
+  }
+
+  const balanceAfter = await getBalance(OG_TEMPLE, signerAddress);
+  console.log(`Ending OGTemple: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
+
+  expect(balanceAfter.gt(balanceBefore)).to.be.true;
 }
 
 async function impersonateAddress(address: string) {
@@ -437,7 +514,7 @@ async function resetFork() {
       {
         forking: {
           jsonRpcUrl: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-          blockNumber: 14159700,
+          blockNumber: 14167662,
         },
       },
     ],

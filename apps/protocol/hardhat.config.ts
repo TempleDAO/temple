@@ -45,7 +45,16 @@ module.exports = {
         },
       },
       {
-        version: '0.6.6',
+        version: "0.5.12", // for fakes/DAI.sol
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 999999,
+          }
+        },
+      },
+      {
+        version: "0.6.6",
         settings: {
           optimizer: {
             enabled: true,
@@ -54,7 +63,7 @@ module.exports = {
         },
       },
       {
-        version: "0.6.12",
+        version: "0.6.12", // for fakes/USDC.sol
         settings: {
           optimizer: {
             enabled: true,
@@ -79,7 +88,7 @@ module.exports = {
     hardhat: {
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-        blockNumber: 14159700,
+        blockNumber: 14167662,
       }
     },
     mainnet: {
