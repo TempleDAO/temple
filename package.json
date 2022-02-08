@@ -8,8 +8,7 @@
       "tools/*"
     ],
     "nohoist": [
-      "**/hardhat",
-      "**/@typechain/ethers-v5"
+      "**/hardhat"
     ]
   },
   "scripts": {
