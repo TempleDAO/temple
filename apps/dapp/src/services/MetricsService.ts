@@ -138,6 +138,7 @@ export class MetricsService {
       ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS;
     const FARMING_WALLET_ADDRESS = ENV_VARS.VITE_PUBLIC_FARMING_WALLET_ADDRESS;
     const ENV = ENV_VARS.VITE_ENV;
+    const BACKEND_URL =  ENV_VARS.VITE_BACKEND_URL
 
     this.provider =
       ENV === 'development'
