@@ -1,7 +1,7 @@
-import "@nomiclabs/hardhat-ethers";
-import { BigNumber } from "ethers";
-import { ethers } from "hardhat";
-import { blockTimestamp, mineNBlocks } from "../../test/helpers";
+import '@nomiclabs/hardhat-ethers';
+import { BigNumber } from 'ethers';
+import { ethers } from 'hardhat';
+import { blockTimestamp, mineNBlocks } from '../../test/helpers';
 import {
   Devotion__factory,
   AMMWhitelist__factory,
@@ -22,7 +22,7 @@ import {
   TreasuryManagementProxy__factory,
   AcceleratedExitQueue,
   AcceleratedExitQueue__factory,
-} from "../../typechain";
+} from '../../typechain';
 
 function toAtto(n: number) {
   return BigNumber.from(10).pow(18).mul(n);
@@ -61,8 +61,8 @@ async function main() {
   );
 
   const stablecToken = await new FakeERC20__factory(owner).deploy(
-    "FRAX",
-    "FRAX"
+    'FRAX',
+    'FRAX'
   );
   const treasury = await new TempleTreasury__factory(owner).deploy(
     templeToken.address,
@@ -308,7 +308,7 @@ async function main() {
     TEMPLE_V2_ROUTER_ADDRESS: templeRouter.address,
     TEMPLE_ROUTER_WHITELIST: ammWhitelist.address,
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
-    TEMPLE_DEVOTION: devotion.address,
+    TEMPLE_DEVOTION_ADDRESS: devotion.address,
     TEMPLE_FAITH_ADDRESS: faith.address,
     LOCKED_OG_TEMPLE_DEVOTION_ADDRESS: lockedOgTemple_new.address,
 
@@ -319,16 +319,16 @@ async function main() {
   };
 
   console.log();
-  console.log("=========================================");
-  console.log("*** Copy/pasta into .env.local for dApp dev\n\n");
+  console.log('=========================================');
+  console.log('*** Copy/pasta into .env.local for dApp dev\n\n');
   for (const envvar in contract_address) {
     console.log(`VITE_PUBLIC_${envvar}=${contract_address[envvar]}`);
   }
 
   console.log();
-  console.log("=========================================");
+  console.log('=========================================');
   console.log(
-    "*** Copy/pasta into terminal to use with scripts like metrics/test-temple interactions etc\n\n"
+    '*** Copy/pasta into terminal to use with scripts like metrics/test-temple interactions etc\n\n'
   );
   for (const envvar in contract_address) {
     console.log(`EXPORT ${envvar}=${contract_address[envvar]}`);
