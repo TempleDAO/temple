@@ -18,6 +18,7 @@ export interface DeployedContracts {
   OPENING_CEREMONY_VERIFIER: string,
 
   TEMPLE_TEAM_FIXED_PAYMENTS: string,
+  TEMPLE_TEAM_EPOCH_2: string,
   TEMPLE_TEAM_CONTIGENT_PAYMENTS: string,
   TEMPLE_V2_PAIR: string,
   TEMPLE_V2_ROUTER: string,
@@ -71,6 +72,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     // multisig. Test on rinkeby before doing the same on mainnet
     TREASURY_MANAGEMENT: '0xB9A7F07f5D0ea3AFa454486cffe39ceFec8e136C',
     TEMPLE_TEAM_FIXED_PAYMENTS: '',
+    TEMPLE_TEAM_EPOCH_2: '',
     TEMPLE_TEAM_CONTIGENT_PAYMENTS: '',
     TEMPLE_V2_PAIR: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
     TEMPLE_V2_ROUTER: '0xb50341AF85763d2D997F4ba764EbBdfAeeC0E07d',
@@ -111,6 +113,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     // NOTE: Probably better to just migrate treasury instead
     TREASURY_MANAGEMENT: '0x20bEB455c3b7b0D84091b84c25f51Bc002d92f05', // currently unused
     TEMPLE_TEAM_FIXED_PAYMENTS: '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
+    TEMPLE_TEAM_EPOCH_2: '0xe0Aafcf26576a53Cbec99481607FB53384909C36',
     TEMPLE_TEAM_CONTIGENT_PAYMENTS: '',
     TEMPLE_V2_PAIR: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
     TEMPLE_V2_ROUTER: '0x8A5058100E60e8F7C42305eb505B12785bbA3BcA',
@@ -118,8 +121,8 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     AMM_WHITELIST: '0x3fAEb34Ab68709DCa02D6B48A03256317b338896',
     TEMPLE_CASHBACK: '0x72e9fa8eD38ddbdA4b044E95A206EDaA509FdF72',
 
-    FAITH: '',
-    FAITH_AIRDROP: '',
+    FAITH: '0x78F683247cb2121B4eBfbD04110760da42752a6B',
+    FAITH_AIRDROP: '0x1b44a9a94f2bb14eeF0ded2f0428231e358d31d7',
     LOCKED_OG_TEMPLE: '',
     DEVOTION: '',
   },
@@ -144,6 +147,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TREASURY: process.env.TREASURY || '',
     TREASURY_MANAGEMENT: process.env.TREASURY_MANAGEMENT || '',
     TEMPLE_TEAM_FIXED_PAYMENTS: process.env.TEMPLE_TEAM_FIXED_PAYMENTS || '',
+    TEMPLE_TEAM_EPOCH_2: process.env.TEMPLE_TEAM_EPOCH_2 || '',
     TEMPLE_TEAM_CONTIGENT_PAYMENTS: process.env.TEMPLE_TEAM_CONTIGENT_PAYMENTS || '',
     TEMPLE_V2_PAIR: process.env.TEMPLE_V2_PAIR || '',
     TEMPLE_V2_ROUTER: process.env.TEMPLE_V2_ROUTER || '',
@@ -156,7 +160,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     LOCKED_OG_TEMPLE: process.env.LOCKED_OG_TEMPLE || '',
     DEVOTION: process.env.DEVOTION || '',
 
-    MULTISIG: '',
+    MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
   }
 }
 
@@ -225,9 +229,10 @@ export function expectAddressWithPrivateKey() {
 }
 
 const expectedEnvvars: {[key: string]: string[]} = {
-  mainnet: ['MAINNET_ADDRESS_PRIVATE_KEY', 'MAINNET_RPC_URL'],
+  mainnet: ['MAINNET_ADDRESS_PRIVATE_KEY', 'MAINNET_RPC_URL', 'MAINNET_GAS_IN_GWEI'],
   rinkeby: ['RINKEBY_ADDRESS_PRIVATE_KEY', 'RINKEBY_RPC_URL'],
   matic: ['MATIC_ADDRESS_PRIVATE_KEY', 'MATIC_RPC_URL'],
+  localhost: [],
 }
 
 /**
