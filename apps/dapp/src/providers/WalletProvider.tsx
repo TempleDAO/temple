@@ -633,18 +633,15 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .connect(signerState);
 
       const newEntry = await ogLockedTempleNew.ogTempleLocked(walletAddress);
-      lockedEntriesVals.push({
-        balanceOGTemple: fromAtto(newEntry.amount),
-        lockedUntilTimestamp: newEntry.lockedUntilTimestamp.toNumber() * 1000,
-        index: lockedEntriesVals.length,
-      });
+      if (newEntry.amount.gt(BigNumber.from(0))) {
+        lockedEntriesVals.push({
+          balanceOGTemple: fromAtto(newEntry.amount),
+          lockedUntilTimestamp: newEntry.lockedUntilTimestamp.toNumber() * 1000,
+          index: lockedEntriesVals.length,
+        });
+      }
 
-      // new contract can contain entries with all 0 values, so we need to filter them
-      setLockedEntries(
-        [...lockedEntriesVals].filter(
-          (entry) => entry.lockedUntilTimestamp !== 0
-        )
-      );
+      setLockedEntries([...lockedEntriesVals]);
     }
   };
 
