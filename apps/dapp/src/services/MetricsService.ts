@@ -118,7 +118,7 @@ export class MetricsService {
       VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS=${ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS}
       VITE_BACKEND_URL=${ENV_VARS.VITE_BACKEND_URL}
       `);
-      //throw new Error(`Missing env vars in Metrics Service`);
+      throw new Error(`Missing env vars in Metrics Service`);
     }
 
     const TEMPLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS;
@@ -138,7 +138,6 @@ export class MetricsService {
       ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS;
     const FARMING_WALLET_ADDRESS = ENV_VARS.VITE_PUBLIC_FARMING_WALLET_ADDRESS;
     const ENV = ENV_VARS.VITE_ENV;
-    const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL;
 
     this.provider =
       ENV === 'development'
