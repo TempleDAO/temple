@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "jsx": "react-jsx",
+    "baseUrl": "src",
+    "resolveJsonModule": true,
+    "paths": {
+      "components/*": ["./components/*"],
+      "providers/*": ["./providers/*"],
+      "assets/*": ["./assets/*"],
+      "styles/*": ["./styles/*"],
+      "utils/*": ["./utils/*"],
+      "hooks/*": ["./hooks/*"],
+      "services/*": ["./services/*"],
+      "hoc/*": ["./hoc/*"],
+      "enums/*": ["./enums/*"],
+      "data/*": ["./data/*"],
+      "types/*": ["./types/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx","**/*.json"],
+  "exclude": ["node_modules"]
+}
