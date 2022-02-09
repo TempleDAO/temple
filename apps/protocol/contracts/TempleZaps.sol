@@ -40,13 +40,10 @@ contract TempleZaps is ZapBaseV2_3 {
     0x853d955aCEf822Db058eb8505911ED77F175b99e;
   address public constant DAI_ADDR = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
   address public TEMPLE = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
-  address public OG_TEMPLE = 0x654590F810f01B51dc7B86915D4632977e49EA33;
   address public TEMPLE_STAKING = 0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77;
   address public TEMPLE_FRAX_AMM_ROUTER =
     0x8A5058100E60e8F7C42305eb505B12785bbA3BcA;
   DAI public dai;
-
-  mapping(address => bool) public permittableTokens;
 
   // Emitted when `sender` Zaps In
   event zappedIn(address indexed sender, uint256 amountReceived);
@@ -54,11 +51,6 @@ contract TempleZaps is ZapBaseV2_3 {
   constructor() ZapBaseV2_3() {
     // 0x: Exchange Proxy
     approvedTargets[0xDef1C0ded9bec7F1a1670819833240f027b25EfF] = true;
-    // USDC
-    permittableTokens[0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48] = true;
-    // UNI
-    permittableTokens[0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984] = true;
-
     dai = DAI(DAI_ADDR);
   }
 
@@ -161,12 +153,9 @@ contract TempleZaps is ZapBaseV2_3 {
     bytes32 r,
     bytes32 s
   ) external whenNotPaused returns (uint256 amountOGTemple) {
-    require(permittableTokens[fromToken], 'TZ: token not allowed');
-
     ERC20 token = ERC20(fromToken);
     token.permit(msg.sender, address(this), fromAmount, deadline, v, r, s);
-    return
-      zapIn(fromToken, fromAmount, minTempleReceived, swapTarget, swapData);
+    return zapIn(fromToken, fromAmount, minTempleReceived, swapTarget, swapData);
   }
 
   /**
@@ -203,10 +192,6 @@ contract TempleZaps is ZapBaseV2_3 {
 
   ///////////// Owner only /////////////
 
-  function setPermittableToken(address token, bool status) external onlyOwner {
-    permittableTokens[token] = status;
-  }
-
   function withdraw(
     address token,
     address to,
@@ -222,10 +207,6 @@ contract TempleZaps is ZapBaseV2_3 {
 
   function updateTemple(address _temple) external onlyOwner {
     TEMPLE = _temple;
-  }
-
-  function updateOGTemple(address _ogTemple) external onlyOwner {
-    OG_TEMPLE = _ogTemple;
   }
 
   function updateStaking(address _staking) external onlyOwner {

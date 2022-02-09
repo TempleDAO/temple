@@ -65,7 +65,7 @@ module.exports = {
     ],
   },
   typechain: {
-    target: 'ethers-v5',
+    target: "ethers-v5",
     outDir: './typechain',
   },
   networks: {
@@ -79,7 +79,6 @@ module.exports = {
     hardhat: {
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-        blockNumber: 14168979,
       }
     },
     mainnet: {

@@ -58,11 +58,6 @@ describe('TempleZaps', async () => {
       expect(await TEMPLE_ZAPS.approvedTargets(ZEROEX_EXCHANGE_PROXY)).to.be
         .true;
     });
-
-    it('should set permittable tokens UNI and USDC', async () => {
-      expect(await TEMPLE_ZAPS.permittableTokens(UNI)).to.be.true;
-      expect(await TEMPLE_ZAPS.permittableTokens(USDC)).to.be.true;
-    });
   });
 
   describe('ZapIn', async () => {
@@ -206,7 +201,6 @@ describe('TempleZaps', async () => {
         const isApproved = [true];
 
         await shouldThrow(aliceConnect.updateTemple(addrZero), NOT_OWNER);
-        await shouldThrow(aliceConnect.updateOGTemple(addrZero), NOT_OWNER);
         await shouldThrow(aliceConnect.updateStaking(addrZero), NOT_OWNER);
         await shouldThrow(aliceConnect.updateAMMRouter(addrZero), NOT_OWNER);
         await shouldThrow(
@@ -216,7 +210,6 @@ describe('TempleZaps', async () => {
         await shouldThrow(aliceConnect.toggleContractActive(), NOT_OWNER);
 
         await ownerConnect.updateTemple(addrZero);
-        await ownerConnect.updateOGTemple(addrZero);
         await ownerConnect.updateStaking(addrZero);
         await ownerConnect.updateAMMRouter(addrZero);
         await ownerConnect.setApprovedTargets(targets, isApproved);
@@ -290,11 +283,6 @@ describe('TempleZaps', async () => {
           ethers.constants.AddressZero
         );
 
-        await ownerConnect.updateOGTemple(ethers.constants.AddressZero);
-        expect(await TEMPLE_ZAPS.OG_TEMPLE()).to.equal(
-          ethers.constants.AddressZero
-        );
-
         await ownerConnect.updateStaking(ethers.constants.AddressZero);
         expect(await TEMPLE_ZAPS.TEMPLE_STAKING()).to.equal(
           ethers.constants.AddressZero
@@ -311,13 +299,6 @@ describe('TempleZaps', async () => {
         const isApproved = [true];
         await TEMPLE_ZAPS.setApprovedTargets(targets, isApproved);
         expect(await TEMPLE_ZAPS.approvedTargets(targets[0])).to.be.true;
-      });
-
-      it('should set permittable tokens', async () => {
-        await TEMPLE_ZAPS.setPermittableToken(WETH, true);
-        expect(await TEMPLE_ZAPS.permittableTokens(WETH)).to.be.true;
-        await TEMPLE_ZAPS.setPermittableToken(WETH, false);
-        expect(await TEMPLE_ZAPS.permittableTokens(WETH)).to.be.false;
       });
     });
   });
@@ -562,7 +543,6 @@ async function resetFork() {
       {
         forking: {
           jsonRpcUrl: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-          blockNumber: 14168979,
         },
       },
     ],
