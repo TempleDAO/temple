@@ -1,0 +1,3 @@
+dapp: apps/dapp/**/*
+protocol: apps/protocol/**/*
+backend: apps/api/**/*
