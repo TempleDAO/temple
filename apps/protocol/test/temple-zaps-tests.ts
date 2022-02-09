@@ -6,6 +6,10 @@ import { signDaiPermit, signERC2612Permit } from 'eth-permit';
 
 import FakeERC20 from '../artifacts/contracts/fakes/FakeERC20.sol/FakeERC20.json';
 import FakeUSDC from '../artifacts/contracts/fakes/FakeUSDC.sol/FiatTokenV2_1.json';
+
+import TempleAMM from '../artifacts/contracts/amm/TempleFraxAMMRouter.sol/TempleFraxAMMRouter.json';
+import TempleStaking from '../artifacts/contracts/TempleStaking.sol/TempleStaking.json';
+
 import { TempleZaps, TempleZaps__factory } from '../typechain';
 import { shouldThrow, getBalance } from './helpers';
 import addresses from './libs/constants';
@@ -367,7 +371,9 @@ async function zapIn(
   let swapCallData, price, guaranteedPrice, gas, estimatedGas;
   const sellAmount = ethers.utils.parseUnits(tokenAmount, decimals).toString();
 
-  if (tokenAddr !== FRAX) {
+  if (tokenAddr === FRAX) {
+    guaranteedPrice = '0.99';
+  } else {
     const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${FRAX}`;
     const response = await axios.get(url);
     ({
@@ -379,6 +385,12 @@ async function zapIn(
   }
 
   // Do zap
+  const minOGTemple = await getExpectedOGT(
+    signer,
+    guaranteedPrice,
+    tokenAmount
+  );
+
   const zapsConnect = zaps.connect(signer);
   const overrides: { value?: BigNumber } = {};
   if (tokenAddr === ETH) {
@@ -402,8 +414,7 @@ async function zapIn(
   const balanceAfter = await getBalance(OG_TEMPLE, signerAddress);
   console.log(`Ending OGTemple: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
 
-  // Expect OGTemple balance to increase
-  expect(balanceAfter.gt(balanceBefore)).to.be.true;
+  expect(balanceAfter.gte(minOGTemple)).to.be.true;
 }
 
 async function zapWithPermit(
@@ -446,6 +457,12 @@ async function zapWithPermit(
 
   console.log(`Price of ${symbol} in FRAX: ${price}`);
   console.log(`Guaranteed price: ${guaranteedPrice}`);
+
+  const minOGTemple = await getExpectedOGT(
+    signer,
+    guaranteedPrice,
+    tokenAmount
+  );
 
   // Confirm allowance is 0 so we know permit actually increased allowance
   expect(
@@ -496,7 +513,40 @@ async function zapWithPermit(
   const balanceAfter = await getBalance(OG_TEMPLE, signerAddress);
   console.log(`Ending OGTemple: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
 
-  expect(balanceAfter.gt(balanceBefore)).to.be.true;
+  expect(balanceAfter.gte(minOGTemple)).to.be.true;
+}
+
+async function getExpectedOGT(
+  signer: Signer,
+  guaranteedPrice: string,
+  tokenAmount: string
+): Promise<BigNumber> {
+  const ammContract = new ethers.Contract(
+    '0x8A5058100E60e8F7C42305eb505B12785bbA3BcA',
+    TempleAMM.abi,
+    signer
+  );
+  const stakingContract = new ethers.Contract(
+    '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
+    TempleStaking.abi,
+    signer
+  );
+  const scale = 1000;
+
+  const minFraxReceived = parseFloat(guaranteedPrice) * parseFloat(tokenAmount);
+  console.log('minFraxReceived', minFraxReceived);
+  const minFraxReceivedWei = ethers.utils.parseUnits(
+    minFraxReceived.toString(),
+    18
+  );
+  console.log('minFraxReceivedWei', minFraxReceivedWei);
+  const ammQuote = await ammContract.swapExactFraxForTempleQuote(
+    minFraxReceivedWei
+  );
+  const factor = await stakingContract.getAccumulationFactor(scale);
+  const expectedOGTempleWei = ammQuote.amountOutAMM.div(factor);
+
+  return expectedOGTempleWei.mul(scale);
 }
 
 async function impersonateAddress(address: string) {
@@ -514,7 +564,7 @@ async function resetFork() {
       {
         forking: {
           jsonRpcUrl: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-          blockNumber: 14167662,
+          blockNumber: 14168979,
         },
       },
     ],
