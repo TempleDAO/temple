@@ -534,12 +534,10 @@ async function getExpectedOGT(
   const scale = 1000;
 
   const minFraxReceived = parseFloat(guaranteedPrice) * parseFloat(tokenAmount);
-  console.log('minFraxReceived', minFraxReceived);
   const minFraxReceivedWei = ethers.utils.parseUnits(
     minFraxReceived.toString(),
     18
   );
-  console.log('minFraxReceivedWei', minFraxReceivedWei);
   const ammQuote = await ammContract.swapExactFraxForTempleQuote(
     minFraxReceivedWei
   );

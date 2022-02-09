@@ -67,7 +67,7 @@ contract TempleZaps is ZapBaseV2_3 {
    * @param fromToken The token used for entry (address(0) if ether)
    * @param fromAmount The amount of fromToken to zap
    * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
-   * @param swapTarget Excecution target for the swap
+   * @param swapTarget Execution target for the swap
    * @param swapData DEX data
    * @return amountOGTemple Quantity of OGTemple received
    */
@@ -113,7 +113,7 @@ contract TempleZaps is ZapBaseV2_3 {
    * @notice This function zaps DAI using permit
    * @param fromAmount The amount of DAI to zap
    * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
-   * @param swapTarget Excecution target for the swap
+   * @param swapTarget Execution target for the swap
    * @param swapData DEX data
    * @param nonce Nonce of the last permit transaction of a user’s wallet
    * @param expiry Permit deadline
@@ -142,7 +142,7 @@ contract TempleZaps is ZapBaseV2_3 {
    * @param fromToken The token used for entry
    * @param fromAmount The amount of fromToken to zap
    * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
-   * @param swapTarget Excecution target for the swap
+   * @param swapTarget Execution target for the swap
    * @param swapData DEX data
    * @param deadline Permit deadline
    * @param v secp256k1 signature component

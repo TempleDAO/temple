@@ -45,15 +45,6 @@ module.exports = {
         },
       },
       {
-        version: "0.5.12", // for fakes/DAI.sol
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 999999,
-          }
-        },
-      },
-      {
         version: "0.6.6",
         settings: {
           optimizer: {
