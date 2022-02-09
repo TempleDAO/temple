@@ -1,0 +1,23 @@
+name: Vercel preview deploy
+on:
+  pull_request:
+    types: [opened, labeled, synchronize]
+
+jobs:
+  vercel-deploy:
+    if: contains(github.event.pull_request.labels.*.name, 'preview-deploy')
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+      - name: "deploy"
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          github-token: ${{ secrets.CI_TOKEN }}
+          vercel-args: '-A apps/dapp/vercel.json'
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.DAPP_PROJECT_ID}}
+          alias-domains: |
+            pr-{{PR_NUMBER}}-preview.templedao.link
