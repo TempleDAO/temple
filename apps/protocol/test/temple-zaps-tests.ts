@@ -392,6 +392,7 @@ async function zapIn(
   }
 
   // Get OGTemple balance after zap
+  console.log(`Minimum expected OGT: ${ethers.utils.formatUnits(minOGTemple, 18)}`);
   const balanceAfter = await getBalance(OG_TEMPLE, signerAddress);
   console.log(`Ending OGTemple: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
 
@@ -491,6 +492,7 @@ async function zapWithPermit(
     );
   }
 
+  console.log(`Minimum expected OGT: ${ethers.utils.formatUnits(minOGTemple, 18)}`);
   const balanceAfter = await getBalance(OG_TEMPLE, signerAddress);
   console.log(`Ending OGTemple: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
 
