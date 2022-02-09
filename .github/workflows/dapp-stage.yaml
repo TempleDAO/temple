@@ -18,6 +18,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}  #Required
           vercel-project-id: ${{ secrets.DAPP_PROJECT_ID }} #Required 
           github-token: ${{ secrets.CI_TOKEN }}
+          github-comment: false
           scope: ${{ secrets.VERCEL_ORG_ID }}
           alias-domains: | #Optional
             stage.templedao.link
