@@ -60,9 +60,9 @@ const Devotion = () => {
   const getDevotionData = useCallback(
     async (signer: JsonRpcSigner) => {
       if (signer && wallet) {
-        const DEVOTION = new Devotion__factory()
-          .attach(TEMPLE_DEVOTION_ADDRESS)
-          .connect(signer);
+        const DEVOTION = new Devotion__factory(signer).attach(
+          TEMPLE_DEVOTION_ADDRESS
+        );
         const round = await DEVOTION.currentRound();
         const roundStatus = await DEVOTION.roundStatus(round);
         const hasVerifiedCurrentRound = await DEVOTION.verifiedFaith(

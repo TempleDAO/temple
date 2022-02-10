@@ -529,9 +529,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       try {
-        const openingCeremonyContract = new OpeningCeremony__factory()
-          .attach(OPENING_CEREMONY_ADDRESS)
-          .connect(signerState);
+        const openingCeremonyContract = new OpeningCeremony__factory(
+          signerState
+        ).attach(OPENING_CEREMONY_ADDRESS);
 
         const inviteGuestTransaction =
           await openingCeremonyContract.addGuestUser(friendAddress, {
@@ -571,9 +571,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
    */
   const getOCTemplar = async () => {
     if (walletAddress && signerState) {
-      const openingCeremony = new OpeningCeremony__factory()
-        .attach(OPENING_CEREMONY_ADDRESS)
-        .connect(signerState);
+      const openingCeremony = new OpeningCeremony__factory(signerState).attach(
+        OPENING_CEREMONY_ADDRESS
+      );
 
       const ocTemplarData = await openingCeremony.users(walletAddress);
 
@@ -591,9 +591,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getMaxInvitesPerVerifiedUser = async () => {
     if (walletAddress && signerState) {
-      const openingCeremony = new OpeningCeremony__factory()
-        .attach(OPENING_CEREMONY_ADDRESS)
-        .connect(signerState);
+      const openingCeremony = new OpeningCeremony__factory(signerState).attach(
+        OPENING_CEREMONY_ADDRESS
+      );
 
       const ocMaxInvitesPerVerifiedUser =
         await openingCeremony.maxInvitesPerVerifiedUser();
@@ -603,9 +603,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getLockedEntries = async () => {
     if (walletAddress && signerState) {
-      const ogLockedTemple = new LockedOGTempleDeprecated__factory()
-        .attach(LOCKED_OG_TEMPLE_ADDRESS)
-        .connect(signerState);
+      const ogLockedTemple = new LockedOGTempleDeprecated__factory(
+        signerState
+      ).attach(LOCKED_OG_TEMPLE_ADDRESS);
 
       const lockedNum = (
         await ogLockedTemple.numLocks(walletAddress)
@@ -628,9 +628,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       // get ogTempleLocked from new Contract
-      const ogLockedTempleNew = new LockedOGTemple__factory()
-        .attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS)
-        .connect(signerState);
+      const ogLockedTempleNew = new LockedOGTemple__factory(signerState).attach(
+        LOCKED_OG_TEMPLE_DEVOTION_ADDRESS
+      );
 
       const newEntry = await ogLockedTempleNew.ogTempleLocked(walletAddress);
       lockedEntriesVals.push({
@@ -645,13 +645,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getExitQueueData = async () => {
     if (walletAddress && signerState) {
-      const EXIT_QUEUE = new ExitQueue__factory()
-        .attach(EXIT_QUEUE_ADDRESS)
-        .connect(signerState);
+      const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(
+        EXIT_QUEUE_ADDRESS
+      );
 
-      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory()
-        .attach(ACCELERATED_EXIT_QUEUE_ADDRESS)
-        .connect(signerState);
+      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(
+        signerState
+      ).attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
 
       const userData = await EXIT_QUEUE.userData(walletAddress);
       const totalTempleOwned = fromAtto(userData.Amount);
@@ -709,9 +709,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getApy = async () => {
     if (walletAddress && signerState) {
-      const TEMPLE_STAKING = new TempleStaking__factory()
-        .attach(TEMPLE_STAKING_ADDRESS)
-        .connect(signerState);
+      const TEMPLE_STAKING = new TempleStaking__factory(signerState).attach(
+        TEMPLE_STAKING_ADDRESS
+      );
       const SCALE_FACTOR = 10000;
       const epy = (await TEMPLE_STAKING.getEpy(SCALE_FACTOR)).toNumber();
       setApy(Math.trunc((Math.pow(epy / SCALE_FACTOR + 1, 365.25) - 1) * 100));
@@ -720,9 +720,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getTemplePrice = async () => {
     if (walletAddress && signerState) {
-      const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory()
-        .attach(TEMPLE_V2_PAIR_ADDRESS)
-        .connect(signerState);
+      const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory(
+        signerState
+      ).attach(TEMPLE_V2_PAIR_ADDRESS);
 
       const { _reserve0, _reserve1 } =
         await TEMPLE_UNISWAP_V2_PAIR.getReserves();
@@ -732,9 +732,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getFaith = async () => {
     if (walletAddress && signerState) {
-      const FAITH = new Faith__factory()
-        .attach(TEMPLE_FAITH_ADDRESS)
-        .connect(signerState);
+      const FAITH = new Faith__factory(signerState).attach(
+        TEMPLE_FAITH_ADDRESS
+      );
 
       const faithBalances = await FAITH.balances(walletAddress);
       const totalSupply = await FAITH.totalSupply();
@@ -787,29 +787,29 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getBalance = async () => {
     if (walletAddress && signerState) {
-      const stableCoinContract = new ERC20__factory()
-        .attach(STABLE_COIN_ADDRESS)
-        .connect(signerState);
+      const stableCoinContract = new ERC20__factory(signerState).attach(
+        STABLE_COIN_ADDRESS
+      );
 
-      const ogLockedTemple = new LockedOGTempleDeprecated__factory()
-        .attach(LOCKED_OG_TEMPLE_ADDRESS)
-        .connect(signerState);
+      const ogLockedTemple = new LockedOGTempleDeprecated__factory(
+        signerState
+      ).attach(LOCKED_OG_TEMPLE_ADDRESS);
 
-      const OGTEMPLE_LOCKED_DEVOTION = new LockedOGTemple__factory()
-        .attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS)
-        .connect(signerState);
+      const OGTEMPLE_LOCKED_DEVOTION = new LockedOGTemple__factory(
+        signerState
+      ).attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS);
 
-      const templeStakingContract = new TempleStaking__factory()
-        .attach(TEMPLE_STAKING_ADDRESS)
-        .connect(signerState);
+      const templeStakingContract = new TempleStaking__factory(
+        signerState
+      ).attach(TEMPLE_STAKING_ADDRESS);
 
-      const OG_TEMPLE_CONTRACT = new OGTemple__factory()
-        .attach(await templeStakingContract.OG_TEMPLE())
-        .connect(signerState);
+      const OG_TEMPLE_CONTRACT = new OGTemple__factory(signerState).attach(
+        await templeStakingContract.OG_TEMPLE()
+      );
 
-      const templeContract = new TempleERC20Token__factory()
-        .attach(TEMPLE_ADDRESS)
-        .connect(signerState);
+      const templeContract = new TempleERC20Token__factory(signerState).attach(
+        TEMPLE_ADDRESS
+      );
 
       const stableCoinBalance: BigNumber = await stableCoinContract.balanceOf(
         walletAddress
@@ -857,9 +857,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getExchangeRate = async (): Promise<void> => {
     if (walletAddress && signerState) {
-      const treasury = new TempleTreasury__factory()
-        .attach(TREASURY_ADDRESS)
-        .connect(signerState);
+      const treasury = new TempleTreasury__factory(signerState).attach(
+        TREASURY_ADDRESS
+      );
 
       const iv = await treasury.intrinsicValueRatio();
       const { temple, stablec } = iv;
@@ -885,9 +885,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getAllocation = async (): Promise<void> => {
     if (walletAddress && signerState && ocTemplar) {
-      const openingCeremony = new OpeningCeremony__factory()
-        .attach(OPENING_CEREMONY_ADDRESS)
-        .connect(signerState);
+      const openingCeremony = new OpeningCeremony__factory(signerState).attach(
+        OPENING_CEREMONY_ADDRESS
+      );
 
       const allocation: number = ocTemplar.isVerified
         ? fromAtto(
@@ -947,19 +947,19 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   ): Promise<boolean> => {
     if (walletAddress && signerState) {
       let allowance;
-      const stableCoinContract = new ERC20__factory()
-        .attach(STABLE_COIN_ADDRESS)
-        .connect(signerState);
-      const templeStakingContract = new TempleStaking__factory()
-        .attach(TEMPLE_STAKING_ADDRESS)
-        .connect(signerState);
+      const stableCoinContract = new ERC20__factory(signerState).attach(
+        STABLE_COIN_ADDRESS
+      );
+      const templeStakingContract = new TempleStaking__factory(
+        signerState
+      ).attach(TEMPLE_STAKING_ADDRESS);
       const STAKING_OC_TEMPLE = await templeStakingContract.OG_TEMPLE();
-      const OGTContract = new OGTemple__factory()
-        .attach(STAKING_OC_TEMPLE)
-        .connect(signerState);
-      const TEMPLE = new TempleERC20Token__factory()
-        .attach(TEMPLE_ADDRESS)
-        .connect(signerState);
+      const OGTContract = new OGTemple__factory(signerState).attach(
+        STAKING_OC_TEMPLE
+      );
+      const TEMPLE = new TempleERC20Token__factory(signerState).attach(
+        TEMPLE_ADDRESS
+      );
 
       switch (allowanceKind) {
         case 'TEMPLE':
@@ -1088,13 +1088,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const mintAndStake = async (amount: BigNumber) => {
     if (walletAddress && signerState) {
-      const openingCeremonyContract = new OpeningCeremony__factory()
-        .attach(OPENING_CEREMONY_ADDRESS)
-        .connect(signerState);
+      const openingCeremonyContract = new OpeningCeremony__factory(
+        signerState
+      ).attach(OPENING_CEREMONY_ADDRESS);
 
-      const stableCoinContract = new ERC20__factory()
-        .attach(STABLE_COIN_ADDRESS)
-        .connect(signerState);
+      const stableCoinContract = new ERC20__factory(signerState).attach(
+        STABLE_COIN_ADDRESS
+      );
 
       try {
         setRitual(
@@ -1157,17 +1157,17 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const unstake = async (amount: BigNumber) => {
     if (walletAddress && signerState) {
-      const TEMPLE_STAKING = new TempleStaking__factory()
-        .attach(TEMPLE_STAKING_ADDRESS)
-        .connect(signerState);
+      const TEMPLE_STAKING = new TempleStaking__factory(signerState).attach(
+        TEMPLE_STAKING_ADDRESS
+      );
 
-      const OGTContract = new OGTemple__factory()
-        .attach(await TEMPLE_STAKING.OG_TEMPLE())
-        .connect(signerState);
+      const OGTContract = new OGTemple__factory(signerState).attach(
+        await TEMPLE_STAKING.OG_TEMPLE()
+      );
 
-      const EXIT_QUEUE = new ExitQueue__factory()
-        .attach(EXIT_QUEUE_ADDRESS)
-        .connect(signerState);
+      const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(
+        EXIT_QUEUE_ADDRESS
+      );
 
       try {
         setRitual(
@@ -1239,11 +1239,11 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
+  //TODO: purge?
   const getLockInPeriod = async () => {
     // if (walletAddress && signerState) {
-    //   const presaleContract = new Presale__factory()
+    //   const presaleContract = new Presale__factory(signerState)
     //       .attach(PRESALE_ADDRESS)
-    //       .connect(signerState);
     //
     //   const unlockTimestamp = (await presaleContract.unlockTimestamp()).toNumber();
     //   const now = Date.now();
@@ -1281,9 +1281,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         nonce: string;
       } = claims[walletAddress.toLowerCase()];
 
-      const templeCashback = new TempleCashback__factory()
-        .attach(TEMPLE_CASHBACK_ADDRESS)
-        .connect(signerState);
+      const templeCashback = new TempleCashback__factory(signerState).attach(
+        TEMPLE_CASHBACK_ADDRESS
+      );
 
       const tx = await templeCashback.claim(
         hash,
@@ -1309,9 +1309,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     proof: string[]
   ): Promise<TransactionReceipt | void> => {
     if (signerState) {
-      const faithAirdrop = new FaithMerkleAirdrop__factory()
-        .attach(FAITH_AIRDROP_ADDRESS)
-        .connect(signerState);
+      const faithAirdrop = new FaithMerkleAirdrop__factory(signerState).attach(
+        FAITH_AIRDROP_ADDRESS
+      );
 
       const tx = await faithAirdrop.claim(index, address, amount, proof, {
         gasLimit: ENV_VARS.VITE_PUBLIC_CLAIM_FAITH_GAS_LIMIT || 100000,
@@ -1327,9 +1327,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     signature: string
   ): Promise<ethers.ContractTransaction | void> => {
     if (walletAddress && signerState) {
-      const AMMWhitelist = new AMMWhitelist__factory()
-        .attach(AMM_WHITELIST_ADDRESS)
-        .connect(signerState);
+      const AMMWhitelist = new AMMWhitelist__factory(signerState).attach(
+        AMM_WHITELIST_ADDRESS
+      );
 
       try {
         const sig = await ethers.utils.splitSignature(signature.trim());
@@ -1344,9 +1344,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const claimOgTemple = async (lockedEntryIndex: number) => {
     if (walletAddress && signerState) {
-      const lockedOGTempleContract = new LockedOGTempleDeprecated__factory()
-        .attach(LOCKED_OG_TEMPLE_ADDRESS)
-        .connect(signerState);
+      const lockedOGTempleContract = new LockedOGTempleDeprecated__factory(
+        signerState
+      ).attach(LOCKED_OG_TEMPLE_ADDRESS);
 
       const withdrawTXN = await lockedOGTempleContract.withdraw(
         lockedEntryIndex,
@@ -1368,18 +1368,18 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     ogtAmount: number
   ): Promise<number | void> => {
     if (walletAddress && signerState) {
-      const STAKING = new TempleStaking__factory()
-        .attach(TEMPLE_STAKING_ADDRESS)
-        .connect(signerState);
+      const STAKING = new TempleStaking__factory(signerState).attach(
+        TEMPLE_STAKING_ADDRESS
+      );
       return fromAtto(await STAKING.balance(toAtto(ogtAmount)));
     }
   };
 
   const claimAvailableTemple = async (): Promise<void> => {
     if (walletAddress && signerState) {
-      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory()
-        .attach(ACCELERATED_EXIT_QUEUE_ADDRESS)
-        .connect(signerState);
+      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(
+        signerState
+      ).attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
 
       if (exitQueueData.claimableEpochs.length) {
         const baseCase =
@@ -1411,13 +1411,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const restakeAvailableTemple = async (): Promise<void> => {
     if (walletAddress && signerState) {
-      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory()
-        .attach(ACCELERATED_EXIT_QUEUE_ADDRESS)
-        .connect(signerState);
+      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(
+        signerState
+      ).attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
 
-      const EXIT_QUEUE = new ExitQueue__factory()
-        .attach(EXIT_QUEUE_ADDRESS)
-        .connect(signerState);
+      const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(
+        EXIT_QUEUE_ADDRESS
+      );
 
       const userData = await EXIT_QUEUE.userData(walletAddress);
 
@@ -1479,12 +1479,12 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     minAmountOutTemple: BigNumber
   ) => {
     if (walletAddress && signerState) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory()
-        .attach(TEMPLE_V2_ROUTER_ADDRESS)
-        .connect(signerState);
-      const STABLE_TOKEN = new ERC20__factory()
-        .attach(STABLE_COIN_ADDRESS)
-        .connect(signerState);
+      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signerState).attach(
+        TEMPLE_V2_ROUTER_ADDRESS
+      );
+      const STABLE_TOKEN = new ERC20__factory(signerState).attach(
+        STABLE_COIN_ADDRESS
+      );
 
       await ensureAllowance(
         STABLE_COIN_SYMBOL,
@@ -1529,12 +1529,12 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     minAmountOutFrax: BigNumber
   ) => {
     if (walletAddress && signerState) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory()
-        .attach(TEMPLE_V2_ROUTER_ADDRESS)
-        .connect(signerState);
-      const TEMPLE = new TempleERC20Token__factory()
-        .attach(TEMPLE_ADDRESS)
-        .connect(signerState);
+      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signerState).attach(
+        TEMPLE_V2_ROUTER_ADDRESS
+      );
+      const TEMPLE = new TempleERC20Token__factory(signerState).attach(
+        TEMPLE_ADDRESS
+      );
 
       await ensureAllowance(
         TEMPLE_TOKEN,
@@ -1572,9 +1572,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getSellQuote = async (amountToSell: BigNumber) => {
     if (walletAddress && signerState) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory()
-        .attach(TEMPLE_V2_ROUTER_ADDRESS)
-        .connect(signerState);
+      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signerState).attach(
+        TEMPLE_V2_ROUTER_ADDRESS
+      );
 
       const { amountOut } = await AMM_ROUTER.swapExactTempleForFraxQuote(
         amountToSell
@@ -1587,9 +1587,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getBuyQuote = async (fraxIn: BigNumber): Promise<BigNumber> => {
     if (walletAddress && signerState) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory()
-        .attach(TEMPLE_V2_ROUTER_ADDRESS)
-        .connect(signerState);
+      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signerState).attach(
+        TEMPLE_V2_ROUTER_ADDRESS
+      );
 
       const { amountOutAMM, amountOutProtocol } =
         await AMM_ROUTER.swapExactFraxForTempleQuote(fraxIn);
@@ -1602,13 +1602,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const stake = async (amountToStake: BigNumber) => {
     if (walletAddress && signerState) {
       console.info(`staking START`);
-      const TEMPLE_STAKING = new TempleStaking__factory()
-        .attach(TEMPLE_STAKING_ADDRESS)
-        .connect(signerState);
+      const TEMPLE_STAKING = new TempleStaking__factory(signerState).attach(
+        TEMPLE_STAKING_ADDRESS
+      );
 
-      const TEMPLE = new TempleERC20Token__factory()
-        .attach(TEMPLE_ADDRESS)
-        .connect(signerState);
+      const TEMPLE = new TempleERC20Token__factory(signerState).attach(
+        TEMPLE_ADDRESS
+      );
 
       await ensureAllowance(
         TEMPLE_TOKEN,
@@ -1637,12 +1637,12 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const epochsToDays = async (epochs: number) => {
     if (signerState) {
-      const EXIT_QUEUE = new ExitQueue__factory()
-        .attach(EXIT_QUEUE_ADDRESS)
-        .connect(signerState);
-      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory()
-        .attach(ACCELERATED_EXIT_QUEUE_ADDRESS)
-        .connect(signerState);
+      const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(
+        EXIT_QUEUE_ADDRESS
+      );
+      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(
+        signerState
+      ).attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
 
       const MAINNET_APROX_BLOCKS_PER_DAY = 6400;
       const epochSizeInBlocks = (await EXIT_QUEUE.epochSize()).toNumber();
@@ -1673,15 +1673,15 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     ogtAmount: BigNumber
   ): Promise<JoinQueueData | void> => {
     if (walletAddress && signerState) {
-      const EXIT_QUEUE = new ExitQueue__factory()
-        .attach(EXIT_QUEUE_ADDRESS)
-        .connect(signerState);
-      const STAKING = new TempleStaking__factory()
-        .attach(TEMPLE_STAKING_ADDRESS)
-        .connect(signerState);
-      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory()
-        .attach(ACCELERATED_EXIT_QUEUE_ADDRESS)
-        .connect(signerState);
+      const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(
+        EXIT_QUEUE_ADDRESS
+      );
+      const STAKING = new TempleStaking__factory(signerState).attach(
+        TEMPLE_STAKING_ADDRESS
+      );
+      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(
+        signerState
+      ).attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
 
       const maxPerAddress = await EXIT_QUEUE.maxPerAddress();
       const maxPerEpoch = await EXIT_QUEUE.maxPerEpoch();
@@ -1721,13 +1721,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const contingentTeamPaymentAddress =
         TEAM_PAYMENTS_CONTINGENT_ADDRESSES_BY_EPOCH[epoch];
 
-      const teamPaymentContract = new TempleTeamPayments__factory()
-        .attach(
-          paymentType === TEAM_PAYMENTS_TYPES.FIXED
-            ? fixedTeamPaymentAddress
-            : contingentTeamPaymentAddress
-        )
-        .connect(signerState);
+      const teamPaymentContract = new TempleTeamPayments__factory(
+        signerState
+      ).attach(
+        paymentType === TEAM_PAYMENTS_TYPES.FIXED
+          ? fixedTeamPaymentAddress
+          : contingentTeamPaymentAddress
+      );
 
       const collectTxn = await teamPaymentContract.claim();
 
@@ -1746,17 +1746,17 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const verifyFaith = async () => {
     if (walletAddress && signerState) {
-      const DEVOTION = new Devotion__factory()
-        .attach(TEMPLE_DEVOTION_ADDRESS)
-        .connect(signerState);
+      const DEVOTION = new Devotion__factory(signerState).attach(
+        TEMPLE_DEVOTION_ADDRESS
+      );
 
-      const TEMPLE_STAKING = new TempleStaking__factory()
-        .attach(TEMPLE_STAKING_ADDRESS)
-        .connect(signerState);
+      const TEMPLE_STAKING = new TempleStaking__factory(signerState).attach(
+        TEMPLE_STAKING_ADDRESS
+      );
 
-      const OG_TEMPLE = new OGTemple__factory()
-        .attach(await TEMPLE_STAKING.OG_TEMPLE())
-        .connect(signerState);
+      const OG_TEMPLE = new OGTemple__factory(signerState).attach(
+        await TEMPLE_STAKING.OG_TEMPLE()
+      );
 
       const walletOGTEMPLE = await OG_TEMPLE.balanceOf(walletAddress);
       await ensureAllowance(
@@ -1786,9 +1786,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const redeemFaith = async (faithAmount: BigNumber) => {
     if (walletAddress && signerState) {
-      const DEVOTION = new Devotion__factory()
-        .attach(TEMPLE_DEVOTION_ADDRESS)
-        .connect(signerState);
+      const DEVOTION = new Devotion__factory(signerState).attach(
+        TEMPLE_DEVOTION_ADDRESS
+      );
 
       const faithClaimTXN = await DEVOTION.claimTempleReward(faithAmount);
       await faithClaimTXN.wait();
@@ -1804,9 +1804,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getTempleFaithReward = async (faithAmount: BigNumber) => {
     if (walletAddress && signerState) {
-      const DEVOTION = new Devotion__factory()
-        .attach(TEMPLE_DEVOTION_ADDRESS)
-        .connect(signerState);
+      const DEVOTION = new Devotion__factory(signerState).attach(
+        TEMPLE_DEVOTION_ADDRESS
+      );
 
       return await DEVOTION.claimableTempleRewardQuote(faithAmount);
     } else {
@@ -1816,9 +1816,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getFaithQuote = async () => {
     if (walletAddress && signerState) {
-      const DEVOTION = new Devotion__factory()
-        .attach(TEMPLE_DEVOTION_ADDRESS)
-        .connect(signerState);
+      const DEVOTION = new Devotion__factory(signerState).attach(
+        TEMPLE_DEVOTION_ADDRESS
+      );
 
       const faithQuote = await DEVOTION.verifyFaithQuote(walletAddress);
       return {
