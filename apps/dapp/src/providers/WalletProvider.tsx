@@ -633,11 +633,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         .connect(signerState);
 
       const newEntry = await ogLockedTempleNew.ogTempleLocked(walletAddress);
-      lockedEntriesVals.push({
-        balanceOGTemple: fromAtto(newEntry.amount),
-        lockedUntilTimestamp: newEntry.lockedUntilTimestamp.toNumber() * 1000,
-        index: lockedEntriesVals.length,
-      });
+      if (newEntry.amount.gt(BigNumber.from(0))) {
+        lockedEntriesVals.push({
+          balanceOGTemple: fromAtto(newEntry.amount),
+          lockedUntilTimestamp: newEntry.lockedUntilTimestamp.toNumber() * 1000,
+          index: lockedEntriesVals.length,
+        });
+      }
 
       setLockedEntries([...lockedEntriesVals]);
     }
