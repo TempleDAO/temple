@@ -127,9 +127,9 @@ function useFireRitualistCashback(): FireRitualCashbackState {
   useEffect(() => {
     async function isAllocationAlreadyClaimed() {
       if (signer && wallet && userClaim) {
-        const templeCashback = new TempleCashback__factory()
-          .attach(TEMPLE_CASHBACK_ADDRESS)
-          .connect(signer);
+        const templeCashback = new TempleCashback__factory(signer).attach(
+          TEMPLE_CASHBACK_ADDRESS
+        );
 
         const allocationClaimed = await templeCashback.usedNonces(
           wallet,

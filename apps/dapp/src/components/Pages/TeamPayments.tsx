@@ -270,9 +270,9 @@ function useTempleTeamPayments(): TeamPaymentsState {
           TEAM_PAYMENTS_CONTINGENT_ADDRESSES_BY_EPOCH[selectedEpoch];
 
         // Retrieve fixed allocation & claimable amounts
-        const fixedTeamPayments = new TempleTeamPayments__factory()
-          .attach(fixedTeamPaymentAddress)
-          .connect(signer);
+        const fixedTeamPayments = new TempleTeamPayments__factory(
+          signer
+        ).attach(fixedTeamPaymentAddress);
 
         const fixedAllocation = await fixedTeamPayments.allocation(wallet);
         const fixedClaimedAmount = await fixedTeamPayments.claimed(wallet);
@@ -295,9 +295,9 @@ function useTempleTeamPayments(): TeamPaymentsState {
 
         // Retrieve contingent allocation and claimable amounts
         if (contingentTeamPaymentAddress) {
-          const contingentTeamPayments = new TempleTeamPayments__factory()
-            .attach(contingentTeamPaymentAddress)
-            .connect(signer);
+          const contingentTeamPayments = new TempleTeamPayments__factory(
+            signer
+          ).attach(contingentTeamPaymentAddress);
 
           const contingentAllocation = await contingentTeamPayments.allocation(
             wallet
