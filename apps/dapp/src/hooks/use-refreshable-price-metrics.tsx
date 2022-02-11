@@ -19,7 +19,7 @@ export default function useRefreshablePriceMetrics(intervalMinutes = 20) {
 
   async function refreshMetrics() {
     const hourlyRequest = await fetch(
-      'https://api.thegraph.com/subgraphs/name/templedao/templedao-balances',
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
       {
         method: 'POST',
         headers: {
@@ -40,7 +40,7 @@ export default function useRefreshablePriceMetrics(intervalMinutes = 20) {
     );
 
     const dailyRequest = await fetch(
-      'https://api.thegraph.com/subgraphs/name/templedao/templedao-balances',
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
       {
         method: 'POST',
         headers: {
@@ -54,7 +54,7 @@ export default function useRefreshablePriceMetrics(intervalMinutes = 20) {
               intrinsicValue
               templePrice
               thresholdTemplePrice
-          }
+            }
           }`,
         }),
       }
