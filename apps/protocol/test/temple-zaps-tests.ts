@@ -49,7 +49,7 @@ describe('TempleZaps', async () => {
     TEMPLE_ZAPS = await new TempleZaps__factory(owner).deploy();
   });
 
-  describe('Deployment', function () {
+  xdescribe('Deployment', function () {
     it('should set the right owner', async () => {
       expect(await TEMPLE_ZAPS.owner()).to.equal(ownerAddress);
     });
@@ -65,7 +65,7 @@ describe('TempleZaps', async () => {
       await resetFork();
     });
 
-    it('should zap ETH to OGTemple', async () => {
+    xit('should zap ETH to OGTemple', async () => {
       const tokenAddr = ETH;
       const tokenAmount = '5';
       const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
@@ -299,6 +299,13 @@ describe('TempleZaps', async () => {
         const isApproved = [true];
         await TEMPLE_ZAPS.setApprovedTargets(targets, isApproved);
         expect(await TEMPLE_ZAPS.approvedTargets(targets[0])).to.be.true;
+      });
+
+      it('should set permittable tokens', async () => {
+        await TEMPLE_ZAPS.setPermittableToken(WETH, true);
+        expect(await TEMPLE_ZAPS.permittableTokens(WETH)).to.be.true;
+        await TEMPLE_ZAPS.setPermittableToken(WETH, false);
+        expect(await TEMPLE_ZAPS.permittableTokens(WETH)).to.be.false;
       });
     });
   });

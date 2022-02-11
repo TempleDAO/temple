@@ -45,12 +45,18 @@ contract TempleZaps is ZapBaseV2_3 {
     0x8A5058100E60e8F7C42305eb505B12785bbA3BcA;
   DAI public dai;
 
+  mapping(address => bool) public permittableTokens;
+
   // Emitted when `sender` Zaps In
   event zappedIn(address indexed sender, uint256 amountReceived);
 
   constructor() ZapBaseV2_3() {
     // 0x: Exchange Proxy
     approvedTargets[0xDef1C0ded9bec7F1a1670819833240f027b25EfF] = true;
+    // USDC
+    permittableTokens[0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48] = true;
+    // UNI
+    permittableTokens[0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984] = true;
     dai = DAI(DAI_ADDR);
   }
 
@@ -153,8 +159,11 @@ contract TempleZaps is ZapBaseV2_3 {
     bytes32 r,
     bytes32 s
   ) external whenNotPaused returns (uint256 amountOGTemple) {
+    require(permittableTokens[fromToken], 'TZ: token not allowed');
+
     ERC20 token = ERC20(fromToken);
     token.permit(msg.sender, address(this), fromAmount, deadline, v, r, s);
+
     return zapIn(fromToken, fromAmount, minTempleReceived, swapTarget, swapData);
   }
 
@@ -203,6 +212,10 @@ contract TempleZaps is ZapBaseV2_3 {
     } else {
       SafeTransferLib.safeTransfer(ERC20(token), to, amount);
     }
+  }
+
+  function setPermittableToken(address token, bool status) external onlyOwner {
+    permittableTokens[token] = status;
   }
 
   function updateTemple(address _temple) external onlyOwner {
