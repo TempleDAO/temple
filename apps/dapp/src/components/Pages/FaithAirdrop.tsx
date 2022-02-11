@@ -152,9 +152,9 @@ function useFaithAirdrop(): FaithAirdropState {
   useEffect(() => {
     async function isAllocationAlreadyClaimed() {
       if (signer && wallet && userClaim) {
-        const faithMerkleAirdrop = new FaithMerkleAirdrop__factory()
-          .attach(FAITH_AIRDROP_ADDRESS)
-          .connect(signer);
+        const faithMerkleAirdrop = new FaithMerkleAirdrop__factory(
+          signer
+        ).attach(FAITH_AIRDROP_ADDRESS);
 
         const allocationClaimed = await faithMerkleAirdrop.isClaimed(
           userClaim.index

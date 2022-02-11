@@ -280,9 +280,9 @@ function useTempleCashback() {
         activeClaim &&
         claims[activeClaim][wallet.toLowerCase()]
       ) {
-        const templeCashback = new TempleCashback__factory()
-          .attach(TEMPLE_CASHBACK_ADDRESS)
-          .connect(signer);
+        const templeCashback = new TempleCashback__factory(signer).attach(
+          TEMPLE_CASHBACK_ADDRESS
+        );
 
         let allocationClaimed;
         if (claims[activeClaim][wallet.toLowerCase()]) {
