@@ -13,7 +13,7 @@ interface IWETH {
 abstract contract ZapBaseV2_3 is Ownable {
   bool public paused;
 
-  address private constant wethTokenAddress = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+  address internal constant FRAX_ADDR = 0x853d955aCEf822Db058eb8505911ED77F175b99e;
 
   // swapTarget => approval status
   mapping(address => bool) public approvedTargets;
@@ -56,7 +56,6 @@ abstract contract ZapBaseV2_3 is Ownable {
   /**
     @dev Fulfills an encoded swap or Zap if the target is approved
     @param fromToken The sell token
-    @param toToken The buy token
     @param amount The quantity of fromToken to sell
     @param swapTarget The execution target for the swapData
     @param swapData The swap data encoding the swap or Zap
@@ -64,22 +63,11 @@ abstract contract ZapBaseV2_3 is Ownable {
      */
   function _fillQuote(
     address fromToken,
-    address toToken,
     uint256 amount,
     address swapTarget,
     bytes memory swapData
   ) internal virtual returns (uint256 amountBought) {
-    if (fromToken == toToken) {
-      return amount;
-    }
-
-    if (fromToken == address(0) && toToken == wethTokenAddress) {
-      IWETH(wethTokenAddress).deposit{value: amount}();
-      return amount;
-    }
-
-    if (fromToken == wethTokenAddress && toToken == address(0)) {
-      IWETH(wethTokenAddress).withdraw(amount);
+    if (fromToken == FRAX_ADDR) {
       return amount;
     }
 
@@ -90,13 +78,13 @@ abstract contract ZapBaseV2_3 is Ownable {
       _approveToken(fromToken, swapTarget, amount);
     }
 
-    uint256 initialBalance = _getBalance(toToken);
+    uint256 initialBalance = _getBalance(FRAX_ADDR);
 
     require(approvedTargets[swapTarget], 'Target not Authorized');
     (bool success, ) = swapTarget.call{value: valueToSend}(swapData);
     require(success, 'Error Swapping Tokens');
 
-    amountBought = _getBalance(toToken) - initialBalance;
+    amountBought = _getBalance(FRAX_ADDR) - initialBalance;
     require(amountBought > 0, 'Swapped To Invalid Token');
   }
 

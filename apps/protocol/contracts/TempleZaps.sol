@@ -34,16 +34,15 @@ interface DAI {
 }
 
 contract TempleZaps is ZapBaseV2_3 {
-  uint256 public constant TEMPLE_AMM_DEADLINE = 1200; // 20 minutes
+  uint256 private constant TEMPLE_AMM_DEADLINE = 1200; // 20 minutes
 
-  address public constant FRAX_ADDR =
-    0x853d955aCEf822Db058eb8505911ED77F175b99e;
-  address public constant DAI_ADDR = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+  address private constant DAI_ADDR = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
   address public TEMPLE = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
   address public TEMPLE_STAKING = 0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77;
   address public TEMPLE_FRAX_AMM_ROUTER =
     0x8A5058100E60e8F7C42305eb505B12785bbA3BcA;
-  DAI public dai;
+
+  DAI private dai;
 
   mapping(address => bool) public permittableTokens;
 
@@ -80,7 +79,6 @@ contract TempleZaps is ZapBaseV2_3 {
 
     uint256 fraxBought = _fillQuote(
       fromToken,
-      FRAX_ADDR,
       fromAmount,
       swapTarget,
       swapData

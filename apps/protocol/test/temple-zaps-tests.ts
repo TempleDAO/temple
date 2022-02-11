@@ -15,6 +15,7 @@ import { shouldThrow, getBalance } from './helpers';
 import addresses from './libs/constants';
 
 const BINANCE_ACCOUNT_8 = '0xF977814e90dA44bFA03b6295A0616a897441aceC';
+const WETH_WHALE = '0x2497b0f470FAbc47B249A03575aD37D2f65A1A4a';
 const FRAX_WHALE = '0x820A9eb227BF770A9dd28829380d53B76eAf1209';
 const DAI_WHALE = '0x1e3D6eAb4BCF24bcD04721caA11C478a2e59852D';
 const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
@@ -30,6 +31,7 @@ let TEMPLE_ZAPS: TempleZaps;
 let owner: Signer;
 let alice: Signer;
 let binanceSigner: Signer;
+let wethSigner: Signer;
 let fraxSigner: Signer;
 let daiSigner: Signer;
 let ownerAddress: string;
@@ -40,6 +42,7 @@ describe('TempleZaps', async () => {
     [owner, alice] = await ethers.getSigners();
 
     binanceSigner = await impersonateAddress(BINANCE_ACCOUNT_8);
+    wethSigner = await impersonateAddress(WETH_WHALE);
     fraxSigner = await impersonateAddress(FRAX_WHALE);
     daiSigner = await impersonateAddress(DAI_WHALE);
 
@@ -49,7 +52,7 @@ describe('TempleZaps', async () => {
     TEMPLE_ZAPS = await new TempleZaps__factory(owner).deploy();
   });
 
-  xdescribe('Deployment', function () {
+  describe('Deployment', function () {
     it('should set the right owner', async () => {
       expect(await TEMPLE_ZAPS.owner()).to.equal(ownerAddress);
     });
@@ -65,7 +68,7 @@ describe('TempleZaps', async () => {
       await resetFork();
     });
 
-    xit('should zap ETH to OGTemple', async () => {
+    it('should zap ETH to OGTemple', async () => {
       const tokenAddr = ETH;
       const tokenAmount = '5';
       const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
@@ -85,7 +88,7 @@ describe('TempleZaps', async () => {
       const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
 
       await zapIn(
-        binanceSigner,
+        wethSigner,
         TEMPLE_ZAPS,
         tokenAddr,
         tokenAmount,
