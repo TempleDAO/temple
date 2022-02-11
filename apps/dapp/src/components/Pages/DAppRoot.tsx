@@ -1,4 +1,5 @@
-import React, { FC, useState } from 'react';
+import { FC, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMediaQuery } from 'react-responsive';
 import MetamaskButton from 'components/Button/MetamaskButton';
 import DevotionCTA from 'components/Accessories/DevotionCTA';
@@ -15,7 +16,14 @@ interface SizeProps {
 
 const DAppRoot = () => {
   const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
-  const [activeView, setView] = useState(DAppView.BUY);
+
+  const [searchParams] = useSearchParams();
+
+  const viewString = searchParams.get('view')?.toUpperCase();
+  const initialView =
+    DAppView[viewString as keyof typeof DAppView] || DAppView.BUY;
+
+  const [activeView, setView] = useState(initialView);
   const navContext = { activeView, setView };
 
   return (
