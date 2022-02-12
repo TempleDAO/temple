@@ -68,6 +68,7 @@
     "eslint-plugin-react-hooks": "^4.3.0",
     "lint-staged": ">=10",
     "prettier": "^2.5.0",
+    "rollup-plugin-analyzer": "^4.0.0",
     "standard-version": "^9.3.2",
     "storybook-addon-styled-component-theme": "^2.0.0",
     "tsconfig-paths-webpack-plugin": "^3.5.2",
