@@ -1,14 +1,40 @@
+import { AMMView } from 'components/Pages/AmmAltars';
 import React, { useState } from 'react';
 
-export type CustomRoutingPage = (props: CustomRoutingPageProps) => JSX.Element;
+type PageName =
+  'Account' |
+  'TempleGates' |
+  'Foyer' |
+  'DashboardDoor' |
+  'Dashboard' |
+  'RitualsPosters' |
+  'Portals' |
+  'AltarEnter' |
+  'AltarExit' |
+  'AltarDevotion';
+
+  //<Altars {...props} view={AMMView.STAKE} />
+
+export type CustomRoutingPage = PageName | AMMView;
+
+  // const Account = React.lazy(() => import('components/Pages/Account'));
+  // const TempleGates = React.lazy(() => import('components/Pages/TempleGates'));
+  // const Foyer = React.lazy(() => import('components/Pages/Foyer'));
+  // const DashboardDoor = React.lazy(() => import('components/Pages/DashboardDoor'));
+  // const Dashboard = React.lazy(() => import('components/Pages/Dashboard'));
+  // const RitualsPosters = React.lazy(() => import('components/Pages/RitualsMoviePoster'));
+  // const Portals = React.lazy(() => import('components/Pages/Portals'));
+  // const AltarEnter = React.lazy(() => import('components/Pages/AltarEnter'));
+  // const AltarExit = React.lazy(() => import('components/Pages/AltarExit'));
+  // const AltarDevotion = React.lazy(() => import('components/Pages/AltarDevotion'));
 
 type RoutingState = {
   changePageTo(PageComponent: CustomRoutingPage): void;
   back(): void;
-  CurrentPage: CustomRoutingPage;
+  currentPage: CustomRoutingPage;
 };
 
-type CustomRoutingPageProps = {
+export type CustomRoutingPageProps = {
   routingHelper: RoutingState;
 };
 
@@ -17,7 +43,7 @@ function useCustomRouting(
   StartingPage?: CustomRoutingPage,
   StartingNavHistory?: CustomRoutingPage[]
 ): RoutingState {
-  const [CurrentPage, setCurrentPage] = useState<CustomRoutingPage>(
+  const [currentPage, setCurrentPage] = useState<CustomRoutingPage>(
     () => StartingPage || BasePageComponent
   );
   const [navHistory, setNavHistory] = useState<CustomRoutingPage[]>(
@@ -25,7 +51,7 @@ function useCustomRouting(
   );
 
   function changePageTo(PageComponent: CustomRoutingPage) {
-    setNavHistory((history) => [...history, CurrentPage]);
+    setNavHistory((history) => [...history, currentPage]);
     setCurrentPage(() => PageComponent);
   }
 
@@ -39,7 +65,7 @@ function useCustomRouting(
   return {
     changePageTo,
     back,
-    CurrentPage,
+    currentPage,
   };
 }
 
