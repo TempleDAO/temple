@@ -17,15 +17,10 @@ const Claim = React.lazy(() => import('components/Pages/Claim'));
 const Exit = React.lazy(() => import('components/Pages/Exit'));
 const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
 const DAppRoot = React.lazy(() => import('components/Pages/DAppRoot'));
-// const Enter = React.lazy(() => import('components/Pages/Enter'));
-// const PageLayout = React.lazy(() => import('components/Layouts/Page'));
-// const Disclaimer = React.lazy(() => import('components/Pages/Disclaimer'));
-// const Home = React.lazy(() => import('components/Pages/Home'));
-
-import Home from 'components/Pages/Home';
-import Enter from 'components/Pages/Enter';
-import Disclaimer from 'components/Pages/Disclaimer';
-import PageLayout from 'components/Layouts/Page';
+const Enter = React.lazy(() => import('components/Pages/Enter'));
+const PageLayout = React.lazy(() => import('components/Layouts/Page'));
+const Disclaimer = React.lazy(() => import('components/Pages/Disclaimer'));
+const Home = React.lazy(() => import('components/Pages/Home'));
 
 ReactDOM.render(
   <React.StrictMode>
@@ -38,10 +33,10 @@ ReactDOM.render(
               <>
                 <Route path="/the-temple" element={<LazyPage component={AmmSpaRoot} />} />
                 <Route path="/dapp" element={<LazyPage component={DAppRoot} />} />
-                <Route path="/" element={<PageLayout />}>
-                  <Route path="/" element={<Home />} />
+                <Route path="/" element={<LazyPage component={PageLayout} />}>
+                  <Route path="/" element={<LazyPage component={Home} />} />
                   <Route path="disclaimer" element={<Disclaimer />} />
-                  <Route path="enter" element={<Enter />} />
+                  <Route path="enter" element={<LazyPage component={Enter} />} />
                   <Route path="exit" element={<LazyPage component={Exit} />} />
                   <Route path="faith-airdrop" element={<LazyPage component={FaithAirdrop} />} />
                   <Route
