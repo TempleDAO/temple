@@ -2,41 +2,58 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import legacy from '@vitejs/plugin-legacy';
 import path from 'path';
-import analyze from 'rollup-plugin-analyzer';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { dependencies } from './package.json';
 
 const VENDOR_CHUNKS = new Set([
   'react',
   'react-router-dom',
   'react-dom',
-  'howler',
-  'ethers',
+  'styled-components',
+  'polished',
+]);
+
+const VISUALIZATION_CHUNKS = new Set([
+  'react-vis',
+  'd3-shape',
 ]);
 
 const renderChunks = (deps: Record<string, string>) => {
   const chunks: Record<string, string[]> = {};
-  Object.keys(deps).forEach((key) => {
-    if (VENDOR_CHUNKS.has(key)) {
+  Object.keys(deps).forEach((dep) => {
+    if (
+      VENDOR_CHUNKS.has(dep) ||
+      VISUALIZATION_CHUNKS.has(dep)
+    ) {
       return;
     }
-    chunks[key] = [key];
+    chunks[dep] = [dep];
   });
   return chunks;
 };
 
+const plugins = [
+  react(),
+  legacy(),
+];
+
+if (process.env.BUILD_STATS) {
+  plugins.push(visualizer());
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), legacy()],
+  plugins,
   build: {
     sourcemap: process.env.VITE_ENV === 'development',
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: Array.from(VENDOR_CHUNKS),
+          visualizations: Array.from(VISUALIZATION_CHUNKS),
           ...renderChunks(dependencies),
         },
       },
-      plugins: [analyze()],
     },
   },
   resolve: {
