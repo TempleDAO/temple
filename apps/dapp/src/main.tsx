@@ -14,13 +14,18 @@ const FireRitualistCashback = React.lazy(() => import('components/Pages/FireRitu
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
 const FaithAirdrop = React.lazy(() => import('components/Pages/FaithAirdrop'));
 const Claim = React.lazy(() => import('components/Pages/Claim'));
-const Enter = React.lazy(() => import('components/Pages/Enter'));
 const Exit = React.lazy(() => import('components/Pages/Exit'));
-const Disclaimer = React.lazy(() => import('components/Pages/Disclaimer'));
 const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
 const DAppRoot = React.lazy(() => import('components/Pages/DAppRoot'));
-const PageLayout = React.lazy(() => import('components/Layouts/Page'));
-const Home = React.lazy(() => import('components/Pages/Home'));
+// const Enter = React.lazy(() => import('components/Pages/Enter'));
+// const PageLayout = React.lazy(() => import('components/Layouts/Page'));
+// const Disclaimer = React.lazy(() => import('components/Pages/Disclaimer'));
+// const Home = React.lazy(() => import('components/Pages/Home'));
+
+import Home from 'components/Pages/Home';
+import Enter from 'components/Pages/Enter';
+import Disclaimer from 'components/Pages/Disclaimer';
+import PageLayout from 'components/Layouts/Page';
 
 ReactDOM.render(
   <React.StrictMode>
@@ -33,10 +38,10 @@ ReactDOM.render(
               <>
                 <Route path="/the-temple" element={<LazyPage component={AmmSpaRoot} />} />
                 <Route path="/dapp" element={<LazyPage component={DAppRoot} />} />
-                <Route path="/" element={<LazyPage component={PageLayout} />}>
-                  <Route path="/" element={<LazyPage component={Home} />} />
-                  <Route path="disclaimer" element={<LazyPage component={Disclaimer} />} />
-                  <Route path="enter" element={<LazyPage component={Enter} />} />
+                <Route path="/" element={<PageLayout />}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="disclaimer" element={<Disclaimer />} />
+                  <Route path="enter" element={<Enter />} />
                   <Route path="exit" element={<LazyPage component={Exit} />} />
                   <Route path="faith-airdrop" element={<LazyPage component={FaithAirdrop} />} />
                   <Route
