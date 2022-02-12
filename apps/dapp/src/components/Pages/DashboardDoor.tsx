@@ -7,7 +7,7 @@ import bgImage from 'assets/images/dashboardroom_bg.jpg';
 import glowLeft from 'assets/images/dashboardroom_glowleft.png';
 import glowRight from 'assets/images/dashboardroom_glowright.png';
 import { getBgImgDimensions } from 'utils/imageSize';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import useCancellableTrack from 'hooks/use-cancellable-track';
 import doorwayToDashboardsTrack from 'assets/sounds/doorway-to-dashboards-bg-track.mp3';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
@@ -28,7 +28,7 @@ const track = new Howl({
   volume: 0.15,
 });
 
-const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
+const DashboardDoorPage = ({ routingHelper }: CustomRoutingPageProps) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
@@ -69,7 +69,7 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={glowLeft}
             title="Dashboard"
-            onClick={() => changePageTo(Dashboard)}
+            onClick={() => changePageTo('Dashboard')}
             style={{
               transform: `scale(${0.98 * bgDimensions.scaleW}%)`,
               bottom: `${0.152 * bgDimensions.height}px`,
@@ -85,7 +85,7 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={glowRight}
             title="Account"
-            onClick={() => changePageTo(Account)}
+            onClick={() => changePageTo('Account')}
             style={{
               transform: `scale(${0.98 * bgDimensions.scaleW}%)`,
               bottom: `${0.155 * bgDimensions.height}px`,

@@ -11,7 +11,7 @@ import { Unlock } from 'components/AMM/Unlock';
 import { Withdraw } from 'components/AMM/Withdraw';
 import Image from 'components/Image/Image';
 import withWallet from 'hoc/withWallet';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import React, { ReactNode, useEffect, useState } from 'react';
 import styled, { css } from 'styled-components';
 
@@ -33,8 +33,7 @@ export enum AMMView {
 }
 
 // CustomRoutingPage does not take view as prop
-//@ts-ignore
-const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
+const AMMAltars = ({ routingHelper, view }: CustomRoutingPageProps & { view: AMMView }) => {
   const { back } = routingHelper;
   const [activeAMMView, setActiveAMMView] = useState<AMMView | null>(view);
 

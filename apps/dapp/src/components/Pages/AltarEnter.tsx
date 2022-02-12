@@ -1,16 +1,16 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Howl } from 'howler';
-import Altars, { AMMView } from 'components/Pages/AmmAltars';
+import { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/altar-enter-bg.jpg';
 import glowLeft from 'assets/images/AMM_leftcut.png';
 import glowRight from 'assets/images/AMM_rightglow.png';
 import enterAltarTrack from 'assets/sounds/enter-altar-bg-track.mp3';
 import { getBgImgDimensions } from 'utils/imageSize';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 import { Background } from 'components/BackgroundItem/Background';
 import useCancellableTrack from 'hooks/use-cancellable-track';
+import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 
 type BgDimension = {
   width: number;
@@ -27,7 +27,7 @@ const soundscape = new Howl({
   volume: 0.15,
 });
 
-const EnterPage: CustomRoutingPage = ({ routingHelper }) => {
+const EnterPage = ({ routingHelper }: CustomRoutingPageProps) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
@@ -69,10 +69,7 @@ const EnterPage: CustomRoutingPage = ({ routingHelper }) => {
             src={glowLeft}
             title="Buy"
             onClick={() =>
-              changePageTo((props) => (
-                //@ts-ignore
-                <Altars {...props} view={AMMView.BUY} />
-              ))
+              changePageTo(AMMView.BUY)
             }
             style={{
               transform: `scale(${1 * bgDimensions.scaleW}%)`,
@@ -90,10 +87,7 @@ const EnterPage: CustomRoutingPage = ({ routingHelper }) => {
             src={glowRight}
             title="Stake"
             onClick={() =>
-              changePageTo((props) => (
-                //@ts-ignore
-                <Altars {...props} view={AMMView.STAKE} />
-              ))
+              changePageTo(AMMView.STAKE)
             }
             style={{
               transform: `scale(${1 * bgDimensions.scaleW}%)`,

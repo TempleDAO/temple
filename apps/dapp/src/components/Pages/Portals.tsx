@@ -1,9 +1,6 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Howl } from 'howler';
 import styled from 'styled-components';
-import AltarEnter from 'components/Pages/AltarEnter';
-import AltarExit from 'components/Pages/AltarExit';
-import AltarDevotion from 'components/Pages/AltarDevotion';
 import useUnmountableTrack from 'hooks/use-unmountable-track';
 import doorwaysToAltarsTrack from 'assets/sounds/doorways-to-altars-bg-track.mp3';
 import BackButton from 'components/Button/BackButton';
@@ -14,7 +11,7 @@ import rightGlow from 'assets/images/glow_right.png';
 import scrollGlow from 'assets/images/glow_scroll.png';
 import { PriceChart } from 'components/Charts/PriceChart';
 import { getBgImgDimensions } from 'utils/imageSize';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 import { Background } from 'components/BackgroundItem/Background';
 
@@ -33,7 +30,7 @@ const track = new Howl({
   volume: 0.15,
 });
 
-const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
+const PortalPage = ({ routingHelper }: CustomRoutingPageProps) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
@@ -84,7 +81,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={leftGlow}
             title="Devotion"
-            onClick={() => changePageTo(AltarDevotion)}
+            onClick={() => changePageTo('AltarDevotion')}
             style={{
               transform: `scale(${0.99 * bgDimensions.scaleW}%)`,
               bottom: `${0.443 * bgDimensions.height}px`,
@@ -100,7 +97,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={midGlow}
             title="Enter"
-            onClick={() => changePageTo(AltarEnter)}
+            onClick={() => changePageTo('AltarEnter')}
             style={{
               transform: `scale(${0.99 * bgDimensions.scaleW}%)`,
               bottom: `${0.466 * bgDimensions.height}px`,
@@ -116,7 +113,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={rightGlow}
             title="Exit"
-            onClick={() => changePageTo(AltarExit)}
+            onClick={() => changePageTo('AltarExit')}
             style={{
               transform: `scale(${0.99 * bgDimensions.scaleW}%)`,
               bottom: `${0.443 * bgDimensions.height}px`,

@@ -11,7 +11,7 @@ import { Spacer } from 'components/AMM/helpers/components';
 import { theme } from 'styles/theme';
 import { formatNumber, formatMillions } from 'utils/formatter';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 
 import texture1 from 'assets/images/texture-1.svg';
 import texture2 from 'assets/images/texture-2.svg';
@@ -100,7 +100,7 @@ const DUNE_RATIO_CHART =
 // const DUNE_RATIO_VALUE =
 //   'https://dune.xyz/embeds/237286/444167/ae8ef580-ef5f-4123-b629-72fc87da465d';
 
-const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
+const Dashboard = ({ routingHelper }: CustomRoutingPageProps) => {
   const { back } = routingHelper;
 
   const dashboardMetrics = useRefreshableDashboardMetrics();
