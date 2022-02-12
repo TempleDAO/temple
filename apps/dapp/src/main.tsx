@@ -7,7 +7,8 @@ import { NotificationProvider } from 'providers/NotificationProvider';
 import { WalletProvider } from 'providers/WalletProvider';
 import { GlobalStyle } from 'styles/GlobalStyle';
 import { theme } from 'styles/theme';
-import Loader from 'components/Loader/Loader';
+
+import LazyPage from 'utils/LazyPage';
 
 const FireRitualistCashback = React.lazy(() => import('components/Pages/FireRitualistCashback'));
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -20,19 +21,6 @@ const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
 const DAppRoot = React.lazy(() => import('components/Pages/DAppRoot'));
 const PageLayout = React.lazy(() => import('components/Layouts/Page'));
 const Home = React.lazy(() => import('components/Pages/Home'));
-
-interface LazyPageProps {
-  component: React.LazyExoticComponent<(props: unknown) => JSX.Element>;
-}
-
-const LazyPage = (
-  { component: Component }: LazyPageProps) => {
-  return (
-    <React.Suspense fallback={<Loader />}>
-      <Component />
-    </React.Suspense>
-  );
-};
 
 ReactDOM.render(
   <React.StrictMode>
