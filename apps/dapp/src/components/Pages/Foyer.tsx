@@ -1,7 +1,6 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Howl } from 'howler';
-import RitualsPosters from 'components/Pages/RitualsMoviePoster';
-// import Portals from 'components/Pages/Portals';
+
 import BackButton from 'components/Button/BackButton';
 import useUnmountableTrack from 'hooks/use-unmountable-track';
 import bgImage from 'assets/images/foyer.jpg';
@@ -11,7 +10,6 @@ import rightGlow from 'assets/images/right-glow.png';
 import foyerTrack from 'assets/sounds/foyer-bg-track.mp3';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
-// import DashboardDoorPage from 'components/Pages/DashboardDoor';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 import { Background } from 'components/BackgroundItem/Background';
 

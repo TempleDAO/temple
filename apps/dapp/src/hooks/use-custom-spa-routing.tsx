@@ -1,5 +1,6 @@
-import { AMMView } from 'components/Pages/AmmAltars';
 import React, { useState } from 'react';
+
+import { AMMView } from 'components/Pages/AmmAltars';
 
 type PageName =
   'Account' |
@@ -13,20 +14,7 @@ type PageName =
   'AltarExit' |
   'AltarDevotion';
 
-  //<Altars {...props} view={AMMView.STAKE} />
-
 export type CustomRoutingPage = PageName | AMMView;
-
-  // const Account = React.lazy(() => import('components/Pages/Account'));
-  // const TempleGates = React.lazy(() => import('components/Pages/TempleGates'));
-  // const Foyer = React.lazy(() => import('components/Pages/Foyer'));
-  // const DashboardDoor = React.lazy(() => import('components/Pages/DashboardDoor'));
-  // const Dashboard = React.lazy(() => import('components/Pages/Dashboard'));
-  // const RitualsPosters = React.lazy(() => import('components/Pages/RitualsMoviePoster'));
-  // const Portals = React.lazy(() => import('components/Pages/Portals'));
-  // const AltarEnter = React.lazy(() => import('components/Pages/AltarEnter'));
-  // const AltarExit = React.lazy(() => import('components/Pages/AltarExit'));
-  // const AltarDevotion = React.lazy(() => import('components/Pages/AltarDevotion'));
 
 type RoutingState = {
   changePageTo(PageComponent: CustomRoutingPage): void;

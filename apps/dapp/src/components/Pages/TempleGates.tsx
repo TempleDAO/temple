@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { Howl } from 'howler';
-import Foyer from 'components/Pages/Foyer';
+
 import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import useUnmountableTrack from 'hooks/use-unmountable-track';
 import withWallet from 'hoc/withWallet';
