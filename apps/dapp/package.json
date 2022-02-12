@@ -14,7 +14,8 @@
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
     "version:release": "standard-version",
-    "version:prerelease": "standard-version --prerelease beta"
+    "version:prerelease": "standard-version --prerelease beta",
+    "build-with-stats": "tsc && BUILD_STATS=true vite build"
   },
   "dependencies": {
     "@tippyjs/react": "^4.2.6",
