@@ -24,13 +24,11 @@ const renderChunks = (deps: Record<string, string>) => {
   return chunks;
 };
 
-const IS_DEV = process.env.VITE_ENV === 'development';
-
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), legacy()],
   build: {
-    sourcemap: IS_DEV,
+    sourcemap: process.env.VITE_ENV === 'development',
     rollupOptions: {
       output: {
         manualChunks: {
