@@ -8,17 +8,29 @@ import { useHash } from 'hooks/use-query';
 import Loader from 'components/Loader/Loader';
 import { AMMView } from './AmmAltars';
 
-const Account = React.lazy(() => import('components/Pages/Account'));
-const TempleGates = React.lazy(() => import('components/Pages/TempleGates'));
-const Foyer = React.lazy(() => import('components/Pages/Foyer'));
-const DashboardDoor = React.lazy(() => import('components/Pages/DashboardDoor'));
-const Dashboard = React.lazy(() => import('components/Pages/Dashboard'));
-const RitualsPosters = React.lazy(() => import('components/Pages/RitualsMoviePoster'));
-const Portals = React.lazy(() => import('components/Pages/Portals'));
-const AltarEnter = React.lazy(() => import('components/Pages/AltarEnter'));
-const AltarExit = React.lazy(() => import('components/Pages/AltarExit'));
-const AltarDevotion = React.lazy(() => import('components/Pages/AltarDevotion'));
-const AmmAltars = React.lazy(() => import('./AmmAltars'));
+type ExoticComponentWithPreload = React.LazyExoticComponent<React.ComponentType<any>> & {
+  preload: () => Promise<any>;
+}
+
+const createLazyPreloadable = (dynamicImport: () => Promise<any>): ExoticComponentWithPreload => {
+  const ExoticComponent = React.lazy(dynamicImport);
+  // @ts-ignore
+  ExoticComponent.preload = dynamicImport;
+  // @ts-ignore
+  return ExoticComponent;
+};
+
+const Account = createLazyPreloadable(() => import('components/Pages/Account'));
+const TempleGates = createLazyPreloadable(() => import('components/Pages/TempleGates'));
+const Foyer = createLazyPreloadable(() => import('components/Pages/Foyer'));
+const DashboardDoor = createLazyPreloadable(() => import('components/Pages/DashboardDoor'));
+const Dashboard = createLazyPreloadable(() => import('components/Pages/Dashboard'));
+const RitualsPosters = createLazyPreloadable(() => import('components/Pages/RitualsMoviePoster'));
+const Portals = createLazyPreloadable(() => import('components/Pages/Portals'));
+const AltarEnter = createLazyPreloadable(() => import('components/Pages/AltarEnter'));
+const AltarExit = createLazyPreloadable(() => import('components/Pages/AltarExit'));
+const AltarDevotion = createLazyPreloadable(() => import('components/Pages/AltarDevotion'));
+const AmmAltars = createLazyPreloadable(() => import('./AmmAltars'));
 
 const Container = styled.div`
   height: 100vh;
@@ -30,7 +42,14 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
     case 'TempleGates':
       return (
         <React.Suspense fallback={<Loader />}>
-          <TempleGates routingHelper={routingHelper} />
+          <TempleGates
+            routingHelper={routingHelper}
+            preloadPages={() => {
+              Foyer.preload().catch((err) => {
+                console.log('failed to preload foyer', err)
+              })
+            }}
+          />
         </React.Suspense>
       );
     case 'Account':
@@ -42,7 +61,18 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
     case 'Foyer':
       return (
         <React.Suspense fallback={<Loader />}>
-          <Foyer routingHelper={routingHelper} />
+          <Foyer
+            routingHelper={routingHelper}
+            preloadPages={() => {
+              Promise.all([
+                RitualsPosters.preload(),
+                Portals.preload(),
+                DashboardDoor.preload(),
+              ]).catch((err) => {
+                console.log('failed to preload', err);
+              });
+            }}
+          />
         </React.Suspense>
       );
     case 'Dashboard':
@@ -54,7 +84,17 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
     case 'DashboardDoor':
       return (
         <React.Suspense fallback={<Loader />}>
-          <DashboardDoor routingHelper={routingHelper} />
+          <DashboardDoor
+            preloadPages={() => {
+              Promise.all([
+                Account.preload(),
+                Dashboard.preload(),
+              ]).catch((err) => {
+                console.log('failed to preload', err);
+              });
+            }}
+            routingHelper={routingHelper}
+          />
         </React.Suspense>
       );
     case 'RitualsPosters':
@@ -66,7 +106,18 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
     case 'Portals':
       return (
         <React.Suspense fallback={<Loader />}>
-          <Portals routingHelper={routingHelper} />
+          <Portals
+            routingHelper={routingHelper}
+            preloadPages={() => {
+              Promise.all([
+                AltarDevotion.preload(),
+                AltarEnter.preload(),
+                AltarExit.preload(),
+              ]).catch((err) => {
+                console.log('failed to preload', err);
+              });
+            }}
+          />
         </React.Suspense>
       );
     case 'AltarEnter':

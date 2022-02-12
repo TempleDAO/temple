@@ -28,12 +28,18 @@ const track = new Howl({
   volume: 0.15,
 });
 
-const FoyerPage = ({ routingHelper }: CustomRoutingPageProps) => {
+const FoyerPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
     Dispatch<SetStateAction<BgDimension | undefined>>
   ] = useState();
+
+  React.useEffect(() => {
+    if (preloadPages) {
+      preloadPages();
+    }
+  }, []);
 
   const { back, changePageTo } = routingHelper;
 

@@ -24,6 +24,7 @@ type RoutingState = {
 
 export type CustomRoutingPageProps = {
   routingHelper: RoutingState;
+  preloadPages?: () => void;
 };
 
 function useCustomRouting(

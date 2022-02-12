@@ -1,7 +1,5 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Howl } from 'howler';
-import Dashboard from 'components/Pages/Dashboard';
-import Account from 'components/Pages/Account';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/dashboardroom_bg.jpg';
 import glowLeft from 'assets/images/dashboardroom_glowleft.png';
@@ -28,12 +26,18 @@ const track = new Howl({
   volume: 0.15,
 });
 
-const DashboardDoorPage = ({ routingHelper }: CustomRoutingPageProps) => {
+const DashboardDoorPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
     Dispatch<SetStateAction<BgDimension | undefined>>
   ] = useState();
+
+  React.useEffect(() => {
+    if (preloadPages) {
+      preloadPages();
+    }
+  }, [])
 
   const { back, changePageTo } = routingHelper;
 

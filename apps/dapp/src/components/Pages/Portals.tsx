@@ -30,12 +30,18 @@ const track = new Howl({
   volume: 0.15,
 });
 
-const PortalPage = ({ routingHelper }: CustomRoutingPageProps) => {
+const PortalPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
     Dispatch<SetStateAction<BgDimension | undefined>>
   ] = useState();
+
+  React.useEffect(() => {
+    if (preloadPages) {
+      preloadPages();
+    }
+  }, []);
 
   // Change visibility of chart component
   const [chartVisible, setChartVisible] = useState(false);
