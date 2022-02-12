@@ -2,12 +2,44 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import legacy from '@vitejs/plugin-legacy';
 import path from 'path';
+import analyze from 'rollup-plugin-analyzer';
+import { dependencies } from './package.json';
+
+const VENDOR_CHUNKS = new Set([
+  'react',
+  'react-router-dom',
+  'react-dom',
+  'howler',
+  'ethers',
+]);
+
+const renderChunks = (deps: Record<string, string>) => {
+  const chunks: Record<string, string[]> = {};
+  Object.keys(deps).forEach((key) => {
+    if (VENDOR_CHUNKS.has(key)) {
+      return;
+    }
+    chunks[key] = [key];
+  });
+  return chunks;
+};
+
+const IS_DEV = process.env.VITE_ENV === 'development';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), legacy()],
   build: {
-    sourcemap: process.env.VITE_ENV === 'development',
+    sourcemap: IS_DEV,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: Array.from(VENDOR_CHUNKS),
+          ...renderChunks(dependencies),
+        },
+      },
+      plugins: [analyze()],
+    },
   },
   resolve: {
     alias: {
