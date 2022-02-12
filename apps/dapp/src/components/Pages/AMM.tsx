@@ -61,9 +61,7 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
           <TempleGates
             routingHelper={routingHelper}
             preloadPages={() => {
-              Foyer.preload().catch((err) => {
-                console.log('failed to preload foyer', err)
-              })
+              Foyer.preload().catch((err) => console.error('[Preload Error] ', err));
             }}
           />
         </React.Suspense>
@@ -84,9 +82,7 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
                 RitualsPosters.preload(),
                 Portals.preload(),
                 DashboardDoor.preload(),
-              ]).catch((err) => {
-                console.log('failed to preload', err);
-              });
+              ]).catch((err) => console.error('[Preload Error] ', err));
             }}
           />
         </React.Suspense>
@@ -105,9 +101,7 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
               Promise.all([
                 Account.preload(),
                 Dashboard.preload(),
-              ]).catch((err) => {
-                console.log('failed to preload', err);
-              });
+              ]).catch((err) => console.error('[Preload Error] ', err));
             }}
             routingHelper={routingHelper}
           />
@@ -129,9 +123,7 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
                 AltarDevotion.preload(),
                 AltarEnter.preload(),
                 AltarExit.preload(),
-              ]).catch((err) => {
-                console.log('failed to preload', err);
-              });
+              ]).catch((err) => console.error('[Preload Error] ', err));
             }}
           />
         </React.Suspense>
@@ -145,7 +137,12 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
     case 'AltarExit':
       return (
         <React.Suspense fallback={<Loader />}>
-          <AltarExit routingHelper={routingHelper} />
+          <AltarExit
+            routingHelper={routingHelper}
+            preloadPages={() => {
+              AmmAltars.preload().catch((err) => console.error('[Preload Error] ', err));
+            }}
+          />
         </React.Suspense>
       );
     case 'AltarDevotion':
