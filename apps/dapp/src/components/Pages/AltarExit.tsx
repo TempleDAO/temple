@@ -109,7 +109,7 @@ const ExitPage = ({ routingHelper }: CustomRoutingPageProps) => {
           <BackgroundItem
             src={glow3}
             title="Withdraw"
-            onClick={() => changePageTo(AMMView.WITHDRAW)}
+            onClick={() => changePageTo(AMMView.WITHDRAW_TEMPLE)}
             style={{
               transform: `scale(${1 * bgDimensions.scaleW}%)`,
               bottom: `${-0.036 * bgDimensions.height}px`,

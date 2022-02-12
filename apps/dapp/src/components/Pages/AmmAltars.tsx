@@ -23,7 +23,7 @@ export enum AMMView {
 
   UNLOCK = 'UNLOCK',
   JOIN_QUEUE = 'JOIN_QUEUE',
-  WITHDRAW = 'WITHDRAW',
+  WITHDRAW_TEMPLE = 'WITHDRAW_TEMPLE',
   SELL = 'SELL',
   DEVOTION = 'DEVOTION',
 
@@ -64,7 +64,7 @@ const AMMAltars = ({ routingHelper, view }: CustomRoutingPageProps & { view: AMM
         );
       case AMMView.JOIN_QUEUE:
         return <Queue />;
-      case AMMView.WITHDRAW:
+      case AMMView.WITHDRAW_TEMPLE:
         return <Withdraw />;
       case AMMView.DEVOTION:
         return ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ENGAGED ? (
@@ -79,18 +79,18 @@ const AMMAltars = ({ routingHelper, view }: CustomRoutingPageProps & { view: AMM
 
   const getBackgroundImage = () => {
     let bgImage = '';
-    if (activeAMMView === 'BUY' || activeAMMView === 'STAKE') {
+    if (activeAMMView === AMMView.BUY || activeAMMView === AMMView.STAKE) {
       bgImage = EnterBgImage;
     }
     if (
-      activeAMMView === 'UNLOCK OGTEMPLE' ||
-      activeAMMView === 'JOIN QUEUE' ||
-      activeAMMView === 'WITHDRAW TEMPLE' ||
-      activeAMMView === 'SELL'
+      activeAMMView === AMMView.UNLOCK ||
+      activeAMMView === AMMView.JOIN_QUEUE ||
+      activeAMMView === AMMView.WITHDRAW_TEMPLE ||
+      activeAMMView === AMMView.SELL
     ) {
       bgImage = ExitBgImage;
     }
-    if (activeAMMView === 'DEVOTION') {
+    if (activeAMMView === AMMView.DEVOTION) {
       bgImage = DevotionBgImage;
     }
 
@@ -102,13 +102,13 @@ const AMMAltars = ({ routingHelper, view }: CustomRoutingPageProps & { view: AMM
       <Background backgroundUrl={() => getBackgroundImage()}>
         <ConvoFlowContent
           isSmall={
-            activeAMMView === 'BUY' ||
-            activeAMMView === 'STAKE' ||
-            activeAMMView === 'SELL'
+            activeAMMView === AMMView.BUY ||
+            activeAMMView === AMMView.STAKE ||
+            activeAMMView === AMMView.SELL
           }
           isDisabled={
             ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true' &&
-            (activeAMMView === 'BUY' || activeAMMView === 'SELL')
+            (activeAMMView === AMMView.BUY || activeAMMView === AMMView.SELL)
           }
         >
           <ConvoFlowClose
