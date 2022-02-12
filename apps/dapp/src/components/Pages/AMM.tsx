@@ -5,13 +5,15 @@ import useCustomRouting, { CustomRoutingPageProps } from 'hooks/use-custom-spa-r
 import MetamaskButton from 'components/Button/MetamaskButton';
 import DevotionCTA from 'components/Accessories/DevotionCTA';
 import { useHash } from 'hooks/use-query';
-import Loader from 'components/Loader/Loader';
+import Spinner from 'components/Loader/Loader';
 import { AMMView } from './AmmAltars';
 
 type ExoticComponentWithPreload = React.LazyExoticComponent<React.ComponentType<any>> & {
   preload: () => Promise<any>;
 }
 
+// Note(MrFujisawa):
+// Idea taken from https://medium.com/hackernoon/lazy-loading-and-preloading-components-in-react-16-6-804de091c82d
 const createLazyPreloadable = (dynamicImport: () => Promise<any>): ExoticComponentWithPreload => {
   const ExoticComponent = React.lazy(dynamicImport);
   // @ts-ignore
@@ -36,6 +38,20 @@ const Container = styled.div`
   height: 100vh;
   width: 100vw;
 `;
+
+const LoaderWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  justify-self: center;
+`;
+
+const Loader = () => (
+  <LoaderWrapper>
+    <Spinner />
+  </LoaderWrapper>
+);
 
 const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
   switch (routingHelper.currentPage) {
