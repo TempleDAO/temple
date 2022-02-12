@@ -1,16 +1,12 @@
 import React from 'react';
+import styled from 'styled-components';
+
+import useCustomRouting, { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import MetamaskButton from 'components/Button/MetamaskButton';
 import DevotionCTA from 'components/Accessories/DevotionCTA';
-import styled from 'styled-components';
-import useCustomRouting, { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import { useHash } from 'hooks/use-query';
 import Loader from 'components/Loader/Loader';
 import { AMMView } from './AmmAltars';
-
-// import TempleGates from 'components/Pages/TempleGates';
-// import Account from 'components/Pages/Account';
-// import Foyer from 'components/Pages/Foyer';
-// import DashboardDoor from 'components/Pages/DashboardDoor';
 
 const Account = React.lazy(() => import('components/Pages/Account'));
 const TempleGates = React.lazy(() => import('components/Pages/TempleGates'));
