@@ -22,6 +22,7 @@ import {
   TreasuryManagementProxy__factory,
   AcceleratedExitQueue,
   AcceleratedExitQueue__factory,
+  TempleZaps__factory,
 } from '../../typechain';
 
 function toAtto(n: number) {
@@ -290,6 +291,12 @@ async function main() {
   await faith.gain(account1.address, 25);
   await faith.gain(account2.address, 45);
 
+  //deploy templeZaps contract
+  const templeZaps = await new TempleZaps__factory(owner).deploy(
+    templeToken.address,
+    templeRouter.address
+  );
+
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
     EXIT_QUEUE_ADDRESS: exitQueue.address,
@@ -311,6 +318,7 @@ async function main() {
     TEMPLE_DEVOTION_ADDRESS: devotion.address,
     TEMPLE_FAITH_ADDRESS: faith.address,
     LOCKED_OG_TEMPLE_DEVOTION_ADDRESS: lockedOgTemple_new.address,
+    TEMPLE_ZAPS_ADDRESS: templeZaps.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys
