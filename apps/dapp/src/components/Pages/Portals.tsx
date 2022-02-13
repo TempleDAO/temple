@@ -1,6 +1,7 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Howl } from 'howler';
 import styled from 'styled-components';
+
 import useUnmountableTrack from 'hooks/use-unmountable-track';
 import doorwaysToAltarsTrack from 'assets/sounds/doorways-to-altars-bg-track.mp3';
 import BackButton from 'components/Button/BackButton';
@@ -9,11 +10,12 @@ import midGlow from 'assets/images/glow_center.png';
 import leftGlow from 'assets/images/glow_left.png';
 import rightGlow from 'assets/images/glow_right.png';
 import scrollGlow from 'assets/images/glow_scroll.png';
-import { PriceChart } from 'components/Charts/PriceChart';
 import { getBgImgDimensions } from 'utils/imageSize';
 import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 import { Background } from 'components/BackgroundItem/Background';
+
+const PriceChart = React.lazy(() => import('components/Charts/PriceChart'));
 
 type BgDimension = {
   width: number;
@@ -160,12 +162,10 @@ const PortalPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => 
               backgroundColor: chartVisible ? 'black' : 'transparent',
             }}
           />
-          <ChartContainer
-            style={{
-              transform: chartVisible ? 'scale(100%)' : 'scale(0%)',
-            }}
-          >
-            <PriceChart />
+          <ChartContainer chartVisible={chartVisible}>
+            <React.Suspense fallback={null}>
+              <PriceChart />
+            </React.Suspense>
           </ChartContainer>
         </>
       )}
@@ -183,12 +183,13 @@ const OffClick = styled.div`
   opacity: 0.3;
 `;
 
-const ChartContainer = styled.div`
+const ChartContainer = styled.div<{ chartVisible: boolean }>`
   position: absolute;
   bottom: 0;
   margin-left: 5vw;
   width: 90vw;
   height: 60vh;
+  transform: ${({ chartVisible }) => chartVisible ? 'scale(100%)' : 'scale(0%)'};
   /* TODO: user existing or add this as new theme color */
   background: rgba(0, 0, 0, 0.95);
   z-index: 20;
