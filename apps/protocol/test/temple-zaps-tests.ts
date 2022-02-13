@@ -79,7 +79,7 @@ describe('TempleZaps', async () => {
     });
   });
 
-  describe('ZapIn', async () => {
+  xdescribe('ZapIn', async () => {
     afterEach(async () => {
       await resetFork();
     });
@@ -213,7 +213,7 @@ describe('TempleZaps', async () => {
         await ownerConnect.toggleContractActive();
       });
 
-      it('should disable zapIn when paused', async () => {
+      xit('should disable zapIn when paused', async () => {
         // Pause
         const ownerConnect = TEMPLE_ZAPS.connect(owner);
         await ownerConnect.toggleContractActive();
@@ -228,20 +228,6 @@ describe('TempleZaps', async () => {
             TEMPLE_ZAPS,
             usdcAddr,
             usdcAmount,
-            minTempleReceived
-          ),
-          PAUSED
-        );
-
-        // Zap in FRAX
-        const fraxAddr = FRAX;
-        const fraxAmount = '10000';
-        await shouldThrow(
-          zapIn(
-            fraxSigner,
-            TEMPLE_ZAPS,
-            fraxAddr,
-            fraxAmount,
             minTempleReceived
           ),
           PAUSED

@@ -76,11 +76,6 @@ module.exports = {
         : [],
       gasPrice: 2000000000,
     },
-    hardhat: {
-      forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-      }
-    },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
       accounts: process.env.MAINNET_ADDRESS_PRIVATE_KEY
