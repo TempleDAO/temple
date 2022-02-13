@@ -10,9 +10,9 @@ import { AMMView } from './AmmAltars';
 
 type ExoticComponentWithPreload = React.LazyExoticComponent<React.ComponentType<any>> & {
   preload: () => Promise<any>;
-}
+};
 
-// Note(MrFujisawa):
+// Note(MrFujisawa): Struggling to type this stuff correctly.
 // Idea taken from https://medium.com/hackernoon/lazy-loading-and-preloading-components-in-react-16-6-804de091c82d
 const createLazyPreloadable = (dynamicImport: () => Promise<any>): ExoticComponentWithPreload => {
   const ExoticComponent = React.lazy(dynamicImport);
@@ -22,8 +22,9 @@ const createLazyPreloadable = (dynamicImport: () => Promise<any>): ExoticCompone
   return ExoticComponent;
 };
 
+import TempleGates from 'components/Pages/TempleGates';
+
 const Account = createLazyPreloadable(() => import('components/Pages/Account'));
-const TempleGates = createLazyPreloadable(() => import('components/Pages/TempleGates'));
 const Foyer = createLazyPreloadable(() => import('components/Pages/Foyer'));
 const DashboardDoor = createLazyPreloadable(() => import('components/Pages/DashboardDoor'));
 const Dashboard = createLazyPreloadable(() => import('components/Pages/Dashboard'));
@@ -57,14 +58,12 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
   switch (routingHelper.currentPage) {
     case 'TempleGates':
       return (
-        <React.Suspense fallback={<Loader />}>
-          <TempleGates
-            routingHelper={routingHelper}
-            preloadPages={() => {
-              Foyer.preload().catch((err) => console.error('[Preload Error] ', err));
-            }}
-          />
-        </React.Suspense>
+        <TempleGates
+          routingHelper={routingHelper}
+          preloadPages={() => {
+            Foyer.preload().catch((err) => console.error('[Preload Error] ', err));
+          }}
+        />
       );
     case 'Account':
       return (
@@ -163,6 +162,8 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
       </React.Suspense>
     );
   }
+
+  // Should never get here... log something?
 
   return null;
 }
