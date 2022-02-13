@@ -75,7 +75,7 @@ describe('TempleZaps', async () => {
         TEMPLE_ZAPS,
         tokenAddr,
         tokenAmount,
-        minTempleReceived
+        minTempleReceived,
       );
     });
 
@@ -365,6 +365,7 @@ async function zapIn(
     tokenAddr,
     sellAmount,
     minTempleReceived,
+    Math.floor(Date.now() / 1000) + 1200, // deadline of 20 minutes from now
     ZEROEX_EXCHANGE_PROXY,
     swapCallData,
     overrides
@@ -444,6 +445,7 @@ async function zapWithPermit(
     tokenAddr,
     sellAmount,
     minTempleReceived,
+    Math.floor(Date.now() / 1000) + 1200, // amm deadline of 20 minutes from now
     ZEROEX_EXCHANGE_PROXY,
     swapCallData,
     deadline,

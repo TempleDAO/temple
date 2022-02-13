@@ -19,8 +19,6 @@ interface ITempleStaking {
 }
 
 contract TempleZaps is ZapBaseV2_3 {
-  uint256 private constant TEMPLE_AMM_DEADLINE = 1200; // 20 minutes
-
   address public TEMPLE = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
   address public TEMPLE_STAKING = 0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77;
   address public TEMPLE_FRAX_AMM_ROUTER =
@@ -45,6 +43,7 @@ contract TempleZaps is ZapBaseV2_3 {
    * @param fromToken The token used for entry (address(0) if ether)
    * @param fromAmount The amount of fromToken to zap
    * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
+   * @param ammDeadline The UNIX timestamp the zap must be completed by
    * @param swapTarget Execution target for the swap
    * @param swapData DEX data
    * @return amountOGTemple Quantity of OGTemple received
@@ -53,6 +52,7 @@ contract TempleZaps is ZapBaseV2_3 {
     address fromToken,
     uint256 fromAmount,
     uint256 minTempleReceived,
+    uint256 ammDeadline,
     address swapTarget,
     bytes calldata swapData
   ) public payable whenNotPaused returns (uint256 amountOGTemple) {
@@ -65,7 +65,7 @@ contract TempleZaps is ZapBaseV2_3 {
       swapData
     );
 
-    amountOGTemple = _enterTemple(fraxBought, minTempleReceived);
+    amountOGTemple = _enterTemple(fraxBought, minTempleReceived, ammDeadline);
     emit zappedIn(msg.sender, amountOGTemple);
   }
 
@@ -74,9 +74,10 @@ contract TempleZaps is ZapBaseV2_3 {
    * @param fromToken The token used for entry
    * @param fromAmount The amount of fromToken to zap
    * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
+   * @param ammDeadline The UNIX timestamp the zap must be completed by
    * @param swapTarget Execution target for the swap
    * @param swapData DEX data
-   * @param deadline Permit deadline
+   * @param permitDeadline Permit deadline
    * @param v secp256k1 signature component
    * @param r secp256k1 signature component
    * @param s secp256k1 signature component
@@ -86,9 +87,10 @@ contract TempleZaps is ZapBaseV2_3 {
     address fromToken,
     uint256 fromAmount,
     uint256 minTempleReceived,
+    uint256 ammDeadline,
     address swapTarget,
     bytes calldata swapData,
-    uint256 deadline,
+    uint256 permitDeadline,
     uint8 v,
     bytes32 r,
     bytes32 s
@@ -96,9 +98,9 @@ contract TempleZaps is ZapBaseV2_3 {
     require(permittableTokens[fromToken], 'TZ: token not allowed');
 
     ERC20 token = ERC20(fromToken);
-    token.permit(msg.sender, address(this), fromAmount, deadline, v, r, s);
+    token.permit(msg.sender, address(this), fromAmount, permitDeadline, v, r, s);
 
-    return zapIn(fromToken, fromAmount, minTempleReceived, swapTarget, swapData);
+    return zapIn(fromToken, fromAmount, minTempleReceived, ammDeadline, swapTarget, swapData);
   }
 
   /**
@@ -107,7 +109,7 @@ contract TempleZaps is ZapBaseV2_3 {
    * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
    * @return amountOGTemple Quantity of OGTemple received
    */
-  function _enterTemple(uint256 amountFRAX, uint256 minTempleReceived)
+  function _enterTemple(uint256 amountFRAX, uint256 minTempleReceived, uint256 ammDeadline)
     internal
     returns (uint256 amountOGTemple)
   {
@@ -118,7 +120,7 @@ contract TempleZaps is ZapBaseV2_3 {
         amountFRAX,
         minTempleReceived,
         address(this),
-        block.timestamp + TEMPLE_AMM_DEADLINE
+        ammDeadline
       );
 
     _approveToken(TEMPLE, TEMPLE_STAKING, amountTempleReceived);
