@@ -19,23 +19,29 @@ interface ITempleStaking {
 }
 
 contract TempleZaps is ZapBaseV2_3 {
-  address public TEMPLE = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
-  address public TEMPLE_STAKING = 0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77;
-  address public TEMPLE_FRAX_AMM_ROUTER =
-    0x8A5058100E60e8F7C42305eb505B12785bbA3BcA;
+  address public TEMPLE;
+  address public TEMPLE_STAKING;
+  address public TEMPLE_FRAX_AMM_ROUTER;
 
   mapping(address => bool) public permittableTokens;
 
   // Emitted when `sender` Zaps In
   event zappedIn(address indexed sender, uint256 amountReceived);
 
-  constructor() ZapBaseV2_3() {
+  constructor(
+    address templeToken,
+    address templeStaking,
+    address templeAMM
+  ) ZapBaseV2_3() {
     // 0x: Exchange Proxy
     approvedTargets[0xDef1C0ded9bec7F1a1670819833240f027b25EfF] = true;
     // USDC
     permittableTokens[0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48] = true;
     // UNI
     permittableTokens[0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984] = true;
+    TEMPLE = templeToken;
+    TEMPLE_STAKING = templeStaking;
+    TEMPLE_FRAX_AMM_ROUTER = templeAMM;
   }
 
   /**
@@ -98,9 +104,25 @@ contract TempleZaps is ZapBaseV2_3 {
     require(permittableTokens[fromToken], 'TZ: token not allowed');
 
     ERC20 token = ERC20(fromToken);
-    token.permit(msg.sender, address(this), fromAmount, permitDeadline, v, r, s);
+    token.permit(
+      msg.sender,
+      address(this),
+      fromAmount,
+      permitDeadline,
+      v,
+      r,
+      s
+    );
 
-    return zapIn(fromToken, fromAmount, minTempleReceived, ammDeadline, swapTarget, swapData);
+    return
+      zapIn(
+        fromToken,
+        fromAmount,
+        minTempleReceived,
+        ammDeadline,
+        swapTarget,
+        swapData
+      );
   }
 
   /**
@@ -109,10 +131,11 @@ contract TempleZaps is ZapBaseV2_3 {
    * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
    * @return amountOGTemple Quantity of OGTemple received
    */
-  function _enterTemple(uint256 amountFRAX, uint256 minTempleReceived, uint256 ammDeadline)
-    internal
-    returns (uint256 amountOGTemple)
-  {
+  function _enterTemple(
+    uint256 amountFRAX,
+    uint256 minTempleReceived,
+    uint256 ammDeadline
+  ) internal returns (uint256 amountOGTemple) {
     _approveToken(FRAX_ADDR, TEMPLE_FRAX_AMM_ROUTER, amountFRAX);
 
     uint256 amountTempleReceived = ITempleFraxAMMRouter(TEMPLE_FRAX_AMM_ROUTER)

@@ -20,7 +20,7 @@ const FRAX_WHALE = '0x820A9eb227BF770A9dd28829380d53B76eAf1209';
 const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
 const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
 
-const { OG_TEMPLE } = addresses.temple;
+const { TEMPLE, OG_TEMPLE, STAKING, AMM_ROUTER } = addresses.temple;
 const { WETH, USDC, FRAX, ETH } = addresses.tokens;
 
 const NOT_OWNER = /Ownable: caller is not the owner/;
@@ -46,7 +46,11 @@ describe('TempleZaps', async () => {
     ownerAddress = await owner.getAddress();
     aliceAddress = await alice.getAddress();
 
-    TEMPLE_ZAPS = await new TempleZaps__factory(owner).deploy();
+    TEMPLE_ZAPS = await new TempleZaps__factory(owner).deploy(
+      TEMPLE,
+      STAKING,
+      AMM_ROUTER
+    );
   });
 
   describe('Deployment', function () {
@@ -57,6 +61,12 @@ describe('TempleZaps', async () => {
     it('should have 0x exchange proxy as an approved target', async () => {
       expect(await TEMPLE_ZAPS.approvedTargets(ZEROEX_EXCHANGE_PROXY)).to.be
         .true;
+    });
+
+    it('should set all temple addresses', async () => {
+      expect(await TEMPLE_ZAPS.TEMPLE()).to.equal(TEMPLE);
+      expect(await TEMPLE_ZAPS.TEMPLE_STAKING()).to.equal(STAKING);
+      expect(await TEMPLE_ZAPS.TEMPLE_FRAX_AMM_ROUTER()).to.equal(AMM_ROUTER);
     });
   });
 
@@ -75,7 +85,7 @@ describe('TempleZaps', async () => {
         TEMPLE_ZAPS,
         tokenAddr,
         tokenAmount,
-        minTempleReceived,
+        minTempleReceived
       );
     });
 
