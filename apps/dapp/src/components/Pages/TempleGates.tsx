@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
 import { Howl } from 'howler';
 
@@ -14,16 +14,10 @@ const track = new Howl({
   volume: 0.15,
 });
 
-const TempleGatesPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => {
+const TempleGatesPage = ({ routingHelper }: CustomRoutingPageProps) => {
   const { changePageTo } = routingHelper;
 
   useUnmountableTrack(track);
-
-  React.useEffect(() => {
-    if (preloadPages) {
-      preloadPages();
-    }
-  }, []);
 
   return (
     <TempleGatesContainer>

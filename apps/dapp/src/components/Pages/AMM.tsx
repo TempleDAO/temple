@@ -23,9 +23,9 @@ const createLazyPreloadable = (dynamicImport: () => Promise<any>): ExoticCompone
 };
 
 import TempleGates from 'components/Pages/TempleGates';
+import Foyer from 'components/Pages/Foyer';
 
 const Account = createLazyPreloadable(() => import('components/Pages/Account'));
-const Foyer = createLazyPreloadable(() => import('components/Pages/Foyer'));
 const DashboardDoor = createLazyPreloadable(() => import('components/Pages/DashboardDoor'));
 const Dashboard = createLazyPreloadable(() => import('components/Pages/Dashboard'));
 const RitualsPosters = createLazyPreloadable(() => import('components/Pages/RitualsMoviePoster'));
@@ -58,12 +58,7 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
   switch (routingHelper.currentPage) {
     case 'TempleGates':
       return (
-        <TempleGates
-          routingHelper={routingHelper}
-          preloadPages={() => {
-            Foyer.preload().catch((err) => console.error('[Preload Error] ', err));
-          }}
-        />
+        <TempleGates routingHelper={routingHelper} />
       );
     case 'Account':
       return (
@@ -73,18 +68,16 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
       );
     case 'Foyer':
       return (
-        <React.Suspense fallback={<Loader />}>
-          <Foyer
-            routingHelper={routingHelper}
-            preloadPages={() => {
-              Promise.all([
-                RitualsPosters.preload(),
-                Portals.preload(),
-                DashboardDoor.preload(),
-              ]).catch((err) => console.error('[Preload Error] ', err));
-            }}
-          />
-        </React.Suspense>
+        <Foyer
+          routingHelper={routingHelper}
+          preloadPages={() => {
+            Promise.all([
+              RitualsPosters.preload(),
+              Portals.preload(),
+              DashboardDoor.preload(),
+            ]).catch((err) => console.error('[Preload Error] ', err));
+          }}
+        />
       );
     case 'Dashboard':
       return (
