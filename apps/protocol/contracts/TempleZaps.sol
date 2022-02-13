@@ -12,15 +12,8 @@ interface ITempleFraxAMMRouter {
   ) external returns (uint256 amountOut);
 }
 
-interface ITempleStaking {
-  function stakeFor(address staker, uint256 amountTemple)
-    external
-    returns (uint256 amountOgTemple);
-}
-
 contract TempleZaps is ZapBaseV2_3 {
   address public TEMPLE;
-  address public TEMPLE_STAKING;
   address public TEMPLE_FRAX_AMM_ROUTER;
 
   mapping(address => bool) public permittableTokens;
@@ -28,13 +21,8 @@ contract TempleZaps is ZapBaseV2_3 {
   // Emitted when `sender` Zaps In
   event zappedIn(address indexed sender, uint256 amountReceived);
 
-  constructor(
-    address templeToken,
-    address templeStaking,
-    address templeAMM
-  ) ZapBaseV2_3() {
+  constructor(address templeToken, address templeAMM) ZapBaseV2_3() {
     TEMPLE = templeToken;
-    TEMPLE_STAKING = templeStaking;
     TEMPLE_FRAX_AMM_ROUTER = templeAMM;
   }
 
@@ -46,7 +34,7 @@ contract TempleZaps is ZapBaseV2_3 {
    * @param ammDeadline The UNIX timestamp the zap must be completed by
    * @param swapTarget Execution target for the swap
    * @param swapData DEX data
-   * @return amountOGTemple Quantity of OGTemple received
+   * @return amountTemple Quantity of Temple received
    */
   function zapIn(
     address fromToken,
@@ -55,7 +43,7 @@ contract TempleZaps is ZapBaseV2_3 {
     uint256 ammDeadline,
     address swapTarget,
     bytes calldata swapData
-  ) public payable whenNotPaused returns (uint256 amountOGTemple) {
+  ) public payable whenNotPaused returns (uint256 amountTemple) {
     _pullTokens(fromToken, fromAmount);
 
     uint256 fraxBought = _fillQuote(
@@ -65,8 +53,8 @@ contract TempleZaps is ZapBaseV2_3 {
       swapData
     );
 
-    amountOGTemple = _enterTemple(fraxBought, minTempleReceived, ammDeadline);
-    emit zappedIn(msg.sender, amountOGTemple);
+    amountTemple = _enterTemple(fraxBought, minTempleReceived, ammDeadline);
+    emit zappedIn(msg.sender, amountTemple);
   }
 
   /**
@@ -120,32 +108,25 @@ contract TempleZaps is ZapBaseV2_3 {
   }
 
   /**
-   * @notice This function swaps FRAX for TEMPLE and stakes TEMPLE
+   * @notice This function swaps FRAX for TEMPLE
    * @param amountFRAX The amount of FRAX to swap
    * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
-   * @return amountOGTemple Quantity of OGTemple received
+   * @return amountTempleReceived Quantity of TEMPLE received
    */
   function _enterTemple(
     uint256 amountFRAX,
     uint256 minTempleReceived,
     uint256 ammDeadline
-  ) internal returns (uint256 amountOGTemple) {
+  ) internal returns (uint256 amountTempleReceived) {
     _approveToken(FRAX_ADDR, TEMPLE_FRAX_AMM_ROUTER, amountFRAX);
 
-    uint256 amountTempleReceived = ITempleFraxAMMRouter(TEMPLE_FRAX_AMM_ROUTER)
+    amountTempleReceived = ITempleFraxAMMRouter(TEMPLE_FRAX_AMM_ROUTER)
       .swapExactFraxForTemple(
         amountFRAX,
         minTempleReceived,
-        address(this),
+        msg.sender,
         ammDeadline
       );
-
-    _approveToken(TEMPLE, TEMPLE_STAKING, amountTempleReceived);
-
-    amountOGTemple = ITempleStaking(TEMPLE_STAKING).stakeFor(
-      msg.sender,
-      amountTempleReceived
-    );
   }
 
   ///////////// Owner only /////////////
@@ -181,10 +162,6 @@ contract TempleZaps is ZapBaseV2_3 {
 
   function updateTemple(address _temple) external onlyOwner {
     TEMPLE = _temple;
-  }
-
-  function updateStaking(address _staking) external onlyOwner {
-    TEMPLE_STAKING = _staking;
   }
 
   function updateAMMRouter(address _ammRouter) external onlyOwner {

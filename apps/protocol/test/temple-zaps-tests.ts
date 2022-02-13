@@ -8,7 +8,6 @@ import FakeERC20 from '../artifacts/contracts/fakes/FakeERC20.sol/FakeERC20.json
 import FakeUSDC from '../artifacts/contracts/fakes/FakeUSDC.sol/FiatTokenV2_1.json';
 
 import TempleAMM from '../artifacts/contracts/amm/TempleFraxAMMRouter.sol/TempleFraxAMMRouter.json';
-import TempleStaking from '../artifacts/contracts/TempleStaking.sol/TempleStaking.json';
 
 import { TempleZaps, TempleZaps__factory } from '../typechain';
 import { shouldThrow, getBalance } from './helpers';
@@ -20,7 +19,7 @@ const FRAX_WHALE = '0x820A9eb227BF770A9dd28829380d53B76eAf1209';
 const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
 const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
 
-const { TEMPLE, OG_TEMPLE, STAKING, AMM_ROUTER } = addresses.temple;
+const { TEMPLE, AMM_ROUTER } = addresses.temple;
 const { WETH, USDC, UNI, FRAX, ETH } = addresses.tokens;
 
 const NOT_OWNER = /Ownable: caller is not the owner/;
@@ -48,20 +47,10 @@ describe('TempleZaps', async () => {
 
     TEMPLE_ZAPS = await new TempleZaps__factory(owner).deploy(
       TEMPLE,
-      STAKING,
       AMM_ROUTER
     );
-    await TEMPLE_ZAPS.setApprovedTargets(
-      [ZEROEX_EXCHANGE_PROXY],
-      [true]
-    );
-    await TEMPLE_ZAPS.setPermittableTokens(
-      [
-        USDC,
-        UNI,
-      ],
-      [true, true]
-    );
+    await TEMPLE_ZAPS.setApprovedTargets([ZEROEX_EXCHANGE_PROXY], [true]);
+    await TEMPLE_ZAPS.setPermittableTokens([USDC, UNI], [true, true]);
   });
 
   describe('Deployment', function () {
@@ -74,17 +63,17 @@ describe('TempleZaps', async () => {
         .true;
     });
 
-    it('should set all temple addresses', async () => {
+    it('should set temple addresses', async () => {
       expect(await TEMPLE_ZAPS.TEMPLE()).to.equal(TEMPLE);
-      expect(await TEMPLE_ZAPS.TEMPLE_STAKING()).to.equal(STAKING);
       expect(await TEMPLE_ZAPS.TEMPLE_FRAX_AMM_ROUTER()).to.equal(AMM_ROUTER);
     });
 
-    it('should set all approved targets', async () => {
-      expect(await TEMPLE_ZAPS.approvedTargets(ZEROEX_EXCHANGE_PROXY)).to.be.true;
+    it('should set approved targets', async () => {
+      expect(await TEMPLE_ZAPS.approvedTargets(ZEROEX_EXCHANGE_PROXY)).to.be
+        .true;
     });
 
-    it('should set all permittable tokens', async () => {
+    it('should set permittable tokens', async () => {
       expect(await TEMPLE_ZAPS.permittableTokens(USDC)).to.be.true;
       expect(await TEMPLE_ZAPS.permittableTokens(UNI)).to.be.true;
     });
@@ -95,7 +84,7 @@ describe('TempleZaps', async () => {
       await resetFork();
     });
 
-    it('should zap ETH to OGTemple', async () => {
+    it('should zap ETH to TEMPLE', async () => {
       const tokenAddr = ETH;
       const tokenAmount = '5';
       const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
@@ -109,7 +98,7 @@ describe('TempleZaps', async () => {
       );
     });
 
-    it('should zap WETH to OGTemple', async () => {
+    it('should zap WETH to TEMPLE', async () => {
       const tokenAddr = WETH;
       const tokenAmount = '10';
       const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
@@ -123,7 +112,7 @@ describe('TempleZaps', async () => {
       );
     });
 
-    it('should zap USDC to OGTemple', async () => {
+    it('should zap USDC to TEMPLE', async () => {
       const tokenAddr = USDC;
       const tokenAmount = '10000';
       const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
@@ -137,7 +126,7 @@ describe('TempleZaps', async () => {
       );
     });
 
-    it('should zap FRAX to OGTemple', async () => {
+    it('should zap FRAX to TEMPLE', async () => {
       const tokenAddr = FRAX;
       const tokenAmount = '10000';
       const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
@@ -168,7 +157,7 @@ describe('TempleZaps', async () => {
       );
     });
 
-    it('should zap with permit USDC to OGTemple', async () => {
+    it('should zap with permit USDC to TEMPLE', async () => {
       const tokenAddr = USDC;
       const tokenAmount = '5000';
       const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
@@ -206,7 +195,6 @@ describe('TempleZaps', async () => {
         const isApproved = [true];
 
         await shouldThrow(aliceConnect.updateTemple(addrZero), NOT_OWNER);
-        await shouldThrow(aliceConnect.updateStaking(addrZero), NOT_OWNER);
         await shouldThrow(aliceConnect.updateAMMRouter(addrZero), NOT_OWNER);
         await shouldThrow(
           aliceConnect.setApprovedTargets(targets, isApproved),
@@ -215,7 +203,6 @@ describe('TempleZaps', async () => {
         await shouldThrow(aliceConnect.toggleContractActive(), NOT_OWNER);
 
         await ownerConnect.updateTemple(addrZero);
-        await ownerConnect.updateStaking(addrZero);
         await ownerConnect.updateAMMRouter(addrZero);
         await ownerConnect.setApprovedTargets(targets, isApproved);
         await ownerConnect.toggleContractActive();
@@ -288,11 +275,6 @@ describe('TempleZaps', async () => {
           ethers.constants.AddressZero
         );
 
-        await ownerConnect.updateStaking(ethers.constants.AddressZero);
-        expect(await TEMPLE_ZAPS.TEMPLE_STAKING()).to.equal(
-          ethers.constants.AddressZero
-        );
-
         await ownerConnect.updateAMMRouter(ethers.constants.AddressZero);
         expect(await TEMPLE_ZAPS.TEMPLE_FRAX_AMM_ROUTER()).to.equal(
           ethers.constants.AddressZero
@@ -339,11 +321,11 @@ async function zapIn(
     sellToken = tokenAddr;
   }
 
-  // Get OGTemple balance before zap
+  // Get TEMPLE balance before zap
   const signerAddress = await signer.getAddress();
-  const balanceBefore = await getBalance(OG_TEMPLE, signerAddress);
+  const balanceBefore = await getBalance(TEMPLE, signerAddress);
   console.log(
-    `Starting OGTemple: ${ethers.utils.formatUnits(balanceBefore, 18)}`
+    `Starting Temple: ${ethers.utils.formatUnits(balanceBefore, 18)}`
   );
   console.log(`Selling ${tokenAmount} ${symbol}`);
 
@@ -379,7 +361,7 @@ async function zapIn(
   }
 
   // Do zap
-  const minOGTemple = await getExpectedOGT(
+  const minExpectedTemple = await getExpectedTemple(
     signer,
     guaranteedPrice,
     tokenAmount
@@ -401,14 +383,17 @@ async function zapIn(
     overrides
   );
 
-  // Get OGTemple balance after zap
   console.log(
-    `Minimum expected OGT: ${ethers.utils.formatUnits(minOGTemple, 18)}`
+    `Minimum expected Temple: ${ethers.utils.formatUnits(
+      minExpectedTemple,
+      18
+    )}`
   );
-  const balanceAfter = await getBalance(OG_TEMPLE, signerAddress);
-  console.log(`Ending OGTemple: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
+  // Get Temple balance after zap
+  const balanceAfter = await getBalance(TEMPLE, signerAddress);
+  console.log(`Ending Temple: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
 
-  expect(balanceAfter.gte(minOGTemple)).to.be.true;
+  expect(balanceAfter.gte(minExpectedTemple)).to.be.true;
 }
 
 async function zapWithPermit(
@@ -435,9 +420,9 @@ async function zapWithPermit(
   // console.log('permitDomain', permitDomain);
   const sellAmount = ethers.utils.parseUnits(tokenAmount, decimals).toString();
 
-  const balanceBefore = await getBalance(OG_TEMPLE, signerAddress);
+  const balanceBefore = await getBalance(TEMPLE, signerAddress);
   console.log(
-    `Starting OGTemple: ${ethers.utils.formatUnits(balanceBefore, 18)}`
+    `Starting Temple: ${ethers.utils.formatUnits(balanceBefore, 18)}`
   );
 
   // Get quote from 0x API
@@ -452,7 +437,7 @@ async function zapWithPermit(
   console.log(`Price of ${symbol} in FRAX: ${price}`);
   console.log(`Guaranteed price: ${guaranteedPrice}`);
 
-  const minOGTemple = await getExpectedOGT(
+  const minExpectedTemple = await getExpectedTemple(
     signer,
     guaranteedPrice,
     tokenAmount
@@ -485,43 +470,33 @@ async function zapWithPermit(
   );
 
   console.log(
-    `Minimum expected OGT: ${ethers.utils.formatUnits(minOGTemple, 18)}`
+    `Minimum expected Temple: ${ethers.utils.formatUnits(
+      minExpectedTemple,
+      18
+    )}`
   );
-  const balanceAfter = await getBalance(OG_TEMPLE, signerAddress);
-  console.log(`Ending OGTemple: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
+  const balanceAfter = await getBalance(TEMPLE, signerAddress);
+  console.log(`Ending Temple: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
 
-  expect(balanceAfter.gte(minOGTemple)).to.be.true;
+  expect(balanceAfter.gte(minExpectedTemple)).to.be.true;
 }
 
-async function getExpectedOGT(
+async function getExpectedTemple(
   signer: Signer,
   guaranteedPrice: string,
   tokenAmount: string
 ): Promise<BigNumber> {
-  const ammContract = new ethers.Contract(
-    '0x8A5058100E60e8F7C42305eb505B12785bbA3BcA',
-    TempleAMM.abi,
-    signer
-  );
-  const stakingContract = new ethers.Contract(
-    '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
-    TempleStaking.abi,
-    signer
-  );
-  const scale = 1000;
+  const ammContract = new ethers.Contract(AMM_ROUTER, TempleAMM.abi, signer);
 
   const minFraxReceived = parseFloat(guaranteedPrice) * parseFloat(tokenAmount);
   const minFraxReceivedWei = ethers.utils.parseUnits(
     minFraxReceived.toString(),
     18
   );
-  const ammQuote = await ammContract.swapExactFraxForTempleQuote(
+  const quote = await ammContract.swapExactFraxForTempleQuote(
     minFraxReceivedWei
   );
-  const factor = await stakingContract.getAccumulationFactor(scale);
-  const expectedOGTempleWei = ammQuote.amountOutAMM.div(factor);
-
-  return expectedOGTempleWei.mul(scale);
+  return quote.amountOutAMM;
 }
 
 async function impersonateAddress(address: string) {
