@@ -59,6 +59,8 @@ export type { TempleTreasury } from "./TempleTreasury";
 export type { TreasuryManagementProxy } from "./TreasuryManagementProxy";
 export type { IUniswapRouter } from "./IUniswapRouter";
 export type { Zap } from "./Zap";
+export type { TempleZaps } from "./TempleZaps";
+export type { ZapBaseV23 } from "./ZapBaseV23";
 
 export { AccessControl__factory } from "./factories/AccessControl__factory";
 export { IAccessControl__factory } from "./factories/IAccessControl__factory";
@@ -118,3 +120,5 @@ export { TempleTreasury__factory } from "./factories/TempleTreasury__factory";
 export { TreasuryManagementProxy__factory } from "./factories/TreasuryManagementProxy__factory";
 export { IUniswapRouter__factory } from "./factories/IUniswapRouter__factory";
 export { Zap__factory } from "./factories/Zap__factory";
+export { TempleZaps__factory } from "./factories/TempleZaps__factory";
+export { ZapBaseV23__factory } from "./factories/ZapBaseV23__factory";
