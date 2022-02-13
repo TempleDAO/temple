@@ -18,29 +18,13 @@ interface ITempleStaking {
     returns (uint256 amountOgTemple);
 }
 
-interface DAI {
-  function permit(
-    address holder,
-    address spender,
-    uint256 nonce,
-    uint256 expiry,
-    bool allowed,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  ) external;
-}
-
 contract TempleZaps is ZapBaseV2_3 {
   uint256 private constant TEMPLE_AMM_DEADLINE = 1200; // 20 minutes
 
-  address private constant DAI_ADDR = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
   address public TEMPLE = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
   address public TEMPLE_STAKING = 0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77;
   address public TEMPLE_FRAX_AMM_ROUTER =
     0x8A5058100E60e8F7C42305eb505B12785bbA3BcA;
-
-  DAI private dai;
 
   mapping(address => bool) public permittableTokens;
 
@@ -54,7 +38,6 @@ contract TempleZaps is ZapBaseV2_3 {
     permittableTokens[0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48] = true;
     // UNI
     permittableTokens[0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984] = true;
-    dai = DAI(DAI_ADDR);
   }
 
   /**
@@ -84,34 +67,6 @@ contract TempleZaps is ZapBaseV2_3 {
 
     amountOGTemple = _enterTemple(fraxBought, minTempleReceived);
     emit zappedIn(msg.sender, amountOGTemple);
-  }
-
-  /**
-   * @notice This function zaps DAI using permit
-   * @param fromAmount The amount of DAI to zap
-   * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
-   * @param swapTarget Execution target for the swap
-   * @param swapData DEX data
-   * @param nonce Nonce of the last permit transaction of a user’s wallet
-   * @param expiry Permit deadline
-   * @param v secp256k1 signature component
-   * @param r secp256k1 signature component
-   * @param s secp256k1 signature component
-   * @return amountOGTemple Quantity of OGTemple received
-   */
-  function zapInDAIWithPermit(
-    uint256 fromAmount,
-    uint256 minTempleReceived,
-    address swapTarget,
-    bytes calldata swapData,
-    uint256 nonce,
-    uint256 expiry,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  ) external whenNotPaused returns (uint256 amountOGTemple) {
-    dai.permit(msg.sender, address(this), nonce, expiry, true, v, r, s);
-    return zapIn(DAI_ADDR, fromAmount, minTempleReceived, swapTarget, swapData);
   }
 
   /**

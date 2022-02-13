@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { ethers, network } from 'hardhat';
 import { BigNumber, Signer } from 'ethers';
 import axios from 'axios';
-import { signDaiPermit, signERC2612Permit } from 'eth-permit';
+import { signERC2612Permit } from 'eth-permit';
 
 import FakeERC20 from '../artifacts/contracts/fakes/FakeERC20.sol/FakeERC20.json';
 import FakeUSDC from '../artifacts/contracts/fakes/FakeUSDC.sol/FiatTokenV2_1.json';
@@ -17,12 +17,11 @@ import addresses from './libs/constants';
 const BINANCE_ACCOUNT_8 = '0xF977814e90dA44bFA03b6295A0616a897441aceC';
 const WETH_WHALE = '0x6555e1CC97d3cbA6eAddebBCD7Ca51d75771e0B8';
 const FRAX_WHALE = '0x820A9eb227BF770A9dd28829380d53B76eAf1209';
-const DAI_WHALE = '0x1e3D6eAb4BCF24bcD04721caA11C478a2e59852D';
 const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
 const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
 
 const { OG_TEMPLE } = addresses.temple;
-const { WETH, UNI, USDC, DAI, FRAX, ETH } = addresses.tokens;
+const { WETH, USDC, FRAX, ETH } = addresses.tokens;
 
 const NOT_OWNER = /Ownable: caller is not the owner/;
 const PAUSED = /Paused/;
@@ -33,7 +32,6 @@ let alice: Signer;
 let binanceSigner: Signer;
 let wethSigner: Signer;
 let fraxSigner: Signer;
-let daiSigner: Signer;
 let ownerAddress: string;
 let aliceAddress: string;
 
@@ -44,7 +42,6 @@ describe('TempleZaps', async () => {
     binanceSigner = await impersonateAddress(BINANCE_ACCOUNT_8);
     wethSigner = await impersonateAddress(WETH_WHALE);
     fraxSigner = await impersonateAddress(FRAX_WHALE);
-    daiSigner = await impersonateAddress(DAI_WHALE);
 
     ownerAddress = await owner.getAddress();
     aliceAddress = await alice.getAddress();
@@ -151,31 +148,6 @@ describe('TempleZaps', async () => {
         tokenAddr,
         FakeERC20.abi,
         binanceSigner
-      );
-
-      const decimals = await tokenContract.decimals();
-      const amount = ethers.utils.parseUnits(tokenAmount, decimals).toString();
-      await tokenContract.approve(aliceAddress, amount);
-      await tokenContract.transfer(aliceAddress, amount);
-
-      await zapWithPermit(
-        alice,
-        TEMPLE_ZAPS,
-        tokenAddr,
-        tokenAmount,
-        minTempleReceived
-      );
-    });
-
-    it('should zap with permit DAI to OGTemple', async () => {
-      const tokenAddr = DAI;
-      const tokenAmount = '5000';
-      const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
-
-      const tokenContract = new ethers.Contract(
-        tokenAddr,
-        FakeERC20.abi,
-        daiSigner
       );
 
       const decimals = await tokenContract.decimals();
@@ -460,46 +432,25 @@ async function zapWithPermit(
     await tokenContract.allowance(signerAddress, TEMPLE_ZAPS.address)
   ).to.be.equal(0);
 
-  if (tokenAddr === DAI) {
-    const { nonce, expiry, v, r, s } = await signDaiPermit(
-      owner.provider,
-      permitDomain,
-      signerAddress,
-      TEMPLE_ZAPS.address
-    );
+  const { deadline, v, r, s } = await signERC2612Permit(
+    owner.provider,
+    permitDomain,
+    signerAddress,
+    TEMPLE_ZAPS.address,
+    sellAmount
+  );
 
-    await zapsConnect.zapInDAIWithPermit(
-      sellAmount,
-      minTempleReceived,
-      ZEROEX_EXCHANGE_PROXY,
-      swapCallData,
-      nonce,
-      expiry,
-      v,
-      r,
-      s
-    );
-  } else {
-    const { deadline, v, r, s } = await signERC2612Permit(
-      owner.provider,
-      permitDomain,
-      signerAddress,
-      TEMPLE_ZAPS.address,
-      sellAmount
-    );
-
-    await zapsConnect.zapInWithPermit(
-      tokenAddr,
-      sellAmount,
-      minTempleReceived,
-      ZEROEX_EXCHANGE_PROXY,
-      swapCallData,
-      deadline,
-      v,
-      r,
-      s
-    );
-  }
+  await zapsConnect.zapInWithPermit(
+    tokenAddr,
+    sellAmount,
+    minTempleReceived,
+    ZEROEX_EXCHANGE_PROXY,
+    swapCallData,
+    deadline,
+    v,
+    r,
+    s
+  );
 
   console.log(
     `Minimum expected OGT: ${ethers.utils.formatUnits(minOGTemple, 18)}`
