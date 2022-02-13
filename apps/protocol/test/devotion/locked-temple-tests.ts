@@ -4,20 +4,17 @@ import { expect } from "chai";
 import { 
   TempleERC20Token, 
   Faith, 
-  RedeemFaithManager, 
   LockedTemple, 
   Faith__factory,
-  RedeemFaithManager__factory,
   LockedTemple__factory
 } from "../../typechain";
 
 import { Signer } from "ethers";
-import { shouldThrow, blockTimestamp, fromAtto, deployAndAirdropTemple, toAtto, mineToTimestamp } from "../helpers";
+import { shouldThrow, fromAtto, deployAndAirdropTemple, toAtto, mineToTimestamp } from "../helpers";
 
 describe("LockedTemple", async () => {
   let templeToken: TempleERC20Token;
   let faith: Faith;
-  let redeemFaithManager: RedeemFaithManager;
   let lockedTemple: LockedTemple;
 
   let owner: Signer;
