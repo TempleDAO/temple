@@ -15,7 +15,7 @@ import { shouldThrow, getBalance } from './helpers';
 import addresses from './libs/constants';
 
 const BINANCE_ACCOUNT_8 = '0xF977814e90dA44bFA03b6295A0616a897441aceC';
-const WETH_WHALE = '0x2497b0f470FAbc47B249A03575aD37D2f65A1A4a';
+const WETH_WHALE = '0x6555e1CC97d3cbA6eAddebBCD7Ca51d75771e0B8';
 const FRAX_WHALE = '0x820A9eb227BF770A9dd28829380d53B76eAf1209';
 const DAI_WHALE = '0x1e3D6eAb4BCF24bcD04721caA11C478a2e59852D';
 const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
@@ -364,6 +364,7 @@ async function zapIn(
 
   if (tokenAddr === FRAX) {
     guaranteedPrice = '0.99';
+    swapCallData = '0x';
   } else {
     const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${FRAX}`;
     const response = await axios.get(url);
@@ -388,21 +389,19 @@ async function zapIn(
     overrides.value = ethers.utils.parseEther(tokenAmount);
   }
 
-  if (tokenAddr === FRAX) {
-    await zapsConnect.zapInFRAX(sellAmount, minTempleReceived);
-  } else {
-    await zapsConnect.zapIn(
-      tokenAddr,
-      sellAmount,
-      minTempleReceived,
-      ZEROEX_EXCHANGE_PROXY,
-      swapCallData,
-      overrides
-    );
-  }
+  await zapsConnect.zapIn(
+    tokenAddr,
+    sellAmount,
+    minTempleReceived,
+    ZEROEX_EXCHANGE_PROXY,
+    swapCallData,
+    overrides
+  );
 
   // Get OGTemple balance after zap
-  console.log(`Minimum expected OGT: ${ethers.utils.formatUnits(minOGTemple, 18)}`);
+  console.log(
+    `Minimum expected OGT: ${ethers.utils.formatUnits(minOGTemple, 18)}`
+  );
   const balanceAfter = await getBalance(OG_TEMPLE, signerAddress);
   console.log(`Ending OGTemple: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
 
@@ -502,7 +501,9 @@ async function zapWithPermit(
     );
   }
 
-  console.log(`Minimum expected OGT: ${ethers.utils.formatUnits(minOGTemple, 18)}`);
+  console.log(
+    `Minimum expected OGT: ${ethers.utils.formatUnits(minOGTemple, 18)}`
+  );
   const balanceAfter = await getBalance(OG_TEMPLE, signerAddress);
   console.log(`Ending OGTemple: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
 

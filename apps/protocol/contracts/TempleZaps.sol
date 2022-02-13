@@ -90,22 +90,6 @@ contract TempleZaps is ZapBaseV2_3 {
   }
 
   /**
-   * @notice This function skips the FRAX swap and performs the remaining zap steps
-   * @param amountFRAX The amount of FRAX to zap
-   * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
-   * @return amountOGTemple Quantity of OGTemple received
-   */
-  function zapInFRAX(uint256 amountFRAX, uint256 minTempleReceived)
-    external
-    whenNotPaused
-    returns (uint256 amountOGTemple)
-  {
-    _pullTokens(FRAX_ADDR, amountFRAX);
-    amountOGTemple = _enterTemple(amountFRAX, minTempleReceived);
-    emit zappedIn(msg.sender, amountOGTemple);
-  }
-
-  /**
    * @notice This function zaps DAI using permit
    * @param fromAmount The amount of DAI to zap
    * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
