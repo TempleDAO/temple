@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 import "./IFaith.sol";
 
+// import "hardhat/console.sol";
+
 /**
  * Bookkeeping and faith rewards Temple that's locked
  */
@@ -30,7 +32,7 @@ contract LockedTemple is EIP712 {
     }
 
     // All temple locked for any given user
-    mapping(address => LockedEntry) public wemTemple;
+    mapping(address => LockedEntry) public wenTemple;
 
     IERC20 public templeToken;
     IFaith public faith;
@@ -76,7 +78,7 @@ contract LockedTemple is EIP712 {
 
     /** Withdraw locked entry */
     function unlock(uint256 _amount) public {
-        LockedEntry storage lockEntry = wemTemple[msg.sender];
+        LockedEntry storage lockEntry = wenTemple[msg.sender];
         require(lockEntry.lockedUntilTimestamp < block.timestamp, "LockedTemple: Still Locked");
         require(_amount <= lockEntry.amount, "LockedTemple: can't unlock more than originally locked");
 
@@ -86,28 +88,36 @@ contract LockedTemple is EIP712 {
     }
 
     /**
+     * Calculate faith for a given lock increase/totalDuration
+     */
+    function calcFaith(uint256 amount, uint256 lockIncreaseDuration, uint256 lockDuration) public pure returns (uint256) {
+        return amount * lockIncreaseDuration *  lockDuration / SECONDS_IN_MONTH / SECONDS_IN_MONTH / 1e18;
+    }
+
+    /**
      * Must be private, otherwise security issue where anyone can
      * refresh lock for another wallet (and lock more if they have
      * an allowance)
      */
     function lockFor(address _owner, uint256 _amount, uint256 _unlockDelaySeconds) private {
-        LockedEntry storage lockEntry = wemTemple[_owner];
+        LockedEntry storage lockEntry = wenTemple[_owner];
 
         uint256 newLockedUntilTimestamp = block.timestamp + _unlockDelaySeconds;
         require(newLockedUntilTimestamp > lockEntry.lockedUntilTimestamp, "LockedTemple: New unlock time must be greater than current unlock time");
+        require(_unlockDelaySeconds >= SECONDS_IN_MONTH, "LockedTemple: min lock period is one month");
+        require(_unlockDelaySeconds <= SECONDS_IN_MONTH * 48, "LockedTemple: max lock period is 3 years");
 
         uint256 faithEarned = 0;
-        uint256 lockIncreaseDuration = newLockedUntilTimestamp - lockEntry.lockedUntilTimestamp;
         uint256 lockDuration = newLockedUntilTimestamp - block.timestamp;
 
         // first, calculate faith for any increase in lock time        
         if (lockEntry.amount > 0) {
-            faithEarned += lockEntry.amount * lockIncreaseDuration *  lockDuration / SECONDS_IN_MONTH / SECONDS_IN_MONTH;
+            faithEarned += calcFaith(lockEntry.amount, newLockedUntilTimestamp - lockEntry.lockedUntilTimestamp, lockDuration);
         }
 
         // then, calculate faith for new temple transferred in
         if (_amount > 0) {
-            faithEarned += _amount * lockIncreaseDuration *  lockDuration / SECONDS_IN_MONTH / SECONDS_IN_MONTH;
+            faithEarned += calcFaith(_amount, lockDuration, lockDuration);
         }
 
         lockEntry.amount += _amount;
