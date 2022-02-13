@@ -21,7 +21,7 @@ const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
 const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
 
 const { TEMPLE, OG_TEMPLE, STAKING, AMM_ROUTER } = addresses.temple;
-const { WETH, USDC, FRAX, ETH } = addresses.tokens;
+const { WETH, USDC, UNI, FRAX, ETH } = addresses.tokens;
 
 const NOT_OWNER = /Ownable: caller is not the owner/;
 const PAUSED = /Paused/;
@@ -51,6 +51,17 @@ describe('TempleZaps', async () => {
       STAKING,
       AMM_ROUTER
     );
+    await TEMPLE_ZAPS.setApprovedTargets(
+      [ZEROEX_EXCHANGE_PROXY],
+      [true]
+    );
+    await TEMPLE_ZAPS.setPermittableTokens(
+      [
+        USDC,
+        UNI,
+      ],
+      [true, true]
+    );
   });
 
   describe('Deployment', function () {
@@ -67,6 +78,15 @@ describe('TempleZaps', async () => {
       expect(await TEMPLE_ZAPS.TEMPLE()).to.equal(TEMPLE);
       expect(await TEMPLE_ZAPS.TEMPLE_STAKING()).to.equal(STAKING);
       expect(await TEMPLE_ZAPS.TEMPLE_FRAX_AMM_ROUTER()).to.equal(AMM_ROUTER);
+    });
+
+    it('should set all approved targets', async () => {
+      expect(await TEMPLE_ZAPS.approvedTargets(ZEROEX_EXCHANGE_PROXY)).to.be.true;
+    });
+
+    it('should set all permittable tokens', async () => {
+      expect(await TEMPLE_ZAPS.permittableTokens(USDC)).to.be.true;
+      expect(await TEMPLE_ZAPS.permittableTokens(UNI)).to.be.true;
     });
   });
 
@@ -287,9 +307,9 @@ describe('TempleZaps', async () => {
       });
 
       it('should set permittable tokens', async () => {
-        await TEMPLE_ZAPS.setPermittableToken(WETH, true);
+        await TEMPLE_ZAPS.setPermittableTokens([WETH], [true]);
         expect(await TEMPLE_ZAPS.permittableTokens(WETH)).to.be.true;
-        await TEMPLE_ZAPS.setPermittableToken(WETH, false);
+        await TEMPLE_ZAPS.setPermittableTokens([WETH], [false]);
         expect(await TEMPLE_ZAPS.permittableTokens(WETH)).to.be.false;
       });
     });

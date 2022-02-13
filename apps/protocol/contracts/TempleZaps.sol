@@ -33,12 +33,6 @@ contract TempleZaps is ZapBaseV2_3 {
     address templeStaking,
     address templeAMM
   ) ZapBaseV2_3() {
-    // 0x: Exchange Proxy
-    approvedTargets[0xDef1C0ded9bec7F1a1670819833240f027b25EfF] = true;
-    // USDC
-    permittableTokens[0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48] = true;
-    // UNI
-    permittableTokens[0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984] = true;
     TEMPLE = templeToken;
     TEMPLE_STAKING = templeStaking;
     TEMPLE_FRAX_AMM_ROUTER = templeAMM;
@@ -169,8 +163,20 @@ contract TempleZaps is ZapBaseV2_3 {
     }
   }
 
-  function setPermittableToken(address token, bool status) external onlyOwner {
-    permittableTokens[token] = status;
+  /**
+    @dev Adds or removes a permittable token
+    @param tokens An array of token addresses
+    @param isPermittable An array of booleans indicating whether the token is permittable
+    */
+  function setPermittableTokens(
+    address[] calldata tokens,
+    bool[] calldata isPermittable
+  ) external onlyOwner {
+    require(tokens.length == isPermittable.length, 'Invalid Input length');
+
+    for (uint256 i = 0; i < tokens.length; i++) {
+      permittableTokens[tokens[i]] = isPermittable[i];
+    }
   }
 
   function updateTemple(address _temple) external onlyOwner {
