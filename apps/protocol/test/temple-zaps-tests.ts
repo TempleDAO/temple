@@ -200,11 +200,16 @@ describe('TempleZaps', async () => {
           aliceConnect.setApprovedTargets(targets, isApproved),
           NOT_OWNER
         );
+        await shouldThrow(
+          aliceConnect.setPermittableTokens(targets, isApproved),
+          NOT_OWNER
+        );
         await shouldThrow(aliceConnect.toggleContractActive(), NOT_OWNER);
 
         await ownerConnect.updateTemple(addrZero);
         await ownerConnect.updateAMMRouter(addrZero);
         await ownerConnect.setApprovedTargets(targets, isApproved);
+        await ownerConnect.setPermittableTokens(targets, isApproved);
         await ownerConnect.toggleContractActive();
       });
 

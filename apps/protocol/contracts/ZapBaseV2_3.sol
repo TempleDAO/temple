@@ -102,19 +102,6 @@ abstract contract ZapBaseV2_3 is Ownable {
   }
 
   /**
-    @notice Approve a token for spending with infinite allowance
-    @param token The ERC20 token to approve
-    @param spender The spender of the token
-     */
-  function _approveToken(address token, address spender) internal {
-    ERC20 _token = ERC20(token);
-    if (_token.allowance(address(this), spender) > 0) return;
-    else {
-      SafeTransferLib.safeApprove(_token, spender, type(uint256).max);
-    }
-  }
-
-  /**
     @notice Approve a token for spending with finite allowance
     @param token The ERC20 token to approve
     @param spender The spender of the token
