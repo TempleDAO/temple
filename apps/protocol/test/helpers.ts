@@ -1,6 +1,7 @@
 import { network, ethers } from "hardhat";
-import { BigNumber, ContractFactory, Signer } from "ethers";
+import { BigNumber, BigNumberish, ContractFactory, Signer } from "ethers";
 import { expect } from "chai";
+import { TempleERC20Token, TempleERC20Token__factory } from "../typechain";
 
 export async function shouldThrow(p: Promise<any>, matches: RegExp) {
   try {
@@ -83,4 +84,19 @@ export function fromFixedPoint112x112(n: BigNumber): number {
      fractionalPart += (bit) * (2 ** (-1 * (i + 1)))
   }
   return Number.parseFloat(n.shr(112).toString()) + fractionalPart;
+}
+
+export async function deployAndAirdropTemple(
+  owner: Signer,
+  airdropRecipients: Signer[],
+  airdropAmount: BigNumberish
+  ): Promise<TempleERC20Token> {
+  const templeToken = await new TempleERC20Token__factory(owner).deploy()
+
+  await templeToken.addMinter(await owner.getAddress());
+  for (const u of airdropRecipients) {
+    await templeToken.mint(await u.getAddress(), airdropAmount)
+  }
+
+  return templeToken;
 }

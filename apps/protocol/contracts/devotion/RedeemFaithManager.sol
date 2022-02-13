@@ -17,8 +17,8 @@ contract RedeemFaithManager is Ownable {
     RedeemFaith[] public closed;
     RedeemFaith public active;
 
-    IFaith public faith;
     IERC20 public templeToken;
+    IFaith public faith;
 
     event CloseAndRollActiveClaim(address account, uint256 faithUsed, uint256 templeRewarded);
 
