@@ -7,6 +7,16 @@ yarn
 yarn test
 ```
 
+## Environment Variables
+Create a `.env` file in the root of the project with the following variables.
+
+`ALCHEMY_API_KEY`: Used to fork mainnet when yarn test test/temple-zaps-tests.ts is run.
+
+`ETHERSCAN_API_KEY`: Optional. hardhat.config.ts logs a message if it's not set.
+
+`COINMARKETCAP_API_KEY`: Optional. Used to show USD values in the gas report that appears after testing.
+
+`REPORT_GAS`: Optional. Set value to `true` to enable the gas report.
 
 ## Rinkeby Deployment
 ```
@@ -28,3 +38,16 @@ comments on the PR on how to best setup the deploy scripts.
 
 You can also run and test locally by replacing `yarn hardhat:testnet` with `yarn hardhat:local`. You'll probably have to run some of the previous deploys
 in order to setup the right local state
+
+## Gas Reporter Settings
+
+The gas reporter settings are in `hardhat.config.ts`. For more information, check out the [plugin docs](https://github.com/cgewecke/hardhat-gas-reporter).
+
+```
+gasReporter: {
+  currency: // optional: defaults to EUR
+  coinmarketcap: // optional: API key used to additionally display fiat values for gas costs
+  gasPrice: // optional: defaults to ETH Gas Station price
+  enabled: // reads from the REPORT_GAS env var
+}
+```

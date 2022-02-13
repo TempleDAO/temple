@@ -103,5 +103,6 @@ module.exports = {
     currency: 'USD',
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
     gasPrice: 135,
+    enabled: (process.env.REPORT_GAS) ? true : false
   }
 };
