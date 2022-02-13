@@ -3,12 +3,10 @@ import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { blockTimestamp, mineNBlocks } from '../../test/helpers';
 import {
-  Devotion__factory,
   AMMWhitelist__factory,
   ExitQueue__factory,
   Faith__factory,
   FakeERC20__factory,
-  LockedOGTemple__factory,
   OGTemple__factory,
   TempleCashback__factory,
   TempleERC20Token__factory,
@@ -22,6 +20,8 @@ import {
   TreasuryManagementProxy__factory,
   AcceleratedExitQueue,
   AcceleratedExitQueue__factory,
+  RedeemFaithManager__factory,
+  LockedTemple__factory,
 } from '../../typechain';
 
 function toAtto(n: number) {
@@ -73,9 +73,6 @@ async function main() {
   const lockedOgTemple_old = await new LockedOGTempleDeprecated__factory(
     owner
   ).deploy(ogTempleToken.address);
-  const lockedOgTemple_new = await new LockedOGTemple__factory(owner).deploy(
-    ogTempleToken.address
-  );
 
   // mint fake stablecToken into all test accounts
   const accounts = await ethers.getSigners();
@@ -215,9 +212,7 @@ async function main() {
     verifier.address
   );
 
-  // Buy the Dip
-  const faith = await new Faith__factory(owner).deploy();
-
+  // acceleated exit queue
   const acceleratedExitQueue: AcceleratedExitQueue =
     await new AcceleratedExitQueue__factory(owner).deploy(
       templeToken.address,
@@ -226,19 +221,22 @@ async function main() {
     );
   await exitQueue.transferOwnership(acceleratedExitQueue.address);
 
-  const devotion = await new Devotion__factory(owner).deploy(
+  // Devotion
+  const faith = await new Faith__factory(owner).deploy();
+
+  const redeemFaithManager = await new RedeemFaithManager__factory(owner).deploy(
     templeToken.address,
-    faith.address,
-    pair.address,
-    lockedOgTemple_new.address,
-    templeStaking.address,
-    60 // 60 seconds
+    faith.address
   );
 
+  const lockedTemple = await new LockedTemple__factory(owner).deploy(
+    templeToken.address,
+    faith.address,
+  )
+  await faith.addManager(lockedTemple.address);
+
+  // add liquidity to AMM
   const expiryDate = (): number => Math.floor(Date.now() / 1000) + 900;
-  await devotion.addDevotionMaster(owner.address);
-  await faith.addManager(devotion.address);
-  await faith.addManager(await owner.getAddress());
   await templeToken.increaseAllowance(
     templeRouter.address,
     toAtto(10000000000)
@@ -255,46 +253,11 @@ async function main() {
     await owner.getAddress(),
     expiryDate()
   );
-  await devotion.startDevotion(1, 1);
-  // set a win state on Devotion
-  await templeRouter.swapExactFraxForTemple(
-    10000,
-    1,
-    account1.address,
-    expiryDate()
-  );
-  await templeRouter.swapExactFraxForTemple(
-    10000,
-    1,
-    account2.address,
-    expiryDate()
-  );
-  // Add value to templePrizePool
-  await templeToken.transfer(devotion.address, toAtto(1000));
-  await mineNBlocks(3);
-  await devotion.initiateDevotionFinalHour();
-  await mineNBlocks(3);
-  await devotion.connect(account1);
-  // lock verify account1 OGT
-  const DEVOTION = new Devotion__factory(owner)
-    .attach(devotion.address)
-    .connect(account1);
-  const OG_TEMPLE = new OGTemple__factory(owner)
-    .attach(await templeStaking.OG_TEMPLE())
-    .connect(account1);
-  await OG_TEMPLE.approve(lockedOgTemple_new.address, toAtto(1000000));
-  const amountOGTemple1 = await ogTempleToken.balanceOf(account1.address);
-  console.info(`amountOGTemple1: ${fromAtto(amountOGTemple1)}`);
-  await DEVOTION.lockAndVerify(amountOGTemple1);
-  // await devotion.endDevotionRound();
-  await faith.gain(account1.address, 25);
-  await faith.gain(account2.address, 45);
-
+  
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
     EXIT_QUEUE_ADDRESS: exitQueue.address,
     LOCKED_OG_TEMPLE_ADDRESS: lockedOgTemple_old.address,
-    LOCKED_OG_TEMPLE_ADDRESS_NEW: lockedOgTemple_new.address,
     STABLE_COIN_ADDRESS: stablecToken.address,
     TEMPLE_ADDRESS: templeToken.address,
     TEMPLE_STAKING_ADDRESS: templeStaking.address,
@@ -308,9 +271,9 @@ async function main() {
     TEMPLE_V2_ROUTER_ADDRESS: templeRouter.address,
     TEMPLE_ROUTER_WHITELIST: ammWhitelist.address,
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
-    TEMPLE_DEVOTION_ADDRESS: devotion.address,
+    REDEEM_FAITH_MANAGER: redeemFaithManager.address,
     TEMPLE_FAITH_ADDRESS: faith.address,
-    LOCKED_OG_TEMPLE_DEVOTION_ADDRESS: lockedOgTemple_new.address,
+    LOCKED_TEMPLE_ADDRESS: lockedTemple.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys
