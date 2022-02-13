@@ -60,11 +60,9 @@ describe("LockedTemple", async () => {
     const initialLock = (await lockedTemple.wenTemple(await alan.getAddress())).lockedUntilTimestamp;
     await shouldThrow(lockedTemple.connect(alan).unlock(0), stillLockedErr)
     expect(fromAtto((await lockedTemple.wenTemple(await alan.getAddress())).amount)).eq(100);
-    expect((await faith.balances(await alan.getAddress())).usableFaith).eq(100);
 
     await lockedTemple.connect(alan).lock(toAtto(50), SECONDS_IN_MONTH * 2)
     await shouldThrow(lockedTemple.connect(alan).unlock(1), stillLockedErr)
-    expect((await faith.balances(await alan.getAddress())).usableFaith).eq(500);
 
     const refreshedLock = (await lockedTemple.wenTemple(await alan.getAddress())).lockedUntilTimestamp;
     expect(fromAtto((await lockedTemple.wenTemple(await alan.getAddress())).amount)).eq(150);
@@ -80,6 +78,20 @@ describe("LockedTemple", async () => {
     await lockedTemple.connect(alan).unlock(toAtto(50));
 
     expect(fromAtto((await lockedTemple.wenTemple(await alan.getAddress())).amount)).eq(0);
+  });
+
+  it("Faith calc for locks", async () => {
+    await templeToken.connect(alan).increaseAllowance(lockedTemple.address, toAtto(150));
+    await templeToken.connect(ben).increaseAllowance(lockedTemple.address, toAtto(150));
+
+    await lockedTemple.connect(alan).lock(toAtto(100), SECONDS_IN_MONTH);
+    expect((await faith.balances(await alan.getAddress())).usableFaith).eq(100);
+
+    await lockedTemple.connect(alan).lock(toAtto(50), SECONDS_IN_MONTH * 2)
+    expect((await faith.balances(await alan.getAddress())).usableFaith).eq(500);
+
+    await lockedTemple.connect(ben).lock(toAtto(150), SECONDS_IN_MONTH * 2)
+    expect((await faith.balances(await ben.getAddress())).usableFaith).eq(600);
   });
 
   // TODO(butlerji): test lockFor permit
