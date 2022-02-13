@@ -40,7 +40,8 @@ describe("RedeemFaith", async () => {
       faith.address
     );
     lockedTemple = await new LockedTemple__factory(owner).deploy(
-      templeToken.address
+      templeToken.address,
+      faith.address,
     )
 
     await faith.addManager(lockedTemple.address);
