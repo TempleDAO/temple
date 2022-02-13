@@ -1,26 +1,51 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from 'styled-components';
+import styled, { ThemeProvider } from 'styled-components';
+
 import NotificationManager from 'components/Notification/NotificationManager';
 import { NotificationProvider } from 'providers/NotificationProvider';
 import { WalletProvider } from 'providers/WalletProvider';
 import { GlobalStyle } from 'styles/GlobalStyle';
 import { theme } from 'styles/theme';
+import PageLayout from 'components/Layouts/Page';
+import Loader from 'components/Loader/Loader';
 
-import LazyPage from 'utils/LazyPage';
+import Home from 'components/Pages/Home';
+import Disclaimer from 'components/Pages/Disclaimer';
 
+// Separate Chunks
+const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
+const DAppRoot = React.lazy(() => import('components/Pages/DAppRoot'));
 const FireRitualistCashback = React.lazy(() => import('components/Pages/FireRitualistCashback'));
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
 const FaithAirdrop = React.lazy(() => import('components/Pages/FaithAirdrop'));
 const Claim = React.lazy(() => import('components/Pages/Claim'));
 const Exit = React.lazy(() => import('components/Pages/Exit'));
-const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
-const DAppRoot = React.lazy(() => import('components/Pages/DAppRoot'));
 const Enter = React.lazy(() => import('components/Pages/Enter'));
-const PageLayout = React.lazy(() => import('components/Layouts/Page'));
-const Disclaimer = React.lazy(() => import('components/Pages/Disclaimer'));
-const Home = React.lazy(() => import('components/Pages/Home'));
+
+const LoaderWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  justify-self: center;
+  min-height: 100vh;
+`;
+
+interface LazyPageProps {
+  component: React.LazyExoticComponent<(props: unknown) => JSX.Element>;
+}
+
+const LazyPage = ({ component: Component }: LazyPageProps) => (
+  <React.Suspense fallback={(
+    <LoaderWrapper>
+      <Loader />
+    </LoaderWrapper>
+  )}>
+    <Component />
+  </React.Suspense>
+);
 
 ReactDOM.render(
   <React.StrictMode>
@@ -33,8 +58,8 @@ ReactDOM.render(
               <>
                 <Route path="/the-temple" element={<LazyPage component={AmmSpaRoot} />} />
                 <Route path="/dapp" element={<LazyPage component={DAppRoot} />} />
-                <Route path="/" element={<LazyPage component={PageLayout} />}>
-                  <Route path="/" element={<LazyPage component={Home} />} />
+                <Route path="/" element={<PageLayout />}>
+                  <Route path="/" element={<Home />} />
                   <Route path="disclaimer" element={<Disclaimer />} />
                   <Route path="enter" element={<LazyPage component={Enter} />} />
                   <Route path="exit" element={<LazyPage component={Exit} />} />
