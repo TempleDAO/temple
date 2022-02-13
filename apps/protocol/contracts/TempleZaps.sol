@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.4;
 
-import 'hardhat/console.sol';
-
 import './ZapBaseV2_3.sol';
 
 interface ITempleFraxAMMRouter {
@@ -83,7 +81,6 @@ contract TempleZaps is ZapBaseV2_3 {
       swapTarget,
       swapData
     );
-    console.log('fraxBought:', fraxBought / 1e18);
 
     amountOGTemple = _enterTemple(fraxBought, minTempleReceived);
     emit zappedIn(msg.sender, amountOGTemple);
@@ -169,16 +166,12 @@ contract TempleZaps is ZapBaseV2_3 {
         block.timestamp + TEMPLE_AMM_DEADLINE
       );
 
-    console.log('amountTempleReceived:', amountTempleReceived / 1e18);
-
     _approveToken(TEMPLE, TEMPLE_STAKING, amountTempleReceived);
 
     amountOGTemple = ITempleStaking(TEMPLE_STAKING).stakeFor(
       msg.sender,
       amountTempleReceived
     );
-
-    console.log('amountOGTemple:', amountOGTemple / 1e18);
   }
 
   ///////////// Owner only /////////////
