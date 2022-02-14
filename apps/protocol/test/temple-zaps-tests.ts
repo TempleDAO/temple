@@ -5,7 +5,7 @@ import axios from 'axios';
 import { signERC2612Permit } from 'eth-permit';
 
 import FakeERC20 from '../artifacts/contracts/fakes/FakeERC20.sol/FakeERC20.json';
-import FakeUSDC from '../artifacts/contracts/fakes/FakeUSDC.sol/FiatTokenV2_1.json';
+import FakeERC20Permit from '../artifacts/contracts/fakes/FakeERC20Permit.sol/ERC20PermitMock.json';
 
 import TempleAMM from '../artifacts/contracts/amm/TempleFraxAMMRouter.sol/TempleFraxAMMRouter.json';
 
@@ -394,7 +394,7 @@ async function zapWithPermit(
   tokenAmount: string,
   minTempleReceived: string
 ) {
-  const tokenContract = new ethers.Contract(tokenAddr, FakeUSDC.abi, signer);
+  const tokenContract = new ethers.Contract(tokenAddr, FakeERC20Permit.abi, signer);
   const signerAddress = await signer.getAddress();
 
   const symbol = await tokenContract.symbol();

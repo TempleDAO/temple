@@ -53,15 +53,6 @@ module.exports = {
           },
         },
       },
-      {
-        version: '0.6.12', // for fakes/USDC.sol
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 999999,
-          },
-        },
-      },
     ],
   },
   typechain: {
