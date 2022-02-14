@@ -5,7 +5,7 @@ import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ganache'; // for testing
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
-import "hardhat-gas-reporter";
+import 'hardhat-gas-reporter';
 
 // NOTE: Any tasks that depend on the generated typechain makes the build flaky.
 //       Favour scripts instead
@@ -54,12 +54,12 @@ module.exports = {
         },
       },
       {
-        version: "0.6.12", // for fakes/USDC.sol
+        version: '0.6.12', // for fakes/USDC.sol
         settings: {
           optimizer: {
             enabled: true,
             runs: 999999,
-          }
+          },
         },
       },
     ],
@@ -76,6 +76,12 @@ module.exports = {
         : [],
       gasPrice: 2000000000,
     },
+    // Note: Overrides `yarn test` to always use forked mainnet
+    // hardhat: {
+    //   forking: {
+    //     url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
+    //   },
+    // },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
       accounts: process.env.MAINNET_ADDRESS_PRIVATE_KEY
@@ -97,12 +103,12 @@ module.exports = {
     apiKey: process.env.ETHERSCAN_API_KEY,
   },
   mocha: {
-    timeout: 120000
+    timeout: 120000,
   },
   gasReporter: {
     currency: 'USD',
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
     gasPrice: 135,
-    enabled: (process.env.REPORT_GAS) ? true : false
-  }
+    enabled: process.env.REPORT_GAS === 'true',
+  },
 };

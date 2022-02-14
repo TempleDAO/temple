@@ -90,7 +90,7 @@ describe('TempleZaps', async () => {
       const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
 
       await zapIn(
-        binanceSigner,
+        alice,
         TEMPLE_ZAPS,
         tokenAddr,
         tokenAmount,
@@ -404,7 +404,7 @@ async function zapWithPermit(
   const zapsConnect = zaps.connect(signer);
   const permitDomain = {
     name: await tokenContract.name(),
-    version: await tokenContract.version(),
+    version: tokenAddr === USDC ? '2' : '1',
     chainId: 1, // don't use (await ethers.provider.getNetwork()).chainId on forked mainnet
     verifyingContract: tokenAddr,
   };

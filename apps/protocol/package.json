@@ -51,7 +51,7 @@
     "hardhat:mainnet": "hardhat --network mainnet",
     "hardhat:matic": "hardhat --network matic",
     "local-metrics": "hardhat run --network localhost scripts/metrics.ts",
-    "local-fork": "hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/$(grep ALCHEMY_API_KEY .env | cut -d '=' -f2) --fork-block-number 14168979"
+    "local-fork": "hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/$(grep ALCHEMY_API_KEY .env | cut -d '=' -f2)"
   },
   "engines": {
     "node": "14.x"
