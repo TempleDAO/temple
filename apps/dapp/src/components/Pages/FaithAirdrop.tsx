@@ -23,12 +23,11 @@ import chant from 'assets/sounds/chant.mp3';
 
 const ENV_VARS = import.meta.env;
 const FAITH_AIRDROP_ADDRESS = ENV_VARS.VITE_PUBLIC_FAITH_AIRDROP_ADDRESS;
-const AIRDROP_START_TIMESTAMP =
-  ENV_VARS.VITE_PUBLIC_AIRDROP_START_TIMESTAMP || 1645030560000;
+const AIRDROP_END_TIMESTAMP =
+  ENV_VARS.VITE_PUBLIC_FAITH_AIRDROP_END_TIMESTAMP || 1645061667000;
 const ONE_MINUTE = 60000;
 const ONE_HOUR = 3600000;
 const ONE_DAY = 86400000;
-const AIRDROP_LENGTH = ONE_DAY * 5;
 
 type ReducerState = {
   cashbackComplete: boolean;
@@ -229,8 +228,7 @@ function useBackgroundNoise() {
 
 function getTimeRemaining() {
   const now = new Date().valueOf();
-  const timeRemaining =
-    AIRDROP_LENGTH - (now - Number(AIRDROP_START_TIMESTAMP));
+  const timeRemaining = Number(AIRDROP_END_TIMESTAMP);
 
   if (timeRemaining <= 0) return null;
   else {
