@@ -257,6 +257,8 @@ interface WalletState {
     tokenAmount: string,
     minTempleReceived: string
   ): Promise<void>;
+
+  getZapQuote(sellToken: string, sellAmount: string): Promise<number | void>;
 }
 
 const INITIAL_STATE: WalletState = {
@@ -336,6 +338,7 @@ const INITIAL_STATE: WalletState = {
   getFaithQuote: asyncNoop,
   getExitQueueData: asyncNoop,
   zapIn: asyncNoop,
+  getZapQuote: asyncNoop,
 };
 
 const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
@@ -1838,12 +1841,12 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  //TODO: move to walletprovider
   const zapIn = async (
     tokenAddr: string,
     tokenAmount: string,
     minTempleReceived: string
   ) => {
+    // TODO: Make these env vars
     const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
     const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
     const FRAX = '0x853d955aCEf822Db058eb8505911ED77F175b99e';
@@ -1890,7 +1893,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       const tx = await templeZaps.zapIn(
         tokenAddr,
-        sellAmount,
+        sellAmount.toString(),
         minTempleReceived,
         Math.floor(Date.now() / 1000) + 1200, // deadline of 20 minutes from now
         ZEROEX_EXCHANGE_PROXY,
@@ -1907,6 +1910,23 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         });
       }
     }
+  };
+
+  const getZapQuote = async (sellToken: string, tokenAmount: string) => {
+    const sellAmount = ethers.utils.parseUnits(tokenAmount).toString();
+
+    // TODO: Make these env vars
+    const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
+    const FRAX = '0x853d955aCEf822Db058eb8505911ED77F175b99e';
+
+    const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${FRAX}`;
+    let swapCallData, price;
+    const response = await axios.get(url);
+    ({
+      data: { data: swapCallData, price },
+    } = response);
+
+    return price * fromAtto(BigNumber.from(sellAmount));
   };
 
   return (
@@ -1959,6 +1979,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         faith,
         getExitQueueData,
         zapIn,
+        getZapQuote,
       }}
     >
       {children}
