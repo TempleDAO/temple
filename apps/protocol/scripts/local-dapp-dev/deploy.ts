@@ -290,12 +290,15 @@ async function main() {
   // await devotion.endDevotionRound();
   await faith.gain(account1.address, 25);
   await faith.gain(account2.address, 45);
-
+  
   //deploy templeZaps contract
   const templeZaps = await new TempleZaps__factory(owner).deploy(
     templeToken.address,
     templeRouter.address
   );
+  await templeZaps.setApprovedTargets(["0xDef1C0ded9bec7F1a1670819833240f027b25EfF"], [true]);
+
+
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
