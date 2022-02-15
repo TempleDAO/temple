@@ -6,8 +6,10 @@ import { Sell } from 'components/AMM/Sell';
 import { Stake } from 'components/AMM/Stake';
 import { Withdraw } from 'components/AMM/Withdraw';
 import { Unlock } from 'components/AMM/Unlock';
+import { Zap } from 'components/AMM/Zap';
 import { Nav } from 'components/DApp/Nav';
 import { Profile } from 'components/DApp/Profile';
+
 import {
   Container,
   Main,
@@ -75,6 +77,9 @@ export const DApp: FC<DAppProps> = ({ small }) => {
       break;
     case DAppView.PROFILE:
       CurrentView = <Profile />;
+      break;
+    case DAppView.ZAP:
+      CurrentView = <Zap />;
       break;
   }
 

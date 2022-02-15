@@ -19,6 +19,7 @@ export const Nav = React.forwardRef<HTMLElement, NavProps>(
         <NavGroup>
           <NavItem close={onClose} view={DAppView.BUY} />
           <NavItem close={onClose} view={DAppView.STAKE} />
+          <NavItem close={onClose} view={DAppView.ZAP} />
         </NavGroup>
         {ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ENGAGED && (
           <NavGroup>
