@@ -15,16 +15,13 @@ import {
 import { formatNumberWithCommas } from 'utils/formatter';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { TempleZaps__factory } from 'types/typechain';
-import { BigNumber, ethers, Signer } from 'ethers';
-import axios from 'axios';
+import { ethers } from 'ethers';
 
 export const Zap = () => {
-  const ENV_VARS = import.meta.env;
-  const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
-  const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
-  const FRAX = '0x853d955aCEf822Db058eb8505911ED77F175b99e';
-  const { wallet, signer, balance } = useWallet();
+  const { signer, balance, getBalance, zapIn } = useWallet();
   const [ethBalance, setEthBalance] = useState(0);
+  const [tokenAmount, setTokenAmount] = useState('0');
+  const [zapped, setZapped] = useState(false);
 
   //TODO: add to balance in walletprovider
   const getEthBalance = async () => {
@@ -34,12 +31,17 @@ export const Zap = () => {
     } else setEthBalance(0);
   };
 
+  const handleClick = (address: string, tokenAmount: string) => {
+    setZapped(false);
+    zapIn(address, tokenAmount, toAtto(1).toString()).then((res) => {
+      setZapped(true);
+    });
+  };
+
   useEffect(() => {
     getEthBalance();
-    if(signer){
-      const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
-    }
-  }, []);
+    getBalance();
+  }, [zapped]);
 
   return (
     <ViewContainer>
@@ -53,6 +55,9 @@ export const Zap = () => {
         crypto={{ kind: 'value', value: 'ETH' }}
         hint={`Balance: ${formatNumberWithCommas(ethBalance)}`}
         placeholder={'0.00'}
+        onChange={(e) => {
+          setTokenAmount(e.target.value);
+        }}
       />
 
       <Spacer small />
@@ -70,8 +75,11 @@ export const Zap = () => {
 
       <Spacer small />
 
-      <Button isSmall label={'ZAP AND STAKE'} />
+      <Button
+        isSmall
+        label={'ZAP AND STAKE'}
+        onClick={() => handleClick(ethers.constants.AddressZero, tokenAmount)}
+      />
     </ViewContainer>
   );
 };
-

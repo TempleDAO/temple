@@ -4,6 +4,7 @@ import {
   JsonRpcSigner,
   Network,
 } from '@ethersproject/providers';
+import axios from 'axios';
 import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
 import { ClaimType } from 'enums/claim-type';
 import {
@@ -39,6 +40,7 @@ import {
   TempleTeamPayments__factory,
   TempleTreasury__factory,
   TempleUniswapV2Pair__factory,
+  TempleZaps__factory,
 } from 'types/typechain';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
@@ -250,6 +252,11 @@ interface WalletState {
   getFaithQuote(): Promise<FaithQuote | void>;
 
   getExitQueueData(): Promise<ExitQueueData | void>;
+  zapIn(
+    tokenAddr: string,
+    tokenAmount: string,
+    minTempleReceived: string
+  ): Promise<void>;
 }
 
 const INITIAL_STATE: WalletState = {
@@ -328,6 +335,7 @@ const INITIAL_STATE: WalletState = {
   getTempleFaithReward: asyncNoop,
   getFaithQuote: asyncNoop,
   getExitQueueData: asyncNoop,
+  zapIn: asyncNoop,
 };
 
 const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
@@ -1830,6 +1838,77 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
+  //TODO: move to walletprovider
+  const zapIn = async (
+    tokenAddr: string,
+    tokenAmount: string,
+    minTempleReceived: string
+  ) => {
+    const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
+    const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
+    const FRAX = '0x853d955aCEf822Db058eb8505911ED77F175b99e';
+
+    if (walletAddress && signerState) {
+      // const tokenContract = new ethers.Contract(tokenAddr, signer);
+      let symbol;
+      let decimals;
+      let sellToken;
+
+      symbol = 'ETH';
+      decimals = 18;
+      sellToken = 'ETH';
+
+      // Get quote from 0x API
+      let swapCallData, price, guaranteedPrice, gas, estimatedGas;
+      const sellAmount = ethers.utils
+        .parseUnits(tokenAmount, decimals)
+        .toString();
+
+      if (tokenAddr === FRAX) {
+        guaranteedPrice = '0.99';
+        swapCallData = '0x';
+      } else {
+        const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${FRAX}`;
+        const response = await axios.get(url);
+        ({
+          data: {
+            data: swapCallData,
+            price,
+            guaranteedPrice,
+            gas,
+            estimatedGas,
+          },
+        } = response);
+      }
+
+      // Do zap
+      const templeZaps = new TempleZaps__factory(signerState).attach(
+        ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS
+      );
+      const overrides: { value?: BigNumber } = {};
+      overrides.value = ethers.utils.parseEther(tokenAmount);
+
+      const tx = await templeZaps.zapIn(
+        tokenAddr,
+        sellAmount,
+        minTempleReceived,
+        Math.floor(Date.now() / 1000) + 1200, // deadline of 20 minutes from now
+        ZEROEX_EXCHANGE_PROXY,
+        swapCallData,
+        overrides
+      );
+
+      const txReceipt = await tx.wait();
+
+      if (txReceipt) {
+        openNotification({
+          title: `Zapped ETH for ${TEMPLE_TOKEN}`,
+          hash: tx.hash,
+        });
+      }
+    }
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -1879,6 +1958,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         getFaithQuote,
         faith,
         getExitQueueData,
+        zapIn,
       }}
     >
       {children}
