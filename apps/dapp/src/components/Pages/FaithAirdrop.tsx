@@ -228,7 +228,7 @@ function useBackgroundNoise() {
 
 function getTimeRemaining() {
   const now = new Date().valueOf();
-  const timeRemaining = Number(AIRDROP_END_TIMESTAMP);
+  const timeRemaining = Number(AIRDROP_END_TIMESTAMP) - now;
 
   if (timeRemaining <= 0) return null;
   else {
