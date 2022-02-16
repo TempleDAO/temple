@@ -17,7 +17,6 @@ import {
 import { NavContext } from 'components/DApp/NavContext';
 import { DAppView } from 'enums/dapp-view';
 import React, { FC, useContext, useEffect, useRef, useState } from 'react';
-import { createBrowserHistory } from 'history';
 
 interface DAppProps {
   small?: boolean;
@@ -48,44 +47,34 @@ export const DApp: FC<DAppProps> = ({ small }) => {
 
   let CurrentView;
 
-  let history = createBrowserHistory();
-
   switch (activeView) {
     case DAppView.BUY:
       CurrentView = (
         <Buy onSwapArrowClick={() => setView(DAppView.SELL)} small />
       );
-      history.push(`/dapp?view=${DAppView.BUY}`);
       break;
     case DAppView.STAKE:
       CurrentView = <Stake small />;
-      history.push(`/dapp?view=${DAppView.STAKE}`);
       break;
     case DAppView.QUEUE:
       CurrentView = <Queue small />;
-      history.push(`/dapp?view=${DAppView.QUEUE}`);
       break;
     case DAppView.WITHDRAW:
       CurrentView = <Withdraw small />;
-      history.push(`/dapp?view=${DAppView.WITHDRAW}`);
       break;
     case DAppView.SELL:
       CurrentView = (
         <Sell onSwapArrowClick={() => setView(DAppView.BUY)} small />
       );
-      history.push(`/dapp?view=${DAppView.SELL}`);
       break;
     case DAppView.DEVOTION:
       CurrentView = <Devotion />;
-      history.push(`/dapp?view=${DAppView.DEVOTION}`);
       break;
     case DAppView.UNLOCK:
       CurrentView = <Unlock />;
-      history.push(`/dapp?view=${DAppView.UNLOCK}`);
       break;
     case DAppView.PROFILE:
       CurrentView = <Profile />;
-      history.push(`/dapp?view=${DAppView.PROFILE}`);
       break;
   }
 
