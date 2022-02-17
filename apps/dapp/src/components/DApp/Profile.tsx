@@ -21,6 +21,7 @@ export const Profile: FC = () => {
       layout={{
         kind: 'container',
         direction: 'column',
+        justifyContent: 'center'
       }}
     >
       <Flex
