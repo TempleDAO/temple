@@ -107,26 +107,20 @@ export const Profile: FC = () => {
       >
         <Flex layout={{ kind: 'item' }}>
           <DataCard
-            title={`USABLE ${FAITH_TOKEN}`}
-            data={`${formatNumberWithCommas(faith.usableFaith)} ${FAITH_TOKEN}`}
+            title={`USABLE FAITH`}
+            data={`${faith.usableFaith} ${FAITH_TOKEN}`}
             small
           />
         </Flex>
         <Flex layout={{ kind: 'item' }}>
           <DataCard
-            title={`LIFETIME ${FAITH_TOKEN}`}
-            data={`${formatNumberWithCommas(
-              faith.lifeTimeFaith
-            )}  ${FAITH_TOKEN}`}
+            title={`LIFETIME FAITH`}
+            data={`${faith.lifeTimeFaith}  ${FAITH_TOKEN}`}
             small
           />
         </Flex>
         <Flex layout={{ kind: 'item' }}>
-          <DataCard
-            title={`${FAITH_TOKEN} SHARE`}
-            data={`${faith.share}%`}
-            small
-          />
+          <DataCard title={`FAITH SHARE`} data={`${faith.share}%`} small />
         </Flex>
       </Flex>
     </Container>
