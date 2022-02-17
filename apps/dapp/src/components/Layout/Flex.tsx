@@ -25,7 +25,7 @@ interface FlexContainer {
   alignItems?: LayoutOption;
 }
 
-type Col = 'half' | 'third' | 'quarter' | 'three-quarter' | 'fullwidth';
+type Col = 'half' | 'third' | 'quarter' | 'fifth' | 'three-quarter' | 'fullwidth';
 
 interface FlexItem extends Omit<FlexContainer, 'kind'> {
   kind: 'item';
@@ -133,6 +133,14 @@ export const FlexStyled = styled.div<PropsWithChildren<FlexProps>>`
       flex: 1 25%;
       margin: 1rem 2rem;
     `};
+
+    ${(props) =>
+      props.layout.kind === 'item' &&
+      props.layout.col === 'fifth' &&
+      css`
+        flex: 1 20%;
+        margin: 1rem 2rem;
+      `};
 
   ${(props) =>
     props.layout.kind === 'item' &&
