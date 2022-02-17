@@ -32,6 +32,7 @@ interface FlexItem extends Omit<FlexContainer, 'kind'> {
   col?: Col;
   colTablet?: Col;
   colDesktop?: Col;
+  smallMargin?: boolean;
 }
 
 type Layout = FlexContainer | FlexItem;
@@ -132,6 +133,16 @@ export const FlexStyled = styled.div<PropsWithChildren<FlexProps>>`
       flex: 1 25%;
       margin: 1rem 2rem;
     `};
+
+  ${(props) =>
+    props.layout.kind === 'item' &&
+    props.layout.smallMargin &&
+    props.layout.col !== 'fullwidth' &&
+    css`
+      margin: 0.25rem 0.75rem;
+    `};
+  
+      
   ${(props) =>
     props.layout.kind === 'container' &&
     props.layout.canWrap &&
