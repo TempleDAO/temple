@@ -1,6 +1,7 @@
 import React, { FC, useEffect } from 'react';
 import styled from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
+import { Flex } from 'components/Layout/Flex';
 import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
 import PercentageBar from 'components/PercentageBar/PercentageBar';
@@ -10,12 +11,11 @@ import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
 import { formatNumber } from 'utils/formatter';
 import {
   ConvoFlowTitle,
-  Spacer,
-  SpacerWidth,
   TitleWrapper,
   TooltipPadding,
   ViewContainer,
 } from 'components/AMM/helpers/components';
+
 
 interface SizeProps {
   small?: boolean;
@@ -64,8 +64,8 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
         total={exitQueueData.totalTempleOwned}
         processed={exitQueueData.claimableTemple}
       />
-      <CardGroup>
-        <CardContainer>
+      <Flex layout={{ kind: 'container' }}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <StyledDataCard
             //@ts-ignore
             tooltipPosition={isSmallOrMediumScreen ? 'right' : 'top'}
@@ -75,8 +75,8 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
               'Amount of $TEMPLE that has been processed and is available for withdrawal.'
             }
           />
-        </CardContainer>
-        <CardContainer>
+        </Flex>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <StyledDataCard
             title={'NOT PROCESSED'}
             data={
@@ -88,8 +88,8 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
               'Amount of $TEMPLE yet to be processed through the queue.'
             }
           />
-        </CardContainer>
-        <CardContainer>
+        </Flex>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <StyledDataCard
             title={'QUEUE PROCESSED BY'}
             //@ts-ignore
@@ -102,10 +102,10 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
               'The time at which all of your $TEMPLE will be available to withdraw.'
             }
           />
-        </CardContainer>
-      </CardGroup>
-      <ButtonGroup>
-        <ButtonContainer>
+        </Flex>
+      </Flex>
+      <Flex layout={{ kind: 'container' }}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <Button
             isSmall={small}
             label={'restake pending $TEMPLE'}
@@ -116,7 +116,8 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
               exitQueueData.claimableTemple === 0
             }
           />
-          <SpacerWidth small />
+        </Flex>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <Button
             isSmall={small}
             label={'withdraw available $TEMPLE'}
@@ -124,8 +125,8 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
             isUppercase
             disabled={exitQueueData.claimableTemple == 0}
           />
-        </ButtonContainer>
-      </ButtonGroup>
+        </Flex>
+      </Flex>
     </ViewContainer>
   );
 };
@@ -137,27 +138,4 @@ const StyledDataCard = styled(DataCard)`
   p {
     font-size: 1rem;
   }
-`;
-
-const CardGroup = styled.div`
-  display: flex;
-  flex-wrap: nowrap;
-  flex-direction: row;
-  padding: 10px 0;
-  gap: 10px;
-`;
-
-const CardContainer = styled.div`
-  display: flex;
-  flex-grow: 0.33;
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  flex-grow: 1;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  flex-direction: column;
 `;
