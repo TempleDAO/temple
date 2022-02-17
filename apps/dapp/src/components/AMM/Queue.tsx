@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useState } from 'react';
-import styled from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
+import { Flex } from 'components/Layout/Flex';
 import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
@@ -15,11 +15,13 @@ import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import {
   ConvoFlowTitle,
+  Spacer,
   TitleWrapper,
   TooltipPadding,
   ViewContainer,
 } from 'components/AMM/helpers/components';
 import { copyBalance } from 'components/AMM/helpers/methods';
+
 
 interface QueueProps {
   small?: boolean;
@@ -140,8 +142,9 @@ export const Queue: FC<QueueProps> = ({ small }) => {
         handleChange={handleUpdateOGT}
         placeholder={'0.00'}
       />
-      <CardGroup>
-        <CardContainer>
+
+      <Flex layout={{kind: 'container', direction:'row'}}>
+        <Flex layout={{kind:'item', smallMargin:true}}>
           <DataCard
             small={small}
             title={'TEMPLE + REWARDS'}
@@ -150,8 +153,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
               'Amount of $TEMPLE received once you exit the queue.'
             }
           />
-        </CardContainer>
-        <CardContainer>
+        </Flex>
+        <Flex layout={{kind:'item', smallMargin:true}}>
           <DataCard
             small={small}
             title={'QUEUE LENGTH'}
@@ -160,8 +163,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
               'The current length of the queue due to other templars waiting to be processed in front of you.'
             }
           />
-        </CardContainer>
-        <CardContainer>
+        </Flex>
+        <Flex layout={{kind:'item', smallMargin:true}}>
           <DataCard
             small={small}
             title={'PROCESS TIME'}
@@ -170,9 +173,9 @@ export const Queue: FC<QueueProps> = ({ small }) => {
               'Amount of time it takes to process the $OGTEMPLE that you have selected. Your processing will begin in the number of days specified in the current ‘queue length’.'
             }
           />
-        </CardContainer>
-      </CardGroup>
-      <br />
+        </Flex>
+      </Flex>
+      <Spacer small />
       <Button
         isSmall={small}
         label={'BURN $OGTEMPLE & JOIN QUEUE'}
@@ -187,16 +190,3 @@ export const Queue: FC<QueueProps> = ({ small }) => {
     </ViewContainer>
   );
 };
-
-const CardGroup = styled.div`
-  display: flex;
-  flex-wrap: nowrap;
-  flex-direction: row;
-  padding: 10px 0;
-  gap: 10px;
-`;
-
-const CardContainer = styled.div`
-  display: flex;
-  flex-grow: 0.33;
-`;

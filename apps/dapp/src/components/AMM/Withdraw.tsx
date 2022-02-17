@@ -11,6 +11,7 @@ import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
 import { formatNumber } from 'utils/formatter';
 import {
   ConvoFlowTitle,
+  Spacer,
   TitleWrapper,
   TooltipPadding,
   ViewContainer,
@@ -104,8 +105,8 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
           />
         </Flex>
       </Flex>
-      <Flex layout={{ kind: 'container' }}>
-        <Flex layout={{ kind: 'item', smallMargin: true }}>
+      <Spacer small />
+      <ButtonContainer layout={{ kind: 'container' }}>
           <Button
             isSmall={small}
             label={'restake pending $TEMPLE'}
@@ -116,8 +117,6 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
               exitQueueData.claimableTemple === 0
             }
           />
-        </Flex>
-        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <Button
             isSmall={small}
             label={'withdraw available $TEMPLE'}
@@ -125,11 +124,14 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
             isUppercase
             disabled={exitQueueData.claimableTemple == 0}
           />
-        </Flex>
-      </Flex>
+      </ButtonContainer>
     </ViewContainer>
   );
 };
+
+const ButtonContainer = styled(Flex)`
+  gap: 0.75rem;
+`;
 
 const StyledDataCard = styled(DataCard)`
   display: flex;
