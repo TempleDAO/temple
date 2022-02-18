@@ -17,22 +17,22 @@ export const Nav = React.forwardRef<HTMLElement, NavProps>(
       <Container ref={ref}>
         {small && <CloseImage onClick={onClose} />}
         <NavGroup>
-          <NavItem close={onClose} view={DAppView.BUY} />
-          <NavItem close={onClose} view={DAppView.STAKE} />
+          <NavItem close={onClose} to="/dapp/buy" view={DAppView.BUY} />
+          <NavItem close={onClose} to="/dapp/stake" view={DAppView.STAKE} />
         </NavGroup>
         {ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ENGAGED && (
           <NavGroup>
-            <NavItem close={onClose} view={DAppView.DEVOTION} />
+            <NavItem close={onClose} to="/dapp/devotion" view={DAppView.DEVOTION} />
           </NavGroup>
         )}
         <NavGroup>
-          <NavItem close={onClose} view={DAppView.UNLOCK} />
-          <NavItem close={onClose} view={DAppView.QUEUE} />
-          <NavItem close={onClose} view={DAppView.WITHDRAW} />
-          <NavItem close={onClose} view={DAppView.SELL} />
+          <NavItem close={onClose} to="/dapp/unlock" view={DAppView.UNLOCK} />
+          <NavItem close={onClose} to="/dapp/queue" view={DAppView.QUEUE} />
+          <NavItem close={onClose} to="/dapp/withdraw" view={DAppView.WITHDRAW} />
+          <NavItem close={onClose} to="/dapp/sell" view={DAppView.SELL} />
         </NavGroup>
         <NavGroup>
-          <NavItem close={onClose} view={DAppView.PROFILE} />
+          <NavItem close={onClose} to="/dapp/profile" view={DAppView.PROFILE} />
         </NavGroup>
       </Container>
     );
