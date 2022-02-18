@@ -1,4 +1,4 @@
-export const MOBILE_BREAKPOINT = '540px';
+export const MOBILE_BREAKPOINT = '768px';
 
 export const aboveMobileBreakpoint = (styles: string) => {
   return `

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useMediaQuery } from 'react-responsive';
 
 import Image from 'components/Image/Image';
 import styled, { css } from 'styled-components';
@@ -7,6 +8,7 @@ import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
 import Metrics from 'components/Metrics/Metrics';
 import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
+import { MOBILE_BREAKPOINT } from 'styles/breakpoints';
 
 import circleBgImage from 'assets/images/circle-bg.svg';
 import earnTradingFeeImage from 'assets/images/earn-trading-fee.svg';
@@ -23,48 +25,48 @@ import {
   SunGateWrapper,
   TempleDaoSun,
   ResponsiveImage,
+  EarnStableGainsWrapper,
+  EarnStableGainsHeader,
+  SleepEasyStakingText,
+  ButtonGroup,
 } from './styles';
 
 const Home = () => {
   const treasuryMetrics = useRefreshableTreasuryMetrics();
+  const isDesktop = useMediaQuery({
+    query: `(min-width: ${MOBILE_BREAKPOINT})`,
+  });
 
   return (
     <>
       <Row>
         <RowCell>
-          <h1>Earn Stable Gains</h1>
-          <h4>Sleep easy staking in the Temple</h4>
-          <br />
-          <br />
-          <Flex
-            layout={{
-              kind: 'container',
-            }}
-          >
+          <EarnStableGainsWrapper>
+            <EarnStableGainsHeader>Earn Stable Gains</EarnStableGainsHeader>
+            <SleepEasyStakingText>Sleep easy staking in the Temple</SleepEasyStakingText>
             <ButtonGroup>
-              <ButtonContainer>
-                <Link to={'/the-temple'}>
-                  <StyledButton
-                    label={`enter temple ${String.fromCharCode(10146)}`}
-                    isUppercase
-                    isSmall
-                  />
-                </Link>
-              </ButtonContainer>
+              {isDesktop && (
+                <ButtonContainer>
+                  <Link to={'/the-temple'}>
+                    <StyledButton
+                      label={`enter temple ${String.fromCharCode(10146)}`}
+                      isUppercase
+                      isSmall
+                    />
+                  </Link>
+                </ButtonContainer>
+              )}
               <ButtonContainer>
                 <Link to={'/dapp'}>
                   <StyledButton label={'buy now $'} isUppercase isSmall />
                 </Link>
               </ButtonContainer>
             </ButtonGroup>
-          </Flex>
-          <br />
-          <br />
-          <br />
-          {/*TODO: maybe render spinner while fetching metrics*/}
-          {treasuryMetrics ? (
-            <Metrics treasuryMetrics={treasuryMetrics} isHome />
-          ) : null}
+            {/*TODO: maybe render spinner while fetching metrics*/}
+            {treasuryMetrics ? (
+              <Metrics treasuryMetrics={treasuryMetrics} isHome />
+            ) : null}
+          </EarnStableGainsWrapper>
         </RowCell>
         <RowCell>
           <SunGateWrapper>
@@ -306,13 +308,7 @@ const CircleBgWrapper = styled.div<CircleBgWrapperProps>`
     `}
 `;
 
-const ButtonGroup = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  width: 24.0625rem;
-`;
+
 
 const ButtonContainer = styled.div`
   width: 9.6875rem;
