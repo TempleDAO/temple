@@ -1,4 +1,4 @@
-# TempleDOA Protocol
+# TempleDAO Protocol
 
 ## Dev Setup
 ```
