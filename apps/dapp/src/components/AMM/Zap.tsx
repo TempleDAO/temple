@@ -14,12 +14,15 @@ import {
 import { formatNumberWithCommas } from 'utils/formatter';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { ethers } from 'ethers';
+import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
 
 export const Zap = () => {
-  const { signer, balance, getBalance, zapIn, getZapQuote } = useWallet();
+  const { signer, balance, getBalance, zapIn, getTokenPriceInFrax } = useWallet();
+  const treasuryMetrics = useRefreshableTreasuryMetrics();
   const [ethBalance, setEthBalance] = useState(0);
   const [tokenAmount, setTokenAmount] = useState('0');
   const [zapped, setZapped] = useState(false);
+  const [tokenPrice, setTokenPrice] = useState(0);
   const [templeQuote, setTempleQuote] = useState(0);
 
   //TODO: add to balance in walletprovider
@@ -38,14 +41,26 @@ export const Zap = () => {
   };
 
   const handleInput = async (value: string) => {
-    setTokenAmount(value);
-    if (value !== '') {
-      const quote = await getZapQuote('ETH', value);
-      quote && setTempleQuote(quote);
-    } else setTempleQuote(0);
+    if(value !== ""){
+      setTokenAmount(value);
+      // TODO: Replace hardcoded 0.7 with actual TEMPLE price
+      //       once treasuryMetrics is working on this branch
+      setTempleQuote(tokenPrice * parseFloat(value) / 0.7);
+    } else {
+      setTokenAmount("0");
+      setTempleQuote(0);
+    }
   };
 
+  const getQuote = async () => {
+    const priceInFrax = await getTokenPriceInFrax('ETH');
+    if(priceInFrax){
+      setTokenPrice(priceInFrax);
+    } else setTokenPrice(0);
+  }
+
   useEffect(() => {
+    getQuote();
     getEthBalance();
     getBalance();
   }, [zapped]);

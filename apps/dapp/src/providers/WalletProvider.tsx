@@ -258,7 +258,7 @@ interface WalletState {
     minTempleReceived: string
   ): Promise<void>;
 
-  getZapQuote(sellToken: string, sellAmount: string): Promise<number | void>;
+  getTokenPriceInFrax(sellToken: string): Promise<number | void>;
 }
 
 const INITIAL_STATE: WalletState = {
@@ -338,7 +338,7 @@ const INITIAL_STATE: WalletState = {
   getFaithQuote: asyncNoop,
   getExitQueueData: asyncNoop,
   zapIn: asyncNoop,
-  getZapQuote: asyncNoop,
+  getTokenPriceInFrax: asyncNoop,
 };
 
 const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
@@ -1893,7 +1893,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       const tx = await templeZaps.zapIn(
         tokenAddr,
-        sellAmount.toString(),
+        sellAmount,
         minTempleReceived,
         Math.floor(Date.now() / 1000) + 1200, // deadline of 20 minutes from now
         ZEROEX_EXCHANGE_PROXY,
@@ -1912,21 +1912,23 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const getZapQuote = async (sellToken: string, tokenAmount: string) => {
-    const sellAmount = ethers.utils.parseUnits(tokenAmount).toString();
-
+  const getTokenPriceInFrax = async (sellToken: string) => {
     // TODO: Make these env vars
     const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
     const FRAX = '0x853d955aCEf822Db058eb8505911ED77F175b99e';
 
-    const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${FRAX}`;
-    let swapCallData, price;
+    const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${toAtto(
+      1
+    )}&buyToken=${FRAX}`;
     const response = await axios.get(url);
-    ({
-      data: { data: swapCallData, price },
-    } = response);
 
-    return price * fromAtto(BigNumber.from(sellAmount));
+    if (response.data.price) {
+      return response.data.price;
+    } else {
+      console.error(`Could not retrieve token price for ${sellToken}`);
+      console.error(`${response.status} ${response.statusText}`);
+      return 0;
+    }
   };
 
   return (
@@ -1979,7 +1981,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         faith,
         getExitQueueData,
         zapIn,
-        getZapQuote,
+        getTokenPriceInFrax,
       }}
     >
       {children}
