@@ -68,12 +68,14 @@ export const Zap = () => {
         const tokenArr: IToken[] = [];
 
         tokenResponse.forEach((token) => {
-          tokenArr.push({
-            symbol: token.symbol,
-            address: token.address,
-            balance: token.balance,
-            price: token.price,
-          });
+          if (token.network === 'ethereum') {
+            tokenArr.push({
+              symbol: token.symbol,
+              address: token.address,
+              balance: token.balance,
+              price: token.price,
+            });
+          }
         });
         setTokensInWallet(tokenArr);
       }
