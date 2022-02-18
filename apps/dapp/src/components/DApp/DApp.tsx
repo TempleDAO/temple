@@ -1,5 +1,5 @@
 import React, { FC, useContext, useEffect, useRef, useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 import { Buy } from 'components/AMM/Buy';
 import Devotion from 'components/AMM/Devotion';
@@ -56,6 +56,7 @@ export const DApp: FC<DAppProps> = ({ small }) => {
       <Route path="/devotion" element={<Devotion />} />
       <Route path="/unlock" element={<Unlock />} />
       <Route path="/profile" element={<Profile />} />
+      <Route path="/*" element={<Navigate replace to="/" />} />
     </Routes>
   );
 
