@@ -1,5 +1,7 @@
 import React, { FC, useContext } from 'react';
+import { useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
+
 import { DAppView } from 'enums/dapp-view';
 import { NavContext } from 'components/DApp/NavContext';
 import Image from 'components/Image/Image';
@@ -13,6 +15,7 @@ export const NavGroup: FC = ({ children }) => {
 interface ItemProps {
   view: DAppView;
   close?: () => void;
+  to: string;
 }
 
 interface TextProps {
@@ -23,21 +26,23 @@ interface ListItemProps {
   isActive?: boolean;
 }
 
-export const NavItem: FC<ItemProps> = ({ close, view }) => {
-  const { activeView, setView } = useContext(NavContext);
-  const isActive = activeView === view;
+export const NavItem: FC<ItemProps> = ({ close, view, to }) => {
+  const { setView } = useContext(NavContext);
+
+  const resolved = useResolvedPath(to);
+  const isActive = useMatch({ path: resolved.pathname, end: true });
 
   const click = () => {
     if (close) close();
-    setView(view);
+    setView(to);
   };
 
   return (
-    <ListItem isActive={isActive}>
+    <ListItem isActive={!!isActive}>
       <Text
         tabIndex={0}
         onClick={click}
-        isActive={isActive}
+        isActive={!!isActive}
         onKeyPress={(e) => {
           e.key === 'Enter' && click();
         }}

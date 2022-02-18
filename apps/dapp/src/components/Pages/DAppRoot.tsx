@@ -9,7 +9,6 @@ import BgImage from 'assets/images/dapp-bg.svg';
 import { DApp } from 'components/DApp/DApp';
 import { Analytics } from 'components/DApp/Analytics';
 import { NavContext } from 'components/DApp/NavContext';
-import { DAppView } from 'enums/dapp-view';
 
 interface SizeProps {
   small?: boolean;
@@ -17,19 +16,10 @@ interface SizeProps {
 
 const DAppRoot = () => {
   const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
-  const [searchParams] = useSearchParams();
-  const viewString = searchParams.get('view')?.toUpperCase();
-
-  const initialView =
-    DAppView[viewString as keyof typeof DAppView] || DAppView.BUY;
-  const [activeView, setView] = useState(initialView);
-
   const navigate = useNavigate();
   const navContext = {
-    activeView,
-    setView: function (view: DAppView) {
-      navigate(`/dapp?view=${view}`, { replace: true });
-      setView(view);
+    setView: function (view: string) {
+      navigate(view);
     },
   };
 

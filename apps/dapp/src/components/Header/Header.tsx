@@ -20,7 +20,7 @@ export const Header = () => {
           />
           <DAppButton
             label={'launch dapp'}
-            onClick={() => navigate('/dapp')}
+            onClick={() => navigate('/dapp/buy')}
             isSmall
             isUppercase
             isActive

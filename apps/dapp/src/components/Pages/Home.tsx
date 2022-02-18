@@ -55,7 +55,7 @@ const Home = () => {
                 </Link>
               </ButtonContainer>
               <ButtonContainer>
-                <Link to={'/dapp'}>
+                <Link to={'/dapp/buy'}>
                   <StyledButton label={'buy now $'} isUppercase isSmall />
                 </Link>
               </ButtonContainer>

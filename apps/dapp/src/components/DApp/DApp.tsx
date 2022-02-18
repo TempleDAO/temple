@@ -1,3 +1,6 @@
+import React, { FC, useContext, useEffect, useRef, useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+
 import { Buy } from 'components/AMM/Buy';
 import Devotion from 'components/AMM/Devotion';
 import { Queue } from 'components/AMM/Queue';
@@ -15,8 +18,6 @@ import {
   MobileContainer,
 } from 'components/DApp/NavComponents';
 import { NavContext } from 'components/DApp/NavContext';
-import { DAppView } from 'enums/dapp-view';
-import React, { FC, useContext, useEffect, useRef, useState } from 'react';
 
 interface DAppProps {
   small?: boolean;
@@ -24,7 +25,7 @@ interface DAppProps {
 
 export const DApp: FC<DAppProps> = ({ small }) => {
   const menuRef = useRef() as React.MutableRefObject<HTMLElement>;
-  const { activeView, setView } = useContext(NavContext);
+  const { setView } = useContext(NavContext);
   const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
@@ -45,38 +46,22 @@ export const DApp: FC<DAppProps> = ({ small }) => {
     };
   }, [menuVisible]);
 
-  let CurrentView;
-
-  switch (activeView) {
-    case DAppView.BUY:
-      CurrentView = (
-        <Buy onSwapArrowClick={() => setView(DAppView.SELL)} small />
-      );
-      break;
-    case DAppView.STAKE:
-      CurrentView = <Stake small />;
-      break;
-    case DAppView.QUEUE:
-      CurrentView = <Queue small />;
-      break;
-    case DAppView.WITHDRAW:
-      CurrentView = <Withdraw small />;
-      break;
-    case DAppView.SELL:
-      CurrentView = (
-        <Sell onSwapArrowClick={() => setView(DAppView.BUY)} small />
-      );
-      break;
-    case DAppView.DEVOTION:
-      CurrentView = <Devotion />;
-      break;
-    case DAppView.UNLOCK:
-      CurrentView = <Unlock />;
-      break;
-    case DAppView.PROFILE:
-      CurrentView = <Profile />;
-      break;
-  }
+  const routes = (
+    <Routes>
+      <Route path="/buy" element={<Buy onSwapArrowClick={() => setView('/dapp/sell')} small />} />
+      <Route path="/stake" element={<Stake small />} />
+      <Route path="/queue" element={<Queue small />} />
+      <Route path="/withdraw" element={<Withdraw small />} />
+      <Route path="/sell" element={<Sell onSwapArrowClick={() => setView('/dapp/buy')} small />} />
+      <Route path="/devotion" element={<Devotion />} />
+      <Route path="/unlock" element={<Unlock />} />
+      <Route path="/profile" element={<Profile />} />
+      {/* Preserve the old /dapp route in case someone has that bookmarked */}
+      <Route path="/" element={<Navigate replace to="/dapp/buy" />} />
+      {/* Catch all other routes and redirect to home page */}
+      <Route path="/*" element={<Navigate replace to="/" />} />
+    </Routes>
+  );
 
   return small ? (
     <MobileContainer>
@@ -87,12 +72,12 @@ export const DApp: FC<DAppProps> = ({ small }) => {
         <MenuImage onClick={() => setMenuVisible(true)} />
         <h4>TempleDAO</h4>
       </MenuBar>
-      <Main>{CurrentView}</Main>
+      <Main>{routes}</Main>
     </MobileContainer>
   ) : (
     <Container>
       <Nav />
-      <Main>{CurrentView}</Main>
+      <Main>{routes}</Main>
     </Container>
   );
 };

@@ -29,7 +29,7 @@ ReactDOM.render(
             <Routes>
               <>
                 <Route path="/the-temple" element={<AmmSpaRoot />} />
-                <Route path="/dapp" element={<DAppRoot />} />
+                <Route path="/dapp/*" element={<DAppRoot />} />
                 <Route path="/" element={<PageLayout />}>
                   <Route path="/" element={<Home />} />
                   <Route path="disclaimer" element={<Disclaimer />} />
