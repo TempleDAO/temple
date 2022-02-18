@@ -1,7 +1,8 @@
 import React from 'react';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button } from 'components/Button/Button';
+import { Button as BaseButton } from 'components/Button/Button';
+import { aboveMobileBreakpoint } from 'styles/breakpoints';
 
 export const Header = () => {
   const navigate = useNavigate();
@@ -31,19 +32,32 @@ export const Header = () => {
   );
 };
 
+const Button = styled(BaseButton)`
+  display: none;
+
+  ${aboveMobileBreakpoint(`
+    display: flex;
+  `)}
+`;
+
 const HeaderStyled = styled.header`
   position: fixed;
   z-index: ${(props) => props.theme.zIndexes.top};
   top: 0;
   left: 0;
-  width: 100vw;
   height: ${(props) => props.theme.metrics.headerHeight};
   padding: 1rem;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   color: ${(props) => props.theme.palette.brand};
   background-color: ${(props) => props.theme.palette.dark};
+  width: 100%;
+
+  ${aboveMobileBreakpoint(`
+    width: 100vw;
+    justify-content: center;
+  `)}
 `;
 
 const NavContainer = styled.div`
@@ -58,10 +72,12 @@ const NavContainer = styled.div`
 
 const MenuContainer = styled.div`
   display: flex;
-  width: 20rem;
+  ${aboveMobileBreakpoint(`
+    width: 20rem;
+  `)}
 `;
 
-const DAppButton = styled(Button)`
+const DAppButton = styled(BaseButton)`
   border: none;
   color: ${({ theme }) => theme.palette.dark};
 `;
