@@ -10,7 +10,7 @@ export const Header = () => {
     <HeaderStyled>
       <NavContainer>
         <Link to="/">
-          <h4>TempleDAO</h4>
+          <AppTitle>TempleDAO</AppTitle>
         </Link>
         <MenuContainer>
           <Button
@@ -31,6 +31,12 @@ export const Header = () => {
     </HeaderStyled>
   );
 };
+
+const AppTitle = styled.h1`
+  font-size: 1.5rem;
+  line-height: 2.75rem;
+  margin: 0;
+`;
 
 const Button = styled(BaseButton)`
   display: none;
