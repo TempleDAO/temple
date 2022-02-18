@@ -19,18 +19,22 @@ import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metric
 export const Zap = () => {
   const { signer, balance, getBalance, zapIn, getTokenPriceInFrax } = useWallet();
   const treasuryMetrics = useRefreshableTreasuryMetrics();
-  const [ethBalance, setEthBalance] = useState(0);
+  const [tokenBalance, setTokenBalance] = useState(0);
   const [tokenAmount, setTokenAmount] = useState('0');
   const [zapped, setZapped] = useState(false);
   const [tokenPrice, setTokenPrice] = useState(0);
   const [templeQuote, setTempleQuote] = useState(0);
+  const [selectedToken, setSelectedToken] = useState({
+    symbol: 'ETH',
+    address: ethers.constants.AddressZero
+  });
 
   //TODO: add to balance in walletprovider
   const getEthBalance = async () => {
     if (signer) {
       const ethBal = await signer.getBalance();
-      setEthBalance(fromAtto(ethBal));
-    } else setEthBalance(0);
+      setTokenBalance(fromAtto(ethBal));
+    } else setTokenBalance(0);
   };
 
   const handleClick = (address: string, tokenAmount: string) => {
@@ -53,7 +57,7 @@ export const Zap = () => {
   };
 
   const getQuote = async () => {
-    const priceInFrax = await getTokenPriceInFrax('ETH');
+    const priceInFrax = await getTokenPriceInFrax(selectedToken.symbol);
     if(priceInFrax){
       setTokenPrice(priceInFrax);
     } else setTokenPrice(0);
@@ -74,8 +78,8 @@ export const Zap = () => {
       <Input
         small
         isNumber
-        crypto={{ kind: 'value', value: 'ETH' }}
-        hint={`Balance: ${formatNumberWithCommas(ethBalance)}`}
+        crypto={{ kind: 'value', value: selectedToken.symbol }}
+        hint={`Balance: ${formatNumberWithCommas(tokenBalance)}`}
         placeholder={'0.00'}
         onChange={(e) => {
           handleInput(e.target.value);
@@ -100,7 +104,7 @@ export const Zap = () => {
 
       <Button
         isSmall
-        label={'ZAP AND STAKE'}
+        label={`ZAP ${selectedToken.symbol} FOR ${TEMPLE_TOKEN}`}
         onClick={() => handleClick(ethers.constants.AddressZero, tokenAmount)}
       />
     </ViewContainer>
