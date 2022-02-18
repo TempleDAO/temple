@@ -56,6 +56,9 @@ export const DApp: FC<DAppProps> = ({ small }) => {
       <Route path="/devotion" element={<Devotion />} />
       <Route path="/unlock" element={<Unlock />} />
       <Route path="/profile" element={<Profile />} />
+      {/* Preserve the old /dapp route in case someone has that bookmarked */}
+      <Route path="/" element={<Navigate replace to="/dapp/buy" />} />
+      {/* Catch all other routes and redirect to home page */}
       <Route path="/*" element={<Navigate replace to="/" />} />
     </Routes>
   );
