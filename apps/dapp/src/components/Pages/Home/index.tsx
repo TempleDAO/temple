@@ -1,10 +1,13 @@
 import React from 'react';
-import Image from 'components/Image/Image';
 import { Link } from 'react-router-dom';
+
+import Image from 'components/Image/Image';
 import styled, { css } from 'styled-components';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
 import Metrics from 'components/Metrics/Metrics';
+import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
+
 import circleBgImage from 'assets/images/circle-bg.svg';
 import earnTradingFeeImage from 'assets/images/earn-trading-fee.svg';
 import eyeImage from 'assets/images/eye.svg';
@@ -13,28 +16,22 @@ import planetsImage from 'assets/images/planets.svg';
 import receiveTokenImage from 'assets/images/receive-token.svg';
 import sunImage from 'assets/images/sun-art.svg';
 import sunsetImage from 'assets/images/sunset.svg';
-import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
+
+import {
+  Row,
+  RowCell,
+  SunGateWrapper,
+  TempleDaoSun,
+  ResponsiveImage,
+} from './styles';
 
 const Home = () => {
   const treasuryMetrics = useRefreshableTreasuryMetrics();
 
   return (
     <>
-      <Flex
-        layout={{
-          kind: 'container',
-          direction: 'row',
-        }}
-      >
-        <Flex
-          layout={{
-            kind: 'item',
-            direction: 'column',
-            justifyContent: 'center',
-            col: 'fullwidth',
-            colTablet: 'half',
-          }}
-        >
+      <Row>
+        <RowCell>
           <h1>Earn Stable Gains</h1>
           <h4>Sleep easy staking in the Temple</h4>
           <br />
@@ -68,24 +65,16 @@ const Home = () => {
           {treasuryMetrics ? (
             <Metrics treasuryMetrics={treasuryMetrics} isHome />
           ) : null}
-        </Flex>
-        <Flex
-          layout={{
-            kind: 'item',
-            justifyContent: 'center',
-            alignItems: 'center',
-            col: 'half',
-            hidden: true,
-            hiddenTablet: false,
-          }}
-        >
-          <TempleDaoSun>
-            <Image src={sunImage} alt={'Temple DAO'} />
-          </TempleDaoSun>
-          <Image src={gateImage} alt={'Temple DAO'} />
-        </Flex>
-      </Flex>
-
+        </RowCell>
+        <RowCell>
+          <SunGateWrapper>
+            <TempleDaoSun>
+              <ResponsiveImage src={sunImage} alt={'Temple DAO'} />
+            </TempleDaoSun>
+            <ResponsiveImage src={gateImage} alt={'Temple DAO'} />
+          </SunGateWrapper>
+        </RowCell>
+      </Row>
       <section>
         <h2 className={'align-text-center'}>Temple Offerings</h2>
         <Flex
@@ -300,16 +289,6 @@ const Home = () => {
     </>
   );
 };
-
-const TempleDaoSun = styled.div`
-  position: absolute;
-  z-index: ${(props) => props.theme.zIndexes.up};
-  transform: translateY(-48%);
-
-  img {
-    animation: ${(props) => props.theme.animations.spin};
-  }
-`;
 
 interface CircleBgWrapperProps {
   rightAlign?: boolean;
