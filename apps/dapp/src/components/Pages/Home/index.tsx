@@ -64,15 +64,15 @@ const Home = () => {
               </ButtonContainer>
             </ButtonGroup>
             {/*TODO: maybe render spinner while fetching metrics*/}
-            {/* {treasuryMetrics ? ( */}
+            {treasuryMetrics ? (
               <MetricsWrapper>
                 <Metrics
-                  treasuryMetrics={{ templeApy: 1177, treasuryValue: 164400000, templeValue: 0.72 }}
+                  treasuryMetrics={treasuryMetrics}
                   isHome
                   alignCenter={!isDesktop}
                 />
               </MetricsWrapper>
-              {/* ) : null} */}
+              ) : null}
           </EarnStableGainsWrapper>
         </RowCell>
         <RowCell>
