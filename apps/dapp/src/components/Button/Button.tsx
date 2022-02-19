@@ -1,5 +1,7 @@
 import React, { HTMLProps, useState } from 'react';
 import styled, { css } from 'styled-components';
+
+import useIsMounted from 'hooks/use-is-mounted';
 import Loader from '../Loader/Loader';
 
 interface ButtonProps extends ButtonStyledProps, HTMLProps<HTMLButtonElement> {
@@ -22,6 +24,7 @@ export const Button = ({
   ...props
 }: ButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const isMountedRef = useIsMounted();
 
   /**
    * Click handler which shows a spinner while the action is in progress.
@@ -31,6 +34,7 @@ export const Button = ({
     if (isLoading) {
       return;
     }
+
     if (!onClick) {
       return;
     }
@@ -47,7 +51,10 @@ export const Button = ({
         console.info(`Error: ${JSON.stringify(err, null, 2)}`);
       }
     } finally {
-      setIsLoading(false);
+      // Make sure component is mounted to avoid memory leaks.
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
