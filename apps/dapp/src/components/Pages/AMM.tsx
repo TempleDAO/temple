@@ -46,6 +46,7 @@ const LoaderWrapper = styled.div`
   justify-content: center;
   align-self: center;
   justify-self: center;
+  height: 100%;
 `;
 
 const Loader = () => (
@@ -155,8 +156,6 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
       </React.Suspense>
     );
   }
-
-  // Should never get here... log something?
 
   return null;
 }

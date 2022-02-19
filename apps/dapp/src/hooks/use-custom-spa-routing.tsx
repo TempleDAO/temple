@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 
 import { AMMView } from 'components/Pages/AmmAltars';
 
-type PageName =
+type NexusView =
   'Account' |
   'TempleGates' |
   'Foyer' |
@@ -14,7 +14,7 @@ type PageName =
   'AltarExit' |
   'AltarDevotion';
 
-export type CustomRoutingPage = PageName | AMMView;
+export type CustomRoutingPage = NexusView | AMMView;
 
 type RoutingState = {
   changePageTo(PageComponent: CustomRoutingPage): void;
@@ -28,15 +28,15 @@ export type CustomRoutingPageProps = {
 };
 
 function useCustomRouting(
-  BasePageComponent: CustomRoutingPage,
-  StartingPage?: CustomRoutingPage,
-  StartingNavHistory?: CustomRoutingPage[]
+  baseNexusPage: CustomRoutingPage,
+  startingNexusPage?: CustomRoutingPage,
+  startingNexuHistory?: CustomRoutingPage[]
 ): RoutingState {
-  const [currentPage, setCurrentPage] = useState<CustomRoutingPage>(
-    () => StartingPage || BasePageComponent
+  const [currentPage, setCurrentPage] = React.useState<CustomRoutingPage>(
+    () => startingNexusPage || baseNexusPage
   );
-  const [navHistory, setNavHistory] = useState<CustomRoutingPage[]>(
-    StartingNavHistory || []
+  const [navHistory, setNavHistory] = React.useState<CustomRoutingPage[]>(
+    startingNexuHistory || []
   );
 
   function changePageTo(PageComponent: CustomRoutingPage) {
@@ -47,7 +47,7 @@ function useCustomRouting(
   function back() {
     const [PrevPage] = navHistory.slice(-1);
     setNavHistory((history) => [...history.slice(0, -1)]);
-    const BackPage = PrevPage ? () => PrevPage : () => BasePageComponent;
+    const BackPage = PrevPage ? () => PrevPage : () => baseNexusPage;
     setCurrentPage(BackPage);
   }
 
