@@ -38,13 +38,12 @@ interface IToken {
 }
 
 export const Zap = () => {
-  const { signer, wallet, balance, getBalance, zapIn, getTokenPriceInFrax } =
+  const { signer, wallet, balance, getBalance, zapIn } =
     useWallet();
   const treasuryMetrics = useRefreshableTreasuryMetrics();
   const [tokensInWallet, setTokensInWallet] = useState<IToken[]>([]);
   const [tokenAmount, setTokenAmount] = useState(0);
   const [zapped, setZapped] = useState(false);
-  const [tokenPrice, setTokenPrice] = useState(0);
   const [templeQuote, setTempleQuote] = useState(0);
   // TODO: setup null state for selectedToken
   const [selectedToken, setSelectedToken] = useState<IToken>({
@@ -105,17 +104,8 @@ export const Zap = () => {
     }
   };
 
-  // TODO: do i need this or can I stick to zapper price?
-  const getQuote = async () => {
-    const priceInFrax = await getTokenPriceInFrax(selectedToken.symbol);
-    if (priceInFrax) {
-      setTokenPrice(priceInFrax);
-    } else setTokenPrice(0);
-  };
-
   useEffect(() => {
     getWalletTokenBalances();
-    getQuote();
     getBalance();
   }, [zapped]);
 
@@ -138,7 +128,6 @@ export const Zap = () => {
               setSelectedToken(token);
             }
           });
-          getQuote();
         }}
       />
 

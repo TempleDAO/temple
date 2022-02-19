@@ -259,8 +259,6 @@ interface WalletState {
     tokenAmount: string,
     minTempleReceived: string
   ): Promise<void>;
-
-  getTokenPriceInFrax(sellToken: string): Promise<number | void>;
 }
 
 const INITIAL_STATE: WalletState = {
@@ -340,7 +338,6 @@ const INITIAL_STATE: WalletState = {
   getFaithQuote: asyncNoop,
   getExitQueueData: asyncNoop,
   zapIn: asyncNoop,
-  getTokenPriceInFrax: asyncNoop,
 };
 
 // TODO: Make these constants or env vars
@@ -1950,26 +1947,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  // TODO: do we still need this func?
-  const getTokenPriceInFrax = async (sellToken: string) => {
-    // TODO: Make these env vars
-    const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
-    const FRAX = '0x853d955aCEf822Db058eb8505911ED77F175b99e';
-
-    const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${toAtto(
-      1
-    )}&buyToken=${FRAX}`;
-    const response = await axios.get(url);
-
-    if (response.data.price) {
-      return response.data.price;
-    } else {
-      console.error(`Could not retrieve token price for ${sellToken}`);
-      console.error(`${response.status} ${response.statusText}`);
-      return 0;
-    }
-  };
-
   return (
     <WalletContext.Provider
       value={{
@@ -2020,7 +1997,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         faith,
         getExitQueueData,
         zapIn,
-        getTokenPriceInFrax,
       }}
     >
       {children}
