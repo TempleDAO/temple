@@ -106,11 +106,20 @@ export const ButtonGroup = styled.div`
   gap: 20px;
   max-width: 24.0625rem;
   width: 100%;
-  margin: 0 auto;
+  margin: 0 auto 3rem;
 
   ${aboveMobileBreakpoint(`
-    margin: 0;
+    margin: 0 0 4rem;
     justify-content: space-between;
+  `)}
+`;
+
+export const MetricsWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+
+  ${aboveMobileBreakpoint(`
+    justify-content: flex-start;
   `)}
 `;
 

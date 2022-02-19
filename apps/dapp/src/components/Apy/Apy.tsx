@@ -9,6 +9,7 @@ interface ApyProps extends ApyStyledProps {
     alt: string;
   };
   value: string;
+  alignCenter?: boolean;
 }
 
 /**
@@ -20,6 +21,7 @@ export const Apy = ({
   imageData,
   isWhite,
   isHome = false,
+  alignCenter = false,
 }: ApyProps) => {
   const { imageUrl, alt } = imageData;
 
@@ -28,15 +30,16 @@ export const Apy = ({
   };
 
   return (
-    <ApyStyled isHome={isHome}>
-      <i>
-        <Image
-          src={imageUrl}
-          alt={alt}
-          width={getImageSize()}
-          height={getImageSize()}
-        />
-      </i>
+    <ApyStyled
+      alignCenter={alignCenter}
+      isHome={isHome}
+    >
+      <Image
+        src={imageUrl}
+        alt={alt}
+        width={getImageSize()}
+        height={getImageSize()}
+      />
       <ApyValue>{value}</ApyValue>
       <ApyLabel isWhite={isWhite}>{cryptoName}</ApyLabel>
     </ApyStyled>
@@ -46,6 +49,7 @@ export const Apy = ({
 interface ApyStyledProps {
   isWhite?: boolean;
   isHome?: boolean;
+  alignCenter?: boolean;
 }
 
 export const ApyStyled = styled.div<ApyStyledProps>`
@@ -55,9 +59,7 @@ export const ApyStyled = styled.div<ApyStyledProps>`
   padding-left: 32px;
   margin: 1.25rem 0 3rem 0;
 
-  & + & {
-    margin-left: 4rem;
-  }
+  ${({ alignCenter }) => alignCenter ? `align-items: center;` : ''}
 
   i {
     position: absolute;

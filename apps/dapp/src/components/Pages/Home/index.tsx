@@ -29,6 +29,7 @@ import {
   StyledButton,
   ButtonContainer,
   CircleBgWrapper,
+  MetricsWrapper,
 } from './styles';
 
 const Home = () => {
@@ -63,9 +64,15 @@ const Home = () => {
               </ButtonContainer>
             </ButtonGroup>
             {/*TODO: maybe render spinner while fetching metrics*/}
-            {treasuryMetrics ? (
-              <Metrics treasuryMetrics={treasuryMetrics} isHome />
-            ) : null}
+            {/* {treasuryMetrics ? ( */}
+              <MetricsWrapper>
+                <Metrics
+                  treasuryMetrics={{ templeApy: 1000, treasuryValue: 125000000, templeValue: 0.72 }}
+                  isHome
+                  alignCenter={!isDesktop}
+                />
+              </MetricsWrapper>
+              {/* ) : null} */}
           </EarnStableGainsWrapper>
         </RowCell>
         <RowCell>
