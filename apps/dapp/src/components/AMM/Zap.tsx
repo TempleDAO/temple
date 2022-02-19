@@ -42,16 +42,16 @@ export const Zap = () => {
     useWallet();
   const treasuryMetrics = useRefreshableTreasuryMetrics();
   const [tokensInWallet, setTokensInWallet] = useState<IToken[]>([]);
-  const [tokenBalance, setTokenBalance] = useState(0);
-  const [tokenAmount, setTokenAmount] = useState('0');
+  const [tokenAmount, setTokenAmount] = useState(0);
   const [zapped, setZapped] = useState(false);
   const [tokenPrice, setTokenPrice] = useState(0);
   const [templeQuote, setTempleQuote] = useState(0);
+  // TODO: setup null state for selectedToken
   const [selectedToken, setSelectedToken] = useState<IToken>({
-    symbol: 'ETH',
-    address: ethers.constants.AddressZero,
+    symbol: 'FRAX',
+    address: '0x853d955aCEf822Db058eb8505911ED77F175b99e',
     balance: 0,
-    price: 0,
+    price: 0.99,
   });
 
   const getWalletTokenBalances = async () => {
@@ -82,33 +82,30 @@ export const Zap = () => {
     }
   };
 
-  //TODO: add to balance in walletprovider
-  /*   const getEthBalance = async () => {
-    if (signer) {
-      const ethBal = await signer.getBalance();
-      setTokenBalance(fromAtto(ethBal));
-    } else setTokenBalance(0);
-  }; */
-
-  const handleClick = (address: string, tokenAmount: string) => {
+  const handleClick = async (address: string, tokenAmount: number) => {
     setZapped(false);
-    zapIn(address, tokenAmount, toAtto(1).toString()).then((res) => {
-      setZapped(true);
-    });
+    await zapIn(
+      selectedToken.symbol,
+      selectedToken.address,
+      tokenAmount.toString(),
+      toAtto(1).toString()
+    );
+    setZapped(true);
   };
 
   const handleInput = async (value: string) => {
     if (value !== '') {
-      setTokenAmount(value);
+      setTokenAmount(Number(value));
       // TODO: Replace hardcoded 0.7 with actual TEMPLE price
       //       once treasuryMetrics is working on this branch
       setTempleQuote((selectedToken.price * parseFloat(value)) / 0.7);
     } else {
-      setTokenAmount('0');
+      setTokenAmount(0);
       setTempleQuote(0);
     }
   };
 
+  // TODO: do i need this or can I stick to zapper price?
   const getQuote = async () => {
     const priceInFrax = await getTokenPriceInFrax(selectedToken.symbol);
     if (priceInFrax) {
@@ -119,14 +116,13 @@ export const Zap = () => {
   useEffect(() => {
     getWalletTokenBalances();
     getQuote();
-    //getEthBalance();
     getBalance();
   }, [zapped]);
 
   return (
     <ViewContainer>
       <TitleWrapper>
-        <ConvoFlowTitle>ZAP ASSETS FOR {TEMPLE_TOKEN}</ConvoFlowTitle>
+        <ConvoFlowTitle>ZAP ASSETS TO {TEMPLE_TOKEN}</ConvoFlowTitle>
       </TitleWrapper>
 
       <InputSelect
@@ -175,8 +171,9 @@ export const Zap = () => {
 
       <Button
         isSmall
-        label={`ZAP ${selectedToken.symbol} FOR ${TEMPLE_TOKEN}`}
+        label={`ZAP ${selectedToken.symbol} TO ${TEMPLE_TOKEN}`}
         onClick={() => handleClick(ethers.constants.AddressZero, tokenAmount)}
+        
       />
     </ViewContainer>
   );

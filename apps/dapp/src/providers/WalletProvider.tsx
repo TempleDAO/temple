@@ -41,6 +41,7 @@ import {
   TempleTreasury__factory,
   TempleUniswapV2Pair__factory,
   TempleZaps__factory,
+  FakeERC20__factory,
 } from 'types/typechain';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
@@ -253,6 +254,7 @@ interface WalletState {
 
   getExitQueueData(): Promise<ExitQueueData | void>;
   zapIn(
+    tokenSymbol: string,
     tokenAddr: string,
     tokenAmount: string,
     minTempleReceived: string
@@ -340,6 +342,10 @@ const INITIAL_STATE: WalletState = {
   zapIn: asyncNoop,
   getTokenPriceInFrax: asyncNoop,
 };
+
+// TODO: Make these constants or env vars
+const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
+const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
 
 const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
 const TEMPLE_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS;
@@ -1842,36 +1848,46 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   };
 
   const zapIn = async (
+    tokenSymbol: string,
     tokenAddr: string,
     tokenAmount: string,
     minTempleReceived: string
   ) => {
-    // TODO: Make these env vars
-    const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
-    const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
-    const FRAX = '0x853d955aCEf822Db058eb8505911ED77F175b99e';
+    if (signerState && walletAddress) {
 
-    if (walletAddress && signerState) {
-      // const tokenContract = new ethers.Contract(tokenAddr, signer);
-      let symbol;
-      let decimals;
-      let sellToken;
+      let decimals: number;
+      let sellToken: string;
 
-      symbol = 'ETH';
-      decimals = 18;
-      sellToken = 'ETH';
+      if (tokenSymbol === 'ETH') {
+        sellToken = 'ETH';
+        decimals = 18;
+      } else {
+        sellToken = tokenAddr;
+        decimals = 18;
+      }
 
+      console.log('creating templeZaps factory..');
+      const templeZaps = new TempleZaps__factory(signerState).attach(
+        ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS
+      );
+      console.log('templeZaps factory created');
+
+      console.log(`creating fake ${tokenSymbol} contract..`);
+      let tokenContract = new FakeERC20__factory(signerState).attach(tokenAddr);
+      console.log(`${tokenSymbol} contract created.`);
+
+      console.log('getting quote from 0x api...');
       // Get quote from 0x API
       let swapCallData, price, guaranteedPrice, gas, estimatedGas;
       const sellAmount = ethers.utils
         .parseUnits(tokenAmount, decimals)
         .toString();
 
-      if (tokenAddr === FRAX) {
+      if (tokenSymbol === 'FRAX') {
         guaranteedPrice = '0.99';
         swapCallData = '0x';
       } else {
-        const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${FRAX}`;
+        const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=0x853d955aCEf822Db058eb8505911ED77F175b99e`;
         const response = await axios.get(url);
         ({
           data: {
@@ -1883,14 +1899,35 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           },
         } = response);
       }
+      console.log(`quoted price: ${guaranteedPrice}`);
 
+      console.log(`approving ${tokenSymbol}...`);
+      // approve token
+      if (sellToken !== 'ETH') {
+        await tokenContract.approve(
+          ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS,
+          ethers.utils.parseUnits('1000111', decimals)
+        );
+
+        const allowance = await tokenContract.allowance(
+          walletAddress,
+          ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS
+        );
+        console.log(
+          `Allowance: ${ethers.utils.formatUnits(allowance, decimals)}`
+        );
+      }
+
+      console.log(`${tokenSymbol} approved. Hooray!`);
+
+      console.log(`Is it ETH? If so, set override value.`);
       // Do zap
-      const templeZaps = new TempleZaps__factory(signerState).attach(
-        ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS
-      );
       const overrides: { value?: BigNumber } = {};
-      overrides.value = ethers.utils.parseEther(tokenAmount);
+      if (sellToken === 'ETH') {
+        overrides.value = ethers.utils.parseEther(tokenAmount);
+      }
 
+      console.log(`Zapping...`);
       const tx = await templeZaps.zapIn(
         tokenAddr,
         sellAmount,
@@ -1900,18 +1937,20 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         swapCallData,
         overrides
       );
-
+      console.log(`tx ${tx.hash} sent. just waiting for receipt`);
       const txReceipt = await tx.wait();
 
       if (txReceipt) {
+        console.log(`Zapped! Enjoy your TEMPLE`);
         openNotification({
-          title: `Zapped ETH for ${TEMPLE_TOKEN}`,
+          title: `Zapped ${tokenSymbol} for ${TEMPLE_TOKEN}`,
           hash: tx.hash,
         });
       }
     }
   };
 
+  // TODO: do we still need this func?
   const getTokenPriceInFrax = async (sellToken: string) => {
     // TODO: Make these env vars
     const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
