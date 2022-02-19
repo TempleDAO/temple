@@ -1,5 +1,5 @@
-import React, { FC, useContext, useEffect, useRef, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { FC, useEffect, useRef, useState } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 import { Buy } from 'components/AMM/Buy';
 import Devotion from 'components/AMM/Devotion';
@@ -17,15 +17,14 @@ import {
   MenuImage,
   MobileContainer,
 } from 'components/DApp/NavComponents';
-import { NavContext } from 'components/DApp/NavContext';
 
 interface DAppProps {
   small?: boolean;
 }
 
 export const DApp: FC<DAppProps> = ({ small }) => {
-  const menuRef = useRef() as React.MutableRefObject<HTMLElement>;
-  const { setView } = useContext(NavContext);
+  const menuRef = useRef() as React.MutableRefObject<HTMLDivElement>;
+  const navigate = useNavigate();
   const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
@@ -48,11 +47,11 @@ export const DApp: FC<DAppProps> = ({ small }) => {
 
   const routes = (
     <Routes>
-      <Route path="/buy" element={<Buy onSwapArrowClick={() => setView('/dapp/sell')} small />} />
+      <Route path="/buy" element={<Buy onSwapArrowClick={() => navigate('/dapp/sell')} small />} />
       <Route path="/stake" element={<Stake small />} />
       <Route path="/queue" element={<Queue small />} />
       <Route path="/withdraw" element={<Withdraw small />} />
-      <Route path="/sell" element={<Sell onSwapArrowClick={() => setView('/dapp/buy')} small />} />
+      <Route path="/sell" element={<Sell onSwapArrowClick={() => navigate('/dapp/buy')} small />} />
       <Route path="/devotion" element={<Devotion />} />
       <Route path="/unlock" element={<Unlock />} />
       <Route path="/profile" element={<Profile />} />

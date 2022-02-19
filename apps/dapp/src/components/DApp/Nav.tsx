@@ -1,19 +1,21 @@
-import { CloseImage, NavGroup, NavItem } from 'components/DApp/NavComponents';
-import { DAppView } from 'enums/dapp-view';
 import React from 'react';
 import styled from 'styled-components';
 
+import { CloseImage, NavItem } from 'components/DApp/NavComponents';
+import { DAppView } from 'enums/dapp-view';
+
 const ENV_VARS = import.meta.env;
+
 interface NavProps {
   small?: boolean;
   onClose?: () => void;
 }
 
-export const Nav = React.forwardRef<HTMLElement, NavProps>(
+export const Nav = React.forwardRef<HTMLDivElement, NavProps>(
   ({ small, onClose }, ref) => {
     const Container = small ? NavMobileContainer : NavContainer;
+
     return (
-      // @ts-ignore
       <Container ref={ref}>
         {small && <CloseImage onClick={onClose} />}
         <NavGroup>
@@ -41,13 +43,16 @@ export const Nav = React.forwardRef<HTMLElement, NavProps>(
 
 Nav.displayName = 'Nav';
 
-const NavContainer = styled.div`
-  // border: 1px solid red;
+const NavGroup = styled.ul`
+  margin-top: 0px;
+`;
 
+const NavContainer = styled.div`
   width: 160px;
   padding-top: 60px;
   padding-left: 23px;
 `;
+
 const NavMobileContainer = styled.div`
   border-right: 2px solid #bd7b4f;
   padding-top: 60px;

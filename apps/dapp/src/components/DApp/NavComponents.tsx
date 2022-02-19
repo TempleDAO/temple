@@ -1,16 +1,11 @@
-import React, { FC, useContext } from 'react';
-import { useResolvedPath, useMatch } from 'react-router-dom';
+import * as React from 'react';
+import { useResolvedPath, useMatch, Link } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { DAppView } from 'enums/dapp-view';
-import { NavContext } from 'components/DApp/NavContext';
 import Image from 'components/Image/Image';
 import MenuSvg from 'assets/icons/menu.svg';
 import CloseSvg from 'assets/images/cross.svg';
-
-export const NavGroup: FC = ({ children }) => {
-  return <UL>{children}</UL>;
-};
 
 interface ItemProps {
   view: DAppView;
@@ -26,25 +21,27 @@ interface ListItemProps {
   isActive?: boolean;
 }
 
-export const NavItem: FC<ItemProps> = ({ close, view, to }) => {
-  const { setView } = useContext(NavContext);
-
+export const NavItem: React.FC<ItemProps> = ({ close, view, to }) => {
   const resolved = useResolvedPath(to);
   const isActive = useMatch({ path: resolved.pathname, end: true });
 
   const click = () => {
-    if (close) close();
-    setView(to);
+    if (close) {
+      close();
+    }
   };
 
   return (
     <ListItem isActive={!!isActive}>
       <Text
+        to={to}
         tabIndex={0}
         onClick={click}
         isActive={!!isActive}
         onKeyPress={(e) => {
-          e.key === 'Enter' && click();
+          if (e.key === 'Enter') {
+            click();
+          }
         }}
       >
         {view}
@@ -53,11 +50,7 @@ export const NavItem: FC<ItemProps> = ({ close, view, to }) => {
   );
 };
 
-const UL = styled.ul`
-  margin-top: 0px;
-`;
-
-const Text = styled.a<TextProps>`
+const Text = styled(Link)<TextProps>`
   color: ${({ isActive }) => (isActive ? '#fff' : '#b6b6b6')};
   text-decoration: ${({ isActive }) => (isActive ? 'underline' : 'none')};
   cursor: pointer;

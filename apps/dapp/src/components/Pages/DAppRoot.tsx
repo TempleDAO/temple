@@ -1,14 +1,11 @@
-import { FC, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React from 'react';
 import { useMediaQuery } from 'react-responsive';
-import { useNavigate } from 'react-router-dom';
 import MetamaskButton from 'components/Button/MetamaskButton';
 import DevotionCTA from 'components/Accessories/DevotionCTA';
 import styled from 'styled-components';
 import BgImage from 'assets/images/dapp-bg.svg';
 import { DApp } from 'components/DApp/DApp';
 import { Analytics } from 'components/DApp/Analytics';
-import { NavContext } from 'components/DApp/NavContext';
 
 interface SizeProps {
   small?: boolean;
@@ -16,18 +13,12 @@ interface SizeProps {
 
 const DAppRoot = () => {
   const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
-  const navigate = useNavigate();
-  const navContext = {
-    setView: function (view: string) {
-      navigate(view);
-    },
-  };
 
-  return (
-    <NavContext.Provider value={navContext}>
-      {isSmallOrMediumScreen ? <DAppSmall /> : <DAppLarge />}
-    </NavContext.Provider>
-  );
+  if (isSmallOrMediumScreen) {
+    return <DAppSmall />;
+  }
+
+  return <DAppLarge />;
 };
 
 const DAppLarge = () => (
@@ -41,7 +32,7 @@ const DAppLarge = () => (
   </Background>
 );
 
-const DAppSmall: FC = () => (
+const DAppSmall = () => (
   <Frame>
     <Container small>
       <DApp small />
