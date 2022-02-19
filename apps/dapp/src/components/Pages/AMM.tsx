@@ -158,8 +158,9 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
   }
 
   // Note(MrFujisawa):
-  // We should never get here as long as we've enumerated all the possible nexus routes. Once we have Sentry
-  // setup we can o
+  // We should never get here as long as we've enumerated all the possible nexus routes.
+  // console.error'ing here for sanity sake -- which should show up in Sentry once that's setup.
+  console.error('Programming Error: Attempted to render unknown NexusPage.');
 
   return null;
 }
