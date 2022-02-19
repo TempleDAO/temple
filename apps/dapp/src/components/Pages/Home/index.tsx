@@ -96,7 +96,7 @@ const Home = () => {
               alignItems: 'center',
             }}
           >
-            <Image
+            <ResponsiveImage
               src={receiveTokenImage}
               alt={'Receive Tokens'}
               height={275}
@@ -119,7 +119,7 @@ const Home = () => {
               alignItems: 'center',
             }}
           >
-            <Image
+            <ResponsiveImage
               src={earnTradingFeeImage}
               alt={'Earn Trading Fee'}
               height={275}
@@ -166,7 +166,7 @@ const Home = () => {
               .
             </p>
             <CircleBgWrapper>
-              <Image
+              <ResponsiveImage
                 src={circleBgImage}
                 alt={''}
                 aria-hidden={true}
@@ -181,7 +181,7 @@ const Home = () => {
               justifyContent: 'flex-end',
             }}
           >
-            <Image
+            <ResponsiveImage
               src={sunsetImage}
               alt={'Earn Trading Fee'}
               height={450}
@@ -200,7 +200,7 @@ const Home = () => {
               kind: 'item',
             }}
           >
-            <Image
+            <ResponsiveImage
               src={eyeImage}
               alt={'Earn Trading Fee'}
               height={450}
@@ -231,7 +231,7 @@ const Home = () => {
               and completing the !verify ritual. Good luck.{' '}
             </p>
             <CircleBgWrapper rightAlign>
-              <Image
+              <ResponsiveImage
                 src={circleBgImage}
                 alt={''}
                 aria-hidden={true}
@@ -264,7 +264,7 @@ const Home = () => {
               goes up.{' '}
             </p>
             <CircleBgWrapper>
-              <Image
+              <ResponsiveImage
                 src={circleBgImage}
                 alt={''}
                 aria-hidden={true}
@@ -279,7 +279,7 @@ const Home = () => {
               justifyContent: 'flex-end',
             }}
           >
-            <Image
+            <ResponsiveImage
               src={planetsImage}
               alt={'Earn Trading Fee'}
               height={450}
