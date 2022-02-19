@@ -6,7 +6,8 @@ import MetamaskButton from 'components/Button/MetamaskButton';
 import DevotionCTA from 'components/Accessories/DevotionCTA';
 import { useHash } from 'hooks/use-query';
 import Spinner from 'components/Loader/Loader';
-import { AMMView } from './AmmAltars';
+import AMMErrorBoundary from './AMMErrorBoundary';
+import { AMMView } from '../AmmAltars';
 
 type ExoticComponentWithPreload = React.LazyExoticComponent<React.ComponentType<any>> & {
   preload: () => Promise<any>;
@@ -33,7 +34,7 @@ const Portals = createLazyPreloadable(() => import('components/Pages/Portals'));
 const AltarEnter = createLazyPreloadable(() => import('components/Pages/AltarEnter'));
 const AltarExit = createLazyPreloadable(() => import('components/Pages/AltarExit'));
 const AltarDevotion = createLazyPreloadable(() => import('components/Pages/AltarDevotion'));
-const AmmAltars = createLazyPreloadable(() => import('./AmmAltars'));
+const AmmAltars = createLazyPreloadable(() => import('../AmmAltars'));
 
 const Container = styled.div`
   height: 100vh;
@@ -159,10 +160,8 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
 
   // Note(MrFujisawa):
   // We should never get here as long as we've enumerated all the possible nexus routes.
-  // console.error'ing here for sanity sake -- which should show up in Sentry once that's setup.
-  console.error('Programming Error: Attempted to render unknown NexusPage.');
-
-  return null;
+  // throwing an error here for sanity sake -- which be picked up by our error boundary and logged.
+  throw new Error('Programming Error: Attempted to render unknown NexusPage.');
 }
 
 const AmmSpaRoot = () => {
@@ -176,11 +175,13 @@ const AmmSpaRoot = () => {
   );
 
   return (
-    <Container>
-      <DevotionCTA />
-      <MetamaskButton />
-      <CurrentPage routingHelper={routingHelper} />
-    </Container>
+    <AMMErrorBoundary routingHelper={routingHelper}>
+      <Container>
+        <DevotionCTA />
+        <MetamaskButton />
+        <CurrentPage routingHelper={routingHelper} />
+      </Container>
+    </AMMErrorBoundary>
   );
 };
 
