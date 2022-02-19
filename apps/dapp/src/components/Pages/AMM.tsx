@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import useCustomRouting, { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
+import useCustomRouting, { CustomRoutingPageProps, NexusView } from 'hooks/use-custom-spa-routing';
 import MetamaskButton from 'components/Button/MetamaskButton';
 import DevotionCTA from 'components/Accessories/DevotionCTA';
 import { useHash } from 'hooks/use-query';
@@ -57,17 +57,17 @@ const Loader = () => (
 
 const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
   switch (routingHelper.currentPage) {
-    case 'TempleGates':
+    case NexusView.TempleGates:
       return (
         <TempleGates routingHelper={routingHelper} />
       );
-    case 'Account':
+    case NexusView.Account:
       return (
         <React.Suspense fallback={<Loader />}>
           <Account routingHelper={routingHelper} />
         </React.Suspense>
       );
-    case 'Foyer':
+    case NexusView.Foyer:
       return (
         <Foyer
           routingHelper={routingHelper}
@@ -80,13 +80,13 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
           }}
         />
       );
-    case 'Dashboard':
+    case NexusView.Dashboard:
       return (
         <React.Suspense fallback={<Loader />}>
           <Dashboard routingHelper={routingHelper} />
         </React.Suspense>
       );
-    case 'DashboardDoor':
+    case NexusView.DashboardDoor:
       return (
         <React.Suspense fallback={<Loader />}>
           <DashboardDoor
@@ -100,13 +100,13 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
           />
         </React.Suspense>
       );
-    case 'RitualsPosters':
+    case NexusView.RitualPosters:
       return (
         <React.Suspense fallback={<Loader />}>
           <RitualsPosters routingHelper={routingHelper} />
         </React.Suspense>
       );
-    case 'Portals':
+    case NexusView.Portals:
       return (
         <React.Suspense fallback={<Loader />}>
           <Portals
@@ -121,13 +121,13 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
           />
         </React.Suspense>
       );
-    case 'AltarEnter':
+    case NexusView.AltarEnter:
       return (
         <React.Suspense fallback={<Loader />}>
           <AltarEnter routingHelper={routingHelper} />
         </React.Suspense>
       );
-    case 'AltarExit':
+    case NexusView.AltarExit:
       return (
         <React.Suspense fallback={<Loader />}>
           <AltarExit
@@ -138,7 +138,7 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
           />
         </React.Suspense>
       );
-    case 'AltarDevotion':
+    case NexusView.AltarDevotion:
       return (
         <React.Suspense fallback={<Loader />}>
           <AltarDevotion routingHelper={routingHelper} />
@@ -157,6 +157,10 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
     );
   }
 
+  // Note(MrFujisawa):
+  // We should never get here as long as we've enumerated all the possible nexus routes. Once we have Sentry
+  // setup we can o
+
   return null;
 }
 
@@ -165,9 +169,9 @@ const AmmSpaRoot = () => {
   const isDiscordRedirect = hash.get('access_token') && hash.get('token_type');
 
   const routingHelper = useCustomRouting(
-    'TempleGates',
-    isDiscordRedirect ? 'Account' : 'TempleGates',
-    isDiscordRedirect ? ['TempleGates', 'Foyer', 'DashboardDoor'] : []
+    NexusView.TempleGates,
+    isDiscordRedirect ? NexusView.Account : NexusView.TempleGates,
+    isDiscordRedirect ? [NexusView.TempleGates, NexusView.Foyer, NexusView.DashboardDoor] : []
   );
 
   return (

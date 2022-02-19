@@ -1,7 +1,6 @@
-import EnterBgImage from 'assets/images/altar-enter-bg.jpg';
-import ExitBgImage from 'assets/images/altar-exit.jpg';
-import crossImage from 'assets/images/cross.svg';
-import DevotionBgImage from 'assets/images/devotion_bg.jpg';
+import React, { ReactNode, useEffect, useState } from 'react';
+import styled, { css } from 'styled-components';
+
 import { Buy } from 'components/AMM/Buy';
 import Devotion from 'components/AMM/Devotion';
 import { Queue } from 'components/AMM/Queue';
@@ -12,8 +11,11 @@ import { Withdraw } from 'components/AMM/Withdraw';
 import Image from 'components/Image/Image';
 import withWallet from 'hoc/withWallet';
 import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
-import React, { ReactNode, useEffect, useState } from 'react';
-import styled, { css } from 'styled-components';
+
+import EnterBgImage from 'assets/images/altar-enter-bg.jpg';
+import ExitBgImage from 'assets/images/altar-exit.jpg';
+import crossImage from 'assets/images/cross.svg';
+import DevotionBgImage from 'assets/images/devotion_bg.jpg';
 
 const ENV_VARS = import.meta.env;
 

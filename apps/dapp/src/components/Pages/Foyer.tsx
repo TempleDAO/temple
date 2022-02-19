@@ -9,7 +9,7 @@ import leftGlow from 'assets/images/left-glow.png';
 import rightGlow from 'assets/images/right-glow.png';
 import foyerTrack from 'assets/sounds/foyer-bg-track.mp3';
 import { getBgImgDimensions } from 'utils/imageSize';
-import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
+import { CustomRoutingPageProps, NexusView } from 'hooks/use-custom-spa-routing';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 import { Background } from 'components/BackgroundItem/Background';
 
@@ -75,7 +75,7 @@ const FoyerPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => {
           <BackgroundItem
             src={leftGlow}
             title="Rituals"
-            onClick={() => changePageTo('RitualsPosters')}
+            onClick={() => changePageTo(NexusView.RitualPosters)}
             style={{
               transform: `scale(${0.965 * bgDimensions.scaleW}%)`,
               bottom: `${0.234 * bgDimensions.height}px`,
@@ -91,7 +91,7 @@ const FoyerPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => {
           <BackgroundItem
             src={midGlow}
             title="Altars"
-            onClick={() => changePageTo('Portals')}
+            onClick={() => changePageTo(NexusView.Portals)}
             style={{
               transform: `scale(${0.97 * bgDimensions.scaleW}%)`,
               bottom: `${0.448 * bgDimensions.height}px`,
@@ -107,7 +107,7 @@ const FoyerPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => {
           <BackgroundItem
             src={rightGlow}
             title="Dashboard"
-            onClick={() => changePageTo('DashboardDoor')}
+            onClick={() => changePageTo(NexusView.DashboardDoor)}
             style={{
               transform: `scale(${0.965 * bgDimensions.scaleW}%)`,
               bottom: `${0.238 * bgDimensions.height}px`,

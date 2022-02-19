@@ -11,7 +11,7 @@ import leftGlow from 'assets/images/glow_left.png';
 import rightGlow from 'assets/images/glow_right.png';
 import scrollGlow from 'assets/images/glow_scroll.png';
 import { getBgImgDimensions } from 'utils/imageSize';
-import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
+import { CustomRoutingPageProps, NexusView } from 'hooks/use-custom-spa-routing';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 import { Background } from 'components/BackgroundItem/Background';
 
@@ -89,7 +89,7 @@ const PortalPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => 
           <BackgroundItem
             src={leftGlow}
             title="Devotion"
-            onClick={() => changePageTo('AltarDevotion')}
+            onClick={() => changePageTo(NexusView.AltarDevotion)}
             style={{
               transform: `scale(${0.99 * bgDimensions.scaleW}%)`,
               bottom: `${0.443 * bgDimensions.height}px`,
@@ -105,7 +105,7 @@ const PortalPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => 
           <BackgroundItem
             src={midGlow}
             title="Enter"
-            onClick={() => changePageTo('AltarEnter')}
+            onClick={() => changePageTo(NexusView.AltarEnter)}
             style={{
               transform: `scale(${0.99 * bgDimensions.scaleW}%)`,
               bottom: `${0.466 * bgDimensions.height}px`,
@@ -121,7 +121,7 @@ const PortalPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => 
           <BackgroundItem
             src={rightGlow}
             title="Exit"
-            onClick={() => changePageTo('AltarExit')}
+            onClick={() => changePageTo(NexusView.AltarExit)}
             style={{
               transform: `scale(${0.99 * bgDimensions.scaleW}%)`,
               bottom: `${0.443 * bgDimensions.height}px`,

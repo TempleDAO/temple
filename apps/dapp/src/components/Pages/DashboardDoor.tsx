@@ -1,11 +1,12 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Howl } from 'howler';
+
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/dashboardroom_bg.jpg';
 import glowLeft from 'assets/images/dashboardroom_glowleft.png';
 import glowRight from 'assets/images/dashboardroom_glowright.png';
 import { getBgImgDimensions } from 'utils/imageSize';
-import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
+import { CustomRoutingPageProps, NexusView } from 'hooks/use-custom-spa-routing';
 import useCancellableTrack from 'hooks/use-cancellable-track';
 import doorwayToDashboardsTrack from 'assets/sounds/doorway-to-dashboards-bg-track.mp3';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
@@ -73,7 +74,7 @@ const DashboardDoorPage = ({ routingHelper, preloadPages }: CustomRoutingPagePro
           <BackgroundItem
             src={glowLeft}
             title="Dashboard"
-            onClick={() => changePageTo('Dashboard')}
+            onClick={() => changePageTo(NexusView.Dashboard)}
             style={{
               transform: `scale(${0.98 * bgDimensions.scaleW}%)`,
               bottom: `${0.152 * bgDimensions.height}px`,
@@ -89,7 +90,7 @@ const DashboardDoorPage = ({ routingHelper, preloadPages }: CustomRoutingPagePro
           <BackgroundItem
             src={glowRight}
             title="Account"
-            onClick={() => changePageTo('Account')}
+            onClick={() => changePageTo(NexusView.Account)}
             style={{
               transform: `scale(${0.98 * bgDimensions.scaleW}%)`,
               bottom: `${0.155 * bgDimensions.height}px`,

@@ -2,17 +2,18 @@ import * as React from 'react';
 
 import { AMMView } from 'components/Pages/AmmAltars';
 
-type NexusView =
-  'Account' |
-  'TempleGates' |
-  'Foyer' |
-  'DashboardDoor' |
-  'Dashboard' |
-  'RitualsPosters' |
-  'Portals' |
-  'AltarEnter' |
-  'AltarExit' |
-  'AltarDevotion';
+export enum NexusView {
+  Account,
+  TempleGates,
+  Foyer,
+  DashboardDoor,
+  Dashboard,
+  RitualPosters,
+  Portals,
+  AltarEnter,
+  AltarExit,
+  AltarDevotion,
+}
 
 export type CustomRoutingPage = NexusView | AMMView;
 
