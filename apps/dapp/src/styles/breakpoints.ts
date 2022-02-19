@@ -8,4 +8,4 @@ export const aboveMobileBreakpoint = (styles: string) => {
       ${styles}
     }
   `;
-};16
+};
