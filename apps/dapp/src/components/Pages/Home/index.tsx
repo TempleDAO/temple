@@ -2,9 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useMediaQuery } from 'react-responsive';
 
-import Image from 'components/Image/Image';
-import styled, { css } from 'styled-components';
-import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
 import Metrics from 'components/Metrics/Metrics';
 import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
@@ -29,6 +26,9 @@ import {
   EarnStableGainsHeader,
   SleepEasyStakingText,
   ButtonGroup,
+  StyledButton,
+  ButtonContainer,
+  CircleBgWrapper,
 } from './styles';
 
 const Home = () => {
@@ -292,30 +292,6 @@ const Home = () => {
   );
 };
 
-interface CircleBgWrapperProps {
-  rightAlign?: boolean;
-}
 
-const CircleBgWrapper = styled.div<CircleBgWrapperProps>`
-  position: absolute;
-  transform: translateX(-50%);
-
-  ${(props) =>
-    props.rightAlign &&
-    css`
-      right: 0;
-      transform: translateX(50%);
-    `}
-`;
-
-
-
-const ButtonContainer = styled.div`
-  width: 9.6875rem;
-`;
-
-const StyledButton = styled(Button)`
-  width: 100%;
-`;
 
 export default Home;

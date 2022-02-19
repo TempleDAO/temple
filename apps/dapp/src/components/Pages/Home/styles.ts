@@ -1,4 +1,6 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+
+import { Button, ButtonProps } from 'components/Button/Button';
 import { aboveMobileBreakpoint } from 'styles/breakpoints';
 
 export const Row = styled.section`
@@ -112,4 +114,26 @@ export const ButtonGroup = styled.div`
   `)}
 `;
 
-export const TempleOfferingsHeader = styled.h2``
+interface CircleBgWrapperProps {
+  rightAlign?: boolean;
+}
+
+export const CircleBgWrapper = styled.div<CircleBgWrapperProps>`
+  position: absolute;
+  transform: translateX(-50%);
+
+  ${(props) =>
+    props.rightAlign &&
+    css`
+      right: 0;
+      transform: translateX(50%);
+    `}
+`;
+
+export const ButtonContainer = styled.div`
+  width: 9.6875rem;
+`;
+
+export const StyledButton = styled(Button)<ButtonProps>`
+  width: 100%;
+`;
