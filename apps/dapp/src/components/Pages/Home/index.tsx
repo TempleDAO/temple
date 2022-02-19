@@ -67,7 +67,7 @@ const Home = () => {
             {/* {treasuryMetrics ? ( */}
               <MetricsWrapper>
                 <Metrics
-                  treasuryMetrics={{ templeApy: 1000, treasuryValue: 125000000, templeValue: 0.72 }}
+                  treasuryMetrics={{ templeApy: 1177, treasuryValue: 164400000, templeValue: 0.72 }}
                   isHome
                   alignCenter={!isDesktop}
                 />

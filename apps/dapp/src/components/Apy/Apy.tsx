@@ -1,6 +1,6 @@
 import React from 'react';
 import styled, { css } from 'styled-components';
-import Image from 'components/Image/Image';
+import BaseImage from 'components/Image/Image';
 
 interface ApyProps extends ApyStyledProps {
   cryptoName: string;
@@ -52,7 +52,11 @@ interface ApyStyledProps {
   alignCenter?: boolean;
 }
 
-export const ApyStyled = styled.div<ApyStyledProps>`
+const Image = styled(BaseImage)`
+  margin-bottom: 1.5rem;
+`;
+
+const ApyStyled = styled.div<ApyStyledProps>`
   display: flex;
   flex-direction: column;
   position: relative;
@@ -60,17 +64,6 @@ export const ApyStyled = styled.div<ApyStyledProps>`
   margin: 1.25rem 0 3rem 0;
 
   ${({ alignCenter }) => alignCenter ? `align-items: center;` : ''}
-
-  i {
-    position: absolute;
-    top: 0;
-    left: 0;
-    margin: 0;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
 
   ${(props) =>
     props.isHome &&

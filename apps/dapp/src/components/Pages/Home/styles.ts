@@ -27,11 +27,11 @@ export const RowCell = styled.div`
     align-items: flex-start;
 
     &:nth-child(odd) {
-      padding-right: 1rem;
+      padding-right: 1.5rem;
     }
 
     &:nth-child(even) {
-      padding-left: 1rem;
+      padding-left: 1.5rem;
     }
   `)}
 `;
@@ -51,7 +51,7 @@ export const EarnStableGainsHeader = styled.h2`
 
   ${aboveMobileBreakpoint(`
     text-align: left;
-    margin: 0 0 1em;
+    margin: 2em 0;
   `)}
 `;
 
@@ -59,7 +59,7 @@ export const SleepEasyStakingText = styled.h4`
   margin: 0 0 2em;
 
   ${aboveMobileBreakpoint(`
-    margin: 0 0 3em;
+    margin: 0 0 2.75em;
   `)}
 `;
 
@@ -109,7 +109,7 @@ export const ButtonGroup = styled.div`
   margin: 0 auto 3rem;
 
   ${aboveMobileBreakpoint(`
-    margin: 0 0 4rem;
+    margin: 0 0 3.5rem;
     justify-content: space-between;
   `)}
 `;
