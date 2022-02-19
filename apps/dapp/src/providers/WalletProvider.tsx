@@ -43,7 +43,11 @@ import {
   TempleUniswapV2Pair__factory,
 } from 'types/typechain';
 import { fromAtto, toAtto } from 'utils/bigNumber';
-import { formatNumber, formatNumberNoDecimals } from 'utils/formatter';
+import {
+  formatNumber,
+  formatNumberFourDecimals,
+  formatNumberNoDecimals,
+} from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
 
 /**
@@ -747,7 +751,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         lifeTimeFaith: formatNumber(lifeTimeFaith),
         usableFaith: formatNumber(usableFaith),
         totalSupply: formatNumber(totalFaithSupply),
-        share: Number(((usableFaith * 100) / totalFaithSupply).toFixed(4)),
+        share: formatNumberFourDecimals((usableFaith * 100) / totalFaithSupply),
       });
     }
   };

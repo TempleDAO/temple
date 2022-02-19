@@ -16,6 +16,10 @@ export const formatNumberNoDecimals = (n: number): number => {
   return +Number(n).toFixed(0);
 };
 
+export const formatNumberFourDecimals = (n: number): number => {
+  return +Number(n).toFixed(4);
+};
+
 export const formatMillions = (n: number): string => {
   const million = 1000000;
   return `${Number(n / million).toFixed(2)}M`;
