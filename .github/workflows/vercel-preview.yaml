@@ -21,3 +21,24 @@ jobs:
           vercel-project-id: ${{ secrets.DAPP_PROJECT_ID}}
           alias-domains: |
             pr-{{PR_NUMBER}}-preview.templedao.link
+        continue-on-error: true
+      - name: "notify failure"
+        if: steps.deploy_step.outcome == 'failure'
+        uses: rjstone/discord-webhook-notify@v1
+        with:
+          severity: error
+          description: Deploy to Vercel failed!
+          details: "[PR Details](${{ github.event.pull_request._links.html.href }})"
+          footer: PR ${{ github.event.number }}
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      - name: "fail"
+        if: steps.deploy_step.outcome == 'failure'
+        run: exit 1
+      - name: "notify success"
+        uses: rjstone/discord-webhook-notify@v1
+        with:
+          severity: info
+          description: Deploy to Vercel succeeded!
+          details: "[View Preview](${{ steps.deploy_step.outputs['preview-url'] }}) | [PR Details](${{ github.event.pull_request._links.html.href }})"
+          footer: PR ${{ github.event.number }}
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
