@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useResolvedPath, useMatch, Link } from 'react-router-dom';
+import { useResolvedPath, useMatch, Link as BaseLink } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { DAppView } from 'enums/dapp-view';
@@ -14,11 +14,11 @@ interface ItemProps {
 }
 
 interface TextProps {
-  isActive: boolean;
+  $isActive: boolean;
 }
 
 interface ListItemProps {
-  isActive?: boolean;
+  $isActive?: boolean;
 }
 
 export const NavItem: React.FC<ItemProps> = ({ close, view, to }) => {
@@ -32,12 +32,12 @@ export const NavItem: React.FC<ItemProps> = ({ close, view, to }) => {
   };
 
   return (
-    <ListItem isActive={!!isActive}>
-      <Text
+    <ListItem $isActive={!!isActive}>
+      <Link
         to={to}
         tabIndex={0}
         onClick={click}
-        isActive={!!isActive}
+        $isActive={!!isActive}
         onKeyPress={(e) => {
           if (e.key === 'Enter') {
             click();
@@ -45,20 +45,18 @@ export const NavItem: React.FC<ItemProps> = ({ close, view, to }) => {
         }}
       >
         {view}
-      </Text>
+      </Link>
     </ListItem>
   );
 };
 
-const Text = styled(Link)<TextProps>`
-  color: ${({ isActive }) => (isActive ? '#fff' : '#b6b6b6')};
-  text-decoration: ${({ isActive }) => (isActive ? 'underline' : 'none')};
+const Link = styled(BaseLink)<TextProps>`
+  color: ${({ $isActive }) => ($isActive ? '#fff' : '#b6b6b6')};
+  text-decoration: ${({ $isActive }) => ($isActive ? 'underline' : 'none')};
   cursor: pointer;
 `;
 
 const ListItem = styled.li<ListItemProps>`
-  // padding-left: 1em;
-  // text-indent: -1em;
   list-style: none;
   position: relative;
   padding: 8px;
@@ -79,8 +77,8 @@ const ListItem = styled.li<ListItemProps>`
     text-align: center;
     line-height: 38px;
 
-    background: ${({ isActive, theme }) =>
-      isActive ? theme.palette.brand : '#000'};
+    background: ${({ $isActive, theme }) =>
+      $isActive ? theme.palette.brand : '#000'};
   }
 
   :before {
@@ -136,6 +134,7 @@ export const MobileContainer = styled.div`
   width: 100%;
   text-align: center;
 `;
+
 export const MenuBar = styled.div`
   height: 60px;
   border-bottom: 1px solid #bd7b4f;
