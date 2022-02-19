@@ -40,16 +40,16 @@ function useCustomRouting(
     startingNexuHistory || []
   );
 
-  function changePageTo(PageComponent: CustomRoutingPage) {
+  function changePageTo(pageRoute: CustomRoutingPage) {
     setNavHistory((history) => [...history, currentPage]);
-    setCurrentPage(() => PageComponent);
+    setCurrentPage(() => pageRoute);
   }
 
   function back() {
-    const [PrevPage] = navHistory.slice(-1);
+    const [prevPage] = navHistory.slice(-1);
     setNavHistory((history) => [...history.slice(0, -1)]);
-    const BackPage = PrevPage ? () => PrevPage : () => baseNexusPage;
-    setCurrentPage(BackPage);
+    const backPage = prevPage ? () => prevPage : () => baseNexusPage;
+    setCurrentPage(backPage);
   }
 
   return {
