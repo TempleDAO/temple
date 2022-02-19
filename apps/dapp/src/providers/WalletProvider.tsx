@@ -747,7 +747,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         lifeTimeFaith: formatNumber(lifeTimeFaith),
         usableFaith: formatNumber(usableFaith),
         totalSupply: formatNumber(totalFaithSupply),
-        share: formatNumber((usableFaith * 100) / totalFaithSupply),
+        share: Number(((usableFaith * 100) / totalFaithSupply).toFixed(4)),
       });
     }
   };
