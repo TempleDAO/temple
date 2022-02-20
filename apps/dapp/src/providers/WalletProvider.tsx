@@ -43,7 +43,7 @@ import {
   TempleUniswapV2Pair__factory,
 } from 'types/typechain';
 import { fromAtto, toAtto } from 'utils/bigNumber';
-import { formatNumber, formatNumberNoDecimals } from 'utils/formatter';
+import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
 
 /**
@@ -747,7 +747,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         lifeTimeFaith: formatNumber(lifeTimeFaith),
         usableFaith: formatNumber(usableFaith),
         totalSupply: formatNumber(totalFaithSupply),
-        share: formatNumber((usableFaith * 100) / totalFaithSupply),
+        share: formatNumberFixedDecimals(
+          (usableFaith * 100) / totalFaithSupply,
+          4
+        ),
       });
     }
   };
@@ -828,7 +831,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         templeLockedPromises.push(ogLockedTemple.locked(walletAddress, i));
       }
 
-      const now = formatNumberNoDecimals(Date.now() / 1000);
+      const now = formatNumberFixedDecimals(Date.now() / 1000, 0);
       const templeLocked = await Promise.all(templeLockedPromises);
       templeLocked.map((x) => {
         ogTempleLocked += fromAtto(x.BalanceOGTemple);
@@ -1500,7 +1503,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         ? amountInFrax
         : balance;
 
-      const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
+      const deadline = formatNumberFixedDecimals(
+        Date.now() / 1000 + DEADLINE,
+        0
+      );
 
       const buyTXN = await AMM_ROUTER.swapExactFraxForTemple(
         verifiedAmountInFrax,
@@ -1550,7 +1556,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         ? amountInTemple
         : balance;
 
-      const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
+      const deadline = formatNumberFixedDecimals(
+        Date.now() / 1000 + DEADLINE,
+        0
+      );
 
       const sellTXN = await AMM_ROUTER.swapExactTempleForFrax(
         verifiedAmountInTemple,
