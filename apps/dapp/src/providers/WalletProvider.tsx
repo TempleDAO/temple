@@ -7,10 +7,8 @@ import {
 import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
 import { ClaimType } from 'enums/claim-type';
 import {
-  TEAM_PAYMENTS_CONTINGENT_ADDRESSES_BY_EPOCH,
   TEAM_PAYMENTS_EPOCHS,
   TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH,
-  TEAM_PAYMENTS_TYPES,
 } from 'enums/team-payment-type';
 import { BigNumber, ContractTransaction, ethers } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
@@ -238,7 +236,6 @@ interface WalletState {
   getBalance(): Promise<Balance | void>;
 
   collectTempleTeamPayment(
-    paymentType: TEAM_PAYMENTS_TYPES,
     epoch: TEAM_PAYMENTS_EPOCHS
   ): Promise<void | TransactionReceipt>;
 
@@ -1722,23 +1719,14 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const collectTempleTeamPayment = async (
-    paymentType: TEAM_PAYMENTS_TYPES,
-    epoch: TEAM_PAYMENTS_EPOCHS
-  ) => {
+  const collectTempleTeamPayment = async (epoch: TEAM_PAYMENTS_EPOCHS) => {
     if (walletAddress && signerState) {
       const fixedTeamPaymentAddress =
         TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[epoch];
-      const contingentTeamPaymentAddress =
-        TEAM_PAYMENTS_CONTINGENT_ADDRESSES_BY_EPOCH[epoch];
 
       const teamPaymentContract = new TempleTeamPayments__factory(
         signerState
-      ).attach(
-        paymentType === TEAM_PAYMENTS_TYPES.FIXED
-          ? fixedTeamPaymentAddress
-          : contingentTeamPaymentAddress
-      );
+      ).attach(fixedTeamPaymentAddress);
 
       const collectTxn = await teamPaymentContract.claim();
 
