@@ -9,7 +9,7 @@ import { ClaimType } from 'enums/claim-type';
 import {
   TEAM_PAYMENTS_EPOCHS,
   TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH,
-} from 'enums/team-payment-type';
+} from 'enums/team-payment';
 import { BigNumber, ContractTransaction, ethers } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
 import React, {
