@@ -12,8 +12,8 @@ export const formatNumberWithCommas = (n: number): string => {
     .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
-export const formatNumberFixedDecimals = (n: number, decimals?: number): number => {
-  return +Number(n).toFixed(decimals ?? 2);
+export const formatNumberFixedDecimals = (n: number, decimals = 2): number => {
+  return +Number(n).toFixed(decimals);
 };
 
 export const formatMillions = (n: number): string => {
@@ -22,5 +22,5 @@ export const formatMillions = (n: number): string => {
 };
 
 export const allocationToIncense = (allocation: number): number => {
-  return formatNumberFixedDecimals((allocation / 1000), 0);
+  return formatNumberFixedDecimals(allocation / 1000, 0);
 };
