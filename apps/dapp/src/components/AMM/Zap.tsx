@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { ethers } from 'ethers';
+
+import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
+
+import { formatNumberWithCommas } from 'utils/formatter';
+import { toAtto } from 'utils/bigNumber';
+
+import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
 
 import { Button } from 'components/Button/Button';
 import { Input } from 'components/Input/Input';
+import { InputSelect } from 'components/InputSelect/InputSelect';
 import Slippage from 'components/Slippage/Slippage';
-import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
 
 import {
   ConvoFlowTitle,
@@ -11,12 +20,6 @@ import {
   TitleWrapper,
   ViewContainer,
 } from './helpers/components';
-import { formatNumberWithCommas } from 'utils/formatter';
-import { fromAtto, toAtto } from 'utils/bigNumber';
-import { ethers } from 'ethers';
-import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
-import axios from 'axios';
-import { InputSelect } from 'components/InputSelect/InputSelect';
 
 interface IZapperAPIResponse {
   address: string;
@@ -35,11 +38,11 @@ interface IToken {
   address: string;
   balance: number;
   price: number;
+  decimals: number;
 }
 
 export const Zap = () => {
-  const { signer, wallet, balance, getBalance, zapIn } =
-    useWallet();
+  const { signer, wallet, balance, getBalance, zapIn } = useWallet();
   const treasuryMetrics = useRefreshableTreasuryMetrics();
   const [tokensInWallet, setTokensInWallet] = useState<IToken[]>([]);
   const [tokenAmount, setTokenAmount] = useState(0);
@@ -51,6 +54,7 @@ export const Zap = () => {
     address: '0x853d955aCEf822Db058eb8505911ED77F175b99e',
     balance: 0,
     price: 0.99,
+    decimals: 18,
   });
 
   const getWalletTokenBalances = async () => {
@@ -73,6 +77,7 @@ export const Zap = () => {
               address: token.address,
               balance: token.balance,
               price: token.price,
+              decimals: token.decimals,
             });
           }
         });
@@ -86,6 +91,7 @@ export const Zap = () => {
     await zapIn(
       selectedToken.symbol,
       selectedToken.address,
+      selectedToken.decimals,
       tokenAmount.toString(),
       toAtto(1).toString()
     );
@@ -162,7 +168,6 @@ export const Zap = () => {
         isSmall
         label={`ZAP ${selectedToken.symbol} TO ${TEMPLE_TOKEN}`}
         onClick={() => handleClick(ethers.constants.AddressZero, tokenAmount)}
-        
       />
     </ViewContainer>
   );

@@ -256,6 +256,7 @@ interface WalletState {
   zapIn(
     tokenSymbol: string,
     tokenAddr: string,
+    decimals: number,
     tokenAmount: string,
     minTempleReceived: string
   ): Promise<void>;
@@ -1847,12 +1848,11 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const zapIn = async (
     tokenSymbol: string,
     tokenAddr: string,
+    decimals: number,
     tokenAmount: string,
     minTempleReceived: string
   ) => {
     if (signerState && walletAddress) {
-
-      let decimals: number;
       let sellToken: string;
 
       if (tokenSymbol === 'ETH') {
@@ -1860,7 +1860,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         decimals = 18;
       } else {
         sellToken = tokenAddr;
-        decimals = 18;
       }
 
       console.log('creating templeZaps factory..');
