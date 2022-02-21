@@ -11,9 +11,9 @@ import lockImage from 'assets/images/lock.svg';
 import tagImage from 'assets/images/tag.svg';
 
 const Wrapper = styled.div<{ isHome?: boolean }>`
+  max-width: ${({ isHome }) => isHome ? '26.5rem' : '100%'};
   display: flex;
   flex-direction: row;
-  max-width: ${({ isHome }) => isHome ? '424px' : '100%'};
   width: 100%;
   flex-wrap: wrap;
   justify-content: center;

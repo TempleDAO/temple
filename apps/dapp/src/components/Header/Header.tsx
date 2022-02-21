@@ -33,8 +33,7 @@ export const Header = () => {
 };
 
 const AppTitle = styled.h1`
-  font-size: 1.5rem;
-  line-height: 2.75rem;
+  ${({ theme }) => theme.typography.h4}
   margin: 0;
 `;
 
