@@ -21,16 +21,16 @@ export const Profile: FC = () => {
       layout={{
         kind: 'container',
         direction: 'column',
+        justifyContent: 'center'
       }}
     >
       <Flex
         layout={{
           kind: 'container',
           direction: 'row',
-          justifyContent: 'left',
         }}
       >
-        <Flex layout={{ kind: 'item' }}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             title={`NET WORTH ($${formatNumberWithCommas(
               accountMetrics?.netWorth || 0
@@ -46,10 +46,9 @@ export const Profile: FC = () => {
         layout={{
           kind: 'container',
           direction: 'row',
-          justifyContent: 'left',
         }}
       >
-        <Flex layout={{ kind: 'item' }}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             title={`WALLET ($${formatNumberWithCommas(
               accountMetrics?.walletValue || 0
@@ -60,7 +59,7 @@ export const Profile: FC = () => {
             small
           />
         </Flex>
-        <Flex layout={{ kind: 'item' }}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             title={`EXIT QUEUE ($${formatNumberWithCommas(
               accountMetrics?.exitQueueValue || 0
@@ -76,10 +75,9 @@ export const Profile: FC = () => {
         layout={{
           kind: 'container',
           direction: 'row',
-          justifyContent: 'left',
         }}
       >
-        <Flex layout={{ kind: 'item' }}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             title={`STAKED ($${formatNumberWithCommas(
               accountMetrics?.ogTempleWalletValue || 0
@@ -90,7 +88,7 @@ export const Profile: FC = () => {
             small
           />
         </Flex>
-        <Flex layout={{ kind: 'item' }}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             title={`LOCKED ($${formatNumberWithCommas(
               accountMetrics?.lockedOGTempleValue || 0
@@ -106,24 +104,23 @@ export const Profile: FC = () => {
         layout={{
           kind: 'container',
           direction: 'row',
-          justifyContent: 'left',
         }}
       >
-        <Flex layout={{ kind: 'item' }}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             title={`USABLE FAITH`}
             data={`${faith.usableFaith} ${FAITH_TOKEN}`}
             small
           />
         </Flex>
-        <Flex layout={{ kind: 'item' }}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             title={`LIFETIME FAITH`}
             data={`${faith.lifeTimeFaith}  ${FAITH_TOKEN}`}
             small
           />
         </Flex>
-        <Flex layout={{ kind: 'item' }}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard title={`FAITH SHARE`} data={`${faith.share}%`} small />
         </Flex>
       </Flex>
