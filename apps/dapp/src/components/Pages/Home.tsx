@@ -289,7 +289,7 @@ const Home = () => {
 };
 
 
-export const Row = styled.section`
+const Row = styled.section`
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -300,7 +300,7 @@ export const Row = styled.section`
   `)}
 `;
 
-export const RowCell = styled.div`
+const RowCell = styled.div`
   position: relative;
   display: flex;
   justify-content: center;
@@ -322,14 +322,14 @@ export const RowCell = styled.div`
   `)}
 `;
 
-export const SunGateWrapper = styled.div`
+const SunGateWrapper = styled.div`
   position: relative;
   display: flex;
   justify-content: center;
   width: fit-content;
 `;
 
-export const EarnStableGainsHeader = styled.h2`
+const EarnStableGainsHeader = styled.h2`
   font-size: 3rem;
   line-height: 3.5rem;
   text-align: center;
@@ -341,7 +341,7 @@ export const EarnStableGainsHeader = styled.h2`
   `)}
 `;
 
-export const SleepEasyStakingText = styled.h4`
+const SleepEasyStakingText = styled.h4`
   margin: 0 0 2em;
 
   ${aboveTabletBreakpoint(`
@@ -349,7 +349,7 @@ export const SleepEasyStakingText = styled.h4`
   `)}
 `;
 
-export const EarnStableGainsWrapper = styled.div`
+const EarnStableGainsWrapper = styled.div`
   margin: 1rem 0 3rem;
   display: flex;
   flex-direction: column;
@@ -364,7 +364,7 @@ export const EarnStableGainsWrapper = styled.div`
   `)}
 `;
 
-export const TempleDaoSun = styled.div`
+const TempleDaoSun = styled.div`
   z-index: ${(props) => props.theme.zIndexes.up};
 
   position: absolute;
@@ -379,7 +379,7 @@ export const TempleDaoSun = styled.div`
   }
 `;
 
-export const ButtonGroup = styled.div`
+const ButtonGroup = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -394,7 +394,7 @@ export const ButtonGroup = styled.div`
   `)}
 `;
 
-export const MetricsWrapper = styled.div`
+const MetricsWrapper = styled.div`
   display: flex;
   justify-content: center;
 
@@ -407,7 +407,7 @@ interface CircleBgWrapperProps {
   rightAlign?: boolean;
 }
 
-export const CircleBgWrapper = styled.div<CircleBgWrapperProps>`
+const CircleBgWrapper = styled.div<CircleBgWrapperProps>`
   position: absolute;
   transform: translateX(-50%);
 
@@ -419,11 +419,11 @@ export const CircleBgWrapper = styled.div<CircleBgWrapperProps>`
     `}
 `;
 
-export const ButtonContainer = styled.div`
+const ButtonContainer = styled.div`
   width: 9.6875rem;
 `;
 
-export const StyledButton = styled(Button)<ButtonProps>`
+const StyledButton = styled(Button)<ButtonProps>`
   width: 100%;
 `;
 
