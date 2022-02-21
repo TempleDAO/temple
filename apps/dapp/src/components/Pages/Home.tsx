@@ -8,7 +8,7 @@ import { aboveTabletBreakpoint } from 'styles/breakpoints';
 import { Flex } from 'components/Layout/Flex';
 import Metrics from 'components/Metrics/Metrics';
 import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
-import { MOBILE_BREAKPOINT } from 'styles/breakpoints';
+import { theme } from 'styles/theme';
 
 import circleBgImage from 'assets/images/circle-bg.svg';
 import earnTradingFeeImage from 'assets/images/earn-trading-fee.svg';
@@ -24,7 +24,7 @@ import { ResponsiveImage } from 'styles/common';
 const Home = () => {
   const treasuryMetrics = useRefreshableTreasuryMetrics();
   const isDesktop = useMediaQuery({
-    query: `(min-width: ${MOBILE_BREAKPOINT})`,
+    query: `(min-width: ${theme.metrics.devices.tablet})`,
   });
 
   return (
