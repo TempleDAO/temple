@@ -331,7 +331,7 @@ export const SunGateWrapper = styled.div`
 
 export const EarnStableGainsHeader = styled.h2`
   font-size: 3rem;
-  line-height: 3.5625rem;
+  line-height: 3.5rem;
   text-align: center;
   margin: 0;
 
@@ -384,7 +384,7 @@ export const ButtonGroup = styled.div`
   align-items: center;
   justify-content: center;
   gap: 20px;
-  max-width: 24.0625rem;
+  max-width: 24rem;
   width: 100%;
   margin: 0 auto 3rem;
 

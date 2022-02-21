@@ -10,31 +10,6 @@ import cashImage from 'assets/images/cash.svg';
 import lockImage from 'assets/images/lock.svg';
 import tagImage from 'assets/images/tag.svg';
 
-const Wrapper = styled.div<{ isHome?: boolean }>`
-  max-width: ${({ isHome }) => isHome ? '26.5rem' : '100%'};
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  flex-wrap: wrap;
-  justify-content: center;
-
-  ${aboveMobileBreakpoint(`
-    justify-content: flex-start;
-  `)}
-`;
-
-const ApyWrapper = styled.div`
-  margin-left: 2rem;
-
-  &:first-of-type {
-    margin-left: 0;
-  }
-
-  ${aboveMobileBreakpoint(`
-    margin-left: 4rem;
-  `)}
-`;
-
 export interface MetricsProps {
   treasuryMetrics: TreasuryMetrics;
   isHome?: boolean;
@@ -86,5 +61,30 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter, }: MetricsProps) => {
     </Wrapper>
   );
 };
+
+const Wrapper = styled.div<{ isHome?: boolean }>`
+  max-width: ${({ isHome }) => isHome ? '26.5rem' : '100%'};
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+
+  ${aboveMobileBreakpoint(`
+    justify-content: flex-start;
+  `)}
+`;
+
+const ApyWrapper = styled.div`
+  margin-left: 2rem;
+
+  &:first-of-type {
+    margin-left: 0;
+  }
+
+  ${aboveMobileBreakpoint(`
+    margin-left: 4rem;
+  `)}
+`;
 
 export default Metrics;
