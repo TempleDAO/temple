@@ -1,10 +1,10 @@
 import { css } from 'styled-components';
 
-export const MOBILE_BREAKPOINT = '768px';
+export const MOBILE_BREAKPOINT = '64rem';
 
-export const aboveMobileBreakpoint = (styles: string) => {
+export const aboveTabletBreakpoint = (styles: string) => {
   return css`
-    @media screen and (min-width: ${MOBILE_BREAKPOINT}) {
+    @media screen and (min-width: ${({ theme }) => theme.metrics.devices.tablet}) {
       ${styles}
     }
   `;

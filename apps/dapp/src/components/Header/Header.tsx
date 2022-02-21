@@ -1,8 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
+
 import { Button as BaseButton } from 'components/Button/Button';
-import { aboveMobileBreakpoint } from 'styles/breakpoints';
+import { aboveTabletBreakpoint } from 'styles/breakpoints';
 
 export const Header = () => {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ const AppTitle = styled.h1`
 const Button = styled(BaseButton)`
   display: none;
 
-  ${aboveMobileBreakpoint(`
+  ${aboveTabletBreakpoint(`
     display: flex;
   `)}
 `;
@@ -59,7 +60,7 @@ const HeaderStyled = styled.header`
   background-color: ${(props) => props.theme.palette.dark};
   width: 100%;
 
-  ${aboveMobileBreakpoint(`
+  ${aboveTabletBreakpoint(`
     width: 100vw;
     justify-content: center;
   `)}
@@ -77,7 +78,7 @@ const NavContainer = styled.div`
 
 const MenuContainer = styled.div`
   display: flex;
-  ${aboveMobileBreakpoint(`
+  ${aboveTabletBreakpoint(`
     width: 20rem;
   `)}
 `;

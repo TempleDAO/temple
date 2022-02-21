@@ -4,7 +4,7 @@ import { useMediaQuery } from 'react-responsive';
 import styled, { css } from 'styled-components';
 
 import { Button, ButtonProps } from 'components/Button/Button';
-import { aboveMobileBreakpoint } from 'styles/breakpoints';
+import { aboveTabletBreakpoint } from 'styles/breakpoints';
 import { Flex } from 'components/Layout/Flex';
 import Metrics from 'components/Metrics/Metrics';
 import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
@@ -295,7 +295,7 @@ export const Row = styled.section`
   width: 100%;
   padding: 1rem 0;
 
-  ${aboveMobileBreakpoint(`
+  ${aboveTabletBreakpoint(`
     flex-direction: row;
   `)}
 `;
@@ -308,7 +308,7 @@ export const RowCell = styled.div`
   align-items: center;
 
 
-  ${aboveMobileBreakpoint(`
+  ${aboveTabletBreakpoint(`
     width: 50%;
     align-items: flex-start;
 
@@ -335,7 +335,7 @@ export const EarnStableGainsHeader = styled.h2`
   text-align: center;
   margin: 0;
 
-  ${aboveMobileBreakpoint(`
+  ${aboveTabletBreakpoint(`
     text-align: left;
     margin: 2em 0;
   `)}
@@ -344,7 +344,7 @@ export const EarnStableGainsHeader = styled.h2`
 export const SleepEasyStakingText = styled.h4`
   margin: 0 0 2em;
 
-  ${aboveMobileBreakpoint(`
+  ${aboveTabletBreakpoint(`
     margin: 0 0 2.75em;
   `)}
 `;
@@ -357,7 +357,7 @@ export const EarnStableGainsWrapper = styled.div`
   text-align: center;
   width: 100%;
 
-  ${aboveMobileBreakpoint(`
+  ${aboveTabletBreakpoint(`
     margin: 0;
     text-align: initial;
     margin-bottom: 3rem;
@@ -388,7 +388,7 @@ export const ButtonGroup = styled.div`
   width: 100%;
   margin: 0 auto 3rem;
 
-  ${aboveMobileBreakpoint(`
+  ${aboveTabletBreakpoint(`
     margin: 0 0 3.5rem;
     justify-content: space-between;
   `)}
@@ -398,7 +398,7 @@ export const MetricsWrapper = styled.div`
   display: flex;
   justify-content: center;
 
-  ${aboveMobileBreakpoint(`
+  ${aboveTabletBreakpoint(`
     justify-content: flex-start;
   `)}
 `;
