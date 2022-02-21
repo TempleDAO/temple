@@ -93,12 +93,6 @@ export const TempleDaoSun = styled.div`
   }
 `;
 
-export const ResponsiveImage = styled.img`
-  display: block;
-  max-width: 100%;
-  height: auto;
-`;
-
 export const ButtonGroup = styled.div`
   display: flex;
   align-items: center;

@@ -16,12 +16,13 @@ import receiveTokenImage from 'assets/images/receive-token.svg';
 import sunImage from 'assets/images/sun-art.svg';
 import sunsetImage from 'assets/images/sunset.svg';
 
+import { ResponsiveImage } from 'styles/common';
+
 import {
   Row,
   RowCell,
   SunGateWrapper,
   TempleDaoSun,
-  ResponsiveImage,
   EarnStableGainsWrapper,
   EarnStableGainsHeader,
   SleepEasyStakingText,
