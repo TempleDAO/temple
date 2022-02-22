@@ -289,8 +289,8 @@ const Home = () => {
 };
 
 // TODO(MrFujisawa):
-// Replace this and the RowCell with grid framework once we have a replacement for
-// <Flex /> figured out.
+// Replace this and the row cell with grid framework once we have a replacement for
+//<Flex /> figured out.
 const Row = styled.section`
   display: flex;
   flex-direction: column;
@@ -331,9 +331,11 @@ const SunGateWrapper = styled.div`
   width: fit-content;
 `;
 
+// Special case heading h2 for landing page.
 const EarnStableGainsHeader = styled.h2`
-  ${({ theme }) => theme.typography.h4}
   text-align: center;
+  font-size: 3rem;
+  line-height: 3.5rem;
   margin: 0;
 
   ${aboveMobileBreakpoint(`

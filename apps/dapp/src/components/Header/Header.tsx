@@ -11,7 +11,7 @@ export const Header = () => {
     <HeaderStyled>
       <NavContainer>
         <Link to="/">
-          <AppTitle>TempleDAO</AppTitle>
+          <AppLogo>TempleDAO</AppLogo>
         </Link>
         <MenuContainer>
           <Button
@@ -33,8 +33,10 @@ export const Header = () => {
   );
 };
 
-const AppTitle = styled.h1`
-  ${({ theme }) => theme.typography.h4}
+// Special case font sizing/line height for TempleDAO Logo
+const AppLogo = styled.h1`
+  font-size: 1.5rem;
+  line-height: 2.75rem;
   margin: 0;
 `;
 
@@ -78,6 +80,7 @@ const NavContainer = styled.div`
 
 const MenuContainer = styled.div`
   display: flex;
+
   ${aboveMobileBreakpoint(`
     width: 20rem;
   `)}
