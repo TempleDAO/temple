@@ -20,7 +20,7 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter, }: MetricsProps) => {
   const { treasuryValue, templeApy, templeValue } = treasuryMetrics;
 
   return (
-    <Wrapper isHome={isHome}>
+    <Wrapper>
       <ApyWrapper>
         <Apy
           cryptoName={'$TEMPLE'}
@@ -62,11 +62,9 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter, }: MetricsProps) => {
   );
 };
 
-const Wrapper = styled.div<{ isHome?: boolean }>`
-  max-width: ${({ isHome }) => isHome ? '26.5rem' : '100%'};
+const Wrapper = styled.div`
   display: flex;
   flex-direction: row;
-  width: 100%;
   flex-wrap: wrap;
   justify-content: center;
 

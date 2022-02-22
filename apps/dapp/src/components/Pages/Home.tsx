@@ -22,11 +22,18 @@ import sunsetImage from 'assets/images/sunset.svg';
 import { ResponsiveImage } from 'styles/common';
 
 const Home = () => {
-  const treasuryMetrics = useRefreshableTreasuryMetrics();
+  // const treasuryMetrics = useRefreshableTreasuryMetrics();
   const isAboveMobile = useMediaQuery({
     query: `(min-width: ${theme.metrics.devices.tablet})`,
   });
-
+  const treasuryMetrics = {
+  //   treasuryValue: number;
+  // templeApy: number;
+  // templeValue: number;
+    templeApy: 1177,
+    templeValue: 0.75,
+    treasuryValue: 16500000,
+}
   return (
     <>
       <Row>
@@ -400,9 +407,12 @@ const ButtonGroup = styled.div`
 const MetricsWrapper = styled.div`
   display: flex;
   justify-content: center;
+  max-width: 26.5rem;
+  margin: 0 auto;
 
   ${aboveMobileBreakpoint(`
     justify-content: flex-start;
+    margin: 0;
   `)}
 `;
 
