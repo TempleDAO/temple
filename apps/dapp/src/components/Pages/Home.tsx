@@ -23,7 +23,7 @@ import { ResponsiveImage } from 'styles/common';
 
 const Home = () => {
   const treasuryMetrics = useRefreshableTreasuryMetrics();
-  const isDesktop = useMediaQuery({
+  const isAboveMobile = useMediaQuery({
     query: `(min-width: ${theme.metrics.devices.tablet})`,
   });
 
@@ -35,7 +35,7 @@ const Home = () => {
             <EarnStableGainsHeader>Earn Stable Gains</EarnStableGainsHeader>
             <SleepEasyStakingText>Sleep easy staking in the Temple</SleepEasyStakingText>
             <ButtonGroup>
-              {isDesktop && (
+              {isAboveMobile && (
                 <ButtonContainer>
                   <Link to={'/the-temple'}>
                     <StyledButton
@@ -58,7 +58,7 @@ const Home = () => {
                 <Metrics
                   treasuryMetrics={treasuryMetrics}
                   isHome
-                  alignCenter={!isDesktop}
+                  alignCenter={!isAboveMobile}
                 />
               </MetricsWrapper>
               ) : null}
