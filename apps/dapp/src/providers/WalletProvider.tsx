@@ -11,6 +11,7 @@ import {
   TEAM_PAYMENTS_EPOCHS,
   TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH,
 } from 'enums/team-payment';
+import { signERC2612Permit } from 'eth-permit';
 import { BigNumber, ContractTransaction, ethers } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
 import React, {
@@ -1855,13 +1856,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     if (signerState && walletAddress) {
       let sellToken: string;
 
-      if (tokenSymbol === 'ETH') {
-        sellToken = 'ETH';
-        decimals = 18;
-      } else {
-        sellToken = tokenAddr;
-      }
-
       console.log('creating templeZaps factory..');
       const templeZaps = new TempleZaps__factory(signerState).attach(
         ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS
@@ -1871,6 +1865,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       console.log(`creating fake ${tokenSymbol} contract..`);
       let tokenContract = new FakeERC20__factory(signerState).attach(tokenAddr);
       console.log(`${tokenSymbol} contract created.`);
+
+      if (tokenSymbol === 'ETH') {
+        sellToken = 'ETH';
+        decimals = 18;
+      } else {
+        sellToken = tokenAddr;
+      }
 
       console.log('getting quote from 0x api...');
       // Get quote from 0x API
@@ -1883,7 +1884,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         guaranteedPrice = '0.99';
         swapCallData = '0x';
       } else {
-        const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=0x853d955aCEf822Db058eb8505911ED77F175b99e`;
+        const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS}`;
         const response = await axios.get(url);
         ({
           data: {
@@ -1897,51 +1898,93 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       }
       console.log(`quoted price: ${guaranteedPrice}`);
 
-      console.log(`approving ${tokenSymbol}...`);
-      // approve token
-      if (sellToken !== 'ETH') {
-        await tokenContract.approve(
-          ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS,
-          ethers.utils.parseUnits('1000111', decimals)
-        );
+      if (tokenSymbol === 'USDC' || tokenSymbol === 'UNI') {
+        console.log(`${tokenSymbol} is permittable, so let's sign it.`);
 
-        const allowance = await tokenContract.allowance(
+        const permitDomain = {
+          name: await tokenContract.name(),
+          version: tokenSymbol === 'USDC' ? '2' : '1',
+          chainId: 1337, // don't use (await ethers.provider.getNetwork()).chainId on forked mainnet
+          verifyingContract: tokenAddr,
+        };
+
+        const { deadline, v, r, s } = await signERC2612Permit(
+          signerState.provider,
+          permitDomain,
           walletAddress,
-          ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS
+          templeZaps.address,
+          sellAmount
         );
-        console.log(
-          `Allowance: ${ethers.utils.formatUnits(allowance, decimals)}`
+
+        const tx = await templeZaps.zapInWithPermit(
+          tokenAddr,
+          sellAmount,
+          minTempleReceived,
+          Math.floor(Date.now() / 1000) + 1200, // amm deadline of 20 minutes from now
+          ZEROEX_EXCHANGE_PROXY,
+          swapCallData,
+          deadline,
+          v,
+          r,
+          s
         );
-      }
 
-      console.log(`${tokenSymbol} approved. Hooray!`);
+        const txReceipt = await tx.wait();
 
-      console.log(`Is it ETH? If so, set override value.`);
-      // Do zap
-      const overrides: { value?: BigNumber } = {};
-      if (sellToken === 'ETH') {
-        overrides.value = ethers.utils.parseEther(tokenAmount);
-      }
+        if (txReceipt) {
+          console.log(`Zapped! Enjoy your TEMPLE`);
+          openNotification({
+            title: `Zapped ${tokenSymbol} for ${TEMPLE_TOKEN}`,
+            hash: tx.hash,
+          });
+        }
+      } else {
+        console.log(`approving ${tokenSymbol}...`);
+        // approve token
+        if (sellToken !== 'ETH') {
+          await tokenContract.approve(
+            ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS,
+            ethers.utils.parseUnits('1000111', decimals)
+          );
 
-      console.log(`Zapping...`);
-      const tx = await templeZaps.zapIn(
-        tokenAddr,
-        sellAmount,
-        minTempleReceived,
-        Math.floor(Date.now() / 1000) + 1200, // deadline of 20 minutes from now
-        ZEROEX_EXCHANGE_PROXY,
-        swapCallData,
-        overrides
-      );
-      console.log(`tx ${tx.hash} sent. just waiting for receipt`);
-      const txReceipt = await tx.wait();
+          const allowance = await tokenContract.allowance(
+            walletAddress,
+            ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS
+          );
+          console.log(
+            `Allowance: ${ethers.utils.formatUnits(allowance, decimals)}`
+          );
+        }
 
-      if (txReceipt) {
-        console.log(`Zapped! Enjoy your TEMPLE`);
-        openNotification({
-          title: `Zapped ${tokenSymbol} for ${TEMPLE_TOKEN}`,
-          hash: tx.hash,
-        });
+        console.log(`${tokenSymbol} approved. Hooray!`);
+
+        // Do zap
+        const overrides: { value?: BigNumber } = {};
+        if (sellToken === 'ETH') {
+          console.log(`It's eth. Need to set an override value.`);
+          overrides.value = ethers.utils.parseEther(tokenAmount);
+        }
+
+        console.log(`Zapping...`);
+        const tx = await templeZaps.zapIn(
+          tokenAddr,
+          sellAmount,
+          minTempleReceived,
+          Math.floor(Date.now() / 1000) + 1200, // deadline of 20 minutes from now
+          ZEROEX_EXCHANGE_PROXY,
+          swapCallData,
+          overrides
+        );
+        console.log(`tx ${tx.hash} sent. just waiting for receipt`);
+        const txReceipt = await tx.wait();
+
+        if (txReceipt) {
+          console.log(`Zapped! Enjoy your TEMPLE`);
+          openNotification({
+            title: `Zapped ${tokenSymbol} for ${TEMPLE_TOKEN}`,
+            hash: tx.hash,
+          });
+        }
       }
     }
   };
