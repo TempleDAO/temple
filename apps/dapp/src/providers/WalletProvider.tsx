@@ -260,7 +260,7 @@ interface WalletState {
     decimals: number,
     tokenAmount: string,
     minTempleReceived: string
-  ): Promise<void>;
+  ): Promise<TransactionReceipt | void>;
 }
 
 const INITIAL_STATE: WalletState = {
@@ -1860,15 +1860,16 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const templeZaps = new TempleZaps__factory(signerState).attach(
         ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS
       );
-      console.log('templeZaps factory created');
 
       console.log(`creating fake ${tokenSymbol} contract..`);
-      let tokenContract = new FakeERC20__factory(signerState).attach(tokenAddr);
-      console.log(`${tokenSymbol} contract created.`);
+      const tokenContract = new FakeERC20__factory(signerState).attach(
+        tokenAddr
+      );
+
+      let tx: ContractTransaction;
 
       if (tokenSymbol === 'ETH') {
         sellToken = 'ETH';
-        decimals = 18;
       } else {
         sellToken = tokenAddr;
       }
@@ -1916,7 +1917,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           sellAmount
         );
 
-        const tx = await templeZaps.zapInWithPermit(
+        tx = await templeZaps.zapInWithPermit(
           tokenAddr,
           sellAmount,
           minTempleReceived,
@@ -1928,16 +1929,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           r,
           s
         );
-
-        const txReceipt = await tx.wait();
-
-        if (txReceipt) {
-          console.log(`Zapped! Enjoy your TEMPLE`);
-          openNotification({
-            title: `Zapped ${tokenSymbol} for ${TEMPLE_TOKEN}`,
-            hash: tx.hash,
-          });
-        }
       } else {
         console.log(`approving ${tokenSymbol}...`);
         // approve token
@@ -1966,7 +1957,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         }
 
         console.log(`Zapping...`);
-        const tx = await templeZaps.zapIn(
+        tx = await templeZaps.zapIn(
           tokenAddr,
           sellAmount,
           minTempleReceived,
@@ -1976,16 +1967,26 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           overrides
         );
         console.log(`tx ${tx.hash} sent. just waiting for receipt`);
-        const txReceipt = await tx.wait();
-
-        if (txReceipt) {
-          console.log(`Zapped! Enjoy your TEMPLE`);
-          openNotification({
-            title: `Zapped ${tokenSymbol} for ${TEMPLE_TOKEN}`,
-            hash: tx.hash,
-          });
-        }
       }
+
+      const txReceipt = await tx.wait();
+
+      if (txReceipt) {
+        console.log(`Zapped! Enjoy your TEMPLE`);
+        openNotification({
+          title: `Zapped ${tokenSymbol} for ${TEMPLE_TOKEN}`,
+          hash: tx.hash,
+        });
+        return txReceipt;
+      } else {
+        openNotification({
+          title: `Failed to zap ${tokenSymbol} for ${TEMPLE_TOKEN}`,
+          hash: tx.hash,
+        });
+        console.error('Error swapping tokens');
+      }
+    } else {
+      console.error('Missing wallet address');
     }
   };
 
