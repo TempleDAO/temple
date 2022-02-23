@@ -227,7 +227,6 @@ function useTempleTeamPayments(): TeamPaymentsState {
     dispatch({ type: 'collect-fixed' });
 
     const tx = await collectTempleTeamPayment(
-      TEAM_PAYMENTS_TYPES.FIXED,
       selectedEpoch
     );
 
