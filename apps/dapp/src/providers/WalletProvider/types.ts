@@ -2,10 +2,7 @@ import { JsonRpcSigner, Network } from '@ethersproject/providers';
 import { BigNumber, ContractTransaction } from 'ethers';
 import { ClaimType } from 'enums/claim-type';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
-import {
-  TEAM_PAYMENTS_EPOCHS,
-  TEAM_PAYMENTS_TYPES,
-} from 'enums/team-payment-type';
+import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
 
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
@@ -178,7 +175,6 @@ export interface WalletState {
   getBalance(): Promise<Balance | void>;
 
   collectTempleTeamPayment(
-    paymentType: TEAM_PAYMENTS_TYPES,
     epoch: TEAM_PAYMENTS_EPOCHS
   ): Promise<void | TransactionReceipt>;
 

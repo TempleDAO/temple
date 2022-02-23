@@ -226,10 +226,7 @@ function useTempleTeamPayments(): TeamPaymentsState {
   async function onCollectTeamFixedPayment() {
     dispatch({ type: 'collect-fixed' });
 
-    const tx = await collectTempleTeamPayment(
-      TEAM_PAYMENTS_TYPES.FIXED,
-      selectedEpoch
-    );
+    const tx = await collectTempleTeamPayment(selectedEpoch);
 
     if (tx) {
       setClaimed(!claimed);

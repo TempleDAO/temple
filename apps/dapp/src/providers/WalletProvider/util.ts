@@ -1,7 +1,4 @@
-import {
-  JsonRpcProvider,
-  JsonRpcSigner,
-} from '@ethersproject/providers';
+import { JsonRpcProvider, JsonRpcSigner } from '@ethersproject/providers';
 
 import {
   AcceleratedExitQueue__factory,
@@ -20,7 +17,7 @@ import {
 
 import { BigNumber } from 'ethers';
 import { fromAtto, toAtto } from 'utils/bigNumber';
-import { formatNumber, formatNumberNoDecimals } from 'utils/formatter';
+import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
 
 import {
   TEMPLE_V2_PAIR_ADDRESS,
@@ -49,9 +46,9 @@ export const getTemplePrice = async (
     throw new NoWalletAddressError();
   }
 
-  const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory()
-    .attach(TEMPLE_V2_PAIR_ADDRESS)
-    .connect(signerState);
+  const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory(
+    signerState
+  ).attach(TEMPLE_V2_PAIR_ADDRESS);
 
   const { _reserve0, _reserve1 } = await TEMPLE_UNISWAP_V2_PAIR.getReserves();
 
@@ -60,7 +57,8 @@ export const getTemplePrice = async (
 
 export const getCurrentEpoch = async (provider: JsonRpcProvider) => {
   const blockNumber = await provider.getBlockNumber();
-  const currentBlockTimestamp = (await provider.getBlock(blockNumber)).timestamp;
+  const currentBlockTimestamp = (await provider.getBlock(blockNumber))
+    .timestamp;
   // block timestamps are in seconds no ms
   return currentBlockTimestamp * 1000;
 };
@@ -73,9 +71,9 @@ export const getExchangeRate = async (
     throw new NoWalletAddressError();
   }
 
-  const treasury = new TempleTreasury__factory()
-    .attach(TREASURY_ADDRESS)
-    .connect(signerState);
+  const treasury = new TempleTreasury__factory(signerState).attach(
+    TREASURY_ADDRESS
+  );
 
   const iv = await treasury.intrinsicValueRatio();
   const { temple, stablec } = iv;
@@ -84,37 +82,44 @@ export const getExchangeRate = async (
   return rate;
 };
 
-export const getBalance = async (walletAddress: string, signerState: JsonRpcSigner) => {
+export const getBalance = async (
+  walletAddress: string,
+  signerState: JsonRpcSigner
+) => {
   if (!walletAddress) {
     throw new NoWalletAddressError();
   }
 
-  const stableCoinContract = new ERC20__factory(signerState)
-    .attach(STABLE_COIN_ADDRESS);
+  const stableCoinContract = new ERC20__factory(signerState).attach(
+    STABLE_COIN_ADDRESS
+  );
 
-  const ogLockedTemple = new LockedOGTempleDeprecated__factory(signerState)
-    .attach(LOCKED_OG_TEMPLE_ADDRESS);
+  const ogLockedTemple = new LockedOGTempleDeprecated__factory(
+    signerState
+  ).attach(LOCKED_OG_TEMPLE_ADDRESS);
 
-  const OGTEMPLE_LOCKED_DEVOTION = new LockedOGTemple__factory(signerState)
-    .attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS);
+  const OGTEMPLE_LOCKED_DEVOTION = new LockedOGTemple__factory(
+    signerState
+  ).attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS);
 
-  const templeStakingContract = new TempleStaking__factory(signerState)
-    .attach(TEMPLE_STAKING_ADDRESS);
+  const templeStakingContract = new TempleStaking__factory(signerState).attach(
+    TEMPLE_STAKING_ADDRESS
+  );
 
-  const OG_TEMPLE_CONTRACT = new OGTemple__factory(signerState)
-    .attach(await templeStakingContract.OG_TEMPLE());
+  const OG_TEMPLE_CONTRACT = new OGTemple__factory(signerState).attach(
+    await templeStakingContract.OG_TEMPLE()
+  );
 
-  const templeContract = new TempleERC20Token__factory(signerState)
-    .attach(TEMPLE_ADDRESS);
+  const templeContract = new TempleERC20Token__factory(signerState).attach(
+    TEMPLE_ADDRESS
+  );
 
   const stableCoinBalance: BigNumber = await stableCoinContract.balanceOf(
     walletAddress
   );
 
   // get the locked OG temple
-  const lockedNum = (
-    await ogLockedTemple.numLocks(walletAddress)
-  ).toNumber();
+  const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber();
   let ogTempleLocked = 0;
   let ogTempleLockedClaimable = 0;
   const templeLockedPromises = [];
@@ -122,7 +127,7 @@ export const getBalance = async (walletAddress: string, signerState: JsonRpcSign
     templeLockedPromises.push(ogLockedTemple.locked(walletAddress, i));
   }
 
-  const now = formatNumberNoDecimals(Date.now() / 1000);
+  const now = formatNumberFixedDecimals(Date.now() / 1000, 0);
   const templeLocked = await Promise.all(templeLockedPromises);
   templeLocked.map((x) => {
     ogTempleLocked += fromAtto(x.BalanceOGTemple);
@@ -131,9 +136,7 @@ export const getBalance = async (walletAddress: string, signerState: JsonRpcSign
     }
   });
 
-  const ogTemple = fromAtto(
-    await OG_TEMPLE_CONTRACT.balanceOf(walletAddress)
-  );
+  const ogTemple = fromAtto(await OG_TEMPLE_CONTRACT.balanceOf(walletAddress));
   const temple = fromAtto(await templeContract.balanceOf(walletAddress));
 
   const lockedOGTempleEntry = await OGTEMPLE_LOCKED_DEVOTION.ogTempleLocked(
@@ -157,8 +160,7 @@ export const getFaith = async (
     throw new NoWalletAddressError();
   }
 
-  const FAITH = new Faith__factory(signerState)
-    .attach(TEMPLE_FAITH_ADDRESS);
+  const FAITH = new Faith__factory(signerState).attach(TEMPLE_FAITH_ADDRESS);
 
   const faithBalances = await FAITH.balances(walletAddress);
   const totalSupply = await FAITH.totalSupply();
@@ -183,8 +185,9 @@ export const getAllocation = async (
     throw new NoWalletAddressError();
   }
 
-  const openingCeremony = new OpeningCeremony__factory(signerState)
-    .attach(OPENING_CEREMONY_ADDRESS);
+  const openingCeremony = new OpeningCeremony__factory(signerState).attach(
+    OPENING_CEREMONY_ADDRESS
+  );
 
   const allocation: number = ocTemplar.isVerified
     ? fromAtto(
@@ -203,17 +206,19 @@ export const getAllocation = async (
   };
 };
 
-export const getLockedEntries = async (walletAddress: string, signerState: JsonRpcSigner) => {
+export const getLockedEntries = async (
+  walletAddress: string,
+  signerState: JsonRpcSigner
+) => {
   if (!walletAddress) {
     throw new NoWalletAddressError();
   }
 
-  const ogLockedTemple = new LockedOGTempleDeprecated__factory(signerState)
-    .attach(LOCKED_OG_TEMPLE_ADDRESS);
+  const ogLockedTemple = new LockedOGTempleDeprecated__factory(
+    signerState
+  ).attach(LOCKED_OG_TEMPLE_ADDRESS);
 
-  const lockedNum = (
-    await ogLockedTemple.numLocks(walletAddress)
-  ).toNumber();
+  const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber();
   const lockedEntriesPromises = [];
   for (let i = 0; i < lockedNum; i++) {
     lockedEntriesPromises.push(ogLockedTemple.locked(walletAddress, i));
@@ -232,8 +237,9 @@ export const getLockedEntries = async (walletAddress: string, signerState: JsonR
   );
 
   // get ogTempleLocked from new Contract
-  const ogLockedTempleNew = new LockedOGTemple__factory(signerState)
-    .attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS);
+  const ogLockedTempleNew = new LockedOGTemple__factory(signerState).attach(
+    LOCKED_OG_TEMPLE_DEVOTION_ADDRESS
+  );
 
   const newEntry = await ogLockedTempleNew.ogTempleLocked(walletAddress);
   lockedEntriesVals.push({
@@ -245,16 +251,21 @@ export const getLockedEntries = async (walletAddress: string, signerState: JsonR
   return lockedEntriesVals;
 };
 
-export const getExitQueueData = async (walletAddress: string, signerState: JsonRpcSigner) => {
+export const getExitQueueData = async (
+  walletAddress: string,
+  signerState: JsonRpcSigner
+) => {
   if (!walletAddress) {
     throw new NoWalletAddressError();
   }
 
-  const EXIT_QUEUE = new ExitQueue__factory(signerState)
-    .attach(EXIT_QUEUE_ADDRESS);
+  const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(
+    EXIT_QUEUE_ADDRESS
+  );
 
-  const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(signerState)
-    .attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
+  const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(
+    signerState
+  ).attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
 
   const userData = await EXIT_QUEUE.userData(walletAddress);
   const totalTempleOwned = fromAtto(userData.Amount);
@@ -265,12 +276,10 @@ export const getExitQueueData = async (walletAddress: string, signerState: JsonR
       claimableTemple: 0,
       totalTempleOwned: 0,
       claimableEpochs: [],
-    }
+    };
   }
 
-  const currentEpoch = (
-    await ACCELERATED_EXIT_QUEUE.currentEpoch()
-  ).toNumber();
+  const currentEpoch = (await ACCELERATED_EXIT_QUEUE.currentEpoch()).toNumber();
   const firstEpoch = userData.FirstExitEpoch.toNumber();
   const lastEpoch = userData.LastExitEpoch.toNumber();
   const todayInMs = new Date().getTime();
@@ -290,9 +299,7 @@ export const getExitQueueData = async (walletAddress: string, signerState: JsonR
   const claimableEpochs: Array<number> = [];
   for (let i = firstEpoch; i < currentEpoch; i++) {
     maybeClaimableEpochs.push(i);
-    exitEntryPromises.push(
-      EXIT_QUEUE.currentEpochAllocation(walletAddress, i)
-    );
+    exitEntryPromises.push(EXIT_QUEUE.currentEpochAllocation(walletAddress, i));
   }
 
   const exitEntries = await Promise.all(exitEntryPromises);
@@ -322,11 +329,13 @@ export const getEpochsToDays = async (
     return 0;
   }
 
-  const EXIT_QUEUE = new ExitQueue__factory(signerState)
-    .attach(EXIT_QUEUE_ADDRESS);
+  const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(
+    EXIT_QUEUE_ADDRESS
+  );
 
-  const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(signerState)
-    .attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
+  const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(
+    signerState
+  ).attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
 
   const MAINNET_APROX_BLOCKS_PER_DAY = 6400;
   const epochSizeInBlocks = (await EXIT_QUEUE.epochSize()).toNumber();
@@ -349,13 +358,17 @@ export const getEpochsToDays = async (
   return formatNumber(epochsToDays);
 };
 
-export const getApy = async (walletAddress: string, signerState: JsonRpcSigner) => {
+export const getApy = async (
+  walletAddress: string,
+  signerState: JsonRpcSigner
+) => {
   if (!walletAddress) {
     throw new NoWalletAddressError();
   }
 
-  const TEMPLE_STAKING = new TempleStaking__factory(signerState)
-    .attach(TEMPLE_STAKING_ADDRESS);
+  const TEMPLE_STAKING = new TempleStaking__factory(signerState).attach(
+    TEMPLE_STAKING_ADDRESS
+  );
 
   const SCALE_FACTOR = 10000;
   const epy = (await TEMPLE_STAKING.getEpy(SCALE_FACTOR)).toNumber();
@@ -371,8 +384,9 @@ export const getRewardsForOGTemple = async (
     throw new NoWalletAddressError();
   }
 
-  const STAKING = new TempleStaking__factory(signerState)
-    .attach(TEMPLE_STAKING_ADDRESS);
+  const STAKING = new TempleStaking__factory(signerState).attach(
+    TEMPLE_STAKING_ADDRESS
+  );
 
   return fromAtto(await STAKING.balance(toAtto(ogtAmount)));
 };
