@@ -37,11 +37,7 @@ import {
   TempleTeamPayments__factory,
 } from 'types/typechain';
 import { fromAtto, toAtto } from 'utils/bigNumber';
-<<<<<<< HEAD
-import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
-=======
-import { formatNumberNoDecimals } from 'utils/formatter';
->>>>>>> d3a2604 (wip: move getRewardsForOGTemple to util, delete unused variables)
+import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
 import { NoWalletAddressError } from './errors';
 
@@ -482,7 +478,11 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       return;
     }
 
-    const allocation = await getAllocation(walletAddress, signerState, ocTemplar);
+    const allocation = await getAllocation(
+      walletAddress,
+      signerState,
+      ocTemplar
+    );
     setAllocation(allocation);
   };
 
