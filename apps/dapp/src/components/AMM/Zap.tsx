@@ -24,6 +24,7 @@ import {
   TitleWrapper,
   ViewContainer,
 } from './helpers/components';
+import { copyBalance } from './helpers/methods';
 
 export const Zap = () => {
   const {
@@ -43,7 +44,7 @@ export const Zap = () => {
     tokensInWallet[0]
   );
 
-  const handleClick = async (address: string, tokenAmount: number) => {
+  const handleClick = async (tokenAmount: number) => {
     setZapping(true);
 
     const minTempleRecieved = templeQuote * (1 - slippage / 100);
@@ -93,6 +94,7 @@ export const Zap = () => {
             tokensInWallet.forEach((token) => {
               if (token.address === e.value) {
                 setSelectedToken(token);
+                setTokenAmount(0);
               }
             });
           }}
@@ -108,7 +110,12 @@ export const Zap = () => {
         isNumber
         crypto={{ kind: 'value', value: `$${selectedToken.symbol}` }}
         hint={`Balance: ${formatNumberWithCommas(selectedToken.balance)}`}
+        onHintClick={() => {
+          setTokenAmount(selectedToken.balance);
+          console.log(selectedToken.balance);
+        }}
         placeholder={'0.00'}
+        value={tokenAmount}
         onChange={(e) => {
           handleInput(e.target.value);
         }}
@@ -141,7 +148,7 @@ export const Zap = () => {
             ? 'ZAPPING'
             : `ZAP $${selectedToken.symbol} TO ${TEMPLE_TOKEN}`
         }
-        onClick={() => handleClick(ethers.constants.AddressZero, tokenAmount)}
+        onClick={() => handleClick(tokenAmount)}
         disabled={
           zapping ||
           tokenAmount === 0 ||
