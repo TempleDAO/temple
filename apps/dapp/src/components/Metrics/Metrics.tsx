@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { TreasuryMetrics } from 'services/MetricsService';
 import { formatMillions, formatNumber } from 'utils/formatter';
 import { Apy } from 'components/Apy/Apy';
-import { aboveMobileBreakpoint } from 'styles/breakpoints';
+import { tabletAndAboveBreakpoint } from 'styles/breakpoints';
 
 import cashImage from 'assets/images/cash.svg';
 import lockImage from 'assets/images/lock.svg';
@@ -68,7 +68,7 @@ const Wrapper = styled.div`
   flex-wrap: wrap;
   justify-content: center;
 
-  ${aboveMobileBreakpoint(`
+  ${tabletAndAboveBreakpoint(`
     justify-content: flex-start;
   `)}
 `;
@@ -80,7 +80,7 @@ const ApyWrapper = styled.div`
     margin-left: 0;
   }
 
-  ${aboveMobileBreakpoint(`
+  ${tabletAndAboveBreakpoint(`
     margin-left: 4rem;
   `)}
 `;
