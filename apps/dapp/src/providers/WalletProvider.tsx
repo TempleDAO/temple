@@ -164,6 +164,18 @@ export interface FaithQuote {
   claimableFaith: number;
 }
 
+export interface IZapperTokenData {
+  address: string;
+  balance: number;
+  balanceRaw: string;
+  balanceUSD: number;
+  decimals: number;
+  network: string;
+  price: number;
+  symbol: string;
+  type: string;
+}
+
 interface WalletState {
   // has the user connected a wallet to the dapp
   isConnected: boolean;
@@ -185,6 +197,7 @@ interface WalletState {
   network: Network | null;
   lockedEntries: Array<LockedEntry>;
   exitQueueData: ExitQueueData;
+  tokensInWallet: IZapperTokenData[];
 
   connectWallet(): void;
 
@@ -261,6 +274,8 @@ interface WalletState {
     tokenAmount: string,
     minTempleReceived: string
   ): Promise<TransactionReceipt | void>;
+
+  getWalletTokenBalances(): Promise<IZapperTokenData[] | void>;
 }
 
 const INITIAL_STATE: WalletState = {
@@ -277,6 +292,19 @@ const INITIAL_STATE: WalletState = {
     totalSupply: 0,
     share: 0,
   },
+  tokensInWallet: [
+    {
+      address: '',
+      balance: 0,
+      balanceRaw: '',
+      balanceUSD: 0,
+      decimals: 0,
+      network: '',
+      price: 0,
+      symbol: 'TOKEN',
+      type: '',
+    },
+  ],
   // Fallback when user has not connected wallet, we can update this from Vercel and redeploy
   exchangeRate: ENV_VARS.NEXT_PUBLIC_EXCHANGE_RATE_VALUE
     ? +ENV_VARS.NEXT_PUBLIC_EXCHANGE_RATE_VALUE
@@ -340,6 +368,7 @@ const INITIAL_STATE: WalletState = {
   getFaithQuote: asyncNoop,
   getExitQueueData: asyncNoop,
   zapIn: asyncNoop,
+  getWalletTokenBalances: asyncNoop,
 };
 
 // TODO: Make these constants or env vars
@@ -446,6 +475,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const [apy, setApy] = useState(0);
   const [templePrice, setTemplePrice] = useState(INITIAL_STATE.templePrice);
   const [faith, setFaith] = useState(INITIAL_STATE.faith);
+
+  const [tokensInWallet, setTokensInWallet] = useState<IZapperTokenData[]>(
+    INITIAL_STATE.tokensInWallet
+  );
 
   const { openNotification } = useNotification();
 
@@ -1990,6 +2023,28 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
+  const getWalletTokenBalances = async () => {
+    const tokenArr: IZapperTokenData[] = [];
+
+    if (walletAddress && signerState) {
+      const PUBLIC_ZAPPER_API_KEY = '96e0cc51-a62e-42ca-acee-910ea7d2a241';
+      const res = await axios.get(
+        `https://api.zapper.fi/v1/protocols/tokens/balances?addresses[]=${walletAddress}&api_key=${PUBLIC_ZAPPER_API_KEY}`
+      );
+      if (res) {
+        //@ts-ignore
+        const tokenResponse: IZapperTokenData[] = Object.values(res.data)[0]
+          .products[0].assets;
+        tokenResponse.forEach((token) => {
+          if (token.network === 'ethereum') {
+            tokenArr.push(token);
+          }
+        });
+      }
+    }
+    setTokensInWallet(tokenArr);
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -2040,6 +2095,8 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         faith,
         getExitQueueData,
         zapIn,
+        getWalletTokenBalances,
+        tokensInWallet,
       }}
     >
       {children}
