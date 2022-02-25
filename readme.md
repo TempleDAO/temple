@@ -2,10 +2,11 @@
 
 ## Getting Started
 ### Requirements
-* node > v14
-* npm
+* node 
 * yarn
 * Docker
+
+This repository uses `.nvmrc` to dictate the version of node required to compile and run the project. This will allow you to use `nvm` followed by either `nvm use` or `nvm install` to automatically set the right version of node in that terminal session.
 
 If developing on Windows, some scripts are currently written in bash so WSL is recommended to run those. For most developments tasks you'll likely only need to run the steps in Protocol local deployment and Dapp. 
 
