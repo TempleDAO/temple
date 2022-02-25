@@ -286,7 +286,8 @@ const Copy = styled.p`
 `;
 
 const ButtonArea = styled.div`
-  width: 31.25rem;
+  max-width: 31.25rem;
+  width: 100%;
   margin-top: 4rem;
 `;
 
