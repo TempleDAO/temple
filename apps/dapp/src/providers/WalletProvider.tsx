@@ -271,8 +271,8 @@ interface WalletState {
     tokenSymbol: string,
     tokenAddr: string,
     decimals: number,
-    tokenAmount: string,
-    minTempleReceived: string
+    tokenAmount: number,
+    minTempleReceived: BigNumber
   ): Promise<void>;
 
   getWalletTokenBalances(): Promise<IZapperTokenData[] | void>;
@@ -1887,8 +1887,8 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     tokenSymbol: string,
     tokenAddr: string,
     decimals: number,
-    tokenAmount: string,
-    minTempleReceived: string
+    tokenAmount: number,
+    minTempleReceived: BigNumber
   ) => {
     if (signerState && walletAddress) {
       let sellToken: string;
@@ -1909,7 +1909,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       // Get quote from 0x API
       let swapCallData;
       const sellAmount = ethers.utils
-        .parseUnits(tokenAmount, decimals)
+        .parseUnits(tokenAmount.toString(), decimals)
         .toString();
       if (tokenSymbol === 'FRAX') {
         swapCallData = '0x';
@@ -1920,6 +1920,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           data: { data: swapCallData },
         } = response);
       }
+      // gasless approve permittable tokens
       if (tokenSymbol === 'USDC' || tokenSymbol === 'UNI') {
         const permitDomain = {
           name: await tokenContract.name(),
@@ -1937,8 +1938,8 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         tx = await templeZaps.zapInWithPermit(
           tokenAddr,
           sellAmount,
-          minTempleReceived,
-          Math.floor(Date.now() / 1000) + 1200, // amm deadline of 20 minutes from now
+          minTempleReceived.toString(),
+          Math.floor(Date.now() / 1000) + 1200,
           ZEROEX_EXCHANGE_PROXY,
           swapCallData,
           deadline,
@@ -1957,13 +1958,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         // Do zap
         const overrides: { value?: BigNumber } = {};
         if (sellToken === 'ETH') {
-          overrides.value = ethers.utils.parseEther(tokenAmount);
+          overrides.value = ethers.utils.parseEther(tokenAmount.toString());
         }
         tx = await templeZaps.zapIn(
           tokenAddr,
           sellAmount,
-          minTempleReceived,
-          Math.floor(Date.now() / 1000) + 1200, // deadline of 20 minutes from now
+          minTempleReceived.toString(),
+          Math.floor(Date.now() / 1000) + 1200,
           ZEROEX_EXCHANGE_PROXY,
           swapCallData,
           overrides

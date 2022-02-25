@@ -52,8 +52,8 @@ export const Zap = () => {
       selectedToken.symbol,
       selectedToken.address,
       selectedToken.decimals,
-      tokenAmount.toString(),
-      toAtto(minTempleRecieved).toString()
+      tokenAmount,
+      toAtto(minTempleRecieved)
     );
     setZapping(false);
     await updateTokenBalance(selectedToken.address, selectedToken.decimals);
