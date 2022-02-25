@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
 import { Howl } from 'howler';
-import Foyer from 'components/Pages/Foyer';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+
+import { CustomRoutingPageProps, NexusView } from 'hooks/use-custom-spa-routing';
 import useUnmountableTrack from 'hooks/use-unmountable-track';
 import withWallet from 'hoc/withWallet';
+
 import templeGatesTrack from 'assets/sounds/temple-gates-bg-track.mp3';
 import gatesImage from 'assets/images/EnterTheGates.jpg';
 
@@ -14,7 +15,7 @@ const track = new Howl({
   volume: 0.15,
 });
 
-const TempleGatesPage: CustomRoutingPage = ({ routingHelper }) => {
+const TempleGatesPage = ({ routingHelper }: CustomRoutingPageProps) => {
   const { changePageTo } = routingHelper;
 
   useUnmountableTrack(track);
@@ -22,7 +23,7 @@ const TempleGatesPage: CustomRoutingPage = ({ routingHelper }) => {
   return (
     <TempleGatesContainer>
       <KeyForm onSubmit={(e) => e.preventDefault()}>
-        <EnterButton onClick={() => changePageTo(Foyer)}>ENTER</EnterButton>
+        <EnterButton onClick={() => changePageTo(NexusView.Foyer)}>ENTER</EnterButton>
       </KeyForm>
     </TempleGatesContainer>
   );
