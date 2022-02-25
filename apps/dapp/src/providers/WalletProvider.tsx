@@ -248,6 +248,8 @@ interface WalletState {
   getTempleFaithReward(faithAmount: BigNumber): Promise<BigNumber | void>;
 
   getFaithQuote(): Promise<FaithQuote | void>;
+
+  getExitQueueData(): Promise<ExitQueueData | void>;
 }
 
 const INITIAL_STATE: WalletState = {
@@ -325,6 +327,7 @@ const INITIAL_STATE: WalletState = {
   redeemFaith: asyncNoop,
   getTempleFaithReward: asyncNoop,
   getFaithQuote: asyncNoop,
+  getExitQueueData: asyncNoop,
 };
 
 const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
@@ -1877,6 +1880,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         getTempleFaithReward,
         getFaithQuote,
         faith,
+        getExitQueueData,
       }}
     >
       {children}
