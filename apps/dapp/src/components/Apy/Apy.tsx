@@ -1,6 +1,6 @@
 import React from 'react';
 import styled, { css } from 'styled-components';
-import Image from 'components/Image/Image';
+import BaseImage from 'components/Image/Image';
 
 interface ApyProps extends ApyStyledProps {
   cryptoName: string;
@@ -9,6 +9,7 @@ interface ApyProps extends ApyStyledProps {
     alt: string;
   };
   value: string;
+  alignCenter?: boolean;
 }
 
 /**
@@ -20,6 +21,7 @@ export const Apy = ({
   imageData,
   isWhite,
   isHome = false,
+  alignCenter = false,
 }: ApyProps) => {
   const { imageUrl, alt } = imageData;
 
@@ -28,15 +30,16 @@ export const Apy = ({
   };
 
   return (
-    <ApyStyled isHome={isHome}>
-      <i>
-        <Image
-          src={imageUrl}
-          alt={alt}
-          width={getImageSize()}
-          height={getImageSize()}
-        />
-      </i>
+    <ApyStyled
+      alignCenter={alignCenter}
+      isHome={isHome}
+    >
+      <Image
+        src={imageUrl}
+        alt={alt}
+        width={getImageSize()}
+        height={getImageSize()}
+      />
       <ApyValue>{value}</ApyValue>
       <ApyLabel isWhite={isWhite}>{cryptoName}</ApyLabel>
     </ApyStyled>
@@ -46,29 +49,21 @@ export const Apy = ({
 interface ApyStyledProps {
   isWhite?: boolean;
   isHome?: boolean;
+  alignCenter?: boolean;
 }
 
-export const ApyStyled = styled.div<ApyStyledProps>`
+const Image = styled(BaseImage)`
+  margin-bottom: 1.5rem;
+`;
+
+const ApyStyled = styled.div<ApyStyledProps>`
   display: flex;
   flex-direction: column;
   position: relative;
   padding-left: 32px;
   margin: 1.25rem 0 3rem 0;
 
-  & + & {
-    margin-left: 4rem;
-  }
-
-  i {
-    position: absolute;
-    top: 0;
-    left: 0;
-    margin: 0;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  ${({ alignCenter }) => alignCenter ? `align-items: center;` : ''}
 
   ${(props) =>
     props.isHome &&

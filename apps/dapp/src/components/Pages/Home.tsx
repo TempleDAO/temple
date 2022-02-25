@@ -1,10 +1,15 @@
 import React from 'react';
-import Image from 'components/Image/Image';
 import { Link } from 'react-router-dom';
+import { useMediaQuery } from 'react-responsive';
 import styled, { css } from 'styled-components';
-import { Button } from 'components/Button/Button';
+
+import { Button, ButtonProps } from 'components/Button/Button';
+import * as breakpoints from 'styles/breakpoints';
 import { Flex } from 'components/Layout/Flex';
 import Metrics from 'components/Metrics/Metrics';
+import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
+import { theme } from 'styles/theme';
+
 import circleBgImage from 'assets/images/circle-bg.svg';
 import earnTradingFeeImage from 'assets/images/earn-trading-fee.svg';
 import eyeImage from 'assets/images/eye.svg';
@@ -13,79 +18,61 @@ import planetsImage from 'assets/images/planets.svg';
 import receiveTokenImage from 'assets/images/receive-token.svg';
 import sunImage from 'assets/images/sun-art.svg';
 import sunsetImage from 'assets/images/sunset.svg';
-import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
+
+import { ResponsiveImage } from 'styles/common';
 
 const Home = () => {
   const treasuryMetrics = useRefreshableTreasuryMetrics();
+  const isAboveMobile = useMediaQuery({
+    query: `(min-width: ${theme.metrics.devices.tablet})`,
+  });
 
   return (
     <>
-      <Flex
-        layout={{
-          kind: 'container',
-          direction: 'row',
-        }}
-      >
-        <Flex
-          layout={{
-            kind: 'item',
-            direction: 'column',
-            justifyContent: 'center',
-            col: 'fullwidth',
-            colTablet: 'half',
-          }}
-        >
-          <h1>Earn Stable Gains</h1>
-          <h4>Sleep easy staking in the Temple</h4>
-          <br />
-          <br />
-          <Flex
-            layout={{
-              kind: 'container',
-            }}
-          >
+      <Row>
+        <RowCell>
+          <EarnStableGainsWrapper>
+            <EarnStableGainsHeader>Earn Stable Gains</EarnStableGainsHeader>
+            <SleepEasyStakingText>Sleep easy staking in the Temple</SleepEasyStakingText>
             <ButtonGroup>
-              <ButtonContainer>
-                <Link to={'/the-temple'}>
-                  <StyledButton
-                    label={`enter temple ${String.fromCharCode(10146)}`}
-                    isUppercase
-                    isSmall
-                  />
-                </Link>
-              </ButtonContainer>
+              {isAboveMobile && (
+                <ButtonContainer>
+                  <Link to={'/the-temple'}>
+                    <StyledButton
+                      label={`enter temple ${String.fromCharCode(10146)}`}
+                      isUppercase
+                      isSmall
+                    />
+                  </Link>
+                </ButtonContainer>
+              )}
               <ButtonContainer>
                 <Link to={'/dapp'}>
                   <StyledButton label={'buy now $'} isUppercase isSmall />
                 </Link>
               </ButtonContainer>
             </ButtonGroup>
-          </Flex>
-          <br />
-          <br />
-          <br />
-          {/*TODO: maybe render spinner while fetching metrics*/}
-          {treasuryMetrics ? (
-            <Metrics treasuryMetrics={treasuryMetrics} isHome />
-          ) : null}
-        </Flex>
-        <Flex
-          layout={{
-            kind: 'item',
-            justifyContent: 'center',
-            alignItems: 'center',
-            col: 'half',
-            hidden: true,
-            hiddenTablet: false,
-          }}
-        >
-          <TempleDaoSun>
-            <Image src={sunImage} alt={'Temple DAO'} />
-          </TempleDaoSun>
-          <Image src={gateImage} alt={'Temple DAO'} />
-        </Flex>
-      </Flex>
-
+            {/*TODO: maybe render spinner while fetching metrics*/}
+            {treasuryMetrics ? (
+              <MetricsWrapper>
+                <Metrics
+                  treasuryMetrics={treasuryMetrics}
+                  isHome
+                  alignCenter={!isAboveMobile}
+                />
+              </MetricsWrapper>
+              ) : null}
+          </EarnStableGainsWrapper>
+        </RowCell>
+        <RowCell>
+          <SunGateWrapper>
+            <TempleDaoSun>
+              <ResponsiveImage src={sunImage} alt={'Temple DAO'} />
+            </TempleDaoSun>
+            <ResponsiveImage src={gateImage} alt={'Temple DAO'} />
+          </SunGateWrapper>
+        </RowCell>
+      </Row>
       <section>
         <h2 className={'align-text-center'}>Temple Offerings</h2>
         <Flex
@@ -105,7 +92,7 @@ const Home = () => {
               alignItems: 'center',
             }}
           >
-            <Image
+            <ResponsiveImage
               src={receiveTokenImage}
               alt={'Receive Tokens'}
               height={275}
@@ -128,7 +115,7 @@ const Home = () => {
               alignItems: 'center',
             }}
           >
-            <Image
+            <ResponsiveImage
               src={earnTradingFeeImage}
               alt={'Earn Trading Fee'}
               height={275}
@@ -175,7 +162,7 @@ const Home = () => {
               .
             </p>
             <CircleBgWrapper>
-              <Image
+              <ResponsiveImage
                 src={circleBgImage}
                 alt={''}
                 aria-hidden={true}
@@ -190,7 +177,7 @@ const Home = () => {
               justifyContent: 'flex-end',
             }}
           >
-            <Image
+            <ResponsiveImage
               src={sunsetImage}
               alt={'Earn Trading Fee'}
               height={450}
@@ -209,7 +196,7 @@ const Home = () => {
               kind: 'item',
             }}
           >
-            <Image
+            <ResponsiveImage
               src={eyeImage}
               alt={'Earn Trading Fee'}
               height={450}
@@ -240,7 +227,7 @@ const Home = () => {
               and completing the !verify ritual. Good luck.{' '}
             </p>
             <CircleBgWrapper rightAlign>
-              <Image
+              <ResponsiveImage
                 src={circleBgImage}
                 alt={''}
                 aria-hidden={true}
@@ -273,7 +260,7 @@ const Home = () => {
               goes up.{' '}
             </p>
             <CircleBgWrapper>
-              <Image
+              <ResponsiveImage
                 src={circleBgImage}
                 alt={''}
                 aria-hidden={true}
@@ -288,7 +275,7 @@ const Home = () => {
               justifyContent: 'flex-end',
             }}
           >
-            <Image
+            <ResponsiveImage
               src={planetsImage}
               alt={'Earn Trading Fee'}
               height={450}
@@ -301,14 +288,125 @@ const Home = () => {
   );
 };
 
+// TODO(MrFujisawa):
+// Replace this and the row cell with grid framework once we have a replacement for
+//<Flex /> figured out.
+const Row = styled.section`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 1rem 0;
+
+  ${breakpoints.tabletAndAbove(`
+    flex-direction: row;
+  `)}
+`;
+
+const RowCell = styled.div`
+  position: relative;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+
+
+  ${breakpoints.tabletAndAbove(`
+    width: 50%;
+    align-items: flex-start;
+
+    &:nth-child(odd) {
+      padding-right: 1.5rem;
+    }
+
+    &:nth-child(even) {
+      padding-left: 1.5rem;
+    }
+  `)}
+`;
+
+const SunGateWrapper = styled.div`
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: fit-content;
+`;
+
+// Special case heading h2 for landing page.
+const EarnStableGainsHeader = styled.h2`
+  text-align: center;
+  font-size: 3rem;
+  line-height: 3.5rem;
+  margin: 0;
+
+  ${breakpoints.tabletAndAbove(`
+    text-align: left;
+    margin: 2em 0;
+  `)}
+`;
+
+const SleepEasyStakingText = styled.h4`
+  margin: 0 0 2em;
+
+  ${breakpoints.tabletAndAbove(`
+    margin: 0 0 2.75em;
+  `)}
+`;
+
+const EarnStableGainsWrapper = styled.div`
+  margin: 1rem 0 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+
+  ${breakpoints.tabletAndAbove(`
+    margin: 0;
+    text-align: initial;
+    margin-bottom: 3rem;
+  `)}
+`;
+
 const TempleDaoSun = styled.div`
-  position: absolute;
   z-index: ${(props) => props.theme.zIndexes.up};
-  transform: translateY(-48%);
+
+  position: absolute;
+  transform-origin: center center;
+  transform: translateY(44%);
+  translate-origin: center center;
+
+  width: 53%;
 
   img {
     animation: ${(props) => props.theme.animations.spin};
   }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  max-width: 24rem;
+  width: 100%;
+  margin: 0 auto 3rem;
+
+  ${breakpoints.tabletAndAbove(`
+    margin: 0 0 3.5rem;
+    justify-content: space-between;
+  `)}
+`;
+
+const MetricsWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  max-width: 26.5rem;
+  margin: 0 auto;
+
+  ${breakpoints.tabletAndAbove(`
+    justify-content: flex-start;
+    margin: 0;
+  `)}
 `;
 
 interface CircleBgWrapperProps {
@@ -327,19 +425,11 @@ const CircleBgWrapper = styled.div<CircleBgWrapperProps>`
     `}
 `;
 
-const ButtonGroup = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  width: 24.0625rem;
-`;
-
 const ButtonContainer = styled.div`
   width: 9.6875rem;
 `;
 
-const StyledButton = styled(Button)`
+const StyledButton = styled(Button)<ButtonProps>`
   width: 100%;
 `;
 

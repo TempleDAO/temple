@@ -149,7 +149,7 @@ const TempleCashbackPage = () => {
           />
         </ClaimContainer>
       ) : (
-        <WelcomeImage />
+        <WelcomeImage src={welcomeImage} />
       )}
       <Copy>
         Not all who attended the Opening Ceremony made it through unscathed.
@@ -381,25 +381,25 @@ const Copy = styled.p`
 `;
 
 const flicker = keyframes`
-    0% {
+  0% {
     opacity: 0.3;
-    }
+  }
 
-    33% {
+  33% {
     opacity: 0.6;
-    }
+  }
 
-    60% {
-    opacity: 0.4;
-    }
+  60% {
+   opacity: 0.4;
+  }
 
-    80% {
+  80% {
     opacity: 0.8;
-    }
+  }
 
-    100% {
-    opacity: 0.5;
-    }
+  100% {
+   opacity: 0.5;
+  }
 `;
 
 const ClaimContainer = styled.div`
@@ -413,11 +413,11 @@ const ClaimContainer = styled.div`
   animation: ${flicker} 4s infinite alternate ease-out;
 `;
 
-const WelcomeImage = styled.div`
+const WelcomeImage = styled.img`
   position: relative;
-  width: 470px;
-  height: 300px;
-  background: url(${welcomeImage}) center no-repeat;
+  width: 100%;
+  height: auto;
+  max-width: 470px;
   background-size: contain;
   margin-bottom: 50px;
 `;
