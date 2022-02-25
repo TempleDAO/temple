@@ -500,7 +500,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const isConnected = (): void => {
     // only trigger once window is loaded
     if (typeof window !== undefined) {
-      // @ts-ignore
       const ethereum = window.ethereum;
       if (ethereum) {
         const connected = ethereum.isConnected();
@@ -761,7 +760,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       setIsLoading(true);
     }
     if (typeof window !== undefined) {
-      // @ts-ignore
       const ethereum = window.ethereum;
       if (ethereum) {
         isConnected();
