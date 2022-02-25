@@ -1,12 +1,12 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Howl } from 'howler';
-import Altars, { AMMView } from 'components/Pages/AmmAltars';
+import { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/devotion_bg.jpg';
 import glow from 'assets/images/devotion_glow.png';
 import devotionAltarTrack from 'assets/sounds/devotion-altar-bg-track.mp3';
 import { getBgImgDimensions } from 'utils/imageSize';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import useCancellableTrack from 'hooks/use-cancellable-track';
 import { Background } from 'components/BackgroundItem/Background';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
@@ -26,7 +26,7 @@ const soundscape = new Howl({
   volume: 0.15,
 });
 
-const DevotionPage: CustomRoutingPage = ({ routingHelper }) => {
+const DevotionPage = ({ routingHelper }: CustomRoutingPageProps) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
@@ -67,10 +67,7 @@ const DevotionPage: CustomRoutingPage = ({ routingHelper }) => {
           src={glow}
           title="Buy the Dip"
           onClick={() =>
-            changePageTo((props) => (
-              //@ts-ignore
-              <Altars {...props} view={AMMView.DEVOTION} />
-            ))
+            changePageTo(AMMView.DEVOTION)
           }
           style={{
             transform: `scale(${0.99 * bgDimensions.scaleW}%)`,

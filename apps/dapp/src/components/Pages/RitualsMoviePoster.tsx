@@ -5,9 +5,9 @@ import { Flex } from 'components/Layout/Flex';
 import BackButton from 'components/Button/BackButton';
 import talismanImage from 'assets/images/comingsoon.png';
 import enclavesImage from 'assets/images/openingceremony.png';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 
-const RitualsMoviePoster: CustomRoutingPage = ({ routingHelper }) => {
+const RitualsMoviePoster = ({ routingHelper }: CustomRoutingPageProps) => {
   const { back } = routingHelper;
 
   return (

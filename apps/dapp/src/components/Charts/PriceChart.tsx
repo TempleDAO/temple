@@ -299,6 +299,8 @@ export const PriceChart = ({
   );
 };
 
+export default PriceChart;
+
 function useProtocolMetrics(timeInterval: TIME_INTERVAL) {
   const { hourlyPriceMetrics, dailyPriceMetrics } =
     useRefreshablePriceMetrics();
