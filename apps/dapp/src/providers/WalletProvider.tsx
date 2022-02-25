@@ -273,9 +273,13 @@ interface WalletState {
     decimals: number,
     tokenAmount: string,
     minTempleReceived: string
-  ): Promise<TransactionReceipt | void>;
+  ): Promise<void>;
 
   getWalletTokenBalances(): Promise<IZapperTokenData[] | void>;
+
+  getTokenBalance(tokenAddr: string, decimals: number): Promise<number | void>;
+
+  getZapQuote(tokenPrice: number, tokenAmount: number): Promise<number | void>;
 }
 
 const INITIAL_STATE: WalletState = {
@@ -369,11 +373,12 @@ const INITIAL_STATE: WalletState = {
   getExitQueueData: asyncNoop,
   zapIn: asyncNoop,
   getWalletTokenBalances: asyncNoop,
+  getTokenBalance: asyncNoop,
+  getZapQuote: asyncNoop,
 };
 
 // TODO: Make these constants or env vars
 const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
-const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
 
 const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
 const TEMPLE_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS;
@@ -1888,18 +1893,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   ) => {
     if (signerState && walletAddress) {
       let sellToken: string;
-
-      console.log('creating templeZaps factory..');
+      let tx: ContractTransaction;
       const templeZaps = new TempleZaps__factory(signerState).attach(
         ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS
       );
-
-      console.log(`creating fake ${tokenSymbol} contract..`);
       const tokenContract = new FakeERC20__factory(signerState).attach(
         tokenAddr
       );
-
-      let tx: ContractTransaction;
 
       if (tokenSymbol === 'ETH') {
         sellToken = 'ETH';
@@ -1907,41 +1907,27 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         sellToken = tokenAddr;
       }
 
-      console.log('getting quote from 0x api...');
       // Get quote from 0x API
-      let swapCallData, price, guaranteedPrice, gas, estimatedGas;
+      let swapCallData;
       const sellAmount = ethers.utils
         .parseUnits(tokenAmount, decimals)
         .toString();
-
       if (tokenSymbol === 'FRAX') {
-        guaranteedPrice = '0.99';
         swapCallData = '0x';
       } else {
-        const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS}`;
+        const url = `https://api.0x.org/swap/v1/quote?sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS}`;
         const response = await axios.get(url);
         ({
-          data: {
-            data: swapCallData,
-            price,
-            guaranteedPrice,
-            gas,
-            estimatedGas,
-          },
+          data: { data: swapCallData },
         } = response);
       }
-      console.log(`quoted price: ${guaranteedPrice}`);
-
       if (tokenSymbol === 'USDC' || tokenSymbol === 'UNI') {
-        console.log(`${tokenSymbol} is permittable, so let's sign it.`);
-
         const permitDomain = {
           name: await tokenContract.name(),
           version: tokenSymbol === 'USDC' ? '2' : '1',
-          chainId: 1337, // don't use (await ethers.provider.getNetwork()).chainId on forked mainnet
+          chainId: 1,
           verifyingContract: tokenAddr,
         };
-
         const { deadline, v, r, s } = await signERC2612Permit(
           signerState.provider,
           permitDomain,
@@ -1949,7 +1935,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           templeZaps.address,
           sellAmount
         );
-
         tx = await templeZaps.zapInWithPermit(
           tokenAddr,
           sellAmount,
@@ -1963,33 +1948,18 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           s
         );
       } else {
-        console.log(`approving ${tokenSymbol}...`);
         // approve token
         if (sellToken !== 'ETH') {
           await tokenContract.approve(
             ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS,
             ethers.utils.parseUnits('1000111', decimals)
           );
-
-          const allowance = await tokenContract.allowance(
-            walletAddress,
-            ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS
-          );
-          console.log(
-            `Allowance: ${ethers.utils.formatUnits(allowance, decimals)}`
-          );
         }
-
-        console.log(`${tokenSymbol} approved. Hooray!`);
-
         // Do zap
         const overrides: { value?: BigNumber } = {};
         if (sellToken === 'ETH') {
-          console.log(`It's eth. Need to set an override value.`);
           overrides.value = ethers.utils.parseEther(tokenAmount);
         }
-
-        console.log(`Zapping...`);
         tx = await templeZaps.zapIn(
           tokenAddr,
           sellAmount,
@@ -1999,18 +1969,13 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           swapCallData,
           overrides
         );
-        console.log(`tx ${tx.hash} sent. just waiting for receipt`);
       }
-
       const txReceipt = await tx.wait();
-
       if (txReceipt) {
-        console.log(`Zapped! Enjoy your TEMPLE`);
         openNotification({
           title: `Zapped ${tokenSymbol} for ${TEMPLE_TOKEN}`,
           hash: tx.hash,
         });
-        return txReceipt;
       } else {
         openNotification({
           title: `Failed to zap ${tokenSymbol} for ${TEMPLE_TOKEN}`,
@@ -2043,6 +2008,30 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       }
     }
     setTokensInWallet(tokenArr);
+  };
+
+  const getZapQuote = async (
+    tokenPrice: number,
+    tokenAmount: number
+  ): Promise<number | void> => {
+    await getTemplePrice();
+    return (tokenPrice * tokenAmount) / templePrice;
+  };
+
+  const getTokenBalance = async (tokenAddr: string, decimals: number) => {
+    if (signerState && walletAddress) {
+      if (tokenAddr === ethers.constants.AddressZero) {
+        const ethBalance = await signerState.getBalance();
+        return fromAtto(ethBalance);
+      }
+      const tokenContract = new FakeERC20__factory(signerState).attach(
+        tokenAddr
+      );
+      const balance = await tokenContract.balanceOf(walletAddress);
+      if (balance) {
+        return Number(ethers.utils.formatUnits(balance, decimals));
+      }
+    }
   };
 
   return (
@@ -2097,6 +2086,8 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         zapIn,
         getWalletTokenBalances,
         tokensInWallet,
+        getTokenBalance,
+        getZapQuote,
       }}
     >
       {children}

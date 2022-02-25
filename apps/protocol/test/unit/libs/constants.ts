@@ -13,6 +13,9 @@ const addresses = {
     STAKING: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
     AMM_ROUTER: '0x8A5058100E60e8F7C42305eb505B12785bbA3BcA'
   },
+  exchanges: {
+    ZEOREX_EXCHANGE_PROXY: '0xDef1C0ded9bec7F1a1670819833240f027b25EfF'
+  }
 };
 
 export default addresses;

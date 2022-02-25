@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { constants, ethers } from 'ethers';
 
 import {
   IZapperTokenData,
@@ -11,8 +9,6 @@ import {
 import { formatNumberWithCommas } from 'utils/formatter';
 import { toAtto } from 'utils/bigNumber';
 
-import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
-
 import { Button } from 'components/Button/Button';
 import { Input } from 'components/Input/Input';
 import { InputSelect } from 'components/InputSelect/InputSelect';
@@ -22,33 +18,36 @@ import {
   ConvoFlowTitle,
   Spacer,
   TitleWrapper,
+  TooltipPadding,
   ViewContainer,
 } from './helpers/components';
-import { copyBalance } from './helpers/methods';
+import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 
 export const Zap = () => {
   const {
-    templePrice,
+    signer,
+    wallet,
+    getZapQuote,
     balance,
     getBalance,
+    getTokenBalance,
     tokensInWallet,
     getWalletTokenBalances,
     zapIn,
   } = useWallet();
 
-  const [tokenAmount, setTokenAmount] = useState(0);
+  const [tokenAmount, setTokenAmount] = useState<number | ''>('');
   const [zapping, setZapping] = useState(false);
   const [slippage, setSlippage] = useState(5);
   const [templeQuote, setTempleQuote] = useState(0);
   const [selectedToken, setSelectedToken] = useState<IZapperTokenData>(
     tokensInWallet[0]
   );
+  const [tokenBalance, setTokenBalance] = useState(0);
 
   const handleClick = async (tokenAmount: number) => {
     setZapping(true);
-
     const minTempleRecieved = templeQuote * (1 - slippage / 100);
-
     await zapIn(
       selectedToken.symbol,
       selectedToken.address,
@@ -56,30 +55,56 @@ export const Zap = () => {
       tokenAmount.toString(),
       toAtto(minTempleRecieved).toString()
     );
-
     setZapping(false);
+    await updateTokenBalance(selectedToken.address, selectedToken.decimals);
   };
 
   const handleInput = async (value: string) => {
     if (value !== '') {
       setTokenAmount(Number(value));
-      setTempleQuote((selectedToken.price * parseFloat(value)) / templePrice);
+      const quote = await getZapQuote(selectedToken.price, Number(value));
+      if (quote) {
+        setTempleQuote(quote);
+      }
     } else {
       setTokenAmount(0);
       setTempleQuote(0);
     }
   };
 
+  const updateTokenBalance = async (tokenAddr: string, decimals: number) => {
+    if (signer && wallet) {
+      const balance = await getTokenBalance(tokenAddr, decimals);
+      if (balance) {
+        setTokenBalance(balance);
+      } else {
+        setTokenBalance(selectedToken.balance);
+      }
+    }
+  };
+
   useEffect(() => {
     getWalletTokenBalances();
     getBalance();
-    setSelectedToken(tokensInWallet[0]);
+    updateTokenBalance(selectedToken.address, selectedToken.decimals);
   }, [zapping]);
 
   return (
     <ViewContainer>
       <TitleWrapper>
         <ConvoFlowTitle>ZAP ASSETS TO {TEMPLE_TOKEN}</ConvoFlowTitle>
+        <TooltipPadding>
+          <Tooltip
+            content={
+              <small>
+                {`Get ${TEMPLE_TOKEN} in a single transaction with any ERC20 token.`}
+              </small>
+            }
+            position={'top'}
+          >
+            <TooltipIcon />
+          </Tooltip>
+        </TooltipPadding>
       </TitleWrapper>
 
       {tokensInWallet.length > 0 && (
@@ -95,6 +120,7 @@ export const Zap = () => {
               if (token.address === e.value) {
                 setSelectedToken(token);
                 setTokenAmount(0);
+                updateTokenBalance(token.address, token.decimals);
               }
             });
           }}
@@ -107,13 +133,12 @@ export const Zap = () => {
 
       <Input
         small
-        isNumber
         crypto={{ kind: 'value', value: `$${selectedToken.symbol}` }}
-        hint={`Balance: ${formatNumberWithCommas(selectedToken.balance)}`}
+        hint={`Balance: ${formatNumberWithCommas(tokenBalance)}`}
         onHintClick={() => {
-          setTokenAmount(selectedToken.balance);
-          console.log(selectedToken.balance);
+          handleInput(`${selectedToken.balance}`);
         }}
+        type={'number'}
         placeholder={'0.00'}
         value={tokenAmount}
         onChange={(e) => {
@@ -148,10 +173,11 @@ export const Zap = () => {
             ? 'ZAPPING'
             : `ZAP $${selectedToken.symbol} TO ${TEMPLE_TOKEN}`
         }
-        onClick={() => handleClick(tokenAmount)}
+        onClick={() => handleClick(Number(tokenAmount))}
         disabled={
           zapping ||
           tokenAmount === 0 ||
+          tokenAmount === '' ||
           tokenAmount > selectedToken.balance ||
           selectedToken.balance === 0
         }

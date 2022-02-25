@@ -291,17 +291,25 @@ async function main() {
   // await devotion.endDevotionRound();
   await faith.gain(account1.address, 25);
   await faith.gain(account2.address, 45);
-  
+
   // deploy templeZaps contract
   // requires mainnet addresses as it has to be tested on a fork
+  // if you want to test contract interactions you'll also have
+  // to use mainnet contract addresses in .env.local in dapp
   const templeZaps = await new TempleZaps__factory(owner).deploy(
     addresses.temple.TEMPLE,
     addresses.temple.AMM_ROUTER
   );
   // approve 0x proxy as a target
-  await templeZaps.setApprovedTargets(["0xDef1C0ded9bec7F1a1670819833240f027b25EfF"], [true]);
-
-
+  await templeZaps.setApprovedTargets(
+    [addresses.exchanges.ZEOREX_EXCHANGE_PROXY],
+    [true]
+  );
+  // allow gasless approve for USDC and UNI
+  await templeZaps.setPermittableTokens(
+    [addresses.tokens.USDC, addresses.tokens.UNI],
+    [true, true]
+  );
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
