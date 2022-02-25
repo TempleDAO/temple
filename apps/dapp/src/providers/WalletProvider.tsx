@@ -377,9 +377,6 @@ const INITIAL_STATE: WalletState = {
   getZapQuote: asyncNoop,
 };
 
-// TODO: Make these constants or env vars
-const ZEROEX_EXCHANGE_PROXY = '0xDef1C0ded9bec7F1a1670819833240f027b25EfF';
-
 const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
 const TEMPLE_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS;
 const LOCKED_OG_TEMPLE_ADDRESS = ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS;
@@ -403,6 +400,8 @@ const TEMPLE_TEAM_CONTINGENT_PAYMENTS_ADDRESS =
   ENV_VARS.VITE_PUBLIC_TEMPLE_R1_TEAM_CONTINGENT_PAYMENTS_ADDRESS;
 const TEMPLE_DEVOTION_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ADDRESS;
 const TEMPLE_FAITH_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_FAITH_ADDRESS;
+const PUBLIC_ZAPPER_API_KEY = ENV_VARS.VITE_PUBLIC_ZAPPER_API_KEY;
+const ZEROEX_EXCHANGE_PROXY = ENV_VARS.VITE_PUBLIC_ZEROEX_PROXY_ADDRESS;
 if (
   STABLE_COIN_ADDRESS === undefined ||
   TEMPLE_ADDRESS === undefined ||
@@ -1992,7 +1991,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     const tokenArr: IZapperTokenData[] = [];
 
     if (walletAddress && signerState) {
-      const PUBLIC_ZAPPER_API_KEY = '96e0cc51-a62e-42ca-acee-910ea7d2a241';
       const res = await axios.get(
         `https://api.zapper.fi/v1/protocols/tokens/balances?addresses[]=${walletAddress}&api_key=${PUBLIC_ZAPPER_API_KEY}`
       );
