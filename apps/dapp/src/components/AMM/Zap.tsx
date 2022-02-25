@@ -22,6 +22,7 @@ import {
   ViewContainer,
 } from './helpers/components';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
+import styled from 'styled-components';
 
 export const Zap = () => {
   const {
@@ -43,6 +44,7 @@ export const Zap = () => {
   const [selectedToken, setSelectedToken] = useState<IZapperTokenData>(
     tokensInWallet[0]
   );
+  const [userIsSelecting, setUserIsSelecting] = useState(false);
   const [tokenBalance, setTokenBalance] = useState(0);
 
   const handleClick = async (tokenAmount: number) => {
@@ -72,13 +74,17 @@ export const Zap = () => {
     }
   };
 
-  const updateTokenBalance = async (tokenAddr: string, decimals: number) => {
+  const updateTokenBalance = async (
+    tokenAddr: string,
+    decimals: number,
+    fallbackBalance?: number
+  ) => {
     if (signer && wallet) {
       const balance = await getTokenBalance(tokenAddr, decimals);
       if (balance) {
         setTokenBalance(balance);
       } else {
-        setTokenBalance(selectedToken.balance);
+        fallbackBalance && setTokenBalance(fallbackBalance);
       }
     }
   };
@@ -107,45 +113,53 @@ export const Zap = () => {
         </TooltipPadding>
       </TitleWrapper>
 
-      {tokensInWallet.length > 0 && (
-        <InputSelect
-          options={tokensInWallet.map((token) => {
-            return {
-              value: token.address,
-              label: `$${token.symbol}`,
-            };
-          })}
-          onChange={(e) => {
-            tokensInWallet.forEach((token) => {
-              if (token.address === e.value) {
-                setSelectedToken(token);
-                setTokenAmount(0);
-                updateTokenBalance(token.address, token.decimals);
-              }
-            });
-          }}
-          defaultValue={{
-            value: tokensInWallet[0].address,
-            label: tokensInWallet[0].symbol,
-          }}
-        />
-      )}
-
-      <Input
-        small
-        crypto={{ kind: 'value', value: `$${selectedToken.symbol}` }}
-        hint={`Balance: ${formatNumberWithCommas(tokenBalance)}`}
-        onHintClick={() => {
-          handleInput(`${selectedToken.balance}`);
-        }}
-        type={'number'}
-        placeholder={'0.00'}
-        value={tokenAmount}
-        onChange={(e) => {
-          handleInput(e.target.value);
-        }}
-        disabled={selectedToken.symbol === 'TOKEN'}
-      />
+      <InputWrapper>
+        <DropdownOpenButton label="" onClick={() => setUserIsSelecting(true)} />
+        {!userIsSelecting ? (
+          <Input
+            small
+            crypto={{ kind: 'value', value: `$${selectedToken.symbol}` }}
+            hint={`Balance: ${formatNumberWithCommas(tokenBalance)}`}
+            onHintClick={() => {
+              handleInput(`${tokenBalance}`);
+            }}
+            type={'number'}
+            placeholder={'0.00'}
+            value={tokenAmount}
+            onChange={(e) => {
+              handleInput(e.target.value);
+            }}
+            disabled={selectedToken.symbol === 'TOKEN'}
+          />
+        ) : (
+          <InputSelect
+            options={tokensInWallet.map((token) => {
+              return {
+                value: token.address,
+                label: `$${token.symbol}`,
+              };
+            })}
+            onChange={(e) => {
+              tokensInWallet.forEach((token) => {
+                if (token.address === e.value) {
+                  setSelectedToken(token);
+                  setTokenAmount(0);
+                  updateTokenBalance(
+                    token.address,
+                    token.decimals,
+                    token.balance
+                  );
+                  setUserIsSelecting(false);
+                }
+              });
+            }}
+            defaultValue={{
+              value: tokensInWallet[0].address,
+              label: tokensInWallet[0].symbol,
+            }}
+          />
+        )}
+      </InputWrapper>
 
       <Input
         small
@@ -185,3 +199,15 @@ export const Zap = () => {
     </ViewContainer>
   );
 };
+
+const DropdownOpenButton = styled(Button)`
+  position: absolute;
+  height: 2rem;
+  width: 7rem;
+  border: 0;
+  z-index: ${({ theme }) => theme.zIndexes.top};
+`;
+
+const InputWrapper = styled.div`
+  height: 4rem;
+`;
