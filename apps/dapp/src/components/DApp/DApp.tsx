@@ -1,3 +1,4 @@
+import React, { FC, useContext, useEffect, useRef, useState } from 'react';
 import { Buy } from 'components/AMM/Buy';
 import Devotion from 'components/AMM/Devotion';
 import { Queue } from 'components/AMM/Queue';
@@ -16,7 +17,6 @@ import {
 } from 'components/DApp/NavComponents';
 import { NavContext } from 'components/DApp/NavContext';
 import { DAppView } from 'enums/dapp-view';
-import React, { FC, useContext, useEffect, useRef, useState } from 'react';
 
 interface DAppProps {
   small?: boolean;
