@@ -12,7 +12,7 @@ import {
   TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH,
 } from 'enums/team-payment';
 import { signERC2612Permit } from 'eth-permit';
-import { BigNumber, ContractTransaction, ethers } from 'ethers';
+import { BigNumber, ContractTransaction, ethers, Signer } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
 import React, {
   createContext,
@@ -43,6 +43,8 @@ import {
   TempleUniswapV2Pair__factory,
   TempleZaps__factory,
   FakeERC20__factory,
+  FakeERC20,
+  TempleZaps,
 } from 'types/typechain';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
@@ -58,6 +60,10 @@ const ENV_VARS = import.meta.env;
 export const TEMPLE_TOKEN = '$TEMPLE';
 export const OG_TEMPLE_TOKEN = '$OGTEMPLE';
 export const FAITH_TOKEN = 'FAITH';
+const USDC = 'USDC';
+const UNI = 'UNI';
+const FRAX = 'FRAX';
+const ETH = 'ETH';
 
 // our default deadline is 20 minutes
 const DEADLINE = 20 * 60;
@@ -268,6 +274,8 @@ interface WalletState {
 
   getExitQueueData(): Promise<ExitQueueData | void>;
   zapIn(
+    signerState: Signer,
+    walletAddress: string,
     tokenSymbol: string,
     tokenAddr: string,
     decimals: number,
@@ -400,7 +408,8 @@ const TEMPLE_TEAM_CONTINGENT_PAYMENTS_ADDRESS =
   ENV_VARS.VITE_PUBLIC_TEMPLE_R1_TEAM_CONTINGENT_PAYMENTS_ADDRESS;
 const TEMPLE_DEVOTION_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ADDRESS;
 const TEMPLE_FAITH_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_FAITH_ADDRESS;
-const ZEROEX_EXCHANGE_PROXY = ENV_VARS.VITE_PUBLIC_ZEROEX_EXCHANGE_PROXY_ADDRESS;
+const ZEROEX_EXCHANGE_PROXY =
+  ENV_VARS.VITE_PUBLIC_ZEROEX_EXCHANGE_PROXY_ADDRESS;
 const PUBLIC_ZAPPER_API_KEY = ENV_VARS.VITE_PUBLIC_ZAPPER_API_KEY;
 if (
   STABLE_COIN_ADDRESS === undefined ||
@@ -1884,108 +1893,139 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   };
 
   const zapIn = async (
+    signerState: Signer,
+    walletAddress: string,
     tokenSymbol: string,
     tokenAddr: string,
     decimals: number,
     tokenAmount: number,
     minTempleReceived: BigNumber
   ) => {
-    if (signerState && walletAddress) {
-      let sellToken: string;
-      let tx: ContractTransaction;
-      const templeZaps = new TempleZaps__factory(signerState).attach(
-        ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS
-      );
-      const tokenContract = new FakeERC20__factory(signerState).attach(
-        tokenAddr
-      );
+    let sellToken: string;
+    let tx: ContractTransaction;
+    const templeZaps = new TempleZaps__factory(signerState).attach(
+      ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS
+    );
+    const tokenContract = new FakeERC20__factory(signerState).attach(tokenAddr);
 
-      if (tokenSymbol === 'ETH') {
-        sellToken = 'ETH';
-      } else {
-        sellToken = tokenAddr;
-      }
-
-      // Get quote from 0x API
-      let swapCallData;
-      const sellAmount = ethers.utils
-        .parseUnits(tokenAmount.toString(), decimals)
-        .toString();
-      if (tokenSymbol === 'FRAX') {
-        swapCallData = '0x';
-      } else {
-        const url = `https://api.0x.org/swap/v1/quote?sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS}`;
-        const response = await axios.get(url);
-        ({
-          data: { data: swapCallData },
-        } = response);
-      }
-      // gasless approve permittable tokens
-      if (tokenSymbol === 'USDC' || tokenSymbol === 'UNI') {
-        const permitDomain = {
-          name: await tokenContract.name(),
-          version: tokenSymbol === 'USDC' ? '2' : '1',
-          chainId: 1,
-          verifyingContract: tokenAddr,
-        };
-        const { deadline, v, r, s } = await signERC2612Permit(
-          signerState.provider,
-          permitDomain,
-          walletAddress,
-          templeZaps.address,
-          sellAmount
-        );
-        tx = await templeZaps.zapInWithPermit(
-          tokenAddr,
-          sellAmount,
-          minTempleReceived.toString(),
-          Math.floor(Date.now() / 1000) + 1200,
-          ZEROEX_EXCHANGE_PROXY,
-          swapCallData,
-          deadline,
-          v,
-          r,
-          s
-        );
-      } else {
-        // approve token
-        if (sellToken !== 'ETH') {
-          await tokenContract.approve(
-            ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS,
-            ethers.utils.parseUnits('1000111', decimals)
-          );
-        }
-        // Do zap
-        const overrides: { value?: BigNumber } = {};
-        if (sellToken === 'ETH') {
-          overrides.value = ethers.utils.parseEther(tokenAmount.toString());
-        }
-        tx = await templeZaps.zapIn(
-          tokenAddr,
-          sellAmount,
-          minTempleReceived.toString(),
-          Math.floor(Date.now() / 1000) + 1200,
-          ZEROEX_EXCHANGE_PROXY,
-          swapCallData,
-          overrides
-        );
-      }
-      const txReceipt = await tx.wait();
-      if (txReceipt) {
-        openNotification({
-          title: `Zapped ${tokenSymbol} for ${TEMPLE_TOKEN}`,
-          hash: tx.hash,
-        });
-      } else {
-        openNotification({
-          title: `Failed to zap ${tokenSymbol} for ${TEMPLE_TOKEN}`,
-          hash: tx.hash,
-        });
-        console.error('Error swapping tokens');
-      }
+    if (tokenSymbol === ETH) {
+      sellToken = ETH;
     } else {
-      console.error('Missing wallet address');
+      sellToken = tokenAddr;
     }
+
+    const sellAmount = ethers.utils
+      .parseUnits(tokenAmount.toString(), decimals)
+      .toString();
+
+    const swapCallData = await get0xApiSwapQuote(
+      sellToken,
+      tokenSymbol,
+      sellAmount
+    );
+
+    if (tokenSymbol === USDC || tokenSymbol === UNI) {
+      tx = await zapWithPermit(
+        signerState,
+        walletAddress,
+        templeZaps,
+        tokenContract,
+        tokenSymbol,
+        sellAmount,
+        minTempleReceived,
+        swapCallData
+      );
+    } else {
+      if (sellToken !== ETH) {
+        await tokenContract.approve(
+          ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS,
+          ethers.utils.parseUnits('1000111', decimals)
+        );
+      }
+      const overrides: { value?: BigNumber } = {};
+      if (sellToken === ETH) {
+        overrides.value = toAtto(tokenAmount);
+      }
+      tx = await templeZaps.zapIn(
+        tokenAddr,
+        sellAmount,
+        minTempleReceived.toString(),
+        Math.floor(Date.now() / 1000) + 1200,
+        ZEROEX_EXCHANGE_PROXY,
+        swapCallData,
+        overrides
+      );
+    }
+    const txReceipt = await tx.wait();
+    if (txReceipt) {
+      openNotification({
+        title: `Zapped ${tokenSymbol} for ${TEMPLE_TOKEN}`,
+        hash: tx.hash,
+      });
+    } else {
+      openNotification({
+        title: `Failed to zap ${tokenSymbol} for ${TEMPLE_TOKEN}`,
+        hash: tx.hash,
+      });
+      console.error('Error swapping tokens');
+    }
+  };
+
+  const get0xApiSwapQuote = async (
+    sellToken: string,
+    tokenSymbol: string,
+    sellAmount: string
+  ) => {
+    let swapCallData;
+
+    if (tokenSymbol === FRAX) {
+      swapCallData = '0x';
+    } else {
+      const url = `https://api.0x.org/swap/v1/quote?sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS}`;
+      const response = await axios.get(url);
+      ({
+        data: { data: swapCallData },
+      } = response);
+    }
+    return swapCallData;
+  };
+
+  const zapWithPermit = async (
+    signerState: Signer,
+    walletAddress: string,
+    zapsContract: TempleZaps,
+    tokenContract: FakeERC20,
+    tokenSymbol: string,
+    sellAmount: string,
+    minTempleReceived: BigNumber,
+    swapCallData: string
+  ) => {
+    const permitDomain = {
+      name: await tokenContract.name(),
+      version: tokenSymbol === USDC ? '2' : '1',
+      chainId: 1,
+      verifyingContract: tokenContract.address,
+    };
+    const { deadline, v, r, s } = await signERC2612Permit(
+      signerState.provider,
+      permitDomain,
+      walletAddress,
+      zapsContract.address,
+      sellAmount
+    );
+
+    return await zapsContract.zapInWithPermit(
+      tokenContract.address,
+      sellAmount,
+      minTempleReceived.toString(),
+      Math.floor(Date.now() / 1000) + 1200,
+      ZEROEX_EXCHANGE_PROXY,
+      swapCallData,
+      deadline,
+      v,
+      r,
+      s
+    );
   };
 
   const getWalletTokenBalances = async () => {

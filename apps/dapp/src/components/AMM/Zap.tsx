@@ -47,19 +47,23 @@ export const Zap = () => {
   const handleClick = async (tokenAmount: number) => {
     setZapping(true);
     const minTempleRecieved = templeQuote * (1 - slippage / 100);
-    await zapIn(
-      selectedToken.symbol,
-      selectedToken.address,
-      selectedToken.decimals,
-      tokenAmount,
-      toAtto(minTempleRecieved)
-    );
+    if (signer && wallet) {
+      await zapIn(
+        signer,
+        wallet,
+        selectedToken.symbol,
+        selectedToken.address,
+        selectedToken.decimals,
+        tokenAmount,
+        toAtto(minTempleRecieved)
+      );
+    }
     setZapping(false);
     await updateTokenBalance(selectedToken.address, selectedToken.decimals);
   };
 
   const handleInput = async (value: string) => {
-    if (value !== '') {
+    if (!!value) {
       setTokenAmount(Number(value));
       const quote = await getZapQuote(selectedToken.price, Number(value));
       if (quote) {
@@ -177,8 +181,7 @@ export const Zap = () => {
         onClick={() => handleClick(Number(tokenAmount))}
         disabled={
           zapping ||
-          tokenAmount === 0 ||
-          tokenAmount === '' ||
+          !tokenAmount ||
           tokenAmount > selectedToken.balance ||
           selectedToken.balance === 0
         }
