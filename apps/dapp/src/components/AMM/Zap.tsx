@@ -9,6 +9,9 @@ import {
 import { formatNumberWithCommas } from 'utils/formatter';
 import { toAtto } from 'utils/bigNumber';
 
+import useIsMounted from 'hooks/use-is-mounted';
+
+import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { Button } from 'components/Button/Button';
 import { Input } from 'components/Input/Input';
 import { InputSelect } from 'components/InputSelect/InputSelect';
@@ -21,7 +24,7 @@ import {
   TooltipPadding,
   ViewContainer,
 } from './helpers/components';
-import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
+
 export const Zap = () => {
   const {
     signer,
@@ -34,6 +37,8 @@ export const Zap = () => {
     getWalletTokenBalances,
     zapIn,
   } = useWallet();
+
+  const isMounted = useIsMounted();
 
   const [tokenAmount, setTokenAmount] = useState<number | ''>('');
   const [zapping, setZapping] = useState(false);
@@ -59,6 +64,11 @@ export const Zap = () => {
       );
     }
     setZapping(false);
+
+    if (!isMounted.current) {
+      return;
+    }
+
     await updateTokenBalance(selectedToken.address, selectedToken.decimals);
   };
 
@@ -66,6 +76,11 @@ export const Zap = () => {
     if (!!value) {
       setTokenAmount(Number(value));
       const quote = await getZapQuote(selectedToken.price, Number(value));
+
+      if (!isMounted.current) {
+        return;
+      }
+
       if (quote) {
         setTempleQuote(quote);
       }
@@ -82,6 +97,11 @@ export const Zap = () => {
   ) => {
     if (signer && wallet) {
       const balance = await getTokenBalance(tokenAddr, decimals);
+
+      if (!isMounted.current) {
+        return;
+      }
+
       if (balance) {
         setTokenBalance(balance);
       } else {
