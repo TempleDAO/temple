@@ -15,7 +15,6 @@ export function withWallet<T>(WrappedComponent: ComponentType<T>) {
       ENVIRONMENT == 'development' || network?.chainId == 1;
 
     return (
-      //@ts-ignore
       window.ethereum ? (
         <>
           {wallet && isValidNetwork() ? (
@@ -29,11 +28,8 @@ export function withWallet<T>(WrappedComponent: ComponentType<T>) {
                 <Button
                   label={'Change network'}
                   onClick={() => {
-                    // Ignore warning that window.ethereum may not exist
-                    // @ts-ignore
-                    const { ethereum } = window;
-                    if (ethereum) {
-                      ethereum.request({
+                    if (window.ethereum) {
+                      window.ethereum.request({
                         method: 'wallet_switchEthereumChain',
                         params: [{ chainId: '0x1' }],
                       });

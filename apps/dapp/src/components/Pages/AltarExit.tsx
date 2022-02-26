@@ -1,6 +1,6 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Howl } from 'howler';
-import Altars, { AMMView } from 'components/Pages/AmmAltars';
+import { AMMView } from 'components/Pages/AmmAltars';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/altar-exit.jpg';
 import glow1 from 'assets/images/1_glow.png';
@@ -9,7 +9,7 @@ import glow3 from 'assets/images/3_glow.png';
 import glow4 from 'assets/images/4_glow.png';
 import exitAltarTrack from 'assets/sounds/exit-altar-bg-track.mp3';
 import { getBgImgDimensions } from 'utils/imageSize';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 import { Background } from 'components/BackgroundItem/Background';
 import useCancellableTrack from 'hooks/use-cancellable-track';
@@ -29,7 +29,7 @@ const soundscape = new Howl({
   volume: 0.15,
 });
 
-const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
+const ExitPage = ({ routingHelper }: CustomRoutingPageProps) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
@@ -77,12 +77,7 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={glow1}
             title="Unlock"
-            onClick={() =>
-              changePageTo((props) => (
-                //@ts-ignore
-                <Altars {...props} view={AMMView.UNLOCK} />
-              ))
-            }
+            onClick={() => changePageTo(AMMView.UNLOCK)}
             style={{
               transform: `scale(${1 * bgDimensions.scaleW}%)`,
               bottom: `${-0.04 * bgDimensions.height}px`,
@@ -98,12 +93,7 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={glow2}
             title="Join Queue"
-            onClick={() =>
-              changePageTo((props) => (
-                //@ts-ignore
-                <Altars {...props} view={AMMView.JOIN_QUEUE} />
-              ))
-            }
+            onClick={() => changePageTo(AMMView.JOIN_QUEUE)}
             style={{
               transform: `scale(${1 * bgDimensions.scaleW}%)`,
               bottom: `${-0.035 * bgDimensions.height}px`,
@@ -119,12 +109,7 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={glow3}
             title="Withdraw"
-            onClick={() =>
-              changePageTo((props) => (
-                //@ts-ignore
-                <Altars {...props} view={AMMView.WITHDRAW} />
-              ))
-            }
+            onClick={() => changePageTo(AMMView.WITHDRAW_TEMPLE)}
             style={{
               transform: `scale(${1 * bgDimensions.scaleW}%)`,
               bottom: `${-0.036 * bgDimensions.height}px`,
@@ -140,12 +125,7 @@ const ExitPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={glow4}
             title="Sell"
-            onClick={() =>
-              changePageTo((props) => (
-                //@ts-ignore
-                <Altars {...props} view={AMMView.SELL} />
-              ))
-            }
+            onClick={() => changePageTo(AMMView.SELL)}
             style={{
               transform: `scale(${1 * bgDimensions.scaleW}%)`,
               bottom: `${-0.03 * bgDimensions.height}px`,
