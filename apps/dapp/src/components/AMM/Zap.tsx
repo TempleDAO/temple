@@ -63,11 +63,12 @@ export const Zap = () => {
         toAtto(minTempleRecieved)
       );
     }
-    setZapping(false);
 
     if (!isMounted.current) {
       return;
     }
+    
+    setZapping(false);
 
     await updateTokenBalance(selectedToken.address, selectedToken.decimals);
   };
