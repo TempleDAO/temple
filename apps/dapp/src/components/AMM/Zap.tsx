@@ -100,7 +100,12 @@ export const Zap = () => {
     fallbackBalance?: number
   ) => {
     if (signer && wallet) {
-      const balance = await getTokenBalance(tokenAddr, decimals);
+      const balance = await getTokenBalance(
+        signer,
+        wallet,
+        tokenAddr,
+        decimals
+      );
 
       if (!isMounted.current) {
         return;
@@ -115,7 +120,9 @@ export const Zap = () => {
   };
 
   useEffect(() => {
-    getWalletTokenBalances();
+    if (wallet) {
+      getWalletTokenBalances(wallet);
+    }
     getBalance();
     updateTokenBalance(selectedToken.address, selectedToken.decimals);
   }, [zapping]);

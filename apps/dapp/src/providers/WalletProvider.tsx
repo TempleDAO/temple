@@ -283,9 +283,16 @@ interface WalletState {
     minTempleReceived: BigNumber
   ): Promise<void>;
 
-  getWalletTokenBalances(): Promise<IZapperTokenData[] | void>;
+  getWalletTokenBalances(
+    walletAddress: string
+  ): Promise<IZapperTokenData[] | void>;
 
-  getTokenBalance(tokenAddr: string, decimals: number): Promise<number | void>;
+  getTokenBalance(
+    signerState: Signer,
+    walletAddress: string,
+    tokenAddr: string,
+    decimals: number
+  ): Promise<number | void>;
 
   getZapQuote(tokenPrice: number, tokenAmount: number): Promise<number | void>;
 }
@@ -2028,23 +2035,20 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     );
   };
 
-  const getWalletTokenBalances = async () => {
+  const getWalletTokenBalances = async (walletAddress: string) => {
     const tokenArr: IZapperTokenData[] = [];
-
-    if (walletAddress && signerState) {
-      const res = await axios.get(
-        `https://api.zapper.fi/v1/protocols/tokens/balances?addresses[]=${walletAddress}&api_key=${PUBLIC_ZAPPER_API_KEY}`
-      );
-      if (res) {
-        //@ts-ignore
-        const tokenResponse: IZapperTokenData[] = Object.values(res.data)[0]
-          .products[0].assets;
-        tokenResponse.forEach((token) => {
-          if (token.network === 'ethereum') {
-            tokenArr.push(token);
-          }
-        });
-      }
+    const res = await axios.get(
+      `https://api.zapper.fi/v1/protocols/tokens/balances?addresses[]=${walletAddress}&api_key=${PUBLIC_ZAPPER_API_KEY}`
+    );
+    if (res) {
+      //@ts-ignore
+      const tokenResponse: IZapperTokenData[] = Object.values(res.data)[0]
+        .products[0].assets;
+      tokenResponse.forEach((token) => {
+        if (token.network === 'ethereum') {
+          tokenArr.push(token);
+        }
+      });
     }
     setTokensInWallet(tokenArr);
   };
@@ -2057,19 +2061,20 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     return (tokenPrice * tokenAmount) / templePrice;
   };
 
-  const getTokenBalance = async (tokenAddr: string, decimals: number) => {
-    if (signerState && walletAddress) {
-      if (tokenAddr === ethers.constants.AddressZero) {
-        const ethBalance = await signerState.getBalance();
-        return fromAtto(ethBalance);
-      }
-      const tokenContract = new FakeERC20__factory(signerState).attach(
-        tokenAddr
-      );
-      const balance = await tokenContract.balanceOf(walletAddress);
-      if (balance) {
-        return Number(ethers.utils.formatUnits(balance, decimals));
-      }
+  const getTokenBalance = async (
+    signerState: Signer,
+    walletAddress: string,
+    tokenAddr: string,
+    decimals: number
+  ) => {
+    if (tokenAddr === ethers.constants.AddressZero) {
+      const ethBalance = await signerState.getBalance();
+      return fromAtto(ethBalance);
+    }
+    const tokenContract = new FakeERC20__factory(signerState).attach(tokenAddr);
+    const balance = await tokenContract.balanceOf(walletAddress);
+    if (balance) {
+      return Number(ethers.utils.formatUnits(balance, decimals));
     }
   };
 
