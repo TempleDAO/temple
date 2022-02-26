@@ -65,6 +65,10 @@ const UNI = 'UNI';
 const FRAX = 'FRAX';
 const ETH = 'ETH';
 
+const NETWORKS = {
+  ethereum: 'ethereum'
+}
+
 // our default deadline is 20 minutes
 const DEADLINE = 20 * 60;
 
@@ -2045,7 +2049,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const tokenResponse: IZapperTokenData[] = Object.values(res.data)[0]
         .products[0].assets;
       tokenResponse.forEach((token) => {
-        if (token.network === 'ethereum') {
+        if (token.network === NETWORKS.ethereum) {
           tokenArr.push(token);
         }
       });
