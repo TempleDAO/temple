@@ -122,13 +122,15 @@ export const Zap = () => {
           };
         })}
         onChange={(e) => {
-          tokensInWallet.forEach((token) => {
-            if (token.address === e.value) {
-              setSelectedToken(token);
-              setTokenAmount(0);
-              updateTokenBalance(token.address, token.decimals, token.balance);
-            }
-          });
+          const token = tokensInWallet.find(
+            ({ address }) => address === e.value
+          );
+          if (!token) {
+            return;
+          }
+          setSelectedToken(token);
+          setTokenAmount(0);
+          updateTokenBalance(token.address, token.decimals, token.balance);
         }}
         defaultValue={{
           value: tokensInWallet[0].address,
