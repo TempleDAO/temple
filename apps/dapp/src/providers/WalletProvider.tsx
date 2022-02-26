@@ -7,11 +7,9 @@ import {
 import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
 import { ClaimType } from 'enums/claim-type';
 import {
-  TEAM_PAYMENTS_CONTINGENT_ADDRESSES_BY_EPOCH,
   TEAM_PAYMENTS_EPOCHS,
   TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH,
-  TEAM_PAYMENTS_TYPES,
-} from 'enums/team-payment-type';
+} from 'enums/team-payment';
 import { BigNumber, ContractTransaction, ethers } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
 import React, {
@@ -43,7 +41,7 @@ import {
   TempleUniswapV2Pair__factory,
 } from 'types/typechain';
 import { fromAtto, toAtto } from 'utils/bigNumber';
-import { formatNumber, formatNumberNoDecimals } from 'utils/formatter';
+import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
 
 /**
@@ -238,7 +236,6 @@ interface WalletState {
   getBalance(): Promise<Balance | void>;
 
   collectTempleTeamPayment(
-    paymentType: TEAM_PAYMENTS_TYPES,
     epoch: TEAM_PAYMENTS_EPOCHS
   ): Promise<void | TransactionReceipt>;
 
@@ -251,6 +248,8 @@ interface WalletState {
   getTempleFaithReward(faithAmount: BigNumber): Promise<BigNumber | void>;
 
   getFaithQuote(): Promise<FaithQuote | void>;
+
+  getExitQueueData(): Promise<ExitQueueData | void>;
 }
 
 const INITIAL_STATE: WalletState = {
@@ -328,6 +327,7 @@ const INITIAL_STATE: WalletState = {
   redeemFaith: asyncNoop,
   getTempleFaithReward: asyncNoop,
   getFaithQuote: asyncNoop,
+  getExitQueueData: asyncNoop,
 };
 
 const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
@@ -503,7 +503,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const isConnected = (): void => {
     // only trigger once window is loaded
     if (typeof window !== undefined) {
-      // @ts-ignore
       const ethereum = window.ethereum;
       if (ethereum) {
         const connected = ethereum.isConnected();
@@ -747,7 +746,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         lifeTimeFaith: formatNumber(lifeTimeFaith),
         usableFaith: formatNumber(usableFaith),
         totalSupply: formatNumber(totalFaithSupply),
-        share: formatNumber((usableFaith * 100) / totalFaithSupply),
+        share: formatNumberFixedDecimals(
+          (usableFaith * 100) / totalFaithSupply,
+          4
+        ),
       });
     }
   };
@@ -761,7 +763,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       setIsLoading(true);
     }
     if (typeof window !== undefined) {
-      // @ts-ignore
       const ethereum = window.ethereum;
       if (ethereum) {
         isConnected();
@@ -828,7 +829,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         templeLockedPromises.push(ogLockedTemple.locked(walletAddress, i));
       }
 
-      const now = formatNumberNoDecimals(Date.now() / 1000);
+      const now = formatNumberFixedDecimals(Date.now() / 1000, 0);
       const templeLocked = await Promise.all(templeLockedPromises);
       templeLocked.map((x) => {
         ogTempleLocked += fromAtto(x.BalanceOGTemple);
@@ -1500,7 +1501,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         ? amountInFrax
         : balance;
 
-      const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
+      const deadline = formatNumberFixedDecimals(
+        Date.now() / 1000 + DEADLINE,
+        0
+      );
 
       const buyTXN = await AMM_ROUTER.swapExactFraxForTemple(
         verifiedAmountInFrax,
@@ -1550,7 +1554,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         ? amountInTemple
         : balance;
 
-      const deadline = formatNumberNoDecimals(Date.now() / 1000 + DEADLINE);
+      const deadline = formatNumberFixedDecimals(
+        Date.now() / 1000 + DEADLINE,
+        0
+      );
 
       const sellTXN = await AMM_ROUTER.swapExactTempleForFrax(
         verifiedAmountInTemple,
@@ -1713,23 +1720,14 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const collectTempleTeamPayment = async (
-    paymentType: TEAM_PAYMENTS_TYPES,
-    epoch: TEAM_PAYMENTS_EPOCHS
-  ) => {
+  const collectTempleTeamPayment = async (epoch: TEAM_PAYMENTS_EPOCHS) => {
     if (walletAddress && signerState) {
       const fixedTeamPaymentAddress =
         TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[epoch];
-      const contingentTeamPaymentAddress =
-        TEAM_PAYMENTS_CONTINGENT_ADDRESSES_BY_EPOCH[epoch];
 
       const teamPaymentContract = new TempleTeamPayments__factory(
         signerState
-      ).attach(
-        paymentType === TEAM_PAYMENTS_TYPES.FIXED
-          ? fixedTeamPaymentAddress
-          : contingentTeamPaymentAddress
-      );
+      ).attach(fixedTeamPaymentAddress);
 
       const collectTxn = await teamPaymentContract.claim();
 
@@ -1880,6 +1878,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         getTempleFaithReward,
         getFaithQuote,
         faith,
+        getExitQueueData,
       }}
     >
       {children}

@@ -141,8 +141,7 @@ export class MetricsService {
 
     this.provider =
       ENV === 'development'
-        ? //@ts-ignore
-          new ethers.providers.Web3Provider(window.ethereum)
+        ? new ethers.providers.Web3Provider(window.ethereum)
         : new ethers.providers.AlchemyProvider(
             ALCHEMY_PROVIDER_NETWORK,
             ALCHEMY_API_KEY

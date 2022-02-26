@@ -7,7 +7,6 @@ export default function useRefreshableTreasuryMetrics() {
     useState<TreasuryMetrics | null>(null);
 
   async function refreshMetrics() {
-    //@ts-ignore
     if (window.ethereum) {
       const metricsService = new MetricsService();
 
