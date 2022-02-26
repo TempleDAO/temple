@@ -51,7 +51,14 @@ export const Zap = () => {
 
   const handleClick = async (tokenAmount: number) => {
     setZapping(true);
+    // quoted temple * slippage as a percentage
+    // e.g. for 5% slippage, 100 TEMPLE * 0.95 = 95 min recieved
     const minTempleRecieved = templeQuote * (1 - slippage / 100);
+    console.log(minTempleRecieved)
+    console.log(templeQuote)
+    console.log(slippage)
+    console.log(1 - slippage)
+    console.log(1 - slippage / 100)
     if (signer && wallet) {
       await zapIn(
         signer,
@@ -67,7 +74,7 @@ export const Zap = () => {
     if (!isMounted.current) {
       return;
     }
-    
+
     setZapping(false);
 
     await updateTokenBalance(selectedToken.address, selectedToken.decimals);
