@@ -7,5 +7,5 @@ export enum DAppView {
   DEVOTION = 'Devotion',
   UNLOCK = 'Unlock',
   PROFILE = 'Profile',
-  ZAP = "Zap"
+  ZAP = 'Zap',
 }
