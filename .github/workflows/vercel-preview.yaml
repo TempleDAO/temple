@@ -39,7 +39,7 @@ jobs:
         uses: rjstone/discord-webhook-notify@v1
         with:
           severity: info
-          description: Deploy to Vercel succeeded!
+          description: (Dapp) PREVIEW Deploy to Vercel succeeded!
           details: "[View Preview](${{ steps.deploy_step.outputs['preview-url'] }}) | [PR Details](${{ github.event.pull_request._links.html.href }})"
           footer: PR ${{ github.event.number }}
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
