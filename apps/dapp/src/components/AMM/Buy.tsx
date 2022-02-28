@@ -12,8 +12,8 @@ import {
 import { copyBalance } from 'components/AMM/helpers/methods';
 import Slippage from 'components/Slippage/Slippage';
 import { Button } from 'components/Button/Button';
-import { STABLE_COIN_SYMBOL } from 'enums/symbols';
-import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
+import { STABLE_COIN_SYMBOL, TEMPLE_TOKEN_SYMBOL } from 'enums/symbols';
+import { useWallet } from 'providers/WalletProvider';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
 
@@ -117,7 +117,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       <Input
         small={small}
         hint={`Balance: ${formatNumber(templeWalletAmount)}`}
-        crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
+        crypto={{ kind: 'value', value: TEMPLE_TOKEN_SYMBOL }}
         type={'number'}
         value={formatNumber(rewards as number)}
         placeholder={'0.00'}
@@ -126,7 +126,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         pairBottom
       />
       <Slippage
-        label={`${TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
+        label={`${TEMPLE_TOKEN_SYMBOL}: (${formatNumber(templePrice)})`}
         value={slippage}
         onChange={
           ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true'

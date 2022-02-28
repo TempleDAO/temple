@@ -7,8 +7,9 @@ import { DataCard } from 'components/DataCard/DataCard';
 import PercentageBar from 'components/PercentageBar/PercentageBar';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import dateFormat from 'dateformat';
-import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
+import { useWallet } from 'providers/WalletProvider';
 import { formatNumber } from 'utils/formatter';
+import { TEMPLE_TOKEN_SYMBOL } from 'enums/symbols';
 import {
   ConvoFlowTitle,
   Spacer,
@@ -16,7 +17,6 @@ import {
   TooltipPadding,
   ViewContainer,
 } from 'components/AMM/helpers/components';
-
 
 interface SizeProps {
   small?: boolean;
@@ -44,7 +44,8 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
     <ViewContainer>
       <TitleWrapper>
         <ConvoFlowTitle>
-          YOU HAVE {exitQueueData.totalTempleOwned} {TEMPLE_TOKEN} IN QUEUE
+          YOU HAVE {exitQueueData.totalTempleOwned} {TEMPLE_TOKEN_SYMBOL} IN
+          QUEUE
         </ConvoFlowTitle>
         <TooltipPadding>
           <Tooltip
@@ -107,23 +108,23 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
       </Flex>
       <Spacer small />
       <ButtonContainer layout={{ kind: 'container' }}>
-          <Button
-            isSmall={small}
-            label={'restake pending $TEMPLE'}
-            onClick={restakeAvailableTemple}
-            isUppercase
-            disabled={
-              exitQueueData.totalTempleOwned === 0 &&
-              exitQueueData.claimableTemple === 0
-            }
-          />
-          <Button
-            isSmall={small}
-            label={'withdraw available $TEMPLE'}
-            onClick={claimAvailableTemple}
-            isUppercase
-            disabled={exitQueueData.claimableTemple == 0}
-          />
+        <Button
+          isSmall={small}
+          label={'restake pending $TEMPLE'}
+          onClick={restakeAvailableTemple}
+          isUppercase
+          disabled={
+            exitQueueData.totalTempleOwned === 0 &&
+            exitQueueData.claimableTemple === 0
+          }
+        />
+        <Button
+          isSmall={small}
+          label={'withdraw available $TEMPLE'}
+          onClick={claimAvailableTemple}
+          isUppercase
+          disabled={exitQueueData.claimableTemple == 0}
+        />
       </ButtonContainer>
     </ViewContainer>
   );

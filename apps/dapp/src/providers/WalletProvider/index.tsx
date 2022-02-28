@@ -17,6 +17,11 @@ import {
   TEAM_PAYMENTS_EPOCHS,
   TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH,
 } from 'enums/team-payment';
+import {
+  OG_TEMPLE_TOKEN_SYMBOL,
+  TEMPLE_TOKEN_SYMBOL,
+  FAITH_SYMBOL,
+} from 'enums/symbols';
 import { BigNumber, ethers } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
 import {
@@ -90,9 +95,6 @@ import {
 } from './env';
 
 /* TODO: Move this to a common place */
-export const TEMPLE_TOKEN = '$TEMPLE';
-export const OG_TEMPLE_TOKEN = '$OGTEMPLE';
-export const FAITH_TOKEN = 'FAITH';
 
 // our default deadline is 20 minutes
 const DEADLINE = 20 * 60;
@@ -123,7 +125,6 @@ const INITIAL_STATE: WalletState = {
     : 0.9,
   isConnected: false,
   wallet: null,
-  lockInPeriod: 0,
   currentEpoch: -1,
   templePrice: 0,
   isLoading: true,
@@ -158,6 +159,7 @@ const INITIAL_STATE: WalletState = {
   redeemFaith: asyncNoop,
   getTempleFaithReward: asyncNoop,
   getFaithQuote: asyncNoop,
+  ensureAllowance: asyncNoop,
 };
 
 const WalletContext = createContext<WalletState>(INITIAL_STATE);
@@ -174,9 +176,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   );
   const [exchangeRateState, setExchangeRateState] = useState<number>(
     INITIAL_STATE.exchangeRate
-  );
-  const [lockInPeriod, setLockInPeriod] = useState<number>(
-    INITIAL_STATE.lockInPeriod
   );
   const [currentEpoch, setCurrentEpoch] = useState<number>(
     INITIAL_STATE.currentEpoch
@@ -476,25 +475,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const verifyAMMWhitelist = async (
-    signature: string
-  ): Promise<ethers.ContractTransaction | void> => {
-    if (walletAddress && signerState) {
-      const AMMWhitelist = new AMMWhitelist__factory(signerState).attach(
-        AMM_WHITELIST_ADDRESS
-      );
-
-      try {
-        const sig = await ethers.utils.splitSignature(signature.trim());
-        return await AMMWhitelist.verify(sig.v, sig.r, sig.s);
-      } catch (e) {
-        console.error(e);
-      }
-    } else {
-      console.error('Missing wallet address');
-    }
-  };
-
   const claimOgTemple = async (lockedEntryIndex: number) => {
     if (walletAddress && signerState) {
       const lockedOGTempleContract = new LockedOGTempleDeprecated__factory(
@@ -511,7 +491,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       await withdrawTXN.wait();
 
       openNotification({
-        title: `${OG_TEMPLE_TOKEN} claimed`,
+        title: `${OG_TEMPLE_TOKEN_SYMBOL} claimed`,
         hash: withdrawTXN.hash,
       });
     }
@@ -557,7 +537,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await withdrawTXN.wait();
         // Show feedback to user
         openNotification({
-          title: `${TEMPLE_TOKEN} claimed`,
+          title: `${TEMPLE_TOKEN_SYMBOL} claimed`,
           hash: withdrawTXN.hash,
         });
       }
@@ -620,7 +600,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await restakeTXN.wait();
         // Show feedback to user
         openNotification({
-          title: `${TEMPLE_TOKEN} restaked`,
+          title: `${TEMPLE_TOKEN_SYMBOL} restaked`,
           hash: restakeTXN.hash,
         });
       }
@@ -693,7 +673,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       await ensureAllowance(
-        TEMPLE_TOKEN,
+        TEMPLE_TOKEN_SYMBOL,
         TEMPLE,
         TEMPLE_V2_ROUTER_ADDRESS,
         amountInTemple
@@ -722,7 +702,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       // Show feedback to user
       openNotification({
-        title: `${TEMPLE_TOKEN} renounced`,
+        title: `${TEMPLE_TOKEN_SYMBOL} renounced`,
         hash: sellTXN.hash,
       });
     }
@@ -769,7 +749,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       await ensureAllowance(
-        TEMPLE_TOKEN,
+        TEMPLE_TOKEN_SYMBOL,
         TEMPLE,
         TEMPLE_STAKING_ADDRESS,
         amountToStake
@@ -787,7 +767,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       // Show feedback to user
       openNotification({
-        title: `${TEMPLE_TOKEN} staked`,
+        title: `${TEMPLE_TOKEN_SYMBOL} staked`,
         hash: stakeTXN.hash,
       });
     }
@@ -850,7 +830,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const txnReceipt = await collectTxn.wait();
 
       openNotification({
-        title: `${TEMPLE_TOKEN} claimed`,
+        title: `${TEMPLE_TOKEN_SYMBOL} claimed`,
         hash: collectTxn.hash,
       });
 
@@ -876,7 +856,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       const walletOGTEMPLE = await OG_TEMPLE.balanceOf(walletAddress);
       await ensureAllowance(
-        OG_TEMPLE_TOKEN,
+        OG_TEMPLE_TOKEN_SYMBOL,
         OG_TEMPLE,
         LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
         walletOGTEMPLE
@@ -891,7 +871,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       await faithVerificationTXN.wait();
 
       openNotification({
-        title: `${FAITH_TOKEN} verified`,
+        title: `${FAITH_SYMBOL} verified`,
         hash: faithVerificationTXN.hash,
       });
     } else {
@@ -909,7 +889,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       await faithClaimTXN.wait();
 
       openNotification({
-        title: `${FAITH_TOKEN} redeemed`,
+        title: `${FAITH_SYMBOL} redeemed`,
         hash: faithClaimTXN.hash,
       });
     } else {
@@ -952,7 +932,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         exchangeRate: exchangeRateState,
         isConnected: isConnectedState,
         wallet: walletAddress,
-        lockInPeriod,
         currentEpoch,
         isLoading,
         templePrice,
@@ -962,8 +941,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         changeWalletAddress,
         updateWallet,
         stake,
-        increaseAllowanceForRitual,
-        verifyAMMWhitelist,
+        ensureAllowance,
         claim,
         claimFaithAirdrop,
         signer: signerState,

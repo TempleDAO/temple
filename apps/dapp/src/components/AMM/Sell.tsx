@@ -12,8 +12,8 @@ import {
 import { copyBalance } from 'components/AMM/helpers/methods';
 import Slippage from 'components/Slippage/Slippage';
 import { Button } from 'components/Button/Button';
-import { STABLE_COIN_SYMBOL } from 'enums/symbols';
-import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
+import { STABLE_COIN_SYMBOL, TEMPLE_TOKEN_SYMBOL } from 'enums/symbols';
+import { useWallet } from 'providers/WalletProvider';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
 
@@ -100,7 +100,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         onHintClick={() =>
           copyBalance(templeWalletAmount, handleUpdateTempleAmount)
         }
-        crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
+        crypto={{ kind: 'value', value: TEMPLE_TOKEN_SYMBOL }}
         max={templeWalletAmount}
         min={0}
         value={templeAmount}
@@ -125,7 +125,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         pairBottom
       />
       <Slippage
-        label={`${TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
+        label={`${TEMPLE_TOKEN_SYMBOL}: (${formatNumber(templePrice)})`}
         value={slippage}
         onChange={
           ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true'
@@ -142,7 +142,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
             : `${
                 small
                   ? 'EXCHANGE $TEMPLE FOR $FRAX'
-                  : `RENOUNCE YOUR ${TEMPLE_TOKEN}`
+                  : `RENOUNCE YOUR ${TEMPLE_TOKEN_SYMBOL}`
               }`
         }
         isUppercase

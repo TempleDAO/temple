@@ -5,11 +5,9 @@ import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
-import {
-  OG_TEMPLE_TOKEN,
-  useWallet,
-} from 'providers/WalletProvider';
+import { useWallet } from 'providers/WalletProvider';
 import { RitualKind, JoinQueueData } from 'providers/WalletProvider/types';
+import { OG_TEMPLE_TOKEN_SYMBOL } from 'enums/symbols';
 import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import {
@@ -21,7 +19,6 @@ import {
 } from 'components/AMM/helpers/components';
 import { copyBalance } from 'components/AMM/helpers/methods';
 
-
 interface QueueProps {
   small?: boolean;
 }
@@ -31,7 +28,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
     balance,
     getBalance,
     updateWallet,
-    increaseAllowanceForRitual,
+    ensureAllowance,
     getJoinQueueData,
     getRewardsForOGT,
   } = useWallet();
@@ -71,6 +68,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
   const handleUnlockOGT = async () => {
     try {
       if (OGTAmount) {
+        await ensureAllowance();
+
         await increaseAllowanceForRitual(
           toAtto(OGTAmount),
           RitualKind.OGT_UNLOCK,
@@ -103,7 +102,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
     <ViewContainer>
       <TitleWrapper>
         <ConvoFlowTitle>
-          SELECT {OG_TEMPLE_TOKEN} TO UNSTAKE VIA QUEUE
+          SELECT {OG_TEMPLE_TOKEN_SYMBOL} TO UNSTAKE VIA QUEUE
         </ConvoFlowTitle>
         <TooltipPadding>
           <Tooltip
@@ -142,8 +141,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
         placeholder={'0.00'}
       />
 
-      <Flex layout={{kind: 'container', direction:'row'}}>
-        <Flex layout={{kind:'item', smallMargin:true}}>
+      <Flex layout={{ kind: 'container', direction: 'row' }}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             small={small}
             title={'TEMPLE + REWARDS'}
@@ -153,7 +152,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
             }
           />
         </Flex>
-        <Flex layout={{kind:'item', smallMargin:true}}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             small={small}
             title={'QUEUE LENGTH'}
@@ -163,7 +162,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
             }
           />
         </Flex>
-        <Flex layout={{kind:'item', smallMargin:true}}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             small={small}
             title={'PROCESS TIME'}

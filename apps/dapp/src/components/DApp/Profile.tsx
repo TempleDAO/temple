@@ -5,12 +5,12 @@ import { DataCard } from 'components/DataCard/DataCard';
 import { formatNumberWithCommas } from 'utils/formatter';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
 import { Flex } from 'components/Layout/Flex';
+import { FAITH_SYMBOL, useWallet } from 'providers/WalletProvider';
 import {
-  TEMPLE_TOKEN,
-  OG_TEMPLE_TOKEN,
-  FAITH_TOKEN,
-  useWallet,
-} from 'providers/WalletProvider';
+  OG_TEMPLE_TOKEN_SYMBOL,
+  TEMPLE_TOKEN_SYMBOL,
+  FAITH_SYMBOL,
+} from 'enums/symbols';
 
 export const Profile: FC = () => {
   const accountMetrics = useRefreshableAccountMetrics();
@@ -21,7 +21,7 @@ export const Profile: FC = () => {
       layout={{
         kind: 'container',
         direction: 'column',
-        justifyContent: 'center'
+        justifyContent: 'center',
       }}
     >
       <Flex
@@ -37,7 +37,7 @@ export const Profile: FC = () => {
             )})`}
             data={`${formatNumberWithCommas(
               accountMetrics?.netWorthTemple || 0
-            )} ${TEMPLE_TOKEN}`}
+            )} ${TEMPLE_TOKEN_SYMBOL}`}
             small
           />
         </Flex>
@@ -55,7 +55,7 @@ export const Profile: FC = () => {
             )})`}
             data={`${formatNumberWithCommas(
               accountMetrics?.templeBalance || 0
-            )} ${TEMPLE_TOKEN}`}
+            )} ${TEMPLE_TOKEN_SYMBOL}`}
             small
           />
         </Flex>
@@ -66,7 +66,7 @@ export const Profile: FC = () => {
             )})`}
             data={`${formatNumberWithCommas(
               accountMetrics?.exitQueueTotal || 0
-            )} ${TEMPLE_TOKEN}`}
+            )} ${TEMPLE_TOKEN_SYMBOL}`}
             small
           />
         </Flex>
@@ -84,7 +84,7 @@ export const Profile: FC = () => {
             )})`}
             data={`${formatNumberWithCommas(
               accountMetrics?.ogTempleWallet || 0
-            )} ${OG_TEMPLE_TOKEN}`}
+            )} ${OG_TEMPLE_TOKEN_SYMBOL}`}
             small
           />
         </Flex>
@@ -95,7 +95,7 @@ export const Profile: FC = () => {
             )})`}
             data={`${formatNumberWithCommas(
               accountMetrics?.lockedOGTemple || 0
-            )} ${OG_TEMPLE_TOKEN}`}
+            )} ${OG_TEMPLE_TOKEN_SYMBOL}`}
             small
           />
         </Flex>
@@ -109,14 +109,14 @@ export const Profile: FC = () => {
         <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             title={`USABLE FAITH`}
-            data={`${faith.usableFaith} ${FAITH_TOKEN}`}
+            data={`${faith.usableFaith} ${FAITH_SYMBOL}`}
             small
           />
         </Flex>
         <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             title={`LIFETIME FAITH`}
-            data={`${faith.lifeTimeFaith}  ${FAITH_TOKEN}`}
+            data={`${faith.lifeTimeFaith}  ${FAITH_SYMBOL}`}
             small
           />
         </Flex>

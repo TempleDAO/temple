@@ -1,5 +1,6 @@
 import { JsonRpcSigner, Network } from '@ethersproject/providers';
-import { BigNumber, ContractTransaction } from 'ethers';
+import { BigNumber } from 'ethers';
+import { ERC20 } from 'types/typechain';
 import { ClaimType } from 'enums/claim-type';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
@@ -75,7 +76,6 @@ export interface WalletState {
   faith: FaithBalance;
   templePrice: number;
   exchangeRate: number;
-  lockInPeriod: number;
   currentEpoch: number;
   isLoading: boolean;
   signer: JsonRpcSigner | null;
@@ -133,4 +133,11 @@ export interface WalletState {
   getTempleFaithReward(faithAmount: BigNumber): Promise<BigNumber | void>;
 
   getFaithQuote(): Promise<FaithQuote | void>;
+
+  ensureAllowance(
+    tokenName: string,
+    token: ERC20,
+    spender: string,
+    minAllowance: BigNumber
+  ): Promise<void>;
 }
