@@ -33,7 +33,7 @@ import {
   ACCELERATED_EXIT_QUEUE_ADDRESS,
 } from './env';
 
-import { OpeningCeremonyUser, LockedEntry } from './types';
+import { LockedEntry } from './types';
 
 import { NoWalletAddressError } from './errors';
 import { Nullable } from 'types/util';
@@ -173,36 +173,6 @@ export const getFaith = async (
     usableFaith: usableFaith,
     totalSupply: totalFaithSupply,
     share: formatNumber((usableFaith * 100) / totalFaithSupply),
-  };
-};
-
-export const getAllocation = async (
-  walletAddress: string,
-  signerState: JsonRpcSigner,
-  ocTemplar: OpeningCeremonyUser
-) => {
-  if (!walletAddress) {
-    throw new NoWalletAddressError();
-  }
-
-  const openingCeremony = new OpeningCeremony__factory(signerState).attach(
-    OPENING_CEREMONY_ADDRESS
-  );
-
-  const allocation: number = ocTemplar.isVerified
-    ? fromAtto(
-        await openingCeremony.maxSacrificableStablec(
-          ocTemplar.doublingIndexAtVerification
-        )
-      )
-    : ocTemplar.isGuest
-    ? 10000
-    : 0;
-
-  return {
-    amount: allocation - ocTemplar.totalSacrificedStablec,
-    //they can start right away once verified
-    startEpoch: 1,
   };
 };
 
