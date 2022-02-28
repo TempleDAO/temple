@@ -12,7 +12,7 @@ import {
 import { copyBalance } from 'components/AMM/helpers/methods';
 import Slippage from 'components/Slippage/Slippage';
 import { Button } from 'components/Button/Button';
-import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
+import { STABLE_COIN_SYMBOL } from 'enums/symbols';
 import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';

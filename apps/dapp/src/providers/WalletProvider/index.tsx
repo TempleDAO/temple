@@ -11,7 +11,7 @@ import {
   JsonRpcSigner,
   Network,
 } from '@ethersproject/providers';
-import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
+import { STABLE_COIN_SYMBOL } from 'enums/symbols';
 import { ClaimType } from 'enums/claim-type';
 import {
   TEAM_PAYMENTS_EPOCHS,
