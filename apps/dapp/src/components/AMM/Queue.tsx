@@ -6,10 +6,11 @@ import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { useWallet } from 'providers/WalletProvider';
-import { RitualKind, JoinQueueData } from 'providers/WalletProvider/types';
-import { OG_TEMPLE_TOKEN_SYMBOL } from 'enums/symbols';
+import { JoinQueueData } from 'providers/WalletProvider/types';
+import { TEMPLE_STAKING_ADDRESS } from 'providers/WalletProvider/env';
 import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
+import { OG_TEMPLE_TOKEN_SYMBOL } from 'enums/symbols';
 import {
   ConvoFlowTitle,
   Spacer,
@@ -18,6 +19,7 @@ import {
   ViewContainer,
 } from 'components/AMM/helpers/components';
 import { copyBalance } from 'components/AMM/helpers/methods';
+import { TempleStaking__factory, OGTemple__factory } from 'types/typechain';
 
 interface QueueProps {
   small?: boolean;
@@ -25,6 +27,7 @@ interface QueueProps {
 
 export const Queue: FC<QueueProps> = ({ small }) => {
   const {
+    signer,
     balance,
     getBalance,
     updateWallet,
@@ -40,10 +43,6 @@ export const Queue: FC<QueueProps> = ({ small }) => {
   });
   const [rewards, setRewards] = useState<number | ''>('');
   const repositionTopTooltip = useMediaQuery({ query: '(max-width: 1235px)' });
-  const repositionProcessTimeTooltip = useMediaQuery({
-    query: '(max-width: 970px)',
-  });
-  const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
 
   const updateTempleRewards = async (ogtAmount: number) => {
     setRewards((await getRewardsForOGT(ogtAmount)) || 0);
@@ -67,14 +66,22 @@ export const Queue: FC<QueueProps> = ({ small }) => {
 
   const handleUnlockOGT = async () => {
     try {
-      if (OGTAmount) {
-        await ensureAllowance();
-
-        await increaseAllowanceForRitual(
-          toAtto(OGTAmount),
-          RitualKind.OGT_UNLOCK,
-          'OGTEMPLE'
+      if (OGTAmount && signer) {
+        const TEMPLE_STAKING = new TempleStaking__factory(signer).attach(
+          TEMPLE_STAKING_ADDRESS
         );
+
+        const OG_TEMPLE_TOKEN = new OGTemple__factory(signer).attach(
+          await TEMPLE_STAKING.OG_TEMPLE()
+        );
+
+        await ensureAllowance(
+          OG_TEMPLE_TOKEN_SYMBOL,
+          OG_TEMPLE_TOKEN,
+          TEMPLE_STAKING_ADDRESS,
+          toAtto(OGTAmount)
+        );
+
         getBalance();
         handleUpdateOGT(0);
       }
