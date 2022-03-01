@@ -117,7 +117,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       <Input
         small={small}
         hint={`Balance: ${formatNumber(stableCoinWalletAmount)}`}
-        crypto={{ kind: 'value', value: TICKER_SYMBOL.STABLE_COIN }}
+        crypto={{ kind: 'value', value: TICKER_SYMBOL.STABLE_TOKEN }}
         isNumber
         value={formatNumber(rewards as number)}
         placeholder={'0.00'}

@@ -1,10 +1,5 @@
-export const STABLE_COIN_SYMBOL = '$FRAX';
-export const TEMPLE_TOKEN_SYMBOL = '$TEMPLE';
-export const OG_TEMPLE_TOKEN_SYMBOL = '$OGTEMPLE';
-export const FAITH_SYMBOL = 'FAITH';
-
 export enum TICKER_SYMBOL {
-  STABLE_COIN = '$FRAX',
+  STABLE_TOKEN = '$FRAX',
   TEMPLE_TOKEN = '$TEMPLE',
   OG_TEMPLE_TOKEN = '$OGTEMPLE',
   FAITH = 'FAITH',

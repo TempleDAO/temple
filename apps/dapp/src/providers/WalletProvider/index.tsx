@@ -614,7 +614,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       await ensureAllowance(
-        TICKER_SYMBOL.STABLE_COIN,
+        TICKER_SYMBOL.STABLE_TOKEN,
         STABLE_TOKEN,
         TEMPLE_V2_ROUTER_ADDRESS,
         amountInFrax
@@ -642,7 +642,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       await buyTXN.wait();
       // Show feedback to user
       openNotification({
-        title: `Sacrificed ${TICKER_SYMBOL.STABLE_COIN}`,
+        title: `Sacrificed ${TICKER_SYMBOL.STABLE_TOKEN}`,
         hash: buyTXN.hash,
       });
     }
