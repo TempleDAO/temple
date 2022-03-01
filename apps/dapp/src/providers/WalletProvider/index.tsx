@@ -11,22 +11,16 @@ import {
   JsonRpcSigner,
   Network,
 } from '@ethersproject/providers';
-import { STABLE_COIN_SYMBOL } from 'enums/symbols';
 import { ClaimType } from 'enums/claim-type';
 import {
   TEAM_PAYMENTS_EPOCHS,
   TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH,
 } from 'enums/team-payment';
-import {
-  OG_TEMPLE_TOKEN_SYMBOL,
-  TEMPLE_TOKEN_SYMBOL,
-  FAITH_SYMBOL,
-} from 'enums/symbols';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { BigNumber, ethers } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
 import {
   AcceleratedExitQueue__factory,
-  AMMWhitelist__factory,
   Devotion__factory,
   ERC20,
   ERC20__factory,
@@ -490,7 +484,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       await withdrawTXN.wait();
 
       openNotification({
-        title: `${OG_TEMPLE_TOKEN_SYMBOL} claimed`,
+        title: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN} claimed`,
         hash: withdrawTXN.hash,
       });
     }
@@ -536,7 +530,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await withdrawTXN.wait();
         // Show feedback to user
         openNotification({
-          title: `${TEMPLE_TOKEN_SYMBOL} claimed`,
+          title: `${TICKER_SYMBOL.TEMPLE_TOKEN} claimed`,
           hash: withdrawTXN.hash,
         });
       }
@@ -599,7 +593,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await restakeTXN.wait();
         // Show feedback to user
         openNotification({
-          title: `${TEMPLE_TOKEN_SYMBOL} restaked`,
+          title: `${TICKER_SYMBOL.TEMPLE_TOKEN} restaked`,
           hash: restakeTXN.hash,
         });
       }
@@ -620,7 +614,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       await ensureAllowance(
-        STABLE_COIN_SYMBOL,
+        TICKER_SYMBOL.STABLE_COIN,
         STABLE_TOKEN,
         TEMPLE_V2_ROUTER_ADDRESS,
         amountInFrax
@@ -648,7 +642,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       await buyTXN.wait();
       // Show feedback to user
       openNotification({
-        title: `Sacrificed ${STABLE_COIN_SYMBOL}`,
+        title: `Sacrificed ${TICKER_SYMBOL.STABLE_COIN}`,
         hash: buyTXN.hash,
       });
     }
@@ -672,7 +666,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       await ensureAllowance(
-        TEMPLE_TOKEN_SYMBOL,
+        TICKER_SYMBOL.TEMPLE_TOKEN,
         TEMPLE,
         TEMPLE_V2_ROUTER_ADDRESS,
         amountInTemple
@@ -701,7 +695,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       // Show feedback to user
       openNotification({
-        title: `${TEMPLE_TOKEN_SYMBOL} renounced`,
+        title: `${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
         hash: sellTXN.hash,
       });
     }
@@ -748,7 +742,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       await ensureAllowance(
-        TEMPLE_TOKEN_SYMBOL,
+        TICKER_SYMBOL.TEMPLE_TOKEN,
         TEMPLE,
         TEMPLE_STAKING_ADDRESS,
         amountToStake
@@ -766,7 +760,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       // Show feedback to user
       openNotification({
-        title: `${TEMPLE_TOKEN_SYMBOL} staked`,
+        title: `${TICKER_SYMBOL.TEMPLE_TOKEN} staked`,
         hash: stakeTXN.hash,
       });
     }
@@ -829,7 +823,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const txnReceipt = await collectTxn.wait();
 
       openNotification({
-        title: `${TEMPLE_TOKEN_SYMBOL} claimed`,
+        title: `${TICKER_SYMBOL.TEMPLE_TOKEN} claimed`,
         hash: collectTxn.hash,
       });
 
@@ -855,7 +849,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       const walletOGTEMPLE = await OG_TEMPLE.balanceOf(walletAddress);
       await ensureAllowance(
-        OG_TEMPLE_TOKEN_SYMBOL,
+        TICKER_SYMBOL.OG_TEMPLE_TOKEN,
         OG_TEMPLE,
         LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
         walletOGTEMPLE
@@ -870,7 +864,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       await faithVerificationTXN.wait();
 
       openNotification({
-        title: `${FAITH_SYMBOL} verified`,
+        title: `${TICKER_SYMBOL.FAITH} verified`,
         hash: faithVerificationTXN.hash,
       });
     } else {
@@ -888,7 +882,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       await faithClaimTXN.wait();
 
       openNotification({
-        title: `${FAITH_SYMBOL} redeemed`,
+        title: `${TICKER_SYMBOL.FAITH} redeemed`,
         hash: faithClaimTXN.hash,
       });
     } else {

@@ -10,7 +10,7 @@ import { JoinQueueData } from 'providers/WalletProvider/types';
 import { TEMPLE_STAKING_ADDRESS } from 'providers/WalletProvider/env';
 import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
-import { OG_TEMPLE_TOKEN_SYMBOL } from 'enums/symbols';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import {
   ConvoFlowTitle,
   Spacer,
@@ -76,7 +76,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
         );
 
         await ensureAllowance(
-          OG_TEMPLE_TOKEN_SYMBOL,
+          TICKER_SYMBOL.OG_TEMPLE_TOKEN,
           OG_TEMPLE_TOKEN,
           TEMPLE_STAKING_ADDRESS,
           toAtto(OGTAmount)
@@ -109,7 +109,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
     <ViewContainer>
       <TitleWrapper>
         <ConvoFlowTitle>
-          SELECT {OG_TEMPLE_TOKEN_SYMBOL} TO UNSTAKE VIA QUEUE
+          SELECT {TICKER_SYMBOL.OG_TEMPLE_TOKEN} TO UNSTAKE VIA QUEUE
         </ConvoFlowTitle>
         <TooltipPadding>
           <Tooltip

@@ -11,7 +11,7 @@ import withWallet from 'hoc/withWallet';
 import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
 import useFetchStoreDiscordUser from 'hooks/use-fetch-store-discord-user';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
-import { FAITH_TOKEN, useWallet } from 'providers/WalletProvider';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { formatNumberWithCommas } from 'utils/formatter';
@@ -28,7 +28,7 @@ export interface DiscordUser {
 }
 
 const ENV_VARS = import.meta.env;
-const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL
+const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL;
 
 const Account: CustomRoutingPage = ({ routingHelper }) => {
   const { back } = routingHelper;
@@ -155,11 +155,15 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
                   <RightAlign>
                     <ProfileMetric
                       label={`lifetime`}
-                      value={`${formatNumberWithCommas(faith.lifeTimeFaith)}  ${FAITH_TOKEN}`}
+                      value={`${formatNumberWithCommas(faith.lifeTimeFaith)}  ${
+                        TICKER_SYMBOL.FAITH
+                      }`}
                     />
                     <ProfileMetric
                       label={`usable`}
-                      value={`${formatNumberWithCommas(faith.usableFaith)} ${FAITH_TOKEN}`}
+                      value={`${formatNumberWithCommas(faith.usableFaith)} ${
+                        TICKER_SYMBOL.FAITH
+                      }`}
                     />
                   </RightAlign>
                   <RightAlign>

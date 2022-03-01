@@ -15,7 +15,7 @@ import { ProgressAnimation } from 'components/Loader/ProgressAnimation';
 import withWallet from 'hoc/withWallet';
 import { useWallet } from 'providers/WalletProvider';
 import { FaithMerkleAirdrop__factory } from 'types/typechain';
-import { FAITH_SYMBOL } from 'enums/symbols';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumber } from 'utils/formatter';
 import claimData from 'data/claims/faith-airdrop.json';
 import deityImage from 'assets/images/deity.svg';
@@ -99,7 +99,7 @@ const FaithAirdropPage = () => {
         />
       ) : (
         <CollectButton
-          label={`No ${FAITH_SYMBOL} claim available`}
+          label={`No ${TICKER_SYMBOL.FAITH} claim available`}
           disabled={true}
           ongoingRequest={false}
         />
@@ -122,7 +122,7 @@ function useFaithAirdrop(): FaithAirdropState {
 
   const [state, dispatch] = useReducer(reducer, {
     ...reducerInitialState,
-    label: `Collect ${formatNumber(allocationAmount)} ${FAITH_SYMBOL}`,
+    label: `Collect ${formatNumber(allocationAmount)} ${TICKER_SYMBOL.FAITH}`,
   });
 
   function reducer(state: ReducerState, action: Action): ReducerState {
