@@ -24,7 +24,7 @@ jobs:
           scope: ${{ secrets.VERCEL_ORG_ID }}
           alias-domains: | #Optional
             backend-stage.templedao.link
-          continue-on-error: true
+        continue-on-error: true
       - name: "notify failure"
         if: steps.deploy_step.outcome == 'failure'
         uses: rjstone/discord-webhook-notify@v1
