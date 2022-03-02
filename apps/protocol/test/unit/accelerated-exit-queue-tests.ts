@@ -4,7 +4,7 @@ import { expect } from "chai";
 
 import { blockTimestamp, fromAtto, mineNBlocks, shouldThrow, toAtto } from "./helpers";
 
-import { AcceleratedExitQueue, AcceleratedExitQueue__factory, ExitQueue, ExitQueue__factory, OGTemple, OGTemple__factory, TempleERC20Token, TempleERC20Token__factory, TempleStaking, TempleStaking__factory } from "../typechain";
+import { AcceleratedExitQueue, AcceleratedExitQueue__factory, ExitQueue, ExitQueue__factory, OGTemple, OGTemple__factory, TempleERC20Token, TempleERC20Token__factory, TempleStaking, TempleStaking__factory } from "../../typechain";
 import { exit } from "process";
 
 describe("Accelerated Exit Queue", async () => {

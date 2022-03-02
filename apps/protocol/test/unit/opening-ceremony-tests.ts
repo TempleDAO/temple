@@ -18,7 +18,7 @@ import {
   TempleTreasury__factory, 
   TreasuryManagementProxy, 
   TreasuryManagementProxy__factory 
-} from "../typechain";
+} from "../../typechain";
 import { blockTimestamp, fromAtto, mineForwardSeconds, mineToEpoch, mineToTimestamp, shouldThrow, toAtto } from "./helpers";
 
 

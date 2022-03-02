@@ -6,7 +6,7 @@ import {
     TempleERC20Token__factory,
     TempleCashback__factory,
     TempleCashback,
-} from '../typechain'
+} from '../../typechain'
 import { shouldThrow, toAtto, fromAtto } from './helpers'
 
 describe('Test Temple Cashback', async () => {

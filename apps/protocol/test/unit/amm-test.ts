@@ -24,7 +24,7 @@ import {
   TempleStaking__factory,
   LockedOGTemple,
   LockedOGTemple__factory
-} from "../typechain";
+} from "../../typechain";
 
 import { BigNumber, Signer } from "ethers";
 import { mineNBlocks, toAtto, shouldThrow, blockTimestamp, fromAtto } from "./helpers";

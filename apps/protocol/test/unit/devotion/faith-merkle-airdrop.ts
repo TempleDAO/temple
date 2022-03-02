@@ -2,9 +2,9 @@ import { ethers } from "hardhat";
 import { expect } from "chai";
 import { BigNumber, Signer } from "ethers";
 import { FaithMerkleAirdrop, FaithMerkleAirdrop__factory, 
-  Faith, Faith__factory } from "../../typechain";
+  Faith, Faith__factory } from "../../../typechain";
 import { shouldThrow, blockTimestamp, mineForwardSeconds } from "../helpers";
-import BalanceTree from "../../scripts/merkle/balance-tree";
+import BalanceTree from "../../../scripts/merkle/balance-tree";
 
 const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000'
 

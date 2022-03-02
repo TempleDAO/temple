@@ -4,14 +4,14 @@ import { BigNumber, Signer } from 'ethers';
 import axios from 'axios';
 import { signERC2612Permit } from 'eth-permit';
 
-import FakeERC20 from '../artifacts/contracts/fakes/FakeERC20.sol/FakeERC20.json';
-import FakeERC20Permit from '../artifacts/contracts/fakes/FakeERC20Permit.sol/ERC20PermitMock.json';
+import FakeERC20 from '../../artifacts/contracts/fakes/FakeERC20.sol/FakeERC20.json';
+import FakeERC20Permit from '../../artifacts/contracts/fakes/FakeERC20Permit.sol/ERC20PermitMock.json';
 
-import TempleAMM from '../artifacts/contracts/amm/TempleFraxAMMRouter.sol/TempleFraxAMMRouter.json';
+import TempleAMM from '../../artifacts/contracts/amm/TempleFraxAMMRouter.sol/TempleFraxAMMRouter.json';
 
-import { TempleZaps, TempleZaps__factory } from '../typechain';
-import { shouldThrow, getBalance } from './helpers';
-import addresses from './libs/constants';
+import { TempleZaps, TempleZaps__factory } from '../../typechain';
+import { shouldThrow, getBalance } from '../unit/helpers';
+import addresses from '../unit/libs/constants';
 
 const BINANCE_ACCOUNT_8 = '0xF977814e90dA44bFA03b6295A0616a897441aceC';
 const WETH_WHALE = '0x6555e1CC97d3cbA6eAddebBCD7Ca51d75771e0B8';
@@ -79,7 +79,7 @@ describe('TempleZaps', async () => {
     });
   });
 
-  xdescribe('ZapIn', async () => {
+  describe('ZapIn', async () => {
     afterEach(async () => {
       await resetFork();
     });
@@ -213,7 +213,7 @@ describe('TempleZaps', async () => {
         await ownerConnect.toggleContractActive();
       });
 
-      xit('should disable zapIn when paused', async () => {
+      it('should disable zapIn when paused', async () => {
         // Pause
         const ownerConnect = TEMPLE_ZAPS.connect(owner);
         await ownerConnect.toggleContractActive();

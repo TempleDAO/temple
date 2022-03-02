@@ -58,6 +58,11 @@ comments on the PR on how to best setup the deploy scripts).
 You can also run and test locally by replacing `yarn workspace @temple/protocol hardhat:testnet` with `yarn workspace @temple/protocol hardhat:local`. You'll probably have to run some of the previous deploys
 in order to setup the right local state
 
+#### Testing using forked mainnet
+The protocol app has a test suite which requires using a forked mainnet to operate correctly. In order to prevent every test requiring a forked mainnet, we've split our tests into two sets; one requiring forking, and the other that does not. 
+
+Running `yarn test` by default will run the tests that do **not** require forked mainnet and this will largely be the bulk of tests most developers will want to run. If you wish to run tests that require forked mainnet, you should firstly ensure your test file resides in the `./test/forked` directory, ensure you've created an `.env` file and populated it with your `ALCHEMY_API_KEY` and lastly then run `yarn mainnet-fork-tests`. This script will ensure the config files are set appropriately and will **only** run the tests in the `./test/forked` directory. 
+
 ### Dapp
 The Dapp uses [Vite](https://vitejs.dev/) but we've created some convenience methods on top. In order to properly communicate with the contracts deployed on the local node we need to update your `.env.local` file. Make a copy of the `env.local.example` and rename it to `.env.local`. Once the steps in Protocol Local Deployment have been completed, the deploy job output all the deployed contract addresses deployed to your local network in the correct Vite env var format. Copy these values and paste them into your `.env.local` file. 
 

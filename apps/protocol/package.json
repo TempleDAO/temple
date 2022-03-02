@@ -38,12 +38,14 @@
     "ethereum-waffle": "^3.0.0",
     "ethers": "^5.0.0",
     "hardhat": "^2.8.3",
-    "hardhat-gas-reporter": "^1.0.7"
+    "hardhat-gas-reporter": "^1.0.7",
+    "shelljs" : "^0.8.5"
   },
   "scripts": {
     "compile": "hardhat compile",
     "clean": "hardhat clean",
     "test": "hardhat test",
+    "mainnet-fork-tests": "HARDHAT_TEST_DIRECTORY=./test/zaps && node scripts/test-forked-mainnet.js",
     "local-node": "hardhat node",
     "local-deploy": "hardhat run --network localhost scripts/local-dapp-dev/deploy.ts",
     "hardhat:local": "hardhat --network localhost",

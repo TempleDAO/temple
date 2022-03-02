@@ -2,8 +2,8 @@ import { network, ethers } from "hardhat";
 import { BigNumber } from "ethers";
 import { expect } from "chai";
 
-import { IERC20 } from "../typechain";
-import FakeERC20 from '../artifacts/contracts/fakes/FakeERC20.sol/FakeERC20.json';
+import { IERC20 } from "../../typechain";
+import FakeERC20 from '../../artifacts/contracts/fakes/FakeERC20.sol/FakeERC20.json';
 
 export async function shouldThrow(p: Promise<any>, matches: RegExp) {
   try {

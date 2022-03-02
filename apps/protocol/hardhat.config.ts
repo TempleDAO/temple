@@ -67,12 +67,10 @@ module.exports = {
         : [],
       gasPrice: 2000000000,
     },
-    // Note: Overrides `yarn test` to always use forked mainnet
-    // hardhat: {
-    //   forking: {
-    //     url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-    //   },
-    // },
+    // Note: For zap tests, we need to fork mainnet to run the tests, the line below acts as amark
+    // {required for zap tests}
+    // {end}
+
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
       accounts: process.env.MAINNET_ADDRESS_PRIVATE_KEY
@@ -95,6 +93,9 @@ module.exports = {
   },
   mocha: {
     timeout: 120000,
+  },
+  paths: {
+    tests: process.env.HARDHAT_TEST_DIRECTORY || './test/unit'
   },
   gasReporter: {
     currency: 'USD',
