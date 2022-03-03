@@ -67,11 +67,9 @@ export const Zap = () => {
       );
     }
 
-    if (!isMounted.current) {
-      return;
+    if (isMounted.current) {
+      setZapping(false);
     }
-
-    setZapping(false);
 
     await updateTokenBalance(selectedToken.address, selectedToken.decimals);
   };
@@ -106,10 +104,6 @@ export const Zap = () => {
         tokenAddr,
         decimals
       );
-
-      if (!isMounted.current) {
-        return;
-      }
 
       if (balance) {
         setTokenBalance(balance);
