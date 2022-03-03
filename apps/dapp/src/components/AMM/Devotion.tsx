@@ -14,11 +14,8 @@ import { Input } from 'components/Input/Input';
 import { Flex } from 'components/Layout/Flex';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { BigNumber } from 'ethers';
-import {
-  FAITH_TOKEN,
-  OG_TEMPLE_TOKEN,
-  useWallet,
-} from 'providers/WalletProvider';
+import { useWallet } from 'providers/WalletProvider';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { FaithBalance } from 'providers/WalletProvider/types';
 import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
@@ -160,12 +157,13 @@ const Devotion = () => {
                       Congratulations Templar! The devotees arrived and the
                       target price was achieved by the Templars.
                       <br />
-                      You may now redeem your {FAITH_TOKEN} for Bonus{' '}
-                      {OG_TEMPLE_TOKEN}.
+                      You may now redeem your {TICKER_SYMBOL.FAITH} for Bonus{' '}
+                      {TICKER_SYMBOL.OG_TEMPLE_TOKEN}.
                       <br />
-                      Choose how much {FAITH_TOKEN} you wish to redeem.{' '}
-                      {FAITH_TOKEN} can be saved for later redemption, future
-                      airdrops, and for other benefits in the Templeverse.
+                      Choose how much {TICKER_SYMBOL.FAITH} you wish to redeem.{' '}
+                      {TICKER_SYMBOL.FAITH} can be saved for later redemption,
+                      future airdrops, and for other benefits in the
+                      Templeverse.
                     </small>
                   }
                   position={'top'}
@@ -179,7 +177,7 @@ const Devotion = () => {
               onHintClick={() =>
                 copyBalance(faithBalance.usableFaith, handleFaithUpdate)
               }
-              crypto={{ kind: 'value', value: FAITH_TOKEN }}
+              crypto={{ kind: 'value', value: TICKER_SYMBOL.FAITH }}
               isNumber
               max={faithBalance.usableFaith}
               min={0}
@@ -198,7 +196,7 @@ const Devotion = () => {
                 }}
               >
                 <DataCard
-                  title={`BONUS ${OG_TEMPLE_TOKEN}`}
+                  title={`BONUS ${TICKER_SYMBOL.OG_TEMPLE_TOKEN}`}
                   data={`${formatNumber(rewards) || 0}`}
                   small
                 />
@@ -247,9 +245,10 @@ const Devotion = () => {
                 content={
                   <small>
                     Temple Devotion is active. During this 24 hours, if you lock
-                    {OG_TEMPLE_TOKEN} you gain {FAITH_TOKEN}. {FAITH_TOKEN} can
-                    be redeemed for Bonus APY, future airdrops, and other
-                    benefits in the Templeverse.
+                    {TICKER_SYMBOL.OG_TEMPLE_TOKEN} you gain{' '}
+                    {TICKER_SYMBOL.FAITH}. {TICKER_SYMBOL.FAITH} can be redeemed
+                    for Bonus APY, future airdrops, and other benefits in the
+                    Templeverse.
                     <br />
                     Faith can be redeemed only if the target price is reached at
                     the end of the 24 hour game window.
@@ -274,7 +273,7 @@ const Devotion = () => {
               }}
             >
               <DataCard
-                title={`${OG_TEMPLE_TOKEN} TO LOCK`}
+                title={`${TICKER_SYMBOL.OG_TEMPLE_TOKEN} TO LOCK`}
                 data={`+ ${devotion}`}
                 tooltipContent={`All OGTEMPLE in your wallet as well as in the locking contract will be locked for ${minimumLockPeriodDays} days.`}
                 small
@@ -286,7 +285,7 @@ const Devotion = () => {
               }}
             >
               <DataCard
-                title={`${FAITH_TOKEN} Gained`}
+                title={`${TICKER_SYMBOL.FAITH} Gained`}
                 data={`+ ${devotion}`}
                 tooltipContent={
                   'You gain 1 Faith for each OGTEMPLE that is locked.'
@@ -306,11 +305,14 @@ const Devotion = () => {
             <>
               <small>
                 You have{' '}
-                <small className={'color-brand'}>{OG_TEMPLE_TOKEN}</small> to be
-                claimed from the Fire Ritual or Opening Ceremony contracts.{' '}
-                <br />
-                This <small className={'color-brand'}>
-                  {OG_TEMPLE_TOKEN}
+                <small className={'color-brand'}>
+                  {TICKER_SYMBOL.OG_TEMPLE_TOKEN}
+                </small>{' '}
+                to be claimed from the Fire Ritual or Opening Ceremony
+                contracts. <br />
+                This{' '}
+                <small className={'color-brand'}>
+                  {TICKER_SYMBOL.OG_TEMPLE_TOKEN}
                 </small>{' '}
                 will not be verified or re-locked until it is claimed.
               </small>

@@ -2,8 +2,9 @@ import ClaimOGTemple from 'components/AMM/helpers/ClaimOGTemple';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
-import { OG_TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
+import { useWallet } from 'providers/WalletProvider';
 import React, { FC, useEffect } from 'react';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import {
   ConvoFlowTitle,
   TitleWrapper,
@@ -35,7 +36,9 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
   return (
     <ViewContainer>
       <TitleWrapper>
-        <ConvoFlowTitle>CLAIM YOUR {OG_TEMPLE_TOKEN}</ConvoFlowTitle>
+        <ConvoFlowTitle>
+          CLAIM YOUR {TICKER_SYMBOL.OG_TEMPLE_TOKEN}
+        </ConvoFlowTitle>
         <TooltipPadding>
           <Tooltip
             content={

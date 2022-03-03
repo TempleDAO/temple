@@ -12,8 +12,8 @@ import {
 import { copyBalance } from 'components/AMM/helpers/methods';
 import Slippage from 'components/Slippage/Slippage';
 import { Button } from 'components/Button/Button';
-import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
-import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { useWallet } from 'providers/WalletProvider';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
 
@@ -100,7 +100,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         onHintClick={() =>
           copyBalance(stableCoinWalletAmount, handleUpdateStableCoinAmount)
         }
-        crypto={{ kind: 'value', value: STABLE_COIN_SYMBOL }}
+        crypto={{ kind: 'value', value: TICKER_SYMBOL.STABLE_TOKEN }}
         isNumber
         max={stableCoinWalletAmount}
         min={0}
@@ -117,7 +117,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       <Input
         small={small}
         hint={`Balance: ${formatNumber(templeWalletAmount)}`}
-        crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
+        crypto={{ kind: 'value', value: TICKER_SYMBOL.TEMPLE_TOKEN }}
         type={'number'}
         value={formatNumber(rewards as number)}
         placeholder={'0.00'}
@@ -126,7 +126,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         pairBottom
       />
       <Slippage
-        label={`${TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
+        label={`${TICKER_SYMBOL.TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
         value={slippage}
         onChange={
           ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true'
@@ -142,7 +142,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
             : `${
                 small
                   ? 'EXCHANGE $FRAX FOR $TEMPLE'
-                  : `sacrifice ${STABLE_COIN_SYMBOL}`
+                  : `sacrifice ${TICKER_SYMBOL.STABLE_TOKEN}`
               } `
         }
         isUppercase

@@ -11,17 +11,16 @@ import {
   JsonRpcSigner,
   Network,
 } from '@ethersproject/providers';
-import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
 import { ClaimType } from 'enums/claim-type';
 import {
   TEAM_PAYMENTS_EPOCHS,
   TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH,
 } from 'enums/team-payment';
-import { BigNumber, ContractTransaction, ethers } from 'ethers';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { BigNumber, ethers } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
 import {
   AcceleratedExitQueue__factory,
-  AMMWhitelist__factory,
   Devotion__factory,
   ERC20,
   ERC20__factory,
@@ -29,7 +28,6 @@ import {
   FaithMerkleAirdrop__factory,
   LockedOGTempleDeprecated__factory,
   OGTemple__factory,
-  OpeningCeremony__factory,
   TempleCashback__factory,
   TempleERC20Token__factory,
   TempleFraxAMMRouter__factory,
@@ -47,7 +45,6 @@ import {
   getExchangeRate,
   getBalance,
   getFaith,
-  getAllocation,
   getLockedEntries,
   getExitQueueData,
   getEpochsToDays,
@@ -56,27 +53,19 @@ import {
 } from './util';
 
 import {
-  OpeningCeremonyUser,
   WalletState,
   Balance,
-  Allocation,
-  RitualMapping,
   LockedEntry,
   ExitQueueData,
   ETH_ACTIONS,
-  COIN_TYPE,
-  RitualKind,
   JoinQueueData,
-  RitualStatus,
 } from './types';
 
 import {
   EXIT_QUEUE_ADDRESS,
-  AMM_WHITELIST_ADDRESS,
   ACCELERATED_EXIT_QUEUE_ADDRESS,
   LOCKED_OG_TEMPLE_ADDRESS,
   TEMPLE_STAKING_ADDRESS,
-  OPENING_CEREMONY_ADDRESS,
   TEMPLE_ADDRESS,
   STABLE_COIN_ADDRESS,
   TEMPLE_V2_ROUTER_ADDRESS,
@@ -85,9 +74,6 @@ import {
   TEMPLE_DEVOTION_ADDRESS,
   LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
   NEXT_PUBLIC_EXCHANGE_RATE_VALUE,
-  VITE_PUBLIC_MINT_AND_STAKE_GAS_LIMIT,
-  VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT,
-  VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_PER_EPOCH_GAS_LIMIT,
   VITE_PUBLIC_CLAIM_GAS_LIMIT,
   VITE_PUBLIC_CLAIM_FAITH_GAS_LIMIT,
   VITE_PUBLIC_WITHDRAW_EPOCHS_BASE_GAS_LIMIT,
@@ -102,9 +88,6 @@ import {
 } from './env';
 
 /* TODO: Move this to a common place */
-export const TEMPLE_TOKEN = '$TEMPLE';
-export const OG_TEMPLE_TOKEN = '$OGTEMPLE';
-export const FAITH_TOKEN = 'FAITH';
 
 // our default deadline is 20 minutes
 const DEADLINE = 20 * 60;
@@ -133,26 +116,11 @@ const INITIAL_STATE: WalletState = {
   exchangeRate: NEXT_PUBLIC_EXCHANGE_RATE_VALUE
     ? +NEXT_PUBLIC_EXCHANGE_RATE_VALUE
     : 0.9,
-  allocation: {
-    amount: 0,
-    startEpoch: undefined,
-  },
   isConnected: false,
   wallet: null,
-  ritual: new Map(),
-  lockInPeriod: 0,
   currentEpoch: -1,
   templePrice: 0,
   isLoading: true,
-  ocTemplar: {
-    isGuest: false,
-    isVerified: false,
-    numInvited: 0,
-    doublingIndexAtVerification: 1,
-    totalSacrificedTemple: 0,
-    totalSacrificedStablec: 0,
-  },
-  maxInvitesPerVerifiedUser: 0,
   lockedEntries: [],
   exitQueueData: {
     lastClaimableEpochAt: 0,
@@ -166,13 +134,8 @@ const INITIAL_STATE: WalletState = {
   changeWalletAddress: noop,
   updateWallet: noop,
   stake: asyncNoop,
-  mintAndStake: noop,
-  increaseAllowanceForRitual: noop,
-  clearRitual: noop,
-  inviteFriend: noop,
   claim: asyncNoop,
   claimFaithAirdrop: asyncNoop,
-  verifyAMMWhitelist: asyncNoop,
   signer: null,
   network: null,
   claimOgTemple: asyncNoop,
@@ -190,6 +153,7 @@ const INITIAL_STATE: WalletState = {
   getTempleFaithReward: asyncNoop,
   getFaithQuote: asyncNoop,
   getExitQueueData: asyncNoop,
+  ensureAllowance: asyncNoop,
 };
 
 const WalletContext = createContext<WalletState>(INITIAL_STATE);
@@ -207,22 +171,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const [exchangeRateState, setExchangeRateState] = useState<number>(
     INITIAL_STATE.exchangeRate
   );
-  const [allocation, setAllocation] = useState<Allocation>(
-    INITIAL_STATE.allocation
-  );
-  const [ritual, setRitual] = useState<RitualMapping>(INITIAL_STATE.ritual);
-  const [lockInPeriod, setLockInPeriod] = useState<number>(
-    INITIAL_STATE.lockInPeriod
-  );
   const [currentEpoch, setCurrentEpoch] = useState<number>(
     INITIAL_STATE.currentEpoch
   );
   const [isLoading, setIsLoading] = useState<boolean>(INITIAL_STATE.isLoading);
-  const [ocTemplar, setOcTemplar] = useState<OpeningCeremonyUser>(
-    INITIAL_STATE.ocTemplar
-  );
-  const [maxInvitesPerVerifiedUser, setMaxInvitesPerVerifiedUser] =
-    useState<number>(INITIAL_STATE.maxInvitesPerVerifiedUser);
   const [lockedEntries, setLockedEntries] = useState<Array<LockedEntry>>(
     INITIAL_STATE.lockedEntries
   );
@@ -313,60 +265,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const inviteFriend = async (
-    friendAddress: string,
-    ritualKind: RitualKind
-  ) => {
-    if (walletAddress && signerState) {
-      setRitual(
-        new Map(
-          ritual.set(ritualKind, {
-            inviteFriendTransaction: RitualStatus.PROCESSING,
-            completedBalanceApproval: RitualStatus.NO_STATUS,
-            completedTransaction: RitualStatus.NO_STATUS,
-            verifyingTransaction: RitualStatus.NO_STATUS,
-          })
-        )
-      );
-
-      try {
-        const openingCeremonyContract = new OpeningCeremony__factory(
-          signerState
-        ).attach(OPENING_CEREMONY_ADDRESS);
-
-        const inviteGuestTransaction =
-          await openingCeremonyContract.addGuestUser(friendAddress, {
-            gasLimit: 85000,
-          });
-        await inviteGuestTransaction.wait();
-
-        setRitual(
-          new Map(
-            ritual.set(ritualKind, {
-              completedBalanceApproval: RitualStatus.NO_STATUS,
-              completedTransaction: RitualStatus.NO_STATUS,
-              inviteFriendTransaction: RitualStatus.COMPLETED,
-              verifyingTransaction: RitualStatus.NO_STATUS,
-              ritualMessage: `continue`,
-            })
-          )
-        );
-      } catch (e) {
-        setRitual(
-          new Map(
-            ritual.set(ritualKind, {
-              inviteFriendTransaction: RitualStatus.FAILED,
-              completedBalanceApproval: RitualStatus.NO_STATUS,
-              completedTransaction: RitualStatus.NO_STATUS,
-              verifyingTransaction: RitualStatus.NO_STATUS,
-              ritualMessage: `failed to invite friend`,
-            })
-          )
-        );
-      }
-    }
-  };
-
   const updateLockedEntries = async () => {
     if (!walletAddress || !signerState) {
       return;
@@ -431,7 +329,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           updateExchangeRate(),
           updateBalance(),
           updateFaith(),
-          updateAllocation(),
           updateLockedEntries(),
           updateExitQueueData(),
           updateApy(),
@@ -473,19 +370,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     setCurrentEpoch(epoch);
   };
 
-  const updateAllocation = async (): Promise<void> => {
-    if (!walletAddress || !signerState || !ocTemplar) {
-      return;
-    }
-
-    const allocation = await getAllocation(
-      walletAddress,
-      signerState,
-      ocTemplar
-    );
-    setAllocation(allocation);
-  };
-
   /**
    * Always use this to increase allowance for TOKENS
    * @param tokenName
@@ -517,309 +401,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         hash: approveTXN.hash,
       });
     }
-  };
-
-  const increaseTokenAllowance = async (
-    amount: BigNumber,
-    ritualKind: RitualKind,
-    allowanceKind: COIN_TYPE = 'FRAX'
-  ): Promise<boolean> => {
-    if (walletAddress && signerState) {
-      let allowance;
-      const stableCoinContract = new ERC20__factory(signerState).attach(
-        STABLE_COIN_ADDRESS
-      );
-      const templeStakingContract = new TempleStaking__factory(
-        signerState
-      ).attach(TEMPLE_STAKING_ADDRESS);
-      const STAKING_OC_TEMPLE = await templeStakingContract.OG_TEMPLE();
-      const OGTContract = new OGTemple__factory(signerState).attach(
-        STAKING_OC_TEMPLE
-      );
-      const TEMPLE = new TempleERC20Token__factory(signerState).attach(
-        TEMPLE_ADDRESS
-      );
-
-      switch (allowanceKind) {
-        case 'TEMPLE':
-          allowance = await TEMPLE.allowance(
-            walletAddress,
-            TEMPLE_V2_ROUTER_ADDRESS
-          );
-          break;
-        case 'FRAX':
-          allowance = await stableCoinContract.allowance(
-            walletAddress,
-            OPENING_CEREMONY_ADDRESS
-          );
-          break;
-        case 'OGTEMPLE':
-          allowance = await OGTContract.allowance(
-            walletAddress,
-            TEMPLE_STAKING_ADDRESS
-          );
-          break;
-      }
-
-      if (allowance.lt(amount)) {
-        try {
-          let approveTXN: ContractTransaction;
-          switch (allowanceKind) {
-            case 'TEMPLE':
-              console.info(
-                `checkk TEMPLEPELPEL approve => TEMPLE_V2_ROUTER_ADDRESS`
-              );
-              approveTXN = await TEMPLE.approve(
-                TEMPLE_V2_ROUTER_ADDRESS,
-                DEFAULT_ALLOWANCE
-              );
-              break;
-            case 'FRAX':
-              approveTXN = await stableCoinContract.approve(
-                OPENING_CEREMONY_ADDRESS,
-                DEFAULT_ALLOWANCE
-              );
-              break;
-            case 'OGTEMPLE':
-              approveTXN = await OGTContract.approve(
-                TEMPLE_STAKING_ADDRESS,
-                DEFAULT_ALLOWANCE
-              );
-              break;
-          }
-          // Show feedback to user
-          openNotification({
-            title: `${allowanceKind} Approved`,
-            hash: approveTXN.hash,
-          });
-          await approveTXN.wait();
-          return true;
-        } catch (e) {
-          setRitual(
-            new Map(
-              ritual.set(ritualKind, {
-                completedBalanceApproval: RitualStatus.FAILED,
-                completedTransaction: RitualStatus.NO_STATUS,
-                inviteFriendTransaction: RitualStatus.NO_STATUS,
-                verifyingTransaction: RitualStatus.NO_STATUS,
-                ritualMessage: 'RITUAL FAILED ➢ PRAY HARDER',
-              })
-            )
-          );
-
-          return false;
-        }
-      } else {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const increaseAllowanceForRitual = async (
-    amount: BigNumber,
-    ritualKind: RitualKind,
-    allowanceKind: COIN_TYPE
-  ) => {
-    if (walletAddress && signerState) {
-      setRitual(
-        new Map(
-          ritual.set(ritualKind, {
-            completedBalanceApproval: RitualStatus.PROCESSING,
-            completedTransaction: RitualStatus.NO_STATUS,
-            inviteFriendTransaction: RitualStatus.NO_STATUS,
-            verifyingTransaction: RitualStatus.NO_STATUS,
-          })
-        )
-      );
-      const allowanceApproved: boolean = await increaseTokenAllowance(
-        amount,
-        ritualKind,
-        allowanceKind
-      );
-
-      if (allowanceApproved) {
-        setRitual(
-          new Map(
-            ritual.set(ritualKind, {
-              completedBalanceApproval: RitualStatus.COMPLETED,
-              completedTransaction: RitualStatus.NO_STATUS,
-              inviteFriendTransaction: RitualStatus.NO_STATUS,
-              verifyingTransaction: RitualStatus.NO_STATUS,
-            })
-          )
-        );
-
-        switch (ritualKind) {
-          case RitualKind.OFFERING_STAKING:
-            await mintAndStake(amount);
-            break;
-          case RitualKind.OGT_UNLOCK:
-            await unstake(amount);
-            break;
-          default:
-            console.error(`Unknown ritual: ${ritualKind}`);
-            return;
-        }
-      }
-    }
-  };
-
-  const mintAndStake = async (amount: BigNumber) => {
-    if (walletAddress && signerState) {
-      const openingCeremonyContract = new OpeningCeremony__factory(
-        signerState
-      ).attach(OPENING_CEREMONY_ADDRESS);
-
-      const stableCoinContract = new ERC20__factory(signerState).attach(
-        STABLE_COIN_ADDRESS
-      );
-
-      try {
-        setRitual(
-          new Map(
-            ritual.set(RitualKind.OFFERING_STAKING, {
-              completedBalanceApproval: RitualStatus.COMPLETED,
-              completedTransaction: RitualStatus.PROCESSING,
-              verifyingTransaction: RitualStatus.NO_STATUS,
-              inviteFriendTransaction: RitualStatus.NO_STATUS,
-            })
-          )
-        );
-        const stableCoinBalance: BigNumber = await stableCoinContract.balanceOf(
-          walletAddress
-        );
-        // ensure user input is not greater than user balance. if greater use all user balance.
-        const offering = amount.lte(stableCoinBalance)
-          ? amount
-          : stableCoinBalance;
-        const mintAndStakeTransaction =
-          await openingCeremonyContract.mintAndStake(offering, {
-            gasLimit: VITE_PUBLIC_MINT_AND_STAKE_GAS_LIMIT || 500000,
-          });
-
-        // Show feedback to user
-        openNotification({
-          title: `Incense burned`,
-          hash: mintAndStakeTransaction.hash,
-        });
-
-        await mintAndStakeTransaction.wait();
-        setRitual(
-          new Map(
-            ritual.set(RitualKind.OFFERING_STAKING, {
-              completedBalanceApproval: RitualStatus.COMPLETED,
-              inviteFriendTransaction: RitualStatus.NO_STATUS,
-              completedTransaction: RitualStatus.COMPLETED,
-              verifyingTransaction: RitualStatus.NO_STATUS,
-              ritualMessage: 'burn more incense?',
-            })
-          )
-        );
-        await updateWallet(false);
-      } catch (e) {
-        /* TODO: Set a notification transaction has failed */
-        setRitual(
-          new Map(
-            ritual.set(RitualKind.OFFERING_STAKING, {
-              inviteFriendTransaction: RitualStatus.NO_STATUS,
-              completedBalanceApproval: RitualStatus.COMPLETED,
-              completedTransaction: RitualStatus.FAILED,
-              verifyingTransaction: RitualStatus.NO_STATUS,
-              ritualMessage: 'RITUAL FAILED ➢ PRAY HARDER',
-            })
-          )
-        );
-      }
-    }
-  };
-
-  const unstake = async (amount: BigNumber) => {
-    if (walletAddress && signerState) {
-      const TEMPLE_STAKING = new TempleStaking__factory(signerState).attach(
-        TEMPLE_STAKING_ADDRESS
-      );
-
-      const OGTContract = new OGTemple__factory(signerState).attach(
-        await TEMPLE_STAKING.OG_TEMPLE()
-      );
-
-      const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(
-        EXIT_QUEUE_ADDRESS
-      );
-
-      try {
-        setRitual(
-          new Map(
-            ritual.set(RitualKind.OGT_UNLOCK, {
-              completedBalanceApproval: RitualStatus.COMPLETED,
-              completedTransaction: RitualStatus.PROCESSING,
-              verifyingTransaction: RitualStatus.NO_STATUS,
-              inviteFriendTransaction: RitualStatus.NO_STATUS,
-            })
-          )
-        );
-        const ogTempleBalance: BigNumber = await OGTContract.balanceOf(
-          walletAddress
-        );
-        // ensure user input is not greater than user balance. if greater use all user balance.
-        const offering = amount.lte(ogTempleBalance) ? amount : ogTempleBalance;
-        const baseGas = Number(
-          VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT || 300000
-        );
-        const gasPerEpoch = Number(
-          VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_PER_EPOCH_GAS_LIMIT || 20000
-        );
-        const accFactor = await TEMPLE_STAKING.accumulationFactor();
-        const maxPerEpoch = await EXIT_QUEUE.maxPerEpoch();
-        const epochs = fromAtto(offering.mul(accFactor).div(maxPerEpoch));
-        const recommendedGas = Math.ceil(baseGas + gasPerEpoch * epochs);
-
-        const unstakeTXN = await TEMPLE_STAKING.unstake(offering, {
-          gasLimit: recommendedGas < 30000000 ? recommendedGas : 30000000,
-        });
-
-        await unstakeTXN.wait();
-        // Show feedback to user
-        openNotification({
-          title: `Queue joined`,
-          hash: unstakeTXN.hash,
-        });
-
-        setRitual(
-          new Map(
-            ritual.set(RitualKind.OGT_UNLOCK, {
-              completedBalanceApproval: RitualStatus.COMPLETED,
-              inviteFriendTransaction: RitualStatus.NO_STATUS,
-              completedTransaction: RitualStatus.COMPLETED,
-              verifyingTransaction: RitualStatus.NO_STATUS,
-              ritualMessage: `${OG_TEMPLE_TOKEN} Unlocked`,
-            })
-          )
-        );
-        updateExitQueueData();
-        await updateWallet(false);
-      } catch (e) {
-        /* TODO: Set a notification transaction has failed */
-        console.info(`error: ${JSON.stringify(e, null, 2)}`);
-        setRitual(
-          new Map(
-            ritual.set(RitualKind.OFFERING_STAKING, {
-              inviteFriendTransaction: RitualStatus.NO_STATUS,
-              completedBalanceApproval: RitualStatus.COMPLETED,
-              completedTransaction: RitualStatus.FAILED,
-              verifyingTransaction: RitualStatus.NO_STATUS,
-              ritualMessage: 'RITUAL FAILED ➢ PRAY HARDER',
-            })
-          )
-        );
-      }
-    }
-  };
-
-  const clearRitual = (ritualKind: RitualKind) => {
-    ritual.delete(ritualKind);
-    setRitual(new Map(ritual));
   };
 
   const claim = async (
@@ -886,25 +467,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const verifyAMMWhitelist = async (
-    signature: string
-  ): Promise<ethers.ContractTransaction | void> => {
-    if (walletAddress && signerState) {
-      const AMMWhitelist = new AMMWhitelist__factory(signerState).attach(
-        AMM_WHITELIST_ADDRESS
-      );
-
-      try {
-        const sig = await ethers.utils.splitSignature(signature.trim());
-        return await AMMWhitelist.verify(sig.v, sig.r, sig.s);
-      } catch (e) {
-        console.error(e);
-      }
-    } else {
-      console.error('Missing wallet address');
-    }
-  };
-
   const claimOgTemple = async (lockedEntryIndex: number) => {
     if (walletAddress && signerState) {
       const lockedOGTempleContract = new LockedOGTempleDeprecated__factory(
@@ -921,7 +483,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       await withdrawTXN.wait();
 
       openNotification({
-        title: `${OG_TEMPLE_TOKEN} claimed`,
+        title: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN} claimed`,
         hash: withdrawTXN.hash,
       });
     }
@@ -967,7 +529,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await withdrawTXN.wait();
         // Show feedback to user
         openNotification({
-          title: `${TEMPLE_TOKEN} claimed`,
+          title: `${TICKER_SYMBOL.TEMPLE_TOKEN} claimed`,
           hash: withdrawTXN.hash,
         });
       }
@@ -987,7 +549,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       const userData = await EXIT_QUEUE.userData(walletAddress);
 
-      const currentEpoch = (await EXIT_QUEUE.currentEpoch()).toNumber();
       const firstEpoch = userData.FirstExitEpoch.toNumber();
       const lastEpoch = userData.LastExitEpoch.toNumber();
       const exitEntryPromises = [];
@@ -1031,7 +592,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await restakeTXN.wait();
         // Show feedback to user
         openNotification({
-          title: `${TEMPLE_TOKEN} restaked`,
+          title: `${TICKER_SYMBOL.TEMPLE_TOKEN} restaked`,
           hash: restakeTXN.hash,
         });
       }
@@ -1052,7 +613,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       await ensureAllowance(
-        STABLE_COIN_SYMBOL,
+        TICKER_SYMBOL.STABLE_TOKEN,
         STABLE_TOKEN,
         TEMPLE_V2_ROUTER_ADDRESS,
         amountInFrax
@@ -1080,7 +641,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       await buyTXN.wait();
       // Show feedback to user
       openNotification({
-        title: `Sacrificed ${STABLE_COIN_SYMBOL}`,
+        title: `Sacrificed ${TICKER_SYMBOL.STABLE_TOKEN}`,
         hash: buyTXN.hash,
       });
     }
@@ -1104,7 +665,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       await ensureAllowance(
-        TEMPLE_TOKEN,
+        TICKER_SYMBOL.TEMPLE_TOKEN,
         TEMPLE,
         TEMPLE_V2_ROUTER_ADDRESS,
         amountInTemple
@@ -1133,7 +694,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       // Show feedback to user
       openNotification({
-        title: `${TEMPLE_TOKEN} renounced`,
+        title: `${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
         hash: sellTXN.hash,
       });
     }
@@ -1180,7 +741,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       await ensureAllowance(
-        TEMPLE_TOKEN,
+        TICKER_SYMBOL.TEMPLE_TOKEN,
         TEMPLE,
         TEMPLE_STAKING_ADDRESS,
         amountToStake
@@ -1198,7 +759,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       // Show feedback to user
       openNotification({
-        title: `${TEMPLE_TOKEN} staked`,
+        title: `${TICKER_SYMBOL.TEMPLE_TOKEN} staked`,
         hash: stakeTXN.hash,
       });
     }
@@ -1261,7 +822,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       const txnReceipt = await collectTxn.wait();
 
       openNotification({
-        title: `${TEMPLE_TOKEN} claimed`,
+        title: `${TICKER_SYMBOL.TEMPLE_TOKEN} claimed`,
         hash: collectTxn.hash,
       });
 
@@ -1287,7 +848,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
       const walletOGTEMPLE = await OG_TEMPLE.balanceOf(walletAddress);
       await ensureAllowance(
-        OG_TEMPLE_TOKEN,
+        TICKER_SYMBOL.OG_TEMPLE_TOKEN,
         OG_TEMPLE,
         LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
         walletOGTEMPLE
@@ -1302,7 +863,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       await faithVerificationTXN.wait();
 
       openNotification({
-        title: `${FAITH_TOKEN} verified`,
+        title: `${TICKER_SYMBOL.FAITH} verified`,
         hash: faithVerificationTXN.hash,
       });
     } else {
@@ -1320,7 +881,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       await faithClaimTXN.wait();
 
       openNotification({
-        title: `${FAITH_TOKEN} redeemed`,
+        title: `${TICKER_SYMBOL.FAITH} redeemed`,
         hash: faithClaimTXN.hash,
       });
     } else {
@@ -1361,14 +922,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       value={{
         balance: balanceState,
         exchangeRate: exchangeRateState,
-        ritual: ritual,
-        allocation,
         isConnected: isConnectedState,
         wallet: walletAddress,
-        lockInPeriod,
         currentEpoch,
         isLoading,
-        ocTemplar,
         templePrice,
         buy,
         sell,
@@ -1376,12 +933,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         changeWalletAddress,
         updateWallet,
         stake,
-        mintAndStake,
-        increaseAllowanceForRitual,
-        clearRitual,
-        inviteFriend,
-        verifyAMMWhitelist,
-        maxInvitesPerVerifiedUser,
+        ensureAllowance,
         claim,
         claimFaithAirdrop,
         signer: signerState,

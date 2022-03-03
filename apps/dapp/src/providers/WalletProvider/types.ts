@@ -1,5 +1,6 @@
 import { JsonRpcSigner, Network } from '@ethersproject/providers';
-import { BigNumber, ContractTransaction } from 'ethers';
+import { BigNumber } from 'ethers';
+import { ERC20 } from 'types/typechain';
 import { ClaimType } from 'enums/claim-type';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
@@ -12,8 +13,6 @@ export enum RitualKind {
   VERIFYING = 'VERIFYING',
   INVITE_FRIEND = 'INVITE_FRIEND',
 }
-
-export type COIN_TYPE = 'FRAX' | 'OGTEMPLE' | 'TEMPLE';
 
 export enum ETH_ACTIONS {
   REQUEST_ACCOUNTS = 'eth_requestAccounts',
@@ -34,40 +33,6 @@ export type FaithBalance = {
   totalSupply: number;
   share: number;
 };
-
-export type Allocation = {
-  amount: number;
-  // Contract returns the number of block/days at which the user will be able to start the rituals
-  // this value will be set to a timestamp of ms from epoch 0ms to ease use in dapp
-  startEpoch: number | undefined;
-};
-
-export enum RitualStatus {
-  NO_STATUS,
-  COMPLETED,
-  PROCESSING,
-  FAILED,
-}
-
-export type RitualMapping = Map<
-  RitualKind,
-  {
-    completedBalanceApproval: RitualStatus;
-    completedTransaction: RitualStatus;
-    verifyingTransaction: RitualStatus;
-    inviteFriendTransaction: RitualStatus;
-    ritualMessage?: string;
-  }
->;
-
-export interface OpeningCeremonyUser {
-  isVerified: boolean;
-  isGuest: boolean;
-  numInvited: number;
-  doublingIndexAtVerification: number;
-  totalSacrificedStablec: number;
-  totalSacrificedTemple: number;
-}
 
 export interface LockedEntry {
   // OG_Temple balance
@@ -111,13 +76,8 @@ export interface WalletState {
   faith: FaithBalance;
   templePrice: number;
   exchangeRate: number;
-  allocation: Allocation;
-  ritual: RitualMapping;
-  lockInPeriod: number;
   currentEpoch: number;
   isLoading: boolean;
-  ocTemplar: OpeningCeremonyUser;
-  maxInvitesPerVerifiedUser: number;
   signer: JsonRpcSigner | null;
   network: Network | null;
   lockedEntries: Array<LockedEntry>;
@@ -135,18 +95,6 @@ export interface WalletState {
 
   stake(amountToStake: BigNumber): Promise<void>;
 
-  mintAndStake(amountToBuy: BigNumber): void;
-
-  increaseAllowanceForRitual(
-    amountToBuy: BigNumber,
-    ritualKind: RitualKind,
-    allowanceKind?: COIN_TYPE
-  ): void;
-
-  clearRitual(ritualKind: RitualKind): void;
-
-  inviteFriend(sandalWoodToken: string, ritualKind: RitualKind): void;
-
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
 
   claimFaithAirdrop(
@@ -155,8 +103,6 @@ export interface WalletState {
     amount: BigNumber,
     proof: string[]
   ): Promise<TransactionReceipt | void>;
-
-  verifyAMMWhitelist(signature: string): Promise<ContractTransaction | void>;
 
   claimOgTemple(lockedEntryIndex: number): Promise<void>;
 
@@ -187,4 +133,11 @@ export interface WalletState {
   getTempleFaithReward(faithAmount: BigNumber): Promise<BigNumber | void>;
 
   getFaithQuote(): Promise<FaithQuote | void>;
+
+  ensureAllowance(
+    tokenName: string,
+    token: ERC20,
+    spender: string,
+    minAllowance: BigNumber
+  ): Promise<void>;
 }

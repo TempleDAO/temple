@@ -7,8 +7,9 @@ import { DataCard } from 'components/DataCard/DataCard';
 import PercentageBar from 'components/PercentageBar/PercentageBar';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import dateFormat from 'dateformat';
-import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
+import { useWallet } from 'providers/WalletProvider';
 import { formatNumber } from 'utils/formatter';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import {
   ConvoFlowTitle,
   Spacer,
@@ -43,7 +44,8 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
     <ViewContainer>
       <TitleWrapper>
         <ConvoFlowTitle>
-          YOU HAVE {exitQueueData.totalTempleOwned} {TEMPLE_TOKEN} IN QUEUE
+          YOU HAVE {exitQueueData.totalTempleOwned} {TICKER_SYMBOL.TEMPLE_TOKEN}{' '}
+          IN QUEUE
         </ConvoFlowTitle>
         <TooltipPadding>
           <Tooltip

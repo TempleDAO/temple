@@ -3,8 +3,9 @@ import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
-import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
+import { useWallet } from 'providers/WalletProvider';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import {
@@ -60,9 +61,9 @@ export const Stake: FC<StakeProps> = ({ small }) => {
   return (
     <ViewContainer>
       <TitleWrapper>
-        <ConvoFlowTitle>{`${
-          small ? 'STAKE' : 'PLEDGE'
-        } YOUR ${TEMPLE_TOKEN}`}</ConvoFlowTitle>
+        <ConvoFlowTitle>{`${small ? 'STAKE' : 'PLEDGE'} YOUR ${
+          TICKER_SYMBOL.TEMPLE_TOKEN
+        }`}</ConvoFlowTitle>
         <TooltipPadding>
           <Tooltip
             content={
@@ -83,7 +84,7 @@ export const Stake: FC<StakeProps> = ({ small }) => {
         small={small}
         hint={`Balance: ${formatNumber(templeWalletAmount)}`}
         onHintClick={() => copyBalance(templeWalletAmount, setTempleAmount)}
-        crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
+        crypto={{ kind: 'value', value: TICKER_SYMBOL.TEMPLE_TOKEN }}
         isNumber
         max={templeWalletAmount}
         min={0}
