@@ -60,14 +60,16 @@ const ENV_VARS = import.meta.env;
 export const TEMPLE_TOKEN = '$TEMPLE';
 export const OG_TEMPLE_TOKEN = '$OGTEMPLE';
 export const FAITH_TOKEN = 'FAITH';
-const USDC = 'USDC';
-const UNI = 'UNI';
-const FRAX = 'FRAX';
-const ETH = 'ETH';
+
+const TOKEN_SYMBOLS = {
+  ETH: 'ETH',
+  USDC: 'USDC',
+  UNI: 'UNI',
+};
 
 const NETWORKS = {
-  ethereum: 'ethereum'
-}
+  ethereum: 'ethereum',
+};
 
 // our default deadline is 20 minutes
 const DEADLINE = 20 * 60;
@@ -1919,8 +1921,8 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     );
     const tokenContract = new FakeERC20__factory(signerState).attach(tokenAddr);
 
-    if (tokenSymbol === ETH) {
-      sellToken = ETH;
+    if (tokenAddr === ethers.constants.AddressZero) {
+      sellToken = TOKEN_SYMBOLS.ETH;
     } else {
       sellToken = tokenAddr;
     }
@@ -1929,13 +1931,12 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       .parseUnits(tokenAmount.toString(), decimals)
       .toString();
 
-    const swapCallData = await get0xApiSwapQuote(
-      sellToken,
-      tokenSymbol,
-      sellAmount
-    );
+    const swapCallData = await get0xApiSwapQuote(sellToken, sellAmount);
 
-    if (tokenSymbol === USDC || tokenSymbol === UNI) {
+    if (
+      tokenSymbol === TOKEN_SYMBOLS.USDC ||
+      tokenSymbol === TOKEN_SYMBOLS.UNI
+    ) {
       tx = await zapWithPermit(
         signerState,
         walletAddress,
@@ -1947,14 +1948,14 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         swapCallData
       );
     } else {
-      if (sellToken !== ETH) {
+      if (sellToken !== TOKEN_SYMBOLS.ETH) {
         await tokenContract.approve(
           ENV_VARS.VITE_PUBLIC_TEMPLE_ZAPS_ADDRESS,
           ethers.utils.parseUnits('1000111', decimals)
         );
       }
       const overrides: { value?: BigNumber } = {};
-      if (sellToken === ETH) {
+      if (sellToken === TOKEN_SYMBOLS.ETH) {
         overrides.value = toAtto(tokenAmount);
       }
       tx = await templeZaps.zapIn(
@@ -1982,14 +1983,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const get0xApiSwapQuote = async (
-    sellToken: string,
-    tokenSymbol: string,
-    sellAmount: string
-  ) => {
+  const get0xApiSwapQuote = async (sellToken: string, sellAmount: string) => {
     let swapCallData;
 
-    if (tokenSymbol === FRAX) {
+    if (sellToken === STABLE_COIN_ADDRESS) {
       swapCallData = '0x';
     } else {
       const url = `https://api.0x.org/swap/v1/quote?sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS}`;
@@ -2013,7 +2010,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   ) => {
     const permitDomain = {
       name: await tokenContract.name(),
-      version: tokenSymbol === USDC ? '2' : '1',
+      version: tokenSymbol === TOKEN_SYMBOLS.USDC ? '2' : '1',
       chainId: 1,
       verifyingContract: tokenContract.address,
     };
