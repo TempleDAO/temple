@@ -1999,9 +1999,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     } else {
       const url = create0xQuoteUrl(sellToken, sellAmount);
       const response = await axios.get(url);
-      ({
-        data: { data: swapCallData },
-      } = response);
+      swapCallData = response.data.data;
     }
     return swapCallData;
   };
