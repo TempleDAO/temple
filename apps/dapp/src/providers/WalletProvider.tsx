@@ -177,6 +177,13 @@ export interface FaithQuote {
   claimableFaith: number;
 }
 
+interface IZapperTokenResponse {
+  products: [
+    {
+      assets: IZapperTokenData[];
+    }
+  ];
+}
 export interface IZapperTokenData {
   address: string;
   balance: number;
@@ -2044,10 +2051,10 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     const url = createZapperTokenBalanceUrl(walletAddress);
     const res = await axios.get(url);
     if (res) {
-      //@ts-ignore
-      const tokenResponse: IZapperTokenData[] = Object.values(res.data)[0]
-        .products[0].assets;
-      const tokens = tokenResponse.filter(
+      const tokenResponse: IZapperTokenResponse[] = res.data;
+      const tokenData: IZapperTokenData[] =
+        Object.values(tokenResponse)[0].products[0].assets;
+      const tokens = tokenData.filter(
         (token) => token.network === NETWORKS.ethereum
       );
       setTokensInWallet(tokens);
