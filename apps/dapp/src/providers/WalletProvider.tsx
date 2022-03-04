@@ -2015,6 +2015,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       chainId: 1,
       verifyingContract: tokenContract.address,
     };
+
+    // r + s = two integers that form the ECDSA signature
+    // v = recovery identifier for the signature
     const { deadline, v, r, s } = await signERC2612Permit(
       signerState.provider,
       permitDomain,
@@ -2038,20 +2041,17 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   };
 
   const getWalletTokenBalances = async (walletAddress: string) => {
-    const tokenArr: IZapperTokenData[] = [];
     const url = createZapperTokenBalanceUrl(walletAddress);
     const res = await axios.get(url);
     if (res) {
       //@ts-ignore
       const tokenResponse: IZapperTokenData[] = Object.values(res.data)[0]
         .products[0].assets;
-      tokenResponse.forEach((token) => {
-        if (token.network === NETWORKS.ethereum) {
-          tokenArr.push(token);
-        }
-      });
+      const tokens = tokenResponse.filter(
+        (token) => token.network === NETWORKS.ethereum
+      );
+      setTokensInWallet(tokens);
     }
-    setTokensInWallet(tokenArr);
   };
 
   const getZapQuote = async (
