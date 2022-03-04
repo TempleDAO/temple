@@ -49,6 +49,7 @@ import {
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
+import { create0xQuoteUrl, createZapperTokenBalanceUrl } from 'utils/url';
 
 /**
  * temple Staking . balance => all temple for user
@@ -1989,7 +1990,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     if (sellToken === STABLE_COIN_ADDRESS) {
       swapCallData = '0x';
     } else {
-      const url = `https://api.0x.org/swap/v1/quote?sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS}`;
+      const url = create0xQuoteUrl(sellToken, sellAmount);
       const response = await axios.get(url);
       ({
         data: { data: swapCallData },
@@ -2038,9 +2039,8 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
   const getWalletTokenBalances = async (walletAddress: string) => {
     const tokenArr: IZapperTokenData[] = [];
-    const res = await axios.get(
-      `https://api.zapper.fi/v1/protocols/tokens/balances?addresses[]=${walletAddress}&api_key=${PUBLIC_ZAPPER_API_KEY}`
-    );
+    const url = createZapperTokenBalanceUrl(walletAddress);
+    const res = await axios.get(url);
     if (res) {
       //@ts-ignore
       const tokenResponse: IZapperTokenData[] = Object.values(res.data)[0]
