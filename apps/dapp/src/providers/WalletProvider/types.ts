@@ -134,6 +134,8 @@ export interface WalletState {
 
   getFaithQuote(): Promise<FaithQuote | void>;
 
+  getExitQueueData(): Promise<ExitQueueData | void>;
+
   ensureAllowance(
     tokenName: string,
     token: ERC20,

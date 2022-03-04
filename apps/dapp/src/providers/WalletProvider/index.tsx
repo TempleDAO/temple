@@ -955,7 +955,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         getTempleFaithReward,
         getFaithQuote,
         faith,
-        getExitQueueData,
+        getExitQueueData: updateExitQueueData,
       }}
     >
       {children}
