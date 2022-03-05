@@ -22,7 +22,6 @@ import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
 import {
   TEMPLE_V2_PAIR_ADDRESS,
   TEMPLE_FAITH_ADDRESS,
-  OPENING_CEREMONY_ADDRESS,
   TREASURY_ADDRESS,
   TEMPLE_STAKING_ADDRESS,
   STABLE_COIN_ADDRESS,

@@ -66,6 +66,16 @@ export interface FaithQuote {
   claimableFaith: number;
 }
 
+export interface StakingService {
+  stake(amountToStake: BigNumber): Promise<void>;
+
+  claimAvailableTemple(): Promise<void>;
+
+  restakeAvailableTemple(): Promise<void>;
+
+  getJoinQueueData(ogtAmount: BigNumber): Promise<JoinQueueData | void>;
+}
+
 export interface WalletState {
   // has the user connected a wallet to the dapp
   isConnected: boolean;
@@ -93,8 +103,6 @@ export interface WalletState {
 
   sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber): void;
 
-  stake(amountToStake: BigNumber): Promise<void>;
-
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
 
   claimFaithAirdrop(
@@ -106,13 +114,7 @@ export interface WalletState {
 
   claimOgTemple(lockedEntryIndex: number): Promise<void>;
 
-  claimAvailableTemple(): Promise<void>;
-
-  restakeAvailableTemple(): Promise<void>;
-
   getRewardsForOGT(ogtAmount: number): Promise<number | void>;
-
-  getJoinQueueData(ogtAmount: BigNumber): Promise<JoinQueueData | void>;
 
   getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
 
