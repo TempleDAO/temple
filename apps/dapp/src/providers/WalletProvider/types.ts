@@ -90,6 +90,15 @@ export interface FaithService {
   redeemFaith(faithAmount: BigNumber): Promise<BigNumber | void>;
 
   getFaithQuote(): Promise<FaithQuote | void>;
+
+  getTempleFaithReward(faithAmount: BigNumber): Promise<BigNumber | void>;
+
+  claimFaithAirdrop(
+    index: number,
+    address: string,
+    amount: BigNumber,
+    proof: string[]
+  ): Promise<TransactionReceipt | void>;
 }
 
 export interface WalletState {
@@ -118,13 +127,6 @@ export interface WalletState {
 
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
 
-  claimFaithAirdrop(
-    index: number,
-    address: string,
-    amount: BigNumber,
-    proof: string[]
-  ): Promise<TransactionReceipt | void>;
-
   claimOgTemple(lockedEntryIndex: number): Promise<void>;
 
   getRewardsForOGT(ogtAmount: number): Promise<number | void>;
@@ -140,10 +142,6 @@ export interface WalletState {
   ): Promise<void | TransactionReceipt>;
 
   apy: number;
-
-  getTempleFaithReward(faithAmount: BigNumber): Promise<BigNumber | void>;
-
-  getExitQueueData(): Promise<ExitQueueData | void>;
 
   ensureAllowance(
     tokenName: string,

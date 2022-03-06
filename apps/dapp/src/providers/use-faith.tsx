@@ -1,5 +1,6 @@
 import React, { useState, useContext, createContext } from 'react';
 import { BigNumber } from 'ethers';
+import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { useNotification } from 'providers/NotificationProvider';
 import { useWallet } from 'providers/WalletProvider';
 import { FaithService } from 'providers/WalletProvider/types';
@@ -11,24 +12,29 @@ import {
   TEMPLE_STAKING_ADDRESS,
   LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
   VITE_PUBLIC_DEVOTION_LOCK_AND_VERIFY_GAS_LIMIT,
+  FAITH_AIRDROP_ADDRESS,
+  VITE_PUBLIC_CLAIM_FAITH_GAS_LIMIT,
 } from 'providers/WalletProvider/env';
 import {
   Devotion__factory,
   TempleStaking__factory,
   OGTemple__factory,
+  FaithMerkleAirdrop__factory,
 } from 'types/typechain';
 
 const INITIAL_STATE: FaithService = {
-  verifyFaith: asyncNoop,
-  redeemFaith: asyncNoop,
-  updateFaith: asyncNoop,
-  getFaithQuote: asyncNoop,
   faith: {
     usableFaith: 0,
     lifeTimeFaith: 0,
     totalSupply: 0,
     share: 0,
   },
+  verifyFaith: asyncNoop,
+  redeemFaith: asyncNoop,
+  updateFaith: asyncNoop,
+  getFaithQuote: asyncNoop,
+  getTempleFaithReward: asyncNoop,
+  claimFaithAirdrop: asyncNoop,
 };
 
 const FaithContext = createContext(INITIAL_STATE);
@@ -121,6 +127,39 @@ export const FaithProvider = () => {
     }
   };
 
+  const getTempleFaithReward = async (faithAmount: BigNumber) => {
+    if (wallet && signer) {
+      const DEVOTION = new Devotion__factory(signer).attach(
+        TEMPLE_DEVOTION_ADDRESS
+      );
+
+      return await DEVOTION.claimableTempleRewardQuote(faithAmount);
+    } else {
+      console.error('Missing wallet address');
+    }
+  };
+
+  const claimFaithAirdrop = async (
+    index: number,
+    address: string,
+    amount: BigNumber,
+    proof: string[]
+  ): Promise<TransactionReceipt | void> => {
+    if (signer) {
+      const faithAirdrop = new FaithMerkleAirdrop__factory(signer).attach(
+        FAITH_AIRDROP_ADDRESS
+      );
+
+      const tx = await faithAirdrop.claim(index, address, amount, proof, {
+        gasLimit: VITE_PUBLIC_CLAIM_FAITH_GAS_LIMIT || 100000,
+      });
+
+      return tx.wait();
+    } else {
+      console.error('Missing wallet address');
+    }
+  };
+
   return (
     <FaithContext.Provider
       value={{
@@ -129,6 +168,8 @@ export const FaithProvider = () => {
         redeemFaith,
         verifyFaith,
         getFaithQuote,
+        getTempleFaithReward,
+        claimFaithAirdrop,
       }}
     />
   );
