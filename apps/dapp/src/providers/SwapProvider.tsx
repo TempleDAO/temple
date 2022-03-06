@@ -1,39 +1,79 @@
-import React, { useContext, createContext, PropsWithChildren } from 'react';
+import React, {
+  useState,
+  useContext,
+  createContext,
+  PropsWithChildren,
+} from 'react';
 import { BigNumber } from 'ethers';
+import { JsonRpcSigner } from '@ethersproject/providers';
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
-import { SwapService } from 'providers/WalletProvider/types';
+import { SwapService } from 'providers/types';
+import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop } from 'utils/helpers';
+import { fromAtto } from 'utils/bigNumber';
 import {
   ERC20__factory,
   TempleERC20Token__factory,
   TempleFraxAMMRouter__factory,
+  TempleUniswapV2Pair__factory,
 } from 'types/typechain';
 import {
   TEMPLE_ADDRESS,
   STABLE_COIN_ADDRESS,
   TEMPLE_V2_ROUTER_ADDRESS,
+  TEMPLE_V2_PAIR_ADDRESS,
   VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT,
   VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT,
-} from 'providers/WalletProvider/env';
+} from 'providers/env';
 
 // our default deadline is 20 minutes
 const DEADLINE = 20 * 60;
 
 const INITIAL_STATE: SwapService = {
+  templePrice: 0,
   buy: asyncNoop,
   sell: asyncNoop,
   getSellQuote: asyncNoop,
   getBuyQuote: asyncNoop,
+  updateTemplePrice: asyncNoop,
 };
 
 const SwapContext = createContext(INITIAL_STATE);
 
 export const SwapProvider = (props: PropsWithChildren<any>) => {
+  const [templePrice, setTemplePrice] = useState(INITIAL_STATE.templePrice);
+
   const { wallet, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
+
+  const getTemplePrice = async (
+    walletAddress: string,
+    signerState: JsonRpcSigner
+  ) => {
+    if (!walletAddress) {
+      throw new NoWalletAddressError();
+    }
+
+    const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory(
+      signerState
+    ).attach(TEMPLE_V2_PAIR_ADDRESS);
+
+    const { _reserve0, _reserve1 } = await TEMPLE_UNISWAP_V2_PAIR.getReserves();
+
+    return fromAtto(_reserve1) / fromAtto(_reserve0);
+  };
+
+  const updateTemplePrice = async () => {
+    if (!wallet || !signer) {
+      return;
+    }
+
+    const price = await getTemplePrice(wallet, signer);
+    setTemplePrice(price);
+  };
 
   const buy = async (
     amountInFrax: BigNumber,
@@ -167,10 +207,12 @@ export const SwapProvider = (props: PropsWithChildren<any>) => {
   return (
     <SwapContext.Provider
       value={{
+        templePrice,
         buy,
         sell,
         getBuyQuote,
         getSellQuote,
+        updateTemplePrice,
       }}
     >
       {props.children}
@@ -178,4 +220,4 @@ export const SwapProvider = (props: PropsWithChildren<any>) => {
   );
 };
 
-export const useSwap = useContext(SwapContext);
+export const useSwap = () => useContext(SwapContext);

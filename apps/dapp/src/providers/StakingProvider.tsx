@@ -5,45 +5,45 @@ import React, {
   PropsWithChildren,
 } from 'react';
 import { BigNumber } from 'ethers';
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { fromAtto } from 'utils/bigNumber';
-import { asyncNoop } from 'utils/helpers';
+import { JsonRpcSigner } from '@ethersproject/providers';
 import { useWallet } from 'providers/WalletProvider';
-import {
-  getEpochsToDays,
-  getExitQueueData,
-  getLockedEntries,
-  getRewardsForOGTemple,
-} from 'providers/WalletProvider/util';
 import { useNotification } from 'providers/NotificationProvider';
+import { getEpochsToDays } from 'providers/util';
+import { NoWalletAddressError } from 'providers/errors';
+import { fromAtto, toAtto } from 'utils/bigNumber';
+import { asyncNoop } from 'utils/helpers';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import {
+  LOCKED_OG_TEMPLE_ADDRESS,
+  LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
+  TEMPLE_ADDRESS,
   EXIT_QUEUE_ADDRESS,
   ACCELERATED_EXIT_QUEUE_ADDRESS,
   TEMPLE_STAKING_ADDRESS,
-  TEMPLE_ADDRESS,
-  LOCKED_OG_TEMPLE_ADDRESS,
   VITE_PUBLIC_WITHDRAW_EPOCHS_BASE_GAS_LIMIT,
   VITE_PUBLIC_WITHDRAW_EPOCHS_PER_EPOCH_GAS_LIMIT,
   VITE_PUBLIC_RESTAKE_EPOCHS_BASE_GAS_LIMIT,
   VITE_PUBLIC_RESTAKE_EPOCHS_PER_EPOCH_GAS_LIMIT,
   VITE_PUBLIC_STAKE_GAS_LIMIT,
   VITE_PUBLIC_CLAIM_OGTEMPLE_GAS_LIMIT,
-} from 'providers/WalletProvider/env';
+} from 'providers/env';
 import {
   StakingService,
   JoinQueueData,
   ExitQueueData,
   LockedEntry,
-} from 'providers/WalletProvider/types';
+} from 'providers/types';
 import {
   AcceleratedExitQueue__factory,
   ExitQueue__factory,
   TempleERC20Token__factory,
   TempleStaking__factory,
+  LockedOGTemple__factory,
   LockedOGTempleDeprecated__factory,
 } from 'types/typechain';
 
 const INITIAL_STATE: StakingService = {
+  apy: 0,
   exitQueueData: {
     lastClaimableEpochAt: 0,
     claimableTemple: 0,
@@ -59,11 +59,13 @@ const INITIAL_STATE: StakingService = {
   updateLockedEntries: asyncNoop,
   claimOgTemple: asyncNoop,
   getRewardsForOGT: asyncNoop,
+  updateApy: asyncNoop,
 };
 
 const StakingContext = createContext<StakingService>(INITIAL_STATE);
 
 export const StakingProvider = (props: PropsWithChildren<any>) => {
+  const [apy, setApy] = useState(0);
   const [exitQueueData, setExitQueueData] = useState<ExitQueueData>(
     INITIAL_STATE.exitQueueData
   );
@@ -74,6 +76,155 @@ export const StakingProvider = (props: PropsWithChildren<any>) => {
   const { wallet, signer, getBalance, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
 
+  const getApy = async (walletAddress: string, signerState: JsonRpcSigner) => {
+    if (!walletAddress) {
+      throw new NoWalletAddressError();
+    }
+
+    const TEMPLE_STAKING = new TempleStaking__factory(signerState).attach(
+      TEMPLE_STAKING_ADDRESS
+    );
+
+    const SCALE_FACTOR = 10000;
+    const epy = (await TEMPLE_STAKING.getEpy(SCALE_FACTOR)).toNumber();
+    return Math.trunc((Math.pow(epy / SCALE_FACTOR + 1, 365.25) - 1) * 100);
+  };
+
+  const getRewardsForOGTemple = async (
+    walletAddress: string,
+    signerState: JsonRpcSigner,
+    ogtAmount: number
+  ) => {
+    if (!walletAddress) {
+      throw new NoWalletAddressError();
+    }
+
+    const STAKING = new TempleStaking__factory(signerState).attach(
+      TEMPLE_STAKING_ADDRESS
+    );
+
+    return fromAtto(await STAKING.balance(toAtto(ogtAmount)));
+  };
+
+  const getLockedEntries = async (
+    walletAddress: string,
+    signerState: JsonRpcSigner
+  ) => {
+    if (!walletAddress) {
+      throw new NoWalletAddressError();
+    }
+
+    const ogLockedTemple = new LockedOGTempleDeprecated__factory(
+      signerState
+    ).attach(LOCKED_OG_TEMPLE_ADDRESS);
+
+    const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber();
+    const lockedEntriesPromises = [];
+    for (let i = 0; i < lockedNum; i++) {
+      lockedEntriesPromises.push(ogLockedTemple.locked(walletAddress, i));
+    }
+
+    const lockedEntries = await Promise.all(lockedEntriesPromises);
+    const lockedEntriesVals: Array<LockedEntry> = lockedEntries.map(
+      (entry, index) => {
+        return {
+          // chain timestamp is in second => we need milli
+          lockedUntilTimestamp: entry.LockedUntilTimestamp.toNumber() * 1000,
+          balanceOGTemple: fromAtto(entry.BalanceOGTemple),
+          index,
+        };
+      }
+    );
+
+    // get ogTempleLocked from new Contract
+    const ogLockedTempleNew = new LockedOGTemple__factory(signerState).attach(
+      LOCKED_OG_TEMPLE_DEVOTION_ADDRESS
+    );
+
+    const newEntry = await ogLockedTempleNew.ogTempleLocked(walletAddress);
+    lockedEntriesVals.push({
+      balanceOGTemple: fromAtto(newEntry.amount),
+      lockedUntilTimestamp: newEntry.lockedUntilTimestamp.toNumber() * 1000,
+      index: lockedEntriesVals.length,
+    });
+
+    return lockedEntriesVals;
+  };
+
+  const getExitQueueData = async (
+    walletAddress: string,
+    signerState: JsonRpcSigner
+  ) => {
+    if (!walletAddress) {
+      throw new NoWalletAddressError();
+    }
+
+    const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(
+      EXIT_QUEUE_ADDRESS
+    );
+
+    const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(
+      signerState
+    ).attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
+
+    const userData = await EXIT_QUEUE.userData(walletAddress);
+    const totalTempleOwned = fromAtto(userData.Amount);
+
+    if (totalTempleOwned === 0) {
+      return {
+        lastClaimableEpochAt: 0,
+        claimableTemple: 0,
+        totalTempleOwned: 0,
+        claimableEpochs: [],
+      };
+    }
+
+    const currentEpoch = (
+      await ACCELERATED_EXIT_QUEUE.currentEpoch()
+    ).toNumber();
+    const firstEpoch = userData.FirstExitEpoch.toNumber();
+    const lastEpoch = userData.LastExitEpoch.toNumber();
+    const todayInMs = new Date().getTime();
+    const dayInMs = 8.64e7;
+    const daysUntilLastClaimableEpoch = await getEpochsToDays(
+      lastEpoch - currentEpoch + 1,
+      signerState
+    );
+    const lastClaimableEpochAt =
+      todayInMs + daysUntilLastClaimableEpoch * dayInMs;
+
+    const exitEntryPromises = [];
+
+    // stores all epochs address has in the ExitQueue.sol, some might have Allocation 0
+    const maybeClaimableEpochs: Array<number> = [];
+    // stores all epochs with allocations for address
+    const claimableEpochs: Array<number> = [];
+    for (let i = firstEpoch; i < currentEpoch; i++) {
+      maybeClaimableEpochs.push(i);
+      exitEntryPromises.push(
+        EXIT_QUEUE.currentEpochAllocation(walletAddress, i)
+      );
+    }
+
+    const exitEntries = await Promise.all(exitEntryPromises);
+    const claimableTemple: number = fromAtto(
+      exitEntries.reduce((prev, curr, index) => {
+        // the contract is not removing the user.Exits[epoch], so we only get the ones with a claimable amount(anything above 0)
+        if (fromAtto(curr) > 0) {
+          claimableEpochs.push(maybeClaimableEpochs[index]);
+        }
+        return prev.add(curr);
+      }, BigNumber.from(0))
+    );
+
+    return {
+      lastClaimableEpochAt,
+      claimableTemple,
+      totalTempleOwned,
+      claimableEpochs,
+    };
+  };
+
   const updateExitQueueData = async () => {
     if (!wallet || !signer) {
       return;
@@ -81,6 +232,15 @@ export const StakingProvider = (props: PropsWithChildren<any>) => {
 
     const exitQueueData = await getExitQueueData(wallet, signer);
     setExitQueueData(exitQueueData);
+  };
+
+  const updateApy = async () => {
+    if (!wallet || !signer) {
+      return;
+    }
+
+    const apy = await getApy(wallet, signer);
+    setApy(apy);
   };
 
   const updateLockedEntries = async () => {
@@ -301,6 +461,7 @@ export const StakingProvider = (props: PropsWithChildren<any>) => {
   return (
     <StakingContext.Provider
       value={{
+        apy,
         exitQueueData,
         lockedEntries,
         stake,
@@ -311,6 +472,7 @@ export const StakingProvider = (props: PropsWithChildren<any>) => {
         updateLockedEntries,
         claimOgTemple,
         getRewardsForOGT,
+        updateApy,
       }}
     >
       {props.children}

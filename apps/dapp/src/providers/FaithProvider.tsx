@@ -5,27 +5,32 @@ import React, {
   PropsWithChildren,
 } from 'react';
 import { BigNumber } from 'ethers';
+import { JsonRpcSigner } from '@ethersproject/providers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { useNotification } from 'providers/NotificationProvider';
 import { useWallet } from 'providers/WalletProvider';
-import { FaithService } from 'providers/WalletProvider/types';
-import { getFaith } from 'providers/WalletProvider/util';
-import { asyncNoop } from 'utils/helpers';
+import { FaithService } from 'providers/types';
+import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { asyncNoop } from 'utils/helpers';
+import { fromAtto } from 'utils/bigNumber';
+import { formatNumber } from 'utils/formatter';
 import {
+  Faith__factory,
+  Devotion__factory,
+  TempleStaking__factory,
+  OGTemple__factory,
+  FaithMerkleAirdrop__factory,
+} from 'types/typechain';
+import {
+  TEMPLE_FAITH_ADDRESS,
   TEMPLE_DEVOTION_ADDRESS,
   TEMPLE_STAKING_ADDRESS,
   LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
   VITE_PUBLIC_DEVOTION_LOCK_AND_VERIFY_GAS_LIMIT,
   FAITH_AIRDROP_ADDRESS,
   VITE_PUBLIC_CLAIM_FAITH_GAS_LIMIT,
-} from 'providers/WalletProvider/env';
-import {
-  Devotion__factory,
-  TempleStaking__factory,
-  OGTemple__factory,
-  FaithMerkleAirdrop__factory,
-} from 'types/typechain';
+} from 'providers/env';
 
 const INITIAL_STATE: FaithService = {
   faith: {
@@ -49,6 +54,30 @@ export const FaithProvider = (props: PropsWithChildren<any>) => {
 
   const { wallet, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
+
+  const getFaith = async (
+    walletAddress: string,
+    signerState: JsonRpcSigner
+  ) => {
+    if (!walletAddress) {
+      throw new NoWalletAddressError();
+    }
+
+    const FAITH = new Faith__factory(signerState).attach(TEMPLE_FAITH_ADDRESS);
+
+    const faithBalances = await FAITH.balances(walletAddress);
+    const totalSupply = await FAITH.totalSupply();
+    const totalFaithSupply = fromAtto(totalSupply);
+    const lifeTimeFaith = fromAtto(faithBalances.lifeTimeFaith);
+    const usableFaith = fromAtto(faithBalances.usableFaith);
+
+    return {
+      lifeTimeFaith: lifeTimeFaith,
+      usableFaith: usableFaith,
+      totalSupply: totalFaithSupply,
+      share: formatNumber((usableFaith * 100) / totalFaithSupply),
+    };
+  };
 
   const updateFaith = async () => {
     if (!wallet || !signer) {
@@ -182,4 +211,4 @@ export const FaithProvider = (props: PropsWithChildren<any>) => {
   );
 };
 
-export const useFaith = useContext(FaithContext);
+export const useFaith = () => useContext(FaithContext);

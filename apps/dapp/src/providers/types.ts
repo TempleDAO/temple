@@ -67,6 +67,7 @@ export interface FaithQuote {
 }
 
 export interface StakingService {
+  apy: number;
   exitQueueData: ExitQueueData;
   lockedEntries: Array<LockedEntry>;
 
@@ -85,6 +86,8 @@ export interface StakingService {
   claimOgTemple(lockedEntryIndex: number): Promise<void>;
 
   getRewardsForOGT(ogtAmount: number): Promise<number | void>;
+
+  updateApy(): Promise<void>
 }
 
 export interface FaithService {
@@ -109,6 +112,8 @@ export interface FaithService {
 }
 
 export interface SwapService { 
+  templePrice: number;
+
   buy(amountInFrax: BigNumber, minAmountOutTemple: BigNumber): void;
 
   sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber): void;
@@ -116,35 +121,33 @@ export interface SwapService {
   getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
 
   getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
+
+  updateTemplePrice(): Promise<void>
 }
 
 export interface WalletState {
   // has the user connected a wallet to the dapp
-  isConnected: boolean;
   wallet: string | null;
   // current
   balance: Balance;
-  templePrice: number;
-  currentEpoch: number;
-  isLoading: boolean;
   signer: JsonRpcSigner | null;
   network: Network | null;
+
+  isConnected(): boolean;
 
   connectWallet(): void;
 
   changeWalletAddress(): void;
 
-  updateWallet(): Promise<void> | void;
-
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
 
   getBalance(): Promise<Balance | void>;
 
+  getCurrentEpoch(): Promise<void | number>;
+
   collectTempleTeamPayment(
     epoch: TEAM_PAYMENTS_EPOCHS
   ): Promise<void | TransactionReceipt>;
-
-  apy: number;
 
   ensureAllowance(
     tokenName: string,
