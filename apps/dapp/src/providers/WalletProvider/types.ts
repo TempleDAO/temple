@@ -108,6 +108,16 @@ export interface FaithService {
   ): Promise<TransactionReceipt | void>;
 }
 
+export interface SwapService { 
+  buy(amountInFrax: BigNumber, minAmountOutTemple: BigNumber): void;
+
+  sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber): void;
+
+  getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
+
+  getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
+}
+
 export interface WalletState {
   // has the user connected a wallet to the dapp
   isConnected: boolean;
@@ -127,15 +137,7 @@ export interface WalletState {
 
   updateWallet(): Promise<void> | void;
 
-  buy(amountInFrax: BigNumber, minAmountOutTemple: BigNumber): void;
-
-  sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber): void;
-
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
-
-  getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
-
-  getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
 
   getBalance(): Promise<Balance | void>;
 

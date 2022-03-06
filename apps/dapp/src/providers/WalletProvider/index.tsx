@@ -21,14 +21,10 @@ import { BigNumber, ethers } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
 import {
   ERC20,
-  ERC20__factory,
   TempleCashback__factory,
-  TempleERC20Token__factory,
-  TempleFraxAMMRouter__factory,
   TempleTeamPayments__factory,
 } from 'types/typechain';
 import { toAtto } from 'utils/bigNumber';
-import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
 import { NoWalletAddressError } from './errors';
 
@@ -43,18 +39,10 @@ import {
 import { WalletState, Balance, ETH_ACTIONS } from './types';
 
 import {
-  TEMPLE_ADDRESS,
-  STABLE_COIN_ADDRESS,
-  TEMPLE_V2_ROUTER_ADDRESS,
   TEMPLE_CASHBACK_ADDRESS,
   NEXT_PUBLIC_EXCHANGE_RATE_VALUE,
   VITE_PUBLIC_CLAIM_GAS_LIMIT,
-  VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT,
-  VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT,
 } from './env';
-
-// our default deadline is 20 minutes
-const DEADLINE = 20 * 60;
 
 // We want to save gas burn $ for the Templars,
 // so we approving 1M up front, so only 1 approve TXN is required for approve
@@ -79,16 +67,12 @@ const INITIAL_STATE: WalletState = {
   currentEpoch: -1,
   templePrice: 0,
   isLoading: true,
-  buy: noop,
-  sell: noop,
   connectWallet: noop,
   changeWalletAddress: noop,
   updateWallet: noop,
   claim: asyncNoop,
   signer: null,
   network: null,
-  getSellQuote: asyncNoop,
-  getBuyQuote: asyncNoop,
   getBalance: asyncNoop,
   collectTempleTeamPayment: asyncNoop,
   apy: 0,
@@ -352,135 +336,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const buy = async (
-    amountInFrax: BigNumber,
-    minAmountOutTemple: BigNumber
-  ) => {
-    if (walletAddress && signerState) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signerState).attach(
-        TEMPLE_V2_ROUTER_ADDRESS
-      );
-      const STABLE_TOKEN = new ERC20__factory(signerState).attach(
-        STABLE_COIN_ADDRESS
-      );
-
-      await ensureAllowance(
-        TICKER_SYMBOL.STABLE_TOKEN,
-        STABLE_TOKEN,
-        TEMPLE_V2_ROUTER_ADDRESS,
-        amountInFrax
-      );
-
-      const balance = await STABLE_TOKEN.balanceOf(walletAddress);
-      const verifiedAmountInFrax = amountInFrax.lt(balance)
-        ? amountInFrax
-        : balance;
-
-      const deadline = formatNumberFixedDecimals(
-        Date.now() / 1000 + DEADLINE,
-        0
-      );
-
-      const buyTXN = await AMM_ROUTER.swapExactFraxForTemple(
-        verifiedAmountInFrax,
-        minAmountOutTemple,
-        walletAddress,
-        deadline,
-        {
-          gasLimit: VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT || 300000,
-        }
-      );
-      await buyTXN.wait();
-      // Show feedback to user
-      openNotification({
-        title: `Sacrificed ${TICKER_SYMBOL.STABLE_TOKEN}`,
-        hash: buyTXN.hash,
-      });
-    }
-  };
-
-  /**
-   * AMM Sell
-   * @param amountInTemple: Amount of $TEMPLE user wants to sell
-   * @param minAmountOutFrax: % user is giving as slippage
-   */
-  const sell = async (
-    amountInTemple: BigNumber,
-    minAmountOutFrax: BigNumber
-  ) => {
-    if (walletAddress && signerState) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signerState).attach(
-        TEMPLE_V2_ROUTER_ADDRESS
-      );
-      const TEMPLE = new TempleERC20Token__factory(signerState).attach(
-        TEMPLE_ADDRESS
-      );
-
-      await ensureAllowance(
-        TICKER_SYMBOL.TEMPLE_TOKEN,
-        TEMPLE,
-        TEMPLE_V2_ROUTER_ADDRESS,
-        amountInTemple
-      );
-
-      const balance = await TEMPLE.balanceOf(walletAddress);
-      const verifiedAmountInTemple = amountInTemple.lt(balance)
-        ? amountInTemple
-        : balance;
-
-      const deadline = formatNumberFixedDecimals(
-        Date.now() / 1000 + DEADLINE,
-        0
-      );
-
-      const sellTXN = await AMM_ROUTER.swapExactTempleForFrax(
-        verifiedAmountInTemple,
-        minAmountOutFrax,
-        walletAddress,
-        deadline,
-        {
-          gasLimit: VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
-        }
-      );
-      await sellTXN.wait();
-
-      // Show feedback to user
-      openNotification({
-        title: `${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
-        hash: sellTXN.hash,
-      });
-    }
-  };
-
-  const getSellQuote = async (amountToSell: BigNumber) => {
-    if (walletAddress && signerState) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signerState).attach(
-        TEMPLE_V2_ROUTER_ADDRESS
-      );
-
-      const { amountOut } = await AMM_ROUTER.swapExactTempleForFraxQuote(
-        amountToSell
-      );
-
-      return amountOut;
-    }
-    return BigNumber.from(0);
-  };
-
-  const getBuyQuote = async (fraxIn: BigNumber): Promise<BigNumber> => {
-    if (walletAddress && signerState) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signerState).attach(
-        TEMPLE_V2_ROUTER_ADDRESS
-      );
-
-      const { amountOutAMM, amountOutProtocol } =
-        await AMM_ROUTER.swapExactFraxForTempleQuote(fraxIn);
-
-      return amountOutAMM.add(amountOutProtocol);
-    }
-    return BigNumber.from(0);
-  };
-
   const collectTempleTeamPayment = async (epoch: TEAM_PAYMENTS_EPOCHS) => {
     if (walletAddress && signerState) {
       const fixedTeamPaymentAddress =
@@ -515,8 +370,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         currentEpoch,
         isLoading,
         templePrice,
-        buy,
-        sell,
         connectWallet,
         changeWalletAddress,
         updateWallet,
@@ -524,8 +377,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         claim,
         signer: signerState,
         network,
-        getSellQuote,
-        getBuyQuote,
         getBalance: updateBalance,
         apy,
         collectTempleTeamPayment,
