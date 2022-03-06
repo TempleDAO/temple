@@ -1,4 +1,9 @@
-import React, { useState, useContext, createContext } from 'react';
+import React, {
+  useState,
+  useContext,
+  createContext,
+  PropsWithChildren,
+} from 'react';
 import { BigNumber } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { useNotification } from 'providers/NotificationProvider';
@@ -39,7 +44,7 @@ const INITIAL_STATE: FaithService = {
 
 const FaithContext = createContext(INITIAL_STATE);
 
-export const FaithProvider = () => {
+export const FaithProvider = (props: PropsWithChildren<any>) => {
   const [faith, setFaith] = useState(INITIAL_STATE.faith);
 
   const { wallet, signer, ensureAllowance } = useWallet();
@@ -171,7 +176,9 @@ export const FaithProvider = () => {
         getTempleFaithReward,
         claimFaithAirdrop,
       }}
-    />
+    >
+      {props.children}
+    </FaithContext.Provider>
   );
 };
 

@@ -53,8 +53,6 @@ import {
   VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT,
 } from './env';
 
-/* TODO: Move this to a common place */
-
 // our default deadline is 20 minutes
 const DEADLINE = 20 * 60;
 

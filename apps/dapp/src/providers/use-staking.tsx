@@ -1,4 +1,9 @@
-import React, { useState, createContext, useContext } from 'react';
+import React, {
+  useState,
+  createContext,
+  useContext,
+  PropsWithChildren,
+} from 'react';
 import { BigNumber } from 'ethers';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { fromAtto } from 'utils/bigNumber';
@@ -58,7 +63,7 @@ const INITIAL_STATE: StakingService = {
 
 const StakingContext = createContext<StakingService>(INITIAL_STATE);
 
-export const StakingProvider = () => {
+export const StakingProvider = (props: PropsWithChildren<any>) => {
   const [exitQueueData, setExitQueueData] = useState<ExitQueueData>(
     INITIAL_STATE.exitQueueData
   );
@@ -307,7 +312,9 @@ export const StakingProvider = () => {
         claimOgTemple,
         getRewardsForOGT,
       }}
-    />
+    >
+      {props.children}
+    </StakingContext.Provider>
   );
 };
 
