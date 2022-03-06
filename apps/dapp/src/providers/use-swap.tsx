@@ -178,4 +178,4 @@ export const SwapProvider = (props: PropsWithChildren<any>) => {
   );
 };
 
-const useSwap = useContext(SwapContext);
+export const useSwap = useContext(SwapContext);

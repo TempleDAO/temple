@@ -91,9 +91,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const [balanceState, setBalanceState] = useState<Balance>(
     INITIAL_STATE.balance
   );
-  const [exchangeRateState, setExchangeRateState] = useState<number>(
-    INITIAL_STATE.exchangeRate
-  );
   const [currentEpoch, setCurrentEpoch] = useState<number>(
     INITIAL_STATE.currentEpoch
   );
@@ -216,7 +213,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         await Promise.all([
           updateTemplePrice(),
           updateCurrentEpoch(),
-          updateExchangeRate(),
           updateBalance(),
           updateFaith(),
           updateLockedEntries(),
@@ -238,17 +234,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
     const balance = await getBalance(walletAddress, signerState);
     setBalanceState(balance);
-  };
-
-  const updateExchangeRate = async (): Promise<void> => {
-    if (!walletAddress || !signerState) {
-      return;
-    }
-
-    const rate = await getExchangeRate(walletAddress, signerState);
-    if (rate > 0) {
-      setExchangeRateState(rate);
-    }
   };
 
   const updateCurrentEpoch = async (): Promise<void> => {
@@ -364,7 +349,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     <WalletContext.Provider
       value={{
         balance: balanceState,
-        exchangeRate: exchangeRateState,
         isConnected: isConnectedState,
         wallet: walletAddress,
         currentEpoch,

@@ -125,7 +125,6 @@ export interface WalletState {
   // current
   balance: Balance;
   templePrice: number;
-  exchangeRate: number;
   currentEpoch: number;
   isLoading: boolean;
   signer: JsonRpcSigner | null;
