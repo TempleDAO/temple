@@ -8,7 +8,6 @@ import {
   LockedOGTemple__factory,
   LockedOGTempleDeprecated__factory,
   OGTemple__factory,
-  OpeningCeremony__factory,
   TempleERC20Token__factory,
   TempleStaking__factory,
   TempleTreasury__factory,

@@ -40,6 +40,7 @@ import { NoWalletAddressError } from './errors';
 import {
   getTemplePrice,
   getCurrentEpoch,
+  getExitQueueData,
   getExchangeRate,
   getBalance,
   getFaith,
@@ -162,7 +163,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const [lockedEntries, setLockedEntries] = useState<Array<LockedEntry>>(
     INITIAL_STATE.lockedEntries
   );
-    const [exitQueueData, setExitQueueData] = useState<ExitQueueData>(
+  const [exitQueueData, setExitQueueData] = useState<ExitQueueData>(
     INITIAL_STATE.exitQueueData
   );
   const [apy, setApy] = useState(0);
@@ -760,7 +761,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         getFaithQuote,
         exitQueueData,
         getExitQueueData: updateExitQueueData,
-        faith
+        faith,
       }}
     >
       {children}

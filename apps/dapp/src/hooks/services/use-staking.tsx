@@ -1,8 +1,9 @@
-import React, { useState, createContext } from 'react';
+import React, { useState, createContext, useContext } from 'react';
 import { BigNumber } from 'ethers';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { fromAtto } from 'utils/bigNumber';
 import { asyncNoop, noop } from 'utils/helpers';
+import { useWallet } from 'providers/WalletProvider';
 import { getEpochsToDays } from 'providers/WalletProvider/util';
 import { useNotification } from 'providers/NotificationProvider';
 import {
@@ -16,7 +17,7 @@ import {
   VITE_PUBLIC_RESTAKE_EPOCHS_PER_EPOCH_GAS_LIMIT,
   VITE_PUBLIC_STAKE_GAS_LIMIT,
 } from 'providers/WalletProvider/env';
-import { StakingService, ExitQueueData } from 'providers/WalletProvider/types';
+import { StakingService, JoinQueueData } from 'providers/WalletProvider/types';
 import {
   AcceleratedExitQueue__factory,
   ExitQueue__factory,
@@ -25,33 +26,30 @@ import {
 } from 'types/typechain';
 
 const INITIAL_STATE: StakingService = {
-    stake: asyncNoop,
-    claimAvailableTemple: asyncNoop,
-    restakeAvailableTemple: asyncNoop,
+  stake: asyncNoop,
+  claimAvailableTemple: asyncNoop,
+  restakeAvailableTemple: asyncNoop,
   getJoinQueueData: asyncNoop,
-  
-}
+};
 
 const StakingContext = createContext<StakingService>(INITIAL_STATE);
 
-
-
-export const useStaking = () => {
-  
-
+const StakingProvider = () => {
+  const { wallet, signer, exitQueueData, getBalance, ensureAllowance } =
+    useWallet();
   const { openNotification } = useNotification();
 
-const restakeAvailableTemple = async (): Promise<void> => {
-    if (walletAddress && signerState) {
+  const restakeAvailableTemple = async (): Promise<void> => {
+    if (wallet && signer) {
       const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(
-        signerState
+        signer
       ).attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
 
-      const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(
+      const EXIT_QUEUE = new ExitQueue__factory(signer).attach(
         EXIT_QUEUE_ADDRESS
       );
 
-      const userData = await EXIT_QUEUE.userData(walletAddress);
+      const userData = await EXIT_QUEUE.userData(wallet);
 
       const firstEpoch = userData.FirstExitEpoch.toNumber();
       const lastEpoch = userData.LastExitEpoch.toNumber();
@@ -64,9 +62,7 @@ const restakeAvailableTemple = async (): Promise<void> => {
 
       for (let i = firstEpoch; i <= lastEpoch; i++) {
         maybeClaimableEpochs.push(i);
-        exitEntryPromises.push(
-          EXIT_QUEUE.currentEpochAllocation(walletAddress, i)
-        );
+        exitEntryPromises.push(EXIT_QUEUE.currentEpochAllocation(wallet, i));
       }
 
       const exitEntries = await Promise.all(exitEntryPromises);
@@ -100,22 +96,22 @@ const restakeAvailableTemple = async (): Promise<void> => {
           hash: restakeTXN.hash,
         });
       }
-      updateBalance();
+      getBalance();
     }
   };
 
-const getJoinQueueData = async (
+  const getJoinQueueData = async (
     ogtAmount: BigNumber
   ): Promise<JoinQueueData | void> => {
-    if (walletAddress && signerState) {
-      const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(
+    if (wallet && signer) {
+      const EXIT_QUEUE = new ExitQueue__factory(signer).attach(
         EXIT_QUEUE_ADDRESS
       );
-      const STAKING = new TempleStaking__factory(signerState).attach(
+      const STAKING = new TempleStaking__factory(signer).attach(
         TEMPLE_STAKING_ADDRESS
       );
       const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(
-        signerState
+        signer
       ).attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
 
       const maxPerAddress = await EXIT_QUEUE.maxPerAddress();
@@ -140,21 +136,21 @@ const getJoinQueueData = async (
       return {
         queueLength: await getEpochsToDays(
           queueLengthEpochs >= 0 ? queueLengthEpochs : 0,
-          signerState
+          signer
         ),
-        processTime: await getEpochsToDays(processTimeEpochs, signerState),
+        processTime: await getEpochsToDays(processTimeEpochs, signer),
       };
     }
   };
 
-const stake = async (amountToStake: BigNumber) => {
-    if (walletAddress && signerState) {
+  const stake = async (amountToStake: BigNumber) => {
+    if (wallet && signer) {
       console.info(`staking START`);
-      const TEMPLE_STAKING = new TempleStaking__factory(signerState).attach(
+      const TEMPLE_STAKING = new TempleStaking__factory(signer).attach(
         TEMPLE_STAKING_ADDRESS
       );
 
-      const TEMPLE = new TempleERC20Token__factory(signerState).attach(
+      const TEMPLE = new TempleERC20Token__factory(signer).attach(
         TEMPLE_ADDRESS
       );
 
@@ -165,7 +161,7 @@ const stake = async (amountToStake: BigNumber) => {
         amountToStake
       );
 
-      const balance = await TEMPLE.balanceOf(walletAddress);
+      const balance = await TEMPLE.balanceOf(wallet);
       const verifiedAmountToStake = amountToStake.lt(balance)
         ? amountToStake
         : balance;
@@ -183,10 +179,10 @@ const stake = async (amountToStake: BigNumber) => {
     }
   };
 
-const claimAvailableTemple = async (): Promise<void> => {
-    if (walletAddress && signerState) {
+  const claimAvailableTemple = async (): Promise<void> => {
+    if (wallet && signer) {
       const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(
-        signerState
+        signer
       ).attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
 
       if (exitQueueData.claimableEpochs.length) {
@@ -212,13 +208,20 @@ const claimAvailableTemple = async (): Promise<void> => {
           hash: withdrawTXN.hash,
         });
       }
-      updateBalance();
+      getBalance();
     }
+  };
+
+  return (
+    <StakingContext.Provider
+      value={{
+        stake,
+        claimAvailableTemple,
+        restakeAvailableTemple,
+        getJoinQueueData,
+      }}
+    />
+  );
 };
 
-
-    return (<StakingContext.Provider value={{ stake, claimAvailableTemple, restakeAvailableTemple, getJoinQueueData, exitQueueData }}/>)
-}
-
-
-
+export const useStaking = () => useContext(StakingContext);
