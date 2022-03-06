@@ -22,7 +22,6 @@ import { useNotification } from 'providers/NotificationProvider';
 import {
   ERC20,
   ERC20__factory,
-  LockedOGTempleDeprecated__factory,
   TempleCashback__factory,
   TempleERC20Token__factory,
   TempleFraxAMMRouter__factory,
@@ -38,15 +37,12 @@ import {
   getCurrentEpoch,
   getExchangeRate,
   getBalance,
-  getLockedEntries,
   getApy,
-  getRewardsForOGTemple,
 } from './util';
 
-import { WalletState, Balance, LockedEntry, ETH_ACTIONS } from './types';
+import { WalletState, Balance, ETH_ACTIONS } from './types';
 
 import {
-  LOCKED_OG_TEMPLE_ADDRESS,
   TEMPLE_ADDRESS,
   STABLE_COIN_ADDRESS,
   TEMPLE_V2_ROUTER_ADDRESS,
@@ -55,7 +51,6 @@ import {
   VITE_PUBLIC_CLAIM_GAS_LIMIT,
   VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT,
   VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT,
-  VITE_PUBLIC_CLAIM_OGTEMPLE_GAS_LIMIT,
 } from './env';
 
 /* TODO: Move this to a common place */
@@ -86,7 +81,6 @@ const INITIAL_STATE: WalletState = {
   currentEpoch: -1,
   templePrice: 0,
   isLoading: true,
-  lockedEntries: [],
   buy: noop,
   sell: noop,
   connectWallet: noop,
@@ -95,8 +89,6 @@ const INITIAL_STATE: WalletState = {
   claim: asyncNoop,
   signer: null,
   network: null,
-  claimOgTemple: asyncNoop,
-  getRewardsForOGT: asyncNoop,
   getSellQuote: asyncNoop,
   getBuyQuote: asyncNoop,
   getBalance: asyncNoop,
@@ -124,9 +116,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     INITIAL_STATE.currentEpoch
   );
   const [isLoading, setIsLoading] = useState<boolean>(INITIAL_STATE.isLoading);
-  const [lockedEntries, setLockedEntries] = useState<Array<LockedEntry>>(
-    INITIAL_STATE.lockedEntries
-  );
 
   const [apy, setApy] = useState(0);
   const [templePrice, setTemplePrice] = useState(INITIAL_STATE.templePrice);
@@ -209,15 +198,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         setIsConnectedState(connected);
       }
     }
-  };
-
-  const updateLockedEntries = async () => {
-    if (!walletAddress || !signerState) {
-      return;
-    }
-
-    const lockedEntries = await getLockedEntries(walletAddress, signerState);
-    setLockedEntries(lockedEntries);
   };
 
   const updateApy = async () => {
@@ -371,43 +351,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       return tx.wait();
     } else {
       console.error('Missing wallet address');
-    }
-  };
-
-  const getRewardsForOGT = async (
-    ogtAmount: number
-  ): Promise<number | void> => {
-    if (!walletAddress || !signerState) {
-      return;
-    }
-
-    const rewards = await getRewardsForOGTemple(
-      walletAddress,
-      signerState,
-      ogtAmount
-    );
-    return rewards;
-  };
-
-  const claimOgTemple = async (lockedEntryIndex: number) => {
-    if (walletAddress && signerState) {
-      const lockedOGTempleContract = new LockedOGTempleDeprecated__factory(
-        signerState
-      ).attach(LOCKED_OG_TEMPLE_ADDRESS);
-
-      const withdrawTXN = await lockedOGTempleContract.withdraw(
-        lockedEntryIndex,
-        {
-          gasLimit: VITE_PUBLIC_CLAIM_OGTEMPLE_GAS_LIMIT || 100000,
-        }
-      );
-
-      await withdrawTXN.wait();
-
-      openNotification({
-        title: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN} claimed`,
-        hash: withdrawTXN.hash,
-      });
     }
   };
 
@@ -583,9 +526,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         claim,
         signer: signerState,
         network,
-        claimOgTemple,
-        getRewardsForOGT,
-        lockedEntries,
         getSellQuote,
         getBuyQuote,
         getBalance: updateBalance,

@@ -68,6 +68,7 @@ export interface FaithQuote {
 
 export interface StakingService {
   exitQueueData: ExitQueueData;
+  lockedEntries: Array<LockedEntry>;
 
   stake(amountToStake: BigNumber): Promise<void>;
 
@@ -78,6 +79,12 @@ export interface StakingService {
   getJoinQueueData(ogtAmount: BigNumber): Promise<JoinQueueData | void>;
 
   getExitQueueData(): Promise<void>
+
+  updateLockedEntries(): Promise<void>
+
+  claimOgTemple(lockedEntryIndex: number): Promise<void>;
+
+  getRewardsForOGT(ogtAmount: number): Promise<number | void>;
 }
 
 export interface FaithService {
@@ -113,7 +120,6 @@ export interface WalletState {
   isLoading: boolean;
   signer: JsonRpcSigner | null;
   network: Network | null;
-  lockedEntries: Array<LockedEntry>;
 
   connectWallet(): void;
 
@@ -126,10 +132,6 @@ export interface WalletState {
   sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber): void;
 
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
-
-  claimOgTemple(lockedEntryIndex: number): Promise<void>;
-
-  getRewardsForOGT(ogtAmount: number): Promise<number | void>;
 
   getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
 

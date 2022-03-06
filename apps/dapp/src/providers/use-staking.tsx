@@ -7,6 +7,8 @@ import { useWallet } from 'providers/WalletProvider';
 import {
   getEpochsToDays,
   getExitQueueData,
+  getLockedEntries,
+  getRewardsForOGTemple,
 } from 'providers/WalletProvider/util';
 import { useNotification } from 'providers/NotificationProvider';
 import {
@@ -14,22 +16,26 @@ import {
   ACCELERATED_EXIT_QUEUE_ADDRESS,
   TEMPLE_STAKING_ADDRESS,
   TEMPLE_ADDRESS,
+  LOCKED_OG_TEMPLE_ADDRESS,
   VITE_PUBLIC_WITHDRAW_EPOCHS_BASE_GAS_LIMIT,
   VITE_PUBLIC_WITHDRAW_EPOCHS_PER_EPOCH_GAS_LIMIT,
   VITE_PUBLIC_RESTAKE_EPOCHS_BASE_GAS_LIMIT,
   VITE_PUBLIC_RESTAKE_EPOCHS_PER_EPOCH_GAS_LIMIT,
   VITE_PUBLIC_STAKE_GAS_LIMIT,
+  VITE_PUBLIC_CLAIM_OGTEMPLE_GAS_LIMIT,
 } from 'providers/WalletProvider/env';
 import {
   StakingService,
   JoinQueueData,
   ExitQueueData,
+  LockedEntry,
 } from 'providers/WalletProvider/types';
 import {
   AcceleratedExitQueue__factory,
   ExitQueue__factory,
   TempleERC20Token__factory,
   TempleStaking__factory,
+  LockedOGTempleDeprecated__factory,
 } from 'types/typechain';
 
 const INITIAL_STATE: StakingService = {
@@ -39,11 +45,15 @@ const INITIAL_STATE: StakingService = {
     totalTempleOwned: 0,
     claimableEpochs: [],
   },
+  lockedEntries: [],
   stake: asyncNoop,
   claimAvailableTemple: asyncNoop,
   restakeAvailableTemple: asyncNoop,
   getJoinQueueData: asyncNoop,
   getExitQueueData: asyncNoop,
+  updateLockedEntries: asyncNoop,
+  claimOgTemple: asyncNoop,
+  getRewardsForOGT: asyncNoop,
 };
 
 const StakingContext = createContext<StakingService>(INITIAL_STATE);
@@ -51,6 +61,9 @@ const StakingContext = createContext<StakingService>(INITIAL_STATE);
 export const StakingProvider = () => {
   const [exitQueueData, setExitQueueData] = useState<ExitQueueData>(
     INITIAL_STATE.exitQueueData
+  );
+  const [lockedEntries, setLockedEntries] = useState<Array<LockedEntry>>(
+    INITIAL_STATE.lockedEntries
   );
 
   const { wallet, signer, getBalance, ensureAllowance } = useWallet();
@@ -63,6 +76,15 @@ export const StakingProvider = () => {
 
     const exitQueueData = await getExitQueueData(wallet, signer);
     setExitQueueData(exitQueueData);
+  };
+
+  const updateLockedEntries = async () => {
+    if (!wallet || !signer) {
+      return;
+    }
+
+    const lockedEntries = await getLockedEntries(wallet, signer);
+    setLockedEntries(lockedEntries);
   };
 
   const restakeAvailableTemple = async (): Promise<void> => {
@@ -238,15 +260,52 @@ export const StakingProvider = () => {
     }
   };
 
+  const getRewardsForOGT = async (
+    ogtAmount: number
+  ): Promise<number | void> => {
+    if (!wallet || !signer) {
+      return;
+    }
+
+    const rewards = await getRewardsForOGTemple(wallet, signer, ogtAmount);
+    return rewards;
+  };
+
+  const claimOgTemple = async (lockedEntryIndex: number) => {
+    if (wallet && signer) {
+      const lockedOGTempleContract = new LockedOGTempleDeprecated__factory(
+        signer
+      ).attach(LOCKED_OG_TEMPLE_ADDRESS);
+
+      const withdrawTXN = await lockedOGTempleContract.withdraw(
+        lockedEntryIndex,
+        {
+          gasLimit: VITE_PUBLIC_CLAIM_OGTEMPLE_GAS_LIMIT || 100000,
+        }
+      );
+
+      await withdrawTXN.wait();
+
+      openNotification({
+        title: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN} claimed`,
+        hash: withdrawTXN.hash,
+      });
+    }
+  };
+
   return (
     <StakingContext.Provider
       value={{
-        stake,
         exitQueueData,
+        lockedEntries,
+        stake,
         claimAvailableTemple,
         restakeAvailableTemple,
         getJoinQueueData,
         getExitQueueData: updateExitQueueData,
+        updateLockedEntries,
+        claimOgTemple,
+        getRewardsForOGT,
       }}
     />
   );
