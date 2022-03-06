@@ -25,11 +25,9 @@ import {
   ERC20__factory,
   FaithMerkleAirdrop__factory,
   LockedOGTempleDeprecated__factory,
-  OGTemple__factory,
   TempleCashback__factory,
   TempleERC20Token__factory,
   TempleFraxAMMRouter__factory,
-  TempleStaking__factory,
   TempleTeamPayments__factory,
 } from 'types/typechain';
 import { toAtto } from 'utils/bigNumber';
@@ -40,10 +38,8 @@ import { NoWalletAddressError } from './errors';
 import {
   getTemplePrice,
   getCurrentEpoch,
-  getExitQueueData,
   getExchangeRate,
   getBalance,
-  getFaith,
   getLockedEntries,
   getApy,
   getRewardsForOGTemple,
@@ -59,21 +55,18 @@ import {
 
 import {
   LOCKED_OG_TEMPLE_ADDRESS,
-  TEMPLE_STAKING_ADDRESS,
   TEMPLE_ADDRESS,
   STABLE_COIN_ADDRESS,
   TEMPLE_V2_ROUTER_ADDRESS,
   FAITH_AIRDROP_ADDRESS,
   TEMPLE_CASHBACK_ADDRESS,
   TEMPLE_DEVOTION_ADDRESS,
-  LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
   NEXT_PUBLIC_EXCHANGE_RATE_VALUE,
   VITE_PUBLIC_CLAIM_GAS_LIMIT,
   VITE_PUBLIC_CLAIM_FAITH_GAS_LIMIT,
   VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT,
   VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT,
   VITE_PUBLIC_CLAIM_OGTEMPLE_GAS_LIMIT,
-  VITE_PUBLIC_DEVOTION_LOCK_AND_VERIFY_GAS_LIMIT,
 } from './env';
 
 /* TODO: Move this to a common place */
@@ -95,12 +88,6 @@ const INITIAL_STATE: WalletState = {
     ogTempleLockedClaimable: 0,
     ogTemple: 0,
   },
-  faith: {
-    usableFaith: 0,
-    lifeTimeFaith: 0,
-    totalSupply: 0,
-    share: 0,
-  },
   // Fallback when user has not connected wallet, we can update this from Vercel and redeploy
   exchangeRate: NEXT_PUBLIC_EXCHANGE_RATE_VALUE
     ? +NEXT_PUBLIC_EXCHANGE_RATE_VALUE
@@ -111,12 +98,7 @@ const INITIAL_STATE: WalletState = {
   templePrice: 0,
   isLoading: true,
   lockedEntries: [],
-  exitQueueData: {
-    lastClaimableEpochAt: 0,
-    claimableTemple: 0,
-    totalTempleOwned: 0,
-    claimableEpochs: [],
-  },
+
   buy: noop,
   sell: noop,
   connectWallet: noop,
@@ -133,10 +115,7 @@ const INITIAL_STATE: WalletState = {
   getBalance: asyncNoop,
   collectTempleTeamPayment: asyncNoop,
   apy: 0,
-  verifyFaith: asyncNoop,
-  redeemFaith: asyncNoop,
   getTempleFaithReward: asyncNoop,
-  getFaithQuote: asyncNoop,
   getExitQueueData: asyncNoop,
   ensureAllowance: asyncNoop,
 };
@@ -163,12 +142,9 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   const [lockedEntries, setLockedEntries] = useState<Array<LockedEntry>>(
     INITIAL_STATE.lockedEntries
   );
-  const [exitQueueData, setExitQueueData] = useState<ExitQueueData>(
-    INITIAL_STATE.exitQueueData
-  );
+
   const [apy, setApy] = useState(0);
   const [templePrice, setTemplePrice] = useState(INITIAL_STATE.templePrice);
-  const [faith, setFaith] = useState(INITIAL_STATE.faith);
 
   const { openNotification } = useNotification();
 
@@ -259,15 +235,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     setLockedEntries(lockedEntries);
   };
 
-  const updateExitQueueData = async () => {
-    if (!walletAddress || !signerState) {
-      return;
-    }
-
-    const exitQueueData = await getExitQueueData(walletAddress, signerState);
-    setExitQueueData(exitQueueData);
-  };
-
   const updateApy = async () => {
     if (!walletAddress || !signerState) {
       return;
@@ -284,15 +251,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
 
     const price = await getTemplePrice(walletAddress, signerState);
     setTemplePrice(price);
-  };
-
-  const updateFaith = async () => {
-    if (!walletAddress || !signerState) {
-      return;
-    }
-
-    const faith = await getFaith(walletAddress, signerState);
-    setFaith(faith);
   };
 
   /**
@@ -642,63 +600,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
     }
   };
 
-  const verifyFaith = async () => {
-    if (walletAddress && signerState) {
-      const DEVOTION = new Devotion__factory(signerState).attach(
-        TEMPLE_DEVOTION_ADDRESS
-      );
-
-      const TEMPLE_STAKING = new TempleStaking__factory(signerState).attach(
-        TEMPLE_STAKING_ADDRESS
-      );
-
-      const OG_TEMPLE = new OGTemple__factory(signerState).attach(
-        await TEMPLE_STAKING.OG_TEMPLE()
-      );
-
-      const walletOGTEMPLE = await OG_TEMPLE.balanceOf(walletAddress);
-      await ensureAllowance(
-        TICKER_SYMBOL.OG_TEMPLE_TOKEN,
-        OG_TEMPLE,
-        LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
-        walletOGTEMPLE
-      );
-
-      const faithVerificationTXN = await DEVOTION.lockAndVerify(
-        walletOGTEMPLE,
-        {
-          gasLimit: VITE_PUBLIC_DEVOTION_LOCK_AND_VERIFY_GAS_LIMIT || 250000,
-        }
-      );
-      await faithVerificationTXN.wait();
-
-      openNotification({
-        title: `${TICKER_SYMBOL.FAITH} verified`,
-        hash: faithVerificationTXN.hash,
-      });
-    } else {
-      console.error('Missing wallet address');
-    }
-  };
-
-  const redeemFaith = async (faithAmount: BigNumber) => {
-    if (walletAddress && signerState) {
-      const DEVOTION = new Devotion__factory(signerState).attach(
-        TEMPLE_DEVOTION_ADDRESS
-      );
-
-      const faithClaimTXN = await DEVOTION.claimTempleReward(faithAmount);
-      await faithClaimTXN.wait();
-
-      openNotification({
-        title: `${TICKER_SYMBOL.FAITH} redeemed`,
-        hash: faithClaimTXN.hash,
-      });
-    } else {
-      console.error('Missing wallet address');
-    }
-  };
-
   const getTempleFaithReward = async (faithAmount: BigNumber) => {
     if (walletAddress && signerState) {
       const DEVOTION = new Devotion__factory(signerState).attach(
@@ -706,22 +607,6 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
       );
 
       return await DEVOTION.claimableTempleRewardQuote(faithAmount);
-    } else {
-      console.error('Missing wallet address');
-    }
-  };
-
-  const getFaithQuote = async () => {
-    if (walletAddress && signerState) {
-      const DEVOTION = new Devotion__factory(signerState).attach(
-        TEMPLE_DEVOTION_ADDRESS
-      );
-
-      const faithQuote = await DEVOTION.verifyFaithQuote(walletAddress);
-      return {
-        canClaim: faithQuote.canClaim,
-        claimableFaith: faithQuote.claimableFaith.toNumber(),
-      };
     } else {
       console.error('Missing wallet address');
     }
@@ -755,13 +640,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
         getBalance: updateBalance,
         apy,
         collectTempleTeamPayment,
-        verifyFaith,
-        redeemFaith,
         getTempleFaithReward,
-        getFaithQuote,
-        exitQueueData,
-        getExitQueueData: updateExitQueueData,
-        faith,
       }}
     >
       {children}

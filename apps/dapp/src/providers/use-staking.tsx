@@ -2,9 +2,12 @@ import React, { useState, createContext, useContext } from 'react';
 import { BigNumber } from 'ethers';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { fromAtto } from 'utils/bigNumber';
-import { asyncNoop, noop } from 'utils/helpers';
+import { asyncNoop } from 'utils/helpers';
 import { useWallet } from 'providers/WalletProvider';
-import { getEpochsToDays } from 'providers/WalletProvider/util';
+import {
+  getEpochsToDays,
+  getExitQueueData,
+} from 'providers/WalletProvider/util';
 import { useNotification } from 'providers/NotificationProvider';
 import {
   EXIT_QUEUE_ADDRESS,
@@ -17,7 +20,11 @@ import {
   VITE_PUBLIC_RESTAKE_EPOCHS_PER_EPOCH_GAS_LIMIT,
   VITE_PUBLIC_STAKE_GAS_LIMIT,
 } from 'providers/WalletProvider/env';
-import { StakingService, JoinQueueData } from 'providers/WalletProvider/types';
+import {
+  StakingService,
+  JoinQueueData,
+  ExitQueueData,
+} from 'providers/WalletProvider/types';
 import {
   AcceleratedExitQueue__factory,
   ExitQueue__factory,
@@ -26,18 +33,37 @@ import {
 } from 'types/typechain';
 
 const INITIAL_STATE: StakingService = {
+  exitQueueData: {
+    lastClaimableEpochAt: 0,
+    claimableTemple: 0,
+    totalTempleOwned: 0,
+    claimableEpochs: [],
+  },
   stake: asyncNoop,
   claimAvailableTemple: asyncNoop,
   restakeAvailableTemple: asyncNoop,
   getJoinQueueData: asyncNoop,
+  getExitQueueData: asyncNoop,
 };
 
 const StakingContext = createContext<StakingService>(INITIAL_STATE);
 
-const StakingProvider = () => {
-  const { wallet, signer, exitQueueData, getBalance, ensureAllowance } =
-    useWallet();
+export const StakingProvider = () => {
+  const [exitQueueData, setExitQueueData] = useState<ExitQueueData>(
+    INITIAL_STATE.exitQueueData
+  );
+
+  const { wallet, signer, getBalance, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
+
+  const updateExitQueueData = async () => {
+    if (!wallet || !signer) {
+      return;
+    }
+
+    const exitQueueData = await getExitQueueData(wallet, signer);
+    setExitQueueData(exitQueueData);
+  };
 
   const restakeAvailableTemple = async (): Promise<void> => {
     if (wallet && signer) {
@@ -216,9 +242,11 @@ const StakingProvider = () => {
     <StakingContext.Provider
       value={{
         stake,
+        exitQueueData,
         claimAvailableTemple,
         restakeAvailableTemple,
         getJoinQueueData,
+        getExitQueueData: updateExitQueueData,
       }}
     />
   );

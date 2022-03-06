@@ -67,6 +67,8 @@ export interface FaithQuote {
 }
 
 export interface StakingService {
+  exitQueueData: ExitQueueData;
+
   stake(amountToStake: BigNumber): Promise<void>;
 
   claimAvailableTemple(): Promise<void>;
@@ -74,16 +76,28 @@ export interface StakingService {
   restakeAvailableTemple(): Promise<void>;
 
   getJoinQueueData(ogtAmount: BigNumber): Promise<JoinQueueData | void>;
+
+  getExitQueueData(): Promise<void>
+}
+
+export interface FaithService {
+  faith: FaithBalance;
+
+  updateFaith(): Promise<void>
+
+  verifyFaith(lockingPeriod?: number): Promise<void>;
+
+  redeemFaith(faithAmount: BigNumber): Promise<BigNumber | void>;
+
+  getFaithQuote(): Promise<FaithQuote | void>;
 }
 
 export interface WalletState {
   // has the user connected a wallet to the dapp
   isConnected: boolean;
-
   wallet: string | null;
   // current
   balance: Balance;
-  faith: FaithBalance;
   templePrice: number;
   exchangeRate: number;
   currentEpoch: number;
@@ -91,7 +105,6 @@ export interface WalletState {
   signer: JsonRpcSigner | null;
   network: Network | null;
   lockedEntries: Array<LockedEntry>;
-  exitQueueData: ExitQueueData;
 
   connectWallet(): void;
 
@@ -128,13 +141,7 @@ export interface WalletState {
 
   apy: number;
 
-  verifyFaith(lockingPeriod?: number): Promise<void>;
-
-  redeemFaith(faithAmount: BigNumber): Promise<BigNumber | void>;
-
   getTempleFaithReward(faithAmount: BigNumber): Promise<BigNumber | void>;
-
-  getFaithQuote(): Promise<FaithQuote | void>;
 
   getExitQueueData(): Promise<ExitQueueData | void>;
 
