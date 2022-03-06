@@ -5,7 +5,9 @@ import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
+import { useRefreshState } from 'hooks/use-refresh-state';
 import { useWallet } from 'providers/WalletProvider';
+import { useStaking } from 'providers/StakingProvider';
 import { JoinQueueData } from 'providers/types';
 import { TEMPLE_STAKING_ADDRESS } from 'providers/env';
 import { toAtto } from 'utils/bigNumber';
@@ -26,15 +28,8 @@ interface QueueProps {
 }
 
 export const Queue: FC<QueueProps> = ({ small }) => {
-  const {
-    signer,
-    balance,
-    getBalance,
-    updateWallet,
-    ensureAllowance,
-    getJoinQueueData,
-    getRewardsForOGT,
-  } = useWallet();
+  const { signer, balance, getBalance, ensureAllowance } = useWallet();
+  const { getJoinQueueData, getRewardsForOGT } = useStaking();
   const [OGTWalletAmount, setOGTWalletAmount] = useState<number>(0);
   const [OGTAmount, setOGTAmount] = useState<number | ''>('');
   const [joinQueueData, setJoinQueueData] = useState<JoinQueueData | null>({
@@ -98,7 +93,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await updateWallet();
+      await useRefreshState();
       setRewards('');
     }
 

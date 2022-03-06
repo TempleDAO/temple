@@ -1,3 +1,4 @@
+import React, { useCallback, useEffect, useState } from 'react';
 import { JsonRpcSigner } from '@ethersproject/providers';
 import devotionImage from 'assets/images/DEVOTION.svg';
 import {
@@ -8,6 +9,7 @@ import {
 } from 'components/AMM/helpers/components';
 import { copyBalance } from 'components/AMM/helpers/methods';
 import { Button } from 'components/Button/Button';
+import styled from 'styled-components';
 import { DataCard } from 'components/DataCard/DataCard';
 import Image from 'components/Image/Image';
 import { Input } from 'components/Input/Input';
@@ -15,10 +17,10 @@ import { Flex } from 'components/Layout/Flex';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { BigNumber } from 'ethers';
 import { useWallet } from 'providers/WalletProvider';
+import { useFaith } from 'providers/FaithProvider';
+import { useRefreshState } from 'hooks/use-refresh-state';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { FaithBalance } from 'providers/WalletProvider/types';
-import React, { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
+import { FaithBalance } from 'providers/types';
 import { Devotion__factory } from 'types/typechain';
 import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
@@ -27,16 +29,8 @@ const ENV_VARS = import.meta.env;
 const TEMPLE_DEVOTION_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ADDRESS;
 const SECONDS_IN_DAY = 86400;
 const Devotion = () => {
-  const {
-    balance,
-    faith,
-    updateWallet,
-    verifyFaith,
-    getTempleFaithReward,
-    redeemFaith,
-    signer,
-    wallet,
-  } = useWallet();
+  const { balance, signer, wallet } = useWallet();
+  const { faith, verifyFaith, getTempleFaithReward, redeemFaith } = useFaith();
 
   // This is the available OGTemple for the Templar
   const [devotion, setDevotion] = useState<number>(0);
@@ -87,7 +81,7 @@ const Devotion = () => {
 
   useEffect(() => {
     async function onMount() {
-      await updateWallet();
+      await useRefreshState();
     }
 
     void onMount();
@@ -109,7 +103,7 @@ const Devotion = () => {
     try {
       if (devotion) {
         await verifyFaith();
-        await updateWallet();
+        await useRefreshState();
       }
     } catch (e) {
       console.info(e);
@@ -120,7 +114,7 @@ const Devotion = () => {
     try {
       if (faithAmount) {
         await redeemFaith(BigNumber.from(faithAmount));
-        await updateWallet();
+        await useRefreshState();
         setFaithAmount('');
       }
     } catch (e) {

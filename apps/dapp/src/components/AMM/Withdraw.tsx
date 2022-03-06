@@ -8,6 +8,7 @@ import PercentageBar from 'components/PercentageBar/PercentageBar';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import dateFormat from 'dateformat';
 import { useWallet } from 'providers/WalletProvider';
+import { useStaking } from 'providers/StakingProvider';
 import { formatNumber } from 'utils/formatter';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import {
@@ -28,7 +29,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
     getExitQueueData,
     restakeAvailableTemple,
     claimAvailableTemple,
-  } = useWallet();
+  } = useStaking();
   const repositionTooltip = useMediaQuery({ query: '(max-width: 980px)' });
   const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
 

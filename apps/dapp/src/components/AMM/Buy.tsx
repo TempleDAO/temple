@@ -1,6 +1,6 @@
-import { Input } from 'components/Input/Input';
-import { BigNumber } from 'ethers';
 import React, { FC, useEffect, useState } from 'react';
+import { BigNumber } from 'ethers';
+import { Input } from 'components/Input/Input';
 import { formatNumber } from 'utils/formatter';
 import {
   ConvoFlowTitle,
@@ -14,6 +14,8 @@ import Slippage from 'components/Slippage/Slippage';
 import { Button } from 'components/Button/Button';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
+import { useSwap } from 'providers/SwapProvider';
+import { useRefreshState } from 'hooks/use-refresh-state';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
 
@@ -25,8 +27,8 @@ interface BuyProps {
 const ENV_VARS = import.meta.env;
 
 export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
-  const { balance, getBalance, updateWallet, buy, getBuyQuote, templePrice } =
-    useWallet();
+  const { balance, getBalance } = useWallet();
+  const { buy, getBuyQuote, templePrice } = useSwap();
 
   const [stableCoinAmount, setStableCoinAmount] = useState<number | ''>('');
   const [stableCoinWalletAmount, setStableCoinWalletAmount] =
@@ -77,7 +79,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await updateWallet();
+      await useRefreshState();
       setRewards('');
       setMinAmountOut(0);
     }
