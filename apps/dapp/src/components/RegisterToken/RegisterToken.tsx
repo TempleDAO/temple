@@ -1,4 +1,3 @@
-import { Button } from 'components/Button/Button';
 import Image from 'components/Image/Image';
 import { useNotification } from 'providers/NotificationProvider';
 import { FC } from 'react';
@@ -32,7 +31,8 @@ const RegisterToken: FC<RegisterTokenProps> = ({token, token: {options: {image,s
       if (wasAdded) {
         openNotification({
           title: `Token ${symbol} added to your assets`,
-          hash: address
+          hash: address,
+          kind: 'SIMPLE'
         })
       } else {
         console.log(`FAILED: Adding Token ${symbol} to your assets`);

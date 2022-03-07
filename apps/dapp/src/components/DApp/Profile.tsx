@@ -1,4 +1,6 @@
 //@ts-nocheck
+import RegisterToken from 'components/RegisterToken/RegisterToken';
+import { TEMPLE_TOKEN_ASSET } from 'components/RegisterToken/TOKENS';
 import React, { FC } from 'react';
 import styled from 'styled-components';
 import { DataCard } from 'components/DataCard/DataCard';
@@ -118,6 +120,16 @@ export const Profile: FC = () => {
         </Flex>
         <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard title={`FAITH SHARE`} data={`${faith.share}%`} small />
+        </Flex>
+      </Flex>
+      <Flex
+        layout={{
+          kind: 'container',
+          direction: 'row',
+        }}
+      >
+        <Flex layout={{ kind: 'item' }}>
+          <RegisterToken token={TEMPLE_TOKEN_ASSET} >&nbsp;Add Temple token</RegisterToken>
         </Flex>
       </Flex>
     </Container>

@@ -1,10 +1,12 @@
 //@ts-nocheck
+import RegisterToken from 'components/RegisterToken/RegisterToken';
+import { TEMPLE_TOKEN_ASSET } from 'components/RegisterToken/TOKENS';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import AccessoriesTemplate from 'components/Accessories/AccessoriesTemplate';
 import BackButton from 'components/Button/BackButton';
 import EnclaveCard from 'components/EnclaveCard/EnclaveCard';
-import { FlexStyled } from 'components/Layout/Flex';
+import { Flex, FlexStyled } from 'components/Layout/Flex';
 import ProfileHeader from 'components/ProfileHeader/ProfileHeader';
 import ProfileMetric from 'components/ProfileMetric/ProfileMetric';
 import withWallet from 'hoc/withWallet';
@@ -213,6 +215,12 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
             </FlexStyled>
           </ProfileWrapper>
         </Container>
+        <Flex layout={{
+          kind: 'container',
+          justifyContent: 'center'
+        }}>
+          <RegisterToken token={TEMPLE_TOKEN_ASSET} >&nbsp;Add Temple token</RegisterToken>
+        </Flex>
       </PageWrapper>
       <BackButton onClick={back} />
     </>
