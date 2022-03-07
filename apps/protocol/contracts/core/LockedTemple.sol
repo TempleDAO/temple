@@ -6,12 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-import "./IFaith.sol";
-
 // import "hardhat/console.sol";
 
 /**
- * Bookkeeping and faith rewards Temple that's locked
+ * Bookkeeping of all locked temple
  */
 contract LockedTemple is EIP712 {
     using Counters for Counters.Counter;
@@ -19,9 +17,6 @@ contract LockedTemple is EIP712 {
 
     // solhint-disable-next-line var-name-mixedcase
     bytes32 public immutable LOCK_FOR_TYPEHASH = keccak256("lockFor(address owner, uint256 maxAmount, uint256 unlockDelaySeconds, uint256 deadline, uint256 nonce)");
-
-    // solhint-disable-next-line var-name-mixedcase
-    uint256 public immutable SECONDS_IN_MONTH = 2629800;
 
     struct LockedEntry {
         // How many tokens are locked
@@ -35,14 +30,12 @@ contract LockedTemple is EIP712 {
     mapping(address => LockedEntry) public wenTemple;
 
     IERC20 public templeToken;
-    IFaith public faith;
 
-    event Lock(address staker, uint256 increasedByTemple, uint256 totalLockedTemple, uint256 lockedUntil, uint256 faithEarned);
+    event Lock(address staker, uint256 increasedByTemple, uint256 totalLockedTemple, uint256 lockedUntil, uint256 sharesEarned);
     event Unlock(address staker, uint256 amount);
 
-    constructor(IERC20 _templeToken, IFaith _faith) EIP712("LockedTemple", "1") {
+    constructor(IERC20 _templeToken) EIP712("LockedTemple", "1") {
         templeToken = _templeToken;
-        faith = _faith;
     }
 
     /**
@@ -60,8 +53,8 @@ contract LockedTemple is EIP712 {
      * Gasless for the owner
      *
      * NOTE: amount is explicitly _not_ part of the digest, as in the common use case
-     * the owner often doesn't know how much extra will be locked (might be via an AMM purchase)
-     * or similar).
+     * the owner often doesn't know exactly how much will be locked (example, AMM buy with
+     * immediate lock). We do capture the max however to mitigate any possibly attack vectors
      */
     function lockFor(address owner, uint256 amount, uint256 maxAmount, uint256 unlockDelaySeconds, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
         require(block.timestamp <= deadline, "LockedTemple: expired deadline");
@@ -88,13 +81,6 @@ contract LockedTemple is EIP712 {
     }
 
     /**
-     * Calculate faith for a given lock increase/totalDuration
-     */
-    function calcFaith(uint256 amount, uint256 lockIncreaseDuration, uint256 lockDuration) public pure returns (uint256) {
-        return amount * lockIncreaseDuration *  lockDuration / SECONDS_IN_MONTH / SECONDS_IN_MONTH / 1e18;
-    }
-
-    /**
      * Must be private, otherwise security issue where anyone can
      * refresh lock for another wallet (and lock more if they have
      * an allowance)
@@ -104,21 +90,8 @@ contract LockedTemple is EIP712 {
 
         uint256 newLockedUntilTimestamp = block.timestamp + _unlockDelaySeconds;
         require(newLockedUntilTimestamp > lockEntry.lockedUntilTimestamp, "LockedTemple: New unlock time must be greater than current unlock time");
-        require(_unlockDelaySeconds >= SECONDS_IN_MONTH, "LockedTemple: min lock period is one month");
-        require(_unlockDelaySeconds <= SECONDS_IN_MONTH * 48, "LockedTemple: max lock period is 3 years");
 
-        uint256 faithEarned = 0;
         uint256 lockDuration = newLockedUntilTimestamp - block.timestamp;
-
-        // first, calculate faith for any increase in lock time        
-        if (lockEntry.amount > 0) {
-            faithEarned += calcFaith(lockEntry.amount, newLockedUntilTimestamp - lockEntry.lockedUntilTimestamp, lockDuration);
-        }
-
-        // then, calculate faith for new temple transferred in
-        if (_amount > 0) {
-            faithEarned += calcFaith(_amount, lockDuration, lockDuration);
-        }
 
         lockEntry.amount += _amount;
         lockEntry.lockedUntilTimestamp = newLockedUntilTimestamp;
@@ -127,11 +100,7 @@ contract LockedTemple is EIP712 {
             SafeERC20.safeTransferFrom(templeToken, _owner, address(this), _amount);
         }
 
-        if (faithEarned > 0) {
-            faith.gain(_owner, uint112(faithEarned));
-        }
-
-        emit Lock(_owner, _amount, lockEntry.amount, lockEntry.lockedUntilTimestamp, faithEarned);
+        emit Lock(_owner, _amount, lockEntry.amount, lockEntry.lockedUntilTimestamp);
     }
 
     /**
