@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useEffect, useState, useCallback } from 'react';
 import { BigNumber } from 'ethers';
 import { Input } from 'components/Input/Input';
 import { formatNumber } from 'utils/formatter';
@@ -15,7 +15,7 @@ import { Button } from 'components/Button/Button';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
-import { useRefreshState } from 'hooks/use-refresh-state';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
 
@@ -37,6 +37,8 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const [templeWalletAmount, setTempleWalletAmount] = useState<number>(0);
   const [slippage, setSlippage] = useState<number>(1);
   const [minAmountOut, setMinAmountOut] = useState<number>(0);
+
+  const refreshWalletState = useRefreshWalletState();
 
   const handleUpdateStableCoinAmount = async (value: number | '') => {
     setStableCoinAmount(value === 0 ? '' : value);
@@ -79,7 +81,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await useRefreshState();
+      await refreshWalletState();
       setRewards('');
       setMinAmountOut(0);
     }

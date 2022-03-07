@@ -18,7 +18,7 @@ import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { BigNumber } from 'ethers';
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
-import { useRefreshState } from 'hooks/use-refresh-state';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { FaithBalance } from 'providers/types';
 import { Devotion__factory } from 'types/typechain';
@@ -47,6 +47,8 @@ const Devotion = () => {
   const [devotionWon, setDevotionWon] = useState(false);
   const [hasVerifiedFaith, setHasVerifiedFaith] = useState(false);
   const [minimumLockPeriodDays, setMinimumLockPeriodDays] = useState(0);
+
+  const refreshWalletState = useRefreshWalletState();
 
   const getDevotionData = useCallback(
     async (signer: JsonRpcSigner) => {
@@ -81,7 +83,7 @@ const Devotion = () => {
 
   useEffect(() => {
     async function onMount() {
-      await useRefreshState();
+      await refreshWalletState();
     }
 
     void onMount();
@@ -103,7 +105,7 @@ const Devotion = () => {
     try {
       if (devotion) {
         await verifyFaith();
-        await useRefreshState();
+        await refreshWalletState();
       }
     } catch (e) {
       console.info(e);
@@ -114,7 +116,7 @@ const Devotion = () => {
     try {
       if (faithAmount) {
         await redeemFaith(BigNumber.from(faithAmount));
-        await useRefreshState();
+        await refreshWalletState();
         setFaithAmount('');
       }
     } catch (e) {

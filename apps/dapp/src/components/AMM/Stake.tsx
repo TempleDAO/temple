@@ -6,7 +6,7 @@ import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { useWallet } from 'providers/WalletProvider';
 import { useStaking } from 'providers/StakingProvider';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
-import { useRefreshState } from 'hooks/use-refresh-state';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
@@ -30,6 +30,8 @@ export const Stake: FC<StakeProps> = ({ small }) => {
 
   const [templeAmount, setTempleAmount] = useState<number | ''>('');
   const [templeWalletAmount, setTempleWalletAmount] = useState<number>(0);
+
+  const refreshWalletState = useRefreshWalletState();
 
   const handleUpdateTempleAmmount = async (value: number) => {
     setTempleAmount(value === 0 ? '' : value);
@@ -55,7 +57,7 @@ export const Stake: FC<StakeProps> = ({ small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await useRefreshState();
+      await refreshWalletState();
     }
 
     onMount();

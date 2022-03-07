@@ -5,7 +5,7 @@ import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
-import { useRefreshState } from 'hooks/use-refresh-state';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useWallet } from 'providers/WalletProvider';
 import { useStaking } from 'providers/StakingProvider';
 import { JoinQueueData } from 'providers/types';
@@ -38,6 +38,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
   });
   const [rewards, setRewards] = useState<number | ''>('');
   const repositionTopTooltip = useMediaQuery({ query: '(max-width: 1235px)' });
+
+  const refreshWalletState = useRefreshWalletState();
 
   const updateTempleRewards = async (ogtAmount: number) => {
     setRewards((await getRewardsForOGT(ogtAmount)) || 0);
@@ -93,7 +95,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await useRefreshState();
+      await refreshWalletState();
       setRewards('');
     }
 

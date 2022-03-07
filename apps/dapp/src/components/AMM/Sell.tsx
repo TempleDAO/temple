@@ -15,7 +15,7 @@ import { Button } from 'components/Button/Button';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
-import { useRefreshState } from 'hooks/use-refresh-state';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
 
@@ -39,6 +39,8 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const [slippage, setSlippage] = useState<number>(1);
   const [minAmountOut, setMinAmountOut] = useState<number>(0);
   const [templeAmount, setTempleAmount] = useState<number | ''>('');
+
+  const refreshWalletState = useRefreshWalletState();
 
   const handleUpdateTempleAmount = async (value: number | '') => {
     setTempleAmount(value === 0 ? '' : value);
@@ -81,7 +83,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await useRefreshState();
+      await refreshWalletState();
       setRewards('');
       setMinAmountOut(0);
     }

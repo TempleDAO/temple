@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import styled, { ThemeProvider } from 'styled-components';
@@ -41,7 +41,7 @@ interface LazyPageProps {
 }
 
 const LazyPage = ({ component: Component }: LazyPageProps) => (
-  <React.Suspense
+  <Suspense
     fallback={
       <LoaderWrapper>
         <Loader />
@@ -49,7 +49,7 @@ const LazyPage = ({ component: Component }: LazyPageProps) => (
     }
   >
     <Component />
-  </React.Suspense>
+  </Suspense>
 );
 
 ReactDOM.render(

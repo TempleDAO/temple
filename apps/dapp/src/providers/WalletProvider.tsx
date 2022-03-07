@@ -13,7 +13,7 @@ import {
   Network,
 } from '@ethersproject/providers';
 // Circular dependency
-import { useRefreshState } from 'hooks/use-refresh-state';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useNotification } from 'providers/NotificationProvider';
 import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -87,6 +87,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
   );
 
   const { openNotification } = useNotification();
+  const refreshWalletState = useRefreshWalletState();
 
   useEffect(() => {
     interactWithMetamask(undefined, true).then();
@@ -151,7 +152,7 @@ export const WalletProvider = (props: PropsWithChildren<any>) => {
           setNetwork(await provider.getNetwork());
           setWalletAddress(wallet);
           // Circular dependency
-          await useRefreshState();
+          await refreshWalletState();
         }
       } else {
         console.error('Please add MetaMask to your browser');
