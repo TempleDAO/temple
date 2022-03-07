@@ -51,8 +51,6 @@ import {
 // so we approving 1M up front, so only 1 approve TXN is required for approve
 const DEFAULT_ALLOWANCE = toAtto(100000000);
 
-// @Deprecated this was used on FIRE_RITUAL and OC, don't use.
-
 const INITIAL_STATE: WalletState = {
   balance: {
     stableCoin: 0,
@@ -76,7 +74,7 @@ const INITIAL_STATE: WalletState = {
 
 const WalletContext = createContext<WalletState>(INITIAL_STATE);
 
-export const WalletProvider = (props: PropsWithChildren<any>) => {
+export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
   const [provider, setProvider] = useState<JsonRpcProvider | null>(null);
   const [network, setNetwork] = useState<Network | null>(null);

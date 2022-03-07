@@ -27,7 +27,7 @@ export const NotificationContext =
 /**
  * NotificationProvider controls the active notifications on the app
  */
-export const NotificationProvider = (props: PropsWithChildren<any>) => {
+export const NotificationProvider = (props: PropsWithChildren<{}>) => {
   const [notifications, setNotifications] = useState<Array<NotificationProps>>(
     INITIAL_STATE.notifications
   );

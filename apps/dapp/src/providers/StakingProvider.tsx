@@ -64,7 +64,7 @@ const INITIAL_STATE: StakingService = {
 
 const StakingContext = createContext<StakingService>(INITIAL_STATE);
 
-export const StakingProvider = (props: PropsWithChildren<any>) => {
+export const StakingProvider = (props: PropsWithChildren<{}>) => {
   const [apy, setApy] = useState(0);
   const [exitQueueData, setExitQueueData] = useState<ExitQueueData>(
     INITIAL_STATE.exitQueueData

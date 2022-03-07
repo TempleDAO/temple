@@ -49,7 +49,7 @@ const INITIAL_STATE: FaithService = {
 
 const FaithContext = createContext(INITIAL_STATE);
 
-export const FaithProvider = (props: PropsWithChildren<any>) => {
+export const FaithProvider = (props: PropsWithChildren<{}>) => {
   const [faith, setFaith] = useState(INITIAL_STATE.faith);
 
   const { wallet, signer, ensureAllowance } = useWallet();

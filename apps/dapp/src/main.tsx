@@ -1,16 +1,13 @@
 import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import styled, { ThemeProvider } from 'styled-components';
+import styled from 'styled-components';
+import { GlobalStyle } from 'styles/GlobalStyle';
+
+import { AppProvider } from 'providers/AppProvider';
 
 import NotificationManager from 'components/Notification/NotificationManager';
-import { NotificationProvider } from 'providers/NotificationProvider';
-import { WalletProvider } from 'providers/WalletProvider';
-import { SwapProvider } from 'providers/SwapProvider';
-import { StakingProvider } from 'providers/StakingProvider';
-import { FaithProvider } from 'providers/FaithProvider';
-import { GlobalStyle } from 'styles/GlobalStyle';
-import { theme } from 'styles/theme';
+
 import PageLayout from 'components/Layouts/Page';
 import Loader from 'components/Loader/Loader';
 
@@ -54,60 +51,42 @@ const LazyPage = ({ component: Component }: LazyPageProps) => (
 
 ReactDOM.render(
   <React.StrictMode>
-    <GlobalStyle />
-    <NotificationProvider>
-      <WalletProvider>
-        <SwapProvider>
-          <StakingProvider>
-            <FaithProvider>
-              <ThemeProvider theme={theme}>
-                <BrowserRouter>
-                  <Routes>
-                    <>
-                      <Route
-                        path="/the-temple"
-                        element={<LazyPage component={AmmSpaRoot} />}
-                      />
-                      <Route
-                        path="/dapp"
-                        element={<LazyPage component={DAppRoot} />}
-                      />
-                      <Route path="/" element={<PageLayout />}>
-                        <Route path="/" element={<Home />} />
-                        <Route path="disclaimer" element={<Disclaimer />} />
-                        <Route
-                          path="faith-airdrop"
-                          element={<LazyPage component={FaithAirdrop} />}
-                        />
-                        <Route
-                          path="fire-ritualist-apy-topup"
-                          element={
-                            <LazyPage component={FireRitualistCashback} />
-                          }
-                        />
-                        <Route
-                          path="temple-claim"
-                          element={<LazyPage component={Claim} />}
-                        />
-                        <Route
-                          path="team-payments"
-                          element={<LazyPage component={TeamPayments} />}
-                        />
-                        <Route
-                          path="/*"
-                          element={<Navigate replace to="/" />}
-                        />
-                      </Route>
-                    </>
-                  </Routes>
-                </BrowserRouter>
-                <NotificationManager />
-              </ThemeProvider>
-            </FaithProvider>
-          </StakingProvider>
-        </SwapProvider>
-      </WalletProvider>
-    </NotificationProvider>
+    <AppProvider>
+      <GlobalStyle />
+      <BrowserRouter>
+        <Routes>
+          <>
+            <Route
+              path="/the-temple"
+              element={<LazyPage component={AmmSpaRoot} />}
+            />
+            <Route path="/dapp" element={<LazyPage component={DAppRoot} />} />
+            <Route path="/" element={<PageLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="disclaimer" element={<Disclaimer />} />
+              <Route
+                path="faith-airdrop"
+                element={<LazyPage component={FaithAirdrop} />}
+              />
+              <Route
+                path="fire-ritualist-apy-topup"
+                element={<LazyPage component={FireRitualistCashback} />}
+              />
+              <Route
+                path="temple-claim"
+                element={<LazyPage component={Claim} />}
+              />
+              <Route
+                path="team-payments"
+                element={<LazyPage component={TeamPayments} />}
+              />
+              <Route path="/*" element={<Navigate replace to="/" />} />
+            </Route>
+          </>
+        </Routes>
+      </BrowserRouter>
+      <NotificationManager />
+    </AppProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );

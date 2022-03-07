@@ -43,7 +43,7 @@ const INITIAL_STATE: SwapService = {
 
 const SwapContext = createContext(INITIAL_STATE);
 
-export const SwapProvider = (props: PropsWithChildren<any>) => {
+export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const [templePrice, setTemplePrice] = useState(INITIAL_STATE.templePrice);
 
   const { wallet, signer, ensureAllowance } = useWallet();
