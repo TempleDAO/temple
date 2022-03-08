@@ -28,19 +28,24 @@ const RegisterToken: FC<RegisterTokenProps> = ({
   const handleRegisterToken = async () => {
     try {
       // wasAdded is a boolean. Like any RPC method, an error may be thrown.
-      // @ts-ignore ethereum not visible by IDE
-      const wasAdded = await window.ethereum.request({
-        method: 'wallet_watchAsset',
-        params: token,
-      });
+      let ethereum = window.ethereum;
 
-      if (wasAdded) {
-        openNotification({
-          title: `Token ${symbol} added to your assets`,
-          hash: address,
+      if (ethereum) {
+        const wasAdded = await ethereum.request({
+          method: 'wallet_watchAsset',
+          params: token,
         });
+
+        if (wasAdded) {
+          openNotification({
+            title: `Token ${symbol} added to your assets`,
+            hash: address,
+          });
+        } else {
+          console.log(`FAILED: Adding Token ${symbol} to your assets`);
+        }
       } else {
-        console.log(`FAILED: Adding Token ${symbol} to your assets`);
+        console.error(`Metamask not found`);
       }
     } catch (error) {
       console.log(error);
