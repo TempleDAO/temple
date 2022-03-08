@@ -10,13 +10,11 @@ const CoreLayout = () => (
     <Header />
     <Main>
       <Routes>
-        <Route path="/home" element={'Home'} />
+        <Route path="/" element={'Home'} />
         <Route path="/vaults/*" element={'Vaults'} />
         <Route path="/trade" element={'Trade'} />
         <Route path="/profile" element={'Profile'} />
         <Route path="/analytics" element={'Analytics'} />
-        {/* Redirect /core => /core/dashboard */}
-        <Route path="/" element={<Navigate replace to="/core/dashboard" />} />
         {/* Redirect everything else to the home page */}
         <Route path="/*" element={<Navigate replace to="/" />} />
       </Routes>
