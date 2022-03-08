@@ -7,7 +7,7 @@ import { flexCenter } from 'styles/mixins';
 import { UnstyledList } from 'styles/common';
 
 import selectorIcon from './nav-selector-icon.svg';
-import templeDaoLogo from './temple-dao-logo.svg';
+import templeDaoLogo from 'assets/images/sun-art.svg';
 import metamaskLogo from 'assets/images/metamask-transparent.svg';
 
 const Header = () => {
