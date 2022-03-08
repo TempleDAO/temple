@@ -146,7 +146,7 @@ const Selector = styled.span<{ $position: number }>`
   height: 24px;
   position: absolute;
 
-  transition: all .2s ease-out;
+  transition: transform 250ms ease-in-out;
   display: ${({ $position }) => $position ? 'block' : 'none'};
   transform: translate(${({ $position }) => $position}px, 50%);
 `;
