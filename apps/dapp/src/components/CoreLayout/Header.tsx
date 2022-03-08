@@ -64,12 +64,11 @@ const MenuItem = ({ to, children }: PropsWithChildren<MenuItemProps>) => {
 
 const Wrapper = styled.header`
   background: linear-gradient(180deg, #0B0A0A 0%, #1D1A1A 100%);
-  border-bottom: 1px solid #BD7B4F;
+  border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  overflow-x: visible;
   padding: 0 1.75rem;
 `;
 
@@ -86,11 +85,11 @@ const Logo = styled.span`
 const Menu = styled(UnstyledList)`
   display: flex;
   flex-direction: row;
-  border-left: 1px solid #BD7B4F;
-  border-right: 1px solid #BD7B4F;
+  border-left: 1px solid ${({ theme }) => theme.palette.brand};
+  border-right: 1px solid ${({ theme }) => theme.palette.brand};
 
   > li {
-    border-right: 1px solid #BD7B4F;
+    border-right: 1px solid ${({ theme }) => theme.palette.brand};
 
     &:last-of-type {
       border-right: none;
