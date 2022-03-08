@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useRef, useState, useCallback, useLayoutEffect } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -12,34 +12,54 @@ import metamaskLogo from 'assets/images/metamask-transparent.svg';
 
 const Header = () => {
   const { connectWallet, changeWalletAddress, wallet } = useWallet();
+  const [selectorPosition, setSelectorPosition] = useState(0);
+
+  const onMenuItemActive = useCallback((offsetX: number) => {
+    const centerSelectorPostion = offsetX - (SELECTOR_WIDTH / 2);
+    setSelectorPosition(centerSelectorPostion);
+  }, [setSelectorPosition]);
 
   return (
     <Wrapper>
       <Logo to="/core">
         TempleDAO
       </Logo>
-      <nav>
+      <Navigation>
         <Menu>
           <MenuItem
             to="/core"
             strictMatch
+            onMenuItemActive={onMenuItemActive}
           >
             Home
           </MenuItem>
-          <MenuItem to="/core/vaults">
+          <MenuItem
+            to="/core/vaults"
+            onMenuItemActive={onMenuItemActive}
+          >
             Vaults
           </MenuItem>
-          <MenuItem to="/core/trade">
+          <MenuItem
+            to="/core/trade"
+            onMenuItemActive={onMenuItemActive}
+          >
             Trade
           </MenuItem>
-          <MenuItem to="/core/profile">
+          <MenuItem
+            to="/core/profile"
+            onMenuItemActive={onMenuItemActive}
+          >
             Profile
           </MenuItem>
-          <MenuItem to="/core/analytics">
+          <MenuItem
+            to="/core/analytics"
+            onMenuItemActive={onMenuItemActive}
+          >
             Analytics
           </MenuItem>
         </Menu>
-      </nav>
+        <Selector $position={selectorPosition} />
+      </Navigation>
       <MetamaskButton
         aria-label={wallet ? 'Change Wallet' : 'Connect Wallet'}
         onClick={wallet ? changeWalletAddress : connectWallet}
@@ -53,15 +73,35 @@ export default Header;
 interface MenuItemProps {
   to: string;
   strictMatch?: boolean;
+  onMenuItemActive: (offsetX: number) => void;
 }
 
-const MenuItem: FC<MenuItemProps> = ({ to, children, strictMatch = false }) => {
+const MenuItem: FC<MenuItemProps> = ({
+  to,
+  children,
+  onMenuItemActive,
+  strictMatch = false,
+}) => {
   const resolved = useResolvedPath(to);
   const match = useMatch({ path: resolved.pathname, end: strictMatch });
+  const menuItemRef = useRef<HTMLAnchorElement>(null);
+
+  useLayoutEffect(() => {
+    if (!match || !menuItemRef.current) {
+      return;
+    }
+
+    const domNode = menuItemRef.current;
+    const clientRect = domNode.getBoundingClientRect();
+    const centerOffsetLeft = domNode.offsetLeft + (clientRect.width / 2);
+
+    onMenuItemActive(centerOffsetLeft);
+  }, [match, onMenuItemActive, menuItemRef]);
 
   return (
     <li>
       <NavLink
+        ref={menuItemRef}
         to={to}
         $active={!!match}
       >
@@ -70,6 +110,8 @@ const MenuItem: FC<MenuItemProps> = ({ to, children, strictMatch = false }) => {
     </li>
   );
 };
+
+const SELECTOR_WIDTH = 23;
 
 // Component Colors
 const NAV_HOVER = '#FFDEC9';
@@ -96,11 +138,30 @@ const Logo = styled(Link)`
   text-indent: -999rem;
 `;
 
+const Selector = styled.span<{ $position: number }>`
+  ${backgroundImage(selectorIcon)}
+  content: '';
+  width: ${SELECTOR_WIDTH}px;
+  height: 24px;
+  position: absolute;
+  bottom: 0;
+  display: block;
+
+  transition: all .2s ease-out;
+  display: ${({ $position }) => $position ? 'block' : 'none'};
+  transform: translate(${({ $position }) => $position}px, 50%);
+`;
+
+const Navigation = styled.nav`
+  position: relative;
+`;
+
 const Menu = styled(UnstyledList)`
   display: flex;
   flex-direction: row;
   border-left: 1px solid ${({ theme }) => theme.palette.brand};
   border-right: 1px solid ${({ theme }) => theme.palette.brand};
+  position: relative;
 
   > li {
     border-right: 1px solid ${({ theme }) => theme.palette.brand};
@@ -138,16 +199,5 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   &:hover {
     color: ${NAV_HOVER};
     text-shadow: ${NAV_SHADOW};
-  }
-
-  &:after {
-    ${backgroundImage(selectorIcon)}
-    display: ${({ $active }) => $active ? 'block' : 'none'};
-    content: '';
-    width: 23px;
-    height: 24px;
-    position: absolute;
-    bottom: 0;
-    transform: translate(0, 50%);
   }
 `;
