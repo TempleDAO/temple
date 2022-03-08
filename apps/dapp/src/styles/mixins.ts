@@ -5,3 +5,9 @@ export const flexCenter = css`
   align-items: center;
   justify-content: center;
 `;
+
+export const buttonResets = css`
+  appearance: none;
+  border: none;
+  cursor: pointer;
+`;
