@@ -1,4 +1,4 @@
-import { PropsWithChildren } from 'react';
+import { FC } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -46,7 +46,7 @@ interface MenuItemProps {
   to: string;
 }
 
-const MenuItem = ({ to, children }: PropsWithChildren<MenuItemProps>) => {
+const MenuItem: FC<MenuItemProps> = ({ to, children }) => {
   const resolved = useResolvedPath(to);
   const match = useMatch({ path: resolved.pathname, end: false });
 
