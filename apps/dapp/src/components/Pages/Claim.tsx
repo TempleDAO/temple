@@ -9,7 +9,7 @@ import React, {
 import styled, { keyframes } from 'styled-components';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
-import { InputSelect, Option } from 'components/InputSelect/InputSelect';
+import { InputSelect } from 'components/InputSelect/InputSelect';
 import withWallet from 'hoc/withWallet';
 import { useWallet } from 'providers/WalletProvider';
 import { ClaimType } from 'enums/claim-type';

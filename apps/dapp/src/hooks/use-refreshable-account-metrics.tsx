@@ -1,14 +1,17 @@
-//@ts-nocheck
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import useInterval from 'use-interval';
 import { MetricsService, AccountMetrics } from 'services/MetricsService';
 import { useWallet } from 'providers/WalletProvider';
+import { useStaking } from 'providers/StakingProvider';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 
 export default function useRefreshableAccountMetrics() {
-  const { updateWallet, wallet, balance, exitQueueData } = useWallet();
+  const { wallet, balance } = useWallet();
   const [accountMetrics, setAccountMetrics] = useState<AccountMetrics | null>(
     null
   );
+  const refreshWalletState = useRefreshWalletState();
+  const { exitQueueData } = useStaking();
 
   const metricsService = useMemo(() => new MetricsService(), []);
 
@@ -18,37 +21,15 @@ export default function useRefreshableAccountMetrics() {
     }
     const accountMetrics = await metricsService.getAccountMetrics(wallet);
     if (accountMetrics) {
-      const walletValue =
-        accountMetrics.templeBalance * accountMetrics.templeValue;
-      const exitQueueValue =
-        exitQueueData.totalTempleOwned * accountMetrics.templeValue;
-      const ogTempleWalletValue =
-        balance.ogTemple * accountMetrics.ogTemplePrice;
-      const lockedOGTempleValue =
-        balance.ogTempleLocked * accountMetrics.ogTemplePrice;
-      const netWorth =
-        lockedOGTempleValue +
-        walletValue +
-        ogTempleWalletValue +
-        exitQueueValue;
       setAccountMetrics({
         ...accountMetrics,
-        walletValue,
-        exitQueueTotal: exitQueueData.totalTempleOwned,
-        exitQueueValue,
-        ogTempleWallet: balance.ogTemple,
-        ogTempleWalletValue,
-        lockedOGTemple: balance.ogTempleLocked,
-        lockedOGTempleValue,
-        netWorth,
-        netWorthTemple: netWorth / accountMetrics.templeValue,
       });
     }
   }, [wallet, balance, exitQueueData, metricsService]);
 
   useEffect(() => {
     async function onMount() {
-      await updateWallet();
+      await refreshWalletState();
     }
     onMount();
   }, []);

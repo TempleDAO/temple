@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import styled from 'styled-components';
 
 import useCustomRouting, {
@@ -83,9 +83,9 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
       return <TempleGates routingHelper={routingHelper} />;
     case NexusView.Account:
       return (
-        <React.Suspense fallback={<Loader />}>
+        <Suspense fallback={<Loader />}>
           <Account routingHelper={routingHelper} />
-        </React.Suspense>
+        </Suspense>
       );
     case NexusView.Foyer:
       return (
@@ -102,13 +102,13 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
       );
     case NexusView.Dashboard:
       return (
-        <React.Suspense fallback={<Loader />}>
+        <Suspense fallback={<Loader />}>
           <Dashboard routingHelper={routingHelper} />
-        </React.Suspense>
+        </Suspense>
       );
     case NexusView.DashboardDoor:
       return (
-        <React.Suspense fallback={<Loader />}>
+        <Suspense fallback={<Loader />}>
           <DashboardDoor
             preloadPages={() => {
               Promise.all([Account.preload(), Dashboard.preload()]).catch(
@@ -117,17 +117,17 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
             }}
             routingHelper={routingHelper}
           />
-        </React.Suspense>
+        </Suspense>
       );
     case NexusView.RitualPosters:
       return (
-        <React.Suspense fallback={<Loader />}>
+        <Suspense fallback={<Loader />}>
           <RitualsPosters routingHelper={routingHelper} />
-        </React.Suspense>
+        </Suspense>
       );
     case NexusView.Portals:
       return (
-        <React.Suspense fallback={<Loader />}>
+        <Suspense fallback={<Loader />}>
           <Portals
             routingHelper={routingHelper}
             preloadPages={() => {
@@ -138,17 +138,17 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
               ]).catch((err) => console.error('[Preload Error] ', err));
             }}
           />
-        </React.Suspense>
+        </Suspense>
       );
     case NexusView.AltarEnter:
       return (
-        <React.Suspense fallback={<Loader />}>
+        <Suspense fallback={<Loader />}>
           <AltarEnter routingHelper={routingHelper} />
-        </React.Suspense>
+        </Suspense>
       );
     case NexusView.AltarExit:
       return (
-        <React.Suspense fallback={<Loader />}>
+        <Suspense fallback={<Loader />}>
           <AltarExit
             routingHelper={routingHelper}
             preloadPages={() => {
@@ -157,24 +157,24 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
               );
             }}
           />
-        </React.Suspense>
+        </Suspense>
       );
     case NexusView.AltarDevotion:
       return (
-        <React.Suspense fallback={<Loader />}>
+        <Suspense fallback={<Loader />}>
           <AltarDevotion routingHelper={routingHelper} />
-        </React.Suspense>
+        </Suspense>
       );
   }
 
   if (routingHelper.currentPage in AMMView) {
     return (
-      <React.Suspense fallback={<Loader />}>
+      <Suspense fallback={<Loader />}>
         <AmmAltars
           routingHelper={routingHelper}
           view={routingHelper.currentPage}
         />
-      </React.Suspense>
+      </Suspense>
     );
   }
 
