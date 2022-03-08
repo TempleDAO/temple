@@ -3,7 +3,7 @@ import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { useWallet } from 'providers/WalletProvider';
-import { flexCenter, buttonResets } from 'styles/mixins';
+import { flexCenter, buttonResets, backgroundImage } from 'styles/mixins';
 import { UnstyledList } from 'styles/common';
 
 import selectorIcon from './nav-selector-icon.svg';
@@ -88,13 +88,10 @@ const Wrapper = styled.header`
 `;
 
 const Logo = styled(Link)`
+  ${backgroundImage(templeDaoLogo)}
   display: block;
   width: 42px;
   height: 42px;
-  background: url(${templeDaoLogo});
-  background-size: contain;
-  background-position: center center;
-  background-repeat: no-repeat;
   overflow: hidden;
   text-indent: -999rem;
 `;
@@ -116,10 +113,7 @@ const Menu = styled(UnstyledList)`
 
 const MetamaskButton = styled.button`
   ${buttonResets}
-  background: url(${metamaskLogo});
-  background-position: center center;
-  background-size: contain;
-  background-repeat: no-repeat;
+  ${backgroundImage(metamaskLogo)}
   width: 55px;
   height: 54px;
 `;
@@ -147,12 +141,9 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   }
 
   &:after {
+    ${backgroundImage(selectorIcon)}
     display: ${({ $active }) => $active ? 'block' : 'none'};
     content: '';
-    background-image: url(${selectorIcon});
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: contain;
     width: 23px;
     height: 24px;
     position: absolute;

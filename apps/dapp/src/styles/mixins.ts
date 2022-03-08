@@ -11,3 +11,18 @@ export const buttonResets = css`
   border: none;
   cursor: pointer;
 `;
+
+interface BackgroundImageOptions {
+  size?: 'contain' | 'cover';
+  position?: string;
+  repeat?: string;
+  color?: string;
+}
+
+export const backgroundImage = (imageUrl: string, options?: BackgroundImageOptions) => css`
+  background-image: url(${imageUrl});
+  background-color: ${options?.color || 'transparent'};
+  background-size: ${options?.size || 'contain'};
+  background-position: ${options?.position || 'center center'};
+  background-repeat: ${options?.repeat || 'no-repeat'};
+`;
