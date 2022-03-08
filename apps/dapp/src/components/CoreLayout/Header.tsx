@@ -16,7 +16,7 @@ const Header = () => {
   return (
     <Wrapper>
       <Logo />
-      <Navigation>
+      <nav>
         <Menu>
           <MenuItem to="/core/dashboard">
             Dashboard
@@ -31,7 +31,7 @@ const Header = () => {
             Profile
           </MenuItem>
         </Menu>
-      </Navigation>
+      </nav>
       <MetamaskButton
         aria-label={wallet ? 'Change Wallet' : 'Connect Wallet'}
         onClick={wallet ? changeWalletAddress : connectWallet}
@@ -83,11 +83,6 @@ const Logo = styled.span`
   background-repeat: no-repeat;
 `;
 
-const Navigation = styled.nav`
-  display: block;
-  position: relative;
-`;
-
 const Menu = styled(UnstyledList)`
   display: flex;
   flex-direction: row;
@@ -124,6 +119,7 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   font-weight: bold;
   letter-spacing: 0.05em;
   min-width: 7.5rem;
+  position: relative;
 
   padding: 26px 14px 21px;
   transition: all 150ms ease-in;
