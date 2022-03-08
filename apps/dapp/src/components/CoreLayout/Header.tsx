@@ -18,8 +18,8 @@ const Header = () => {
       <Logo />
       <nav>
         <Menu>
-          <MenuItem to="/core/dashboard">
-            Dashboard
+          <MenuItem to="/core/home">
+            Home
           </MenuItem>
           <MenuItem to="/core/vaults">
             Vaults
@@ -29,6 +29,9 @@ const Header = () => {
           </MenuItem>
           <MenuItem to="/core/profile">
             Profile
+          </MenuItem>
+          <MenuItem to="/core/analytics">
+            Analytics
           </MenuItem>
         </Menu>
       </nav>
