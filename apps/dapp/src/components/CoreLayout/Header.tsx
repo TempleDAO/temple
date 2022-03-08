@@ -140,12 +140,11 @@ const Logo = styled(Link)`
 
 const Selector = styled.span<{ $position: number }>`
   ${backgroundImage(selectorIcon)}
+  bottom: 0;
   content: '';
   width: ${SELECTOR_WIDTH}px;
   height: 24px;
   position: absolute;
-  bottom: 0;
-  display: block;
 
   transition: all .2s ease-out;
   display: ${({ $position }) => $position ? 'block' : 'none'};
