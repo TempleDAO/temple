@@ -3,7 +3,7 @@ import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { useWallet } from 'providers/WalletProvider';
-import { flexCenter } from 'styles/mixins';
+import { flexCenter, buttonResets } from 'styles/mixins';
 import { UnstyledList } from 'styles/common';
 
 import selectorIcon from './nav-selector-icon.svg';
@@ -115,15 +115,13 @@ const Menu = styled(UnstyledList)`
 `;
 
 const MetamaskButton = styled.button`
-  appearance: none;
+  ${buttonResets}
   background: url(${metamaskLogo});
   background-position: center center;
   background-size: contain;
   background-repeat: no-repeat;
   width: 55px;
   height: 54px;
-  border: none;
-  cursor: pointer;
 `;
 
 const NavLink = styled(Link)<{ $active?: boolean }>`
