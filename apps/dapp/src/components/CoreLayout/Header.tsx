@@ -80,6 +80,7 @@ const Logo = styled.span`
   background: url(${templeDaoLogo});
   background-size: contain;
   background-position: center center;
+  background-repeat: no-repeat;
 `;
 
 const Navigation = styled.nav`
@@ -107,6 +108,7 @@ const MetamaskButton = styled.button`
   background: url(${metamaskLogo});
   background-position: center center;
   background-size: contain;
+  background-repeat: no-repeat;
   width: 55px;
   height: 54px;
   border: none;
