@@ -15,7 +15,9 @@ const Header = () => {
 
   return (
     <Wrapper>
-      <Logo />
+      <Logo to="/core">
+        TempleDAO
+      </Logo>
       <nav>
         <Menu>
           <MenuItem
@@ -69,6 +71,7 @@ const MenuItem: FC<MenuItemProps> = ({ to, children, strictMatch = false }) => {
   );
 };
 
+// Component Colors
 const NAV_HOVER = '#FFDEC9';
 const NAV_SHADOW = '0px 0px 5px rgba(222, 92, 6, 0.5)';
 const NAV_BACKGROUND_GRADIENT_START = '#0B0A0A';
@@ -84,7 +87,7 @@ const Wrapper = styled.header`
   padding: 0 1.75rem;
 `;
 
-const Logo = styled.span`
+const Logo = styled(Link)`
   display: block;
   width: 42px;
   height: 42px;
@@ -92,6 +95,8 @@ const Logo = styled.span`
   background-size: contain;
   background-position: center center;
   background-repeat: no-repeat;
+  overflow: hidden;
+  text-indent: -999rem;
 `;
 
 const Menu = styled(UnstyledList)`
