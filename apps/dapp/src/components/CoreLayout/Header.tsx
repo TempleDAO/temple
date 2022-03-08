@@ -62,6 +62,9 @@ const MenuItem: FC<MenuItemProps> = ({ to, children }) => {
   );
 };
 
+const NAV_HOVER = '#FFDEC9';
+const NAV_SHADOW = '0px 0px 5px rgba(222, 92, 6, 0.5)';
+
 const Wrapper = styled.header`
   background: linear-gradient(180deg, #0B0A0A 0%, #1D1A1A 100%);
   border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
@@ -123,12 +126,12 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   padding: 26px 14px 21px;
   transition: all 150ms ease-in;
 
-  color: ${({ theme, $active }) => $active ? '#FFDEC9' : theme.palette.brand};
-  text-shadow: ${({ $active }) => $active ? '0px 0px 5px rgba(222, 92, 6, 0.5)' : 'none'};
+  color: ${({ theme, $active }) => $active ? NAV_HOVER : theme.palette.brand};
+  text-shadow: ${({ $active }) => $active ? NAV_SHADOW : 'none'};
 
   &:hover {
-    color: #FFDEC9;
-    text-shadow: 0px 0px 5px rgba(222, 92, 6, 0.5);
+    color: ${NAV_HOVER};
+    text-shadow: ${NAV_SHADOW};
   }
 
   &:after {
