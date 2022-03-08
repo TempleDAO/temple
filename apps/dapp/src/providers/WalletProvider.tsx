@@ -90,7 +90,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
   useEffect(() => {
     interactWithMetamask(undefined, true).then();
     if (typeof window !== undefined) {
-      // @ts-ignore
       const { ethereum } = window;
 
       if (ethereum && ethereum.isMetaMask) {
@@ -125,7 +124,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     syncConnected?: boolean
   ) => {
     if (typeof window !== undefined) {
-      // @ts-ignore
       const { ethereum } = window;
 
       if (ethereum && ethereum.isMetaMask) {
