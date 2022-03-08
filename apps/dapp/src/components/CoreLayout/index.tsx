@@ -27,7 +27,6 @@ export default CoreLayout;
 
 const GlobalStyleOverride = createGlobalStyle`
   html, body {
-    overflow-x: visible;
     min-height: 100vh;
     min-width: 100vw;
   }
