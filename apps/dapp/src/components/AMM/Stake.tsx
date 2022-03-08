@@ -4,7 +4,9 @@ import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { useWallet } from 'providers/WalletProvider';
+import { useStaking } from 'providers/StakingProvider';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
@@ -22,11 +24,14 @@ interface StakeProps {
 }
 
 export const Stake: FC<StakeProps> = ({ small }) => {
-  const { balance, getBalance, updateWallet, stake } = useWallet();
+  const { balance, getBalance } = useWallet();
+  const { stake } = useStaking();
   const dashboardMetrics = useRefreshableDashboardMetrics();
 
   const [templeAmount, setTempleAmount] = useState<number | ''>('');
   const [templeWalletAmount, setTempleWalletAmount] = useState<number>(0);
+
+  const refreshWalletState = useRefreshWalletState();
 
   const handleUpdateTempleAmmount = async (value: number) => {
     setTempleAmount(value === 0 ? '' : value);
@@ -52,7 +57,7 @@ export const Stake: FC<StakeProps> = ({ small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await updateWallet();
+      await refreshWalletState();
     }
 
     onMount();

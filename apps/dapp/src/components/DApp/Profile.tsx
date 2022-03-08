@@ -5,12 +5,12 @@ import { DataCard } from 'components/DataCard/DataCard';
 import { formatNumberWithCommas } from 'utils/formatter';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
 import { Flex } from 'components/Layout/Flex';
-import { useWallet } from 'providers/WalletProvider';
+import { useFaith } from 'providers/FaithProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 export const Profile: FC = () => {
   const accountMetrics = useRefreshableAccountMetrics();
-  const { faith } = useWallet();
+  const { faith } = useFaith();
 
   return (
     <Container

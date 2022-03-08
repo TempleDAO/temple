@@ -5,9 +5,11 @@ import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useWallet } from 'providers/WalletProvider';
-import { JoinQueueData } from 'providers/WalletProvider/types';
-import { TEMPLE_STAKING_ADDRESS } from 'providers/WalletProvider/env';
+import { useStaking } from 'providers/StakingProvider';
+import { JoinQueueData } from 'providers/types';
+import { TEMPLE_STAKING_ADDRESS } from 'providers/env';
 import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -26,15 +28,8 @@ interface QueueProps {
 }
 
 export const Queue: FC<QueueProps> = ({ small }) => {
-  const {
-    signer,
-    balance,
-    getBalance,
-    updateWallet,
-    ensureAllowance,
-    getJoinQueueData,
-    getRewardsForOGT,
-  } = useWallet();
+  const { signer, balance, getBalance, ensureAllowance } = useWallet();
+  const { getJoinQueueData, getRewardsForOGT } = useStaking();
   const [OGTWalletAmount, setOGTWalletAmount] = useState<number>(0);
   const [OGTAmount, setOGTAmount] = useState<number | ''>('');
   const [joinQueueData, setJoinQueueData] = useState<JoinQueueData | null>({
@@ -43,6 +38,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
   });
   const [rewards, setRewards] = useState<number | ''>('');
   const repositionTopTooltip = useMediaQuery({ query: '(max-width: 1235px)' });
+
+  const refreshWalletState = useRefreshWalletState();
 
   const updateTempleRewards = async (ogtAmount: number) => {
     setRewards((await getRewardsForOGT(ogtAmount)) || 0);
@@ -98,7 +95,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await updateWallet();
+      await refreshWalletState();
       setRewards('');
     }
 

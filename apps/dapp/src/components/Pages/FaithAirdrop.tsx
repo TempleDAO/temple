@@ -14,6 +14,7 @@ import { Flex } from 'components/Layout/Flex';
 import { ProgressAnimation } from 'components/Loader/ProgressAnimation';
 import withWallet from 'hoc/withWallet';
 import { useWallet } from 'providers/WalletProvider';
+import { useFaith } from 'providers/FaithProvider';
 import { FaithMerkleAirdrop__factory } from 'types/typechain';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumber } from 'utils/formatter';
@@ -109,7 +110,8 @@ const FaithAirdropPage = () => {
 };
 
 function useFaithAirdrop(): FaithAirdropState {
-  const { claimFaithAirdrop, wallet, signer } = useWallet();
+  const { wallet, signer } = useWallet();
+  const { claimFaithAirdrop } = useFaith();
   const [timeRemaining, setTimeRemaining] = useState<string | null>(null);
   // wallet may be falsey, the code can handle that
   // hooks should not be called conditionally so we deal with it this way

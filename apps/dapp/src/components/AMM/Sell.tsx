@@ -1,6 +1,6 @@
+import React, { FC, useEffect, useState } from 'react';
 import { Input } from 'components/Input/Input';
 import { BigNumber } from 'ethers';
-import React, { FC, useEffect, useState } from 'react';
 import { formatNumber } from 'utils/formatter';
 import {
   ConvoFlowTitle,
@@ -14,6 +14,8 @@ import Slippage from 'components/Slippage/Slippage';
 import { Button } from 'components/Button/Button';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
+import { useSwap } from 'providers/SwapProvider';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
 
@@ -27,8 +29,8 @@ interface BuyProps extends SizeProps {
 const ENV_VARS = import.meta.env;
 
 export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
-  const { balance, getBalance, updateWallet, sell, getSellQuote, templePrice } =
-    useWallet();
+  const { balance, getBalance } = useWallet();
+  const { sell, getSellQuote, templePrice } = useSwap();
 
   const [stableCoinWalletAmount, setStableCoinWalletAmount] =
     useState<number>(0);
@@ -37,6 +39,8 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const [slippage, setSlippage] = useState<number>(1);
   const [minAmountOut, setMinAmountOut] = useState<number>(0);
   const [templeAmount, setTempleAmount] = useState<number | ''>('');
+
+  const refreshWalletState = useRefreshWalletState();
 
   const handleUpdateTempleAmount = async (value: number | '') => {
     setTempleAmount(value === 0 ? '' : value);
@@ -79,7 +83,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await updateWallet();
+      await refreshWalletState();
       setRewards('');
       setMinAmountOut(0);
     }

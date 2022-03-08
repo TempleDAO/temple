@@ -1,7 +1,7 @@
 import dateFormat from 'dateformat';
 import React from 'react';
 import styled from 'styled-components';
-import { LockedEntry } from 'providers/WalletProvider/types';
+import { LockedEntry } from 'providers/types';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';

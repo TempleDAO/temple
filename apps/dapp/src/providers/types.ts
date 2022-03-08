@@ -66,36 +66,42 @@ export interface FaithQuote {
   claimableFaith: number;
 }
 
-export interface WalletState {
-  // has the user connected a wallet to the dapp
-  isConnected: boolean;
-
-  wallet: string | null;
-  // current
-  balance: Balance;
-  faith: FaithBalance;
-  templePrice: number;
-  exchangeRate: number;
-  currentEpoch: number;
-  isLoading: boolean;
-  signer: JsonRpcSigner | null;
-  network: Network | null;
-  lockedEntries: Array<LockedEntry>;
+export interface StakingService {
+  apy: number;
   exitQueueData: ExitQueueData;
-
-  connectWallet(): void;
-
-  changeWalletAddress(): void;
-
-  updateWallet(): Promise<void> | void;
-
-  buy(amountInFrax: BigNumber, minAmountOutTemple: BigNumber): void;
-
-  sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber): void;
+  lockedEntries: Array<LockedEntry>;
 
   stake(amountToStake: BigNumber): Promise<void>;
 
-  claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
+  claimAvailableTemple(): Promise<void>;
+
+  restakeAvailableTemple(): Promise<void>;
+
+  getJoinQueueData(ogtAmount: BigNumber): Promise<JoinQueueData | void>;
+
+  getExitQueueData(): Promise<void>
+
+  updateLockedEntries(): Promise<void>
+
+  claimOgTemple(lockedEntryIndex: number): Promise<void>;
+
+  getRewardsForOGT(ogtAmount: number): Promise<number | void>;
+
+  updateApy(): Promise<void>
+}
+
+export interface FaithService {
+  faith: FaithBalance;
+
+  updateFaith(): Promise<void>
+
+  verifyFaith(lockingPeriod?: number): Promise<void>;
+
+  redeemFaith(faithAmount: BigNumber): Promise<BigNumber | void>;
+
+  getFaithQuote(): Promise<FaithQuote | void>;
+
+  getTempleFaithReward(faithAmount: BigNumber): Promise<BigNumber | void>;
 
   claimFaithAirdrop(
     index: number,
@@ -103,38 +109,45 @@ export interface WalletState {
     amount: BigNumber,
     proof: string[]
   ): Promise<TransactionReceipt | void>;
+}
 
-  claimOgTemple(lockedEntryIndex: number): Promise<void>;
+export interface SwapService { 
+  templePrice: number;
 
-  claimAvailableTemple(): Promise<void>;
+  buy(amountInFrax: BigNumber, minAmountOutTemple: BigNumber): void;
 
-  restakeAvailableTemple(): Promise<void>;
-
-  getRewardsForOGT(ogtAmount: number): Promise<number | void>;
-
-  getJoinQueueData(ogtAmount: BigNumber): Promise<JoinQueueData | void>;
+  sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber): void;
 
   getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
 
   getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
 
+  updateTemplePrice(): Promise<void>
+}
+
+export interface WalletState {
+  // has the user connected a wallet to the dapp
+  wallet: string | null;
+  // current
+  balance: Balance;
+  signer: JsonRpcSigner | null;
+  network: Network | null;
+
+  isConnected(): boolean;
+
+  connectWallet(): void;
+
+  changeWalletAddress(): void;
+
+  claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
+
   getBalance(): Promise<Balance | void>;
+
+  getCurrentEpoch(): Promise<void | number>;
 
   collectTempleTeamPayment(
     epoch: TEAM_PAYMENTS_EPOCHS
   ): Promise<void | TransactionReceipt>;
-
-  apy: number;
-
-  verifyFaith(lockingPeriod?: number): Promise<void>;
-
-  redeemFaith(faithAmount: BigNumber): Promise<BigNumber | void>;
-
-  getTempleFaithReward(faithAmount: BigNumber): Promise<BigNumber | void>;
-
-  getFaithQuote(): Promise<FaithQuote | void>;
-
-  getExitQueueData(): Promise<ExitQueueData | void>;
 
   ensureAllowance(
     tokenName: string,
