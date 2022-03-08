@@ -64,9 +64,11 @@ const MenuItem: FC<MenuItemProps> = ({ to, children }) => {
 
 const NAV_HOVER = '#FFDEC9';
 const NAV_SHADOW = '0px 0px 5px rgba(222, 92, 6, 0.5)';
+const NAV_BACKGROUND_GRADIENT_START = '#0B0A0A';
+const NAV_BACKGROUND_GRADIENT_END = '#1D1A1A';
 
 const Wrapper = styled.header`
-  background: linear-gradient(180deg, #0B0A0A 0%, #1D1A1A 100%);
+  background: linear-gradient(180deg, ${NAV_BACKGROUND_GRADIENT_START} 0%, ${NAV_BACKGROUND_GRADIENT_END} 100%);
   border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
   display: flex;
   flex-direction: row;
