@@ -12,54 +12,13 @@ import metamaskLogo from 'assets/images/metamask-transparent.svg';
 
 const Header = () => {
   const { connectWallet, changeWalletAddress, wallet } = useWallet();
-  const [selectorPosition, setSelectorPosition] = useState(0);
-
-  const onMenuItemActive = useCallback((offsetX: number) => {
-    const centerSelectorPostion = offsetX - (SELECTOR_WIDTH / 2);
-    setSelectorPosition(centerSelectorPostion);
-  }, [setSelectorPosition]);
 
   return (
     <Wrapper>
       <Logo to="/core">
         TempleDAO
       </Logo>
-      <Navigation>
-        <Menu>
-          <MenuItem
-            to="/core"
-            strictMatch
-            onMenuItemActive={onMenuItemActive}
-          >
-            Home
-          </MenuItem>
-          <MenuItem
-            to="/core/vaults"
-            onMenuItemActive={onMenuItemActive}
-          >
-            Vaults
-          </MenuItem>
-          <MenuItem
-            to="/core/trade"
-            onMenuItemActive={onMenuItemActive}
-          >
-            Trade
-          </MenuItem>
-          <MenuItem
-            to="/core/profile"
-            onMenuItemActive={onMenuItemActive}
-          >
-            Profile
-          </MenuItem>
-          <MenuItem
-            to="/core/analytics"
-            onMenuItemActive={onMenuItemActive}
-          >
-            Analytics
-          </MenuItem>
-        </Menu>
-        <Selector $position={selectorPosition} />
-      </Navigation>
+      <Navigation />
       <MetamaskButton
         aria-label={wallet ? 'Change Wallet' : 'Connect Wallet'}
         onClick={wallet ? changeWalletAddress : connectWallet}
@@ -69,6 +28,54 @@ const Header = () => {
 };
 
 export default Header;
+
+const Navigation = () => {
+  const [selectorPosition, setSelectorPosition] = useState(0);
+
+  const onMenuItemActive = useCallback((offsetX: number) => {
+    const centerSelectorPostion = offsetX - (SELECTOR_WIDTH / 2);
+    setSelectorPosition(centerSelectorPostion);
+  }, [setSelectorPosition]);
+
+  return (
+    <NavWrapper>
+      <Menu>
+        <MenuItem
+          to="/core"
+          strictMatch
+          onMenuItemActive={onMenuItemActive}
+        >
+          Home
+        </MenuItem>
+        <MenuItem
+          to="/core/vaults"
+          onMenuItemActive={onMenuItemActive}
+        >
+          Vaults
+        </MenuItem>
+        <MenuItem
+          to="/core/trade"
+          onMenuItemActive={onMenuItemActive}
+        >
+          Trade
+        </MenuItem>
+        <MenuItem
+          to="/core/profile"
+          onMenuItemActive={onMenuItemActive}
+        >
+          Profile
+        </MenuItem>
+        <MenuItem
+          to="/core/analytics"
+          onMenuItemActive={onMenuItemActive}
+        >
+          Analytics
+        </MenuItem>
+      </Menu>
+      <Selector $position={selectorPosition} />
+    </NavWrapper>
+  );
+};
 
 interface MenuItemProps {
   to: string;
@@ -151,7 +158,7 @@ const Selector = styled.span<{ $position: number }>`
   transform: translate(${({ $position }) => $position}px, 50%);
 `;
 
-const Navigation = styled.nav`
+const NavWrapper = styled.nav`
   position: relative;
 `;
 
