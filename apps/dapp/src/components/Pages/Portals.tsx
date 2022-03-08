@@ -1,4 +1,10 @@
-import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import React, {
+  Suspense,
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useState,
+} from 'react';
 import { Howl } from 'howler';
 import styled from 'styled-components';
 
@@ -11,7 +17,10 @@ import leftGlow from 'assets/images/glow_left.png';
 import rightGlow from 'assets/images/glow_right.png';
 import scrollGlow from 'assets/images/glow_scroll.png';
 import { getBgImgDimensions } from 'utils/imageSize';
-import { CustomRoutingPageProps, NexusView } from 'hooks/use-custom-spa-routing';
+import {
+  CustomRoutingPageProps,
+  NexusView,
+} from 'hooks/use-custom-spa-routing';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 import { Background } from 'components/BackgroundItem/Background';
 
@@ -32,7 +41,10 @@ const track = new Howl({
   volume: 0.15,
 });
 
-const PortalPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => {
+const PortalPage = ({
+  routingHelper,
+  preloadPages,
+}: CustomRoutingPageProps) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
@@ -163,9 +175,9 @@ const PortalPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => 
             }}
           />
           <ChartContainer chartVisible={chartVisible}>
-            <React.Suspense fallback={null}>
+            <Suspense fallback={null}>
               <PriceChart />
-            </React.Suspense>
+            </Suspense>
           </ChartContainer>
         </>
       )}
@@ -189,7 +201,8 @@ const ChartContainer = styled.div<{ chartVisible: boolean }>`
   margin-left: 5vw;
   width: 90vw;
   height: 60vh;
-  transform: ${({ chartVisible }) => chartVisible ? 'scale(100%)' : 'scale(0%)'};
+  transform: ${({ chartVisible }) =>
+    chartVisible ? 'scale(100%)' : 'scale(0%)'};
   /* TODO: user existing or add this as new theme color */
   background: rgba(0, 0, 0, 0.95);
   z-index: 20;

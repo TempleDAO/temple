@@ -5,14 +5,14 @@ import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
-import {
-  JoinQueueData,
-  OG_TEMPLE_TOKEN,
-  RitualKind,
-  useWallet,
-} from 'providers/WalletProvider';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
+import { useWallet } from 'providers/WalletProvider';
+import { useStaking } from 'providers/StakingProvider';
+import { JoinQueueData } from 'providers/types';
+import { TEMPLE_STAKING_ADDRESS } from 'providers/env';
 import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import {
   ConvoFlowTitle,
   Spacer,
@@ -21,21 +21,15 @@ import {
   ViewContainer,
 } from 'components/AMM/helpers/components';
 import { copyBalance } from 'components/AMM/helpers/methods';
-
+import { TempleStaking__factory, OGTemple__factory } from 'types/typechain';
 
 interface QueueProps {
   small?: boolean;
 }
 
 export const Queue: FC<QueueProps> = ({ small }) => {
-  const {
-    balance,
-    getBalance,
-    updateWallet,
-    increaseAllowanceForRitual,
-    getJoinQueueData,
-    getRewardsForOGT,
-  } = useWallet();
+  const { signer, balance, getBalance, ensureAllowance } = useWallet();
+  const { getJoinQueueData, getRewardsForOGT } = useStaking();
   const [OGTWalletAmount, setOGTWalletAmount] = useState<number>(0);
   const [OGTAmount, setOGTAmount] = useState<number | ''>('');
   const [joinQueueData, setJoinQueueData] = useState<JoinQueueData | null>({
@@ -44,10 +38,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
   });
   const [rewards, setRewards] = useState<number | ''>('');
   const repositionTopTooltip = useMediaQuery({ query: '(max-width: 1235px)' });
-  const repositionProcessTimeTooltip = useMediaQuery({
-    query: '(max-width: 970px)',
-  });
-  const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
+
+  const refreshWalletState = useRefreshWalletState();
 
   const updateTempleRewards = async (ogtAmount: number) => {
     setRewards((await getRewardsForOGT(ogtAmount)) || 0);
@@ -71,12 +63,22 @@ export const Queue: FC<QueueProps> = ({ small }) => {
 
   const handleUnlockOGT = async () => {
     try {
-      if (OGTAmount) {
-        await increaseAllowanceForRitual(
-          toAtto(OGTAmount),
-          RitualKind.OGT_UNLOCK,
-          'OGTEMPLE'
+      if (OGTAmount && signer) {
+        const TEMPLE_STAKING = new TempleStaking__factory(signer).attach(
+          TEMPLE_STAKING_ADDRESS
         );
+
+        const OG_TEMPLE_TOKEN = new OGTemple__factory(signer).attach(
+          await TEMPLE_STAKING.OG_TEMPLE()
+        );
+
+        await ensureAllowance(
+          TICKER_SYMBOL.OG_TEMPLE_TOKEN,
+          OG_TEMPLE_TOKEN,
+          TEMPLE_STAKING_ADDRESS,
+          toAtto(OGTAmount)
+        );
+
         getBalance();
         handleUpdateOGT(0);
       }
@@ -93,7 +95,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await updateWallet();
+      await refreshWalletState();
       setRewards('');
     }
 
@@ -104,7 +106,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
     <ViewContainer>
       <TitleWrapper>
         <ConvoFlowTitle>
-          SELECT {OG_TEMPLE_TOKEN} TO UNSTAKE VIA QUEUE
+          SELECT {TICKER_SYMBOL.OG_TEMPLE_TOKEN} TO UNSTAKE VIA QUEUE
         </ConvoFlowTitle>
         <TooltipPadding>
           <Tooltip
@@ -143,8 +145,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
         placeholder={'0.00'}
       />
 
-      <Flex layout={{kind: 'container', direction:'row'}}>
-        <Flex layout={{kind:'item', smallMargin:true}}>
+      <Flex layout={{ kind: 'container', direction: 'row' }}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             small={small}
             title={'TEMPLE + REWARDS'}
@@ -154,7 +156,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
             }
           />
         </Flex>
-        <Flex layout={{kind:'item', smallMargin:true}}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             small={small}
             title={'QUEUE LENGTH'}
@@ -164,7 +166,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
             }
           />
         </Flex>
-        <Flex layout={{kind:'item', smallMargin:true}}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             small={small}
             title={'PROCESS TIME'}
