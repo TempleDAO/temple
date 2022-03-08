@@ -18,7 +18,10 @@ const Header = () => {
       <Logo />
       <nav>
         <Menu>
-          <MenuItem to="/core/home">
+          <MenuItem
+            to="/core"
+            strictMatch
+          >
             Home
           </MenuItem>
           <MenuItem to="/core/vaults">
@@ -47,11 +50,12 @@ export default Header;
 
 interface MenuItemProps {
   to: string;
+  strictMatch?: boolean;
 }
 
-const MenuItem: FC<MenuItemProps> = ({ to, children }) => {
+const MenuItem: FC<MenuItemProps> = ({ to, children, strictMatch = false }) => {
   const resolved = useResolvedPath(to);
-  const match = useMatch({ path: resolved.pathname, end: false });
+  const match = useMatch({ path: resolved.pathname, end: strictMatch });
 
   return (
     <li>
