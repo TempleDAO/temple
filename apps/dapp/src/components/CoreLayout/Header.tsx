@@ -121,13 +121,13 @@ const MenuItem: FC<MenuItemProps> = ({
 const SELECTOR_WIDTH = 23;
 
 // Component Colors
-const NAV_HOVER = '#FFDEC9';
-const NAV_SHADOW = '0px 0px 5px rgba(222, 92, 6, 0.5)';
-const NAV_BACKGROUND_GRADIENT_START = '#0B0A0A';
-const NAV_BACKGROUND_GRADIENT_END = '#1D1A1A';
+const COLOR_NAV_HOVER = '#FFDEC9';
+const COLOR_NAV_SHADOW = '0px 0px 5px rgba(222, 92, 6, 0.5)';
+const COLOR_NAV_BACKGROUND_GRADIENT_START = '#0B0A0A';
+const COLOR_NAV_BACKGROUND_GRADIENT_END = '#1D1A1A';
 
 const Wrapper = styled.header`
-  background: linear-gradient(180deg, ${NAV_BACKGROUND_GRADIENT_START} 0%, ${NAV_BACKGROUND_GRADIENT_END} 100%);
+  background: linear-gradient(180deg, ${COLOR_NAV_BACKGROUND_GRADIENT_START} 0%, ${COLOR_NAV_BACKGROUND_GRADIENT_END} 100%);
   border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
   display: flex;
   flex-direction: row;
@@ -199,11 +199,11 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   padding: 26px 14px 21px;
   transition: all 150ms ease-in;
 
-  color: ${({ theme, $active }) => $active ? NAV_HOVER : theme.palette.brand};
-  text-shadow: ${({ $active }) => $active ? NAV_SHADOW : 'none'};
+  color: ${({ theme, $active }) => $active ? COLOR_NAV_HOVER : theme.palette.brand};
+  text-shadow: ${({ $active }) => $active ? COLOR_NAV_SHADOW : 'none'};
 
   &:hover {
-    color: ${NAV_HOVER};
-    text-shadow: ${NAV_SHADOW};
+    color: ${COLOR_NAV_HOVER};
+    text-shadow: ${COLOR_NAV_SHADOW};
   }
 `;
