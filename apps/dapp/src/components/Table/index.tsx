@@ -45,7 +45,7 @@ export const Row = styled.tr`
 type Alignment = 'left' | 'center' | 'right';
 
 export const Cell = styled.td<{ align?: Alignment }>`
-  text-align: ${({ align = 'left '}) => align};
+  text-align: ${({ align = 'left' }) => align};
   padding: 9px 1.5rem 9px 0;
 
   &:last-of-type {
