@@ -4,7 +4,9 @@ import styled, { css } from 'styled-components';
 import Loader from '../Loader/Loader';
 import useIsMounted from 'hooks/use-is-mounted';
 
-export interface ButtonProps extends ButtonStyledProps, HTMLProps<HTMLButtonElement> {
+export interface ButtonProps
+  extends ButtonStyledProps,
+    HTMLProps<HTMLButtonElement> {
   type?: 'submit' | 'reset' | 'button' | undefined;
   label: string;
 
@@ -93,13 +95,15 @@ interface ButtonStyledProps {
   autoWidth?: boolean;
 }
 
+const buttonHeight = '4.75rem';
 export const ButtonStyled = styled.button<ButtonStyledProps>`
   // common
-  background-color: transparent;
+  ${(props) => props.theme.gradients.dark}
   cursor: pointer;
-  color: ${(props) => props.theme.palette.brand};
-  border: 0.0625rem /* 1/16 */ solid currentColor;
-  height: 4.75rem /* 76/16 */;
+  color: ${(props) => props.theme.palette.core.active};
+  border: 0.125rem /* 2/16 */ solid ${(props) => props.theme.palette.brand};
+  border-radius: calc(${buttonHeight} / 2);
+  height: ${buttonHeight} /* 76/16 */;
   ${(props) => props.theme.typography.h4};
   display: flex;
   justify-content: center;
@@ -146,9 +150,7 @@ export const ButtonStyled = styled.button<ButtonStyledProps>`
 
 export const ButtonLabel = styled.span<ButtonStyledProps>`
   margin: 0;
-  ${(props) =>
-    props.isUppercase &&
-    css`
-      text-transform: uppercase;
-    `};
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  font-weight: bold;
 `;
