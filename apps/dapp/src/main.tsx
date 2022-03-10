@@ -13,11 +13,8 @@ import Loader from 'components/Loader/Loader';
 
 import Home from 'components/Pages/Home';
 import Disclaimer from 'components/Pages/Disclaimer';
-<<<<<<< HEAD
+
 import CoreLayout from 'components/Layouts/CoreLayout';
-=======
-import CoreLayout from 'components/CoreLayout';
->>>>>>> 5fcc740 (Feat: add new core layout component)
 
 // Separate Chunks
 const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
