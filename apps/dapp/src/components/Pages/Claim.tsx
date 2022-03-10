@@ -9,7 +9,7 @@ import React, {
 import styled, { keyframes } from 'styled-components';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
-import { InputSelect, Option } from 'components/InputSelect/InputSelect';
+import { InputSelect } from 'components/InputSelect/InputSelect';
 import withWallet from 'hoc/withWallet';
 import { useWallet } from 'providers/WalletProvider';
 import { ClaimType } from 'enums/claim-type';
@@ -149,7 +149,7 @@ const TempleCashbackPage = () => {
           />
         </ClaimContainer>
       ) : (
-        <WelcomeImage />
+        <WelcomeImage src={welcomeImage} />
       )}
       <Copy>
         Not all who attended the Opening Ceremony made it through unscathed.
@@ -280,9 +280,9 @@ function useTempleCashback() {
         activeClaim &&
         claims[activeClaim][wallet.toLowerCase()]
       ) {
-        const templeCashback = new TempleCashback__factory()
-          .attach(TEMPLE_CASHBACK_ADDRESS)
-          .connect(signer);
+        const templeCashback = new TempleCashback__factory(signer).attach(
+          TEMPLE_CASHBACK_ADDRESS
+        );
 
         let allocationClaimed;
         if (claims[activeClaim][wallet.toLowerCase()]) {
@@ -381,25 +381,25 @@ const Copy = styled.p`
 `;
 
 const flicker = keyframes`
-    0% {
+  0% {
     opacity: 0.3;
-    }
+  }
 
-    33% {
+  33% {
     opacity: 0.6;
-    }
+  }
 
-    60% {
-    opacity: 0.4;
-    }
+  60% {
+   opacity: 0.4;
+  }
 
-    80% {
+  80% {
     opacity: 0.8;
-    }
+  }
 
-    100% {
-    opacity: 0.5;
-    }
+  100% {
+   opacity: 0.5;
+  }
 `;
 
 const ClaimContainer = styled.div`
@@ -413,11 +413,11 @@ const ClaimContainer = styled.div`
   animation: ${flicker} 4s infinite alternate ease-out;
 `;
 
-const WelcomeImage = styled.div`
+const WelcomeImage = styled.img`
   position: relative;
-  width: 470px;
-  height: 300px;
-  background: url(${welcomeImage}) center no-repeat;
+  width: 100%;
+  height: auto;
+  max-width: 470px;
   background-size: contain;
   margin-bottom: 50px;
 `;

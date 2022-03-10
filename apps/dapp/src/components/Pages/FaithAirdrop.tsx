@@ -13,8 +13,10 @@ import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
 import { ProgressAnimation } from 'components/Loader/ProgressAnimation';
 import withWallet from 'hoc/withWallet';
-import { FAITH_TOKEN, useWallet } from 'providers/WalletProvider';
+import { useWallet } from 'providers/WalletProvider';
+import { useFaith } from 'providers/FaithProvider';
 import { FaithMerkleAirdrop__factory } from 'types/typechain';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumber } from 'utils/formatter';
 import claimData from 'data/claims/faith-airdrop.json';
 import deityImage from 'assets/images/deity.svg';
@@ -23,12 +25,11 @@ import chant from 'assets/sounds/chant.mp3';
 
 const ENV_VARS = import.meta.env;
 const FAITH_AIRDROP_ADDRESS = ENV_VARS.VITE_PUBLIC_FAITH_AIRDROP_ADDRESS;
-const AIRDROP_START_TIMESTAMP =
-  ENV_VARS.VITE_PUBLIC_AIRDROP_START_TIMESTAMP || 1645030560000;
+const AIRDROP_END_TIMESTAMP =
+  ENV_VARS.VITE_PUBLIC_FAITH_AIRDROP_END_TIMESTAMP || 1645061667000;
 const ONE_MINUTE = 60000;
 const ONE_HOUR = 3600000;
 const ONE_DAY = 86400000;
-const AIRDROP_LENGTH = ONE_DAY * 5;
 
 type ReducerState = {
   cashbackComplete: boolean;
@@ -99,7 +100,7 @@ const FaithAirdropPage = () => {
         />
       ) : (
         <CollectButton
-          label={`No ${FAITH_TOKEN} claim available`}
+          label={`No ${TICKER_SYMBOL.FAITH} claim available`}
           disabled={true}
           ongoingRequest={false}
         />
@@ -109,7 +110,8 @@ const FaithAirdropPage = () => {
 };
 
 function useFaithAirdrop(): FaithAirdropState {
-  const { claimFaithAirdrop, wallet, signer } = useWallet();
+  const { wallet, signer } = useWallet();
+  const { claimFaithAirdrop } = useFaith();
   const [timeRemaining, setTimeRemaining] = useState<string | null>(null);
   // wallet may be falsey, the code can handle that
   // hooks should not be called conditionally so we deal with it this way
@@ -122,7 +124,7 @@ function useFaithAirdrop(): FaithAirdropState {
 
   const [state, dispatch] = useReducer(reducer, {
     ...reducerInitialState,
-    label: `Collect ${formatNumber(allocationAmount)} ${FAITH_TOKEN}`,
+    label: `Collect ${formatNumber(allocationAmount)} ${TICKER_SYMBOL.FAITH}`,
   });
 
   function reducer(state: ReducerState, action: Action): ReducerState {
@@ -152,9 +154,9 @@ function useFaithAirdrop(): FaithAirdropState {
   useEffect(() => {
     async function isAllocationAlreadyClaimed() {
       if (signer && wallet && userClaim) {
-        const faithMerkleAirdrop = new FaithMerkleAirdrop__factory()
-          .attach(FAITH_AIRDROP_ADDRESS)
-          .connect(signer);
+        const faithMerkleAirdrop = new FaithMerkleAirdrop__factory(
+          signer
+        ).attach(FAITH_AIRDROP_ADDRESS);
 
         const allocationClaimed = await faithMerkleAirdrop.isClaimed(
           userClaim.index
@@ -229,8 +231,7 @@ function useBackgroundNoise() {
 
 function getTimeRemaining() {
   const now = new Date().valueOf();
-  const timeRemaining =
-    AIRDROP_LENGTH - (now - Number(AIRDROP_START_TIMESTAMP));
+  const timeRemaining = Number(AIRDROP_END_TIMESTAMP) - now;
 
   if (timeRemaining <= 0) return null;
   else {

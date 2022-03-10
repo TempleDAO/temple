@@ -1,7 +1,6 @@
-import EnterBgImage from 'assets/images/altar-enter-bg.jpg';
-import ExitBgImage from 'assets/images/altar-exit.jpg';
-import crossImage from 'assets/images/cross.svg';
-import DevotionBgImage from 'assets/images/devotion_bg.jpg';
+import React, { ReactNode, useEffect, useState } from 'react';
+import styled, { css } from 'styled-components';
+
 import { Buy } from 'components/AMM/Buy';
 import Devotion from 'components/AMM/Devotion';
 import { Queue } from 'components/AMM/Queue';
@@ -11,9 +10,12 @@ import { Unlock } from 'components/AMM/Unlock';
 import { Withdraw } from 'components/AMM/Withdraw';
 import Image from 'components/Image/Image';
 import withWallet from 'hoc/withWallet';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
-import React, { ReactNode, useEffect, useState } from 'react';
-import styled, { css } from 'styled-components';
+import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
+
+import EnterBgImage from 'assets/images/altar-enter-bg.jpg';
+import ExitBgImage from 'assets/images/altar-exit.jpg';
+import crossImage from 'assets/images/cross.svg';
+import DevotionBgImage from 'assets/images/devotion_bg.jpg';
 
 const ENV_VARS = import.meta.env;
 
@@ -21,9 +23,9 @@ export enum AMMView {
   BUY = 'BUY',
   STAKE = 'STAKE',
 
-  UNLOCK = 'UNLOCK OGTEMPLE',
-  JOIN_QUEUE = 'JOIN QUEUE',
-  WITHDRAW = 'WITHDRAW TEMPLE',
+  UNLOCK = 'UNLOCK',
+  JOIN_QUEUE = 'JOIN_QUEUE',
+  WITHDRAW_TEMPLE = 'WITHDRAW_TEMPLE',
   SELL = 'SELL',
   DEVOTION = 'DEVOTION',
 
@@ -33,8 +35,7 @@ export enum AMMView {
 }
 
 // CustomRoutingPage does not take view as prop
-//@ts-ignore
-const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
+const AMMAltars = ({ routingHelper, view }: CustomRoutingPageProps & { view: AMMView }) => {
   const { back } = routingHelper;
   const [activeAMMView, setActiveAMMView] = useState<AMMView | null>(view);
 
@@ -65,7 +66,7 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
         );
       case AMMView.JOIN_QUEUE:
         return <Queue />;
-      case AMMView.WITHDRAW:
+      case AMMView.WITHDRAW_TEMPLE:
         return <Withdraw />;
       case AMMView.DEVOTION:
         return ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ENGAGED ? (
@@ -80,18 +81,18 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
 
   const getBackgroundImage = () => {
     let bgImage = '';
-    if (activeAMMView === 'BUY' || activeAMMView === 'STAKE') {
+    if (activeAMMView === AMMView.BUY || activeAMMView === AMMView.STAKE) {
       bgImage = EnterBgImage;
     }
     if (
-      activeAMMView === 'UNLOCK OGTEMPLE' ||
-      activeAMMView === 'JOIN QUEUE' ||
-      activeAMMView === 'WITHDRAW TEMPLE' ||
-      activeAMMView === 'SELL'
+      activeAMMView === AMMView.UNLOCK ||
+      activeAMMView === AMMView.JOIN_QUEUE ||
+      activeAMMView === AMMView.WITHDRAW_TEMPLE ||
+      activeAMMView === AMMView.SELL
     ) {
       bgImage = ExitBgImage;
     }
-    if (activeAMMView === 'DEVOTION') {
+    if (activeAMMView === AMMView.DEVOTION) {
       bgImage = DevotionBgImage;
     }
 
@@ -103,13 +104,13 @@ const AMMAltars: CustomRoutingPage = ({ routingHelper, view }) => {
       <Background backgroundUrl={() => getBackgroundImage()}>
         <ConvoFlowContent
           isSmall={
-            activeAMMView === 'BUY' ||
-            activeAMMView === 'STAKE' ||
-            activeAMMView === 'SELL'
+            activeAMMView === AMMView.BUY ||
+            activeAMMView === AMMView.STAKE ||
+            activeAMMView === AMMView.SELL
           }
           isDisabled={
             ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true' &&
-            (activeAMMView === 'BUY' || activeAMMView === 'SELL')
+            (activeAMMView === AMMView.BUY || activeAMMView === AMMView.SELL)
           }
         >
           <ConvoFlowClose

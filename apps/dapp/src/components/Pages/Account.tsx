@@ -1,5 +1,5 @@
 //@ts-nocheck
-
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import AccessoriesTemplate from 'components/Accessories/AccessoriesTemplate';
 import BackButton from 'components/Button/BackButton';
@@ -8,11 +8,11 @@ import { FlexStyled } from 'components/Layout/Flex';
 import ProfileHeader from 'components/ProfileHeader/ProfileHeader';
 import ProfileMetric from 'components/ProfileMetric/ProfileMetric';
 import withWallet from 'hoc/withWallet';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import useFetchStoreDiscordUser from 'hooks/use-fetch-store-discord-user';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
-import { FAITH_TOKEN, useWallet } from 'providers/WalletProvider';
-import React, { useEffect, useState } from 'react';
+import { useWallet } from 'providers/WalletProvider';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import styled from 'styled-components';
 import { formatNumberWithCommas } from 'utils/formatter';
 
@@ -28,9 +28,9 @@ export interface DiscordUser {
 }
 
 const ENV_VARS = import.meta.env;
-const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL
+const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL;
 
-const Account: CustomRoutingPage = ({ routingHelper }) => {
+const Account = ({ routingHelper }: CustomRoutingPageProps) => {
   const { back } = routingHelper;
 
   const { faith } = useWallet();
@@ -155,11 +155,15 @@ const Account: CustomRoutingPage = ({ routingHelper }) => {
                   <RightAlign>
                     <ProfileMetric
                       label={`lifetime`}
-                      value={`${formatNumberWithCommas(faith.lifeTimeFaith)}  ${FAITH_TOKEN}`}
+                      value={`${formatNumberWithCommas(faith.lifeTimeFaith)}  ${
+                        TICKER_SYMBOL.FAITH
+                      }`}
                     />
                     <ProfileMetric
                       label={`usable`}
-                      value={`${formatNumberWithCommas(faith.usableFaith)} ${FAITH_TOKEN}`}
+                      value={`${formatNumberWithCommas(faith.usableFaith)} ${
+                        TICKER_SYMBOL.FAITH
+                      }`}
                     />
                   </RightAlign>
                   <RightAlign>

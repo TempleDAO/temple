@@ -20,8 +20,6 @@ import {
   TreasuryManagementProxy__factory,
   AcceleratedExitQueue,
   AcceleratedExitQueue__factory,
-  RedeemFaithManager__factory,
-  LockedTemple__factory,
 } from '../../typechain';
 
 function toAtto(n: number) {
@@ -253,7 +251,7 @@ async function main() {
     await owner.getAddress(),
     expiryDate()
   );
-  
+
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
     EXIT_QUEUE_ADDRESS: exitQueue.address,
@@ -271,9 +269,6 @@ async function main() {
     TEMPLE_V2_ROUTER_ADDRESS: templeRouter.address,
     TEMPLE_ROUTER_WHITELIST: ammWhitelist.address,
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
-    REDEEM_FAITH_MANAGER: redeemFaithManager.address,
-    TEMPLE_FAITH_ADDRESS: faith.address,
-    LOCKED_TEMPLE_ADDRESS: lockedTemple.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys

@@ -28,9 +28,9 @@ const DevotionCTA = () => {
   const [devotionActive, setDevotionActive] = useState(false);
 
   const getStatus = async (signer: JsonRpcSigner) => {
-    const DEVOTION = new Devotion__factory()
-      .attach(TEMPLE_DEVOTION_ADDRESS)
-      .connect(signer);
+    const DEVOTION = new Devotion__factory(signer).attach(
+      TEMPLE_DEVOTION_ADDRESS
+    );
     const devotionRound = await DEVOTION.currentRound();
     const roundStatus = await DEVOTION.roundStatus(devotionRound);
 

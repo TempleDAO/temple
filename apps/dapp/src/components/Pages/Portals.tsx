@@ -1,9 +1,13 @@
-import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import React, {
+  Suspense,
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useState,
+} from 'react';
 import { Howl } from 'howler';
 import styled from 'styled-components';
-import AltarEnter from 'components/Pages/AltarEnter';
-import AltarExit from 'components/Pages/AltarExit';
-import AltarDevotion from 'components/Pages/AltarDevotion';
+
 import useUnmountableTrack from 'hooks/use-unmountable-track';
 import doorwaysToAltarsTrack from 'assets/sounds/doorways-to-altars-bg-track.mp3';
 import BackButton from 'components/Button/BackButton';
@@ -12,11 +16,15 @@ import midGlow from 'assets/images/glow_center.png';
 import leftGlow from 'assets/images/glow_left.png';
 import rightGlow from 'assets/images/glow_right.png';
 import scrollGlow from 'assets/images/glow_scroll.png';
-import { PriceChart } from 'components/Charts/PriceChart';
 import { getBgImgDimensions } from 'utils/imageSize';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import {
+  CustomRoutingPageProps,
+  NexusView,
+} from 'hooks/use-custom-spa-routing';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
 import { Background } from 'components/BackgroundItem/Background';
+
+const PriceChart = React.lazy(() => import('components/Charts/PriceChart'));
 
 type BgDimension = {
   width: number;
@@ -33,12 +41,21 @@ const track = new Howl({
   volume: 0.15,
 });
 
-const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
+const PortalPage = ({
+  routingHelper,
+  preloadPages,
+}: CustomRoutingPageProps) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
     Dispatch<SetStateAction<BgDimension | undefined>>
   ] = useState();
+
+  React.useEffect(() => {
+    if (preloadPages) {
+      preloadPages();
+    }
+  }, []);
 
   // Change visibility of chart component
   const [chartVisible, setChartVisible] = useState(false);
@@ -84,7 +101,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={leftGlow}
             title="Devotion"
-            onClick={() => changePageTo(AltarDevotion)}
+            onClick={() => changePageTo(NexusView.AltarDevotion)}
             style={{
               transform: `scale(${0.99 * bgDimensions.scaleW}%)`,
               bottom: `${0.443 * bgDimensions.height}px`,
@@ -100,7 +117,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={midGlow}
             title="Enter"
-            onClick={() => changePageTo(AltarEnter)}
+            onClick={() => changePageTo(NexusView.AltarEnter)}
             style={{
               transform: `scale(${0.99 * bgDimensions.scaleW}%)`,
               bottom: `${0.466 * bgDimensions.height}px`,
@@ -116,7 +133,7 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={rightGlow}
             title="Exit"
-            onClick={() => changePageTo(AltarExit)}
+            onClick={() => changePageTo(NexusView.AltarExit)}
             style={{
               transform: `scale(${0.99 * bgDimensions.scaleW}%)`,
               bottom: `${0.443 * bgDimensions.height}px`,
@@ -157,12 +174,10 @@ const PortalPage: CustomRoutingPage = ({ routingHelper }) => {
               backgroundColor: chartVisible ? 'black' : 'transparent',
             }}
           />
-          <ChartContainer
-            style={{
-              transform: chartVisible ? 'scale(100%)' : 'scale(0%)',
-            }}
-          >
-            <PriceChart />
+          <ChartContainer chartVisible={chartVisible}>
+            <Suspense fallback={null}>
+              <PriceChart />
+            </Suspense>
           </ChartContainer>
         </>
       )}
@@ -180,12 +195,14 @@ const OffClick = styled.div`
   opacity: 0.3;
 `;
 
-const ChartContainer = styled.div`
+const ChartContainer = styled.div<{ chartVisible: boolean }>`
   position: absolute;
   bottom: 0;
   margin-left: 5vw;
   width: 90vw;
   height: 60vh;
+  transform: ${({ chartVisible }) =>
+    chartVisible ? 'scale(100%)' : 'scale(0%)'};
   /* TODO: user existing or add this as new theme color */
   background: rgba(0, 0, 0, 0.95);
   z-index: 20;

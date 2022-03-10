@@ -1,45 +1,61 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 
-export type CustomRoutingPage = (props: CustomRoutingPageProps) => JSX.Element;
+import { AMMView } from 'components/Pages/AmmAltars';
+
+export enum NexusView {
+  Account,
+  TempleGates,
+  Foyer,
+  DashboardDoor,
+  Dashboard,
+  RitualPosters,
+  Portals,
+  AltarEnter,
+  AltarExit,
+  AltarDevotion,
+}
+
+export type CustomRoutingPage = NexusView | AMMView;
 
 type RoutingState = {
   changePageTo(PageComponent: CustomRoutingPage): void;
   back(): void;
-  CurrentPage: CustomRoutingPage;
+  currentPage: CustomRoutingPage;
 };
 
-type CustomRoutingPageProps = {
+export type CustomRoutingPageProps = {
   routingHelper: RoutingState;
+  preloadPages?: () => void;
 };
 
 function useCustomRouting(
-  BasePageComponent: CustomRoutingPage,
-  StartingPage?: CustomRoutingPage,
-  StartingNavHistory?: CustomRoutingPage[]
+  baseNexusPage: CustomRoutingPage,
+  startingNexusPage?: CustomRoutingPage,
+  startingNexuHistory?: CustomRoutingPage[]
 ): RoutingState {
-  const [CurrentPage, setCurrentPage] = useState<CustomRoutingPage>(
-    () => StartingPage || BasePageComponent
+  const [currentPage, setCurrentPage] = React.useState<CustomRoutingPage>(
+    () => startingNexusPage || baseNexusPage
   );
-  const [navHistory, setNavHistory] = useState<CustomRoutingPage[]>(
-    StartingNavHistory || []
+  const [navHistory, setNavHistory] = React.useState<CustomRoutingPage[]>(
+    startingNexuHistory || []
   );
 
-  function changePageTo(PageComponent: CustomRoutingPage) {
-    setNavHistory((history) => [...history, CurrentPage]);
-    setCurrentPage(() => PageComponent);
+  function changePageTo(pageRoute: CustomRoutingPage) {
+    setNavHistory((history) => [...history, currentPage]);
+    setCurrentPage(() => pageRoute);
   }
 
   function back() {
-    const [PrevPage] = navHistory.slice(-1);
+    const [prevPage] = navHistory.slice(-1);
     setNavHistory((history) => [...history.slice(0, -1)]);
-    const BackPage = PrevPage ? () => PrevPage : () => BasePageComponent;
-    setCurrentPage(BackPage);
+    const backPage = prevPage ? () => prevPage : () => baseNexusPage;
+    setCurrentPage(backPage);
   }
 
   return {
     changePageTo,
     back,
-    CurrentPage,
+    currentPage,
   };
 }
 

@@ -1,13 +1,12 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Howl } from 'howler';
-import Dashboard from 'components/Pages/Dashboard';
-import Account from 'components/Pages/Account';
+
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/dashboardroom_bg.jpg';
 import glowLeft from 'assets/images/dashboardroom_glowleft.png';
 import glowRight from 'assets/images/dashboardroom_glowright.png';
 import { getBgImgDimensions } from 'utils/imageSize';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import { CustomRoutingPageProps, NexusView } from 'hooks/use-custom-spa-routing';
 import useCancellableTrack from 'hooks/use-cancellable-track';
 import doorwayToDashboardsTrack from 'assets/sounds/doorway-to-dashboards-bg-track.mp3';
 import { BackgroundItem } from 'components/BackgroundItem/BackgroundItem';
@@ -28,12 +27,18 @@ const track = new Howl({
   volume: 0.15,
 });
 
-const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
+const DashboardDoorPage = ({ routingHelper, preloadPages }: CustomRoutingPageProps) => {
   // Used to determine door images size and position
   const [bgDimensions, setBgDimensions]: [
     BgDimension | undefined,
     Dispatch<SetStateAction<BgDimension | undefined>>
   ] = useState();
+
+  React.useEffect(() => {
+    if (preloadPages) {
+      preloadPages();
+    }
+  }, [])
 
   const { back, changePageTo } = routingHelper;
 
@@ -69,7 +74,7 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={glowLeft}
             title="Dashboard"
-            onClick={() => changePageTo(Dashboard)}
+            onClick={() => changePageTo(NexusView.Dashboard)}
             style={{
               transform: `scale(${0.98 * bgDimensions.scaleW}%)`,
               bottom: `${0.152 * bgDimensions.height}px`,
@@ -85,7 +90,7 @@ const DashboardDoorPage: CustomRoutingPage = ({ routingHelper }) => {
           <BackgroundItem
             src={glowRight}
             title="Account"
-            onClick={() => changePageTo(Account)}
+            onClick={() => changePageTo(NexusView.Account)}
             style={{
               transform: `scale(${0.98 * bgDimensions.scaleW}%)`,
               bottom: `${0.155 * bgDimensions.height}px`,

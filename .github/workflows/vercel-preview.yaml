@@ -1,0 +1,45 @@
+name: Vercel preview deploy
+on:
+  pull_request:
+    types: [opened, labeled, synchronize]
+
+jobs:
+  vercel-deploy:
+    if: contains(github.event.pull_request.labels.*.name, 'preview-deploy')
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+      - name: "deploy"
+        id: deploy_step
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          github-token: ${{ secrets.CI_TOKEN }}
+          vercel-args: '-A apps/dapp/vercel.json'
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.DAPP_PROJECT_ID}}
+          alias-domains: |
+            pr-{{PR_NUMBER}}-preview.templedao.link
+        continue-on-error: true
+      - name: "notify failure"
+        if: steps.deploy_step.outcome == 'failure'
+        uses: rjstone/discord-webhook-notify@v1
+        with:
+          severity: error
+          description: Deploy to Vercel failed!
+          details: "[PR Details](${{ github.event.pull_request._links.html.href }})"
+          footer: PR ${{ github.event.number }}
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      - name: "fail"
+        if: steps.deploy_step.outcome == 'failure'
+        run: exit 1
+      - name: "notify success"
+        uses: rjstone/discord-webhook-notify@v1
+        with:
+          severity: info
+          description: (Dapp) PREVIEW Deploy to Vercel succeeded!
+          details: "[View Preview](${{ steps.deploy_step.outputs['preview-url'] }}) | [PR Details](${{ github.event.pull_request._links.html.href }})"
+          footer: PR ${{ github.event.number }}
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}

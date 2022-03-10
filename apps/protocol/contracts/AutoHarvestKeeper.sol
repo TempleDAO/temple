@@ -1,4 +1,4 @@
-pragma solidity ^0.8.4; // SPDX-License-Identifier: GPL-3.0-or-later
+pragma solidity ^0.8.4; // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import "./TreasuryManagementProxy.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";

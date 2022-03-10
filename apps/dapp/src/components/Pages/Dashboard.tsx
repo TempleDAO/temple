@@ -6,11 +6,12 @@ import Embed from 'components/Embed/Embed';
 import BackButton from 'components/Button/BackButton';
 import StatsCard from 'components/StatsCard/StatsCard';
 import { PriceChart } from 'components/Charts/PriceChart';
-import { FlexStyled } from 'components/Layout/Flex';
+import { Flex } from 'components/Layout/Flex';
+import { Spacer } from 'components/AMM/helpers/components';
 import { theme } from 'styles/theme';
 import { formatNumber, formatMillions } from 'utils/formatter';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
-import { CustomRoutingPage } from 'hooks/use-custom-spa-routing';
+import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 
 import texture1 from 'assets/images/texture-1.svg';
 import texture2 from 'assets/images/texture-2.svg';
@@ -22,9 +23,6 @@ import background2 from 'assets/images/dashboard-2.png';
 import background3 from 'assets/images/dashboard-3.png';
 import background4 from 'assets/images/dashboard-4.png';
 
-import background5 from 'assets/images/dashboard-5.png';
-import background6 from 'assets/images/dashboard-6.png';
-import background7 from 'assets/images/dashboard-7.png';
 import background8 from 'assets/images/dashboard-8.png';
 import background9 from 'assets/images/dashboard-9.png';
 import background10 from 'assets/images/dashboard-10.png';
@@ -35,6 +33,7 @@ import mysteryImage from 'assets/images/mystery.png';
 import logicImage from 'assets/images/logic.png';
 import structureImage from 'assets/images/structure.png';
 import orderImage from 'assets/images/order.png';
+
 
 const CHART_EMBED_MIN_WIDTH = 520;
 const CHART_EMBED_HEIGHT = 400;
@@ -101,7 +100,7 @@ const DUNE_RATIO_CHART =
 // const DUNE_RATIO_VALUE =
 //   'https://dune.xyz/embeds/237286/444167/ae8ef580-ef5f-4123-b629-72fc87da465d';
 
-const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
+const Dashboard = ({ routingHelper }: CustomRoutingPageProps) => {
   const { back } = routingHelper;
 
   const dashboardMetrics = useRefreshableDashboardMetrics();
@@ -110,7 +109,7 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
     <>
       <PageWrapper>
         <h3>Temple Price</h3>
-        <FlexStyled
+        <Flex
           layout={{
             kind: 'container',
             direction: 'row',
@@ -118,9 +117,10 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             canWrap: true,
           }}
         >
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -130,11 +130,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               backgroundImageUrl={texture1}
               heightPercentage={50}
             />
-          </FlexStyled>
+          </Flex>
 
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -144,11 +145,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               backgroundImageUrl={texture4}
               heightPercentage={50}
             />
-          </FlexStyled>
+          </Flex>
 
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -158,13 +160,13 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               backgroundImageUrl={texture2}
               heightPercentage={50}
             />
-          </FlexStyled>
-        </FlexStyled>
+          </Flex>
+        </Flex>
         <ChartContainer>
           <PriceChart />
         </ChartContainer>
         <h3>Protocol Growth</h3>
-        <FlexStyled
+        <Flex
           layout={{
             kind: 'container',
             direction: 'row',
@@ -172,9 +174,10 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             canWrap: true,
           }}
         >
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -184,11 +187,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               backgroundImageUrl={texture3}
               heightPercentage={35}
             />
-          </FlexStyled>
+          </Flex>
 
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -198,14 +202,20 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               backgroundImageUrl={texture4}
               heightPercentage={35}
             />
-          </FlexStyled>
-        </FlexStyled>
+          </Flex>
+        </Flex>
+
+        <Spacer small />
+
         <Embed
           src={DUNE_TREASURY_CHART}
           minWidth={CHART_EMBED_MIN_WIDTH}
           height={CHART_EMBED_HEIGHT}
         />
-        <FlexStyled
+
+        <Spacer small />
+
+        <Flex
           layout={{
             kind: 'container',
             direction: 'row',
@@ -213,9 +223,10 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             canWrap: true,
           }}
         >
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -226,11 +237,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               fontColor={theme.palette.light}
               backgroundImageUrl={background1}
             />
-          </FlexStyled>
+          </Flex>
 
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -244,11 +256,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               fontColor={theme.palette.light}
               backgroundImageUrl={background2}
             />
-          </FlexStyled>
+          </Flex>
 
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -259,11 +272,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               fontColor={theme.palette.light}
               backgroundImageUrl={background3}
             />
-          </FlexStyled>
+          </Flex>
 
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -274,12 +288,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               fontColor={theme.palette.light}
               backgroundImageUrl={background4}
             />
-          </FlexStyled>
-        </FlexStyled>
+          </Flex>
+        </Flex>
 
         <h3>Compounding Return</h3>
 
-        <FlexStyled
+        <Flex
           layout={{
             kind: 'container',
             direction: 'row',
@@ -287,9 +301,10 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             canWrap: true,
           }}
         >
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -299,11 +314,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               backgroundImageUrl={texture2}
               heightPercentage={35}
             />
-          </FlexStyled>
+          </Flex>
 
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -314,10 +330,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               backgroundImageUrl={texture1}
               heightPercentage={35}
             />
-          </FlexStyled>
-        </FlexStyled>
+          </Flex>
+        </Flex>
 
-        <FlexStyled
+        <Spacer small />
+
+        <Flex
           layout={{
             kind: 'container',
             direction: 'row',
@@ -325,9 +343,10 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             canWrap: true,
           }}
         >
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <Embed
@@ -335,10 +354,11 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               minWidth={CHART_EMBED_MIN_WIDTH}
               height={CHART_EMBED_HEIGHT}
             />
-          </FlexStyled>
-          <FlexStyled
+          </Flex>
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <Embed
@@ -346,10 +366,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               minWidth={CHART_EMBED_MIN_WIDTH}
               height={CHART_EMBED_HEIGHT}
             />
-          </FlexStyled>
-        </FlexStyled>
+          </Flex>
+        </Flex>
 
-        <FlexStyled
+        <Spacer small />
+
+        <Flex
           layout={{
             kind: 'container',
             direction: 'row',
@@ -357,9 +379,10 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             canWrap: true,
           }}
         >
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -371,10 +394,11 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               darken
               heightPercentage={50}
             />
-          </FlexStyled>
-          <FlexStyled
+          </Flex>
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -386,11 +410,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               darken
               heightPercentage={50}
             />
-          </FlexStyled>
+          </Flex>
 
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -404,11 +429,11 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               backgroundImageUrl={background4}
               heightPercentage={50}
             />
-          </FlexStyled>
-        </FlexStyled>
+          </Flex>
+        </Flex>
 
         <h3>Community Growth</h3>
-        <FlexStyled
+        <Flex
           layout={{
             kind: 'container',
             direction: 'row',
@@ -416,9 +441,10 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             canWrap: true,
           }}
         >
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -428,11 +454,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               backgroundImageUrl={background9}
               heightPercentage={50}
             />
-          </FlexStyled>
+          </Flex>
 
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -442,11 +469,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               backgroundImageUrl={background10}
               heightPercentage={50}
             />
-          </FlexStyled>
+          </Flex>
 
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -457,9 +485,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               backgroundImageUrl={background11}
               heightPercentage={50}
             />
-          </FlexStyled>
-        </FlexStyled>
-        <FlexStyled
+          </Flex>
+        </Flex>
+
+        <Spacer small />
+
+        <Flex
           layout={{
             kind: 'container',
             direction: 'row',
@@ -467,9 +498,10 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
             canWrap: true,
           }}
         >
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -480,10 +512,11 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               fontColor={theme.palette.light}
               backgroundImageUrl={chaosImage}
             />
-          </FlexStyled>
-          <FlexStyled
+          </Flex>
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -494,11 +527,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               fontColor={theme.palette.light}
               backgroundImageUrl={mysteryImage}
             />
-          </FlexStyled>
+          </Flex>
 
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -509,11 +543,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               fontColor={theme.palette.light}
               backgroundImageUrl={logicImage}
             />
-          </FlexStyled>
+          </Flex>
 
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -524,11 +559,12 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               fontColor={theme.palette.light}
               backgroundImageUrl={structureImage}
             />
-          </FlexStyled>
+          </Flex>
 
-          <FlexStyled
+          <Flex
             layout={{
               kind: 'item',
+              smallMargin: true,
             }}
           >
             <StatsCard
@@ -539,8 +575,8 @@ const Dashboard: CustomRoutingPage = ({ routingHelper }) => {
               fontColor={theme.palette.light}
               backgroundImageUrl={orderImage}
             />
-          </FlexStyled>
-        </FlexStyled>
+          </Flex>
+        </Flex>
       </PageWrapper>
       <BackButton onClick={back} />
     </>

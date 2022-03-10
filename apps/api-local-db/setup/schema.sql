@@ -32,3 +32,12 @@ CREATE TABLE discord_user_messages (
  reactions_count int,
  primary key(message_id)
 );
+
+CREATE TABLE "public"."twitter_temple_stats" (
+    "name" text NOT NULL,
+    "screen_name" text NOT NULL,
+    "favourites_count" int4 NOT NULL,
+    "followers_count" int4 NOT NULL,
+    "friends_count" int4 NOT NULL,
+    "statuses_count" int4 NOT NULL
+);

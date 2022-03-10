@@ -54,8 +54,8 @@ const theme: DefaultTheme = {
       maxWidth: '72rem' /* 1152/16 */,
     },
     devices: {
-      tablet: '64rem',
-      laptop: '90rem  /* 1440/16 */',
+      tablet: '64rem', /* 1024/16 */
+      laptop: '90rem', /* 1440/16 */
     },
   },
   typography: {

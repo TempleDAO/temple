@@ -1,3 +1,4 @@
+import React, { useCallback, useEffect, useState } from 'react';
 import { JsonRpcSigner } from '@ethersproject/providers';
 import devotionImage from 'assets/images/DEVOTION.svg';
 import {
@@ -8,20 +9,18 @@ import {
 } from 'components/AMM/helpers/components';
 import { copyBalance } from 'components/AMM/helpers/methods';
 import { Button } from 'components/Button/Button';
+import styled from 'styled-components';
 import { DataCard } from 'components/DataCard/DataCard';
 import Image from 'components/Image/Image';
 import { Input } from 'components/Input/Input';
 import { Flex } from 'components/Layout/Flex';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { BigNumber } from 'ethers';
-import {
-  FAITH_TOKEN,
-  FaithBalance,
-  OG_TEMPLE_TOKEN,
-  useWallet,
-} from 'providers/WalletProvider';
-import React, { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
+import { useWallet } from 'providers/WalletProvider';
+import { useFaith } from 'providers/FaithProvider';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { FaithBalance } from 'providers/types';
 import { Devotion__factory } from 'types/typechain';
 import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
@@ -30,16 +29,8 @@ const ENV_VARS = import.meta.env;
 const TEMPLE_DEVOTION_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ADDRESS;
 const SECONDS_IN_DAY = 86400;
 const Devotion = () => {
-  const {
-    balance,
-    faith,
-    updateWallet,
-    verifyFaith,
-    getTempleFaithReward,
-    redeemFaith,
-    signer,
-    wallet,
-  } = useWallet();
+  const { balance, signer, wallet } = useWallet();
+  const { faith, verifyFaith, getTempleFaithReward, redeemFaith } = useFaith();
 
   // This is the available OGTemple for the Templar
   const [devotion, setDevotion] = useState<number>(0);
@@ -57,12 +48,14 @@ const Devotion = () => {
   const [hasVerifiedFaith, setHasVerifiedFaith] = useState(false);
   const [minimumLockPeriodDays, setMinimumLockPeriodDays] = useState(0);
 
+  const refreshWalletState = useRefreshWalletState();
+
   const getDevotionData = useCallback(
     async (signer: JsonRpcSigner) => {
       if (signer && wallet) {
-        const DEVOTION = new Devotion__factory()
-          .attach(TEMPLE_DEVOTION_ADDRESS)
-          .connect(signer);
+        const DEVOTION = new Devotion__factory(signer).attach(
+          TEMPLE_DEVOTION_ADDRESS
+        );
         const round = await DEVOTION.currentRound();
         const roundStatus = await DEVOTION.roundStatus(round);
         const hasVerifiedCurrentRound = await DEVOTION.verifiedFaith(
@@ -90,7 +83,7 @@ const Devotion = () => {
 
   useEffect(() => {
     async function onMount() {
-      await updateWallet();
+      await refreshWalletState();
     }
 
     void onMount();
@@ -112,7 +105,7 @@ const Devotion = () => {
     try {
       if (devotion) {
         await verifyFaith();
-        await updateWallet();
+        await refreshWalletState();
       }
     } catch (e) {
       console.info(e);
@@ -123,7 +116,7 @@ const Devotion = () => {
     try {
       if (faithAmount) {
         await redeemFaith(BigNumber.from(faithAmount));
-        await updateWallet();
+        await refreshWalletState();
         setFaithAmount('');
       }
     } catch (e) {
@@ -160,12 +153,13 @@ const Devotion = () => {
                       Congratulations Templar! The devotees arrived and the
                       target price was achieved by the Templars.
                       <br />
-                      You may now redeem your {FAITH_TOKEN} for Bonus{' '}
-                      {OG_TEMPLE_TOKEN}.
+                      You may now redeem your {TICKER_SYMBOL.FAITH} for Bonus{' '}
+                      {TICKER_SYMBOL.OG_TEMPLE_TOKEN}.
                       <br />
-                      Choose how much {FAITH_TOKEN} you wish to redeem.{' '}
-                      {FAITH_TOKEN} can be saved for later redemption, future
-                      airdrops, and for other benefits in the Templeverse.
+                      Choose how much {TICKER_SYMBOL.FAITH} you wish to redeem.{' '}
+                      {TICKER_SYMBOL.FAITH} can be saved for later redemption,
+                      future airdrops, and for other benefits in the
+                      Templeverse.
                     </small>
                   }
                   position={'top'}
@@ -179,7 +173,7 @@ const Devotion = () => {
               onHintClick={() =>
                 copyBalance(faithBalance.usableFaith, handleFaithUpdate)
               }
-              crypto={{ kind: 'value', value: FAITH_TOKEN }}
+              crypto={{ kind: 'value', value: TICKER_SYMBOL.FAITH }}
               isNumber
               max={faithBalance.usableFaith}
               min={0}
@@ -198,7 +192,7 @@ const Devotion = () => {
                 }}
               >
                 <DataCard
-                  title={`BONUS ${OG_TEMPLE_TOKEN}`}
+                  title={`BONUS ${TICKER_SYMBOL.OG_TEMPLE_TOKEN}`}
                   data={`${formatNumber(rewards) || 0}`}
                   small
                 />
@@ -247,9 +241,10 @@ const Devotion = () => {
                 content={
                   <small>
                     Temple Devotion is active. During this 24 hours, if you lock
-                    {OG_TEMPLE_TOKEN} you gain {FAITH_TOKEN}. {FAITH_TOKEN} can
-                    be redeemed for Bonus APY, future airdrops, and other
-                    benefits in the Templeverse.
+                    {TICKER_SYMBOL.OG_TEMPLE_TOKEN} you gain{' '}
+                    {TICKER_SYMBOL.FAITH}. {TICKER_SYMBOL.FAITH} can be redeemed
+                    for Bonus APY, future airdrops, and other benefits in the
+                    Templeverse.
                     <br />
                     Faith can be redeemed only if the target price is reached at
                     the end of the 24 hour game window.
@@ -274,7 +269,7 @@ const Devotion = () => {
               }}
             >
               <DataCard
-                title={`${OG_TEMPLE_TOKEN} TO LOCK`}
+                title={`${TICKER_SYMBOL.OG_TEMPLE_TOKEN} TO LOCK`}
                 data={`+ ${devotion}`}
                 tooltipContent={`All OGTEMPLE in your wallet as well as in the locking contract will be locked for ${minimumLockPeriodDays} days.`}
                 small
@@ -286,7 +281,7 @@ const Devotion = () => {
               }}
             >
               <DataCard
-                title={`${FAITH_TOKEN} Gained`}
+                title={`${TICKER_SYMBOL.FAITH} Gained`}
                 data={`+ ${devotion}`}
                 tooltipContent={
                   'You gain 1 Faith for each OGTEMPLE that is locked.'
@@ -306,11 +301,14 @@ const Devotion = () => {
             <>
               <small>
                 You have{' '}
-                <small className={'color-brand'}>{OG_TEMPLE_TOKEN}</small> to be
-                claimed from the Fire Ritual or Opening Ceremony contracts.{' '}
-                <br />
-                This <small className={'color-brand'}>
-                  {OG_TEMPLE_TOKEN}
+                <small className={'color-brand'}>
+                  {TICKER_SYMBOL.OG_TEMPLE_TOKEN}
+                </small>{' '}
+                to be claimed from the Fire Ritual or Opening Ceremony
+                contracts. <br />
+                This{' '}
+                <small className={'color-brand'}>
+                  {TICKER_SYMBOL.OG_TEMPLE_TOKEN}
                 </small>{' '}
                 will not be verified or re-locked until it is claimed.
               </small>

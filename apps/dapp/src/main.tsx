@@ -1,56 +1,92 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from 'styled-components';
-import PageLayout from 'components/Layouts/Page';
-import Disclaimer from 'components/Pages/Disclaimer';
-import Enter from 'components/Pages/Enter';
-import Exit from 'components/Pages/Exit';
-import Home from 'components/Pages/Home';
-import Claim from 'components/Pages/Claim';
-import AmmSpaRoot from 'components/Pages/AMM';
-import TeamPayments from 'components/Pages/TeamPayments';
-import FaithAirdrop from 'components/Pages/FaithAirdrop';
-import FireRitualistCashback from 'components/Pages/FireRitualistCashback';
-import NotificationManager from 'components/Notification/NotificationManager';
-import { NotificationProvider } from 'providers/NotificationProvider';
-import { WalletProvider } from 'providers/WalletProvider';
+import styled from 'styled-components';
 import { GlobalStyle } from 'styles/GlobalStyle';
-import { theme } from 'styles/theme';
-import DAppRoot from 'components/Pages/DAppRoot';
+
+import { AppProvider } from 'providers/AppProvider';
+
+import NotificationManager from 'components/Notification/NotificationManager';
+
+import PageLayout from 'components/Layouts/Page';
+import Loader from 'components/Loader/Loader';
+
+import Home from 'components/Pages/Home';
+import Disclaimer from 'components/Pages/Disclaimer';
+
+// Separate Chunks
+const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
+const DAppRoot = React.lazy(() => import('components/Pages/DAppRoot'));
+const FireRitualistCashback = React.lazy(
+  () => import('components/Pages/FireRitualistCashback')
+);
+const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
+const FaithAirdrop = React.lazy(() => import('components/Pages/FaithAirdrop'));
+const Claim = React.lazy(() => import('components/Pages/Claim'));
+
+const LoaderWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  justify-self: center;
+  min-height: 100vh;
+`;
+
+interface LazyPageProps {
+  component: React.LazyExoticComponent<(props: unknown) => JSX.Element>;
+}
+
+const LazyPage = ({ component: Component }: LazyPageProps) => (
+  <Suspense
+    fallback={
+      <LoaderWrapper>
+        <Loader />
+      </LoaderWrapper>
+    }
+  >
+    <Component />
+  </Suspense>
+);
 
 ReactDOM.render(
   <React.StrictMode>
-    <GlobalStyle />
-    <NotificationProvider>
-      <WalletProvider>
-        <ThemeProvider theme={theme}>
-          <BrowserRouter>
-            <Routes>
-              <>
-                <Route path="/the-temple" element={<AmmSpaRoot />} />
-                <Route path="/dapp" element={<DAppRoot />} />
-                <Route path="/" element={<PageLayout />}>
-                  <Route path="/" element={<Home />} />
-                  <Route path="disclaimer" element={<Disclaimer />} />
-                  <Route path="enter" element={<Enter />} />
-                  <Route path="exit" element={<Exit />} />
-                  <Route path="faith-airdrop" element={<FaithAirdrop />} />
-                  <Route
-                    path="fire-ritualist-apy-topup"
-                    element={<FireRitualistCashback />}
-                  />
-                  <Route path="temple-claim" element={<Claim />} />
-                  <Route path="team-payments" element={<TeamPayments />} />
-                  <Route path="/*" element={<Navigate replace to="/" />} />
-                </Route>
-              </>
-            </Routes>
-          </BrowserRouter>
-          <NotificationManager />
-        </ThemeProvider>
-      </WalletProvider>
-    </NotificationProvider>
+    <AppProvider>
+      <GlobalStyle />
+      <BrowserRouter>
+        <Routes>
+          <>
+            <Route
+              path="/the-temple"
+              element={<LazyPage component={AmmSpaRoot} />}
+            />
+            <Route path="/dapp" element={<LazyPage component={DAppRoot} />} />
+            <Route path="/" element={<PageLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="disclaimer" element={<Disclaimer />} />
+              <Route
+                path="faith-airdrop"
+                element={<LazyPage component={FaithAirdrop} />}
+              />
+              <Route
+                path="fire-ritualist-apy-topup"
+                element={<LazyPage component={FireRitualistCashback} />}
+              />
+              <Route
+                path="temple-claim"
+                element={<LazyPage component={Claim} />}
+              />
+              <Route
+                path="team-payments"
+                element={<LazyPage component={TeamPayments} />}
+              />
+              <Route path="/*" element={<Navigate replace to="/" />} />
+            </Route>
+          </>
+        </Routes>
+      </BrowserRouter>
+      <NotificationManager />
+    </AppProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );

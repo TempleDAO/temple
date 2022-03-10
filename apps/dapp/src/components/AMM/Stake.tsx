@@ -3,8 +3,11 @@ import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
-import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
+import { useWallet } from 'providers/WalletProvider';
+import { useStaking } from 'providers/StakingProvider';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import {
@@ -21,11 +24,14 @@ interface StakeProps {
 }
 
 export const Stake: FC<StakeProps> = ({ small }) => {
-  const { balance, getBalance, updateWallet, stake } = useWallet();
+  const { balance, getBalance } = useWallet();
+  const { stake } = useStaking();
   const dashboardMetrics = useRefreshableDashboardMetrics();
 
   const [templeAmount, setTempleAmount] = useState<number | ''>('');
   const [templeWalletAmount, setTempleWalletAmount] = useState<number>(0);
+
+  const refreshWalletState = useRefreshWalletState();
 
   const handleUpdateTempleAmmount = async (value: number) => {
     setTempleAmount(value === 0 ? '' : value);
@@ -51,7 +57,7 @@ export const Stake: FC<StakeProps> = ({ small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await updateWallet();
+      await refreshWalletState();
     }
 
     onMount();
@@ -60,9 +66,9 @@ export const Stake: FC<StakeProps> = ({ small }) => {
   return (
     <ViewContainer>
       <TitleWrapper>
-        <ConvoFlowTitle>{`${
-          small ? 'STAKE' : 'PLEDGE'
-        } YOUR ${TEMPLE_TOKEN}`}</ConvoFlowTitle>
+        <ConvoFlowTitle>{`${small ? 'STAKE' : 'PLEDGE'} YOUR ${
+          TICKER_SYMBOL.TEMPLE_TOKEN
+        }`}</ConvoFlowTitle>
         <TooltipPadding>
           <Tooltip
             content={
@@ -83,7 +89,7 @@ export const Stake: FC<StakeProps> = ({ small }) => {
         small={small}
         hint={`Balance: ${formatNumber(templeWalletAmount)}`}
         onHintClick={() => copyBalance(templeWalletAmount, setTempleAmount)}
-        crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
+        crypto={{ kind: 'value', value: TICKER_SYMBOL.TEMPLE_TOKEN }}
         isNumber
         max={templeWalletAmount}
         min={0}

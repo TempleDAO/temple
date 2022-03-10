@@ -1,5 +1,97 @@
 # Temple Monorepo
 
+## Getting Started
+### Requirements
+* node 
+* yarn
+* Docker
+
+This repository uses `.nvmrc` to dictate the version of node required to compile and run the project. This will allow you to use `nvm` followed by either `nvm use` or `nvm install` to automatically set the right version of node in that terminal session.
+
+If developing on Windows, some scripts are currently written in bash so WSL is recommended to run those. For most developments tasks you'll likely only need to run the steps in Protocol local deployment and Dapp. 
+
+This project uses yarn workspaces to share common dependencies between all the applications. Before attempting to run any of the apps, you'll want to run `yarn install` from the root of the project. 
+
+### Contracts (/Protocol)
+#### Local Deployment
+The protocol app uses hardhat for development. The following steps will compile the contracts and deploy to a local hardhat node
+
+```
+# Enter the correct dir
+cd apps/protocol
+
+# Compile the contracts
+yarn compile
+
+# In one terminal window, run a local-node
+yarn local-node
+
+# In another window, run the deploy script
+yarn local-deploy
+```
+
+The protocol test suite can be run without deploying to a local-node by running
+
+```
+# Run tests, no deployment neccessary
+yarn test
+```
+
+#### Rinkeby Deployment
+```
+export RINKEBY_ADDRESS_PRIVATE_KEY=...  # export from metamask
+export RINKEBY_RPC_URL=... 		# grab RPC url from metamask or create a relayer on alchemy
+
+yarn hardhat:testnet run scripts/deploys/rinkeby/{your-script-name}
+```
+
+Once successfully deployed on testnet, verify contract source on etherscan. If you use the `deployAndMine` helper when creating your
+script, it will spit out the relevant command. It will look something like this
+
+```
+yarn hardhat verify --network rinkeby 0x359655dcB8A32479680Af81Eb38eA3Bb2B42Af54 
+```
+
+It's fine to have multiple versions of a contract on rinkeby, so it's okay to run before your PR is merged (and re-run if there are any
+comments on the PR on how to best setup the deploy scripts).
+
+You can also run and test locally by replacing `yarn workspace @temple/protocol hardhat:testnet` with `yarn workspace @temple/protocol hardhat:local`. You'll probably have to run some of the previous deploys
+in order to setup the right local state
+
+### Dapp
+The Dapp uses [Vite](https://vitejs.dev/) but we've created some convenience methods on top. In order to properly communicate with the contracts deployed on the local node we need to update your `.env.local` file. Make a copy of the `env.local.example` and rename it to `.env.local`. Once the steps in Protocol Local Deployment have been completed, the deploy job output all the deployed contract addresses deployed to your local network in the correct Vite env var format. Copy these values and paste them into your `.env.local` file. 
+
+```
+# Enter the correct dir
+cd apps/dapp
+
+# Run the dapp in dev mode
+yarn dev
+
+# Alternatively, you can compile the dapp and run in 'production' mode locally
+yarn build
+
+yarn serve
+```
+
+### Analytics
+For most development tasks, you likely won't need the analytics app running. The Analytics app is split across two folders `apps/api` and `apps/api-local-db`. In order to run the app, first you'll want to provision the database. For convenience, the `apps/api-local-db` folder contains a Docker image, along with bootstrapping scripts for the container. 
+
+First, you'll want to create and run the docker container by running `./startdb.sh`. Once you've confirmed the container is running successfully (you can use `docker ps` for this), you can then bootstrap the DB with `./setupdb.sh`. Upon success, we're ready to start the analytics app. 
+
+Take the `apps/api/.env-dev` file and rename it to `.env` or `.env.local`. You will likely want to ensure you've set the `VITE_BACKEND_URL` to the correct address (for example, if you're running the analytics app on port 3001, you'll want to set `VITE_BACKEND_URL` to `localhost:3001`).
+
+```
+# Enter the correct dir
+cd apps/api
+
+# If running the analytics app on its own
+yarn dev
+
+# However, the dapp and analytics app may clash so you can change the port to 3001 by running
+yarn next dev -p 3001
+```
+
 ## Local Dependencies
 
 ### Naming Convention
@@ -48,3 +140,8 @@ The integration with Vercel has changed. Because this is a monorepo, we have one
   7. Setup a GitHub action to deploy. Go into the .github/workflows folde. Copy an existing workflow, and edit the `vercel-project-id` entry to use the new GitHub secret env name you created (`[NAME]_PROJECT_ID`)
 
   8. Tweak the workflow as needed; what branch/pr triggers, what aliases/urls to use, etc... 
+
+
+  ## Contributing
+
+  We welcome all contributors to this project - please see the [contribution guide](https://github.com/TempleDAO/temple/blob/main/CONTRIBUTING.md) for more information on how to get involved and what to expect.

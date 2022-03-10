@@ -60,7 +60,7 @@ export interface AccountMetrics {
 }
 
 const ENV_VARS = import.meta.env;
-const BACKEND_URL =  ENV_VARS.VITE_BACKEND_URL
+const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL;
 
 // Temple MintMultiple is fixed tp 6
 const MINT_MULTIPLE = 6.0;
@@ -141,8 +141,7 @@ export class MetricsService {
 
     this.provider =
       ENV === 'development'
-        ? //@ts-ignore
-          new ethers.providers.Web3Provider(window.ethereum)
+        ? new ethers.providers.Web3Provider(window.ethereum)
         : new ethers.providers.AlchemyProvider(
             ALCHEMY_PROVIDER_NETWORK,
             ALCHEMY_API_KEY
@@ -150,13 +149,13 @@ export class MetricsService {
 
     this.signer = new ethers.Wallet(SERVER_PRIVATE_KEY, this.provider);
 
-    this.stableCoinContract = new ERC20__factory()
-      .attach(STABLE_COIN_ADDRESS)
-      .connect(this.signer);
+    this.stableCoinContract = new ERC20__factory(this.signer).attach(
+      STABLE_COIN_ADDRESS
+    );
 
-    this.templeCoinContract = new ERC20__factory()
-      .attach(TEMPLE_COIN_ADDRESS)
-      .connect(this.signer);
+    this.templeCoinContract = new ERC20__factory(this.signer).attach(
+      TEMPLE_COIN_ADDRESS
+    );
 
     this.frax3crv_fCoinContract =
       FRAX3CRV_F_ADDRESS &&
@@ -182,17 +181,17 @@ export class MetricsService {
 
     this.farmingWalletAddress = FARMING_WALLET_ADDRESS;
 
-    this.treasuryContract = new TempleTreasury__factory()
-      .attach(TREASURY_ADDRESS)
-      .connect(this.signer);
+    this.treasuryContract = new TempleTreasury__factory(this.signer).attach(
+      TREASURY_ADDRESS
+    );
 
-    this.templeStakingContract = new TempleStaking__factory()
-      .attach(TEMPLE_STAKING_ADDRESS)
-      .connect(this.signer);
+    this.templeStakingContract = new TempleStaking__factory(this.signer).attach(
+      TEMPLE_STAKING_ADDRESS
+    );
 
-    this.lockedOGTempleContract = new LockedOGTemple__factory()
-      .attach(LOCKED_OG_TEMPLE_ADDRESS)
-      .connect(this.signer);
+    this.lockedOGTempleContract = new LockedOGTemple__factory(
+      this.signer
+    ).attach(LOCKED_OG_TEMPLE_ADDRESS);
   }
 
   /**
@@ -213,9 +212,9 @@ export class MetricsService {
   }
 
   async getDashboardMetrics(): Promise<DashboardMetrics> {
-    this.ogTempleCoinContract = new OGTemple__factory()
-      .attach(await this.templeStakingContract.OG_TEMPLE())
-      .connect(this.signer);
+    this.ogTempleCoinContract = new OGTemple__factory(this.signer).attach(
+      await this.templeStakingContract.OG_TEMPLE()
+    );
 
     const treasuryValue = await this.getTreasuryValue();
     const treasuryTempleValue = fromAtto(
@@ -425,7 +424,7 @@ export class MetricsService {
   };
 
   private getSocialMetrics = async () => {
-  
+
     const twitter_response = await axios({
       url: `${BACKEND_URL}/api/twitter/summary`,
     });

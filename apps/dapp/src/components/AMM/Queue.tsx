@@ -1,39 +1,35 @@
 import React, { FC, useEffect, useState } from 'react';
-import styled from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
+import { Flex } from 'components/Layout/Flex';
 import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
-import {
-  JoinQueueData,
-  OG_TEMPLE_TOKEN,
-  RitualKind,
-  useWallet,
-} from 'providers/WalletProvider';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
+import { useWallet } from 'providers/WalletProvider';
+import { useStaking } from 'providers/StakingProvider';
+import { JoinQueueData } from 'providers/types';
+import { TEMPLE_STAKING_ADDRESS } from 'providers/env';
 import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import {
   ConvoFlowTitle,
+  Spacer,
   TitleWrapper,
   TooltipPadding,
   ViewContainer,
 } from 'components/AMM/helpers/components';
 import { copyBalance } from 'components/AMM/helpers/methods';
+import { TempleStaking__factory, OGTemple__factory } from 'types/typechain';
 
 interface QueueProps {
   small?: boolean;
 }
 
 export const Queue: FC<QueueProps> = ({ small }) => {
-  const {
-    balance,
-    getBalance,
-    updateWallet,
-    increaseAllowanceForRitual,
-    getJoinQueueData,
-    getRewardsForOGT,
-  } = useWallet();
+  const { signer, balance, getBalance, ensureAllowance } = useWallet();
+  const { getJoinQueueData, getRewardsForOGT } = useStaking();
   const [OGTWalletAmount, setOGTWalletAmount] = useState<number>(0);
   const [OGTAmount, setOGTAmount] = useState<number | ''>('');
   const [joinQueueData, setJoinQueueData] = useState<JoinQueueData | null>({
@@ -42,10 +38,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
   });
   const [rewards, setRewards] = useState<number | ''>('');
   const repositionTopTooltip = useMediaQuery({ query: '(max-width: 1235px)' });
-  const repositionProcessTimeTooltip = useMediaQuery({
-    query: '(max-width: 970px)',
-  });
-  const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
+
+  const refreshWalletState = useRefreshWalletState();
 
   const updateTempleRewards = async (ogtAmount: number) => {
     setRewards((await getRewardsForOGT(ogtAmount)) || 0);
@@ -69,12 +63,22 @@ export const Queue: FC<QueueProps> = ({ small }) => {
 
   const handleUnlockOGT = async () => {
     try {
-      if (OGTAmount) {
-        await increaseAllowanceForRitual(
-          toAtto(OGTAmount),
-          RitualKind.OGT_UNLOCK,
-          'OGTEMPLE'
+      if (OGTAmount && signer) {
+        const TEMPLE_STAKING = new TempleStaking__factory(signer).attach(
+          TEMPLE_STAKING_ADDRESS
         );
+
+        const OG_TEMPLE_TOKEN = new OGTemple__factory(signer).attach(
+          await TEMPLE_STAKING.OG_TEMPLE()
+        );
+
+        await ensureAllowance(
+          TICKER_SYMBOL.OG_TEMPLE_TOKEN,
+          OG_TEMPLE_TOKEN,
+          TEMPLE_STAKING_ADDRESS,
+          toAtto(OGTAmount)
+        );
+
         getBalance();
         handleUpdateOGT(0);
       }
@@ -91,7 +95,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await updateWallet();
+      await refreshWalletState();
       setRewards('');
     }
 
@@ -102,7 +106,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
     <ViewContainer>
       <TitleWrapper>
         <ConvoFlowTitle>
-          SELECT {OG_TEMPLE_TOKEN} TO UNSTAKE VIA QUEUE
+          SELECT {TICKER_SYMBOL.OG_TEMPLE_TOKEN} TO UNSTAKE VIA QUEUE
         </ConvoFlowTitle>
         <TooltipPadding>
           <Tooltip
@@ -140,8 +144,9 @@ export const Queue: FC<QueueProps> = ({ small }) => {
         handleChange={handleUpdateOGT}
         placeholder={'0.00'}
       />
-      <CardGroup>
-        <CardContainer>
+
+      <Flex layout={{ kind: 'container', direction: 'row' }}>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             small={small}
             title={'TEMPLE + REWARDS'}
@@ -150,8 +155,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
               'Amount of $TEMPLE received once you exit the queue.'
             }
           />
-        </CardContainer>
-        <CardContainer>
+        </Flex>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             small={small}
             title={'QUEUE LENGTH'}
@@ -160,8 +165,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
               'The current length of the queue due to other templars waiting to be processed in front of you.'
             }
           />
-        </CardContainer>
-        <CardContainer>
+        </Flex>
+        <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard
             small={small}
             title={'PROCESS TIME'}
@@ -170,9 +175,9 @@ export const Queue: FC<QueueProps> = ({ small }) => {
               'Amount of time it takes to process the $OGTEMPLE that you have selected. Your processing will begin in the number of days specified in the current ‘queue length’.'
             }
           />
-        </CardContainer>
-      </CardGroup>
-      <br />
+        </Flex>
+      </Flex>
+      <Spacer small />
       <Button
         isSmall={small}
         label={'BURN $OGTEMPLE & JOIN QUEUE'}
@@ -187,16 +192,3 @@ export const Queue: FC<QueueProps> = ({ small }) => {
     </ViewContainer>
   );
 };
-
-const CardGroup = styled.div`
-  display: flex;
-  flex-wrap: nowrap;
-  flex-direction: row;
-  padding: 10px 0;
-  gap: 10px;
-`;
-
-const CardContainer = styled.div`
-  display: flex;
-  flex-grow: 0.33;
-`;
