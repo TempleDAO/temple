@@ -71,6 +71,6 @@ export const Cell = styled.td<CellProps>`
   }
 
   &:last-of-type {
-    padding: 0.5625rem 0.25rem  0.5625rem 0;
+    padding: 0.5625rem 0.25rem 0.5625rem 0;
   }
 `;
