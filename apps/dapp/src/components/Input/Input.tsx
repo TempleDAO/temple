@@ -59,6 +59,7 @@ export const Input = ({
   small,
   pairTop,
   pairBottom,
+  className,
   ...props
 }: InputProps) => {
   const renderCrypto = () => {
@@ -123,6 +124,7 @@ export const Input = ({
       small={small}
       pairTop={pairTop}
       pairBottom={pairBottom}
+      className={className}
     >
       <InputStyled
         small={small}

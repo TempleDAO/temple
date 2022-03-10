@@ -18,6 +18,7 @@ const StyledDropdown = styled(BaseDropdown)<StyledDropdownProps>`
     font-weight: bold;
 
     * {
+      cursor: pointer;
       color: ${COLOR_FONT};
     }
 
@@ -36,6 +37,11 @@ const StyledDropdown = styled(BaseDropdown)<StyledDropdownProps>`
       background: ${COLOR_BACKGROUND}
       border: 1px solid ${({ theme }) => theme.palette.brand};
       border-radius: 1.25rem /* 20/16 */;
+    }
+
+    .is-selected:not(.Dropdown-placeholder) {
+      color: black;
+      background: ${({ theme }) => theme.palette.brand};
     }
 
     .Dropdown-arrow-wrapper {
