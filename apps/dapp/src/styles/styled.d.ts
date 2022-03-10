@@ -7,6 +7,9 @@ declare module 'styled-components' {
   export interface DefaultTheme {
     palette: {
       brand: string;
+      brandLight: string;
+      brandDark: string;
+      brandDarker: string;
       brand25: string;
       brand50: string;
       brand75: string;
@@ -22,6 +25,9 @@ declare module 'styled-components' {
         chaos: string;
         mystery: string;
         logic: string;
+      };
+      gradients: {
+        dark: string;
       };
     };
     metrics: {
