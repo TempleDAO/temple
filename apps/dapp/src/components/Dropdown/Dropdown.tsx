@@ -39,6 +39,13 @@ const StyledDropdown = styled(BaseDropdown)<StyledDropdownProps>`
       border-radius: 1.25rem /* 20/16 */;
     }
 
+    .Dropdown-option {
+      &:hover {
+        color: ${COLOR_FONT};
+        background: ${({ theme }) => theme.palette.brand25};
+      }
+    }
+
     .is-selected:not(.Dropdown-placeholder) {
       color: black;
       background: ${({ theme }) => theme.palette.brand};

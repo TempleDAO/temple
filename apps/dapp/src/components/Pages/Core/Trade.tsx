@@ -25,7 +25,7 @@ const Swap = () => {
     <SwapContainer>
       <DividerContainer>
         <DropdownFrame>
-          <Dropdown options={['FRAX', 'TEMPLE']} value={'FRAX'} />
+          <Dropdown options={['$FRAX', '$TEMPLE', '$ETH']} value={'$FRAX'} />
           <PriceLabel>BALANCE: 5,000,442</PriceLabel>
         </DropdownFrame>
         <StyledInput isNumber />
