@@ -29,23 +29,31 @@ const spinKeyframe = keyframes`
 `;
 
 const theme: DefaultTheme = {
+  // Pallete is in sync with Figma TempleDAO SD => https://www.figma.com/file/UA58EtNIjomjY9maDMCPtH/TempleDAO-DS
   palette: {
     brand: brandColor,
+    brandLight: '#FFDEC9',
+    brandDark: '#95613F',
+    brandDarker: '#351F11',
     brand75: transparentize(0.25, brandColor),
     brand50: transparentize(0.5, brandColor),
     brand25: transparentize(0.75, brandColor),
     dark: darkColor,
     dark75: transparentize(0.25, darkColor),
-    grayOpaque: '#1b1919',
+    // check if this color is needed? If it is then need to sync to Figma
+    grayOpaque: '#1B1919',
     light: '#FFFFFF',
     light75: darken(0.25, '#FFFFFF'),
     light50: darken(0.5, '#FFFFFF'),
     enclave: {
       structure: '#01806C',
-      order: '#bbaa6c',
-      chaos: '#ad2d47',
-      mystery: '#8e76b0',
+      order: '#BBAA6C',
+      chaos: '#AD2D47',
+      mystery: '#8E76B0',
       logic: '#226697',
+    },
+    gradients: {
+      dark: 'linear-gradient(180deg, #353535 45.25%, #101010 87.55%)',
     },
   },
   metrics: {
@@ -54,8 +62,8 @@ const theme: DefaultTheme = {
       maxWidth: '72rem' /* 1152/16 */,
     },
     devices: {
-      tablet: '64rem', /* 1024/16 */
-      laptop: '90rem', /* 1440/16 */
+      tablet: '64rem' /* 1024/16 */,
+      laptop: '90rem' /* 1440/16 */,
     },
   },
   typography: {
