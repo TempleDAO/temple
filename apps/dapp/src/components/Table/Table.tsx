@@ -42,7 +42,7 @@ export const Row = styled.tr`
 `;
 
 type Alignment = 'left' | 'center' | 'right';
-type Icon = 'claim' | 'bread';
+type Icon = 'claim';
 
 interface CellProps {
   $align?: Alignment;
