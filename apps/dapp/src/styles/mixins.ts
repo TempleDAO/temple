@@ -13,7 +13,7 @@ export const buttonResets = css`
 `;
 
 interface BackgroundImageOptions {
-  size?: 'contain' | 'cover';
+  size?: 'contain' | 'cover' | 'auto';
   position?: string;
   repeat?: string;
   color?: string;
