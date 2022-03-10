@@ -149,13 +149,13 @@ const Selector = styled.span<{ $position: number }>`
   ${backgroundImage(selectorIcon)}
   bottom: 0;
   content: '';
-  width: ${SELECTOR_WIDTH}px;
+  width: ${SELECTOR_WIDTH / 16}rem;
   height: 1.5rem;
   position: absolute;
 
   transition: transform 250ms ease-in-out;
   display: ${({ $position }) => $position ? 'block' : 'none'};
-  transform: translate(${({ $position }) => $position}px, 50%);
+  transform: translate(${({ $position }) => $position / 16}rem, 50%);
 `;
 
 const NavWrapper = styled.nav`
