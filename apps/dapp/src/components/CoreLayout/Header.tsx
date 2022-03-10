@@ -122,7 +122,7 @@ const SELECTOR_WIDTH = 23;
 
 // Component Colors
 const COLOR_NAV_HOVER = '#FFDEC9';
-const COLOR_NAV_SHADOW = '0px 0px 5px rgba(222, 92, 6, 0.5)';
+const COLOR_NAV_SHADOW = '0px 0px 0.3125rem rgba(222, 92, 6, 0.5)';
 const COLOR_NAV_BACKGROUND_GRADIENT_START = '#0B0A0A';
 const COLOR_NAV_BACKGROUND_GRADIENT_END = '#1D1A1A';
 
@@ -139,8 +139,8 @@ const Wrapper = styled.header`
 const Logo = styled(Link)`
   ${backgroundImage(templeDaoLogo)}
   display: block;
-  width: 42px;
-  height: 42px;
+  width: 2.625rem;
+  height: 2.625rem;
   overflow: hidden;
   text-indent: -999rem;
 `;
@@ -150,7 +150,7 @@ const Selector = styled.span<{ $position: number }>`
   bottom: 0;
   content: '';
   width: ${SELECTOR_WIDTH}px;
-  height: 24px;
+  height: 1.5rem;
   position: absolute;
 
   transition: transform 250ms ease-in-out;
@@ -181,8 +181,8 @@ const Menu = styled(UnstyledList)`
 const MetamaskButton = styled.button`
   ${buttonResets}
   ${backgroundImage(metamaskLogo)}
-  width: 55px;
-  height: 54px;
+  width: 3.4375rem;
+  height: 3.375rem;
 `;
 
 const NavLink = styled(Link)<{ $active?: boolean }>`
@@ -196,7 +196,7 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   min-width: 7.5rem;
   position: relative;
 
-  padding: 26px 14px 21px;
+  padding: 1.625rem 0.875rem 1.3125rem;
   transition: all 150ms ease-in;
 
   color: ${({ theme, $active }) => $active ? COLOR_NAV_HOVER : theme.palette.brand};
