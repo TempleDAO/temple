@@ -15,8 +15,6 @@ import Home from 'components/Pages/Home';
 import Disclaimer from 'components/Pages/Disclaimer';
 import CoreLayout from 'components/Layouts/CoreLayout';
 
-import { Test } from 'components/Table';
-
 // Separate Chunks
 const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
 const DAppRoot = React.lazy(() => import('components/Pages/DAppRoot'));
@@ -68,10 +66,6 @@ ReactDOM.render(
               {/* Redirect everything else to the home page */}
               <Route path="*" element={<Navigate replace to="/" />} />
             </Route>
-            <Route
-              path="/table-test"
-              element={<Test />}
-            />
             <Route
               path="/the-temple"
               element={<LazyPage component={AmmSpaRoot} />}

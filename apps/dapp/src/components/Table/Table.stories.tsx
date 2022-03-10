@@ -1,7 +1,7 @@
 import React from 'react';
 import { ComponentMeta, ComponentStory } from '@storybook/react';
 
-import { Table, Row, Cell, Body, Head } from '.';
+import { Table, Row, Cell, Body, Head } from './Table';
 
 const ExampleTable = () => (
   <Table $expand>
