@@ -5,3 +5,9 @@ export const ResponsiveImage = styled.img`
   max-width: 100%;
   height: auto;
 `;
+
+export const UnstyledList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+`;
