@@ -15,6 +15,7 @@ import Home from 'components/Pages/Home';
 import Disclaimer from 'components/Pages/Disclaimer';
 
 import CoreLayout from 'components/Layouts/CoreLayout';
+import AnalyticsPage from 'components/Pages/Core/Analytics';
 
 // Separate Chunks
 const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
@@ -63,7 +64,7 @@ ReactDOM.render(
               <Route path="vaults/*" element={'Vaults'} />
               <Route path="trade" element={'Trade'} />
               <Route path="profile" element={'Profile'} />
-              <Route path="analytics" element={'Analytics'} />
+              <Route path="analytics" element={<AnalyticsPage />} />
               {/* Redirect everything else to the home page */}
               <Route path="*" element={<Navigate replace to="/" />} />
             </Route>
