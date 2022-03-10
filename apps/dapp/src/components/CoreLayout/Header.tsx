@@ -128,7 +128,7 @@ const COLOR_NAV_BACKGROUND_GRADIENT_END = '#1D1A1A';
 
 const Wrapper = styled.header`
   background: linear-gradient(180deg, ${COLOR_NAV_BACKGROUND_GRADIENT_START} 0%, ${COLOR_NAV_BACKGROUND_GRADIENT_END} 100%);
-  border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
+  border-bottom: 0.0625rem solid ${({ theme }) => theme.palette.brand};
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -165,12 +165,12 @@ const NavWrapper = styled.nav`
 const Menu = styled(UnstyledList)`
   display: flex;
   flex-direction: row;
-  border-left: 1px solid ${({ theme }) => theme.palette.brand};
-  border-right: 1px solid ${({ theme }) => theme.palette.brand};
+  border-left: 0.0625rem solid ${({ theme }) => theme.palette.brand};
+  border-right: 0.0625rem solid ${({ theme }) => theme.palette.brand};
   position: relative;
 
   > li {
-    border-right: 1px solid ${({ theme }) => theme.palette.brand};
+    border-right: 0.0625rem solid ${({ theme }) => theme.palette.brand};
 
     &:last-of-type {
       border-right: none;
