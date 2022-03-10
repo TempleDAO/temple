@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import { backgroundImage } from 'styles/mixins';
 
-import claimStar from './claim-star.svg';
+import claimStar from 'assets/icons/claim-star.svg';
 
 export const Table = styled.table<{ $expand?: boolean }>`
   border-collapse: collapse;
@@ -62,9 +62,7 @@ export const Cell = styled.td<CellProps>`
   text-align: ${({ $align = 'left' }) => $align};
   padding: 0.5625rem 1.5rem 0.5625rem 0;
 
-  ${({ $icon }) => $icon ? backgroundImage(getIcon($icon), {
-    size: 'auto',
-  }) : ''}
+  ${({ $icon }) => $icon ? backgroundImage(getIcon($icon), { size: 'auto' }) : ''}
 
   &:first-of-type {
     padding: 0.5625rem 1.5rem 0.5625rem 0.25rem;
