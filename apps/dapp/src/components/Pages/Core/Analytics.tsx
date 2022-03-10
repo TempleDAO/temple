@@ -1,4 +1,3 @@
-//@ts-nocheck
 import React from 'react';
 import styled from 'styled-components';
 
@@ -45,7 +44,7 @@ const DUNE_RATIO_CHART =
 
 const AnalyticsPage = () => {
   const dashboardMetrics = useRefreshableDashboardMetrics();
-  console.log(dashboardMetrics)
+
   return (
     <>
     <h3>Temple Price</h3>
@@ -95,7 +94,7 @@ const AnalyticsPage = () => {
           >
             <StatsCard
               label="Intrinsic Value"
-              stat={`$${formatNumber(dashboardMetrics?.iv)}`}
+              stat={`$${formatNumber(dashboardMetrics?.iv || 0)}`}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={texture2}
               heightPercentage={50}
@@ -122,7 +121,7 @@ const AnalyticsPage = () => {
           >
             <StatsCard
               label="Treasury Value"
-              stat={`$${formatMillions(dashboardMetrics?.treasuryValue)}`}
+              stat={dashboardMetrics ? `$${formatMillions(dashboardMetrics?.treasuryValue)}` : ''}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={texture3}
               heightPercentage={35}
@@ -137,7 +136,7 @@ const AnalyticsPage = () => {
           >
             <StatsCard
               label="Current Apy (EXCLUDING FAITH BONUS)"
-              stat={`${formatNumber(dashboardMetrics?.templeApy)}%`}
+              stat={dashboardMetrics ? `${formatNumber(dashboardMetrics?.templeApy)}%` : ''}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={texture4}
               heightPercentage={35}
@@ -171,7 +170,7 @@ const AnalyticsPage = () => {
           >
             <StatsCard
               label="Circulating Market Cap"
-              stat={`$${formatMillions(dashboardMetrics?.circMCap)}`}
+              stat={dashboardMetrics ? `$${formatMillions(dashboardMetrics?.circMCap)}` : ''}
               backgroundColor={theme.palette.dark}
               darken
               fontColor={theme.palette.light}
@@ -405,7 +404,7 @@ const AnalyticsPage = () => {
           >
             <StatsCard
               label="Twitter Followers"
-              stat={dashboardMetrics?.socialMetrics?.twitter_followers_count}
+              stat={dashboardMetrics?.socialMetrics?.twitter_followers_count || ''}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={background10}
               heightPercentage={50}
@@ -447,7 +446,7 @@ const AnalyticsPage = () => {
           >
             <StatsCard
               label="Members in chaos"
-              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveChaos}
+              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveChaos || ''}
               backgroundColor={theme.palette.dark}
               darken
               fontColor={theme.palette.light}
@@ -462,7 +461,7 @@ const AnalyticsPage = () => {
           >
             <StatsCard
               label="Members in Mystery"
-              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveMystery}
+              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveMystery || ''}
               backgroundColor={theme.palette.dark}
               darken
               fontColor={theme.palette.light}
@@ -478,7 +477,7 @@ const AnalyticsPage = () => {
           >
             <StatsCard
               label="Members in Logic"
-              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveLogic}
+              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveLogic || ''}
               backgroundColor={theme.palette.dark}
               darken
               fontColor={theme.palette.light}
@@ -494,7 +493,7 @@ const AnalyticsPage = () => {
           >
             <StatsCard
               label="Members in structure"
-              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveStructure}
+              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveStructure || ''}
               backgroundColor={theme.palette.dark}
               darken
               fontColor={theme.palette.light}
@@ -510,7 +509,7 @@ const AnalyticsPage = () => {
           >
             <StatsCard
               label="Members in order"
-              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveOrder}
+              stat={dashboardMetrics?.socialMetrics?.discord?.enclaveOrder || ''}
               backgroundColor={theme.palette.dark}
               darken
               fontColor={theme.palette.light}
