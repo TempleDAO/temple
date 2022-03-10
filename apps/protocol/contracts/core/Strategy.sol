@@ -4,6 +4,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./RebasingERC20.sol";
+import "./Rational.sol";
 
 /**
  * @title Captures the distribution of shares of a given strategy
@@ -17,19 +18,12 @@ import "./RebasingERC20.sol";
  * if you take no action) or liquidate some portion of your share
  */
 contract Strategy is Ownable, RebasingERC20 {
+    Rational private _amountPerShare;
+
     /// @dev Strategies are tightly coupled with vaults. Vaults
     /// can increase (ie mint) and decrease (ie burn) their own
     /// shares depending on their temple holdings
     mapping(address => bool) public isVault;
-
-    /// @dev A number of the form p/q where q != 0
-    /// used to track amountPerShare
-    struct Rational {
-        uint256 p;
-        uint256 q;
-    }
-
-    Rational private _amountPerShare;
 
     /**
      * @dev Sets the values for {name} and {symbol}.

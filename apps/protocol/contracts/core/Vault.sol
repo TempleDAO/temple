@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./RebasingERC20.sol";
 import "./Strategy.sol";
+import "./Rational.sol";
 
 // import "hardhat/console.sol";
 
@@ -55,6 +56,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     /// @dev window from cycle start in which accounts can enter/exit the vault
     uint256 public enterExitWindowDuration;
 
+    /// @dev how many shares in the various strategies does this vault get based on temple deposited
+    Rational public shareBoostFactor;
 
     constructor(
         string memory _name,
@@ -63,13 +66,15 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         Strategy _treasuryInvestmentRevenueStrategy,
         Strategy _revenueReinvestmentStrategy,
         uint256 _periodDuration,
-        uint256 _enterExitWindowDuration
+        uint256 _enterExitWindowDuration,
+        Rational memory _shareBoostFactory
     ) EIP712(_name, "1") ERC20(_name, _symbol)  {
         templeToken = _templeToken;
         treasuryInvestmentRevenueStrategy = _treasuryInvestmentRevenueStrategy;
         revenueReinvestmentStrategy = _revenueReinvestmentStrategy;
         periodDuration = _periodDuration;
         enterExitWindowDuration = _enterExitWindowDuration;
+        shareBoostFactor = _shareBoostFactory;
 
         firstPeriodStartTimestamp = block.timestamp;
     }
@@ -100,25 +105,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         require(signer == owner, "Vault: invalid signature");
 
         depositFor(owner, amount);
-    }
-
-    /**
-     * @dev public and permisionless, however for correctness within reasonably
-     * time bounds this only needs to be called during a vault deposit/withdrawal
-     */
-    function syncStrategyShares() public {
-        uint256 totalTemple = templeToken.balanceOf(address(this));
-        uint totalRevenueShares = treasuryInvestmentRevenueStrategy.balanceOf(address(this));
-
-        if (totalTemple > totalRevenueShares) { // mint extra revenue/reinvestment shares
-            treasuryInvestmentRevenueStrategy.mint(totalTemple - totalRevenueShares);
-            revenueReinvestmentStrategy.mint(totalTemple - totalRevenueShares);
-        } else if (totalTemple < totalRevenueShares) { // burn shares to account for withdrawal
-            treasuryInvestmentRevenueStrategy.burn(totalRevenueShares - totalTemple);
-            revenueReinvestmentStrategy.burn(totalRevenueShares - totalTemple);
-            // TODO(butlerji): Is the above correct for balancing out the reinvestment strategy?
-            // I think so (it needs extra eyes)
-        }
     }
 
     /**
@@ -182,6 +168,24 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     /**
+     * @dev public and permisionless, however for correctness within reasonably
+     * time bounds this only needs to be called during a vault deposit/withdrawal
+     */
+    function syncStrategyShares() public {
+        uint256 targetRevenueShare = templeToken.balanceOf(address(this)) * shareBoostFactor.p / shareBoostFactor.q;
+        uint currentRevenueShare = treasuryInvestmentRevenueStrategy.balanceOf(address(this));
+
+
+        if (targetRevenueShare > currentRevenueShare) { // mint extra revenue/reinvestment shares
+            treasuryInvestmentRevenueStrategy.mint(targetRevenueShare - currentRevenueShare);
+            revenueReinvestmentStrategy.mint(targetRevenueShare - currentRevenueShare);
+        } else if (targetRevenueShare < currentRevenueShare) { // burn shares to account for withdrawal
+            treasuryInvestmentRevenueStrategy.burn(currentRevenueShare - targetRevenueShare);
+            revenueReinvestmentStrategy.burn(currentRevenueShare - targetRevenueShare);
+        }
+    }
+
+    /**
      * @dev shared private implementation of depositFor. Must be private, to prevent
      * security issue where anyone can deposit (and lock) for another account, once
      * said account as approved this contract to pull temple funds.
@@ -209,7 +213,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     function withdrawFor(address _account, uint256 _amount) private {
         require(inEnterExitWindow(), "Vault: Cannot exit vault when outside of enter/exit window");
 
-        // TODO(bulterji): I think this math is wrong. Review
         totalDepositsTemple -= toSharesAmount(_amount);
         SafeERC20.safeTransferFrom(templeToken, address(this), msg.sender, _amount);
 
