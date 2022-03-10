@@ -1,47 +1,56 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+import BaseDropdown, { ReactDropdownProps } from 'react-dropdown';
+import dropdownArrow from 'assets/icons/dropdown-arrow.svg';
+import 'react-dropdown/style.css';
 
-type DropdownOptions = {
-  selected: string;
-  options: string[];
-};
+const COLOR_BACKGROUND = css`linear-gradient(180deg, #222020 38.95%, #211F1F 45.25%, #000000 87.55%);`;
+const COLOR_FONT = `#FFDEC9`;
 
-const StyledDropdown = styled.select`
-  height: 3rem;
-  width: 7.375rem /* 118/16 */;
-  padding: 0.5rem 0.9375rem /* 8/16 15/16 */;
+interface StyledDropdownProps extends ReactDropdownProps {
+  open?: boolean;
+}
 
-  border: 1px solid ${({ theme }) => theme.palette.brand};
-  border-radius: 1.5rem /* 20/16 */;
-  box-sizing: border-box;
+const StyledDropdown = styled(BaseDropdown)<StyledDropdownProps>`
+    height: 2.8125rem /* 45/16 */;
+    width: 7.375rem /* 118/16 */;
+    font-size: 1.125rem /* 18/16 */;
+    font-weight: bold;
 
-  color: #ffdec9;
-  font-size: 1.5rem /* 24/16 */;
-  background-color: black;
+    * {
+      color: ${COLOR_FONT};
+    }
 
-  /* for Firefox */
-  -moz-appearance: none;
-  /* for Chrome */
-  -webkit-appearance: none;
+    .Dropdown-control{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
 
-  /* For IE10 */
-  select::-ms-expand {
-    display: none;
-  }
+      padding: 0.5rem 0.9375rem /* 8/16 15/16 */;
+      background: ${COLOR_BACKGROUND}
+      border: 1px solid ${({ theme }) => theme.palette.brand};
+      border-radius: 1.25rem /* 20/16 */;
+    }
 
-  outline: none;
+    .Dropdown-menu {
+      background: ${COLOR_BACKGROUND}
+      border: 1px solid ${({ theme }) => theme.palette.brand};
+      border-radius: 1.25rem /* 20/16 */;
+    }
 
-  option {
-    background-color: red;
-  }
+    .Dropdown-arrow-wrapper {
+      height: 0.5625rem /* 9/16 */;
+      width: 0.6875rem /* 11/16 */;
+      color: white;
+      background: url(${dropdownArrow});
+      background-repeat: no-repeat;
+
+      ${({ open }) => open && `transform: rotate(180deg)`};
+    }
+    
+    .Dropdown-arrow {
+      display: none;
+    }
 `;
 
-export const Dropdown = ({ selected, options }: DropdownOptions) => {
-  return (
-    <StyledDropdown name={selected}>
-      {options.map((option) => (
-        <option key={option}>{option}</option>
-      ))}
-    </StyledDropdown>
-  );
-};
+export const Dropdown = StyledDropdown;

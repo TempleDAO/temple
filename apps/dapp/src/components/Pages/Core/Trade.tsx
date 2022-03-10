@@ -7,7 +7,7 @@ export const Trade = () => {
   return (
     <Container>
       <Divider />
-      <Dropdown selected={'FRAX'} options={['a', 'b', 'c']} />
+      <Dropdown options={['FRAX', 'TEMPLE', 'FXS']} value={'FRAX'} />
     </Container>
   );
 };
