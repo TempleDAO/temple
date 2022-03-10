@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 
+import { backgroundImage } from 'styles/mixins';
+
 import claimStar from './claim-star.svg';
 
 export const Table = styled.table<{ $expand?: boolean }>`
@@ -8,14 +10,12 @@ export const Table = styled.table<{ $expand?: boolean }>`
   width: ${({ $expand }) => $expand ? '100%' : 'auto'};
 `;
 
-const TABLE_TEXT_COLOR = '#FFDEC9';
-
 export const Head = styled.thead`
   ${({ theme }) => theme.typography.fonts.fontBody}
+  color: ${({ theme }) => theme.palette.brandLight};
   font-weight: bold;
   font-size: 0.625rem;
   line-height: 0.9375rem;
-  color: ${TABLE_TEXT_COLOR};
   text-transform: uppercase;
   text-align: left;
 `;
@@ -25,10 +25,10 @@ const GRADIENT_EVEN_ROW_BACKGROUND =
 
 export const Body = styled.tbody`
   ${({ theme }) => theme.typography.fonts.fontBody}
+  color: ${({ theme }) => theme.palette.brandLight};
   font-weight: bold;
   font-size: 0.8125rem;
   line-height: 1.25rem;
-  color: ${TABLE_TEXT_COLOR};
 
   tr {
     &:nth-child(even) {
@@ -38,7 +38,7 @@ export const Body = styled.tbody`
 `;
 
 export const Row = styled.tr`
-  border-bottom: 0.125rem solid #95613F;
+  border-bottom: 0.125rem solid ${({ theme }) => theme.palette.brandDark};
 `;
 
 type Alignment = 'left' | 'center' | 'right';
@@ -62,9 +62,7 @@ export const Cell = styled.td<CellProps>`
   text-align: ${({ $align = 'left' }) => $align};
   padding: 0.5625rem 1.5rem 0.5625rem 0;
 
-  background-image: ${({ $icon }) => $icon ? `url(${getIcon($icon)})` : 'none'};
-  background-repeat: no-repeat;
-  background-position: center center;
+  ${({ $icon }) => $icon ? backgroundImage(getIcon($icon)) : ''}
 
   &:first-of-type {
     padding: 0.5625rem 1.5rem 0.5625rem 0.25rem;
