@@ -3,9 +3,9 @@ import styled from 'styled-components';
 
 import claimStar from './claim-star.svg';
 
-export const Table = styled.table`
+export const Table = styled.table<{ $expand?: boolean }>`
   border-collapse: collapse;
-  width: 400px;
+  width: ${({ $expand }) => $expand ? '100%' : 'auto'};
 `;
 
 const TABLE_TEXT_COLOR = '#FFDEC9';
@@ -42,7 +42,7 @@ export const Row = styled.tr`
 `;
 
 type Alignment = 'left' | 'center' | 'right';
-type Icon = 'claim';
+type Icon = 'claim' | 'bread';
 
 interface CellProps {
   $align?: Alignment;
@@ -75,18 +75,9 @@ export const Cell = styled.td<CellProps>`
   }
 `;
 
-
-const ExampleWraper = styled.div`
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
 // TODO
-export const TimingTable = () => (
-  <Table>
+export const Test = () => (
+  <Table $expand>
     <Head>
       <Row>
         <Cell as="th">
