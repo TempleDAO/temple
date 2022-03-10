@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 
 import Header from './Header';
@@ -9,15 +9,7 @@ const CoreLayout = () => (
     <GlobalStyleOverride />
     <Header />
     <Main>
-      <Routes>
-        <Route path="/" element={'Home'} />
-        <Route path="/vaults/*" element={'Vaults'} />
-        <Route path="/trade" element={'Trade'} />
-        <Route path="/profile" element={'Profile'} />
-        <Route path="/analytics" element={'Analytics'} />
-        {/* Redirect everything else to the home page */}
-        <Route path="/*" element={<Navigate replace to="/" />} />
-      </Routes>
+      <Outlet />
     </Main>
   </>
 );
