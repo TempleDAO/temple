@@ -6,7 +6,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { flexCenter, buttonResets, backgroundImage } from 'styles/mixins';
 import { UnstyledList } from 'styles/common';
 
-import selectorIcon from './nav-selector-icon.svg';
+import selectorIcon from 'assets/icons/nav-selector-icon.svg';
 import templeDaoLogo from 'assets/images/sun-art.svg';
 import metamaskLogo from 'assets/images/metamask-transparent.svg';
 
