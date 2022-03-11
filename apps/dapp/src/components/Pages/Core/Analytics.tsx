@@ -252,7 +252,6 @@ const GridLayout = styled.section<{ columnCount: number }>`
 
   ${({ columnCount }) => tabletAndAbove(`
     grid-template-columns: repeat(${columnCount}, 1fr);
-    grid-column-gap: .75rem;
   `)}
 `;
 
