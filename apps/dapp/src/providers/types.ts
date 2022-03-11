@@ -72,6 +72,7 @@ export interface StakingService {
   lockedEntries: Array<LockedEntry>;
 
   stake(amountToStake: BigNumber): Promise<void>;
+  unstake(amountToStake: BigNumber): Promise<void>;
 
   claimAvailableTemple(): Promise<void>;
 

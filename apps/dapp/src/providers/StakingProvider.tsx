@@ -22,6 +22,8 @@ import {
   TEMPLE_STAKING_ADDRESS,
   VITE_PUBLIC_WITHDRAW_EPOCHS_BASE_GAS_LIMIT,
   VITE_PUBLIC_WITHDRAW_EPOCHS_PER_EPOCH_GAS_LIMIT,
+  VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT,
+  VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_PER_EPOCH_GAS_LIMIT,
   VITE_PUBLIC_RESTAKE_EPOCHS_BASE_GAS_LIMIT,
   VITE_PUBLIC_RESTAKE_EPOCHS_PER_EPOCH_GAS_LIMIT,
   VITE_PUBLIC_STAKE_GAS_LIMIT,
@@ -36,6 +38,7 @@ import {
 import {
   AcceleratedExitQueue__factory,
   ExitQueue__factory,
+  OGTemple__factory,
   TempleERC20Token__factory,
   TempleStaking__factory,
   LockedOGTemple__factory,
@@ -52,6 +55,7 @@ const INITIAL_STATE: StakingService = {
   },
   lockedEntries: [],
   stake: asyncNoop,
+  unstake: asyncNoop,
   claimAvailableTemple: asyncNoop,
   restakeAvailableTemple: asyncNoop,
   getJoinQueueData: asyncNoop,
@@ -392,6 +396,52 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
+  const unstake = async (amount: BigNumber) => {
+    if (wallet && signer) {
+      const TEMPLE_STAKING = new TempleStaking__factory(signer).attach(
+        TEMPLE_STAKING_ADDRESS
+      );
+
+      const OGTContract = new OGTemple__factory(signer).attach(
+        await TEMPLE_STAKING.OG_TEMPLE()
+      );
+
+      const EXIT_QUEUE = new ExitQueue__factory(signer).attach(
+        EXIT_QUEUE_ADDRESS
+      );
+
+      try {
+        const ogTempleBalance: BigNumber = await OGTContract.balanceOf(wallet);
+        // ensure user input is not greater than user balance. if greater use all user balance.
+        const offering = amount.lte(ogTempleBalance) ? amount : ogTempleBalance;
+        const baseGas = Number(
+          VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_BASE_GAS_LIMIT || 300000
+        );
+        const gasPerEpoch = Number(
+          VITE_PUBLIC_TEMPLE_STAKING_UNSTAKE_PER_EPOCH_GAS_LIMIT || 20000
+        );
+        const accFactor = await TEMPLE_STAKING.accumulationFactor();
+        const maxPerEpoch = await EXIT_QUEUE.maxPerEpoch();
+        const epochs = fromAtto(offering.mul(accFactor).div(maxPerEpoch));
+        const recommendedGas = Math.ceil(baseGas + gasPerEpoch * epochs);
+
+        const unstakeTXN = await TEMPLE_STAKING.unstake(offering, {
+          gasLimit: recommendedGas < 30000000 ? recommendedGas : 30000000,
+        });
+
+        await unstakeTXN.wait();
+        // Show feedback to user
+        openNotification({
+          title: `Queue joined`,
+          hash: unstakeTXN.hash,
+        });
+      } catch (e) {
+        /* TODO: Set a notification transaction has failed */
+        console.info(`error: ${JSON.stringify(e, null, 2)}`);
+      }
+    }
+  };
+
   const claimAvailableTemple = async (): Promise<void> => {
     if (wallet && signer) {
       const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(
@@ -465,6 +515,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         exitQueueData,
         lockedEntries,
         stake,
+        unstake,
         claimAvailableTemple,
         restakeAvailableTemple,
         getJoinQueueData,
