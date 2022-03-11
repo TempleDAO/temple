@@ -41,41 +41,6 @@ const DUNE_OGTEMPLE_CHART =
 const DUNE_RATIO_CHART =
   'https://dune.xyz/embeds/321528/612129/a6738355-8078-4cfd-b12d-b142559e1ab0';
 
-const GridLayout = styled.section`
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-column-gap: .75rem;
-`;
-
-const ThreeUpGrid = styled(GridLayout)`
-  padding: 0;
-
-  ${tabletAndAbove(`
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-column-gap: .75rem;
-  `)}
-`;
-
-const ProtocolGrowthWrapper = styled(GridLayout)`
-  ${tabletAndAbove(`
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-  `)}
-`;
-
-const CommunityGrowthWrapper = styled(GridLayout)`
-  ${tabletAndAbove(`
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-  `)}
-`;
-
-const ItemWrapper = styled.div`
-  margin: 0 0 .75rem;
-
-  ${tabletAndAbove(`
-    margin: 0;
-  `)}
-`;
-
 const AnalyticsPage = () => {
   const dashboardMetrics = useRefreshableDashboardMetrics();
 
@@ -99,7 +64,7 @@ const AnalyticsPage = () => {
             backgroundColor={theme.palette.brand75}
             backgroundImageUrl={texture4}
             heightPercentage={50}
-            />
+          />
         </ItemWrapper>
         <ItemWrapper>
           <StatsCard
@@ -152,9 +117,9 @@ const AnalyticsPage = () => {
           <StatsCard
             label="Fully Diluted Valuation"
             stat={`$${formatMillions(dashboardMetrics ? (
-                dashboardMetrics?.templeTotalSupply *
-                dashboardMetrics?.templeValue
-              ) : 0)}`}
+              dashboardMetrics?.templeTotalSupply *
+              dashboardMetrics?.templeValue
+            ) : 0)}`}
             backgroundColor={theme.palette.dark}
             darken
             fontColor={theme.palette.light}
@@ -271,12 +236,47 @@ const AnalyticsPage = () => {
         </ItemWrapper>
       </CommunityGrowthWrapper>
     </>
-  )
+  );
 };
 
 const ChartContainer = styled.div`
   width: 100%;
   height: ${CHART_HEIGHT}px;
+`;
+
+const GridLayout = styled.section`
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-column-gap: .75rem;
+`;
+
+const ThreeUpGrid = styled(GridLayout)`
+  padding: 0;
+
+  ${tabletAndAbove(`
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-column-gap: .75rem;
+  `)}
+`;
+
+const ProtocolGrowthWrapper = styled(GridLayout)`
+  ${tabletAndAbove(`
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  `)}
+`;
+
+const CommunityGrowthWrapper = styled(GridLayout)`
+  ${tabletAndAbove(`
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  `)}
+`;
+
+const ItemWrapper = styled.div`
+  margin: 0 0 .75rem;
+
+  ${tabletAndAbove(`
+    margin: 0;
+  `)}
 `;
 
 export default AnalyticsPage;
