@@ -260,7 +260,7 @@ const NavWrapper = styled.nav<{ $isOpen: boolean }>`
   left: 0;
   right: 0;
   bottom: 0;
-  padding-top: 5.0625rem;
+  align-items: center;
 
   ${backgroundImage(mobileBackgoundImage, {
     color: COLOR_NAV_BACKGROUND_GRADIENT_START,
@@ -282,6 +282,7 @@ const Menu = styled(UnstyledList)`
   flex-direction: column;
   align-items: flex-start;
   padding: 0 1.9375rem;
+  top: -${NAV_MOBILE_HEIGHT / 16}rem;
 
   > li {
     margin-bottom: 2.5rem;
@@ -292,6 +293,7 @@ const Menu = styled(UnstyledList)`
   }
 
   ${tabletAndAbove(`
+    top: 0;
     padding: 0;
     flex-direction: row;
     border-left: 0.0625rem solid ${theme.palette.brand};
