@@ -75,7 +75,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
           toAtto(OGTAmount)
         );
 
-        await unstake(OGTAmount);
+        await unstake(toAtto(OGTAmount));
 
         await updateBalance();
         handleUpdateOGT(0);
