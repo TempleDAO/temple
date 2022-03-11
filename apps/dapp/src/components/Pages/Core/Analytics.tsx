@@ -122,26 +122,11 @@ const AnalyticsPage = () => {
           }}
         >
           <StatsCard
-            label="Temple Price"
-            stat={`$${formatNumber(dashboardMetrics?.templeValue || 0)}`}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture1}
-            heightPercentage={35}
-          />
-      </Flex>
-
-      <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
-          <StatsCard
             label="Treasury Value"
             stat={dashboardMetrics ? `$${formatMillions(dashboardMetrics?.treasuryValue)}` : ''}
             backgroundColor={theme.palette.brand75}
             backgroundImageUrl={texture3}
-            heightPercentage={35}
+            heightPercentage={25}
           />
         </Flex>
       </Flex>
