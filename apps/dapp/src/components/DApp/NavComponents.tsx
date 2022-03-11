@@ -1,7 +1,5 @@
-import React, { FC, useContext } from 'react';
+import React, { FC, useCallback } from 'react';
 import styled from 'styled-components';
-import { DAppView } from 'enums/dapp-view';
-import { NavContext } from 'components/DApp/NavContext';
 import Image from 'components/Image/Image';
 import MenuSvg from 'assets/icons/menu.svg';
 import CloseSvg from 'assets/images/cross.svg';
@@ -11,7 +9,8 @@ export const NavGroup: FC = ({ children }) => {
 };
 
 interface ItemProps {
-  view: DAppView;
+  isActive?: boolean;
+  label: string;
   close?: () => void;
 }
 
@@ -23,26 +22,15 @@ interface ListItemProps {
   isActive?: boolean;
 }
 
-export const NavItem: FC<ItemProps> = ({ close, view }) => {
-  const { activeView, setView } = useContext(NavContext);
-  const isActive = activeView === view;
-
-  const click = () => {
-    if (close) close();
-    setView(view);
-  };
+export const NavItem: FC<ItemProps> = ({ close, label, isActive = false }) => {
+  const handler = useCallback(() => {
+    close && close();
+  }, [close]);
 
   return (
     <ListItem isActive={isActive}>
-      <Text
-        tabIndex={0}
-        onClick={click}
-        isActive={isActive}
-        onKeyPress={(e) => {
-          e.key === 'Enter' && click();
-        }}
-      >
-        {view}
+      <Text tabIndex={0} isActive={isActive} onClick={handler}>
+        {label}
       </Text>
     </ListItem>
   );
@@ -108,7 +96,6 @@ export const MenuImage = styled(Image).attrs(() => ({
   left: 20px;
   width: 40px;
   cursor: pointer;
-  -webkit-filter: brightness(90%);
   filter: brightness(90%);
 
   :hover {
@@ -124,7 +111,6 @@ export const CloseImage = styled(Image).attrs(() => ({
   right: 20px;
   width: 30px;
   cursor: pointer;
-  -webkit-filter: brightness(90%);
   filter: brightness(90%);
 
   :hover {

@@ -3,24 +3,11 @@ import styled from 'styled-components';
 import { Dropdown } from 'components/Dropdown/Dropdown';
 import { DividerContainer } from 'components/DividerContainer/DividerContainer';
 import { Input } from 'components/Input/Input';
-import BgImage from 'assets/images/dapp-bg.svg';
 import arrow from 'assets/icons/amm-arrow.svg';
 
-//FIXME: get cleaner way to do this;
-const HEADER_HEIGHT = `68px`;
 const COLOR_FONT = `#FFDEC9`;
 
-export const Trade = () => {
-  return (
-    <Background>
-      <Modal>
-        <Swap />
-      </Modal>
-    </Background>
-  );
-};
-
-const Swap = () => {
+export const Swap = () => {
   return (
     <SwapContainer>
       <DividerContainer>
@@ -42,28 +29,6 @@ const Swap = () => {
     </SwapContainer>
   );
 };
-
-const Background = styled.div`
-  display: flex;
-  height: calc(100vh - ${HEADER_HEIGHT});
-  justify-content: center;
-  align-items: center;
-
-  background-image: url(${BgImage});
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center bottom;
-`;
-
-const Modal = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 50vh;
-  width: 50vw;
-
-  background: black;
-`;
 
 const PriceLabel = styled.label`
   padding: 0.5rem /* 8/16 */;

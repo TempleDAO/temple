@@ -1,9 +1,8 @@
-import { CloseImage, NavGroup, NavItem } from 'components/DApp/NavComponents';
-import { DAppView } from 'enums/dapp-view';
 import React from 'react';
 import styled from 'styled-components';
+import { Link } from 'react-router-dom';
+import { CloseImage, NavGroup, NavItem } from 'components/DApp/NavComponents';
 
-const ENV_VARS = import.meta.env;
 interface NavProps {
   small?: boolean;
   onClose?: () => void;
@@ -17,22 +16,17 @@ export const Nav = React.forwardRef<HTMLElement, NavProps>(
       <Container ref={ref}>
         {small && <CloseImage onClick={onClose} />}
         <NavGroup>
-          <NavItem close={onClose} view={DAppView.BUY} />
-          <NavItem close={onClose} view={DAppView.STAKE} />
-        </NavGroup>
-        {ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ENGAGED && (
-          <NavGroup>
-            <NavItem close={onClose} view={DAppView.DEVOTION} />
-          </NavGroup>
-        )}
-        <NavGroup>
-          <NavItem close={onClose} view={DAppView.UNLOCK} />
-          <NavItem close={onClose} view={DAppView.QUEUE} />
-          <NavItem close={onClose} view={DAppView.WITHDRAW} />
-          <NavItem close={onClose} view={DAppView.SELL} />
+          <Link to="trade">
+            <NavItem close={onClose} label={'Trade'} />
+          </Link>
         </NavGroup>
         <NavGroup>
-          <NavItem close={onClose} view={DAppView.PROFILE} />
+          <Link to="unstake">
+            <NavItem close={onClose} label={'Unstake'} />
+          </Link>
+          <Link to="withdraw">
+            <NavItem close={onClose} label={'Withdraw'} />
+          </Link>
         </NavGroup>
       </Container>
     );
