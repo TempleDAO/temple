@@ -27,7 +27,7 @@ const GlobalStyleOverride = createGlobalStyle`
 const Main = styled.main`
   max-width: ${({ theme }) => theme.metrics.desktop.maxWidth};
   margin: 0 auto;
-  padding: ${NAV_MOBILE_HEIGHT_PIXELS /16}rem 1.75rem 1.75rem;
+  padding: ${NAV_MOBILE_HEIGHT_PIXELS / 16}rem 1.75rem 1.75rem;
 
   ${tabletAndAbove(`
     padding: 0 1.75rem 1.75rem;
