@@ -4,7 +4,7 @@ import { useMediaQuery } from 'react-responsive';
 import styled from 'styled-components';
 
 import { useWallet } from 'providers/WalletProvider';
-import { flexCenter, buttonResets, backgroundImage } from 'styles/mixins';
+import { flexCenter, buttonResets, backgroundImage, pixelsToRems } from 'styles/mixins';
 import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
 import { tabletAndAbove } from 'styles/breakpoints';
@@ -211,7 +211,7 @@ const Wrapper = styled.header`
   justify-content: space-between;
   align-items: center;
   padding: 0 1.75rem;
-  height: ${NAV_MOBILE_HEIGHT_PIXELS / 16}rem;
+  height: ${pixelsToRems(NAV_MOBILE_HEIGHT_PIXELS)}rem;
   background: ${COLOR_NAV_BACKGROUND_GRADIENT_START};
   position: fixed;
   top: 0;
@@ -252,7 +252,7 @@ const Selector = styled.span<{ $position: number }>`
   position: absolute;
 
   transition: transform 250ms ease-in-out;
-  transform: translate(${({ $position }) => $position / 16}rem, 50%);
+  transform: translate(${({ $position }) => pixelsToRems($position)}rem, 50%);
 
   ${({ $position }) => tabletAndAbove(`
     display: ${$position ? 'block' : 'none'};
@@ -262,7 +262,7 @@ const Selector = styled.span<{ $position: number }>`
 const NavWrapper = styled.nav<{ $isOpen: boolean }>`
   display: ${({ $isOpen }) => $isOpen ? 'flex' : 'none'};
   position: fixed;
-  top: ${NAV_MOBILE_HEIGHT_PIXELS / 16}rem;
+  top: ${pixelsToRems(NAV_MOBILE_HEIGHT_PIXELS)}rem;
   left: 0;
   right: 0;
   bottom: 0;
@@ -289,7 +289,7 @@ const Menu = styled(UnstyledList)`
   flex-direction: column;
   align-items: flex-start;
   padding: 0 1.9375rem;
-  top: -${NAV_MOBILE_HEIGHT_PIXELS / 16}rem;
+  top: -${pixelsToRems(NAV_MOBILE_HEIGHT_PIXELS)}rem;
 
   > li {
     margin-bottom: 2.5rem;
