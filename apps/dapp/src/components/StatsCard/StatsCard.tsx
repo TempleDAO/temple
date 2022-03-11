@@ -1,5 +1,5 @@
-//@ts-nocheck
-import React from 'react';
+// @ts-nocheck
+import React, { ReactChild } from 'react';
 import styled from 'styled-components';
 import { transparentize } from 'polished';
 
