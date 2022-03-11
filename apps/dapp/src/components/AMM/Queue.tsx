@@ -27,9 +27,8 @@ interface QueueProps {
 }
 
 export const Queue: FC<QueueProps> = ({ small }) => {
-  const { signer, balance, getBalance, updateBalance, ensureAllowance } =
-    useWallet();
-  const { getJoinQueueData, getRewardsForOGT } = useStaking();
+  const { signer, balance, updateBalance, ensureAllowance } = useWallet();
+  const { unstake, getJoinQueueData, getRewardsForOGT } = useStaking();
   const [OGTAmount, setOGTAmount] = useState<number | ''>('');
   const [joinQueueData, setJoinQueueData] = useState<JoinQueueData | null>({
     queueLength: 0,
@@ -75,6 +74,8 @@ export const Queue: FC<QueueProps> = ({ small }) => {
           TEMPLE_STAKING_ADDRESS,
           toAtto(OGTAmount)
         );
+
+        await unstake(OGTAmount);
 
         await updateBalance();
         handleUpdateOGT(0);
