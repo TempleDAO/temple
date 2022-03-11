@@ -24,6 +24,7 @@ const GlobalStyleOverride = createGlobalStyle`
 `;
 
 const Main = styled.main`
-  max-width: ${({ theme }) => theme.metrics.devices.laptop};
+  max-width: ${({ theme }) => theme.metrics.desktop.maxWidth};
   margin: 0 auto;
+  padding: 0 1.75rem 1.75rem;
 `;
