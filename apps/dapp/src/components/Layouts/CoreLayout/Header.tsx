@@ -213,8 +213,14 @@ const Wrapper = styled.header`
   padding: 0 1.75rem;
   height: ${NAV_MOBILE_HEIGHT / 16}rem;
   background: ${COLOR_NAV_BACKGROUND_GRADIENT_START};
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: ${({ theme }) => theme.zIndexes.top};
 
   ${tabletAndAbove(`
+    position: relative;
     height: auto;
     background: linear-gradient(180deg, ${COLOR_NAV_BACKGROUND_GRADIENT_START} 0%, ${COLOR_NAV_BACKGROUND_GRADIENT_END} 100%);
     border-bottom: 0.0625rem solid ${theme.palette.brand};
@@ -261,6 +267,7 @@ const NavWrapper = styled.nav<{ $isOpen: boolean }>`
   right: 0;
   bottom: 0;
   align-items: center;
+  z-index: ${({ theme }) => theme.zIndexes.max};
 
   ${backgroundImage(mobileBackgoundImage, {
     color: COLOR_NAV_BACKGROUND_GRADIENT_START,
