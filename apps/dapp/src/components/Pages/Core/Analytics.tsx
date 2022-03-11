@@ -30,7 +30,6 @@ import logicImage from 'assets/images/logic.png';
 import structureImage from 'assets/images/structure.png';
 import orderImage from 'assets/images/order.png';
 
-const CHART_EMBED_MIN_WIDTH = 520;
 const CHART_EMBED_HEIGHT = 400;
 const CHART_HEIGHT = 500;
 
@@ -92,7 +91,6 @@ const AnalyticsPage = () => {
 
       <Embed
         src={DUNE_TREASURY_CHART}
-        minWidth={CHART_EMBED_MIN_WIDTH}
         height={CHART_EMBED_HEIGHT}
       />
 
