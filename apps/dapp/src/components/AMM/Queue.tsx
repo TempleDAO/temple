@@ -30,7 +30,6 @@ export const Queue: FC<QueueProps> = ({ small }) => {
   const { signer, balance, getBalance, updateBalance, ensureAllowance } =
     useWallet();
   const { getJoinQueueData, getRewardsForOGT } = useStaking();
-  const [OGTWalletAmount, setOGTWalletAmount] = useState<number>(0);
   const [OGTAmount, setOGTAmount] = useState<number | ''>('');
   const [joinQueueData, setJoinQueueData] = useState<JoinQueueData | null>({
     queueLength: 0,
@@ -77,7 +76,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
           toAtto(OGTAmount)
         );
 
-        getBalance();
+        await updateBalance();
         handleUpdateOGT(0);
       }
     } catch (e) {
@@ -132,11 +131,11 @@ export const Queue: FC<QueueProps> = ({ small }) => {
 
       <Input
         small={small}
-        hint={`Balance: ${formatNumber(OGTWalletAmount)}`}
-        onHintClick={() => copyBalance(OGTWalletAmount, handleUpdateOGT)}
+        hint={`Balance: ${formatNumber(balance.ogTemple)}`}
+        onHintClick={() => copyBalance(balance.ogTemple, handleUpdateOGT)}
         crypto={{ kind: 'value', value: '$OGTEMPLE' }}
         isNumber
-        max={OGTWalletAmount}
+        max={balance.ogTemple}
         min={0}
         value={OGTAmount}
         handleChange={handleUpdateOGT}
