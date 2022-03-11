@@ -9,6 +9,7 @@ import { Spacer } from 'components/AMM/helpers/components';
 import { theme } from 'styles/theme';
 import { formatNumber, formatMillions } from 'utils/formatter';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
+import { tabletAndAbove } from 'styles/breakpoints';
 
 import texture1 from 'assets/images/texture-1.svg';
 import texture2 from 'assets/images/texture-2.svg';
@@ -41,26 +42,50 @@ const DUNE_OGTEMPLE_CHART =
 const DUNE_RATIO_CHART =
   'https://dune.xyz/embeds/321528/612129/a6738355-8078-4cfd-b12d-b142559e1ab0';
 
+const GridLayout = styled.section`
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-column-gap: .75rem;
+  row-gap: 1fr;
+`;
+
+const ThreeUpGrid = styled(GridLayout)`
+  padding: 0;
+
+  ${tabletAndAbove(`
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-column-gap: .75rem;
+  `)}
+`;
+
+const ProtocolGrowthWrapper = styled(GridLayout)`
+  ${tabletAndAbove(`
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  `)}
+`;
+
+const CommunityGrowthWrapper = styled(GridLayout)`
+  ${tabletAndAbove(`
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  `)}
+`;
+
+const ItemWrapper = styled.div`
+  margin: 0 0 .75rem;
+
+  ${tabletAndAbove(`
+    margin: 0;
+  `)}
+`;
+
 const AnalyticsPage = () => {
   const dashboardMetrics = useRefreshableDashboardMetrics();
 
   return (
     <>
       <h3>Temple Price</h3>
-      <Flex
-        layout={{
-          kind: 'container',
-          direction: 'row',
-          justifyContent: 'flex-start',
-          canWrap: true,
-        }}
-      >
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+      <ThreeUpGrid>
+        <ItemWrapper>
           <StatsCard
             label="Temple Price"
             stat={`$${formatNumber(dashboardMetrics?.templeValue || 0)}`}
@@ -68,29 +93,17 @@ const AnalyticsPage = () => {
             backgroundImageUrl={texture1}
             heightPercentage={50}
           />
-        </Flex>
-
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+        </ItemWrapper>
+        <ItemWrapper>
           <StatsCard
             label="Risk Free Value"
             stat={`$${formatNumber(dashboardMetrics?.riskFreeValue || 0)}`}
             backgroundColor={theme.palette.brand75}
             backgroundImageUrl={texture4}
             heightPercentage={50}
-          />
-        </Flex>
-
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+            />
+        </ItemWrapper>
+        <ItemWrapper>
           <StatsCard
             label="Intrinsic Value"
             stat={`$${formatNumber(dashboardMetrics?.iv || 0)}`}
@@ -98,38 +111,23 @@ const AnalyticsPage = () => {
             backgroundImageUrl={texture2}
             heightPercentage={50}
           />
-        </Flex>
-      </Flex>
+        </ItemWrapper>
+      </ThreeUpGrid>
 
       <ChartContainer>
         <PriceChart />
       </ChartContainer>
 
       <h3>Protocol Growth</h3>
-      <Flex
-        layout={{
-          kind: 'container',
-          direction: 'row',
-          justifyContent: 'flex-start',
-          canWrap: true,
-        }}
-      >
-
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
-          <StatsCard
-            label="Treasury Value"
-            stat={dashboardMetrics ? `$${formatMillions(dashboardMetrics?.treasuryValue)}` : ''}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture3}
-            heightPercentage={25}
-          />
-        </Flex>
-      </Flex>
+      <div>
+        <StatsCard
+          label="Treasury Value"
+          stat={dashboardMetrics ? `$${formatMillions(dashboardMetrics?.treasuryValue)}` : ''}
+          backgroundColor={theme.palette.brand75}
+          backgroundImageUrl={texture3}
+          heightPercentage={25}
+        />
+      </div>
 
       <Spacer small />
 
@@ -141,20 +139,8 @@ const AnalyticsPage = () => {
 
       <Spacer small />
 
-      <Flex
-        layout={{
-          kind: 'container',
-          direction: 'row',
-          justifyContent: 'flex-start',
-          canWrap: true,
-        }}
-      >
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+      <ProtocolGrowthWrapper>
+        <ItemWrapper>
           <StatsCard
             label="Circulating Market Cap"
             stat={dashboardMetrics ? `$${formatMillions(dashboardMetrics?.circMCap)}` : ''}
@@ -163,14 +149,8 @@ const AnalyticsPage = () => {
             fontColor={theme.palette.light}
             backgroundImageUrl={background1}
           />
-        </Flex>
-
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+        </ItemWrapper>
+        <ItemWrapper>
           <StatsCard
             label="Fully Diluted Valuation"
             stat={`$${formatMillions(dashboardMetrics ? (
@@ -182,14 +162,8 @@ const AnalyticsPage = () => {
             fontColor={theme.palette.light}
             backgroundImageUrl={background2}
           />
-        </Flex>
-
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+        </ItemWrapper>
+        <ItemWrapper>
           <StatsCard
             label="Circulating TEMPLE supply"
             stat={`${formatMillions(dashboardMetrics?.circTempleSupply || 0)}`}
@@ -198,14 +172,8 @@ const AnalyticsPage = () => {
             fontColor={theme.palette.light}
             backgroundImageUrl={background3}
           />
-        </Flex>
-
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+        </ItemWrapper>
+        <ItemWrapper>
           <StatsCard
             label="Fully Diluted TEMPLE supply"
             stat={`${formatMillions(dashboardMetrics?.templeTotalSupply || 0)}`}
@@ -214,25 +182,13 @@ const AnalyticsPage = () => {
             fontColor={theme.palette.light}
             backgroundImageUrl={background4}
           />
-        </Flex>
-      </Flex>
+        </ItemWrapper>
+      </ProtocolGrowthWrapper>
 
       <h3>Community Growth</h3>
 
-      <Flex
-        layout={{
-          kind: 'container',
-          direction: 'row',
-          justifyContent: 'flex-start',
-          canWrap: true,
-        }}
-      >
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+      <ThreeUpGrid>
+        <ItemWrapper>
           <StatsCard
             label="Discord Users"
             stat={dashboardMetrics?.socialMetrics?.discord?.totalMembers || ''}
@@ -240,14 +196,8 @@ const AnalyticsPage = () => {
             backgroundImageUrl={background9}
             heightPercentage={50}
           />
-        </Flex>
-
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+        </ItemWrapper>
+        <ItemWrapper>
           <StatsCard
             label="Twitter Followers"
             stat={dashboardMetrics?.socialMetrics?.twitter_followers_count || ''}
@@ -255,14 +205,8 @@ const AnalyticsPage = () => {
             backgroundImageUrl={background10}
             heightPercentage={50}
           />
-        </Flex>
-
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+        </ItemWrapper>
+        <ItemWrapper>
           <StatsCard
             label="Number of Enclaves"
             stat={'5'}
@@ -271,25 +215,13 @@ const AnalyticsPage = () => {
             backgroundImageUrl={background11}
             heightPercentage={50}
           />
-        </Flex>
-      </Flex>
+        </ItemWrapper>
+      </ThreeUpGrid>
 
       <Spacer small />
 
-      <Flex
-        layout={{
-          kind: 'container',
-          direction: 'row',
-          justifyContent: 'flex-start',
-          canWrap: true,
-        }}
-      >
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+      <CommunityGrowthWrapper>
+        <ItemWrapper>
           <StatsCard
             label="Members in chaos"
             stat={dashboardMetrics?.socialMetrics?.discord?.enclaveChaos || ''}
@@ -298,13 +230,8 @@ const AnalyticsPage = () => {
             fontColor={theme.palette.light}
             backgroundImageUrl={chaosImage}
           />
-        </Flex>
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+        </ItemWrapper>
+        <ItemWrapper>
           <StatsCard
             label="Members in Mystery"
             stat={dashboardMetrics?.socialMetrics?.discord?.enclaveMystery || ''}
@@ -313,14 +240,8 @@ const AnalyticsPage = () => {
             fontColor={theme.palette.light}
             backgroundImageUrl={mysteryImage}
           />
-        </Flex>
-
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+        </ItemWrapper>
+        <ItemWrapper>
           <StatsCard
             label="Members in Logic"
             stat={dashboardMetrics?.socialMetrics?.discord?.enclaveLogic || ''}
@@ -329,14 +250,8 @@ const AnalyticsPage = () => {
             fontColor={theme.palette.light}
             backgroundImageUrl={logicImage}
           />
-        </Flex>
-
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+        </ItemWrapper>
+        <ItemWrapper>
           <StatsCard
             label="Members in structure"
             stat={dashboardMetrics?.socialMetrics?.discord?.enclaveStructure || ''}
@@ -345,14 +260,8 @@ const AnalyticsPage = () => {
             fontColor={theme.palette.light}
             backgroundImageUrl={structureImage}
           />
-        </Flex>
-
-        <Flex
-          layout={{
-            kind: 'item',
-            smallMargin: true,
-          }}
-        >
+        </ItemWrapper>
+        <ItemWrapper>
           <StatsCard
             label="Members in order"
             stat={dashboardMetrics?.socialMetrics?.discord?.enclaveOrder || ''}
@@ -361,8 +270,8 @@ const AnalyticsPage = () => {
             fontColor={theme.palette.light}
             backgroundImageUrl={orderImage}
           />
-        </Flex>
-      </Flex>
+        </ItemWrapper>
+      </CommunityGrowthWrapper>
     </>
   )
 };
