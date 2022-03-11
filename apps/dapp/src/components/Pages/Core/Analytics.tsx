@@ -47,7 +47,7 @@ const AnalyticsPage = () => {
   return (
     <>
       <h3>Temple Price</h3>
-      <ThreeUpGrid>
+      <GridLayout columnCount={3}>
         <ItemWrapper>
           <StatsCard
             label="Temple Price"
@@ -75,7 +75,7 @@ const AnalyticsPage = () => {
             heightPercentage={50}
           />
         </ItemWrapper>
-      </ThreeUpGrid>
+      </GridLayout>
 
       <ChartContainer>
         <PriceChart />
@@ -102,7 +102,7 @@ const AnalyticsPage = () => {
 
       <Spacer small />
 
-      <ProtocolGrowthWrapper>
+      <GridLayout columnCount={4}>
         <ItemWrapper>
           <StatsCard
             label="Circulating Market Cap"
@@ -146,11 +146,11 @@ const AnalyticsPage = () => {
             backgroundImageUrl={background4}
           />
         </ItemWrapper>
-      </ProtocolGrowthWrapper>
+      </GridLayout>
 
       <h3>Community Growth</h3>
 
-      <ThreeUpGrid>
+      <GridLayout columnCount={3}>
         <ItemWrapper>
           <StatsCard
             label="Discord Users"
@@ -179,11 +179,11 @@ const AnalyticsPage = () => {
             heightPercentage={50}
           />
         </ItemWrapper>
-      </ThreeUpGrid>
+      </GridLayout>
 
       <Spacer small />
 
-      <CommunityGrowthWrapper>
+      <GridLayout columnCount={5}>
         <ItemWrapper>
           <StatsCard
             label="Members in chaos"
@@ -234,7 +234,7 @@ const AnalyticsPage = () => {
             backgroundImageUrl={orderImage}
           />
         </ItemWrapper>
-      </CommunityGrowthWrapper>
+      </GridLayout>
     </>
   );
 };
@@ -244,30 +244,15 @@ const ChartContainer = styled.div`
   height: ${CHART_HEIGHT}px;
 `;
 
-const GridLayout = styled.section`
+const GridLayout = styled.section<{ columnCount: number }>`
   display: grid;
   grid-template-columns: 1fr;
   grid-column-gap: .75rem;
-`;
-
-const ThreeUpGrid = styled(GridLayout)`
   padding: 0;
 
-  ${tabletAndAbove(`
-    grid-template-columns: 1fr 1fr 1fr;
+  ${({ columnCount }) => tabletAndAbove(`
+    grid-template-columns: repeat(${columnCount}, 1fr);
     grid-column-gap: .75rem;
-  `)}
-`;
-
-const ProtocolGrowthWrapper = styled(GridLayout)`
-  ${tabletAndAbove(`
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-  `)}
-`;
-
-const CommunityGrowthWrapper = styled(GridLayout)`
-  ${tabletAndAbove(`
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
   `)}
 `;
 
