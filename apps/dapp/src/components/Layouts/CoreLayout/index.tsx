@@ -1,8 +1,8 @@
 import React from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 
-import Header from './Header';
+import Header from 'components/Layouts/CoreLayout/Header';
 
 const CoreLayout = () => (
   <>
