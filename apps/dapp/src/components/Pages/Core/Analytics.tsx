@@ -20,7 +20,6 @@ import background2 from 'assets/images/dashboard-2.png';
 import background3 from 'assets/images/dashboard-3.png';
 import background4 from 'assets/images/dashboard-4.png';
 
-import background8 from 'assets/images/dashboard-8.png';
 import background9 from 'assets/images/dashboard-9.png';
 import background10 from 'assets/images/dashboard-10.png';
 import background11 from 'assets/images/dashboard-11.png';
@@ -113,7 +112,23 @@ const AnalyticsPage = () => {
             canWrap: true,
           }}
         >
+
           <Flex
+            layout={{
+              kind: 'item',
+              smallMargin: true,
+            }}
+          >
+            <StatsCard
+              label="Temple Price"
+              stat={`$${formatNumber(dashboardMetrics?.templeValue || 0)}`}
+              backgroundColor={theme.palette.brand75}
+              backgroundImageUrl={texture1}
+              heightPercentage={35}
+            />
+        </Flex>
+
+        <Flex
             layout={{
               kind: 'item',
               smallMargin: true,
@@ -124,21 +139,6 @@ const AnalyticsPage = () => {
               stat={dashboardMetrics ? `$${formatMillions(dashboardMetrics?.treasuryValue)}` : ''}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={texture3}
-              heightPercentage={35}
-            />
-          </Flex>
-
-          <Flex
-            layout={{
-              kind: 'item',
-              smallMargin: true,
-            }}
-          >
-            <StatsCard
-              label="Current Apy (EXCLUDING FAITH BONUS)"
-              stat={dashboardMetrics ? `${formatNumber(dashboardMetrics?.templeApy)}%` : ''}
-              backgroundColor={theme.palette.brand75}
-              backgroundImageUrl={texture4}
               heightPercentage={35}
             />
           </Flex>
@@ -229,6 +229,8 @@ const AnalyticsPage = () => {
             />
           </Flex>
         </Flex>
+
+
 
         <h3>Community Growth</h3>
         <Flex
