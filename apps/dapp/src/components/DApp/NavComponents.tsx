@@ -1,5 +1,6 @@
 import React, { FC, useCallback } from 'react';
 import styled from 'styled-components';
+import { Link } from 'react-router-dom';
 import Image from 'components/Image/Image';
 import MenuSvg from 'assets/icons/menu.svg';
 import CloseSvg from 'assets/images/cross.svg';
@@ -29,9 +30,11 @@ export const NavItem: FC<ItemProps> = ({ close, label, isActive = false }) => {
 
   return (
     <ListItem isActive={isActive}>
-      <Text tabIndex={0} isActive={isActive} onClick={handler}>
-        {label}
-      </Text>
+      <Link to={label.toLocaleLowerCase()}>
+        <Text tabIndex={0} isActive={isActive} onClick={handler}>
+          {label}
+        </Text>
+      </Link>
     </ListItem>
   );
 };

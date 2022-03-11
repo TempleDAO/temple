@@ -16,17 +16,11 @@ export const Nav = React.forwardRef<HTMLElement, NavProps>(
       <Container ref={ref}>
         {small && <CloseImage onClick={onClose} />}
         <NavGroup>
-          <Link to="trade">
-            <NavItem close={onClose} label={'Trade'} />
-          </Link>
+          <NavItem close={onClose} label={'Trade'} />
         </NavGroup>
         <NavGroup>
-          <Link to="unstake">
-            <NavItem close={onClose} label={'Unstake'} />
-          </Link>
-          <Link to="withdraw">
-            <NavItem close={onClose} label={'Withdraw'} />
-          </Link>
+          <NavItem close={onClose} label={'Unstake'} />
+          <NavItem close={onClose} label={'Withdraw'} />
         </NavGroup>
       </Container>
     );
