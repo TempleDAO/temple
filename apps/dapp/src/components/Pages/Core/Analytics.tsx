@@ -4,7 +4,6 @@ import styled from 'styled-components';
 import Embed from 'components/Embed/Embed';
 import StatsCard from 'components/StatsCard/StatsCard';
 import { PriceChart } from 'components/Charts/PriceChart';
-import { Flex } from 'components/Layout/Flex';
 import { Spacer } from 'components/AMM/helpers/components';
 import { theme } from 'styles/theme';
 import { formatNumber, formatMillions } from 'utils/formatter';
@@ -46,7 +45,6 @@ const GridLayout = styled.section`
   display: grid;
   grid-template-columns: 1fr;
   grid-column-gap: .75rem;
-  row-gap: 1fr;
 `;
 
 const ThreeUpGrid = styled(GridLayout)`
