@@ -27,18 +27,33 @@ const Header = () => {
     setIsNavOpen(false);
   }, [setIsNavOpen]);
 
+  const logo = (
+    <Logo to="/core">
+      TempleDAO
+    </Logo>
+  );
+
+  const metamaskButton = (
+    <MetamaskButton
+      aria-label={wallet ? 'Change Wallet' : 'Connect Wallet'}
+      onClick={wallet ? changeWalletAddress : connectWallet}
+    />
+  );
+
+  const navigation = (
+    <Navigation
+      isNavOpenMobile={isNavOpen}
+      onClickMenuItem={onClickMenuItem}
+    />
+  );
+
   // Desktop
   if (isAboveMobile) {
     return (
       <Wrapper>
-        <Logo to="/core">
-          TempleDAO
-        </Logo>
-        <Navigation isNavOpenMobile={isNavOpen} />
-        <MetamaskButton
-          aria-label={wallet ? 'Change Wallet' : 'Connect Wallet'}
-          onClick={wallet ? changeWalletAddress : connectWallet}
-        />
+        {logo}
+        {navigation}
+        {metamaskButton}
       </Wrapper>
     );
   }
@@ -52,18 +67,10 @@ const Header = () => {
           $isOpen={isNavOpen}
           onClick={() => setIsNavOpen((isOpen) => !isOpen)}
         />
-        <MetamaskButton
-          aria-label={wallet ? 'Change Wallet' : 'Connect Wallet'}
-          onClick={wallet ? changeWalletAddress : connectWallet}
-        />
+        {metamaskButton}
       </MobileNavLeft>
-      <Navigation
-        isNavOpenMobile={isNavOpen}
-        onClickMenuItem={onClickMenuItem}
-      />
-      <Logo to="/core">
-        TempleDAO
-      </Logo>
+      {navigation}
+      {logo}
     </Wrapper>
   );
 };
