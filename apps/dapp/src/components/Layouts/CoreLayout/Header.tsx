@@ -180,7 +180,7 @@ const MenuItem: FC<MenuItemProps> = ({
 };
 
 const SELECTOR_WIDTH = 23; // pixels
-const NAV_MOBILE_HEIGHT = 52; // pixels
+export const NAV_MOBILE_HEIGHT_PIXELS = 52; // pixels
 
 // Component Colors
 const COLOR_NAV_SHADOW_DESKTOP = '0px 0px 0.3125rem rgba(222, 92, 6, 0.5)';
@@ -211,7 +211,7 @@ const Wrapper = styled.header`
   justify-content: space-between;
   align-items: center;
   padding: 0 1.75rem;
-  height: ${NAV_MOBILE_HEIGHT / 16}rem;
+  height: ${NAV_MOBILE_HEIGHT_PIXELS / 16}rem;
   background: ${COLOR_NAV_BACKGROUND_GRADIENT_START};
   position: fixed;
   top: 0;
@@ -262,7 +262,7 @@ const Selector = styled.span<{ $position: number }>`
 const NavWrapper = styled.nav<{ $isOpen: boolean }>`
   display: ${({ $isOpen }) => $isOpen ? 'flex' : 'none'};
   position: fixed;
-  top: ${NAV_MOBILE_HEIGHT / 16}rem;
+  top: ${NAV_MOBILE_HEIGHT_PIXELS / 16}rem;
   left: 0;
   right: 0;
   bottom: 0;
@@ -289,7 +289,7 @@ const Menu = styled(UnstyledList)`
   flex-direction: column;
   align-items: flex-start;
   padding: 0 1.9375rem;
-  top: -${NAV_MOBILE_HEIGHT / 16}rem;
+  top: -${NAV_MOBILE_HEIGHT_PIXELS / 16}rem;
 
   > li {
     margin-bottom: 2.5rem;
