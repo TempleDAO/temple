@@ -11,12 +11,10 @@ const HEADER_HEIGHT = `68px`;
 const Trade = () => {
   return (
     <Background>
-      <Modal>
-        <Container>
-          <Nav />
-          <Outlet />
-        </Container>
-      </Modal>
+      <StyledContainer>
+        <Nav />
+        <Outlet />
+      </StyledContainer>
     </Background>
   );
 };
@@ -35,12 +33,7 @@ const Background = styled.div`
   background-position: center bottom;
 `;
 
-const Modal = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 50vh;
-  width: 50vw;
-
-  background: black;
+const StyledContainer = styled(Container)`
+  padding-right: 3.4375rem /* 55/16 */;
+  flex-grow: 0;
 `;

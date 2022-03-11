@@ -30,6 +30,14 @@ export const Swap = () => {
   );
 };
 
+const SwapContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  position: relative;
+`;
+
 const PriceLabel = styled.label`
   padding: 0.5rem /* 8/16 */;
   height: 0.9375rem /* 15/16 */;
@@ -79,12 +87,6 @@ const InvertButton = styled.button`
   background-repeat: no-repeat;
   background-size: cover;
   border-radius: 100%;
-`;
-
-const SwapContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  position: relative;
 `;
 
 const Spacer = styled.div`
