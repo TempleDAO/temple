@@ -36,10 +36,6 @@ const CHART_HEIGHT = 500;
 
 const DUNE_TREASURY_CHART =
   'https://dune.xyz/embeds/321490/612067/621fe92e-859a-4525-be32-33631910b83c';
-const DUNE_OGTEMPLE_CHART =
-  'https://dune.xyz/embeds/321944/612832/822318f7-5c30-4a12-8688-3fea73e3f3ea';
-const DUNE_RATIO_CHART =
-  'https://dune.xyz/embeds/321528/612129/a6738355-8078-4cfd-b12d-b142559e1ab0';
 
 const AnalyticsPage = () => {
   const dashboardMetrics = useRefreshableDashboardMetrics();
