@@ -18,6 +18,7 @@ import frax3crv_fRewardsABI from 'data/abis/frax3crv-fRewardPool';
 import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { fetchSubgraph } from 'utils/subgraph';
+import { Nullable } from 'types/util';
 import axios from 'axios';
 
 export interface ProtocolMetrics {
@@ -44,8 +45,10 @@ export interface DashboardMetrics {
   iv: number;
   circMCap: number;
   circTempleSupply: number;
-  socialMetrics: unknown;
+  socialMetrics: SocialMetrics;
   templeRFV: number;
+  riskFreeValue: number;
+  percentageStaked: number;
 }
 
 export interface AccountMetrics {
@@ -66,6 +69,25 @@ export interface AccountMetrics {
   unClaimedOGTempleBalance: number;
   totalSacrificed: number;
   templeApy: number;
+}
+
+interface DiscordResponse {
+  disciples: string;
+  enclaveChaos: string;
+  enclaveLogic: string;
+  enclaveMystery: string;
+  enclaveOrder: string;
+  enclaveStructure: string;
+  initiates: string;
+  masters: string;
+  totalMembers: string;
+  unverified: string;
+  verified: string;
+}
+
+export interface SocialMetrics {
+  twitter_followers_count: Nullable<string>;
+  discord: Nullable<DiscordResponse>;
 }
 
 const ENV_VARS = import.meta.env;
@@ -432,7 +454,8 @@ export class MetricsService {
     };
   };
 
-  private getSocialMetrics = async () => {
+  private getSocialMetrics = async (): SocialMetrics => {
+
     const twitter_response = await axios({
       url: `${BACKEND_URL}/api/twitter/summary`,
     });
