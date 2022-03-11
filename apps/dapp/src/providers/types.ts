@@ -142,6 +142,8 @@ export interface WalletState {
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
 
   getBalance(): Promise<Balance | void>;
+  
+  updateBalance(): Promise<void>;
 
   getCurrentEpoch(): Promise<void | number>;
 
