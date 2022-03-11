@@ -183,7 +183,8 @@ const SELECTOR_WIDTH = 23; // pixels
 const NAV_MOBILE_HEIGHT = 52; // pixels
 
 // Component Colors
-const COLOR_NAV_SHADOW = '0px 0px 0.3125rem rgba(222, 92, 6, 0.5)';
+const COLOR_NAV_SHADOW_DESKTOP = '0px 0px 0.3125rem rgba(222, 92, 6, 0.5)';
+const COLOR_NAV_SHADOW_MOBILE = '0px 0px 0.6428rem rgba(222, 92, 6, 0.5)';
 const COLOR_NAV_BACKGROUND_GRADIENT_START = '#0B0A0A';
 const COLOR_NAV_BACKGROUND_GRADIENT_END = '#1D1A1A';
 
@@ -332,11 +333,11 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   transition: all 150ms ease-in;
 
   color: ${({ theme, $active }) => $active ? theme.palette.brandLight : theme.palette.brand};
-  text-shadow: ${({ $active }) => $active ? '0px 0px 0.6428rem rgba(222, 92, 6, 0.5)' : 'none'};
+  text-shadow: ${({ $active }) => $active ? COLOR_NAV_SHADOW_MOBILE : 'none'};
 
   &:hover {
     color: ${theme.palette.brandLight};
-    text-shadow: ${({ $active }) => $active ? '0px 0px 0.6428rem rgba(222, 92, 6, 0.5)' : 'none'};
+    text-shadow: ${({ $active }) => $active ? COLOR_NAV_SHADOW_MOBILE : 'none'};
   }
 
   ${({ $active }) => tabletAndAbove(`
@@ -349,10 +350,10 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
 
     padding: 1.625rem 0.875rem 1.3125rem;
 
-    text-shadow: ${$active ? COLOR_NAV_SHADOW : 'none'};
+    text-shadow: ${$active ? COLOR_NAV_SHADOW_DESKTOP : 'none'};
 
     &:hover {
-      text-shadow: ${COLOR_NAV_SHADOW};
+      text-shadow: ${COLOR_NAV_SHADOW_DESKTOP};
     }
   `)}
 `;
