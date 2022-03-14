@@ -98,9 +98,9 @@ interface ButtonStyledProps {
 const buttonHeight = '4.75rem';
 export const ButtonStyled = styled.button<ButtonStyledProps>`
   // common
-  ${(props) => props.theme.gradients.dark}
+  background: ${(props) => props.theme.palette.gradients.dark};
   cursor: pointer;
-  color: ${(props) => props.theme.palette.core.active};
+  color: ${(props) => props.theme.palette.brandLight};
   border: 0.125rem /* 2/16 */ solid ${(props) => props.theme.palette.brand};
   border-radius: calc(${buttonHeight} / 2);
   height: ${buttonHeight} /* 76/16 */;
