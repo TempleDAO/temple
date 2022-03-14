@@ -1,6 +1,6 @@
 import { css } from 'styled-components';
 
-const ROOT_FONT_SIZE = 16;
+import { ROOT_FONT_SIZE } from 'styles/GlobalStyle';
 
 export const pixelsToRems = (pixels: number) => pixels / ROOT_FONT_SIZE;
 

@@ -19,46 +19,11 @@ import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
 const Header = () => {
   const { connectWallet, changeWalletAddress, wallet } = useWallet();
   const [isNavOpen, setIsNavOpen] = useState(false);
-  const isAboveMobile = useMediaQuery({
-    query: `(min-width: ${theme.metrics.devices.tablet})`,
-  });
 
   const onClickMenuItem = useCallback(() => {
     setIsNavOpen(false);
   }, [setIsNavOpen]);
 
-  const logo = (
-    <Logo to="/core">
-      TempleDAO
-    </Logo>
-  );
-
-  const metamaskButton = (
-    <MetamaskButton
-      aria-label={wallet ? 'Change Wallet' : 'Connect Wallet'}
-      onClick={wallet ? changeWalletAddress : connectWallet}
-    />
-  );
-
-  const navigation = (
-    <Navigation
-      isNavOpenMobile={isNavOpen}
-      onClickMenuItem={onClickMenuItem}
-    />
-  );
-
-  // Desktop
-  if (isAboveMobile) {
-    return (
-      <Wrapper>
-        {logo}
-        {navigation}
-        {metamaskButton}
-      </Wrapper>
-    );
-  }
-
-  // Mobile
   return (
     <Wrapper>
       <MobileNavLeft>
@@ -67,10 +32,18 @@ const Header = () => {
           $isOpen={isNavOpen}
           onClick={() => setIsNavOpen((isOpen) => !isOpen)}
         />
-        {metamaskButton}
+        <Logo to="/core">
+          TempleDAO
+        </Logo>
       </MobileNavLeft>
-      {navigation}
-      {logo}
+      <Navigation
+        isNavOpenMobile={isNavOpen}
+        onClickMenuItem={onClickMenuItem}
+      />
+      <MetamaskButton
+        aria-label={wallet ? 'Change Wallet' : 'Connect Wallet'}
+        onClick={wallet ? changeWalletAddress : connectWallet}
+      />
     </Wrapper>
   );
 };
@@ -247,7 +220,7 @@ const Selector = styled.span<{ $position: number }>`
   display: none;
   bottom: 0;
   content: '';
-  width: ${SELECTOR_WIDTH / 16}rem;
+  width: ${pixelsToRems(SELECTOR_WIDTH)}rem;
   height: 1.5rem;
   position: absolute;
 
