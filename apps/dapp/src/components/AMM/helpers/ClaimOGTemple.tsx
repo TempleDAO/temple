@@ -1,10 +1,10 @@
-import dateFormat from 'dateformat';
-import React from 'react';
-import styled from 'styled-components';
-import { LockedEntry } from 'providers/types';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
+import dateFormat from 'dateformat';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { LockedEntry } from 'providers/types';
+import React from 'react';
+import styled from 'styled-components';
 
 export interface ClaimOGTempleProps {
   lockedEntries: Array<LockedEntry>;
