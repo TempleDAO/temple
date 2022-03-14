@@ -94,7 +94,6 @@ export const GlobalStyle = createGlobalStyle`
   h2 {
     font-size: 2.25rem /* 36/16 */;
     line-height: 4.1875rem /* 67/16 */;
-    margin-bottom: 3rem  /* 48/16 */
   }
 
   h3 {
