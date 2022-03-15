@@ -12,6 +12,7 @@ import caviar from './parts/assets/caviardreams.ttf';
 import { useContentBox } from './useContentBox';
 import { useOutsideClick } from './useOutsideClick';
 import { Box, Entry, Point, Vault } from './types';
+import { processData } from './parts/utils';
 
 type Props = {
   data: Vault;
@@ -51,6 +52,7 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
   // @ts-ignore
   const child = children ? children[selectedNav - 1] : <div>ERROR: Bad Nav</div>
 
+  const vault = processData(data)
   return (
     <>
       <GlobalStyle />
@@ -60,7 +62,7 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
         <Svg height="100%" viewBox="0 0 1000 1000" fill="none" ref={svgRef}>
           <Background />
           <OuterRing
-            data={data}
+            data={vault}
             selected={selectedNav}
             setSelected={setSelectedNav}
             onMarkerClick={markerClick}
@@ -70,7 +72,7 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
           {selectedEntry && (
             <MarkerBubble
               ref={popupRef}
-              months={data.months}
+              months={vault.months}
               entry={selectedEntry}
               position={markerPosition}
             />

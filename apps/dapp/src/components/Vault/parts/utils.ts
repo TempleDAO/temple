@@ -16,8 +16,7 @@ export const processData = (originalData: Vault) => {
     return entry;
   });
 
-  maybeInsertEmptyMarker(data);
-
+  maybeInsertEmptyMarker(data); 
   return data;
 };
 
