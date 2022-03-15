@@ -4,15 +4,10 @@ const TIMING: Record<number, number> = {
   1: 400,
   2: 700,
   3: 800,
-  4: 900
+  4: 900,
 };
 
-type HookReturnType = [
-  number,
-  number,
-  number,
-  RefObject<SVGAnimationElement>,
-];
+type HookReturnType = [number, number, number, RefObject<SVGAnimationElement>];
 
 // used in the animation for the selector nub and glow
 // when user clicks different vault nav buttons
@@ -51,7 +46,7 @@ export const useRotationAngle = (selected: number): HookReturnType => {
     ref.current?.beginElement();
   }, [angle, selected, prevSelected]);
 
-  const dist = (Math.abs(prevAngle - angle) / 36.25);
+  const dist = Math.abs(prevAngle - angle) / 36.25;
 
   const duration = TIMING[dist];
 
