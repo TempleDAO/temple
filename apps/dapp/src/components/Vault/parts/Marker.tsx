@@ -5,6 +5,7 @@ import { lerp } from './utils';
 
 const MIN_ANGLE = 80.5;
 const MAX_ANGLE = -80.5;
+
 type Props = {
   data: Entry;
   onMarkerClick: (entry: Entry, el: SVGElement) => void;
