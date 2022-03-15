@@ -1,9 +1,9 @@
 // This is the "golden pizza pie" glow that is under the selected button's text
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
-export const SelectedIndicator = ({ selected }) => {
-  const ref = useRef();
+export const SelectedIndicator = ({ selected }: { selected: number }) => {
+  const ref = useRef(null);
   const [prevSelected, setPrevSelected] = useState(selected);
   const [angle, setAngle] = useState(0);
   const [prevAngle, setPrevAngle] = useState(0);
@@ -29,9 +29,10 @@ export const SelectedIndicator = ({ selected }) => {
         setAngle(72.5);
         break;
     }
+    // @ts-ignore
     ref.current?.beginElement();
   }, [angle, selected, prevSelected]);
-  
+
   const t = `rotate(${angle} 500 500)`;
   return (
     <g id="vault-selection-indicator" transform={t}>

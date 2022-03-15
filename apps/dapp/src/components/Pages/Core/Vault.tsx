@@ -5,22 +5,23 @@ import { Summary } from './VaultPages/Summary';
 import { Strategy } from './VaultPages/Strategy';
 import { Timing } from './VaultPages/Timing';
 import { VaultSVG } from 'components/Vault/VaultSVG';
+import { Vault } from 'components/Vault/types';
 
 const VaultPage = () => {
-  const vaultData = {
+  const vaultData:Vault = {
     id: 'abc',
     months: 3,
-    now: '6/15/22',
-    startDate: '4/1/22',
+    now: new Date('6/15/22'),
+    startDate: new Date('4/1/22'),
     entries: [
       {
         id: 1,
-        entryDate: '4/1/2022',
+        entryDate: new Date('4/1/2022'),
         amount: 5000,
       },
       {
         id: 2,
-        entryDate: '5/30/2022',
+        entryDate: new Date('5/30/2022'),
         amount: 5000,
       },
     ],
