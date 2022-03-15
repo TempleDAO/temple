@@ -49,8 +49,8 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
     setSelectedEntry(entryData);
   };
 
-  // @ts-ignore
   const child = children ? (
+    // @ts-ignore
     children[selectedNav - 1]
   ) : (
     <div>ERROR: Bad Nav</div>
