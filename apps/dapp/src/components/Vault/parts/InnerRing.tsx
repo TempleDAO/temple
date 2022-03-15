@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { Selector } from "./Selector";
+import { useEffect, useRef, useState } from 'react';
+import { Selector } from './Selector';
 
-export const InnerRing = ({ selected }: {selected: number}) => {
+export const InnerRing = ({ selected }: { selected: number }) => {
   const ref = useRef(null);
   const [prevSelected, setPrevSelected] = useState(selected);
   const [angle, setAngle] = useState(0);
@@ -323,7 +323,7 @@ export const InnerRing = ({ selected }: {selected: number}) => {
           fillOpacity={0.25}
         />
       </g>
-      <Selector/>
+      <Selector />
     </g>
   );
 };

@@ -14,7 +14,6 @@ export const Marker = ({ data, onMarkerClick }: Props) => {
   const click = () => {
     onMarkerClick(data, ref.current!);
   };
-
   const angle = getAngle(data.percent!);
   const t = `rotate(${angle} 502.066 502.066)`;
   return (

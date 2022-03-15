@@ -17,12 +17,12 @@ const VaultPage = () => {
       {
         id: 1,
         entryDate: new Date('4/1/2022'),
-        amount: 5000,
+        amount: 5300,
       },
       {
         id: 2,
         entryDate: new Date('5/30/2022'),
-        amount: 5000,
+        amount: 2500,
       },
     ],
   };
