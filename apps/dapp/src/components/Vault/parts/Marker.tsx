@@ -1,17 +1,21 @@
-import { useRef } from "react";
-import styled from "styled-components";
-import { lerp } from "./utils";
+import { useRef } from 'react';
+import styled from 'styled-components';
+import { MarkerType, Entry } from '../types';
+import { lerp } from './utils';
 
 const MIN_ANGLE = 80.5;
 const MAX_ANGLE = -80.5;
-
-export const Marker = ({ data, onMarkerClick }) => {
-  const ref = useRef();
+type Props = {
+  data: Entry;
+  onMarkerClick: (entry: Entry, el: SVGElement) => void;
+};
+export const Marker = ({ data, onMarkerClick }: Props) => {
+  const ref = useRef(null);
   const click = () => {
-    onMarkerClick(data, ref.current);
+    onMarkerClick(data, ref.current!);
   };
 
-  const angle = getAngle(data.percent);
+  const angle = getAngle(data.percent!);
   const t = `rotate(${angle} 502.066 502.066)`;
   return (
     <MarkerContainer id="marker" transform={t} onClick={click} ref={ref}>
@@ -24,20 +28,20 @@ export const Marker = ({ data, onMarkerClick }) => {
         dur="600ms"
         repeatCount="1"
       />
-      {getMarker(data.type)}
+      {getMarker(data.type!)}
     </MarkerContainer>
   );
 };
 
-const getAngle = (percent) => {
+const getAngle = (percent: number) => {
   const angle = lerp(MIN_ANGLE, MAX_ANGLE, percent);
 
   return angle;
 };
 
-const getMarker = (type) => {
+const getMarker = (type: MarkerType) => {
   switch (type) {
-    case "EMPTY":
+    case MarkerType.EMPTY:
       return (
         <g id="empty-timeline-marker">
           <g id="stake-timeline-marker" filter="url(#filter9_d_4015_16261)">
@@ -54,7 +58,7 @@ const getMarker = (type) => {
         </g>
       );
 
-    case "STAKING":
+    case MarkerType.STAKING:
       return (
         <g id="deposited-timeline-marker">
           <g
@@ -74,7 +78,7 @@ const getMarker = (type) => {
         </g>
       );
 
-    case "ZONE":
+    case MarkerType.ZONE:
       return (
         <g id="zone-timeline-marker">
           <g id="sun-marker" filter="url(#filter10_d_4015_16261)">

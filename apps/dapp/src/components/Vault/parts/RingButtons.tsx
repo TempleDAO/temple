@@ -1,12 +1,16 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
-export const RingButtons = ({ selected, setSelected }) => {
-  const selectedFill = "#FFDEC9";
-  const defaultFillCircle = "#3C2211";
-  const defaultFillIcon = "#BD7B4F";
-  const circleFill = (item) =>
+type Props = {
+  selected: number;
+  setSelcted: (_: number) => void;
+};
+export const RingButtons = ({ selected, setSelected }: any) => {
+  const selectedFill = '#FFDEC9';
+  const defaultFillCircle = '#3C2211';
+  const defaultFillIcon = '#BD7B4F';
+  const circleFill = (item: number) =>
     item === selected ? selectedFill : defaultFillCircle;
-  const iconFill = (item) =>
+  const iconFill = (item: number) =>
     item === selected ? selectedFill : defaultFillIcon;
   return (
     <g id="vault-icons">
@@ -47,7 +51,7 @@ export const RingButtons = ({ selected, setSelected }) => {
             fill="#AB8165"
             xmlSpace="preserve"
             style={{
-              whiteSpace: "pre",
+              whiteSpace: 'pre',
             }}
             fontFamily="Caviar Dreams"
             fontSize={17.961}
@@ -55,7 +59,7 @@ export const RingButtons = ({ selected, setSelected }) => {
             letterSpacing=".1em"
           >
             <tspan x={1.347} y={17.748}>
-              {"CLAIM"}
+              {'CLAIM'}
             </tspan>
           </text>
         ) : (
@@ -65,7 +69,7 @@ export const RingButtons = ({ selected, setSelected }) => {
               fill="#FFDEC9"
               xmlSpace="preserve"
               style={{
-                whiteSpace: "pre",
+                whiteSpace: 'pre',
               }}
               fontFamily="Caviar Dreams"
               fontSize={22.437}
@@ -73,7 +77,7 @@ export const RingButtons = ({ selected, setSelected }) => {
               letterSpacing=".1em"
             >
               <tspan x={4.338} y={21.806}>
-                {"CLAIM"}
+                {'CLAIM'}
               </tspan>
             </text>
           </g>
@@ -112,7 +116,7 @@ export const RingButtons = ({ selected, setSelected }) => {
             fill="#AB8165"
             xmlSpace="preserve"
             style={{
-              whiteSpace: "pre",
+              whiteSpace: 'pre',
             }}
             fontFamily="Caviar Dreams"
             fontSize={17.961}
@@ -120,7 +124,7 @@ export const RingButtons = ({ selected, setSelected }) => {
             letterSpacing=".1em"
           >
             <tspan x={1.383} y={17.748}>
-              {"STAKE"}
+              {'STAKE'}
             </tspan>
           </text>
         ) : (
@@ -130,7 +134,7 @@ export const RingButtons = ({ selected, setSelected }) => {
               fill="#FFDEC9"
               xmlSpace="preserve"
               style={{
-                whiteSpace: "pre",
+                whiteSpace: 'pre',
               }}
               fontFamily="Caviar Dreams"
               fontSize={22.437}
@@ -138,7 +142,7 @@ export const RingButtons = ({ selected, setSelected }) => {
               letterSpacing=".1em"
             >
               <tspan x={1.449} y={21.806}>
-                {"STAKE"}
+                {'STAKE'}
               </tspan>
             </text>
           </g>
@@ -176,7 +180,7 @@ export const RingButtons = ({ selected, setSelected }) => {
             fill="#AB8165"
             xmlSpace="preserve"
             style={{
-              whiteSpace: "pre",
+              whiteSpace: 'pre',
             }}
             fontFamily="Caviar Dreams"
             fontSize={17.961}
@@ -184,7 +188,7 @@ export const RingButtons = ({ selected, setSelected }) => {
             letterSpacing=".1em"
           >
             <tspan x={451.224} y={124.647}>
-              {"SUMMARY"}
+              {'SUMMARY'}
             </tspan>
           </text>
         ) : (
@@ -193,7 +197,7 @@ export const RingButtons = ({ selected, setSelected }) => {
               fill="#FFDEC9"
               xmlSpace="preserve"
               style={{
-                whiteSpace: "pre",
+                whiteSpace: 'pre',
               }}
               fontFamily="Caviar Dreams"
               fontSize={22.437}
@@ -201,7 +205,7 @@ export const RingButtons = ({ selected, setSelected }) => {
               letterSpacing=".1em"
             >
               <tspan x={438.881} y={109.704}>
-                {"SUMMARY"}
+                {'SUMMARY'}
               </tspan>
             </text>
           </g>
@@ -239,7 +243,7 @@ export const RingButtons = ({ selected, setSelected }) => {
             fill="#AB8165"
             xmlSpace="preserve"
             style={{
-              whiteSpace: "pre",
+              whiteSpace: 'pre',
             }}
             fontFamily="Caviar Dreams"
             fontSize={17.961}
@@ -247,7 +251,7 @@ export const RingButtons = ({ selected, setSelected }) => {
             letterSpacing=".1em"
           >
             <tspan x={1.909} y={17.748}>
-              {"STRATEGY"}
+              {'STRATEGY'}
             </tspan>
           </text>
         ) : (
@@ -257,7 +261,7 @@ export const RingButtons = ({ selected, setSelected }) => {
               fill="#FFDEC9"
               xmlSpace="preserve"
               style={{
-                whiteSpace: "pre",
+                whiteSpace: 'pre',
               }}
               fontFamily="Caviar Dreams"
               fontSize={22.437}
@@ -265,7 +269,7 @@ export const RingButtons = ({ selected, setSelected }) => {
               letterSpacing=".1em"
             >
               <tspan x={1.442} y={21.806}>
-                {"STRATEGY"}
+                {'STRATEGY'}
               </tspan>
             </text>
           </g>
@@ -301,7 +305,7 @@ export const RingButtons = ({ selected, setSelected }) => {
             fill="#AB8165"
             xmlSpace="preserve"
             style={{
-              whiteSpace: "pre",
+              whiteSpace: 'pre',
             }}
             fontFamily="Caviar Dreams"
             fontSize={17.961}
@@ -309,7 +313,7 @@ export const RingButtons = ({ selected, setSelected }) => {
             letterSpacing=".1em"
           >
             <tspan x={1.471} y={17.748}>
-              {"TIMING"}
+              {'TIMING'}
             </tspan>
           </text>
         ) : (
@@ -319,7 +323,7 @@ export const RingButtons = ({ selected, setSelected }) => {
               fill="#FFDEC9"
               xmlSpace="preserve"
               style={{
-                whiteSpace: "pre",
+                whiteSpace: 'pre',
               }}
               fontFamily="Caviar Dreams"
               fontSize={22.437}
@@ -327,7 +331,7 @@ export const RingButtons = ({ selected, setSelected }) => {
               letterSpacing=".1em"
             >
               <tspan x={2.276} y={21.806}>
-                {"TIMING"}
+                {'TIMING'}
               </tspan>
             </text>
           </g>

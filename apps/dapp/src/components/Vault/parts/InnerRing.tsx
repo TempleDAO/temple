@@ -28,6 +28,7 @@ export const InnerRing = ({ selected }: {selected: number}) => {
         setAngle(72.5);
         break;
     }
+    // @ts-ignore
     ref.current?.beginElement();
   }, [angle, selected, prevSelected]);
 
