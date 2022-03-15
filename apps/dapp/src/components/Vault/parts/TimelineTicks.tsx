@@ -1,4 +1,8 @@
-export const TimelineTicks = ({ months }) => {
+import React from 'react';
+type Props = {
+  months: number;
+};
+export const TimelineTicks = ({ months }: Props) => {
   const m12 = (
     <g id="twelve-month-timeline">
       <g id="twelve-month">
@@ -18,7 +22,7 @@ export const TimelineTicks = ({ months }) => {
           fill="#351F11"
           xmlSpace="preserve"
           style={{
-            whiteSpace: "pre",
+            whiteSpace: 'pre',
           }}
           fontFamily="Caviar Dreams"
           fontSize={12}
@@ -26,7 +30,7 @@ export const TimelineTicks = ({ months }) => {
           letterSpacing=".15em"
         >
           <tspan x={783.481} y={526.065}>
-            {"12 MO."}
+            {'12 MO.'}
           </tspan>
         </text>
       </g>
@@ -52,7 +56,7 @@ export const TimelineTicks = ({ months }) => {
           fill="#351F11"
           xmlSpace="preserve"
           style={{
-            whiteSpace: "pre",
+            whiteSpace: 'pre',
           }}
           fontFamily="Caviar Dreams"
           fontSize={12}
@@ -60,7 +64,7 @@ export const TimelineTicks = ({ months }) => {
           letterSpacing=".15em"
         >
           <tspan x={787.64} y={526.065}>
-            {"6 MO."}
+            {'6 MO.'}
           </tspan>
         </text>
       </g>
@@ -87,7 +91,7 @@ export const TimelineTicks = ({ months }) => {
           fill="#351F11"
           xmlSpace="preserve"
           style={{
-            whiteSpace: "pre",
+            whiteSpace: 'pre',
           }}
           fontFamily="Caviar Dreams"
           fontSize={12}
@@ -95,7 +99,7 @@ export const TimelineTicks = ({ months }) => {
           letterSpacing=".15em"
         >
           <tspan x={787.47} y={526.065}>
-            {"4 MO."}
+            {'4 MO.'}
           </tspan>
         </text>
       </g>
@@ -121,7 +125,7 @@ export const TimelineTicks = ({ months }) => {
           fill="#351F11"
           xmlSpace="preserve"
           style={{
-            whiteSpace: "pre",
+            whiteSpace: 'pre',
           }}
           fontFamily="Caviar Dreams"
           fontSize={12}
@@ -129,7 +133,7 @@ export const TimelineTicks = ({ months }) => {
           letterSpacing=".15em"
         >
           <tspan x={787.593} y={526.065}>
-            {"3 MO."}
+            {'3 MO.'}
           </tspan>
         </text>
       </g>
@@ -155,7 +159,7 @@ export const TimelineTicks = ({ months }) => {
           fill="#351F11"
           xmlSpace="preserve"
           style={{
-            whiteSpace: "pre",
+            whiteSpace: 'pre',
           }}
           fontFamily="Caviar Dreams"
           fontSize={12}
@@ -163,7 +167,7 @@ export const TimelineTicks = ({ months }) => {
           letterSpacing=".15em"
         >
           <tspan x={787.241} y={526.065}>
-            {"1 MO."}
+            {'1 MO.'}
           </tspan>
         </text>
       </g>
