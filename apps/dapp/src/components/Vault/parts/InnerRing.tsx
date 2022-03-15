@@ -9,6 +9,7 @@ export const InnerRing = ({ selected }: { selected: number }) => {
   return (
     <g id="vault-inner-ring" transform={transform}>
       <animateTransform
+        // @ts-ignore
         ref={ref}
         attributeName="transform"
         attributeType="XML"
