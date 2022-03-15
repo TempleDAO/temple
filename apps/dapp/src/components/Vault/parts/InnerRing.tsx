@@ -1,49 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
+import { useRotationAngle } from '../useRotationAngle';
 import { Selector } from './Selector';
 
 export const InnerRing = ({ selected }: { selected: number }) => {
-  const ref = useRef(null);
-  const [prevSelected, setPrevSelected] = useState(selected);
-  const [angle, setAngle] = useState(0);
-  const [prevAngle, setPrevAngle] = useState(0);
-
-  useEffect(() => {
-    if (prevSelected == selected) return;
-    setPrevAngle(angle);
-    setPrevSelected(selected);
-    switch (selected) {
-      case 1:
-        setAngle(-72.5);
-        break;
-      case 2:
-        setAngle(-36.25);
-        break;
-      case 3:
-        setAngle(0);
-        break;
-      case 4:
-        setAngle(36.25);
-        break;
-      case 5:
-        setAngle(72.5);
-        break;
-    }
-    // @ts-ignore
-    ref.current?.beginElement();
-  }, [angle, selected, prevSelected]);
-
-  const t = `rotate(${angle} 502.066 502.066)`;
+  const [angle, prevAngle, duration, ref] = useRotationAngle(selected);
+  const transform = `rotate(${angle} 502.066 502.066)`;
 
   return (
-    <g id="vault-inner-ring" transform={t}>
+    <g id="vault-inner-ring" transform={transform}>
       <animateTransform
+        // @ts-ignore
         ref={ref}
         attributeName="transform"
         attributeType="XML"
         type="rotate"
         from={`${prevAngle} 502.066 502.066`}
         to={`${angle} 502.066 502.066`}
-        dur="400ms"
+        dur={`${duration}ms`}
         repeatCount="1"
         calcMode="spline"
         keySplines=" .4,0, .58,1"

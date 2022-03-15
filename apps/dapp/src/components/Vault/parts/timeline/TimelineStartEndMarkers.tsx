@@ -1,4 +1,4 @@
-export const TimelineMarkers = () => {
+export const TimelineStartEndMarkers = () => {
   return (
     <g id="vault-timeline-markers">
       <circle

@@ -13,6 +13,8 @@ import { useContentBox } from './useContentBox';
 import { useOutsideClick } from './useOutsideClick';
 import { Box, Entry, Point, Vault } from './types';
 import { processData } from './parts/utils';
+import { RingButtons } from './parts/RingButtons';
+import { Timeline } from './parts/timeline/Timeline';
 
 type Props = {
   data: Vault;
@@ -71,6 +73,8 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
             setSelected={setSelectedNav}
             onMarkerClick={markerClick}
           />
+          <RingButtons selected={selectedNav} setSelected={setSelectedNav} />
+          <Timeline data={vault} onMarkerClick={markerClick} />
           <InnerRing selected={selectedNav} />
           <Definitions />
           {selectedEntry && (

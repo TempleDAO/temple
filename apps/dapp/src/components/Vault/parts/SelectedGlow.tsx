@@ -1,49 +1,23 @@
 // This is the "golden pizza pie" glow that is under the selected button's text
 
 import { useEffect, useRef, useState } from 'react';
+import { useRotationAngle } from '../useRotationAngle';
 
-export const SelectedIndicator = ({ selected }: { selected: number }) => {
-  const ref = useRef(null);
-  const [prevSelected, setPrevSelected] = useState(selected);
-  const [angle, setAngle] = useState(0);
-  const [prevAngle, setPrevAngle] = useState(0);
+export const SelectedGlow = ({ selected }: { selected: number }) => {
+  const [angle, prevAngle, duration, ref] = useRotationAngle(selected);
 
-  useEffect(() => {
-    if (prevSelected == selected) return;
-    setPrevAngle(angle);
-    setPrevSelected(selected);
-    switch (selected) {
-      case 1:
-        setAngle(-72.5);
-        break;
-      case 2:
-        setAngle(-36.25);
-        break;
-      case 3:
-        setAngle(0);
-        break;
-      case 4:
-        setAngle(36.25);
-        break;
-      case 5:
-        setAngle(72.5);
-        break;
-    }
-    // @ts-ignore
-    ref.current?.beginElement();
-  }, [angle, selected, prevSelected]);
-
-  const t = `rotate(${angle} 500 500)`;
+  const transform = `rotate(${angle} 500 500)`;
   return (
-    <g id="vault-selection-indicator" transform={t}>
+    <g id="vault-selection-indicator" transform={transform}>
       <animateTransform
+        // @ts-ignore
         ref={ref}
         attributeName="transform"
         attributeType="XML"
         type="rotate"
         from={`${prevAngle} 500 500`}
         to={`${angle} 500 500`}
-        dur="400ms"
+        dur={`${duration}ms`}
         repeatCount="1"
         calcMode="spline"
         keySplines=" .4,0, .58,1"
