@@ -2,7 +2,11 @@ import { useState, useEffect, RefObject } from 'react';
 import { Box } from './types';
 import { useWindowResize } from './useWindowResize';
 
-
+// Used to figure out where to place the vault pages. We
+// need to place a perfect square exactly overlapped with the 
+// Vault inner circle, to create the illusion that the content
+// is "inside" the vault. In reality, it floats on top, aboslutely 
+// positioned
 export function useContentBox(svgRef: RefObject<SVGGElement>) {
   const windowBox = useWindowResize();
   const [size, setSize] = useState<number>(); // h or w of SVG square

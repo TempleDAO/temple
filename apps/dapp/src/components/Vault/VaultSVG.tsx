@@ -67,12 +67,7 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
         <Content {...box}>{child}</Content>
         <Svg height="100%" viewBox="0 0 1000 1000" fill="none" ref={svgRef}>
           <Background />
-          <OuterRing
-            data={vault}
-            selected={selectedNav}
-            setSelected={setSelectedNav}
-            onMarkerClick={markerClick}
-          />
+          <OuterRing selected={selectedNav} />
           <RingButtons selected={selectedNav} setSelected={setSelectedNav} />
           <Timeline data={vault} onMarkerClick={markerClick} />
           <InnerRing selected={selectedNav} />
