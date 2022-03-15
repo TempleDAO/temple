@@ -1,5 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 
+// used in the animation for the selector nub and glow
+// when user clicks different vault nav buttons
 export const useRotationAngle = (selected: number) => {
   const ref = useRef<SVGElement>(null);
   const [prevSelected, setPrevSelected] = useState(selected);
