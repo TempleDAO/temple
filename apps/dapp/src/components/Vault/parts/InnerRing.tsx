@@ -33,6 +33,7 @@ export const InnerRing = ({ selected }: { selected: number }) => {
   }, [angle, selected, prevSelected]);
 
   const t = `rotate(${angle} 502.066 502.066)`;
+
   return (
     <g id="vault-inner-ring" transform={t}>
       <animateTransform

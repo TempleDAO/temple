@@ -50,15 +50,19 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
   };
 
   // @ts-ignore
-  const child = children ? children[selectedNav - 1] : <div>ERROR: Bad Nav</div>
+  const child = children ? (
+    children[selectedNav - 1]
+  ) : (
+    <div>ERROR: Bad Nav</div>
+  );
 
-  const vault = processData(data)
+  const vault = processData(data);
   return (
     <>
       <GlobalStyle />
-      {/* @ts-ignore */}
-      <Content {...box}>{child}</Content>
       <BoundingBox>
+        {/* @ts-ignore */}
+        <Content {...box}>{child}</Content>
         <Svg height="100%" viewBox="0 0 1000 1000" fill="none" ref={svgRef}>
           <Background />
           <OuterRing
@@ -92,6 +96,7 @@ const BoundingBox = styled.div`
   height: 100vh;
   display: inline-flex;
   flex-direction: column;
+  position: relative;
 `;
 
 const Content = styled.div`
@@ -106,11 +111,10 @@ const Content = styled.div`
 
   display: flex;
   justify-content: center;
-
   padding-top: 10px;
 `;
 
-// TODO move this
+// TODO move this, or confirm if these fonts are already loaded elsewhere
 const GlobalStyle = createGlobalStyle`
 @font-face {
   font-family: 'Megante';
