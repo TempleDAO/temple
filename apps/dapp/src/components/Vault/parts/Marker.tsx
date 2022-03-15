@@ -5,17 +5,18 @@ import { lerp } from './utils';
 
 const MIN_ANGLE = 80.5;
 const MAX_ANGLE = -80.5;
+
 type Props = {
   data: Entry;
   onMarkerClick: (entry: Entry, el: SVGElement) => void;
 };
+
 export const Marker = ({ data, onMarkerClick }: Props) => {
   const ref = useRef(null);
-  const click = () => {
-    onMarkerClick(data, ref.current!);
-  };
+  const click = () => onMarkerClick(data, ref.current!);
   const angle = getAngle(data.percent!);
   const t = `rotate(${angle} 502.066 502.066)`;
+
   return (
     <MarkerContainer id="marker" transform={t} onClick={click} ref={ref}>
       <animateTransform
@@ -32,11 +33,7 @@ export const Marker = ({ data, onMarkerClick }: Props) => {
   );
 };
 
-const getAngle = (percent: number) => {
-  const angle = lerp(MIN_ANGLE, MAX_ANGLE, percent);
-
-  return angle;
-};
+const getAngle = (percent: number) => lerp(MIN_ANGLE, MAX_ANGLE, percent);
 
 const getMarker = (type: MarkerType) => {
   switch (type) {

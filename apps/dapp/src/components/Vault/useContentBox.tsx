@@ -20,8 +20,8 @@ export function useContentBox(svgRef: RefObject<SVGGElement>) {
     setSize(rect.height);
     const scaleFactor = rect.height / 1000;
     const b:Box = {
-      left: rect.x + 240 * scaleFactor,
-      top: rect.y + 240 * scaleFactor,
+      left: 240 * scaleFactor,
+      top: 240 * scaleFactor,
       width: 520 * scaleFactor,
       height: 520 * scaleFactor,
     };
