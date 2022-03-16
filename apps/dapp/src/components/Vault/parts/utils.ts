@@ -78,7 +78,6 @@ const calculateEmptyPercent = (vault: Vault) => {
   const secondsIntoThisCycle = secondsSinceVaultStart % totalSecondsThisCycle;
   const secondsIntoZone = secondsIntoThisCycle % SECONDS_IN_MONTH;
   const percent = secondsIntoZone / totalSecondsThisCycle;
-
   return percent;
 };
 

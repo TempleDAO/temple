@@ -1,11 +1,17 @@
+<<<<<<< HEAD
 import { useRef, useState, PropsWithChildren, ReactNode } from 'react';
 import styled from 'styled-components';
 
+=======
+import { useEffect, useRef, useState, PropsWithChildren } from 'react';
+import styled from 'styled-components';
+>>>>>>> 372b7aa (Add Vault)
 import { Definitions } from './parts/Definitions';
 import { Background } from './parts/Background';
 import { InnerRing } from './parts/InnerRing';
 import { OuterRing } from './parts/OuterRing';
 import { MarkerBubble } from './parts/MarkerBubble';
+<<<<<<< HEAD
 import { useOutsideClick } from '../../hooks/useOutsideClick';
 import { Entry, Point, Vault } from './types';
 import { processData } from './parts/utils';
@@ -13,13 +19,26 @@ import { RingButtons } from './parts/RingButtons';
 import { Timeline } from './parts/timeline/Timeline';
 import { pixelsToRems } from 'styles/mixins';
 import { NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
+=======
+import { createGlobalStyle } from 'styled-components';
+import megante from './parts/assets/megante.ttf';
+import caviar from './parts/assets/caviardreams.ttf';
+
+import { useContentBox } from './useContentBox';
+import { useOutsideClick } from './useOutsideClick';
+import { Box, Entry, Point, Vault } from './types';
+>>>>>>> 372b7aa (Add Vault)
 
 type Props = {
   data: Vault;
 };
 
 export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
+<<<<<<< HEAD
   const svgRef = useRef<SVGSVGElement>(null);
+=======
+  const svgRef = useRef(null);
+>>>>>>> 372b7aa (Add Vault)
   const popupRef = useRef(null);
   const [selectedNav, setSelectedNav] = useState<number>(3);
   const [selectedEntry, setSelectedEntry] = useState<Entry>();
