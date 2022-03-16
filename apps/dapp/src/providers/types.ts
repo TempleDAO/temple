@@ -72,6 +72,7 @@ export interface StakingService {
   lockedEntries: Array<LockedEntry>;
 
   stake(amountToStake: BigNumber): Promise<void>;
+  unstake(amountToStake: BigNumber): Promise<void>;
 
   claimAvailableTemple(): Promise<void>;
 
@@ -142,6 +143,8 @@ export interface WalletState {
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
 
   getBalance(): Promise<Balance | void>;
+  
+  updateBalance(): Promise<void>;
 
   getCurrentEpoch(): Promise<void | number>;
 

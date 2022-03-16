@@ -7,7 +7,6 @@ import { DataCard } from 'components/DataCard/DataCard';
 import PercentageBar from 'components/PercentageBar/PercentageBar';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import dateFormat from 'dateformat';
-import { useWallet } from 'providers/WalletProvider';
 import { useStaking } from 'providers/StakingProvider';
 import { formatNumber } from 'utils/formatter';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
