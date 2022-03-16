@@ -36,8 +36,7 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
 
     const point = DOMPoint.fromPoint(markerCenterInScreenCoords);
     const marketCenterInSVGCoords = point.matrixTransform(
-      // @ts-ignore
-      svgRef.current?.getScreenCTM().inverse()
+      (svgRef.current! as SVGGraphicsElement)?.getScreenCTM()?.inverse()
     );
     // offset so the location is in the circle not the top left of bubble
     marketCenterInSVGCoords.x -= 125;
