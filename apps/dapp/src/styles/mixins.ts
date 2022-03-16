@@ -1,5 +1,9 @@
 import { css } from 'styled-components';
 
+import { ROOT_FONT_SIZE } from 'styles/GlobalStyle';
+
+export const pixelsToRems = (pixels: number) => pixels / ROOT_FONT_SIZE;
+
 export const flexCenter = css`
   display: flex;
   align-items: center;
