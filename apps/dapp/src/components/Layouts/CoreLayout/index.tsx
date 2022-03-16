@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import styled, { createGlobalStyle } from 'styled-components';
 import { tabletAndAbove } from 'styles/breakpoints';
 import { pixelsToRems } from 'styles/mixins';
