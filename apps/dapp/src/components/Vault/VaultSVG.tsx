@@ -92,15 +92,14 @@ const BoundingBox = styled.div`
 const Content = styled.div`
   // border: 1px solid red;
   position: absolute;
-  border-radius: 250px;
-  left: ${(props: Box) => props.left + 'px'};
-  top: ${(props: Box) => props.top + 'px'};
-  width: ${(props: Box) => props.width + 'px'};
-  height: ${(props: Box) => props.height + 'px'};
+  border-radius: 15.625rem; // 250 /16
+  left: ${(props: Box) => props.left / 16 + 'rem'};
+  top: ${(props: Box) => props.top / 16 + 'rem'};
+  width: ${(props: Box) => props.width / 16 + 'rem'};
+  height: ${(props: Box) => props.height / 16 + 'rem'};
   overflow: hidden;
 
   display: flex;
   justify-content: center;
-  padding-top: 10px;
+  padding-top: 0.625rem; // 10/16
 `;
-
