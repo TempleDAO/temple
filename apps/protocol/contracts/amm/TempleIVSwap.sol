@@ -11,8 +11,8 @@ import "../TempleERC20Token.sol";
 
 
 contract TempleIVSwap is Ownable {
-    IERC20 public immutable templeToken;
-    TempleERC20Token public immutable stablecToken;
+    TempleERC20Token public immutable templeToken;
+    IERC20 public immutable stablecToken;
 
     struct Price {
         uint frax;
@@ -41,7 +41,7 @@ contract TempleIVSwap is Ownable {
         uint deadline
     ) external virtual ensure(deadline) {
         SafeERC20.safeTransferFrom(templeToken, msg.sender, address(this), amountIn);
-        SafeERC20.safeTransfer(stablecToken, to, amountIn * (iv.frax / iv.temple));
+        SafeERC20.safeTransfer(stablecToken, to, amountIn * iv.frax / iv.temple);
     }
 
     /**
