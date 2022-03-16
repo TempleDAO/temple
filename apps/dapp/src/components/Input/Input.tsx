@@ -12,7 +12,7 @@ interface SizeProps {
   small?: boolean;
 }
 
-interface CryptoSelector {
+export interface CryptoSelector {
   kind: 'select';
   // A selector for the crypto, must provide onCryptoChange
   cryptoOptions: SelectTempleDaoOptions;
@@ -24,7 +24,7 @@ interface CryptoSelector {
   onCryptoChange?(): void;
 }
 
-interface CryptoValue {
+export interface CryptoValue {
   kind: 'value';
   value: string;
 }

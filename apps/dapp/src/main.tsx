@@ -25,6 +25,9 @@ import { Summary } from 'components/Pages/Core/VaultPages/Summary';
 import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
 import { Trade } from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
+import CoreTradeLayout from 'components/Layouts/CoreLayout/Trade';
+
+import { Swap } from 'components/Pages/Core/Trade/Swap';
 
 // Separate Chunks
 const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
@@ -84,8 +87,13 @@ ReactDOM.render(
                 <Route path="strategy" element={<Strategy />} />
                 <Route path="timing" element={<Timing />} />
               </Route>
-              <Route path="trade" element={<Trade />} />
+              {/*<Route path="trade" element={<Trade />} />*/}
               <Route path="profile" element={<ProfilePage />} />
+              <Route path="trade" element={<CoreTradeLayout />}>
+                <Route path="swap" element={<Swap />} />
+                <Route path="*" element={<Navigate replace to="swap" />} />
+              </Route>
+              <Route path="profile" element={'Profile'} />
               <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
             <Route
