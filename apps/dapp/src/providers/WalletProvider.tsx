@@ -68,6 +68,7 @@ const INITIAL_STATE: WalletState = {
   network: null,
   getCurrentEpoch: asyncNoop,
   getBalance: asyncNoop,
+  updateBalance: asyncNoop,
   collectTempleTeamPayment: asyncNoop,
   ensureAllowance: asyncNoop,
 };
@@ -235,6 +236,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       ogTempleLockedClaimable: ogTempleLockedClaimable,
     };
   };
+
   const updateBalance = async () => {
     if (!walletAddress || !signerState) {
       return;
@@ -370,6 +372,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
         network,
         getCurrentEpoch,
         getBalance: updateBalance,
+        updateBalance,
         collectTempleTeamPayment,
       }}
     >

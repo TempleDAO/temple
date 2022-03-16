@@ -5,7 +5,6 @@ import { Button } from 'components/Button/Button';
 import { DataCard } from 'components/DataCard/DataCard';
 import { Input } from 'components/Input/Input';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
-import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useWallet } from 'providers/WalletProvider';
 import { useStaking } from 'providers/StakingProvider';
 import { JoinQueueData } from 'providers/types';
@@ -28,9 +27,8 @@ interface QueueProps {
 }
 
 export const Queue: FC<QueueProps> = ({ small }) => {
-  const { signer, balance, getBalance, ensureAllowance } = useWallet();
-  const { getJoinQueueData, getRewardsForOGT } = useStaking();
-  const [OGTWalletAmount, setOGTWalletAmount] = useState<number>(0);
+  const { signer, balance, updateBalance, ensureAllowance } = useWallet();
+  const { unstake, getJoinQueueData, getRewardsForOGT } = useStaking();
   const [OGTAmount, setOGTAmount] = useState<number | ''>('');
   const [joinQueueData, setJoinQueueData] = useState<JoinQueueData | null>({
     queueLength: 0,
@@ -38,8 +36,6 @@ export const Queue: FC<QueueProps> = ({ small }) => {
   });
   const [rewards, setRewards] = useState<number | ''>('');
   const repositionTopTooltip = useMediaQuery({ query: '(max-width: 1235px)' });
-
-  const refreshWalletState = useRefreshWalletState();
 
   const updateTempleRewards = async (ogtAmount: number) => {
     setRewards((await getRewardsForOGT(ogtAmount)) || 0);
@@ -79,7 +75,9 @@ export const Queue: FC<QueueProps> = ({ small }) => {
           toAtto(OGTAmount)
         );
 
-        getBalance();
+        await unstake(toAtto(OGTAmount));
+
+        await updateBalance();
         handleUpdateOGT(0);
       }
     } catch (e) {
@@ -89,13 +87,13 @@ export const Queue: FC<QueueProps> = ({ small }) => {
 
   useEffect(() => {
     if (balance) {
-      setOGTWalletAmount(balance.ogTemple);
+      handleUpdateOGT(balance.ogTemple);
     }
   }, [balance]);
 
   useEffect(() => {
     async function onMount() {
-      await refreshWalletState();
+      await updateBalance();
       setRewards('');
     }
 
@@ -134,11 +132,11 @@ export const Queue: FC<QueueProps> = ({ small }) => {
 
       <Input
         small={small}
-        hint={`Balance: ${formatNumber(OGTWalletAmount)}`}
-        onHintClick={() => copyBalance(OGTWalletAmount, handleUpdateOGT)}
+        hint={`Balance: ${formatNumber(balance.ogTemple)}`}
+        onHintClick={() => copyBalance(balance.ogTemple, handleUpdateOGT)}
         crypto={{ kind: 'value', value: '$OGTEMPLE' }}
         isNumber
-        max={OGTWalletAmount}
+        max={balance.ogTemple}
         min={0}
         value={OGTAmount}
         handleChange={handleUpdateOGT}
