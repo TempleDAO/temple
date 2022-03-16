@@ -30,18 +30,22 @@ html, body {
 `;
 
 const AppContainer = styled.div`
-  border: 1px dashed white;
+  // border: 1px dashed white;
   display: flex;
   flex-direction: column;
   // align-items: center;
   height: 100vh;
 `;
 const Main = styled.main`
-  border: 1px solid blue;
-  min-width: ${({ theme }) => theme.metrics.desktop.minWidth};
-  max-width: ${({ theme }) => theme.metrics.desktop.maxWidth};
+  // border: 1px solid blue;
+  display: flex;
   flex-grow: 1;
   align-self: center;
+  align-items: stretch;
+  min-width: ${({ theme }) => theme.metrics.desktop.minWidth};
+  max-width: ${({ theme }) => theme.metrics.desktop.maxWidth};
+  height: 100vh;
+  justify-content: center;
 
   ${tabletAndAbove(`
     padding: 0 1.75rem 1.75rem;
