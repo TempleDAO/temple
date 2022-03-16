@@ -24,7 +24,6 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
   const [selectedNav, setSelectedNav] = useState<number>(3);
   const [selectedEntry, setSelectedEntry] = useState<Entry>();
   const [markerPosition, setMarkerPosition] = useState<Point>({ x: 0, y: 0 });
-
   useOutsideClick(popupRef, () => {
     setSelectedEntry(undefined);
   });

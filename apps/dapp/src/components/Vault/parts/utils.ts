@@ -16,7 +16,7 @@ export const processData = (originalData: Vault) => {
     return entry;
   });
 
-  maybeInsertEmptyMarker(data); 
+  maybeInsertEmptyMarker(data);
   return data;
 };
 
@@ -78,7 +78,6 @@ const calculateEmptyPercent = (vault: Vault) => {
   const secondsIntoThisCycle = secondsSinceVaultStart % totalSecondsThisCycle;
   const secondsIntoZone = secondsIntoThisCycle % SECONDS_IN_MONTH;
   const percent = secondsIntoZone / totalSecondsThisCycle;
-
   return percent;
 };
 
@@ -99,9 +98,9 @@ const getCurrentCycle = (vaultStart: Date, vaultMonths: number, now: Date) => {
 
 // calculates the value that is at X% distance between A and B
 // ex, half way between 2 and 8 is 5.. lerp(2,8,0.5)=5
-// we use this to figure out the angle between the start and 
+// we use this to figure out the angle between the start and
 // end of the timeline. Start being at -72 (or whatever) and end being at 72 (degrees)
-// so if we know a marker is 15% into a cycle, then we know what degree to 
+// so if we know a marker is 15% into a cycle, then we know what degree to
 // put it at.
 export const lerp = (v0: number, v1: number, t: number) =>
   v0 * (1 - t) + v1 * t;
