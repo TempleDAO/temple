@@ -70,7 +70,7 @@ export const MarkerBubble = forwardRef<SVGGElement, MarkerProps>(
           </tspan>
         </text>
         <text
-          id="Vesting Date: 6/1/2022"
+          id="vesting-date"
           fill="#fff"
           xmlSpace="preserve"
           style={{ whiteSpace: 'pre' }}
