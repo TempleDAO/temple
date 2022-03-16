@@ -1,7 +1,7 @@
 import { getUnixTime, differenceInSeconds } from 'date-fns';
 import { Entry, Vault, MarkerType } from '../types';
 
-export const SECONDS_IN_MONTH = 2_592_000; //30*24*60*60
+export const SECONDS_IN_MONTH = 2_629_800;
 
 export const processData = (originalData: Vault) => {
   const data = { ...originalData }; // shallow copy
