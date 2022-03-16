@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Input, CryptoValue, CryptoSelector } from 'components/Input/Input';
+import { Tabs } from 'components/Tabs/Tabs';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import arrow from 'assets/icons/amm-arrow.svg';
 
@@ -30,13 +31,28 @@ export const Swap = () => {
     value: `${TICKER_SYMBOL.STABLE_TOKEN}`,
   };
 
-  return (
+  const Swap = (
     <SwapContainer>
       <Input crypto={sellCryptoConfig} value={1000} hint="Balance: 10000" />
       <Spacer />
       <Input crypto={{ kind: 'value', value: '$FRAX' }} disabled value={650} />
       <InvertButton />
     </SwapContainer>
+  );
+
+  return (
+    <Tabs
+      tabs={[
+        {
+          label: 'Swap',
+          content: Swap,
+        },
+        {
+          label: 'Unlock',
+          content: <SwapContainer>unlock $temple</SwapContainer>,
+        },
+      ]}
+    />
   );
 };
 
@@ -46,6 +62,7 @@ const SwapContainer = styled.div`
   justify-content: center;
   flex-direction: column;
   position: relative;
+  min-width: 20rem /*320/16*/;
 `;
 
 const InvertButton = styled.button`
