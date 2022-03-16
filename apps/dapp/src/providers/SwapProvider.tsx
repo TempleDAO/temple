@@ -90,7 +90,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     );
 
     const { frax, temple } = await TEMPLE_IV_SWAP.iv();
-    return fromAtto(temple.div(frax));
+    return fromAtto(frax) / fromAtto(temple);
   };
 
   const updateIv = async () => {
