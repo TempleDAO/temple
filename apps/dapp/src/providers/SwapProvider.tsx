@@ -153,6 +153,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
    * AMM Sell
    * @param amountInTemple: Amount of $TEMPLE user wants to sell
    * @param minAmountOutFrax: % user is giving as slippage
+   * @param isIvSwap: should sale be directed to TempleIvSwap contract
    */
   const sell = async (
     amountInTemple: BigNumber,
