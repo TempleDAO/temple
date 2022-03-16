@@ -6,6 +6,8 @@ import caviarDreamsBold from 'assets/fonts/CaviarDreams/CaviarDreams_Bold.ttf';
 import caviarDreamsBoldItalic from 'assets/fonts/CaviarDreams/CaviarDreams_BoldItalic.ttf';
 import caviarDreamsItalic from 'assets/fonts/CaviarDreams/CaviarDreams_Italic.ttf';
 
+export const ROOT_FONT_SIZE = 16;
+
 export const GlobalStyle = createGlobalStyle`
 
   // Fonts
@@ -19,7 +21,7 @@ export const GlobalStyle = createGlobalStyle`
 
   @font-face {
     font-family: "Caviar Dreams";
-    src: url(${caviarDreams});i
+    src: url(${caviarDreams});
     font-style: normal;
     font-weight: 400;
     font-display: swap;
@@ -61,7 +63,7 @@ export const GlobalStyle = createGlobalStyle`
   body {
     font-family: Caviar Dreams, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
     Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-    font-size: 16px;
+    font-size: ${ROOT_FONT_SIZE};
     background-color: ${theme.palette.dark};
     color: ${theme.palette.light};
     overflow-x: hidden;
@@ -154,19 +156,19 @@ export const GlobalStyle = createGlobalStyle`
     &-brand {
       color: ${theme.palette.brand};
     }
-    
+
     &-brandLight {
       color: ${theme.palette.brandLight};
     }
-    
+
     &-brandDark {
       color: ${theme.palette.brandDark};
     }
-    
+
     &-brandDarker {
       color: ${theme.palette.brandDarker};
     }
-    
+
     &-dark {
       color: ${theme.palette.dark};
     }

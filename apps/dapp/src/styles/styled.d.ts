@@ -33,6 +33,7 @@ declare module 'styled-components' {
     metrics: {
       headerHeight: string;
       desktop: {
+        minWidth: string;
         maxWidth: string;
       };
       devices: {
