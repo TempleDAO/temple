@@ -1,16 +1,12 @@
-import { useEffect, useRef, useState, PropsWithChildren } from 'react';
+import { useRef, useState, PropsWithChildren } from 'react';
 import styled from 'styled-components';
 import { Definitions } from './parts/Definitions';
 import { Background } from './parts/Background';
 import { InnerRing } from './parts/InnerRing';
 import { OuterRing } from './parts/OuterRing';
 import { MarkerBubble } from './parts/MarkerBubble';
-import { createGlobalStyle } from 'styled-components';
-import megante from './parts/assets/megante.ttf';
-import caviar from './parts/assets/caviardreams.ttf';
-
 import { useContentBox } from './useContentBox';
-import { useOutsideClick } from './useOutsideClick';
+import { useOutsideClick } from '../../hooks/useOutsideClick';
 import { Box, Entry, Point, Vault } from './types';
 import { processData } from './parts/utils';
 import { RingButtons } from './parts/RingButtons';
@@ -61,11 +57,10 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
   const vault = processData(data);
   return (
     <>
-      <GlobalStyle />
       <BoundingBox>
         {/* @ts-ignore */}
         <Content {...box}>{child}</Content>
-        <Svg height="100%" viewBox="0 0 1000 1000" fill="none" ref={svgRef}>
+        <svg height="100%" viewBox="0 0 1000 1000" fill="none" ref={svgRef}>
           <Background />
           <OuterRing selected={selectedNav} />
           <RingButtons selected={selectedNav} setSelected={setSelectedNav} />
@@ -80,15 +75,11 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
               position={markerPosition}
             />
           )}
-        </Svg>
+        </svg>
       </BoundingBox>
     </>
   );
 };
-
-const Svg = styled.svg`
-  // border: 1px dashed yellow;
-`;
 
 const BoundingBox = styled.div`
   // border: 1px solid red;
@@ -113,20 +104,3 @@ const Content = styled.div`
   padding-top: 10px;
 `;
 
-// TODO move this, or confirm if these fonts are already loaded elsewhere
-const GlobalStyle = createGlobalStyle`
-@font-face {
-  font-family: 'Megante';
-  src: url('${megante}') format('woff');
-  font-style: normal;
-  font-weight: 400;
-  font-display: fallback; /* <- this can be added to each @font-face definition */
-}
-@font-face {
-  font-family: 'Caviar Dreams';
-  src: url('${caviar}') format('woff');
-  font-style: normal;
-  font-weight: 400;
-  font-display: fallback; /* <- this can be added to each @font-face definition */
-}
-`;
