@@ -5,15 +5,6 @@ import { ClaimType } from 'enums/claim-type';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
 
-export enum RitualKind {
-  OFFERING_STAKING = 'OFFERING_STAKING',
-  OGT_UNLOCK = 'OGT_UNLOCK',
-  // SELL
-  SURRENDER = 'SURRENDER',
-  VERIFYING = 'VERIFYING',
-  INVITE_FRIEND = 'INVITE_FRIEND',
-}
-
 export enum ETH_ACTIONS {
   REQUEST_ACCOUNTS = 'eth_requestAccounts',
   REQUEST_PERMISSIONS = 'wallet_requestPermissions',
@@ -80,21 +71,21 @@ export interface StakingService {
 
   getJoinQueueData(ogtAmount: BigNumber): Promise<JoinQueueData | void>;
 
-  getExitQueueData(): Promise<void>
+  getExitQueueData(): Promise<void>;
 
-  updateLockedEntries(): Promise<void>
+  updateLockedEntries(): Promise<void>;
 
   claimOgTemple(lockedEntryIndex: number): Promise<void>;
 
   getRewardsForOGT(ogtAmount: number): Promise<number | void>;
 
-  updateApy(): Promise<void>
+  updateApy(): Promise<void>;
 }
 
 export interface FaithService {
   faith: FaithBalance;
 
-  updateFaith(): Promise<void>
+  updateFaith(): Promise<void>;
 
   verifyFaith(lockingPeriod?: number): Promise<void>;
 
@@ -112,21 +103,35 @@ export interface FaithService {
   ): Promise<TransactionReceipt | void>;
 }
 
-export interface SwapService { 
+export interface SwapService {
   templePrice: number;
   iv: number;
 
   buy(amountInFrax: BigNumber, minAmountOutTemple: BigNumber): void;
 
-  sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber, isIvSwap: boolean): void;
+  sell(
+    amountInTemple: BigNumber,
+    minAmountOutFrax: BigNumber,
+    isIvSwap: boolean
+  ): void;
 
   getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
 
   getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
 
-  updateTemplePrice(): Promise<void>
-  
-  updateIv(): Promise<void>
+  updateTemplePrice(): Promise<void>;
+
+  updateIv(): Promise<void>;
+}
+
+export interface ZapService {
+  zapIn(
+    tokenSymbol: string,
+    tokenAddr: string,
+    decimals: number,
+    tokenAmount: number,
+    minTempleReceived: BigNumber
+  ): void;
 }
 
 export interface WalletState {
@@ -146,7 +151,7 @@ export interface WalletState {
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
 
   getBalance(): Promise<Balance | void>;
-  
+
   updateBalance(): Promise<void>;
 
   getCurrentEpoch(): Promise<void | number>;
