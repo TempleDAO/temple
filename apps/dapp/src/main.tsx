@@ -16,6 +16,7 @@ import Disclaimer from 'components/Pages/Disclaimer';
 
 import CoreLayout from 'components/Layouts/CoreLayout';
 import AnalyticsPage from 'components/Pages/Core/Analytics';
+import VaultPage from 'components/Pages/Core/Vault';
 
 // Separate Chunks
 const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
@@ -61,7 +62,7 @@ ReactDOM.render(
           <>
             <Route path="/core/*" element={<CoreLayout />}>
               <Route path="" element={'Home'} />
-              <Route path="vaults/*" element={'Vaults'} />
+              <Route path="vaults/*" element={<VaultPage/>} />
               <Route path="trade" element={'Trade'} />
               <Route path="profile" element={'Profile'} />
               <Route path="analytics" element={<AnalyticsPage />} />
