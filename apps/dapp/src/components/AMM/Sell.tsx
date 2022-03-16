@@ -63,8 +63,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
         const sellQuote = await getSellQuote(toAtto(templeAmount));
 
-        const isIvSwap =
-          !!sellQuote && sellQuote.lt(toAtto(templeAmount).mul(toAtto(iv)));
+        const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
 
         if (minAmountOut <= rewards || isIvSwap) {
           await sell(toAtto(templeAmount), toAtto(minAmountOut), isIvSwap);
