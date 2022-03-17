@@ -22,6 +22,8 @@ import {
   TreasuryManagementProxy__factory,
   AcceleratedExitQueue,
   AcceleratedExitQueue__factory,
+  TempleIVSwap,
+  TempleIVSwap__factory,
 } from '../../typechain';
 
 function toAtto(n: number) {
@@ -290,6 +292,15 @@ async function main() {
   await faith.gain(account1.address, 25);
   await faith.gain(account2.address, 45);
 
+  // create and initialise contract that allows a permissionless
+  // swap @ IV
+  const templeIVSwap = await new TempleIVSwap__factory(owner).deploy(
+    templeToken.address,
+    stablecToken.address,
+    {temple: 100, frax: 65}, /* iv */
+  );
+  await stablecToken.mint(templeIVSwap.address, toAtto(1000000));
+
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
     EXIT_QUEUE_ADDRESS: exitQueue.address,
@@ -311,6 +322,8 @@ async function main() {
     TEMPLE_DEVOTION_ADDRESS: devotion.address,
     TEMPLE_FAITH_ADDRESS: faith.address,
     LOCKED_OG_TEMPLE_DEVOTION_ADDRESS: lockedOgTemple_new.address,
+
+    TEMPLE_IV_SWAP: templeIVSwap.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys

@@ -145,6 +145,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleFraxAMMRouter__factory>;
     getContractFactory(
+      name: "TempleIVSwap",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TempleIVSwap__factory>;
+    getContractFactory(
       name: "TempleUniswapV2Pair",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleUniswapV2Pair__factory>;
@@ -422,6 +426,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TempleFraxAMMRouter>;
+    getContractAt(
+      name: "TempleIVSwap",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TempleIVSwap>;
     getContractAt(
       name: "TempleUniswapV2Pair",
       address: string,

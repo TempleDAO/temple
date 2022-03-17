@@ -114,16 +114,19 @@ export interface FaithService {
 
 export interface SwapService { 
   templePrice: number;
+  iv: number;
 
   buy(amountInFrax: BigNumber, minAmountOutTemple: BigNumber): void;
 
-  sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber): void;
+  sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber, isIvSwap: boolean): void;
 
   getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
 
   getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
 
   updateTemplePrice(): Promise<void>
+  
+  updateIv(): Promise<void>
 }
 
 export interface WalletState {
