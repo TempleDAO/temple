@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { useRotationAngle } from '../useRotationAngle';
 import { Selector } from './Selector';
 
@@ -9,7 +9,6 @@ export const InnerRing = ({ selected }: { selected: number }) => {
   return (
     <g id="vault-inner-ring" transform={transform}>
       <animateTransform
-        // @ts-ignore
         ref={ref}
         attributeName="transform"
         attributeType="XML"
