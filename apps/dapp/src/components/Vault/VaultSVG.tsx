@@ -1,6 +1,6 @@
 import { useRef, useState, PropsWithChildren, useEffect } from 'react';
 import styled from 'styled-components';
-import { useLocation, useNavigate, useResolvedPath } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Definitions } from './parts/Definitions';
 import { Background } from './parts/Background';
