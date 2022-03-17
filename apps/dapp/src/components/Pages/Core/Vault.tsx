@@ -1,12 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, useParams, Outlet } from 'react-router-dom';
+import { useParams, Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 
-import { Claim } from './VaultPages/Claim';
-import { Stake } from './VaultPages/Stake';
-import { Summary } from './VaultPages/Summary';
-import { Strategy } from './VaultPages/Strategy';
-import { Timing } from './VaultPages/Timing';
+import Loader from 'components/Loader/Loader';
 import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Vault } from 'components/Vault/types';
 
@@ -48,11 +44,11 @@ const VaultPage = () => {
   const { isLoading, data, error } = useMockVaultData(vaultId || '');
 
   if (isLoading) {
-    return <div>'loading'</div>;
+    return <Loader />;
   }
 
   if (!data || error) {
-    return <div>'something went wrong'</div>;
+    return <div>Something went wrong</div>;
   }
 
   return (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 
 import Loader from 'components/Loader/Loader';
 
@@ -18,22 +18,21 @@ const useMockVaultData = () => {
 };
 
 const VaultListPage = () => {
-  const navigate = useNavigate();
   const { isLoading, data } = useMockVaultData();
 
   if (isLoading) {
-    return <Loader />
+    return <Loader />;
   }
 
-  if (data.length === 0) {
+  if (data.length === 0 || !data) {
     return <div>Something went wrong</div>;
   }
 
-  if (data.length > 1) {
-    return <div>List view</div>;
+  if (data.length === 1) {
+    return <Navigate replace to={`/core/vaults/${data[0]}/summary`} />;
   }
 
-  return <Navigate replace to={`/core/vaults/${data[0]}/summary`} />;
+  return <div>Vault List View</div>;
 };
 
 export default VaultListPage;
