@@ -29,7 +29,7 @@ const ENV_VARS = import.meta.env;
 
 export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const { balance, getBalance, updateBalance } = useWallet();
-  const { sell, getSellQuote, templePrice, iv } = useSwap();
+  const { sell, getSellQuote, templePrice, iv, updateIv } = useSwap();
 
   const [stableCoinWalletAmount, setStableCoinWalletAmount] =
     useState<number>(0);
@@ -86,6 +86,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   useEffect(() => {
     async function onMount() {
       await updateBalance();
+      await updateIv();
       setRewards('');
       setMinAmountOut(0);
     }
