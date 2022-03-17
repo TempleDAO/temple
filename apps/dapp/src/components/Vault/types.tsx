@@ -27,3 +27,5 @@ export enum MarkerType {
   STAKING,
   ZONE,
 }
+
+export type VaultPage = 'claim' | 'stake' | 'summary' | 'strategy' | 'timing';

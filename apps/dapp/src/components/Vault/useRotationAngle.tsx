@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, RefObject } from 'react';
+import { VaultPage } from './types';
 
 const TIMING: Record<number, number> = {
   1: 400,
@@ -9,13 +10,31 @@ const TIMING: Record<number, number> = {
 
 type HookReturnType = [number, number, number, RefObject<SVGAnimationElement>];
 
+const getPageAngle = (page?: VaultPage) => {
+  switch (page) {
+    case 'claim':
+      return -72.5;
+    case 'stake':
+      return -36.25;
+    case 'summary':
+      return 0;
+    case 'strategy':
+      return 36.25;
+    case 'timing':
+      return 72.5;
+    default:
+      return 0;
+  }
+}
+
 // used in the animation for the selector nub and glow
 // when user clicks different vault nav buttons
-export const useRotationAngle = (selected: number): HookReturnType => {
+export const useRotationAngle = (selected?: VaultPage): HookReturnType => {
   const ref = useRef<SVGAnimationElement>(null);
   const [prevSelected, setPrevSelected] = useState(selected);
-  const [angle, setAngle] = useState(0);
-  const [prevAngle, setPrevAngle] = useState(0);
+  const initialPageAngle = getPageAngle(selected);
+  const [angle, setAngle] = useState(initialPageAngle);
+  const [prevAngle, setPrevAngle] = useState(initialPageAngle);
 
   useEffect(() => {
     if (prevSelected === selected) {
@@ -25,23 +44,8 @@ export const useRotationAngle = (selected: number): HookReturnType => {
     setPrevAngle(angle);
     setPrevSelected(selected);
 
-    switch (selected) {
-      case 1:
-        setAngle(-72.5);
-        break;
-      case 2:
-        setAngle(-36.25);
-        break;
-      case 3:
-        setAngle(0);
-        break;
-      case 4:
-        setAngle(36.25);
-        break;
-      case 5:
-        setAngle(72.5);
-        break;
-    }
+    const nextAngle = getPageAngle(selected);
+    setAngle(nextAngle);
 
     ref.current?.beginElement();
   }, [angle, selected, prevSelected]);
