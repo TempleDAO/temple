@@ -1,9 +1,11 @@
 import React from 'react';
+
 type Props = {
   months: number;
 };
+
 export const TimelineTicks = ({ months }: Props) => {
-  const m12 = (
+  const twelveMonths = (
     <g id="twelve-month-timeline">
       <g id="twelve-month">
         <g id="twelve-month-tickmarks" fill="#382315">
@@ -37,7 +39,7 @@ export const TimelineTicks = ({ months }: Props) => {
     </g>
   );
 
-  const m6 = (
+  const sixMonth = (
     <g id="six-month-timeline">
       <g id="six-month">
         <g id="six-month-tickmarks" fill="#382315">
@@ -71,42 +73,7 @@ export const TimelineTicks = ({ months }: Props) => {
     </g>
   );
 
-  const m4 = (
-    <g id="four-month-timeline">
-      <g id="four-month">
-        <g id="four-moth-tickmarks" fill="#382315">
-          <path d="M772.732 545.363a243.1 243.1 0 0 1-.247 1.527l13.706 2.232a243.1 243.1 0 0 0 .247-1.527l-13.706-2.232ZM680.195 710.36c-.392.335-.784.669-1.178 1.002l8.995 10.578c.393-.333.786-.667 1.177-1.002l-8.994-10.578ZM502.841 776.132l-.773.001-.773-.001v13.885l.773.001h.344l.429-.001v-13.885ZM323.626 710.087c-.391-.336-.781-.673-1.17-1.011l-8.995 10.578c.389.338.779.675 1.171 1.011l8.994-10.578ZM231.652 546.891c-.084-.508-.166-1.017-.247-1.526l-13.706 2.231c.081.51.163 1.019.247 1.527l13.706-2.232ZM162.307 556.617l13.175-2.146c.081.51.163 1.018.247 1.527l-13.174 2.145-.248-1.526ZM828.408 555.997c.083-.509.166-1.018.247-1.527l13.185 2.147-.249 1.526-13.183-2.146ZM716.231 754.084l.663-.565 8.68 10.209-1.178 1.001-8.68-10.208.515-.437ZM502.068 832.784l.773-.001v13.405h-1.546v-13.405l.773.001ZM285.756 752.236c.389.338.78.674 1.172 1.01l-9.053 10.646-1.178-1.002 9.059-10.654Z" />
-        </g>
-        <path
-          id="four-month-progress-bar-outline"
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="m201.146 547.984.615 3.818c11.319 70.229 47.755 135.43 101.588 181.876l-5.052 5.855c-55.21-47.634-92.562-114.474-104.17-186.501l-.615-3.817 7.634-1.231Z"
-          stroke="#BD7B4F"
-          strokeWidth={2}
-          strokeLinecap="round"
-        />
-        <text
-          id="4 MO"
-          fill="#351F11"
-          xmlSpace="preserve"
-          style={{
-            whiteSpace: 'pre',
-          }}
-          fontFamily="Caviar Dreams"
-          fontSize={12}
-          fontWeight="bold"
-          letterSpacing=".15em"
-        >
-          <tspan x={787.47} y={526.065}>
-            {'4 MO.'}
-          </tspan>
-        </text>
-      </g>
-    </g>
-  );
-
-  const m3 = (
+  const threeMonth = (
     <g id="three-month-timeline">
       <g id="three-month">
         <g id="three-month-tickmarks" fill="#382315">
@@ -140,7 +107,7 @@ export const TimelineTicks = ({ months }: Props) => {
     </g>
   );
 
-  const m1 = (
+  const oneMonth = (
     <g id="one-month-timeline">
       <g id="one-month">
         <g id="one-month-tickmarks" fill="#382315">
@@ -173,19 +140,20 @@ export const TimelineTicks = ({ months }: Props) => {
       </g>
     </g>
   );
+
   let ticks;
   switch (months) {
     case 1:
-      ticks = m1;
+      ticks = oneMonth;
       break;
     case 3:
-      ticks = m3;
+      ticks = threeMonth;
       break;
     case 6:
-      ticks = m6;
+      ticks = sixMonth;
       break;
     case 12:
-      ticks = m12;
+      ticks = twelveMonths;
       break;
     default:
       ticks = <div>ERROR: Invalid Months: {months} </div>;

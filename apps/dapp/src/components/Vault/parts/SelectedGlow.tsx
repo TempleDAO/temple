@@ -1,16 +1,19 @@
 // This is the "golden pizza pie" glow that is under the selected button's text
 
-import { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { useRotationAngle } from '../useRotationAngle';
 
-export const SelectedGlow = ({ selected }: { selected: number }) => {
+type Props = {
+  selected: number;
+};
+
+export const SelectedGlow = ({ selected }: Props) => {
   const [angle, prevAngle, duration, ref] = useRotationAngle(selected);
 
   const transform = `rotate(${angle} 500 500)`;
   return (
     <g id="vault-selection-indicator" transform={transform}>
       <animateTransform
-        // @ts-ignore
         ref={ref}
         attributeName="transform"
         attributeType="XML"
