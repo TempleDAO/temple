@@ -1,10 +1,22 @@
-import { FC, useRef, useState, useCallback, useLayoutEffect, SyntheticEvent } from 'react';
+import {
+  FC,
+  useRef,
+  useState,
+  useCallback,
+  useLayoutEffect,
+  SyntheticEvent,
+} from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import { useMediaQuery } from 'react-responsive';
 import styled from 'styled-components';
 
 import { useWallet } from 'providers/WalletProvider';
-import { flexCenter, buttonResets, backgroundImage, pixelsToRems } from 'styles/mixins';
+import {
+  flexCenter,
+  buttonResets,
+  backgroundImage,
+  pixelsToRems,
+} from 'styles/mixins';
 import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
 import { tabletAndAbove } from 'styles/breakpoints';
@@ -32,9 +44,7 @@ const Header = () => {
           $isOpen={isNavOpen}
           onClick={() => setIsNavOpen((isOpen) => !isOpen)}
         />
-        <Logo to="/core">
-          TempleDAO
-        </Logo>
+        <Logo to="/core">TempleDAO</Logo>
       </MobileNavLeft>
       <Navigation
         isNavOpenMobile={isNavOpen}
@@ -58,10 +68,13 @@ interface NavigationProps {
 const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
   const [selectorPosition, setSelectorPosition] = useState(0);
 
-  const onMenuItemActive = useCallback((offsetX: number) => {
-    const centerSelectorPostion = offsetX - (SELECTOR_WIDTH / 2);
-    setSelectorPosition(centerSelectorPostion);
-  }, [setSelectorPosition]);
+  const onMenuItemActive = useCallback(
+    (offsetX: number) => {
+      const centerSelectorPostion = offsetX - SELECTOR_WIDTH / 2;
+      setSelectorPosition(centerSelectorPostion);
+    },
+    [setSelectorPosition]
+  );
 
   return (
     <NavWrapper $isOpen={isNavOpenMobile}>
@@ -133,19 +146,14 @@ const MenuItem: FC<MenuItemProps> = ({
 
     const domNode = menuItemRef.current;
     const clientRect = domNode.getBoundingClientRect();
-    const centerOffsetLeft = domNode.offsetLeft + (clientRect.width / 2);
+    const centerOffsetLeft = domNode.offsetLeft + clientRect.width / 2;
 
     onMenuItemActive(centerOffsetLeft);
   }, [match, onMenuItemActive, menuItemRef]);
 
   return (
     <li>
-      <NavLink
-        ref={menuItemRef}
-        to={to}
-        $active={!!match}
-        onClick={onClick}
-      >
+      <NavLink ref={menuItemRef} to={to} $active={!!match} onClick={onClick}>
         {children}
       </NavLink>
     </li>
@@ -164,9 +172,12 @@ const COLOR_NAV_BACKGROUND_GRADIENT_END = '#1D1A1A';
 
 const HamburgerBun = styled.button<{ $isOpen: boolean }>`
   ${buttonResets}
-  ${({ $isOpen }) => backgroundImage($isOpen ? hamburgerX : hamburger, { position: 'left center' })}
-  width: ${({ $isOpen }) => $isOpen ? 1.3125 : 1.3125}rem;
-  height: ${({ $isOpen }) => $isOpen ? 1 : 0.875}rem;
+  ${({ $isOpen }) =>
+    backgroundImage($isOpen ? hamburgerX : hamburger, {
+      position: 'left center',
+    })}
+  width: ${({ $isOpen }) => ($isOpen ? 1.3125 : 1.3125)}rem;
+  height: ${({ $isOpen }) => ($isOpen ? 1 : 0.875)}rem;
   margin-right: 1.125rem;
 
   ${tabletAndAbove(`
@@ -229,13 +240,14 @@ const Selector = styled.span<{ $position: number }>`
   transition: transform 250ms ease-in-out;
   transform: translate(${({ $position }) => pixelsToRems($position)}rem, 50%);
 
-  ${({ $position }) => tabletAndAbove(`
+  ${({ $position }) =>
+    tabletAndAbove(`
     display: ${$position ? 'block' : 'none'};
   `)}
 `;
 
 const NavWrapper = styled.nav<{ $isOpen: boolean }>`
-  display: ${({ $isOpen }) => $isOpen ? 'flex' : 'none'};
+  display: ${({ $isOpen }) => ($isOpen ? 'flex' : 'none')};
   position: fixed;
   top: ${pixelsToRems(NAV_MOBILE_HEIGHT_PIXELS)}rem;
   left: 0;
@@ -314,15 +326,18 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   font-weight: normal;
   transition: all 150ms ease-in;
 
-  color: ${({ theme, $active }) => $active ? theme.palette.brandLight : theme.palette.brand};
-  text-shadow: ${({ $active }) => $active ? COLOR_NAV_SHADOW_MOBILE : 'none'};
+  color: ${({ theme, $active }) =>
+    $active ? theme.palette.brandLight : theme.palette.brand};
+  text-shadow: ${({ $active }) => ($active ? COLOR_NAV_SHADOW_MOBILE : 'none')};
 
   &:hover {
     color: ${theme.palette.brandLight};
-    text-shadow: ${({ $active }) => $active ? COLOR_NAV_SHADOW_MOBILE : 'none'};
+    text-shadow: ${({ $active }) =>
+      $active ? COLOR_NAV_SHADOW_MOBILE : 'none'};
   }
 
-  ${({ $active }) => tabletAndAbove(`
+  ${({ $active }) =>
+    tabletAndAbove(`
     font-size: 1rem;
     line-height: 1.25rem;
     font-weight: bold;
