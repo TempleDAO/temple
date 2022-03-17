@@ -1,9 +1,9 @@
 import { SelectedGlow } from './SelectedGlow';
 import { OuterRingTickmarks } from './OuterRingTickmarks';
-import { Entry, Vault } from '../types';
+import { VaultPage } from '../types';
 
 type Props = {
-  selected: number;
+  selected?: VaultPage;
 };
 
 export const OuterRing = ({ selected }: Props) => {
