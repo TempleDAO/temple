@@ -8,7 +8,7 @@ import { useFaith } from 'providers/FaithProvider';
  * Load new data for the connected wallet
  */
 export const useRefreshWalletState = () => {
-  const { updateTemplePrice } = useSwap();
+  const { updateTemplePrice, updateIv } = useSwap();
   const { updateFaith } = useFaith();
   const {
     isConnected,
@@ -34,6 +34,7 @@ export const useRefreshWalletState = () => {
         updateLockedEntries(),
         updateExitQueueData(),
         updateApy(),
+        updateIv(),
       ]);
     } catch (e) {
       console.error('Failed to refresh wallet state', e);
