@@ -3,8 +3,10 @@
 import React from 'react';
 import { useRotationAngle } from '../useRotationAngle';
 
+import { VaultPage } from '../types';
+
 type Props = {
-  selected: number;
+  selected?: VaultPage;
 };
 
 export const SelectedGlow = ({ selected }: Props) => {
