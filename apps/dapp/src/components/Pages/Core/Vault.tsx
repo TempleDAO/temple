@@ -8,7 +8,7 @@ import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Vault } from 'components/Vault/types';
 
 const VaultPage = () => {
-  const vaultData:Vault = {
+  const vaultData: Vault = {
     id: 'abc',
     months: 3,
     now: new Date('6/15/22'),
