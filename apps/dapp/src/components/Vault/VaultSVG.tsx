@@ -87,7 +87,7 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
 // TODO Long Term: SVG should have a "circular hole" in it so
 // we can simply layer things correctly.
 const ForeignObject = styled.foreignObject`
-  border-radius: 260px;
+  border-radius: 50%;
 `;
 
 const BoundingBox = styled.div`
