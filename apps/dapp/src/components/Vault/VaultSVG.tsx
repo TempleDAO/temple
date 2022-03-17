@@ -1,5 +1,6 @@
 import { useRef, useState, PropsWithChildren, ReactNode } from 'react';
 import styled from 'styled-components';
+
 import { Definitions } from './parts/Definitions';
 import { Background } from './parts/Background';
 import { InnerRing } from './parts/InnerRing';
@@ -11,6 +12,7 @@ import { processData } from './parts/utils';
 import { RingButtons } from './parts/RingButtons';
 import { Timeline } from './parts/timeline/Timeline';
 import { pixelsToRems } from 'styles/mixins';
+import { NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
 
 type Props = {
   data: Vault;
@@ -81,8 +83,9 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
 };
 
 const BoundingBox = styled.div`
-  height: 100vh;
-  display: inline-flex;
+  height: calc(100vh - ${NAV_DESKTOP_HEIGHT_PIXELS}px);
+  display: flex;
+  margin: 0 auto;
   flex-direction: column;
   position: relative;
 `;
