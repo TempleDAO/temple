@@ -1,12 +1,14 @@
 import React, { createContext, useContext, PropsWithChildren } from 'react';
 import { ethers, ContractTransaction, BigNumber } from 'ethers';
 import axios from 'axios';
-import { useWallet } from './WalletProvider';
+import { signERC2612Permit } from 'eth-permit';
+import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { toAtto } from 'utils/bigNumber';
 import { asyncNoop } from 'utils/helpers';
 import { ZapService } from 'providers/types';
+import { create0xQuoteUrl, createZapperTokenBalanceUrl } from 'utils/url';
 import {
   TempleZaps,
   FakeERC20,
@@ -65,8 +67,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       tokenSymbol === TICKER_SYMBOL.UNI
     ) {
       tx = await zapWithPermit(
-        signer,
-        wallet,
         TEMPLE_ZAPS,
         tokenContract,
         tokenSymbol,

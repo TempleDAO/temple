@@ -1,8 +1,8 @@
 const ENV_VARS = import.meta.env;
 
 export const createDiscordUserUrl = (userId: string) => {
-  return `${ENV_VARS.BACKEND_URL}/api/discord/members/${userId}`
-}
+  return `${ENV_VARS.BACKEND_URL}/api/discord/members/${userId}`;
+};
 
 export const createDiscordAuthUrl = () => {
   const params = new URLSearchParams({
@@ -12,4 +12,12 @@ export const createDiscordAuthUrl = () => {
     scope: 'identify',
   });
   return `https://discord.com/oauth2/authorize?${params.toString()}`;
-}
+};
+
+export const create0xQuoteUrl = (sellToken: string, sellAmount: string) => {
+  return `https://api.0x.org/swap/v1/quote?sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS}`;
+};
+
+export const createZapperTokenBalanceUrl = (walletAddress: string) => {
+  return `https://api.zapper.fi/v1/protocols/tokens/balances?addresses[]=${walletAddress}&api_key=${ENV_VARS.VITE_PUBLIC_ZAPPER_API_KEY}`;
+};
