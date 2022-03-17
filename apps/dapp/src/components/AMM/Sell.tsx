@@ -29,7 +29,7 @@ const ENV_VARS = import.meta.env;
 
 export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const { balance, getBalance, updateBalance } = useWallet();
-  const { sell, getSellQuote, templePrice } = useSwap();
+  const { sell, getSellQuote, templePrice, iv } = useSwap();
 
   const [stableCoinWalletAmount, setStableCoinWalletAmount] =
     useState<number>(0);
@@ -60,8 +60,13 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         // ( 'current price' * 'FRAX sacrificing' )  * (1 - SlippageSetting )
         const minAmountOut = templeAmount * templePrice * (1 - slippage / 100);
         setMinAmountOut(minAmountOut);
-        if (minAmountOut <= rewards) {
-          await sell(toAtto(templeAmount), toAtto(minAmountOut));
+
+        const sellQuote = await getSellQuote(toAtto(templeAmount));
+
+        const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
+
+        if (minAmountOut <= rewards || isIvSwap) {
+          await sell(toAtto(templeAmount), toAtto(minAmountOut), isIvSwap);
           getBalance();
           handleUpdateTempleAmount(0);
         }

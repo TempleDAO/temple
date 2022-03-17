@@ -19,12 +19,14 @@ import {
   TempleERC20Token__factory,
   TempleFraxAMMRouter__factory,
   TempleUniswapV2Pair__factory,
+  TempleIVSwap__factory,
 } from 'types/typechain';
 import {
   TEMPLE_ADDRESS,
   STABLE_COIN_ADDRESS,
   TEMPLE_V2_ROUTER_ADDRESS,
   TEMPLE_V2_PAIR_ADDRESS,
+  TEMPLE_IV_SWAP_ADDRESS,
   VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT,
   VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT,
 } from 'providers/env';
@@ -34,17 +36,20 @@ const DEADLINE = 20 * 60;
 
 const INITIAL_STATE: SwapService = {
   templePrice: 0,
+  iv: 0,
   buy: asyncNoop,
   sell: asyncNoop,
   getSellQuote: asyncNoop,
   getBuyQuote: asyncNoop,
   updateTemplePrice: asyncNoop,
+  updateIv: asyncNoop,
 };
 
 const SwapContext = createContext(INITIAL_STATE);
 
 export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const [templePrice, setTemplePrice] = useState(INITIAL_STATE.templePrice);
+  const [iv, setIv] = useState(INITIAL_STATE.iv);
 
   const { wallet, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
@@ -73,6 +78,28 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
     const price = await getTemplePrice(wallet, signer);
     setTemplePrice(price);
+  };
+
+  const getIv = async (walletAddress: string, signerState: JsonRpcSigner) => {
+    if (!walletAddress) {
+      throw new NoWalletAddressError();
+    }
+
+    const TEMPLE_IV_SWAP = new TempleIVSwap__factory(signerState).attach(
+      TEMPLE_IV_SWAP_ADDRESS
+    );
+
+    const { frax, temple } = await TEMPLE_IV_SWAP.iv();
+    return fromAtto(frax) / fromAtto(temple);
+  };
+
+  const updateIv = async () => {
+    if (!wallet || !signer) {
+      return;
+    }
+
+    const iv = await getIv(wallet, signer);
+    setIv(iv);
   };
 
   const buy = async (
@@ -126,10 +153,12 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
    * AMM Sell
    * @param amountInTemple: Amount of $TEMPLE user wants to sell
    * @param minAmountOutFrax: % user is giving as slippage
+   * @param isIvSwap: should sale be directed to TempleIvSwap contract
    */
   const sell = async (
     amountInTemple: BigNumber,
-    minAmountOutFrax: BigNumber
+    minAmountOutFrax: BigNumber,
+    isIvSwap = false
   ) => {
     if (wallet && signer) {
       const AMM_ROUTER = new TempleFraxAMMRouter__factory(signer).attach(
@@ -139,10 +168,14 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         TEMPLE_ADDRESS
       );
 
+      const TEMPLE_IV_SWAP = new TempleIVSwap__factory(signer).attach(
+        TEMPLE_IV_SWAP_ADDRESS
+      );
+
       await ensureAllowance(
         TICKER_SYMBOL.TEMPLE_TOKEN,
         TEMPLE,
-        TEMPLE_V2_ROUTER_ADDRESS,
+        isIvSwap ? TEMPLE_IV_SWAP_ADDRESS : TEMPLE_V2_ROUTER_ADDRESS,
         amountInTemple
       );
 
@@ -156,21 +189,32 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         0
       );
 
-      const sellTXN = await AMM_ROUTER.swapExactTempleForFrax(
-        verifiedAmountInTemple,
-        minAmountOutFrax,
-        wallet,
-        deadline,
-        {
-          gasLimit: VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
-        }
-      );
-      await sellTXN.wait();
+      let sellTx;
+
+      if (isIvSwap) {
+        sellTx = await TEMPLE_IV_SWAP.swapTempleForIV(
+          verifiedAmountInTemple,
+          wallet,
+          deadline
+        );
+      } else {
+        sellTx = await AMM_ROUTER.swapExactTempleForFrax(
+          verifiedAmountInTemple,
+          minAmountOutFrax,
+          wallet,
+          deadline,
+          {
+            gasLimit: VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
+          }
+        );
+      }
+
+      await sellTx.wait();
 
       // Show feedback to user
       openNotification({
         title: `${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
-        hash: sellTXN.hash,
+        hash: sellTx.hash,
       });
     }
   };
@@ -208,11 +252,13 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     <SwapContext.Provider
       value={{
         templePrice,
+        iv,
         buy,
         sell,
         getBuyQuote,
         getSellQuote,
         updateTemplePrice,
+        updateIv,
       }}
     >
       {props.children}
