@@ -25,7 +25,6 @@ const GlobalStyleOverride = createGlobalStyle`
   }
 `;
 
-
 const Main = styled.main`
   max-width: ${({ theme }) => theme.metrics.desktop.maxWidth};
   margin: 0 auto;
