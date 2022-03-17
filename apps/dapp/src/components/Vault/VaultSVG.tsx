@@ -64,9 +64,9 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
           <RingButtons selected={selectedNav} setSelected={setSelectedNav} />
           <Timeline data={vault} onMarkerClick={markerClick} />
           <InnerRing selected={selectedNav} />
-          <foreignObject x="239.5" y="239.5" width="520" height="520">
+          <ForeignObject x="239.5" y="239.5" width="520" height="520">
             <Content>{child}</Content>
-          </foreignObject>
+          </ForeignObject>
           <Definitions />
           {selectedEntry && (
             <MarkerBubble
@@ -81,6 +81,14 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
     </>
   );
 };
+
+// Need to 'trim' the corners on this square
+// otherwise the corners cover some of the ring buttons.
+// TODO Long Term: SVG should have a "circular hole" in it so
+// we can simply layer things correctly.
+const ForeignObject = styled.foreignObject`
+  border-radius: 260px;
+`;
 
 const BoundingBox = styled.div`
   height: calc(100vh - ${NAV_DESKTOP_HEIGHT_PIXELS}px);
