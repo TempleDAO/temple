@@ -12,7 +12,7 @@ export const processData = (originalData: Vault) => {
     entry.entryDate = new Date(entry.entryDate as Date);
     entry.percent = calculatePercent(entry, data);
     entry.inZone = calculateInZone(entry, data);
-    entry.type = calculateEntryType(entry, data);
+    entry.type = calculateEntryType(entry);
     return entry;
   });
 

@@ -22,13 +22,6 @@ export type Point = {
   y: number;
 };
 
-export type Box = {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-};
-
 export enum MarkerType {
   EMPTY,
   STAKING,

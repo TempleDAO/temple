@@ -1,16 +1,16 @@
-import { useRef, useState, PropsWithChildren } from 'react';
+import { useRef, useState, PropsWithChildren, ReactNode } from 'react';
 import styled from 'styled-components';
 import { Definitions } from './parts/Definitions';
 import { Background } from './parts/Background';
 import { InnerRing } from './parts/InnerRing';
 import { OuterRing } from './parts/OuterRing';
 import { MarkerBubble } from './parts/MarkerBubble';
-import { useContentBox } from './useContentBox';
 import { useOutsideClick } from '../../hooks/useOutsideClick';
-import { Box, Entry, Point, Vault } from './types';
+import { Entry, Point, Vault } from './types';
 import { processData } from './parts/utils';
 import { RingButtons } from './parts/RingButtons';
 import { Timeline } from './parts/timeline/Timeline';
+import { pixelsToRems } from 'styles/mixins';
 
 type Props = {
   data: Vault;
@@ -22,7 +22,7 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
   const [selectedNav, setSelectedNav] = useState<number>(3);
   const [selectedEntry, setSelectedEntry] = useState<Entry>();
   const [markerPosition, setMarkerPosition] = useState<Point>({ x: 0, y: 0 });
-  const box = useContentBox(svgRef);
+
   useOutsideClick(popupRef, () => {
     setSelectedEntry(undefined);
   });
@@ -47,8 +47,7 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
   };
 
   const child = children ? (
-    // @ts-ignore
-    children[selectedNav - 1]
+    (children as ReactNode[])[selectedNav - 1]
   ) : (
     <div>ERROR: Bad Nav</div>
   );
@@ -57,14 +56,15 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
   return (
     <>
       <BoundingBox>
-        {/* @ts-ignore */}
-        <Content {...box}>{child}</Content>
         <svg height="100%" viewBox="0 0 1000 1000" fill="none" ref={svgRef}>
           <Background />
           <OuterRing selected={selectedNav} />
           <RingButtons selected={selectedNav} setSelected={setSelectedNav} />
           <Timeline data={vault} onMarkerClick={markerClick} />
           <InnerRing selected={selectedNav} />
+          <foreignObject x="239.5" y="239.5" width="520" height="520">
+            <Content>{child}</Content>
+          </foreignObject>
           <Definitions />
           {selectedEntry && (
             <MarkerBubble
@@ -81,7 +81,6 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
 };
 
 const BoundingBox = styled.div`
-  // border: 1px solid red;
   height: 100vh;
   display: inline-flex;
   flex-direction: column;
@@ -89,16 +88,10 @@ const BoundingBox = styled.div`
 `;
 
 const Content = styled.div`
-  // border: 1px solid red;
-  position: absolute;
-  border-radius: 15.625rem; // 250 /16
-  left: ${(props: Box) => props.left / 16 + 'rem'};
-  top: ${(props: Box) => props.top / 16 + 'rem'};
-  width: ${(props: Box) => props.width / 16 + 'rem'};
-  height: ${(props: Box) => props.height / 16 + 'rem'};
-  overflow: hidden;
-
   display: flex;
+  height: 100%;
+  border-radius: ${pixelsToRems(260)}rem;
+  overflow: hidden;
   justify-content: center;
-  padding-top: 0.625rem; // 10/16
+  padding-top: ${pixelsToRems(10)}rem;
 `;
