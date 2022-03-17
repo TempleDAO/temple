@@ -1,4 +1,3 @@
-import React from 'React';
 import styled from 'styled-components';
 import { Claim } from './VaultPages/Claim';
 import { Stake } from './VaultPages/Stake';
