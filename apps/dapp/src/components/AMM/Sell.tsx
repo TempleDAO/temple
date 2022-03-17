@@ -65,7 +65,9 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
         const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
 
-        console.log('sellQuote', sellQuote);
+        !!sellQuote && console.log('sellQuote', fromAtto(sellQuote));
+        console.log('templeAmount', templeAmount);
+        console.log('iv', iv);
         console.log('ivQuote', templeAmount * iv);
         console.log('isIvSwap', isIvSwap);
 
