@@ -9,43 +9,27 @@ import Header, { NAV_MOBILE_HEIGHT_PIXELS } from './Header';
 const CoreLayout = () => (
   <>
     <GlobalStyleOverride />
-    <AppContainer>
-      <Header />
-      <Main>
-        <Outlet />
-      </Main>
-    </AppContainer>
+    <Header />
+    <Main>
+      <Outlet />
+    </Main>
   </>
 );
 
 export default CoreLayout;
 
 const GlobalStyleOverride = createGlobalStyle`
-html, body {
-   height: 100%;
-   height: -webkit-fill-available;
-    margin: 0;
-    padding: 0;
+  html, body {
+    min-height: 100vh;
+    min-width: 100vw;
   }
 `;
 
-const AppContainer = styled.div`
-  // border: 1px dashed white;
-  display: flex;
-  flex-direction: column;
-  // align-items: center;
-  height: 100vh;
-`;
+
 const Main = styled.main`
-  // border: 1px solid blue;
-  display: flex;
-  flex-grow: 1;
-  align-self: center;
-  align-items: stretch;
-  min-width: ${({ theme }) => theme.metrics.desktop.minWidth};
   max-width: ${({ theme }) => theme.metrics.desktop.maxWidth};
-  height: 100vh;
-  justify-content: center;
+  margin: 0 auto;
+  padding: ${pixelsToRems(NAV_MOBILE_HEIGHT_PIXELS)}rem 1.75rem 1.75rem;
 
   ${tabletAndAbove(`
     padding: 0 1.75rem;
