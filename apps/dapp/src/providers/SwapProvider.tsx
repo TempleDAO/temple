@@ -197,6 +197,8 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
           wallet,
           deadline
         );
+
+        console.log('IV_SWAP');
       } else {
         sellTx = await AMM_ROUTER.swapExactTempleForFrax(
           verifiedAmountInTemple,
@@ -207,6 +209,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
             gasLimit: VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
           }
         );
+        console.log('AMM_SWAP');
       }
 
       await sellTx.wait();
