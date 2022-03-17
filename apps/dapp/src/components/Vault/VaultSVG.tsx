@@ -71,7 +71,7 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
       <BoundingBox>
         <svg height="100%" viewBox="0 0 1000 1000" fill="none" ref={svgRef}>
           <Background />
-          <OuterRing selected={0} />
+          <OuterRing selected={selectedNav} />
           <RingButtons
             selected={selectedNav}
             onClickButton={(page) => {
