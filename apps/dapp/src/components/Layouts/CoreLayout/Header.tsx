@@ -154,6 +154,7 @@ const MenuItem: FC<MenuItemProps> = ({
 
 const SELECTOR_WIDTH = 23; // pixels
 export const NAV_MOBILE_HEIGHT_PIXELS = 52; // pixels
+export const NAV_DESKTOP_HEIGHT_PIXELS = 68; // pixels
 
 // Component Colors
 const COLOR_NAV_SHADOW_DESKTOP = '0px 0px 0.3125rem rgba(222, 92, 6, 0.5)';
@@ -193,6 +194,7 @@ const Wrapper = styled.header`
   z-index: ${({ theme }) => theme.zIndexes.top};
 
   ${tabletAndAbove(`
+    height: ${pixelsToRems(NAV_DESKTOP_HEIGHT_PIXELS)}rem;
     position: relative;
     height: auto;
     background: linear-gradient(180deg, ${COLOR_NAV_BACKGROUND_GRADIENT_START} 0%, ${COLOR_NAV_BACKGROUND_GRADIENT_END} 100%);

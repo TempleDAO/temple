@@ -1,4 +1,5 @@
-// import { VaultSVG } from "components/Vault/VaultSVG";
+import React from 'React';
+import styled from 'styled-components';
 import { Claim } from './VaultPages/Claim';
 import { Stake } from './VaultPages/Stake';
 import { Summary } from './VaultPages/Summary';
@@ -28,14 +29,20 @@ const VaultPage = () => {
   };
 
   return (
-    <VaultSVG data={vaultData}>
-      <Claim />
-      <Stake />
-      <Summary />
-      <Strategy />
-      <Timing />
-    </VaultSVG>
+    <Wrapper>
+      <VaultSVG data={vaultData}>
+        <Claim />
+        <Stake />
+        <Summary />
+        <Strategy />
+        <Timing />
+      </VaultSVG>
+    </Wrapper>
   );
 };
+
+const Wrapper = styled.div`
+  display: flex;
+`;
 
 export default VaultPage;
