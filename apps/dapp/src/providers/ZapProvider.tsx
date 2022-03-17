@@ -38,7 +38,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     tokenAmount: number,
     minTempleReceived: BigNumber
   ) => {
-    if (!signer || wallet) {
+    if (!signer || !wallet) {
       console.error('Missing wallet address and/or signer', wallet, signer);
       return;
     }
@@ -131,7 +131,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     minTempleReceived: BigNumber,
     swapCallData: string
   ) => {
-    if (!signer || wallet) {
+    if (!signer || !wallet) {
       console.error('Missing wallet address and/or signer', wallet, signer);
       return;
     }
