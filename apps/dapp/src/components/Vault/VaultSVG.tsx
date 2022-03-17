@@ -1,5 +1,6 @@
-import { useRef, useState, PropsWithChildren, ReactNode } from 'react';
+import { useRef, useState, PropsWithChildren, useEffect } from 'react';
 import styled from 'styled-components';
+import { useLocation, useNavigate, useResolvedPath } from 'react-router-dom';
 
 import { Definitions } from './parts/Definitions';
 import { Background } from './parts/Background';
@@ -7,21 +8,38 @@ import { InnerRing } from './parts/InnerRing';
 import { OuterRing } from './parts/OuterRing';
 import { MarkerBubble } from './parts/MarkerBubble';
 import { useOutsideClick } from '../../hooks/useOutsideClick';
-import { Entry, Point, Vault } from './types';
+import { Entry, Point, Vault, VaultPage } from './types';
 import { processData } from './parts/utils';
 import { RingButtons } from './parts/RingButtons';
 import { Timeline } from './parts/timeline/Timeline';
 import { pixelsToRems } from 'styles/mixins';
 import { NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
+import { Maybe } from 'types/util';
 
 type Props = {
   data: Vault;
 };
 
+const VAULT_PAGES: VaultPage[] = ['claim', 'stake', 'summary', 'strategy', 'timing'];
+
+const useSelectedVaultPage = (): Maybe<VaultPage> => {
+  const { pathname } = useLocation();
+  const pageName = VAULT_PAGES.find((page) => pathname.endsWith(page));
+
+  useEffect(() => {
+    if (!pageName) {
+      console.error('Programming Error: Invalid page name')
+    }
+  }, [pageName]);
+
+  return pageName;
+};
+
 export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
+  const navigate = useNavigate();
+  const selectedNav = useSelectedVaultPage();
   const svgRef = useRef<SVGSVGElement>(null);
   const popupRef = useRef(null);
-  const [selectedNav, setSelectedNav] = useState<number>(3);
   const [selectedEntry, setSelectedEntry] = useState<Entry>();
   const [markerPosition, setMarkerPosition] = useState<Point>({ x: 0, y: 0 });
   useOutsideClick(popupRef, () => {
@@ -47,25 +65,24 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
     setSelectedEntry(entryData);
   };
 
-  const child = children ? (
-    (children as ReactNode[])[selectedNav - 1]
-  ) : (
-    <div>ERROR: Bad Nav</div>
-  );
-
   const vault = processData(data);
   return (
     <>
       <BoundingBox>
         <svg height="100%" viewBox="0 0 1000 1000" fill="none" ref={svgRef}>
           <Background />
-          <OuterRing selected={selectedNav} />
-          <RingButtons selected={selectedNav} setSelected={setSelectedNav} />
+          <OuterRing selected={0} />
+          <RingButtons
+            selected={selectedNav}
+            onClickButton={(page) => {
+              navigate(`/core/vaults/${data.id}/${page}`);
+            }}
+          />
           <Timeline data={vault} onMarkerClick={markerClick} />
           <InnerRing selected={selectedNav} />
-          <ForeignObject x="239.5" y="239.5" width="520" height="520">
-            <Content>{child}</Content>
-          </ForeignObject>
+          <foreignObject x="239.5" y="239.5" width="520" height="520">
+            <Content>{children}</Content>
+          </foreignObject>
           <Definitions />
           {selectedEntry && (
             <MarkerBubble

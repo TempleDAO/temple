@@ -17,6 +17,12 @@ import Disclaimer from 'components/Pages/Disclaimer';
 import CoreLayout from 'components/Layouts/CoreLayout';
 import AnalyticsPage from 'components/Pages/Core/Analytics';
 import VaultPage from 'components/Pages/Core/Vault';
+import VaultListPage from 'components/Pages/Core/VaultList';
+import { Claim as VaultClaim } from 'components/Pages/Core/VaultPages/Claim';
+import { Stake } from 'components/Pages/Core/VaultPages/Stake';
+import { Summary } from 'components/Pages/Core/VaultPages/Summary';
+import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
+import { Timing } from 'components/Pages/Core/VaultPages/Timing';
 
 // Separate Chunks
 const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
@@ -62,7 +68,14 @@ ReactDOM.render(
           <>
             <Route path="/core/*" element={<CoreLayout />}>
               <Route path="" element={'Home'} />
-              <Route path="vaults/*" element={<VaultPage/>} />
+              <Route path="vaults" element={<VaultListPage />} />
+              <Route path="vaults/:vaultId/*" element={<VaultPage />}>
+                <Route path="claim" element={<VaultClaim />} />
+                <Route path="stake" element={<Stake />} />
+                <Route path="summary" element={<Summary />} />
+                <Route path="strategy" element={<Strategy />} />
+                <Route path="timing" element={<Timing />} />
+              </Route>
               <Route path="trade" element={'Trade'} />
               <Route path="profile" element={'Profile'} />
               <Route path="analytics" element={<AnalyticsPage />} />

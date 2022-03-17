@@ -1,8 +1,12 @@
-import React from 'react';
 import { useRotationAngle } from '../useRotationAngle';
 import { Selector } from './Selector';
+import { VaultPage } from '../types';
 
-export const InnerRing = ({ selected }: { selected: number }) => {
+interface Props {
+  selected?: VaultPage;
+}
+
+export const InnerRing = ({ selected }: Props) => {
   const [angle, prevAngle, duration, ref] = useRotationAngle(selected);
   const transform = `rotate(${angle} 502.066 502.066)`;
 
