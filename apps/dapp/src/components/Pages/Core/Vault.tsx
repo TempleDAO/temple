@@ -54,7 +54,7 @@ const VaultPage = () => {
   return (
     <Wrapper>
       <VaultSVG data={data}>
-        <Outlet context={{ vault: data }} />
+        <Outlet />
       </VaultSVG>
     </Wrapper>
   );

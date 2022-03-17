@@ -28,7 +28,7 @@ const useSelectedVaultPage = (): Maybe<VaultPage> => {
 
   useEffect(() => {
     if (!pageName) {
-      console.error('Programming Error: Invalid page name')
+      console.error('Programming Error: Invalid page name');
     }
   }, [pageName]);
 
