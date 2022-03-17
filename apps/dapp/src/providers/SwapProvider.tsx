@@ -90,6 +90,8 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     );
 
     const { frax, temple } = await TEMPLE_IV_SWAP.iv();
+    console.log('frax', fromAtto(frax));
+    console.log('temple', fromAtto(temple));
     return fromAtto(frax) / fromAtto(temple);
   };
 
