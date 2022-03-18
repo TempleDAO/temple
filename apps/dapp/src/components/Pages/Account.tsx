@@ -8,10 +8,10 @@ import { FlexStyled } from 'components/Layout/Flex';
 import ProfileHeader from 'components/ProfileHeader/ProfileHeader';
 import ProfileMetric from 'components/ProfileMetric/ProfileMetric';
 import withWallet from 'hoc/withWallet';
+import { useFaith } from 'providers/FaithProvider';
 import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import useFetchStoreDiscordUser from 'hooks/use-fetch-store-discord-user';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
-import { useWallet } from 'providers/WalletProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import styled from 'styled-components';
 import { formatNumberWithCommas } from 'utils/formatter';
@@ -33,7 +33,7 @@ const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL;
 const Account = ({ routingHelper }: CustomRoutingPageProps) => {
   const { back } = routingHelper;
 
-  const { faith } = useWallet();
+  const { faith } = useFaith();
   const [discordData, setDiscordData] = useState<DiscordUser>();
   const discordId = useFetchStoreDiscordUser();
   const accountMetrics = useRefreshableAccountMetrics();

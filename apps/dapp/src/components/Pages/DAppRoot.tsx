@@ -1,13 +1,13 @@
 import React, { FC, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
+import styled from 'styled-components';
 import MetamaskButton from 'components/Button/MetamaskButton';
 import DevotionCTA from 'components/Accessories/DevotionCTA';
-import styled from 'styled-components';
-import BgImage from 'assets/images/dapp-bg.svg';
 import { DApp } from 'components/DApp/DApp';
 import { Analytics } from 'components/DApp/Analytics';
 import { NavContext } from 'components/DApp/NavContext';
 import { DAppView } from 'enums/dapp-view';
+import BgImage from 'assets/images/dapp-bg.svg';
 
 interface SizeProps {
   small?: boolean;
