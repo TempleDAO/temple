@@ -42,7 +42,7 @@ const Timing = () => {
                   {vault.currentCycle || 0}
                 </Cell>
                 <Cell $icon={entry.inZone ? 'claim' : undefined} $align="center">
-                  {entry.inZone ? 'Yes' : 'No'}
+                  {entry.inZone ? 'YES' : 'NO'}
                 </Cell>
               </Row>
             ))}

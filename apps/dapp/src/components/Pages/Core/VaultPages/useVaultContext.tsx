@@ -1,4 +1,3 @@
-
 import { useOutletContext } from 'react-router-dom';
 
 import { Vault } from 'components/Vault/types';
