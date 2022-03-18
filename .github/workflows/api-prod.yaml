@@ -13,6 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: amondnet/vercel-action@v20
+        id: deploy_step
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }} # Required
           vercel-args: '--prod -A apps/api/vercel.json' #Optional
@@ -23,3 +24,22 @@ jobs:
           scope: ${{ secrets.VERCEL_ORG_ID }}
           alias-domains: | #Optional
             backend.templedao.link
+        continue-on-error: true
+      - name: "notify failure"
+        if: steps.deploy_step.outcome == 'failure'
+        uses: rjstone/discord-webhook-notify@v1
+        with:
+          severity: error
+          description: (Backend) PROD Deploy to Vercel failed!
+          details: Check the GH Action or Vercel logs for details.
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      - name: "fail"
+        if: steps.deploy_step.outcome == 'failure'
+        run: exit 1
+      - name: "notify success"
+        uses: rjstone/discord-webhook-notify@v1
+        with:
+          severity: info
+          description: (Backend) PROD Deploy to Vercel succeeded!
+          details: "[Prod Deployment URL](https://backend.templedao.link)"
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}

@@ -424,6 +424,7 @@ export class MetricsService {
   };
 
   private getSocialMetrics = async () => {
+
     const twitter_response = await axios({
       url: `${BACKEND_URL}/api/twitter/summary`,
     });
