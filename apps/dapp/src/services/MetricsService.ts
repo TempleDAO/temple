@@ -19,7 +19,6 @@ import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { fetchSubgraph } from 'utils/subgraph';
 import axios from 'axios';
-import { LockedOGTemple } from '../types/typechain/LockedOGTemple';
 
 export interface ProtocolMetrics {
   templeValue: number;
