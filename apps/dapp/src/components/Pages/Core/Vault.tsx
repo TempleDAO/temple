@@ -25,6 +25,7 @@ const vaultData: { [key: string]: Vault } = {
     months: 3,
     now: now,
     startDate: twoMonthsAgo,
+    currentCycle: 1, // zero index
     entries: [
       {
         id: 1,

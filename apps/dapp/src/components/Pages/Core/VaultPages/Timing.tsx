@@ -9,7 +9,7 @@ import useVaultContext from './useVaultContext';
 
 const Timing = () => {
   const vault = useVaultContext();
-
+  const vaultEndDate = getVaultEndDate(vault.startDate, vault.months);
   return (
     <Wrapper>
       <Header>Timing</Header>
@@ -41,10 +41,10 @@ const Timing = () => {
                   $T {entry.amount}
                 </Cell>
                 <Cell $align="center">
-                  {getHumanReadableCycle(vault.currentCycle)}
+                  {entry.entryDate ? getHumanReadableCycle(entry.entryDate, vaultEndDate, vault.months) : ''}
                 </Cell>
                 <Cell $icon={entry.inZone ? 'claim' : undefined} $align="center">
-                  {entry.inZone ? 'YES' : getVaultEndDate(vault.startDate, vault.months)}
+                  {entry.inZone ? 'YES' : getVaultClaimableFormatted(vaultEndDate)}
                 </Cell>
               </Row>
             ))}
@@ -58,13 +58,20 @@ const Timing = () => {
   );
 };
 
-const getVaultEndDate = (start: Date, numMonths: number) => {
-  const completionDate = new Date(start.getTime() + (numMonths * VAULT_MONTH_MILLISECONDS));
-  return formatDistance(Date.now(), completionDate);
-}
+const getVaultEndDate = (vaultStart: Date, numMonths: number) => {
+  return new Date(vaultStart.getTime() + (numMonths * VAULT_MONTH_MILLISECONDS));
+};
 
-const getHumanReadableCycle = (cycleIndex = 0) => {
-  const cycleNumber = cycleIndex + 1;
+const getVaultClaimableFormatted = (vaultEndDate: Date) => {
+  return formatDistance(Date.now(), vaultEndDate);
+};
+
+const getHumanReadableCycle = (entryDate: Date, vaultEndDate: Date, vaultDuration: number) => {
+  // TODO(MrFujisawa): How is this calculated?
+
+  let cycleNumber = 0;
+
+  cycleNumber = cycleNumber + 1;
   switch (cycleNumber) {
     case 1:
       return '1st';
