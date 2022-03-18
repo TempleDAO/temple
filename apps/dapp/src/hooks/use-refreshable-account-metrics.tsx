@@ -7,11 +7,11 @@ import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 
 export default function useRefreshableAccountMetrics() {
   const { wallet, balance } = useWallet();
+  const { exitQueueData } = useStaking();
   const [accountMetrics, setAccountMetrics] = useState<AccountMetrics | null>(
     null
   );
   const refreshWalletState = useRefreshWalletState();
-  const { exitQueueData } = useStaking();
 
   const metricsService = useMemo(() => new MetricsService(), []);
 
@@ -19,10 +19,33 @@ export default function useRefreshableAccountMetrics() {
     if (!wallet || !balance || !exitQueueData) {
       return;
     }
+
     const accountMetrics = await metricsService.getAccountMetrics(wallet);
     if (accountMetrics) {
+      const walletValue =
+        accountMetrics.templeBalance * accountMetrics.templeValue;
+      const exitQueueValue =
+        exitQueueData.totalTempleOwned * accountMetrics.templeValue;
+      const ogTempleWalletValue =
+        balance.ogTemple * accountMetrics.ogTemplePrice;
+      const lockedOGTempleValue =
+        balance.ogTempleLocked * accountMetrics.ogTemplePrice;
+      const netWorth =
+        lockedOGTempleValue +
+        walletValue +
+        ogTempleWalletValue +
+        exitQueueValue;
       setAccountMetrics({
         ...accountMetrics,
+        walletValue,
+        exitQueueTotal: exitQueueData.totalTempleOwned,
+        exitQueueValue,
+        ogTempleWallet: balance.ogTemple,
+        ogTempleWalletValue,
+        lockedOGTemple: balance.ogTempleLocked,
+        lockedOGTempleValue,
+        netWorth,
+        netWorthTemple: netWorth / accountMetrics.templeValue,
       });
     }
   }, [wallet, balance, exitQueueData, metricsService]);
