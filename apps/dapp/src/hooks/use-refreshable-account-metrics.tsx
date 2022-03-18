@@ -2,10 +2,12 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import useInterval from 'use-interval';
 import { MetricsService, AccountMetrics } from 'services/MetricsService';
 import { useWallet } from 'providers/WalletProvider';
+import { useStaking } from 'providers/StakingProvider';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 
 export default function useRefreshableAccountMetrics() {
-  const { wallet } = useWallet();
+  const { wallet, balance } = useWallet();
+  const { exitQueueData } = useStaking();
   const [accountMetrics, setAccountMetrics] = useState<AccountMetrics | null>(
     null
   );
