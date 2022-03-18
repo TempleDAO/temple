@@ -4,6 +4,7 @@ import { formatDistance } from 'date-fns';
 
 import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Table';
 
+import { VAULT_MONTH_MILLISECONDS } from '../../../../constants';
 import useVaultContext from './useVaultContext';
 
 const Timing = () => {
@@ -57,11 +58,8 @@ const Timing = () => {
   );
 };
 
-// The seconds are a constant defined in our contracts for what we consider a month.
-const MILLISECONDS_IN_MONTH = 2629800 * 1000;
-
 const getVaultEndDate = (start: Date, numMonths: number) => {
-  const completionDate = new Date(start.getTime() + (numMonths * MILLISECONDS_IN_MONTH));
+  const completionDate = new Date(start.getTime() + (numMonths * VAULT_MONTH_MILLISECONDS));
   return formatDistance(Date.now(), completionDate);
 }
 

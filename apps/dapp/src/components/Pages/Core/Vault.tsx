@@ -5,19 +5,23 @@ import styled from 'styled-components';
 import Loader from 'components/Loader/Loader';
 import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Vault } from 'components/Vault/types';
+import { VAULT_MONTH_MILLISECONDS } from '../../../constants';
 
 const oneDay = 1000 * 60 * 60 * 24;
 const now = new Date(Date.now());
+
+// Vault starts two months ago
+const twoMonthsAgo = new Date(now.getTime() - (VAULT_MONTH_MILLISECONDS * 2));
+
 const oneWeekAgo = new Date(now.getTime() - (oneDay * 7));
-const twoWeeksAgo = new Date(now.getTime() - (oneDay * 7 * 2));
-const yesterday = new Date(now.getTime() - (oneDay));
+const oneMonthAndOneWeek = new Date(now.getTime() - (VAULT_MONTH_MILLISECONDS + oneDay * 7));
 
 const vaultData: { [key: string]: Vault } = {
   abc: {
     id: 'abc',
     months: 3,
     now: now,
-    startDate: twoWeeksAgo,
+    startDate: twoMonthsAgo,
     entries: [
       {
         id: 1,
@@ -30,10 +34,10 @@ const vaultData: { [key: string]: Vault } = {
         amount: 2500,
       },
       {
-        id: 2,
-        entryDate: yesterday,
+        id: 3,
+        entryDate: oneMonthAndOneWeek,
         amount: 2500,
-      }
+      },
     ],
   },
 };
