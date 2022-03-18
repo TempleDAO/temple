@@ -1,6 +1,6 @@
+import React, { FC, useEffect, useState } from 'react';
 import { Input } from 'components/Input/Input';
 import { BigNumber } from 'ethers';
-import React, { FC, useEffect, useState } from 'react';
 import { formatNumber } from 'utils/formatter';
 import {
   ConvoFlowTitle,
@@ -12,8 +12,9 @@ import {
 import { copyBalance } from 'components/AMM/helpers/methods';
 import Slippage from 'components/Slippage/Slippage';
 import { Button } from 'components/Button/Button';
-import { STABLE_COIN_SYMBOL } from 'components/Pages/Rituals';
-import { TEMPLE_TOKEN, useWallet } from 'providers/WalletProvider';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { useWallet } from 'providers/WalletProvider';
+import { useSwap } from 'providers/SwapProvider';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
 
@@ -27,8 +28,8 @@ interface BuyProps extends SizeProps {
 const ENV_VARS = import.meta.env;
 
 export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
-  const { balance, getBalance, updateWallet, sell, getSellQuote, templePrice } =
-    useWallet();
+  const { balance, getBalance, updateBalance } = useWallet();
+  const { sell, getSellQuote, templePrice, iv, updateIv } = useSwap();
 
   const [stableCoinWalletAmount, setStableCoinWalletAmount] =
     useState<number>(0);
@@ -59,8 +60,13 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         // ( 'current price' * 'FRAX sacrificing' )  * (1 - SlippageSetting )
         const minAmountOut = templeAmount * templePrice * (1 - slippage / 100);
         setMinAmountOut(minAmountOut);
-        if (minAmountOut <= rewards) {
-          await sell(toAtto(templeAmount), toAtto(minAmountOut));
+
+        const sellQuote = await getSellQuote(toAtto(templeAmount));
+
+        const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
+
+        if (minAmountOut <= rewards || isIvSwap) {
+          await sell(toAtto(templeAmount), toAtto(minAmountOut), isIvSwap);
           getBalance();
           handleUpdateTempleAmount(0);
         }
@@ -79,7 +85,8 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await updateWallet();
+      await updateBalance();
+      await updateIv();
       setRewards('');
       setMinAmountOut(0);
     }
@@ -100,7 +107,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         onHintClick={() =>
           copyBalance(templeWalletAmount, handleUpdateTempleAmount)
         }
-        crypto={{ kind: 'value', value: TEMPLE_TOKEN }}
+        crypto={{ kind: 'value', value: TICKER_SYMBOL.TEMPLE_TOKEN }}
         max={templeWalletAmount}
         min={0}
         value={templeAmount}
@@ -117,7 +124,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       <Input
         small={small}
         hint={`Balance: ${formatNumber(stableCoinWalletAmount)}`}
-        crypto={{ kind: 'value', value: STABLE_COIN_SYMBOL }}
+        crypto={{ kind: 'value', value: TICKER_SYMBOL.STABLE_TOKEN }}
         isNumber
         value={formatNumber(rewards as number)}
         placeholder={'0.00'}
@@ -125,7 +132,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         pairBottom
       />
       <Slippage
-        label={`${TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
+        label={`${TICKER_SYMBOL.TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
         value={slippage}
         onChange={
           ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true'
@@ -142,7 +149,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
             : `${
                 small
                   ? 'EXCHANGE $TEMPLE FOR $FRAX'
-                  : `RENOUNCE YOUR ${TEMPLE_TOKEN}`
+                  : `RENOUNCE YOUR ${TICKER_SYMBOL.TEMPLE_TOKEN}`
               }`
         }
         isUppercase

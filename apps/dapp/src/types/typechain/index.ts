@@ -31,6 +31,7 @@ export type { TempleFraxAMMOps } from "./TempleFraxAMMOps";
 export type { ITempleTreasury } from "./ITempleTreasury";
 export type { ITempleTWAP } from "./ITempleTWAP";
 export type { TempleFraxAMMRouter } from "./TempleFraxAMMRouter";
+export type { TempleIVSwap } from "./TempleIVSwap";
 export type { TempleUniswapV2Pair } from "./TempleUniswapV2Pair";
 export type { AMMWhitelist } from "./AMMWhitelist";
 export type { AutoHarvestKeeper } from "./AutoHarvestKeeper";
@@ -90,6 +91,7 @@ export { TempleFraxAMMOps__factory } from "./factories/TempleFraxAMMOps__factory
 export { ITempleTreasury__factory } from "./factories/ITempleTreasury__factory";
 export { ITempleTWAP__factory } from "./factories/ITempleTWAP__factory";
 export { TempleFraxAMMRouter__factory } from "./factories/TempleFraxAMMRouter__factory";
+export { TempleIVSwap__factory } from "./factories/TempleIVSwap__factory";
 export { TempleUniswapV2Pair__factory } from "./factories/TempleUniswapV2Pair__factory";
 export { AMMWhitelist__factory } from "./factories/AMMWhitelist__factory";
 export { AutoHarvestKeeper__factory } from "./factories/AutoHarvestKeeper__factory";

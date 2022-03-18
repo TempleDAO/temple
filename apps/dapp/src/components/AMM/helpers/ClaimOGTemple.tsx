@@ -1,9 +1,10 @@
 import dateFormat from 'dateformat';
 import React from 'react';
 import styled from 'styled-components';
-import { LockedEntry, OG_TEMPLE_TOKEN } from 'providers/WalletProvider';
+import { LockedEntry } from 'providers/types';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 export interface ClaimOGTempleProps {
   lockedEntries: Array<LockedEntry>;
@@ -37,7 +38,7 @@ const ClaimOGTemple = ({ lockedEntries, onClaim }: ClaimOGTempleProps) => {
                 }}
               >
                 <strong className={'color-dark'}>
-                  {OG_TEMPLE_TOKEN} AMOUNT
+                  {TICKER_SYMBOL.OG_TEMPLE_TOKEN} AMOUNT
                 </strong>
               </Flex>
             </Flex>

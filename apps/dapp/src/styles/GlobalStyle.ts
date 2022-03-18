@@ -155,6 +155,18 @@ export const GlobalStyle = createGlobalStyle`
       color: ${theme.palette.brand};
     }
     
+    &-brandLight {
+      color: ${theme.palette.brandLight};
+    }
+    
+    &-brandDark {
+      color: ${theme.palette.brandDark};
+    }
+    
+    &-brandDarker {
+      color: ${theme.palette.brandDarker};
+    }
+    
     &-dark {
       color: ${theme.palette.dark};
     }
