@@ -10,8 +10,10 @@ import { VAULT_MONTH_MILLISECONDS } from '../../../constants';
 const oneDay = 1000 * 60 * 60 * 24;
 const now = new Date(Date.now());
 
-// Vault starts two months ago
+// CurrentCycle Start (cycle 2)
 const twoMonthsAgo = new Date(now.getTime() - (VAULT_MONTH_MILLISECONDS * 2));
+// 3 months before current cycle start
+const vaultStart = new Date(twoMonthsAgo.getTime() - (VAULT_MONTH_MILLISECONDS * 3));
 
 const oneWeekAgo = new Date(now.getTime() - (oneDay * 7));
 const oneMonthAndOneWeek = new Date(now.getTime() - (VAULT_MONTH_MILLISECONDS + oneDay * 7));
@@ -24,7 +26,7 @@ const vaultData: { [key: string]: Vault } = {
     id: 'abc',
     months: 3,
     now: now,
-    startDate: twoMonthsAgo,
+    startDate: vaultStart,
     currentCycle: 1, // zero index
     entries: [
       {
