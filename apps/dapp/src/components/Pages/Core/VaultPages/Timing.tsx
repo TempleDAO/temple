@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import dateFormat from 'dateformat';
+import { formatDistance } from 'date-fns';
 
 import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Table';
 
@@ -33,16 +34,16 @@ const Timing = () => {
             {(vault.entries || []).map((entry) => (
               <Row key={entry.id}>
                 <Cell>
-                  {entry.entryDate ? dateFormat(new Date(entry.entryDate), 'mmm d, yyyy') : ''}
+                  {entry.entryDate ? dateFormat(entry.entryDate, 'mmm d, yyyy') : ''}
                 </Cell>
                 <Cell $align="center">
                   $T {entry.amount}
                 </Cell>
                 <Cell $align="center">
-                  {vault.currentCycle || 0}
+                  {getHumanReadableCycle(vault.currentCycle)}
                 </Cell>
                 <Cell $icon={entry.inZone ? 'claim' : undefined} $align="center">
-                  {entry.inZone ? 'YES' : 'NO'}
+                  {entry.inZone ? 'YES' : getVaultEndDate(vault.startDate, vault.months)}
                 </Cell>
               </Row>
             ))}
@@ -54,6 +55,28 @@ const Timing = () => {
       </Duration>
     </Wrapper>
   );
+};
+
+// The seconds are a constant defined in our contracts for what we consider a month.
+const MILLISECONDS_IN_MONTH = 2629800 * 1000;
+
+const getVaultEndDate = (start: Date, numMonths: number) => {
+  const completionDate = new Date(start.getTime() + (numMonths * MILLISECONDS_IN_MONTH));
+  return formatDistance(Date.now(), completionDate);
+}
+
+const getHumanReadableCycle = (cycleIndex = 0) => {
+  const cycleNumber = cycleIndex + 1;
+  switch (cycleNumber) {
+    case 1:
+      return '1st';
+    case 2:
+      return '2nd';
+    case 3:
+      return '3rd';
+    default:
+      return `${cycleNumber}th`;
+  }
 };
 
 const COLOR_HEADER_SHADOW = '0px 4px 7.48px rgba(222, 92, 6, 0.5)';
@@ -68,15 +91,15 @@ const Wrapper = styled.div`
 `;
 
 const TableWrapper = styled.div`
-  height: 18.1875rem;
+  height: 18.1875rem; /* 291/16 */
 `;
 
 const Table = styled(BaseTable)`
-  margin-bottom: 3.375rem;
+  margin-bottom: 3.375rem; /* 54/16 */
 `;
 
 const Header = styled.h2`
-  margin: 0 0 3.625rem;
+  margin: 0 0 3.625rem; /* 58/16 */
   font-size: 3rem;
   line-height: 3.5rem;
   text-align: center;
@@ -89,7 +112,7 @@ const Duration = styled.span`
   display: flex;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.9375rem;
+  font-size: 0.9375rem; /* 15/16 */
   line-height: 1.1875rem;
   text-transform: uppercase;
   text-align: center;
