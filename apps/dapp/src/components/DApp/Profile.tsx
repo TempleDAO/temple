@@ -11,6 +11,7 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 export const Profile: FC = () => {
   const accountMetrics = useRefreshableAccountMetrics();
   const { faith } = useFaith();
+  console.log('accountMetrics', accountMetrics);
 
   return (
     <Container

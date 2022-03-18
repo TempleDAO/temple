@@ -2,21 +2,19 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import useInterval from 'use-interval';
 import { MetricsService, AccountMetrics } from 'services/MetricsService';
 import { useWallet } from 'providers/WalletProvider';
-import { useStaking } from 'providers/StakingProvider';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 
 export default function useRefreshableAccountMetrics() {
-  const { wallet, balance } = useWallet();
+  const { wallet } = useWallet();
   const [accountMetrics, setAccountMetrics] = useState<AccountMetrics | null>(
     null
   );
   const refreshWalletState = useRefreshWalletState();
-  const { exitQueueData } = useStaking();
 
   const metricsService = useMemo(() => new MetricsService(), []);
 
   const refreshMetrics = useCallback(async () => {
-    if (!wallet || !balance || !exitQueueData) {
+    if (!wallet) {
       return;
     }
     const accountMetrics = await metricsService.getAccountMetrics(wallet);
@@ -25,17 +23,20 @@ export default function useRefreshableAccountMetrics() {
         ...accountMetrics,
       });
     }
-  }, [wallet, balance, exitQueueData, metricsService]);
+  }, [wallet, metricsService]);
 
   useEffect(() => {
     async function onMount() {
       await refreshWalletState();
+      console.log('refreshed wallet state');
+      console.log('wallet', wallet);
     }
     onMount();
   }, []);
 
   useEffect(() => {
     refreshMetrics();
+    console.log('refreshed metrics');
   }, [refreshMetrics]);
 
   const clearInterval = useInterval(refreshMetrics, 20 * 60 * 1000, true);
