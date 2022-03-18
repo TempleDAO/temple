@@ -28,15 +28,12 @@ export default function useRefreshableAccountMetrics() {
   useEffect(() => {
     async function onMount() {
       await refreshWalletState();
-      console.log('refreshed wallet state');
-      console.log('wallet', wallet);
     }
     onMount();
   }, []);
 
   useEffect(() => {
     refreshMetrics();
-    console.log('refreshed metrics');
   }, [refreshMetrics]);
 
   const clearInterval = useInterval(refreshMetrics, 20 * 60 * 1000, true);
