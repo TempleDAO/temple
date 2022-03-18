@@ -18,10 +18,6 @@ const DAppRoot = () => {
   const [activeView, setView] = useState(DAppView.BUY);
   const navContext = { activeView, setView };
 
-  useEffect(() => {
-    refreshWalletState();
-  }, [refreshWalletState]);
-
   return (
     <NavContext.Provider value={navContext}>
       {isSmallOrMediumScreen ? <DAppSmall /> : <DAppLarge />}
