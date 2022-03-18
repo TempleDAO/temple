@@ -16,16 +16,39 @@ export default function useRefreshableAccountMetrics() {
   const metricsService = useMemo(() => new MetricsService(), []);
 
   const refreshMetrics = useCallback(async () => {
-    if (!wallet) {
+    if (!wallet || !balance || !exitQueueData) {
       return;
     }
+
     const accountMetrics = await metricsService.getAccountMetrics(wallet);
     if (accountMetrics) {
+      const walletValue =
+        accountMetrics.templeBalance * accountMetrics.templeValue;
+      const exitQueueValue =
+        exitQueueData.totalTempleOwned * accountMetrics.templeValue;
+      const ogTempleWalletValue =
+        balance.ogTemple * accountMetrics.ogTemplePrice;
+      const lockedOGTempleValue =
+        balance.ogTempleLocked * accountMetrics.ogTemplePrice;
+      const netWorth =
+        lockedOGTempleValue +
+        walletValue +
+        ogTempleWalletValue +
+        exitQueueValue;
       setAccountMetrics({
         ...accountMetrics,
+        walletValue,
+        exitQueueTotal: exitQueueData.totalTempleOwned,
+        exitQueueValue,
+        ogTempleWallet: balance.ogTemple,
+        ogTempleWalletValue,
+        lockedOGTemple: balance.ogTempleLocked,
+        lockedOGTempleValue,
+        netWorth,
+        netWorthTemple: netWorth / accountMetrics.templeValue,
       });
     }
-  }, [wallet, metricsService]);
+  }, [wallet, balance, exitQueueData, metricsService]);
 
   useEffect(() => {
     async function onMount() {
