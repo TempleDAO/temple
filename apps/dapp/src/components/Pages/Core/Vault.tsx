@@ -16,6 +16,9 @@ const twoMonthsAgo = new Date(now.getTime() - (VAULT_MONTH_MILLISECONDS * 2));
 const oneWeekAgo = new Date(now.getTime() - (oneDay * 7));
 const oneMonthAndOneWeek = new Date(now.getTime() - (VAULT_MONTH_MILLISECONDS + oneDay * 7));
 
+// Entry into vault 10 days before begining of current cycle.
+const secondCycleEntry = new Date(twoMonthsAgo.getTime() - (oneDay * 10));
+
 const vaultData: { [key: string]: Vault } = {
   abc: {
     id: 'abc',
@@ -37,6 +40,11 @@ const vaultData: { [key: string]: Vault } = {
         id: 3,
         entryDate: oneMonthAndOneWeek,
         amount: 2500,
+      },
+      {
+        id: 4,
+        entryDate: secondCycleEntry,
+        amount: 30000,
       },
     ],
   },
