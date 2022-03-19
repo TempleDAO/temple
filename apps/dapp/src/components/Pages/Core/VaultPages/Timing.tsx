@@ -1,6 +1,5 @@
 import styled from 'styled-components';
-import dateFormat from 'dateformat';
-import { formatDistance } from 'date-fns';
+import { formatDistance, format } from 'date-fns';
 
 import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Table';
 
@@ -35,7 +34,7 @@ const Timing = () => {
             {(vault.entries || []).map((entry) => (
               <Row key={entry.id}>
                 <Cell>
-                  {entry.entryDate ? dateFormat(entry.entryDate, 'mmm d, yyyy') : ''}
+                  {entry.entryDate ? format(entry.entryDate, 'MMM d, yyyy') : ''}
                 </Cell>
                 <Cell $align="center">
                   $T {entry.amount}
