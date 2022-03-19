@@ -8,7 +8,6 @@ import useVaultContext from './useVaultContext';
 
 const Timing = () => {
   const vault = useVaultContext();
-  const vaultEndDate = getVaultEndDate(vault.startDate, vault.months);
   return (
     <Wrapper>
       <Header>Timing</Header>
@@ -43,7 +42,7 @@ const Timing = () => {
                   {getFormattedEntryCycle(entry.currentCycle)}
                 </Cell>
                 <Cell $icon={entry.inZone ? 'claim' : undefined} $align="center">
-                  {entry.inZone ? 'YES' : getVaultClaimableFormatted(vaultEndDate)}
+                  {entry.inZone ? 'YES' : getVaultClaimableFormatted(vault.startDate, vault.months)}
                 </Cell>
               </Row>
             ))}
@@ -57,11 +56,8 @@ const Timing = () => {
   );
 };
 
-const getVaultEndDate = (vaultStart: Date, numMonths: number) => {
-  return new Date(vaultStart.getTime() + (numMonths * VAULT_MONTH_MILLISECONDS));
-};
-
-const getVaultClaimableFormatted = (vaultEndDate: Date) => {
+const getVaultClaimableFormatted = (vaultStart: Date, numMonths: number) => {
+  const vaultEndDate = new Date(vaultStart.getTime() + (numMonths * VAULT_MONTH_MILLISECONDS));
   return formatDistance(Date.now(), vaultEndDate);
 };
 
