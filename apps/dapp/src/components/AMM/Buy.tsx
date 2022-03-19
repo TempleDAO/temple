@@ -27,7 +27,7 @@ const ENV_VARS = import.meta.env;
 
 export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const { balance, getBalance, updateBalance } = useWallet();
-  const { buy, getBuyQuote, templePrice } = useSwap();
+  const { buy, getBuyQuote, templePrice, updateTemplePrice } = useSwap();
 
   const [stableCoinAmount, setStableCoinAmount] = useState<number | ''>('');
   const [stableCoinWalletAmount, setStableCoinWalletAmount] =
@@ -41,9 +41,6 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
     setStableCoinAmount(value === 0 ? '' : value);
     if (value) {
       setRewards(
-        fromAtto((await getBuyQuote(toAtto(value))) || BigNumber.from(0) || 0)
-      );
-      console.log(
         fromAtto((await getBuyQuote(toAtto(value))) || BigNumber.from(0) || 0)
       );
     } else {
@@ -60,10 +57,6 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       if (stableCoinAmount) {
         const minAmountOut =
           (stableCoinAmount / templePrice) * (1 - slippage / 100);
-        console.log('CALCULATING');
-        console.log('stableCoinAmount', stableCoinAmount);
-        console.log('templePrice', templePrice);
-        console.log('slippage', slippage);
         setMinAmountOut(minAmountOut);
         if (minAmountOut <= rewards) {
           await buy(toAtto(stableCoinAmount), toAtto(minAmountOut));
@@ -86,15 +79,13 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   useEffect(() => {
     async function onMount() {
       await updateBalance();
+      await updateTemplePrice();
       setRewards('');
       setMinAmountOut(0);
     }
 
     onMount();
   }, []);
-
-  console.log('minAmountOut', minAmountOut);
-  console.log('rewards', rewards);
 
   return (
     <ViewContainer>
