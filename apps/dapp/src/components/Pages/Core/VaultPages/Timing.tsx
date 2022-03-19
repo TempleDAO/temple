@@ -41,7 +41,7 @@ const Timing = () => {
                   $T {entry.amount}
                 </Cell>
                 <Cell $align="center">
-                  {entry.entryDate ? getHumanReadableCycle(entry.entryDate, vaultEndDate, vault.months) : ''}
+                  {getFormattedEntryCycle(entry.currentCycle)}
                 </Cell>
                 <Cell $icon={entry.inZone ? 'claim' : undefined} $align="center">
                   {entry.inZone ? 'YES' : getVaultClaimableFormatted(vaultEndDate)}
@@ -66,11 +66,7 @@ const getVaultClaimableFormatted = (vaultEndDate: Date) => {
   return formatDistance(Date.now(), vaultEndDate);
 };
 
-const getHumanReadableCycle = (entryDate: Date, vaultEndDate: Date, vaultDuration: number) => {
-  // TODO(MrFujisawa): How is this calculated?
-
-  let cycleNumber = 0;
-
+const getFormattedEntryCycle = (cycleNumber = 0) => {
   cycleNumber = cycleNumber + 1;
   switch (cycleNumber) {
     case 1:
