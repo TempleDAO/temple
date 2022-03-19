@@ -43,6 +43,9 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       setRewards(
         fromAtto((await getBuyQuote(toAtto(value))) || BigNumber.from(0) || 0)
       );
+      console.log(
+        fromAtto((await getBuyQuote(toAtto(value))) || BigNumber.from(0) || 0)
+      );
     } else {
       setRewards('');
     }
@@ -57,6 +60,10 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       if (stableCoinAmount) {
         const minAmountOut =
           (stableCoinAmount / templePrice) * (1 - slippage / 100);
+        console.log('CALCULATING');
+        console.log('stableCoinAmount', stableCoinAmount);
+        console.log('templePrice', templePrice);
+        console.log('slippage', slippage);
         setMinAmountOut(minAmountOut);
         if (minAmountOut <= rewards) {
           await buy(toAtto(stableCoinAmount), toAtto(minAmountOut));
@@ -85,6 +92,9 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
     onMount();
   }, []);
+
+  console.log('minAmountOut', minAmountOut);
+  console.log('rewards', rewards);
 
   return (
     <ViewContainer>
