@@ -42,7 +42,7 @@ const Timing = () => {
                   {getFormattedEntryCycle(entry.currentCycle)}
                 </Cell>
                 <Cell $icon={entry.inZone ? 'claim' : undefined} $align="center">
-                  {entry.inZone ? 'YES' : getVaultClaimableFormatted(vault.startDate, vault.months)}
+                  {entry.inZone ? 'YES' : getVaultClaimableFormatted(vault.startDate, vault.months, vault.currentCycle)}
                 </Cell>
               </Row>
             ))}
@@ -56,8 +56,11 @@ const Timing = () => {
   );
 };
 
-const getVaultClaimableFormatted = (vaultStart: Date, numMonths: number) => {
-  const vaultEndDate = new Date(vaultStart.getTime() + (numMonths * VAULT_MONTH_MILLISECONDS));
+const getVaultClaimableFormatted = (vaultStart: Date, numMonths: number, vaultCycle = 0) => {
+  vaultCycle = vaultCycle + 1;
+
+  const endOfCurrentCycleMs = numMonths * VAULT_MONTH_MILLISECONDS * vaultCycle;
+  const vaultEndDate = new Date(vaultStart.getTime() + endOfCurrentCycleMs);
   return formatDistance(Date.now(), vaultEndDate);
 };
 
