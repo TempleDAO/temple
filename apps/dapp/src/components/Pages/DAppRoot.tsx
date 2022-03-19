@@ -1,6 +1,7 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useState, useEffect } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import styled from 'styled-components';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import MetamaskButton from 'components/Button/MetamaskButton';
 import DevotionCTA from 'components/Accessories/DevotionCTA';
 import { DApp } from 'components/DApp/DApp';
@@ -17,6 +18,11 @@ const DAppRoot = () => {
   const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
   const [activeView, setView] = useState(DAppView.BUY);
   const navContext = { activeView, setView };
+  const refreshWalletState = useRefreshWalletState();
+
+  useEffect(() => {
+    refreshWalletState();
+  }, []);
 
   return (
     <NavContext.Provider value={navContext}>
