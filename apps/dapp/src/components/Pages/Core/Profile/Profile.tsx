@@ -4,7 +4,9 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 import StatsCard from 'components/StatsCard/StatsCard';
 import { Tabs } from 'components/Tabs/Tabs';
+import { ProfileVaults } from 'components/Profile/ProfileVaults';
 import type { Tab } from 'components/Tabs/Tabs';
+import type { Vault } from 'components/Vault/types';
 
 import { tabletAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
@@ -13,10 +15,11 @@ import texture1 from 'assets/images/texture-1.svg';
 import texture2 from 'assets/images/texture-2.svg';
 import texture3 from 'assets/images/texture-3.svg';
 import texture4 from 'assets/images/texture-4.svg';
-
 import texture5 from 'assets/images/dashboard-4.png';
+
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
+import { useMockVaultData } from './Vault';
 
 const STAT_CARD_HEIGHT = '5rem';
 const PIE_AREA_HEIGHT = '10rem';
@@ -24,8 +27,11 @@ const PIE_AREA_HEIGHT = '10rem';
 const ProfilePage = () => {
   const { getBalance, balance } = useWallet();
   const { faith } = useFaith();
+  const { isLoading, data } = useMockVaultData('abc');
 
   const tabs = getTabs(
+    isLoading,
+    [data],
     balance.ogTempleLocked,
     balance.ogTemple,
     faith.lifeTimeFaith
@@ -95,12 +101,17 @@ const ProfilePage = () => {
 };
 
 function getTabs(
+  isLoading: boolean,
+  vaults: Vault[],
   lockedOgtBalance: number,
   ogtBalance: number,
   faithBalance: number
 ): Tab[] {
   const tabs = [
-    { label: 'Vaults', content: <Subheading>Vaults</Subheading> },
+    {
+      label: 'Vaults',
+      content: <ProfileVaults isLoading={isLoading} vaults={vaults} />,
+    },
     { label: 'Transactions', content: <Subheading>Transactions</Subheading> },
     { label: 'Discord', content: <Subheading>Discord</Subheading> },
   ];
