@@ -4,6 +4,7 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 import StatsCard from 'components/StatsCard/StatsCard';
 import { Tabs } from 'components/Tabs/Tabs';
+import { ProfileLegacyTemple } from 'components/Profile/ProfileLegacyTemple';
 import type { Tab } from 'components/Tabs/Tabs';
 
 import { tabletAndAbove } from 'styles/breakpoints';
@@ -111,7 +112,11 @@ function getTabs(
     tabs.push({
       label: `Legacy ${TICKER_SYMBOL.TEMPLE_TOKEN}`,
       content: (
-        <Subheading>{`Legacy ${TICKER_SYMBOL.TEMPLE_TOKEN}`}</Subheading>
+        <ProfileLegacyTemple
+          lockedOgTempleBalance={lockedOgtBalance}
+          ogTempleBalance={ogtBalance}
+          faithBalance={faithBalance}
+        />
       ),
     });
   }
