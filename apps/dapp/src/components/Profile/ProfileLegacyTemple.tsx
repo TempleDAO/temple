@@ -4,21 +4,25 @@ import styled from 'styled-components';
 import { tabletAndAbove } from 'styles/breakpoints';
 
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+
+import { formatNumberWithCommas } from 'utils/formatter'
+
 import StatsCard from 'components/StatsCard/StatsCard';
-import { formatNumberWithCommas } from 'utils/formatter';
+import { Button } from 'components/Button/Button';
 
 import background1 from 'assets/images/dashboard-1.png';
 import background2 from 'assets/images/dashboard-2.png';
 import background3 from 'assets/images/dashboard-3.png';
 import background4 from 'assets/images/dashboard-4.png';
 import texture2 from 'assets/images/texture-2.svg';
-import { Button } from 'components/Button/Button';
 
-export const ProfileLegacyTemple: React.FC<{
+interface IProps {
   lockedOgTempleBalance?: number;
   ogTempleBalance?: number;
   faithBalance?: number;
-}> = ({ lockedOgTempleBalance, ogTempleBalance, faithBalance }) => {
+}
+
+export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance, ogTempleBalance, faithBalance }) => {
   return (
     <>
       <LegacyTempleArea>
@@ -52,7 +56,6 @@ export const ProfileLegacyTemple: React.FC<{
         <Button
           label={`Redeem ${TICKER_SYMBOL.TEMPLE_TOKEN}`}
           isSmall
-          className="button-redeem"
         />
       </LegacyTempleArea>
     </>
