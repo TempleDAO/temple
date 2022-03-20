@@ -23,8 +23,9 @@ export interface DiscordUser {
   enclave: string;
   engagementlast7days: string;
   engagementlast30days: string;
-  engagementalltime: SVGStringList;
+  engagementalltime: string;
   roles: string[];
+  joined_at: string;
 }
 
 const ENV_VARS = import.meta.env;

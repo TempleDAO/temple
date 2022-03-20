@@ -4,6 +4,7 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 import StatsCard from 'components/StatsCard/StatsCard';
 import { Tabs } from 'components/Tabs/Tabs';
+import { ProfileDiscordData } from 'components/Profile/ProfileDiscordData';
 import type { Tab } from 'components/Tabs/Tabs';
 
 import { tabletAndAbove } from 'styles/breakpoints';
@@ -102,7 +103,7 @@ function getTabs(
   const tabs = [
     { label: 'Vaults', content: <Subheading>Vaults</Subheading> },
     { label: 'Transactions', content: <Subheading>Transactions</Subheading> },
-    { label: 'Discord', content: <Subheading>Discord</Subheading> },
+    { label: 'Discord', content: <ProfileDiscordData /> },
   ];
 
   const hasLegacyTemple = !!ogtBalance || !!lockedOgtBalance || !!faithBalance;
