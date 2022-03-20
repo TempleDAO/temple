@@ -27,7 +27,7 @@ const vaultData: { [key: string]: Vault } = {
   },
 };
 
-const useMockVaultData = (id: string) => {
+export const useMockVaultData = (id: string) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
