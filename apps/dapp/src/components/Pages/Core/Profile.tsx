@@ -5,7 +5,6 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import StatsCard from 'components/StatsCard/StatsCard';
 import { Tabs } from 'components/Tabs/Tabs';
 import type { Tab } from 'components/Tabs/Tabs';
-import type { Vault } from 'components/Vault/types';
 
 import { tabletAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
@@ -19,8 +18,6 @@ import texture5 from 'assets/images/dashboard-4.png';
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
 
-import { useMockVaultData } from './Vault';
-
 const STAT_CARD_HEIGHT = '5rem';
 const PIE_AREA_HEIGHT = '10rem';
 
@@ -28,11 +25,7 @@ const ProfilePage = () => {
   const { getBalance, balance } = useWallet();
   const { faith } = useFaith();
 
-  const { isLoading, data, error } = useMockVaultData('abc' || '');
-
   const tabs = getTabs(
-    isLoading,
-    [data],
     balance.ogTempleLocked,
     balance.ogTemple,
     faith.lifeTimeFaith
@@ -102,19 +95,17 @@ const ProfilePage = () => {
 };
 
 function getTabs(
-  isLoading: boolean,
-  vaults: Vault[],
   lockedOgtBalance: number,
   ogtBalance: number,
   faithBalance: number
 ): Tab[] {
   const tabs = [
+    { label: 'Vaults', content: <Subheading>Vaults</Subheading> },
     { label: 'Transactions', content: <Subheading>Transactions</Subheading> },
     { label: 'Discord', content: <Subheading>Discord</Subheading> },
   ];
 
   const hasLegacyTemple = !!ogtBalance || !!lockedOgtBalance || !!faithBalance;
-  const hasEnteredVaults = !!vaults.length;
 
   if (hasLegacyTemple) {
     tabs.push({
@@ -123,10 +114,6 @@ function getTabs(
         <Subheading>{`Legacy ${TICKER_SYMBOL.TEMPLE_TOKEN}`}</Subheading>
       ),
     });
-  }
-
-  if (!isLoading && hasEnteredVaults) {
-    tabs.unshift({ label: 'Vaults', content: <Subheading>Vaults</Subheading> });
   }
 
   return tabs;
@@ -148,7 +135,6 @@ const ProfileOverview = styled.section`
   grid-template-columns: 1fr;
   gap: 2rem;
   margin-bottom: 2rem;
-
   ${tabletAndAbove(`
     grid-template-columns: 1fr 1fr;
   `)}
@@ -160,7 +146,6 @@ const ProfileMeta = styled.div`
   grid-template-columns: 1fr;
   gap: 0.75rem;
   padding-right: 0.75rem;
-
   ${tabletAndAbove(`
   grid-template-columns: 60% 40%;
   grid-template-rows: 1fr 1fr 2fr;
