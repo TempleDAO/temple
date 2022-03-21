@@ -1,9 +1,22 @@
-import React from 'react';
+import React, { useReducer } from 'react';
 import styled from 'styled-components';
 import { Input, CryptoValue, CryptoSelector } from 'components/Input/Input';
 import { Tabs } from 'components/Tabs/Tabs';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import arrow from 'assets/icons/amm-arrow.svg';
+
+type SwapMode = 'BUY' | 'SELL';
+interface SwapReducerState {
+  mode: SwapMode;
+  ongoingTx: boolean;
+  inputToken: TICKER_SYMBOL;
+  outputToken: TICKER_SYMBOL;
+  inputValue: number;
+  quoteValue: number;
+  inputTokenBalance: number;
+  inputConfig: CryptoSelector;
+  outputConfig: CryptoValue;
+}
 
 export const Swap = () => {
   const defaultOption = {
