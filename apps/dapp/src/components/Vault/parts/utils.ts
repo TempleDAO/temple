@@ -13,6 +13,11 @@ export const processData = (originalData: Vault) => {
     entry.percent = calculatePercent(entry, data);
     entry.inZone = calculateInZone(entry, data);
     entry.type = calculateEntryType(entry);
+    entry.currentCycle = getCurrentCycle(
+      entry.entryDate,
+      data.months,
+      data.now
+    );
     return entry;
   });
 
@@ -85,16 +90,12 @@ const calculateEmptyPercent = (vault: Vault) => {
 // how many cycles since the vault started:
 // months_since_start = seconds_since_vault_start / seconds_in_months
 // cycles_since_start = floor(months_since_start / vault_months)
-//     this could be something like
-//     18mo... so we need to further mod this to get which X cycle
-//     we're in. for ex, cycle 5 of a 6 mo vault
-// current_cycle = cycles_since_start mod vault_months
-const getCurrentCycle = (vaultStart: Date, vaultMonths: number, now: Date) => {
+const getCurrentCycle = (startDate: Date, numMonths: number, now: Date) => {
   const monthsSinceStart =
-    differenceInSeconds(now, vaultStart) / SECONDS_IN_MONTH;
-  const cyclesSinceStart = Math.floor(monthsSinceStart / vaultMonths);
-  const currentCycle = cyclesSinceStart % vaultMonths;
-  return currentCycle;
+    differenceInSeconds(now, startDate) / SECONDS_IN_MONTH;
+  const cyclesSinceStart = Math.floor(monthsSinceStart / numMonths);
+
+  return cyclesSinceStart;
 };
 
 // calculates the value that is at X% distance between A and B
