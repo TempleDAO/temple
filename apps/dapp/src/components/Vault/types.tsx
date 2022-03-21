@@ -5,6 +5,7 @@ export type Entry = {
   percent?: number;
   inZone?: boolean;
   type?: MarkerType;
+  currentCycle?: number;
 };
 
 export type Vault = {
