@@ -42,9 +42,7 @@ const VaultClaim = () => {
           kind: 'select',
           cryptoOptions: dummyOptions,
           onCryptoChange: handleTickerUpdate,
-          defaultValue: dummyOptions.filter(
-            (option) => option.value === ticker
-          )[0],
+          defaultValue: dummyOptions.find((option) => option.value === ticker),
         }}
         value={templeAmount}
         hint={`Balance: ${formatNumber(templeWalletAmount)}`}
