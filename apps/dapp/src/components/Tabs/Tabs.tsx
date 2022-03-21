@@ -95,7 +95,7 @@ const TabStyled = styled(Button)<TabStyledProps>`
     props.isActive &&
     css`
       background-color: transparent;
-      border-bottom: ${pixelsToRems(1)} solid
+      border-bottom: ${pixelsToRems(1)}rem solid
         ${(props) => props.theme.palette.brand};
       color: ${(props) => props.theme.palette.light};
     `};
