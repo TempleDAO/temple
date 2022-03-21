@@ -81,10 +81,13 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
           ethers.utils.parseUnits('1000111', decimals)
         );
       }
+
       const overrides: { value?: BigNumber } = {};
+
       if (sellToken === TICKER_SYMBOL.ETH) {
         overrides.value = toAtto(tokenAmount);
       }
+
       tx = await TEMPLE_ZAPS.zapIn(
         tokenAddr,
         sellAmount,
@@ -95,7 +98,9 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         overrides
       );
     }
+
     const txReceipt = await tx.wait();
+
     if (txReceipt) {
       openNotification({
         title: `Zapped ${tokenSymbol} for ${TICKER_SYMBOL.TEMPLE_TOKEN}`,

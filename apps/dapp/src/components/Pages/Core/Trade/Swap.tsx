@@ -5,7 +5,12 @@ import { Tabs } from 'components/Tabs/Tabs';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import arrow from 'assets/icons/amm-arrow.svg';
 
-type SwapMode = 'BUY' | 'SELL';
+type SwapMode = 'BUY' | 'SELL' | 'ZAP-IN';
+
+type SwapReducerAction =
+  | { type: 'changeMode'; value: SwapMode }
+  | { type: 'changeInputToken'; value: TICKER_SYMBOL };
+
 interface SwapReducerState {
   mode: SwapMode;
   ongoingTx: boolean;
@@ -18,37 +23,58 @@ interface SwapReducerState {
   outputConfig: CryptoValue;
 }
 
-export const Swap = () => {
+const INITIAL_STATE: SwapReducerState = {
+  mode: 'BUY',
+  ongoingTx: false,
+  inputToken: TICKER_SYMBOL.STABLE_TOKEN,
+  outputToken: TICKER_SYMBOL.TEMPLE_TOKEN,
+  inputValue: 0,
+  quoteValue: 0,
+  inputTokenBalance: 0,
+  inputConfig: buildInputConfig(TICKER_SYMBOL.STABLE_TOKEN),
+  outputConfig: buildOutputConfig(TICKER_SYMBOL.TEMPLE_TOKEN),
+};
+
+function buildInputConfig(defaultToken: TICKER_SYMBOL): CryptoSelector {
   const defaultOption = {
-    value: TICKER_SYMBOL.TEMPLE_TOKEN,
-    label: TICKER_SYMBOL.TEMPLE_TOKEN,
+    value: defaultToken,
+    label: defaultToken,
   };
 
-  const selectOptions = [
-    {
-      value: TICKER_SYMBOL.STABLE_TOKEN,
-      label: TICKER_SYMBOL.STABLE_TOKEN,
-    },
-    defaultOption,
-  ];
+  const selectOptions = Object.values(TICKER_SYMBOL).map((token) => ({
+    value: token,
+    label: token,
+  }));
 
-  // buy/zap config
-  const buyCryptoConfig: CryptoSelector = {
+  return {
     kind: 'select',
     cryptoOptions: selectOptions,
     defaultValue: defaultOption,
   };
+}
 
-  const sellCryptoConfig: CryptoValue = {
+function buildOutputConfig(token: TICKER_SYMBOL): CryptoValue {
+  return {
     kind: 'value',
-    value: `${TICKER_SYMBOL.STABLE_TOKEN}`,
+    value: `${token}`,
   };
+}
+
+function reducer(
+  state: SwapReducerState,
+  action: SwapReducerAction
+): SwapReducerState {
+  return INITIAL_STATE;
+}
+
+export const Swap = () => {
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
   const Swap = (
     <SwapContainer>
-      <Input crypto={sellCryptoConfig} value={1000} hint="Balance: 10000" />
+      <Input crypto={state.inputConfig} value={1000} hint="Balance: 10000" />
       <Spacer />
-      <Input crypto={{ kind: 'value', value: '$FRAX' }} disabled value={650} />
+      <Input crypto={state.outputConfig} disabled value={650} />
       <InvertButton />
     </SwapContainer>
   );
