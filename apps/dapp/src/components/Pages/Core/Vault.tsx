@@ -5,6 +5,9 @@ import styled from 'styled-components';
 import Loader from 'components/Loader/Loader';
 import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Vault } from 'components/Vault/types';
+import { useMediaQuery } from 'react-responsive';
+import { theme } from 'styles/theme';
+import { VaultMobileSVG } from 'components/Vault/VaultMobileSVG';
 
 const vaultData: { [key: string]: Vault } = {
   abc: {
@@ -33,7 +36,7 @@ export const useMockVaultData = (id: string) => {
   useEffect(() => {
     setTimeout(() => {
       setIsLoading(false);
-    }, 1500);
+    }, 750);
   }, [setIsLoading]);
 
   return { isLoading, data: vaultData[id], error: !vaultData[id] };
@@ -42,6 +45,8 @@ export const useMockVaultData = (id: string) => {
 const VaultPage = () => {
   const { vaultId } = useParams();
   const { isLoading, data, error } = useMockVaultData(vaultId || '');
+  const isDesktop = useMediaQuery({ query: `(min-width: ${theme.metrics.devices.tablet})` });
+
 
   if (isLoading) {
     return <Loader />;
@@ -51,13 +56,19 @@ const VaultPage = () => {
     return <div>Something went wrong</div>;
   }
 
-  return (
+  return isDesktop ?(
     <Wrapper>
       <VaultSVG data={data}>
         <Outlet context={{ vault: data }} />
       </VaultSVG>
     </Wrapper>
-  );
+  ) : (
+    <Wrapper>
+      <VaultMobileSVG data={data}>
+        <Outlet />
+      </VaultMobileSVG>
+    </Wrapper>
+  )
 };
 
 const Wrapper = styled.div`
