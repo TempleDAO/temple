@@ -4,9 +4,10 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 import StatsCard from 'components/StatsCard/StatsCard';
 import { Tabs } from 'components/Tabs/Tabs';
-import { ProfileVaults } from 'components/Profile/ProfileVaults';
 import type { Tab } from 'components/Tabs/Tabs';
 import type { Vault } from 'components/Vault/types';
+
+import { ProfileVaults } from './components/ProfileVaults';
 
 import { tabletAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
@@ -19,7 +20,7 @@ import texture5 from 'assets/images/dashboard-4.png';
 
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
-import { useMockVaultData } from './Vault';
+import { useMockVaultData } from '../Vault';
 
 const STAT_CARD_HEIGHT = '5rem';
 const PIE_AREA_HEIGHT = '10rem';
