@@ -4,11 +4,11 @@ import { useMediaQuery } from 'react-responsive';
 import styled, { css } from 'styled-components';
 
 import { Button, ButtonProps } from 'components/Button/Button';
+import { queryMinTablet } from 'styles/breakpoints';
 import * as breakpoints from 'styles/breakpoints';
 import { Flex } from 'components/Layout/Flex';
 import Metrics from 'components/Metrics/Metrics';
 import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
-import { theme } from 'styles/theme';
 
 import circleBgImage from 'assets/images/circle-bg.svg';
 import earnTradingFeeImage from 'assets/images/earn-trading-fee.svg';
@@ -24,7 +24,7 @@ import { ResponsiveImage } from 'styles/common';
 const Home = () => {
   const treasuryMetrics = useRefreshableTreasuryMetrics();
   const isAboveMobile = useMediaQuery({
-    query: `(min-width: ${theme.metrics.devices.tablet})`,
+    query: queryMinTablet,
   });
 
   return (
@@ -33,7 +33,9 @@ const Home = () => {
         <RowCell>
           <EarnStableGainsWrapper>
             <EarnStableGainsHeader>Earn Stable Gains</EarnStableGainsHeader>
-            <SleepEasyStakingText>Sleep easy staking in the Temple</SleepEasyStakingText>
+            <SleepEasyStakingText>
+              Sleep easy staking in the Temple
+            </SleepEasyStakingText>
             <ButtonGroup>
               {isAboveMobile && (
                 <ButtonContainer>
@@ -61,7 +63,7 @@ const Home = () => {
                   alignCenter={!isAboveMobile}
                 />
               </MetricsWrapper>
-              ) : null}
+            ) : null}
           </EarnStableGainsWrapper>
         </RowCell>
         <RowCell>
@@ -308,7 +310,6 @@ const RowCell = styled.div`
   justify-content: center;
   flex-direction: column;
   align-items: center;
-
 
   ${breakpoints.tabletAndAbove(`
     width: 50%;
