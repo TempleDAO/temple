@@ -61,7 +61,7 @@ export const ProfileDiscordData = () => {
         <StatsCard
           label="Enclave of"
           stat={discordData.enclave}
-          backgroundImageUrl={setEnclaveImage(discordData.enclave)}
+          backgroundImageUrl={setEnclaveImage(discordData.enclave as ENCLAVES)}
           darken
           isSquare={false}
           height={CARD_HEIGHT_LARGE}
@@ -125,7 +125,7 @@ function onStartCeremony() {
   // simple OC stuff
 }
 
-function setEnclaveImage(enclave: string) {
+function setEnclaveImage(enclave: ENCLAVES) {
   switch (enclave) {
     case ENCLAVES.CHAOS: {
       return chaos;

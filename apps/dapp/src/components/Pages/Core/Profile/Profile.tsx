@@ -4,8 +4,9 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 import StatsCard from 'components/StatsCard/StatsCard';
 import { Tabs } from 'components/Tabs/Tabs';
-import { ProfileDiscordData } from 'components/Profile/ProfileDiscordData';
 import type { Tab } from 'components/Tabs/Tabs';
+
+import { ProfileDiscordData } from './components/ProfileDiscordData';
 
 import { tabletAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
