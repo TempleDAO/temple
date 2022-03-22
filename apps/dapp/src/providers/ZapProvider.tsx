@@ -172,6 +172,14 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     );
   };
 
+  const getZapQuote = async (
+    tokenPrice: number,
+    tokenAmount: number
+  ): Promise<number | void> => {
+    await getTemplePrice();
+    return (tokenPrice * tokenAmount) / templePrice;
+  };
+
   return (
     <ZapContext.Provider
       value={{

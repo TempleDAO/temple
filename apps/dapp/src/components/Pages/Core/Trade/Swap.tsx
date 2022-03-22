@@ -1,25 +1,26 @@
-import React, { useReducer } from 'react';
+import React, { useReducer, useCallback } from 'react';
 import styled from 'styled-components';
 import { Input, CryptoValue, CryptoSelector } from 'components/Input/Input';
 import { Tabs } from 'components/Tabs/Tabs';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import arrow from 'assets/icons/amm-arrow.svg';
 
-type SwapMode = 'BUY' | 'SELL' | 'ZAP-IN';
+type SwapMode = 'BUY' | 'SELL';
 
 type SwapReducerAction =
   | { type: 'changeMode'; value: SwapMode }
   | { type: 'changeInputToken'; value: TICKER_SYMBOL }
   | { type: 'changeInputValue'; value: number }
-  | { type: 'startTx' }
-  | { type: 'endTx' }
+  | { type: 'changeQuoteValue'; value: number }
   | { type: 'changeSlippageValue'; value: number }
+  | { type: 'changeTxState'; value: boolean }
   | { type: 'slippageTooLow' };
 
 interface SwapReducerState {
   mode: SwapMode;
   ongoingTx: boolean;
-  increaseSlippage: boolean;
+  slippageTooLow: boolean;
+  zap: boolean;
   inputToken: TICKER_SYMBOL;
   outputToken: TICKER_SYMBOL;
   inputValue: number;
@@ -32,12 +33,13 @@ interface SwapReducerState {
 const INITIAL_STATE: SwapReducerState = {
   mode: 'BUY',
   ongoingTx: false,
-  increaseSlippage: false,
+  slippageTooLow: false,
+  zap: false,
   inputToken: TICKER_SYMBOL.STABLE_TOKEN,
   outputToken: TICKER_SYMBOL.TEMPLE_TOKEN,
   inputValue: 0,
   quoteValue: 0,
-  slippageValue: 0.5,
+  slippageValue: 1,
   inputConfig: buildInputConfig(TICKER_SYMBOL.STABLE_TOKEN),
   outputConfig: buildOutputConfig(TICKER_SYMBOL.TEMPLE_TOKEN),
 };
@@ -45,12 +47,25 @@ const INITIAL_STATE: SwapReducerState = {
 export const Swap = () => {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
+  const handleSelectChange = useCallback(
+    (event) => {
+      dispatch({ type: 'changeInputToken', value: event.value });
+    },
+    [dispatch]
+  );
+
+  //const handleInputChange =
+
   const Swap = (
     <SwapContainer>
-      <Input crypto={state.inputConfig} value={1000} hint="Balance: 10000" />
+      <Input
+        crypto={{ ...state.inputConfig, onCryptoChange: handleSelectChange }}
+        value={1000}
+        hint="Balance: 10000"
+      />
       <Spacer />
       <Input crypto={state.outputConfig} disabled value={650} />
-      <InvertButton />
+      <InvertButton /* TODO: ongoing TX must disable this*/ />
     </SwapContainer>
   );
 
@@ -70,20 +85,63 @@ export const Swap = () => {
   );
 };
 
+function handleSelectChange(
+  event: any,
+  dispatch: React.Dispatch<SwapReducerAction>
+) {}
+
 function reducer(
   state: SwapReducerState,
   action: SwapReducerAction
 ): SwapReducerState {
   switch (action.type) {
-    case 'startTx':
-      return { ...state, ongoingTx: true };
-    case 'endTx': {
-      //TODO: async refresh user balance
-      return { ...state, ongoingTx: false };
+    case 'changeMode': {
+      return action.value === 'BUY'
+        ? INITIAL_STATE
+        : {
+            ...INITIAL_STATE,
+            mode: 'SELL',
+            inputToken: INITIAL_STATE.outputToken,
+            outputToken: INITIAL_STATE.inputToken,
+            inputConfig: buildInputConfig(INITIAL_STATE.outputToken),
+            outputConfig: buildOutputConfig(INITIAL_STATE.inputToken),
+          };
     }
-  }
 
-  return INITIAL_STATE;
+    case 'changeTxState':
+      return { ...state, ongoingTx: action.value };
+
+    case 'slippageTooLow':
+      return { ...state, slippageTooLow: true };
+
+    case 'changeInputToken':
+      return {
+        ...state,
+        inputToken: action.value,
+        inputValue: INITIAL_STATE.inputValue,
+        quoteValue: INITIAL_STATE.quoteValue,
+        slippageValue: INITIAL_STATE.slippageValue,
+      };
+
+    case 'changeInputValue':
+      //TODO: async update quote value
+      return { ...state, inputValue: action.value };
+
+    case 'changeQuoteValue':
+      return { ...state, quoteValue: action.value };
+
+    case 'changeSlippageValue':
+      return {
+        ...state,
+        slippageValue: action.value,
+        slippageTooLow:
+          action.value > state.slippageValue ? false : state.slippageTooLow,
+      };
+
+    default:
+      console.error('Invalid reducer action: ', action);
+      return state;
+  }
 }
 
 function buildInputConfig(defaultToken: TICKER_SYMBOL): CryptoSelector {
@@ -101,6 +159,7 @@ function buildInputConfig(defaultToken: TICKER_SYMBOL): CryptoSelector {
     kind: 'select',
     cryptoOptions: selectOptions,
     defaultValue: defaultOption,
+    onCryptoChange: () => {},
   };
 }
 
