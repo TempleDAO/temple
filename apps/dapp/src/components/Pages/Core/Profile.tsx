@@ -147,8 +147,8 @@ const ProfileMeta = styled.div`
   gap: 0.75rem;
   padding-right: 0.75rem;
   ${tabletAndAbove(`
-  grid-template-columns: 60% 40%;
-  grid-template-rows: 1fr 1fr 2fr;
+    grid-template-columns: 60% 40%;
+    grid-template-rows: 1fr 1fr 2fr;
     .stats-pie {
       grid-column: 1 / -1;
     }
