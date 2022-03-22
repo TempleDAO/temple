@@ -1,8 +1,14 @@
-import React, { createContext, useContext, PropsWithChildren } from 'react';
+import React, {
+  useState,
+  createContext,
+  useContext,
+  PropsWithChildren,
+} from 'react';
 import { ethers, ContractTransaction, BigNumber } from 'ethers';
 import axios from 'axios';
 import { signERC2612Permit } from 'eth-permit';
 import { useWallet } from 'providers/WalletProvider';
+import { useSwap } from 'providers/SwapProvider';
 import { useNotification } from 'providers/NotificationProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { toAtto } from 'utils/bigNumber';
@@ -29,6 +35,7 @@ const ZapContext = createContext(INITIAL_STATE);
 
 export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const { signer, wallet } = useWallet();
+  const { getTemplePrice } = useSwap();
   const { openNotification } = useNotification();
 
   const zapIn = async (
@@ -116,16 +123,13 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   };
 
   const get0xApiSwapQuote = async (sellToken: string, sellAmount: string) => {
-    let swapCallData;
-
     if (sellToken === STABLE_COIN_ADDRESS) {
-      swapCallData = '0x';
-    } else {
-      const url = create0xQuoteUrl(sellToken, sellAmount);
-      const response = await axios.get(url);
-      swapCallData = response.data.data;
+      return '0x';
     }
-    return swapCallData;
+
+    const url = create0xQuoteUrl(sellToken, sellAmount);
+    const response = await axios.get(url);
+    return response.data.data;
   };
 
   const zapWithPermit = async (
@@ -172,11 +176,17 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     );
   };
 
+  // Unsure how useful this is
   const getZapQuote = async (
     tokenPrice: number,
     tokenAmount: number
   ): Promise<number | void> => {
-    await getTemplePrice();
+    const templePrice = await getTemplePrice();
+
+    if (!templePrice) {
+      throw new Error('Unable to get $TEMPLE price for Zap Quote');
+    }
+
     return (tokenPrice * tokenAmount) / templePrice;
   };
 

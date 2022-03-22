@@ -41,6 +41,7 @@ const INITIAL_STATE: SwapService = {
   sell: asyncNoop,
   getSellQuote: asyncNoop,
   getBuyQuote: asyncNoop,
+  getTemplePrice: asyncNoop,
   updateTemplePrice: asyncNoop,
   updateIv: asyncNoop,
 };
@@ -54,16 +55,13 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const { wallet, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
 
-  const getTemplePrice = async (
-    walletAddress: string,
-    signerState: JsonRpcSigner
-  ) => {
-    if (!walletAddress) {
+  const getTemplePrice = async () => {
+    if (!wallet || !signer) {
       throw new NoWalletAddressError();
     }
 
     const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory(
-      signerState
+      signer
     ).attach(TEMPLE_V2_PAIR_ADDRESS);
 
     const { _reserve0, _reserve1 } = await TEMPLE_UNISWAP_V2_PAIR.getReserves();
@@ -76,7 +74,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       return;
     }
 
-    const price = await getTemplePrice(wallet, signer);
+    const price = await getTemplePrice();
     setTemplePrice(price);
   };
 
@@ -257,6 +255,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         sell,
         getBuyQuote,
         getSellQuote,
+        getTemplePrice,
         updateTemplePrice,
         updateIv,
       }}

@@ -12,6 +12,7 @@ import {
   JsonRpcSigner,
   Network,
 } from '@ethersproject/providers';
+import axios from 'axios';
 // Circular dependency
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useNotification } from 'providers/NotificationProvider';
@@ -22,10 +23,18 @@ import {
   TEAM_PAYMENTS_EPOCHS,
   TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH,
 } from 'enums/team-payment';
+import { Networks } from 'enums/network';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumberFixedDecimals } from 'utils/formatter';
+import { createZapperTokenBalanceUrl } from 'utils/url';
 import { asyncNoop, noop } from 'utils/helpers';
-import { WalletState, Balance, ETH_ACTIONS } from 'providers/types';
+import {
+  WalletState,
+  Balance,
+  ZapperTokenData,
+  ZapperTokenResponse,
+  ETH_ACTIONS,
+} from 'providers/types';
 import {
   ERC20,
   ERC20__factory,
@@ -59,6 +68,19 @@ const INITIAL_STATE: WalletState = {
     ogTempleLockedClaimable: 0,
     ogTemple: 0,
   },
+  zapperBalances: [
+    {
+      address: '',
+      balance: 0,
+      balanceRaw: '',
+      balanceUSD: 0,
+      decimals: 0,
+      network: '',
+      price: 0,
+      symbol: 'TOKEN',
+      type: '',
+    },
+  ],
   wallet: null,
   isConnected: () => false,
   connectWallet: noop,
@@ -69,6 +91,7 @@ const INITIAL_STATE: WalletState = {
   getCurrentEpoch: asyncNoop,
   getBalance: asyncNoop,
   updateBalance: asyncNoop,
+  updateZapperBalances: asyncNoop,
   collectTempleTeamPayment: asyncNoop,
   ensureAllowance: asyncNoop,
 };
@@ -83,6 +106,9 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [balanceState, setBalanceState] = useState<Balance>(
     INITIAL_STATE.balance
+  );
+  const [zapperBalances, setZapperBalances] = useState(
+    INITIAL_STATE.zapperBalances
   );
 
   const { openNotification } = useNotification();
@@ -246,6 +272,28 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     setBalanceState(balance);
   };
 
+  const updateZapperBalances = async () => {
+    if (!walletAddress || !signerState) {
+      throw new NoWalletAddressError();
+    }
+
+    const url = createZapperTokenBalanceUrl(walletAddress);
+    const res = await axios.get(url);
+
+    if (!res) {
+      throw new Error(`Network request error: ${url}`);
+    }
+
+    const tokenResponse: ZapperTokenResponse[] = res.data;
+    const tokenData: ZapperTokenData[] =
+      Object.values(tokenResponse)[0].products[0].assets;
+    const tokens = tokenData.filter(
+      (token) => token.network === Networks.Ethereum
+    );
+
+    setZapperBalances(tokens);
+  };
+
   const getCurrentEpoch = async (): Promise<void | number> => {
     if (!provider) {
       return;
@@ -362,6 +410,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     <WalletContext.Provider
       value={{
         balance: balanceState,
+        zapperBalances,
         isConnected,
         wallet: walletAddress,
         connectWallet,
@@ -373,6 +422,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
         getCurrentEpoch,
         getBalance: updateBalance,
         updateBalance,
+        updateZapperBalances,
         collectTempleTeamPayment,
       }}
     >

@@ -119,11 +119,31 @@ export interface SwapService {
 
   getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
 
+  getTemplePrice(): Promise<number | void>;
+
   updateTemplePrice(): Promise<void>;
 
   updateIv(): Promise<void>;
 }
 
+export interface ZapperTokenResponse {
+  products: [
+    {
+      assets: ZapperTokenData[];
+    }
+  ];
+}
+export interface ZapperTokenData {
+  address: string;
+  balance: number;
+  balanceRaw: string;
+  balanceUSD: number;
+  decimals: number;
+  network: string;
+  price: number;
+  symbol: string;
+  type: string;
+}
 export interface ZapService {
   zapIn(
     tokenSymbol: string,
@@ -139,6 +159,7 @@ export interface WalletState {
   wallet: string | null;
   // current
   balance: Balance;
+  zapperBalances: ZapperTokenData[];
   signer: JsonRpcSigner | null;
   network: Network | null;
 
@@ -153,6 +174,8 @@ export interface WalletState {
   getBalance(): Promise<Balance | void>;
 
   updateBalance(): Promise<void>;
+
+  updateZapperBalances(): Promise<void>;
 
   getCurrentEpoch(): Promise<void | number>;
 

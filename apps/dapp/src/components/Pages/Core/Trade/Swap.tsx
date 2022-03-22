@@ -1,8 +1,12 @@
-import React, { useReducer, useCallback } from 'react';
+import React, { useReducer, useCallback, useEffect } from 'react';
 import styled from 'styled-components';
+import { useWallet } from 'providers/WalletProvider';
+import { useSwap } from 'providers/SwapProvider';
+import { useZap } from 'providers/ZapProvider';
 import { Input, CryptoValue, CryptoSelector } from 'components/Input/Input';
 import { Tabs } from 'components/Tabs/Tabs';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { fromAtto, toAtto } from 'utils/bigNumber';
 import arrow from 'assets/icons/amm-arrow.svg';
 
 type SwapMode = 'BUY' | 'SELL';
@@ -46,6 +50,10 @@ const INITIAL_STATE: SwapReducerState = {
 
 export const Swap = () => {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+  const { balance, updateBalance, zapperBalances, updateZapperBalances } =
+    useWallet();
+  const { getSellQuote, getBuyQuote } = useSwap();
+  const { zapIn } = useZap();
 
   const handleSelectChange = useCallback(
     (event) => {
@@ -54,7 +62,23 @@ export const Swap = () => {
     [dispatch]
   );
 
-  //const handleInputChange =
+  const handleInputChange = useCallback(
+    async (value) => {
+      dispatch({ type: 'changeInputValue', value });
+      const quote = await fetchQuote(value, state);
+      dispatch({ type: 'changeQuoteValue', value: quote });
+    },
+    [dispatch]
+  );
+
+  useEffect(() => {
+    async function onMount() {
+      await updateBalance();
+      await updateZapperBalances();
+    }
+
+    onMount();
+  }, []);
 
   const Swap = (
     <SwapContainer>
@@ -84,11 +108,6 @@ export const Swap = () => {
     />
   );
 };
-
-function handleSelectChange(
-  event: any,
-  dispatch: React.Dispatch<SwapReducerAction>
-) {}
 
 function reducer(
   state: SwapReducerState,
@@ -124,7 +143,6 @@ function reducer(
       };
 
     case 'changeInputValue':
-      //TODO: async update quote value
       return { ...state, inputValue: action.value };
 
     case 'changeQuoteValue':
@@ -142,6 +160,14 @@ function reducer(
       console.error('Invalid reducer action: ', action);
       return state;
   }
+}
+
+async function fetchQuote(
+  value: number,
+  swapState: SwapReducerState
+): Promise<number> {
+  const { mode, zap, inputToken } = swapState;
+  return 0;
 }
 
 function buildInputConfig(defaultToken: TICKER_SYMBOL): CryptoSelector {
