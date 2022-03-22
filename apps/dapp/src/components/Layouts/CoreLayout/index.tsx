@@ -21,16 +21,19 @@ export default CoreLayout;
 const GlobalStyleOverride = createGlobalStyle`
   html, body {
     min-height: 100vh;
-    min-width: 100vw;
+    min-width: 320px;
+    ${tabletAndAbove(`
+      min-height: 100vh;
+      min-width: 100vw;
+  `)}
   }
 `;
 
 const Main = styled.main`
-  max-width: ${({ theme }) => theme.metrics.desktop.maxWidth};
-  margin: 0 auto;
-  padding: ${pixelsToRems(NAV_MOBILE_HEIGHT_PIXELS)}rem 1.75rem 1.75rem;
-
+  margin: 0px;
+  padding: 0px;
   ${tabletAndAbove(`
-    padding: 0 1.75rem;
-  `)}
+      max-width: ${({ theme }) => theme.metrics.desktop.maxWidth};
+      padding: 0 1.75rem;
+    `)}
 `;
