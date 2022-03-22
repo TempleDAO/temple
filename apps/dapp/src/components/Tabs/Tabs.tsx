@@ -2,6 +2,7 @@ import React, { ReactNode, useState } from 'react';
 import styled, { css } from 'styled-components';
 import { Button, ButtonLabel } from 'components/Button/Button';
 import { noop } from 'utils/helpers';
+import { pixelsToRems } from 'styles/mixins';
 
 export interface Tab {
   // the label to use on the Tab
@@ -87,11 +88,15 @@ interface TabStyledProps {
 const TabStyled = styled(Button)<TabStyledProps>`
   flex: 1;
   text-transform: none;
-  height: 3.25rem /* 52/16 */;
+  height: 2rem;
+  max-width: max-content;
+  border: ${pixelsToRems(1)}rem solid transparent;
   ${(props) =>
     props.isActive &&
     css`
-      background-color: ${(props) => props.theme.palette.brand};
+      background-color: transparent;
+      border-bottom: ${pixelsToRems(1)}rem solid
+        ${(props) => props.theme.palette.brand};
       color: ${(props) => props.theme.palette.light};
     `};
   transition: ${(props) => props.theme.transitions.color},
@@ -114,13 +119,13 @@ const TabStyled = styled(Button)<TabStyledProps>`
 
 const TabsContent = styled.div`
   position: relative;
-  border: 0.0625rem /* 1/16 */ solid ${(props) => props.theme.palette.brand};
-  border-top: none;
+  bottom: ${pixelsToRems(1)}rem;
+  border: none;
+  border-top: ${pixelsToRems(1)}rem solid
+    ${(props) => props.theme.palette.brand50};
   height: 100%;
-  min-height: 31.25rem /* 500/16 */;
-  padding: 2rem;
+  padding: 2rem 0;
   color: ${(props) => props.theme.palette.light};
-  box-shadow: ${(props) => props.theme.shadows.base};
 
   ${ButtonLabel} {
     text-transform: uppercase;
