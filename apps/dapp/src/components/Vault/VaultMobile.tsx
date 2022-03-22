@@ -1,5 +1,6 @@
 import { NAV_MOBILE_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
 import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { pixelsToRems } from 'styles/mixins';
 import { Definitions } from './mobile-parts/Definitions';
@@ -20,23 +21,34 @@ export const VaultMobile = forwardRef<VaultRef, VaultProps>(
     },
     ref
   ) => {
-    
+    const svgRef = useRef<SVGSVGElement>(null);
+    const popupRef = useRef(null);
 
+    useImperativeHandle(ref, () => ({
+      get svgRef() {
+        return svgRef.current;
+      },
+      get popupRef(){
+        return popupRef.current;
+      }
+    }))
+    const navigate = useNavigate();
+    
     return (
       <BoundingBox>
         <Box>
           <Svg width="100%" viewBox="0 50 320 129" fill="none">
-            <g clipPath="url(#clip0_4383_16241)">
-              <path fill="#0B0A0A" d="M0 0h320v568H0z" />
-              <g id="big-container">
-                <Nav />
-                <Header />
-              </g>
-            </g>
+            <Nav
+              selected={selectedNav}
+              onClickButton={(page) => {
+                navigate(`/core/vaults/${vault.id}/${page}`);
+              }}
+            />
+            <Header />
             <Definitions />
           </Svg>
         </Box>
-        <Content>Content</Content>
+        <Content>Content Foo</Content>
         <Box>
           <Svg width="100%" viewBox="1 503 320 65" fill="none">
             <Timeline />
