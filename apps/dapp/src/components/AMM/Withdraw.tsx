@@ -8,6 +8,7 @@ import PercentageBar from 'components/PercentageBar/PercentageBar';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import dateFormat from 'dateformat';
 import { useStaking } from 'providers/StakingProvider';
+import { queryMaxTablet } from 'styles/breakpoints';
 import { formatNumber } from 'utils/formatter';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import {
@@ -29,8 +30,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
     restakeAvailableTemple,
     claimAvailableTemple,
   } = useStaking();
-  const repositionTooltip = useMediaQuery({ query: '(max-width: 980px)' });
-  const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
+  const repositionTooltip = useMediaQuery({ query: queryMaxTablet });
 
   useEffect(() => {
     async function onMount() {
@@ -55,7 +55,7 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
                 from the temple.
               </small>
             }
-            position={isSmallOrMediumScreen ? 'left' : 'top'}
+            position={repositionTooltip ? 'left' : 'top'}
           >
             <TooltipIcon />
           </Tooltip>
@@ -69,8 +69,6 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
       <Flex layout={{ kind: 'container' }}>
         <Flex layout={{ kind: 'item', smallMargin: true }}>
           <StyledDataCard
-            //@ts-ignore
-            tooltipPosition={isSmallOrMediumScreen ? 'right' : 'top'}
             title={'AVAILABLE TO CLAIM'}
             data={formatNumber(exitQueueData.claimableTemple) + ''}
             tooltipContent={
@@ -94,8 +92,6 @@ export const Withdraw: FC<SizeProps> = ({ small }) => {
         <Flex layout={{ kind: 'item', smallMargin: true }}>
           <StyledDataCard
             title={'QUEUE PROCESSED BY'}
-            //@ts-ignore
-            tooltipPosition={small && repositionTooltip ? 'left' : 'top'}
             data={`${dateFormat(
               exitQueueData.lastClaimableEpochAt,
               'dd, mmm h:MM TT'
