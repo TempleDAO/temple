@@ -69,7 +69,7 @@ export const ProfileDiscordData = () => {
       </div>
       <div>
         <StatsCard
-          label="Seniority"
+          label="Role"
           stat={getTenure(discordData.roles)}
           backgroundImageUrl={background4}
           darken
@@ -158,9 +158,9 @@ function onDiscordLogout() {
 }
 
 function getTenure(roles: string[]) {
-  const highestRankingRole = Object.values(ROLES).find((role) => {
-    return roles.indexOf(role) !== -1;
-  });
+  const highestRankingRole = Object.values(ROLES).find((role) =>
+    roles.includes(role)
+  );
 
   if (highestRankingRole) return ROLE_LABELS[highestRankingRole];
 

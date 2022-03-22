@@ -11,9 +11,10 @@ export enum ROLES {
   INITIATE = 'Temple Initiates',
   DISCIPLE = 'Temple Disciples',
   ACOLYTE = 'Acolytes',
+  GUARDIAN = 'Guardians',
+  FIRE_RITUAL = 'Fire Ritualists',
   OPENING_CEREMONY = 'Echoing Whispers',
   TEMPLAR = 'Templars',
-  FIRE_RITUAL = 'Fire Ritualists'
 }
 
 export const ROLE_LABELS = {
@@ -21,8 +22,9 @@ export const ROLE_LABELS = {
   [ROLES.INITIATE]: 'Initiate',
   [ROLES.DISCIPLE]: 'Disciple',
   [ROLES.ACOLYTE]: 'Acolyte',
+  [ROLES.GUARDIAN]: 'Guardian',
   [ROLES.FIRE_RITUAL]: 'Ritualist',
   [ROLES.OPENING_CEREMONY]: '!Verified',
   [ROLES.TEMPLAR]: 'Templar',
-  UNVERIFIED: '!Unverified'
-}
+  UNVERIFIED: '!Unverified',
+};
