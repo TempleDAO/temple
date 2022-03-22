@@ -5,53 +5,23 @@ import styled from 'styled-components';
 import Loader from 'components/Loader/Loader';
 import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Vault } from 'components/Vault/types';
-import { VAULT_MONTH_MILLISECONDS } from '../../../constants';
-
-const oneDay = 1000 * 60 * 60 * 24;
-const now = new Date(Date.now());
-
-// CurrentCycle Start (cycle 2)
-const twoMonthsAgo = new Date(now.getTime() - (VAULT_MONTH_MILLISECONDS * 2));
-// 3 months before current cycle start
-const vaultStart = new Date(twoMonthsAgo.getTime() - (VAULT_MONTH_MILLISECONDS * 3));
-
-const oneWeekAgo = new Date(now.getTime() - (oneDay * 7));
-const oneMonthAndOneWeek = new Date(now.getTime() - (VAULT_MONTH_MILLISECONDS + oneDay * 7));
-
-// Entry into vault 10 days before begining of current cycle.
-const secondCycleEntry = new Date(twoMonthsAgo.getTime() - (oneDay * 10));
 
 const vaultData: { [key: string]: Vault } = {
   abc: {
     id: 'abc',
     months: 3,
-    now: now,
-    startDate: vaultStart,
-    currentCycle: 1, // zero index
+    now: new Date('6/15/22'),
+    startDate: new Date('4/1/22'),
     entries: [
       {
         id: 1,
-        entryDate: now,
+        entryDate: new Date('4/1/2022'),
         amount: 5300,
-        currentCycle: 0,
       },
       {
         id: 2,
-        entryDate: oneWeekAgo,
+        entryDate: new Date('5/30/2022'),
         amount: 2500,
-        currentCycle: 0,
-      },
-      {
-        id: 3,
-        entryDate: oneMonthAndOneWeek,
-        amount: 2500,
-        currentCycle: 0,
-      },
-      {
-        id: 4,
-        entryDate: secondCycleEntry,
-        amount: 30000,
-        currentCycle: 1,
       },
     ],
   },

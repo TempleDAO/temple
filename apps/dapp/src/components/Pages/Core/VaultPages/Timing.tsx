@@ -1,9 +1,9 @@
 import styled from 'styled-components';
-import { formatDistance, format } from 'date-fns';
+import { formatDistance, format, differenceInSeconds } from 'date-fns';
 
 import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Table';
 
-import { VAULT_MONTH_MILLISECONDS } from '../../../../constants';
+import { SECONDS_IN_MONTH } from 'components/Vault/parts/utils';
 import useVaultContext from './useVaultContext';
 
 const Timing = () => {
@@ -59,8 +59,8 @@ const Timing = () => {
 const getVaultClaimableFormatted = (vaultStart: Date, numMonths: number, vaultCycle = 0) => {
   vaultCycle = vaultCycle + 1;
 
-  const endOfCurrentCycleMs = numMonths * VAULT_MONTH_MILLISECONDS * vaultCycle;
-  const vaultEndDate = new Date(vaultStart.getTime() + endOfCurrentCycleMs);
+  const endOfCurrentCycleSeconds = numMonths * SECONDS_IN_MONTH * vaultCycle;
+  const vaultEndDate = new Date(vaultStart.getTime() + (endOfCurrentCycleSeconds * 1000));
   return formatDistance(Date.now(), vaultEndDate);
 };
 
