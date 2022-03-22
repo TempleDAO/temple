@@ -1,7 +1,8 @@
-import styled from 'styled-components';
+import VaultClaim from 'components/Vault/VaultClaim';
+import VaultContent from 'components/Vault/VaultContent';
 
 export const Claim = () => (
-  <div>
-    <h3>Claim</h3>
-  </div>
+  <VaultContent>
+    <VaultClaim />
+  </VaultContent>
 );
