@@ -1,9 +1,11 @@
 import styled from 'styled-components';
-import { formatDistance, format, differenceInSeconds } from 'date-fns';
+import { formatDistance, format, differenceInSeconds, addSeconds } from 'date-fns';
 
 import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Table';
 
 import { SECONDS_IN_MONTH } from 'components/Vault/parts/utils';
+import { Vault, Entry } from 'components/Vault/types';
+
 import useVaultContext from './useVaultContext';
 
 const Timing = () => {
@@ -42,7 +44,7 @@ const Timing = () => {
                   {getFormattedEntryCycle(entry.currentCycle)}
                 </Cell>
                 <Cell $icon={entry.inZone ? 'claim' : undefined} $align="center">
-                  {entry.inZone ? 'YES' : getVaultClaimableFormatted(vault.startDate, vault.months, vault.currentCycle)}
+                  {entry.inZone ? 'YES' : getVaultClaimableFormatted(vault)}
                 </Cell>
               </Row>
             ))}
@@ -56,11 +58,10 @@ const Timing = () => {
   );
 };
 
-const getVaultClaimableFormatted = (vaultStart: Date, numMonths: number, vaultCycle = 0) => {
-  vaultCycle = vaultCycle + 1;
-
-  const endOfCurrentCycleSeconds = numMonths * SECONDS_IN_MONTH * vaultCycle;
-  const vaultEndDate = new Date(vaultStart.getTime() + (endOfCurrentCycleSeconds * 1000));
+const getVaultClaimableFormatted = (vault: Vault) => {
+  const currentCycle = (vault.currentCycle || 0) + 1;
+  const endOfCurrentCycle = SECONDS_IN_MONTH * vault.months * currentCycle;
+  const vaultEndDate = addSeconds(vault.startDate!, endOfCurrentCycle);
   return formatDistance(Date.now(), vaultEndDate);
 };
 
