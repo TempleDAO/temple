@@ -15,47 +15,51 @@ interface IProps {
 }
 
 export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaults }) => {
-  return !isLoading ? (
-    !!vaults.length ? (
-      <>
-        {vaults.map((vault) => {
-          return (
-            <div key={vault.id}>
-              <VaultHeading>{`${vault.id}`}</VaultHeading>
-              <Table $expand>
-                <Head>
-                  <Row>
-                    <Cell as="th">Start date</Cell>
-                    <Cell as="th">Entry Date</Cell>
-                    <Cell as="th">{TICKER_SYMBOL.TEMPLE_TOKEN} amount</Cell>
-                  </Row>
-                </Head>
-                <Body>
-                  {vault.entries.map((entry) => {
-                    const entryDate = entry.entryDate ?? new Date();
-                    return (
-                      <Row key={`${vault.id}${entry.id}`}>
-                        <Cell>{format(vault.startDate, 'dd MMM yy')}</Cell>
-                        <Cell>{format(entryDate, 'dd MMM yy')}</Cell>
-                        <Cell>{entry.amount}</Cell>
-                      </Row>
-                    );
-                  })}
-                </Body>
-              </Table>
-            </div>
-          );
-        })}
-      </>
-    ) : (
+  if (isLoading) {
+    <Container>
+      <Loader />
+    </Container>;
+  }
+
+  if (!vaults.length) {
+    return (
       <Container>
         <Button isSmall as="a" label="Enter a vault" href="/core/vaults" />
       </Container>
-    )
-  ) : (
-    <Container>
-      <Loader />
-    </Container>
+    );
+  }
+
+  return (
+    <>
+      {vaults.map((vault) => {
+        return (
+          <div key={vault.id}>
+            <VaultHeading>{`${vault.id}`}</VaultHeading>
+            <Table $expand>
+              <Head>
+                <Row>
+                  <Cell as="th">Start date</Cell>
+                  <Cell as="th">Entry Date</Cell>
+                  <Cell as="th">{TICKER_SYMBOL.TEMPLE_TOKEN} amount</Cell>
+                </Row>
+              </Head>
+              <Body>
+                {vault.entries.map((entry) => {
+                  const entryDate = entry.entryDate ?? new Date();
+                  return (
+                    <Row key={`${vault.id}${entry.id}`}>
+                      <Cell>{format(vault.startDate, 'dd MMM yy')}</Cell>
+                      <Cell>{format(entryDate, 'dd MMM yy')}</Cell>
+                      <Cell>{entry.amount}</Cell>
+                    </Row>
+                  );
+                })}
+              </Body>
+            </Table>
+          </div>
+        );
+      })}
+    </>
   );
 };
 
