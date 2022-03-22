@@ -1,20 +1,20 @@
 import { useRef, useState, PropsWithChildren, useEffect } from 'react';
 import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-import { Definitions } from './desktop-parts/Definitions';
-import { Background } from './desktop-parts/Background';
-import { InnerRing } from './desktop-parts/InnerRing';
-import { OuterRing } from './desktop-parts/OuterRing';
-import { MarkerBubble } from './desktop-parts/MarkerBubble';
 import { useOutsideClick } from '../../hooks/useOutsideClick';
 import { Entry, Point, Vault, VaultPage } from './types';
 import { processData } from './desktop-parts/utils';
-import { RingButtons } from './desktop-parts/RingButtons';
-import { Timeline } from './desktop-parts/timeline/Timeline';
 import { pixelsToRems } from 'styles/mixins';
-import { NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
+import {
+  NAV_DESKTOP_HEIGHT_PIXELS,
+  NAV_MOBILE_HEIGHT_PIXELS,
+} from 'components/Layouts/CoreLayout/Header';
 import { Maybe } from 'types/util';
+import { Definitions } from './mobile-parts/Definitions';
+import { Header } from './mobile-parts/Header';
+import { Nav } from './mobile-parts/Nav';
+import { Timeline } from './mobile-parts/Timeline';
+import { Background } from './mobile-parts/Background';
 
 type Props = {
   data: Vault;
@@ -41,7 +41,10 @@ const useSelectedVaultPage = (): Maybe<VaultPage> => {
   return pageName;
 };
 
-export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
+export const VaultMobileSVG = ({
+  data,
+  children,
+}: PropsWithChildren<Props>) => {
   const navigate = useNavigate();
   const selectedNav = useSelectedVaultPage();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -75,58 +78,65 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
   return (
     <>
       <BoundingBox>
-        <svg height="100%" viewBox="0 0 1000 1000" fill="none" ref={svgRef}>
-          <Background />
-          <OuterRing selected={selectedNav} />
-          <RingButtons
-            selected={selectedNav}
-            onClickButton={(page) => {
-              navigate(`/core/dapp/vaults/${data.id}/${page}`);
-            }}
-          />
-          <Timeline data={vault} onMarkerClick={markerClick} />
-          <InnerRing selected={selectedNav} />
-          <ForeignObject x="239.5" y="239.5" width="520" height="520">
-            <Content>{children}</Content>
-          </ForeignObject>
-          <Definitions />
-          {selectedEntry && (
-            <MarkerBubble
-              ref={popupRef}
-              months={vault.months}
-              entry={selectedEntry}
-              position={markerPosition}
-            />
-          )}
-        </svg>
+        <Box>
+          <Svg
+            width="100%"
+            viewBox="0 50 320 129"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <g clipPath="url(#clip0_4383_16241)">
+              <path fill="#0B0A0A" d="M0 0h320v568H0z" />
+              <g id="big-container">
+                <Nav />
+                <Header />
+              </g>
+            </g>
+            <Definitions />
+          </Svg>
+        </Box>
+        <Content>Content</Content>
+        <Box>
+          <Svg
+            width="100%"
+            viewBox="1 503 320 65"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <Timeline />
+            <Definitions />
+          </Svg>
+        </Box>
       </BoundingBox>
     </>
   );
 };
 
-// Need to 'trim' the corners on this square
-// otherwise the corners cover some of the ring buttons.
-// TODO Long Term: SVG should have a "circular hole" in it so
-// we can simply layer things correctly.
-const ForeignObject = styled.foreignObject`
-  border-radius: 50%;
+const Svg = styled.svg`
+  // border: 1px dashed yellow;
+`;
+
+const Box = styled.div`
+  // border: 1px dashed white;
+  // flex: 1;
 `;
 
 const BoundingBox = styled.div`
-  height: calc(100vh - ${NAV_DESKTOP_HEIGHT_PIXELS}px);
+  // border: 1px solid green;
+  width: 100vw;
+  height: calc(100vh - ${NAV_MOBILE_HEIGHT_PIXELS}px);
   display: flex;
-  margin: 0 auto;
   flex-direction: column;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate3d(-50%, -50%, 0);
+  margin: 0px;
+  margin-top: ${pixelsToRems(NAV_MOBILE_HEIGHT_PIXELS)}rem;
 `;
 
 const Content = styled.div`
+  // border: 1px solid red;
   display: flex;
-  height: 100%;
-  border-radius: 50%;
+  flex-grow: 1;
   overflow: hidden;
   justify-content: center;
+  margin-top: -20px;  // This makes titles appear inside the curve a little
+  
 `;
