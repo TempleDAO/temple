@@ -1,9 +1,11 @@
-import axios from 'axios';
-import { DiscordUser } from 'components/Pages/Account';
 import React, { useEffect, useState } from 'react';
-import { createDiscordUserUrl } from 'utils/url';
-import useFetchStoreDiscordUser from './use-fetch-store-discord-user';
+import axios from 'axios';
 
+import { createDiscordUserUrl } from 'utils/url';
+
+import type { DiscordUser } from 'components/Pages/Account';
+
+import useFetchStoreDiscordUser from './use-fetch-store-discord-user';
 import useIsMounted from './use-is-mounted';
 
 export const useDiscordUserData = () => {
