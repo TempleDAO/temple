@@ -111,7 +111,10 @@ const BoundingBox = styled.div`
   display: flex;
   margin: 0 auto;
   flex-direction: column;
-  position: relative;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate3d(-50%, -50%, 0);
 `;
 
 const Content = styled.div`
