@@ -59,6 +59,9 @@ module.exports = {
     outDir: './typechain',
   },
   networks: {
+    hardhat: {
+      chainId: 1337,
+    },
     rinkeby: {
       url: process.env.RINKEBY_RPC_URL || '',
       accounts: process.env.RINKEBY_ADDRESS_PRIVATE_KEY
