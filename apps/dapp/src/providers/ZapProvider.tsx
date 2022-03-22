@@ -29,6 +29,7 @@ import {
 
 const INITIAL_STATE: ZapService = {
   zapIn: asyncNoop,
+  getZapQuote: asyncNoop,
 };
 
 const ZapContext = createContext(INITIAL_STATE);
@@ -194,6 +195,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     <ZapContext.Provider
       value={{
         zapIn,
+        getZapQuote,
       }}
     >
       {props.children}

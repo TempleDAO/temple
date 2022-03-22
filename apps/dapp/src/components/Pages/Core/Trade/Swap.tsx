@@ -13,10 +13,14 @@ type SwapMode = 'BUY' | 'SELL';
 
 type SwapReducerAction =
   | { type: 'changeMode'; value: SwapMode }
-  | { type: 'changeInputToken'; value: TICKER_SYMBOL }
+  | {
+      type: 'changeInputToken';
+      value: { token: TICKER_SYMBOL; balance: number };
+    }
   | { type: 'changeInputValue'; value: number }
   | { type: 'changeQuoteValue'; value: number }
   | { type: 'changeSlippageValue'; value: number }
+  | { type: 'changeInputTokenBalance'; value: number }
   | { type: 'changeTxState'; value: boolean }
   | { type: 'slippageTooLow' };
 
@@ -27,6 +31,7 @@ interface SwapReducerState {
   zap: boolean;
   inputToken: TICKER_SYMBOL;
   outputToken: TICKER_SYMBOL;
+  inputTokenBalance: number;
   inputValue: number;
   quoteValue: number;
   slippageValue: number;
@@ -41,6 +46,7 @@ const INITIAL_STATE: SwapReducerState = {
   zap: false,
   inputToken: TICKER_SYMBOL.STABLE_TOKEN,
   outputToken: TICKER_SYMBOL.TEMPLE_TOKEN,
+  inputTokenBalance: 0,
   inputValue: 0,
   quoteValue: 0,
   slippageValue: 1,
@@ -49,27 +55,13 @@ const INITIAL_STATE: SwapReducerState = {
 };
 
 export const Swap = () => {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
-  const { balance, updateBalance, zapperBalances, updateZapperBalances } =
-    useWallet();
-  const { getSellQuote, getBuyQuote } = useSwap();
-  const { zapIn } = useZap();
-
-  const handleSelectChange = useCallback(
-    (event) => {
-      dispatch({ type: 'changeInputToken', value: event.value });
-    },
-    [dispatch]
-  );
-
-  const handleInputChange = useCallback(
-    async (value) => {
-      dispatch({ type: 'changeInputValue', value });
-      const quote = await fetchQuote(value, state);
-      dispatch({ type: 'changeQuoteValue', value: quote });
-    },
-    [dispatch]
-  );
+  const {
+    state,
+    updateBalance,
+    updateZapperBalances,
+    handleInputChange,
+    handleSelectChange,
+  } = useSwapController();
 
   useEffect(() => {
     async function onMount() {
@@ -84,12 +76,13 @@ export const Swap = () => {
     <SwapContainer>
       <Input
         crypto={{ ...state.inputConfig, onCryptoChange: handleSelectChange }}
-        value={1000}
-        hint="Balance: 10000"
+        handleChange={handleInputChange}
+        value={state.inputValue}
+        hint={`Balance: ${state.inputTokenBalance}`}
       />
       <Spacer />
       <Input crypto={state.outputConfig} disabled value={650} />
-      <InvertButton /* TODO: ongoing TX must disable this*/ />
+      <InvertButton disabled={state.ongoingTx} />
     </SwapContainer>
   );
 
@@ -108,6 +101,107 @@ export const Swap = () => {
     />
   );
 };
+
+function useSwapController() {
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+  const { balance, updateBalance, zapperBalances, updateZapperBalances } =
+    useWallet();
+  const { getSellQuote, getBuyQuote } = useSwap();
+  const { zapIn, getZapQuote } = useZap();
+
+  useEffect(() => {
+    dispatch({
+      type: 'changeInputTokenBalance',
+      value: getTokenBalance(state.inputToken),
+    });
+  }, [balance, zapperBalances]);
+
+  const handleSelectChange = useCallback(
+    (event) => {
+      const token = Object.values(TICKER_SYMBOL).find(
+        (token) => token === event.value
+      );
+
+      if (!token) {
+        throw new Error('Invalid token selected');
+      }
+
+      dispatch({
+        type: 'changeInputToken',
+        value: { token, balance: getTokenBalance(token) },
+      });
+    },
+    [dispatch]
+  );
+
+  const handleInputChange = useCallback(
+    async (value) => {
+      dispatch({ type: 'changeInputValue', value });
+      const quote = await fetchQuote(value);
+      dispatch({ type: 'changeQuoteValue', value: quote ?? 0 });
+    },
+    [dispatch]
+  );
+
+  const fetchQuote = useCallback(
+    async (value: number): Promise<number | void> => {
+      if (state.zap) {
+        // TODO: double check if these symbols are the same as our tickers
+        // alternatively create a map of our own tickers as keys with the zapper symbols as values
+        const selectedToken = zapperBalances.find(
+          (token) => token.symbol === state.inputToken
+        );
+
+        if (!selectedToken) {
+          throw new Error(
+            `Selected token (${state.inputToken}) does not match any Zapper token symbol`
+          );
+        }
+
+        return getZapQuote(selectedToken.balance, value);
+      }
+
+      const quote = await (state.mode === 'BUY'
+        ? getBuyQuote(toAtto(value))
+        : getSellQuote(toAtto(value)));
+
+      if (!quote) {
+        throw new Error(
+          `Unable to get ${state.mode === 'BUY' ? 'buy' : 'sell'} quote for (${
+            state.inputToken
+          })`
+        );
+      }
+
+      return fromAtto(quote);
+    },
+    [getZapQuote, getBuyQuote, getSellQuote]
+  );
+
+  function getTokenBalance(token: TICKER_SYMBOL): number {
+    switch (token) {
+      case TICKER_SYMBOL.STABLE_TOKEN:
+        return balance.stableCoin;
+      case TICKER_SYMBOL.TEMPLE_TOKEN:
+        return balance.temple;
+      default:
+        return (
+          zapperBalances.find((zapperToken) => zapperToken.symbol === token)
+            ?.balance ?? 0
+        );
+    }
+  }
+
+  return {
+    state,
+    balance,
+    updateBalance,
+    updateZapperBalances,
+    handleInputChange,
+    handleSelectChange,
+    fetchQuote,
+  };
+}
 
 function reducer(
   state: SwapReducerState,
@@ -136,10 +230,14 @@ function reducer(
     case 'changeInputToken':
       return {
         ...state,
-        inputToken: action.value,
+        inputToken: action.value.token,
         inputValue: INITIAL_STATE.inputValue,
+        inputTokenBalance: action.value.balance,
         quoteValue: INITIAL_STATE.quoteValue,
         slippageValue: INITIAL_STATE.slippageValue,
+        zap:
+          state.mode === 'BUY' &&
+          action.value.token !== TICKER_SYMBOL.STABLE_TOKEN,
       };
 
     case 'changeInputValue':
@@ -147,6 +245,9 @@ function reducer(
 
     case 'changeQuoteValue':
       return { ...state, quoteValue: action.value };
+
+    case 'changeInputTokenBalance':
+      return { ...state, inputTokenBalance: action.value };
 
     case 'changeSlippageValue':
       return {
@@ -160,14 +261,6 @@ function reducer(
       console.error('Invalid reducer action: ', action);
       return state;
   }
-}
-
-async function fetchQuote(
-  value: number,
-  swapState: SwapReducerState
-): Promise<number> {
-  const { mode, zap, inputToken } = swapState;
-  return 0;
 }
 
 function buildInputConfig(defaultToken: TICKER_SYMBOL): CryptoSelector {

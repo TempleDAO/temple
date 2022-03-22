@@ -152,6 +152,8 @@ export interface ZapService {
     tokenAmount: number,
     minTempleReceived: BigNumber
   ): void;
+
+  getZapQuote(tokenPrice: number, tokenAmount: number): Promise<number | void>;
 }
 
 export interface WalletState {
