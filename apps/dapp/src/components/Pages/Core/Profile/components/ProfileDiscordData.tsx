@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { format } from 'date-fns';
-import axios from 'axios';
 
-import useIsMounted from 'hooks/use-is-mounted';
-import useFetchStoreDiscordUser from 'hooks/use-fetch-store-discord-user';
+import { createDiscordAuthUrl } from 'utils/url';
 
-import { createDiscordUserUrl, createDiscordAuthUrl } from 'utils/url';
 import { ENCLAVES, ROLES, ROLE_LABELS } from 'enums/discord';
+
+import { useDiscordUserData } from 'hooks/use-discord-data';
 
 import { Button } from 'components/Button/Button';
 import StatsCard from 'components/StatsCard/StatsCard';
-import type { DiscordUser } from 'components/Pages/Account';
+import Loader from 'components/Loader/Loader';
 
 import { theme } from 'styles/theme';
 import { tabletAndAbove } from 'styles/breakpoints';
@@ -30,28 +29,34 @@ const CARD_HEIGHT_LARGE = '10rem';
 const CARD_HEIGHT_SMALL = '5rem';
 
 export const ProfileDiscordData = () => {
-  const discordId = useFetchStoreDiscordUser();
-  const [discordData, setDiscordData] = useState<DiscordUser | null>(null);
-  const isMounted = useIsMounted();
+  const { data, loading, clearDiscordData } = useDiscordUserData();
 
-  useEffect(() => {
-    async function getDiscordData() {
-      if (discordId) {
-        const userData = await getDiscordUser(discordId);
+  if (loading) {
+    return (
+      <Container>
+        <Loader />;
+      </Container>
+    );
+  }
 
-        if (userData && isMounted) {
-          setDiscordData(userData);
-        }
-      }
-    }
-    getDiscordData();
-  }, [discordId]);
+  if (!data) {
+    return (
+      <Container>
+        <Button
+          isSmall
+          label="Connect Discord"
+          as="a"
+          href={createDiscordAuthUrl()}
+        />
+      </Container>
+    );
+  }
 
-  return discordData ? (
+  return (
     <DiscordDataSection>
       <div>
         <StatsCard
-          stat={discordData.guild_name}
+          stat={data.guild_name}
           backgroundImageUrl={texture2}
           backgroundColor={theme.palette.brand75}
           isSquare={false}
@@ -60,8 +65,8 @@ export const ProfileDiscordData = () => {
         />
         <StatsCard
           label="Enclave of"
-          stat={discordData.enclave}
-          backgroundImageUrl={setEnclaveImage(discordData.enclave as ENCLAVES)}
+          stat={data.enclave}
+          backgroundImageUrl={setEnclaveImage(data.enclave as ENCLAVES)}
           darken
           isSquare={false}
           height={CARD_HEIGHT_LARGE}
@@ -70,7 +75,7 @@ export const ProfileDiscordData = () => {
       <div>
         <StatsCard
           label="Role"
-          stat={getTenure(discordData.roles)}
+          stat={getTenure(data.roles)}
           backgroundImageUrl={background4}
           darken
           isSquare={false}
@@ -78,7 +83,7 @@ export const ProfileDiscordData = () => {
         />
         <StatsCard
           label="Templar since"
-          stat={format(new Date(discordData.joined_at), 'dd MMM yyyy')}
+          stat={format(new Date(data.joined_at), 'dd MMM yyyy')}
           backgroundImageUrl={texture3}
           backgroundColor={theme.palette.brand75}
           isSquare={false}
@@ -89,7 +94,7 @@ export const ProfileDiscordData = () => {
       <div>
         <StatsCard
           label="Engagement"
-          stat={`${discordData.engagementalltime} posts`}
+          stat={`${data.engagementalltime} posts`}
           backgroundImageUrl={texture1}
           backgroundColor={theme.palette.brand75}
           isSquare={false}
@@ -97,27 +102,18 @@ export const ProfileDiscordData = () => {
           height={CARD_HEIGHT_SMALL}
         />
         <Button
-          label={discordData.enclave ? 'Change enclave' : 'Join an enclave'}
+          label={data.enclave ? 'Change enclave' : 'Join an enclave'}
           onClick={onStartCeremony}
         />
         <Button
           label="Disconnect discord"
           onClick={() => {
             onDiscordLogout();
-            setDiscordData(null);
+            clearDiscordData();
           }}
         />
       </div>
     </DiscordDataSection>
-  ) : (
-    <DiscordEmptyState>
-      <Button
-        isSmall
-        label="Connect Discord"
-        as="a"
-        href={createDiscordAuthUrl()}
-      />
-    </DiscordEmptyState>
   );
 };
 
@@ -146,11 +142,6 @@ function setEnclaveImage(enclave: ENCLAVES) {
       return;
     }
   }
-}
-
-async function getDiscordUser(userId: string): Promise<DiscordUser | void> {
-  const url = createDiscordUserUrl(userId);
-  return await axios.get(url);
 }
 
 function onDiscordLogout() {
@@ -184,7 +175,7 @@ const DiscordDataSection = styled.div`
 `)}
 `;
 
-const DiscordEmptyState = styled.div`
+const Container = styled.div`
   display: flex;
   margin: 2rem;
   justify-content: center;
