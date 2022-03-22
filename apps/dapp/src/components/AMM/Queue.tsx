@@ -9,6 +9,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { useStaking } from 'providers/StakingProvider';
 import { JoinQueueData } from 'providers/types';
 import { TEMPLE_STAKING_ADDRESS } from 'providers/env';
+import { queryMaxLaptop } from 'styles/breakpoints';
 import { toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -35,7 +36,7 @@ export const Queue: FC<QueueProps> = ({ small }) => {
     processTime: 0,
   });
   const [rewards, setRewards] = useState<number | ''>('');
-  const repositionTopTooltip = useMediaQuery({ query: '(max-width: 1235px)' });
+  const repositionTopTooltip = useMediaQuery({ query: queryMaxLaptop });
 
   const updateTempleRewards = async (ogtAmount: number) => {
     setRewards((await getRewardsForOGT(ogtAmount)) || 0);

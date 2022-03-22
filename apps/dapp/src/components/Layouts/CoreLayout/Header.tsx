@@ -7,7 +7,6 @@ import {
   SyntheticEvent,
 } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
-import { useMediaQuery } from 'react-responsive';
 import styled from 'styled-components';
 
 import { useWallet } from 'providers/WalletProvider';
