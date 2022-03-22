@@ -9,16 +9,22 @@ type SwapMode = 'BUY' | 'SELL' | 'ZAP-IN';
 
 type SwapReducerAction =
   | { type: 'changeMode'; value: SwapMode }
-  | { type: 'changeInputToken'; value: TICKER_SYMBOL };
+  | { type: 'changeInputToken'; value: TICKER_SYMBOL }
+  | { type: 'changeInputValue'; value: number }
+  | { type: 'startTx' }
+  | { type: 'endTx' }
+  | { type: 'changeSlippageValue'; value: number }
+  | { type: 'slippageTooLow' };
 
 interface SwapReducerState {
   mode: SwapMode;
   ongoingTx: boolean;
+  increaseSlippage: boolean;
   inputToken: TICKER_SYMBOL;
   outputToken: TICKER_SYMBOL;
   inputValue: number;
   quoteValue: number;
-  inputTokenBalance: number;
+  slippageValue: number;
   inputConfig: CryptoSelector;
   outputConfig: CryptoValue;
 }
@@ -26,46 +32,15 @@ interface SwapReducerState {
 const INITIAL_STATE: SwapReducerState = {
   mode: 'BUY',
   ongoingTx: false,
+  increaseSlippage: false,
   inputToken: TICKER_SYMBOL.STABLE_TOKEN,
   outputToken: TICKER_SYMBOL.TEMPLE_TOKEN,
   inputValue: 0,
   quoteValue: 0,
-  inputTokenBalance: 0,
+  slippageValue: 0.5,
   inputConfig: buildInputConfig(TICKER_SYMBOL.STABLE_TOKEN),
   outputConfig: buildOutputConfig(TICKER_SYMBOL.TEMPLE_TOKEN),
 };
-
-function buildInputConfig(defaultToken: TICKER_SYMBOL): CryptoSelector {
-  const defaultOption = {
-    value: defaultToken,
-    label: defaultToken,
-  };
-
-  const selectOptions = Object.values(TICKER_SYMBOL).map((token) => ({
-    value: token,
-    label: token,
-  }));
-
-  return {
-    kind: 'select',
-    cryptoOptions: selectOptions,
-    defaultValue: defaultOption,
-  };
-}
-
-function buildOutputConfig(token: TICKER_SYMBOL): CryptoValue {
-  return {
-    kind: 'value',
-    value: `${token}`,
-  };
-}
-
-function reducer(
-  state: SwapReducerState,
-  action: SwapReducerAction
-): SwapReducerState {
-  return INITIAL_STATE;
-}
 
 export const Swap = () => {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
@@ -94,6 +69,47 @@ export const Swap = () => {
     />
   );
 };
+
+function reducer(
+  state: SwapReducerState,
+  action: SwapReducerAction
+): SwapReducerState {
+  switch (action.type) {
+    case 'startTx':
+      return { ...state, ongoingTx: true };
+    case 'endTx': {
+      //TODO: async refresh user balance
+      return { ...state, ongoingTx: false };
+    }
+  }
+
+  return INITIAL_STATE;
+}
+
+function buildInputConfig(defaultToken: TICKER_SYMBOL): CryptoSelector {
+  const defaultOption = {
+    value: defaultToken,
+    label: defaultToken,
+  };
+
+  const selectOptions = Object.values(TICKER_SYMBOL).map((token) => ({
+    value: token,
+    label: token,
+  }));
+
+  return {
+    kind: 'select',
+    cryptoOptions: selectOptions,
+    defaultValue: defaultOption,
+  };
+}
+
+function buildOutputConfig(token: TICKER_SYMBOL): CryptoValue {
+  return {
+    kind: 'value',
+    value: `${token}`,
+  };
+}
 
 const SwapContainer = styled.div`
   display: flex;
