@@ -8,13 +8,14 @@ import { DApp } from 'components/DApp/DApp';
 import { Analytics } from 'components/DApp/Analytics';
 import { NavContext } from 'components/DApp/NavContext';
 import { DAppView } from 'enums/dapp-view';
+import { queryMaxTablet } from 'styles/breakpoints';
 
 interface SizeProps {
   small?: boolean;
 }
 
 const DAppRoot = () => {
-  const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
+  const isSmallOrMediumScreen = useMediaQuery({ query: queryMaxTablet });
   const [activeView, setView] = useState(DAppView.BUY);
   const navContext = { activeView, setView };
 
