@@ -11,10 +11,8 @@ const Content = styled.div`
   flex-direction: column;
   justify-content: center;
   text-align: center;
-  border-radius: 50%;
-  /* TODO: adjust once in the 'Vault' */
-  width: 100%;
-  height: 500px;
+  width: 90%;
+  height: 100%;
 `;
 
 export const VaultButton = styled(Button)`
