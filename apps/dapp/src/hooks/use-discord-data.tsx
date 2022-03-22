@@ -37,6 +37,7 @@ export const useDiscordUserData = () => {
   }, [discordId]);
 
   const clearDiscordData = () => {
+    localStorage.removeItem('discord-id');
     setDiscordData(null);
   };
 

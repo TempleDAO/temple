@@ -105,13 +105,7 @@ export const ProfileDiscordData = () => {
           label={data.enclave ? 'Change enclave' : 'Join an enclave'}
           onClick={onStartCeremony}
         />
-        <Button
-          label="Disconnect discord"
-          onClick={() => {
-            onDiscordLogout();
-            clearDiscordData();
-          }}
-        />
+        <Button label="Disconnect discord" onClick={clearDiscordData} />
       </div>
     </DiscordDataSection>
   );
@@ -142,10 +136,6 @@ function setEnclaveImage(enclave: ENCLAVES) {
       return;
     }
   }
-}
-
-function onDiscordLogout() {
-  localStorage.removeItem('discord-id');
 }
 
 function getTenure(roles: string[]) {
