@@ -43,27 +43,28 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
     query: `(min-width: ${theme.metrics.devices.tablet})`,
   });
 
-  useOutsideClick(vaultRef.current?.popupRef!, () => {
-    setSelectedEntry(undefined);
-  });
+  // useOutsideClick(vaultRef.current?.popupRef!, () => {
+  //   setSelectedEntry(undefined);
+  // });
 
   const markerClick = (entryData: Entry, markerEl: SVGElement) => {
-    const markerBox = markerEl.getBoundingClientRect();
-    const markerCenterInScreenCoords = {
-      x: markerBox.x + markerBox.width / 2,
-      y: markerBox.y + markerBox.height / 2,
-    };
+    console.log(`marker clicked: `, entryData);
+    // const markerBox = markerEl.getBoundingClientRect();
+    // const markerCenterInScreenCoords = {
+    //   x: markerBox.x + markerBox.width / 2,
+    //   y: markerBox.y + markerBox.height / 2,
+    // };
 
-    const point = DOMPoint.fromPoint(markerCenterInScreenCoords);
-    const marketCenterInSVGCoords = point.matrixTransform(
-      vaultRef.current?.svgRef?.getScreenCTM()?.inverse()
-    );
-    // offset so the location is in the circle not the top left of bubble
-    marketCenterInSVGCoords.x -= 125;
-    marketCenterInSVGCoords.y -= 147;
+    // const point = DOMPoint.fromPoint(markerCenterInScreenCoords);
+    // const marketCenterInSVGCoords = point.matrixTransform(
+    //   vaultRef.current?.svgRef?.getScreenCTM()?.inverse()
+    // );
+    // // offset so the location is in the circle not the top left of bubble
+    // marketCenterInSVGCoords.x -= 125;
+    // marketCenterInSVGCoords.y -= 147;
 
-    setMarkerPosition(marketCenterInSVGCoords);
-    setSelectedEntry(entryData);
+    // setMarkerPosition(marketCenterInSVGCoords);
+    // setSelectedEntry(entryData);
   };
 
   const vault = processData(data);
@@ -79,7 +80,7 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
     />
   ) : (
     <VaultMobile
-      // ref={vaultRef}
+      ref={vaultRef}
       vault={vault}
       selectedNav={selectedNav!}
       markerClick={markerClick}
