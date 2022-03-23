@@ -23,7 +23,7 @@ import {
   TEAM_PAYMENTS_EPOCHS,
   TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH,
 } from 'enums/team-payment';
-import { Networks } from 'enums/network';
+import { Network as NetworkEnum } from 'enums/network';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { createZapperTokenBalanceUrl } from 'utils/url';
@@ -94,6 +94,7 @@ const INITIAL_STATE: WalletState = {
   updateZapperBalances: asyncNoop,
   collectTempleTeamPayment: asyncNoop,
   ensureAllowance: asyncNoop,
+  getZapperToken: noop,
 };
 
 const WalletContext = createContext<WalletState>(INITIAL_STATE);
@@ -288,7 +289,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     const tokenData: ZapperTokenData[] =
       Object.values(tokenResponse)[0].products[0].assets;
     const tokens = tokenData.filter(
-      (token) => token.network === Networks.Ethereum
+      (token) => token.network === NetworkEnum.Ethereum
     );
 
     setZapperBalances(tokens);
@@ -406,6 +407,12 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
+  const getZapperToken = (token: TICKER_SYMBOL, network: NetworkEnum) => {
+    return zapperBalances
+      .filter((token) => token.network === network)
+      .find((zapperToken) => zapperToken.symbol === token);
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -424,6 +431,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
         updateBalance,
         updateZapperBalances,
         collectTempleTeamPayment,
+        getZapperToken,
       }}
     >
       {children}

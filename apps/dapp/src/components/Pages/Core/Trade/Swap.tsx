@@ -8,6 +8,7 @@ import { Button } from 'components/Button/Button';
 import Slippage from 'components/Slippage/Slippage';
 import { Tabs } from 'components/Tabs/Tabs';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { Network } from 'enums/network';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { noop } from 'utils/helpers';
@@ -136,8 +137,13 @@ export const Swap = () => {
 
 function useSwapController() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
-  const { balance, updateBalance, zapperBalances, updateZapperBalances } =
-    useWallet();
+  const {
+    balance,
+    updateBalance,
+    zapperBalances,
+    updateZapperBalances,
+    getZapperToken,
+  } = useWallet();
   const { getSellQuote, getBuyQuote, templePrice, iv, sell, buy } = useSwap();
   const { zapIn, getZapQuote } = useZap();
 
@@ -215,9 +221,7 @@ function useSwapController() {
 
   const handleZap = async () => {
     const zapAmount = state.inputValue;
-    const zapToken = zapperBalances.find(
-      (zapperToken) => zapperToken.symbol === state.inputToken
-    );
+    const zapToken = getZapperToken(state.inputToken, Network.Ethereum);
 
     if (!zapAmount || !zapToken) {
       return;
@@ -268,8 +272,9 @@ function useSwapController() {
       if (state.zap) {
         // TODO: double check if these symbols are the same as our tickers
         // alternatively create a map of our own tickers as keys with the zapper symbols as values
-        const selectedToken = zapperBalances.find(
-          (token) => token.symbol === state.inputToken
+        const selectedToken = getZapperToken(
+          state.inputToken,
+          Network.Ethereum
         );
 
         if (!selectedToken) {
@@ -309,10 +314,7 @@ function useSwapController() {
       case TICKER_SYMBOL.TEMPLE_TOKEN:
         return balance.temple;
       default:
-        return (
-          zapperBalances.find((zapperToken) => zapperToken.symbol === token)
-            ?.balance ?? 0
-        );
+        return getZapperToken(state.inputToken, Network.Ethereum)?.balance ?? 0;
     }
   }
 

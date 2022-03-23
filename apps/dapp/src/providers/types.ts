@@ -4,6 +4,8 @@ import { ERC20 } from 'types/typechain';
 import { ClaimType } from 'enums/claim-type';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { Network as NetworkEnum } from 'enums/network';
 
 export enum ETH_ACTIONS {
   REQUEST_ACCOUNTS = 'eth_requestAccounts',
@@ -191,4 +193,9 @@ export interface WalletState {
     spender: string,
     minAllowance: BigNumber
   ): Promise<void>;
+
+  getZapperToken(
+    token: TICKER_SYMBOL,
+    network: NetworkEnum
+  ): ZapperTokenData | void;
 }

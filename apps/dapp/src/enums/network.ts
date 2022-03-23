@@ -1,3 +1,3 @@
-export enum Networks {
+export enum Network {
   Ethereum = 'ethereum',
 }
