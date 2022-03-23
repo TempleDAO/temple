@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 
 import { createDiscordAuthUrl } from 'utils/url';
 
-import { ENCLAVES, ROLES, ROLE_LABELS } from 'enums/discord';
+import { DiscordRole, Enclave, ROLE_LABELS } from 'enums/discord';
 
 import { useDiscordUserData } from 'hooks/use-discord-data';
 
@@ -56,7 +56,7 @@ export const ProfileDiscordData = () => {
     <DiscordDataSection>
       <div>
         <StatsCard
-          stat={data.guild_name}
+          stat={data.guildName}
           backgroundImageUrl={texture2}
           backgroundColor={theme.palette.brand75}
           isSquare={false}
@@ -66,7 +66,7 @@ export const ProfileDiscordData = () => {
         <StatsCard
           label="Enclave of"
           stat={data.enclave}
-          backgroundImageUrl={setEnclaveImage(data.enclave as ENCLAVES)}
+          backgroundImageUrl={setEnclaveImage(data.enclave)}
           darken
           isSquare={false}
           height={CARD_HEIGHT_LARGE}
@@ -83,7 +83,7 @@ export const ProfileDiscordData = () => {
         />
         <StatsCard
           label="Templar since"
-          stat={format(new Date(data.joined_at), 'dd MMM yyyy')}
+          stat={format(data.joinedAt, 'dd MMM yyyy')}
           backgroundImageUrl={texture3}
           backgroundColor={theme.palette.brand75}
           isSquare={false}
@@ -94,7 +94,7 @@ export const ProfileDiscordData = () => {
       <div>
         <StatsCard
           label="Engagement"
-          stat={`${data.engagementalltime} posts`}
+          stat={`${data.engagementAllTime} posts`}
           backgroundImageUrl={texture1}
           backgroundColor={theme.palette.brand75}
           isSquare={false}
@@ -115,21 +115,21 @@ function onStartCeremony() {
   // simple OC stuff
 }
 
-function setEnclaveImage(enclave: ENCLAVES) {
+function setEnclaveImage(enclave: Enclave) {
   switch (enclave) {
-    case ENCLAVES.CHAOS: {
+    case Enclave.Chaos: {
       return chaos;
     }
-    case ENCLAVES.LOGIC: {
+    case Enclave.Logic: {
       return logic;
     }
-    case ENCLAVES.MYSTERY: {
+    case Enclave.Mystery: {
       return mystery;
     }
-    case ENCLAVES.ORDER: {
+    case Enclave.Order: {
       return order;
     }
-    case ENCLAVES.STRUCTURE: {
+    case Enclave.Structure: {
       return structure;
     }
     default: {
@@ -139,7 +139,7 @@ function setEnclaveImage(enclave: ENCLAVES) {
 }
 
 function getTenure(roles: string[]) {
-  const highestRankingRole = Object.values(ROLES).find((role) =>
+  const highestRankingRole = Object.values(DiscordRole).find((role) =>
     roles.includes(role)
   );
 

@@ -5,8 +5,9 @@ import { createDiscordUserUrl } from 'utils/url';
 
 import useFetchStoreDiscordUser from './use-fetch-store-discord-user';
 import useIsMounted from './use-is-mounted';
+import { Enclave } from 'enums/discord';
 
-export interface DiscordUser {
+interface DiscordUserResponse {
   user_id: string;
   user_name: string;
   guild_name: string;
@@ -16,6 +17,18 @@ export interface DiscordUser {
   engagementalltime: string;
   roles: string[];
   joined_at: string;
+}
+
+export interface DiscordUser {
+  userId: string;
+  userName: string;
+  guildName: string;
+  enclave: Enclave;
+  engagementLast7Days: string;
+  engagementLast30Days: string;
+  engagementAllTime: string;
+  roles: string[];
+  joinedAt: Date;
 }
 
 export const useDiscordUserData = () => {
@@ -32,7 +45,17 @@ export const useDiscordUserData = () => {
         try {
           const userData = await getDiscordUser(discordId);
           if (userData && isMounted) {
-            setDiscordData(userData);
+            setDiscordData({
+              userId: userData.user_id,
+              userName: userData.user_name,
+              guildName: userData.guild_name,
+              enclave: userData.enclave as Enclave,
+              engagementLast7Days: userData.engagementlast7days,
+              engagementLast30Days: userData.engagementlast30days,
+              engagementAllTime: userData.engagementalltime,
+              roles: userData.roles,
+              joinedAt: new Date(userData.joined_at),
+            });
           }
         } catch (err) {
           if (err && isMounted) {
@@ -61,7 +84,9 @@ export const useDiscordUserData = () => {
   };
 };
 
-async function getDiscordUser(userId: string): Promise<DiscordUser | void> {
+async function getDiscordUser(
+  userId: string
+): Promise<DiscordUserResponse | void> {
   const url = createDiscordUserUrl(userId);
   return await axios.get(url);
 }

@@ -15,7 +15,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import styled from 'styled-components';
 import { formatNumberWithCommas } from 'utils/formatter';
-import type DiscordUser from 'hooks/use-discord-data';
+import { DiscordUser } from 'hooks/use-discord-data';
 
 const ENV_VARS = import.meta.env;
 const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL;

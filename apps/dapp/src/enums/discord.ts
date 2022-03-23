@@ -1,30 +1,30 @@
-export enum ENCLAVES {
-  STRUCTURE = 'Structure',
-  LOGIC = 'Logic',
-  MYSTERY = 'Mystery',
-  ORDER = 'Order',
-  CHAOS = 'Chaos',
+export enum Enclave {
+  Structure = 'Structure',
+  Logic = 'Logic',
+  Mystery = 'Mystery',
+  Order = 'Order',
+  Chaos = 'Chaos',
 }
 
-export enum ROLES {
-  MASTER = 'Temple Masters',
-  INITIATE = 'Temple Initiates',
-  DISCIPLE = 'Temple Disciples',
-  ACOLYTE = 'Acolytes',
-  GUARDIAN = 'Guardians',
-  FIRE_RITUAL = 'Fire Ritualists',
-  OPENING_CEREMONY = 'Echoing Whispers',
-  TEMPLAR = 'Templars',
+export enum DiscordRole {
+  TempleMasters = 'Temple Masters',
+  TempleInitiates = 'Temple Initiates',
+  TempleDisciples = 'Temple Disciples',
+  Acolytes = 'Acolytes',
+  Guardians = 'Guardians',
+  FireRitualists = 'Fire Ritualists',
+  EchoingWhispers = 'Echoing Whispers',
+  Templar = 'Templars',
 }
 
 export const ROLE_LABELS = {
-  [ROLES.MASTER]: 'Master',
-  [ROLES.INITIATE]: 'Initiate',
-  [ROLES.DISCIPLE]: 'Disciple',
-  [ROLES.ACOLYTE]: 'Acolyte',
-  [ROLES.GUARDIAN]: 'Guardian',
-  [ROLES.FIRE_RITUAL]: 'Ritualist',
-  [ROLES.OPENING_CEREMONY]: '!Verified',
-  [ROLES.TEMPLAR]: 'Templar',
+  [DiscordRole.TempleMasters]: 'Master',
+  [DiscordRole.TempleInitiates]: 'Initiate',
+  [DiscordRole.TempleDisciples]: 'Disciple',
+  [DiscordRole.Acolytes]: 'Acolyte',
+  [DiscordRole.Guardians]: 'Guardian',
+  [DiscordRole.FireRitualists]: 'Ritualist',
+  [DiscordRole.EchoingWhispers]: '!Verified',
+  [DiscordRole.Templar]: 'Templar',
   UNVERIFIED: '!Unverified',
 };
