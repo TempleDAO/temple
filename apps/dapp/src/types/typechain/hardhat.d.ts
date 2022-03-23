@@ -33,6 +33,14 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC20__factory>;
     getContractFactory(
+      name: "ERC20Permit",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ERC20Permit__factory>;
+    getContractFactory(
+      name: "IERC20Permit",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20Permit__factory>;
+    getContractFactory(
       name: "ERC20Burnable",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC20Burnable__factory>;
@@ -52,6 +60,10 @@ declare module "hardhat/types/runtime" {
       name: "IERC165",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC165__factory>;
+    getContractFactory(
+      name: "ERC20",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ERC20__factory>;
     getContractFactory(
       name: "IERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -205,6 +217,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.FakeERC20__factory>;
     getContractFactory(
+      name: "ERC20PermitMock",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ERC20PermitMock__factory>;
+    getContractFactory(
       name: "TestTreasuryAllocation",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestTreasuryAllocation__factory>;
@@ -249,6 +265,14 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleTreasury__factory>;
     getContractFactory(
+      name: "ITempleFraxAMMRouter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ITempleFraxAMMRouter__factory>;
+    getContractFactory(
+      name: "TempleZaps",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TempleZaps__factory>;
+    getContractFactory(
       name: "TreasuryManagementProxy",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TreasuryManagementProxy__factory>;
@@ -260,6 +284,14 @@ declare module "hardhat/types/runtime" {
       name: "Zap",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Zap__factory>;
+    getContractFactory(
+      name: "IWETH",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IWETH__factory>;
+    getContractFactory(
+      name: "ZapBaseV23",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ZapBaseV23__factory>;
 
     getContractAt(
       name: "AccessControl",
@@ -287,6 +319,16 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.ERC20>;
     getContractAt(
+      name: "ERC20Permit",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ERC20Permit>;
+    getContractAt(
+      name: "IERC20Permit",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC20Permit>;
+    getContractAt(
       name: "ERC20Burnable",
       address: string,
       signer?: ethers.Signer
@@ -311,6 +353,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IERC165>;
+    getContractAt(
+      name: "ERC20",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ERC20>;
     getContractAt(
       name: "IERC20",
       address: string,
@@ -502,6 +549,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.FakeERC20>;
     getContractAt(
+      name: "ERC20PermitMock",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ERC20PermitMock>;
+    getContractAt(
       name: "TestTreasuryAllocation",
       address: string,
       signer?: ethers.Signer
@@ -557,6 +609,16 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.TempleTreasury>;
     getContractAt(
+      name: "ITempleFraxAMMRouter",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ITempleFraxAMMRouter>;
+    getContractAt(
+      name: "TempleZaps",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TempleZaps>;
+    getContractAt(
       name: "TreasuryManagementProxy",
       address: string,
       signer?: ethers.Signer
@@ -571,6 +633,16 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Zap>;
+    getContractAt(
+      name: "IWETH",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IWETH>;
+    getContractAt(
+      name: "ZapBaseV23",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ZapBaseV23>;
 
     // default types
     getContractFactory(
