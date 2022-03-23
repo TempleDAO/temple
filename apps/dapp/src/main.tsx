@@ -17,6 +17,7 @@ import Disclaimer from 'components/Pages/Disclaimer';
 import CoreLayout from 'components/Layouts/CoreLayout';
 import AnalyticsPage from 'components/Pages/Core/Analytics';
 import VaultPage from 'components/Pages/Core/Vault';
+import ProfilePage from 'components/Pages/Core/Profile/Profile';
 import VaultListPage from 'components/Pages/Core/VaultList';
 import { Claim as VaultClaim } from 'components/Pages/Core/VaultPages/Claim';
 import { Stake } from 'components/Pages/Core/VaultPages/Stake';
@@ -77,7 +78,7 @@ ReactDOM.render(
                 <Route path="timing" element={<Timing />} />
               </Route>
               <Route path="trade" element={'Trade'} />
-              <Route path="profile" element={'Profile'} />
+              <Route path="profile" element={<ProfilePage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
               {/* Redirect everything else to the home page */}
               <Route path="*" element={<Navigate replace to="/" />} />
