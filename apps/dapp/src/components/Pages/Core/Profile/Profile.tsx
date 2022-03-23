@@ -8,6 +8,7 @@ import type { Tab } from 'components/Tabs/Tabs';
 import type { Vault } from 'components/Vault/types';
 
 import { ProfileVaults } from './components/ProfileVaults';
+import { ProfileLegacyTemple } from './components/ProfileLegacyTemple';
 
 import { tabletAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
@@ -123,7 +124,11 @@ function getTabs(
     tabs.push({
       label: `Legacy ${TICKER_SYMBOL.TEMPLE_TOKEN}`,
       content: (
-        <Subheading>{`Legacy ${TICKER_SYMBOL.TEMPLE_TOKEN}`}</Subheading>
+        <ProfileLegacyTemple
+          lockedOgTempleBalance={lockedOgtBalance}
+          ogTempleBalance={ogtBalance}
+          faithBalance={faithBalance}
+        />
       ),
     });
   }
