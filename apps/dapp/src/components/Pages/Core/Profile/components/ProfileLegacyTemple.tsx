@@ -5,7 +5,7 @@ import { tabletAndAbove } from 'styles/breakpoints';
 
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
-import { formatNumberWithCommas } from 'utils/formatter'
+import { formatNumberWithCommas } from 'utils/formatter';
 
 import StatsCard from 'components/StatsCard/StatsCard';
 import { Button } from 'components/Button/Button';
@@ -22,25 +22,29 @@ interface IProps {
   faithBalance?: number;
 }
 
-export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance, ogTempleBalance, faithBalance }) => {
+export const ProfileLegacyTemple: React.FC<IProps> = ({
+  lockedOgTempleBalance = 0,
+  ogTempleBalance = 0,
+  faithBalance = 0,
+}) => {
   return (
     <>
       <LegacyTempleArea>
         <StatsCard
           label={`${TICKER_SYMBOL.OG_TEMPLE_TOKEN} (Locked)`}
-          stat={formatNumberWithCommas(lockedOgTempleBalance ?? 0)}
+          stat={formatNumberWithCommas(lockedOgTempleBalance)}
           backgroundImageUrl={background3}
           darken
         />
         <StatsCard
           label={`${TICKER_SYMBOL.OG_TEMPLE_TOKEN} (Unlocked)`}
-          stat={formatNumberWithCommas(ogTempleBalance ?? 0)}
+          stat={formatNumberWithCommas(ogTempleBalance)}
           backgroundImageUrl={background1}
           darken
         />
         <StatsCard
           label={TICKER_SYMBOL.FAITH}
-          stat={formatNumberWithCommas(faithBalance ?? 0)}
+          stat={formatNumberWithCommas(faithBalance)}
           backgroundColor={background2}
           backgroundImageUrl={texture2}
           darken
@@ -53,10 +57,7 @@ export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance, o
         />
       </LegacyTempleArea>
       <LegacyTempleArea>
-        <Button
-          label={`Redeem ${TICKER_SYMBOL.TEMPLE_TOKEN}`}
-          isSmall
-        />
+        <Button label={`Redeem ${TICKER_SYMBOL.TEMPLE_TOKEN}`} isSmall />
       </LegacyTempleArea>
     </>
   );
