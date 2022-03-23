@@ -119,12 +119,12 @@ function getTabs(
   return tabs;
 }
 
-const Heading = styled.h1`
+const Heading = styled.h2`
   ${({ theme }) => theme.typography.h2};
   margin: 0;
 `;
 
-const Subheading = styled.h2`
+const Subheading = styled.h3`
   ${({ theme }) => theme.typography.h4};
   margin: 0;
 `;
