@@ -1,49 +1,12 @@
-import React, { useReducer, useCallback, useEffect } from 'react';
-import styled from 'styled-components';
+import { useReducer, useEffect, useCallback } from 'react';
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
 import { useZap } from 'providers/ZapProvider';
-import { Input, CryptoValue, CryptoSelector } from 'components/Input/Input';
-import { Button } from 'components/Button/Button';
-import Slippage from 'components/Slippage/Slippage';
-import { Tabs } from 'components/Tabs/Tabs';
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { Network } from 'enums/network';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { fromAtto, toAtto } from 'utils/bigNumber';
-import { formatNumber } from 'utils/formatter';
-import { noop } from 'utils/helpers';
-import arrow from 'assets/icons/amm-arrow.svg';
-
-type SwapMode = 'BUY' | 'SELL';
-
-type SwapReducerAction =
-  | { type: 'changeMode'; value: SwapMode }
-  | {
-      type: 'changeInputToken';
-      value: { token: TICKER_SYMBOL; balance: number };
-    }
-  | { type: 'changeInputValue'; value: number }
-  | { type: 'changeQuoteValue'; value: number }
-  | { type: 'changeSlippageValue'; value: number }
-  | { type: 'changeInputTokenBalance'; value: number }
-  | { type: 'startTx' }
-  | { type: 'endTx' }
-  | { type: 'slippageTooHigh' };
-
-interface SwapReducerState {
-  mode: SwapMode;
-  ongoingTx: boolean;
-  slippageTooHigh: boolean;
-  zap: boolean;
-  inputToken: TICKER_SYMBOL;
-  outputToken: TICKER_SYMBOL;
-  inputTokenBalance: number;
-  inputValue: number;
-  quoteValue: number;
-  slippageValue: number;
-  inputConfig: CryptoSelector;
-  outputConfig: CryptoValue;
-}
+import { SwapReducerState, SwapReducerAction } from './types';
+import { buildInputConfig, buildOutputConfig } from './utils';
 
 const INITIAL_STATE: SwapReducerState = {
   mode: 'BUY',
@@ -60,82 +23,7 @@ const INITIAL_STATE: SwapReducerState = {
   outputConfig: buildOutputConfig(TICKER_SYMBOL.TEMPLE_TOKEN),
 };
 
-export const Swap = () => {
-  const {
-    state,
-    templePrice,
-    updateBalance,
-    updateZapperBalances,
-    handleInputChange,
-    handleSelectChange,
-    handleSlippageUpdate,
-    handleTransaction,
-    handleHintClick,
-  } = useSwapController();
-
-  useEffect(() => {
-    async function onMount() {
-      await updateBalance();
-      await updateZapperBalances();
-    }
-
-    onMount();
-  }, []);
-
-  const isSwapButtonDisabled =
-    state.slippageTooHigh ||
-    state.inputTokenBalance === 0 ||
-    state.inputValue > state.inputTokenBalance;
-
-  const Swap = (
-    <SwapContainer>
-      <Input
-        crypto={{ ...state.inputConfig, onCryptoChange: handleSelectChange }}
-        handleChange={handleInputChange}
-        value={state.inputValue}
-        min={0}
-        max={state.inputTokenBalance}
-        hint={`Balance: ${state.inputTokenBalance}`}
-        onHintClick={handleHintClick}
-      />
-      <Spacer />
-      <Input crypto={state.outputConfig} disabled value={state.quoteValue} />
-      <Slippage
-        label={`${TICKER_SYMBOL.TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
-        value={state.slippageValue}
-        onChange={handleSlippageUpdate}
-      />
-      <InvertButton disabled={state.ongoingTx} />
-      <Button
-        label={
-          state.slippageTooHigh
-            ? `Increase slippage`
-            : `Exchange ${state.inputToken} for ${state.outputToken}`
-        }
-        onClick={isSwapButtonDisabled ? handleTransaction : noop}
-        isUppercase
-        disabled={isSwapButtonDisabled}
-      />
-    </SwapContainer>
-  );
-
-  return (
-    <Tabs
-      tabs={[
-        {
-          label: 'Swap',
-          content: Swap,
-        },
-        {
-          label: 'Unlock',
-          content: <SwapContainer>unlock $temple</SwapContainer>,
-        },
-      ]}
-    />
-  );
-};
-
-function useSwapController() {
+export default function useSwapController() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const {
     balance,
@@ -154,6 +42,7 @@ function useSwapController() {
     });
   }, [balance, zapperBalances]);
 
+  // Handles selection of a new value in the select dropdown
   const handleSelectChange = useCallback(
     (event) => {
       const token = Object.values(TICKER_SYMBOL).find(
@@ -172,6 +61,7 @@ function useSwapController() {
     [dispatch]
   );
 
+  //TODO: can probably be reduced to a single dispatch
   const handleInputChange = useCallback(
     async (value) => {
       dispatch({ type: 'changeInputValue', value });
@@ -185,6 +75,7 @@ function useSwapController() {
     dispatch({ type: 'changeSlippageValue', value });
   };
 
+  // Fired when the Swap/Exchange button is pressed
   const handleTransaction = async () => {
     dispatch({ type: 'startTx' });
 
@@ -197,6 +88,8 @@ function useSwapController() {
     }
 
     dispatch({ type: 'endTx' });
+
+    // Refresh balances after tx is done in order to update the UI
     await updateBalance();
     await updateZapperBalances();
   };
@@ -210,6 +103,9 @@ function useSwapController() {
     }
 
     const minAmountOut = templeAmount * templePrice * (1 - templeAmount / 100);
+
+    // If there is a sell quote and it is below what you'd get selling at IV
+    // the sale is directed to the IV Swap contract to prevent the AMM price to dip below IV
     const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
 
     if (!isIvSwap && minAmountOut > fromAtto(sellQuote)) {
@@ -401,56 +297,3 @@ function reducer(
       return state;
   }
 }
-
-function buildInputConfig(defaultToken: TICKER_SYMBOL): CryptoSelector {
-  const defaultOption = {
-    value: defaultToken,
-    label: defaultToken,
-  };
-
-  const selectOptions = Object.values(TICKER_SYMBOL).map((token) => ({
-    value: token,
-    label: token,
-  }));
-
-  return {
-    kind: 'select',
-    cryptoOptions: selectOptions,
-    defaultValue: defaultOption,
-    onCryptoChange: () => {},
-  };
-}
-
-function buildOutputConfig(token: TICKER_SYMBOL): CryptoValue {
-  return {
-    kind: 'value',
-    value: `${token}`,
-  };
-}
-
-const SwapContainer = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  position: relative;
-  min-width: 20rem /*320/16*/;
-`;
-
-const InvertButton = styled.button`
-  position: absolute;
-  height: 2.5rem /* 40/16 */;
-  width: 2.5rem /* 40/16 */;
-  top: calc(50% - 1.25rem);
-  left: calc(50% - 1.25rem);
-  border: none;
-  cursor: pointer;
-  background: url(${arrow});
-  background-repeat: no-repeat;
-  background-size: cover;
-  border-radius: 100%;
-`;
-
-const Spacer = styled.div`
-  height: 0.625rem /* 10/16 */;
-`;

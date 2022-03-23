@@ -1,10 +1,5 @@
-import React, {
-  useState,
-  createContext,
-  useContext,
-  PropsWithChildren,
-} from 'react';
-import { ethers, ContractTransaction, BigNumber } from 'ethers';
+import React, { createContext, useContext, PropsWithChildren } from 'react';
+import { ethers, BigNumber } from 'ethers';
 import axios from 'axios';
 import { signERC2612Permit } from 'eth-permit';
 import { useWallet } from 'providers/WalletProvider';
@@ -14,7 +9,7 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { toAtto } from 'utils/bigNumber';
 import { asyncNoop } from 'utils/helpers';
 import { ZapService } from 'providers/types';
-import { create0xQuoteUrl, createZapperTokenBalanceUrl } from 'utils/url';
+import { create0xQuoteUrl } from 'utils/url';
 import {
   TempleZaps,
   FakeERC20,
@@ -52,7 +47,7 @@ export const ZapProvider = (props: PropsWithChildren<{}>) => {
     }
 
     let sellToken: string;
-    let tx: ContractTransaction;
+    let tx;
     const TEMPLE_ZAPS = new TempleZaps__factory(signer).attach(
       TEMPLE_ZAPS_ADDRESS
     );
@@ -105,6 +100,11 @@ export const ZapProvider = (props: PropsWithChildren<{}>) => {
         swapCallData,
         overrides
       );
+    }
+
+    if (!tx) {
+      console.error('Error zapping tokens');
+      return;
     }
 
     const txReceipt = await tx.wait();
