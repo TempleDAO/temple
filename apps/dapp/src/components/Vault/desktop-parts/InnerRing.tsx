@@ -7,7 +7,7 @@ interface Props {
 }
 
 export const InnerRing = ({ selected }: Props) => {
-  const [angle, prevAngle, duration, ref] = useRotationAngle(selected);
+  const [angle, prevAngle, duration, ref] = useRotationAngle(selected, false);
   const transform = `rotate(${angle} 502.066 502.066)`;
 
   return (
