@@ -10,6 +10,7 @@ import { Tabs } from 'components/Tabs/Tabs';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
+import { noop } from 'utils/helpers';
 import arrow from 'assets/icons/amm-arrow.svg';
 
 type SwapMode = 'BUY' | 'SELL';
@@ -26,12 +27,12 @@ type SwapReducerAction =
   | { type: 'changeInputTokenBalance'; value: number }
   | { type: 'startTx' }
   | { type: 'endTx' }
-  | { type: 'slippageTooLow' };
+  | { type: 'slippageTooHigh' };
 
 interface SwapReducerState {
   mode: SwapMode;
   ongoingTx: boolean;
-  slippageTooLow: boolean;
+  slippageTooHigh: boolean;
   zap: boolean;
   inputToken: TICKER_SYMBOL;
   outputToken: TICKER_SYMBOL;
@@ -46,7 +47,7 @@ interface SwapReducerState {
 const INITIAL_STATE: SwapReducerState = {
   mode: 'BUY',
   ongoingTx: false,
-  slippageTooLow: false,
+  slippageTooHigh: false,
   zap: false,
   inputToken: TICKER_SYMBOL.STABLE_TOKEN,
   outputToken: TICKER_SYMBOL.TEMPLE_TOKEN,
@@ -68,6 +69,7 @@ export const Swap = () => {
     handleSelectChange,
     handleSlippageUpdate,
     handleTransaction,
+    handleHintClick,
   } = useSwapController();
 
   useEffect(() => {
@@ -79,13 +81,21 @@ export const Swap = () => {
     onMount();
   }, []);
 
+  const isSwapButtonDisabled =
+    state.slippageTooHigh ||
+    state.inputTokenBalance === 0 ||
+    state.inputValue > state.inputTokenBalance;
+
   const Swap = (
     <SwapContainer>
       <Input
         crypto={{ ...state.inputConfig, onCryptoChange: handleSelectChange }}
         handleChange={handleInputChange}
         value={state.inputValue}
+        min={0}
+        max={state.inputTokenBalance}
         hint={`Balance: ${state.inputTokenBalance}`}
+        onHintClick={handleHintClick}
       />
       <Spacer />
       <Input crypto={state.outputConfig} disabled value={state.quoteValue} />
@@ -96,9 +106,14 @@ export const Swap = () => {
       />
       <InvertButton disabled={state.ongoingTx} />
       <Button
-        label={`Exchange ${state.inputToken} for ${state.outputToken}`}
-        onClick={handleTransaction}
+        label={
+          state.slippageTooHigh
+            ? `Increase slippage`
+            : `Exchange ${state.inputToken} for ${state.outputToken}`
+        }
+        onClick={isSwapButtonDisabled ? handleTransaction : noop}
         isUppercase
+        disabled={isSwapButtonDisabled}
       />
     </SwapContainer>
   );
@@ -189,12 +204,13 @@ function useSwapController() {
     }
 
     const minAmountOut = templeAmount * templePrice * (1 - templeAmount / 100);
-
     const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
 
-    if (minAmountOut <= fromAtto(sellQuote) || isIvSwap) {
-      await sell(toAtto(templeAmount), toAtto(minAmountOut), isIvSwap);
+    if (!isIvSwap && minAmountOut > fromAtto(sellQuote)) {
+      dispatch({ type: 'slippageTooHigh' });
+      return;
     }
+    await sell(toAtto(templeAmount), toAtto(minAmountOut), isIvSwap);
   };
 
   const handleZap = async () => {
@@ -214,6 +230,11 @@ function useSwapController() {
     }
 
     const minTempleReceived = zapQuote * (1 - state.slippageValue / 100);
+
+    if (minTempleReceived > zapQuote) {
+      dispatch({ type: 'slippageTooHigh' });
+      return;
+    }
 
     await zapIn(
       zapToken.symbol,
@@ -235,9 +256,11 @@ function useSwapController() {
     const minAmountOut =
       (fraxAmount / templePrice) * (1 - state.slippageValue / 100);
 
-    if (minAmountOut <= fromAtto(buyQuote)) {
-      await buy(toAtto(fraxAmount), toAtto(minAmountOut));
+    if (minAmountOut > fromAtto(buyQuote)) {
+      dispatch({ type: 'slippageTooHigh' });
+      return;
     }
+    await buy(toAtto(fraxAmount), toAtto(minAmountOut));
   };
 
   const fetchQuote = useCallback(
@@ -275,6 +298,10 @@ function useSwapController() {
     [getZapQuote, getBuyQuote, getSellQuote]
   );
 
+  const handleHintClick = () => {
+    dispatch({ type: 'changeInputValue', value: state.inputTokenBalance });
+  };
+
   function getTokenBalance(token: TICKER_SYMBOL): number {
     switch (token) {
       case TICKER_SYMBOL.STABLE_TOKEN:
@@ -299,6 +326,7 @@ function useSwapController() {
     handleSelectChange,
     handleSlippageUpdate,
     handleTransaction,
+    handleHintClick,
     fetchQuote,
   };
 }
@@ -333,8 +361,8 @@ function reducer(
         slippageValue: INITIAL_STATE.slippageValue,
       };
 
-    case 'slippageTooLow':
-      return { ...state, slippageTooLow: true };
+    case 'slippageTooHigh':
+      return { ...state, slippageTooHigh: true };
 
     case 'changeInputToken':
       return {
@@ -362,8 +390,8 @@ function reducer(
       return {
         ...state,
         slippageValue: action.value,
-        slippageTooLow:
-          action.value > state.slippageValue ? false : state.slippageTooLow,
+        slippageTooHigh:
+          action.value > state.slippageValue ? false : state.slippageTooHigh,
       };
 
     default:
