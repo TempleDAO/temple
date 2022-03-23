@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import { VaultPage } from '../types';
+import { useRotationAngle } from '../useRotationAngle';
 
 type Props = {
   selected?: VaultPage;
@@ -16,8 +17,22 @@ export const Nav = ({ selected, onClickButton }: Props) => {
   const iconFill = (item: VaultPage) =>
     item === selected ? COLOR_SELECTED_FILL : COLOR_DEFAULT_FILL_ICON;
 
+  const [angle, prevAngle, duration, ref] = useRotationAngle(selected, true);
 
-  console.log('selected: ', selected);
+  // Leaving this calculation here to show how it was derived.
+  // These hard coded numbers come directly from the figma file.
+  const bbBoxPosition = {
+    x: -591.29,
+    y: 98.82,
+  };
+  const bbLength = 1504.52;
+  const center = {
+    x: bbBoxPosition.x + bbLength / 2,
+    y: bbBoxPosition.y + bbLength / 2,
+  };
+
+  const transform = `rotate(${angle} ${center.x} ${center.y})`;
+  
   return (
     <g id="nav">
       <g id="background_2" stroke="#BD7B4F">
@@ -252,7 +267,19 @@ export const Nav = ({ selected, onClickButton }: Props) => {
           />
         </g>
       </g>
-      <g id="selector">
+      <g id="selector" transform={transform}>
+        <animateTransform
+          ref={ref}
+          attributeName="transform"
+          attributeType="XML"
+          type="rotate"
+          from={`${prevAngle} ${center.x} ${center.y}`}
+          to={`${angle} ${center.x} ${center.y}`}
+          dur={`${duration}ms`}
+          repeatCount="1"
+          calcMode="spline"
+          keySplines=" .4,0, .58,1"
+        />
         <g id="selector-rotation" filter="url(#filter8_i_4383_16241)">
           <g id="selector_2">
             <path
