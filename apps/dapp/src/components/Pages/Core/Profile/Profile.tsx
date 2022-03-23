@@ -5,10 +5,12 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import StatsCard from 'components/StatsCard/StatsCard';
 import { Tabs } from 'components/Tabs/Tabs';
 import type { Tab } from 'components/Tabs/Tabs';
+
 import type { Vault } from 'components/Vault/types';
 
 import { ProfileVaults } from './components/ProfileVaults';
 import { ProfileLegacyTemple } from './components/ProfileLegacyTemple';
+import { ProfileDiscordData } from './components/ProfileDiscordData';
 
 import { tabletAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
@@ -115,7 +117,7 @@ function getTabs(
       content: <ProfileVaults isLoading={isLoading} vaults={vaults} />,
     },
     { label: 'Transactions', content: <Subheading>Transactions</Subheading> },
-    { label: 'Discord', content: <Subheading>Discord</Subheading> },
+    { label: 'Discord', content: <ProfileDiscordData /> },
   ];
 
   const hasLegacyTemple = !!ogtBalance || !!lockedOgtBalance || !!faithBalance;
