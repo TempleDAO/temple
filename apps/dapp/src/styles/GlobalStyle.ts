@@ -63,7 +63,7 @@ export const GlobalStyle = createGlobalStyle`
   body {
     font-family: Caviar Dreams, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
     Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-    font-size: ${ROOT_FONT_SIZE};
+    font-size: ${ROOT_FONT_SIZE}px;
     background-color: ${theme.palette.dark};
     color: ${theme.palette.light};
     overflow-x: hidden;
