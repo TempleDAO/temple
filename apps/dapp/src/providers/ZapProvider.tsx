@@ -34,7 +34,7 @@ const INITIAL_STATE: ZapService = {
 
 const ZapContext = createContext(INITIAL_STATE);
 
-export const SwapProvider = (props: PropsWithChildren<{}>) => {
+export const ZapProvider = (props: PropsWithChildren<{}>) => {
   const { signer, wallet } = useWallet();
   const { getTemplePrice } = useSwap();
   const { openNotification } = useNotification();
@@ -177,7 +177,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     );
   };
 
-  // Unsure how useful this is
   const getZapQuote = async (
     tokenPrice: number,
     tokenAmount: number

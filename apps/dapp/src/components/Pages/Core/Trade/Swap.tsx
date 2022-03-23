@@ -4,9 +4,12 @@ import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
 import { useZap } from 'providers/ZapProvider';
 import { Input, CryptoValue, CryptoSelector } from 'components/Input/Input';
+import { Button } from 'components/Button/Button';
+import Slippage from 'components/Slippage/Slippage';
 import { Tabs } from 'components/Tabs/Tabs';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { fromAtto, toAtto } from 'utils/bigNumber';
+import { formatNumber } from 'utils/formatter';
 import arrow from 'assets/icons/amm-arrow.svg';
 
 type SwapMode = 'BUY' | 'SELL';
@@ -21,7 +24,8 @@ type SwapReducerAction =
   | { type: 'changeQuoteValue'; value: number }
   | { type: 'changeSlippageValue'; value: number }
   | { type: 'changeInputTokenBalance'; value: number }
-  | { type: 'changeTxState'; value: boolean }
+  | { type: 'startTx' }
+  | { type: 'endTx' }
   | { type: 'slippageTooLow' };
 
 interface SwapReducerState {
@@ -57,10 +61,13 @@ const INITIAL_STATE: SwapReducerState = {
 export const Swap = () => {
   const {
     state,
+    templePrice,
     updateBalance,
     updateZapperBalances,
     handleInputChange,
     handleSelectChange,
+    handleSlippageUpdate,
+    handleTransaction,
   } = useSwapController();
 
   useEffect(() => {
@@ -81,8 +88,18 @@ export const Swap = () => {
         hint={`Balance: ${state.inputTokenBalance}`}
       />
       <Spacer />
-      <Input crypto={state.outputConfig} disabled value={650} />
+      <Input crypto={state.outputConfig} disabled value={state.quoteValue} />
+      <Slippage
+        label={`${TICKER_SYMBOL.TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
+        value={state.slippageValue}
+        onChange={handleSlippageUpdate}
+      />
       <InvertButton disabled={state.ongoingTx} />
+      <Button
+        label={`Exchange ${state.inputToken} for ${state.outputToken}`}
+        onClick={handleTransaction}
+        isUppercase
+      />
     </SwapContainer>
   );
 
@@ -106,7 +123,7 @@ function useSwapController() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const { balance, updateBalance, zapperBalances, updateZapperBalances } =
     useWallet();
-  const { getSellQuote, getBuyQuote } = useSwap();
+  const { getSellQuote, getBuyQuote, templePrice, iv, sell, buy } = useSwap();
   const { zapIn, getZapQuote } = useZap();
 
   useEffect(() => {
@@ -142,6 +159,86 @@ function useSwapController() {
     },
     [dispatch]
   );
+
+  const handleSlippageUpdate = (value: number) => {
+    dispatch({ type: 'changeSlippageValue', value });
+  };
+
+  const handleTransaction = async () => {
+    dispatch({ type: 'startTx' });
+
+    if (state.mode === 'SELL') {
+      await handleSell();
+    } else if (state.zap) {
+      await handleZap();
+    } else {
+      await handleBuy();
+    }
+
+    dispatch({ type: 'endTx' });
+    await updateBalance();
+    await updateZapperBalances();
+  };
+
+  const handleSell = async () => {
+    const templeAmount = state.inputValue;
+    const sellQuote = await getSellQuote(toAtto(templeAmount));
+
+    if (!templeAmount || !sellQuote) {
+      return;
+    }
+
+    const minAmountOut = templeAmount * templePrice * (1 - templeAmount / 100);
+
+    const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
+
+    if (minAmountOut <= fromAtto(sellQuote) || isIvSwap) {
+      await sell(toAtto(templeAmount), toAtto(minAmountOut), isIvSwap);
+    }
+  };
+
+  const handleZap = async () => {
+    const zapAmount = state.inputValue;
+    const zapToken = zapperBalances.find(
+      (zapperToken) => zapperToken.symbol === state.inputToken
+    );
+
+    if (!zapAmount || !zapToken) {
+      return;
+    }
+
+    const zapQuote = await getZapQuote(zapToken.price, state.inputValue);
+
+    if (!zapQuote) {
+      return;
+    }
+
+    const minTempleReceived = zapQuote * (1 - state.slippageValue / 100);
+
+    await zapIn(
+      zapToken.symbol,
+      zapToken.address,
+      zapToken.decimals,
+      state.inputValue,
+      toAtto(minTempleReceived)
+    );
+  };
+
+  const handleBuy = async () => {
+    const fraxAmount = state.inputValue;
+    const buyQuote = await getBuyQuote(toAtto(fraxAmount));
+
+    if (!fraxAmount || !buyQuote) {
+      return;
+    }
+
+    const minAmountOut =
+      (fraxAmount / templePrice) * (1 - state.slippageValue / 100);
+
+    if (minAmountOut <= fromAtto(buyQuote)) {
+      await buy(toAtto(fraxAmount), toAtto(minAmountOut));
+    }
+  };
 
   const fetchQuote = useCallback(
     async (value: number): Promise<number | void> => {
@@ -194,11 +291,14 @@ function useSwapController() {
 
   return {
     state,
+    templePrice,
     balance,
     updateBalance,
     updateZapperBalances,
     handleInputChange,
     handleSelectChange,
+    handleSlippageUpdate,
+    handleTransaction,
     fetchQuote,
   };
 }
@@ -221,8 +321,17 @@ function reducer(
           };
     }
 
-    case 'changeTxState':
-      return { ...state, ongoingTx: action.value };
+    case 'startTx':
+      return { ...state, ongoingTx: true };
+
+    case 'endTx':
+      return {
+        ...state,
+        ongoingTx: false,
+        inputValue: INITIAL_STATE.inputValue,
+        quoteValue: INITIAL_STATE.quoteValue,
+        slippageValue: INITIAL_STATE.slippageValue,
+      };
 
     case 'slippageTooLow':
       return { ...state, slippageTooLow: true };
