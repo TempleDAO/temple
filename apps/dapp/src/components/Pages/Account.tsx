@@ -17,18 +17,8 @@ import useFetchStoreDiscordUser from 'hooks/use-fetch-store-discord-user';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberWithCommas } from 'utils/formatter';
+import { DiscordUser } from 'hooks/use-discord-data';
 import { Nullable } from 'types/util';
-
-export interface DiscordUser {
-  user_id: string;
-  user_name: string;
-  guild_name: string;
-  enclave: string;
-  engagementlast7days: string;
-  engagementlast30days: string;
-  engagementalltime: SVGStringList;
-  roles: string[];
-}
 
 const ENV_VARS = import.meta.env;
 const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL;
