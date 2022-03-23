@@ -87,8 +87,11 @@ interface TabStyledProps {
 
 const TabStyled = styled(Button)<TabStyledProps>`
   flex: 1;
+  border-radius: 0;
+  background: transparent;
+  color: ${(props) => props.theme.palette.brand};
   text-transform: none;
-  height: 2rem;
+  height: 2.25rem;
   max-width: max-content;
   border: ${pixelsToRems(1)}rem solid transparent;
   ${(props) =>

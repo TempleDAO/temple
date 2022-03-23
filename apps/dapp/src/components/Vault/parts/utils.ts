@@ -1,5 +1,5 @@
-import { getUnixTime, differenceInSeconds } from 'date-fns';
-import { Entry, Vault, MarkerType, VaultPage } from '../types';
+import { differenceInSeconds } from 'date-fns';
+import { Entry, Vault, MarkerType } from '../types';
 
 export const SECONDS_IN_MONTH = 2_629_800;
 
