@@ -17,7 +17,7 @@ const getPageAngle = (page?: VaultPage, isMobile: boolean = false) => {
     case 'stake':
       return isMobile ? -5 : -36.25;
     case 'summary':
-      return  0;
+      return 0;
     case 'strategy':
       return isMobile ? 5 : 36.25;
     case 'timing':
