@@ -27,7 +27,7 @@ import { Trade } from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
 import CoreTradeLayout from 'components/Layouts/CoreLayout/Trade';
 
-import { Swap } from 'components/Pages/Core/Trade/Swap';
+import Swap from 'components/Pages/Core/Trade/Swap';
 
 // Separate Chunks
 const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
