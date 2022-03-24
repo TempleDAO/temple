@@ -3,7 +3,7 @@ import { Vault } from 'components/Vault/types';
 export const Ticks = ({ vault }: { vault: Vault }) => {
   const { months } = vault;
 
-  const tickComponents: Record<number, Element> = {
+  const tickComponents: Record<number, JSX.Element> = {
     12: (
       <g id="twelve-month">
         <path
