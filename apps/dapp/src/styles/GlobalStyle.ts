@@ -191,4 +191,28 @@ export const GlobalStyle = createGlobalStyle`
     }
   }
 
+  // Scrollbars
+  /* width */
+  ::-webkit-scrollbar {
+    width: 0.375rem  /* 6/16 */;
+  }
+
+  /* Track */
+  ::-webkit-scrollbar-track {
+    width: 1px;
+    box-shadow: inset 0 0 0.3125rem  /* 5/16 */ ${theme.palette.light50};
+    border-radius: 0.3125rem  /* 5/16 */;
+  }
+
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background-color: ${theme.palette.brand};
+    box-shadow: 0 0 0.25rem  /* 4/16 */ ${theme.palette.brandDark};
+    border-radius: 0.1875rem  /* 3/16 */;
+  }
+
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: ${theme.palette.brandDark};
+  }
 `;

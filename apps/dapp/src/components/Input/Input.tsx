@@ -1,5 +1,7 @@
 import React, { InputHTMLAttributes, KeyboardEvent } from 'react';
 import styled, { css } from 'styled-components';
+import { tabletAndAbove } from 'styles/breakpoints';
+import { theme } from 'styles/theme';
 import {
   InputSelect,
   Option,
@@ -9,11 +11,14 @@ import {
 interface SizeProps {
   small?: boolean;
 }
+
 interface CryptoSelector {
   kind: 'select';
   // A selector for the crypto, must provide onCryptoChange
   cryptoOptions: SelectTempleDaoOptions;
   defaultValue?: Option;
+  // use to limit the number of elements shown in the selector at anytime
+  maxSelectorItems?: number;
 
   // Callback for cryptoSelector value change
   onCryptoChange?(): void;
@@ -24,7 +29,9 @@ interface CryptoValue {
   value: string;
 }
 
-interface InputProps extends SizeProps, InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps
+  extends SizeProps,
+    InputHTMLAttributes<HTMLInputElement> {
   // extra information for the input
   hint?: string;
   // options for the crypto in the input
@@ -67,15 +74,17 @@ export const Input = ({
     }
 
     if (crypto.kind === 'value') {
-      return <Ticker small={small}>{crypto.value}</Ticker>;
+      return <Ticker>{crypto.value}</Ticker>;
     }
     if (crypto.kind === 'select') {
-      const { cryptoOptions, defaultValue, onCryptoChange } = crypto;
+      const { cryptoOptions, defaultValue, onCryptoChange, maxSelectorItems } =
+        crypto;
       return (
         <InputSelect
           options={cryptoOptions}
           defaultValue={defaultValue}
           onChange={onCryptoChange}
+          maxMenuItems={maxSelectorItems}
         />
       );
     }
@@ -124,6 +133,19 @@ export const Input = ({
       pairTop={pairTop}
       pairBottom={pairBottom}
     >
+      <InputTokenWrapper>
+        {renderCrypto()}
+        {hint && (
+          <InputHint
+            hasAction={!!onHintClick}
+            onClick={() => {
+              if (onHintClick) onHintClick();
+            }}
+          >
+            {hint}
+          </InputHint>
+        )}
+      </InputTokenWrapper>
       <InputStyled
         small={small}
         onChange={handleInputChange}
@@ -133,36 +155,28 @@ export const Input = ({
         disabled={disabled}
         {...props}
       />
-      <InputCrypto>{renderCrypto()}</InputCrypto>
-      {hint && (
-        <InputHint
-          hasAction={!!onHintClick}
-          onClick={() => {
-            if (onHintClick) onHintClick();
-          }}
-        >
-          {hint}
-        </InputHint>
-      )}
     </InputWrapper>
   );
 };
 
 interface InputWrapperProps extends SizeProps {
   isDisabled?: boolean;
+  /* TODO: refactor this to a Pair/Swap Component */
   pairTop?: boolean;
   pairBottom?: boolean;
 }
 
 export const InputWrapper = styled.div<InputWrapperProps>`
+  display: flex;
   position: relative;
   margin-bottom: 0.2rem;
-  padding: 0 2rem /* 12/16 */;
-  background-color: ${(props) => props.theme.palette.brand25};
-  height: ${({ small }) => (small ? '4' : '4.75')}rem;
-  border: 0.0625rem /* 1/16 */ solid ${(props) => props.theme.palette.brand};
+  padding: 0.5rem;
+    background-color: ${(props) => props.theme.palette.dark};
+  height: 6.5rem /* 104/16 */;
+  border: 0.125rem  /* 2/16 */ solid ${(props) => props.theme.palette.brand};
   // width will be manage by layout case by case
   width: 100%;
+  border-radius: 1rem;
   ${(props) => {
     const margin = props.small ? '-13px' : '-18px';
     if (props.pairTop) {
@@ -177,35 +191,28 @@ export const InputWrapper = styled.div<InputWrapperProps>`
         color: blue;
       `;
     }
-  }}}
+  }}
 
-  ${(props) =>
-    props.isDisabled &&
-    css`
-      background-color: ${(props) => props.theme.palette.dark};
-    `}
+  
+  ${tabletAndAbove(`
+    padding: 1rem 1.5rem /* 12/16 */;  
+  `)}
+}
+
+${(props) =>
+  props.isDisabled &&
+  css`
+    background-color: ${(props) => props.theme.palette.brand25};
+  `}
 `;
 
-export const InputCrypto = styled.div`
-  position: absolute;
-  top: 0.5rem /* 6/16 */;
-  left: 2rem;
-  text-align: left;
-  width: 10.5rem;
-
-  h3 {
-    margin: 0;
-    width: auto;
-  }
-
-  & > * {
-    line-height: 1;
-  }
-
-  .Select__control {
-    margin-top: -0.375rem /* -6/16 */;
-    margin-right: -0.375rem /* -6/16 */;
-  }
+const InputTokenWrapper = styled.div`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  width: 9.25rem /* 148/16 */;
 `;
 
 interface InputHintProps {
@@ -213,10 +220,10 @@ interface InputHintProps {
 }
 
 export const InputHint = styled.small<InputHintProps>`
-  position: absolute;
-  bottom: 0.75rem /* 12/16 */;
-  left: 2rem;
-  color: ${(props) => props.theme.palette.light};
+  color: ${theme.palette.brandLight};
+  font-size: 10px;
+  text-align: center;
+  text-transform: uppercase;
   ${(props) =>
     props.hasAction &&
     css`
@@ -233,10 +240,12 @@ export const InputStyled = styled.input<SizeProps>`
   background-color: transparent;
   border: none;
   ${(props) => props.theme.typography.h3};
+  color: ${theme.palette.brandLight};
   outline: none;
   width: 100%;
   height: 100%;
   text-align: right;
+  padding-left: 1.5rem;
   ${({ small }) => small && `font-size: 1.5rem`};
 
   // remove input number controls ^ v
@@ -245,10 +254,12 @@ export const InputStyled = styled.input<SizeProps>`
     appearance: none;
     margin: 0;
   }
+
   appearance: textfield;
 `;
 
-const Ticker = styled.h3<SizeProps>`
-  display: inline-block;
-  ${({ small }) => small && 'font-size: 1.2rem'};
+const Ticker = styled.p`
+  margin: 0;
+  color: ${theme.palette.brandLight};
+  font-weight: bold;
 `;
