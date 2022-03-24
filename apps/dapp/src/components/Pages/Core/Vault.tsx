@@ -6,7 +6,6 @@ import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Vault } from 'components/Vault/types';
 import { Spinner } from 'components/LoaderVault/Spinner';
 
-
 const vaultData: { [key: string]: Vault } = {
   abc: {
     id: 'abc',

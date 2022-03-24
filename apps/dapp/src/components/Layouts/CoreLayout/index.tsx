@@ -37,7 +37,7 @@ const Main = styled.main`
   ${tabletAndAbove(`
       
       max-width: ${
-        //@ts-ignore
+        //@ts-ignore 🤬
         (props) => theme.metrics.desktop.maxWidth};
       padding: 0 1.75rem;
     `)}
