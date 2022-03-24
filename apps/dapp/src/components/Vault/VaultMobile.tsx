@@ -10,17 +10,7 @@ import { Timeline } from './mobile-parts/Timeline';
 import { VaultProps, VaultRef } from './types';
 
 export const VaultMobile = forwardRef<VaultRef, VaultProps>(
-  (
-    {
-      vault,
-      selectedNav,
-      markerClick,
-      selectedEntry,
-      markerPosition,
-      children,
-    },
-    ref
-  ) => {
+  ({ vault, selectedNav, markerClick, children }, ref) => {
     const svgRef = useRef<SVGSVGElement>(null);
     const popupRef = useRef(null);
 
@@ -28,16 +18,16 @@ export const VaultMobile = forwardRef<VaultRef, VaultProps>(
       get svgRef() {
         return svgRef.current;
       },
-      get popupRef(){
+      get popupRef() {
         return popupRef.current;
-      }
-    }))
+      },
+    }));
     const navigate = useNavigate();
-    
+
     return (
       <BoundingBox>
-        <Box>
-          <Svg width="100%" viewBox="0 50 320 129" fill="none">
+        <div>
+          <svg width="100%" viewBox="0 50 320 129" fill="none">
             <Nav
               selected={selectedNav}
               onClickButton={(page) => {
@@ -46,30 +36,20 @@ export const VaultMobile = forwardRef<VaultRef, VaultProps>(
             />
             <Header />
             <Definitions />
-          </Svg>
-        </Box>
+          </svg>
+        </div>
         <Content>{children}</Content>
-        <Box>
-          <Svg width="100%" viewBox="1 503 320 65" fill="none">
+        <div>
+          <svg width="100%" viewBox="1 503 320 65" fill="none">
             <Timeline vault={vault} onMarkerClick={markerClick} />
-          </Svg>
-        </Box>
+          </svg>
+        </div>
       </BoundingBox>
     );
   }
 );
 
-const Svg = styled.svg`
-  // border: 1px dashed yellow;
-`;
-
-const Box = styled.div`
-  // border: 1px dashed white;
-  // flex: 1;
-`;
-
 const BoundingBox = styled.div`
-  // border: 1px solid green;
   width: 100vw;
   height: calc(100vh - ${NAV_MOBILE_HEIGHT_PIXELS}px);
   display: flex;
@@ -79,10 +59,9 @@ const BoundingBox = styled.div`
 `;
 
 const Content = styled.div`
-  // border: 1px solid red;
   display: flex;
   flex-grow: 1;
   overflow: hidden;
   justify-content: center;
-  margin-top: -20px; // This makes titles appear inside the curve a little
+  margin-top: ${pixelsToRems(-20)}rem; // This should make titles appear inside the curve a little
 `;
