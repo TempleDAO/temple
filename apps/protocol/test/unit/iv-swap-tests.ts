@@ -8,7 +8,7 @@ import {
   TempleERC20Token__factory,
   TempleIVSwap,
   TempleIVSwap__factory,
-} from "../typechain";
+} from "../../typechain";
 
 import { BigNumber, Signer } from "ethers";
 import { toAtto, shouldThrow, blockTimestamp, fromAtto } from "./helpers";

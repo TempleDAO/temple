@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
 
-import { FakeERC20, FakeERC20__factory,  TempleERC20Token, TempleERC20Token__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTreasury, TempleTreasury__factory, TempleUniswapV2Pair, TempleUniswapV2Pair__factory, LockedOGTemple, LockedOGTemple__factory, TempleStaking, TempleStaking__factory, Faith, Faith__factory, Devotion, Devotion__factory, OGTemple, OGTemple__factory} from "../../typechain";
+import { FakeERC20, FakeERC20__factory,  TempleERC20Token, TempleERC20Token__factory, TempleFraxAMMRouter, TempleFraxAMMRouter__factory, TempleTreasury, TempleTreasury__factory, TempleUniswapV2Pair, TempleUniswapV2Pair__factory, LockedOGTemple, LockedOGTemple__factory, TempleStaking, TempleStaking__factory, Faith, Faith__factory, Devotion, Devotion__factory, OGTemple, OGTemple__factory} from "../../../typechain";
 
 import { Signer } from "ethers";
 import { mineNBlocks, toAtto, shouldThrow, fromFixedPoint112x112, blockTimestamp, fromAtto } from "../helpers";

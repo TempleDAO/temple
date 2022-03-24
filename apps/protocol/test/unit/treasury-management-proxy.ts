@@ -1,14 +1,14 @@
 import { ethers, hardhatArguments } from "hardhat";
 import { expect } from "chai";
 
-import { TempleERC20Token } from "../typechain/TempleERC20Token";
-import { FakeERC20 } from "../typechain/FakeERC20";
-import { TempleTreasury } from "../typechain/TempleTreasury";
-import { TreasuryManagementProxy } from "../typechain/TreasuryManagementProxy"
-import { TempleERC20Token__factory } from "../typechain/factories/TempleERC20Token__factory";
-import { FakeERC20__factory } from "../typechain/factories/FakeERC20__factory";
-import { TempleTreasury__factory } from "../typechain/factories/TempleTreasury__factory";
-import { TreasuryManagementProxy__factory} from "../typechain/factories/TreasuryManagementProxy__factory"
+import { TempleERC20Token } from "../../typechain/TempleERC20Token";
+import { FakeERC20 } from "../../typechain/FakeERC20";
+import { TempleTreasury } from "../../typechain/TempleTreasury";
+import { TreasuryManagementProxy } from "../../typechain/TreasuryManagementProxy"
+import { TempleERC20Token__factory } from "../../typechain/factories/TempleERC20Token__factory";
+import { FakeERC20__factory } from "../../typechain/factories/FakeERC20__factory";
+import { TempleTreasury__factory } from "../../typechain/factories/TempleTreasury__factory";
+import { TreasuryManagementProxy__factory} from "../../typechain/factories/TreasuryManagementProxy__factory"
 import { BigNumber, Signer } from "ethers";
 import { fromAtto, shouldThrow, toAtto } from "./helpers";
 

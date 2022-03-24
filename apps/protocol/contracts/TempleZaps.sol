@@ -1,0 +1,184 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+pragma solidity ^0.8.4;
+
+import './ZapBaseV2_3.sol';
+
+interface ITempleFraxAMMRouter {
+  function swapExactFraxForTemple(
+    uint256 amountIn,
+    uint256 amountOutMin,
+    address to,
+    uint256 deadline
+  ) external returns (uint256 amountOut);
+}
+
+contract TempleZaps is ZapBaseV2_3 {
+  address public TEMPLE;
+  address public TEMPLE_FRAX_AMM_ROUTER;
+
+  mapping(address => bool) public permittableTokens;
+
+  // Emitted when `sender` Zaps In
+  event zappedIn(address indexed sender, uint256 amountReceived);
+  event templeTokenAddressSet(address newAddress);
+  event templeAMMAddressSet(address newAddress);
+
+  constructor(address templeToken, address templeAMM) ZapBaseV2_3() {
+    TEMPLE = templeToken;
+    TEMPLE_FRAX_AMM_ROUTER = templeAMM;
+  }
+
+  /**
+   * @notice This function zaps ETH and ERC20 tokens
+   * @param fromToken The token used for entry (address(0) if ether)
+   * @param fromAmount The amount of fromToken to zap
+   * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
+   * @param ammDeadline The UNIX timestamp the zap must be completed by
+   * @param swapTarget Execution target for the swap
+   * @param swapData DEX data
+   * @return amountTemple Quantity of Temple received
+   */
+  function zapIn(
+    address fromToken,
+    uint256 fromAmount,
+    uint256 minTempleReceived,
+    uint256 ammDeadline,
+    address swapTarget,
+    bytes calldata swapData
+  ) public payable whenNotPaused returns (uint256 amountTemple) {
+    _pullTokens(fromToken, fromAmount);
+
+    uint256 fraxBought = _fillQuote(
+      fromToken,
+      fromAmount,
+      swapTarget,
+      swapData
+    );
+
+    amountTemple = _enterTemple(fraxBought, minTempleReceived, ammDeadline);
+    emit zappedIn(msg.sender, amountTemple);
+  }
+
+  /**
+   * @notice This function zaps EIP-2612 compliant tokens using permit
+   * @param fromToken The token used for entry
+   * @param fromAmount The amount of fromToken to zap
+   * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
+   * @param ammDeadline The UNIX timestamp the zap must be completed by
+   * @param swapTarget Execution target for the swap
+   * @param swapData DEX data
+   * @param permitDeadline Permit deadline
+   * @param v secp256k1 signature component
+   * @param r secp256k1 signature component
+   * @param s secp256k1 signature component
+   * @return amountOGTemple Quantity of OGTemple received
+   */
+  function zapInWithPermit(
+    address fromToken,
+    uint256 fromAmount,
+    uint256 minTempleReceived,
+    uint256 ammDeadline,
+    address swapTarget,
+    bytes calldata swapData,
+    uint256 permitDeadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external whenNotPaused returns (uint256 amountOGTemple) {
+    require(permittableTokens[fromToken], 'TZ: token not allowed');
+
+    ERC20 token = ERC20(fromToken);
+    token.permit(
+      msg.sender,
+      address(this),
+      fromAmount,
+      permitDeadline,
+      v,
+      r,
+      s
+    );
+
+    return
+      zapIn(
+        fromToken,
+        fromAmount,
+        minTempleReceived,
+        ammDeadline,
+        swapTarget,
+        swapData
+      );
+  }
+
+  /**
+   * @notice This function swaps FRAX for TEMPLE
+   * @param amountFRAX The amount of FRAX to swap
+   * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
+   * @return amountTempleReceived Quantity of TEMPLE received
+   */
+  function _enterTemple(
+    uint256 amountFRAX,
+    uint256 minTempleReceived,
+    uint256 ammDeadline
+  ) internal returns (uint256 amountTempleReceived) {
+    _approveToken(FRAX_ADDR, TEMPLE_FRAX_AMM_ROUTER, amountFRAX);
+
+    amountTempleReceived = ITempleFraxAMMRouter(TEMPLE_FRAX_AMM_ROUTER)
+      .swapExactFraxForTemple(
+        amountFRAX,
+        minTempleReceived,
+        msg.sender,
+        ammDeadline
+      );
+  }
+
+  ///////////// Owner only /////////////
+
+  function withdraw(
+    address token,
+    address to,
+    uint256 amount
+  ) external onlyOwner {
+    require(to != address(0), 'TZ: to address zero');
+    if (token == address(0)) {
+      SafeTransferLib.safeTransferETH(to, amount);
+    } else {
+      SafeTransferLib.safeTransfer(ERC20(token), to, amount);
+    }
+  }
+
+  /**
+    @dev Adds or removes a permittable token
+    @param tokens An array of token addresses
+    @param isPermittable An array of booleans indicating whether the token is permittable
+    */
+  function setPermittableTokens(
+    address[] calldata tokens,
+    bool[] calldata isPermittable
+  ) external onlyOwner {
+    require(tokens.length == isPermittable.length, 'Invalid Input length');
+
+    for (uint256 i = 0; i < tokens.length; i++) {
+      permittableTokens[tokens[i]] = isPermittable[i];
+    }
+  }
+
+  /**
+    @dev Setter for the Temple Token Address
+    @param _temple New address to set as Temple token (i.e the asset being zapped to)
+   */
+  function updateTemple(address _temple) external onlyOwner {
+    require(_temple != address(0), 'TZ: to address zero');
+    TEMPLE = _temple;
+    emit templeTokenAddressSet(_temple);
+  }
+
+  /**
+    @dev Setter for the Temple AMM Router Address
+    @param _ammRouter New address to set as Temple AMM Router
+   */
+  function updateAMMRouter(address _ammRouter) external onlyOwner {
+    require(_ammRouter != address(0), 'TZ: to address zero');
+    TEMPLE_FRAX_AMM_ROUTER = _ammRouter;
+    emit templeAMMAddressSet(_ammRouter);
+  }
+}

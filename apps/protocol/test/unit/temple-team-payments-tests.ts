@@ -7,7 +7,7 @@ import {
   TempleTeamPayments,
   TempleERC20Token__factory,
   TempleTeamPayments__factory,
-} from '../typechain';
+} from '../../typechain';
 import { shouldThrow, blockTimestamp } from './helpers';
 
 const SECONDS_IN_1_MONTH = 2630000;
