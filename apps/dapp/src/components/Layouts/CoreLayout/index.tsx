@@ -22,6 +22,8 @@ const GlobalStyleOverride = createGlobalStyle`
   html, body {
     min-height: 100vh;
     min-width: 320px;
+    min-height: -webkit-fill-available
+    height: -webkit-fill-available
     ${tabletAndAbove(`
       min-height: 100vh;
       min-width: 100vw;

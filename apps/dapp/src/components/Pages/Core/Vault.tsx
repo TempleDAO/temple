@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import Loader from 'components/Loader/Loader';
 import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Vault } from 'components/Vault/types';
+import { Spinner } from 'components/LoaderVault/Spinner';
 
 
 const vaultData: { [key: string]: Vault } = {
@@ -45,7 +46,7 @@ const VaultPage = () => {
   const { isLoading, data, error } = useMockVaultData(vaultId || '');
 
   if (isLoading) {
-    return <Loader />;
+    return <Spinner />;
   }
 
   if (!data || error) {
