@@ -43,7 +43,7 @@ const Header = () => {
           $isOpen={isNavOpen}
           onClick={() => setIsNavOpen((isOpen) => !isOpen)}
         />
-        <Logo to="/core">TempleDAO</Logo>
+        <Logo to="/core/home">TempleDAO</Logo>
       </MobileNavLeft>
       <Navigation
         isNavOpenMobile={isNavOpen}
