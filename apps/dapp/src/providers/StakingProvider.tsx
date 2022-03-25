@@ -201,17 +201,23 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     const claimableEpochs =
       firstEpoch < lastEpoch ? range(firstEpoch, lastEpoch, 1) : [lastEpoch];
 
-    // stores all epochs with allocations for address
-    const exitEntryPromises = claimableEpochs.map((epoch) =>
-      EXIT_QUEUE.currentEpochAllocation(walletAddress, epoch)
-    );
+    let claimableTemple: number;
 
-    const exitEntries = await Promise.all(exitEntryPromises);
-    const claimableTemple: number = fromAtto(
-      exitEntries.reduce((acc, curr) => {
-        return acc.add(curr);
-      }, BigNumber.from(0))
-    );
+    if (currentEpoch >= lastEpoch) {
+      claimableTemple = fromAtto(userData.Amount);
+    } else {
+      // stores all epochs with allocations for address
+      const exitEntryPromises = claimableEpochs.map((epoch) =>
+        EXIT_QUEUE.currentEpochAllocation(walletAddress, epoch)
+      );
+
+      const exitEntries = await Promise.all(exitEntryPromises);
+      claimableTemple = fromAtto(
+        exitEntries.reduce((acc, curr) => {
+          return acc.add(curr);
+        }, BigNumber.from(0))
+      );
+    }
 
     return {
       lastClaimableEpochAt,
@@ -447,6 +453,10 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         const recommendedGas =
           Number(baseCase) +
           Number(perEpoch) * exitQueueData.claimableEpochs.length;
+
+        console.log('WITHDRAWING');
+        console.log(exitQueueData.claimableEpochs);
+        console.log(exitQueueData.claimableEpochs.length);
 
         const withdrawTXN = await ACCELERATED_EXIT_QUEUE.withdrawEpochs(
           exitQueueData.claimableEpochs,
