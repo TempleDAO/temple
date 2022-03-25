@@ -21,7 +21,7 @@ import ProfilePage from 'components/Pages/Core/Profile/Profile';
 import VaultListPage from 'components/Pages/Core/VaultList';
 import { Claim as VaultClaim } from 'components/Pages/Core/VaultPages/Claim';
 import { Stake } from 'components/Pages/Core/VaultPages/Stake';
-import { Summary } from 'components/Pages/Core/VaultPages/Summary';
+import Summary from 'components/Pages/Core/VaultPages/Summary';
 import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
 

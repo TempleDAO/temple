@@ -120,8 +120,7 @@ const BoundingBox = styled.div`
 const Content = styled.div`
   display: flex;
   height: 100%;
-  border-radius: ${pixelsToRems(260)}rem;
+  border-radius: 50%;
   overflow: hidden;
   justify-content: center;
-  padding-top: ${pixelsToRems(10)}rem;
 `;
