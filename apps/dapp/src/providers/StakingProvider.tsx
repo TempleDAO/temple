@@ -448,30 +448,38 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         signer
       ).attach(ACCELERATED_EXIT_QUEUE_ADDRESS);
 
-      if (exitQueueData.claimableEpochs.length) {
-        const baseCase = VITE_PUBLIC_WITHDRAW_EPOCHS_BASE_GAS_LIMIT || 60000;
-        const perEpoch =
-          VITE_PUBLIC_WITHDRAW_EPOCHS_PER_EPOCH_GAS_LIMIT || 15000;
-        const recommendedGas =
-          Number(baseCase) +
-          Number(perEpoch) * exitQueueData.claimableEpochs.length;
+      try {
+        if (exitQueueData.claimableEpochs.length) {
+          const baseCase = VITE_PUBLIC_WITHDRAW_EPOCHS_BASE_GAS_LIMIT || 60000;
+          const perEpoch =
+            VITE_PUBLIC_WITHDRAW_EPOCHS_PER_EPOCH_GAS_LIMIT || 15000;
+          const recommendedGas =
+            Number(baseCase) +
+            Number(perEpoch) * exitQueueData.claimableEpochs.length;
 
-        const withdrawTXN = await ACCELERATED_EXIT_QUEUE.withdrawEpochs(
-          exitQueueData.claimableEpochs,
-          exitQueueData.claimableEpochs.length,
-          {
-            gasLimit: recommendedGas || 150000,
-          }
-        );
+          const withdrawTXN = await ACCELERATED_EXIT_QUEUE.withdrawEpochs(
+            exitQueueData.claimableEpochs,
+            exitQueueData.claimableEpochs.length,
+            {
+              gasLimit: recommendedGas || 150000,
+            }
+          );
 
-        await withdrawTXN.wait();
-        // Show feedback to user
-        openNotification({
-          title: `${TICKER_SYMBOL.TEMPLE_TOKEN} claimed`,
-          hash: withdrawTXN.hash,
-        });
+          const receipt = await withdrawTXN.wait();
+
+          console.log('receipt', receipt);
+
+          // Show feedback to user
+          openNotification({
+            title: `${TICKER_SYMBOL.TEMPLE_TOKEN} claimed`,
+            hash: withdrawTXN.hash,
+          });
+        }
+
+        getBalance();
+      } catch (error) {
+        console.error(error);
       }
-      getBalance();
     }
   };
 
