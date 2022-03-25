@@ -460,10 +460,10 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
         const withdrawTXN = await ACCELERATED_EXIT_QUEUE.withdrawEpochs(
           exitQueueData.claimableEpochs,
-          exitQueueData.claimableEpochs.length,
+          exitQueueData.claimableEpochs.length /*,
           {
             gasLimit: recommendedGas || 150000,
-          }
+          }*/
         );
 
         await withdrawTXN.wait();
