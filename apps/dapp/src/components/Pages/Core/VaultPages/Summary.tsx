@@ -50,6 +50,7 @@ const Percentage = styled.span`
   line-height: 7rem;
   text-align: center;
   text-shadow: ${COLOR_PERCENTAGE_TEXT_SHADOW};
+  margin-top: -${pixelsToRems(11)}rem;
 `;
 
 const Duration = styled(BaseDuration)`
