@@ -469,6 +469,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
           hash: withdrawTXN.hash,
         });
       }
+      await updateExitQueueData();
       updateBalance();
     }
   };
