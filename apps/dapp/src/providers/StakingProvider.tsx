@@ -12,6 +12,7 @@ import { getEpochsToDays } from 'providers/util';
 import { NoWalletAddressError } from 'providers/errors';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { asyncNoop } from 'utils/helpers';
+import range from 'utils/range';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import {
   LOCKED_OG_TEMPLE_ADDRESS,
@@ -77,7 +78,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     INITIAL_STATE.lockedEntries
   );
 
-  const { wallet, signer, getBalance, ensureAllowance } = useWallet();
+  const { wallet, signer, updateBalance, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
 
   const getApy = async (walletAddress: string, signerState: JsonRpcSigner) => {
@@ -197,29 +198,26 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     const lastClaimableEpochAt =
       todayInMs + daysUntilLastClaimableEpoch * dayInMs;
 
-    const exitEntryPromises = [];
+    const claimableEpochs =
+      firstEpoch < lastEpoch ? range(firstEpoch, lastEpoch, 1) : [lastEpoch];
 
-    // stores all epochs address has in the ExitQueue.sol, some might have Allocation 0
-    const maybeClaimableEpochs: Array<number> = [];
-    // stores all epochs with allocations for address
-    const claimableEpochs: Array<number> = [];
-    for (let i = firstEpoch; i < currentEpoch; i++) {
-      maybeClaimableEpochs.push(i);
-      exitEntryPromises.push(
-        EXIT_QUEUE.currentEpochAllocation(walletAddress, i)
+    let claimableTemple: number;
+
+    if (currentEpoch >= lastEpoch) {
+      claimableTemple = fromAtto(userData.Amount);
+    } else {
+      // stores all epochs with allocations for address
+      const exitEntryPromises = claimableEpochs.map((epoch) =>
+        EXIT_QUEUE.currentEpochAllocation(walletAddress, epoch)
+      );
+
+      const exitEntries = await Promise.all(exitEntryPromises);
+      claimableTemple = fromAtto(
+        exitEntries.reduce((acc, curr) => {
+          return acc.add(curr);
+        }, BigNumber.from(0))
       );
     }
-
-    const exitEntries = await Promise.all(exitEntryPromises);
-    const claimableTemple: number = fromAtto(
-      exitEntries.reduce((prev, curr, index) => {
-        // the contract is not removing the user.Exits[epoch], so we only get the ones with a claimable amount(anything above 0)
-        if (fromAtto(curr) > 0) {
-          claimableEpochs.push(maybeClaimableEpochs[index]);
-        }
-        return prev.add(curr);
-      }, BigNumber.from(0))
-    );
 
     return {
       lastClaimableEpochAt,
@@ -313,7 +311,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
           hash: restakeTXN.hash,
         });
       }
-      getBalance();
+      updateBalance();
     }
   };
 
@@ -471,7 +469,8 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
           hash: withdrawTXN.hash,
         });
       }
-      getBalance();
+      await updateExitQueueData();
+      updateBalance();
     }
   };
 
