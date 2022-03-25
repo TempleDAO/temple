@@ -24,7 +24,7 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaults }) => {
   if (!vaults.length) {
     return (
       <Container>
-        <Button isSmall as="a" label="Enter a vault" href="/core/vaults" />
+        <Button isSmall as="a" label="Enter a vault" href="/core/dapp/vaults" />
       </Container>
     );
   }

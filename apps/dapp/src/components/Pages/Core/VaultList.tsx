@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 
 import Loader from 'components/Loader/Loader';
 
-const data = ['abc']
+const data = ['abc'];
 
 const useMockVaultData = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -29,7 +29,7 @@ const VaultListPage = () => {
   }
 
   if (data.length === 1) {
-    return <Navigate replace to={`/core/vaults/${data[0]}/summary`} />;
+    return <Navigate replace to={`/core/dapp/vaults/${data[0]}/summary`} />;
   }
 
   return <div>Vault List View</div>;
