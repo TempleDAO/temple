@@ -20,7 +20,13 @@ type Props = {
   data: Vault;
 };
 
-const VAULT_PAGES: VaultPage[] = ['claim', 'stake', 'summary', 'strategy', 'timing'];
+const VAULT_PAGES: VaultPage[] = [
+  'claim',
+  'stake',
+  'summary',
+  'strategy',
+  'timing',
+];
 
 const useSelectedVaultPage = (): Maybe<VaultPage> => {
   const { pathname } = useLocation();
@@ -75,7 +81,7 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
           <RingButtons
             selected={selectedNav}
             onClickButton={(page) => {
-              navigate(`/core/vaults/${data.id}/${page}`);
+              navigate(`/core/dapp/vaults/${data.id}/${page}`);
             }}
           />
           <Timeline data={vault} onMarkerClick={markerClick} />
