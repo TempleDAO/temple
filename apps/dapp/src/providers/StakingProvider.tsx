@@ -78,7 +78,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     INITIAL_STATE.lockedEntries
   );
 
-  const { wallet, signer, getBalance, ensureAllowance } = useWallet();
+  const { wallet, signer, updateBalance, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
 
   const getApy = async (walletAddress: string, signerState: JsonRpcSigner) => {
@@ -311,7 +311,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
           hash: restakeTXN.hash,
         });
       }
-      getBalance();
+      updateBalance();
     }
   };
 
@@ -469,7 +469,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
           hash: withdrawTXN.hash,
         });
       }
-      getBalance();
+      updateBalance();
     }
   };
 
