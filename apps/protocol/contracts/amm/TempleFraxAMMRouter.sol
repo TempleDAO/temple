@@ -409,14 +409,18 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         (uint256 ivFrax, uint256 ivTemple) = templeTreasury.intrinsicValueRatio();
         priceBelowIV = ivTemple * reserveFrax <= reserveTemple * ivFrax;
 
-        if (priceBelowIV) {
-            amountOut = (amountIn * ivFrax) / ivTemple;
+        uint256 amountOutAmm = getAmountOut(amountIn, reserveTemple, reserveFrax);
+        uint256 amountOutIvSwap = (amountIn * ivFrax) / ivTemple;
+
+        if (amountOutIvSwap > amountOutAmm) {
+            amountOut = amountOutIvSwap;
+            priceBelowIV = true;
         } else {
-            amountOut = getAmountOut(amountIn, reserveTemple, reserveFrax);
+            amountOut = amountOutAmm;
+            priceBelowIV = false;
         }
 
         // Will this sell move the price from above to below the dynamic threshold?
-
         if (!priceBelowIV) {
             (uint thresholdPriceFrax, uint thresholdPriceTemple) = dynamicThresholdPriceWithDecay();
 
