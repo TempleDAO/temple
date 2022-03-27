@@ -11,9 +11,11 @@ import type { Vault } from 'components/Vault/types';
 import { ProfileVaults } from './components/ProfileVaults';
 import { ProfileLegacyTemple } from './components/ProfileLegacyTemple';
 import { ProfileDiscordData } from './components/ProfileDiscordData';
+import { ProfileTransactions } from './components/ProfileTransactions';
 
 import { phoneAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
+import { Heading } from './styles';
 
 import texture1 from 'assets/images/texture-1.svg';
 import texture2 from 'assets/images/texture-2.svg';
@@ -117,7 +119,7 @@ function getTabs(
       label: 'Vaults',
       content: <ProfileVaults isLoading={isLoading} vaults={vaults} />,
     },
-    { label: 'Transactions', content: <Subheading>Transactions</Subheading> },
+    { label: 'Transactions', content: <ProfileTransactions /> },
     { label: 'Discord', content: <ProfileDiscordData /> },
   ];
 
@@ -138,12 +140,6 @@ function getTabs(
 
   return tabs;
 }
-
-
-const Subheading = styled.h3`
-  ${({ theme }) => theme.typography.h4};
-  margin: 0;
-`;
 
 const ProfileOverview = styled.section`
   padding: 0;
