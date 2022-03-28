@@ -23,6 +23,7 @@ import { Claim as VaultClaim } from 'components/Pages/Core/VaultPages/Claim';
 import { Stake } from 'components/Pages/Core/VaultPages/Stake';
 import Summary from 'components/Pages/Core/VaultPages/Summary';
 import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
+import { Trade } from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
 
 // Separate Chunks
@@ -67,21 +68,25 @@ ReactDOM.render(
       <BrowserRouter>
         <Routes>
           <>
-            <Route path="/core/*" element={<CoreLayout />}>
-              <Route path="" element={'Home'} />
-              <Route path="dapp/vaults" element={<VaultListPage />} />
-              <Route path="dapp/vaults/:vaultId/*" element={<VaultPage />}>
+            <Route path="/core" element={<PageLayout />}>
+              <Route path="" element={<Home />} />
+              {/* Redirect everything else to the home page */}c
+              <Route path="*" element={<Navigate replace to="/" />} />
+            </Route>
+            <Route path="/core/dapp/*" element={<CoreLayout />}>
+              <Route path="" element={<VaultListPage />} />
+
+              <Route path="vaults" element={<VaultListPage />} />
+              <Route path="vaults/:vaultId/*" element={<VaultPage />}>
                 <Route path="claim" element={<VaultClaim />} />
                 <Route path="stake" element={<Stake />} />
                 <Route path="summary" element={<Summary />} />
                 <Route path="strategy" element={<Strategy />} />
                 <Route path="timing" element={<Timing />} />
               </Route>
-              <Route path="dapp/trade" element={'Trade'} />
-              <Route path="dapp/profile" element={<ProfilePage />} />
-              <Route path="dapp/analytics" element={<AnalyticsPage />} />
-              {/* Redirect everything else to the home page */}
-              <Route path="*" element={<Navigate replace to="/" />} />
+              <Route path="trade" element={<Trade />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
             <Route
               path="/the-temple"

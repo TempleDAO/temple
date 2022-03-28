@@ -36,7 +36,7 @@ const Header = () => {
   }, [setIsNavOpen]);
 
   return (
-    <Wrapper>
+    <Wrapper id="Wrapper">
       <MobileNavLeft>
         <HamburgerBun
           aria-label={`${isNavOpen ? 'Close' : 'Open'} navigation`}
@@ -77,7 +77,7 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
 
   return (
     <NavWrapper $isOpen={isNavOpenMobile}>
-      <Menu>
+      <Menu id="menu">
         <MenuItem
           to="/core/dapp/vaults"
           onMenuItemActive={onMenuItemActive}
@@ -160,6 +160,7 @@ const COLOR_NAV_SHADOW_DESKTOP = '0px 0px 0.3125rem rgba(222, 92, 6, 0.5)';
 const COLOR_NAV_SHADOW_MOBILE = '0px 0px 0.6428rem rgba(222, 92, 6, 0.5)';
 const COLOR_NAV_BACKGROUND_GRADIENT_START = '#0B0A0A';
 const COLOR_NAV_BACKGROUND_GRADIENT_END = '#1D1A1A';
+const COLOR_NAV_BORDER = '#BD7B4F61';
 
 const HamburgerBun = styled.button<{ $isOpen: boolean }>`
   ${buttonResets}
@@ -200,7 +201,7 @@ const Wrapper = styled.header`
     position: relative;
     height: auto;
     background: linear-gradient(180deg, ${COLOR_NAV_BACKGROUND_GRADIENT_START} 0%, ${COLOR_NAV_BACKGROUND_GRADIENT_END} 100%);
-    border-bottom: 0.0625rem solid ${theme.palette.brand};
+    border-bottom: 0.0625rem solid ${COLOR_NAV_BORDER};
   `)}
 `;
 
@@ -213,8 +214,20 @@ const Logo = styled(Link)`
   text-indent: -999rem;
 
   ${phoneAndAbove(`
-    width: 2.625rem;
-    height: 2.625rem;
+    width: 2.125rem;
+    height: 2.125rem;
+  `)}
+`;
+
+const MetamaskButton = styled.button`
+  ${buttonResets}
+  ${backgroundImage(metamaskLogo)}
+  width: 2.2rem;
+  height: 2.2rem;
+
+  ${phoneAndAbove(`
+    width: 2.4375rem;
+    height: 2.375rem;
   `)}
 `;
 
@@ -281,29 +294,17 @@ const Menu = styled(UnstyledList)`
     top: 0;
     padding: 0;
     flex-direction: row;
-    border-left: 0.0625rem solid ${theme.palette.brand};
-    border-right: 0.0625rem solid ${theme.palette.brand};
+    // border-left: 0.0625rem solid ${COLOR_NAV_BORDER};
+    // border-right: 0.0625rem solid ${COLOR_NAV_BORDER};
 
     > li {
       margin: 0;
-      border-right: 0.0625rem solid ${theme.palette.brand};
+      border-right: 0.0625rem solid ${COLOR_NAV_BORDER};
 
       &:last-of-type {
         border-right: none;
       }
     }
-  `)}
-`;
-
-const MetamaskButton = styled.button`
-  ${buttonResets}
-  ${backgroundImage(metamaskLogo)}
-  width: 1.5rem;
-  height: 1.5rem;
-
-  ${phoneAndAbove(`
-    width: 3.4375rem;
-    height: 3.375rem;
   `)}
 `;
 
@@ -329,8 +330,8 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
 
   ${({ $active }) =>
     phoneAndAbove(`
-    font-size: 1rem;
-    line-height: 1.25rem;
+    font-size: .95rem;
+    line-height: 0.25rem;
     font-weight: bold;
     letter-spacing: 0.05em;
     min-width: 7.5rem;
