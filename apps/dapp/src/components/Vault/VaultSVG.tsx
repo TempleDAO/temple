@@ -1,12 +1,14 @@
-import { useRef, useState, PropsWithChildren } from 'react';
+import { useRef, useState, PropsWithChildren, useEffect } from 'react';
 import { useOutsideClick } from '../../hooks/useOutsideClick';
-import { Entry, Point, Vault, VaultRef } from './types';
+import { Entry, Point, Vault, VaultPage, VaultRef } from './types';
 import { processData } from './desktop-parts/utils';
 import { useMediaQuery } from 'react-responsive';
 import { theme } from 'styles/theme';
 import { VaultDesktop } from './VaultDesktop';
 import { VaultMobile } from './VaultMobile';
 import { useSelectedPage } from './useSelectedPage';
+import { Maybe } from 'types/util';
+import { useLocation } from 'react-router-dom';
 
 type Props = {
   data: Vault;
