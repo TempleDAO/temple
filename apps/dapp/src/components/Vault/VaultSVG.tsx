@@ -14,27 +14,6 @@ type Props = {
   data: Vault;
 };
 
-const VAULT_PAGES: VaultPage[] = [
-  'claim',
-  'stake',
-  'summary',
-  'strategy',
-  'timing',
-];
-
-const useSelectedVaultPage = (): Maybe<VaultPage> => {
-  const { pathname } = useLocation();
-  const pageName = VAULT_PAGES.find((page) => pathname.endsWith(page));
-
-  useEffect(() => {
-    if (!pageName) {
-      console.error('Programming Error: Invalid page name');
-    }
-  }, [pageName]);
-
-  return pageName;
-};
-
 export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
   const selectedNav = useSelectedPage();
   const vaultRef = useRef<VaultRef>(null);
