@@ -7,8 +7,6 @@ import { ExitQueue } from "../typechain/ExitQueue";
 import { ExitQueue__factory } from "../typechain/factories/ExitQueue__factory";
 import { FakeERC20 } from "../typechain/FakeERC20";
 import { FakeERC20__factory } from "../typechain/factories/FakeERC20__factory";
-import { LockedOGTemple } from "../typechain/LockedOGTemple";
-import { LockedOGTemple__factory } from "../typechain/factories/LockedOGTemple__factory";
 import { OpeningCeremony } from "../typechain/OpeningCeremony";
 import { OpeningCeremony__factory } from "../typechain/factories/OpeningCeremony__factory";
 import { TempleERC20Token } from "../typechain/TempleERC20Token";

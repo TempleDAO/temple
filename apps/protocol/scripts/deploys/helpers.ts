@@ -28,6 +28,9 @@ export interface DeployedContracts {
 
   FAITH: string,
   FAITH_AIRDROP: string,
+  LOCKED_OG_TEMPLE: string,
+  DEVOTION: string,
+  TEMPLE_IV_SWAP: string,
 
   MULTISIG: string,
 }
@@ -79,6 +82,9 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
 
     FAITH: '0x727d442f05cf22f3A60b787913623f406f9E94bA',
     FAITH_AIRDROP: '0xc101ca108be832a4c44f1F0d9872E33A118317b7',
+    LOCKED_OG_TEMPLE: '0x3C777c4F6fF2bdDD1394De9D4d6ddAB980d47Ed8',
+    DEVOTION: '0x262Eb109183B7f1b4Aa36c136C6A27e9a0c9210F',
+    TEMPLE_IV_SWAP: '',
 
     MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
   },
@@ -119,6 +125,9 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
 
     FAITH: '0x78F683247cb2121B4eBfbD04110760da42752a6B',
     FAITH_AIRDROP: '0x1b44a9a94f2bb14eeF0ded2f0428231e358d31d7',
+    LOCKED_OG_TEMPLE: '',
+    DEVOTION: '',
+    TEMPLE_IV_SWAP: '0xb0D978C8Be39C119922B99f483cD8C4092f0EA56',
   },
   localhost: {
     // No longer active/unused
@@ -151,6 +160,9 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
 
     FAITH: process.env.FAITH || '',
     FAITH_AIRDROP: process.env.FAITH_AIRDROP || '',
+    LOCKED_OG_TEMPLE: process.env.LOCKED_OG_TEMPLE || '',
+    DEVOTION: process.env.DEVOTION || '',
+    TEMPLE_IV_SWAP: process.env.TEMPLE_IV_SWAP || '',
 
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
   }
@@ -174,6 +186,7 @@ export function fromAtto(n: BigNumber): number {
 }
 
 export async function mine(tx: Promise<ContractTransaction>) {
+  console.log(`Mining transaction: ${(await tx).hash}`);
   await (await tx).wait();
 }
 
@@ -195,7 +208,7 @@ export async function deployAndMine<T extends BaseContract, D extends (...args: 
 
   console.log(`*******Deploying ${name} on ${network.name} with args ${renderedArgs}`);
   const contract = await factory.deploy(...args) as T;
-  console.log(`Deployed... waiting for transaction to mine`);
+  console.log(`Deployed... waiting for transaction to mine: ${contract.deployTransaction.hash}`);
   console.log();
   await contract.deployed();
   console.log('Contract deployed');

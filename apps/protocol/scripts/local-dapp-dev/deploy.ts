@@ -20,6 +20,7 @@ import {
   TreasuryManagementProxy__factory,
   AcceleratedExitQueue,
   AcceleratedExitQueue__factory,
+  TempleIVSwap__factory,
 } from '../../typechain';
 
 function toAtto(n: number) {
@@ -222,17 +223,6 @@ async function main() {
   // Devotion
   const faith = await new Faith__factory(owner).deploy();
 
-  const redeemFaithManager = await new RedeemFaithManager__factory(owner).deploy(
-    templeToken.address,
-    faith.address
-  );
-
-  const lockedTemple = await new LockedTemple__factory(owner).deploy(
-    templeToken.address,
-    faith.address,
-  )
-  await faith.addManager(lockedTemple.address);
-
   // add liquidity to AMM
   const expiryDate = (): number => Math.floor(Date.now() / 1000) + 900;
   await templeToken.increaseAllowance(
@@ -252,6 +242,15 @@ async function main() {
     expiryDate()
   );
 
+  // create and initialise contract that allows a permissionless
+  // swap @ IV
+  const templeIVSwap = await new TempleIVSwap__factory(owner).deploy(
+    templeToken.address,
+    stablecToken.address,
+    {temple: 100, frax: 65}, /* iv */
+  );
+  await stablecToken.mint(templeIVSwap.address, toAtto(1000000));
+
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
     EXIT_QUEUE_ADDRESS: exitQueue.address,
@@ -269,6 +268,8 @@ async function main() {
     TEMPLE_V2_ROUTER_ADDRESS: templeRouter.address,
     TEMPLE_ROUTER_WHITELIST: ammWhitelist.address,
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
+
+    TEMPLE_IV_SWAP: templeIVSwap.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys

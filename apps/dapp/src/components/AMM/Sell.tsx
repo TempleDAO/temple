@@ -15,7 +15,6 @@ import { Button } from 'components/Button/Button';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
-import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
 
@@ -29,8 +28,9 @@ interface BuyProps extends SizeProps {
 const ENV_VARS = import.meta.env;
 
 export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
-  const { balance, getBalance } = useWallet();
-  const { sell, getSellQuote, templePrice } = useSwap();
+  const { balance, getBalance, updateBalance } = useWallet();
+  const { sell, getSellQuote, templePrice, updateTemplePrice, iv, updateIv } =
+    useSwap();
 
   const [stableCoinWalletAmount, setStableCoinWalletAmount] =
     useState<number>(0);
@@ -39,8 +39,6 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const [slippage, setSlippage] = useState<number>(1);
   const [minAmountOut, setMinAmountOut] = useState<number>(0);
   const [templeAmount, setTempleAmount] = useState<number | ''>('');
-
-  const refreshWalletState = useRefreshWalletState();
 
   const handleUpdateTempleAmount = async (value: number | '') => {
     setTempleAmount(value === 0 ? '' : value);
@@ -63,8 +61,13 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         // ( 'current price' * 'FRAX sacrificing' )  * (1 - SlippageSetting )
         const minAmountOut = templeAmount * templePrice * (1 - slippage / 100);
         setMinAmountOut(minAmountOut);
-        if (minAmountOut <= rewards) {
-          await sell(toAtto(templeAmount), toAtto(minAmountOut));
+
+        const sellQuote = await getSellQuote(toAtto(templeAmount));
+
+        const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
+
+        if (minAmountOut <= rewards || isIvSwap) {
+          await sell(toAtto(templeAmount), toAtto(minAmountOut), isIvSwap);
           getBalance();
           handleUpdateTempleAmount(0);
         }
@@ -83,7 +86,9 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
   useEffect(() => {
     async function onMount() {
-      await refreshWalletState();
+      await updateBalance();
+      await updateTemplePrice();
+      await updateIv();
       setRewards('');
       setMinAmountOut(0);
     }

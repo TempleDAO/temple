@@ -4,7 +4,6 @@ import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { useStaking } from 'providers/StakingProvider';
-import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import {
   ConvoFlowTitle,
@@ -19,18 +18,16 @@ interface UnlockProps {
 }
 
 export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
-  const { lockedEntries, claimOgTemple } = useStaking();
-
-  const refreshWalletState = useRefreshWalletState();
+  const { lockedEntries, updateLockedEntries, claimOgTemple } = useStaking();
 
   const handleClaimOgTemple = async (index: number) => {
     await claimOgTemple(index);
-    refreshWalletState();
+    updateLockedEntries();
   };
 
   useEffect(() => {
     async function onMount() {
-      await refreshWalletState();
+      await updateLockedEntries();
     }
 
     onMount();
