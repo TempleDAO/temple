@@ -71,11 +71,11 @@ ReactDOM.render(
               <Route path="" element={'Home'} />
               <Route path="dapp/vaults" element={<VaultListPage />} />
               <Route path="dapp/vaults/:vaultId/*" element={<VaultPage />}>
-                <Route path="dapp/claim" element={<VaultClaim />} />
-                <Route path="dapp/stake" element={<Stake />} />
-                <Route path="dapp/summary" element={<Summary />} />
-                <Route path="dapp/strategy" element={<Strategy />} />
-                <Route path="dapp/timing" element={<Timing />} />
+                <Route path="claim" element={<VaultClaim />} />
+                <Route path="stake" element={<Stake />} />
+                <Route path="summary" element={<Summary />} />
+                <Route path="strategy" element={<Strategy />} />
+                <Route path="timing" element={<Timing />} />
               </Route>
               <Route path="dapp/trade" element={'Trade'} />
               <Route path="dapp/profile" element={<ProfilePage />} />
