@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams, Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 
-import Loader from 'components/Loader/Loader';
 import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Vault } from 'components/Vault/types';
 import { Spinner } from 'components/LoaderVault/Spinner';
