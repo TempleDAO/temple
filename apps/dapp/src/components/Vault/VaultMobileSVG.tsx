@@ -79,12 +79,7 @@ export const VaultMobileSVG = ({
     <>
       <BoundingBox>
         <Box>
-          <Svg
-            width="100%"
-            viewBox="0 50 320 129"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
+          <Svg width="100%" viewBox="0 50 320 129" fill="none">
             <g clipPath="url(#clip0_4383_16241)">
               <path fill="#0B0A0A" d="M0 0h320v568H0z" />
               <g id="big-container">
@@ -97,14 +92,8 @@ export const VaultMobileSVG = ({
         </Box>
         <Content>Content</Content>
         <Box>
-          <Svg
-            width="100%"
-            viewBox="1 503 320 65"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
+          <Svg width="100%" viewBox="1 503 320 65" fill="none">
             <Timeline />
-            <Definitions />
           </Svg>
         </Box>
       </BoundingBox>
@@ -137,6 +126,5 @@ const Content = styled.div`
   flex-grow: 1;
   overflow: hidden;
   justify-content: center;
-  margin-top: -20px;  // This makes titles appear inside the curve a little
-  
+  margin-top: -20px; // This makes titles appear inside the curve a little
 `;
