@@ -12,8 +12,6 @@ import { pixelsToRems } from 'styles/mixins';
 import { NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
 import { Entry, Point, Vault, VaultPage, VaultProps, VaultRef } from './types';
 
-
-
 export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
   (
     {
@@ -33,10 +31,10 @@ export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
       get svgRef() {
         return svgRef.current;
       },
-      get popupRef(){
+      get popupRef() {
         return popupRef.current;
-      }
-    }))
+      },
+    }));
 
     const navigate = useNavigate();
     return (
@@ -47,7 +45,7 @@ export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
           <RingButtons
             selected={selectedNav}
             onClickButton={(page) => {
-              navigate(`/core/vaults/${vault.id}/${page}`);
+              navigate(`/core/dapp/vaults/${vault.id}/${page}`);
             }}
           />
           <Timeline data={vault} onMarkerClick={markerClick} />
@@ -76,6 +74,7 @@ export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
 // we can simply layer things correctly.
 const ForeignObject = styled.foreignObject`
   border-radius: 50%;
+  overflow: hidden;
 `;
 
 const BoundingBox = styled.div`
