@@ -9,7 +9,6 @@ import { Body, Cell, Head, Row, Table } from 'components/Table/Table';
 import { useTransactionHistory } from 'hooks/use-transaction-history';
 
 import { Container, Subheading } from '../styles';
-import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 
 export const ProfileTransactions = () => {
@@ -48,16 +47,31 @@ export const ProfileTransactions = () => {
         <Head>
           <Row>
             <Cell as="th">Date</Cell>
-            <Cell as="th">Interacted With</Cell>
-            <Cell as="th">Gas</Cell>
+            <Cell as="th">Swapped</Cell>
+            <Cell as="th">For</Cell>
+            <Cell as="th">Contract</Cell>
             <Cell as="th">Tx Hash</Cell>
           </Row>
         </Head>
         <Body>
           {transactions.map((transaction) => {
+            const isSwap = !!transaction.tokenSwapped;
+
             return (
               <Row key={transaction.id}>
                 <Cell>{format(transaction.time, 'dd MMM yy')}</Cell>
+                <Cell>
+                  {isSwap &&
+                    `${formatNumber(transaction.swappedAmount)} $${
+                      transaction.tokenSwapped
+                    }`}
+                </Cell>
+                <Cell>
+                  {isSwap &&
+                    `${formatNumber(transaction.recievedAmount)} $${
+                      transaction.tokenSwappedFor
+                    }`}
+                </Cell>
                 <Cell>
                   <LinkStyled
                     href={`https://etherscan.io/address/${transaction.to}`}
@@ -65,7 +79,6 @@ export const ProfileTransactions = () => {
                     {transaction.toName ?? transaction.to}
                   </LinkStyled>
                 </Cell>
-                <Cell>{`${formatNumber(transaction.gasGwei)} Gwei`}</Cell>
                 <Cell>
                   <LinkStyled
                     href={`https://etherscan.io/tx/${transaction.id}`}
