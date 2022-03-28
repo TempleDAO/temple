@@ -8,7 +8,7 @@ import { Spacer } from 'components/AMM/helpers/components';
 import { theme } from 'styles/theme';
 import { formatNumber, formatMillions } from 'utils/formatter';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
-import { tabletAndAbove } from 'styles/breakpoints';
+import { phoneAndAbove } from 'styles/breakpoints';
 
 import texture1 from 'assets/images/texture-1.svg';
 import texture2 from 'assets/images/texture-2.svg';
@@ -29,6 +29,7 @@ import mysteryImage from 'assets/images/mystery.png';
 import logicImage from 'assets/images/logic.png';
 import structureImage from 'assets/images/structure.png';
 import orderImage from 'assets/images/order.png';
+import { PageWrapper } from './utils';
 
 const CHART_EMBED_HEIGHT = 400;
 const CHART_HEIGHT = 500;
@@ -40,10 +41,10 @@ const AnalyticsPage = () => {
   const dashboardMetrics = useRefreshableDashboardMetrics();
 
   return (
-    <>
+    <PageWrapper>
       <h3>Temple Price</h3>
-      <GridLayout columnCount={3}>
-        <ItemWrapper>
+      <GridLayout id="grid" columnCount={3}>
+        <ItemWrapper id="wrapper">
           <StatsCard
             label="Temple Price"
             stat={`$${formatNumber(dashboardMetrics?.templeValue || 0)}`}
@@ -229,7 +230,7 @@ const AnalyticsPage = () => {
           />
         </ItemWrapper>
       </GridLayout>
-    </>
+    </PageWrapper>
   );
 };
 
@@ -244,7 +245,7 @@ const GridLayout = styled.section<{ columnCount: number }>`
   grid-column-gap: .75rem;
   padding: 0;
 
-  ${({ columnCount }) => tabletAndAbove(`
+  ${({ columnCount }) => phoneAndAbove(`
     grid-template-columns: repeat(${columnCount}, 1fr);
   `)}
 `;
@@ -252,7 +253,7 @@ const GridLayout = styled.section<{ columnCount: number }>`
 const ItemWrapper = styled.div`
   margin: 0 0 .75rem;
 
-  ${tabletAndAbove(`
+  ${phoneAndAbove(`
     margin: 0;
   `)}
 `;
