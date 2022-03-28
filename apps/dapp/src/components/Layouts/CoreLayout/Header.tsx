@@ -18,7 +18,7 @@ import {
 } from 'styles/mixins';
 import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
-import { tabletAndAbove } from 'styles/breakpoints';
+import { phoneAndAbove } from 'styles/breakpoints';
 
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
 import templeDaoLogo from 'assets/images/sun-art.svg';
@@ -78,14 +78,6 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
   return (
     <NavWrapper $isOpen={isNavOpenMobile}>
       <Menu>
-        <MenuItem
-          to="/core"
-          strictMatch
-          onMenuItemActive={onMenuItemActive}
-          onClick={onClickMenuItem}
-        >
-          Home
-        </MenuItem>
         <MenuItem
           to="/core/dapp/vaults"
           onMenuItemActive={onMenuItemActive}
@@ -179,7 +171,7 @@ const HamburgerBun = styled.button<{ $isOpen: boolean }>`
   height: ${({ $isOpen }) => ($isOpen ? 1 : 0.875)}rem;
   margin-right: 1.125rem;
 
-  ${tabletAndAbove(`
+  ${phoneAndAbove(`
     display: none;
   `)}
 `;
@@ -203,7 +195,7 @@ const Wrapper = styled.header`
   right: 0;
   z-index: ${({ theme }) => theme.zIndexes.top};
 
-  ${tabletAndAbove(`
+  ${phoneAndAbove(`
     height: ${pixelsToRems(NAV_DESKTOP_HEIGHT_PIXELS)}rem;
     position: relative;
     height: auto;
@@ -220,7 +212,7 @@ const Logo = styled(Link)`
   overflow: hidden;
   text-indent: -999rem;
 
-  ${tabletAndAbove(`
+  ${phoneAndAbove(`
     width: 2.625rem;
     height: 2.625rem;
   `)}
@@ -240,7 +232,7 @@ const Selector = styled.span<{ $position: number }>`
   transform: translate(${({ $position }) => pixelsToRems($position)}rem, 50%);
 
   ${({ $position }) =>
-    tabletAndAbove(`
+    phoneAndAbove(`
     display: ${$position ? 'block' : 'none'};
   `)}
 `;
@@ -260,7 +252,7 @@ const NavWrapper = styled.nav<{ $isOpen: boolean }>`
     size: 'cover',
   })}
 
-  ${tabletAndAbove(`
+  ${phoneAndAbove(`
     top: 0;
     padding-top: 0;
     position: relative;
@@ -285,7 +277,7 @@ const Menu = styled(UnstyledList)`
     }
   }
 
-  ${tabletAndAbove(`
+  ${phoneAndAbove(`
     top: 0;
     padding: 0;
     flex-direction: row;
@@ -309,7 +301,7 @@ const MetamaskButton = styled.button`
   width: 1.5rem;
   height: 1.5rem;
 
-  ${tabletAndAbove(`
+  ${phoneAndAbove(`
     width: 3.4375rem;
     height: 3.375rem;
   `)}
@@ -336,7 +328,7 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   }
 
   ${({ $active }) =>
-    tabletAndAbove(`
+    phoneAndAbove(`
     font-size: 1rem;
     line-height: 1.25rem;
     font-weight: bold;
