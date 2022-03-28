@@ -39,6 +39,7 @@ declare module 'styled-components' {
       devices: {
         tablet: string;
         laptop: string;
+        phone: string;
       };
     };
     typography: {

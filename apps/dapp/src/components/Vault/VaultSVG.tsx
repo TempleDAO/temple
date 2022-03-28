@@ -9,6 +9,7 @@ import { VaultMobile } from './VaultMobile';
 import { useSelectedPage } from './useSelectedPage';
 import { Maybe } from 'types/util';
 import { useLocation } from 'react-router-dom';
+import { queryPhone } from 'styles/breakpoints';
 
 type Props = {
   data: Vault;
@@ -21,7 +22,7 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
   const [markerPosition, setMarkerPosition] = useState<Point>({ x: 0, y: 0 });
 
   const isDesktop = useMediaQuery({
-    query: `(min-width: ${theme.metrics.devices.tablet})`,
+    query: queryPhone,
   });
 
   // useOutsideClick(vaultRef.current?.popupRef!, () => {
