@@ -6,7 +6,8 @@ export enum TempleAddress {
   templeStaking = '0x4d14b24edb751221b3ff08bbb8bd91d4b1c8bc77',
   faithAirdrop = '0x1b44a9a94f2bb14eef0ded2f0428231e358d31d7',
   ammRouter = '0x8a5058100e60e8f7C42305eb505b12785bba3bca',
-  exitQueue = '0xc6d556c34a179a224aebe42e77c6e76594148b97',
+  unstake = '0xc6d556c34a179a224aebe42e77c6e76594148b97',
+  exitQueue = '0x967591888a5e8aed9d2a920fe4cc726e83d2bca9',
 }
 
 export const TEMPLE_ADDRESS_LABELS = {
@@ -15,5 +16,6 @@ export const TEMPLE_ADDRESS_LABELS = {
   [TempleAddress.faithAirdrop]: `${TICKER_SYMBOL.FAITH} Airdrop`,
   [TempleAddress.templeStaking]: `${TICKER_SYMBOL.TEMPLE_TOKEN} Staking`,
   [TempleAddress.fireRitual]: 'Fire Ritual',
+  [TempleAddress.unstake]: 'Unstake',
   [TempleAddress.exitQueue]: 'Exit Queue',
 };

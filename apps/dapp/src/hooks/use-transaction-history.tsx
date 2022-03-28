@@ -20,6 +20,8 @@ interface ContractInteractionHistoryResponse {
 interface SwapHistoryResponse {
   timestamp: string;
   amount1In: string;
+  amount1Out: string;
+  amount0In: string;
   amount0Out: string;
   amountUSD: string;
   pair: {
@@ -139,16 +141,35 @@ function formatContractInteraction(
 }
 
 function formatSwap(swap: SwapHistoryResponse): TransactionRecord {
+  let tokenSwapped = '';
+  let tokenSwappedFor = '';
+  let swappedAmount = 0;
+  let receivedAmount = 0;
+
+  if (Number(swap.amount0Out) > 0) {
+    tokenSwapped = swap.pair.token1.symbol;
+    tokenSwappedFor = swap.pair.token0.symbol;
+    swappedAmount = Number(swap.amount1In);
+    receivedAmount = Number(swap.amount0Out);
+  }
+
+  if (Number(swap.amount1Out) > 0) {
+    tokenSwapped = swap.pair.token0.symbol;
+    tokenSwappedFor = swap.pair.token1.symbol;
+    swappedAmount = Number(swap.amount0In);
+    receivedAmount = Number(swap.amount1Out);
+  }
+
   return {
     id: swap.transaction.id,
     timestamp: Number(swap.timestamp) * 1000,
     time: new Date(Number(swap.timestamp) * 1000),
     to: TempleAddress.ammRouter,
     toName: TEMPLE_ADDRESS_LABELS[TempleAddress.ammRouter],
-    tokenSwapped: swap.pair.token1.symbol,
-    swappedAmount: Number(swap.amount1In),
-    tokenSwappedFor: swap.pair.token0.symbol,
-    recievedAmount: Number(swap.amount0Out),
+    tokenSwapped: tokenSwapped,
+    swappedAmount: swappedAmount,
+    tokenSwappedFor: tokenSwappedFor,
+    recievedAmount: receivedAmount,
     amountUsd: Number(swap.amountUSD),
   };
 }
@@ -197,7 +218,9 @@ function setSwapOptions(wallet: string): AxiosRequestConfig {
             }
           }
           amount1In
+          amount1Out
           amount0Out
+          amount0In
           amountUSD
           transaction {
             id
