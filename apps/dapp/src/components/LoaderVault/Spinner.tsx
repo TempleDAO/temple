@@ -2,11 +2,13 @@ import { useMediaQuery } from 'react-responsive';
 import styled from 'styled-components';
 import { theme } from 'styles/theme';
 import { Definitions } from './Definitions';
+import { queryMinTablet } from 'styles/breakpoints';
 
 export const Spinner = () => {
   const isDesktop = useMediaQuery({
-    query: `(min-width: ${theme.metrics.devices.tablet})`,
+    query: queryMinTablet,
   });
+
   const size = isDesktop ? 500 : 300;
   return (
     <Container>

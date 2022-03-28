@@ -1,0 +1,126 @@
+import { useRef, useState, PropsWithChildren } from 'react';
+import { useOutsideClick } from '../../hooks/useOutsideClick';
+import { Entry, Point, Vault, VaultRef } from './types';
+import { processData } from './desktop-parts/utils';
+import { useMediaQuery } from 'react-responsive';
+import { theme } from 'styles/theme';
+import { VaultDesktop } from './VaultDesktop';
+import { VaultMobile } from './VaultMobile';
+import { useSelectedPage } from './useSelectedPage';
+
+type Props = {
+  data: Vault;
+};
+
+<<<<<<< HEAD
+const VAULT_PAGES: VaultPage[] = [
+  'claim',
+  'stake',
+  'summary',
+  'strategy',
+  'timing',
+];
+
+const useSelectedVaultPage = (): Maybe<VaultPage> => {
+  const { pathname } = useLocation();
+  const pageName = VAULT_PAGES.find((page) => pathname.endsWith(page));
+
+  useEffect(() => {
+    if (!pageName) {
+      console.error('Programming Error: Invalid page name');
+    }
+  }, [pageName]);
+
+  return pageName;
+};
+
+=======
+>>>>>>> 79cd4f0 (refactor desktop vault split)
+export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
+  const selectedNav = useSelectedPage();
+  const vaultRef = useRef<VaultRef>(null);
+  const [selectedEntry, setSelectedEntry] = useState<Entry>();
+  const [markerPosition, setMarkerPosition] = useState<Point>({ x: 0, y: 0 });
+
+  const isDesktop = useMediaQuery({
+    query: `(min-width: ${theme.metrics.devices.tablet})`,
+  });
+
+  useOutsideClick(vaultRef.current?.popupRef!, () => {
+    setSelectedEntry(undefined);
+  });
+
+  const markerClick = (entryData: Entry, markerEl: SVGElement) => {
+    const markerBox = markerEl.getBoundingClientRect();
+    const markerCenterInScreenCoords = {
+      x: markerBox.x + markerBox.width / 2,
+      y: markerBox.y + markerBox.height / 2,
+    };
+
+    const point = DOMPoint.fromPoint(markerCenterInScreenCoords);
+    const marketCenterInSVGCoords = point.matrixTransform(
+      vaultRef.current?.svgRef?.getScreenCTM()?.inverse()
+    );
+    // offset so the location is in the circle not the top left of bubble
+    marketCenterInSVGCoords.x -= 125;
+    marketCenterInSVGCoords.y -= 147;
+
+    setMarkerPosition(marketCenterInSVGCoords);
+    setSelectedEntry(entryData);
+  };
+
+  const vault = processData(data);
+<<<<<<< HEAD
+  return (
+    <>
+      <BoundingBox>
+        <svg height="100%" viewBox="0 0 1000 1000" fill="none" ref={svgRef}>
+          <Background />
+          <OuterRing selected={selectedNav} />
+          <RingButtons
+            selected={selectedNav}
+            onClickButton={(page) => {
+              navigate(`/core/dapp/vaults/${data.id}/${page}`);
+            }}
+          />
+          <Timeline data={vault} onMarkerClick={markerClick} />
+          <InnerRing selected={selectedNav} />
+          <ForeignObject x="239.5" y="239.5" width="520" height="520">
+            <Content>{children}</Content>
+          </ForeignObject>
+          <Definitions />
+          {selectedEntry && (
+            <MarkerBubble
+              ref={popupRef}
+              months={vault.months}
+              entry={selectedEntry}
+              position={markerPosition}
+            />
+          )}
+        </svg>
+      </BoundingBox>
+    </>
+=======
+  return isDesktop ? (
+    <VaultDesktop
+      ref={vaultRef}
+      vault={vault}
+      selectedNav={selectedNav!}
+      markerClick={markerClick}
+      markerPosition={markerPosition}
+      selectedEntry={selectedEntry!}
+      children={children}
+    />
+  ) : (
+    <VaultMobile
+      // ref={vaultRef}
+      vault={vault}
+      selectedNav={selectedNav!}
+      markerClick={markerClick}
+      markerPosition={markerPosition}
+      selectedEntry={selectedEntry!}
+      children={children}
+    />
+>>>>>>> 79cd4f0 (refactor desktop vault split)
+  );
+};
