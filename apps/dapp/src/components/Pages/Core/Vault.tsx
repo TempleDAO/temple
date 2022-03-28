@@ -40,13 +40,11 @@ export const useMockVaultData = (id: string) => {
   }, [setIsLoading]);
 
   return { isLoading, data: vaultData[id], error: !vaultData[id] };
-}
+};
 
 const VaultPage = () => {
   const { vaultId } = useParams();
   const { isLoading, data, error } = useMockVaultData(vaultId || '');
-  const isDesktop = useMediaQuery({ query: `(min-width: ${theme.metrics.devices.tablet})` });
-
 
   if (isLoading) {
     return <Loader />;
@@ -56,19 +54,13 @@ const VaultPage = () => {
     return <div>Something went wrong</div>;
   }
 
-  return isDesktop ?(
+  return (
     <Wrapper>
       <VaultSVG data={data}>
         <Outlet context={{ vault: data }} />
       </VaultSVG>
     </Wrapper>
-  ) : (
-    <Wrapper>
-      <VaultMobileSVG data={data}>
-        <Outlet />
-      </VaultMobileSVG>
-    </Wrapper>
-  )
+  );
 };
 
 const Wrapper = styled.div`
