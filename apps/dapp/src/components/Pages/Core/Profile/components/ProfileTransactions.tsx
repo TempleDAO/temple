@@ -68,7 +68,7 @@ export const ProfileTransactions = () => {
                 </Cell>
                 <Cell>
                   {isSwap &&
-                    `${formatNumber(transaction.recievedAmount)} $${
+                    `${formatNumber(transaction.receivedAmount)} $${
                       transaction.tokenSwappedFor
                     }`}
                 </Cell>

@@ -46,7 +46,7 @@ interface TransactionRecord {
   tokenSwapped?: string;
   tokenSwappedFor?: string;
   swappedAmount: number;
-  recievedAmount: number;
+  receivedAmount: number;
   amountUsd?: number;
 }
 
@@ -58,10 +58,20 @@ export function useTransactionHistory() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const handleRequest = async () => {
-      if (wallet) {
-        const balancesRequest = setBalancesOptions(wallet);
-        const ammRequest = setSwapOptions(wallet);
+    setIsLoading(true);
+
+    if (!wallet) {
+      if (isMounted) {
+        setError({
+          name: 'MissingWallet',
+          message: 'Could not get wallet address',
+        });
+        setIsLoading(false);
+      }
+    } else {
+      const handleRequest = async () => {
+        const balancesRequest = createBalancesRequest(wallet);
+        const ammRequest = createSwapsRequest(wallet);
         try {
           const promises = [axios(balancesRequest), axios(ammRequest)];
           const data = await Promise.all(promises);
@@ -90,14 +100,10 @@ export function useTransactionHistory() {
             setIsLoading(false);
           }
         }
-      } else
-        setError({
-          name: 'MissingWallet',
-          message: 'Could not get wallet address',
-        });
-    };
+      };
 
-    handleRequest();
+      handleRequest();
+    }
   }, [wallet]);
 
   return { transactions, isLoading, error };
@@ -136,7 +142,7 @@ function formatContractInteraction(
     to: tx.to,
     toName: TEMPLE_ADDRESS_LABELS[tx.to as TempleAddress],
     swappedAmount: 0,
-    recievedAmount: 0,
+    receivedAmount: 0,
   };
 }
 
@@ -169,12 +175,12 @@ function formatSwap(swap: SwapHistoryResponse): TransactionRecord {
     tokenSwapped: tokenSwapped,
     swappedAmount: swappedAmount,
     tokenSwappedFor: tokenSwappedFor,
-    recievedAmount: receivedAmount,
+    receivedAmount: receivedAmount,
     amountUsd: Number(swap.amountUSD),
   };
 }
 
-function setBalancesOptions(wallet: string): AxiosRequestConfig {
+function createBalancesRequest(wallet: string): AxiosRequestConfig {
   return {
     method: 'post',
     url: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balances',
@@ -198,7 +204,7 @@ function setBalancesOptions(wallet: string): AxiosRequestConfig {
   };
 }
 
-function setSwapOptions(wallet: string): AxiosRequestConfig {
+function createSwapsRequest(wallet: string): AxiosRequestConfig {
   return {
     method: 'post',
     url: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-amm',
