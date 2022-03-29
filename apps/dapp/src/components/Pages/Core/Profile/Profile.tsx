@@ -15,7 +15,6 @@ import { ProfileTransactions } from './components/ProfileTransactions';
 
 import { phoneAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
-import { Heading } from './styles';
 
 import texture1 from 'assets/images/texture-1.svg';
 import texture2 from 'assets/images/texture-2.svg';

@@ -10,12 +10,6 @@ export const Container = styled.div`
   }
 `;
 
-export const Heading = styled.h2`
-  ${({ theme }) => theme.typography.h2};
-  margin: 0;
-`;
-
-export const Subheading = styled.h3`
-  ${({ theme }) => theme.typography.h4};
+export const Subheading = styled.h4`
   margin-top: 0;
 `;
