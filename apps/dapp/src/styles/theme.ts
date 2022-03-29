@@ -65,6 +65,7 @@ const theme: DefaultTheme = {
     devices: {
       tablet: '64rem' /* 1024/16 */,
       laptop: '90rem' /* 1440/16 */,
+      phone: '37.5rem' /* 600/16 */
     },
   },
   typography: {

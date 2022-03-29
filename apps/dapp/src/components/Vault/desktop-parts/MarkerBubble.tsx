@@ -10,7 +10,7 @@ type MarkerProps = {
 };
 
 export const MarkerBubble = forwardRef<SVGGElement, MarkerProps>(
-  ({ months, position, entry }, ref = null) => {
+  ({ months, position, entry }, ref) => {
     const amount = entry.amount;
     const startDate = format(entry.entryDate, 'MMM do');
     const endDate = format(

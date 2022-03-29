@@ -18,7 +18,7 @@ import {
 } from 'styles/mixins';
 import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
-import { tabletAndAbove } from 'styles/breakpoints';
+import { phoneAndAbove } from 'styles/breakpoints';
 
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
 import templeDaoLogo from 'assets/images/sun-art.svg';
@@ -36,7 +36,7 @@ const Header = () => {
   }, [setIsNavOpen]);
 
   return (
-    <Wrapper>
+    <Wrapper id="Wrapper">
       <MobileNavLeft>
         <HamburgerBun
           aria-label={`${isNavOpen ? 'Close' : 'Open'} navigation`}
@@ -77,15 +77,7 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
 
   return (
     <NavWrapper $isOpen={isNavOpenMobile}>
-      <Menu>
-        <MenuItem
-          to="/core"
-          strictMatch
-          onMenuItemActive={onMenuItemActive}
-          onClick={onClickMenuItem}
-        >
-          Home
-        </MenuItem>
+      <Menu id="menu">
         <MenuItem
           to="/core/dapp/vaults"
           onMenuItemActive={onMenuItemActive}
@@ -168,6 +160,7 @@ const COLOR_NAV_SHADOW_DESKTOP = '0px 0px 0.3125rem rgba(222, 92, 6, 0.5)';
 const COLOR_NAV_SHADOW_MOBILE = '0px 0px 0.6428rem rgba(222, 92, 6, 0.5)';
 const COLOR_NAV_BACKGROUND_GRADIENT_START = '#0B0A0A';
 const COLOR_NAV_BACKGROUND_GRADIENT_END = '#1D1A1A';
+const COLOR_NAV_BORDER = '#BD7B4F61';
 
 const HamburgerBun = styled.button<{ $isOpen: boolean }>`
   ${buttonResets}
@@ -179,7 +172,7 @@ const HamburgerBun = styled.button<{ $isOpen: boolean }>`
   height: ${({ $isOpen }) => ($isOpen ? 1 : 0.875)}rem;
   margin-right: 1.125rem;
 
-  ${tabletAndAbove(`
+  ${phoneAndAbove(`
     display: none;
   `)}
 `;
@@ -203,12 +196,12 @@ const Wrapper = styled.header`
   right: 0;
   z-index: ${({ theme }) => theme.zIndexes.top};
 
-  ${tabletAndAbove(`
+  ${phoneAndAbove(`
     height: ${pixelsToRems(NAV_DESKTOP_HEIGHT_PIXELS)}rem;
     position: relative;
     height: auto;
     background: linear-gradient(180deg, ${COLOR_NAV_BACKGROUND_GRADIENT_START} 0%, ${COLOR_NAV_BACKGROUND_GRADIENT_END} 100%);
-    border-bottom: 0.0625rem solid ${theme.palette.brand};
+    border-bottom: 0.0625rem solid ${COLOR_NAV_BORDER};
   `)}
 `;
 
@@ -220,9 +213,21 @@ const Logo = styled(Link)`
   overflow: hidden;
   text-indent: -999rem;
 
-  ${tabletAndAbove(`
-    width: 2.625rem;
-    height: 2.625rem;
+  ${phoneAndAbove(`
+    width: 2.125rem;
+    height: 2.125rem;
+  `)}
+`;
+
+const MetamaskButton = styled.button`
+  ${buttonResets}
+  ${backgroundImage(metamaskLogo)}
+  width: 2.2rem;
+  height: 2.2rem;
+
+  ${phoneAndAbove(`
+    width: 2.4375rem;
+    height: 2.375rem;
   `)}
 `;
 
@@ -240,7 +245,7 @@ const Selector = styled.span<{ $position: number }>`
   transform: translate(${({ $position }) => pixelsToRems($position)}rem, 50%);
 
   ${({ $position }) =>
-    tabletAndAbove(`
+    phoneAndAbove(`
     display: ${$position ? 'block' : 'none'};
   `)}
 `;
@@ -260,7 +265,7 @@ const NavWrapper = styled.nav<{ $isOpen: boolean }>`
     size: 'cover',
   })}
 
-  ${tabletAndAbove(`
+  ${phoneAndAbove(`
     top: 0;
     padding-top: 0;
     position: relative;
@@ -285,33 +290,21 @@ const Menu = styled(UnstyledList)`
     }
   }
 
-  ${tabletAndAbove(`
+  ${phoneAndAbove(`
     top: 0;
     padding: 0;
     flex-direction: row;
-    border-left: 0.0625rem solid ${theme.palette.brand};
-    border-right: 0.0625rem solid ${theme.palette.brand};
+    // border-left: 0.0625rem solid ${COLOR_NAV_BORDER};
+    // border-right: 0.0625rem solid ${COLOR_NAV_BORDER};
 
     > li {
       margin: 0;
-      border-right: 0.0625rem solid ${theme.palette.brand};
+      border-right: 0.0625rem solid ${COLOR_NAV_BORDER};
 
       &:last-of-type {
         border-right: none;
       }
     }
-  `)}
-`;
-
-const MetamaskButton = styled.button`
-  ${buttonResets}
-  ${backgroundImage(metamaskLogo)}
-  width: 1.5rem;
-  height: 1.5rem;
-
-  ${tabletAndAbove(`
-    width: 3.4375rem;
-    height: 3.375rem;
   `)}
 `;
 
@@ -336,9 +329,9 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   }
 
   ${({ $active }) =>
-    tabletAndAbove(`
-    font-size: 1rem;
-    line-height: 1.25rem;
+    phoneAndAbove(`
+    font-size: .95rem;
+    line-height: 0.25rem;
     font-weight: bold;
     letter-spacing: 0.05em;
     min-width: 7.5rem;
