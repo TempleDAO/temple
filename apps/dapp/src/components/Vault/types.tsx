@@ -1,3 +1,5 @@
+import { MutableRefObject, ReactNode } from "react";
+
 export type Entry = {
   id: string | number;
   entryDate?: Date;
@@ -18,6 +20,15 @@ export type Vault = {
   zoneEmpty?: boolean;
 };
 
+export type VaultProps = {
+  vault: Vault;
+  selectedNav: VaultPage;
+  markerClick: (entryData: Entry, markerEl: SVGElement) => void;
+  selectedEntry: Entry;
+  markerPosition: Point;
+  children: ReactNode;
+};
+
 export type Point = {
   x: number;
   y: number;
@@ -30,3 +41,9 @@ export enum MarkerType {
 }
 
 export type VaultPage = 'claim' | 'stake' | 'summary' | 'strategy' | 'timing';
+
+
+export type VaultRef = {
+  svgRef: SVGSVGElement | null;
+  popupRef: MutableRefObject<any> | null;
+}
