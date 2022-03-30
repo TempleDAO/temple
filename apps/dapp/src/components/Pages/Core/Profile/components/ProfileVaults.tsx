@@ -9,6 +9,8 @@ import type { Vault } from 'components/Vault/types';
 import Loader from 'components/Loader/Loader';
 import { Button } from 'components/Button/Button';
 
+import { Container, Subheading } from '../styles';
+
 interface IProps {
   isLoading?: boolean;
   vaults: Vault[];
@@ -34,7 +36,7 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaults }) => {
       {vaults.map((vault) => {
         return (
           <div key={vault.id}>
-            <VaultHeading>{`${vault.id}`}</VaultHeading>
+            <Subheading>{`${vault.id}`}</Subheading>
             <Table $expand>
               <Head>
                 <Row>
@@ -62,17 +64,3 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaults }) => {
     </>
   );
 };
-
-const VaultHeading = styled.h2`
-  ${({ theme }) => theme.typography.h4};
-  margin: 0;
-`;
-
-const Container = styled.div`
-  padding: 2rem;
-  display: flex;
-  justify-content: center;
-  a {
-    width: max-content;
-  }
-`;
