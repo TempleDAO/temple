@@ -60,56 +60,6 @@ contract TempleZaps is ZapBaseV2_3 {
   }
 
   /**
-   * @notice This function zaps EIP-2612 compliant tokens using permit
-   * @param fromToken The token used for entry
-   * @param fromAmount The amount of fromToken to zap
-   * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
-   * @param ammDeadline The UNIX timestamp the zap must be completed by
-   * @param swapTarget Execution target for the swap
-   * @param swapData DEX data
-   * @param permitDeadline Permit deadline
-   * @param v secp256k1 signature component
-   * @param r secp256k1 signature component
-   * @param s secp256k1 signature component
-   * @return amountOGTemple Quantity of OGTemple received
-   */
-  /*function zapInWithPermit(
-    address fromToken,
-    uint256 fromAmount,
-    uint256 minTempleReceived,
-    uint256 ammDeadline,
-    address swapTarget,
-    bytes calldata swapData,
-    uint256 permitDeadline,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  ) external whenNotPaused returns (uint256 amountOGTemple) {
-    require(permittableTokens[fromToken], 'TZ: token not allowed');
-
-    IERC20 token = IERC20(fromToken);
-    token.permit(
-      msg.sender,
-      address(this),
-      fromAmount,
-      permitDeadline,
-      v,
-      r,
-      s
-    );
-
-    return
-      zapIn(
-        fromToken,
-        fromAmount,
-        minTempleReceived,
-        ammDeadline,
-        swapTarget,
-        swapData
-      );
-  }*/
-
-  /**
    * @notice This function swaps FRAX for TEMPLE
    * @param amountFRAX The amount of FRAX to swap
    * @param minTempleReceived The minimum acceptable quantity of TEMPLE to receive
