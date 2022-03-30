@@ -2,9 +2,9 @@ import { ethers, network } from "hardhat";
 import { ContractFactory, Signer } from "ethers";
 import { expect } from "chai";
 
-import { TempleERC20Token } from "../typechain/TempleERC20Token";
+import { TempleERC20Token } from "../../typechain/TempleERC20Token";
 import { shouldThrow } from "./helpers";
-import { TempleERC20Token__factory } from "../typechain/factories/TempleERC20Token__factory";
+import { TempleERC20Token__factory } from "../../typechain/factories/TempleERC20Token__factory";
 
 describe("Temple ERC20 Token", async () => {
   let TEMPLE: TempleERC20Token;

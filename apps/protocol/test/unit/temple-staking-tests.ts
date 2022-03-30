@@ -2,16 +2,16 @@ import { ethers } from "hardhat";
 import { BigNumber, Signer } from "ethers";
 import { expect } from "chai";
 
-import { TempleERC20Token } from "../typechain/TempleERC20Token";
-import { TempleStaking } from "../typechain/TempleStaking";
-import { OGTemple } from "../typechain/OGTemple";
+import { TempleERC20Token } from "../../typechain/TempleERC20Token";
+import { TempleStaking } from "../../typechain/TempleStaking";
+import { OGTemple } from "../../typechain/OGTemple";
 import { blockTimestamp, fromAtto, mineToEpoch, shouldThrow, toAtto } from "./helpers";
-import { TempleERC20Token__factory } from "../typechain/factories/TempleERC20Token__factory";
-import { ExitQueue } from "../typechain/ExitQueue";
-import { ExitQueue__factory } from "../typechain/factories/ExitQueue__factory";
-import { TempleStaking__factory } from "../typechain/factories/TempleStaking__factory";
-import { OGTemple__factory } from "../typechain/factories/OGTemple__factory";
-import { MintAllowance } from "../typechain";
+import { TempleERC20Token__factory } from "../../typechain/factories/TempleERC20Token__factory";
+import { ExitQueue } from "../../typechain/ExitQueue";
+import { ExitQueue__factory } from "../../typechain/factories/ExitQueue__factory";
+import { TempleStaking__factory } from "../../typechain/factories/TempleStaking__factory";
+import { OGTemple__factory } from "../../typechain/factories/OGTemple__factory";
+import { MintAllowance } from "../../typechain";
 import { time } from "console";
 import { entropyToMnemonic } from "ethers/lib/utils";
 

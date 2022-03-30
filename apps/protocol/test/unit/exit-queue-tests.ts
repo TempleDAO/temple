@@ -4,10 +4,10 @@ import { expect, should } from "chai";
 
 import { mineNBlocks, shouldThrow } from "./helpers";
 
-import { TempleERC20Token } from "../typechain/TempleERC20Token";
-import { TempleERC20Token__factory } from "../typechain/factories/TempleERC20Token__factory";
-import { ExitQueue__factory } from "../typechain/factories/ExitQueue__factory";
-import { ExitQueue } from "../typechain/ExitQueue";
+import { TempleERC20Token } from "../../typechain/TempleERC20Token";
+import { TempleERC20Token__factory } from "../../typechain/factories/TempleERC20Token__factory";
+import { ExitQueue__factory } from "../../typechain/factories/ExitQueue__factory";
+import { ExitQueue } from "../../typechain/ExitQueue";
 
 describe("Exit Queue", async () => {
   let TEMPLE: TempleERC20Token;

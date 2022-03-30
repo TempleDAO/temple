@@ -7,7 +7,7 @@ import { FakeERC20, FakeERC20__factory,
   TempleTreasury, TempleTreasury__factory, 
   TempleUniswapV2Pair, TempleUniswapV2Pair__factory,
   TempleFraxAMMOps, TempleFraxAMMOps__factory,
-  TreasuryManagementProxy, TreasuryManagementProxy__factory } from "../typechain";
+  TreasuryManagementProxy, TreasuryManagementProxy__factory } from "../../typechain";
 import { toAtto, shouldThrow } from "./helpers";
 
 describe("AMM Ops", async () => {

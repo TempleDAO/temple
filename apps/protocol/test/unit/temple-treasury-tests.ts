@@ -1,17 +1,17 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
 
-import { TempleERC20Token } from "../typechain/TempleERC20Token";
-import { FakeERC20 } from "../typechain/FakeERC20";
-import { TempleTreasury } from "../typechain/TempleTreasury";
-import { TempleERC20Token__factory } from "../typechain/factories/TempleERC20Token__factory";
-import { FakeERC20__factory } from "../typechain/factories/FakeERC20__factory";
-import { TempleTreasury__factory } from "../typechain/factories/TempleTreasury__factory";
-import { TestTreasuryAllocation__factory } from "../typechain/factories/TestTreasuryAllocation__factory";
+import { TempleERC20Token } from "../../typechain/TempleERC20Token";
+import { FakeERC20 } from "../../typechain/FakeERC20";
+import { TempleTreasury } from "../../typechain/TempleTreasury";
+import { TempleERC20Token__factory } from "../../typechain/factories/TempleERC20Token__factory";
+import { FakeERC20__factory } from "../../typechain/factories/FakeERC20__factory";
+import { TempleTreasury__factory } from "../../typechain/factories/TempleTreasury__factory";
+import { TestTreasuryAllocation__factory } from "../../typechain/factories/TestTreasuryAllocation__factory";
 import { BigNumber, BigNumberish, ContractTransaction, Overrides, Signer } from "ethers";
 import { fromAtto, shouldThrow, toAtto } from "./helpers";
-import { TestTreasuryAllocation } from "../typechain/TestTreasuryAllocation";
-import { TreasuryManagementProxy, TreasuryManagementProxy__factory } from "../typechain";
+import { TestTreasuryAllocation } from "../../typechain/TestTreasuryAllocation";
+import { TreasuryManagementProxy, TreasuryManagementProxy__factory } from "../../typechain";
 
 describe("Temple Treasury management", async () => {
   let TEMPLE: TempleERC20Token;

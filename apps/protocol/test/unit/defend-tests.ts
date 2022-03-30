@@ -2,8 +2,8 @@ import { ethers, network } from "hardhat";
 import { ContractFactory, Signer } from "ethers";
 import { expect } from "chai";
 
-import { TempleERC20Token } from "../typechain/TempleERC20Token";
-import { TempleStaking } from "../typechain/TempleStaking";
+import { TempleERC20Token } from "../../typechain/TempleERC20Token";
+import { TempleStaking } from "../../typechain/TempleStaking";
 import { shouldThrow } from "./helpers";
 
 describe("Defend", async () => {

@@ -1,10 +1,10 @@
 import { expect } from "chai";
 import { Signer } from "ethers";
 import { ethers } from "hardhat";
-import { LockedOGTemple__factory } from "../typechain/factories/LockedOGTemple__factory";
-import { OGTemple__factory } from "../typechain/factories/OGTemple__factory";
-import { LockedOGTemple } from "../typechain/LockedOGTemple";
-import { OGTemple } from "../typechain/OGTemple";
+import { LockedOGTemple__factory } from "../../typechain/factories/LockedOGTemple__factory";
+import { OGTemple__factory } from "../../typechain/factories/OGTemple__factory";
+import { LockedOGTemple } from "../../typechain/LockedOGTemple";
+import { OGTemple } from "../../typechain/OGTemple";
 import { blockTimestamp, fromAtto, mineToTimestamp, shouldThrow, toAtto } from "./helpers";
 
 describe("Temple Staked Lock Mechanics", async () => {

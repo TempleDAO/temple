@@ -9,7 +9,7 @@ import {
   FakeERC20, FakeERC20__factory,
   TempleERC20Token, TempleERC20Token__factory,
   TempleTreasury, TempleTreasury__factory,
-  TempleUniswapV2Pair, TempleUniswapV2Pair__factory} from "../typechain";
+  TempleUniswapV2Pair, TempleUniswapV2Pair__factory} from "../../typechain";
 import { shouldThrow } from "./helpers";
 
 describe("Verify Quest for AMM whitelist Complete tests", async () => {

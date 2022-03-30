@@ -5,6 +5,7 @@ import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ganache'; // for testing
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
+import 'hardhat-gas-reporter';
 
 // NOTE: Any tasks that depend on the generated typechain makes the build flaky.
 //       Favour scripts instead
@@ -61,6 +62,9 @@ module.exports = {
   networks: {
     hardhat: {
       chainId: 1337,
+      // Note: For zap tests, we need to fork mainnet to run the tests, the line below acts as amark
+      // {required for zap tests}
+      // {end}
     },
     rinkeby: {
       url: process.env.RINKEBY_RPC_URL || '',
@@ -91,5 +95,14 @@ module.exports = {
   },
   mocha: {
     timeout: 120000,
+  },
+  paths: {
+    tests: process.env.HARDHAT_TEST_DIRECTORY || './test/unit'
+  },
+  gasReporter: {
+    currency: 'USD',
+    coinmarketcap: process.env.COINMARKETCAP_API_KEY,
+    gasPrice: 135,
+    enabled: process.env.REPORT_GAS === 'true',
   },
 };
