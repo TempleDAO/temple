@@ -16,9 +16,15 @@ import "./Rational.sol";
 /**
  * @title A temple investment vault, allows deposits and withdrawals on a set period (eg. monthly)
  *
- * @notice Each vault is a rebasing ERC20, users ca
+ * @notice Each vault is a rebasing ERC2O (token representing an accounts vault share), Vaults have a
+ * cycle period, and a join/exit period. During the join/exit period, a vault account can withdraw their
+ * share of temple from the vault, or deposit more temple in.
  *
- * If a vault is in a cycle period, the any revenue is re-invested
+ * Depending on when an account joins a vault, there is a linearly increasing joining fee shared by all
+ * other vault accounts.
+ *
+ * If an account doesn't leave during the join/exit period, their holdings are automaticaly re-invested
+ * into the next vault cycle.
  */
 contract Vault is EIP712, Ownable, RebasingERC20 {
     using Counters for Counters.Counter;
@@ -38,14 +44,9 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
     IERC20 public templeToken;
 
-    /// @dev share of main revenue strategy owned by this vault, should be 1 to 1 with the
-    /// vault's total temple
-    Strategy public treasuryInvestmentRevenueStrategy;
-
-    /// @dev share of revenue from any re-investment strategy. At time 0 revenueSharetrategy
-    /// and revenueReinvestmentStrategy should be in the same proportions, and this will
-    /// diverge over time.
-    Strategy public revenueReinvestmentStrategy;
+    /// @dev main revenue strategy, this vault share changes with it's
+    /// temple balance and shareBoostFactor
+    Strategy public primaryStrategy;
 
     /// @dev timestamp (in seconds) of the first period in this vault
     uint256 public firstPeriodStartTimestamp;
@@ -63,15 +64,13 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         string memory _name,
         string memory _symbol,
         IERC20 _templeToken,
-        Strategy _treasuryInvestmentRevenueStrategy,
-        Strategy _revenueReinvestmentStrategy,
+        Strategy _primaryStrategy,
         uint256 _periodDuration,
         uint256 _enterExitWindowDuration,
         Rational memory _shareBoostFactory
     ) EIP712(_name, "1") ERC20(_name, _symbol)  {
         templeToken = _templeToken;
-        treasuryInvestmentRevenueStrategy = _treasuryInvestmentRevenueStrategy;
-        revenueReinvestmentStrategy = _revenueReinvestmentStrategy;
+        primaryStrategy = _primaryStrategy;
         periodDuration = _periodDuration;
         enterExitWindowDuration = _enterExitWindowDuration;
         shareBoostFactor = _shareBoostFactory;
@@ -170,19 +169,22 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     /**
      * @dev public and permisionless, however for correctness within reasonably
      * time bounds this only needs to be called during a vault deposit/withdrawal
+     *
+     * Invariant, a vaults shares in treasuryInvestmentRevenueStrategy should
+     * always equal total temple held in vault * boost factor
      */
     function syncStrategyShares() public {
-        uint256 targetRevenueShare = templeToken.balanceOf(address(this)) * shareBoostFactor.p / shareBoostFactor.q;
-        uint currentRevenueShare = treasuryInvestmentRevenueStrategy.balanceOf(address(this));
+        // uint256 targetRevenueShare = templeToken.balanceOf(address(this)) * shareBoostFactor.p / shareBoostFactor.q;
+        // uint currentRevenueShare = treasuryInvestmentRevenueStrategy.balanceOf(address(this));
 
+        // if (targetRevenueShare > currentRevenueShare) { // mint extra revenue/reinvestment shares
+        //     treasuryInvestmentRevenueStrategy.mint(targetRevenueShare - currentRevenueShare);
+        // } else if (targetRevenueShare < currentRevenueShare) { // burn shares to account for withdrawal
+        //     treasuryInvestmentRevenueStrategy.burn(currentRevenueShare - targetRevenueShare);
+        // }
 
-        if (targetRevenueShare > currentRevenueShare) { // mint extra revenue/reinvestment shares
-            treasuryInvestmentRevenueStrategy.mint(targetRevenueShare - currentRevenueShare);
-            revenueReinvestmentStrategy.mint(targetRevenueShare - currentRevenueShare);
-        } else if (targetRevenueShare < currentRevenueShare) { // burn shares to account for withdrawal
-            treasuryInvestmentRevenueStrategy.burn(currentRevenueShare - targetRevenueShare);
-            revenueReinvestmentStrategy.burn(currentRevenueShare - targetRevenueShare);
-        }
+        // TODO(butlerji): Is this invairant reasonable? What happens to frax revenue earned? Should it
+        //                 get re-invested by default until liquidated by a vault
     }
 
     /**
