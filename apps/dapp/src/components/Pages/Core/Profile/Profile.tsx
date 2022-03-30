@@ -156,8 +156,8 @@ const ProfileMeta = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.75rem;
-  padding-right: 0.75rem;
   ${phoneAndAbove(`
+    padding-right: 0.75rem;
     grid-template-columns: 60% 40%;
     grid-template-rows: 1fr 1fr 2fr;
     .stats-pie {
