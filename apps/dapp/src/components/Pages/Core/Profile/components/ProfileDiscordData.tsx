@@ -14,6 +14,7 @@ import Loader from 'components/Loader/Loader';
 
 import { theme } from 'styles/theme';
 import { tabletAndAbove } from 'styles/breakpoints';
+import { Container } from '../styles';
 
 import background4 from 'assets/images/dashboard-4.png';
 import texture1 from 'assets/images/texture-1.svg';
@@ -163,14 +164,4 @@ const DiscordDataSection = styled.div`
   ${tabletAndAbove(`
     grid-template-columns: 1fr 1fr 1fr;
 `)}
-`;
-
-const Container = styled.div`
-  display: flex;
-  margin: 2rem;
-  justify-content: center;
-
-  a {
-    width: max-content;
-  }
 `;

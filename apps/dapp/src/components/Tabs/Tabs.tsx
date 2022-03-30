@@ -79,6 +79,11 @@ const TabsStyled = styled.div`
 const TabsWrapper = styled.div`
   display: flex;
   align-items: center;
+  overflow: auto;
+  scrollbar-width: none;
+  ::-webkit-scrollbar {
+    display: none;
+  }
 `;
 
 interface TabStyledProps {
