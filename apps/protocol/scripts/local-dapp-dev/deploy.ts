@@ -20,6 +20,7 @@ import {
   TreasuryManagementProxy__factory,
   AcceleratedExitQueue,
   AcceleratedExitQueue__factory,
+  TempleIVSwap,
   TempleIVSwap__factory,
 } from '../../typechain';
 
@@ -251,6 +252,15 @@ async function main() {
   );
   await stablecToken.mint(templeIVSwap.address, toAtto(1000000));
 
+  // create and initialise contract that allows a permissionless
+  // swap @ IV
+  const templeIVSwap = await new TempleIVSwap__factory(owner).deploy(
+    templeToken.address,
+    stablecToken.address,
+    {temple: 100, frax: 65}, /* iv */
+  );
+  await stablecToken.mint(templeIVSwap.address, toAtto(1000000));
+
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
     EXIT_QUEUE_ADDRESS: exitQueue.address,
@@ -268,6 +278,8 @@ async function main() {
     TEMPLE_V2_ROUTER_ADDRESS: templeRouter.address,
     TEMPLE_ROUTER_WHITELIST: ammWhitelist.address,
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
+
+    TEMPLE_IV_SWAP: templeIVSwap.address,
 
     TEMPLE_IV_SWAP: templeIVSwap.address,
 
