@@ -4,11 +4,9 @@ const shell = require('shelljs')
 const uncomment = /{required for zap tests}/
 
 const forkBlock = `
-    hardhat: {
        forking: {
          url: \`https://eth-mainnet.alchemyapi.io/v2/\${process.env.ALCHEMY_API_KEY}\`,
        },
-     },
 `
 
 const hardhatConfigFile = './hardhat.config.ts'

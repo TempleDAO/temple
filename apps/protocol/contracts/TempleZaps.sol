@@ -73,7 +73,7 @@ contract TempleZaps is ZapBaseV2_3 {
    * @param s secp256k1 signature component
    * @return amountOGTemple Quantity of OGTemple received
    */
-  function zapInWithPermit(
+  /*function zapInWithPermit(
     address fromToken,
     uint256 fromAmount,
     uint256 minTempleReceived,
@@ -87,7 +87,7 @@ contract TempleZaps is ZapBaseV2_3 {
   ) external whenNotPaused returns (uint256 amountOGTemple) {
     require(permittableTokens[fromToken], 'TZ: token not allowed');
 
-    ERC20 token = ERC20(fromToken);
+    IERC20 token = IERC20(fromToken);
     token.permit(
       msg.sender,
       address(this),
@@ -107,7 +107,7 @@ contract TempleZaps is ZapBaseV2_3 {
         swapTarget,
         swapData
       );
-  }
+  }*/
 
   /**
    * @notice This function swaps FRAX for TEMPLE
@@ -140,9 +140,12 @@ contract TempleZaps is ZapBaseV2_3 {
   ) external onlyOwner {
     require(to != address(0), 'TZ: to address zero');
     if (token == address(0)) {
-      SafeTransferLib.safeTransferETH(to, amount);
+      // this is effectively how OpenZeppelin transfers eth
+      require(address(this).balance >= amount, "Address: insufficient balance");
+      (bool success, ) = to.call{value: amount}(""); 
+      require(success, "Address: unable to send value, recipient may have reverted");
     } else {
-      SafeTransferLib.safeTransfer(ERC20(token), to, amount);
+      SafeERC20.safeTransfer(IERC20(token), to, amount);
     }
   }
 

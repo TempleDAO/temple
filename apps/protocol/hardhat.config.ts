@@ -62,6 +62,9 @@ module.exports = {
   networks: {
     hardhat: {
       chainId: 1337,
+      // Note: For zap tests, we need to fork mainnet to run the tests, the line below acts as amark
+      // {required for zap tests}
+      // {end}
     },
     rinkeby: {
       url: process.env.RINKEBY_RPC_URL || '',
@@ -70,9 +73,6 @@ module.exports = {
         : [],
       gasPrice: 2000000000,
     },
-    // Note: For zap tests, we need to fork mainnet to run the tests, the line below acts as amark
-    // {required for zap tests}
-    // {end}
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
       accounts: process.env.MAINNET_ADDRESS_PRIVATE_KEY

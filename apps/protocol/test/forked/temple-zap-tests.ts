@@ -66,9 +66,9 @@ describe('TempleZaps', async () => {
     });
 
     it('should set temple addresses', async () => {
-      expect(await TEMPLE_ZAPS.TEMPLE()).to.equal(TEMPLE);
-      expect(await TEMPLE_ZAPS.TEMPLE_FRAX_AMM_ROUTER()).to.equal(
-        TEMPLE_V2_ROUTER
+      expect(await (await TEMPLE_ZAPS.TEMPLE()).toLowerCase()).to.equal(TEMPLE.toLowerCase());
+      expect(await (await TEMPLE_ZAPS.TEMPLE_FRAX_AMM_ROUTER()).toLowerCase()).to.equal(
+        TEMPLE_V2_ROUTER.toLowerCase()
       );
     });
 
@@ -90,6 +90,7 @@ describe('TempleZaps', async () => {
 
     it('should zap ETH to TEMPLE', async () => {
       const tokenAddr = ETH;
+      console.log(tokenAddr)
       const tokenAmount = '5';
       const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
 
@@ -147,7 +148,7 @@ describe('TempleZaps', async () => {
     it('should revert when slippage is too high', async () => {
       const tokenAddr = ETH;
       const tokenAmount = '1';
-      const minTempleReceived = ethers.utils.parseUnits('5000', 18).toString();
+      const minTempleReceived = ethers.utils.parseUnits('50000', 18).toString();
 
       await shouldThrow(
         zapIn(
@@ -161,7 +162,8 @@ describe('TempleZaps', async () => {
       );
     });
 
-    it('should zap with permit USDC to TEMPLE', async () => {
+    // Disabled until we implement permits (or OpenZeppelin take their EIP2612 out of draft)
+    xit('should zap with permit USDC to TEMPLE', async () => {
       const tokenAddr = USDC;
       const tokenAmount = '5000';
       const minTempleReceived = ethers.utils.parseUnits('1', 18).toString();
@@ -311,7 +313,6 @@ async function zapIn(
   let symbol;
   let decimals;
   let sellToken;
-
   if (tokenAddr === ETH) {
     symbol = 'ETH';
     decimals = 18;
@@ -462,7 +463,8 @@ async function zapWithPermit(
     sellAmount
   );
 
-  await zapsConnect.zapInWithPermit(
+  // Will need to uncomment this when we release zap with permits
+  /*await zapsConnect.zapInWithPermit(
     tokenAddr,
     sellAmount,
     minTempleReceived,
@@ -473,7 +475,7 @@ async function zapWithPermit(
     v,
     r,
     s
-  );
+  );*/
 
   console.log(
     `Minimum expected Temple: ${ethers.utils.formatUnits(

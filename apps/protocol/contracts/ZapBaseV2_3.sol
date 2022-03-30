@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.0;
 
-import '@rari-capital/solmate/src/utils/SafeTransferLib.sol';
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import '@openzeppelin/contracts/access/Ownable.sol';
 
 interface IWETH {
@@ -43,8 +43,8 @@ abstract contract ZapBaseV2_3 is Ownable {
     require(amount > 0, 'Invalid token amount');
     require(msg.value == 0, 'ETH sent with token');
 
-    SafeTransferLib.safeTransferFrom(
-      ERC20(token),
+    SafeERC20.safeTransferFrom(
+      IERC20(token),
       msg.sender,
       address(this),
       amount
@@ -97,7 +97,7 @@ abstract contract ZapBaseV2_3 is Ownable {
     if (token == address(0)) {
       balance = address(this).balance;
     } else {
-      balance = ERC20(token).balanceOf(address(this));
+      balance = IERC20(token).balanceOf(address(this));
     }
   }
 
@@ -112,8 +112,8 @@ abstract contract ZapBaseV2_3 is Ownable {
     address spender,
     uint256 amount
   ) internal {
-    SafeTransferLib.safeApprove(ERC20(token), spender, 0);
-    SafeTransferLib.safeApprove(ERC20(token), spender, amount);
+    SafeERC20.safeIncreaseAllowance(IERC20(token), spender, 0);
+    SafeERC20.safeIncreaseAllowance(IERC20(token), spender, amount);
   }
 
   /**
