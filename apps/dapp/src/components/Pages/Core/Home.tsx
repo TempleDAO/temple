@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMediaQuery } from 'react-responsive';
 import styled, { css } from 'styled-components';
 
@@ -16,14 +16,7 @@ import planetsImage from 'assets/images/planets.svg';
 import sunImage from 'assets/images/sun-art.svg';
 import sunsetImage from 'assets/images/sunset.svg';
 
-import socialDiscordIcon from 'assets/images/social-discord.png';
-import socialDocsIcon from 'assets/images/social-docs.png';
-import socialMediumIcon from 'assets/images/social-medium.png';
-import socialMessageIcon from 'assets/images/social-twitter.png';
-import socialTelegramIcon from 'assets/images/social-telegram.png';
-import socialTwitterIcon from 'assets/images/social-twitter.png';
-import footerBg from 'assets/images/footer-bg.png';
-import Image from 'components/Image/Image';
+import { Button as BaseButton } from 'components/Button/Button';
 
 import { ResponsiveImage } from 'styles/common';
 
@@ -32,9 +25,25 @@ const HomePage = () => {
   const isAboveMobile = useMediaQuery({
     query: queryMinTablet,
   });
+  const navigate = useNavigate();
 
   return (
     <>
+      <HeaderStyled>
+        <NavContainer>
+          <Link to="/">
+            <AppLogo>TempleDAO</AppLogo>
+          </Link>
+          <MenuContainer>
+            <DAppButton
+              label={'launch dapp'}
+              onClick={() => navigate('/core/dapp')}
+              isSmall
+              isUppercase
+            />
+          </MenuContainer>
+        </NavContainer>
+      </HeaderStyled>
       <Row>
         <RowCell>
           <EarnBetterYieldsWrapper>
@@ -47,24 +56,14 @@ const HomePage = () => {
             <ButtonGroup>
               {isAboveMobile && (
                 <ButtonContainer>
-                  {
-                    // TODO: Where should this go?
-                  }
-                  <Link to={'/the-temple'}>
-                    <StyledButton
-                      label={`enter temple ${String.fromCharCode(10146)}`}
-                      isUppercase
-                      isSmall
-                    />
+                  <Link to={'/core/dapp/trade'}>
+                    <StyledButton label={`Buy Now`} isUppercase isSmall />
                   </Link>
                 </ButtonContainer>
               )}
               <ButtonContainer>
-                {
-                  // TODO: Where should we link?
-                }
-                <Link to={'/core'}>
-                  <StyledButton label={'Learn More'} isUppercase isSmall />
+                <Link to={'/core/dapp/vaults'}>
+                  <StyledButton label={'Start Earning'} isUppercase isSmall />
                 </Link>
               </ButtonContainer>
             </ButtonGroup>
@@ -221,174 +220,6 @@ const HomePage = () => {
           </Flex>
         </Flex>
       </section>
-      <FooterStyled>
-        <FooterContainer>
-          <Flex
-            layout={{
-              kind: 'container',
-              direction: 'row',
-
-              canWrap: true,
-              canWrapDesktop: false,
-            }}
-          >
-            <Flex
-              layout={{
-                kind: 'container',
-                canWrap: true,
-                canWrapTablet: false,
-              }}
-            >
-              <Flex
-                layout={{
-                  kind: 'item',
-                  direction: 'column',
-                  colTablet: 'three-quarter',
-                }}
-              >
-                <h3 className={'margin-remove'}>TempleDAO</h3>
-                <br />
-                <p>
-                  Stop investing in volatile cryptocurrencies. Join Temple,
-                  Stake, and sleep easy.
-                </p>
-                <br />
-                <br />
-                <strong>
-                  &copy; {new Date().getFullYear()} TempleDAO. All rights
-                  reserved.
-                </strong>
-              </Flex>
-            </Flex>
-            <Flex
-              layout={{
-                kind: 'container',
-              }}
-            >
-              <Flex
-                layout={{
-                  kind: 'item',
-                  direction: 'column',
-                  colTablet: 'third',
-                }}
-              >
-                <h4>Community</h4>
-                <ul>
-                  <li>
-                    <a
-                      href={'https://discord.gg/templedao'}
-                      target={'_blank'}
-                      rel="noreferrer"
-                    >
-                      <Image
-                        src={socialDiscordIcon}
-                        alt={''}
-                        width={24}
-                        height={24}
-                      />
-                      <strong>Discord</strong>
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href={'https://twitter.com/templedao'}
-                      target={'_blank'}
-                      rel="noreferrer"
-                    >
-                      <Image
-                        src={socialTwitterIcon}
-                        alt={''}
-                        width={24}
-                        height={24}
-                      />
-                      <strong>Twitter</strong>
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href={'https://t.me/TempleDAOcommunity'}
-                      target={'_blank'}
-                      rel="noreferrer"
-                    >
-                      <Image
-                        src={socialTelegramIcon}
-                        alt={''}
-                        width={24}
-                        height={24}
-                      />
-                      <strong>Telegram</strong>
-                    </a>
-                  </li>
-                </ul>
-              </Flex>
-              <Flex
-                layout={{
-                  kind: 'item',
-                  direction: 'column',
-                  colTablet: 'third',
-                }}
-              >
-                <h4>Resources</h4>
-                <ul>
-                  <li>
-                    <a
-                      href={'https://templedao.medium.com/'}
-                      target={'_blank'}
-                      rel="noreferrer"
-                    >
-                      <Image
-                        src={socialMediumIcon}
-                        alt={''}
-                        width={24}
-                        height={24}
-                      />
-                      <strong>Medium</strong>
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href={'https://docs.templedao.link/'}
-                      target={'_blank'}
-                      rel="noreferrer"
-                    >
-                      <Image
-                        src={socialDocsIcon}
-                        alt={''}
-                        width={24}
-                        height={24}
-                      />
-                      <strong>Docs</strong>
-                    </a>
-                  </li>
-                  <li>
-                    <a href={'mailto:templedao@protonmail.com'}>
-                      <Image
-                        src={socialMessageIcon}
-                        alt={''}
-                        width={24}
-                        height={24}
-                      />
-                      <strong>Contact Us</strong>
-                    </a>
-                  </li>
-                </ul>
-              </Flex>
-              <Flex
-                layout={{
-                  kind: 'item',
-                  direction: 'column',
-                  colTablet: 'third',
-                }}
-              >
-                <h4>Links</h4>
-                <Link to={'/disclaimer'}>
-                  <strong>Disclaimer</strong>
-                </Link>
-              </Flex>
-            </Flex>
-          </Flex>
-        </FooterContainer>
-      </FooterStyled>
     </>
   );
 };
@@ -534,42 +365,54 @@ const StyledButton = styled(Button)<ButtonProps>`
   width: 100%;
 `;
 
-const FooterStyled = styled.footer`
-  padding: 1.75rem /* 28/16 */;
-  margin-top: 2rem;
-  background: url(${footerBg});
+const HeaderStyled = styled.header`
+  position: fixed;
+  z-index: ${(props) => props.theme.zIndexes.top};
+  top: 0;
+  left: 0;
+  height: ${(props) => props.theme.metrics.headerHeight};
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: ${(props) => props.theme.palette.brand};
+  background-color: ${(props) => props.theme.palette.dark};
+  width: 100%;
+
+  ${breakpoints.tabletAndAbove(`
+    width: 100vw;
+    justify-content: center;
+  `)}
 `;
 
-const FooterContainer = styled.div`
+const NavContainer = styled.div`
+  position: relative;
   max-width: ${(props) => props.theme.metrics.desktop.maxWidth};
-  margin: 0 auto;
-  padding: 0 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+`;
 
-  h4 {
-    margin-top: 0;
-  }
+// Special case font sizing/line height for TempleDAO Logo
+const AppLogo = styled.h1`
+  font-size: 1.5rem;
+  line-height: 2.75rem;
+  margin: 0;
+`;
 
-  ul {
-    margin: 0;
-    padding: 0;
-  }
+const MenuContainer = styled.div`
+  display: flex;
 
-  li {
-    list-style-type: none;
+  ${breakpoints.tabletAndAbove(`
+    width: 20rem;
+  `)}
+`;
 
-    a {
-      display: flex;
-      align-items: center;
-
-      strong {
-        margin-left: 0.75rem;
-      }
-    }
-  }
-
-  li + li {
-    margin-top: 1rem;
-  }
+const DAppButton = styled(BaseButton)`
+  border: none;
+  width: 20rem;
 `;
 
 export default HomePage;
