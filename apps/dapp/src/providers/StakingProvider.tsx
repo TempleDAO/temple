@@ -198,25 +198,33 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     const lastClaimableEpochAt =
       todayInMs + daysUntilLastClaimableEpoch * dayInMs;
 
-    const claimableEpochs =
-      firstEpoch < lastEpoch ? range(firstEpoch, lastEpoch, 1) : [lastEpoch];
+    let claimableEpochs: number[] = [];
+    let claimableTemple = fromAtto(userData.Amount);
 
-    let claimableTemple: number;
-
-    if (currentEpoch >= lastEpoch) {
-      claimableTemple = fromAtto(userData.Amount);
+    // users who unlock recently get to skip the exit queue mechanics so they get all their alloc in 1 epoch
+    if (lastEpoch === firstEpoch) {
+      claimableEpochs = [lastEpoch];
     } else {
-      // stores all epochs with allocations for address
-      const exitEntryPromises = claimableEpochs.map((epoch) =>
-        EXIT_QUEUE.currentEpochAllocation(walletAddress, epoch)
-      );
+      // for users who had unstaked in the past but not withdrawn
+      const exitEntryPromises = [];
+
+      // stores all epochs address has in the ExitQueue.sol, some might have Allocation 0
+      const maybeClaimableEpochs: Array<number> = [];
+
+      for (let i = firstEpoch; i <= lastEpoch; i++) {
+        maybeClaimableEpochs.push(i);
+        exitEntryPromises.push(
+          EXIT_QUEUE.currentEpochAllocation(walletAddress, i)
+        );
+      }
 
       const exitEntries = await Promise.all(exitEntryPromises);
-      claimableTemple = fromAtto(
-        exitEntries.reduce((acc, curr) => {
-          return acc.add(curr);
-        }, BigNumber.from(0))
-      );
+      exitEntries.forEach((epochAlloc, index) => {
+        // the contract is not removing the user.Exits[epoch], so we only get the ones with a claimable amount(anything above 0)
+        if (fromAtto(epochAlloc) > 0) {
+          claimableEpochs.push(maybeClaimableEpochs[index]);
+        }
+      });
     }
 
     return {
