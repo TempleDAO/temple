@@ -17,7 +17,7 @@ const INITIAL_STATE: SwapReducerState = {
   inputToken: TICKER_SYMBOL.STABLE_TOKEN,
   outputToken: TICKER_SYMBOL.TEMPLE_TOKEN,
   inputTokenBalance: 0,
-  inputValue: 0,
+  inputValue: '',
   quoteValue: 0,
   slippageValue: 1,
   inputConfig: buildInputConfig(TICKER_SYMBOL.STABLE_TOKEN),
@@ -87,7 +87,7 @@ export default function useSwapController() {
   const handleInputChange = useCallback(
     async (value) => {
       const numericValue = Number(value);
-      dispatch({ type: 'changeInputValue', value: Number(numericValue) });
+      dispatch({ type: 'changeInputValue', value: value });
       const quote = await fetchQuote(numericValue);
       dispatch({ type: 'changeQuoteValue', value: quote ?? 0 });
     },
@@ -120,7 +120,7 @@ export default function useSwapController() {
   };
 
   const handleSell = async () => {
-    const templeAmount = state.inputValue;
+    const templeAmount = Number(state.inputValue);
     const sellQuote = await getSellQuote(toAtto(templeAmount));
 
     if (!templeAmount || !sellQuote) {
@@ -141,14 +141,14 @@ export default function useSwapController() {
   };
 
   const handleZap = async () => {
-    const zapAmount = state.inputValue;
+    const zapAmount = Number(state.inputValue);
     const zapToken = getZapperToken(state.inputToken, Network.Ethereum);
 
     if (!zapAmount || !zapToken) {
       return;
     }
 
-    const zapQuote = await getZapQuote(zapToken.price, state.inputValue);
+    const zapQuote = await getZapQuote(zapToken.price, zapAmount);
 
     if (!zapQuote) {
       return;
@@ -165,13 +165,13 @@ export default function useSwapController() {
       zapToken.symbol,
       zapToken.address,
       zapToken.decimals,
-      state.inputValue,
+      zapAmount,
       toAtto(minTempleReceived)
     );
   };
 
   const handleBuy = async () => {
-    const fraxAmount = state.inputValue;
+    const fraxAmount = Number(state.inputValue);
     const buyQuote = await getBuyQuote(toAtto(fraxAmount));
 
     if (!fraxAmount || !buyQuote) {
@@ -229,7 +229,7 @@ export default function useSwapController() {
   );
 
   const handleHintClick = () => {
-    dispatch({ type: 'changeInputValue', value: state.inputTokenBalance });
+    dispatch({ type: 'changeInputValue', value: `${state.inputTokenBalance}` });
   };
 
   function getTokenBalance(token: TICKER_SYMBOL): number {

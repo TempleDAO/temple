@@ -9,7 +9,7 @@ export type SwapReducerAction =
       type: 'changeInputToken';
       value: { token: TICKER_SYMBOL; balance: number };
     }
-  | { type: 'changeInputValue'; value: number }
+  | { type: 'changeInputValue'; value: string }
   | { type: 'changeQuoteValue'; value: number }
   | { type: 'changeSlippageValue'; value: number }
   | { type: 'changeInputTokenBalance'; value: number }
@@ -26,7 +26,7 @@ export interface SwapReducerState {
   inputToken: TICKER_SYMBOL;
   outputToken: TICKER_SYMBOL;
   inputTokenBalance: number;
-  inputValue: number;
+  inputValue: string;
   quoteValue: number;
   slippageValue: number;
   inputConfig: CryptoSelector;

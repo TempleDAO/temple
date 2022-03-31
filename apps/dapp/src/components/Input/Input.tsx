@@ -168,6 +168,8 @@ export const Input = ({
         type={type}
         value={value}
         disabled={disabled}
+        //@ts-ignore
+        placeholder={0}
         {...props}
       />
     </InputWrapper>
