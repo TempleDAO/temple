@@ -14,8 +14,6 @@ export const Swap = () => {
   const {
     state,
     templePrice,
-    updateBalance,
-    updateZapperBalances,
     handleInputChange,
     handleSelectChange,
     handleSlippageUpdate,
@@ -27,15 +25,6 @@ export const Swap = () => {
   const [cachedRefreshNonce, setRefreshNonce] = useState(
     state.forceRefreshNonce
   );
-
-  useEffect(() => {
-    async function onMount() {
-      await updateBalance();
-      await updateZapperBalances();
-    }
-
-    onMount();
-  }, []);
 
   useEffect(() => {
     if (state.forceRefreshNonce !== cachedRefreshNonce) {

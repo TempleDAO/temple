@@ -252,16 +252,12 @@ export default function useSwapController() {
   return {
     state,
     templePrice,
-    balance,
-    updateBalance,
-    updateZapperBalances,
     handleInputChange,
     handleSelectChange,
     handleSlippageUpdate,
     handleTransaction,
     handleHintClick,
     handleChangeMode,
-    fetchQuote,
   };
 }
 
