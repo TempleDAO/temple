@@ -29,6 +29,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
       {...props}
       classNamePrefix={'Select'}
       menuPlacement={'auto'}
+      blurInputOnSelect
       theme={(selectTheme) => ({
         ...selectTheme,
         colors: {

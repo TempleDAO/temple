@@ -64,8 +64,9 @@ export default function useSwapController() {
   //TODO: can probably be reduced to a single dispatch
   const handleInputChange = useCallback(
     async (value) => {
-      dispatch({ type: 'changeInputValue', value });
-      const quote = await fetchQuote(value);
+      const numericValue = Number(value);
+      dispatch({ type: 'changeInputValue', value: Number(numericValue) });
+      const quote = await fetchQuote(numericValue);
       dispatch({ type: 'changeQuoteValue', value: quote ?? 0 });
     },
     [dispatch]
@@ -164,7 +165,7 @@ export default function useSwapController() {
   };
 
   const fetchQuote = useCallback(
-    async (value: number): Promise<number | void> => {
+    async (value = 0): Promise<number | void> => {
       if (state.zap) {
         // TODO: double check if these symbols are the same as our tickers
         // alternatively create a map of our own tickers as keys with the zapper symbols as values
@@ -181,6 +182,9 @@ export default function useSwapController() {
 
         return getZapQuote(selectedToken.balance, value);
       }
+
+      console.log('value', value);
+      console.log('toAtto', toAtto(value));
 
       const quote = await (state.mode === 'BUY'
         ? getBuyQuote(toAtto(value))

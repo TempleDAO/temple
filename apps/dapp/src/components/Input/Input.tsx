@@ -1,4 +1,9 @@
-import React, { InputHTMLAttributes, KeyboardEvent } from 'react';
+import React, {
+  useCallback,
+  useRef,
+  InputHTMLAttributes,
+  KeyboardEvent,
+} from 'react';
 import styled, { css } from 'styled-components';
 import { tabletAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
@@ -79,6 +84,7 @@ export const Input = ({
     if (crypto.kind === 'select') {
       const { cryptoOptions, defaultValue, onCryptoChange, maxSelectorItems } =
         crypto;
+
       return (
         <InputSelect
           options={cryptoOptions}

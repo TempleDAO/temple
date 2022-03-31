@@ -163,7 +163,8 @@ export const ZapProvider = (props: PropsWithChildren<{}>) => {
       sellAmount
     );
 
-    return await zapsContract.zapInWithPermit(
+    //FIXME: Uncomment code when zapInWithPermit is back on the menu
+    /*return await zapsContract.zapInWithPermit(
       tokenContract.address,
       sellAmount,
       minTempleReceived.toString(),
@@ -174,7 +175,7 @@ export const ZapProvider = (props: PropsWithChildren<{}>) => {
       v,
       r,
       s
-    );
+    );*/
   };
 
   const getZapQuote = async (

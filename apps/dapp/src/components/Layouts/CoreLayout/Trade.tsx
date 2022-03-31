@@ -31,6 +31,10 @@ const Background = styled.div`
 `;
 
 const StyledContainer = styled(Container)`
+  box-sizing: border-box;
+  margin: 1px;
   border-radius: 1rem;
   flex-grow: 0;
+  min-width: 20rem /*320/16*/;
+  flex-basis: 40rem /*640/16*/;
 `;

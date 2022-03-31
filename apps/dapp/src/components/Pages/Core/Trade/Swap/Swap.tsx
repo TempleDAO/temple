@@ -39,23 +39,25 @@ export const Swap = () => {
 
   const Swap = (
     <SwapContainer>
-      <Input
-        crypto={{ ...state.inputConfig, onCryptoChange: handleSelectChange }}
-        handleChange={handleInputChange}
-        value={state.inputValue}
-        min={0}
-        max={state.inputTokenBalance}
-        hint={`Balance: ${state.inputTokenBalance}`}
-        onHintClick={handleHintClick}
-      />
-      <Spacer />
-      <Input crypto={state.outputConfig} disabled value={state.quoteValue} />
+      <InputsContainer>
+        <Input
+          crypto={{ ...state.inputConfig, onCryptoChange: handleSelectChange }}
+          handleChange={handleInputChange}
+          value={state.inputValue}
+          min={0}
+          max={state.inputTokenBalance}
+          hint={`Balance: ${state.inputTokenBalance}`}
+          onHintClick={handleHintClick}
+        />
+        <Spacer />
+        <Input crypto={state.outputConfig} disabled value={state.quoteValue} />
+        <InvertButton disabled={state.ongoingTx} />
+      </InputsContainer>
       <Slippage
         label={`${TICKER_SYMBOL.TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
         value={state.slippageValue}
         onChange={handleSlippageUpdate}
       />
-      <InvertButton disabled={state.ongoingTx} />
       <Button
         label={
           state.slippageTooHigh
@@ -91,7 +93,15 @@ const SwapContainer = styled.div`
   justify-content: center;
   flex-direction: column;
   position: relative;
-  min-width: 20rem /*320/16*/;
+  padding: 0.3125rem /* 5/16 */;
+`;
+
+const InputsContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  position: relative;
 `;
 
 const InvertButton = styled.button`
