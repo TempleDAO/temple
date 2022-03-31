@@ -61,10 +61,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC165__factory>;
     getContractFactory(
-      name: "ERC20",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ERC20__factory>;
-    getContractFactory(
       name: "IERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IERC20__factory>;
@@ -112,18 +108,6 @@ declare module "hardhat/types/runtime" {
       name: "IWETH",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IWETH__factory>;
-    getContractFactory(
-      name: "IUniswapV3SwapCallback",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IUniswapV3SwapCallback__factory>;
-    getContractFactory(
-      name: "IQuoter",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IQuoter__factory>;
-    getContractFactory(
-      name: "ISwapRouter",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ISwapRouter__factory>;
     getContractFactory(
       name: "AcceleratedExitQueue",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -277,14 +261,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TreasuryManagementProxy__factory>;
     getContractFactory(
-      name: "IUniswapRouter",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IUniswapRouter__factory>;
-    getContractFactory(
-      name: "Zap",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Zap__factory>;
-    getContractFactory(
       name: "IWETH",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IWETH__factory>;
@@ -354,11 +330,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IERC165>;
     getContractAt(
-      name: "ERC20",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.ERC20>;
-    getContractAt(
       name: "IERC20",
       address: string,
       signer?: ethers.Signer
@@ -418,21 +389,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IWETH>;
-    getContractAt(
-      name: "IUniswapV3SwapCallback",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IUniswapV3SwapCallback>;
-    getContractAt(
-      name: "IQuoter",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IQuoter>;
-    getContractAt(
-      name: "ISwapRouter",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.ISwapRouter>;
     getContractAt(
       name: "AcceleratedExitQueue",
       address: string,
@@ -623,16 +579,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TreasuryManagementProxy>;
-    getContractAt(
-      name: "IUniswapRouter",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IUniswapRouter>;
-    getContractAt(
-      name: "Zap",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Zap>;
     getContractAt(
       name: "IWETH",
       address: string,

@@ -22,7 +22,14 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 interface ITempleFraxAMMRouterInterface extends ethers.utils.Interface {
   functions: {
     "addLiquidity(uint256,uint256,uint256,uint256,address,uint256)": FunctionFragment;
-    "removeLiquidity(uint256,uint256,uint256,address,uint256)": FunctionFragment;
+    "dynamicThresholdDecayPerBlock()": FunctionFragment;
+    "dynamicThresholdPriceWithDecay()": FunctionFragment;
+    "mintRatioAt(uint256,uint256)": FunctionFragment;
+    "pair()": FunctionFragment;
+    "priceCrossedBelowDynamicThresholdBlock()": FunctionFragment;
+    "quote(uint256,uint256,uint256)": FunctionFragment;
+    "swapExactFraxForTemple(uint256,uint256,address,uint256)": FunctionFragment;
+    "swapExactTempleForFrax(uint256,uint256,address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -37,8 +44,33 @@ interface ITempleFraxAMMRouterInterface extends ethers.utils.Interface {
     ]
   ): string;
   encodeFunctionData(
-    functionFragment: "removeLiquidity",
-    values: [BigNumberish, BigNumberish, BigNumberish, string, BigNumberish]
+    functionFragment: "dynamicThresholdDecayPerBlock",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "dynamicThresholdPriceWithDecay",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "mintRatioAt",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(functionFragment: "pair", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "priceCrossedBelowDynamicThresholdBlock",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "quote",
+    values: [BigNumberish, BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "swapExactFraxForTemple",
+    values: [BigNumberish, BigNumberish, string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "swapExactTempleForFrax",
+    values: [BigNumberish, BigNumberish, string, BigNumberish]
   ): string;
 
   decodeFunctionResult(
@@ -46,7 +78,29 @@ interface ITempleFraxAMMRouterInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "removeLiquidity",
+    functionFragment: "dynamicThresholdDecayPerBlock",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "dynamicThresholdPriceWithDecay",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "mintRatioAt",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "pair", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "priceCrossedBelowDynamicThresholdBlock",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "quote", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "swapExactFraxForTemple",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "swapExactTempleForFrax",
     data: BytesLike
   ): Result;
 
@@ -107,10 +161,48 @@ export class ITempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    removeLiquidity(
-      liquidity: BigNumberish,
-      amountAMin: BigNumberish,
-      amountBMin: BigNumberish,
+    dynamicThresholdDecayPerBlock(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    dynamicThresholdPriceWithDecay(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
+    mintRatioAt(
+      temple: BigNumberish,
+      frax: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
+    >;
+
+    pair(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    priceCrossedBelowDynamicThresholdBlock(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber] & { blockNumber: BigNumber }>;
+
+    quote(
+      amountA: BigNumberish,
+      reserveA: BigNumberish,
+      reserveB: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber] & { amountB: BigNumber }>;
+
+    swapExactFraxForTemple(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      to: string,
+      deadline: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    swapExactTempleForFrax(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -127,10 +219,48 @@ export class ITempleFraxAMMRouter extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  removeLiquidity(
-    liquidity: BigNumberish,
-    amountAMin: BigNumberish,
-    amountBMin: BigNumberish,
+  dynamicThresholdDecayPerBlock(
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  dynamicThresholdPriceWithDecay(
+    overrides?: CallOverrides
+  ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
+  mintRatioAt(
+    temple: BigNumberish,
+    frax: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
+  >;
+
+  pair(
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  priceCrossedBelowDynamicThresholdBlock(
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  quote(
+    amountA: BigNumberish,
+    reserveA: BigNumberish,
+    reserveB: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  swapExactFraxForTemple(
+    amountIn: BigNumberish,
+    amountOutMin: BigNumberish,
+    to: string,
+    deadline: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  swapExactTempleForFrax(
+    amountIn: BigNumberish,
+    amountOutMin: BigNumberish,
     to: string,
     deadline: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -153,16 +283,50 @@ export class ITempleFraxAMMRouter extends BaseContract {
       }
     >;
 
-    removeLiquidity(
-      liquidity: BigNumberish,
-      amountAMin: BigNumberish,
-      amountBMin: BigNumberish,
+    dynamicThresholdDecayPerBlock(
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    dynamicThresholdPriceWithDecay(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
+    mintRatioAt(
+      temple: BigNumberish,
+      frax: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber] & { numerator: BigNumber; denominator: BigNumber }
+    >;
+
+    pair(overrides?: CallOverrides): Promise<string>;
+
+    priceCrossedBelowDynamicThresholdBlock(
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    quote(
+      amountA: BigNumberish,
+      reserveA: BigNumberish,
+      reserveB: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    swapExactFraxForTemple(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, BigNumber] & { amountA: BigNumber; amountB: BigNumber }
-    >;
+    ): Promise<BigNumber>;
+
+    swapExactTempleForFrax(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      to: string,
+      deadline: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
   };
 
   filters: {};
@@ -178,10 +342,46 @@ export class ITempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    removeLiquidity(
-      liquidity: BigNumberish,
-      amountAMin: BigNumberish,
-      amountBMin: BigNumberish,
+    dynamicThresholdDecayPerBlock(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    dynamicThresholdPriceWithDecay(
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    mintRatioAt(
+      temple: BigNumberish,
+      frax: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    pair(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    priceCrossedBelowDynamicThresholdBlock(
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    quote(
+      amountA: BigNumberish,
+      reserveA: BigNumberish,
+      reserveB: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    swapExactFraxForTemple(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      to: string,
+      deadline: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    swapExactTempleForFrax(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -199,10 +399,46 @@ export class ITempleFraxAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    removeLiquidity(
-      liquidity: BigNumberish,
-      amountAMin: BigNumberish,
-      amountBMin: BigNumberish,
+    dynamicThresholdDecayPerBlock(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    dynamicThresholdPriceWithDecay(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    mintRatioAt(
+      temple: BigNumberish,
+      frax: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    pair(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    priceCrossedBelowDynamicThresholdBlock(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    quote(
+      amountA: BigNumberish,
+      reserveA: BigNumberish,
+      reserveB: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    swapExactFraxForTemple(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      to: string,
+      deadline: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    swapExactTempleForFrax(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }

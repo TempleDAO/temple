@@ -19,52 +19,75 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface IQuoterInterface extends ethers.utils.Interface {
+interface ZapBaseV23Interface extends ethers.utils.Interface {
   functions: {
-    "quoteExactInput(bytes,uint256)": FunctionFragment;
-    "quoteExactInputSingle(address,address,uint24,uint256,uint160)": FunctionFragment;
-    "quoteExactOutput(bytes,uint256)": FunctionFragment;
-    "quoteExactOutputSingle(address,address,uint24,uint256,uint160)": FunctionFragment;
+    "approvedTargets(address)": FunctionFragment;
+    "owner()": FunctionFragment;
+    "paused()": FunctionFragment;
+    "renounceOwnership()": FunctionFragment;
+    "setApprovedTargets(address[],bool[])": FunctionFragment;
+    "toggleContractActive()": FunctionFragment;
+    "transferOwnership(address)": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: "quoteExactInput",
-    values: [BytesLike, BigNumberish]
+    functionFragment: "approvedTargets",
+    values: [string]
+  ): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(functionFragment: "paused", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "renounceOwnership",
+    values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "quoteExactInputSingle",
-    values: [string, string, BigNumberish, BigNumberish, BigNumberish]
+    functionFragment: "setApprovedTargets",
+    values: [string[], boolean[]]
   ): string;
   encodeFunctionData(
-    functionFragment: "quoteExactOutput",
-    values: [BytesLike, BigNumberish]
+    functionFragment: "toggleContractActive",
+    values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "quoteExactOutputSingle",
-    values: [string, string, BigNumberish, BigNumberish, BigNumberish]
+    functionFragment: "transferOwnership",
+    values: [string]
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "quoteExactInput",
+    functionFragment: "approvedTargets",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "quoteExactInputSingle",
+    functionFragment: "setApprovedTargets",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "quoteExactOutput",
+    functionFragment: "toggleContractActive",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "quoteExactOutputSingle",
+    functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
 
-  events: {};
+  events: {
+    "OwnershipTransferred(address,address)": EventFragment;
+  };
+
+  getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
 }
 
-export class IQuoter extends BaseContract {
+export type OwnershipTransferredEvent = TypedEvent<
+  [string, string] & { previousOwner: string; newOwner: string }
+>;
+
+export class ZapBaseV23 extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -105,164 +128,160 @@ export class IQuoter extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: IQuoterInterface;
+  interface: ZapBaseV23Interface;
 
   functions: {
-    quoteExactInput(
-      path: BytesLike,
-      amountIn: BigNumberish,
+    approvedTargets(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
+
+    owner(overrides?: CallOverrides): Promise<[string]>;
+
+    paused(overrides?: CallOverrides): Promise<[boolean]>;
+
+    renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    quoteExactInputSingle(
-      tokenIn: string,
-      tokenOut: string,
-      fee: BigNumberish,
-      amountIn: BigNumberish,
-      sqrtPriceLimitX96: BigNumberish,
+    setApprovedTargets(
+      targets: string[],
+      isApproved: boolean[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    quoteExactOutput(
-      path: BytesLike,
-      amountOut: BigNumberish,
+    toggleContractActive(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    quoteExactOutputSingle(
-      tokenIn: string,
-      tokenOut: string,
-      fee: BigNumberish,
-      amountOut: BigNumberish,
-      sqrtPriceLimitX96: BigNumberish,
+    transferOwnership(
+      newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
 
-  quoteExactInput(
-    path: BytesLike,
-    amountIn: BigNumberish,
+  approvedTargets(arg0: string, overrides?: CallOverrides): Promise<boolean>;
+
+  owner(overrides?: CallOverrides): Promise<string>;
+
+  paused(overrides?: CallOverrides): Promise<boolean>;
+
+  renounceOwnership(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  quoteExactInputSingle(
-    tokenIn: string,
-    tokenOut: string,
-    fee: BigNumberish,
-    amountIn: BigNumberish,
-    sqrtPriceLimitX96: BigNumberish,
+  setApprovedTargets(
+    targets: string[],
+    isApproved: boolean[],
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  quoteExactOutput(
-    path: BytesLike,
-    amountOut: BigNumberish,
+  toggleContractActive(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  quoteExactOutputSingle(
-    tokenIn: string,
-    tokenOut: string,
-    fee: BigNumberish,
-    amountOut: BigNumberish,
-    sqrtPriceLimitX96: BigNumberish,
+  transferOwnership(
+    newOwner: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    quoteExactInput(
-      path: BytesLike,
-      amountIn: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    approvedTargets(arg0: string, overrides?: CallOverrides): Promise<boolean>;
 
-    quoteExactInputSingle(
-      tokenIn: string,
-      tokenOut: string,
-      fee: BigNumberish,
-      amountIn: BigNumberish,
-      sqrtPriceLimitX96: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    owner(overrides?: CallOverrides): Promise<string>;
 
-    quoteExactOutput(
-      path: BytesLike,
-      amountOut: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    paused(overrides?: CallOverrides): Promise<boolean>;
 
-    quoteExactOutputSingle(
-      tokenIn: string,
-      tokenOut: string,
-      fee: BigNumberish,
-      amountOut: BigNumberish,
-      sqrtPriceLimitX96: BigNumberish,
+    renounceOwnership(overrides?: CallOverrides): Promise<void>;
+
+    setApprovedTargets(
+      targets: string[],
+      isApproved: boolean[],
       overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    ): Promise<void>;
+
+    toggleContractActive(overrides?: CallOverrides): Promise<void>;
+
+    transferOwnership(
+      newOwner: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
-  filters: {};
+  filters: {
+    "OwnershipTransferred(address,address)"(
+      previousOwner?: string | null,
+      newOwner?: string | null
+    ): TypedEventFilter<
+      [string, string],
+      { previousOwner: string; newOwner: string }
+    >;
+
+    OwnershipTransferred(
+      previousOwner?: string | null,
+      newOwner?: string | null
+    ): TypedEventFilter<
+      [string, string],
+      { previousOwner: string; newOwner: string }
+    >;
+  };
 
   estimateGas: {
-    quoteExactInput(
-      path: BytesLike,
-      amountIn: BigNumberish,
+    approvedTargets(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    owner(overrides?: CallOverrides): Promise<BigNumber>;
+
+    paused(overrides?: CallOverrides): Promise<BigNumber>;
+
+    renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    quoteExactInputSingle(
-      tokenIn: string,
-      tokenOut: string,
-      fee: BigNumberish,
-      amountIn: BigNumberish,
-      sqrtPriceLimitX96: BigNumberish,
+    setApprovedTargets(
+      targets: string[],
+      isApproved: boolean[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    quoteExactOutput(
-      path: BytesLike,
-      amountOut: BigNumberish,
+    toggleContractActive(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    quoteExactOutputSingle(
-      tokenIn: string,
-      tokenOut: string,
-      fee: BigNumberish,
-      amountOut: BigNumberish,
-      sqrtPriceLimitX96: BigNumberish,
+    transferOwnership(
+      newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    quoteExactInput(
-      path: BytesLike,
-      amountIn: BigNumberish,
+    approvedTargets(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    paused(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    quoteExactInputSingle(
-      tokenIn: string,
-      tokenOut: string,
-      fee: BigNumberish,
-      amountIn: BigNumberish,
-      sqrtPriceLimitX96: BigNumberish,
+    setApprovedTargets(
+      targets: string[],
+      isApproved: boolean[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    quoteExactOutput(
-      path: BytesLike,
-      amountOut: BigNumberish,
+    toggleContractActive(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    quoteExactOutputSingle(
-      tokenIn: string,
-      tokenOut: string,
-      fee: BigNumberish,
-      amountOut: BigNumberish,
-      sqrtPriceLimitX96: BigNumberish,
+    transferOwnership(
+      newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };
