@@ -1,0 +1,21 @@
+name: Protocol Tests
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'apps/protocol/**'
+
+jobs:
+  build:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14.x'
+      - run: yarn install
+      - run: yarn compile
+        working-directory: apps/protocol
+      - run: yarn test
+        working-directory: apps/protocol
