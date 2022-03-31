@@ -4,7 +4,7 @@
 ```
 nvm use
 yarn
-yarn test
+yarn test 
 ```
 
 
