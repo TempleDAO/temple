@@ -9,6 +9,7 @@ import { SwapReducerState, SwapReducerAction } from './types';
 import { buildInputConfig, buildOutputConfig } from './utils';
 
 const INITIAL_STATE: SwapReducerState = {
+  forceRefreshNonce: 0,
   mode: 'BUY',
   ongoingTx: false,
   slippageTooHigh: false,
@@ -25,6 +26,7 @@ const INITIAL_STATE: SwapReducerState = {
 
 export default function useSwapController() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+
   const {
     balance,
     updateBalance,
@@ -32,15 +34,35 @@ export default function useSwapController() {
     updateZapperBalances,
     getZapperToken,
   } = useWallet();
-  const { getSellQuote, getBuyQuote, templePrice, iv, sell, buy } = useSwap();
+
+  const {
+    getSellQuote,
+    getBuyQuote,
+    templePrice,
+    updateTemplePrice,
+    iv,
+    sell,
+    buy,
+  } = useSwap();
+
   const { zapIn, getZapQuote } = useZap();
+
+  useEffect(() => {
+    async function onMount() {
+      await updateBalance();
+      await updateZapperBalances();
+      await updateTemplePrice();
+    }
+
+    onMount();
+  }, []);
 
   useEffect(() => {
     dispatch({
       type: 'changeInputTokenBalance',
       value: getTokenBalance(state.inputToken),
     });
-  }, [balance, zapperBalances]);
+  }, [balance, zapperBalances, state.mode]);
 
   // Handles selection of a new value in the select dropdown
   const handleSelectChange = useCallback(
@@ -81,10 +103,12 @@ export default function useSwapController() {
     dispatch({ type: 'startTx' });
 
     if (state.mode === 'SELL') {
+      console.log('selling');
       await handleSell();
     } else if (state.zap) {
       await handleZap();
     } else {
+      console.log('buying');
       await handleBuy();
     }
 
@@ -158,9 +182,13 @@ export default function useSwapController() {
       (fraxAmount / templePrice) * (1 - state.slippageValue / 100);
 
     if (minAmountOut > fromAtto(buyQuote)) {
+      console.log(minAmountOut, fromAtto(buyQuote));
       dispatch({ type: 'slippageTooHigh' });
       return;
     }
+
+    console.log('buy', toAtto(fraxAmount), toAtto(minAmountOut));
+
     await buy(toAtto(fraxAmount), toAtto(minAmountOut));
   };
 
@@ -182,9 +210,6 @@ export default function useSwapController() {
 
         return getZapQuote(selectedToken.balance, value);
       }
-
-      console.log('value', value);
-      console.log('toAtto', toAtto(value));
 
       const quote = await (state.mode === 'BUY'
         ? getBuyQuote(toAtto(value))
@@ -218,6 +243,12 @@ export default function useSwapController() {
     }
   }
 
+  const handleChangeMode = () =>
+    dispatch({
+      type: 'changeMode',
+      value: state.mode === 'BUY' ? 'SELL' : 'BUY',
+    });
+
   return {
     state,
     templePrice,
@@ -229,6 +260,7 @@ export default function useSwapController() {
     handleSlippageUpdate,
     handleTransaction,
     handleHintClick,
+    handleChangeMode,
     fetchQuote,
   };
 }
@@ -240,7 +272,7 @@ function reducer(
   switch (action.type) {
     case 'changeMode': {
       return action.value === 'BUY'
-        ? INITIAL_STATE
+        ? { ...INITIAL_STATE, forceRefreshNonce: state.forceRefreshNonce + 1 }
         : {
             ...INITIAL_STATE,
             mode: 'SELL',
@@ -248,6 +280,7 @@ function reducer(
             outputToken: INITIAL_STATE.inputToken,
             inputConfig: buildInputConfig(INITIAL_STATE.outputToken),
             outputConfig: buildOutputConfig(INITIAL_STATE.inputToken),
+            forceRefreshNonce: state.forceRefreshNonce + 1,
           };
     }
 

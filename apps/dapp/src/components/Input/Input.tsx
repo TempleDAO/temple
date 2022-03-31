@@ -21,6 +21,7 @@ export interface CryptoSelector {
   kind: 'select';
   // A selector for the crypto, must provide onCryptoChange
   cryptoOptions: SelectTempleDaoOptions;
+  inputValue?: string;
   defaultValue?: Option;
   // use to limit the number of elements shown in the selector at anytime
   maxSelectorItems?: number;
@@ -82,8 +83,15 @@ export const Input = ({
       return <Ticker>{crypto.value}</Ticker>;
     }
     if (crypto.kind === 'select') {
-      const { cryptoOptions, defaultValue, onCryptoChange, maxSelectorItems } =
-        crypto;
+      const {
+        cryptoOptions,
+        defaultValue,
+        onCryptoChange,
+        maxSelectorItems,
+        inputValue,
+      } = crypto;
+
+      const optionalInputValue = inputValue ? { inputValue } : {};
 
       return (
         <InputSelect
@@ -91,6 +99,7 @@ export const Input = ({
           defaultValue={defaultValue}
           onChange={onCryptoChange}
           maxMenuItems={maxSelectorItems}
+          {...optionalInputValue}
         />
       );
     }

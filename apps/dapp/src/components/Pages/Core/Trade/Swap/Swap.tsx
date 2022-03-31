@@ -1,4 +1,4 @@
-import React, { useReducer, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import styled from 'styled-components';
 import useSwapController from './use-swap-controller';
 import { Input } from 'components/Input/Input';
@@ -21,7 +21,12 @@ export const Swap = () => {
     handleSlippageUpdate,
     handleTransaction,
     handleHintClick,
+    handleChangeMode,
   } = useSwapController();
+
+  const [cachedRefreshNonce, setRefreshNonce] = useState(
+    state.forceRefreshNonce
+  );
 
   useEffect(() => {
     async function onMount() {
@@ -32,6 +37,32 @@ export const Swap = () => {
     onMount();
   }, []);
 
+  useEffect(() => {
+    if (state.forceRefreshNonce !== cachedRefreshNonce) {
+      setRefreshNonce(state.forceRefreshNonce);
+    }
+  }, [state.forceRefreshNonce]);
+
+  // no easy way to externally change the selected option of the input so we force re-render the whole component on state change
+  const ForceRefreshedInput = useCallback(() => {
+    return (
+      <>
+        <Input
+          crypto={{
+            ...state.inputConfig,
+            onCryptoChange: handleSelectChange,
+          }}
+          handleChange={handleInputChange}
+          value={state.inputValue}
+          min={0}
+          max={state.inputTokenBalance}
+          hint={`Balance: ${state.inputTokenBalance}`}
+          onHintClick={handleHintClick}
+        />
+      </>
+    );
+  }, [state.forceRefreshNonce]);
+
   const isSwapButtonDisabled =
     state.slippageTooHigh ||
     state.inputTokenBalance === 0 ||
@@ -40,18 +71,25 @@ export const Swap = () => {
   const Swap = (
     <SwapContainer>
       <InputsContainer>
-        <Input
-          crypto={{ ...state.inputConfig, onCryptoChange: handleSelectChange }}
-          handleChange={handleInputChange}
-          value={state.inputValue}
-          min={0}
-          max={state.inputTokenBalance}
-          hint={`Balance: ${state.inputTokenBalance}`}
-          onHintClick={handleHintClick}
-        />
+        {cachedRefreshNonce !== state.forceRefreshNonce ? (
+          <ForceRefreshedInput />
+        ) : (
+          <Input
+            crypto={{
+              ...state.inputConfig,
+              onCryptoChange: handleSelectChange,
+            }}
+            handleChange={handleInputChange}
+            value={state.inputValue}
+            min={0}
+            max={state.inputTokenBalance}
+            hint={`Balance: ${state.inputTokenBalance}`}
+            onHintClick={handleHintClick}
+          />
+        )}
         <Spacer />
         <Input crypto={state.outputConfig} disabled value={state.quoteValue} />
-        <InvertButton disabled={state.ongoingTx} />
+        <InvertButton onClick={handleChangeMode} disabled={state.ongoingTx} />
       </InputsContainer>
       <Slippage
         label={`${TICKER_SYMBOL.TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
@@ -64,7 +102,7 @@ export const Swap = () => {
             ? `Increase slippage`
             : `Exchange ${state.inputToken} for ${state.outputToken}`
         }
-        onClick={isSwapButtonDisabled ? handleTransaction : noop}
+        onClick={isSwapButtonDisabled ? noop : handleTransaction}
         isUppercase
         disabled={isSwapButtonDisabled}
       />
