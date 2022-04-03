@@ -16,8 +16,6 @@ import planetsImage from 'assets/images/planets.svg';
 import sunImage from 'assets/images/sun-art.svg';
 import sunsetImage from 'assets/images/sunset.svg';
 
-import { Button as BaseButton } from 'components/Button/Button';
-
 import { ResponsiveImage } from 'styles/common';
 
 const HomePage = () => {
@@ -406,13 +404,12 @@ const MenuContainer = styled.div`
   display: flex;
 
   ${breakpoints.tabletAndAbove(`
-    width: 20rem;
+    width: 10rem;
   `)}
 `;
 
-const DAppButton = styled(BaseButton)`
-  border: none;
-  width: 20rem;
+const DAppButton = styled(Button)`
+  width: 10rem;
 `;
 
 export default HomePage;
