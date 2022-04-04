@@ -32,13 +32,14 @@ export const Swap = () => {
     }
   }, [state.forceRefreshNonce]);
 
+  /*
   // no easy way to externally change the selected option of the input so we force re-render the whole component on state change
   const ForceRefreshedInput = useCallback(() => {
     return (
       <>
         <Input
           crypto={{
-            ...state.inputConfig,
+            state.mode === 'BUY'...state.inputConfig,
             onCryptoChange: handleSelectChange,
           }}
           handleChange={handleInputChange}
@@ -51,60 +52,78 @@ export const Swap = () => {
       </>
     );
   }, [state.forceRefreshNonce]);
+  */
 
   const isSwapButtonDisabled =
     state.slippageTooHigh ||
     state.inputTokenBalance === 0 ||
     Number(state.inputValue) > state.inputTokenBalance;
 
-  const Swap = (
-    <SwapContainer>
-      <InputsContainer>
-        {cachedRefreshNonce !== state.forceRefreshNonce ? (
+  const Swap = () => {
+    const inputCryptoConfig =
+      state.mode === 'BUY'
+        ? { ...state.inputConfig, onCryptoChange: handleSelectChange }
+        : state.inputConfig;
+
+    const outputCryptoConfig =
+      state.mode === 'SELL'
+        ? { ...state.outputConfig, onCryptoChange: handleSelectChange }
+        : state.outputConfig;
+
+    return (
+      <SwapContainer>
+        <InputsContainer>
+          {
+            /*cachedRefreshNonce !== state.forceRefreshNonce ? (
           <ForceRefreshedInput />
-        ) : (
+        ) : (*/
+            <Input
+              crypto={inputCryptoConfig}
+              handleChange={handleInputChange}
+              value={state.inputValue}
+              min={0}
+              max={state.inputTokenBalance}
+              hint={`Balance: ${state.inputTokenBalance}`}
+              onHintClick={handleHintClick}
+            />
+            /*)*/
+          }
+          <Spacer />
+          {/*TODO: disable only the input not the select*/}
           <Input
-            crypto={{
-              ...state.inputConfig,
-              onCryptoChange: handleSelectChange,
-            }}
-            handleChange={handleInputChange}
-            value={state.inputValue}
-            min={0}
-            max={state.inputTokenBalance}
-            hint={`Balance: ${state.inputTokenBalance}`}
-            onHintClick={handleHintClick}
+            crypto={outputCryptoConfig}
+            disabled
+            value={state.quoteValue}
           />
-        )}
-        <Spacer />
-        {/*TODO: disable only the input not the select*/}
-        <Input crypto={state.outputConfig} disabled value={state.quoteValue} />
-        <InvertButton onClick={handleChangeMode} disabled={state.ongoingTx} />
-      </InputsContainer>
-      <Slippage
-        label={`${TICKER_SYMBOL.TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
-        value={state.slippageValue}
-        onChange={handleSlippageUpdate}
-      />
-      <Button
-        label={
-          state.slippageTooHigh
-            ? `Increase slippage`
-            : `Exchange ${state.inputToken} for ${state.outputToken}`
-        }
-        onClick={isSwapButtonDisabled ? noop : handleTransaction}
-        isUppercase
-        disabled={isSwapButtonDisabled}
-      />
-    </SwapContainer>
-  );
+          <InvertButton onClick={handleChangeMode} disabled={state.ongoingTx} />
+        </InputsContainer>
+        <Slippage
+          label={`${TICKER_SYMBOL.TEMPLE_TOKEN}: (${formatNumber(
+            templePrice
+          )})`}
+          value={state.slippageValue}
+          onChange={handleSlippageUpdate}
+        />
+        <Button
+          label={
+            state.slippageTooHigh
+              ? `Increase slippage`
+              : `Exchange ${state.inputToken} for ${state.outputToken}`
+          }
+          onClick={isSwapButtonDisabled ? noop : handleTransaction}
+          isUppercase
+          disabled={isSwapButtonDisabled}
+        />
+      </SwapContainer>
+    );
+  };
 
   return (
     <Tabs
       tabs={[
         {
           label: 'Swap',
-          content: Swap,
+          content: <Swap />,
         },
         {
           label: 'Unlock',

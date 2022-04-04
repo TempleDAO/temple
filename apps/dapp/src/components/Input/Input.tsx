@@ -1,9 +1,4 @@
-import React, {
-  useCallback,
-  useRef,
-  InputHTMLAttributes,
-  KeyboardEvent,
-} from 'react';
+import React, { InputHTMLAttributes, KeyboardEvent } from 'react';
 import styled, { css } from 'styled-components';
 import { tabletAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
