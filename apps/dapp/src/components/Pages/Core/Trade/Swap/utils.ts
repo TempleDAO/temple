@@ -1,14 +1,27 @@
 import { CryptoValue, CryptoSelector } from 'components/Input/Input';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { SwapMode } from './types';
+import tokensByMode from './tokens-by-mode';
 
 // See apps/dapp/src/components/Input/Input.tsx
-export function buildInputConfig(defaultToken: TICKER_SYMBOL): CryptoSelector {
+export function buildValueConfig(token: TICKER_SYMBOL): CryptoValue {
+  return {
+    kind: 'value',
+    value: `${token}`,
+  };
+}
+
+// See apps/dapp/src/components/Input/Input.tsx
+export function buildSelectConfig(
+  defaultToken: TICKER_SYMBOL,
+  mode: SwapMode
+): CryptoSelector {
   const defaultOption = {
     value: defaultToken,
     label: defaultToken,
   };
 
-  const selectOptions = Object.values(TICKER_SYMBOL).map((token) => ({
+  const selectOptions = Object.values(tokensByMode[mode]).map((token) => ({
     value: token,
     label: token,
   }));
@@ -18,13 +31,5 @@ export function buildInputConfig(defaultToken: TICKER_SYMBOL): CryptoSelector {
     cryptoOptions: selectOptions,
     defaultValue: defaultOption,
     onCryptoChange: () => {},
-  };
-}
-
-// See apps/dapp/src/components/Input/Input.tsx
-export function buildOutputConfig(token: TICKER_SYMBOL): CryptoValue {
-  return {
-    kind: 'value',
-    value: `${token}`,
   };
 }

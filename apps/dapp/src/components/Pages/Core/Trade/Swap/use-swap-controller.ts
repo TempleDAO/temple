@@ -6,7 +6,8 @@ import { Network } from 'enums/network';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { SwapReducerState, SwapReducerAction } from './types';
-import { buildInputConfig, buildOutputConfig } from './utils';
+import { buildValueConfig, buildSelectConfig } from './utils';
+import TOKENS_BY_MODE from './tokens-by-mode';
 
 const INITIAL_STATE: SwapReducerState = {
   forceRefreshNonce: 0,
@@ -14,14 +15,14 @@ const INITIAL_STATE: SwapReducerState = {
   ongoingTx: false,
   slippageTooHigh: false,
   zap: false,
-  inputToken: TICKER_SYMBOL.STABLE_TOKEN,
+  inputToken: TICKER_SYMBOL.FRAX,
   outputToken: TICKER_SYMBOL.TEMPLE_TOKEN,
   inputTokenBalance: 0,
   inputValue: '',
   quoteValue: 0,
   slippageValue: 1,
-  inputConfig: buildInputConfig(TICKER_SYMBOL.STABLE_TOKEN),
-  outputConfig: buildOutputConfig(TICKER_SYMBOL.TEMPLE_TOKEN),
+  inputConfig: buildSelectConfig(TICKER_SYMBOL.FRAX, 'BUY'),
+  outputConfig: buildValueConfig(TICKER_SYMBOL.TEMPLE_TOKEN),
 };
 
 export default function useSwapController() {
@@ -67,7 +68,7 @@ export default function useSwapController() {
   // Handles selection of a new value in the select dropdown
   const handleSelectChange = useCallback(
     (event) => {
-      const token = Object.values(TICKER_SYMBOL).find(
+      const token = Object.values(TOKENS_BY_MODE[state.mode]).find(
         (token) => token === event.value
       );
 
@@ -75,9 +76,18 @@ export default function useSwapController() {
         throw new Error('Invalid token selected');
       }
 
+      if (state.mode === 'BUY') {
+        dispatch({
+          type: 'changeInputToken',
+          value: { token, balance: getTokenBalance(token) },
+        });
+
+        return;
+      }
+
       dispatch({
-        type: 'changeInputToken',
-        value: { token, balance: getTokenBalance(token) },
+        type: 'changeOutputToken',
+        value: { token },
       });
     },
     [dispatch]
@@ -234,7 +244,7 @@ export default function useSwapController() {
 
   function getTokenBalance(token: TICKER_SYMBOL): number {
     switch (token) {
-      case TICKER_SYMBOL.STABLE_TOKEN:
+      case TICKER_SYMBOL.FRAX:
         return balance.stableCoin;
       case TICKER_SYMBOL.TEMPLE_TOKEN:
         return balance.temple;
@@ -274,8 +284,8 @@ function reducer(
             mode: 'SELL',
             inputToken: INITIAL_STATE.outputToken,
             outputToken: INITIAL_STATE.inputToken,
-            inputConfig: buildInputConfig(INITIAL_STATE.outputToken),
-            outputConfig: buildOutputConfig(INITIAL_STATE.inputToken),
+            inputConfig: buildValueConfig(INITIAL_STATE.outputToken),
+            outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, 'SELL'),
             forceRefreshNonce: state.forceRefreshNonce + 1,
           };
     }
@@ -303,9 +313,15 @@ function reducer(
         inputTokenBalance: action.value.balance,
         quoteValue: INITIAL_STATE.quoteValue,
         slippageValue: INITIAL_STATE.slippageValue,
-        zap:
-          state.mode === 'BUY' &&
-          action.value.token !== TICKER_SYMBOL.STABLE_TOKEN,
+        zap: state.mode === 'BUY' && action.value.token !== TICKER_SYMBOL.FRAX,
+      };
+
+    case 'changeOutputToken':
+      return {
+        ...state,
+        outputToken: action.value.token,
+        inputValue: INITIAL_STATE.inputValue,
+        quoteValue: INITIAL_STATE.quoteValue,
       };
 
     case 'changeInputValue':

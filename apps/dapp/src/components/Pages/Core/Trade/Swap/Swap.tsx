@@ -77,6 +77,7 @@ export const Swap = () => {
           />
         )}
         <Spacer />
+        {/*TODO: disable only the input not the select*/}
         <Input crypto={state.outputConfig} disabled value={state.quoteValue} />
         <InvertButton onClick={handleChangeMode} disabled={state.ongoingTx} />
       </InputsContainer>

@@ -3,11 +3,17 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 export type SwapMode = 'BUY' | 'SELL';
 
+type SwapInputConfig = CryptoSelector | CryptoValue;
+
 export type SwapReducerAction =
   | { type: 'changeMode'; value: SwapMode }
   | {
       type: 'changeInputToken';
       value: { token: TICKER_SYMBOL; balance: number };
+    }
+  | {
+      type: 'changeOutputToken';
+      value: { token: TICKER_SYMBOL };
     }
   | { type: 'changeInputValue'; value: string }
   | { type: 'changeQuoteValue'; value: number }
@@ -29,6 +35,6 @@ export interface SwapReducerState {
   inputValue: string;
   quoteValue: number;
   slippageValue: number;
-  inputConfig: CryptoSelector;
-  outputConfig: CryptoValue;
+  inputConfig: SwapInputConfig;
+  outputConfig: SwapInputConfig;
 }

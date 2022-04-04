@@ -108,18 +108,16 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       const AMM_ROUTER = new TempleFraxAMMRouter__factory(signer).attach(
         TEMPLE_V2_ROUTER_ADDRESS
       );
-      const STABLE_TOKEN = new ERC20__factory(signer).attach(
-        STABLE_COIN_ADDRESS
-      );
+      const FRAX_TOKEN = new ERC20__factory(signer).attach(STABLE_COIN_ADDRESS);
 
       await ensureAllowance(
-        TICKER_SYMBOL.STABLE_TOKEN,
-        STABLE_TOKEN,
+        TICKER_SYMBOL.FRAX,
+        FRAX_TOKEN,
         TEMPLE_V2_ROUTER_ADDRESS,
         amountInFrax
       );
 
-      const balance = await STABLE_TOKEN.balanceOf(wallet);
+      const balance = await FRAX_TOKEN.balanceOf(wallet);
       const verifiedAmountInFrax = amountInFrax.lt(balance)
         ? amountInFrax
         : balance;
@@ -141,7 +139,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       await buyTXN.wait();
       // Show feedback to user
       openNotification({
-        title: `Sacrificed ${TICKER_SYMBOL.STABLE_TOKEN}`,
+        title: `Sacrificed ${TICKER_SYMBOL.FRAX}`,
         hash: buyTXN.hash,
       });
     }

@@ -1,9 +1,10 @@
 export enum TICKER_SYMBOL {
-  STABLE_TOKEN = 'FRAX',
+  FRAX = 'FRAX',
   TEMPLE_TOKEN = 'TEMPLE',
   OG_TEMPLE_TOKEN = 'OGTEMPLE',
   FAITH = 'FAITH',
   ETH = 'ETH',
+  FEI = 'FEI',
   USDC = 'USDC',
   UNI = 'UNI',
 }

@@ -101,7 +101,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         onHintClick={() =>
           copyBalance(stableCoinWalletAmount, handleUpdateStableCoinAmount)
         }
-        crypto={{ kind: 'value', value: TICKER_SYMBOL.STABLE_TOKEN }}
+        crypto={{ kind: 'value', value: TICKER_SYMBOL.FRAX }}
         isNumber
         max={stableCoinWalletAmount}
         min={0}
@@ -143,7 +143,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
             : `${
                 small
                   ? 'EXCHANGE $FRAX FOR $TEMPLE'
-                  : `sacrifice ${TICKER_SYMBOL.STABLE_TOKEN}`
+                  : `sacrifice ${TICKER_SYMBOL.FRAX}`
               } `
         }
         isUppercase
