@@ -1,8 +1,8 @@
-//@ts-nocheck
-import RegisterToken from 'components/RegisterToken/RegisterToken';
-import { TEMPLE_TOKEN_ASSET } from 'components/RegisterToken/TOKENS';
-import React, { FC } from 'react';
+import { FC } from 'react';
 import styled from 'styled-components';
+
+import RegisterToken from 'components/RegisterToken/RegisterToken';
+import { TEMPLE_TOKEN } from 'constants/tokens';
 import { DataCard } from 'components/DataCard/DataCard';
 import { formatNumberWithCommas } from 'utils/formatter';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
@@ -129,7 +129,7 @@ export const Profile: FC = () => {
         }}
       >
         <Flex layout={{ kind: 'item' }}>
-          <RegisterToken token={TEMPLE_TOKEN_ASSET} >&nbsp;Add Temple token</RegisterToken>
+          <RegisterToken token={TEMPLE_TOKEN} >&nbsp;Add Temple token</RegisterToken>
         </Flex>
       </Flex>
     </Container>

@@ -1,17 +1,9 @@
-import Image from 'components/Image/Image';
-import { useNotification } from 'providers/NotificationProvider';
 import { FC } from 'react';
 import styled from 'styled-components';
 
-export interface Token {
-  type: 'ERC20';
-  options: {
-    address: string;
-    symbol: string;
-    decimals: number;
-    image: string;
-  };
-}
+import Image from 'components/Image/Image';
+import useRegisterToken from 'hooks/use-register-token';
+import { Token } from 'constants/tokens';
 
 export interface RegisterTokenProps {
   token: Token;
@@ -24,35 +16,14 @@ const RegisterToken: FC<RegisterTokenProps> = ({
   },
   children,
 }) => {
-  const { openNotification } = useNotification();
-  const handleRegisterToken = async () => {
-    try {
-      // wasAdded is a boolean. Like any RPC method, an error may be thrown.
-      let ethereum = window.ethereum;
+  const [registerToken] = useRegisterToken(token);
 
-      if (ethereum) {
-        const wasAdded = await ethereum.request({
-          method: 'wallet_watchAsset',
-          params: token,
-        });
-
-        if (wasAdded) {
-          openNotification({
-            title: `Token ${symbol} added to your assets`,
-            hash: address,
-          });
-        } else {
-          console.log(`FAILED: Adding Token ${symbol} to your assets`);
-        }
-      } else {
-        console.error(`Metamask not found`);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
   return (
-    <RegisterTokenButton onClick={handleRegisterToken}>
+    <RegisterTokenButton
+      onClick={() => {
+        registerToken();
+      }
+    }>
       <Image
         src={image}
         width={32}

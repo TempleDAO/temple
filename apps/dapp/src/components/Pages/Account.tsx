@@ -1,8 +1,10 @@
-//@ts-nocheck
-import RegisterToken from 'components/RegisterToken/RegisterToken';
-import { TEMPLE_TOKEN_ASSET } from 'components/RegisterToken/TOKENS';
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import styled from 'styled-components';
+
+import RegisterToken from 'components/RegisterToken/RegisterToken';
+import { TEMPLE_TOKEN } from 'constants/tokens';
 import AccessoriesTemplate from 'components/Accessories/AccessoriesTemplate';
 import BackButton from 'components/Button/BackButton';
 import EnclaveCard from 'components/EnclaveCard/EnclaveCard';
@@ -15,7 +17,6 @@ import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import useFetchStoreDiscordUser from 'hooks/use-fetch-store-discord-user';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import styled from 'styled-components';
 import { formatNumberWithCommas } from 'utils/formatter';
 
 export interface DiscordUser {
@@ -219,7 +220,7 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
           kind: 'container',
           justifyContent: 'center'
         }}>
-          <RegisterToken token={TEMPLE_TOKEN_ASSET} >&nbsp;Add Temple token</RegisterToken>
+          <RegisterToken token={TEMPLE_TOKEN}>&nbsp;Add Temple token</RegisterToken>
         </Flex>
       </PageWrapper>
       <BackButton onClick={back} />
