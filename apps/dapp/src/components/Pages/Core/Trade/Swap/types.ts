@@ -24,7 +24,7 @@ export type SwapReducerAction =
   | { type: 'slippageTooHigh' };
 
 export interface SwapReducerState {
-  forceRefreshNonce: number;
+  /*forceRefreshNonce: number;*/
   mode: SwapMode;
   ongoingTx: boolean;
   slippageTooHigh: boolean;

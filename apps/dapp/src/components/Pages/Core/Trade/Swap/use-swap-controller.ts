@@ -10,7 +10,7 @@ import { buildValueConfig, buildSelectConfig } from './utils';
 import TOKENS_BY_MODE from './tokens-by-mode';
 
 const INITIAL_STATE: SwapReducerState = {
-  forceRefreshNonce: 0,
+  /*forceRefreshNonce: 0,*/
   mode: 'BUY',
   ongoingTx: false,
   slippageTooHigh: false,
@@ -278,7 +278,9 @@ function reducer(
   switch (action.type) {
     case 'changeMode': {
       return action.value === 'BUY'
-        ? { ...INITIAL_STATE, forceRefreshNonce: state.forceRefreshNonce + 1 }
+        ? {
+            ...INITIAL_STATE /*, forceRefreshNonce: state.forceRefreshNonce + 1*/,
+          }
         : {
             ...INITIAL_STATE,
             mode: 'SELL',
@@ -286,7 +288,7 @@ function reducer(
             outputToken: INITIAL_STATE.inputToken,
             inputConfig: buildValueConfig(INITIAL_STATE.outputToken),
             outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, 'SELL'),
-            forceRefreshNonce: state.forceRefreshNonce + 1,
+            /*forceRefreshNonce: state.forceRefreshNonce + 1,*/
           };
     }
 

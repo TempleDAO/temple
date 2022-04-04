@@ -143,7 +143,7 @@ export const Input = ({
 
   return (
     <InputWrapper
-      isDisabled={disabled}
+      isDisabled={disabled || disableInput}
       small={small}
       pairTop={pairTop}
       pairBottom={pairBottom}

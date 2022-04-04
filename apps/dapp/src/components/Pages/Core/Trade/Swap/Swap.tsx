@@ -22,44 +22,13 @@ export const Swap = () => {
     handleChangeMode,
   } = useSwapController();
 
-  const [cachedRefreshNonce, setRefreshNonce] = useState(
-    state.forceRefreshNonce
-  );
-
-  useEffect(() => {
-    if (state.forceRefreshNonce !== cachedRefreshNonce) {
-      setRefreshNonce(state.forceRefreshNonce);
-    }
-  }, [state.forceRefreshNonce]);
-
-  /*
-  // no easy way to externally change the selected option of the input so we force re-render the whole component on state change
-  const ForceRefreshedInput = useCallback(() => {
-    return (
-      <>
-        <Input
-          crypto={{
-            state.mode === 'BUY'...state.inputConfig,
-            onCryptoChange: handleSelectChange,
-          }}
-          handleChange={handleInputChange}
-          value={state.inputValue}
-          min={0}
-          max={state.inputTokenBalance}
-          hint={`Balance: ${state.inputTokenBalance}`}
-          onHintClick={handleHintClick}
-        />
-      </>
-    );
-  }, [state.forceRefreshNonce]);
-  */
-
   const isSwapButtonDisabled =
     state.slippageTooHigh ||
     state.inputTokenBalance === 0 ||
     Number(state.inputValue) > state.inputTokenBalance;
 
-  const Swap = () => {
+  // Making this an IIFE prevents the component constantly re-rendering and losing focus on state changes
+  const Swap = (() => {
     const inputCryptoConfig =
       state.mode === 'BUY'
         ? { ...state.inputConfig, onCryptoChange: handleSelectChange }
@@ -73,27 +42,21 @@ export const Swap = () => {
     return (
       <SwapContainer>
         <InputsContainer>
-          {
-            /*cachedRefreshNonce !== state.forceRefreshNonce ? (
-          <ForceRefreshedInput />
-        ) : (*/
-            <Input
-              crypto={inputCryptoConfig}
-              handleChange={handleInputChange}
-              value={state.inputValue}
-              min={0}
-              max={state.inputTokenBalance}
-              hint={`Balance: ${state.inputTokenBalance}`}
-              onHintClick={handleHintClick}
-              disableSelect={state.mode === 'SELL'}
-            />
-            /*)*/
-          }
+          <Input
+            crypto={inputCryptoConfig}
+            handleChange={handleInputChange}
+            value={state.inputValue}
+            min={0}
+            max={state.inputTokenBalance}
+            hint={`Balance: ${state.inputTokenBalance}`}
+            onHintClick={handleHintClick}
+            disableSelect={state.mode === 'SELL'}
+          />
           <Spacer />
-          {/*TODO: disable only the input not the select*/}
           <Input
             crypto={outputCryptoConfig}
             disableInput
+            disabled={state.mode === 'BUY'}
             value={state.quoteValue}
           />
           <InvertButton onClick={handleChangeMode} disabled={state.ongoingTx} />
@@ -117,14 +80,14 @@ export const Swap = () => {
         />
       </SwapContainer>
     );
-  };
+  })();
 
   return (
     <Tabs
       tabs={[
         {
           label: 'Swap',
-          content: <Swap />,
+          content: Swap,
         },
         {
           label: 'Unlock',
