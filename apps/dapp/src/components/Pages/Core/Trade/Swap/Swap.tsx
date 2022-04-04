@@ -55,7 +55,7 @@ export const Swap = () => {
   const isSwapButtonDisabled =
     state.slippageTooHigh ||
     state.inputTokenBalance === 0 ||
-    state.inputValue > state.inputTokenBalance;
+    Number(state.inputValue) > state.inputTokenBalance;
 
   const Swap = (
     <SwapContainer>
