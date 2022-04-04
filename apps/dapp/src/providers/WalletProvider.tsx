@@ -288,6 +288,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     const tokenResponse: ZapperTokenResponse[] = res.data;
     const tokenData: ZapperTokenData[] =
       Object.values(tokenResponse)[0].products[0].assets;
+    //TODO: additionally filter according to our allowed list
     const tokens = tokenData.filter(
       (token) => token.network === NetworkEnum.Ethereum
     );
