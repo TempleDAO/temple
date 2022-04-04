@@ -85,6 +85,7 @@ export const Swap = () => {
               max={state.inputTokenBalance}
               hint={`Balance: ${state.inputTokenBalance}`}
               onHintClick={handleHintClick}
+              disableSelect={state.mode === 'SELL'}
             />
             /*)*/
           }
@@ -92,7 +93,7 @@ export const Swap = () => {
           {/*TODO: disable only the input not the select*/}
           <Input
             crypto={outputCryptoConfig}
-            disabled
+            disableInput
             value={state.quoteValue}
           />
           <InvertButton onClick={handleChangeMode} disabled={state.ongoingTx} />

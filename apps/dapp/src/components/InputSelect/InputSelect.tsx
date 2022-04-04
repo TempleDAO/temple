@@ -17,6 +17,7 @@ export interface SelectTempleDaoProps {
   defaultValue?: Option;
   // use to limit the number of elements shown in the menu at anytime
   maxMenuItems?: number;
+  disabled?: boolean;
 }
 
 /**

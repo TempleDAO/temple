@@ -50,6 +50,8 @@ export interface InputProps
   // in the buy/sell amm
   pairTop?: boolean;
   pairBottom?: boolean;
+  disableSelect?: boolean;
+  disableInput?: boolean;
 }
 
 /**
@@ -64,6 +66,8 @@ export const Input = ({
   type,
   value,
   disabled,
+  disableSelect,
+  disableInput,
   small,
   pairTop,
   pairBottom,
@@ -94,6 +98,7 @@ export const Input = ({
           defaultValue={defaultValue}
           onChange={onCryptoChange}
           maxMenuItems={maxSelectorItems}
+          disabled={disableSelect}
           {...optionalInputValue}
         />
       );
@@ -162,7 +167,7 @@ export const Input = ({
         onKeyPress={isNumber ? numbersOnly : undefined}
         type={type}
         value={value}
-        disabled={disabled}
+        disabled={disabled || disableInput}
         //@ts-ignore
         placeholder={0}
         {...props}
