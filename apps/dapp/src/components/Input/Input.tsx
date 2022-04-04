@@ -21,7 +21,7 @@ interface CryptoSelector {
   maxSelectorItems?: number;
 
   // Callback for cryptoSelector value change
-  onCryptoChange?(x: any): void;
+  onCryptoChange?(option: Option): void;
 }
 
 interface CryptoValue {
