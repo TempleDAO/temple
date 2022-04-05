@@ -15,7 +15,8 @@
   },
   "scripts": {
     "build:dapp": "yarn workspace @temple/dapp build",
-    "build:api": "yarn workspace @temple/analytics-api build"
+    "build:api": "yarn workspace @temple/analytics-api build",
+    "run:stack": "./shared/stack/run.sh"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.9.1",

@@ -4,3 +4,4 @@ node_modules
 **/*.tsbuildinfo
 *.env
 .DS_STORE
+shared/stack/deployed-addr.txt
