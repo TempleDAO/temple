@@ -1,9 +1,8 @@
-import RegisterToken from 'components/RegisterToken/RegisterToken';
-import { TEMPLE_TOKEN_ASSET } from 'components/RegisterToken/TOKENS';
-import { WalletProvider } from 'providers/WalletProvider';
 import React from 'react';
 import { ComponentStory, ComponentMeta } from '@storybook/react';
 
+import RegisterToken from 'components/RegisterToken/RegisterToken';
+import { TEMPLE_TOKEN } from 'constants/tokens';
 
 export default {
   title: 'Components/RegisterToken',
@@ -13,9 +12,16 @@ export default {
   },
 } as ComponentMeta<typeof RegisterToken>;
 
-const Template: ComponentStory<typeof RegisterToken> = (args) => <RegisterToken {...args}><small style={{marginLeft: '1rem'}}>Register Token</small></RegisterToken>;
+const Template: ComponentStory<typeof RegisterToken> = (args) => (
+  <RegisterToken {...args}>
+    <small style={{ marginLeft: '1rem' }}>
+      Register Token
+    </small>
+  </RegisterToken>
+);
 
 export const Default = Template.bind({});
+
 Default.args = {
-  token: TEMPLE_TOKEN_ASSET
+  token: TEMPLE_TOKEN
 };
