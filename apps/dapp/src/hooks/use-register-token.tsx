@@ -43,7 +43,7 @@ const useRegisterToken = (token: Token): HookReturnValue => {
       }
     } finally {
       if (isMounted.current) {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
   }, [openNotification, setIsLoading, token, isMounted, setError]);
