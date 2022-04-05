@@ -9,10 +9,12 @@ export interface Token {
   };
 };
 
+const ENV_VARS = import.meta.env;
+
 export const TEMPLE_TOKEN: Token = {
   type: 'ERC20',
   options: {
-    address: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
+    address: ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS,
     symbol: 'TEMPLE',
     decimals: 18,
     image: 'https://etherscan.io/token/images/temple_32.png?v=3'
