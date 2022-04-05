@@ -28,6 +28,7 @@ export const Swap = () => {
     Number(state.inputValue) > state.inputTokenBalance;
 
   // Making this an IIFE prevents the component constantly re-rendering and losing focus on state changes
+  //TODO: double check the closure on state does not lead to dirty data
   const Swap = (() => {
     const inputCryptoConfig =
       state.mode === 'BUY'

@@ -113,12 +113,10 @@ export default function useSwapController() {
     dispatch({ type: 'startTx' });
 
     if (state.mode === 'SELL') {
-      console.log('selling');
       await handleSell();
     } else if (state.zap) {
       await handleZap();
     } else {
-      console.log('buying');
       await handleBuy();
     }
 
@@ -137,7 +135,8 @@ export default function useSwapController() {
       return;
     }
 
-    const minAmountOut = templeAmount * templePrice * (1 - templeAmount / 100);
+    const minAmountOut =
+      templeAmount * templePrice * (1 - state.slippageValue / 100);
 
     // If there is a sell quote and it is below what you'd get selling at IV
     // the sale is directed to the IV Swap contract to prevent the AMM price to dip below IV
@@ -196,8 +195,6 @@ export default function useSwapController() {
       dispatch({ type: 'slippageTooHigh' });
       return;
     }
-
-    console.log('buy', toAtto(fraxAmount), toAtto(minAmountOut));
 
     await buy(toAtto(fraxAmount), toAtto(minAmountOut));
   };
