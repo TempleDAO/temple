@@ -22,6 +22,7 @@ import {
   JoiningFee__factory,
   Vault__factory,
 } from '../../typechain';
+import { writeFile } from 'fs/promises';
 
 function toAtto(n: number) {
   return BigNumber.from(10).pow(18).mul(n);
@@ -280,12 +281,20 @@ async function main() {
     LOCALDEV_VERIFER_EXTERNAL_PRIVATE_KEY: verifier.privateKey,
   };
 
+  await writeFile('../../shared/stack/deployed-addr.txt', '')
+
+  let newVarsToWrite = ''
   console.log();
   console.log('=========================================');
   console.log('*** Copy/pasta into .env.local for dApp dev\n\n');
   for (const envvar in contract_address) {
-    console.log(`VITE_PUBLIC_${envvar}=${contract_address[envvar]}`);
+    let line = `VITE_PUBLIC_${envvar}=${contract_address[envvar]}`
+
+    console.log(line);
+    newVarsToWrite += line + `\n`
   }
+
+  await writeFile('../../shared/stack/deployed-addr.txt', newVarsToWrite)
 
   console.log();
   console.log('=========================================');
