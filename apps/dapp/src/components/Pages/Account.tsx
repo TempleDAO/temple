@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
@@ -18,6 +17,7 @@ import useFetchStoreDiscordUser from 'hooks/use-fetch-store-discord-user';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberWithCommas } from 'utils/formatter';
+import { Nullable } from 'types/util';
 
 export interface DiscordUser {
   user_id: string;
@@ -43,8 +43,8 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
 
   useEffect(() => {
     const getDiscordUser = async (
-      userId?: string
-    ): Promise<DiscordUser | null> => {
+      userId: Nullable<string>
+    ): Promise<void> => {
       if (!userId) {
         return;
       }
@@ -253,10 +253,10 @@ const MetricsFlex = styled(FlexStyled)`
   padding-bottom: 1rem;
 `;
 
-const MetricsFlexItem = styled(MetricsFlex)`
+const MetricsFlexItem = styled(MetricsFlex)<{ gradientDirection: 'left' | 'right' }>`
   background-image: linear-gradient(
-    to ${(props) => props.gradientDirection},
-    ${(props) => props.theme.palette.brand25},
+    to ${({ gradientDirection }) => gradientDirection},
+    ${({ theme }) => theme.palette.brand25},
     rgba(0, 0, 0, 0)
   );
 `;
