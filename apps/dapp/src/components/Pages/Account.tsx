@@ -37,7 +37,7 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
   const { back } = routingHelper;
 
   const { faith } = useFaith();
-  const [discordData, setDiscordData] = useState<DiscordUser>();
+  const [discordData, setDiscordData] = useState<Nullable<DiscordUser>>(null);
   const discordId = useFetchStoreDiscordUser();
   const accountMetrics = useRefreshableAccountMetrics();
 
@@ -182,7 +182,7 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
                 >
                   <RightAlign>
                     <EnclaveCard
-                      enclave={discordData?.enclave?.toLowerCase()}
+                      enclave={discordData?.enclave?.toLowerCase() || ''}
                       unsetDiscrodData={() => setDiscordData(null)}
                     />
                   </RightAlign>
@@ -211,7 +211,7 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
             >
               <ProfileHeader username={discordData?.guild_name} />
               <AccessoriesTemplate
-                enclave={discordData?.enclave?.toLowerCase()}
+                enclave={discordData?.enclave?.toLowerCase() || ''}
               />
             </FlexStyled>
           </ProfileWrapper>
