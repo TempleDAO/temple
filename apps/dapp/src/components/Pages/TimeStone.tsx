@@ -16,6 +16,8 @@ const TimeStone = () => {
     const [currentTime, setCurrentTime] = useState(0);
     const [timeToSet, setTimeToSet] = useState(0);
     const [currentBlock, setCurrentBlock] = useState(0);
+    const [miningInterval, setMiningInterval] = useState(0);
+    const [updateUITimerID, setUpdateUITimerID] = useState<NodeJS.Timer>();
 
     const increaseOneDay = async () => await increaseTime(oneDay);
     const increaseSevenDays = async () => await increaseTime(sevenDays);
@@ -67,13 +69,33 @@ const TimeStone = () => {
         await updateEVMTimeDisplay()
     }
 
+    const sendMiningInterval = async () => {
+        await sendMiningIntervalToEVM(miningInterval)
+    }
+
+    const sendMiningIntervalToEVM = async (miningInterval: number) => {
+        await network.send("evm_setIntervalMining", [Number(miningInterval)])
+        if (updateUITimerID) {
+            clearInterval(updateUITimerID)
+        }
+    
+        if (miningInterval > 0) {
+            let t = setInterval(async () => {
+                await getAndSetCurrentBlock()
+                await updateEVMTimeDisplay()
+            }, miningInterval)
+            setUpdateUITimerID(t)
+        }
+    }
+
     const mineBlock = async() => {
         await network.send('evm_mine', [])
         await getAndSetCurrentBlock()
     }
 
     const getAndSetCurrentBlock = async() => {
-        const blockNumBefore = await network.getBlockNumber();
+        const blockNumBefore = await network.send("eth_blockNumber",[]);
+        console.log(blockNumBefore);
         setCurrentBlock(blockNumBefore);
     }
 
@@ -86,6 +108,15 @@ const TimeStone = () => {
     const handleUpdateTimeToSet = async (value: number) => {
         setTimeToSet(value);
     };
+
+    const handleUpdateMiningInterval = async (value: number) => {
+        setMiningInterval(value);
+    }
+
+    const resetEVM = async () => {
+        await network.send("hardhat_reset", [])
+        await getAndSetCurrentBlock()
+    }
 
     useEffect(() => {
         updateEVMTimeDisplay().catch(console.error)
@@ -128,7 +159,34 @@ const TimeStone = () => {
                         <ButtonContainer>
                             <StyledButton label={'Mine Block'} isUppercase isSmall onClick={mineBlock} />
                         </ButtonContainer>
+                        <ButtonContainer>
+                            <StyledButton label={'Reset EVM'} isUppercase isSmall onClick={resetEVM} />
+                        </ButtonContainer>
                     </ButtonGroup>
+                    <p>Enter auto mining interval in milliseconds. This will create new blocks every interval milliseconds. Set to 0 to disable.</p>
+
+                    <Input
+                        hint={`Must be greater than 0`}
+                        crypto={{ kind: 'value', value: "Interval" }}
+                        isNumber
+                        min={0}
+                        max={1669198714000}
+                        value={miningInterval}
+                        handleChange={
+                            handleUpdateMiningInterval
+                        }
+                        placeholder={"0"}
+                        pairTop
+                    />
+                    <Button
+                        label={`Set Mining Interval`}
+                        isUppercase
+                        isSmall={true}
+                        onClick={
+                            sendMiningInterval
+                        }
+                        style={{margin: '50px 0 0 0'}}
+                    />
                     </FlexCol>
                 </ProfileMeta>
                 <ProfileMeta>
