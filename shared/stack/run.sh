@@ -52,6 +52,12 @@ do
     fi
 done < "$input"
 
+# Sync compiled & deployed contracts into dapp
+typechainSource="./apps/protocol/typechain"
+typechainTarget="./apps/dapp/src/types/"
+
+rsync -avzh $typechainSource $typechainTarget
+
 # Into the dapp we go
 cd apps/dapp
 
