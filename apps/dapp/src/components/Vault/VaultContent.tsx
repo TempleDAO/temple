@@ -9,7 +9,6 @@ const VaultContent = ({ children }: PropsWithChildren<{}>) => {
 const Content = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: center;
   text-align: center;
   width: 90%;
   height: 100%;
