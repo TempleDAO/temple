@@ -1,4 +1,4 @@
-import { ClaimInput } from 'components/Input/ClaimInput';
+import { VaultInput } from 'components/Input/VaultInput';
 import { Button } from 'components/Button/Button';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useState } from 'react';
@@ -22,13 +22,13 @@ const VaultClaim = () => {
   return (
     <>
       <Header>Claim</Header>
-      <ClaimableAmount>
-        <a onClick={() => copyBalance(templeWalletAmount, setTempleAmount)}>
-          {formatNumber(templeWalletAmount)} TEMPLE{' '}
-        </a>
-        Claimable
-      </ClaimableAmount>
-      <ClaimInput
+      <h3>
+        Claimable TEMPLE{' '}
+        <TempleAmountLink onClick={() => copyBalance(templeWalletAmount, setTempleAmount)}>
+          {formatNumber(templeWalletAmount)}
+        </TempleAmountLink>
+      </h3>
+      <VaultInput
         tickerSymbol={TICKER_SYMBOL.TEMPLE_TOKEN}
         handleChange={handleUpdateTempleAmount}
         isNumber
@@ -40,13 +40,13 @@ const VaultClaim = () => {
   );
 };
 
-const ClaimableAmount = styled.h3`
-  padding: 0 0 1.5rem;
-`;
-
 const ClaimButton = styled(Button)`
   align-self: center;
   margin: 3rem;
+`;
+
+const TempleAmountLink = styled.a`
+  display: block;
 `;
 
 export default VaultClaim;
