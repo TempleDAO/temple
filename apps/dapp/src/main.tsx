@@ -19,7 +19,7 @@ import AnalyticsPage from 'components/Pages/Core/Analytics';
 import VaultPage from 'components/Pages/Core/Vault';
 import ProfilePage from 'components/Pages/Core/Profile/Profile';
 import VaultListPage from 'components/Pages/Core/VaultList';
-import HomePage from 'components/Pages/Core/Home';
+import HomePage from 'components/Pages/Core/HomePage';
 import { Claim as VaultClaim } from 'components/Pages/Core/VaultPages/Claim';
 import { Stake } from 'components/Pages/Core/VaultPages/Stake';
 import { Summary } from 'components/Pages/Core/VaultPages/Summary';

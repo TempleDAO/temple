@@ -17,9 +17,17 @@ import sunImage from 'assets/images/sun-art.svg';
 import sunsetImage from 'assets/images/sunset.svg';
 
 import { ResponsiveImage } from 'styles/common';
+import { TreasuryMetrics } from 'services/MetricsService';
 
 const HomePage = () => {
-  const treasuryMetrics = useRefreshableTreasuryMetrics();
+  // TODO: For now, this is hard-coded. 
+  // In a future issue, this will be fixed
+  const treasuryMetrics = {
+    treasuryValue: 133550000,
+    templeApy: 0.6,
+    templeValue: 0.66,
+  } as TreasuryMetrics;
+
   const isAboveMobile = useMediaQuery({
     query: queryMinTablet,
   });
@@ -55,25 +63,23 @@ const HomePage = () => {
               {isAboveMobile && (
                 <ButtonContainer>
                   <Link to={'/core/dapp/trade'}>
-                    <StyledButton label={`Buy Now`} isUppercase isSmall />
+                    <StyledButton label={`Buy Now $`} isUppercase isSmall />
                   </Link>
                 </ButtonContainer>
               )}
               <ButtonContainer>
                 <Link to={'/core/dapp/vaults'}>
-                  <StyledButton label={'Start Earning'} isUppercase isSmall />
+                  <StyledButton label={`Start Earning ${String.fromCharCode(10146)}`} isUppercase isSmall />
                 </Link>
               </ButtonContainer>
             </ButtonGroup>
-            {treasuryMetrics ? (
-              <MetricsWrapper>
-                <Metrics
-                  treasuryMetrics={treasuryMetrics}
-                  isHome
-                  alignCenter={!isAboveMobile}
-                />
-              </MetricsWrapper>
-            ) : null}
+            <MetricsWrapper>
+              <Metrics
+                treasuryMetrics={treasuryMetrics}
+                isHome
+                alignCenter={!isAboveMobile}
+              />
+            </MetricsWrapper>
           </EarnBetterYieldsWrapper>
         </RowCell>
         <RowCell>
