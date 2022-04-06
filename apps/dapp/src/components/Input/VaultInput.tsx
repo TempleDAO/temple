@@ -7,7 +7,11 @@ interface SizeProps {
   small?: boolean;
 }
 
-export interface ClaimInputProps
+interface InputHintProps {
+  hasAction: boolean;
+}
+
+export interface VaultInputProps
   extends SizeProps,
     InputHTMLAttributes<HTMLInputElement> {
   // ticker symbol used when displaying the value
@@ -15,16 +19,20 @@ export interface ClaimInputProps
   // set our own type=number since we need type to be string
   // for proper display and input masking
   isNumber?: boolean;
-
+  // extra information for the input
+  hint?: string;
+  onHintClick?(): void;
   // Callback for input value change
   handleChange?(value: number): void;
 }
 
 /**
- * UI component for claiming temple
+ * UI component for use with vault
  */
-export const ClaimInput = ({
+export const VaultInput = ({
   handleChange,
+  onHintClick,
+  hint,
   tickerSymbol,
   isNumber,
   type,
@@ -32,7 +40,7 @@ export const ClaimInput = ({
   disabled,
   small,
   ...props
-}: ClaimInputProps) => {
+}: VaultInputProps) => {
   const rendertTickerSymbol = () => {
     if (!tickerSymbol) {
       return null;
@@ -81,6 +89,16 @@ export const ClaimInput = ({
     >
       <InputTokenWrapper>
         {rendertTickerSymbol()}
+        {hint && (
+          <InputHint
+            hasAction={!!onHintClick}
+            onClick={() => {
+              if (onHintClick) onHintClick();
+            }}
+          >
+            {hint}
+          </InputHint>
+        )}
       </InputTokenWrapper>
       <InputStyled
         onChange={handleInputChange}
@@ -129,6 +147,7 @@ const InputTokenWrapper = styled.div`
   align-items: center;
   justify-content: space-around;
   width: 9.25rem /* 148/16 */;
+  padding: 0.4rem 0 0;
 `;
 
 export const InputStyled = styled.input<SizeProps>`
@@ -139,10 +158,12 @@ export const InputStyled = styled.input<SizeProps>`
   ${(props) => props.theme.typography.h3};
   color: ${theme.palette.brandLight};
   outline: none;
+  font-size: 3rem;
   width: 100%;
   height: 100%;
   text-align: right;
   padding-left: 1.5rem;
+  padding-bottom: .5rem;
   ${({ small }) => small && `font-size: 1.5rem`};
 
   // remove input number controls ^ v
@@ -155,8 +176,24 @@ export const InputStyled = styled.input<SizeProps>`
   appearance: textfield;
 `;
 
+export const InputHint = styled.small<InputHintProps>`
+  color: ${theme.palette.brandLight};
+  font-size: 12px;
+  text-align: center;
+  text-transform: uppercase;
+  ${(props) =>
+    props.hasAction &&
+    css`
+      background-color: ${(props) => props.theme.palette.brand50};
+      padding: 0.0625rem /* 1/16 */ 0.25rem /* 4/16 */;
+      border-radius: 0.25em;
+      cursor: pointer;
+    `}
+`;
+
 const Ticker = styled.p`
   margin: 0;
   color: ${theme.palette.brandLight};
   font-size: 2rem;
+  width: 100%;
 `;
