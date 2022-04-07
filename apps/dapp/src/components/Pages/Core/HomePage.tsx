@@ -20,7 +20,7 @@ import { ResponsiveImage } from 'styles/common';
 import { TreasuryMetrics } from 'services/MetricsService';
 
 const HomePage = () => {
-  // TODO: For now, this is hard-coded. 
+  // TODO: For now, this is hard-coded.
   // In a future issue, this will be fixed
   const treasuryMetrics = {
     treasuryValue: 133550000,
@@ -69,7 +69,12 @@ const HomePage = () => {
               )}
               <ButtonContainer>
                 <Link to={'/core/dapp/vaults'}>
-                  <StyledButton label={`Start Earning ${String.fromCharCode(10146)}`} isUppercase isSmall />
+                  <StyledButton
+                    label={`Start Earning`}
+                    isUppercase
+                    isSmall
+                    showArrow
+                  />
                 </Link>
               </ButtonContainer>
             </ButtonGroup>
