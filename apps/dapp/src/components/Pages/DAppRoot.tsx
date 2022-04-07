@@ -45,6 +45,9 @@ const DAppLarge = () => (
 const DAppSmall: FC = () => (
   <Frame>
     <Container small>
+      <MetamaskButtonFrame>
+        <MetamaskButton />
+      </MetamaskButtonFrame>
       <DApp small />
     </Container>
   </Frame>
@@ -86,4 +89,15 @@ const Frame = styled.div`
   align-items: center;
 
   width: 100vw;
+`;
+
+const MetamaskButtonFrame = styled.div`
+  position: absolute:
+  top: 0;
+  right: 0;
+
+  div {
+    padding: 0;
+    padding-top: 0.3125rem /* 5/16 */;
+  }
 `;
