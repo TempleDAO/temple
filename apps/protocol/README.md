@@ -10,7 +10,7 @@ yarn test
 
 ## Rinkeby Deployment
 ```
-export RINKEBY_ADDRESS_PRIVATE_KEY=...  # export from metamask
+export RINKEBY_ADDRESS_PRIVATE_KEY=...  # export from metamask 
 export RINKEBY_RPC_URL=... 		# grab RPC url from metamask or create a relayer on alchemy
 
 hardhat:testnet run scripts/deploys/rinkeby/{your-script-name}
