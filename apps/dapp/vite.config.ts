@@ -67,6 +67,7 @@ export default defineConfig({
       services: path.resolve(__dirname, 'src/services'),
       hoc: path.resolve(__dirname, 'src/hoc'),
       enums: path.resolve(__dirname, 'src/enums'),
+      constants: path.resolve(__dirname, 'src/constants'),
       data: path.resolve(__dirname, 'src/data'),
       types: path.resolve(__dirname, 'src/types'),
     },

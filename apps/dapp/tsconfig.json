@@ -7,6 +7,7 @@
     "baseUrl": "src",
     "resolveJsonModule": true,
     "paths": {
+      "constants/*": ["./constants/*"],
       "components/*": ["./components/*"],
       "providers/*": ["./providers/*"],
       "assets/*": ["./assets/*"],

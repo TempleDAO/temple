@@ -1,10 +1,13 @@
-//@ts-nocheck
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import styled from 'styled-components';
+
+import RegisterToken from 'components/RegisterToken/RegisterToken';
+import { TEMPLE_TOKEN } from 'constants/tokens';
 import AccessoriesTemplate from 'components/Accessories/AccessoriesTemplate';
 import BackButton from 'components/Button/BackButton';
 import EnclaveCard from 'components/EnclaveCard/EnclaveCard';
-import { FlexStyled } from 'components/Layout/Flex';
+import { Flex, FlexStyled } from 'components/Layout/Flex';
 import ProfileHeader from 'components/ProfileHeader/ProfileHeader';
 import ProfileMetric from 'components/ProfileMetric/ProfileMetric';
 import withWallet from 'hoc/withWallet';
@@ -13,8 +16,8 @@ import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import useFetchStoreDiscordUser from 'hooks/use-fetch-store-discord-user';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import styled from 'styled-components';
 import { formatNumberWithCommas } from 'utils/formatter';
+import { Nullable } from 'types/util';
 
 export interface DiscordUser {
   user_id: string;
@@ -34,14 +37,14 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
   const { back } = routingHelper;
 
   const { faith } = useFaith();
-  const [discordData, setDiscordData] = useState<DiscordUser>();
+  const [discordData, setDiscordData] = useState<Nullable<DiscordUser>>(null);
   const discordId = useFetchStoreDiscordUser();
   const accountMetrics = useRefreshableAccountMetrics();
 
   useEffect(() => {
     const getDiscordUser = async (
-      userId?: string
-    ): Promise<DiscordUser | null> => {
+      userId: Nullable<string>
+    ): Promise<void> => {
       if (!userId) {
         return;
       }
@@ -179,7 +182,7 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
                 >
                   <RightAlign>
                     <EnclaveCard
-                      enclave={discordData?.enclave?.toLowerCase()}
+                      enclave={discordData?.enclave?.toLowerCase() || ''}
                       unsetDiscrodData={() => setDiscordData(null)}
                     />
                   </RightAlign>
@@ -208,11 +211,17 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
             >
               <ProfileHeader username={discordData?.guild_name} />
               <AccessoriesTemplate
-                enclave={discordData?.enclave?.toLowerCase()}
+                enclave={discordData?.enclave?.toLowerCase() || ''}
               />
             </FlexStyled>
           </ProfileWrapper>
         </Container>
+        <Flex layout={{
+          kind: 'container',
+          justifyContent: 'center'
+        }}>
+          <RegisterToken token={TEMPLE_TOKEN}>&nbsp;Add Temple token</RegisterToken>
+        </Flex>
       </PageWrapper>
       <BackButton onClick={back} />
     </>
@@ -244,10 +253,10 @@ const MetricsFlex = styled(FlexStyled)`
   padding-bottom: 1rem;
 `;
 
-const MetricsFlexItem = styled(MetricsFlex)`
+const MetricsFlexItem = styled(MetricsFlex)<{ gradientDirection: 'left' | 'right' }>`
   background-image: linear-gradient(
-    to ${(props) => props.gradientDirection},
-    ${(props) => props.theme.palette.brand25},
+    to ${({ gradientDirection }) => gradientDirection},
+    ${({ theme }) => theme.palette.brand25},
     rgba(0, 0, 0, 0)
   );
 `;
