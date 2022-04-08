@@ -1,7 +1,7 @@
 import React, { createContext, useContext, PropsWithChildren } from 'react';
 import { ethers, BigNumber } from 'ethers';
 import axios from 'axios';
-import { signERC2612Permit } from 'eth-permit';
+//import { signERC2612Permit } from 'eth-permit';
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
 import { useNotification } from 'providers/NotificationProvider';
@@ -10,12 +10,7 @@ import { toAtto } from 'utils/bigNumber';
 import { asyncNoop } from 'utils/helpers';
 import { ZapService } from 'providers/types';
 import { create0xQuoteUrl } from 'utils/url';
-import {
-  TempleZaps,
-  FakeERC20,
-  TempleZaps__factory,
-  FakeERC20__factory,
-} from 'types/typechain';
+import { TempleZaps__factory, FakeERC20__factory } from 'types/typechain';
 import {
   TEMPLE_ZAPS_ADDRESS,
   ZEROEX_EXCHANGE_PROXY,
@@ -65,42 +60,28 @@ export const ZapProvider = (props: PropsWithChildren<{}>) => {
 
     const swapCallData = await get0xApiSwapQuote(sellToken, sellAmount);
 
-    if (
-      tokenSymbol === TICKER_SYMBOL.USDC ||
-      tokenSymbol === TICKER_SYMBOL.UNI
-    ) {
-      tx = await zapWithPermit(
-        TEMPLE_ZAPS,
-        tokenContract,
-        tokenSymbol,
-        sellAmount,
-        minTempleReceived,
-        swapCallData
-      );
-    } else {
-      if (sellToken !== TICKER_SYMBOL.ETH) {
-        await tokenContract.approve(
-          TEMPLE_ZAPS_ADDRESS,
-          ethers.utils.parseUnits('1000111', decimals)
-        );
-      }
-
-      const overrides: { value?: BigNumber } = {};
-
-      if (sellToken === TICKER_SYMBOL.ETH) {
-        overrides.value = toAtto(tokenAmount);
-      }
-
-      tx = await TEMPLE_ZAPS.zapIn(
-        tokenAddr,
-        sellAmount,
-        minTempleReceived.toString(),
-        Math.floor(Date.now() / 1000) + 1200,
-        ZEROEX_EXCHANGE_PROXY,
-        swapCallData,
-        overrides
+    if (sellToken !== TICKER_SYMBOL.ETH) {
+      await tokenContract.approve(
+        TEMPLE_ZAPS_ADDRESS,
+        ethers.utils.parseUnits('1000111', decimals)
       );
     }
+
+    const overrides: { value?: BigNumber } = {};
+
+    if (sellToken === TICKER_SYMBOL.ETH) {
+      overrides.value = toAtto(tokenAmount);
+    }
+
+    tx = await TEMPLE_ZAPS.zapIn(
+      tokenAddr,
+      sellAmount,
+      minTempleReceived.toString(),
+      Math.floor(Date.now() / 1000) + 1200,
+      ZEROEX_EXCHANGE_PROXY,
+      swapCallData,
+      overrides
+    );
 
     if (!tx) {
       console.error('Error zapping tokens');
@@ -133,6 +114,8 @@ export const ZapProvider = (props: PropsWithChildren<{}>) => {
     return response.data.data;
   };
 
+  //TODO: Uncomment code when zapInWithPermit is back on the menu
+  /*
   const zapWithPermit = async (
     zapsContract: TempleZaps,
     tokenContract: FakeERC20,
@@ -163,8 +146,7 @@ export const ZapProvider = (props: PropsWithChildren<{}>) => {
       sellAmount
     );
 
-    //FIXME: Uncomment code when zapInWithPermit is back on the menu
-    /*return await zapsContract.zapInWithPermit(
+    return await zapsContract.zapInWithPermit(
       tokenContract.address,
       sellAmount,
       minTempleReceived.toString(),
@@ -175,8 +157,8 @@ export const ZapProvider = (props: PropsWithChildren<{}>) => {
       v,
       r,
       s
-    );*/
-  };
+    );
+  };*/
 
   const getZapQuote = async (
     tokenPrice: number,

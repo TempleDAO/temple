@@ -22,7 +22,6 @@
     "axios": "^0.24.0",
     "d3-shape": "^3.0.1",
     "dateformat": "^5.0.2",
-    "eth-permit": "^0.2.1",
     "ethers": "^5.4.3",
     "howler": "^2.2.3",
     "polished": "^4.1.3",
