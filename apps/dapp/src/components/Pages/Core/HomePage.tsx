@@ -15,19 +15,13 @@ import sunImage from 'assets/images/sun-art.svg';
 import sunsetImage from 'assets/images/sunset.svg';
 
 import { ResponsiveImage } from 'styles/common';
-import { TreasuryMetrics } from 'services/MetricsService';
+import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
 
 const REWARDS_IMAGE_HEIGHT = 322;
 const EARN_IMAGE_HEIGHT = 450;
 
 const HomePage = () => {
-  // TODO: For now, this is hard-coded.
-  // In a future issue, this will be fixed
-  const treasuryMetrics = {
-    treasuryValue: 133550000,
-    templeApy: 0.6,
-    templeValue: 0.66,
-  } as TreasuryMetrics;
+  const treasuryMetrics = useRefreshableTreasuryMetrics();
 
   const isAboveMobile = useMediaQuery({
     query: breakpoints.queryMinTablet,
@@ -80,11 +74,15 @@ const HomePage = () => {
               </ButtonContainer>
             </ButtonGroup>
             <MetricsWrapper>
-              <Metrics
-                treasuryMetrics={treasuryMetrics}
-                isHome
-                alignCenter={!isAboveMobile}
-              />
+              {treasuryMetrics ? (
+                <MetricsWrapper>
+                  <Metrics
+                    treasuryMetrics={treasuryMetrics}
+                    isHome
+                    alignCenter={!isAboveMobile}
+                  />
+                </MetricsWrapper>
+              ) : null}
             </MetricsWrapper>
           </EarnBetterYieldsWrapper>
         </RowCell>
