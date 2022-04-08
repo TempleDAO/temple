@@ -3,11 +3,9 @@ import { useMediaQuery } from 'react-responsive';
 import styled, { css } from 'styled-components';
 
 import { Button, ButtonProps } from 'components/Button/Button';
-import { queryMinTablet } from 'styles/breakpoints';
 import * as breakpoints from 'styles/breakpoints';
 import { Flex } from 'components/Layout/Flex';
 import Metrics from 'components/Metrics/Metrics';
-import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
 
 import circleBgImage from 'assets/images/circle-bg.svg';
 import eyeImage from 'assets/images/eye.svg';
@@ -19,6 +17,9 @@ import sunsetImage from 'assets/images/sunset.svg';
 import { ResponsiveImage } from 'styles/common';
 import { TreasuryMetrics } from 'services/MetricsService';
 
+const REWARDS_IMAGE_HEIGHT = 322;
+const EARN_IMAGE_HEIGHT = 450;
+
 const HomePage = () => {
   // TODO: For now, this is hard-coded.
   // In a future issue, this will be fixed
@@ -29,7 +30,7 @@ const HomePage = () => {
   } as TreasuryMetrics;
 
   const isAboveMobile = useMediaQuery({
-    query: queryMinTablet,
+    query: breakpoints.queryMinTablet,
   });
   const navigate = useNavigate();
 
@@ -132,9 +133,6 @@ const HomePage = () => {
               justifyContent: 'flex-end',
             }}
           >
-            {
-              // TODO: Do we want to replace these images?
-            }
             <ResponsiveImage
               src={sunsetImage}
               alt={'Earn Trading Fee'}
@@ -209,8 +207,8 @@ const HomePage = () => {
                 src={circleBgImage}
                 alt={''}
                 aria-hidden={true}
-                height={322}
-                width={322}
+                height={REWARDS_IMAGE_HEIGHT}
+                width={REWARDS_IMAGE_HEIGHT}
               />
             </CircleBgWrapper>
           </Flex>
@@ -223,8 +221,8 @@ const HomePage = () => {
             <ResponsiveImage
               src={planetsImage}
               alt={'Earn Trading Fee'}
-              height={450}
-              width={450}
+              height={EARN_IMAGE_HEIGHT}
+              width={EARN_IMAGE_HEIGHT}
             />
           </Flex>
         </Flex>
