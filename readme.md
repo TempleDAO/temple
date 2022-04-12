@@ -24,7 +24,7 @@ At the root of the project, running `yarn run:stack` will attempt to:
 * copy hardhat factories into the dapp 
 * run the dapp in dev mode
 
-The script also tries to group the child processes so issuing a single `SIGINT` (ctrl+c) should stop all the processes. 
+The script groups the child processes so issuing a single `SIGINT` (ctrl+c) should stop all the processes. 
 
 Requirements:  
 * bash
