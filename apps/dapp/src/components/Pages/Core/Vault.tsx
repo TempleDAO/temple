@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 
-import Loader from 'components/Loader/Loader';
 import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Vault } from 'components/Vault/types';
+import { Spinner } from 'components/LoaderVault/Spinner';
 
 const vaultData: { [key: string]: Vault } = {
   abc: {
@@ -33,18 +33,18 @@ export const useMockVaultData = (id: string) => {
   useEffect(() => {
     setTimeout(() => {
       setIsLoading(false);
-    }, 1500);
+    }, 750);
   }, [setIsLoading]);
 
   return { isLoading, data: vaultData[id], error: !vaultData[id] };
-}
+};
 
 const VaultPage = () => {
   const { vaultId } = useParams();
   const { isLoading, data, error } = useMockVaultData(vaultId || '');
 
   if (isLoading) {
-    return <Loader />;
+    return <Spinner />;
   }
 
   if (!data || error) {

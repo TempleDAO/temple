@@ -5,6 +5,7 @@ import caviarDreams from 'assets/fonts/CaviarDreams/CaviarDreams.ttf';
 import caviarDreamsBold from 'assets/fonts/CaviarDreams/CaviarDreams_Bold.ttf';
 import caviarDreamsBoldItalic from 'assets/fonts/CaviarDreams/CaviarDreams_BoldItalic.ttf';
 import caviarDreamsItalic from 'assets/fonts/CaviarDreams/CaviarDreams_Italic.ttf';
+import { tabletAndAbove } from './breakpoints';
 
 export const ROOT_FONT_SIZE = 16;
 
@@ -68,6 +69,11 @@ export const GlobalStyle = createGlobalStyle`
     color: ${theme.palette.light};
     overflow-x: hidden;
     margin: 0px;
+    min-height: 100vh;
+    min-width: 320px;
+    ${tabletAndAbove(`
+      min-width: 100vw;
+    `)}
   }
 
   h1,
