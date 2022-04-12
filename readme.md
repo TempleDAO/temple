@@ -14,7 +14,7 @@ This project uses yarn workspaces to share common dependencies between all the a
 
 ### Quick Start 
 
-**This script is still experimental so your milage may vary**
+**This script is still experimental so your mileage may vary**
 
 At the root of the project, running `yarn run:stack` will attempt to:  
 * compile the contracts
