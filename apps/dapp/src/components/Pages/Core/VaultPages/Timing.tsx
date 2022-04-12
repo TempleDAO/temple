@@ -1,7 +1,18 @@
 import styled from 'styled-components';
-import { formatDistance, format, differenceInSeconds, addSeconds } from 'date-fns';
+import {
+  formatDistance,
+  format,
+  differenceInSeconds,
+  addSeconds,
+} from 'date-fns';
 
-import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Table';
+import {
+  Table as BaseTable,
+  Head,
+  Row,
+  Body,
+  Cell,
+} from 'components/Table/Table';
 
 import { SECONDS_IN_MONTH } from 'components/Vault/parts/utils';
 import { Vault } from 'components/Vault/types';
@@ -19,9 +30,7 @@ const Timing = () => {
         <Table $expand>
           <Head>
             <Row>
-              <Cell as="th">
-                Entry Date
-              </Cell>
+              <Cell as="th">Entry Date</Cell>
               <Cell $align="center" as="th">
                 Amount
               </Cell>
@@ -37,15 +46,18 @@ const Timing = () => {
             {(vault.entries || []).map((entry) => (
               <Row key={entry.id}>
                 <Cell>
-                  {entry.entryDate ? format(entry.entryDate, 'MMM d, yyyy') : ''}
+                  {entry.entryDate
+                    ? format(entry.entryDate, 'MMM d, yyyy')
+                    : ''}
                 </Cell>
-                <Cell $align="center">
-                  $T {entry.amount}
-                </Cell>
+                <Cell $align="center">$T {entry.amount}</Cell>
                 <Cell $align="center">
                   {getFormattedEntryCycle(entry.currentCycle)}
                 </Cell>
-                <Cell $icon={entry.inZone ? 'claim' : undefined} $align="center">
+                <Cell
+                  $icon={entry.inZone ? 'claim' : undefined}
+                  $align="center"
+                >
                   {entry.inZone ? 'YES' : getVaultClaimableFormatted(vault)}
                 </Cell>
               </Row>
@@ -53,9 +65,7 @@ const Timing = () => {
           </Body>
         </Table>
       </TableWrapper>
-      <Duration>
-        {vault.months} Months
-      </Duration>
+      <Duration>{vault.months} Months</Duration>
     </Wrapper>
   );
 };

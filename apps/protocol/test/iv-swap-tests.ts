@@ -29,7 +29,11 @@ describe("AMM", async () => {
     let bret: Signer;
 
     const expiryDate = (): number =>  Math.floor(Date.now() / 1000) + 9000;
-   
+    
+    before(async () => {
+        await ethers.provider.send("hardhat_reset", []);
+    })
+
     beforeEach(async () => {
       [owner, alan, bret] = await ethers.getSigners();
 

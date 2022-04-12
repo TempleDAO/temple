@@ -19,10 +19,12 @@ import AnalyticsPage from 'components/Pages/Core/Analytics';
 import VaultPage from 'components/Pages/Core/Vault';
 import ProfilePage from 'components/Pages/Core/Profile/Profile';
 import VaultListPage from 'components/Pages/Core/VaultList';
+import HomePage from 'components/Pages/Core/HomePage';
 import { Claim as VaultClaim } from 'components/Pages/Core/VaultPages/Claim';
 import { Stake } from 'components/Pages/Core/VaultPages/Stake';
 import Summary from 'components/Pages/Core/VaultPages/Summary';
 import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
+import { Trade } from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
 
 // Separate Chunks
@@ -67,8 +69,14 @@ ReactDOM.render(
       <BrowserRouter>
         <Routes>
           <>
-            <Route path="/core/*" element={<CoreLayout />}>
-              <Route path="" element={'Home'} />
+            <Route path="/core" element={<PageLayout />}>
+              <Route path="" element={<HomePage />} />
+              {/* Redirect everything else to the home page */}c
+              <Route path="*" element={<Navigate replace to="/" />} />
+            </Route>
+            <Route path="/core/dapp/*" element={<CoreLayout />}>
+              <Route path="" element={<VaultListPage />} />
+
               <Route path="vaults" element={<VaultListPage />} />
               <Route path="vaults/:vaultId/*" element={<VaultPage />}>
                 <Route path="claim" element={<VaultClaim />} />
@@ -77,11 +85,9 @@ ReactDOM.render(
                 <Route path="strategy" element={<Strategy />} />
                 <Route path="timing" element={<Timing />} />
               </Route>
-              <Route path="trade" element={'Trade'} />
+              <Route path="trade" element={<Trade />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
-              {/* Redirect everything else to the home page */}
-              <Route path="*" element={<Navigate replace to="/" />} />
             </Route>
             <Route
               path="/the-temple"

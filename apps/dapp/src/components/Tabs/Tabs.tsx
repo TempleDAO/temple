@@ -1,8 +1,9 @@
-import React, { ReactNode, useState } from 'react';
+import { ReactNode, useState } from 'react';
 import styled, { css } from 'styled-components';
-import { Button, ButtonLabel } from 'components/Button/Button';
+import { ButtonLabel } from 'components/Button/Button';
 import { noop } from 'utils/helpers';
 import { pixelsToRems } from 'styles/mixins';
+import { CoreButton } from 'components/Button/CoreButton';
 
 export interface Tab {
   // the label to use on the Tab
@@ -79,13 +80,18 @@ const TabsStyled = styled.div`
 const TabsWrapper = styled.div`
   display: flex;
   align-items: center;
+  overflow: auto;
+  scrollbar-width: none;
+  ::-webkit-scrollbar {
+    display: none;
+  }
 `;
 
 interface TabStyledProps {
   isActive?: boolean;
 }
 
-const TabStyled = styled(Button)<TabStyledProps>`
+const TabStyled = styled(CoreButton)<TabStyledProps>`
   flex: 1;
   border-radius: 0;
   background: transparent;

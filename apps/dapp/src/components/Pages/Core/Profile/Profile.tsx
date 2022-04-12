@@ -11,8 +11,9 @@ import type { Vault } from 'components/Vault/types';
 import { ProfileVaults } from './components/ProfileVaults';
 import { ProfileLegacyTemple } from './components/ProfileLegacyTemple';
 import { ProfileDiscordData } from './components/ProfileDiscordData';
+import { ProfileTransactions } from './components/ProfileTransactions';
 
-import { tabletAndAbove } from 'styles/breakpoints';
+import { phoneAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
 
 import texture1 from 'assets/images/texture-1.svg';
@@ -24,6 +25,7 @@ import texture5 from 'assets/images/dashboard-4.png';
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
 import { useMockVaultData } from '../Vault';
+import { PageWrapper } from '../utils';
 
 const STAT_CARD_HEIGHT = '5rem';
 const PIE_AREA_HEIGHT = '10rem';
@@ -46,8 +48,8 @@ const ProfilePage = () => {
   }, []);
 
   return (
-    <>
-      <Heading>Profile</Heading>
+    <PageWrapper>
+      <h3>Profile</h3>
       <ProfileOverview>
         <ProfileMeta>
           <StatsCard
@@ -100,7 +102,7 @@ const ProfilePage = () => {
       </ProfileOverview>
 
       <Tabs tabs={tabs} />
-    </>
+    </PageWrapper>
   );
 };
 
@@ -116,7 +118,7 @@ function getTabs(
       label: 'Vaults',
       content: <ProfileVaults isLoading={isLoading} vaults={vaults} />,
     },
-    { label: 'Transactions', content: <Subheading>Transactions</Subheading> },
+    { label: 'Transactions', content: <ProfileTransactions /> },
     { label: 'Discord', content: <ProfileDiscordData /> },
   ];
 
@@ -138,23 +140,13 @@ function getTabs(
   return tabs;
 }
 
-const Heading = styled.h2`
-  ${({ theme }) => theme.typography.h2};
-  margin: 0;
-`;
-
-const Subheading = styled.h3`
-  ${({ theme }) => theme.typography.h4};
-  margin: 0;
-`;
-
 const ProfileOverview = styled.section`
   padding: 0;
   display: grid;
   grid-template-columns: 1fr;
   gap: 2rem;
   margin-bottom: 2rem;
-  ${tabletAndAbove(`
+  ${phoneAndAbove(`
     grid-template-columns: 1fr 1fr;
   `)}
 `;
@@ -164,8 +156,8 @@ const ProfileMeta = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.75rem;
-  padding-right: 0.75rem;
-  ${tabletAndAbove(`
+  ${phoneAndAbove(`
+    padding-right: 0.75rem;
     grid-template-columns: 60% 40%;
     grid-template-rows: 1fr 1fr 2fr;
     .stats-pie {
