@@ -121,7 +121,8 @@ const TimeStone = () => {
     useEffect(() => {
         updateEVMTimeDisplay().catch(console.error)
         getAndSetCurrentBlock().catch(console.error)
-    });
+        setTimeToSet(currentTime);
+    }, [currentTime]);
 
     return (
         <PageWrapper>
