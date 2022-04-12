@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./RebasingERC20.sol";
-import "./Strategy.sol";
 import "./Rational.sol";
+import "./FarmingRevenueManager.sol";
 
 // import "hardhat/console.sol";
 
@@ -46,7 +46,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
     /// @dev main revenue strategy, this vault share changes with it's
     /// temple balance and shareBoostFactor
-    Strategy public primaryStrategy;
+    FarmingRevenueManager public farmingRevenueManager;
 
     /// @dev timestamp (in seconds) of the first period in this vault
     uint256 public firstPeriodStartTimestamp;
@@ -64,13 +64,13 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         string memory _name,
         string memory _symbol,
         IERC20 _templeToken,
-        Strategy _primaryStrategy,
+        Strategy _farmingRevenueManager,
         uint256 _periodDuration,
         uint256 _enterExitWindowDuration,
         Rational memory _shareBoostFactory
     ) EIP712(_name, "1") ERC20(_name, _symbol)  {
         templeToken = _templeToken;
-        primaryStrategy = _primaryStrategy;
+        farmingRevenueManager = _farmingRevenueManager;
         periodDuration = _periodDuration;
         enterExitWindowDuration = _enterExitWindowDuration;
         shareBoostFactor = _shareBoostFactory;
@@ -173,18 +173,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
      * Invariant, a vaults shares in treasuryInvestmentRevenueStrategy should
      * always equal total temple held in vault * boost factor
      */
-    function syncStrategyShares() public {
-        // uint256 targetRevenueShare = templeToken.balanceOf(address(this)) * shareBoostFactor.p / shareBoostFactor.q;
-        // uint currentRevenueShare = treasuryInvestmentRevenueStrategy.balanceOf(address(this));
-
-        // if (targetRevenueShare > currentRevenueShare) { // mint extra revenue/reinvestment shares
-        //     treasuryInvestmentRevenueStrategy.mint(targetRevenueShare - currentRevenueShare);
-        // } else if (targetRevenueShare < currentRevenueShare) { // burn shares to account for withdrawal
-        //     treasuryInvestmentRevenueStrategy.burn(currentRevenueShare - targetRevenueShare);
-        // }
-
-        // TODO(butlerji): Is this invairant reasonable? What happens to frax revenue earned? Should it
-        //                 get re-invested by default until liquidated by a vault
+    function sync(Book[] memory books) public {
+        farmingRevenue.rebalance(address(this), books);
     }
 
     /**
@@ -199,7 +189,9 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
         if (_amount > 0) {
             SafeERC20.safeTransferFrom(templeToken, _account, address(this), _amount);
-            syncStrategyShares();
+            // TODO(butlerji): Ideally, we do this hear, but I don't think we can justify the deposit/withdraw
+            // cost on a per user basis.
+            // farmingRevenue.rebalance(address(this), farmingRevenue.activePositions);
             _mint(_account, _amount);
         }
 
@@ -216,10 +208,14 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         require(inEnterExitWindow(), "Vault: Cannot exit vault when outside of enter/exit window");
 
         totalDepositsTemple -= toSharesAmount(_amount);
+
+        // XXX(butlerji): Check if this should this happen before or after the burn
         SafeERC20.safeTransferFrom(templeToken, address(this), msg.sender, _amount);
 
         if (_amount > 0) {
-            syncStrategyShares();
+            // TODO(butlerji): Ideally, we do this hear, but I don't think we can justify the deposit/withdraw
+            // cost on a per user basis.
+            // farmingRevenue.rebalance(address(this), farmingRevenue.activePositions);
             _burnFrom(_account, _amount);
         }
 
