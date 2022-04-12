@@ -37,7 +37,7 @@ contract FarmingRevenue is Ownable {
 
     event IncreaseShares(address account, uint256 amount);
     event DecreaseShares(address account, uint256 amount);
-    event RevenueEarned(uint256 revenueEarned, lifetimeAccRevenueScaledByShare);
+    event RevenueEarned(uint256 revenueEarned, uint256 lifetimeAccRevenueScaledByShare);
     event RevenueClaimed(address account, uint256 revenueClaimed);
 
     constructor(Position _position) {
@@ -80,10 +80,10 @@ contract FarmingRevenue is Ownable {
         require(shares[account] > 0, "FarmingRevenue: no shares for account, nothing to claim");
 
         uint256 totalScaled = shares[account] * lifetimeAccRevenueScaledByShare;
-        uint256 unclaimedScaled = totalScaled - claimed[account];
+        uint256 unclaimedScaled = totalScaled - claimedByScaled[account];
         claimedByScaled[account] = totalScaled;
 
         position.mint(account, unclaimedScaled / SCALING_FACTOR);
-        emit RevenueClaimed(account, unclaimed);
+        emit RevenueClaimed(account, unclaimedScaled / SCALING_FACTOR);
     }
 }

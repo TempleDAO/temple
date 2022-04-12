@@ -13,35 +13,42 @@ contract FarmingRevenueManager is Ownable {
     mapping(Position => FarmingRevenue) public pools;
     Position[] public activePositions;
 
+    mapping(address => bool) public activeVaults;
+
     /**
      * @notice Account for revenue earned by minting ehares in a given strategy
      */
-    function addRevenue(Position position, uint256 amount) external onlyOwner {
-        if (pools[position] == 0x0) {
-            activePositions.push(book);
-            pools[position] = new FarmingRevenue(book);
-            position.addMinter(pools[position]);
+    function addRevenue(IVault[] memory vaults, Position position, uint256 amount) external onlyOwner {
+        if (address(pools[position]) == address(0x0)) {
+            activePositions.push(position);
+            pools[position] = new FarmingRevenue(position);
+            position.addMinter(address(pools[position]));
         }
-        pools[book].addRevenue(amount);
+
+        rebalance(vaults, position);
+        pools[position].addRevenue(amount);
     }
 
     function claimFor(Position position, address account) external {
-        pools[book].claimFor(account);
+        pools[position].claimFor(account);
     }
 
-    // TODO(butler): make rebalance query the vault for it's expected share
-    function rebalance(address vault, Position[] positions, uint256 targetRevenueShare) onlyVault(vault) external {
+    function rebalance(IVault[] memory vaults, Position position) public {
+        for (uint256 i = 0; i < vaults.length; i++) {
+            require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
 
-        for (uint256 i = 0; i < positions.length; i++) {
-            uint256 currentRevenueShare = pools[positions[i]].sharesOf(msg.sender);
-
-            pools[position].increaseShares(msg.sender, amount);
+            uint256 currentRevenueShare = pools[position].shares(address(vaults[i]));
+            uint256 targetRevenueShare= vaults[i].targetRevenueShare();
 
             if (targetRevenueShare > currentRevenueShare) {
-                pools[positions[i]].increaseShares(vault, targetRevenueShare - currentRevenueShare);
+                pools[position].increaseShares(address(vaults[i]), targetRevenueShare - currentRevenueShare);
             } else if (targetRevenueShare < currentRevenueShare) {
-                pools[positions[i]].decreaseShare(vault, currentRevenueShare - target);
+                pools[position].decreaseShares(address(vaults[i]), currentRevenueShare - targetRevenueShare);
             }
         }
     }
+}
+
+interface IVault {
+    function targetRevenueShare() external view returns (uint256);
 }

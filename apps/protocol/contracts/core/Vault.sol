@@ -167,17 +167,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     /**
-     * @dev public and permisionless, however for correctness within reasonably
-     * time bounds this only needs to be called during a vault deposit/withdrawal
-     *
-     * Invariant, a vaults shares in treasuryInvestmentRevenueStrategy should
-     * always equal total temple held in vault * boost factor
-     */
-    function sync(Book[] memory books) public {
-        farmingRevenue.rebalance(address(this), books);
-    }
-
-    /**
      * @dev shared private implementation of depositFor. Must be private, to prevent
      * security issue where anyone can deposit (and lock) for another account, once
      * said account as approved this contract to pull temple funds.
@@ -189,9 +178,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
         if (_amount > 0) {
             SafeERC20.safeTransferFrom(templeToken, _account, address(this), _amount);
-            // TODO(butlerji): Ideally, we do this hear, but I don't think we can justify the deposit/withdraw
-            // cost on a per user basis.
-            // farmingRevenue.rebalance(address(this), farmingRevenue.activePositions);
             _mint(_account, _amount);
         }
 
@@ -213,9 +199,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         SafeERC20.safeTransferFrom(templeToken, address(this), msg.sender, _amount);
 
         if (_amount > 0) {
-            // TODO(butlerji): Ideally, we do this hear, but I don't think we can justify the deposit/withdraw
-            // cost on a per user basis.
-            // farmingRevenue.rebalance(address(this), farmingRevenue.activePositions);
             _burnFrom(_account, _amount);
         }
 

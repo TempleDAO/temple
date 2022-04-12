@@ -47,6 +47,14 @@ contract Position is Ownable, RebasingERC20 {
     }
 
     /**
+     * @dev decrease reval associated with a strategy
+     */
+    function decreaseReval(uint256 amount) external onlyOwner {
+        reval -= amount;
+        //TODO(butlerji): Emit Event
+    }
+
+    /**
      * @notice Generate new strategy shares
      * 
      * @dev Only callable by minters. Increases a minters share of
@@ -65,6 +73,7 @@ contract Position is Ownable, RebasingERC20 {
     function claim() external {
         uint256 balance = balanceOf(msg.sender);
         _burn(msg.sender, balance);
+        // liquidateToTemple(balance); // TODO(butlerji): collaborator contract we can swap in when we want more automation
         reval -= balance;
         //TODO(butlerji): Event
     }
