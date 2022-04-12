@@ -48,7 +48,12 @@ do
         echo "${split[0]}=${split[1]}" >> $output
     else
         echo "SETTING because '${split[0]}' found already"
-        sed -i '' -r "s/^[#]*\s*${split[0]}=.*/${split[0]}=${split[1]}/" $output
+        # If only macOS used GNU tools
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' -r "s/^[#]*\s*${split[0]}=.*/${split[0]}=${split[1]}/" ${output}
+        else
+            sed -i -r  "s/^[#]*\s*${split[0]}=.*/${split[0]}=${split[1]}/" ${output}
+        fi
     fi
 done < "$input"
 
