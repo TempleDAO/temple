@@ -1,4 +1,4 @@
-import { MutableRefObject, ReactNode } from "react";
+import { MutableRefObject, ReactNode } from 'react';
 
 export type Entry = {
   id: string | number;
@@ -13,6 +13,7 @@ export type Entry = {
 export type Vault = {
   id: string;
   months: number;
+  tvl: number;
   now: Date;
   startDate: Date;
   entries: Entry[];
@@ -42,8 +43,7 @@ export enum MarkerType {
 
 export type VaultPage = 'claim' | 'stake' | 'summary' | 'strategy' | 'timing';
 
-
 export type VaultRef = {
   svgRef: SVGSVGElement | null;
   popupRef: MutableRefObject<any> | null;
-}
+};

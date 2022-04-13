@@ -10,6 +10,7 @@ const vaultData: { [key: string]: Vault } = {
   abc: {
     id: 'abc',
     months: 3,
+    tvl: 12000050,
     now: new Date('6/15/22'),
     startDate: new Date('4/1/22'),
     entries: [
