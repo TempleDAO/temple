@@ -9,7 +9,7 @@ import { theme } from 'styles/theme';
 import { VaultInput } from 'components/Input/VaultInput';
 import { CryptoSelect } from 'components/Input/CryptoSelect';
 
-/* TODO: Update for real data */
+// This dummy data will be replaced by the actual contracts
 const dummyOptions = [
   { value: '$FRAX', label: '$FRAX' },
   { value: '$TEMPLE', label: '$TEMPLE' },
@@ -20,8 +20,7 @@ const dummyOptions = [
   { value: '$FEI', label: '$FEI' },
 ];
 
-const defaultOption = { value: '$FRAX', label: '$FRAX' };
-
+// This dummy data will be replaced by the actual contracts
 const dummyWalletBalances = {
   $FRAX: 4834,
   $TEMPLE: 12834,
@@ -32,6 +31,7 @@ const dummyWalletBalances = {
   $FEI: 945,
 };
 
+// This dummy data will be replaced by the actual contracts
 const dummyCurrencyToTemple = {
   $FRAX: 423,
   $TEMPLE: 343334,
@@ -41,6 +41,8 @@ const dummyCurrencyToTemple = {
   $USDC: 49233,
   $FEI: 9293,
 };
+
+const defaultOption = { value: '$FRAX', label: '$FRAX' };
 
 const VaultClaim = () => {
   const [stakingAmount, setStakingAmount] = useState<number | ''>('');
