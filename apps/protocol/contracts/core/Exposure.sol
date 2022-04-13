@@ -115,6 +115,16 @@ contract Exposure is Ownable, RebasingERC20 {
     function amountPerShare() public view override returns (uint256 p, uint256 q) {
         p = reval;
         q = totalShares;
+
+        // NOTE(butlerji): Assuming this is fairly cheap in gas, as it gets called
+        // often
+        if (p == 0) {
+            p = 1;
+        }
+
+        if (q == 0) {
+            q = p;
+        }
     }
 
     /**

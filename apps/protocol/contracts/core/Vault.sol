@@ -10,9 +10,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./RebasingERC20.sol";
 import "./Rational.sol";
 import "./Exposure.sol";
-import "./IJoiningFee.sol";
+import "./JoiningFee.sol";
 
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 /**
  * @title A temple investment vault, allows deposits and withdrawals on a set period (eg. monthly)
@@ -37,12 +37,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     // solhint-disable-next-line var-name-mixedcase
     bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner, uint256 amount, uint256 deadline, uint256 nonce)");
 
-    /// @dev total temple deposited into vault, this isn't the total 
-    /// temple in the vault (as that is deposits + revenue). A users
-    /// share of a vault is a function of the total temple in the vault
-    /// (that is, their balanceOf(account) / totalSupply * totalTemple)
-    uint256 public totalDepositsTemple;
-
     IERC20 public templeToken;
 
     /// @dev timestamp (in seconds) of the first period in this vault
@@ -58,7 +52,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     Rational public shareBoostFactor;
 
     /// @dev Where to query the fee (per hour) when joining the vault
-    IJoiningFee public joiningFee;
+    JoiningFee public joiningFee;
 
     constructor(
         string memory _name,
@@ -67,7 +61,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         uint256 _periodDuration,
         uint256 _enterExitWindowDuration,
         Rational memory _shareBoostFactory,
-        IJoiningFee _joiningFee
+        JoiningFee _joiningFee
     ) EIP712(_name, "1") ERC20(_name, _symbol)  {
         templeToken = _templeToken;
         periodDuration = _periodDuration;
@@ -142,12 +136,22 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
     function amountPerShare() public view override returns (uint256 p, uint256 q) {
         p = templeToken.balanceOf(address(this));
-        q = totalDepositsTemple;
+        q = totalShares;
+
+        // NOTE(butlerji): Assuming this is fairly cheap in gas, as it gets called
+        // often
+        if (p == 0) {
+            p = 1;
+        }
+
+        if (q == 0) {
+            q = p;
+        }
     }
 
     function inEnterExitWindow() public view returns (bool) {
         uint256 numCylces = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
-        return numCylces * periodDuration + enterExitWindowDuration > block.timestamp;
+        return numCylces * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
     }
 
     /**
@@ -182,13 +186,12 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     function depositFor(address _account, uint256 _amount) private {
         require(inEnterExitWindow(), "Vault: Cannot join vault when outside of enter/exit window");
 
-        totalDepositsTemple += _amount;
-        uint256 numCylces = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
-        uint256 totalJoiningFee = (block.timestamp - (numCylces * periodDuration)) * joiningFee.hourlyJoiningFee() / 60.0;
+        uint256 fee = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));
+        uint256 amountStaked = _amount - fee;
 
         if (_amount > 0) {
             SafeERC20.safeTransferFrom(templeToken, _account, address(this), _amount);
-            _mint(_account, _amount - totalJoiningFee);
+            _mint(_account, amountStaked);
         }
 
         emit Deposit(_account, _amount);
@@ -203,36 +206,12 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     function withdrawFor(address _account, uint256 _amount) private {
         require(inEnterExitWindow(), "Vault: Cannot exit vault when outside of enter/exit window");
 
-        totalDepositsTemple -= toSharesAmount(_amount);
-
-        // XXX(butlerji): Check if this should this happen before or after the burn
-        SafeERC20.safeTransferFrom(templeToken, address(this), msg.sender, _amount);
-
         if (_amount > 0) {
-            _burnFrom(_account, _amount);
+             _burn(_account, _amount);
         }
+        SafeERC20.safeTransfer(templeToken, msg.sender, _amount);
 
         emit Withdraw(_account, _amount);
-    }
-
-    /**
-     * @dev Destroys `amount` tokens from `account`, deducting from the caller's
-     * allowance.
-     *
-     * See {ERC20-_burn} and {ERC20-allowance}.
-     *
-     * Requirements:
-     *
-     * - the caller must have allowance for ``accounts``'s tokens of at least
-     * `amount`.
-     */
-    function _burnFrom(address account, uint256 amount) private {
-        uint256 currentAllowance = allowance(account, _msgSender());
-        require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
-        unchecked {
-            _approve(account, _msgSender(), currentAllowance - amount);
-        }
-        _burn(account, amount);
     }
 
     event Deposit(address account, uint256 amount);
