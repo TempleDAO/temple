@@ -2,10 +2,20 @@ import { ethers } from "hardhat";
 import { Signer } from "ethers";
 import { expect } from "chai";
 
-import { blockTimestamp, fromAtto, mineNBlocks, shouldThrow, toAtto } from "./helpers";
+import { blockTimestamp, mineNBlocks, shouldThrow, toAtto } from "./helpers";
 
-import { AcceleratedExitQueue, AcceleratedExitQueue__factory, ExitQueue, ExitQueue__factory, OGTemple, OGTemple__factory, TempleERC20Token, TempleERC20Token__factory, TempleStaking, TempleStaking__factory } from "../typechain";
-import { exit } from "process";
+import {
+  AcceleratedExitQueue,
+  AcceleratedExitQueue__factory,
+  ExitQueue,
+  ExitQueue__factory,
+  OGTemple,
+  OGTemple__factory,
+  TempleERC20Token,
+  TempleERC20Token__factory,
+  TempleStaking,
+  TempleStaking__factory 
+} from "../typechain";
 
 describe("Accelerated Exit Queue", async () => {
   let templeToken: TempleERC20Token;

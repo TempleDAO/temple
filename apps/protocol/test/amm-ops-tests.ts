@@ -6,8 +6,8 @@ import { FakeERC20, FakeERC20__factory,
   TempleFraxAMMRouter, TempleFraxAMMRouter__factory, 
   TempleTreasury, TempleTreasury__factory, 
   TempleUniswapV2Pair, TempleUniswapV2Pair__factory,
-  TempleFraxAMMOps, TempleFraxAMMOps__factory,
-  TreasuryManagementProxy, TreasuryManagementProxy__factory } from "../typechain";
+  TempleFraxAMMOps, TempleFraxAMMOps__factory
+} from "../typechain";
 import { toAtto, shouldThrow } from "./helpers";
 
 describe("AMM Ops", async () => {
@@ -20,7 +20,6 @@ describe("AMM Ops", async () => {
   let pair: TempleUniswapV2Pair;
   let templeRouter: TempleFraxAMMRouter;
   let ammOps: TempleFraxAMMOps;
-  let treasuryManagementProxy: TreasuryManagementProxy;
 
   const expiryDate = (): number =>  Math.floor(Date.now() / 1000) + 900;
 
@@ -70,17 +69,11 @@ describe("AMM Ops", async () => {
     // Make temple router open access (useful state for most tests)
     await templeRouter.toggleOpenAccess();
 
-    treasuryManagementProxy = await new TreasuryManagementProxy__factory(owner).deploy(
-      await owner.getAddress(), 
-      treasury.address
-    );
-    await treasury.transferOwnership(treasuryManagementProxy.address);
-
     // deploy amm ops
     ammOps = await new TempleFraxAMMOps__factory(owner).deploy(
       templeToken.address,
       templeRouter.address,
-      treasuryManagementProxy.address,
+      treasury.address,
       fraxToken.address,
       treasury.address,
       pair.address
@@ -149,14 +142,4 @@ describe("AMM Ops", async () => {
     await shouldThrow(ammOps.connect(alan).deepenLiquidity(toAtto(100), toAtto(100), 1, 1), /only owner or manager/);
     await shouldThrow(ammOps.connect(alan).removeLiquidity(toAtto(100), toAtto(100), 1), /only owner or manager/);
   });
-
-  it("can raise treasury intrinsic value", async () => {
-    const treasuryFraxBalance = await fraxToken.balanceOf(treasury.address);
-    const ammOpsFraxBalance = await fraxToken.balanceOf(ammOps.address);
-
-    await ammOps.connect(owner).raiseIV(100);
-    expect(await fraxToken.balanceOf(treasury.address)).to.gt(treasuryFraxBalance);
-    expect(await fraxToken.balanceOf(ammOps.address)).to.equal(ammOpsFraxBalance.sub(100));
-  });
-
 });
