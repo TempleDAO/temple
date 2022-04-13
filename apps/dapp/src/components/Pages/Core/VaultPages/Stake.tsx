@@ -1,3 +1,8 @@
-export const Stake = () => <div>
-  <h3>Stake</h3>
-</div>
+import VaultContent from 'components/Vault/VaultContent';
+import VaultStake from 'components/Vault/VaultStake';
+
+export const Stake = () => (
+  <VaultContent>
+    <VaultStake />
+  </VaultContent>
+);
