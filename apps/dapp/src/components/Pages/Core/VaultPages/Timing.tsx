@@ -4,7 +4,7 @@ import { formatDistance, format, differenceInSeconds, addSeconds } from 'date-fn
 import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Table';
 
 import { SECONDS_IN_MONTH } from 'components/Vault/desktop-parts/utils';
-import { Vault, Entry } from 'components/Vault/types';
+import { Vault } from 'components/Vault/types';
 
 import { pixelsToRems } from 'styles/mixins';
 import useVaultContext from './useVaultContext';
