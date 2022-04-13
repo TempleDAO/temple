@@ -20,8 +20,9 @@ import {
   TreasuryManagementProxy__factory,
   AcceleratedExitQueue,
   AcceleratedExitQueue__factory,
-  TempleIVSwap,
   TempleIVSwap__factory,
+  JoiningFee__factory,
+  Vault__factory,
 } from '../../typechain';
 
 function toAtto(n: number) {
@@ -252,14 +253,21 @@ async function main() {
   );
   await stablecToken.mint(templeIVSwap.address, toAtto(1000000));
 
-  // create and initialise contract that allows a permissionless
-  // swap @ IV
-  const templeIVSwap = await new TempleIVSwap__factory(owner).deploy(
-    templeToken.address,
-    stablecToken.address,
-    {temple: 100, frax: 65}, /* iv */
+  // create a temple vault (for testing)
+  // NOTE(butlerji): this is an example only, expect FE team to create whatever they need
+  const joiningFee = await new JoiningFee__factory(owner).deploy(
+    toAtto(1),
   );
-  await stablecToken.mint(templeIVSwap.address, toAtto(1000000));
+
+  const vault = await new Vault__factory(owner).deploy(
+    "Temple 5min Vault",
+    "TV_5Min",
+    templeToken.address,
+    60 * 5,
+    60,
+    { p: 1, q: 1},
+    joiningFee.address
+  )
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
@@ -280,8 +288,7 @@ async function main() {
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
 
     TEMPLE_IV_SWAP: templeIVSwap.address,
-
-    TEMPLE_IV_SWAP: templeIVSwap.address,
+    TEMPLE_VAULT_5_MIN: vault.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys
