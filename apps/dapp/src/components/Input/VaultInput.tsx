@@ -2,94 +2,51 @@ import React, { InputHTMLAttributes, KeyboardEvent } from 'react';
 import styled, { css } from 'styled-components';
 import { tabletAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
-import {
-  InputSelect,
-  Option,
-  SelectTempleDaoOptions,
-} from '../InputSelect/InputSelect';
 
 interface SizeProps {
   small?: boolean;
 }
 
-interface CryptoSelector {
-  kind: 'select';
-  // A selector for the crypto, must provide onCryptoChange
-  cryptoOptions: SelectTempleDaoOptions;
-  defaultValue?: Option;
-  // use to limit the number of elements shown in the selector at anytime
-  maxSelectorItems?: number;
-
-  // Callback for cryptoSelector value change
-  onCryptoChange?(option: Option): void;
+interface InputHintProps {
+  hasAction: boolean;
 }
 
-interface CryptoValue {
-  kind: 'value';
-  value: string;
-}
-
-export interface InputProps
+export interface VaultInputProps
   extends SizeProps,
     InputHTMLAttributes<HTMLInputElement> {
-  // extra information for the input
-  hint?: string;
-  // options for the crypto in the input
-  crypto?: CryptoSelector | CryptoValue;
+  // ticker symbol used when displaying the value
+  tickerSymbol?: string;
   // set our own type=number since we need type to be string
   // for proper display and input masking
   isNumber?: boolean;
-
+  // extra information for the input
+  hint?: string;
+  onHintClick?(): void;
   // Callback for input value change
   handleChange?(value: number): void;
-
-  onHintClick?(): void;
-
-  // Sets styling for the two inputs that are paired
-  // in the buy/sell amm
-  pairTop?: boolean;
-  pairBottom?: boolean;
 }
 
 /**
- * Primary UI component for user interaction
+ * UI component for use with vault
  */
-export const Input = ({
+export const VaultInput = ({
   handleChange,
   onHintClick,
   hint,
-  crypto,
+  tickerSymbol,
   isNumber,
   type,
   value,
   disabled,
   small,
-  pairTop,
-  pairBottom,
   ...props
-}: InputProps) => {
-  const renderCrypto = () => {
-    if (!crypto) {
+}: VaultInputProps) => {
+  const rendertTickerSymbol = () => {
+    if (!tickerSymbol) {
       return null;
     }
 
-    if (crypto.kind === 'value') {
-      return <Ticker>{crypto.value}</Ticker>;
-    }
-    if (crypto.kind === 'select') {
-      const { cryptoOptions, defaultValue, onCryptoChange, maxSelectorItems } =
-        crypto;
-      return (
-        <InputSelect
-          options={cryptoOptions}
-          defaultValue={defaultValue}
-          onChange={onCryptoChange}
-          maxMenuItems={maxSelectorItems}
-        />
-      );
-    }
-
-    return null;
+    return <Ticker>{tickerSymbol}</Ticker>;
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,12 +86,9 @@ export const Input = ({
   return (
     <InputWrapper
       isDisabled={disabled}
-      small={small}
-      pairTop={pairTop}
-      pairBottom={pairBottom}
     >
       <InputTokenWrapper>
-        {renderCrypto()}
+        {rendertTickerSymbol()}
         {hint && (
           <InputHint
             hasAction={!!onHintClick}
@@ -147,7 +101,6 @@ export const Input = ({
         )}
       </InputTokenWrapper>
       <InputStyled
-        small={small}
         onChange={handleInputChange}
         onKeyPress={isNumber ? numbersOnly : undefined}
         type={type}
@@ -161,9 +114,6 @@ export const Input = ({
 
 interface InputWrapperProps extends SizeProps {
   isDisabled?: boolean;
-  /* TODO: refactor this to a Pair/Swap Component */
-  pairTop?: boolean;
-  pairBottom?: boolean;
 }
 
 export const InputWrapper = styled.div<InputWrapperProps>`
@@ -177,23 +127,7 @@ export const InputWrapper = styled.div<InputWrapperProps>`
   // width will be manage by layout case by case
   width: 100%;
   border-radius: 1rem;
-  ${(props) => {
-    const margin = props.small ? '-13px' : '-18px';
-    if (props.pairTop) {
-      return css`
-        margin-bottom: ${margin};
-        color: pink;
-      `;
-    }
-    if (props.pairBottom) {
-      return css`
-        margin-top: ${margin};
-        color: blue;
-      `;
-    }
-  }}
 
-  
   ${tabletAndAbove(`
     padding: 1rem 1.5rem /* 12/16 */;  
   `)}
@@ -213,25 +147,7 @@ const InputTokenWrapper = styled.div`
   align-items: center;
   justify-content: space-around;
   width: 9.25rem /* 148/16 */;
-`;
-
-interface InputHintProps {
-  hasAction: boolean;
-}
-
-export const InputHint = styled.small<InputHintProps>`
-  color: ${theme.palette.brandLight};
-  font-size: 10px;
-  text-align: center;
-  text-transform: uppercase;
-  ${(props) =>
-    props.hasAction &&
-    css`
-      background-color: ${(props) => props.theme.palette.brand50};
-      padding: 0.0625rem /* 1/16 */ 0.25rem /* 4/16 */;
-      border-radius: 0.25em;
-      cursor: pointer;
-    `}
+  padding: 0.4rem 0 0;
 `;
 
 export const InputStyled = styled.input<SizeProps>`
@@ -242,10 +158,12 @@ export const InputStyled = styled.input<SizeProps>`
   ${(props) => props.theme.typography.h3};
   color: ${theme.palette.brandLight};
   outline: none;
+  font-size: 3rem;
   width: 100%;
   height: 100%;
   text-align: right;
   padding-left: 1.5rem;
+  padding-bottom: .5rem;
   ${({ small }) => small && `font-size: 1.5rem`};
 
   // remove input number controls ^ v
@@ -258,8 +176,24 @@ export const InputStyled = styled.input<SizeProps>`
   appearance: textfield;
 `;
 
+export const InputHint = styled.small<InputHintProps>`
+  color: ${theme.palette.brandLight};
+  font-size: 12px;
+  text-align: center;
+  text-transform: uppercase;
+  ${(props) =>
+    props.hasAction &&
+    css`
+      background-color: ${(props) => props.theme.palette.brand50};
+      padding: 0.0625rem /* 1/16 */ 0.25rem /* 4/16 */;
+      border-radius: 0.25em;
+      cursor: pointer;
+    `}
+`;
+
 const Ticker = styled.p`
   margin: 0;
   color: ${theme.palette.brandLight};
-  font-weight: bold;
+  font-size: 2rem;
+  width: 100%;
 `;

@@ -50,7 +50,7 @@ export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
           />
           <Timeline data={vault} onMarkerClick={markerClick} />
           <InnerRing selected={selectedNav} />
-          <ForeignObject x="239.5" y="239.5" width="520" height="520">
+          <ForeignObject x="241.5" y="239.5" width="520" height="520">
             <Content>{children}</Content>
           </ForeignObject>
           <Definitions />
