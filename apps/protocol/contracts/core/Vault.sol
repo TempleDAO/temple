@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./RebasingERC20.sol";
 import "./Rational.sol";
 import "./Exposure.sol";
+import "./IJoiningFee.sol";
 
 // import "hardhat/console.sol";
 
@@ -56,18 +57,23 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     /// @dev how many shares in the various strategies does this vault get based on temple deposited
     Rational public shareBoostFactor;
 
+    /// @dev Where to query the fee (per hour) when joining the vault
+    IJoiningFee public joiningFee;
+
     constructor(
         string memory _name,
         string memory _symbol,
         IERC20 _templeToken,
         uint256 _periodDuration,
         uint256 _enterExitWindowDuration,
-        Rational memory _shareBoostFactory
+        Rational memory _shareBoostFactory,
+        IJoiningFee _joiningFee
     ) EIP712(_name, "1") ERC20(_name, _symbol)  {
         templeToken = _templeToken;
         periodDuration = _periodDuration;
         enterExitWindowDuration = _enterExitWindowDuration;
         shareBoostFactor = _shareBoostFactory;
+        joiningFee = _joiningFee;
 
         firstPeriodStartTimestamp = block.timestamp;
     }
@@ -177,10 +183,12 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         require(inEnterExitWindow(), "Vault: Cannot join vault when outside of enter/exit window");
 
         totalDepositsTemple += _amount;
+        uint256 numCylces = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
+        uint256 totalJoiningFee = (block.timestamp - (numCylces * periodDuration)) * joiningFee.hourlyJoiningFee() / 60.0;
 
         if (_amount > 0) {
             SafeERC20.safeTransferFrom(templeToken, _account, address(this), _amount);
-            _mint(_account, _amount);
+            _mint(_account, _amount - totalJoiningFee);
         }
 
         emit Deposit(_account, _amount);

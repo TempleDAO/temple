@@ -7,16 +7,21 @@ import "./Exposure.sol";
 import "./TreasuryFarmingRevenue.sol";
 import "./Vault.sol";
 import "./Rational.sol";
+import "./IJoiningFee.sol";
 
 /**
  * @title Manage all active treasury farmining revenue.
  */
-contract OpsManager is Ownable {
+contract OpsManager is Ownable, IJoiningFee {
     mapping(Exposure => TreasuryFarmingRevenue) public pools;
     Exposure[] public activeExposures;
     mapping(address => bool) public activeVaults;
 
     IERC20 public templeToken;
+
+    /// @dev fee per hour charged for all vaults during the entry/exit window
+    /// designed to incentives joining a vault early in the period
+    uint256 public override hourlyJoiningFee = 0;
 
     constructor(IERC20 _templeToken) {
         templeToken = _templeToken;
@@ -50,7 +55,7 @@ contract OpsManager is Ownable {
         uint256 enterExitWindowDuration,
         Rational memory shareBoostFactory
     ) external onlyOwner {
-        Vault vault = new Vault(name, symbol, templeToken, periodDuration, enterExitWindowDuration, shareBoostFactory);
+        Vault vault = new Vault(name, symbol, templeToken, periodDuration, enterExitWindowDuration, shareBoostFactory, IJoiningFee(this));
         activeVaults[address(vault)] = true;
     }
 
@@ -109,6 +114,10 @@ contract OpsManager is Ownable {
                 vaults[i].claim(exposures[j]);
             }
         }
+    }
+
+    function setHourlyJoiningFee(uint256 fee) external onlyOwner {
+        hourlyJoiningFee = fee;
     }
 
     /**
