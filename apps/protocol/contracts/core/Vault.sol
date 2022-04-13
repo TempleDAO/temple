@@ -140,9 +140,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     function inEnterExitWindow() public view returns (bool) {
-        // TODO(butlerji): Implement - there is a lot of chat on how to best do
-        // this so left as a stub for now
-        return true;
+        uint256 numCylces = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
+        return numCylces * periodDuration + enterExitWindowDuration > block.timestamp;
     }
 
     /**
