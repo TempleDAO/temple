@@ -1,6 +1,8 @@
-//@ts-nocheck
-import React, { FC } from 'react';
+import { FC } from 'react';
 import styled from 'styled-components';
+
+import RegisterToken from 'components/RegisterToken/RegisterToken';
+import { TEMPLE_TOKEN } from 'constants/tokens';
 import { DataCard } from 'components/DataCard/DataCard';
 import { formatNumberWithCommas } from 'utils/formatter';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
@@ -118,6 +120,16 @@ export const Profile: FC = () => {
         </Flex>
         <Flex layout={{ kind: 'item', smallMargin: true }}>
           <DataCard title={`FAITH SHARE`} data={`${faith.share}%`} small />
+        </Flex>
+      </Flex>
+      <Flex
+        layout={{
+          kind: 'container',
+          direction: 'row',
+        }}
+      >
+        <Flex layout={{ kind: 'item' }}>
+          <RegisterToken token={TEMPLE_TOKEN} >&nbsp;Add Temple token</RegisterToken>
         </Flex>
       </Flex>
     </Container>
