@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./RebasingERC20.sol";
 import "./Rational.sol";
-import "./Position.sol";
+import "./Exposure.sol";
 
 // import "hardhat/console.sol";
 
@@ -129,9 +129,9 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         return templeToken.balanceOf(address(this)) * shareBoostFactor.p / shareBoostFactor.q;
     }
 
-    function claim(Position position) external {
+    function claim(Exposure exposure) external {
         require(inEnterExitWindow(), "Vault: Cannot claim revenue when outside of enter/exit window");
-        position.claim();
+        exposure.claim();
     }
 
     function amountPerShare() public view override returns (uint256 p, uint256 q) {
@@ -139,7 +139,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         q = totalDepositsTemple;
     }
 
-    function inEnterExitWindow() public returns (bool) {
+    function inEnterExitWindow() public view returns (bool) {
         // TODO(butlerji): Implement - there is a lot of chat on how to best do
         // this so left as a stub for now
         return true;

@@ -7,13 +7,12 @@ import "./RebasingERC20.sol";
 import "./Rational.sol";
 
 /**
- * @title Captures the position an account has taken in a given token
+ * @title Captures our exposure to a particular asset
  *
- * @dev A position is always valued in one token, and any increase
- * in position due to trading activities is evenly distributed among all
- * token holders
+ * @dev Any given exposure is split among many holders, as the exposure changes
+ * holders get rebased accordingly.
  */
-contract Position is Ownable, RebasingERC20 {
+contract Exposure is Ownable, RebasingERC20 {
     /// @dev The token which this particular strategy is
     /// accounted for in unused other than for information purposes
     IERC20 public revalToken;

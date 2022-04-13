@@ -4,21 +4,21 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./Position.sol";
+import "./Exposure.sol";
 
 /**
- * @title Account for primary farming revenue earned
+ * @title Account for revenue earned from farming temple's Treasury
  *
  * @dev Each instance of this contract accounts for unclaimed revenue
- * in a specific token. This is captured via Books (where revenue earned
- * by a specific token can compound and be correctly accounted for to 
- * the appropriate vault)
+ * in a specific token. Once claimed, it's accounted for in 
+ * Exposure. Exposure is our concept for revenue claimed and compounding
+ * in assets the temple auto farming strategy.
  */
-contract FarmingRevenue is Ownable {
+contract TreasuryFarmingRevenue is Ownable {
     /// @dev When revenue is claimed, it's accumulated into
-    /// a position. A position is a collection of strategies that is ultimately
+    /// an exposure. An exposure is a collection of strategies that is ultimately
     /// accounted for in a given token type (eg. FXS, CVX, Frax etc)
-    Position position;
+    Exposure public exposure;
 
     /// @notice total shares held by any account
     mapping(address => uint256) public shares;
@@ -35,13 +35,8 @@ contract FarmingRevenue is Ownable {
     /// @dev factor by which lifetimeAccRevenueScaledByShare is scaled
     uint256 constant SCALING_FACTOR = 1e18;
 
-    event IncreaseShares(address account, uint256 amount);
-    event DecreaseShares(address account, uint256 amount);
-    event RevenueEarned(uint256 revenueEarned, uint256 lifetimeAccRevenueScaledByShare);
-    event RevenueClaimed(address account, uint256 revenueClaimed);
-
-    constructor(Position _position) {
-        position = _position;
+    constructor(Exposure _exposure) {
+        exposure = _exposure;
     }
 
     /**
@@ -86,7 +81,12 @@ contract FarmingRevenue is Ownable {
         uint256 unclaimedScaled = totalScaled - claimedByScaled[account];
         claimedByScaled[account] = totalScaled;
 
-        position.mint(account, unclaimedScaled / SCALING_FACTOR);
+        exposure.mint(account, unclaimedScaled / SCALING_FACTOR);
         emit RevenueClaimed(account, unclaimedScaled / SCALING_FACTOR);
     }
+
+    event IncreaseShares(address account, uint256 amount);
+    event DecreaseShares(address account, uint256 amount);
+    event RevenueEarned(uint256 revenueEarned, uint256 lifetimeAccRevenueScaledByShare);
+    event RevenueClaimed(address account, uint256 revenueClaimed);
 }
