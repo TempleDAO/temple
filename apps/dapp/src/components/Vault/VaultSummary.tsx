@@ -6,7 +6,6 @@ import Tooltip from 'components/Tooltip/Tooltip';
 
 import { Vault } from './types';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { Header } from 'styles/vault';
 import { formatNumberWithCommas } from 'utils/formatter';
 
 const VaultSummary: React.FC<{ vault: Vault }> = ({ vault }) => {
@@ -19,7 +18,6 @@ const VaultSummary: React.FC<{ vault: Vault }> = ({ vault }) => {
 
   return (
     <>
-      <Header>{vault.id}</Header>
       <InfoWrapper>
         <Duration>{`${vault.months} MONTH${vault.months > 1 && 'S'}`}</Duration>
         <VaultInfo
@@ -52,7 +50,7 @@ const InfoWrapper = styled.div`
   align-ites: center;
   justify-content: center;
   flex-direction: column;
-  height: 70%;
+  height: 100%;
 `;
 
 const Duration = styled.h3`
