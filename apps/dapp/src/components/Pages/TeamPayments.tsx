@@ -31,7 +31,7 @@ type TeamPaymentsState = ReducerState & {
   allocationFixed: number;
   claimableFixed: number;
   remainingAllocationFixed: number;
-  setSelectedEpoch: React.Dispatch<SetStateAction<number>>;
+  setSelectedEpoch: React.Dispatch<SetStateAction<TEAM_PAYMENTS_EPOCHS>>;
   onCollectTeamFixedPayment(): void;
 };
 
@@ -67,6 +67,7 @@ const TeamPayments = () => {
   const dropdownOptions = [
     { value: TEAM_PAYMENTS_EPOCHS.R1, label: 'Epoch 1' },
     { value: TEAM_PAYMENTS_EPOCHS.R2, label: 'Epoch 2' },
+    { value: TEAM_PAYMENTS_EPOCHS.R3, label: 'Epoch 3' },
   ];
 
   return (
@@ -226,9 +227,7 @@ function useTempleTeamPayments(): TeamPaymentsState {
   async function onCollectTeamFixedPayment() {
     dispatch({ type: 'collect-fixed' });
 
-    const tx = await collectTempleTeamPayment(
-      selectedEpoch
-    );
+    const tx = await collectTempleTeamPayment(selectedEpoch);
 
     if (tx) {
       setClaimed(!claimed);
