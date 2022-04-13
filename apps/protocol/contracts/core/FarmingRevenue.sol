@@ -53,9 +53,12 @@ contract FarmingRevenue is Ownable {
     }
 
     function increaseShares(address account, uint256 amount) onlyOwner external {
+        claimFor(account);
+
         shares[account] += amount;
         totalShares += amount;
         claimedByScaled[account] += amount * lifetimeAccRevenueScaledByShare;
+
         emit IncreaseShares(account, amount);
     }
 
@@ -64,20 +67,20 @@ contract FarmingRevenue is Ownable {
      */
     function decreaseShares(address account, uint256 amount) onlyOwner external {
         claimFor(account);
+
         shares[account] -= amount;
         totalShares -= amount;
+        claimedByScaled[account] -= amount * lifetimeAccRevenueScaledByShare;
 
         emit DecreaseShares(account, amount);
     }
 
-    /// @notice Claim revenue for a given token
-    function claim() public {     
-        claimFor(msg.sender);
-    }
-
     /// @dev Claim revenue for a given (account,token)
     function claimFor(address account) public {
-        require(shares[account] > 0, "FarmingRevenue: no shares for account, nothing to claim");
+        if (shares[account] > 0) {
+            // FarmingRevenue: no shares for account, nothing to claim
+            return;
+        }
 
         uint256 totalScaled = shares[account] * lifetimeAccRevenueScaledByShare;
         uint256 unclaimedScaled = totalScaled - claimedByScaled[account];

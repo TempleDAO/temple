@@ -25,6 +25,13 @@ contract Position is Ownable, RebasingERC20 {
     /// in the temple core, only vaults should hold shares in a position
     mapping(address => bool) public canMint;
 
+    /// @dev actor that can add/remove minters
+    address public canManageMinters;
+
+    /// @dev if set, automatically liquidates position and transfers temple
+    /// minted as a result to the appropriate vault
+    ILiquidator public liquidator;
+
     /**
      * @dev Sets the values for {name} and {symbol}.
      *
@@ -34,8 +41,9 @@ contract Position is Ownable, RebasingERC20 {
      * All two of these values are immutable: they can only be set once during
      * construction.
      */
-    constructor(string memory _name, string memory _symbol, ERC20 _revalToken) ERC20(_name, _symbol) { 
+    constructor(string memory _name, string memory _symbol, ERC20 _revalToken, address _canManageMinters) ERC20(_name, _symbol) { 
         revalToken = _revalToken;
+        canManageMinters = _canManageMinters;
     }
 
     /**
@@ -51,6 +59,29 @@ contract Position is Ownable, RebasingERC20 {
      */
     function decreaseReval(uint256 amount) external onlyOwner {
         reval -= amount;
+        //TODO(butlerji): Emit Event
+    }
+
+    /**
+     * @dev set actor which automatically liquidates any claimed position into temple
+     */
+    function setLiqidator(ILiquidator _liquidator) external onlyOwner {
+        liquidator = _liquidator;
+    }
+
+    /**
+     * @dev add a minter to a strategy
+     */
+    function addMinter(address account) external onlyMinterManager {
+        canMint[account] = true;
+        //TODO(butlerji): Emit Event
+    }
+
+    /**
+     * @dev remove a minter from a strategy
+     */
+    function removeMinter(address account) external onlyMinterManager {
+        canMint[account] = false;
         //TODO(butlerji): Emit Event
     }
 
@@ -73,25 +104,13 @@ contract Position is Ownable, RebasingERC20 {
     function claim() external {
         uint256 balance = balanceOf(msg.sender);
         _burn(msg.sender, balance);
-        // liquidateToTemple(balance); // TODO(butlerji): collaborator contract we can swap in when we want more automation
         reval -= balance;
+
+        if (address(liquidator) != address(0)) {
+            liquidator.toTemple(balance, msg.sender);
+        }
+
         //TODO(butlerji): Event
-    }
-
-    /**
-     * @dev add a minter to a strategy
-     */
-    function addMinter(address account) external onlyOwner {
-        canMint[account] = true;
-        //TODO(butlerji): Emit Event
-    }
-
-    /**
-     * @dev remove a minter from a strategy
-     */
-    function removeMinter(address account) external onlyOwner {
-        canMint[account] = false;
-        //TODO(butlerji): Emit Event
     }
 
     function amountPerShare() public view override returns (uint256 p, uint256 q) {
@@ -106,4 +125,16 @@ contract Position is Ownable, RebasingERC20 {
         require(canMint[msg.sender], "Strategy: caller is not a vault");
         _;
     }
+
+    /**
+     * Throws if called by an actor that cannot manage minters
+     */
+    modifier onlyMinterManager() {
+        require(msg.sender == canManageMinters || msg.sender == owner(), "Strategy: caller is not a minter or owner");
+        _;
+    }
+}
+
+interface ILiquidator {
+    function toTemple(uint256 amount, address toAccount) external view returns (uint256);
 }

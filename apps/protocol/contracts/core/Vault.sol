@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./RebasingERC20.sol";
 import "./Rational.sol";
-import "./FarmingRevenueManager.sol";
+import "./Position.sol";
 
 // import "hardhat/console.sol";
 
@@ -44,10 +44,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
     IERC20 public templeToken;
 
-    /// @dev main revenue strategy, this vault share changes with it's
-    /// temple balance and shareBoostFactor
-    FarmingRevenueManager public farmingRevenueManager;
-
     /// @dev timestamp (in seconds) of the first period in this vault
     uint256 public firstPeriodStartTimestamp;
 
@@ -64,13 +60,11 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         string memory _name,
         string memory _symbol,
         IERC20 _templeToken,
-        Strategy _farmingRevenueManager,
         uint256 _periodDuration,
         uint256 _enterExitWindowDuration,
         Rational memory _shareBoostFactory
     ) EIP712(_name, "1") ERC20(_name, _symbol)  {
         templeToken = _templeToken;
-        farmingRevenueManager = _farmingRevenueManager;
         periodDuration = _periodDuration;
         enterExitWindowDuration = _enterExitWindowDuration;
         shareBoostFactor = _shareBoostFactory;
@@ -131,6 +125,26 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         withdrawFor(owner, amount);
     }
 
+    function targetRevenueShare() external view returns (uint256) {
+        return templeToken.balanceOf(address(this)) * shareBoostFactor.p / shareBoostFactor.q;
+    }
+
+    function claim(Position position) external {
+        require(inEnterExitWindow(), "Vault: Cannot claim revenue when outside of enter/exit window");
+        position.claim();
+    }
+
+    function amountPerShare() public view override returns (uint256 p, uint256 q) {
+        p = templeToken.balanceOf(address(this));
+        q = totalDepositsTemple;
+    }
+
+    function inEnterExitWindow() public returns (bool) {
+        // TODO(butlerji): Implement - there is a lot of chat on how to best do
+        // this so left as a stub for now
+        return true;
+    }
+
     /**
     * See {IERC20Permit-DOMAIN_SEPARATOR}.
     */
@@ -153,17 +167,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         Counters.Counter storage nonce = _nonces[owner];
         current = nonce.current();
         nonce.increment();
-    }
-
-    function amountPerShare() public view override returns (uint256 p, uint256 q) {
-        p = templeToken.balanceOf(address(this));
-        q = totalDepositsTemple;
-    }
-
-    function inEnterExitWindow() public returns (bool) {
-        // TODO(butlerji): Implement - there is a lot of chat on how to best do
-        // this so left as a stub for now
-        return true;
     }
 
     /**
