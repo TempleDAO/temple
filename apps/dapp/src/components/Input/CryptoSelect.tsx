@@ -20,7 +20,6 @@ export interface CryptoSelectProps {
 /**
  * UI component for selecting currency to deposit/stake
  */
-/* FIXME(typing): Get the props right `& any` */
 export const CryptoSelect = (props: CryptoSelectProps) => {
   const selectHeight = '3rem';
   return (
