@@ -8,7 +8,8 @@
       "tools/*"
     ],
     "nohoist": [
-      "**/hardhat"
+      "**/hardhat",
+      "@temple/protocol/**"
     ]
   },
   "scripts": {
