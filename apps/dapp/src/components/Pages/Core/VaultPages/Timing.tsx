@@ -1,10 +1,5 @@
 import styled from 'styled-components';
-import {
-  formatDistance,
-  format,
-  differenceInSeconds,
-  addSeconds,
-} from 'date-fns';
+import { formatDistance, format, addSeconds } from 'date-fns';
 
 import {
   Table as BaseTable,
@@ -19,7 +14,6 @@ import { Vault } from 'components/Vault/types';
 
 import { pixelsToRems } from 'styles/mixins';
 import useVaultContext from './useVaultContext';
-import { Duration, Wrapper } from './styles';
 
 const Timing = () => {
   const vault = useVaultContext();
@@ -93,6 +87,15 @@ const getFormattedEntryCycle = (cycleNumber = 0) => {
 
 const COLOR_HEADER_SHADOW = '0px 4px 7.48px rgba(222, 92, 6, 0.5)';
 
+const Wrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  padding: calc(${pixelsToRems(10)}rem + 1.25rem) 1.25rem 1rem;
+  width: 80%;
+  margin: 0 auto;
+  height: 100%;
+`;
+
 const TableWrapper = styled.div`
   height: 18.1875rem; /* 291/16 */
 `;
@@ -109,6 +112,18 @@ const Header = styled.h2`
   text-shadow: ${COLOR_HEADER_SHADOW};
   color: ${({ theme }) => theme.palette.brandLight};
   font-weight: 300;
+`;
+
+const Duration = styled.span`
+  display: flex;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9375rem; /* 15/16 */
+  line-height: 1.1875rem;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 0.25em;
+  color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 export default Timing;
