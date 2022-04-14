@@ -186,7 +186,7 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
         if (priceBelowIV) {
             require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
             templeToken.burnFrom(msg.sender, amountIn);
-            SafeERC20.safeTransfer(fraxToken, to, amountOut);
+            SafeERC20.safeTransfer(feiToken, to, amountOut); // Send FEI instead of frax if price below IV
         } else {
             
             require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
