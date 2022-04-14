@@ -50,7 +50,8 @@ contract Exposure is Ownable, RebasingERC20 {
      */
     function increaseReval(uint256 amount) external onlyOwner {
         reval += amount;
-        //TODO(butlerji): Emit Event
+
+        emit UpdateReval(reval);
     }
 
     /**
@@ -58,7 +59,8 @@ contract Exposure is Ownable, RebasingERC20 {
      */
     function decreaseReval(uint256 amount) external onlyOwner {
         reval -= amount;
-        //TODO(butlerji): Emit Event
+
+        emit UpdateReval(reval);
     }
 
     /**
@@ -66,6 +68,8 @@ contract Exposure is Ownable, RebasingERC20 {
      */
     function setLiqidator(ILiquidator _liquidator) external onlyOwner {
         liquidator = _liquidator;
+
+        emit SetLiquidator(address(liquidator));
     }
 
     /**
@@ -73,7 +77,8 @@ contract Exposure is Ownable, RebasingERC20 {
      */
     function addMinter(address account) external onlyMinterManager {
         canMint[account] = true;
-        //TODO(butlerji): Emit Event
+
+        emit AddMinter(account);
     }
 
     /**
@@ -81,7 +86,8 @@ contract Exposure is Ownable, RebasingERC20 {
      */
     function removeMinter(address account) external onlyMinterManager {
         canMint[account] = false;
-        //TODO(butlerji): Emit Event
+
+        emit RemoveMinter(account);
     }
 
     /**
@@ -93,7 +99,8 @@ contract Exposure is Ownable, RebasingERC20 {
     function mint(address account, uint256 amount) external onlyMinter {
         _mint(account, amount);
         reval += amount;
-        //TODO(butlerji): Emit Event
+
+        // no need for event, handled via _mint
     }
 
     /**
@@ -109,7 +116,7 @@ contract Exposure is Ownable, RebasingERC20 {
             liquidator.toTemple(balance, msg.sender);
         }
 
-        //TODO(butlerji): Event
+        emit Claim(address(revalToken), msg.sender, balance);
     }
 
     function amountPerShare() public view override returns (uint256 p, uint256 q) {
@@ -142,6 +149,12 @@ contract Exposure is Ownable, RebasingERC20 {
         require(msg.sender == canManageMinters || msg.sender == owner(), "Strategy: caller is not a minter or owner");
         _;
     }
+
+    event UpdateReval(uint256 amount);
+    event SetLiquidator(address liquidator);
+    event AddMinter(address account);
+    event RemoveMinter(address account);
+    event Claim(address revalToken, address account, uint256 amount);
 }
 
 interface ILiquidator {
