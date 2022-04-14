@@ -1,6 +1,6 @@
 import React from 'react';
 import Select from 'react-select';
-import { theme } from '../../styles/theme';
+import { theme } from 'styles/theme';
 
 export type Option = {
   value: string | number;
@@ -9,11 +9,13 @@ export type Option = {
 
 export type SelectTempleDaoOptions = Array<Option>;
 
-interface SelectTempleDaoProps {
+export interface SelectTempleDaoProps {
   onChange?(event: any): void;
 
   options: SelectTempleDaoOptions | [];
   defaultValue?: Option;
+  // use to limit the number of elements shown in the menu at anytime
+  maxMenuItems?: number;
 }
 
 /**
@@ -21,13 +23,14 @@ interface SelectTempleDaoProps {
  */
 /* FIXME(typing): Get the props right `& any` */
 export const InputSelect = (props: SelectTempleDaoProps) => {
+  const selectHeight = '2.75rem';
   return (
     <Select
       {...props}
       classNamePrefix={'Select'}
+      menuPlacement={'auto'}
       theme={(selectTheme) => ({
         ...selectTheme,
-        borderRadius: 0,
         colors: {
           ...selectTheme.colors,
           primary: theme.palette.brand,
@@ -36,38 +39,52 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           primary25: theme.palette.brand25,
           neutral0: theme.palette.dark,
           neutral10: theme.palette.brand,
-          neutral20: theme.palette.light,
+          neutral20: theme.palette.brand,
           neutral50: theme.palette.light50,
           neutral80: theme.palette.light,
         },
+        borderRadius: 0,
       })}
-      /* TODO: Clean the styles DRYit */
       styles={{
         control: (base) => ({
           ...base,
-          backgroundColor: 'transparent',
-          border: 'none',
+          background: `${theme.palette.gradients.dark}`,
+          border: `0.0625rem  /* 1/16 */ solid ${theme.palette.brand}`,
+          borderRadius: `calc(${selectHeight} / 2)`,
           boxShadow: 'none',
-          fontFamily: 'Megant',
-          fontSize: 24,
+          fontSize: '1rem',
           textTransform: 'uppercase',
           textAlign: 'left',
+          padding: '0 0.5rem',
+          minWidth: ' 7.5rem  /* 120/16 */',
+          cursor: 'pointer',
+          height: selectHeight,
+          zIndex: 2, // place it above the menu 👇
         }),
         menu: (base, state) => ({
           ...base,
-          marginTop: 0,
+          paddingTop: '1.5rem',
+          marginTop: '-1.5rem',
+          border: `0.0625rem solid ${theme.palette.brand}`,
         }),
         menuList: (base, state) => ({
+          base,
           padding: 0,
           color: theme.palette.light,
+          maxHeight: props.maxMenuItems
+            ? `calc(${props.maxMenuItems} * ${selectHeight})`
+            : 'none',
+          overflowY: 'auto',
         }),
         option: (base, state) => ({
           ...base,
-          textAlign: 'left',
-          fontFamily: 'Megant',
-          textTransform: 'uppercase',
+          textAlign: 'center',
           cursor: state.isDisabled ? 'not-allowed' : 'pointer',
           transition: theme.transitions.backgroundColor,
+          height: selectHeight,
+          borderBottom: `0.0625rem solid ${theme.palette.brand}`,
+          fontWeight: 'bold',
+          color: theme.palette.brandLight,
         }),
         indicatorSeparator: () => ({
           display: 'none',
@@ -76,15 +93,22 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           ...base,
           opacity: state.isDisabled ? 0.5 : 1,
           transition: 'opacity 300ms',
-          fontFamily: 'Megant',
-          fontSize: 24,
-          textTransform: 'uppercase',
-          color: theme.palette.light,
+          textAlign: 'center',
+          width: '100%',
+          fontWeight: 'bold',
+          color: theme.palette.brandLight,
         }),
         valueContainer: (base) => ({
           ...base,
-          justifyContent: 'flex-end',
-          paddingRight: 0,
+          padding: 0,
+        }),
+        dropdownIndicator: (base, state) => ({
+          color: state.isFocused
+            ? theme.palette.brandLight
+            : theme.palette.brand,
+          display: 'flex',
+          transform: state.isFocused ? 'rotateX(180deg)' : 'none',
+          transition: 'transform 250ms linear',
         }),
       }}
     />

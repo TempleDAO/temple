@@ -1,10 +1,12 @@
-import React, { HTMLProps, useState } from 'react';
+import { HTMLProps, useState } from 'react';
 import styled, { css } from 'styled-components';
 
 import Loader from '../Loader/Loader';
 import useIsMounted from 'hooks/use-is-mounted';
 
-export interface ButtonProps extends ButtonStyledProps, HTMLProps<HTMLButtonElement> {
+export interface ButtonProps
+  extends ButtonStyledProps,
+    HTMLProps<HTMLButtonElement> {
   type?: 'submit' | 'reset' | 'button' | undefined;
   label: string;
 

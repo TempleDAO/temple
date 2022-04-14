@@ -1,28 +1,23 @@
-import React, { FC, useState, useEffect } from 'react';
+import React, { FC, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
-import styled from 'styled-components';
-import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import MetamaskButton from 'components/Button/MetamaskButton';
 import DevotionCTA from 'components/Accessories/DevotionCTA';
+import styled from 'styled-components';
+import BgImage from 'assets/images/dapp-bg.svg';
 import { DApp } from 'components/DApp/DApp';
 import { Analytics } from 'components/DApp/Analytics';
 import { NavContext } from 'components/DApp/NavContext';
 import { DAppView } from 'enums/dapp-view';
-import BgImage from 'assets/images/dapp-bg.svg';
+import { queryMaxTablet } from 'styles/breakpoints';
 
 interface SizeProps {
   small?: boolean;
 }
 
 const DAppRoot = () => {
-  const isSmallOrMediumScreen = useMediaQuery({ query: '(max-width: 800px)' });
+  const isSmallOrMediumScreen = useMediaQuery({ query: queryMaxTablet });
   const [activeView, setView] = useState(DAppView.BUY);
   const navContext = { activeView, setView };
-  const refreshWalletState = useRefreshWalletState();
-
-  useEffect(() => {
-    refreshWalletState();
-  }, []);
 
   return (
     <NavContext.Provider value={navContext}>
@@ -45,9 +40,6 @@ const DAppLarge = () => (
 const DAppSmall: FC = () => (
   <Frame>
     <Container small>
-      <MetamaskButtonFrame>
-        <MetamaskButton />
-      </MetamaskButtonFrame>
       <DApp small />
     </Container>
   </Frame>
@@ -89,15 +81,4 @@ const Frame = styled.div`
   align-items: center;
 
   width: 100vw;
-`;
-
-const MetamaskButtonFrame = styled.div`
-  position: absolute:
-  top: 0;
-  right: 0;
-
-  div {
-    padding: 0;
-    padding-top: 0.3125rem /* 5/16 */;
-  }
 `;

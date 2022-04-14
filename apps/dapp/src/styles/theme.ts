@@ -59,11 +59,13 @@ const theme: DefaultTheme = {
   metrics: {
     headerHeight: '5rem' /* 80/16 */,
     desktop: {
+      minWidth: '64rem' /* 1024/16 */,
       maxWidth: '72rem' /* 1152/16 */,
     },
     devices: {
       tablet: '64rem' /* 1024/16 */,
       laptop: '90rem' /* 1440/16 */,
+      phone: '37.5rem' /* 600/16 */
     },
   },
   typography: {
