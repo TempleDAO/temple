@@ -47,7 +47,7 @@ describe("Temple Core Vault", async () => {
     await templeToken.connect(ben).increaseAllowance(vault.address, toAtto(1000000));
   });
 
-  it("Allows stakers to deposit (only in the entry/exit window)", async () => {
+  it("Single stakers deposit (only in the entry/exit window)", async () => {
     await vault.connect(alan).deposit(toAtto(100));
     expect(fromAtto(await vault.balanceOf(await alan.getAddress()))).eq(100);
 
@@ -56,8 +56,9 @@ describe("Temple Core Vault", async () => {
         .to.be.revertedWith("Vault: Cannot join vault when outside of enter/exit window");
   }) 
 
-  it("Allows stakers to withdraw, if in the entry/exit window", async () => {
+  it("Single staker withdraw, if in the entry/exit window", async () => {
     await vault.connect(alan).deposit(toAtto(100));
+    expect(fromAtto(await vault.balanceOf(await alan.getAddress()))).eq(100);
 
     await mineForwardSeconds(60);
     await expect(vault.connect(alan).withdraw(toAtto(100)))
@@ -66,5 +67,20 @@ describe("Temple Core Vault", async () => {
     await mineForwardSeconds(60 * 4);
     await expect(() => vault.connect(alan).withdraw(toAtto(100)))
         .to.changeTokenBalance(templeToken, alan, toAtto(100));
+  })
+
+  it("Multi-staker deposit then withdraw", async () => {
+    await vault.connect(alan).deposit(toAtto(100));
+    await vault.connect(ben).deposit(toAtto(100));
+
+    expect(fromAtto(await vault.balanceOf(await alan.getAddress()))).eq(100);
+    expect(fromAtto(await vault.balanceOf(await ben.getAddress()))).eq(100);
+
+    await mineForwardSeconds(60*5);
+
+    await expect(() => vault.connect(alan).withdraw(toAtto(100)))
+        .to.changeTokenBalance(templeToken, alan, toAtto(100));
+    await expect(() => vault.connect(ben).withdraw(toAtto(100)))
+        .to.changeTokenBalance(templeToken, ben, toAtto(100));
   })
 })

@@ -190,8 +190,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         uint256 amountStaked = _amount - fee;
 
         if (_amount > 0) {
-            SafeERC20.safeTransferFrom(templeToken, _account, address(this), _amount);
             _mint(_account, amountStaked);
+            SafeERC20.safeTransferFrom(templeToken, _account, address(this), _amount);
         }
 
         emit Deposit(_account, _amount);
