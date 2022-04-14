@@ -5,7 +5,8 @@
     "packages": [
       "apps/*",
       "shared/*",
-      "tools/*"
+      "tools/*",
+      "protocol"
     ],
     "nohoist": [
       "**/hardhat",
