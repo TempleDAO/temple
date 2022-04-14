@@ -102,15 +102,12 @@ contract OpsManager is Ownable {
     }
 
     /**
-     * @notice For the given vaults, liquidate their positions back to temple
+     * @notice For the given vaults, liquidate their exposures back to temple
      */
-    function liquidatePositions(Vault[] memory vaults, Exposure[] memory exposures) external {
+    function liquidateExposures(Vault[] memory vaults, Exposure[] memory exposures) external {
         for (uint256 i = 0; i < vaults.length; i++) {
             require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
-
-            for (uint256 j = 0; i < exposures.length; i++) {
-                vaults[i].claim(exposures[j]);
-            }
+            vaults[i].redeemExposures(exposures);
         }
     }
 

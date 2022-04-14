@@ -9,7 +9,7 @@ import {
     Vault, 
     Vault__factory
 } from "../../typechain";
-import { join } from "path";
+import { fail } from "assert";
 
 describe("Temple Core Vault", async () => {
   let vault: Vault;
@@ -48,8 +48,8 @@ describe("Temple Core Vault", async () => {
   });
 
   it("Single stakers deposit (only in the entry/exit window)", async () => {
-    await vault.connect(alan).deposit(toAtto(100));
-    expect(fromAtto(await vault.balanceOf(await alan.getAddress()))).eq(100);
+    await expect(() => vault.connect(alan).deposit(toAtto(100)))
+      .to.changeTokenBalance(vault, alan, toAtto(100));
 
     await mineForwardSeconds(60);
     await expect(vault.connect(alan).deposit(toAtto(100)))
@@ -57,8 +57,8 @@ describe("Temple Core Vault", async () => {
   }) 
 
   it("Single staker withdraw, if in the entry/exit window", async () => {
-    await vault.connect(alan).deposit(toAtto(100));
-    expect(fromAtto(await vault.balanceOf(await alan.getAddress()))).eq(100);
+    await expect(() => vault.connect(alan).deposit(toAtto(100)))
+      .to.changeTokenBalance(vault, alan, toAtto(100));
 
     await mineForwardSeconds(60);
     await expect(vault.connect(alan).withdraw(toAtto(100)))
@@ -83,4 +83,29 @@ describe("Temple Core Vault", async () => {
     await expect(() => vault.connect(ben).withdraw(toAtto(100)))
         .to.changeTokenBalance(templeToken, ben, toAtto(100));
   })
+
+  it("deposit/withdrawals with rebases", async () => {
+    await expect(() => vault.connect(alan).deposit(toAtto(100)))
+      .to.changeTokenBalance(vault, alan, toAtto(100));
+
+    await expect(() => templeToken.transfer(vault.address, toAtto(100)))
+      .to.changeTokenBalance(vault, alan, toAtto(100));
+
+    await expect(() => vault.connect(ben).deposit(toAtto(100)))
+      .to.changeTokenBalance(vault, ben, toAtto(100));
+
+    await mineForwardSeconds(60*5);
+
+    await expect(() => vault.connect(alan).withdraw(toAtto(200)))
+      .to.changeTokenBalance(templeToken, alan, toAtto(200));
+
+    await expect(() => vault.connect(ben).withdraw(toAtto(100)))
+      .to.changeTokenBalance(templeToken, ben, toAtto(100));
+  })
+
+
+  xit("allows redeeming an exposure back to temple", async () => {
+    // TODO(butler): write test
+    fail("Unimplemented");
+  });
 })

@@ -104,10 +104,9 @@ contract Exposure is Ownable, RebasingERC20 {
     }
 
     /**
-     * @dev Claim the given strategy token holder's share of revenue earned
-     * in tokens different from the revalToken
+     * @dev redeem the callers share of this exposure back to temple
      */
-    function claim() external {
+    function redeem() external {
         uint256 balance = balanceOf(msg.sender);
         _burn(msg.sender, balance);
         reval -= balance;
@@ -116,7 +115,7 @@ contract Exposure is Ownable, RebasingERC20 {
             liquidator.toTemple(balance, msg.sender);
         }
 
-        emit Claim(address(revalToken), msg.sender, balance);
+        emit Redeem(address(revalToken), msg.sender, balance);
     }
 
     function amountPerShare() public view override returns (uint256 p, uint256 q) {
@@ -154,7 +153,7 @@ contract Exposure is Ownable, RebasingERC20 {
     event SetLiquidator(address liquidator);
     event AddMinter(address account);
     event RemoveMinter(address account);
-    event Claim(address revalToken, address account, uint256 amount);
+    event Redeem(address revalToken, address account, uint256 amount);
 }
 
 interface ILiquidator {

@@ -129,11 +129,15 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         return templeToken.balanceOf(address(this)) * shareBoostFactor.p / shareBoostFactor.q;
     }
 
-    function claim(Exposure exposure) external {
-        require(inEnterExitWindow(), "Vault: Cannot claim revenue when outside of enter/exit window");
-        exposure.claim();
+    /// @dev redeem a specific vault's exposure back into temple
+    function redeemExposures(Exposure[] memory exposures) external {
+        require(inEnterExitWindow(), "Vault: Cannot redeem when outside of enter/exit window");
 
-        // no need for event, as exposure.claim() triggers one
+        for (uint256 i = 0; i < exposures.length; i++) {
+            exposures[i].redeem();
+        }
+
+        // no need for event, as exposures[i].redeem() triggers one
     }
 
     function amountPerShare() public view override returns (uint256 p, uint256 q) {
