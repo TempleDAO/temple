@@ -22,7 +22,7 @@ const enclaveImages = {
 
 interface EnclaveCardProps {
   enclave: string;
-  unsetDiscrodData: () => void;
+  unsetDiscrodData: () => null;
 }
 
 function capitalizeFirstLetter(string) {

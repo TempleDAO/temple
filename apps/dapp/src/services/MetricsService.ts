@@ -52,20 +52,11 @@ export interface DashboardMetrics {
 }
 
 export interface AccountMetrics {
-  walletValue: number;
   templeBalance: number;
   templeValue: number;
   ogTemplePrice: number;
   ogTempleRatio: number;
-  ogTempleWallet: number;
-  ogTempleWalletValue: number;
-  exitQueueValue: number;
-  exitQueueTotal: number;
-  lockedOGTemple: number;
-  lockedOGTempleValue: number;
   lockedOGTempleBalance: number;
-  netWorth: number;
-  netWorthTemple: number;
   unClaimedOGTempleBalance: number;
   totalSacrificed: number;
   templeApy: number;
