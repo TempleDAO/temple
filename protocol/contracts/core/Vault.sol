@@ -132,6 +132,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     function claim(Exposure exposure) external {
         require(inEnterExitWindow(), "Vault: Cannot claim revenue when outside of enter/exit window");
         exposure.claim();
+
+        // no need for event, as exposure.claim() triggers one
     }
 
     function amountPerShare() public view override returns (uint256 p, uint256 q) {
