@@ -20,102 +20,51 @@ interface ITempleTreasury {
     function intrinsicValueRatio() external view returns (uint256 frax, uint256 temple);
 }
 
-contract TempleFraxAMMRouter is Ownable, AccessControl {
+contract TempleStableAMMRouter is Ownable, AccessControl {
     bytes32 public constant CAN_ADD_ALLOWED_USER = keccak256("CAN_ADD_ALLOWED_USER");
 
     // precondition token0/tokenA is temple. token1/tokenB is frax
-    IUniswapV2Pair public immutable pair;
+    IUniswapV2Pair public immutable fraxPair;
+    IUniswapV2Pair public immutable feiPair;
 
     TempleERC20Token public immutable templeToken;
     IERC20 public immutable fraxToken;
+    IERC20 public immutable feiToken;
     ITempleTreasury public immutable templeTreasury;
 
     // Address all frax earned via protocol mint is sent
     address protocolMintEarningsAccount;
-
-    struct Price {
-        uint frax;
-        uint temple;
-    }
-
-    // some portion of all buys above threshold get minted on protocol
-    Price public dynamicThresholdPrice; 
-
-    // Rate at which threshold decays, when AMM price is below the dynamicThresholdPrice
-    uint256 public dynamicThresholdDecayPerBlock;
-
-    // Checkpoint for when price fell below threshold
-    uint public priceCrossedBelowDynamicThresholdBlock;
-
-    // Percentage (represented as an int from 0 to 100) 
-    uint constant public DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR = 10000;
-    uint public dynamicThresholdIncreasePct = DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR;
-
-    // To decide how much we mint on protocol, we linearly interp between these two price points, only when the 
-    // market is trading above the dynamicThresholdPrice;
-    Price public interpolateFromPrice;
-    Price public interpolateToPrice;
 
     // who's allowed to swap on the AMM. Only used if openAccessEnabled is false;
     mapping(address => bool) public allowed;
     bool public openAccessEnabled = false;
 
     modifier ensure(uint deadline) {
-        require(deadline >= block.timestamp, 'TempleFraxAMMRouter: EXPIRED');
+        require(deadline >= block.timestamp, 'TempleStableAMMRouter: EXPIRED');
         _;
     }
 
-    event PriceCrossedBelowDynamicThreshold(uint256 blockNumber);
-    event DynamicThresholdChange(uint256 currDynamicThresholdTemple);
-
     constructor(
-            IUniswapV2Pair _pair,
+            IUniswapV2Pair _fraxPair,
+            IUniswapV2Pair _feiPair,
             TempleERC20Token _templeToken,
             IERC20 _fraxToken,
+            IERC20 _feiToken,
             ITempleTreasury _templeTreasury,
-            address _protocolMintEarningsAccount,
-            Price memory _dynamicThresholdPrice,
-            uint256 _dynamicThresholdDecayPerBlock,
-            Price memory _interpolateFromPrice,
-            Price memory _interpolateToPrice
+            address _protocolMintEarningsAccount
             ) {
 
-        pair = _pair;
+        fraxPair = _fraxPair;
+        feiPair = _feiPair;
         templeToken = _templeToken;
         fraxToken = _fraxToken;
+        feiToken = _feiToken;
         templeTreasury = _templeTreasury;
         protocolMintEarningsAccount = _protocolMintEarningsAccount;
-        dynamicThresholdPrice = _dynamicThresholdPrice;
-        dynamicThresholdDecayPerBlock = _dynamicThresholdDecayPerBlock;
-        interpolateFromPrice = _interpolateFromPrice;
-        interpolateToPrice = _interpolateToPrice;
-
-        priceCrossedBelowDynamicThresholdBlock = 0;
 
         _setupRole(DEFAULT_ADMIN_ROLE, owner());
     }
 
-    function setDynamicThresholdDecayPerBlock(uint256 _dynamicThresholdDecayPerBlock) external onlyOwner {
-        dynamicThresholdDecayPerBlock = _dynamicThresholdDecayPerBlock;
-    }
-
-    // Percentage (represented as an int from 0 to DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR) 
-    function setDynamicThresholdIncreasePct(uint256 _dynamicThresholdIncreasePct) external onlyOwner {
-        require(_dynamicThresholdIncreasePct > 0 && _dynamicThresholdIncreasePct <= DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR, "Increase is a pct represented as an integer between 0 and 100");
-        dynamicThresholdIncreasePct = _dynamicThresholdIncreasePct;
-    }
-
-    // To decide how much we mint on protocol, we linearly interp between these two price points, only when the 
-    // market is trading above the dynamicThresholdPrice;
-    function setInterpolateFromPrice(uint256 frax, uint256 temple) external onlyOwner {
-        interpolateFromPrice.frax = frax;
-        interpolateFromPrice.temple = temple;
-    }
-
-    function setInterpolateToPrice(uint256 frax, uint256 temple) external onlyOwner {
-        interpolateToPrice.frax = frax;
-        interpolateToPrice.temple = temple;
-    }
 
     function toggleOpenAccess() external onlyOwner {
         openAccessEnabled = !openAccessEnabled;
@@ -138,7 +87,8 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         uint amountADesired,
         uint amountBDesired,
         uint amountAMin,
-        uint amountBMin
+        uint amountBMin,
+        IUniswapV2Pair pair
     ) internal virtual returns (uint amountA, uint amountB) {
         (uint reserveA, uint reserveB,) = pair.getReserves();
         if (reserveA == 0 && reserveB == 0) {
@@ -146,12 +96,12 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         } else {
             uint amountBOptimal = quote(amountADesired, reserveA, reserveB);
             if (amountBOptimal <= amountBDesired) {
-                require(amountBOptimal >= amountBMin, 'TempleFraxAMMRouter: INSUFFICIENT_FRAX');
+                require(amountBOptimal >= amountBMin, 'TempleStableAMMRouter: INSUFFICIENT_STABLE');
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
                 uint amountAOptimal = quote(amountBDesired, reserveB, reserveA);
                 assert(amountAOptimal <= amountADesired);
-                require(amountAOptimal >= amountAMin, 'TempleFraxAMMRouter: INSUFFICIENT_TEMPLE');
+                require(amountAOptimal >= amountAMin, 'TempleStableAMMRouter: INSUFFICIENT_TEMPLE');
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
             }
         }
@@ -161,12 +111,15 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         uint amountBDesired,
         uint amountAMin,
         uint amountBMin,
+        address stablec,
         address to,
         uint deadline
     ) external virtual ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
-        (amountA, amountB) = _addLiquidity(amountADesired, amountBDesired, amountAMin, amountBMin);
+        require(stablec == address(fraxToken) || stablec == address(feiToken), 'TempleStableAMMRouter: UNSUPPORTED_PAIR');
+        IUniswapV2Pair pair = stablec == address(fraxToken) ? fraxPair : feiPair; 
+        (amountA, amountB) = _addLiquidity(amountADesired, amountBDesired, amountAMin, amountBMin, pair);
         SafeERC20.safeTransferFrom(templeToken, msg.sender, address(pair), amountA);
-        SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(pair), amountB);
+        SafeERC20.safeTransferFrom(IERC20(stablec), msg.sender, address(pair), amountB);
         liquidity = pair.mint(to);
     }
 
@@ -175,12 +128,15 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
         uint liquidity,
         uint amountAMin,
         uint amountBMin,
+        address stablec,
         address to,
         uint deadline
     ) public virtual ensure(deadline) returns (uint amountA, uint amountB) {
+        require(stablec == address(fraxToken) || stablec == address(feiToken), 'TempleStableAMMRouter: UNSUPPORTED_PAIR');
+        IUniswapV2Pair pair = stablec == address(fraxToken) ? fraxPair : feiPair; 
         SafeERC20.safeTransferFrom(IERC20(address(pair)), msg.sender, address(pair), liquidity);
         (amountA, amountB) = pair.burn(to);
-        require(amountA >= amountAMin, 'TempleFraxAMMRouter: INSUFFICIENT_TEMPLE');
+        require(amountA >= amountAMin, 'TempleStableAMMRouter: INSUFFICIENT_TEMPLE');
         require(amountB >= amountBMin, 'TempleFraxAMMRouter: INSUFFICIENT_FRAX');
     }
 
@@ -192,48 +148,31 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     ) external virtual ensure(deadline) returns (uint amountOut) {
         require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
 
-        // Check temple out is witamountOutAMMhin acceptable user bounds
-        (uint amountInAMM, uint amountInProtocol, uint amountOutAMM, uint amountOutProtocol) = swapExactFraxForTempleQuote(amountIn);
-        amountOut = amountOutAMM + amountOutProtocol;
-
-        require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+ 
+        uint amountOut = swapExactStableForTempleQuote(fraxPair, amountIn);
+        require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
 
         // Swap on AMM
-        if (amountInAMM > 0) {
-            SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(pair), amountInAMM);
-            pair.swap(amountOutAMM, 0, to, new bytes(0));
-        }
-
-        // Mint on protocol
-        if (amountInProtocol > 0) {
-            SafeERC20.safeTransferFrom(fraxToken, msg.sender, protocolMintEarningsAccount, amountInProtocol);
-            templeToken.mint(to, amountOutProtocol);
-
-            // gas optimisation. Only update the temple component of the threshold price, keeping the frax component constant
-            (uint rt, uint rf,) = pair.getReserves();
-            uint newDynamicThresholdPriceTemple = (rt * dynamicThresholdPrice.frax * DYNAMIC_THRESHOLD_INCREASE_DENOMINATOR) / (rf * dynamicThresholdIncreasePct);
-
-            (,uint dynamicThresholdPriceTemple) = dynamicThresholdPriceWithDecay();
-            if (newDynamicThresholdPriceTemple < dynamicThresholdPriceTemple) { // when not decaying, ensure DTP only ever increases
-                dynamicThresholdPrice.temple = newDynamicThresholdPriceTemple;
-                priceCrossedBelowDynamicThresholdBlock = 0;
-                emit DynamicThresholdChange(newDynamicThresholdPriceTemple);
-            }
-        }
+        SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(fraxPair), amountIn);
+        fraxPair.swap(amountOut, 0, to, new bytes(0));
     }
 
-    // function swapFraxForExactTemple(
-    //     uint amountOut,
-    //     uint amountInMax,
-    //     address to,
-    //     uint deadline
-    // ) external virtual override ensure(deadline) returns (uint amountIn) {
-    //     (uint reserveA, uint reserveB) = pair.getReserves();
-    //     amountIn = getAmountIn(amountOut, reserveB, reserveA);
-    //     require(amountIn <= amountInMax, 'TempleFraxAMMRouter: EXCESSIVE_INPUT_AMOUNT');
-    //     SafeERC20.safeTransferFrom(fraxToken, msg.sender, pair, amountIn);
-    //     pair.swap(amountOut, 0, to, new bytes(0));
-    // }
+    function swapExactFeiForTemple(
+        uint amountIn,
+        uint amountOutMin,
+        address to,
+        uint deadline
+    ) external virtual ensure(deadline) returns (uint amountOut) {
+        require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
+
+ 
+        uint amountOut = swapExactStableForTempleQuote(feiPair, amountIn);
+        require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+
+        // Swap on AMM
+        SafeERC20.safeTransferFrom(feiToken, msg.sender, address(feiPair), amountIn);
+        feiPair.swap(amountOut, 0, to, new bytes(0));
+    }
 
     function swapExactTempleForFrax(
         uint amountIn,
@@ -243,38 +182,42 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     ) external virtual ensure(deadline) returns (uint) {
         require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
 
-        (bool priceBelowIV, bool willCrossDynamicThreshold, uint amountOut) = swapExactTempleForFraxQuote(amountIn);
+        (bool priceBelowIV, uint amountOut) = swapExactTempleForStableQuote(fraxPair, amountIn);
         if (priceBelowIV) {
-            require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+            require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
             templeToken.burnFrom(msg.sender, amountIn);
             SafeERC20.safeTransfer(fraxToken, to, amountOut);
         } else {
-            // only set the threshold price decay if we aren't already in decay mode
-            if (willCrossDynamicThreshold && priceCrossedBelowDynamicThresholdBlock == 0) {
-                priceCrossedBelowDynamicThresholdBlock = block.number;
-                emit PriceCrossedBelowDynamicThreshold(priceCrossedBelowDynamicThresholdBlock);
-            }
             
-            require(amountOut >= amountOutMin, 'TempleFraxAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-            SafeERC20.safeTransferFrom(templeToken, msg.sender, address(pair), amountIn);
-            pair.swap(0, amountOut, to, new bytes(0));
+            require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+            SafeERC20.safeTransferFrom(templeToken, msg.sender, address(fraxPair), amountIn);
+            fraxPair.swap(0, amountOut, to, new bytes(0));
         }
 
         return amountOut;
     }
 
-    // function swapTempleForExactFrax(
-    //     uint amountOut,
-    //     uint amountInMax,
-    //     address to,
-    //     uint deadline
-    // ) external virtual override ensure(deadline) returns (uint amountIn) {
-    //     (uint reserveA, uint reserveB) = pair.getReserves();
-    //     amountIn = getAmountIn(amountOut, reserveA, reserveB);
-    //     require(amountIn <= amountInMax, 'TempleFraxAMMRouter: EXCESSIVE_INPUT_AMOUNT');
-    //     SafeERC20.safeTransferFrom(templeToken, msg.sender, pair, amountIn);
-    //     pair.swap(0, amountOut, 0, to, new bytes(0));
-    // }
+    function swapExactTempleForFei(
+        uint amountIn,
+        uint amountOutMin,
+        address to,
+        uint deadline
+    ) external virtual ensure(deadline) returns (uint) {
+        require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
+
+        (bool priceBelowIV, uint amountOut) = swapExactTempleForStableQuote(feiPair, amountIn);
+        if (priceBelowIV) {
+            require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+            templeToken.burnFrom(msg.sender, amountIn);
+            SafeERC20.safeTransfer(feiToken, to, amountOut);
+        } else {
+            require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+            SafeERC20.safeTransferFrom(templeToken, msg.sender, address(feiPair), amountIn);
+            feiPair.swap(0, amountOut, to, new bytes(0));
+        }
+
+        return amountOut;
+    }
 
     // **** LIBRARY FUNCTIONS ****
 
@@ -326,83 +269,12 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
     //     amountIn = (numerator / denominator).add(1);
     // }
 
-    function mintRatioAt(uint temple, uint frax)
-        public
-        view
-        returns (uint numerator, uint denominator)
-    {
-        /*
-         * Formula used to calculate ratio
-         * 
-         * ts,fs = temple,frax spot
-         * t1,f1 = temple,frax start
-         * t2,f2 = temple,frax end
-         *
-         * (fs/ts - f1/t1) / (f2/t2 - f1/t1)
-         *
-         * with some algebra this works out to be
-         * 
-         * ((fs*t1 - f1*ts) * t2) / ((f2*t1 - f1*t2) * ts)
-        */
-
-        (uint ts, uint fs, uint t1, uint f1, uint t2, uint f2) = (temple, frax, interpolateFromPrice.temple, interpolateFromPrice.frax, interpolateToPrice.temple, interpolateToPrice.frax);
-
-        uint n1 = fs*t1;
-        uint n2 = f1*ts;
-
-        // if spot is below the from price, we don't mint on protocol
-        if (n2 > n1) {
-            return (0,1);
-        }
-
-        numerator = (n1 - n2) * t2;
-        denominator = (f2*t1 - f1*t2) * ts; // pre-condition, no overflow as fromPrice will be < toPrice
-
-        if ((numerator * 1000 / 800) >= denominator) {
-            return (800,1000); // once we are above the interpolateToPrice, we 100% mint on protocol
-        } else {
-            return (numerator, denominator);
-        }
-    }
-
-    function dynamicThresholdPriceWithDecay() public view returns (uint frax, uint temple) {
-        uint thresholdDecay = 0;
-
-        if (priceCrossedBelowDynamicThresholdBlock > 0) {
-            thresholdDecay = (block.number - priceCrossedBelowDynamicThresholdBlock) * dynamicThresholdDecayPerBlock;
-        }
-
-        return (dynamicThresholdPrice.frax, dynamicThresholdPrice.temple + thresholdDecay);
-    }
-
-    function swapExactFraxForTempleQuote(uint amountIn) public view returns (uint amountInAMM, uint amountInProtocol, uint amountOutAMM, uint amountOutProtocol) {
+    function swapExactStableForTempleQuote(IUniswapV2Pair pair, uint amountIn) public view returns (uint amountOut ) {
         (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
-        (uint thresholdPriceFrax, uint thresholdPriceTemple) = dynamicThresholdPriceWithDecay();
-
-        // if AMM is currently trading above target, route some portion to mint on protocol
-        if (thresholdPriceTemple * reserveFrax >= thresholdPriceFrax * reserveTemple) {
-            (uint numerator, uint denominator) = mintRatioAt(reserveTemple, reserveFrax);
-            amountInProtocol = (amountIn * numerator) / denominator;
-        }
-
-        amountInAMM = amountIn - amountInProtocol;
-
-        // Allocate a portion of temple to the AMM
-        amountOutAMM = 0;
-        if (amountInAMM > 0) {
-            amountOutAMM = getAmountOut(amountInAMM, reserveFrax, reserveTemple);
-        }
-
-        // Allocate a portion of temple to the protocol
-        amountOutProtocol = 0;
-        if (amountInAMM > 0) {
-            amountOutProtocol = (amountInProtocol * amountOutAMM) / amountInAMM;
-        } else {
-            amountOutProtocol = (amountInProtocol * reserveTemple) / reserveFrax;
-        }
+        amountOut = getAmountOut(amountIn, reserveFrax, reserveTemple);
     }
 
-    function swapExactTempleForFraxQuote(uint amountIn) public view returns (bool priceBelowIV, bool willCrossDynamicThreshold, uint amountOut) {
+    function swapExactTempleForStableQuote(IUniswapV2Pair pair, uint amountIn) public view returns (bool priceBelowIV, uint amountOut) {
         (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
   
         // if AMM is currently trading above target, route some portion to mint on protocol
@@ -413,16 +285,6 @@ contract TempleFraxAMMRouter is Ownable, AccessControl {
             amountOut = (amountIn * ivFrax) / ivTemple;
         } else {
             amountOut = getAmountOut(amountIn, reserveTemple, reserveFrax);
-        }
-
-        // Will this sell move the price from above to below the dynamic threshold?
-
-        if (!priceBelowIV) {
-            (uint thresholdPriceFrax, uint thresholdPriceTemple) = dynamicThresholdPriceWithDecay();
-
-            bool currentPriceIsAboveThreshold = thresholdPriceTemple * reserveFrax > thresholdPriceFrax * reserveTemple;
-            bool postSellPrieIsBelowThreshold = thresholdPriceTemple * (reserveFrax - amountOut) < thresholdPriceFrax * (reserveTemple + amountIn);
-            willCrossDynamicThreshold = currentPriceIsAboveThreshold && postSellPrieIsBelowThreshold;
         }
     }
 
