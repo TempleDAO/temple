@@ -19,7 +19,7 @@ export const Spinner = () => {
         xmlns="http://www.w3.org/2000/svg"
       >
         <g id="Spinner">
-          <path transform="translate(1)" fill="#0B0A0A" d="M0 0h300v300H0z" />
+          <path transform="translate(1)" fill="#0C0B0B" d="M0 0h300v300H0z" />
           <g id="spin-outer-geometry" strokeWidth={0.462} strokeMiterlimit={10}>
             <animateTransform
               attributeName="transform"
