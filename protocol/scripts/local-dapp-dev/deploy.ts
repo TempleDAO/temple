@@ -8,7 +8,6 @@ import {
   Faith__factory,
   FakeERC20__factory,
   OGTemple__factory,
-  TempleCashback__factory,
   TempleERC20Token__factory,
   TempleFraxAMMOps__factory,
   TempleFraxAMMRouter__factory,
@@ -17,7 +16,6 @@ import {
   LockedOGTempleDeprecated__factory,
   TempleTreasury__factory,
   TempleUniswapV2Pair__factory,
-  TreasuryManagementProxy__factory,
   AcceleratedExitQueue,
   AcceleratedExitQueue__factory,
   TempleIVSwap__factory,
@@ -88,18 +86,7 @@ async function main() {
   await stablecToken.increaseAllowance(treasury.address, 100);
   await treasury.seedMint(100, 1000);
 
-  // Deploy treasury proxy (used for all treasury management going forward)
-  const treasuryManagementProxy = await new TreasuryManagementProxy__factory(
-    owner
-  ).deploy(await owner.getAddress(), treasury.address);
-  await treasury.transferOwnership(treasuryManagementProxy.address);
-
   const verifier = ethers.Wallet.createRandom();
-
-  const templeCashback = await new TempleCashback__factory(owner).deploy(
-    verifier.address
-  );
-  await templeToken.mint(templeCashback.address, toAtto(150000));
 
   // stake, lock and exit some temple for a few users
   let nLocks = 1;
@@ -180,7 +167,7 @@ async function main() {
   const ammOps = await new TempleFraxAMMOps__factory(owner).deploy(
     templeToken.address,
     templeRouter.address,
-    treasuryManagementProxy.address,
+    treasury.address, /* XXX: Unuse */
     stablecToken.address,
     treasury.address,
     pair.address
@@ -277,9 +264,7 @@ async function main() {
     TEMPLE_ADDRESS: templeToken.address,
     TEMPLE_STAKING_ADDRESS: templeStaking.address,
     TREASURY_ADDRESS: treasury.address,
-    TREASURY_MANAGEMENT_ADDRESS: treasuryManagementProxy.address,
     TEMPLE_AMM_OPS_ADDRESS: ammOps.address,
-    TEMPLE_CASHBACK_ADDRESS: templeCashback.address,
     TEMPLE_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixed.address,
     TEMPLE_TEAM_CONTIGENT_PAYMENTS_ADDRESS: teamPaymentsContigent.address,
     TEMPLE_V2_PAIR_ADDRESS: pair.address,
