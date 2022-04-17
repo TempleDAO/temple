@@ -10,3 +10,6 @@
 [submodule "protocol/lib/v2-core"]
 	path = protocol/lib/v2-core
 	url = https://github.com/uniswap/v2-core
+[submodule "protocol/lib/v2-periphery"]
+	path = protocol/lib/v2-periphery
+	url = https://github.com/uniswap/v2-periphery
