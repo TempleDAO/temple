@@ -28,3 +28,14 @@ comments on the PR on how to best setup the deploy scripts.
 
 You can also run and test locally by replacing `yarn hardhat:testnet` with `yarn hardhat:local`. You'll probably have to run some of the previous deploys
 in order to setup the right local state
+
+
+## VSCode Testing
+
+https://hardhat.org/guides/vscode-tests.html
+
+tl;dr;
+  1. Install https://marketplace.visualstudio.com/items?itemName=hbenl.vscode-mocha-test-adapter
+  2. Set the VSCode config value `"mochaExplorer.files": "test/**/*.{j,t}s"`
+  3. Reload VSCode, click the flask icon, see all tests :)
+
