@@ -18,12 +18,6 @@ import {
   UniswapV2Pair__factory,
   UniswapV2Router02NoEth,
   UniswapV2Router02NoEth__factory,
-  Faith,
-  Faith__factory,
-  TempleStaking,
-  TempleStaking__factory,
-  LockedOGTemple,
-  LockedOGTemple__factory
 } from "../typechain";
 
 import { BigNumber, Signer } from "ethers";

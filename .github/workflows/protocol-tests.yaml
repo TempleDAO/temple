@@ -3,7 +3,7 @@ on:
   pull_request:
     types: [opened, synchronize]
     paths:
-      - 'apps/protocol/**'
+      - 'protocol/**'
 
 jobs:
   build:
@@ -16,6 +16,6 @@ jobs:
           node-version: '14.x'
       - run: yarn install
       - run: yarn compile
-        working-directory: apps/protocol
+        working-directory: protocol
       - run: yarn test
-        working-directory: apps/protocol
+        working-directory: protocol
