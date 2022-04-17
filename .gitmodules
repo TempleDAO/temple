@@ -13,3 +13,6 @@
 [submodule "protocol/lib/v2-periphery"]
 	path = protocol/lib/v2-periphery
 	url = https://github.com/uniswap/v2-periphery
+[submodule "protocol/lib/v3-periphery"]
+	path = protocol/lib/v3-periphery
+	url = https://github.com/uniswap/v3-periphery
