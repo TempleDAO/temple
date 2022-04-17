@@ -4,3 +4,6 @@
 [submodule "protocol/lib/solidity-lib"]
 	path = protocol/lib/solidity-lib
 	url = https://github.com/uniswap/solidity-lib
+[submodule "protocol/lib/openzeppelin-contracts"]
+	path = protocol/lib/openzeppelin-contracts
+	url = https://github.com/openzeppelin/openzeppelin-contracts/
