@@ -1,5 +1,5 @@
-import React, { PropsWithChildren } from 'react';
-import styled from 'styled-components';
+import React, { forwardRef, PropsWithChildren } from 'react';
+import styled, { css } from 'styled-components';
 
 import Tippy from '@tippyjs/react';
 import { roundArrow, Placement } from 'tippy.js';
@@ -13,6 +13,7 @@ export interface TooltipProps {
   delay?: number;
   offset?: [number, number];
   animationDuration?: number;
+  singleton?: any;
 }
 
 const Tooltip = ({
@@ -44,13 +45,21 @@ export const TooltipIcon = () => {
   return <TooltipIconStyled>¡</TooltipIconStyled>;
 };
 
-const TippyStyled = styled(Tippy)`
+const tippyStyles = css`
   ${(props) => props.theme.typography.meta};
   background: ${({ theme }) => theme.palette.brand};
   padding: 0.5rem;
   svg {
     fill: ${({ theme }) => theme.palette.brand};
   }
+`;
+
+export const TippyDiv = styled.div`
+  ${tippyStyles}
+`;
+
+const TippyStyled = styled(Tippy)`
+  ${tippyStyles}
 `;
 
 const TooltipIconStyled = styled.small`

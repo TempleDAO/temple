@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, forwardRef } from 'react';
 import styled from 'styled-components';
 import { MarkerType, Entry } from '../types';
 import { lerp } from './utils';
@@ -11,14 +11,12 @@ type Props = {
   onMarkerClick: (entry: Entry, el: SVGElement) => void;
 };
 
-export const Marker = ({ data, onMarkerClick }: Props) => {
-  const ref = useRef(null);
-  const click = () => onMarkerClick(data, ref.current!);
+export const Marker = forwardRef<SVGGElement, Props>(({ data, onMarkerClick }, ref) => {
   const angle = getAngle(data.percent!);
   const t = `rotate(${angle} 502.066 502.066)`;
 
   return (
-    <MarkerContainer id="marker" transform={t} onClick={click} ref={ref}>
+    <MarkerContainer id="marker" transform={t} ref={ref}>
       <animateTransform
         attributeName="transform"
         attributeType="XML"
@@ -31,7 +29,7 @@ export const Marker = ({ data, onMarkerClick }: Props) => {
       {getMarker(data.type!)}
     </MarkerContainer>
   );
-};
+});
 
 const getAngle = (percent: number) => lerp(MIN_ANGLE, MAX_ANGLE, percent);
 
