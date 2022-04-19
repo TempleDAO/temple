@@ -5,6 +5,7 @@ import {JoiningFee} from "../core/JoiningFee.sol";
 import {Vault} from  "../core/Vault.sol";
 import {Rational} from "../core/Rational.sol";
 import {TempleERC20Token} from  "../TempleERC20Token.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract VaultTest is TempleTest {
     JoiningFee joiningFee;
@@ -104,6 +105,89 @@ contract VaultTest is TempleTest {
         vm.expectRevert(OUTSIDE_ENTER_WINDOW_ERR);
         vault.deposit(ONE_HUNDRED_K/2);
         vm.stopPrank();
+    }
+
+    // This shouldn't fail? 
+    function testFuzzWithdrawFor(uint256 amount) public {
+        // build user
+        uint256 priv = 0xBEEF;
+        address sally = vm.addr(priv);
+
+        uint256 deadline = 250;
+
+        // mint and deposit
+        temple.mint(sally, amount);
+        vm.startPrank(sally);
+        temple.increaseAllowance(address(vault), amount);
+        vault.deposit(amount);
+        vm.stopPrank();
+
+        uint256 nonce = vault.nonces(sally);
+        bytes32 data = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                vault.DOMAIN_SEPARATOR(),
+                keccak256(abi.encode(vault.WITHDRAW_FOR_TYPEHASH(), sally, amount, deadline, nonce))
+            )
+        ); 
+
+        // create signature 
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            priv,
+            data
+        );
+
+        // try to withdraw for
+        vault.withdrawFor(sally, amount, deadline, v, r, s);
+        assertEq(temple.balanceOf(address(this)), amount);
+    }
+
+    function testFuzzDepositFor(uint256 amount) public {
+        // build user
+        uint256 priv = 0xBEEF;
+        address sally = vm.addr(priv);
+
+        uint256 deadline = 250;
+
+        uint256 nonce = vault.nonces(sally);
+        bytes32 data = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                vault.DOMAIN_SEPARATOR(),
+                keccak256(abi.encode(vault.DEPOSIT_FOR_TYPEHASH(), sally, amount, deadline, nonce))
+            )
+        ); 
+
+         // create signature 
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            priv,
+            data
+        );
+
+        temple.mint(sally, amount);
+        vm.prank(sally);
+        temple.increaseAllowance(address(vault), amount);
+        vault.depositFor(sally, amount, amount, deadline, v, r, s);
+
+        uint256 tokenBalance = vault.toTokenAmount(vault.shareBalanceOf(sally));
+        assertEq(tokenBalance, amount);
+    }
+
+    function testFuzzDepositWithdraw(uint256 amount) public {
+        // mint
+        temple.mint(alice, amount);
+
+        // deposit
+        vm.startPrank(alice);
+        temple.increaseAllowance(address(vault), amount);
+        vault.deposit(amount);
+
+        vm.warp(160 + (60*4));
+        // Current fails due to arithmetic overflow
+        vault.withdraw(amount);
+        vm.stopPrank();
+
+        assertEq(temple.balanceOf(alice), amount);
     }
 
     function testWithdrawOnlyInEntryExitWindow() public {
