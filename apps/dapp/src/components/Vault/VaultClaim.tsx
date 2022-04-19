@@ -12,9 +12,7 @@ import { toAtto } from 'utils/bigNumber';
 import { BigNumber } from 'ethers';
 
 const useClaimTempleRequest = (amount: BigNumber) => {
-  const claimTemple = createMockRequest({
-    success: true,
-  }, 1000, true);
+  const claimTemple = createMockRequest({ success: true, }, 1000, true);
   return useRequestState(() => claimTemple(amount));
 };
 
@@ -56,7 +54,7 @@ const VaultClaim = () => {
           try {
             return claimRequest();
           } catch (error) {
-            // intentionall empty
+             // intentionally empty, handled in hook
           }
         }}
       />

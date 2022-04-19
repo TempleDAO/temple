@@ -15,6 +15,7 @@ export const createMockRequest = <T extends object>(
       setTimeout(() => {
         if (shouldThrow) {
           reject(new Error('Mock Request Failed'));
+          return;
         }
         resolve(response);
       }, requestTimeMs);
@@ -22,16 +23,18 @@ export const createMockRequest = <T extends object>(
   };
 };
 
+type RequestResponseState<T> = {
+  isLoading: boolean,
+  error: Nullable<Error>,
+  response: Nullable<T>,
+};
+
 type UseRequestStateReturnType<T extends object> = [
   () => Promise<void>,
-  {
-    isLoading: boolean,
-    error: Nullable<Error>,
-    response: Nullable<T>,
-  }
-]
+  RequestResponseState<T>,
+];
 
-const useRequestState = <T extends object>(request: Request<T>): UseRequestStateReturnType<T> => {
+const usePostRequestState = <T extends object>(request: Request<T>): UseRequestStateReturnType<T> => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Nullable<Error>>(null);
   const [response, setResponse] = useState<Nullable<T>>(null);
@@ -44,6 +47,7 @@ const useRequestState = <T extends object>(request: Request<T>): UseRequestState
       const response = await request();
       setResponse(response);
     } catch (error) {
+      setResponse(null);
       setError(error as Error);
     } finally {
       setIsLoading(false);
@@ -60,4 +64,4 @@ const useRequestState = <T extends object>(request: Request<T>): UseRequestState
   ];
 };
 
-export default useRequestState;
+export default usePostRequestState;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
 import styled from 'styled-components';
 import { BigNumber } from 'ethers';
 
@@ -12,13 +12,14 @@ import { VaultInput } from 'components/Input/VaultInput';
 import { CryptoSelect } from 'components/Input/CryptoSelect';
 import useRequestState, { createMockRequest } from 'hooks/use-request-state';
 import { toAtto } from 'utils/bigNumber';
+import EllipsisLoader from 'components/EllipsisLoader';
 
 // This dummy data will be replaced by the actual contracts
 const dummyOptions = [
   { value: '$FRAX', label: '$FRAX' },
   { value: '$TEMPLE', label: '$TEMPLE' },
   { value: '$OGTEMPLE', label: '$OGTEMPLE' },
-  { value: '$FAITH', label: '$FAITH' },
+  { value: 'FAITH', label: '$FAITH' },
   { value: '$ETH', label: '$ETH' },
   { value: '$USDC', label: '$USDC' },
   { value: '$FEI', label: '$FEI' },
@@ -29,18 +30,18 @@ const dummyWalletBalances = {
   $FRAX: 4834,
   $TEMPLE: 12834,
   $OGTEMPLE: 41834,
-  $FAITH: 3954,
+  FAITH: 3954,
   $ETH: 12,
   $USDC: 402,
   $FEI: 945,
 };
 
 // This dummy data will be replaced by the actual contracts
-const dummyCurrencyToTemple = {
+const dummyCurrencyToTemple: Record<TICKER_SYMBOL, number>= {
   $FRAX: 423,
   $TEMPLE: 343334,
   $OGTEMPLE: 502933,
-  $FAITH: 554,
+  FAITH: 554,
   $ETH: 14454,
   $USDC: 49233,
   $FEI: 9293,
@@ -49,21 +50,41 @@ const dummyCurrencyToTemple = {
 const defaultOption = { value: '$FRAX', label: '$FRAX' };
 
 const useStakeAssetRequest = (token: TICKER_SYMBOL, amount: BigNumber) => {
-  const stakeAsset = createMockRequest({
-    success: true,
-  }, 1000, true);
-  return useRequestState(() => stakeAsset(token, amount));
+  const stakeAssetRequest = createMockRequest({ success: true }, 1000, true);
+  return useRequestState(() => stakeAssetRequest(token, amount));
+};
+
+const useZappedAssetTempleBalance = (token: TICKER_SYMBOL, amount: BigNumber) => {
+  const zapAssetRequest = createMockRequest({ templeAmount: dummyCurrencyToTemple[token] }, 1000, true);
+  return useRequestState(() => zapAssetRequest(token, amount))
 };
 
 const VaultStake = () => {
   const [stakingAmount, setStakingAmount] = useState<number | ''>('');
-  const [templeAmount, setTempleAmount] = useState<number | ''>('');
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(dummyOptions[0].value as TICKER_SYMBOL);
   const [walletCurrencyBalance, setWalletCurrencyBalance] = useState<number>(0);
 
-  const [stakeAssetsRequest, { isLoading, error }] = useStakeAssetRequest(
+  const [
+    stakeAssetsRequest,
+    {
+      isLoading: stakeLoading,
+      error: stakeError
+    },
+  ] = useStakeAssetRequest(
     ticker,
-    toAtto(!stakingAmount ? 0 : stakingAmount)
+    toAtto(!stakingAmount ? 0 : stakingAmount),
+  );
+
+  const [
+    zapAssetRequest, 
+    {
+      response: zapRepsonse, 
+      error: zapError,
+      isLoading: zapLoading,
+    },
+  ] = useZappedAssetTempleBalance(
+    ticker,
+    toAtto(!stakingAmount ? 0 : stakingAmount),
   );
 
   const handleTickerUpdate = (val: Option) => {
@@ -74,7 +95,6 @@ const VaultStake = () => {
       ] as number
     );
     setStakingAmount('');
-    setTempleAmount('');
   };
 
   const handleUpdateStakingAmount = async (value: number) => {
@@ -87,20 +107,28 @@ const VaultStake = () => {
   };
 
   const conditionallySetTempleAmount = () => {
-    if (ticker === '$TEMPLE') {
-      setTempleAmount('');
+    if (ticker === TICKER_SYMBOL.TEMPLE_TOKEN) {
       return;
     }
-    setTempleAmount(
-      dummyCurrencyToTemple[ticker as keyof typeof dummyCurrencyToTemple]
-    );
+    zapAssetRequest();
   };
 
   useEffect(() => {
     handleTickerUpdate(defaultOption);
   }, []);
 
-  const buttonIsDisabled = !templeAmount || isLoading;
+  const isZap = ticker !== TICKER_SYMBOL.TEMPLE_TOKEN ;
+  const templeAmount = !isZap ? stakingAmount : (zapRepsonse?.templeAmount || 0);
+  const stakeButtonDisabled = !templeAmount || stakeLoading || zapLoading || (isZap && !!zapError);
+  
+  let templeAmountMessage: ReactNode = '';
+  if (zapError) {
+    templeAmountMessage = zapError.message || 'Something went wrong';
+  } else if (zapLoading) {
+    templeAmountMessage = <EllipsisLoader />;
+  } else if (zapRepsonse) {
+    templeAmountMessage = <>Staking {zapRepsonse.templeAmount} {TICKER_SYMBOL.TEMPLE_TOKEN}{' \u00A0'}</>;
+  }
 
   return (
     <>
@@ -125,23 +153,22 @@ const VaultStake = () => {
           placeholder={'0.00'}
           value={stakingAmount}
         />
-        <AmountInTemple>
-          {templeAmount !== ''
-            ? `Staking ${templeAmount} ${TICKER_SYMBOL.TEMPLE_TOKEN}`
-            : ''}{' '}
-          {'\u00A0'}
-        </AmountInTemple>
-        {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
+        {isZap && (
+          <AmountInTemple>
+            {templeAmountMessage}
+          </AmountInTemple>
+        )}
+        {!!stakeError && <ErrorLabel>{stakeError.message || 'Something went wrong'}</ErrorLabel>}
       </div>
       <VaultButton
         label={'stake'}
         autoWidth
-        disabled={buttonIsDisabled}
+        disabled={stakeButtonDisabled}
         onClick={async () => {
           try {
             return stakeAssetsRequest();
           } catch (error) {
-            // intentionally empty
+            // intentionally empty, handled in hook
           }
         }}
       />
