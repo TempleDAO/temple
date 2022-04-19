@@ -34,7 +34,7 @@ type UseRequestStateReturnType<T extends object> = [
   RequestResponseState<T>,
 ];
 
-const usePostRequestState = <T extends object>(request: Request<T>): UseRequestStateReturnType<T> => {
+const useRequestState = <T extends object>(request: Request<T>): UseRequestStateReturnType<T> => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Nullable<Error>>(null);
   const [response, setResponse] = useState<Nullable<T>>(null);
@@ -64,4 +64,4 @@ const usePostRequestState = <T extends object>(request: Request<T>): UseRequestS
   ];
 };
 
-export default usePostRequestState;
+export default useRequestState;
