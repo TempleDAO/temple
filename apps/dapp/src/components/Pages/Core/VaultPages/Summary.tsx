@@ -6,7 +6,7 @@ import VaultSummary from 'components/Vault/VaultSummary';
 import useVaultContext from './useVaultContext';
 
 export const Summary = () => {
-  const vault = useVaultContext();
+  const {vault} = useVaultContext();
 
   return (
     <VaultContent>
