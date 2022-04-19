@@ -32,19 +32,22 @@ const VaultClaim = () => {
   return (
     <>
       <Header>Claim</Header>
-      <h3>
-        Claimable TEMPLE{' '}
-        <TempleAmountLink onClick={() => copyBalance(templeWalletAmount, setTempleAmount)}>
-          {formatNumber(templeWalletAmount)}
-        </TempleAmountLink>
-      </h3>
-      <VaultInput
-        tickerSymbol={TICKER_SYMBOL.TEMPLE_TOKEN}
-        handleChange={handleUpdateTempleAmount}
-        isNumber
-        placeholder={'0.00'}
-        value={templeAmount}
-      />
+      <div>
+        <ClaimableLabel>
+          Claimable $TEMPLE{' '}
+          <TempleAmountLink onClick={() => copyBalance(templeWalletAmount, setTempleAmount)}>
+            {formatNumber(templeWalletAmount)}
+          </TempleAmountLink>
+        </ClaimableLabel>
+        <VaultInput
+          tickerSymbol={TICKER_SYMBOL.TEMPLE_TOKEN}
+          handleChange={handleUpdateTempleAmount}
+          isNumber
+          placeholder={'0.00'}
+          value={templeAmount}
+        />
+        {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
+      </div>
       <ClaimButton
         label={'claim'}
         autoWidth
@@ -55,14 +58,26 @@ const VaultClaim = () => {
           } catch (error) {
             // intentionall empty
           }
-        }} />
+        }}
+      />
     </>
   );
 };
 
+const ClaimableLabel = styled.h4`
+  display: block;
+  line-height: 1.3;
+`;
+
 const ClaimButton = styled(Button)`
   align-self: center;
-  margin: 3rem;
+  margin: auto auto 3rem;
+`;
+
+const ErrorLabel = styled.span`
+  color: ${({ theme }) => theme.palette.enclave.chaos};
+  display: block;
+  margin: 1rem 0;
 `;
 
 const TempleAmountLink = styled.a`

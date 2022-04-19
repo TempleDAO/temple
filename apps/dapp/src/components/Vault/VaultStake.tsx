@@ -100,39 +100,43 @@ const VaultStake = () => {
     handleTickerUpdate(defaultOption);
   }, []);
 
+  const buttonIsDisabled = templeAmount === '' || isLoading;
+
   return (
     <>
-      <Header>Stake</Header>
-      <DepositContainer>
-        DEPOSIT{' '}
-        <SelectContainer>
-          <CryptoSelect
-            options={dummyOptions}
-            defaultValue={defaultOption}
-            onChange={handleTickerUpdate}
-          />
-        </SelectContainer>
-      </DepositContainer>
-      <VaultInput
-        tickerSymbol={ticker}
-        handleChange={handleUpdateStakingAmount}
-        hint={`Balance: ${formatNumber(walletCurrencyBalance)}`}
-        onHintClick={handleHintClick}
-        isNumber
-        placeholder={'0.00'}
-        value={stakingAmount}
-      />
-      <AmountInTemple>
-        {templeAmount !== ''
-          ? `Staking ${templeAmount} ${TICKER_SYMBOL.TEMPLE_TOKEN}`
-          : ''}{' '}
-        {'\u00A0'}
-      </AmountInTemple>
-      {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
+      <div>
+        <Header>Stake</Header>
+        <DepositContainer>
+          DEPOSIT{' '}
+          <SelectContainer>
+            <CryptoSelect
+              options={dummyOptions}
+              defaultValue={defaultOption}
+              onChange={handleTickerUpdate}
+            />
+          </SelectContainer>
+        </DepositContainer>
+        <VaultInput
+          tickerSymbol={ticker}
+          handleChange={handleUpdateStakingAmount}
+          hint={`Balance: ${formatNumber(walletCurrencyBalance)}`}
+          onHintClick={handleHintClick}
+          isNumber
+          placeholder={'0.00'}
+          value={stakingAmount}
+        />
+        <AmountInTemple>
+          {templeAmount !== ''
+            ? `Staking ${templeAmount} ${TICKER_SYMBOL.TEMPLE_TOKEN}`
+            : ''}{' '}
+          {'\u00A0'}
+        </AmountInTemple>
+        {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
+      </div>
       <VaultButton
         label={'stake'}
         autoWidth
-        disabled={templeAmount === '' || isLoading}
+        disabled={buttonIsDisabled}
         onClick={async () => {
           try {
             return stakeAsssetsRequest();
