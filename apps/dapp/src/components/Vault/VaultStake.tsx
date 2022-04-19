@@ -97,20 +97,17 @@ const VaultStake = () => {
     setStakingAmount('');
   };
 
-  const handleUpdateStakingAmount = async (value: number) => {
+  const handleUpdateStakingAmount = (value: number) => {
     setStakingAmount(value === 0 ? '' : value);
-    conditionallySetTempleAmount();
+
+    // If there is a value present and its not TEMPLE request the zapped value.
+    if (ticker !== TICKER_SYMBOL.TEMPLE_TOKEN && !!value) {
+      zapAssetRequest();
+    }
   };
 
   const handleHintClick = () => {
     handleUpdateStakingAmount(walletCurrencyBalance);
-  };
-
-  const conditionallySetTempleAmount = () => {
-    if (ticker === TICKER_SYMBOL.TEMPLE_TOKEN) {
-      return;
-    }
-    zapAssetRequest();
   };
 
   useEffect(() => {
@@ -118,7 +115,7 @@ const VaultStake = () => {
   }, []);
 
   const isZap = ticker !== TICKER_SYMBOL.TEMPLE_TOKEN ;
-  const templeAmount = !isZap ? stakingAmount : (zapRepsonse?.templeAmount || 0);
+  const templeAmount = !isZap ? stakingAmount : (stakingAmount && zapRepsonse?.templeAmount || 0);
   const stakeButtonDisabled = !templeAmount || stakeLoading || zapLoading || (isZap && !!zapError);
   
   let templeAmountMessage: ReactNode = '';
@@ -126,7 +123,7 @@ const VaultStake = () => {
     templeAmountMessage = zapError.message || 'Something went wrong';
   } else if (zapLoading) {
     templeAmountMessage = <EllipsisLoader />;
-  } else if (zapRepsonse) {
+  } else if (zapRepsonse && !!stakingAmount) {
     templeAmountMessage = <>Staking {zapRepsonse.templeAmount} {TICKER_SYMBOL.TEMPLE_TOKEN}{' \u00A0'}</>;
   }
 
@@ -153,11 +150,9 @@ const VaultStake = () => {
           placeholder={'0.00'}
           value={stakingAmount}
         />
-        {isZap && (
-          <AmountInTemple>
-            {templeAmountMessage}
-          </AmountInTemple>
-        )}
+        <AmountInTemple>
+          {isZap && templeAmountMessage}
+        </AmountInTemple>
         {!!stakeError && <ErrorLabel>{stakeError.message || 'Something went wrong'}</ErrorLabel>}
       </div>
       <VaultButton
