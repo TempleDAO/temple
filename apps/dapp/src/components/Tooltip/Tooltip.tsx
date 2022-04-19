@@ -1,4 +1,4 @@
-import React, { forwardRef, PropsWithChildren } from 'react';
+import React, { PropsWithChildren } from 'react';
 import styled, { css } from 'styled-components';
 
 import Tippy from '@tippyjs/react';
@@ -13,7 +13,6 @@ export interface TooltipProps {
   delay?: number;
   offset?: [number, number];
   animationDuration?: number;
-  singleton?: any;
 }
 
 const Tooltip = ({
