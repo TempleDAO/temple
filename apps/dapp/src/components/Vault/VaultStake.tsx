@@ -1,13 +1,17 @@
+import { useState, useEffect } from 'react';
+import styled from 'styled-components';
+
 import { Option } from 'components/InputSelect/InputSelect';
 import { VaultButton } from 'components/Vault/VaultContent';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { useState, useEffect } from 'react';
-import styled from 'styled-components';
 import { formatNumber } from 'utils/formatter';
 import { Header } from 'styles/vault';
 import { theme } from 'styles/theme';
 import { VaultInput } from 'components/Input/VaultInput';
 import { CryptoSelect } from 'components/Input/CryptoSelect';
+import useRequestState, { createMockRequest } from 'hooks/use-request-state';
+import { toAtto } from 'utils/bigNumber';
+import { BigNumber } from 'ethers';
 
 // This dummy data will be replaced by the actual contracts
 const dummyOptions = [
@@ -44,15 +48,27 @@ const dummyCurrencyToTemple = {
 
 const defaultOption = { value: '$FRAX', label: '$FRAX' };
 
-const VaultClaim = () => {
+const useStakeAssetRequest = (token: TICKER_SYMBOL, amount: BigNumber) => {
+  const stakeAsset = createMockRequest({
+    success: true,
+  }, 1000, true);
+  return useRequestState(() => stakeAsset(token, amount));
+};
+
+const VaultStake = () => {
   const [stakingAmount, setStakingAmount] = useState<number | ''>('');
   const [templeAmount, setTempleAmount] = useState<number | ''>('');
-  const [ticker, setTicker] = useState(dummyOptions[0].value);
+  const [ticker, setTicker] = useState<TICKER_SYMBOL>(dummyOptions[0].value as TICKER_SYMBOL);
+
+  const [stakeAsssetsRequest, { isLoading, error, response }] = useStakeAssetRequest(
+    ticker,
+    toAtto(!stakingAmount ? 0 : stakingAmount)
+  );
 
   const [walletCurrencyBalance, setWalletCurrencyBalance] = useState<number>(0);
 
   const handleTickerUpdate = (val: Option) => {
-    setTicker(val.value as string);
+    setTicker(val.value as TICKER_SYMBOL);
     setWalletCurrencyBalance(
       dummyWalletBalances[
         val.value as keyof typeof dummyWalletBalances
@@ -113,7 +129,18 @@ const VaultClaim = () => {
           : ''}{' '}
         {'\u00A0'}
       </AmountInTemple>
-      <VaultButton label={'stake'} autoWidth />
+      <VaultButton
+        label={'stake'}
+        autoWidth
+        disabled={isLoading}
+        onClick={async () => {
+          try {
+            stakeAsssetsRequest();
+          } catch (error) {
+            // intentionally empty
+          }
+        }}
+      />
     </>
   );
 };
@@ -137,4 +164,4 @@ const DepositContainer = styled.div`
   display: inline-block;
 `;
 
-export default VaultClaim;
+export default VaultStake;
