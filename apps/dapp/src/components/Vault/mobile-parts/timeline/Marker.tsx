@@ -1,20 +1,18 @@
+import { useRef, forwardRef } from 'react';
+import styled from 'styled-components';
+
 import { lerp } from 'components/Vault/desktop-parts/utils';
 import { Entry, MarkerType } from 'components/Vault/types';
-import { useRef } from 'react';
-import styled from 'styled-components';
 
 type Props = {
   entry: Entry;
-  onMarkerClick: (entry: Entry, el: SVGElement) => void;
 };
 
-export const Marker = ({ entry, onMarkerClick }: Props) => {
-  const ref = useRef(null);
-  const click = () => onMarkerClick(entry, ref.current!);
+export const Marker = forwardRef<SVGGElement, Props>(({ entry }, ref) => {
   const positionX = lerp(0, 274, entry.percent!)
   const transform = `translate(${positionX} 0)`;
   return (
-    <MarkerContainer id="marker" transform={transform} onClick={click} ref={ref}>
+    <MarkerContainer id="marker" transform={transform} ref={ref}>
       <animateTransform
         attributeName="transform"
         attributeType="XML"
@@ -27,7 +25,7 @@ export const Marker = ({ entry, onMarkerClick }: Props) => {
       {getMarker(entry.type!)}
     </MarkerContainer>
   );
-};
+});
 
 const MarkerContainer = styled.g`
   cursor: pointer;
