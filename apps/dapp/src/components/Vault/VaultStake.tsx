@@ -59,13 +59,12 @@ const VaultStake = () => {
   const [stakingAmount, setStakingAmount] = useState<number | ''>('');
   const [templeAmount, setTempleAmount] = useState<number | ''>('');
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(dummyOptions[0].value as TICKER_SYMBOL);
+  const [walletCurrencyBalance, setWalletCurrencyBalance] = useState<number>(0);
 
-  const [stakeAsssetsRequest, { isLoading, error, response }] = useStakeAssetRequest(
+  const [stakeAsssetsRequest, { isLoading, error }] = useStakeAssetRequest(
     ticker,
     toAtto(!stakingAmount ? 0 : stakingAmount)
   );
-
-  const [walletCurrencyBalance, setWalletCurrencyBalance] = useState<number>(0);
 
   const handleTickerUpdate = (val: Option) => {
     setTicker(val.value as TICKER_SYMBOL);
@@ -129,13 +128,14 @@ const VaultStake = () => {
           : ''}{' '}
         {'\u00A0'}
       </AmountInTemple>
+      {error ? <ErrorLabel>Something went wrong</ErrorLabel> : ''}
       <VaultButton
         label={'stake'}
         autoWidth
-        disabled={isLoading}
+        disabled={templeAmount === '' || isLoading}
         onClick={async () => {
           try {
-            stakeAsssetsRequest();
+            return stakeAsssetsRequest();
           } catch (error) {
             // intentionally empty
           }
@@ -153,8 +153,16 @@ const SelectContainer = styled.div`
   z-index: 4;
 `;
 
-const AmountInTemple = styled.p`
+const AmountInTemple = styled.span`
   color: ${theme.palette.brandLight};
+  display: block;
+  margin: 1rem 0;
+`;
+
+const ErrorLabel = styled.span`
+  color: ${theme.palette.enclave.chaos};
+  display: block;
+  margin: 0 0 1rem;
 `;
 
 const DepositContainer = styled.div`

@@ -9,7 +9,8 @@ export const createMockRequest = <T extends object>(
   canThrowError = false,
 ): (...args: any[]) => Promise<T> => {
   return () => {
-    const shouldThrow = canThrowError ? Math.random() >= 0.5 : false;
+    // If chance of error is enabled, throw 25% of the time.
+    const shouldThrow = canThrowError ? Math.random() >= 0.75 : false;
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         if (shouldThrow) {
