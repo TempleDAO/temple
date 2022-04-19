@@ -37,7 +37,7 @@ const dummyWalletBalances = {
 };
 
 // This dummy data will be replaced by the actual contracts
-const dummyCurrencyToTemple: Record<TICKER_SYMBOL, number>= {
+const dummyCurrencyToTemple: Record<TICKER_SYMBOL, number> = {
   $FRAX: 423,
   $TEMPLE: 343334,
   $OGTEMPLE: 502933,

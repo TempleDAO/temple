@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import styled from 'styled-components';
+import { BigNumber } from 'ethers';
 
 import { VaultInput } from 'components/Input/VaultInput';
 import { Button } from 'components/Button/Button';
@@ -9,7 +10,6 @@ import { copyBalance } from 'components/AMM/helpers/methods';
 import { Header } from 'styles/vault';
 import useRequestState, { createMockRequest } from 'hooks/use-request-state';
 import { toAtto } from 'utils/bigNumber';
-import { BigNumber } from 'ethers';
 
 const useClaimTempleRequest = (amount: BigNumber) => {
   const claimTemple = createMockRequest({ success: true, }, 1000, true);
