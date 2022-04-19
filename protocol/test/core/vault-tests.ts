@@ -110,14 +110,12 @@ describe("Temple Core Vault", async () => {
   });
 
   describe("ERC20 verification", async () => {
-    const accounts: [Signer, BigNumber][] = [];
+    let accounts: [Signer, BigNumber][] = [];
 
     beforeEach(async () => {
       await vault.connect(alan).deposit(toAtto(300));
-      accounts.push([alan, toAtto(300)])
-
       await vault.connect(ben).deposit(toAtto(300));
-      accounts.push([ben,  toAtto(300)])
+      accounts = [[alan, toAtto(300)], [ben,  toAtto(300)]]
     })
 
     it("Has expected initial balances", async () => {
