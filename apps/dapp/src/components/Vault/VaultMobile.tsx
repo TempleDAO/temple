@@ -41,7 +41,7 @@ export const VaultMobile = forwardRef<VaultRef, VaultProps>(
         <Content>{children}</Content>
         <div>
           <svg width="100%" viewBox="1 503 320 65" fill="none">
-            <Timeline vault={vault} onMarkerClick={markerClick} />
+            <Timeline vault={vault} />
           </svg>
         </div>
       </BoundingBox>

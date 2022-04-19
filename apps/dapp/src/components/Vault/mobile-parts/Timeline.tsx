@@ -1,23 +1,29 @@
-import { Entry, Vault } from '../types';
+import { Vault } from '../types';
 import { BGTrack } from './timeline/BGTrack';
 import { Marker } from './timeline/Marker';
 import { Ticks } from './timeline/Ticks';
+import TimelineTippy from '../TimelineTippy'
 
 type Props = {
   vault: Vault;
-  onMarkerClick: (entryData: Entry, markerEl: SVGElement) => void;
 };
 
-export const Timeline = ({ vault, onMarkerClick }: Props) => {
+export const Timeline = ({ vault }: Props) => {
   const markers = vault.entries.map((entry) => (
-    <Marker key={entry.id} entry={entry} onMarkerClick={onMarkerClick} />
+    <TimelineTippy
+      vault={vault}
+      entry={entry}
+      key={entry.id}
+    >
+      <Marker entry={entry} />
+    </TimelineTippy>
   ));
 
   return (
     <>
       <BGTrack />
       <Ticks vault={vault} />
-     {markers}
+      {markers}
     </>
   );
 };

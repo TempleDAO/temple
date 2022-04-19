@@ -48,7 +48,7 @@ export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
               navigate(`/core/dapp/vaults/${vault.id}/${page}`);
             }}
           />
-          <Timeline data={vault} onMarkerClick={markerClick} />
+          <Timeline vault={vault} />
           <InnerRing selected={selectedNav} />
           <ForeignObject x="241.5" y="239.5" width="520" height="520">
             <Content>{children}</Content>

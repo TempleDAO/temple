@@ -8,10 +8,9 @@ const MAX_ANGLE = -80.5;
 
 type Props = {
   data: Entry;
-  onMarkerClick: (entry: Entry, el: SVGElement) => void;
 };
 
-export const Marker = forwardRef<SVGGElement, Props>(({ data, onMarkerClick }, ref) => {
+export const Marker = forwardRef<SVGGElement, Props>(({ data }, ref) => {
   const angle = getAngle(data.percent!);
   const t = `rotate(${angle} 502.066 502.066)`;
 
