@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { BigNumber } from 'ethers';
 
 import { Option } from 'components/InputSelect/InputSelect';
 import { VaultButton } from 'components/Vault/VaultContent';
@@ -11,7 +12,6 @@ import { VaultInput } from 'components/Input/VaultInput';
 import { CryptoSelect } from 'components/Input/CryptoSelect';
 import useRequestState, { createMockRequest } from 'hooks/use-request-state';
 import { toAtto } from 'utils/bigNumber';
-import { BigNumber } from 'ethers';
 
 // This dummy data will be replaced by the actual contracts
 const dummyOptions = [
