@@ -16,7 +16,7 @@ import { pixelsToRems } from 'styles/mixins';
 import useVaultContext from './useVaultContext';
 
 const Timing = () => {
-  const vault = useVaultContext();
+  const {vault} = useVaultContext();
   return (
     <Wrapper>
       <Header>Timing</Header>

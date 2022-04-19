@@ -220,4 +220,9 @@ export const GlobalStyle = createGlobalStyle`
   ::-webkit-scrollbar-thumb:hover {
     background-color: ${theme.palette.brandDark};
   }
+
+  // Tippy arrow global style
+  .tippy-svg-arrow {
+    fill: ${theme.palette.brand};
+  }
 `;
