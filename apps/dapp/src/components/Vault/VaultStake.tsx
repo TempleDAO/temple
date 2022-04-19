@@ -61,7 +61,7 @@ const VaultStake = () => {
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(dummyOptions[0].value as TICKER_SYMBOL);
   const [walletCurrencyBalance, setWalletCurrencyBalance] = useState<number>(0);
 
-  const [stakeAsssetsRequest, { isLoading, error }] = useStakeAssetRequest(
+  const [stakeAssetsRequest, { isLoading, error }] = useStakeAssetRequest(
     ticker,
     toAtto(!stakingAmount ? 0 : stakingAmount)
   );
@@ -139,7 +139,7 @@ const VaultStake = () => {
         disabled={buttonIsDisabled}
         onClick={async () => {
           try {
-            return stakeAsssetsRequest();
+            return stakeAssetsRequest();
           } catch (error) {
             // intentionally empty
           }
