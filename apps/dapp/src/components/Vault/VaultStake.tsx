@@ -100,7 +100,7 @@ const VaultStake = () => {
     handleTickerUpdate(defaultOption);
   }, []);
 
-  const buttonIsDisabled = templeAmount === '' || isLoading;
+  const buttonIsDisabled = !templeAmount || isLoading;
 
   return (
     <>
