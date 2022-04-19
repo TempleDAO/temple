@@ -128,7 +128,7 @@ const VaultStake = () => {
           : ''}{' '}
         {'\u00A0'}
       </AmountInTemple>
-      {error ? <ErrorLabel>Something went wrong</ErrorLabel> : ''}
+      {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
       <VaultButton
         label={'stake'}
         autoWidth
