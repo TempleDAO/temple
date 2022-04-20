@@ -21,7 +21,6 @@ interface ITempleTreasury {
 }
 
 contract TempleStableAMMRouter is Ownable, AccessControl {
-    bytes32 public constant CAN_ADD_ALLOWED_USER = keccak256("CAN_ADD_ALLOWED_USER");
 
     // precondition token0/tokenA is temple. token1/tokenB is frax
     IUniswapV2Pair public immutable fraxPair;
@@ -31,13 +30,6 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
     IERC20 public immutable fraxToken;
     IERC20 public immutable feiToken;
     ITempleTreasury public immutable templeTreasury;
-
-    // Address all frax earned via protocol mint is sent
-    address protocolMintEarningsAccount;
-
-    // who's allowed to swap on the AMM. Only used if openAccessEnabled is false;
-    mapping(address => bool) public allowed;
-    bool public openAccessEnabled = false;
 
     modifier ensure(uint deadline) {
         require(deadline >= block.timestamp, 'TempleStableAMMRouter: EXPIRED');
@@ -50,8 +42,7 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
             TempleERC20Token _templeToken,
             IERC20 _fraxToken,
             IERC20 _feiToken,
-            ITempleTreasury _templeTreasury,
-            address _protocolMintEarningsAccount
+            ITempleTreasury _templeTreasury
             ) {
 
         fraxPair = _fraxPair;
@@ -60,27 +51,10 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
         fraxToken = _fraxToken;
         feiToken = _feiToken;
         templeTreasury = _templeTreasury;
-        protocolMintEarningsAccount = _protocolMintEarningsAccount;
 
         _setupRole(DEFAULT_ADMIN_ROLE, owner());
     }
 
-
-    function toggleOpenAccess() external onlyOwner {
-        openAccessEnabled = !openAccessEnabled;
-    }
-
-    function addAllowedUser(address userAddress) external onlyRole(CAN_ADD_ALLOWED_USER) {
-      allowed[userAddress] = true;
-    }
-
-    function removeAllowedUser(address userAddress) external onlyOwner {
-      allowed[userAddress] = false;
-    }
-
-    function setProtocolMintEarningsAccount(address _protocolMintEarningsAccount) external onlyOwner {
-      protocolMintEarningsAccount = _protocolMintEarningsAccount;
-    }
 
     // **** ADD LIQUIDITY ****
     function _addLiquidity(
@@ -146,9 +120,7 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
         address to,
         uint deadline
     ) external virtual ensure(deadline) returns (uint amountOut) {
-        require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
 
- 
         uint amountOut = swapExactStableForTempleQuote(fraxPair, amountIn);
         require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
 
@@ -163,9 +135,7 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
         address to,
         uint deadline
     ) external virtual ensure(deadline) returns (uint amountOut) {
-        require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
 
- 
         uint amountOut = swapExactStableForTempleQuote(feiPair, amountIn);
         require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
 
@@ -180,7 +150,6 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
         address to,
         uint deadline
     ) external virtual ensure(deadline) returns (uint) {
-        require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
 
         (bool priceBelowIV, uint amountOut) = swapExactTempleForStableQuote(fraxPair, amountIn);
         if (priceBelowIV) {
@@ -203,7 +172,6 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
         address to,
         uint deadline
     ) external virtual ensure(deadline) returns (uint) {
-        require(allowed[msg.sender] || openAccessEnabled, "Router isn't open access and caller isn't in the allowed list");
 
         (bool priceBelowIV, uint amountOut) = swapExactTempleForStableQuote(feiPair, amountIn);
         if (priceBelowIV) {
