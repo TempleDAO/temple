@@ -20,9 +20,9 @@ const defaultChain = chain.mainnet
 
 type ConnectorsConfig = { chainId?: number }
 const connectors = ({ chainId }: ConnectorsConfig) => {
-  const rpcUrl =
-    chains.find((x) => x.id === chainId)?.rpcUrls?.[0] ??
-    defaultChain.rpcUrls[0]
+  // const rpcUrl =
+  //   chains.find((x) => x.id === chainId)?.rpcUrls?.[0] ??
+  //   defaultChain.rpcUrls[0];
   return [
     new InjectedConnector({ chains, options: { shimDisconnect: true } }),
     new WalletConnectConnector({
@@ -32,6 +32,7 @@ const connectors = ({ chainId }: ConnectorsConfig) => {
         qrcode: true,
       },
     }),
+    // 
     // new WalletLinkConnector({
     //   chains,
     //   options: {
