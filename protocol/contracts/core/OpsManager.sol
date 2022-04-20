@@ -40,7 +40,7 @@ contract OpsManager is Ownable {
 
         // Create a FarmingRevenue pool associated with this exposure
         pools[exposure] = new TreasuryFarmingRevenue(exposure);
-        exposure.addMinter(address(pools[exposure]));
+        exposure.setMinterState(address(pools[exposure]), true);
     }
 
     /**

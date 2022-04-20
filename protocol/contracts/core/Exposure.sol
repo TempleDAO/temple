@@ -75,21 +75,11 @@ contract Exposure is Ownable, RebasingERC20 {
     }
 
     /**
-     * @dev add a minter to a strategy
+     * @dev set/unset an accounts ability to mint exposure tokens
      */
-    function addMinter(address account) external onlyMinterManager {
-        canMint[account] = true;
-
-        emit AddMinter(account);
-    }
-
-    /**
-     * @dev remove a minter from a strategy
-     */
-    function removeMinter(address account) external onlyMinterManager {
-        canMint[account] = false;
-
-        emit RemoveMinter(account);
+    function setMinterState(address account, bool state) external onlyMinterManager {
+        canMint[account] = state;
+        emit SetMinterState(account, state);
     }
 
     /**
@@ -154,8 +144,7 @@ contract Exposure is Ownable, RebasingERC20 {
     event IncreaseReval(uint256 oldVal, uint256 newVal);
     event DecreaseReval(uint256 oldVal, uint256 newVal);
     event SetLiquidator(address liquidator);
-    event AddMinter(address account);
-    event RemoveMinter(address account);
+    event SetMinterState(address account, bool state);
     event Redeem(address revalToken, address account, uint256 amount);
 }
 
