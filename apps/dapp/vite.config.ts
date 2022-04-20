@@ -56,6 +56,9 @@ export default defineConfig({
       },
     },
   },
+  define: {
+    global: 'globalThis',
+  },
   resolve: {
     alias: {
       components: path.resolve(__dirname, 'src/components'),
