@@ -15,10 +15,10 @@ const VENDOR_CHUNKS = new Set([
 
 const VISUALIZATION_CHUNKS = new Set([
   'd3-shape',
+  'react-vis',
 ]);
 
 const EXTERNAL_DEPS = new Set([
-  'react-vis',
 ]);
 
 const renderChunks = (deps: Record<string, string>) => {
@@ -26,8 +26,7 @@ const renderChunks = (deps: Record<string, string>) => {
   Object.keys(deps).forEach((dep) => {
     if (
       VENDOR_CHUNKS.has(dep) ||
-      VISUALIZATION_CHUNKS.has(dep) || 
-      EXTERNAL_DEPS.has(dep)
+      VISUALIZATION_CHUNKS.has(dep)
     ) {
       return;
     }
@@ -51,7 +50,7 @@ export default defineConfig({
   build: {
     sourcemap: process.env.VITE_ENV === 'development',
     rollupOptions: {
-      external: Array.from(EXTERNAL_DEPS),
+      // external: Array.from(EXTERNAL_DEPS),
       output: {
         manualChunks: {
           vendor: Array.from(VENDOR_CHUNKS),
@@ -60,9 +59,6 @@ export default defineConfig({
         },
       },
     },
-  },
-  define: {
-    global: 'globalThis',
   },
   resolve: {
     alias: {
