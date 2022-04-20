@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import styled, { css } from 'styled-components';
 import { useConnect } from 'wagmi';
 
-import { useOutsideClick } from 'hooks/useOutsideClick';
 import { tabletAndAbove } from 'styles/breakpoints';
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
@@ -19,7 +18,6 @@ interface Props {
 
 // TODO(Fujisawa): Make reusable popover that animates open/shut.
 export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
-  const popoverRef = useRef<HTMLDivElement>(null);
   const [{ data, error, loading }, connect] = useConnect();
 
   const connected = data.connected;
@@ -29,15 +27,10 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
     }
   }, [connected, isOpen]);
 
-  // Close on click outside
-  useOutsideClick(popoverRef, () => {
-    onClose();
-  });
-
   return (
     <>
       {isOpen && <Dimmer />}
-      <Wrapper ref={popoverRef} isOpen={isOpen}>
+      <Wrapper isOpen={isOpen}>
         <SelectWalletLabel>Select Wallet</SelectWalletLabel>
         <XIcon onClick={() => onClose()}/>
         <Menu>
@@ -112,6 +105,8 @@ const SelectWalletLabel = styled.h4`
 const ErrorMessage = styled.span`
   display: flex;
   justify-content: center;
+  color: ${({ theme }) => theme.palette.enclave.chaos};
+  margin: 1rem 0 0;
 `;
 
 const Wrapper = styled.div<{ isOpen: boolean }>`
