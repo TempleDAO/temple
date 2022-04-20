@@ -1,5 +1,7 @@
-import { JsonRpcSigner, Network } from '@ethersproject/providers';
-import { BigNumber } from 'ethers';
+import { Network } from '@ethersproject/providers';
+import { BigNumber, ethers } from 'ethers';
+
+import { Nullable } from 'types/util';
 import { ERC20 } from 'types/typechain';
 import { ClaimType } from 'enums/claim-type';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
@@ -131,11 +133,11 @@ export interface SwapService {
 
 export interface WalletState {
   // has the user connected a wallet to the dapp
-  wallet: string | null;
+  wallet: Nullable<string>;
   // current
   balance: Balance;
-  signer: JsonRpcSigner | null;
-  network: Network | null;
+  signer: Nullable<ethers.providers.JsonRpcSigner>;
+  network: Nullable<Network>;
 
   isConnected(): boolean;
 
