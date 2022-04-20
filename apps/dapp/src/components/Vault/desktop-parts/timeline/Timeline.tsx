@@ -3,24 +3,32 @@ import { TimelineTicks } from './TimelineTicks';
 import { TimelineStartEndMarkers } from './TimelineStartEndMarkers';
 import { TimelineChannel } from './TimelineChannel';
 import { TimelineBackground } from './TimelineBackground';
-import { Entry, Vault } from 'components/Vault/types';
+import { Vault } from 'components/Vault/types';
+import TimelineTippy from '../../TimelineTippy'
 
 type Props = {
-  data: Vault;
-  onMarkerClick: (entryData: Entry, markerEl: SVGElement) => void;
+  vault: Vault;
 };
 
-export const Timeline = ({ data, onMarkerClick }: Props) => {
-  const markers = data.entries.map((entry) => (
-    <Marker key={entry.id} data={entry} onMarkerClick={onMarkerClick} />
-  ));
+export const Timeline = ({ vault }: Props) => {
+  const markers = vault.entries.map((entry) => {
+    return (
+      <TimelineTippy
+        vault={vault}
+        entry={entry}
+        key={entry.id}
+      >
+        <Marker data={entry} />
+      </TimelineTippy>
+    );
+  });
 
   return (
     <g id="vault-timeline">
       <TimelineBackground />
       <TimelineChannel />
       <TimelineStartEndMarkers />
-      <TimelineTicks months={data.months} />
+      <TimelineTicks months={vault.months} />
       {markers}
     </g>
   );
