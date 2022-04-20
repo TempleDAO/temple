@@ -1,16 +1,10 @@
 pragma solidity 0.8.10;
 
-import "ds-test/test.sol";
-import "../core/JoiningFee.sol";
+import {TempleTest} from "./utils/TempleTest.t.sol";
+import {JoiningFee} from "../core/JoiningFee.sol";
 
-interface Vm {
-    function warp(uint256) external;
-    function assume(bool) external; 
-}
-
-contract JoiningFeeTest is DSTest {
+contract JoiningFeeTest is TempleTest {
     JoiningFee joiningFee;
-    Vm vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     
     function setUp() public {
         joiningFee = new JoiningFee(10000000000000000000);
