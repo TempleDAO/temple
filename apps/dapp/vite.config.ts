@@ -66,6 +66,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      process: 'process',
+      util: 'util',
       components: path.resolve(__dirname, 'src/components'),
       providers: path.resolve(__dirname, 'src/providers'),
       assets: path.resolve(__dirname, 'src/assets'),
