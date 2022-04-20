@@ -43,11 +43,14 @@ const Header = () => {
 
   
   let accountButton = null;
-  if (!accountLoading) {
-    accountButton = accountData?.address ? (
+   
+  if (accountLoading) {
+    accountButton = <Loader />;
+  } else if (accountData?.address) {
+    accountButton = (
       <>
         <UserAddress>
-          {accountData.ens?.name ? (
+          {!!accountData.ens?.name ? (
             accountData.ens?.name
           ) : (
             <TruncatedAddress address={accountData?.address} />
@@ -62,7 +65,9 @@ const Header = () => {
           }}
         />
       </>
-    ) : (
+    );
+  } else {
+    accountButton = (
       <ConnectButton
         isSmall
         isUppercase
@@ -73,8 +78,6 @@ const Header = () => {
         }}
       />
     );
-  } else {
-    accountButton = <Loader />;
   }
 
   return (
