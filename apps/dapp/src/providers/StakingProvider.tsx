@@ -1,11 +1,10 @@
-import React, {
+import {
   useState,
   createContext,
   useContext,
   PropsWithChildren,
 } from 'react';
-import { BigNumber } from 'ethers';
-import { JsonRpcSigner } from '@ethersproject/providers';
+import { BigNumber, ethers } from 'ethers';
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
 import { getEpochsToDays } from 'providers/util';
@@ -80,7 +79,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
   const { wallet, signer, getBalance, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
 
-  const getApy = async (walletAddress: string, signerState: JsonRpcSigner) => {
+  const getApy = async (walletAddress: string, signerState: ethers.providers.JsonRpcSigner) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
@@ -96,7 +95,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
   const getRewardsForOGTemple = async (
     walletAddress: string,
-    signerState: JsonRpcSigner,
+    signerState: ethers.providers.JsonRpcSigner,
     ogtAmount: number
   ) => {
     if (!walletAddress) {
@@ -112,7 +111,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
   const getLockedEntries = async (
     walletAddress: string,
-    signerState: JsonRpcSigner
+    signerState: ethers.providers.JsonRpcSigner
   ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
@@ -157,7 +156,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
   const getExitQueueData = async (
     walletAddress: string,
-    signerState: JsonRpcSigner
+    signerState: ethers.providers.JsonRpcSigner
   ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
