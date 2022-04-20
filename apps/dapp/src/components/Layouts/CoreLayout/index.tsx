@@ -2,11 +2,10 @@ import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 import { phoneAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
-import { Connector, Provider as WagmiProvider, chain, defaultChains } from 'wagmi'
+import { Provider as WagmiProvider, chain, defaultChains } from 'wagmi';
 import { Buffer } from 'buffer';
-import { InjectedConnector } from 'wagmi/connectors/injected'
-import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
-import { WalletLinkConnector } from 'wagmi/connectors/walletLink'
+import { InjectedConnector } from 'wagmi/connectors/injected';
+import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
 
 import Header from './Header';
 
@@ -15,24 +14,19 @@ if (!window.Buffer) {
   window.Buffer = Buffer;
 }
 
-const chains = defaultChains
-const defaultChain = chain.mainnet
+const chains = defaultChains;
 
-type ConnectorsConfig = { chainId?: number }
+type ConnectorsConfig = { chainId?: number };
 const connectors = ({ chainId }: ConnectorsConfig) => {
-  // const rpcUrl =
-  //   chains.find((x) => x.id === chainId)?.rpcUrls?.[0] ??
-  //   defaultChain.rpcUrls[0];
   return [
     new InjectedConnector({ chains, options: { shimDisconnect: true } }),
     new WalletConnectConnector({
       chains,
       options: {
-        infuraId: '', // TODO?
         qrcode: true,
       },
     }),
-    // 
+    // TODO(Fujisawa): This borks the build but we should support it eventually.
     // new WalletLinkConnector({
     //   chains,
     //   options: {
