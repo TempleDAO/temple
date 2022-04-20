@@ -20,11 +20,7 @@ interface ITempleTreasury {
     function intrinsicValueRatio() external view returns (uint256 frax, uint256 temple);
 }
 
-contract TempleStableAMMRouter is Ownable, AccessControl {
-
-    // precondition token0/tokenA is temple. token1/tokenB is frax
-    IUniswapV2Pair public immutable fraxPair;
-    IUniswapV2Pair public immutable feiPair;
+contract TempleStableAMMRouter is Ownable {
 
     // Token to uniswap pair contract mapping
     mapping(address => address) public tokenPair; 
@@ -40,22 +36,17 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
     }
 
     constructor(
-            IUniswapV2Pair _fraxPair,
-            IUniswapV2Pair _feiPair,
             TempleERC20Token _templeToken,
             IERC20 _fraxToken,
             IERC20 _feiToken,
             ITempleTreasury _templeTreasury
             ) {
 
-        fraxPair = _fraxPair;
-        feiPair = _feiPair;
         templeToken = _templeToken;
         fraxToken = _fraxToken;
         feiToken = _feiToken;
         templeTreasury = _templeTreasury;
 
-        _setupRole(DEFAULT_ADMIN_ROLE, owner());
     }
 
     function addPair(address _token, address _pair) external onlyOwner {
@@ -121,44 +112,39 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
         require(amountB >= amountBMin, 'TempleFraxAMMRouter: INSUFFICIENT_FRAX');
     }
 
-    function swapExactFraxForTemple(
+    function swapExactStablecForTemple(
         uint amountIn,
         uint amountOutMin,
+        address stablec,
         address to,
         uint deadline
     ) external virtual ensure(deadline) returns (uint amountOut) {
 
-        uint amountOut = swapExactStableForTempleQuote(fraxPair, amountIn);
+        require(tokenPair[stablec] != address(0), 'TempleStableAMMRouter: UNSUPPORTED_PAIR');
+        address pair = tokenPair[stablec];
+
+        uint amountOut = swapExactStableForTempleQuote(pair, amountIn);
         require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
 
         // Swap on AMM
-        SafeERC20.safeTransferFrom(fraxToken, msg.sender, address(fraxPair), amountIn);
-        fraxPair.swap(amountOut, 0, to, new bytes(0));
+        SafeERC20.safeTransferFrom(fraxToken, msg.sender, pair, amountIn);
+        IUniswapV2Pair(pair).swap(amountOut, 0, to, new bytes(0));
     }
 
-    function swapExactFeiForTemple(
+
+    function swapExactTempleForStablec(
         uint amountIn,
         uint amountOutMin,
-        address to,
-        uint deadline
-    ) external virtual ensure(deadline) returns (uint amountOut) {
-
-        uint amountOut = swapExactStableForTempleQuote(feiPair, amountIn);
-        require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-
-        // Swap on AMM
-        SafeERC20.safeTransferFrom(feiToken, msg.sender, address(feiPair), amountIn);
-        feiPair.swap(amountOut, 0, to, new bytes(0));
-    }
-
-    function swapExactTempleForFrax(
-        uint amountIn,
-        uint amountOutMin,
+        address stablec,
         address to,
         uint deadline
     ) external virtual ensure(deadline) returns (uint) {
+        
+        require(tokenPair[stablec] != address(0), 'TempleStableAMMRouter: UNSUPPORTED_PAIR');
+        address pair = tokenPair[stablec];
 
-        (bool priceBelowIV, uint amountOut) = swapExactTempleForStableQuote(fraxPair, amountIn);
+
+        (bool priceBelowIV, uint amountOut) = swapExactTempleForStableQuote(pair, amountIn);
         if (priceBelowIV) {
             require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
             templeToken.burnFrom(msg.sender, amountIn);
@@ -166,33 +152,13 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
         } else {
             
             require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-            SafeERC20.safeTransferFrom(templeToken, msg.sender, address(fraxPair), amountIn);
-            fraxPair.swap(0, amountOut, to, new bytes(0));
+            SafeERC20.safeTransferFrom(templeToken, msg.sender, pair, amountIn);
+            IUniswapV2Pair(pair).swap(0, amountOut, to, new bytes(0));
         }
 
         return amountOut;
     }
 
-    function swapExactTempleForFei(
-        uint amountIn,
-        uint amountOutMin,
-        address to,
-        uint deadline
-    ) external virtual ensure(deadline) returns (uint) {
-
-        (bool priceBelowIV, uint amountOut) = swapExactTempleForStableQuote(feiPair, amountIn);
-        if (priceBelowIV) {
-            require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-            templeToken.burnFrom(msg.sender, amountIn);
-            SafeERC20.safeTransfer(feiToken, to, amountOut);
-        } else {
-            require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-            SafeERC20.safeTransferFrom(templeToken, msg.sender, address(feiPair), amountIn);
-            feiPair.swap(0, amountOut, to, new bytes(0));
-        }
-
-        return amountOut;
-    }
 
     // **** LIBRARY FUNCTIONS ****
 
@@ -244,13 +210,13 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
     //     amountIn = (numerator / denominator).add(1);
     // }
 
-    function swapExactStableForTempleQuote(IUniswapV2Pair pair, uint amountIn) public view returns (uint amountOut ) {
-        (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
+    function swapExactStableForTempleQuote(address pair, uint amountIn) public view returns (uint amountOut ) {
+        (uint reserveTemple, uint reserveFrax,) = IUniswapV2Pair(pair).getReserves();
         amountOut = getAmountOut(amountIn, reserveFrax, reserveTemple);
     }
 
-    function swapExactTempleForStableQuote(IUniswapV2Pair pair, uint amountIn) public view returns (bool priceBelowIV, uint amountOut) {
-        (uint reserveTemple, uint reserveFrax,) = pair.getReserves();
+    function swapExactTempleForStableQuote(address pair, uint amountIn) public view returns (bool priceBelowIV, uint amountOut) {
+        (uint reserveTemple, uint reserveFrax,) = IUniswapV2Pair(pair).getReserves();
   
         // if AMM is currently trading above target, route some portion to mint on protocol
         (uint256 ivFrax, uint256 ivTemple) = templeTreasury.intrinsicValueRatio();
