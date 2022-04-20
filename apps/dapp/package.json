@@ -36,7 +36,8 @@
     "react-vis": "^1.11.7",
     "styled-components": "^5.3.3",
     "tippy.js": "^6.3.7",
-    "use-interval": "^1.4.0"
+    "use-interval": "^1.4.0",
+    "wagmi": "^0.2.27"
   },
   "devDependencies": {
     "@babel/core": "^7.16.0",

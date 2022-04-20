@@ -27,8 +27,18 @@ import hamburger from 'assets/icons/core-hamburger.svg';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
 
+const ConnectButton = styled.button`
+  ${buttonResets}
+  ${(props) => props.theme.typography.h4}
+  border-radius: 6px;
+  display: flex;
+  background: ${({ theme }) => theme.palette.brandDark};
+  height: 100%;
+  color: ${({ theme }) => theme.palette.brandLight}
+`;
+
 const Header = () => {
-  const { connectWallet, changeWalletAddress, wallet } = useWallet();
+  // const { connectWallet, changeWalletAddress, wallet } = useWallet();
   const [isNavOpen, setIsNavOpen] = useState(false);
 
   const onClickMenuItem = useCallback(() => {
@@ -49,10 +59,13 @@ const Header = () => {
         isNavOpenMobile={isNavOpen}
         onClickMenuItem={onClickMenuItem}
       />
-      <MetamaskButton
+      {/* <MetamaskButton
         aria-label={wallet ? 'Change Wallet' : 'Connect Wallet'}
         onClick={wallet ? changeWalletAddress : connectWallet}
-      />
+      /> */}
+      <ConnectButton>
+        Connect
+      </ConnectButton>
     </Wrapper>
   );
 };
