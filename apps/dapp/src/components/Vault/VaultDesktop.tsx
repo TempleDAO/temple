@@ -1,16 +1,16 @@
-import { FC, forwardRef, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import styled from 'styled-components';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+
 import { Definitions } from './desktop-parts/Definitions';
 import { Background } from './desktop-parts/Background';
 import { InnerRing } from './desktop-parts/InnerRing';
 import { OuterRing } from './desktop-parts/OuterRing';
-import { MarkerBubble } from './desktop-parts/MarkerBubble';
 import { RingButtons } from './desktop-parts/RingButtons';
 import { Timeline } from './desktop-parts/timeline/Timeline';
 import { pixelsToRems } from 'styles/mixins';
 import { NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
-import { Entry, Point, Vault, VaultPage, VaultProps, VaultRef } from './types';
+import { VaultProps, VaultRef } from './types';
 
 export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
   (
@@ -48,20 +48,12 @@ export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
               navigate(`/core/dapp/vaults/${vault.id}/${page}`);
             }}
           />
-          <Timeline data={vault} onMarkerClick={markerClick} />
+          <Timeline vault={vault} />
           <InnerRing selected={selectedNav} />
           <ForeignObject x="241.5" y="239.5" width="520" height="520">
             <Content>{children}</Content>
           </ForeignObject>
           <Definitions />
-          {selectedEntry && (
-            <MarkerBubble
-              ref={popupRef}
-              months={vault.months}
-              entry={selectedEntry}
-              position={markerPosition}
-            />
-          )}
         </svg>
       </BoundingBox>
     );
