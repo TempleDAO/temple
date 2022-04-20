@@ -63,8 +63,8 @@ contract TemplePriceOracle is IPriceOracle, IBasePriceOracle {
      */
     function _price(address token) internal view returns (uint) {
         require(token == address(TEMPLE), "Invalid token passed to TemplePriceOracle");
-        (uint256 stablec, uint256 temple) = TREASURY.intrinsicValueRatio();
-        return stablec * IBasePriceOracle(msg.sender).price(baseToken) / ( 10 ** uint256(ERC20(baseToken).decimals()) * temple);
+        (uint256 stablec, uint256 temple) = TREASURY.intrinsicValueRatio(); // IV price is stablec / temple
+        return stablec * IBasePriceOracle(msg.sender).price(baseToken) / temple;
     }
 
 }
