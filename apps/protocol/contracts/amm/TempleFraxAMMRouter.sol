@@ -220,12 +220,15 @@ contract TempleStableAMMRouter is Ownable {
   
         // if AMM is currently trading above target, route some portion to mint on protocol
         (uint256 ivFrax, uint256 ivTemple) = templeTreasury.intrinsicValueRatio();
-        priceBelowIV = ivTemple * reserveFrax <= reserveTemple * ivFrax;
 
-        if (priceBelowIV) {
-            amountOut = (amountIn * ivFrax) / ivTemple;
+        uint256 amountOutAmm = getAmountOut(amountIn, reserveTemple, reserveFrax);
+        uint256 amountOutIvSwap = (amountIn * ivFrax) / ivTemple;
+
+        if (amountOutIvSwap > amountOutAmm) {
+            amountOut = amountOutIvSwap;
+            priceBelowIV = true;
         } else {
-            amountOut = getAmountOut(amountIn, reserveTemple, reserveFrax);
+            amountOut = amountOutAmm;
         }
     }
 
