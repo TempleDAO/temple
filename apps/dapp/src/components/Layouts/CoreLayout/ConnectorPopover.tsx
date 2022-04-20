@@ -6,6 +6,10 @@ import { useOutsideClick } from 'hooks/useOutsideClick';
 import { tabletAndAbove } from 'styles/breakpoints';
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
+import { backgroundImage } from 'styles/mixins';
+
+import walletConnectIcon from 'assets/icons/walletconnect-circle-white.svg';
+import metamaskIcon from 'assets/icons/metamask-icon.png';
 
 interface Props {
   onClose: () => void;
@@ -30,28 +34,57 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
   });
 
   return (
-    <Wrapper ref={popoverRef} isOpen={isOpen}>
-      <SelectWalletLabel>Select Wallet</SelectWalletLabel>
-      <Menu>
-        {data.connectors.map((connector) => (
-          <li key={connector.id}>
-            <ConnectorButon
-              disabled={!connector.ready || loading}
-              onClick={() => {
-                connect(connector);
-              }}
-              label={`
-                ${connector.name}
-                ${!connector.ready ? ' (unsupported)' : ''}
-              `}
-            />
-          </li>
-        ))}
-      </Menu>
-      {error && <ErrorMessage>{error?.message ?? 'Failed to connect'}</ErrorMessage>}
-    </Wrapper>
+    <>
+      {isOpen && <Dimmer />}
+      <Wrapper ref={popoverRef} isOpen={isOpen}>
+        <SelectWalletLabel>Select Wallet</SelectWalletLabel>
+        <Menu>
+          {data.connectors.map((connector) => (
+            <li key={connector.id}>
+              <ConnectorButon
+                disabled={!connector.ready || loading}
+                onClick={() => {
+                  connect(connector);
+                }}
+              >
+                <ButtonContent>
+                  {getConnectorIcon(connector.name)}
+                  <span>{connector.name} {!connector.ready ? ' (unsupported)' : ''}</span>
+                </ButtonContent>
+              </ConnectorButon>
+            </li>
+          ))}
+        </Menu>
+        {error && <ErrorMessage>{error?.message ?? 'Failed to connect'}</ErrorMessage>}
+      </Wrapper>
+    </>
   );
 };
+
+const getConnectorIcon = (name: string) => {
+  switch (name) {
+    case 'MetaMask': return <Icon bgImg={metamaskIcon} />;
+    case 'WalletConnect': return <Icon bgImg={walletConnectIcon} />;
+  }
+  return null;
+}
+
+const Icon = styled.span<{ bgImg: string }>`
+  ${({ bgImg }) => backgroundImage(bgImg)}
+  display: block;
+  width: 2rem;
+  height: 2rem;
+`;
+
+const ButtonContent = styled.span`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  ${Icon} {
+    margin-right: 1rem;
+  }
+`;
 
 const ConnectorButon = styled(Button)`
   border: 1px solid;
@@ -104,4 +137,14 @@ const Menu = styled(UnstyledList)`
       }
     }
   }
+`;
+
+const Dimmer = styled.div`
+  background: rgba(0, 0, 0, .4);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
 `;
