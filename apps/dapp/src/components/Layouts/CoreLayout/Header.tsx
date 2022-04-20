@@ -42,7 +42,17 @@ const Header = () => {
   }, [setIsNavOpen]);
 
   
-  let accountButton = null;
+  let accountButton = (
+   <ConnectButton
+      isSmall
+      isUppercase
+      isActive
+      label="Connect Wallet"
+      onClick={() => {
+        setIsConnectMenuOpen(true);
+      }}
+    />
+  );
    
   if (accountLoading) {
     accountButton = <Loader />;
@@ -65,18 +75,6 @@ const Header = () => {
           }}
         />
       </>
-    );
-  } else {
-    accountButton = (
-      <ConnectButton
-        isSmall
-        isUppercase
-        isActive
-        label="Connect Wallet"
-        onClick={() => {
-          setIsConnectMenuOpen(true);
-        }}
-      />
     );
   }
 
