@@ -7,7 +7,7 @@ on:
 
 jobs:
   e2eTest:
-    name: End-to-end Tests
+    name: Hardhat Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -20,7 +20,7 @@ jobs:
       - run: yarn test
         working-directory: protocol
   fuzzTest:
-    name: Fuzz Tests
+    name: Foundry Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
