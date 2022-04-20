@@ -6,10 +6,11 @@ import { useOutsideClick } from 'hooks/useOutsideClick';
 import { tabletAndAbove } from 'styles/breakpoints';
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
-import { backgroundImage } from 'styles/mixins';
+import { backgroundImage, buttonResets } from 'styles/mixins';
 
 import walletConnectIcon from 'assets/icons/walletconnect-circle-white.svg';
 import metamaskIcon from 'assets/icons/metamask-icon.png';
+import hamburgerX from 'assets/icons/core-x-hamburger.svg';
 
 interface Props {
   onClose: () => void;
@@ -38,6 +39,7 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
       {isOpen && <Dimmer />}
       <Wrapper ref={popoverRef} isOpen={isOpen}>
         <SelectWalletLabel>Select Wallet</SelectWalletLabel>
+        <XIcon onClick={() => onClose()}/>
         <Menu>
           {data.connectors.map((connector) => (
             <li key={connector.id}>
@@ -84,6 +86,16 @@ const ButtonContent = styled.span`
   ${Icon} {
     margin-right: 1rem;
   }
+`;
+
+const XIcon = styled.button`
+  ${backgroundImage(hamburgerX)}
+  ${buttonResets}
+  width: 1.25rem;
+  height: 1.25rem;
+  position: absolute;
+  right: 2rem;
+  top: 1.5rem;
 `;
 
 const ConnectorButon = styled(Button)`
