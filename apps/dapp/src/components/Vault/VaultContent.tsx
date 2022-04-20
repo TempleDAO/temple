@@ -17,4 +17,5 @@ const Content = styled.div`
 export const VaultButton = styled(Button)`
   align-self: center;
 `;
+
 export default VaultContent;
