@@ -2,13 +2,18 @@ import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 import { phoneAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
-import { Connector, Provider, chain, defaultChains } from 'wagmi'
+import { Connector, Provider as WagmiProvider, chain, defaultChains } from 'wagmi'
+import { Buffer } from 'buffer';
 import { InjectedConnector } from 'wagmi/connectors/injected'
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
 import { WalletLinkConnector } from 'wagmi/connectors/walletLink'
 
 import Header from './Header';
 
+// polyfill Buffer for client
+if (!window.Buffer) {
+  window.Buffer = Buffer;
+}
 
 const chains = defaultChains
 const defaultChain = chain.mainnet
@@ -23,7 +28,7 @@ const connectors = ({ chainId }: ConnectorsConfig) => {
     new WalletConnectConnector({
       chains,
       options: {
-        infuraId: '',
+        infuraId: '', // TODO?
         qrcode: true,
       },
     }),
@@ -38,7 +43,7 @@ const connectors = ({ chainId }: ConnectorsConfig) => {
 }
 
 const CoreLayout = () => (
-  <Provider
+  <WagmiProvider
     autoConnect
     connectors={connectors}
   >
@@ -46,7 +51,7 @@ const CoreLayout = () => (
     <Main>
       <Outlet />
     </Main>
-  </Provider>
+  </WagmiProvider>
 );
 
 export default CoreLayout;

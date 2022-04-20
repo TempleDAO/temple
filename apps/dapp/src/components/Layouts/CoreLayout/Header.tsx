@@ -8,7 +8,7 @@ import {
 } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
-import { useAccount, useConnect } from 'wagmi';
+import { useAccount } from 'wagmi';
 
 import {
   flexCenter,
@@ -16,6 +16,7 @@ import {
   backgroundImage,
   pixelsToRems,
 } from 'styles/mixins';
+import { ConnectorPopover } from './ConnectorPopover';
 import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
 import { phoneAndAbove } from 'styles/breakpoints';
@@ -52,57 +53,63 @@ const Header = () => {
   const [{ data: accountData, loading: accountLoading }, disconnect] = useAccount({
     fetchEns: true,
   });
-  const [{ data: connectData, loading: connectLoading}, connect] = useConnect();
 
+  const [isConnectorMenuOpen, setIsConnectMenuOpen] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const onClickMenuItem = useCallback(() => {
     setIsNavOpen(false);
   }, [setIsNavOpen]);
 
   return (
-    <Wrapper id="Wrapper">
-      <MobileNavLeft>
-        <HamburgerBun
-          aria-label={`${isNavOpen ? 'Close' : 'Open'} navigation`}
-          $isOpen={isNavOpen}
-          onClick={() => setIsNavOpen((isOpen) => !isOpen)}
+    <>
+      <Wrapper id="Wrapper">
+        <MobileNavLeft>
+          <HamburgerBun
+            aria-label={`${isNavOpen ? 'Close' : 'Open'} navigation`}
+            $isOpen={isNavOpen}
+            onClick={() => setIsNavOpen((isOpen) => !isOpen)}
+          />
+          <Logo to="/core">TempleDAO</Logo>
+        </MobileNavLeft>
+        <Navigation
+          isNavOpenMobile={isNavOpen}
+          onClickMenuItem={onClickMenuItem}
         />
-        <Logo to="/core">TempleDAO</Logo>
-      </MobileNavLeft>
-      <Navigation
-        isNavOpenMobile={isNavOpen}
-        onClickMenuItem={onClickMenuItem}
-      />
-      <AccountWrapper>
-        {!accountLoading && !connectLoading && !!accountData?.address && (
-          <>
-            <TruncatedAddress address={accountData.address} />
-            <DisconnectButton
+        <AccountWrapper>
+          {!accountLoading && !!accountData?.address && (
+            <>
+              <TruncatedAddress address={accountData.address} />
+              <DisconnectButton
+                isSmall
+                isUppercase
+                label="Disconnect"
+                onClick={() => {
+                  disconnect(); 
+                }}
+              />
+            </>
+          )}
+          {!accountLoading && !accountData?.address && (
+            <ConnectButton
               isSmall
               isUppercase
-              label="Disconnect"
+              isActive
+              label="Connect Wallet"
               onClick={() => {
-                disconnect(); 
+                setIsConnectMenuOpen(true);
               }}
             />
-          </>
-        )}
-        {!accountLoading && !connectLoading && !accountData?.address && (
-          <ConnectButton
-            isSmall
-            isUppercase
-            isActive
-            label="Connect Wallet"
-            onClick={() => {
-              connect(connectData.connectors[0]); 
-            }}
-          />
-        )}
-        {(accountLoading || connectLoading) && (
-          <Loader />
-        )}
-      </AccountWrapper>
-    </Wrapper>
+          )}
+          {accountLoading && (
+            <Loader />
+          )}
+        </AccountWrapper>
+      </Wrapper>
+      <ConnectorPopover
+        isOpen={isConnectorMenuOpen}
+        onClose={() => setIsConnectMenuOpen(false)}
+      />
+    </>
   );
 };
 
