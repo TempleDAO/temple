@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "../TempleERC20Token.sol";
 
-import "hardhat/console.sol";
 
 interface ITempleTWAP {
     function update() external;
@@ -26,8 +25,6 @@ contract TempleStableAMMRouter is Ownable {
     mapping(address => address) public tokenPair; 
 
     TempleERC20Token public immutable templeToken;
-    IERC20 public immutable fraxToken;
-    IERC20 public immutable feiToken;
     ITempleTreasury public immutable templeTreasury;
 
     modifier ensure(uint deadline) {
@@ -37,14 +34,10 @@ contract TempleStableAMMRouter is Ownable {
 
     constructor(
             TempleERC20Token _templeToken,
-            IERC20 _fraxToken,
-            IERC20 _feiToken,
             ITempleTreasury _templeTreasury
             ) {
 
         templeToken = _templeToken;
-        fraxToken = _fraxToken;
-        feiToken = _feiToken;
         templeTreasury = _templeTreasury;
 
     }
@@ -127,7 +120,7 @@ contract TempleStableAMMRouter is Ownable {
         require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
 
         // Swap on AMM
-        SafeERC20.safeTransferFrom(fraxToken, msg.sender, pair, amountIn);
+        SafeERC20.safeTransferFrom(IERC20(stablec), msg.sender, pair, amountIn);
         IUniswapV2Pair(pair).swap(amountOut, 0, to, new bytes(0));
     }
 
@@ -148,7 +141,7 @@ contract TempleStableAMMRouter is Ownable {
         if (priceBelowIV) {
             require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
             templeToken.burnFrom(msg.sender, amountIn);
-            SafeERC20.safeTransfer(feiToken, to, amountOut); // Send FEI instead of frax if price below IV
+            SafeERC20.safeTransfer(IERC20(stablec), to, amountOut);
         } else {
             
             require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
@@ -218,7 +211,6 @@ contract TempleStableAMMRouter is Ownable {
     function swapExactTempleForStableQuote(address pair, uint amountIn) public view returns (bool priceBelowIV, uint amountOut) {
         (uint reserveTemple, uint reserveFrax,) = IUniswapV2Pair(pair).getReserves();
   
-        // if AMM is currently trading above target, route some portion to mint on protocol
         (uint256 ivFrax, uint256 ivTemple) = templeTreasury.intrinsicValueRatio();
 
         uint256 amountOutAmm = getAmountOut(amountIn, reserveTemple, reserveFrax);
