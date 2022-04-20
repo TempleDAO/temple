@@ -8,8 +8,8 @@ import {
 } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
+import { useAccount, useConnect } from 'wagmi';
 
-import { useWallet } from 'providers/WalletProvider';
 import {
   flexCenter,
   buttonResets,
@@ -19,6 +19,7 @@ import {
 import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
 import { phoneAndAbove } from 'styles/breakpoints';
+import TruncatedAddress from 'components/TruncatedAddress';
 
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
 import templeDaoLogo from 'assets/images/sun-art.svg';
@@ -38,7 +39,10 @@ const ConnectButton = styled.button`
 `;
 
 const Header = () => {
-  // const { connectWallet, changeWalletAddress, wallet } = useWallet();
+  const [{ data, error, loading }, disconnect] = useAccount({
+    fetchEns: true,
+  });
+  const [{ data: connectData, loading: connectLoading}, connect] = useConnect();
   const [isNavOpen, setIsNavOpen] = useState(false);
 
   const onClickMenuItem = useCallback(() => {
@@ -59,13 +63,16 @@ const Header = () => {
         isNavOpenMobile={isNavOpen}
         onClickMenuItem={onClickMenuItem}
       />
-      {/* <MetamaskButton
-        aria-label={wallet ? 'Change Wallet' : 'Connect Wallet'}
-        onClick={wallet ? changeWalletAddress : connectWallet}
-      /> */}
-      <ConnectButton>
-        Connect
-      </ConnectButton>
+      <div>
+        {!loading && data?.address && (
+          <div><TruncatedAddress address={data.address} /> <a href="#" onClick={() => disconnect()}>Disconnect</a></div>
+        )}
+        {!loading && !data?.address && (
+          <ConnectButton onClick={() => connect(connectData.connectors[0])}>
+            Connect
+          </ConnectButton>
+        )}
+      </div>
     </Wrapper>
   );
 };
