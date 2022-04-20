@@ -26,6 +26,9 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
     IUniswapV2Pair public immutable fraxPair;
     IUniswapV2Pair public immutable feiPair;
 
+    // Token to uniswap pair contract mapping
+    mapping(address => address) public tokenPair; 
+
     TempleERC20Token public immutable templeToken;
     IERC20 public immutable fraxToken;
     IERC20 public immutable feiToken;
@@ -53,6 +56,10 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
         templeTreasury = _templeTreasury;
 
         _setupRole(DEFAULT_ADMIN_ROLE, owner());
+    }
+
+    function addPair(address _token, address _pair) external onlyOwner {
+        tokenPair[_token] = _pair;
     }
 
 
@@ -89,8 +96,8 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
         address to,
         uint deadline
     ) external virtual ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
-        require(stablec == address(fraxToken) || stablec == address(feiToken), 'TempleStableAMMRouter: UNSUPPORTED_PAIR');
-        IUniswapV2Pair pair = stablec == address(fraxToken) ? fraxPair : feiPair; 
+        require(tokenPair[stablec] != address(0), 'TempleStableAMMRouter: UNSUPPORTED_PAIR');
+        IUniswapV2Pair pair = IUniswapV2Pair(tokenPair[stablec]);
         (amountA, amountB) = _addLiquidity(amountADesired, amountBDesired, amountAMin, amountBMin, pair);
         SafeERC20.safeTransferFrom(templeToken, msg.sender, address(pair), amountA);
         SafeERC20.safeTransferFrom(IERC20(stablec), msg.sender, address(pair), amountB);
@@ -106,8 +113,8 @@ contract TempleStableAMMRouter is Ownable, AccessControl {
         address to,
         uint deadline
     ) public virtual ensure(deadline) returns (uint amountA, uint amountB) {
-        require(stablec == address(fraxToken) || stablec == address(feiToken), 'TempleStableAMMRouter: UNSUPPORTED_PAIR');
-        IUniswapV2Pair pair = stablec == address(fraxToken) ? fraxPair : feiPair; 
+        require(tokenPair[stablec] != address(0), 'TempleStableAMMRouter: UNSUPPORTED_PAIR');
+        IUniswapV2Pair pair = IUniswapV2Pair(tokenPair[stablec]);
         SafeERC20.safeTransferFrom(IERC20(address(pair)), msg.sender, address(pair), liquidity);
         (amountA, amountB) = pair.burn(to);
         require(amountA >= amountAMin, 'TempleStableAMMRouter: INSUFFICIENT_TEMPLE');
