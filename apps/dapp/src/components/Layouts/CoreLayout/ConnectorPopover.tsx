@@ -9,6 +9,7 @@ import { backgroundImage, buttonResets } from 'styles/mixins';
 
 import walletConnectIcon from 'assets/icons/walletconnect-circle-white.svg';
 import metamaskIcon from 'assets/icons/metamask-icon.png';
+import coinbaseAppIcon from 'assets/icons/coinbase-wallet-appicon.svg';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
 
 interface Props {
@@ -43,8 +44,8 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
                 }}
               >
                 <ButtonContent>
-                  {getConnectorIcon(connector.name)}
-                  <span>{connector.name} {!connector.ready ? ' (unsupported)' : ''}</span>
+                  {getConnectorIcon(connector.id)}
+                  <span>{getConnectorNiceName(connector.id)} {!connector.ready ? ' (unsupported)' : ''}</span>
                 </ButtonContent>
               </ConnectorButon>
             </li>
@@ -56,13 +57,23 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
   );
 };
 
-const getConnectorIcon = (name: string) => {
-  switch (name) {
-    case 'MetaMask': return <Icon bgImg={metamaskIcon} />;
-    case 'WalletConnect': return <Icon bgImg={walletConnectIcon} />;
+const getConnectorIcon = (connectorId: string) => {
+  switch (connectorId) {
+    case 'injected': return <Icon bgImg={metamaskIcon} />;
+    case 'walletConnect': return <Icon bgImg={walletConnectIcon} />;
+    case 'walletLink': return <Icon bgImg={coinbaseAppIcon} />;
   }
   return null;
-}
+};
+
+const getConnectorNiceName = (connectorId: string) => {
+  switch (connectorId) {
+    case 'injected': return 'MetaMask';
+    case 'walletConnect': return 'Wallet Connect';
+    case 'walletLink': return 'Coinbase Wallet';
+  }
+  return null;
+};
 
 const Icon = styled.span<{ bgImg: string }>`
   ${({ bgImg }) => backgroundImage(bgImg)}

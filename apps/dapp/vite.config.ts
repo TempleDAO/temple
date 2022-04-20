@@ -57,6 +57,9 @@ export default defineConfig({
       },
     },
   },
+  define: {
+    'process.env': {}
+  },
   resolve: {
     alias: {
       process: 'process',

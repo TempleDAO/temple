@@ -4,7 +4,14 @@ import { phoneAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
 import { providers } from 'ethers';
 import { BaseProvider } from '@ethersproject/providers';
-import { Provider as WagmiProvider, chain, defaultChains, Connector } from 'wagmi';
+import { 
+  WagmiProvider,
+  chain,
+  defaultChains,
+  Connector,
+  developmentChains,
+} from 'wagmi';
+import { WalletLinkConnector } from 'wagmi/connectors/walletLink';
 import { Buffer } from 'buffer';
 import { InjectedConnector } from 'wagmi/connectors/injected';
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
@@ -16,7 +23,8 @@ if (!window.Buffer) {
   window.Buffer = Buffer;
 }
 
-const chains = defaultChains;
+const chains = [...defaultChains, ...developmentChains];
+const defaultChain = chain.mainnet;
 
 const ENV_VARS = import.meta.env;
 const ENV = ENV_VARS.VITE_ENV;
@@ -36,6 +44,8 @@ const provider = ({ chainId }: ProviderConfig) => {
 
 type ConnectorsConfig = { chainId?: number };
 const connectors = ({ chainId }: ConnectorsConfig) => {
+  const rpcUrl = chains.find(({ id }) => id === chainId)?.rpcUrls?.[0] ?? defaultChain.rpcUrls[0];
+  
   return [
     new InjectedConnector({ chains, options: { shimDisconnect: true } }),
     new WalletConnectConnector({
@@ -44,16 +54,15 @@ const connectors = ({ chainId }: ConnectorsConfig) => {
         qrcode: true,
       },
     }),
-    // TODO(Fujisawa): This borks the build but we should support it eventually.
-    // new WalletLinkConnector({
-    //   chains,
-    //   options: {
-    //     appName: 'wagmi',
-    //     jsonRpcUrl: `${rpcUrl}/${ ''}`,
-    //   },
-    // }),
-  ]
-}
+    new WalletLinkConnector({
+      chains,
+      options: {
+        appName: 'TempleDAO',
+        jsonRpcUrl: `${rpcUrl}/${ALCHEMY_API_KEY}`,
+      },
+    }),
+  ];
+};
 
 const CoreLayout = () => (
   <WagmiProvider
