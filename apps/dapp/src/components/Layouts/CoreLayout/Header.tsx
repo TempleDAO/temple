@@ -26,28 +26,9 @@ import { Button as BaseButton } from 'components/Button/Button';
 
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
 import templeDaoLogo from 'assets/images/sun-art.svg';
-import metamaskLogo from 'assets/images/metamask-transparent.svg';
 import hamburger from 'assets/icons/core-hamburger.svg';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
-
-const ConnectButton = styled(BaseButton)`
-  border: none;
-  color: ${({ theme }) => theme.palette.dark};
-`;
-
-const DisconnectButton = styled(BaseButton)`
-  border: 1px solid;
-  color: ${({ theme }) => theme.palette.brand};
-  margin: 0 0 0 0.5rem;
-`;
-
-const AccountWrapper = styled.div`
-  display: flex;
-  height: 100%;
-  flex-direction: row;
-  align-items: center;
-`;
 
 const Header = () => {
   const [{ data: accountData, loading: accountLoading }, disconnect] = useAccount({
@@ -61,11 +42,13 @@ const Header = () => {
   }, [setIsNavOpen]);
 
   
-  let accountButton = <Loader />;
+  let accountButton = null;
   if (!accountLoading) {
     accountButton = accountData?.address ? (
       <>
-        <TruncatedAddress address={accountData.address} />
+        <UserAddress>
+          <TruncatedAddress address={accountData?.address} />
+        </UserAddress>
         <DisconnectButton
           isSmall
           isUppercase
@@ -86,6 +69,8 @@ const Header = () => {
         }}
       />
     );
+  } else {
+    accountButton = <Loader />;
   }
 
   return (
@@ -237,9 +222,32 @@ const HamburgerBun = styled.button<{ $isOpen: boolean }>`
   `)}
 `;
 
+const ConnectButton = styled(BaseButton)`
+  border: none;
+  color: ${({ theme }) => theme.palette.dark};
+`;
+
+const DisconnectButton = styled(BaseButton)`
+  border: 1px solid;
+  color: ${({ theme }) => theme.palette.brand};
+  margin: 0 0 0 0.75rem;
+`;
+
+const AccountWrapper = styled.div`
+  display: flex;
+  height: 100%;
+  flex-direction: row;
+  align-items: center;
+`;
+
 const MobileNavLeft = styled.div`
   display: flex;
   align-items: center;
+`;
+
+const UserAddress = styled.span`
+  color: ${({ theme }) => theme.palette.brandLight};
+  font-size: 0.75rem;
 `;
 
 const Wrapper = styled.header`
