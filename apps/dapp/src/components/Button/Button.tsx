@@ -8,7 +8,7 @@ export interface ButtonProps
   extends ButtonStyledProps,
     HTMLProps<HTMLButtonElement> {
   type?: 'submit' | 'reset' | 'button' | undefined;
-  label: string;
+  label?: string;
 
   onClick?(): Promise<void> | void;
 }
@@ -23,6 +23,7 @@ export const Button = ({
   isSmall = false,
   isUppercase = false,
   showArrow,
+  children,
   ...props
 }: ButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -62,6 +63,7 @@ export const Button = ({
     }
   };
 
+  const buttonContent = label || children;
   return (
     // @ts-ignore expected multiple children
     <ButtonStyled
@@ -77,7 +79,7 @@ export const Button = ({
       ) : (
         <>
           <ButtonLabel isUppercase={isUppercase} isSmall={isSmall}>
-            {label}
+            {buttonContent}
           </ButtonLabel>
           {showArrow && <i>&#10146;</i>}
         </>
