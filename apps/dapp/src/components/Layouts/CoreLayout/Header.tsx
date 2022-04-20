@@ -47,7 +47,11 @@ const Header = () => {
     accountButton = accountData?.address ? (
       <>
         <UserAddress>
-          <TruncatedAddress address={accountData?.address} />
+          {accountData.ens?.name ? (
+            accountData.ens?.name
+          ) : (
+            <TruncatedAddress address={accountData?.address} />
+          )}
         </UserAddress>
         <DisconnectButton
           isSmall
