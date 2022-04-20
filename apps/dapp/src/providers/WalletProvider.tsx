@@ -33,7 +33,6 @@ import {
   LockedOGTemple__factory,
   TempleStaking__factory,
   OGTemple__factory,
-  TempleCashback__factory,
   TempleTeamPayments__factory,
   LockedOGTempleDeprecated__factory,
 } from 'types/typechain';
@@ -63,7 +62,6 @@ const INITIAL_STATE: WalletState = {
   isConnected: () => false,
   connectWallet: noop,
   changeWalletAddress: noop,
-  claim: asyncNoop,
   signer: null,
   network: null,
   getCurrentEpoch: asyncNoop,
@@ -291,49 +289,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  const claim = async (
-    claimType: ClaimType
-  ): Promise<TransactionReceipt | void> => {
-    if (walletAddress && signerState) {
-      const { default: claims } = await import(
-        `../data/claims/${claimType}.json`
-      );
-
-      const {
-        hash,
-        signature,
-        tokenAddress,
-        tokenQuantity,
-        nonce,
-      }: {
-        hash: string;
-        signature: string;
-        tokenAddress: string;
-        tokenQuantity: string;
-        nonce: string;
-      } = claims[walletAddress.toLowerCase()];
-
-      const templeCashback = new TempleCashback__factory(signerState).attach(
-        TEMPLE_CASHBACK_ADDRESS
-      );
-
-      const tx = await templeCashback.claim(
-        hash,
-        signature,
-        tokenAddress,
-        tokenQuantity,
-        nonce,
-        {
-          gasLimit: VITE_PUBLIC_CLAIM_GAS_LIMIT || 100000,
-        }
-      );
-
-      return tx.wait();
-    } else {
-      console.error('Missing wallet address');
-    }
-  };
-
   const collectTempleTeamPayment = async (epoch: TEAM_PAYMENTS_EPOCHS) => {
     if (walletAddress && signerState) {
       const fixedTeamPaymentAddress =
@@ -367,7 +322,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
         connectWallet,
         changeWalletAddress,
         ensureAllowance,
-        claim,
         signer: signerState,
         network,
         getCurrentEpoch,
