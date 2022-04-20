@@ -21,6 +21,7 @@ import { theme } from 'styles/theme';
 import { phoneAndAbove } from 'styles/breakpoints';
 import TruncatedAddress from 'components/TruncatedAddress';
 import Loader from 'components/Loader/Loader';
+import { Button as BaseButton } from 'components/Button/Button';
 
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
 import templeDaoLogo from 'assets/images/sun-art.svg';
@@ -29,14 +30,15 @@ import hamburger from 'assets/icons/core-hamburger.svg';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
 
-const ConnectButton = styled.button`
-  ${buttonResets}
-  font-size: 1.25rem;
-  display: flex;
-  background: transparent;
-  border: 1px solid ${({ theme }) => theme.palette.brand};
-  height: 100%;
+const ConnectButton = styled(BaseButton)`
+  border: none;
+  color: ${({ theme }) => theme.palette.dark};
+`;
+
+const DisconnectButton = styled(BaseButton)`
+  border: 1px solid;
   color: ${({ theme }) => theme.palette.brand};
+  margin: 0 0 0 0.5rem;
 `;
 
 const AccountWrapper = styled.div`
@@ -73,12 +75,28 @@ const Header = () => {
       />
       <AccountWrapper>
         {!accountLoading && !connectLoading && !!accountData?.address && (
-          <><TruncatedAddress address={accountData.address} /><a href="#" onClick={() => disconnect()}>Disconnect</a></>
+          <>
+            <TruncatedAddress address={accountData.address} />
+            <DisconnectButton
+              isSmall
+              isUppercase
+              label="Disconnect"
+              onClick={() => {
+                disconnect(); 
+              }}
+            />
+          </>
         )}
         {!accountLoading && !connectLoading && !accountData?.address && (
-          <ConnectButton onClick={() => connect(connectData.connectors[0])}>
-            Connect
-          </ConnectButton>
+          <ConnectButton
+            isSmall
+            isUppercase
+            isActive
+            label="Connect Wallet"
+            onClick={() => {
+              connect(connectData.connectors[0]); 
+            }}
+          />
         )}
         {(accountLoading || connectLoading) && (
           <Loader />
