@@ -47,12 +47,12 @@ const AccountWrapper = styled.div`
 `;
 
 const Header = () => {
-  const [{ data, error, loading }, disconnect] = useAccount({
+  const [{ data: accountData, loading: accountLoading }, disconnect] = useAccount({
     fetchEns: true,
   });
   const [{ data: connectData, loading: connectLoading}, connect] = useConnect();
-  const [isNavOpen, setIsNavOpen] = useState(false);
 
+  const [isNavOpen, setIsNavOpen] = useState(false);
   const onClickMenuItem = useCallback(() => {
     setIsNavOpen(false);
   }, [setIsNavOpen]);
@@ -72,15 +72,15 @@ const Header = () => {
         onClickMenuItem={onClickMenuItem}
       />
       <AccountWrapper>
-        {!loading && !connectLoading && !!data?.address && (
-          <><TruncatedAddress address={data.address} /><a href="#" onClick={() => disconnect()}>Disconnect</a></>
+        {!accountLoading && !connectLoading && !!accountData?.address && (
+          <><TruncatedAddress address={accountData.address} /><a href="#" onClick={() => disconnect()}>Disconnect</a></>
         )}
-        {!loading && !connectLoading && !data?.address && (
+        {!accountLoading && !connectLoading && !accountData?.address && (
           <ConnectButton onClick={() => connect(connectData.connectors[0])}>
             Connect
           </ConnectButton>
         )}
-        {(loading || connectLoading) && (
+        {(accountLoading || connectLoading) && (
           <Loader />
         )}
       </AccountWrapper>
