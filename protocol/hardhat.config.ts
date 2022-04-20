@@ -19,6 +19,19 @@ if (!process.env.ETHERSCAN_API_KEY) {
 // Go to https://hardhat.org/config/ to learn more
 //
 
+import {subtask} from "hardhat/config";
+import {TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS}  from "hardhat/builtin-tasks/task-names";
+
+subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS)
+  .setAction(async (_, __, runSuper) => {
+    const paths = await runSuper();
+
+    return paths.filter((p: string) => {
+      return !p.endsWith(".t.sol");
+    }); 
+  });
+
+
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
