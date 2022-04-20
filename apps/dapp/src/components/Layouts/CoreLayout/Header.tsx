@@ -60,6 +60,34 @@ const Header = () => {
     setIsNavOpen(false);
   }, [setIsNavOpen]);
 
+  
+  let accountButton = <Loader />;
+  if (!accountLoading) {
+    accountButton = accountData?.address ? (
+      <>
+        <TruncatedAddress address={accountData.address} />
+        <DisconnectButton
+          isSmall
+          isUppercase
+          label="Disconnect"
+          onClick={() => {
+            disconnect(); 
+          }}
+        />
+      </>
+    ) : (
+      <ConnectButton
+        isSmall
+        isUppercase
+        isActive
+        label="Connect Wallet"
+        onClick={() => {
+          setIsConnectMenuOpen(true);
+        }}
+      />
+    );
+  }
+
   return (
     <>
       <Wrapper id="Wrapper">
@@ -76,33 +104,7 @@ const Header = () => {
           onClickMenuItem={onClickMenuItem}
         />
         <AccountWrapper>
-          {!accountLoading && !!accountData?.address && (
-            <>
-              <TruncatedAddress address={accountData.address} />
-              <DisconnectButton
-                isSmall
-                isUppercase
-                label="Disconnect"
-                onClick={() => {
-                  disconnect(); 
-                }}
-              />
-            </>
-          )}
-          {!accountLoading && !accountData?.address && (
-            <ConnectButton
-              isSmall
-              isUppercase
-              isActive
-              label="Connect Wallet"
-              onClick={() => {
-                setIsConnectMenuOpen(true);
-              }}
-            />
-          )}
-          {accountLoading && (
-            <Loader />
-          )}
+          {accountButton}
         </AccountWrapper>
       </Wrapper>
       <ConnectorPopover
@@ -133,37 +135,39 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
 
   return (
     <NavWrapper $isOpen={isNavOpenMobile}>
-      <Menu id="menu">
-        <MenuItem
-          to="/core/dapp/vaults"
-          onMenuItemActive={onMenuItemActive}
-          onClick={onClickMenuItem}
-        >
-          Vaults
-        </MenuItem>
-        <MenuItem
-          to="/core/dapp/trade"
-          onMenuItemActive={onMenuItemActive}
-          onClick={onClickMenuItem}
-        >
-          Trade
-        </MenuItem>
-        <MenuItem
-          to="/core/dapp/profile"
-          onMenuItemActive={onMenuItemActive}
-          onClick={onClickMenuItem}
-        >
-          Profile
-        </MenuItem>
-        <MenuItem
-          to="/core/dapp/analytics"
-          onMenuItemActive={onMenuItemActive}
-          onClick={onClickMenuItem}
-        >
-          Analytics
-        </MenuItem>
-      </Menu>
-      <Selector $position={selectorPosition} />
+      <MenuWrapper>
+        <Menu id="menu">
+          <MenuItem
+            to="/core/dapp/vaults"
+            onMenuItemActive={onMenuItemActive}
+            onClick={onClickMenuItem}
+          >
+            Vaults
+          </MenuItem>
+          <MenuItem
+            to="/core/dapp/trade"
+            onMenuItemActive={onMenuItemActive}
+            onClick={onClickMenuItem}
+          >
+            Trade
+          </MenuItem>
+          <MenuItem
+            to="/core/dapp/profile"
+            onMenuItemActive={onMenuItemActive}
+            onClick={onClickMenuItem}
+          >
+            Profile
+          </MenuItem>
+          <MenuItem
+            to="/core/dapp/analytics"
+            onMenuItemActive={onMenuItemActive}
+            onClick={onClickMenuItem}
+          >
+            Analytics
+          </MenuItem>
+        </Menu>
+        <Selector $position={selectorPosition} />
+      </MenuWrapper>
     </NavWrapper>
   );
 };
@@ -255,7 +259,7 @@ const Wrapper = styled.header`
   ${phoneAndAbove(`
     height: ${pixelsToRems(NAV_DESKTOP_HEIGHT_PIXELS)}rem;
     position: relative;
-    height: auto;
+    height: 3.25rem; // 52px
     background: linear-gradient(180deg, ${COLOR_NAV_BACKGROUND_GRADIENT_START} 0%, ${COLOR_NAV_BACKGROUND_GRADIENT_END} 100%);
     border-bottom: 0.0625rem solid ${COLOR_NAV_BORDER};
   `)}
@@ -272,18 +276,6 @@ const Logo = styled(Link)`
   ${phoneAndAbove(`
     width: 2.125rem;
     height: 2.125rem;
-  `)}
-`;
-
-const MetamaskButton = styled.button`
-  ${buttonResets}
-  ${backgroundImage(metamaskLogo)}
-  width: 2.2rem;
-  height: 2.2rem;
-
-  ${phoneAndAbove(`
-    width: 2.4375rem;
-    height: 2.375rem;
   `)}
 `;
 
@@ -324,10 +316,19 @@ const NavWrapper = styled.nav<{ $isOpen: boolean }>`
   ${phoneAndAbove(`
     top: 0;
     padding-top: 0;
-    position: relative;
-    display: block;
+    justify-content: center;
     background: transparent;
+    position: absolute;
+    display: flex;
+    left: 50%;
+    transform: translate(-50%);
+    margin: 0 auto;
+    text-align: center;
   `)}
+`;
+
+const MenuWrapper = styled.div`
+  position: relative;
 `;
 
 const Menu = styled(UnstyledList)`
