@@ -49,18 +49,20 @@ contract Exposure is Ownable, RebasingERC20 {
      * @dev increase reval associated with a strategy
      */
     function increaseReval(uint256 amount) external onlyOwner {
+        uint256 oldVal = reval;
         reval += amount;
 
-        emit UpdateReval(reval);
+        emit IncreaseReval(oldVal, reval);
     }
 
     /**
      * @dev decrease reval associated with a strategy
      */
     function decreaseReval(uint256 amount) external onlyOwner {
+        uint256 oldVal = reval;
         reval -= amount;
 
-        emit UpdateReval(reval);
+        emit DecreaseReval(oldVal, reval);
     }
 
     /**
@@ -149,7 +151,8 @@ contract Exposure is Ownable, RebasingERC20 {
         _;
     }
 
-    event UpdateReval(uint256 amount);
+    event IncreaseReval(uint256 oldVal, uint256 newVal);
+    event DecreaseReval(uint256 oldVal, uint256 newVal);
     event SetLiquidator(address liquidator);
     event AddMinter(address account);
     event RemoveMinter(address account);
