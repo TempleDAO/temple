@@ -20,6 +20,7 @@ import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
 import { phoneAndAbove } from 'styles/breakpoints';
 import TruncatedAddress from 'components/TruncatedAddress';
+import Loader from 'components/Loader/Loader';
 
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
 import templeDaoLogo from 'assets/images/sun-art.svg';
@@ -30,12 +31,19 @@ import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
 
 const ConnectButton = styled.button`
   ${buttonResets}
-  ${(props) => props.theme.typography.h4}
-  border-radius: 6px;
+  font-size: 1.25rem;
   display: flex;
-  background: ${({ theme }) => theme.palette.brandDark};
+  background: transparent;
+  border: 1px solid ${({ theme }) => theme.palette.brand};
   height: 100%;
-  color: ${({ theme }) => theme.palette.brandLight}
+  color: ${({ theme }) => theme.palette.brand};
+`;
+
+const AccountWrapper = styled.div`
+  display: flex;
+  height: 100%;
+  flex-direction: row;
+  align-items: center;
 `;
 
 const Header = () => {
@@ -63,16 +71,19 @@ const Header = () => {
         isNavOpenMobile={isNavOpen}
         onClickMenuItem={onClickMenuItem}
       />
-      <div>
-        {!loading && data?.address && (
-          <div><TruncatedAddress address={data.address} /> <a href="#" onClick={() => disconnect()}>Disconnect</a></div>
+      <AccountWrapper>
+        {!loading && !connectLoading && !!data?.address && (
+          <><TruncatedAddress address={data.address} /><a href="#" onClick={() => disconnect()}>Disconnect</a></>
         )}
-        {!loading && !data?.address && (
+        {!loading && !connectLoading && !data?.address && (
           <ConnectButton onClick={() => connect(connectData.connectors[0])}>
             Connect
           </ConnectButton>
         )}
-      </div>
+        {(loading || connectLoading) && (
+          <Loader />
+        )}
+      </AccountWrapper>
     </Wrapper>
   );
 };
