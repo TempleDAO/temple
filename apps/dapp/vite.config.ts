@@ -18,9 +18,6 @@ const VISUALIZATION_CHUNKS = new Set([
   'react-vis',
 ]);
 
-const EXTERNAL_DEPS = new Set([
-]);
-
 const renderChunks = (deps: Record<string, string>) => {
   const chunks: Record<string, string[]> = {};
   Object.keys(deps).forEach((dep) => {
