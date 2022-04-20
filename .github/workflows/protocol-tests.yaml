@@ -6,8 +6,8 @@ on:
       - 'protocol/**'
 
 jobs:
-  build:
-    name: Test
+  e2eTest:
+    name: End-to-end Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -18,4 +18,18 @@ jobs:
       - run: yarn compile
         working-directory: protocol
       - run: yarn test
+        working-directory: protocol
+  fuzzTest:
+    name: Fuzz Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - run: forge test -vvvv --gas-report
         working-directory: protocol
