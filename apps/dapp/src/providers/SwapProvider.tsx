@@ -29,6 +29,8 @@ import {
   TEMPLE_IV_SWAP_ADDRESS,
   VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT,
   VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT,
+  FEI_PAIR_ADDRESS,
+  FEI_ADDRESS,
 } from 'providers/env';
 
 // our default deadline is 20 minutes
@@ -103,7 +105,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   };
 
   const buy = async (
-    amountInFrax: BigNumber,
+    amountIn: BigNumber,
     minAmountOutTemple: BigNumber,
     stablecoinAddress = STABLE_COIN_ADDRESS
   ) => {
@@ -122,13 +124,11 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         symbol,
         STABLE_TOKEN,
         TEMPLE_V2_ROUTER_ADDRESS,
-        amountInFrax
+        amountIn
       );
 
       const balance = await STABLE_TOKEN.balanceOf(wallet);
-      const verifiedAmountInFrax = amountInFrax.lt(balance)
-        ? amountInFrax
-        : balance;
+      const verifiedAmountIn = amountIn.lt(balance) ? amountIn : balance;
 
       const deadline = formatNumberFixedDecimals(
         Date.now() / 1000 + DEADLINE,
@@ -136,7 +136,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       );
 
       const buyTXN = await AMM_ROUTER.swapExactStablecForTemple(
-        verifiedAmountInFrax,
+        verifiedAmountIn,
         minAmountOutTemple,
         stablecoinAddress,
         wallet,
@@ -225,15 +225,23 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  const getBuyQuote = async (fraxIn: BigNumber): Promise<BigNumber> => {
+  const getBuyQuote = async (
+    amountIn: BigNumber,
+    sellTokenAddress = TEMPLE_V2_PAIR_ADDRESS
+  ): Promise<BigNumber> => {
     if (wallet && signer) {
       const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(
         TEMPLE_V2_ROUTER_ADDRESS
       );
 
+      const pair =
+        sellTokenAddress === FEI_ADDRESS
+          ? FEI_PAIR_ADDRESS
+          : TEMPLE_V2_PAIR_ADDRESS;
+
       const amountOut = await AMM_ROUTER.swapExactStableForTempleQuote(
-        TEMPLE_V2_PAIR_ADDRESS,
-        fraxIn
+        pair,
+        amountIn
       );
 
       return amountOut;

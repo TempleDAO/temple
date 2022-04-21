@@ -118,7 +118,7 @@ export interface SwapService {
   iv: number;
 
   buy(
-    amountInFrax: BigNumber,
+    amountIn: BigNumber,
     minAmountOutTemple: BigNumber,
     stablecoinAddress?: string
   ): void;
@@ -131,7 +131,10 @@ export interface SwapService {
 
   getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
 
-  getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
+  getBuyQuote(
+    amountIn: BigNumber,
+    sellTokenAddress?: string
+  ): Promise<BigNumber | void>;
 
   updateTemplePrice(): Promise<void>;
 

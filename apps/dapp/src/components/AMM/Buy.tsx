@@ -25,6 +25,13 @@ interface BuyProps {
 }
 
 const ENV_VARS = import.meta.env;
+const dropdownOptions = [
+  {
+    label: TICKER_SYMBOL.STABLE_TOKEN,
+    value: ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS,
+  },
+  { label: TICKER_SYMBOL.FEI, value: ENV_VARS.VITE_PUBLIC_FEI_ADDRESS },
+];
 
 export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const { balance, getBalance, updateBalance } = useWallet();
@@ -46,7 +53,11 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
     setStableCoinAmount(value === 0 ? '' : value);
     if (value) {
       setRewards(
-        fromAtto((await getBuyQuote(toAtto(value))) || BigNumber.from(0) || 0)
+        fromAtto(
+          (await getBuyQuote(toAtto(value), selectedToken.address)) ||
+            BigNumber.from(0) ||
+            0
+        )
       );
     } else {
       setRewards('');
@@ -113,13 +124,8 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         </ConvoFlowTitle>
       </TitleWrapper>
       <InputSelect
-        options={[
-          {
-            label: TICKER_SYMBOL.STABLE_TOKEN,
-            value: ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS,
-          },
-          { label: TICKER_SYMBOL.FEI, value: ENV_VARS.VITE_PUBLIC_FEI_ADDRESS },
-        ]}
+        options={dropdownOptions}
+        defaultValue={dropdownOptions[0]}
         onChange={(e) =>
           setSelectedToken({
             address: e.value,
