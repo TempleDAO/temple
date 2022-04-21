@@ -68,6 +68,7 @@ contract VaultTest is TempleTest {
 
     // Used to see amounts when multiple people depositing
     /*
+    
     function testAmountPerShare() public {
         mintAndDepositFor(alice, ONE_HUNDRED_K);
         printStats("Alice", alice);
