@@ -88,7 +88,7 @@ const Text2 = styled.p<{ light?: boolean }>`
   text-shadow: ${COLOR_PERCENTAGE_TEXT_SHADOW};
 `;
 
-const Text3 = styled.div`
+const Text3 = styled.div<{ light?: boolean }>`
   width: 100%;
   font-weight: 400;
   margin-top: 1.5rem;
