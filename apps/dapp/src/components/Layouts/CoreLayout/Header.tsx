@@ -8,52 +8,120 @@ import {
 } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
+import { useAccount, useConnect } from 'wagmi';
 
-import { useWallet } from 'providers/WalletProvider';
 import {
   flexCenter,
   buttonResets,
   backgroundImage,
   pixelsToRems,
 } from 'styles/mixins';
+import { ConnectorPopover } from './ConnectorPopover';
 import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
 import { phoneAndAbove } from 'styles/breakpoints';
+import TruncatedAddress from 'components/TruncatedAddress';
+import Loader from 'components/Loader/Loader';
+import { Button as BaseButton } from 'components/Button/Button';
 
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
 import templeDaoLogo from 'assets/images/sun-art.svg';
-import metamaskLogo from 'assets/images/metamask-transparent.svg';
 import hamburger from 'assets/icons/core-hamburger.svg';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
+import Tooltip from 'components/Tooltip/Tooltip';
 
 const Header = () => {
-  const { connectWallet, changeWalletAddress, wallet } = useWallet();
-  const [isNavOpen, setIsNavOpen] = useState(false);
+  const [{ data: connectData, loading: connectLoading }] = useConnect();
+  const [{ data: accountData, loading: accountLoading }, disconnect] = useAccount({
+    fetchEns: true,
+  });
 
+  const [isConnectorMenuOpen, setIsConnectMenuOpen] = useState(false);
+  const [isNavOpen, setIsNavOpen] = useState(false);
   const onClickMenuItem = useCallback(() => {
     setIsNavOpen(false);
   }, [setIsNavOpen]);
 
+  
+  let accountButton = (
+   <ConnectButton
+      isSmall
+      isActive
+      isUppercase
+      label={"Connect Wallet"}
+      role="button"
+      onClick={() => {
+        setIsConnectMenuOpen(true);
+      }}
+    />
+  );
+   
+  if (accountLoading || connectLoading) {
+    accountButton = <Loader />;
+  } else if (accountData?.address) {
+    const isMetaMask = connectData.connector?.name === 'MetaMask';
+    const disconnectButton = (
+      <ConnectButton
+        isSmall
+        isActive
+        isUppercase
+        disabled={isMetaMask}
+        role="button"
+        label="Disconnect"
+        onClick={() => {
+          disconnect(); 
+        }}
+      />
+    );
+    
+    accountButton = (
+      <>
+        <UserAddress>
+          {!!accountData.ens?.name ? (
+            accountData.ens?.name
+          ) : (
+            <TruncatedAddress address={accountData?.address} />
+          )}
+        </UserAddress>
+        {!isMetaMask ? disconnectButton : (
+          <Tooltip
+            content={
+              'To disconnect an account managed through Metamask, ' +
+              'use the “Disconnect this account” button on Metamask itself'
+            }
+          >
+            {disconnectButton}
+          </Tooltip>
+        )}
+      </>
+    );
+  }
+
   return (
-    <Wrapper id="Wrapper">
-      <MobileNavLeft>
-        <HamburgerBun
-          aria-label={`${isNavOpen ? 'Close' : 'Open'} navigation`}
-          $isOpen={isNavOpen}
-          onClick={() => setIsNavOpen((isOpen) => !isOpen)}
+    <>
+      <Wrapper id="Wrapper">
+        <MobileNavLeft>
+          <HamburgerBun
+            aria-label={`${isNavOpen ? 'Close' : 'Open'} navigation`}
+            $isOpen={isNavOpen}
+            onClick={() => setIsNavOpen((isOpen) => !isOpen)}
+          />
+          <Logo to="/core">TempleDAO</Logo>
+        </MobileNavLeft>
+        <Navigation
+          isNavOpenMobile={isNavOpen}
+          onClickMenuItem={onClickMenuItem}
         />
-        <Logo to="/core">TempleDAO</Logo>
-      </MobileNavLeft>
-      <Navigation
-        isNavOpenMobile={isNavOpen}
-        onClickMenuItem={onClickMenuItem}
+        <AccountWrapper>
+          {accountButton}
+        </AccountWrapper>
+      </Wrapper>
+      <ConnectorPopover
+        isOpen={isConnectorMenuOpen}
+        onClose={() => setIsConnectMenuOpen(false)}
       />
-      <MetamaskButton
-        aria-label={wallet ? 'Change Wallet' : 'Connect Wallet'}
-        onClick={wallet ? changeWalletAddress : connectWallet}
-      />
-    </Wrapper>
+    </>
   );
 };
 
@@ -77,37 +145,39 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
 
   return (
     <NavWrapper $isOpen={isNavOpenMobile}>
-      <Menu id="menu">
-        <MenuItem
-          to="/core/dapp/vaults"
-          onMenuItemActive={onMenuItemActive}
-          onClick={onClickMenuItem}
-        >
-          Vaults
-        </MenuItem>
-        <MenuItem
-          to="/core/dapp/trade"
-          onMenuItemActive={onMenuItemActive}
-          onClick={onClickMenuItem}
-        >
-          Trade
-        </MenuItem>
-        <MenuItem
-          to="/core/dapp/profile"
-          onMenuItemActive={onMenuItemActive}
-          onClick={onClickMenuItem}
-        >
-          Profile
-        </MenuItem>
-        <MenuItem
-          to="/core/dapp/analytics"
-          onMenuItemActive={onMenuItemActive}
-          onClick={onClickMenuItem}
-        >
-          Analytics
-        </MenuItem>
-      </Menu>
-      <Selector $position={selectorPosition} />
+      <MenuWrapper>
+        <Menu id="menu">
+          <MenuItem
+            to="/core/dapp/vaults"
+            onMenuItemActive={onMenuItemActive}
+            onClick={onClickMenuItem}
+          >
+            Vaults
+          </MenuItem>
+          <MenuItem
+            to="/core/dapp/trade"
+            onMenuItemActive={onMenuItemActive}
+            onClick={onClickMenuItem}
+          >
+            Trade
+          </MenuItem>
+          <MenuItem
+            to="/core/dapp/profile"
+            onMenuItemActive={onMenuItemActive}
+            onClick={onClickMenuItem}
+          >
+            Profile
+          </MenuItem>
+          <MenuItem
+            to="/core/dapp/analytics"
+            onMenuItemActive={onMenuItemActive}
+            onClick={onClickMenuItem}
+          >
+            Analytics
+          </MenuItem>
+        </Menu>
+        <Selector $position={selectorPosition} />
+      </MenuWrapper>
     </NavWrapper>
   );
 };
@@ -177,9 +247,41 @@ const HamburgerBun = styled.button<{ $isOpen: boolean }>`
   `)}
 `;
 
+const ConnectButton = styled(BaseButton)`
+  background-color: rgba(0, 0, 0, 0);
+  border-radius: .75rem;
+  font-weight: 400;
+  border: transparent; 
+  color: ${({ theme }) => theme.palette.brand};
+  border: 1px solid ${({ theme }) => theme.palette.brand};
+  margin: 0 0 0 0.75rem;
+  font-size: .75rem;
+  letter-spacing: 0.1em;
+  transition: background .2s ease-in-out;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.25);
+  }
+
+  &:disabled {
+    border: 1px solid #bd7b4f80;
+  }
+`;
+
+const AccountWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+`;
+
 const MobileNavLeft = styled.div`
   display: flex;
   align-items: center;
+`;
+
+const UserAddress = styled.span`
+  color: ${({ theme }) => theme.palette.brandLight};
+  font-size: 0.75rem;
 `;
 
 const Wrapper = styled.header`
@@ -199,7 +301,7 @@ const Wrapper = styled.header`
   ${phoneAndAbove(`
     height: ${pixelsToRems(NAV_DESKTOP_HEIGHT_PIXELS)}rem;
     position: relative;
-    height: auto;
+    height: 3.25rem; // 52px
     background: linear-gradient(180deg, ${COLOR_NAV_BACKGROUND_GRADIENT_START} 0%, ${COLOR_NAV_BACKGROUND_GRADIENT_END} 100%);
     border-bottom: 0.0625rem solid ${COLOR_NAV_BORDER};
   `)}
@@ -216,18 +318,6 @@ const Logo = styled(Link)`
   ${phoneAndAbove(`
     width: 2.125rem;
     height: 2.125rem;
-  `)}
-`;
-
-const MetamaskButton = styled.button`
-  ${buttonResets}
-  ${backgroundImage(metamaskLogo)}
-  width: 2.2rem;
-  height: 2.2rem;
-
-  ${phoneAndAbove(`
-    width: 2.4375rem;
-    height: 2.375rem;
   `)}
 `;
 
@@ -268,10 +358,19 @@ const NavWrapper = styled.nav<{ $isOpen: boolean }>`
   ${phoneAndAbove(`
     top: 0;
     padding-top: 0;
-    position: relative;
-    display: block;
+    justify-content: center;
     background: transparent;
+    position: absolute;
+    display: flex;
+    left: 50%;
+    transform: translate(-50%);
+    margin: 0 auto;
+    text-align: center;
   `)}
+`;
+
+const MenuWrapper = styled.div`
+  position: relative;
 `;
 
 const Menu = styled(UnstyledList)`

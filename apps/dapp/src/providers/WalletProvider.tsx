@@ -8,8 +8,6 @@ import React, {
 import { BigNumber, ethers } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import {
-  JsonRpcProvider,
-  JsonRpcSigner,
   Network,
 } from '@ethersproject/providers';
 // Circular dependency
@@ -25,6 +23,7 @@ import {
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
+import { Nullable } from 'types/util';
 import { WalletState, Balance, ETH_ACTIONS } from 'providers/types';
 import {
   ERC20,
@@ -76,9 +75,9 @@ const WalletContext = createContext<WalletState>(INITIAL_STATE);
 
 export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
-  const [provider, setProvider] = useState<JsonRpcProvider | null>(null);
-  const [network, setNetwork] = useState<Network | null>(null);
-  const [signerState, setSignerState] = useState<JsonRpcSigner | null>(null);
+  const [provider, setProvider] = useState<Nullable<ethers.providers.Web3Provider>>(null);
+  const [network, setNetwork] = useState<Nullable<Network>>(null);
+  const [signerState, setSignerState] = useState<Nullable<ethers.providers.JsonRpcSigner>>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [balanceState, setBalanceState] = useState<Balance>(
     INITIAL_STATE.balance
@@ -127,7 +126,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       const { ethereum } = window;
 
       if (ethereum && ethereum.isMetaMask) {
-        const provider: JsonRpcProvider = new ethers.providers.Web3Provider(
+        const provider = new ethers.providers.Web3Provider(
           ethereum
         );
 
@@ -166,7 +165,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
   const getBalance = async (
     walletAddress: string,
-    signerState: JsonRpcSigner
+    signerState: ethers.providers.JsonRpcSigner
   ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
