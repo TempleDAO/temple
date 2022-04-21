@@ -17,7 +17,6 @@ import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
-import { InputSelect } from 'components/InputSelect/InputSelect';
 
 interface SizeProps {
   small?: boolean;
@@ -129,16 +128,6 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
             : 'ARE YOU SURE, TEMPLAR?'}
         </ConvoFlowTitle>
       </TitleWrapper>
-      <InputSelect
-        options={dropdownOptions}
-        defaultValue={dropdownOptions[0]}
-        onChange={(e) =>
-          setSelectedToken({
-            address: e.value,
-            symbol: e.label,
-          })
-        }
-      />
       <Input
         small={small}
         hint={`Balance: ${formatNumber(templeWalletAmount)}`}
@@ -162,7 +151,16 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       <Input
         small={small}
         hint={`Balance: ${formatNumber(stableCoinWalletAmount)}`}
-        crypto={{ kind: 'value', value: selectedToken.symbol }}
+        crypto={{
+          kind: 'select',
+          cryptoOptions: dropdownOptions,
+          onCryptoChange: (e) =>
+            setSelectedToken({
+              address: e.value.toString(),
+              symbol: e.label as TICKER_SYMBOL,
+            }),
+          defaultValue: dropdownOptions[0],
+        }}
         isNumber
         value={formatNumber(rewards as number)}
         placeholder={'0.00'}

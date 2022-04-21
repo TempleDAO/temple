@@ -77,14 +77,18 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           opacity: state.isDisabled ? 0.5 : 1,
           transition: 'opacity 300ms',
           fontFamily: 'Megant',
-          fontSize: 24,
+          fontSize: 20,
+          fontWeight: 600,
           textTransform: 'uppercase',
-          color: theme.palette.light,
+          color: theme.palette.brand,
+          margin: 0,
         }),
         valueContainer: (base) => ({
           ...base,
-          justifyContent: 'flex-end',
-          paddingRight: 0,
+          justifyContent: 'flex-start',
+          padding: 0,
+          margin: 0,
+          cursor: 'pointer',
         }),
       }}
     />

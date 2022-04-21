@@ -17,7 +17,6 @@ import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
-import { InputSelect } from 'components/InputSelect/InputSelect';
 
 interface BuyProps {
   small?: boolean;
@@ -123,23 +122,22 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
             : 'HOW DEDICATED ARE YOU, TEMPLAR?'}
         </ConvoFlowTitle>
       </TitleWrapper>
-      <InputSelect
-        options={dropdownOptions}
-        defaultValue={dropdownOptions[0]}
-        onChange={(e) =>
-          setSelectedToken({
-            address: e.value,
-            symbol: e.label,
-          })
-        }
-      />
       <Input
         small={small}
         hint={`Balance: ${formatNumber(stableCoinWalletAmount)}`}
         onHintClick={() =>
           copyBalance(stableCoinWalletAmount, handleUpdateStableCoinAmount)
         }
-        crypto={{ kind: 'value', value: selectedToken.symbol }}
+        crypto={{
+          kind: 'select',
+          cryptoOptions: dropdownOptions,
+          onCryptoChange: (e) =>
+            setSelectedToken({
+              address: e.value.toString(),
+              symbol: e.label as TICKER_SYMBOL,
+            }),
+          defaultValue: dropdownOptions[0],
+        }}
         isNumber
         max={stableCoinWalletAmount}
         min={0}

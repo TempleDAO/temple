@@ -16,7 +16,7 @@ interface CryptoSelector {
   defaultValue?: Option;
 
   // Callback for cryptoSelector value change
-  onCryptoChange?(): void;
+  onCryptoChange?(e: Option): void;
 }
 
 interface CryptoValue {
@@ -203,8 +203,8 @@ export const InputCrypto = styled.div`
   }
 
   .Select__control {
-    margin-top: -0.375rem /* -6/16 */;
-    margin-right: -0.375rem /* -6/16 */;
+    margin-top: -0.625rem /* -6/16 */;
+    margin-right: 3rem;
   }
 `;
 
