@@ -46,7 +46,7 @@ contract TempleStableAMMRouter is Ownable {
         tokenPair[_token] = _pair;
     }
 
-    function updateTreasury(address _templeTreasury) external onlyOwner {
+    function setTreasury(address _templeTreasury) external onlyOwner {
         templeTreasury = ITempleTreasury(_templeTreasury);
     }
 
