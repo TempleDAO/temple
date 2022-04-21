@@ -1,0 +1,147 @@
+import { useEffect, useState } from 'react';
+import styled from 'styled-components';
+import { useConnect, useNetwork, chain } from 'wagmi';
+
+import { UnstyledList } from 'styles/common';
+import { Button } from 'components/Button/Button';
+
+import { Popover } from 'components/Popover';
+import { Nullable } from 'types/util';
+
+export const WrongNetworkPopover = () => {
+  const [{ data, loading, error }, switchNetwork] = useNetwork();
+  const [dismissedChainId, setDismissedChainId] = useState<Nullable<number>>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const currentNetworkId = data?.chain?.id;
+
+  useEffect(() => {
+    if (loading || !currentNetworkId || dismissedChainId === currentNetworkId) {
+      return;
+    }
+
+    const isSupported = isSupportedChain(currentNetworkId);
+    if (!isSupported && !isOpen) {
+      setIsOpen(true);
+    } else if (isSupported && isOpen) {
+      setIsOpen(false);
+    }
+  }, [
+    currentNetworkId,
+    setIsOpen,
+    isOpen,
+    loading,
+    dismissedChainId,
+  ]);
+
+  const isProd = ENV === 'production';
+  const defaultChainForEnv = ENV_CHAIN_MAPPING.get(ENV) || chain.mainnet;
+
+  const onDismiss = () => {
+    // Only allow dismissing popover in staging and dev environments.
+    if (isProd) {
+      return;
+    }
+
+    setIsOpen(false);
+    setDismissedChainId(currentNetworkId!);
+  };
+
+  return (
+    <Popover
+      isOpen={isOpen}
+      onClose={onDismiss}
+      showCloseButton={!isProd}
+      header="Wrong Network"
+    >
+      <Message>
+        {(isProd || !defaultChainForEnv) ? (
+          <>This app only works on Ethereum Mainnet.</>
+        ) : (
+          <>The default environment for {ENV} is {defaultChainForEnv.name}.</>
+        )}
+      </Message>
+      <Menu>
+        <li>
+          <SwitchNetworkButton
+            role="button"
+            isSmall
+            disabled={loading}
+            onClick={() => {
+              if (switchNetwork) {
+                switchNetwork(defaultChainForEnv.id);
+              }
+            }}
+          >
+            Switch to {defaultChainForEnv.name}
+          </SwitchNetworkButton>
+        </li>
+        {!isProd && (
+          <li>
+            <SwitchNetworkButton
+              role="button"
+              isSmall
+              disabled={loading}
+              onClick={onDismiss}
+            >
+              {!!data?.chain?.name ? (
+               <>Continue with {data.chain.name}</>
+              ) : (
+                <>Continue</>
+              )}
+            </SwitchNetworkButton>
+          </li>
+        )}
+      </Menu>
+      
+      
+      {error && <ErrorMessage>{error.message}</ErrorMessage>}
+    </Popover>
+  );
+};
+
+const ENV_VARS = import.meta.env;
+const ENV = 'production' //ENV_VARS.VITE_ENV;
+
+const ENV_CHAIN_MAPPING = new Map([
+  ['production', chain.mainnet],
+  ['staging', chain.rinkeby],
+  ['development', chain.hardhat],
+]);
+
+const isSupportedChain = (chainId: number) => {
+  return Array.from(ENV_CHAIN_MAPPING).some(([_, chain]) => chain.id === chainId);
+};
+
+const Message = styled.p`
+  text-align: center;
+  color: ${({ theme }) => theme.palette.brand};
+  margin: 0 0 3rem;
+`;
+
+const SwitchNetworkButton = styled(Button)`
+  border: 1px solid;
+  color: ${({ theme }) => theme.palette.brand};
+  margin: 0;
+`;
+
+const ErrorMessage = styled.span`
+  display: flex;
+  justify-content: center;
+  color: ${({ theme }) => theme.palette.enclave.chaos};
+  margin: 1rem 0 0;
+`;
+
+const Menu = styled(UnstyledList)`
+  > li {
+    ${SwitchNetworkButton} { 
+      border-bottom: none;
+    }
+
+    &:last-of-type {
+      ${SwitchNetworkButton} {
+        border-bottom: 1px solid;
+      }
+    }
+  }
+`;
