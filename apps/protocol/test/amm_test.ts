@@ -128,7 +128,7 @@ describe("AMM", async () => {
 
     describe("Sell", async() => {
 
-       it("Invaid stablec throws error", async () => {
+       it("Invalid stablec throws error", async () => {
             await shouldThrow(templeRouter.swapExactTempleForStable(toAtto(100), 1, await ben.getAddress(), await alan.getAddress(), expiryDate()), /TempleStableAMMRouter: UNSUPPORTED_PAIR/);
        })
 
@@ -176,7 +176,7 @@ describe("AMM", async () => {
    })
 
    describe("Liquidity", async() => {
-       
+
     it("add", async () => {
       // Expect reserves to match before/after adding liquidity
       expect(fmtPricePair(await pair.getReserves()))
@@ -217,5 +217,18 @@ describe("AMM", async () => {
     });
 
   });
+
+  describe("Update Treasury", async() => {
+
+    it("non-owner reverts", async () => {
+        await shouldThrow(templeRouter.connect(alan).setTreasury(await ben.getAddress()), /Ownable: caller is not the owner/);
+    });
+
+    it("updates treasury address properly", async () => {
+        await templeRouter.setTreasury(await ben.getAddress());
+        expect(await templeRouter.templeTreasury()).to.eq(await ben.getAddress());
+    });
+      
+  })
 
 })
