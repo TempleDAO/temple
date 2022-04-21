@@ -54,19 +54,19 @@ export const CryptoSelect = (props: CryptoSelectProps) => {
           textTransform: 'uppercase',
           textAlign: 'left',
           padding: '0 0.5rem',
-          minWidth: ' 12.5rem  /* 120/16 */',
+          minWidth: '12.5rem  /* 120/16 */',
           cursor: 'pointer',
           height: selectHeight,
           zIndex: 2
         }),
-        menu: (base, state) => ({
+        menu: (base) => ({
           ...base,
           paddingTop: '1.5rem',
           marginTop: '-1.5rem',
           border: `0.0625rem solid ${theme.palette.brand}`,
         }),
-        menuList: (base, state) => ({
-          base,
+        menuList: (base) => ({
+          ...base,
           padding: 0,
           color: theme.palette.light,
           maxHeight: props.maxMenuItems
