@@ -101,7 +101,7 @@ export const WrongNetworkPopover = () => {
 };
 
 const ENV_VARS = import.meta.env;
-const ENV = 'production' //ENV_VARS.VITE_ENV;
+const ENV = ENV_VARS.VITE_ENV;
 
 const ENV_CHAIN_MAPPING = new Map([
   ['production', chain.mainnet],
