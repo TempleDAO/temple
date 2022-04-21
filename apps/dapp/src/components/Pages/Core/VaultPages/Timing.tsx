@@ -17,6 +17,7 @@ import useVaultContext from './useVaultContext';
 
 const Timing = () => {
   const vault = useVaultContext();
+  
   return (
     <Wrapper>
       <Header>Timing</Header>
