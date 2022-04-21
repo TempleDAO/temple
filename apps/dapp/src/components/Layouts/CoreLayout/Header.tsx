@@ -7,8 +7,8 @@ import {
   SyntheticEvent,
 } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
-import styled from 'styled-components';
-import { useAccount } from 'wagmi';
+import styled, { css } from 'styled-components';
+import { useAccount, useConnect } from 'wagmi';
 
 import {
   flexCenter,
@@ -32,6 +32,7 @@ import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
 import Tooltip from 'components/Tooltip/Tooltip';
 
 const Header = () => {
+  const [{ data: connectData, loading: connectLoading }] = useConnect();
   const [{ data: accountData, loading: accountLoading }, disconnect] = useAccount({
     fetchEns: true,
   });
@@ -46,7 +47,6 @@ const Header = () => {
   let accountButton = (
    <ConnectButton
       isSmall
-      isUppercase
       isActive
       label="Connect Wallet"
       onClick={() => {
@@ -55,9 +55,21 @@ const Header = () => {
     />
   );
    
-  if (accountLoading) {
+  if (accountLoading || connectLoading) {
     accountButton = <Loader />;
   } else if (accountData?.address) {
+    const isMetaMask = connectData.connector?.name === 'MetaMask';
+    const disconnectButton = (
+      <DisconnectButton
+        isSmall
+        disabled={isMetaMask}
+        label="Disconnect"
+        onClick={() => {
+          disconnect(); 
+        }}
+      />
+    );
+    
     accountButton = (
       <>
         <UserAddress>
@@ -67,20 +79,16 @@ const Header = () => {
             <TruncatedAddress address={accountData?.address} />
           )}
         </UserAddress>
-        <Tooltip
-        content="You must disconnect through MetaMask"
-        >
-
-        <DisconnectButton
-          isSmall
-          isUppercase
-          disabled
-          label="✖"
-          onClick={() => {
-            disconnect(); 
-          }}
-          />
+        {!isMetaMask ? disconnectButton : (
+          <Tooltip
+            content={
+              'To disconnect an account managed through Metamask, ' +
+              'use the “Disconnect this account” button on Metamask itself'
+            }
+          >
+            {disconnectButton}
           </Tooltip>
+        )}
       </>
     );
   }
@@ -234,35 +242,33 @@ const HamburgerBun = styled.button<{ $isOpen: boolean }>`
   `)}
 `;
 
-const ConnectButton = styled(BaseButton)`
+const buttonStyles = css`
   color: #FCDBC7;
-  border-radius: 8px;
-  text-transform: uppercase;
-  transition: none;
-  background-color: #4a2f1d;
-  border: 1px solid #bc7b4f;
+  border-radius: 1rem;
   font-weight: 400;
-  letter-spacing: .15rem;
-  height: 2.25rem;
   cursor: pointer;
-  
+  border: transparent; 
+`;
+
+const ConnectButton = styled(BaseButton)`
+  ${buttonStyles}
+
   &:hover {
-    color: #16100C;
-    background-color: #bc7b4f;
+    background-color: ${({ theme }) => theme.palette.brandDark};
   }
 `;
 
-const DisconnectButton = styled(ConnectButton)`
+const DisconnectButton = styled(BaseButton)`
+  ${buttonStyles}
+
+  background-color: #4a2f1d;
+  color: ${({ theme }) => theme.palette.brand};
+  border: 1px solid ${({ theme }) => theme.palette.brand};
   margin: 0 0 0 0.75rem;
-  &:hover {
-    color: rgba(189,123,79,0.5)  ;
-    background-color: #4a2f1d;
-  }
 `;
 
 const AccountWrapper = styled.div`
   display: flex;
-  height: 100%;
   flex-direction: row;
   align-items: center;
 `;
