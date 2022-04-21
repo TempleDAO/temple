@@ -1,7 +1,7 @@
 import { ComponentMeta, ComponentStory } from '@storybook/react';
 import { ExampleTable } from 'components/Table/Table.stories';
-import VaultClaim from 'components/Vault/VaultClaim';
-import VaultStake from 'components/Vault/VaultStake';
+import { Claim } from './Claim';
+import { Stake } from './Stake';
 import React from 'react';
 
 import VaultContent from './VaultContent';
@@ -23,9 +23,9 @@ export const ClaimContent = Template.bind({});
 export const TimingContent = Template.bind({});
 
 ClaimContent.args = {
-  children: <VaultClaim />,
+  children: <Claim />,
 };
 
 StakeContent.args = {
-  children: <VaultStake />,
+  children: <Stake />,
 };

@@ -21,7 +21,7 @@ export interface CryptoSelectProps {
  * UI component for selecting currency to deposit/stake
  */
 export const CryptoSelect = (props: CryptoSelectProps) => {
-  const selectHeight = '3rem';
+  const selectHeight = '2.5rem';
   return (
     <Select
       {...props}
@@ -56,7 +56,7 @@ export const CryptoSelect = (props: CryptoSelectProps) => {
           padding: '0 0.5rem',
           minWidth: '12.5rem  /* 120/16 */',
           cursor: 'pointer',
-          height: selectHeight,
+          height: '3rem',
           zIndex: 2
         }),
         menu: (base) => ({
@@ -64,10 +64,12 @@ export const CryptoSelect = (props: CryptoSelectProps) => {
           paddingTop: '1.5rem',
           marginTop: '-1.5rem',
           border: `0.0625rem solid ${theme.palette.brand}`,
+          borderRadius: '0 0 1.25rem 1.25rem'
         }),
         menuList: (base) => ({
           ...base,
           padding: 0,
+          borderRadius: '0 0 1.25rem 1.25rem',
           color: theme.palette.light,
           maxHeight: props.maxMenuItems
             ? `calc(${props.maxMenuItems} * ${selectHeight})`
@@ -83,6 +85,7 @@ export const CryptoSelect = (props: CryptoSelectProps) => {
           borderBottom: `0.0625rem solid ${theme.palette.brand}`,
           fontWeight: 'bold',
           color: theme.palette.brandLight,
+          fontSize: '1rem'
         }),
         indicatorSeparator: () => ({
           display: 'none',
