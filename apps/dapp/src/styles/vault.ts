@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-const COLOR_HEADER_SHADOW = '0px 4px 7.48px rgba(222, 92, 6, 0.5)';
+export const COLOR_HEADER_SHADOW = '0px 4px 7.48px rgba(222, 92, 6, 0.5)';
 
 export const Header = styled.h2`
   margin: 0 0 0.2rem;
