@@ -17,9 +17,9 @@ import { fromAtto } from 'utils/bigNumber';
 import {
   ERC20__factory,
   TempleERC20Token__factory,
-  TempleFraxAMMRouter__factory,
   TempleUniswapV2Pair__factory,
   TempleIVSwap__factory,
+  TempleStableAMMRouter__factory,
 } from 'types/typechain';
 import {
   TEMPLE_ADDRESS,
@@ -107,7 +107,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     minAmountOutTemple: BigNumber
   ) => {
     if (wallet && signer) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signer).attach(
+      const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(
         TEMPLE_V2_ROUTER_ADDRESS
       );
       const STABLE_TOKEN = new ERC20__factory(signer).attach(
@@ -131,9 +131,10 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         0
       );
 
-      const buyTXN = await AMM_ROUTER.swapExactFraxForTemple(
+      const buyTXN = await AMM_ROUTER.swapExactStablecForTemple(
         verifiedAmountInFrax,
         minAmountOutTemple,
+        STABLE_COIN_ADDRESS,
         wallet,
         deadline,
         {
@@ -161,7 +162,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     isIvSwap = false
   ) => {
     if (wallet && signer) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signer).attach(
+      const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(
         TEMPLE_V2_ROUTER_ADDRESS
       );
       const TEMPLE = new TempleERC20Token__factory(signer).attach(
@@ -198,9 +199,10 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
           deadline
         );
       } else {
-        sellTx = await AMM_ROUTER.swapExactTempleForFrax(
+        sellTx = await AMM_ROUTER.swapExactTempleForStablec(
           verifiedAmountInTemple,
           minAmountOutFrax,
+          STABLE_COIN_ADDRESS,
           wallet,
           deadline,
           {
@@ -221,25 +223,28 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
   const getBuyQuote = async (fraxIn: BigNumber): Promise<BigNumber> => {
     if (wallet && signer) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signer).attach(
+      const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(
         TEMPLE_V2_ROUTER_ADDRESS
       );
 
-      const { amountOutAMM, amountOutProtocol } =
-        await AMM_ROUTER.swapExactFraxForTempleQuote(fraxIn);
+      const amountOut = await AMM_ROUTER.swapExactStableForTempleQuote(
+        TEMPLE_V2_PAIR_ADDRESS,
+        fraxIn
+      );
 
-      return amountOutAMM.add(amountOutProtocol);
+      return amountOut;
     }
     return BigNumber.from(0);
   };
 
   const getSellQuote = async (amountToSell: BigNumber) => {
     if (wallet && signer) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signer).attach(
+      const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(
         TEMPLE_V2_ROUTER_ADDRESS
       );
 
-      const { amountOut } = await AMM_ROUTER.swapExactTempleForFraxQuote(
+      const { amountOut } = await AMM_ROUTER.swapExactTempleForStableQuote(
+        TEMPLE_V2_PAIR_ADDRESS,
         amountToSell
       );
 
