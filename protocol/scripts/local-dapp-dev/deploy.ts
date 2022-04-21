@@ -282,7 +282,7 @@ async function main() {
     LOCALDEV_VERIFER_EXTERNAL_PRIVATE_KEY: verifier.privateKey,
   };
 
-  await writeFile('../../shared/stack/deployed-addr.txt', '')
+  await writeFile('../shared/stack/deployed-addr.txt', '')
 
   let newVarsToWrite = ''
   console.log();
@@ -295,7 +295,7 @@ async function main() {
     newVarsToWrite += line + `\n`
   }
 
-  await writeFile('../../shared/stack/deployed-addr.txt', newVarsToWrite)
+  await writeFile('../shared/stack/deployed-addr.txt', newVarsToWrite)
 
   console.log();
   console.log('=========================================');
