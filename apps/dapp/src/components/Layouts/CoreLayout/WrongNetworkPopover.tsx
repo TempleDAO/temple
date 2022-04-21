@@ -58,7 +58,7 @@ export const WrongNetworkPopover = () => {
         {(isProd || !defaultChainForEnv) ? (
           <>This app only works on Ethereum Mainnet.</>
         ) : (
-          <>The default environment for {ENV} is {defaultChainForEnv.name}.</>
+          <>The default chain for {ENV} is {defaultChainForEnv.name}.</>
         )}
       </Message>
       <Menu>
