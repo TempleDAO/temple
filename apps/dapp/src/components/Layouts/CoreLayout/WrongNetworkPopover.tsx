@@ -93,8 +93,6 @@ export const WrongNetworkPopover = () => {
           </li>
         )}
       </Menu>
-      
-      
       {error && <ErrorMessage>{error.message}</ErrorMessage>}
     </Popover>
   );
