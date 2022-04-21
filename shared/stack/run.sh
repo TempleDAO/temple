@@ -5,7 +5,7 @@ trap "exit" INT TERM ERR
 trap "kill 0" EXIT
 
 # Compile and deploy contracts
-cd apps/protocol 
+cd protocol 
 yarn compile
 yarn local-node & 
 
@@ -23,7 +23,7 @@ echo 'Deploying'
 yarn local-deploy
 
 # back to root
-cd ../..
+cd ..
 
 # Appends new env vars and updates any env vars that differ
 input="shared/stack/deployed-addr.txt"
@@ -58,7 +58,7 @@ do
 done < "$input"
 
 # Sync compiled & deployed contracts into dapp
-typechainSource="./apps/protocol/typechain"
+typechainSource="./protocol/typechain"
 typechainTarget="./apps/dapp/src/types/"
 
 rsync -avzh $typechainSource $typechainTarget
