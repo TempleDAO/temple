@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useConnect, useNetwork, chain } from 'wagmi';
+import { useNetwork, chain } from 'wagmi';
 
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
