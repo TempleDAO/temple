@@ -64,12 +64,12 @@ export const CryptoSelect = (props: CryptoSelectProps) => {
           paddingTop: '1.5rem',
           marginTop: '-1.5rem',
           border: `0.0625rem solid ${theme.palette.brand}`,
-          borderRadius: '0px 0px 20px 20px'
+          borderRadius: '0 0 1.25rem 1.25rem'
         }),
         menuList: (base) => ({
           ...base,
           padding: 0,
-          borderRadius: '0px 0px 20px 20px',
+          borderRadius: '0 0 1.25rem 1.25rem',
           color: theme.palette.light,
           maxHeight: props.maxMenuItems
             ? `calc(${props.maxMenuItems} * ${selectHeight})`
