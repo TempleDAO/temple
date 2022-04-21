@@ -180,7 +180,7 @@ async function main() {
   );
 
   await templeRouter.addPair(frax.address, pair.address);
-  await templeRouter.addPair(fei.address, pair.address);
+  await templeRouter.addPair(fei.address, feiPair.address);
 
   // Contract where we send frax earned by treasury
   const ammOps = await new TempleFraxAMMOps__factory(owner).deploy(
@@ -197,9 +197,9 @@ async function main() {
   await templeToken.addMinter(templeRouter.address);
 
   // Add liquidity to the AMM
-  templeToken.mint(owner.address, toAtto(10000000));
-  frax.mint(owner.address, toAtto(10000000));
-  fei.mint(owner.address, toAtto(10000000));
+  await templeToken.mint(owner.address, toAtto(10000000));
+  await frax.mint(owner.address, toAtto(10000000));
+  await fei.mint(owner.address, toAtto(10000000));
   await templeToken.increaseAllowance(templeRouter.address, toAtto(10000000));
   await frax.increaseAllowance(templeRouter.address, toAtto(10000000));
   await fei.increaseAllowance(templeRouter.address, toAtto(10000000));
@@ -217,7 +217,7 @@ async function main() {
     toAtto(1000000),
     1,
     1,
-    frax.address,
+    fei.address,
     await owner.getAddress(),
     (await blockTimestamp()) + 900
   );
