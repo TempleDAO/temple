@@ -179,12 +179,12 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
                   <RightAlign hidden={!discordData}>
                     <ProfileMetric
                       label={`Activity 7 Days`}
-                      value={`${discordData?.engagementlast7days}`}
+                      value={`${discordData?.engagementLast7Days}`}
                     />
 
                     <ProfileMetric
                       label={`Activity All Time`}
-                      value={`${discordData?.engagementalltime}`}
+                      value={`${discordData?.engagementAllTime}`}
                     />
                   </RightAlign>
                 </DiscordMetricsContainer>
@@ -199,7 +199,7 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
                 alignItems: 'center',
               }}
             >
-              <ProfileHeader username={discordData?.guild_name} />
+              <ProfileHeader username={discordData?.guildName} />
               <AccessoriesTemplate
                 enclave={discordData?.enclave?.toLowerCase() || ''}
               />
