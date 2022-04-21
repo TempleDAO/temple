@@ -14,8 +14,16 @@ const Content = styled.div`
   height: 100%;
 `;
 
-export const VaultButton = styled(Button)`
+export const VaultButton = styled(Button).attrs(
+  (props: { marginTop: string }) => props
+)`
   align-self: center;
+  margin-top: ${(props) => props.marginTop || '0rem'};
+  border-radius: 12px;
+  letter-spacing: 0.5rem;
+  text-transform: uppercase;
+  width: 50%;
+  transition: none;
 `;
 
 export default VaultContent;
