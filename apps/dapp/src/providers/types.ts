@@ -117,7 +117,11 @@ export interface SwapService {
   templePrice: number;
   iv: number;
 
-  buy(amountInFrax: BigNumber, minAmountOutTemple: BigNumber): void;
+  buy(
+    amountInFrax: BigNumber,
+    minAmountOutTemple: BigNumber,
+    stablecoinAddress?: string
+  ): void;
 
   sell(
     amountInTemple: BigNumber,

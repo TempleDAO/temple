@@ -104,18 +104,22 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
   const buy = async (
     amountInFrax: BigNumber,
-    minAmountOutTemple: BigNumber
+    minAmountOutTemple: BigNumber,
+    stablecoinAddress = STABLE_COIN_ADDRESS
   ) => {
     if (wallet && signer) {
       const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(
         TEMPLE_V2_ROUTER_ADDRESS
       );
-      const STABLE_TOKEN = new ERC20__factory(signer).attach(
-        STABLE_COIN_ADDRESS
-      );
+      const STABLE_TOKEN = new ERC20__factory(signer).attach(stablecoinAddress);
+
+      const symbol =
+        stablecoinAddress === STABLE_COIN_ADDRESS
+          ? TICKER_SYMBOL.STABLE_TOKEN
+          : TICKER_SYMBOL.FEI;
 
       await ensureAllowance(
-        TICKER_SYMBOL.STABLE_TOKEN,
+        symbol,
         STABLE_TOKEN,
         TEMPLE_V2_ROUTER_ADDRESS,
         amountInFrax
@@ -134,7 +138,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       const buyTXN = await AMM_ROUTER.swapExactStablecForTemple(
         verifiedAmountInFrax,
         minAmountOutTemple,
-        STABLE_COIN_ADDRESS,
+        stablecoinAddress,
         wallet,
         deadline,
         {
@@ -144,7 +148,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       await buyTXN.wait();
       // Show feedback to user
       openNotification({
-        title: `Sacrificed ${TICKER_SYMBOL.STABLE_TOKEN}`,
+        title: `Sacrificed ${symbol}`,
         hash: buyTXN.hash,
       });
     }
