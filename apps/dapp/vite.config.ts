@@ -14,8 +14,8 @@ const VENDOR_CHUNKS = new Set([
 ]);
 
 const VISUALIZATION_CHUNKS = new Set([
-  'react-vis',
   'd3-shape',
+  'react-vis',
 ]);
 
 const renderChunks = (deps: Record<string, string>) => {
@@ -56,8 +56,14 @@ export default defineConfig({
       },
     },
   },
+  define: {
+    // WalletLink requires process to be a global.
+    'process.env': {}
+  },
   resolve: {
     alias: {
+      process: 'process',
+      util: 'util',
       components: path.resolve(__dirname, 'src/components'),
       providers: path.resolve(__dirname, 'src/providers'),
       assets: path.resolve(__dirname, 'src/assets'),

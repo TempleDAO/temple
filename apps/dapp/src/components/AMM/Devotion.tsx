@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { JsonRpcSigner } from '@ethersproject/providers';
-import devotionImage from 'assets/images/DEVOTION.svg';
+import { useCallback, useEffect, useState } from 'react';
+import styled from 'styled-components';
+import { BigNumber, ethers } from 'ethers';
+
 import {
   ConvoFlowTitle,
   TitleWrapper,
@@ -9,13 +10,11 @@ import {
 } from 'components/AMM/helpers/components';
 import { copyBalance } from 'components/AMM/helpers/methods';
 import { Button } from 'components/Button/Button';
-import styled from 'styled-components';
 import { DataCard } from 'components/DataCard/DataCard';
 import Image from 'components/Image/Image';
 import { Input } from 'components/Input/Input';
 import { Flex } from 'components/Layout/Flex';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
-import { BigNumber } from 'ethers';
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
@@ -24,6 +23,7 @@ import { FaithBalance } from 'providers/types';
 import { Devotion__factory } from 'types/typechain';
 import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
+import devotionImage from 'assets/images/DEVOTION.svg';
 
 const ENV_VARS = import.meta.env;
 const TEMPLE_DEVOTION_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_DEVOTION_ADDRESS;
@@ -51,7 +51,7 @@ const Devotion = () => {
   const refreshWalletState = useRefreshWalletState();
 
   const getDevotionData = useCallback(
-    async (signer: JsonRpcSigner) => {
+    async (signer: ethers.providers.JsonRpcSigner) => {
       if (signer && wallet) {
         const DEVOTION = new Devotion__factory(signer).attach(
           TEMPLE_DEVOTION_ADDRESS
@@ -77,7 +77,7 @@ const Devotion = () => {
 
   useEffect(() => {
     if (signer && wallet) {
-      void getDevotionData(signer);
+      getDevotionData(signer);
     }
   }, [getDevotionData, signer, wallet]);
 
@@ -86,7 +86,7 @@ const Devotion = () => {
       await refreshWalletState();
     }
 
-    void onMount();
+    onMount();
   }, []);
 
   useEffect(() => {
