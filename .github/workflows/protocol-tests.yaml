@@ -52,4 +52,4 @@ jobs:
       id: slither
       with:
         node-version: 14
-      working-directory: protocol
+        target: 'protocol/'
