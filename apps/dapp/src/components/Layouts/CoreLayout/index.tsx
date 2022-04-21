@@ -23,7 +23,7 @@ if (!window.Buffer) {
   window.Buffer = Buffer;
 }
 
-const chains = [...defaultChains, ...developmentChains];
+const chains = [chain.mainnet, ...developmentChains];
 const defaultChain = chain.mainnet;
 
 const ENV_VARS = import.meta.env;
