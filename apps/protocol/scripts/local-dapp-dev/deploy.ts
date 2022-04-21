@@ -61,11 +61,13 @@ async function main() {
   );
 
   const frax = await new FakeERC20__factory(owner).deploy('FRAX', 'FRAX');
+  const fei = await new FakeERC20__factory(owner).deploy('FEI', 'FEI');
 
   const treasury = await new TempleTreasury__factory(owner).deploy(
     templeToken.address,
     frax.address
   );
+
   await templeToken.addMinter(treasury.address);
 
   const lockedOgTemple_old = await new LockedOGTempleDeprecated__factory(
@@ -75,13 +77,14 @@ async function main() {
     ogTempleToken.address
   );
 
-  // mint fake frax into all test accounts
+  // mint fake frax and fei into all test accounts
   const accounts = await ethers.getSigners();
 
-  // mint some frax into all test accounts
+  // mint some frax and fei into all test accounts
   for (const account of accounts) {
     const address = await account.getAddress();
     await frax.mint(address, toAtto(15000));
+    await fei.mint(address, toAtto(15000));
   }
 
   // Seed mint to bootstrap treasury
@@ -165,12 +168,19 @@ async function main() {
     frax.address
   );
 
+  const feiPair = await new TempleUniswapV2Pair__factory(owner).deploy(
+    await owner.getAddress(),
+    templeToken.address,
+    fei.address
+  );
+
   const templeRouter = await new TempleStableAMMRouter__factory(owner).deploy(
     templeToken.address,
     treasury.address
   );
 
   await templeRouter.addPair(frax.address, pair.address);
+  await templeRouter.addPair(fei.address, pair.address);
 
   // Contract where we send frax earned by treasury
   const ammOps = await new TempleFraxAMMOps__factory(owner).deploy(
@@ -183,13 +193,16 @@ async function main() {
   );
 
   await pair.setRouter(templeRouter.address);
+  await feiPair.setRouter(templeRouter.address);
   await templeToken.addMinter(templeRouter.address);
 
   // Add liquidity to the AMM
   templeToken.mint(owner.address, toAtto(10000000));
   frax.mint(owner.address, toAtto(10000000));
+  fei.mint(owner.address, toAtto(10000000));
   await templeToken.increaseAllowance(templeRouter.address, toAtto(10000000));
   await frax.increaseAllowance(templeRouter.address, toAtto(10000000));
+  await fei.increaseAllowance(templeRouter.address, toAtto(10000000));
   await templeRouter.addLiquidity(
     toAtto(100000),
     toAtto(1000000),
@@ -199,7 +212,15 @@ async function main() {
     await owner.getAddress(),
     (await blockTimestamp()) + 900
   );
-
+  await templeRouter.addLiquidity(
+    toAtto(100000),
+    toAtto(1000000),
+    1,
+    1,
+    frax.address,
+    await owner.getAddress(),
+    (await blockTimestamp()) + 900
+  );
   // Buy the Dip
   const faith = await new Faith__factory(owner).deploy();
 
@@ -293,6 +314,8 @@ async function main() {
     LOCKED_OG_TEMPLE_DEVOTION_ADDRESS: lockedOgTemple_new.address,
 
     TEMPLE_IV_SWAP: templeIVSwap.address,
+    FEI_ADDRESS: fei.address,
+    FEI_PAIR_ADDRESS: feiPair.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys
