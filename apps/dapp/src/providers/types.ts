@@ -143,8 +143,6 @@ export interface WalletState {
 
   changeWalletAddress(): void;
 
-  claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
-
   getBalance(): Promise<Balance | void>;
   
   updateBalance(): Promise<void>;
