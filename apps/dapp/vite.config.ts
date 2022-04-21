@@ -47,7 +47,6 @@ export default defineConfig({
   build: {
     sourcemap: process.env.VITE_ENV === 'development',
     rollupOptions: {
-      // external: Array.from(EXTERNAL_DEPS),
       output: {
         manualChunks: {
           vendor: Array.from(VENDOR_CHUNKS),
