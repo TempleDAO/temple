@@ -8,12 +8,14 @@ import { Button } from 'components/Button/Button';
 import { Popover } from 'components/Popover';
 import { Nullable } from 'types/util';
 
+
 export const WrongNetworkPopover = () => {
   const [{ data, loading, error }, switchNetwork] = useNetwork();
   const [dismissedChainId, setDismissedChainId] = useState<Nullable<number>>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   const currentNetworkId = data?.chain?.id;
+  const defaultChainForEnv = ENV_CHAIN_MAPPING.get(ENV) || chain.mainnet;
 
   useEffect(() => {
     if (loading || !currentNetworkId || dismissedChainId === currentNetworkId) {
@@ -21,7 +23,10 @@ export const WrongNetworkPopover = () => {
     }
 
     const isSupported = isSupportedChain(currentNetworkId);
-    if (!isSupported && !isOpen) {
+    if (
+      (!isSupported && !isOpen) ||
+      (!IS_PROD && defaultChainForEnv.id !== currentNetworkId)
+    ) {
       setIsOpen(true);
     } else if (isSupported && isOpen) {
       setIsOpen(false);
@@ -32,14 +37,13 @@ export const WrongNetworkPopover = () => {
     isOpen,
     loading,
     dismissedChainId,
+    defaultChainForEnv,
   ]);
 
-  const isProd = ENV === 'production';
-  const defaultChainForEnv = ENV_CHAIN_MAPPING.get(ENV) || chain.mainnet;
 
   const onDismiss = () => {
     // Only allow dismissing popover in staging and dev environments.
-    if (isProd) {
+    if (IS_PROD) {
       return;
     }
 
@@ -51,11 +55,11 @@ export const WrongNetworkPopover = () => {
     <Popover
       isOpen={isOpen}
       onClose={onDismiss}
-      showCloseButton={!isProd}
+      showCloseButton={!IS_PROD}
       header="Wrong Network"
     >
       <Message>
-        {(isProd || !defaultChainForEnv) ? (
+        {(IS_PROD || !defaultChainForEnv) ? (
           <>This app only works on Ethereum Mainnet.</>
         ) : (
           <>The default chain for {ENV} is {defaultChainForEnv.name}.</>
@@ -76,7 +80,7 @@ export const WrongNetworkPopover = () => {
             Switch to {defaultChainForEnv.name}
           </SwitchNetworkButton>
         </li>
-        {!isProd && (
+        {!IS_PROD && (
           <li>
             <SwitchNetworkButton
               role="button"
@@ -100,6 +104,7 @@ export const WrongNetworkPopover = () => {
 
 const ENV_VARS = import.meta.env;
 const ENV = ENV_VARS.VITE_ENV;
+const IS_PROD = ENV === 'production';
 
 const ENV_CHAIN_MAPPING = new Map([
   ['production', chain.mainnet],
