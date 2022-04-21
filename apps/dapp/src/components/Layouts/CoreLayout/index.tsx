@@ -19,6 +19,7 @@ import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
 import Header from './Header';
 
 // polyfill Buffer for client
+// Buffer is required for WalletConnect to work.
 if (!window.Buffer) {
   window.Buffer = Buffer;
 }

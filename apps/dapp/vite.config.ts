@@ -58,6 +58,7 @@ export default defineConfig({
     },
   },
   define: {
+    // WalletLink requires process to be a global.
     'process.env': {}
   },
   resolve: {
