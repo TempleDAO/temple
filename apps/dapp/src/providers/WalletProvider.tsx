@@ -64,6 +64,7 @@ const INITIAL_STATE: WalletState = {
   changeWalletAddress: noop,
   signer: null,
   network: null,
+  claim: asyncNoop,
   getCurrentEpoch: asyncNoop,
   getBalance: asyncNoop,
   updateBalance: asyncNoop,
@@ -289,6 +290,11 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
+  // TODO: remove as part of #239
+  const claim = async(
+    claimType: ClaimType
+  ): Promise<TransactionReceipt | void> => {}
+
   const collectTempleTeamPayment = async (epoch: TEAM_PAYMENTS_EPOCHS) => {
     if (walletAddress && signerState) {
       const fixedTeamPaymentAddress =
@@ -322,6 +328,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
         connectWallet,
         changeWalletAddress,
         ensureAllowance,
+        claim,
         signer: signerState,
         network,
         getCurrentEpoch,
