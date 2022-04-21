@@ -48,7 +48,9 @@ const Header = () => {
    <ConnectButton
       isSmall
       isActive
-      label="Connect Wallet"
+      isUppercase
+      label={"Connect Wallet"}
+      role="button"
       onClick={() => {
         setIsConnectMenuOpen(true);
       }}
@@ -60,9 +62,12 @@ const Header = () => {
   } else if (accountData?.address) {
     const isMetaMask = connectData.connector?.name === 'MetaMask';
     const disconnectButton = (
-      <DisconnectButton
+      <ConnectButton
         isSmall
+        isActive
+        isUppercase
         disabled={isMetaMask}
+        role="button"
         label="Disconnect"
         onClick={() => {
           disconnect(); 
@@ -242,29 +247,25 @@ const HamburgerBun = styled.button<{ $isOpen: boolean }>`
   `)}
 `;
 
-const buttonStyles = css`
-  color: #FCDBC7;
-  border-radius: 1rem;
-  font-weight: 400;
-  cursor: pointer;
-  border: transparent; 
-`;
-
 const ConnectButton = styled(BaseButton)`
-  ${buttonStyles}
-
-  &:hover {
-    background-color: ${({ theme }) => theme.palette.brandDark};
-  }
-`;
-
-const DisconnectButton = styled(BaseButton)`
-  ${buttonStyles}
-
-  background-color: #4a2f1d;
+  background-color: rgba(0, 0, 0, 0);
+  border-radius: .75rem;
+  font-weight: 400;
+  border: transparent; 
   color: ${({ theme }) => theme.palette.brand};
   border: 1px solid ${({ theme }) => theme.palette.brand};
   margin: 0 0 0 0.75rem;
+  font-size: .75rem;
+  letter-spacing: 0.1em;
+  transition: background .2s ease-in-out;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.25);
+  }
+
+  &:disabled {
+    border: 1px solid #bd7b4f80;
+  }
 `;
 
 const AccountWrapper = styled.div`
