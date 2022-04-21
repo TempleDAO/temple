@@ -7,7 +7,7 @@ import {
   SyntheticEvent,
 } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { useAccount, useConnect } from 'wagmi';
 
 import {
