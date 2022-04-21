@@ -50,7 +50,7 @@ const EllipsisLoader = () => {
 };
 
 const Svg = styled.svg`
-  width: 3rem;
+  width: 1.5rem;
   height: 1em;
   display: inline-block;
 `;

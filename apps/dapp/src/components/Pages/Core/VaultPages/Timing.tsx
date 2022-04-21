@@ -8,12 +8,13 @@ import { Vault } from 'components/Vault/types';
 
 import { pixelsToRems } from 'styles/mixins';
 import useVaultContext from './useVaultContext';
+import VaultContent from './VaultContent';
 
 const Timing = () => {
   const vault = useVaultContext();
   
   return (
-    <Wrapper>
+    <VaultContent>
       <Header>Timing</Header>
       <TableWrapper>
         <Table $expand>
@@ -53,10 +54,8 @@ const Timing = () => {
           </Body>
         </Table>
       </TableWrapper>
-      <Duration>
-        {vault.months} Months
-      </Duration>
-    </Wrapper>
+      <Duration>{vault.months} Months</Duration>
+    </VaultContent>
   );
 };
 
