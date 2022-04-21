@@ -53,4 +53,4 @@ jobs:
       with:
         node-version: 14
         target: 'protocol/'
-        slither-args: '--filter-paths "contracts/lib/ contracts/deprecated/ contracts/devotion contracts/fakes/"'
+        slither-args: '--filter-paths "contracts/lib/|contracts/deprecated/|contracts/devotion|contracts/fakes/|node_modules/"'
