@@ -111,6 +111,11 @@ const ConnectorButon = styled(Button)`
 const SelectWalletLabel = styled.h4`
   color: ${({ theme }) => theme.palette.brand};
   margin-top: 0;
+
+  font-size: 1.5rem;
+  text-align: center;
+  color: ${({ theme }) => theme.palette.brandLight};
+  font-weight: 300;
 `;
 
 const ErrorMessage = styled.span`
@@ -140,6 +145,8 @@ const Wrapper = styled.div<{ isOpen: boolean }>`
     bottom: auto;
     transform: translate(-50%, -50%);
     box-shadow: 0 0 4rem rgba(0, 0, 0, .8);
+    border-radius: 15px;
+    border: 1px solid #68452d;
   `))}
 `;
 
