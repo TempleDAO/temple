@@ -26,6 +26,7 @@ import { mineNBlocks, toAtto, shouldThrow, blockTimestamp, fromAtto } from "./he
 const fmtPricePair = (pair: [BigNumber, BigNumber, number?]): [number, number] => {
   return [fromAtto(pair[0]), fromAtto(pair[1])]
 }
+
 const fmtTemplePrice = (pair: [BigNumber, BigNumber, number?]): number => {
   return fromAtto(pair[1])/fromAtto(pair[0]);
 }
@@ -63,6 +64,7 @@ describe("AMM", async () => {
         templeToken.address,
         fraxToken.address,
       );
+
       await templeToken.addMinter(treasury.address),
       await fraxToken.increaseAllowance(treasury.address, toAtto(100));
       await treasury.seedMint(toAtto(100), toAtto(50));
@@ -99,17 +101,15 @@ describe("AMM", async () => {
 
     describe("Buy", async() => {
 
-        it("Invaid stablec throws error", async () => {
-            await shouldThrow(templeRouter.swapExactStablecForTemple(toAtto(100), 1, await ben.getAddress(), await alan.getAddress(), expiryDate()), /TempleStableAMMRouter: UNSUPPORTED_PAIR/);
-        })
-
-
+      it("Invaid stablec throws error", async () => {
+            await shouldThrow(templeRouter.swapExactStableForTemple(toAtto(100), 1, await ben.getAddress(), await alan.getAddress(), expiryDate()), /TempleStableAMMRouter: UNSUPPORTED_PAIR/);
+      })
       
       it("Buy should be the same as regualar amm buy", async() => {
 
         // do swaps
         await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [fraxToken.address, templeToken.address], await ben.getAddress(), expiryDate());
-        await templeRouter.swapExactStablecForTemple(toAtto(100), 1, fraxToken.address, await alan.getAddress(), expiryDate());
+        await templeRouter.swapExactStableForTemple(toAtto(100), 1, fraxToken.address, await alan.getAddress(), expiryDate());
 
         // Expect reserves to match
         expect(fmtPricePair(await pair.getReserves()))
@@ -129,13 +129,13 @@ describe("AMM", async () => {
     describe("Sell", async() => {
 
        it("Invaid stablec throws error", async () => {
-            await shouldThrow(templeRouter.swapExactTempleForStablec(toAtto(100), 1, await ben.getAddress(), await alan.getAddress(), expiryDate()), /TempleStableAMMRouter: UNSUPPORTED_PAIR/);
+            await shouldThrow(templeRouter.swapExactTempleForStable(toAtto(100), 1, await ben.getAddress(), await alan.getAddress(), expiryDate()), /TempleStableAMMRouter: UNSUPPORTED_PAIR/);
        })
 
       it("Fully Above IV sells should be same as on AMM", async() => {
         // do swaps
         await uniswapRouter.swapExactTokensForTokens(toAtto(100), 1, [templeToken.address, fraxToken.address], await ben.getAddress(), expiryDate());
-        await templeRouter.swapExactTempleForStablec(toAtto(100), 1, fraxToken.address, await alan.getAddress(), expiryDate());
+        await templeRouter.swapExactTempleForStable(toAtto(100), 1, fraxToken.address, await alan.getAddress(), expiryDate());
 
         // Expect reserves to match
         expect(fmtPricePair(await pair.getReserves()))
@@ -146,14 +146,14 @@ describe("AMM", async () => {
           .eq(fromAtto(await templeToken.balanceOf(await ben.getAddress())))
       })
 
-      it("Sell to bring below IV sells should always  at IV", async() => {
+      it("Sell to bring below IV sells should always be at IV", async() => {
         // fund router with some frax (for use when price is below IV)
         await fraxToken.transfer(templeRouter.address, toAtto(2000000));
 
         const [rTemple0, rFrax0] = fmtPricePair(await pair.getReserves());
 
         //sell enough temple to bring price below IV
-        await templeRouter.swapExactTempleForStablec(toAtto(900000), 1, fraxToken.address,  await alan.getAddress(), expiryDate());
+        await templeRouter.swapExactTempleForStable(toAtto(900000), 1, fraxToken.address,  await alan.getAddress(), expiryDate());
         await uniswapRouter.swapExactTokensForTokens(toAtto(900000), 1, [templeToken.address, fraxToken.address], await ben.getAddress(), expiryDate());
 
         // // Expect price to be above IV
@@ -168,39 +168,15 @@ describe("AMM", async () => {
         
       })
 
-      it("Sell to bring below IV sells should always  at IV", async() => {
-        // fund router with some frax (for use when price is below IV)
-        await fraxToken.transfer(templeRouter.address, toAtto(2000000));
-
-        const [rTemple0, rFrax0] = fmtPricePair(await pair.getReserves());
-
-        //sell enough temple to bring price below IV
-        await templeRouter.swapExactTempleForStablec(toAtto(900000), 1, fraxToken.address,  await alan.getAddress(), expiryDate());
-        await uniswapRouter.swapExactTokensForTokens(toAtto(900000), 1, [templeToken.address, fraxToken.address], await ben.getAddress(), expiryDate());
-        // expect(fmtPricePair(await pair.getReserves()))
-        //   .eql(fmtPricePair(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
-
-        // // Expect price to be above IV
-        const [ivFrax, ivTemple] = fmtPricePair(await treasury.intrinsicValueRatio());
-        const [rTemple, rFrax] = fmtPricePair(await pair.getReserves());
-        expect(rFrax / rTemple).gte(ivFrax / ivTemple);
-
-
-        // Expect pair reserve to not change and swap to happen on IV
-        expect(rFrax / rTemple).eq(rFrax0 / rTemple0);
-        expect(fromAtto(await fraxToken.balanceOf(await alan.getAddress()))).eq(900000 * ivFrax / ivTemple);
-        
-
-    
-      it("AMM sell with deadline in the past should fail", async() => {
+    it("AMM sell with deadline in the past should fail", async() => {
         const beforeTS = await blockTimestamp() - 1
         const EXPIRED_ERROR = /TempleStableAMMRouter: EXPIRED/
-        await shouldThrow(templeRouter.swapExactTempleForStablec(toAtto(1000), 1, fraxToken.address, await alan.getAddress(), beforeTS), EXPIRED_ERROR);
-      })
-    })  
+        await shouldThrow(templeRouter.swapExactTempleForStable(toAtto(1000), 1, fraxToken.address, await alan.getAddress(), beforeTS), EXPIRED_ERROR);
+    })
    })
 
    describe("Liquidity", async() => {
+       
     it("add", async () => {
       // Expect reserves to match before/after adding liquidity
       expect(fmtPricePair(await pair.getReserves()))
@@ -239,7 +215,7 @@ describe("AMM", async () => {
       expect(await uniswapPair.balanceOf(await owner.getAddress()))
         .eql(await pair.balanceOf(await owner.getAddress()))
     });
-    
+
   });
 
 })
