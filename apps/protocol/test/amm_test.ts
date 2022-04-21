@@ -189,6 +189,14 @@ describe("AMM", async () => {
         .eql(fmtPricePair(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
     });
 
+    it("reverts if amount desired is less that min", async () => {
+        // Expect reserves to match before/after adding liquidity
+        expect(fmtPricePair(await pair.getReserves()))
+          .eql(fmtPricePair(await uniswapRouter.getReserves(templeToken.address, fraxToken.address)));
+  
+        await shouldThrow(templeRouter.addLiquidity(toAtto(100000), toAtto(1000000), toAtto(100001), 1, fraxToken.address, await owner.getAddress(), expiryDate()), /TempleStableAMMRouter: MEV_EXTRACTABLE/);
+    });
+
     it("remove", async () => {
       // Expect reserves to match before/after adding liquidity
       expect(fmtPricePair(await pair.getReserves()))
