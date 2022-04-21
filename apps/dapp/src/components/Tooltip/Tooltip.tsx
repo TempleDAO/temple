@@ -13,6 +13,7 @@ export interface TooltipProps {
   delay?: number;
   offset?: [number, number];
   animationDuration?: number;
+  inline?: boolean;
 }
 
 const Tooltip = ({
@@ -23,6 +24,7 @@ const Tooltip = ({
   offset,
   animationDuration,
   children,
+  inline = false,
 }: PropsWithChildren<TooltipProps>) => {
   return (
     <TippyStyled
@@ -35,7 +37,7 @@ const Tooltip = ({
       arrow={roundArrow}
       placement={position}
     >
-      <ChildrenWrapper>{children}</ChildrenWrapper>
+      <ChildrenWrapper inline={inline}>{children}</ChildrenWrapper>
     </TippyStyled>
   );
 };
@@ -76,8 +78,9 @@ const TooltipIconStyled = styled.small`
   cursor: help;
 `;
 
-const ChildrenWrapper = styled.div`
-  display: flex;
+const ChildrenWrapper = styled.div<{ inline?: boolean }>`
+  display: ${(props) => (props.inline ? 'inline-flex' : 'flex')};
+  cursor: pointer;
 `;
 
 export default Tooltip;
