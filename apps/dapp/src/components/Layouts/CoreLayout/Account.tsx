@@ -42,10 +42,6 @@ const AccountButton = ({ onSetConnectMenuOpen }: AccountButtonProps) => {
     return <Loader />;
   }
 
-  if (networkData) {
-    console.log(networkData)
-  }
-
   if (accountData?.address) {
     const isMetaMask = connectData.connector?.name === 'MetaMask';
     const disconnectButton = (
@@ -143,4 +139,5 @@ const ConnectButton = styled(BaseButton)`
 const UserAddress = styled.a`
   color: ${({ theme }) => theme.palette.brandLight};
   font-size: 0.75rem;
+  font-weight: 300;
 `;
