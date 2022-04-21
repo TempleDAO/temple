@@ -29,6 +29,7 @@ import templeDaoLogo from 'assets/images/sun-art.svg';
 import hamburger from 'assets/icons/core-hamburger.svg';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
+import Tooltip from 'components/Tooltip/Tooltip';
 
 const Header = () => {
   const [{ data: accountData, loading: accountLoading }, disconnect] = useAccount({
@@ -66,14 +67,20 @@ const Header = () => {
             <TruncatedAddress address={accountData?.address} />
           )}
         </UserAddress>
+        <Tooltip
+        content="You must disconnect through MetaMask"
+        >
+
         <DisconnectButton
           isSmall
           isUppercase
-          label="Disconnect"
+          disabled
+          label="✖"
           onClick={() => {
             disconnect(); 
           }}
-        />
+          />
+          </Tooltip>
       </>
     );
   }
@@ -228,14 +235,29 @@ const HamburgerBun = styled.button<{ $isOpen: boolean }>`
 `;
 
 const ConnectButton = styled(BaseButton)`
-  border: none;
-  color: ${({ theme }) => theme.palette.dark};
+  color: #FCDBC7;
+  border-radius: 8px;
+  text-transform: uppercase;
+  transition: none;
+  background-color: #4a2f1d;
+  border: 1px solid #bc7b4f;
+  font-weight: 400;
+  letter-spacing: .15rem;
+  height: 2.25rem;
+  cursor: pointer;
+  
+  &:hover {
+    color: #16100C;
+    background-color: #bc7b4f;
+  }
 `;
 
-const DisconnectButton = styled(BaseButton)`
-  border: 1px solid;
-  color: ${({ theme }) => theme.palette.brand};
+const DisconnectButton = styled(ConnectButton)`
   margin: 0 0 0 0.75rem;
+  &:hover {
+    color: rgba(189,123,79,0.5)  ;
+    background-color: #4a2f1d;
+  }
 `;
 
 const AccountWrapper = styled.div`
