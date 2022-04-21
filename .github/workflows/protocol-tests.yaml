@@ -37,3 +37,19 @@ jobs:
 
       - run: forge test -vvvv --gas-report
         working-directory: protocol
+  slither:
+    name: Slither Static Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Run Slither
+      uses: crytic/slither-action@v0.1.1
+      continue-on-error: true
+      id: slither
+      with:
+        node-version: 14
+      working-directory: protocol
