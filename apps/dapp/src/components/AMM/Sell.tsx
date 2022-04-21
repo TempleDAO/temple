@@ -17,6 +17,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
+import { InputSelect } from 'components/InputSelect/InputSelect';
 
 interface SizeProps {
   small?: boolean;
@@ -26,6 +27,13 @@ interface BuyProps extends SizeProps {
 }
 
 const ENV_VARS = import.meta.env;
+const dropdownOptions = [
+  {
+    label: TICKER_SYMBOL.STABLE_TOKEN,
+    value: ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS,
+  },
+  { label: TICKER_SYMBOL.FEI, value: ENV_VARS.VITE_PUBLIC_FEI_ADDRESS },
+];
 
 export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const { balance, getBalance, updateBalance } = useWallet();
@@ -39,6 +47,10 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const [slippage, setSlippage] = useState<number>(1);
   const [minAmountOut, setMinAmountOut] = useState<number>(0);
   const [templeAmount, setTempleAmount] = useState<number | ''>('');
+  const [selectedToken, setSelectedToken] = useState({
+    address: ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS,
+    symbol: TICKER_SYMBOL.STABLE_TOKEN,
+  });
 
   const handleUpdateTempleAmount = async (value: number | '') => {
     setTempleAmount(value === 0 ? '' : value);
@@ -67,7 +79,12 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
 
         if (minAmountOut <= rewards || isIvSwap) {
-          await sell(toAtto(templeAmount), toAtto(minAmountOut), isIvSwap);
+          await sell(
+            toAtto(templeAmount),
+            toAtto(minAmountOut),
+            isIvSwap,
+            selectedToken.address
+          );
           getBalance();
           handleUpdateTempleAmount(0);
         }
@@ -78,11 +95,18 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   };
 
   useEffect(() => {
-    if (balance) {
-      setStableCoinWalletAmount(balance.stableCoin);
+    const setBalanceState = () => {
       setTempleWalletAmount(balance.temple);
+      if (selectedToken.symbol === TICKER_SYMBOL.FEI) {
+        setStableCoinWalletAmount(balance.fei);
+      } else {
+        setStableCoinWalletAmount(balance.stableCoin);
+      }
+    };
+    if (balance) {
+      setBalanceState();
     }
-  }, [balance]);
+  }, [balance, selectedToken]);
 
   useEffect(() => {
     async function onMount() {
@@ -100,9 +124,21 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
     <ViewContainer>
       <TitleWrapper>
         <ConvoFlowTitle>
-          {small ? 'EXCHANGE $TEMPLE FOR $FRAX' : 'ARE YOU SURE, TEMPLAR?'}
+          {small
+            ? `EXCHANGE ${TICKER_SYMBOL.TEMPLE_TOKEN} FOR ${selectedToken.symbol}`
+            : 'ARE YOU SURE, TEMPLAR?'}
         </ConvoFlowTitle>
       </TitleWrapper>
+      <InputSelect
+        options={dropdownOptions}
+        defaultValue={dropdownOptions[0]}
+        onChange={(e) =>
+          setSelectedToken({
+            address: e.value,
+            symbol: e.label,
+          })
+        }
+      />
       <Input
         small={small}
         hint={`Balance: ${formatNumber(templeWalletAmount)}`}
@@ -126,7 +162,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       <Input
         small={small}
         hint={`Balance: ${formatNumber(stableCoinWalletAmount)}`}
-        crypto={{ kind: 'value', value: TICKER_SYMBOL.STABLE_TOKEN }}
+        crypto={{ kind: 'value', value: selectedToken.symbol }}
         isNumber
         value={formatNumber(rewards as number)}
         placeholder={'0.00'}
@@ -150,7 +186,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
             ? 'increase slippage'
             : `${
                 small
-                  ? 'EXCHANGE $TEMPLE FOR $FRAX'
+                  ? `EXCHANGE ${TICKER_SYMBOL.TEMPLE_TOKEN} FOR ${selectedToken.symbol}`
                   : `RENOUNCE YOUR ${TICKER_SYMBOL.TEMPLE_TOKEN}`
               }`
         }

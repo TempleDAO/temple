@@ -163,7 +163,8 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const sell = async (
     amountInTemple: BigNumber,
     minAmountOutFrax: BigNumber,
-    isIvSwap = false
+    isIvSwap = false,
+    stablecoinAddress = STABLE_COIN_ADDRESS
   ) => {
     if (wallet && signer) {
       const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(
@@ -206,7 +207,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         sellTx = await AMM_ROUTER.swapExactTempleForStablec(
           verifiedAmountInTemple,
           minAmountOutFrax,
-          STABLE_COIN_ADDRESS,
+          stablecoinAddress,
           wallet,
           deadline,
           {
@@ -249,14 +250,22 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     return BigNumber.from(0);
   };
 
-  const getSellQuote = async (amountToSell: BigNumber) => {
+  const getSellQuote = async (
+    amountToSell: BigNumber,
+    buyTokenAddress = STABLE_COIN_ADDRESS
+  ) => {
     if (wallet && signer) {
       const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(
         TEMPLE_V2_ROUTER_ADDRESS
       );
 
+      const pair =
+        buyTokenAddress === FEI_ADDRESS
+          ? FEI_PAIR_ADDRESS
+          : TEMPLE_V2_PAIR_ADDRESS;
+
       const { amountOut } = await AMM_ROUTER.swapExactTempleForStableQuote(
-        TEMPLE_V2_PAIR_ADDRESS,
+        pair,
         amountToSell
       );
 

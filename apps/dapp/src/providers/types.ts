@@ -126,10 +126,14 @@ export interface SwapService {
   sell(
     amountInTemple: BigNumber,
     minAmountOutFrax: BigNumber,
-    isIvSwap: boolean
+    isIvSwap: boolean,
+    stablecoinAddress?: string
   ): void;
 
-  getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
+  getSellQuote(
+    amountToSell: BigNumber,
+    buyTokenAddress?: string
+  ): Promise<BigNumber | void>;
 
   getBuyQuote(
     amountIn: BigNumber,
