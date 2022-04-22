@@ -286,7 +286,7 @@ async function main() {
   // swap @ IV
   const templeIVSwap = await new TempleIVSwap__factory(owner).deploy(
     templeToken.address,
-    frax.address,
+    fei.address,
     { temple: 100, frax: 65 } /* iv */
   );
   await frax.mint(templeIVSwap.address, toAtto(1000000));
