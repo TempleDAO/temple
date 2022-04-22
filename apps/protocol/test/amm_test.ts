@@ -261,4 +261,28 @@ describe("AMM", async () => {
       
   })
 
+  describe("Defend stable", async() => {
+
+    it("non-owner reverts", async () => {
+        await shouldThrow(templeRouter.connect(alan).setDefendStable(feiToken.address), /Ownable: caller is not the owner/);
+    });
+
+    it("sets correctly", async () => {
+        await templeRouter.setDefendStable(feiToken.address);
+        expect(await templeRouter.defendStable()).to.eq(feiToken.address);
+    });
+  })
+
+ describe("Add pair ", async() => {
+
+      it("non-owner reverts", async () => {
+          await shouldThrow(templeRouter.connect(alan).addPair(feiToken.address, templeRouter.address), /Ownable: caller is not the owner/);
+      });
+
+      it("sets correctly", async () => {
+          let fakeToken = await new FakeERC20__factory(owner).deploy("STABLEC", "STABLEC");
+          await templeRouter.addPair(fakeToken.address, templeRouter.address);
+          expect(await templeRouter.tokenPair(fakeToken.address)).to.eq(templeRouter.address);
+      });
+  })
 })
