@@ -290,7 +290,7 @@ async function main() {
     fei.address,
     { temple: 100, frax: 65 } /* iv */
   );
-  await frax.mint(templeIVSwap.address, toAtto(1000000));
+  await fei.mint(templeIVSwap.address, toAtto(1000000));
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
