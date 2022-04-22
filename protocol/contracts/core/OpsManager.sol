@@ -32,7 +32,7 @@ contract OpsManager is Ownable {
         string memory name,
         string memory symbol,
         ERC20 revalToken
-    ) external onlyOwner  { 
+    ) external onlyOwner  {
         // Create position and transfer ownership to the caller
         Exposure exposure = new Exposure(name, symbol, revalToken, address(this));
         activeExposures.push(exposure);
@@ -41,6 +41,7 @@ contract OpsManager is Ownable {
         // Create a FarmingRevenue pool associated with this exposure
         pools[exposure] = new TreasuryFarmingRevenue(exposure);
         exposure.setMinterState(address(pools[exposure]), true);
+        emit CreateExposure(address(exposure), address(pools[exposure]));
     }
 
     /**
@@ -55,6 +56,7 @@ contract OpsManager is Ownable {
     ) external onlyOwner {
         Vault vault = new Vault(name, symbol, templeToken, periodDuration, enterExitWindowDuration, shareBoostFactory, joiningFee);
         activeVaults[address(vault)] = true;
+        emit CreateVault(address(vault));
     }
 
     /**
@@ -90,7 +92,7 @@ contract OpsManager is Ownable {
 
     /**
      * @notice claim revenue attributed to the given vault, into the given exposure
-     * @dev not required to be called, exposed if vault users want to spend the gas to 
+     * @dev not required to be called, exposed if vault users want to spend the gas to
      * keep the accounts and compounding up to date at a faster rate than the automated
      * ops process
      */
@@ -129,4 +131,7 @@ contract OpsManager is Ownable {
 
         return requiresUpdate;
     }
+
+    event CreateVault(address vaultAddress);
+    event CreateExposure(address exposureAddress, address primaryRevenueAddress);
 }
