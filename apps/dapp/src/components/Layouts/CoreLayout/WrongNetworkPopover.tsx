@@ -65,11 +65,6 @@ export const WrongNetworkPopover = () => {
         disabled={loading}
         onClick={() => {
           if (switchNetwork) {
-            // const id = defaultChainForEnv.
-            let chain = defaultChainForEnv.id;
-            if (defaultChainForEnv.name === 'Hardhat') {
-              chain = 1337;
-            }
             switchNetwork(defaultChainForEnv.id);
           }
         }}
