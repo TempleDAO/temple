@@ -135,7 +135,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         0
       );
 
-      const buyTXN = await AMM_ROUTER.swapExactStablecForTemple(
+      const buyTXN = await AMM_ROUTER.swapExactStableForTemple(
         verifiedAmountIn,
         minAmountOutTemple,
         stablecoinAddress,
@@ -204,7 +204,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
           deadline
         );
       } else {
-        sellTx = await AMM_ROUTER.swapExactTempleForStablec(
+        sellTx = await AMM_ROUTER.swapExactTempleForStable(
           verifiedAmountInTemple,
           minAmountOutFrax,
           stablecoinAddress,

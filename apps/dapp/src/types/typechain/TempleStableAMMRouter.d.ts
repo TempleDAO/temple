@@ -23,15 +23,18 @@ interface TempleStableAMMRouterInterface extends ethers.utils.Interface {
   functions: {
     "addLiquidity(uint256,uint256,uint256,uint256,address,address,uint256)": FunctionFragment;
     "addPair(address,address)": FunctionFragment;
+    "defendStable()": FunctionFragment;
     "getAmountOut(uint256,uint256,uint256)": FunctionFragment;
     "owner()": FunctionFragment;
     "quote(uint256,uint256,uint256)": FunctionFragment;
     "removeLiquidity(uint256,uint256,uint256,address,address,uint256)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
+    "setDefendStable(address)": FunctionFragment;
+    "setTreasury(address)": FunctionFragment;
+    "swapExactStableForTemple(uint256,uint256,address,address,uint256)": FunctionFragment;
     "swapExactStableForTempleQuote(address,uint256)": FunctionFragment;
-    "swapExactStablecForTemple(uint256,uint256,address,address,uint256)": FunctionFragment;
+    "swapExactTempleForStable(uint256,uint256,address,address,uint256)": FunctionFragment;
     "swapExactTempleForStableQuote(address,uint256)": FunctionFragment;
-    "swapExactTempleForStablec(uint256,uint256,address,address,uint256)": FunctionFragment;
     "templeToken()": FunctionFragment;
     "templeTreasury()": FunctionFragment;
     "tokenPair(address)": FunctionFragment;
@@ -54,6 +57,10 @@ interface TempleStableAMMRouterInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "addPair",
     values: [string, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "defendStable",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "getAmountOut",
@@ -80,20 +87,25 @@ interface TempleStableAMMRouterInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "setDefendStable",
+    values: [string]
+  ): string;
+  encodeFunctionData(functionFragment: "setTreasury", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "swapExactStableForTemple",
+    values: [BigNumberish, BigNumberish, string, string, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "swapExactStableForTempleQuote",
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "swapExactStablecForTemple",
+    functionFragment: "swapExactTempleForStable",
     values: [BigNumberish, BigNumberish, string, string, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "swapExactTempleForStableQuote",
     values: [string, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "swapExactTempleForStablec",
-    values: [BigNumberish, BigNumberish, string, string, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "templeToken",
@@ -119,6 +131,10 @@ interface TempleStableAMMRouterInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "addPair", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "defendStable",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "getAmountOut",
     data: BytesLike
   ): Result;
@@ -133,19 +149,27 @@ interface TempleStableAMMRouterInterface extends ethers.utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "setDefendStable",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setTreasury",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "swapExactStableForTemple",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "swapExactStableForTempleQuote",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "swapExactStablecForTemple",
+    functionFragment: "swapExactTempleForStable",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "swapExactTempleForStableQuote",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "swapExactTempleForStablec",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -223,7 +247,7 @@ export class TempleStableAMMRouter extends BaseContract {
       amountBDesired: BigNumberish,
       amountAMin: BigNumberish,
       amountBMin: BigNumberish,
-      stablec: string,
+      stable: string,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -234,6 +258,8 @@ export class TempleStableAMMRouter extends BaseContract {
       _pair: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    defendStable(overrides?: CallOverrides): Promise<[string]>;
 
     getAmountOut(
       amountIn: BigNumberish,
@@ -255,7 +281,7 @@ export class TempleStableAMMRouter extends BaseContract {
       liquidity: BigNumberish,
       amountAMin: BigNumberish,
       amountBMin: BigNumberish,
-      stablec: string,
+      stable: string,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -265,16 +291,35 @@ export class TempleStableAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    setDefendStable(
+      _defendStable: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setTreasury(
+      _templeTreasury: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    swapExactStableForTemple(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      stable: string,
+      to: string,
+      deadline: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     swapExactStableForTempleQuote(
       pair: string,
       amountIn: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { amountOut: BigNumber }>;
 
-    swapExactStablecForTemple(
+    swapExactTempleForStable(
       amountIn: BigNumberish,
       amountOutMin: BigNumberish,
-      stablec: string,
+      stable: string,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -287,15 +332,6 @@ export class TempleStableAMMRouter extends BaseContract {
     ): Promise<
       [boolean, BigNumber] & { priceBelowIV: boolean; amountOut: BigNumber }
     >;
-
-    swapExactTempleForStablec(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
-      stablec: string,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
 
     templeToken(overrides?: CallOverrides): Promise<[string]>;
 
@@ -321,7 +357,7 @@ export class TempleStableAMMRouter extends BaseContract {
     amountBDesired: BigNumberish,
     amountAMin: BigNumberish,
     amountBMin: BigNumberish,
-    stablec: string,
+    stable: string,
     to: string,
     deadline: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -332,6 +368,8 @@ export class TempleStableAMMRouter extends BaseContract {
     _pair: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
+
+  defendStable(overrides?: CallOverrides): Promise<string>;
 
   getAmountOut(
     amountIn: BigNumberish,
@@ -353,7 +391,7 @@ export class TempleStableAMMRouter extends BaseContract {
     liquidity: BigNumberish,
     amountAMin: BigNumberish,
     amountBMin: BigNumberish,
-    stablec: string,
+    stable: string,
     to: string,
     deadline: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -363,16 +401,35 @@ export class TempleStableAMMRouter extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  setDefendStable(
+    _defendStable: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setTreasury(
+    _templeTreasury: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  swapExactStableForTemple(
+    amountIn: BigNumberish,
+    amountOutMin: BigNumberish,
+    stable: string,
+    to: string,
+    deadline: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   swapExactStableForTempleQuote(
     pair: string,
     amountIn: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
-  swapExactStablecForTemple(
+  swapExactTempleForStable(
     amountIn: BigNumberish,
     amountOutMin: BigNumberish,
-    stablec: string,
+    stable: string,
     to: string,
     deadline: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -385,15 +442,6 @@ export class TempleStableAMMRouter extends BaseContract {
   ): Promise<
     [boolean, BigNumber] & { priceBelowIV: boolean; amountOut: BigNumber }
   >;
-
-  swapExactTempleForStablec(
-    amountIn: BigNumberish,
-    amountOutMin: BigNumberish,
-    stablec: string,
-    to: string,
-    deadline: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
 
   templeToken(overrides?: CallOverrides): Promise<string>;
 
@@ -419,7 +467,7 @@ export class TempleStableAMMRouter extends BaseContract {
       amountBDesired: BigNumberish,
       amountAMin: BigNumberish,
       amountBMin: BigNumberish,
-      stablec: string,
+      stable: string,
       to: string,
       deadline: BigNumberish,
       overrides?: CallOverrides
@@ -436,6 +484,8 @@ export class TempleStableAMMRouter extends BaseContract {
       _pair: string,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    defendStable(overrides?: CallOverrides): Promise<string>;
 
     getAmountOut(
       amountIn: BigNumberish,
@@ -457,7 +507,7 @@ export class TempleStableAMMRouter extends BaseContract {
       liquidity: BigNumberish,
       amountAMin: BigNumberish,
       amountBMin: BigNumberish,
-      stablec: string,
+      stable: string,
       to: string,
       deadline: BigNumberish,
       overrides?: CallOverrides
@@ -467,16 +517,35 @@ export class TempleStableAMMRouter extends BaseContract {
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
+    setDefendStable(
+      _defendStable: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setTreasury(
+      _templeTreasury: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    swapExactStableForTemple(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      stable: string,
+      to: string,
+      deadline: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     swapExactStableForTempleQuote(
       pair: string,
       amountIn: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    swapExactStablecForTemple(
+    swapExactTempleForStable(
       amountIn: BigNumberish,
       amountOutMin: BigNumberish,
-      stablec: string,
+      stable: string,
       to: string,
       deadline: BigNumberish,
       overrides?: CallOverrides
@@ -489,15 +558,6 @@ export class TempleStableAMMRouter extends BaseContract {
     ): Promise<
       [boolean, BigNumber] & { priceBelowIV: boolean; amountOut: BigNumber }
     >;
-
-    swapExactTempleForStablec(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
-      stablec: string,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
 
     templeToken(overrides?: CallOverrides): Promise<string>;
 
@@ -542,7 +602,7 @@ export class TempleStableAMMRouter extends BaseContract {
       amountBDesired: BigNumberish,
       amountAMin: BigNumberish,
       amountBMin: BigNumberish,
-      stablec: string,
+      stable: string,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -553,6 +613,8 @@ export class TempleStableAMMRouter extends BaseContract {
       _pair: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
+
+    defendStable(overrides?: CallOverrides): Promise<BigNumber>;
 
     getAmountOut(
       amountIn: BigNumberish,
@@ -574,7 +636,7 @@ export class TempleStableAMMRouter extends BaseContract {
       liquidity: BigNumberish,
       amountAMin: BigNumberish,
       amountBMin: BigNumberish,
-      stablec: string,
+      stable: string,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -584,16 +646,35 @@ export class TempleStableAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    setDefendStable(
+      _defendStable: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setTreasury(
+      _templeTreasury: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    swapExactStableForTemple(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      stable: string,
+      to: string,
+      deadline: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     swapExactStableForTempleQuote(
       pair: string,
       amountIn: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    swapExactStablecForTemple(
+    swapExactTempleForStable(
       amountIn: BigNumberish,
       amountOutMin: BigNumberish,
-      stablec: string,
+      stable: string,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -603,15 +684,6 @@ export class TempleStableAMMRouter extends BaseContract {
       pair: string,
       amountIn: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    swapExactTempleForStablec(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
-      stablec: string,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     templeToken(overrides?: CallOverrides): Promise<BigNumber>;
@@ -639,7 +711,7 @@ export class TempleStableAMMRouter extends BaseContract {
       amountBDesired: BigNumberish,
       amountAMin: BigNumberish,
       amountBMin: BigNumberish,
-      stablec: string,
+      stable: string,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -650,6 +722,8 @@ export class TempleStableAMMRouter extends BaseContract {
       _pair: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
+
+    defendStable(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     getAmountOut(
       amountIn: BigNumberish,
@@ -671,7 +745,7 @@ export class TempleStableAMMRouter extends BaseContract {
       liquidity: BigNumberish,
       amountAMin: BigNumberish,
       amountBMin: BigNumberish,
-      stablec: string,
+      stable: string,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -681,16 +755,35 @@ export class TempleStableAMMRouter extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    setDefendStable(
+      _defendStable: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setTreasury(
+      _templeTreasury: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    swapExactStableForTemple(
+      amountIn: BigNumberish,
+      amountOutMin: BigNumberish,
+      stable: string,
+      to: string,
+      deadline: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     swapExactStableForTempleQuote(
       pair: string,
       amountIn: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    swapExactStablecForTemple(
+    swapExactTempleForStable(
       amountIn: BigNumberish,
       amountOutMin: BigNumberish,
-      stablec: string,
+      stable: string,
       to: string,
       deadline: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -700,15 +793,6 @@ export class TempleStableAMMRouter extends BaseContract {
       pair: string,
       amountIn: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    swapExactTempleForStablec(
-      amountIn: BigNumberish,
-      amountOutMin: BigNumberish,
-      stablec: string,
-      to: string,
-      deadline: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     templeToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
