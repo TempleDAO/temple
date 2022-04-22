@@ -40,22 +40,50 @@ export const WrongNetworkPopover = () => {
     defaultChainForEnv,
   ]);
 
-
   const onDismiss = () => {
     // Only allow dismissing popover in staging and dev environments.
-    if (IS_PROD) {
-      return;
-    }
-
     setIsOpen(false);
     setDismissedChainId(currentNetworkId!);
   };
+
+  // Not all wallets allow switching network programatically.
+  let switchNetworkButton = (
+    <SwitchNetworkButton
+      role="button"
+      isSmall
+      onClick={onDismiss}
+    >
+      Dismiss
+    </SwitchNetworkButton>
+  );
+  
+  if (switchNetwork) {
+    switchNetworkButton = (
+      <SwitchNetworkButton
+        role="button"
+        isSmall
+        disabled={loading}
+        onClick={() => {
+          if (switchNetwork) {
+            // const id = defaultChainForEnv.
+            let chain = defaultChainForEnv.id;
+            if (defaultChainForEnv.name === 'Hardhat') {
+              chain = 1337;
+            }
+            switchNetwork(defaultChainForEnv.id);
+          }
+        }}
+      >
+        Switch to {defaultChainForEnv.name}
+      </SwitchNetworkButton>
+    );
+  }
 
   return (
     <Popover
       isOpen={isOpen}
       onClose={onDismiss}
-      showCloseButton={!IS_PROD}
+      showCloseButton={!switchNetwork || !IS_PROD}
       header="Wrong Network"
     >
       <Message>
@@ -67,18 +95,7 @@ export const WrongNetworkPopover = () => {
       </Message>
       <Menu>
         <li>
-          <SwitchNetworkButton
-            role="button"
-            isSmall
-            disabled={loading}
-            onClick={() => {
-              if (switchNetwork) {
-                switchNetwork(defaultChainForEnv.id);
-              }
-            }}
-          >
-            Switch to {defaultChainForEnv.name}
-          </SwitchNetworkButton>
+          {switchNetworkButton}
         </li>
         {!IS_PROD && (
           <li>
