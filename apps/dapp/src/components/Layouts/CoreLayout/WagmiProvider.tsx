@@ -6,7 +6,7 @@ import {
   chain,
   Connector,
 } from 'wagmi';
-import { WalletLinkConnector } from 'wagmi/connectors/walletLink';
+import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
 import { Buffer } from 'buffer';
 import { InjectedConnector } from 'wagmi/connectors/injected';
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
@@ -54,7 +54,7 @@ const connectors = ({ chainId }: ConnectorsConfig) => {
         qrcode: true,
       },
     }),
-    new WalletLinkConnector({
+    new CoinbaseWalletConnector({
       chains,
       options: {
         appName: 'TempleDAO',

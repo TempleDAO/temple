@@ -56,10 +56,11 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
 };
 
 const getConnectorIcon = (connectorId: string) => {
+  console.log(connectorId)
   switch (connectorId) {
     case 'injected': return <Icon bgImg={metamaskIcon} />;
     case 'walletConnect': return <Icon bgImg={walletConnectIcon} />;
-    case 'walletLink': return <Icon bgImg={coinbaseAppIcon} />;
+    case 'coinbasewallet': return <Icon bgImg={coinbaseAppIcon} />;
   }
   return null;
 };
@@ -68,7 +69,7 @@ const getConnectorNiceName = (connectorId: string) => {
   switch (connectorId) {
     case 'injected': return 'MetaMask';
     case 'walletConnect': return 'Wallet Connect';
-    case 'walletLink': return 'Coinbase Wallet';
+    case 'coinbasewallet': return 'Coinbase Wallet';
   }
   return null;
 };
