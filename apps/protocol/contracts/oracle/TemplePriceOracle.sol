@@ -21,21 +21,17 @@ contract TemplePriceOracle is IPriceOracle, IBasePriceOracle {
     /**
      * @notice Temple treasury address.
      */
-    TempleTreasury public TREASURY = TempleTreasury(0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443);
+    TempleTreasury constant public TREASURY = TempleTreasury(0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443);
 
     /**
      * @notice Temple token address.
      */
-    address public TEMPLE = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
+    address constant public TEMPLE = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
 
     /**
      * @dev The token on which to base IV (its price must be available via `msg.sender`).
      */
-    address immutable public baseToken;
-
-    constructor (address _baseToken) {
-        baseToken = _baseToken;
-    }
+    address constant public baseToken = 0x853d955aCEf822Db058eb8505911ED77F175b99e;
 
     /**
      * @notice Fetches the token/ETH price, with 18 decimals of precision.
