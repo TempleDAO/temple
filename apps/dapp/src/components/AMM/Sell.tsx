@@ -26,13 +26,6 @@ interface BuyProps extends SizeProps {
 }
 
 const ENV_VARS = import.meta.env;
-const dropdownOptions = [
-  {
-    label: TICKER_SYMBOL.STABLE_TOKEN,
-    value: ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS,
-  },
-  { label: TICKER_SYMBOL.FEI, value: ENV_VARS.VITE_PUBLIC_FEI_ADDRESS },
-];
 
 export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const { balance, getBalance, updateBalance } = useWallet();
@@ -50,6 +43,18 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
     address: ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS,
     symbol: TICKER_SYMBOL.STABLE_TOKEN,
   });
+
+  const dropdownOptions = [
+    { label: TICKER_SYMBOL.FEI, value: ENV_VARS.VITE_PUBLIC_FEI_ADDRESS },
+  ];
+
+  // only allow selling for FEI if we are close to IV
+  if (templePrice > iv * 1.02) {
+    dropdownOptions.unshift({
+      label: TICKER_SYMBOL.STABLE_TOKEN,
+      value: ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS,
+    });
+  }
 
   const handleUpdateTempleAmount = async (value: number | '') => {
     setTempleAmount(value === 0 ? '' : value);
