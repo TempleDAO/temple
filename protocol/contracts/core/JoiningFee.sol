@@ -40,5 +40,9 @@ contract JoiningFee is Ownable {
         } else {
             hourlyJoiningFeeFor[vault] = amount;
         }
+
+        emit SetJoiningFee(vault, amount);
     }
+
+    event SetJoiningFee(address vault, uint256 amount);
 }

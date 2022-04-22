@@ -41,6 +41,8 @@ contract OpsManager is Ownable {
         // Create a FarmingRevenue pool associated with this exposure
         pools[exposure] = new TreasuryFarmingRevenue(exposure);
         exposure.setMinterState(address(pools[exposure]), true);
+
+        emit CreateExposure(address(exposure), address(pools[exposure]));
     }
 
     /**
@@ -55,6 +57,8 @@ contract OpsManager is Ownable {
     ) external onlyOwner {
         Vault vault = new Vault(name, symbol, templeToken, periodDuration, enterExitWindowDuration, shareBoostFactory, joiningFee);
         activeVaults[address(vault)] = true;
+
+        emit CreateVault(address(vault));
     }
 
     /**
@@ -129,4 +133,7 @@ contract OpsManager is Ownable {
 
         return requiresUpdate;
     }
+
+    event CreateVault(address vault);
+    event CreateExposure(address exposure, address primaryRevenue);
 }
