@@ -129,7 +129,7 @@ contract Exposure is Ownable, RebasingERC20 {
      * Throws if called by an actor that cannot mint
      */
     modifier onlyMinter() {
-        require(canMint[msg.sender], "Strategy: caller is not a vault");
+        require(canMint[msg.sender], "Exposure: caller is not a vault");
         _;
     }
 
