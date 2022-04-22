@@ -27,6 +27,8 @@ contract TempleStableAMMRouter is Ownable {
     TempleERC20Token public immutable templeToken;
     ITempleTreasury public templeTreasury;
 
+    address public defendStable; // stable to swap for when defend is active
+
     modifier ensure(uint deadline) {
         require(deadline >= block.timestamp, 'TempleStableAMMRouter: EXPIRED');
         _;
@@ -34,12 +36,13 @@ contract TempleStableAMMRouter is Ownable {
 
     constructor(
             TempleERC20Token _templeToken,
-            ITempleTreasury _templeTreasury
+            ITempleTreasury _templeTreasury,
+            address  _defendStable
             ) {
 
         templeToken = _templeToken;
         templeTreasury = _templeTreasury;
-
+        defendStable  = _defendStable;
     }
 
     function addPair(address _token, address _pair) external onlyOwner {
@@ -48,6 +51,10 @@ contract TempleStableAMMRouter is Ownable {
 
     function setTreasury(address _templeTreasury) external onlyOwner {
         templeTreasury = ITempleTreasury(_templeTreasury);
+    }
+
+    function setDefendStable(address _defendStable) external onlyOwner {
+        defendStable = _defendStable;
     }
 
     // **** ADD LIQUIDITY ****
@@ -74,6 +81,7 @@ contract TempleStableAMMRouter is Ownable {
             }
         }
     }
+
     function addLiquidity(
         uint amountADesired,
         uint amountBDesired,
@@ -145,7 +153,7 @@ contract TempleStableAMMRouter is Ownable {
         if (priceBelowIV) {
             require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
             templeToken.burnFrom(msg.sender, amountIn);
-            SafeERC20.safeTransfer(IERC20(stable), to, amountOut);
+            SafeERC20.safeTransfer(IERC20(defendStable), to, amountOut);
         } else {
             
             require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
