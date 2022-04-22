@@ -7,7 +7,7 @@ import { Button } from 'components/Button/Button';
 
 import { Popover } from 'components/Popover';
 import { Nullable } from 'types/util';
-
+import { LOCAL_CHAIN } from './WagmiProvider';
 
 export const WrongNetworkPopover = () => {
   const [{ data, loading, error }, switchNetwork] = useNetwork();
@@ -126,7 +126,7 @@ const IS_PROD = ENV === 'production';
 const ENV_CHAIN_MAPPING = new Map([
   ['production', chain.mainnet],
   ['staging', chain.rinkeby],
-  ['development', chain.hardhat],
+  ['development', LOCAL_CHAIN],
 ]);
 
 const isSupportedChain = (chainId: number) => {
