@@ -34,6 +34,7 @@ const fmtTemplePrice = (pair: [BigNumber, BigNumber, number?]): number => {
 describe("AMM", async () => {
     let templeToken: TempleERC20Token;
     let fraxToken: FakeERC20;
+    let feiToken: FakeERC20;
     let treasury: TempleTreasury;
     let owner: Signer;
     let alan: Signer;
@@ -52,11 +53,13 @@ describe("AMM", async () => {
 
       templeToken = await new TempleERC20Token__factory(owner).deploy();
       fraxToken = await new FakeERC20__factory(owner).deploy("STABLEC", "STABLEC");
+      feiToken = await new FakeERC20__factory(owner).deploy("FEI", "FEI"); 
 
       await templeToken.addMinter(await owner.getAddress()),
 
       await Promise.all([
         fraxToken.mint(await owner.getAddress(), toAtto(100000000)),
+        feiToken.mint(await owner.getAddress(), toAtto(100000000)),
         templeToken.mint(await owner.getAddress(), toAtto(100000000)),
       ]);
 
@@ -73,6 +76,7 @@ describe("AMM", async () => {
       templeRouter = await new TempleStableAMMRouter__factory(owner).deploy(
         templeToken.address,
         treasury.address,
+        fraxToken.address,
       );
 
       await Promise.all([
@@ -165,6 +169,24 @@ describe("AMM", async () => {
         // Expect pair reserve to not change and swap to happen on IV
         expect(rFrax / rTemple).eq(rFrax0 / rTemple0);
         expect(fromAtto(await fraxToken.balanceOf(await alan.getAddress()))).eq(900000 * ivFrax / ivTemple);
+        
+      })
+
+
+      it("Sell below IV should use what ever defend token is set to ", async() => {
+        // fund router with some frax and fei (for use when price is below IV)
+        await Promise.all([
+          fraxToken.transfer(templeRouter.address, toAtto(2000000)),
+          feiToken.transfer(templeRouter.address, toAtto(2000000)),
+          templeRouter.setDefendStable(feiToken.address),
+        ])
+
+        //sell enough temple to bring price below IV
+        await templeRouter.swapExactTempleForStable(toAtto(900000), 1, fraxToken.address,  await alan.getAddress(), expiryDate());
+
+        const [ivFrax, ivTemple] = fmtPricePair(await treasury.intrinsicValueRatio());
+        expect(fromAtto(await fraxToken.balanceOf(await alan.getAddress()))).eq(0);
+        expect(fromAtto(await feiToken.balanceOf(await alan.getAddress()))).eq(900000 * ivFrax / ivTemple);
         
       })
 
