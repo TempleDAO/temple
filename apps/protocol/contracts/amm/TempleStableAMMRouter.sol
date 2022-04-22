@@ -1,7 +1,7 @@
 pragma solidity ^0.8.4;
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -125,8 +125,8 @@ contract TempleStableAMMRouter is Ownable {
         uint deadline
     ) external virtual ensure(deadline) returns (uint amountOut) {
 
-        require(tokenPair[stable] != address(0), 'TempleStableAMMRouter: UNSUPPORTED_PAIR');
         address pair = tokenPair[stable];
+        require(pair != address(0), 'TempleStableAMMRouter: UNSUPPORTED_PAIR');
 
         uint amountOut = swapExactStableForTempleQuote(pair, amountIn);
         require(amountOut >= amountOutMin, 'TempleStableAMMRouter: INSUFFICIENT_OUTPUT_AMOUNT');
@@ -145,8 +145,8 @@ contract TempleStableAMMRouter is Ownable {
         uint deadline
     ) external virtual ensure(deadline) returns (uint) {
         
-        require(tokenPair[stable] != address(0), 'TempleStableAMMRouter: UNSUPPORTED_PAIR');
         address pair = tokenPair[stable];
+        require(pair != address(0), 'TempleStableAMMRouter: UNSUPPORTED_PAIR');
 
 
         (bool priceBelowIV, uint amountOut) = swapExactTempleForStableQuote(pair, amountIn);
@@ -196,24 +196,6 @@ contract TempleStableAMMRouter is Ownable {
         uint denominator = (reserveIn * 1000) + amountInWithFee;
         amountOut = numerator / denominator;
     }
-
-    // /**
-    //  * given an output amount of an asset and pair reserves, returns a required input amount of the other asset
-    //  *
-    //  * Direct copy of UniswapV2Library.getAmountIn
-    //  * NOTE: Currently unused (copied in as we need for the swapTokenForTokens variants)
-    //  */
-    // function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut)
-    //     public
-    //     pure
-    //     returns (uint amountIn)
-    // {
-    //     require(amountOut > 0, 'UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT');
-    //     require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
-    //     uint numerator = reserveIn.mul(amountOut).mul(1000);
-    //     uint denominator = reserveOut.sub(amountOut).mul(997);
-    //     amountIn = (numerator / denominator).add(1);
-    // }
 
     function swapExactStableForTempleQuote(address pair, uint amountIn) public view returns (uint amountOut ) {
         (uint reserveTemple, uint reserveFrax,) = IUniswapV2Pair(pair).getReserves();
