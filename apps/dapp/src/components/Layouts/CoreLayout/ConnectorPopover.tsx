@@ -56,7 +56,6 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
 };
 
 const getConnectorIcon = (connectorId: string) => {
-  console.log(connectorId)
   switch (connectorId) {
     case 'injected': return <Icon bgImg={metamaskIcon} />;
     case 'walletConnect': return <Icon bgImg={walletConnectIcon} />;

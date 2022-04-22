@@ -1,6 +1,6 @@
-import {  useState } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
-import { useAccount, useConnect, useNetwork, chain } from 'wagmi';
+import { useAccount, useConnect, useNetwork } from 'wagmi';
 
 import { ConnectorPopover } from './ConnectorPopover';
 import TruncatedAddress from 'components/TruncatedAddress';
