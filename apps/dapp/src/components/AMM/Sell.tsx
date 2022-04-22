@@ -152,7 +152,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         isNumber
         pairTop
       />
-      <SwapArrows onClick={onSwapArrowClick} small />
+      <SwapArrows onClick={onSwapArrowClick} small={small} />
       <Input
         small={small}
         hint={`Balance: ${formatNumber(stableCoinWalletAmount)}`}
