@@ -14,6 +14,7 @@ interface SelectTempleDaoProps {
 
   options: SelectTempleDaoOptions | [];
   defaultValue?: Option;
+  isSmall?: boolean;
 }
 
 /**
@@ -77,7 +78,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           opacity: state.isDisabled ? 0.5 : 1,
           transition: 'opacity 300ms',
           fontFamily: 'Megant',
-          fontSize: 20,
+          fontSize: props.isSmall ? '1.2rem' : '1.75rem',
           fontWeight: 600,
           textTransform: 'uppercase',
           color: theme.palette.brand,
