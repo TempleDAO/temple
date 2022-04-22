@@ -176,7 +176,8 @@ async function main() {
 
   const templeRouter = await new TempleStableAMMRouter__factory(owner).deploy(
     templeToken.address,
-    treasury.address
+    treasury.address,
+    fei.address
   );
 
   await templeRouter.addPair(frax.address, pair.address);
