@@ -132,6 +132,6 @@ contract OpsManager is Ownable {
         return requiresUpdate;
     }
 
-    event CreateVault(address vaultAddress);
-    event CreateExposure(address exposureAddress, address primaryRevenueAddress);
+    event CreateVault(address vault);
+    event CreateExposure(address exposure, address primaryRevenue);
 }
