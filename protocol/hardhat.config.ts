@@ -74,6 +74,7 @@ module.exports = {
   networks: {
     hardhat: {
       chainId: 1337,
+      allowUnlimitedContractSize: true,
     },
     rinkeby: {
       url: process.env.RINKEBY_RPC_URL || '',

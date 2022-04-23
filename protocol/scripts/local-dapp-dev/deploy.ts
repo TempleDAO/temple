@@ -1,5 +1,5 @@
 import '@nomiclabs/hardhat-ethers';
-import { BigNumber } from 'ethers';
+import { BigNumber, ContractTransaction } from 'ethers';
 import { ethers } from 'hardhat';
 import { blockTimestamp, mineNBlocks } from '../../test/helpers';
 import {
@@ -21,6 +21,8 @@ import {
   TempleIVSwap__factory,
   JoiningFee__factory,
   Vault__factory,
+  OpsManager__factory,
+  Exposure__factory,
 } from '../../typechain';
 import { writeFile } from 'fs/promises';
 
@@ -30,6 +32,24 @@ function toAtto(n: number) {
 
 function fromAtto(n: BigNumber) {
   return n.div(BigNumber.from(10).pow(18)).toNumber();
+}
+
+async function extractDeployedAddress(tx: ContractTransaction, eventName: string) : Promise<string> {
+  let result = 'FAILED TO FIND';
+  
+  await tx.wait(0).then(receipt => {
+    let event = receipt.events?.filter(evt => {
+      if (evt.event) {
+        return evt.event === eventName
+      }; 
+    })[0];
+
+    if (event?.args) {
+      result = event.args[0]
+    }
+  })
+
+  return result;
 }
 
 async function main() {
@@ -247,15 +267,30 @@ async function main() {
     toAtto(1),
   );
 
-  const vault = await new Vault__factory(owner).deploy(
+  const opsManagerLib = await (await ethers.getContractFactory("OpsManagerLib")).connect(owner).deploy();
+
+  const opsManager = await new OpsManager__factory({ "contracts/core/OpsManagerLib.sol:OpsManagerLib" : opsManagerLib.address }, owner).deploy(
+    templeToken.address,
+    joiningFee.address
+  );
+  
+  const vaultTx = await opsManager.createVault(
     "Temple 5min Vault",
     "TV_5Min",
-    templeToken.address,
     60 * 5,
     60,
-    { p: 1, q: 1},
-    joiningFee.address
-  )
+    { p: 1, q : 1}
+  );
+
+  let vault = await extractDeployedAddress(vaultTx, 'CreateVault');
+
+  const exposureTx = await opsManager.createExposure(
+    "Stable Exposure",
+    "STBCXP",
+    stablecToken.address
+  );
+
+  let exposure = await extractDeployedAddress(exposureTx, 'CreateExposure');
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
@@ -274,7 +309,9 @@ async function main() {
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
 
     TEMPLE_IV_SWAP: templeIVSwap.address,
-    TEMPLE_VAULT_5_MIN: vault.address,
+    TEMPLE_VAULT_OPS_MANAGER: opsManager.address,
+    TEMPLE_VAULT_5_MIN: vault,
+    TEMPLE_VAULT_STABLEC_EXPOSURE: exposure,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys
