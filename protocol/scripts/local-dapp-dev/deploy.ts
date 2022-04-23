@@ -36,12 +36,12 @@ function fromAtto(n: BigNumber) {
 
 async function extractDeployedAddress(tx: ContractTransaction, eventName: string) : Promise<string> {
   let result = 'FAILED TO FIND';
-  
+
   await tx.wait(0).then(receipt => {
     let event = receipt.events?.filter(evt => {
       if (evt.event) {
         return evt.event === eventName
-      }; 
+      };
     })[0];
 
     if (event?.args) {
@@ -267,13 +267,13 @@ async function main() {
     toAtto(1),
   );
 
-  const opsManagerLib = await (await ethers.getContractFactory("OpsManagerLib")).connect(owner).deploy();
+  // const opsManagerLib = await (await ethers.getContractFactory("OpsManagerLib")).connect(owner).deploy();
 
-  const opsManager = await new OpsManager__factory({ "contracts/core/OpsManagerLib.sol:OpsManagerLib" : opsManagerLib.address }, owner).deploy(
+  const opsManager = await new OpsManager__factory(owner).deploy(
     templeToken.address,
     joiningFee.address
   );
-  
+
   const vaultTx = await opsManager.createVault(
     "Temple 5min Vault",
     "TV_5Min",
