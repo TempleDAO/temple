@@ -58,6 +58,8 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
     setTempleAmount(value === 0 ? '' : value);
     if (value) {
       const sellQuote = await getSellQuote(toAtto(value));
+
+      // if this sell is going to IVSwap, remove FRAX from the dropdown and select FEI
       if (isIvSwap(sellQuote, value) && options[1]) {
         setSelectedToken({
           symbol: defaultOption.label,
