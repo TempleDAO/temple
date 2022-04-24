@@ -8,6 +8,7 @@ import "./TreasuryFarmingRevenue.sol";
 import "./Vault.sol";
 import "./Rational.sol";
 import "./JoiningFee.sol";
+import "./OpsManagerLib.sol";
 
 /**
  * @title Manage all active treasury farmining revenue.
@@ -33,14 +34,7 @@ contract OpsManager is Ownable {
         string memory symbol,
         ERC20 revalToken
     ) external onlyOwner  {
-        // Create position and transfer ownership to the caller
-        Exposure exposure = new Exposure(name, symbol, revalToken, address(this));
-        activeExposures.push(exposure);
-        exposure.transferOwnership(msg.sender);
-
-        // Create a FarmingRevenue pool associated with this exposure
-        pools[exposure] = new TreasuryFarmingRevenue(exposure);
-        exposure.setMinterState(address(pools[exposure]), true);
+        Exposure exposure = OpsManagerLib.createExposure(name, symbol, revalToken, activeExposures, pools);
         emit CreateExposure(address(exposure), address(pools[exposure]));
     }
 
@@ -75,18 +69,7 @@ contract OpsManager is Ownable {
     function rebalance(Vault[] memory vaults, Exposure exposure) external {
         for (uint256 i = 0; i < vaults.length; i++) {
             require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
-            require(vaults[i].inEnterExitWindow(), "FarmingRevenueMnager: Cannot rebalance vaults in their exit/entry window");
-
-            uint256 currentRevenueShare = pools[exposure].shares(address(vaults[i]));
-            uint256 targetRevenueShare= vaults[i].targetRevenueShare();
-
-            if (targetRevenueShare > currentRevenueShare) {
-                pools[exposure].increaseShares(address(vaults[i]), targetRevenueShare - currentRevenueShare);
-            } else if (targetRevenueShare < currentRevenueShare) {
-                pools[exposure].decreaseShares(address(vaults[i]), currentRevenueShare - targetRevenueShare);
-            } else {
-                pools[exposure].claimFor(address(vaults[i]));
-            }
+            OpsManagerLib.rebalance(vaults[i], exposure, pools);
         }
     }
 
@@ -119,17 +102,7 @@ contract OpsManager is Ownable {
      * exposure
      */
     function requiresRebalance(Vault[] memory vaults, Exposure exposure) external view returns (bool[] memory) {
-        bool[] memory requiresUpdate = new bool[](vaults.length);
-
-        for (uint256 i = 0; i < vaults.length; i++) {
-            if (vaults[i].inEnterExitWindow()) {
-                continue;
-            }
-
-            requiresUpdate[i] = pools[exposure].shares(address(vaults[i])) != vaults[i].targetRevenueShare();
-        }
-
-        return requiresUpdate;
+        return OpsManagerLib.requiresRebalance(vaults, exposure, pools);
     }
 
     event CreateVault(address vault);
