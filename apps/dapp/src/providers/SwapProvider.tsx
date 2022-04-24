@@ -166,6 +166,9 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     isIvSwap = false,
     stablecoinAddress = STABLE_COIN_ADDRESS
   ) => {
+    if (isIvSwap) {
+      stablecoinAddress = FEI_ADDRESS;
+    }
     if (wallet && signer) {
       const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(
         TEMPLE_V2_ROUTER_ADDRESS

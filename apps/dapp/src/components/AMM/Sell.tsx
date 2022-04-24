@@ -17,6 +17,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
+import { STABLE_COIN_ADDRESS, FEI_ADDRESS } from 'providers/env';
 
 interface SizeProps {
   small?: boolean;
@@ -26,6 +27,11 @@ interface BuyProps extends SizeProps {
 }
 
 const ENV_VARS = import.meta.env;
+
+const defaultOption = {
+  label: TICKER_SYMBOL.FEI,
+  value: FEI_ADDRESS,
+};
 
 export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const { balance, getBalance, updateBalance } = useWallet();
@@ -40,28 +46,28 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const [minAmountOut, setMinAmountOut] = useState<number>(0);
   const [templeAmount, setTempleAmount] = useState<number | ''>('');
   const [selectedToken, setSelectedToken] = useState({
-    address: ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS,
-    symbol: TICKER_SYMBOL.STABLE_TOKEN,
+    address: FEI_ADDRESS,
+    symbol: TICKER_SYMBOL.FEI,
   });
+  const [options, setOptions] = useState([defaultOption]);
 
-  const dropdownOptions = [
-    { label: TICKER_SYMBOL.FEI, value: ENV_VARS.VITE_PUBLIC_FEI_ADDRESS },
-  ];
-
-  // only allow selling for FEI if we are close to IV
-  if (templePrice > iv * 1.02) {
-    dropdownOptions.unshift({
-      label: TICKER_SYMBOL.STABLE_TOKEN,
-      value: ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS,
-    });
-  }
+  const isIvSwap = (quote: BigNumber | void, value: number) =>
+    !!quote && fromAtto(quote) < value * iv;
 
   const handleUpdateTempleAmount = async (value: number | '') => {
     setTempleAmount(value === 0 ? '' : value);
     if (value) {
-      setRewards(
-        fromAtto((await getSellQuote(toAtto(value))) || BigNumber.from(0) || 0)
-      );
+      const sellQuote = await getSellQuote(toAtto(value));
+      if (isIvSwap(sellQuote, value) && options[1]) {
+        setSelectedToken({
+          symbol: defaultOption.label,
+          address: defaultOption.value,
+        });
+
+        setOptions([defaultOption]);
+      }
+
+      setRewards(fromAtto(sellQuote || BigNumber.from(0) || 0));
     } else {
       setRewards('');
     }
@@ -80,13 +86,11 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
         const sellQuote = await getSellQuote(toAtto(templeAmount));
 
-        const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
-
         if (minAmountOut <= rewards || isIvSwap) {
           await sell(
             toAtto(templeAmount),
             toAtto(minAmountOut),
-            isIvSwap,
+            isIvSwap(sellQuote, templeAmount),
             selectedToken.address
           );
           getBalance();
@@ -119,6 +123,17 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       await updateIv();
       setRewards('');
       setMinAmountOut(0);
+
+      // only allow selling for FRAX if we are out of IV swap territory
+      if (templePrice > iv * 1.02) {
+        setOptions([
+          defaultOption,
+          {
+            label: TICKER_SYMBOL.STABLE_TOKEN,
+            value: STABLE_COIN_ADDRESS,
+          },
+        ]);
+      }
     }
 
     onMount();
@@ -158,13 +173,13 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         hint={`Balance: ${formatNumber(stableCoinWalletAmount)}`}
         crypto={{
           kind: 'select',
-          cryptoOptions: dropdownOptions,
+          cryptoOptions: options,
           onCryptoChange: (e) =>
             setSelectedToken({
               address: e.value.toString(),
               symbol: e.label as TICKER_SYMBOL,
             }),
-          defaultValue: dropdownOptions[0],
+          defaultValue: defaultOption,
         }}
         isNumber
         value={formatNumber(rewards as number)}
