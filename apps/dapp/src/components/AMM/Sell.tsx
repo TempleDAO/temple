@@ -65,8 +65,6 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
           symbol: defaultOption.label,
           address: defaultOption.value,
         });
-
-        setOptions([defaultOption]);
       }
 
       setRewards(fromAtto(sellQuote || BigNumber.from(0) || 0));
