@@ -228,7 +228,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
   const getBuyQuote = async (
     amountIn: BigNumber,
-    sellTokenAddress = TEMPLE_V2_PAIR_ADDRESS
+    sellTokenAddress = STABLE_COIN_ADDRESS
   ): Promise<BigNumber> => {
     if (wallet && signer) {
       const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(
