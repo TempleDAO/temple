@@ -11,13 +11,6 @@ import {
 } from "../../typechain";
 import { mkRebasingERC20TestSuite } from "./rebasing-erc20-testsuite";
 
-interface RebasingERC20TestSuiteState {
-  accounts: [Signer, BigNumber][];
-  token: IERC20;
-  rebaseUp: () => Promise<any>;
-  rebaseDown: () => Promise<any>;
-}
-
 describe("Temple Core Exposures", async () => {
   let exposure: Exposure;
 
