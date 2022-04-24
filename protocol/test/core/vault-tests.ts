@@ -105,6 +105,10 @@ describe("Temple Core Vault", async () => {
       .to.changeTokenBalance(templeToken, ben, toAtto(100));
   })
 
+  xit("cannot redeem exposures when outside of the entry/exit window", async () => {
+    // TODO(butler): write test
+    fail("Unimplemented");
+  });
 
   xit("allows redeeming an exposure back to temple", async () => {
     // TODO(butler): write test
