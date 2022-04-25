@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useNetwork, chain } from 'wagmi';
+import { useNetwork, chain, AddChainError } from 'wagmi';
 
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
@@ -63,14 +63,28 @@ export const WrongNetworkPopover = () => {
         role="button"
         isSmall
         disabled={loading}
-        onClick={() => {
+        onClick={async () => {
           if (switchNetwork) {
-            switchNetwork(defaultChainForEnv.id);
+            await switchNetwork(defaultChainForEnv.id);
           }
         }}
       >
         Switch to {defaultChainForEnv.name}
       </SwitchNetworkButton>
+    );
+  }
+
+  let errorMessage = error && <ErrorMessage>{error.message}</ErrorMessage>;
+  if (
+    !IS_PROD &&
+    defaultChainForEnv.id === LOCAL_CHAIN.id &&
+    error instanceof AddChainError
+  ) {
+    errorMessage = (
+      <ErrorMessage>
+        Error connecting to {LOCAL_CHAIN.name}. Please make sure you have {LOCAL_CHAIN.name} added to
+        {' '}your MetaMask Networks with RPC Url: {LOCAL_CHAIN.rpcUrls[0]} and ChainId: {LOCAL_CHAIN.id}.
+      </ErrorMessage>
     );
   }
 
@@ -109,7 +123,7 @@ export const WrongNetworkPopover = () => {
           </li>
         )}
       </Menu>
-      {error && <ErrorMessage>{error.message}</ErrorMessage>}
+      {errorMessage}
     </Popover>
   );
 };
