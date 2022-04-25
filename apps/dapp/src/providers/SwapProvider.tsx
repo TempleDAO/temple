@@ -177,10 +177,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         TEMPLE_ADDRESS
       );
 
-      const TEMPLE_IV_SWAP = new TempleIVSwap__factory(signer).attach(
-        TEMPLE_IV_SWAP_ADDRESS
-      );
-
       await ensureAllowance(
         TICKER_SYMBOL.TEMPLE_TOKEN,
         TEMPLE,
@@ -198,26 +194,16 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         0
       );
 
-      let sellTx;
-
-      if (isIvSwap) {
-        sellTx = await TEMPLE_IV_SWAP.swapTempleForIV(
-          verifiedAmountInTemple,
-          wallet,
-          deadline
-        );
-      } else {
-        sellTx = await AMM_ROUTER.swapExactTempleForStable(
-          verifiedAmountInTemple,
-          minAmountOutFrax,
-          stablecoinAddress,
-          wallet,
-          deadline,
-          {
-            gasLimit: VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
-          }
-        );
-      }
+      const sellTx = await AMM_ROUTER.swapExactTempleForStable(
+        verifiedAmountInTemple,
+        minAmountOutFrax,
+        stablecoinAddress,
+        wallet,
+        deadline,
+        {
+          gasLimit: VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
+        }
+      );
 
       await sellTx.wait();
 
