@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useSigner } from 'wagmi';
+
 import {
   Vault__factory,
 } from 'types/typechain';
@@ -7,15 +8,26 @@ import { toAtto } from 'utils/bigNumber';
 import useIsMounted from 'hooks/use-is-mounted';
 import { Nullable } from 'types/util';
 
-const useDepositToVault = (vaultContractAddress: string) => {
+type MetaMaskError = Error & { data?: { message: string } };
+
+type HookReturnType = [
+  { 
+    loading: boolean;
+    error: Nullable<MetaMaskError>,
+  },
+  (amount: number) => Promise<void>,
+];
+
+const useDepositToVault = (vaultContractAddress: string): HookReturnType => {
   const [{ data: signer }] = useSigner();
   const isMounted = useIsMounted();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Nullable<Error>>(null);
+  const [error, setError] = useState<Nullable<MetaMaskError>>(null);
 
   const deposit = useCallback(async (amount: number) => {
     if (!signer) {
-      console.error(`Attempted to deposit to vault: ${vaultContractAddress} without a signer.`);
+      console.error(`
+        Attempted to deposit to vault: ${vaultContractAddress} without a signer.`);
       return;
     }
     
@@ -27,14 +39,20 @@ const useDepositToVault = (vaultContractAddress: string) => {
       await vault.deposit(toAtto(amount));
     } catch (err) {
       if (isMounted.current) {
-        setError(error as Error);
+        setError(err as MetaMaskError);
       }
     } finally {
       if (isMounted.current) {
         setLoading(false);
       }
     }
-  }, [signer, vaultContractAddress, isMounted, setLoading, setError]);
+  }, [
+    signer,
+    vaultContractAddress,
+    isMounted,
+    setLoading,
+    setError,
+  ]);
   
   return [{ loading, error }, deposit];
 }

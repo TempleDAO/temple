@@ -7,9 +7,11 @@ import { Vault } from 'components/Vault/types';
 import { Spinner } from 'components/LoaderVault/Spinner';
 import { VAULT_CONTRACT_INFO } from 'constants/core';
 
-const vaultData: { [key: string]: Vault } = {
-  ['0x1d3591a131f6C1951dae5a4dE3AfEF0Fc1d63e64']: {
-    id: '0x1d3591a131f6C1951dae5a4dE3AfEF0Fc1d63e64',
+const ENV = import.meta.env;
+
+export const vaultData: { [key: string]: Vault } = {
+  [ENV.VITE_PUBLIC_TEMPLE_VAULT_5_MIN]: {
+    id: ENV.VITE_PUBLIC_TEMPLE_VAULT_5_MIN,
     months: 3,
     tvl: 12000050,
     now: new Date('6/15/22'),

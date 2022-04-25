@@ -15,6 +15,8 @@ import { CryptoSelect } from 'components/Input/CryptoSelect';
 import useRequestState, { createMockRequest } from 'hooks/use-request-state';
 import { toAtto } from 'utils/bigNumber';
 import EllipsisLoader from 'components/EllipsisLoader';
+import useDepositToVault from 'hooks/use-deposit-to-vault';
+import useVaultContext from './useVaultContext';
 
 // This dummy data will be replaced by the actual contracts
 const dummyOptions = [
@@ -69,6 +71,8 @@ const useZappedAssetTempleBalance = (
 };
 
 export const Stake = () => {
+  const vault = useVaultContext();
+  const [{ loading: depositLoading, error: depositError }, deposit] = useDepositToVault(vault.id);
   const [stakingAmount, setStakingAmount] = useState<number | ''>('');
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(
     dummyOptions[0].value as TICKER_SYMBOL
@@ -118,7 +122,7 @@ export const Stake = () => {
     ? stakingAmount
     : (stakingAmount && zapRepsonse?.templeAmount) || 0;
   const stakeButtonDisabled =
-    !templeAmount || stakeLoading || zapLoading || (isZap && !!zapError);
+    !templeAmount || depositLoading || stakeLoading || zapLoading || (isZap && !!zapError);
 
   let templeAmountMessage: ReactNode = '';
   if (zapError) {
@@ -137,6 +141,8 @@ export const Stake = () => {
       </>
     );
   }
+
+  const error = !!depositError && (depositError.data?.message || depositError.message || 'Something went wrong');
 
   return (
     <VaultContent>
@@ -161,20 +167,15 @@ export const Stake = () => {
         value={stakingAmount}
       />
       <AmountInTemple>{isZap && templeAmountMessage}</AmountInTemple>
-      {!!stakeError && (
-        <ErrorLabel>{stakeError.message || 'Something went wrong'}</ErrorLabel>
-      )}
-
+      {!!error && <ErrorLabel>{error}</ErrorLabel>}
       <VaultButton
         label={'stake'}
         autoWidth
         disabled={stakeButtonDisabled}
         onClick={async () => {
-          try {
-            return stakeAssetsRequest();
-          } catch (error) {
-            // intentionally empty, handled in hook
-          }
+          const amountToDeposit = !stakingAmount ? 0 : stakingAmount;
+          await deposit(amountToDeposit);
+          // TODO: reset UI.
         }}
       />
     </VaultContent>

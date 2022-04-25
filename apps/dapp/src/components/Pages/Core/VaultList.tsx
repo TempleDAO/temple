@@ -1,7 +1,11 @@
 import { Navigate } from 'react-router-dom';
+import { vaultData } from './Vault';
 
-const VaultListPage = () => (
-  <Navigate replace to={`/core/dapp/vaults/0x1d3591a131f6C1951dae5a4dE3AfEF0Fc1d63e64/summary`} />
-);
+const VaultListPage = () => {
+  const firstVault = Object.values(vaultData)[0];
+  return (
+    <Navigate replace to={`/core/dapp/vaults/${firstVault.id}/summary`} />
+  );
+};
 
 export default VaultListPage;
