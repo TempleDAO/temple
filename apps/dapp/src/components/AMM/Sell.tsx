@@ -28,10 +28,16 @@ interface BuyProps extends SizeProps {
 
 const ENV_VARS = import.meta.env;
 
-const defaultOption = {
-  label: TICKER_SYMBOL.FEI,
-  value: FEI_ADDRESS,
-};
+const dropdownOptions = [
+  {
+    label: TICKER_SYMBOL.FEI,
+    value: FEI_ADDRESS,
+  },
+  {
+    label: TICKER_SYMBOL.STABLE_TOKEN,
+    value: STABLE_COIN_ADDRESS,
+  },
+];
 
 export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const { balance, getBalance, updateBalance } = useWallet();
@@ -49,7 +55,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
     address: FEI_ADDRESS,
     symbol: TICKER_SYMBOL.FEI,
   });
-  const [options, setOptions] = useState([defaultOption]);
+  const [isFraxHidden, setIsFraxHidden] = useState(true);
 
   const isIvSwap = (quote: BigNumber | void, value: number) =>
     !!quote && fromAtto(quote) < value * iv;
@@ -60,12 +66,13 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       const sellQuote = await getSellQuote(toAtto(value));
 
       // if this sell is going to IVSwap, auto-select FEI
-      if (isIvSwap(sellQuote, value) && options[1]) {
+      if (isIvSwap(sellQuote, value)) {
+        setIsFraxHidden(true);
         setSelectedToken({
-          symbol: defaultOption.label,
-          address: defaultOption.value,
+          symbol: dropdownOptions[0].label,
+          address: dropdownOptions[0].value,
         });
-      }
+      } else setIsFraxHidden(false);
 
       setRewards(fromAtto(sellQuote || BigNumber.from(0) || 0));
     } else {
@@ -86,7 +93,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
         const sellQuote = await getSellQuote(toAtto(templeAmount));
 
-        if (minAmountOut <= rewards || isIvSwap) {
+        if (minAmountOut <= rewards || isIvSwap(sellQuote, templeAmount)) {
           await sell(
             toAtto(templeAmount),
             toAtto(minAmountOut),
@@ -126,13 +133,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
       // only allow selling for FRAX if we are out of IV swap territory
       if (templePrice > iv * 1.02) {
-        setOptions([
-          defaultOption,
-          {
-            label: TICKER_SYMBOL.STABLE_TOKEN,
-            value: STABLE_COIN_ADDRESS,
-          },
-        ]);
+        setIsFraxHidden(false);
       }
     }
 
@@ -171,16 +172,23 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       <Input
         small={small}
         hint={`Balance: ${formatNumber(stableCoinWalletAmount)}`}
-        crypto={{
-          kind: 'select',
-          cryptoOptions: options,
-          onCryptoChange: (e) =>
-            setSelectedToken({
-              address: e.value.toString(),
-              symbol: e.label as TICKER_SYMBOL,
-            }),
-          defaultValue: defaultOption,
-        }}
+        crypto={
+          isFraxHidden
+            ? {
+                kind: 'value',
+                value: selectedToken.symbol,
+              }
+            : {
+                kind: 'select',
+                cryptoOptions: dropdownOptions,
+                onCryptoChange: (e) =>
+                  setSelectedToken({
+                    address: e.value.toString(),
+                    symbol: e.label as TICKER_SYMBOL,
+                  }),
+                defaultValue: dropdownOptions[0],
+              }
+        }
         isNumber
         value={formatNumber(rewards as number)}
         placeholder={'0.00'}
