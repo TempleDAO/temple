@@ -7,20 +7,13 @@ import {
   BigNumberish,
   BytesLike,
   CallOverrides,
-  ContractTransaction,
-  Overrides,
   PopulatedTransaction,
   Signer,
   utils,
 } from "ethers";
 import { FunctionFragment, Result } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
-import type {
-  TypedEventFilter,
-  TypedEvent,
-  TypedListener,
-  OnEvent,
-} from "./common";
+import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
 export interface ILiquidatorInterface extends utils.Interface {
   contractName: "ILiquidator";
@@ -69,15 +62,15 @@ export interface ILiquidator extends BaseContract {
     toTemple(
       amount: BigNumberish,
       toAccount: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
   };
 
   toTemple(
     amount: BigNumberish,
     toAccount: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
   callStatic: {
     toTemple(
@@ -93,7 +86,7 @@ export interface ILiquidator extends BaseContract {
     toTemple(
       amount: BigNumberish,
       toAccount: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
 
@@ -101,7 +94,7 @@ export interface ILiquidator extends BaseContract {
     toTemple(
       amount: BigNumberish,
       toAccount: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };
 }

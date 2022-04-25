@@ -16,8 +16,12 @@ type Props = {
 };
 
 const TimelineTippy = ({ vault, entry, children }: Props) => {
+  if (!entry.entryDate) {
+    return null;
+  }
+  
   const amount = entry.amount;
-  const startDate = format(entry.entryDate!, 'MMM do');
+  const startDate = format(entry.entryDate, 'MMM do');
   const endDate = format(
     addSeconds(entry.entryDate!, SECONDS_IN_MONTH * vault.months),
     'MMM do'
