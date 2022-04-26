@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, Signer } from 'ethers';
 
 import {
   ConvoFlowTitle,
@@ -51,7 +51,7 @@ const Devotion = () => {
   const refreshWalletState = useRefreshWalletState();
 
   const getDevotionData = useCallback(
-    async (signer: ethers.providers.JsonRpcSigner) => {
+    async (signer: Signer) => {
       if (signer && wallet) {
         const DEVOTION = new Devotion__factory(signer).attach(
           TEMPLE_DEVOTION_ADDRESS
@@ -297,24 +297,6 @@ const Devotion = () => {
             disabled={devotion === 0}
           />
           <Spacer />
-          {balance.ogTempleLocked > 0 && (
-            <>
-              <small>
-                You have{' '}
-                <small className={'color-brand'}>
-                  {TICKER_SYMBOL.OG_TEMPLE_TOKEN}
-                </small>{' '}
-                to be claimed from the Fire Ritual or Opening Ceremony
-                contracts. <br />
-                This{' '}
-                <small className={'color-brand'}>
-                  {TICKER_SYMBOL.OG_TEMPLE_TOKEN}
-                </small>{' '}
-                will not be verified or re-locked until it is claimed.
-              </small>
-              <Spacer />
-            </>
-          )}
         </>
       )}
     </ViewContainer>
