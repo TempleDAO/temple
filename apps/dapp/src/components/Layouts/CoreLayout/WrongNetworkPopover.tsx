@@ -9,6 +9,10 @@ import { Popover } from 'components/Popover';
 import { Nullable } from 'types/util';
 import { LOCAL_CHAIN } from 'components/WagmiProvider';
 
+const ENV_VARS = import.meta.env;
+const ENV = ENV_VARS.VITE_ENV;
+const IS_PROD = ENV === 'production';
+
 export const WrongNetworkPopover = () => {
   const [{ data, loading, error }, switchNetwork] = useNetwork();
   const [dismissedChainId, setDismissedChainId] = useState<Nullable<number>>(null);
@@ -127,10 +131,6 @@ export const WrongNetworkPopover = () => {
     </Popover>
   );
 };
-
-const ENV_VARS = import.meta.env;
-const ENV = ENV_VARS.VITE_ENV;
-const IS_PROD = ENV === 'production';
 
 const ENV_CHAIN_MAPPING = new Map([
   ['production', chain.mainnet],
