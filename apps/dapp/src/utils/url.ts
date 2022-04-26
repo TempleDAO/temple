@@ -1,4 +1,10 @@
+import env from 'constants/env';
+
 const ENV_VARS = import.meta.env;
+
+export const createGraphUrl = () => {
+  return `${env.graph.handler}`
+}
 
 export const createDiscordUserUrl = (userId: string) => {
   return `${ENV_VARS.BACKEND_URL}/api/discord/members/${userId}`

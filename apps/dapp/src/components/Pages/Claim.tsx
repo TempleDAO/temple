@@ -270,6 +270,39 @@ function useTempleCashback() {
     if (dispatch) dispatch({ type: 'fileChange' });
   }, [activeClaim, wallet]);
 
+<<<<<<< HEAD
+=======
+  // checks if user has already claimed their allocation
+  useEffect(() => {
+    async function isAllocationAlreadyClaimed() {
+      if (
+        signer &&
+        wallet &&
+        activeClaim &&
+        claims[activeClaim][wallet.toLowerCase()]
+      ) {
+        // const templeCashback = new TempleCashback__factory(signer).attach(
+        //   TEMPLE_CASHBACK_ADDRESS
+        // );
+
+        let allocationClaimed;
+        if (claims[activeClaim][wallet.toLowerCase()]) {
+          // allocationClaimed = await templeCashback.usedNonces(
+          //   wallet,
+          //   BigNumber.from(claims[activeClaim][wallet.toLowerCase()]?.nonce)
+          // );
+        }
+
+        if (allocationClaimed) {
+          dispatch({ type: 'success', claim: activeClaim });
+        }
+      }
+    }
+
+    isAllocationAlreadyClaimed();
+  }, [signer, activeClaim]);
+
+>>>>>>> 1c16e67 (Add vaults hooks, vaults provider, vault list logic)
   const [state, dispatch] = useReducer(reducer, {
     ...cashbackInitialState,
     label: `Collect ${allocation} $TEMPLE`,
