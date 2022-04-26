@@ -3,16 +3,15 @@ import styled from 'styled-components';
 import { phoneAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
 
-import { WagmiProvider } from './WagmiProvider';
 import Header from './Header';
 
 const CoreLayout = () => (
-  <WagmiProvider>
+  <>
     <Header />
     <Main>
       <Outlet />
     </Main>
-  </WagmiProvider>
+  </>
 );
 
 export default CoreLayout;

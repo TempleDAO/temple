@@ -6,19 +6,22 @@ import { WalletProvider } from 'providers/WalletProvider';
 import { SwapProvider } from 'providers/SwapProvider';
 import { StakingProvider } from 'providers/StakingProvider';
 import { FaithProvider } from 'providers/FaithProvider';
+import { WagmiProvider } from 'components/WagmiProvider';
 
 export const AppProvider = (props: PropsWithChildren<{}>) => {
   return (
     <NotificationProvider>
-      <WalletProvider>
-        <SwapProvider>
-          <StakingProvider>
-            <FaithProvider>
-              <ThemeProvider theme={theme}>{props.children}</ThemeProvider>
-            </FaithProvider>
-          </StakingProvider>
-        </SwapProvider>
-      </WalletProvider>
+      <WagmiProvider>
+        <WalletProvider>
+          <SwapProvider>
+            <StakingProvider>
+              <FaithProvider>
+                <ThemeProvider theme={theme}>{props.children}</ThemeProvider>
+              </FaithProvider>
+            </StakingProvider>
+          </SwapProvider>
+        </WalletProvider>
+      </WagmiProvider>
     </NotificationProvider>
   );
 };
