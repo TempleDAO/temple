@@ -1,9 +1,7 @@
 import {
   createContext,
   PropsWithChildren,
-  useCallback,
   useContext,
-  useEffect,
   useState,
 } from 'react';
 import { BigNumber, Signer } from 'ethers';
@@ -124,7 +122,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
     // get the locked OG temple
     const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber();
-    let ogTempleLocked = 0;
     let ogTempleLockedClaimable = 0;
     const templeLockedPromises = [];
     for (let i = 0; i < lockedNum; i++) {
@@ -134,7 +131,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     const now = formatNumberFixedDecimals(Date.now() / 1000, 0);
     const templeLocked = await Promise.all(templeLockedPromises);
     templeLocked.map((x) => {
-      ogTempleLocked += fromAtto(x.BalanceOGTemple);
       if (x.LockedUntilTimestamp.lte(BigNumber.from(now))) {
         ogTempleLockedClaimable += fromAtto(x.BalanceOGTemple);
       }
@@ -148,7 +144,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     return {
       stableCoin: fromAtto(stableCoinBalance),
       temple: temple,
-      ogTempleLocked: 0,
       ogTemple: ogTemple >= 1 ? ogTemple : 0,
       ogTempleLockedClaimable: ogTempleLockedClaimable,
     };
