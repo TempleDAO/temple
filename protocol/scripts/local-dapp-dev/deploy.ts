@@ -275,10 +275,10 @@ async function main() {
   );
 
   const vaultTx = await opsManager.createVault(
-    "Temple 5min Vault",
-    "TV_5Min",
-    60 * 5,
-    60,
+    "Temple 1 Month Vault",
+    "TV_1MO",
+    60 * 60 * 24 * 30, //30 days
+    60 * 60 * 24, // 1 day
     { p: 1, q : 1}
   );
 
