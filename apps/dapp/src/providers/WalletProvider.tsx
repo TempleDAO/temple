@@ -1,6 +1,7 @@
 import {
   createContext,
   PropsWithChildren,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -25,7 +26,6 @@ import {
   ERC20,
   ERC20__factory,
   TempleERC20Token__factory,
-  LockedOGTemple__factory,
   TempleStaking__factory,
   OGTemple__factory,
   TempleTeamPayments__factory,
@@ -36,7 +36,6 @@ import {
   STABLE_COIN_ADDRESS,
   TEMPLE_STAKING_ADDRESS,
   LOCKED_OG_TEMPLE_ADDRESS,
-  LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
 } from 'providers/env';
 
 // We want to save gas burn $ for the Templars,
@@ -47,12 +46,11 @@ const INITIAL_STATE: WalletState = {
   balance: {
     stableCoin: 0,
     temple: 0,
-    ogTempleLocked: 0,
     ogTempleLockedClaimable: 0,
     ogTemple: 0,
   },
   wallet: null,
-  isConnected: () => false,
+  isConnected: false,
   connectWallet: noop,
   changeWalletAddress: noop,
   signer: null,
@@ -70,35 +68,19 @@ const WalletContext = createContext<WalletState>(INITIAL_STATE);
 export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
   
-  const [{ data: signerState }] = useSigner();
+  const [{ data: signer }] = useSigner();
   const [{ data: network }] = useNetwork();
   const [{ data: accountData }] = useAccount();
   const provider = useProvider();
 
+  const { openNotification } = useNotification();
   const [balanceState, setBalanceState] = useState<Balance>(
     INITIAL_STATE.balance
   );
 
-  const { openNotification } = useNotification();
-
+  const chain = network?.chain;
   const walletAddress = accountData?.address;
-
-  useEffect(() => {
-    if (!walletAddress || !signerState) {
-      return;
-    }
-
-    const update = async () => {
-      const balance = await getBalance(walletAddress, signerState);
-      setBalanceState(balance);
-    };
-    
-    update();
-  }, [walletAddress, signerState, setBalanceState]);
-
-  const isConnected = () => {
-    return !!walletAddress;
-  };
+  const isConnected = !!walletAddress;
 
   const connectWallet = async () => {
     throw new Error('Deprecated');
@@ -110,33 +92,29 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
   const getBalance = async (
     walletAddress: string,
-    signerState: Signer
+    signer: Signer
   ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
 
-    const stableCoinContract = new ERC20__factory(signerState).attach(
+    const stableCoinContract = new ERC20__factory(signer).attach(
       STABLE_COIN_ADDRESS
     );
 
     const ogLockedTemple = new LockedOGTempleDeprecated__factory(
-      signerState
+      signer
     ).attach(LOCKED_OG_TEMPLE_ADDRESS);
 
-    const OGTEMPLE_LOCKED_DEVOTION = new LockedOGTemple__factory(
-      signerState
-    ).attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS);
-
     const templeStakingContract = new TempleStaking__factory(
-      signerState
+      signer
     ).attach(TEMPLE_STAKING_ADDRESS);
 
-    const OG_TEMPLE_CONTRACT = new OGTemple__factory(signerState).attach(
+    const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(
       await templeStakingContract.OG_TEMPLE()
     );
 
-    const templeContract = new TempleERC20Token__factory(signerState).attach(
+    const templeContract = new TempleERC20Token__factory(signer).attach(
       TEMPLE_ADDRESS
     );
 
@@ -167,25 +145,21 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     );
     const temple = fromAtto(await templeContract.balanceOf(walletAddress));
 
-    const lockedOGTempleEntry = await OGTEMPLE_LOCKED_DEVOTION.ogTempleLocked(
-      walletAddress
-    );
-
     return {
       stableCoin: fromAtto(stableCoinBalance),
       temple: temple,
-      ogTempleLocked: ogTempleLocked + fromAtto(lockedOGTempleEntry.amount),
+      ogTempleLocked: 0,
       ogTemple: ogTemple >= 1 ? ogTemple : 0,
       ogTempleLockedClaimable: ogTempleLockedClaimable,
     };
   };
 
   const updateBalance = async () => {
-    if (!walletAddress || !signerState) {
+    if (!walletAddress || !signer) {
       return;
     }
 
-    const balance = await getBalance(walletAddress, signerState);
+    const balance = await getBalance(walletAddress, signer);
     setBalanceState(balance);
   };
 
@@ -240,12 +214,12 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
   ): Promise<TransactionReceipt | void> => {}
 
   const collectTempleTeamPayment = async (epoch: TEAM_PAYMENTS_EPOCHS) => {
-    if (walletAddress && signerState) {
+    if (walletAddress && signer) {
       const fixedTeamPaymentAddress =
         TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[epoch];
 
       const teamPaymentContract = new TempleTeamPayments__factory(
-        signerState
+        signer
       ).attach(fixedTeamPaymentAddress);
 
       const collectTxn = await teamPaymentContract.claim();
@@ -263,8 +237,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  const chain = network?.chain;
-
   return (
     <WalletContext.Provider
       value={{
@@ -275,8 +247,11 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
         changeWalletAddress,
         ensureAllowance,
         claim,
-        signer: signerState || null,
-        network: chain ? { chainId: chain.id, name: chain.name || '' } : null,
+        signer: signer || null,
+        network: !chain ? null : {
+          chainId: chain.id,
+          name: chain.name || '',
+        },
         getCurrentEpoch,
         getBalance: updateBalance,
         updateBalance,

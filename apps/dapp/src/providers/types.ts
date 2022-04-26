@@ -24,7 +24,6 @@ export enum ETH_ACTIONS {
 export type Balance = {
   stableCoin: number;
   temple: number;
-  ogTempleLocked: number;
   ogTempleLockedClaimable: number;
   ogTemple: number;
 };
@@ -139,7 +138,7 @@ export interface WalletState {
   signer: Nullable<Signer>;
   network: Nullable<Network>;
 
-  isConnected(): boolean;
+  isConnected: boolean;
 
   connectWallet(): void;
 
