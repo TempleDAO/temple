@@ -8,11 +8,9 @@
     "create-local": "graph create --node http://localhost:8020/ templedao-core",
     "remove-local": "graph remove --node http://localhost:8020/ templedao-core",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 templedao-core",
-    "local-node": "echo foo",
-    "local-graph-setup": "./scripts/graph-node-setup.sh",
-    "local-graph-start": "cd graph-node/docker && docker compose up",
-    "local-graph-stop": "cd graph-node/docker && docker compose down",
-    "local-ganache": "ganache -i=1337 --db=./.data -d"
+    "graph:setup": "./scripts/graph-node-setup.sh",
+    "graph:start": "cd graph-node/docker && docker compose up",
+    "graph:stop": "cd graph-node/docker && docker compose down"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "^0.28.1",

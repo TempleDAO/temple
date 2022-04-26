@@ -1,16 +1,13 @@
 # TempleDAO Core Subgraph
 
-Head over to the [wiki](https://github.com/TempleDAO/templedao-core-subgraph/wiki) to get started.
-
 ## Local Development Steps
 
 ### Graph node setup
 
-1) Run `yarn local-ganache` in one window, and open a new window for the next steps.
-1) Run `yarn local-graph-setup` in a new window.
-1) Run `yarn local-graph-start` to start the local subgraph node. It may take a few minutes to fully start.
-
-Note you can use `yarn local-graph-stop` to stop the node.
+1) If a local hardhat node is not already running, go to the `protocol` directory and run `yarn local-node` to start.
+1) In a new terminal window, run `yarn graph:setup`. This will pull the graph-node project and build the docker image.
+1) Run `yarn graph:start` to start the local subgraph node. It may take a few minutes to fully start.
+1) Use `yarn graph:stop` to stop the node.
 
 ### Subgraph Build and Deploy
 
