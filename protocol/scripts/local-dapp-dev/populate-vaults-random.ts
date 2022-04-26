@@ -48,10 +48,12 @@ function toAtto(n: number) {
     
     const numberOfHours = getRandomInt(1,24);
     const depositAmounts = new Map<string, number>();
-    depositAmounts.set(account1.address, 0);
-    depositAmounts.set(account2.address, 0);
-    depositAmounts.set(account3.address, 0);
-    depositAmounts.set(account4.address, 0);
+
+
+    depositAmounts.set(account1.address, fromAtto(await templeToken.balanceOf(account1.address)));
+    depositAmounts.set(account2.address, fromAtto(await templeToken.balanceOf(account2.address)));
+    depositAmounts.set(account3.address, fromAtto(await templeToken.balanceOf(account3.address)));
+    depositAmounts.set(account4.address, fromAtto(await templeToken.balanceOf(account4.address)));
 
     console.log(`Number of hours to input data: ${numberOfHours}`);
 
@@ -61,9 +63,9 @@ function toAtto(n: number) {
             let accountNum = getRandomInt(0,3);
             let amount = getRandomInt(1,1500);
             let depositedAmountForAddr = depositAmounts.get(accounts[accountNum].address) ?? 0
-            if (depositedAmountForAddr + amount < 30000) {
+            if (depositedAmountForAddr - amount > 0) {
                 await vault.connect(accounts[accountNum]).deposit(toAtto(amount));
-                depositAmounts.set(accounts[accountNum].address, depositedAmountForAddr + amount)
+                depositAmounts.set(accounts[accountNum].address, depositedAmountForAddr - amount)
             }
         }
 
@@ -78,7 +80,7 @@ function toAtto(n: number) {
             if (bal > toAtto(amount) && (fromAtto(bal) - amount) > 0) {
                 let depositedAmountForAddr = depositAmounts.get(accounts[accountNum].address) ?? 0
                 await vault.connect(accounts[accountNum]).withdraw(toAtto(amount));
-                depositAmounts.set(accounts[accountNum].address, depositedAmountForAddr - amount)
+                depositAmounts.set(accounts[accountNum].address, depositedAmountForAddr + amount)
             }
         }
 
@@ -87,6 +89,10 @@ function toAtto(n: number) {
     }
 
     console.log(`Starting block timestamp: ${await blockTimestamp()}`);
+    console.log(`Deposited Balance for account1: ${10000 - (depositAmounts.get(account1.address) ?? 0)}`)
+    console.log(`Deposited Balance for account2: ${10000 - (depositAmounts.get(account2.address) ?? 0)}`)
+    console.log(`Deposited Balance for account3: ${10000 - (depositAmounts.get(account3.address) ?? 0)}`)
+    console.log(`Deposited Balance for account4: ${10000 - (depositAmounts.get(account4.address) ?? 0)}`)
   }
 
 // We recommend this pattern to be able to use async/await everywhere
