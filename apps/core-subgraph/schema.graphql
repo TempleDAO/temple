@@ -1,9 +1,9 @@
 type Metric @entity {
   id: ID!
   timestamp: BigInt!
-  volumeETH: BigDecimal!
+  volume: BigDecimal!
   volumeUSD: BigDecimal!
-  tvlETH: BigDecimal!
+  tvl: BigDecimal!
   tvlUSD: BigDecimal!
   vaultCount: BigInt!
   exposureCount: BigInt!
@@ -16,9 +16,9 @@ type MetricDayData @entity {
   id: ID!
   timestamp: BigInt!
   metric: Metric!
-  volumeETH: BigDecimal!
+  volume: BigDecimal!
   volumeUSD: BigDecimal!
-  tvlETH: BigDecimal!
+  tvl: BigDecimal!
   tvlUSD: BigDecimal!
   vaultCount: BigInt!
   exposureCount: BigInt!
@@ -57,6 +57,8 @@ type Vault @entity {
   shareBoostFactor: BigDecimal!
   joiningFee: String!
   firstPeriodStartTimestamp: BigInt!
+  users: [User!]!
+  tvl: BigDecimal!
   vaultHourDatas: [VaultHourData!]! @derivedFrom(field: "vault")
 }
 
@@ -72,4 +74,62 @@ type VaultHourData @entity {
   shareBoostFactor: BigDecimal!
   joiningFee: String!
   firstPeriodStartTimestamp: BigInt!
+  users: [User!]!
+  tvl: BigDecimal!
+}
+
+type User @entity {
+  id: ID!
+  timestamp: BigInt!
+  vaultUserBalances: [VaultUserBalance!]! @derivedFrom(field: "user")
+  deposits: [Deposit!]! @derivedFrom(field: "user")
+  withdraws: [Withdraw!]! @derivedFrom(field: "user")
+  userDayDatas: [UserDayData!]! @derivedFrom(field: "user")
+  depositsBalance: BigDecimal!
+  withdrawsBalance: BigDecimal!
+  totalBalance: BigDecimal!
+}
+
+type UserDayData @entity {
+  id: ID!
+  timestamp: BigInt!
+  user: User!
+  depositsBalance: BigDecimal!
+  withdrawsBalance: BigDecimal!
+  totalBalance: BigDecimal!
+}
+
+type VaultUserBalance @entity {
+  id: ID!
+  timestamp: BigInt!
+  vault: Vault!
+  user: User!
+  token: Token!
+  amount: BigDecimal!
+  value: BigDecimal!
+}
+
+type Deposit @entity {
+  id: ID!
+  timestamp: BigInt!
+  vault: Vault!
+  user: User!
+  token: Token!
+  amount: BigDecimal!
+  value: BigDecimal!
+}
+
+type Withdraw @entity {
+  id: ID!
+  timestamp: BigInt!
+  vault: Vault!
+  user: User!
+  token: Token!
+  amount: BigDecimal!
+  value: BigDecimal!
+}
+
+type Token @entity {
+  id: ID!
+  timestamp: BigInt!
 }

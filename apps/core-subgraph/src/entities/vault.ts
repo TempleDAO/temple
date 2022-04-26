@@ -5,7 +5,7 @@ import { Vault as VaultTemplate } from '../../generated/templates'
 import { CreateVault } from '../../generated/OpsManager/OpsManager'
 import { Vault as VaultContract } from '../../generated/OpsManager/Vault'
 
-import { BIG_DECIMAL_0, BIG_INT_1 } from '../utils/constants'
+import { BIG_INT_1, BIG_DECIMAL_0 } from '../utils/constants'
 import { hourFromTimestamp } from '../utils/dates'
 import { getMetric, updateMetric } from './metric'
 
@@ -40,6 +40,8 @@ export function createVault(event: CreateVault): void {
   vault.shareBoostFactor = shareBoostFactor
   vault.joiningFee = joiningFee
   vault.firstPeriodStartTimestamp = firstPeriodStartTimestamp
+  vault.users = []
+  vault.tvl = BIG_DECIMAL_0
   vault.save()
 
   updateOrCreateHourData(vault, event.block.timestamp)
@@ -78,5 +80,7 @@ export function updateOrCreateHourData(vault: Vault, timestamp: BigInt): void {
   hourData.shareBoostFactor = vault.shareBoostFactor
   hourData.joiningFee = vault.joiningFee
   hourData.firstPeriodStartTimestamp = vault.firstPeriodStartTimestamp
+  hourData.users = vault.users
+  hourData.tvl = vault.tvl
   hourData.save()
 }
