@@ -8,7 +8,6 @@ import {
 } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
-import { useAccount, useConnect } from 'wagmi';
 
 import {
   flexCenter,
@@ -16,87 +15,22 @@ import {
   backgroundImage,
   pixelsToRems,
 } from 'styles/mixins';
-import { ConnectorPopover } from './ConnectorPopover';
 import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
 import { phoneAndAbove } from 'styles/breakpoints';
-import TruncatedAddress from 'components/TruncatedAddress';
-import Loader from 'components/Loader/Loader';
-import { Button as BaseButton } from 'components/Button/Button';
 
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
 import templeDaoLogo from 'assets/images/sun-art.svg';
 import hamburger from 'assets/icons/core-hamburger.svg';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
-import Tooltip from 'components/Tooltip/Tooltip';
+import { Account } from './Account';
 
 const Header = () => {
-  const [{ data: connectData, loading: connectLoading }] = useConnect();
-  const [{ data: accountData, loading: accountLoading }, disconnect] = useAccount({
-    fetchEns: true,
-  });
-
-  const [isConnectorMenuOpen, setIsConnectMenuOpen] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const onClickMenuItem = useCallback(() => {
     setIsNavOpen(false);
   }, [setIsNavOpen]);
-
-  
-  let accountButton = (
-   <ConnectButton
-      isSmall
-      isActive
-      isUppercase
-      label={"Connect Wallet"}
-      role="button"
-      onClick={() => {
-        setIsConnectMenuOpen(true);
-      }}
-    />
-  );
-   
-  if (accountLoading || connectLoading) {
-    accountButton = <Loader />;
-  } else if (accountData?.address) {
-    const isMetaMask = connectData.connector?.name === 'MetaMask';
-    const disconnectButton = (
-      <ConnectButton
-        isSmall
-        isActive
-        isUppercase
-        disabled={isMetaMask}
-        role="button"
-        label="Disconnect"
-        onClick={() => {
-          disconnect(); 
-        }}
-      />
-    );
-    
-    accountButton = (
-      <>
-        <UserAddress>
-          {!!accountData.ens?.name ? (
-            accountData.ens?.name
-          ) : (
-            <TruncatedAddress address={accountData?.address} />
-          )}
-        </UserAddress>
-        {!isMetaMask ? disconnectButton : (
-          <Tooltip
-            content={
-              'To disconnect an account managed through Metamask, ' +
-              'use the “Disconnect this account” button on Metamask itself'
-            }
-          >
-            {disconnectButton}
-          </Tooltip>
-        )}
-      </>
-    );
-  }
 
   return (
     <>
@@ -114,13 +48,9 @@ const Header = () => {
           onClickMenuItem={onClickMenuItem}
         />
         <AccountWrapper>
-          {accountButton}
+          <Account />
         </AccountWrapper>
       </Wrapper>
-      <ConnectorPopover
-        isOpen={isConnectorMenuOpen}
-        onClose={() => setIsConnectMenuOpen(false)}
-      />
     </>
   );
 };
@@ -247,27 +177,6 @@ const HamburgerBun = styled.button<{ $isOpen: boolean }>`
   `)}
 `;
 
-const ConnectButton = styled(BaseButton)`
-  background-color: rgba(0, 0, 0, 0);
-  border-radius: .75rem;
-  font-weight: 400;
-  border: transparent; 
-  color: ${({ theme }) => theme.palette.brand};
-  border: 1px solid ${({ theme }) => theme.palette.brand};
-  margin: 0 0 0 0.75rem;
-  font-size: .75rem;
-  letter-spacing: 0.1em;
-  transition: background .2s ease-in-out;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.25);
-  }
-
-  &:disabled {
-    border: 1px solid #bd7b4f80;
-  }
-`;
-
 const AccountWrapper = styled.div`
   display: flex;
   flex-direction: row;
@@ -277,11 +186,6 @@ const AccountWrapper = styled.div`
 const MobileNavLeft = styled.div`
   display: flex;
   align-items: center;
-`;
-
-const UserAddress = styled.span`
-  color: ${({ theme }) => theme.palette.brandLight};
-  font-size: 0.75rem;
 `;
 
 const Wrapper = styled.header`

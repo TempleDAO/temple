@@ -5,19 +5,18 @@ import { useConnect } from 'wagmi';
 import { tabletAndAbove } from 'styles/breakpoints';
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
-import { backgroundImage, buttonResets } from 'styles/mixins';
+import { backgroundImage } from 'styles/mixins';
 
 import walletConnectIcon from 'assets/icons/walletconnect-circle-white.svg';
 import metamaskIcon from 'assets/icons/metamask-icon.png';
 import coinbaseAppIcon from 'assets/icons/coinbase-wallet-appicon.svg';
-import hamburgerX from 'assets/icons/core-x-hamburger.svg';
+import { Popover } from 'components/Popover';
 
 interface Props {
   onClose: () => void;
   isOpen: boolean;
 }
 
-// TODO(Fujisawa): Make reusable popover that animates open/shut.
 export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
   const [{ data, error, loading }, connect] = useConnect();
 
@@ -29,31 +28,30 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
   }, [connected, isOpen]);
 
   return (
-    <>
-      {isOpen && <Dimmer />}
-      <Wrapper isOpen={isOpen}>
-        <SelectWalletLabel>Select Wallet</SelectWalletLabel>
-        <XIcon onClick={() => onClose()}/>
-        <Menu>
-          {data.connectors.map((connector) => (
-            <li key={connector.id}>
-              <ConnectorButon
-                disabled={!connector.ready || loading}
-                onClick={() => {
-                  connect(connector);
-                }}
-              >
-                <ButtonContent>
-                  {getConnectorIcon(connector.id)}
-                  <span>{getConnectorNiceName(connector.id)} {!connector.ready ? ' (unsupported)' : ''}</span>
-                </ButtonContent>
-              </ConnectorButon>
-            </li>
-          ))}
-        </Menu>
-        {error && <ErrorMessage>{error?.message ?? 'Failed to connect'}</ErrorMessage>}
-      </Wrapper>
-    </>
+    <Popover
+      isOpen={isOpen}
+      onClose={onClose}
+      header="Select Wallet"
+    >
+      <Menu>
+        {data.connectors.map((connector) => (
+          <li key={connector.id}>
+            <ConnectorButon
+              disabled={!connector.ready || loading}
+              onClick={() => {
+                connect(connector);
+              }}
+            >
+              <ButtonContent>
+                {getConnectorIcon(connector.id)}
+                <span>{getConnectorNiceName(connector.id)} {!connector.ready ? ' (unsupported)' : ''}</span>
+              </ButtonContent>
+            </ConnectorButon>
+          </li>
+        ))}
+      </Menu>
+      {error && <ErrorMessage>{error?.message ?? 'Failed to connect'}</ErrorMessage>}
+    </Popover>
   );
 };
 
@@ -61,7 +59,7 @@ const getConnectorIcon = (connectorId: string) => {
   switch (connectorId) {
     case 'injected': return <Icon bgImg={metamaskIcon} />;
     case 'walletConnect': return <Icon bgImg={walletConnectIcon} />;
-    case 'walletLink': return <Icon bgImg={coinbaseAppIcon} />;
+    case 'coinbasewallet': return <Icon bgImg={coinbaseAppIcon} />;
   }
   return null;
 };
@@ -70,7 +68,7 @@ const getConnectorNiceName = (connectorId: string) => {
   switch (connectorId) {
     case 'injected': return 'MetaMask';
     case 'walletConnect': return 'Wallet Connect';
-    case 'walletLink': return 'Coinbase Wallet';
+    case 'coinbasewallet': return 'Coinbase Wallet';
   }
   return null;
 };
@@ -92,30 +90,10 @@ const ButtonContent = styled.span`
   }
 `;
 
-const XIcon = styled.button`
-  ${backgroundImage(hamburgerX)}
-  ${buttonResets}
-  width: 1.25rem;
-  height: 1.25rem;
-  position: absolute;
-  right: 2rem;
-  top: 1.5rem;
-`;
-
 const ConnectorButon = styled(Button)`
   border: 1px solid;
   color: ${({ theme }) => theme.palette.brand};
   margin: 0 0 0 0.5rem;
-`;
-
-const SelectWalletLabel = styled.h4`
-  color: ${({ theme }) => theme.palette.brand};
-  margin-top: 0;
-
-  font-size: 1.5rem;
-  text-align: center;
-  color: ${({ theme }) => theme.palette.brandLight};
-  font-weight: 300;
 `;
 
 const ErrorMessage = styled.span`
@@ -123,31 +101,6 @@ const ErrorMessage = styled.span`
   justify-content: center;
   color: ${({ theme }) => theme.palette.enclave.chaos};
   margin: 1rem 0 0;
-`;
-
-const Wrapper = styled.div<{ isOpen: boolean }>`
-  display: ${({ isOpen }) => isOpen ? 'flex' : 'none'};
-  background: #1D1A1A;
-  position: fixed;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1000;
-  padding: 1.5rem 2rem 2rem;
-  flex-direction: column;
-
-  ${(tabletAndAbove(css`
-    width: 25rem; // 400px
-    left: 50%;
-    top: 50%;
-    right: auto;
-    bottom: auto;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 4rem rgba(0, 0, 0, .8);
-    border-radius: 15px;
-    border: 1px solid #68452d;
-  `))}
 `;
 
 const Menu = styled(UnstyledList)`
@@ -162,14 +115,4 @@ const Menu = styled(UnstyledList)`
       }
     }
   }
-`;
-
-const Dimmer = styled.div`
-  background: rgba(0, 0, 0, .4);
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1000;
 `;

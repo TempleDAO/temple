@@ -1,6 +1,6 @@
 import { useRef, useState, PropsWithChildren } from 'react';
 
-import { useOutsideClick } from '../../hooks/useOutsideClick';
+import { useOutsideClick } from '../../hooks/use-outside-click';
 import { Entry, Point, Vault, VaultRef } from './types';
 import { processData } from './desktop-parts/utils';
 import { useMediaQuery } from 'react-responsive';
