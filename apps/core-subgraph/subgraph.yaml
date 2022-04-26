@@ -13,7 +13,7 @@ dataSources:
     source:
       address: '0x2e2ed0cfd3ad2f1d34481277b3204d807ca2f8c2'
       abi: OpsManager
-      startBlock: 1
+      startBlock: 108
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6

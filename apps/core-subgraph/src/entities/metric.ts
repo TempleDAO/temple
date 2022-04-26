@@ -1,18 +1,18 @@
 import { Address, BigInt } from '@graphprotocol/graph-ts'
 
-import { BIG_DECIMAL_0, BIG_INT_0, GAUGE_CONTROLLER } from '../utils/constants'
+import { BIG_DECIMAL_0, BIG_INT_0, OPS_MANAGER_LOCAL } from '../utils/constants'
 import { dayFromTimestamp } from '../utils/dates'
 import { MetricDayData, Metric } from '../../generated/schema'
 
 
 export function getMetric(): Metric {
-  let metric = Metric.load(GAUGE_CONTROLLER)
+  let metric = Metric.load(OPS_MANAGER_LOCAL)
 
   if (metric === null) {
-    metric = new Metric(GAUGE_CONTROLLER)
-    metric.volumeETH = BIG_DECIMAL_0
+    metric = new Metric(OPS_MANAGER_LOCAL)
+    metric.volume = BIG_DECIMAL_0
     metric.volumeUSD = BIG_DECIMAL_0
-    metric.tvlETH = BIG_DECIMAL_0
+    metric.tvl = BIG_DECIMAL_0
     metric.tvlUSD = BIG_DECIMAL_0
     metric.vaultCount = BIG_INT_0
     metric.exposureCount = BIG_INT_0
@@ -41,9 +41,9 @@ export function updateOrCreateDayData(metric: Metric, timestamp: BigInt): void {
 
   dayData.metric = metric.id
   dayData.timestamp = timestamp
+  dayData.volume = metric.volume
   dayData.volumeUSD = metric.volumeUSD
-  dayData.volumeETH = metric.volumeETH
-  dayData.tvlETH = metric.tvlETH
+  dayData.tvl = metric.tvl
   dayData.tvlUSD = metric.tvlUSD
   dayData.vaultCount = metric.vaultCount
   dayData.exposureCount = metric.exposureCount
