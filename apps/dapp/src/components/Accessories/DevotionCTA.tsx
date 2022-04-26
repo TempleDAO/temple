@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { ethers } from 'ethers';
+import { Signer } from 'ethers';
 
 import devotionImage from 'assets/images/DEVOTION.svg';
 import Image from 'components/Image/Image';
@@ -27,7 +27,7 @@ const DevotionCTA = () => {
   const { signer } = useWallet();
   const [devotionActive, setDevotionActive] = useState(false);
 
-  const getStatus = async (signer: ethers.providers.JsonRpcSigner) => {
+  const getStatus = async (signer: Signer) => {
     const DEVOTION = new Devotion__factory(signer).attach(
       TEMPLE_DEVOTION_ADDRESS
     );
@@ -39,7 +39,9 @@ const DevotionCTA = () => {
   };
 
   useEffect(() => {
-    if (signer) getStatus(signer);
+    if (signer) {
+      getStatus(signer);
+    }
   }, [signer]);
 
   return (

@@ -22,7 +22,7 @@ export const useRefreshWalletState = () => {
   } = useStaking();
 
   return useCallback(async () => {
-    if (!isConnected()) {
+    if (!isConnected) {
       return;
     }
     try {
