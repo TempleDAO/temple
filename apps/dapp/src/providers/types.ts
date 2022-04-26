@@ -1,5 +1,5 @@
 import { Network } from '@ethersproject/providers';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, ethers, Signer } from 'ethers';
 
 import { Nullable } from 'types/util';
 import { ERC20 } from 'types/typechain';
@@ -136,7 +136,7 @@ export interface WalletState {
   wallet: Nullable<string>;
   // current
   balance: Balance;
-  signer: Nullable<ethers.providers.JsonRpcSigner>;
+  signer: Nullable<Signer>;
   network: Nullable<Network>;
 
   isConnected(): boolean;

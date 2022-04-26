@@ -1,17 +1,14 @@
-import React, {
+import {
   createContext,
   PropsWithChildren,
   useContext,
   useEffect,
   useState,
 } from 'react';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, Signer } from 'ethers';
+import { useAccount, useSigner, useNetwork, useProvider } from 'wagmi';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
-import {
-  Network,
-} from '@ethersproject/providers';
-// Circular dependency
-import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
+
 import { useNotification } from 'providers/NotificationProvider';
 import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -23,8 +20,7 @@ import {
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
-import { Nullable } from 'types/util';
-import { WalletState, Balance, ETH_ACTIONS } from 'providers/types';
+import { WalletState, Balance } from 'providers/types';
 import {
   ERC20,
   ERC20__factory,
@@ -39,10 +35,8 @@ import {
   TEMPLE_ADDRESS,
   STABLE_COIN_ADDRESS,
   TEMPLE_STAKING_ADDRESS,
-  TEMPLE_CASHBACK_ADDRESS,
   LOCKED_OG_TEMPLE_ADDRESS,
   LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
-  VITE_PUBLIC_CLAIM_GAS_LIMIT,
 } from 'providers/env';
 
 // We want to save gas burn $ for the Templars,
@@ -75,97 +69,48 @@ const WalletContext = createContext<WalletState>(INITIAL_STATE);
 
 export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
-  const [provider, setProvider] = useState<Nullable<ethers.providers.Web3Provider>>(null);
-  const [network, setNetwork] = useState<Nullable<Network>>(null);
-  const [signerState, setSignerState] = useState<Nullable<ethers.providers.JsonRpcSigner>>(null);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  
+  const [{ data: signerState }] = useSigner();
+  const [{ data: network }] = useNetwork();
+  const [{ data: accountData }] = useAccount();
+  const provider = useProvider();
+
   const [balanceState, setBalanceState] = useState<Balance>(
     INITIAL_STATE.balance
   );
 
   const { openNotification } = useNotification();
-  const refreshWalletState = useRefreshWalletState();
+
+  const walletAddress = accountData?.address;
 
   useEffect(() => {
-    interactWithMetamask(undefined, true).then();
-    if (typeof window !== undefined) {
-      const { ethereum } = window;
-
-      if (ethereum && ethereum.isMetaMask) {
-        ethereum.on('accountsChanged', () => {
-          window.location.reload();
-        });
-        ethereum.on('chainChanged', () => {
-          window.location.reload();
-        });
-      }
-
-      return () => {
-        ethereum.removeListener('accountsChanged');
-        ethereum.removeListener('networkChanged');
-      };
+    if (!walletAddress || !signerState) {
+      return;
     }
-  }, []);
 
-  const isConnected = (): boolean => {
-    // only trigger once window is loaded
-    if (typeof window !== undefined) {
-      const ethereum = window.ethereum;
-      if (ethereum) {
-        return ethereum.isConnected();
-      }
-    }
-    return false;
-  };
+    const update = async () => {
+      const balance = await getBalance(walletAddress, signerState);
+      setBalanceState(balance);
+    };
+    
+    update();
+  }, [walletAddress, signerState, setBalanceState]);
 
-  const interactWithMetamask = async (
-    action?: ETH_ACTIONS,
-    syncConnected?: boolean
-  ) => {
-    if (typeof window !== undefined) {
-      const { ethereum } = window;
-
-      if (ethereum && ethereum.isMetaMask) {
-        const provider = new ethers.providers.Web3Provider(
-          ethereum
-        );
-
-        if (action) {
-          await provider.send(action, [
-            {
-              eth_accounts: {},
-            },
-          ]);
-        }
-
-        const signer = provider.getSigner();
-        const accounts = await provider.listAccounts();
-        if (accounts.length > 0) {
-          const wallet: string = await signer.getAddress();
-          setSignerState(signer);
-          setProvider(provider);
-          setNetwork(await provider.getNetwork());
-          setWalletAddress(wallet);
-          // Circular dependency
-          await refreshWalletState();
-        }
-      } else {
-        console.error('Please add MetaMask to your browser');
-      }
-    }
+  const isConnected = () => {
+    return !!walletAddress;
   };
 
   const connectWallet = async () => {
-    await interactWithMetamask(ETH_ACTIONS.REQUEST_ACCOUNTS);
+    throw new Error('Deprecated');
   };
 
   const changeWalletAddress = async () => {
-    await interactWithMetamask(ETH_ACTIONS.REQUEST_PERMISSIONS);
+    throw new Error('Deprecated');
   };
 
   const getBalance = async (
     walletAddress: string,
-    signerState: ethers.providers.JsonRpcSigner
+    signerState: Signer
   ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
@@ -318,18 +263,20 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
+  const chain = network?.chain;
+
   return (
     <WalletContext.Provider
       value={{
         balance: balanceState,
         isConnected,
-        wallet: walletAddress,
+        wallet: walletAddress || null,
         connectWallet,
         changeWalletAddress,
         ensureAllowance,
         claim,
-        signer: signerState,
-        network,
+        signer: signerState || null,
+        network: chain ? { chainId: chain.id, name: chain.name || '' } : null,
         getCurrentEpoch,
         getBalance: updateBalance,
         updateBalance,

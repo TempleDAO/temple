@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { ethers, Signer } from 'ethers';
 import { JsonRpcSigner } from '@ethersproject/providers';
 
 import { formatNumber } from 'utils/formatter';
@@ -14,7 +14,7 @@ import {
 
 export const getEpochsToDays = async (
   epochs: number,
-  signerState: Nullable<ethers.providers.JsonRpcSigner>
+  signerState: Nullable<Signer>
 ) => {
   if (!signerState) {
     return 0;
