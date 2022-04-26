@@ -7,7 +7,7 @@ import { Button } from 'components/Button/Button';
 
 import { Popover } from 'components/Popover';
 import { Nullable } from 'types/util';
-import { LOCAL_CHAIN } from './WagmiProvider';
+import { LOCAL_CHAIN } from 'components/WagmiProvider';
 
 export const WrongNetworkPopover = () => {
   const [{ data, loading, error }, switchNetwork] = useNetwork();
