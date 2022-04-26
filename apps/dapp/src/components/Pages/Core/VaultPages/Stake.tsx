@@ -13,10 +13,23 @@ import { theme } from 'styles/theme';
 import { VaultInput } from 'components/Input/VaultInput';
 import { CryptoSelect } from 'components/Input/CryptoSelect';
 import useRequestState, { createMockRequest } from 'hooks/use-request-state';
-import { toAtto } from 'utils/bigNumber';
 import EllipsisLoader from 'components/EllipsisLoader';
 import useDepositToVault from 'hooks/use-deposit-to-vault';
 import useVaultContext from './useVaultContext';
+import { useWallet } from 'providers/WalletProvider';
+import { fromAtto, toAtto } from 'utils/bigNumber';
+import {
+  ERC20,
+  ERC20__factory,
+  TempleERC20Token__factory,
+  LockedOGTemple__factory,
+  TempleStaking__factory,
+  OGTemple__factory,
+  TempleTeamPayments__factory,
+  LockedOGTempleDeprecated__factory,
+} from 'types/typechain';
+import { useSigner } from 'wagmi';
+import { useMemo } from 'react';
 
 // This dummy data will be replaced by the actual contracts
 const dummyOptions = [
@@ -70,14 +83,19 @@ const useZappedAssetTempleBalance = (
   return useRequestState(() => zapAssetRequest(token, amount));
 };
 
+const ENV = import.meta.env;
+
 export const Stake = () => {
+  const { balance } = useWallet();
   const vault = useVaultContext();
+
   const [{ loading: depositLoading, error: depositError }, deposit] = useDepositToVault(vault.id);
+
   const [stakingAmount, setStakingAmount] = useState<number | ''>('');
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(
     dummyOptions[0].value as TICKER_SYMBOL
   );
-  const [walletCurrencyBalance, setWalletCurrencyBalance] = useState<number>(0);
+  // const [walletCurrencyBalance, setWalletCurrencyBalance] = useState<number>(0);
 
   const [stakeAssetsRequest, { isLoading: stakeLoading, error: stakeError }] =
     useStakeAssetRequest(ticker, toAtto(!stakingAmount ? 0 : stakingAmount));
@@ -92,11 +110,6 @@ export const Stake = () => {
 
   const handleTickerUpdate = (val: Option) => {
     setTicker(val.value as TICKER_SYMBOL);
-    setWalletCurrencyBalance(
-      dummyWalletBalances[
-        val.value as keyof typeof dummyWalletBalances
-      ] as number
-    );
     setStakingAmount('');
   };
 
@@ -172,10 +185,11 @@ export const Stake = () => {
         label={'stake'}
         autoWidth
         disabled={stakeButtonDisabled}
+        loading={depositLoading}
         onClick={async () => {
           const amountToDeposit = !stakingAmount ? 0 : stakingAmount;
           await deposit(amountToDeposit);
-          // TODO: reset UI.
+          setStakingAmount(0);
         }}
       />
     </VaultContent>
