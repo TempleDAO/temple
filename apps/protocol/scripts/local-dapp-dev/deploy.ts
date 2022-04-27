@@ -4,7 +4,6 @@ import { ethers } from 'hardhat';
 import { blockTimestamp, mineNBlocks } from '../../test/helpers';
 import {
   Devotion__factory,
-  AMMWhitelist__factory,
   ExitQueue__factory,
   Faith__factory,
   FakeERC20__factory,
@@ -13,7 +12,6 @@ import {
   TempleCashback__factory,
   TempleERC20Token__factory,
   TempleFraxAMMOps__factory,
-  TempleFraxAMMRouter__factory,
   TempleStaking__factory,
   TempleTeamPayments__factory,
   LockedOGTempleDeprecated__factory,
@@ -22,8 +20,8 @@ import {
   TreasuryManagementProxy__factory,
   AcceleratedExitQueue,
   AcceleratedExitQueue__factory,
-  TempleIVSwap,
   TempleIVSwap__factory,
+  TempleStableAMMRouter__factory,
 } from '../../typechain';
 
 function toAtto(n: number) {
@@ -62,14 +60,14 @@ async function main() {
     await templeStaking.OG_TEMPLE()
   );
 
-  const stablecToken = await new FakeERC20__factory(owner).deploy(
-    'FRAX',
-    'FRAX'
-  );
+  const frax = await new FakeERC20__factory(owner).deploy('FRAX', 'FRAX');
+  const fei = await new FakeERC20__factory(owner).deploy('FEI', 'FEI');
+
   const treasury = await new TempleTreasury__factory(owner).deploy(
     templeToken.address,
-    stablecToken.address
+    frax.address
   );
+
   await templeToken.addMinter(treasury.address);
 
   const lockedOgTemple_old = await new LockedOGTempleDeprecated__factory(
@@ -79,17 +77,18 @@ async function main() {
     ogTempleToken.address
   );
 
-  // mint fake stablecToken into all test accounts
+  // mint fake frax and fei into all test accounts
   const accounts = await ethers.getSigners();
 
-  // mint some stablecToken into all test accounts
+  // mint some frax and fei into all test accounts
   for (const account of accounts) {
     const address = await account.getAddress();
-    await stablecToken.mint(address, toAtto(15000));
+    await frax.mint(address, toAtto(15000));
+    await fei.mint(address, toAtto(15000));
   }
 
   // Seed mint to bootstrap treasury
-  await stablecToken.increaseAllowance(treasury.address, 100);
+  await frax.increaseAllowance(treasury.address, 100);
   await treasury.seedMint(100, 1000);
 
   // Deploy treasury proxy (used for all treasury management going forward)
@@ -162,60 +161,63 @@ async function main() {
   const pair = await new TempleUniswapV2Pair__factory(owner).deploy(
     await owner.getAddress(),
     templeToken.address,
-    stablecToken.address
+    frax.address
   );
 
-  await mineNBlocks(5);
-
-  const templeRouter = await new TempleFraxAMMRouter__factory(owner).deploy(
-    pair.address,
+  const feiPair = await new TempleUniswapV2Pair__factory(owner).deploy(
+    await owner.getAddress(),
     templeToken.address,
-    stablecToken.address,
-    treasury.address,
-    treasury.address,
-    { frax: 100000, temple: 9000 },
-    100 /* threshold decay per block */,
-    { frax: 1000000, temple: 1000000 },
-    { frax: 1000000, temple: 100000 }
+    fei.address
   );
+
+  const templeRouter = await new TempleStableAMMRouter__factory(owner).deploy(
+    templeToken.address,
+    treasury.address,
+    fei.address
+  );
+
+  await templeRouter.addPair(frax.address, pair.address);
+  await templeRouter.addPair(fei.address, feiPair.address);
 
   // Contract where we send frax earned by treasury
   const ammOps = await new TempleFraxAMMOps__factory(owner).deploy(
     templeToken.address,
     templeRouter.address,
     treasuryManagementProxy.address,
-    stablecToken.address,
+    frax.address,
     treasury.address,
     pair.address
   );
 
   await pair.setRouter(templeRouter.address);
+  await feiPair.setRouter(templeRouter.address);
   await templeToken.addMinter(templeRouter.address);
-  await templeRouter.setProtocolMintEarningsAccount(ammOps.address);
 
   // Add liquidity to the AMM
-  templeToken.mint(owner.address, toAtto(10000000));
-  stablecToken.mint(owner.address, toAtto(10000000));
+  await templeToken.mint(owner.address, toAtto(10000000));
+  await frax.mint(owner.address, toAtto(10000000));
+  await fei.mint(owner.address, toAtto(10000000));
   await templeToken.increaseAllowance(templeRouter.address, toAtto(10000000));
-  await stablecToken.increaseAllowance(templeRouter.address, toAtto(10000000));
+  await frax.increaseAllowance(templeRouter.address, toAtto(10000000));
+  await fei.increaseAllowance(templeRouter.address, toAtto(10000000));
   await templeRouter.addLiquidity(
     toAtto(100000),
     toAtto(1000000),
     1,
     1,
+    frax.address,
     await owner.getAddress(),
     (await blockTimestamp()) + 900
   );
-
-  // Make temple router open access
-  await templeRouter.toggleOpenAccess();
-
-  // AMMWhitelist
-  const ammWhitelist = await new AMMWhitelist__factory(owner).deploy(
-    templeRouter.address,
-    verifier.address
+  await templeRouter.addLiquidity(
+    toAtto(100000),
+    toAtto(1000000),
+    1,
+    1,
+    fei.address,
+    await owner.getAddress(),
+    (await blockTimestamp()) + 900
   );
-
   // Buy the Dip
   const faith = await new Faith__factory(owner).deploy();
 
@@ -244,32 +246,18 @@ async function main() {
     templeRouter.address,
     toAtto(10000000000)
   );
-  await stablecToken.increaseAllowance(
-    templeRouter.address,
-    toAtto(10000000000)
-  );
+  await frax.increaseAllowance(templeRouter.address, toAtto(10000000000));
   await templeRouter.addLiquidity(
     toAtto(100000),
     toAtto(100000),
     1,
     1,
+    frax.address,
     await owner.getAddress(),
     expiryDate()
   );
   await devotion.startDevotion(1, 1);
-  // set a win state on Devotion
-  await templeRouter.swapExactFraxForTemple(
-    10000,
-    1,
-    account1.address,
-    expiryDate()
-  );
-  await templeRouter.swapExactFraxForTemple(
-    10000,
-    1,
-    account2.address,
-    expiryDate()
-  );
+
   // Add value to templePrizePool
   await templeToken.transfer(devotion.address, toAtto(1000));
   await mineNBlocks(3);
@@ -286,26 +274,21 @@ async function main() {
   await OG_TEMPLE.approve(lockedOgTemple_new.address, toAtto(1000000));
   const amountOGTemple1 = await ogTempleToken.balanceOf(account1.address);
   console.info(`amountOGTemple1: ${fromAtto(amountOGTemple1)}`);
-  await DEVOTION.lockAndVerify(amountOGTemple1);
-  // await devotion.endDevotionRound();
-  await faith.gain(account1.address, 25);
-  await faith.gain(account2.address, 45);
 
   // create and initialise contract that allows a permissionless
   // swap @ IV
   const templeIVSwap = await new TempleIVSwap__factory(owner).deploy(
     templeToken.address,
-    stablecToken.address,
+    fei.address,
     { temple: 100, frax: 65 } /* iv */
   );
-  await stablecToken.mint(templeIVSwap.address, toAtto(1000000));
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
     EXIT_QUEUE_ADDRESS: exitQueue.address,
     LOCKED_OG_TEMPLE_ADDRESS: lockedOgTemple_old.address,
     LOCKED_OG_TEMPLE_ADDRESS_NEW: lockedOgTemple_new.address,
-    STABLE_COIN_ADDRESS: stablecToken.address,
+    STABLE_COIN_ADDRESS: frax.address,
     TEMPLE_ADDRESS: templeToken.address,
     TEMPLE_STAKING_ADDRESS: templeStaking.address,
     TREASURY_ADDRESS: treasury.address,
@@ -317,13 +300,15 @@ async function main() {
     TEMPLE_R3_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR3.address,
     TEMPLE_V2_PAIR_ADDRESS: pair.address,
     TEMPLE_V2_ROUTER_ADDRESS: templeRouter.address,
-    TEMPLE_ROUTER_WHITELIST: ammWhitelist.address,
+    TEMPLE_ROUTER_WHITELIST: 'removed',
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
     TEMPLE_DEVOTION_ADDRESS: devotion.address,
     TEMPLE_FAITH_ADDRESS: faith.address,
     LOCKED_OG_TEMPLE_DEVOTION_ADDRESS: lockedOgTemple_new.address,
 
     TEMPLE_IV_SWAP: templeIVSwap.address,
+    FEI_ADDRESS: fei.address,
+    FEI_PAIR_ADDRESS: feiPair.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys

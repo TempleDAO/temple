@@ -24,11 +24,22 @@ interface BuyProps {
 }
 
 const ENV_VARS = import.meta.env;
+const dropdownOptions = [
+  {
+    label: TICKER_SYMBOL.STABLE_TOKEN,
+    value: ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS,
+  },
+  { label: TICKER_SYMBOL.FEI, value: ENV_VARS.VITE_PUBLIC_FEI_ADDRESS },
+];
 
 export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const { balance, getBalance, updateBalance } = useWallet();
   const { buy, getBuyQuote, templePrice, updateTemplePrice } = useSwap();
 
+  const [selectedToken, setSelectedToken] = useState({
+    address: ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS,
+    symbol: TICKER_SYMBOL.STABLE_TOKEN,
+  });
   const [stableCoinAmount, setStableCoinAmount] = useState<number | ''>('');
   const [stableCoinWalletAmount, setStableCoinWalletAmount] =
     useState<number>(0);
@@ -41,7 +52,11 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
     setStableCoinAmount(value === 0 ? '' : value);
     if (value) {
       setRewards(
-        fromAtto((await getBuyQuote(toAtto(value))) || BigNumber.from(0) || 0)
+        fromAtto(
+          (await getBuyQuote(toAtto(value), selectedToken.address)) ||
+            BigNumber.from(0) ||
+            0
+        )
       );
     } else {
       setRewards('');
@@ -59,7 +74,11 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
           (stableCoinAmount / templePrice) * (1 - slippage / 100);
         setMinAmountOut(minAmountOut);
         if (minAmountOut <= rewards) {
-          await buy(toAtto(stableCoinAmount), toAtto(minAmountOut));
+          await buy(
+            toAtto(stableCoinAmount),
+            toAtto(minAmountOut),
+            selectedToken.address
+          );
           getBalance();
           handleUpdateStableCoinAmount('');
         }
@@ -70,11 +89,18 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   };
 
   useEffect(() => {
-    if (balance) {
-      setStableCoinWalletAmount(balance.stableCoin);
+    const setBalanceState = () => {
       setTempleWalletAmount(balance.temple);
+      if (selectedToken.symbol === TICKER_SYMBOL.FEI) {
+        setStableCoinWalletAmount(balance.fei);
+      } else {
+        setStableCoinWalletAmount(balance.stableCoin);
+      }
+    };
+    if (balance) {
+      setBalanceState();
     }
-  }, [balance]);
+  }, [balance, selectedToken]);
 
   useEffect(() => {
     async function onMount() {
@@ -92,7 +118,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       <TitleWrapper>
         <ConvoFlowTitle>
           {small
-            ? 'EXCHANGE $FRAX FOR $TEMPLE'
+            ? `EXCHANGE ${selectedToken.symbol} for ${TICKER_SYMBOL.TEMPLE_TOKEN}`
             : 'HOW DEDICATED ARE YOU, TEMPLAR?'}
         </ConvoFlowTitle>
       </TitleWrapper>
@@ -102,7 +128,16 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         onHintClick={() =>
           copyBalance(stableCoinWalletAmount, handleUpdateStableCoinAmount)
         }
-        crypto={{ kind: 'value', value: TICKER_SYMBOL.STABLE_TOKEN }}
+        crypto={{
+          kind: 'select',
+          cryptoOptions: dropdownOptions,
+          onCryptoChange: (e) =>
+            setSelectedToken({
+              address: e.value.toString(),
+              symbol: e.label as TICKER_SYMBOL,
+            }),
+          defaultValue: dropdownOptions[0],
+        }}
         isNumber
         max={stableCoinWalletAmount}
         min={0}
@@ -143,8 +178,8 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
             ? 'increase slippage'
             : `${
                 small
-                  ? 'EXCHANGE $FRAX FOR $TEMPLE'
-                  : `sacrifice ${TICKER_SYMBOL.STABLE_TOKEN}`
+                  ? `EXCHANGE ${selectedToken.symbol} for ${TICKER_SYMBOL.TEMPLE_TOKEN}`
+                  : `sacrifice ${selectedToken.symbol}`
               } `
         }
         isUppercase

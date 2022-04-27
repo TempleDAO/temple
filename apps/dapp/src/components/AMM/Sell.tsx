@@ -17,6 +17,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
+import { STABLE_COIN_ADDRESS, FEI_ADDRESS } from 'providers/env';
 
 interface SizeProps {
   small?: boolean;
@@ -26,6 +27,17 @@ interface BuyProps extends SizeProps {
 }
 
 const ENV_VARS = import.meta.env;
+
+const dropdownOptions = [
+  {
+    label: TICKER_SYMBOL.FEI,
+    value: FEI_ADDRESS,
+  },
+  {
+    label: TICKER_SYMBOL.STABLE_TOKEN,
+    value: STABLE_COIN_ADDRESS,
+  },
+];
 
 export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const { balance, getBalance, updateBalance } = useWallet();
@@ -39,13 +51,30 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const [slippage, setSlippage] = useState<number>(1);
   const [minAmountOut, setMinAmountOut] = useState<number>(0);
   const [templeAmount, setTempleAmount] = useState<number | ''>('');
+  const [selectedToken, setSelectedToken] = useState({
+    address: FEI_ADDRESS,
+    symbol: TICKER_SYMBOL.FEI,
+  });
+  const [isFraxHidden, setIsFraxHidden] = useState(true);
+
+  const isIvSwap = (quote: BigNumber | void, value: number) =>
+    !!quote && fromAtto(quote) < value * iv;
 
   const handleUpdateTempleAmount = async (value: number | '') => {
     setTempleAmount(value === 0 ? '' : value);
     if (value) {
-      setRewards(
-        fromAtto((await getSellQuote(toAtto(value))) || BigNumber.from(0) || 0)
-      );
+      const sellQuote = await getSellQuote(toAtto(value));
+
+      // if this sell is going to IVSwap, auto-select FEI
+      if (isIvSwap(sellQuote, value)) {
+        setIsFraxHidden(true);
+        setSelectedToken({
+          symbol: dropdownOptions[0].label,
+          address: dropdownOptions[0].value,
+        });
+      } else setIsFraxHidden(false);
+
+      setRewards(fromAtto(sellQuote || BigNumber.from(0) || 0));
     } else {
       setRewards('');
     }
@@ -64,10 +93,13 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
         const sellQuote = await getSellQuote(toAtto(templeAmount));
 
-        const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
-
-        if (minAmountOut <= rewards || isIvSwap) {
-          await sell(toAtto(templeAmount), toAtto(minAmountOut), isIvSwap);
+        if (minAmountOut <= rewards || isIvSwap(sellQuote, templeAmount)) {
+          await sell(
+            toAtto(templeAmount),
+            toAtto(minAmountOut),
+            isIvSwap(sellQuote, templeAmount),
+            selectedToken.address
+          );
           getBalance();
           handleUpdateTempleAmount(0);
         }
@@ -78,11 +110,18 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   };
 
   useEffect(() => {
-    if (balance) {
-      setStableCoinWalletAmount(balance.stableCoin);
+    const setBalanceState = () => {
       setTempleWalletAmount(balance.temple);
+      if (selectedToken.symbol === TICKER_SYMBOL.FEI) {
+        setStableCoinWalletAmount(balance.fei);
+      } else {
+        setStableCoinWalletAmount(balance.stableCoin);
+      }
+    };
+    if (balance) {
+      setBalanceState();
     }
-  }, [balance]);
+  }, [balance, selectedToken]);
 
   useEffect(() => {
     async function onMount() {
@@ -91,6 +130,11 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       await updateIv();
       setRewards('');
       setMinAmountOut(0);
+
+      // only allow selling for FRAX if we are out of IV swap territory
+      if (templePrice > iv * 1.02) {
+        setIsFraxHidden(false);
+      }
     }
 
     onMount();
@@ -100,7 +144,9 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
     <ViewContainer>
       <TitleWrapper>
         <ConvoFlowTitle>
-          {small ? 'EXCHANGE $TEMPLE FOR $FRAX' : 'ARE YOU SURE, TEMPLAR?'}
+          {small
+            ? `EXCHANGE ${TICKER_SYMBOL.TEMPLE_TOKEN} FOR ${selectedToken.symbol}`
+            : 'ARE YOU SURE, TEMPLAR?'}
         </ConvoFlowTitle>
       </TitleWrapper>
       <Input
@@ -122,11 +168,27 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         isNumber
         pairTop
       />
-      <SwapArrows onClick={onSwapArrowClick} small />
+      <SwapArrows onClick={onSwapArrowClick} small={small} />
       <Input
         small={small}
         hint={`Balance: ${formatNumber(stableCoinWalletAmount)}`}
-        crypto={{ kind: 'value', value: TICKER_SYMBOL.STABLE_TOKEN }}
+        crypto={
+          isFraxHidden
+            ? {
+                kind: 'value',
+                value: selectedToken.symbol,
+              }
+            : {
+                kind: 'select',
+                cryptoOptions: dropdownOptions,
+                onCryptoChange: (e) =>
+                  setSelectedToken({
+                    address: e.value.toString(),
+                    symbol: e.label as TICKER_SYMBOL,
+                  }),
+                defaultValue: dropdownOptions[0],
+              }
+        }
         isNumber
         value={formatNumber(rewards as number)}
         placeholder={'0.00'}
@@ -150,7 +212,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
             ? 'increase slippage'
             : `${
                 small
-                  ? 'EXCHANGE $TEMPLE FOR $FRAX'
+                  ? `EXCHANGE ${TICKER_SYMBOL.TEMPLE_TOKEN} FOR ${selectedToken.symbol}`
                   : `RENOUNCE YOUR ${TICKER_SYMBOL.TEMPLE_TOKEN}`
               }`
         }
