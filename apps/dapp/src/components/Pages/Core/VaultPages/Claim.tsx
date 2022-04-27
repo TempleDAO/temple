@@ -22,8 +22,8 @@ export const Claim = () => {
   });
   const [amount, setAmount] = useState(0);
 
-  // Fix type errors
-  // @ts-ignore
+  // TODO Fix type errors
+  // @ts-ignore 
   const claimableAmount = vault.users?.[0]?.vaultUserBalances?.[0]?.amount || 0;
 
   const buttonIsDisabled = (

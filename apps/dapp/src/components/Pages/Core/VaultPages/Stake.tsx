@@ -21,7 +21,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { toAtto } from 'utils/bigNumber';
 
 // This dummy data will be replaced by the actual contracts
-const dummyOptions = [
+const OPTIONS = [
   { value: '$TEMPLE', label: 'TEMPLE' },
   { value: '$OGTEMPLE', label: 'OGTEMPLE' },
   { value: 'FAITH', label: 'FAITH' },
@@ -30,17 +30,6 @@ const dummyOptions = [
   { value: '$USDC', label: 'USDC' },
   { value: '$FEI', label: 'FEI' },
 ];
-
-// This dummy data will be replaced by the actual contracts
-const dummyWalletBalances = {
-  $FRAX: 4834,
-  $TEMPLE: 12834,
-  $OGTEMPLE: 41834,
-  FAITH: 3954,
-  $ETH: 12,
-  $USDC: 402,
-  $FEI: 945,
-};
 
 // This dummy data will be replaced by the actual contracts
 const dummyCurrencyToTemple: Record<TICKER_SYMBOL, number> = {
@@ -52,8 +41,6 @@ const dummyCurrencyToTemple: Record<TICKER_SYMBOL, number> = {
   $USDC: 49233,
   $FEI: 9293,
 };
-
-const defaultOption = { value: '$TEMPLE', label: 'TEMPLE' };
 
 const useZappedAssetTempleBalance = (
   token: TICKER_SYMBOL,
@@ -81,7 +68,7 @@ export const Stake = () => {
 
   // Currently selected token
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(
-    dummyOptions[0].value as TICKER_SYMBOL
+    OPTIONS[0].value as TICKER_SYMBOL
   );
 
   const [
@@ -146,8 +133,8 @@ export const Stake = () => {
         DEPOSIT{' '}
         <SelectContainer>
           <CryptoSelect
-            options={dummyOptions}
-            defaultValue={defaultOption}
+            options={OPTIONS}
+            defaultValue={OPTIONS[0]}
             onChange={(val: Option) => {
               setTicker(val.value as TICKER_SYMBOL);
               setStakingAmount(0);
