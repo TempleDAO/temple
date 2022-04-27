@@ -1,73 +1,69 @@
 import { useState } from 'react';
 import styled from 'styled-components';
-import { BigNumber } from 'ethers';
 
 import { VaultInput } from 'components/Input/VaultInput';
-import { Button } from 'components/Button/Button';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberWithCommas } from 'utils/formatter';
 import { copyBalance } from 'components/AMM/helpers/methods';
 import { Header } from 'styles/vault';
-import useRequestState, { createMockRequest } from 'hooks/use-request-state';
-import { toAtto } from 'utils/bigNumber';
 import VaultContent, {
   VaultButton,
 } from 'components/Pages/Core/VaultPages/VaultContent';
-
-const useClaimTempleRequest = (amount: BigNumber) => {
-  const claimTemple = createMockRequest({ success: true }, 1000, true);
-  return useRequestState(() => claimTemple(amount));
-};
+import { useWithdrawFromVault } from 'hooks/use-deposit-to-vault';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
+import useVaultContext from './useVaultContext';
 
 export const Claim = () => {
-  const [templeAmount, setTempleAmount] = useState<number | ''>('');
-  const [templeWalletAmount, setTempleWalletAmount] =
-    useState<number>(12_345_678.12);
-  const [claimRequest, { isLoading, error }] = useClaimTempleRequest(
-    toAtto(templeAmount || 0)
+  const vault = useVaultContext();
+  const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
+  const [{ loading: withdrawIsLoading, error }, withdraw] = useWithdrawFromVault(vault.id, async () => {
+    await refreshWalletState();
+    // TODO Refetch wallet from graph.
+  });
+  const [amount, setAmount] = useState(0);
+
+  // Fix type errors
+  // @ts-ignore
+  const claimableAmount = vault.users?.[0]?.vaultUserBalances?.[0]?.amount || 0;
+
+  const buttonIsDisabled = (
+    refreshLoading ||
+    withdrawIsLoading ||
+    !amount || 
+    amount > claimableAmount
   );
-
-  const handleUpdateTempleAmount = async (value: number) => {
-    setTempleAmount(value === 0 ? '' : value);
-  };
-
-  const buttonIsDisabled =
-    isLoading || !templeAmount || templeAmount > templeWalletAmount;
 
   return (
     <VaultContent>
       <Header>Claim</Header>
-
       <ClaimableLabel>
         Claimable Temple
         <TempleAmountLink
-          onClick={() => copyBalance(templeWalletAmount, setTempleAmount)}
+          onClick={() => copyBalance(claimableAmount, setAmount)}
         >
-          {formatNumberWithCommas(templeWalletAmount)}
+          {formatNumberWithCommas(claimableAmount)}
         </TempleAmountLink>
       </ClaimableLabel>
       <VaultInput
         tickerSymbol={TICKER_SYMBOL.TEMPLE_TOKEN}
-        handleChange={handleUpdateTempleAmount}
+        handleChange={(value: number) => {
+          setAmount(value || 0);
+        }}
         isNumber
-        placeholder={'0.00'}
-        value={templeAmount}
+        placeholder="0.00"
+        value={amount}
       />
       {!!error && (
         <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>
       )}
-
       <VaultButton
         label={'claim'}
         autoWidth
         marginTop={error ? '0.5rem' : '3.5rem'}
         disabled={buttonIsDisabled}
         onClick={async () => {
-          try {
-            return claimRequest();
-          } catch (error) {
-            // intentionally empty, handled in hook
-          }
+          await withdraw(amount);
+          setAmount(0);
         }}
       />
     </VaultContent>

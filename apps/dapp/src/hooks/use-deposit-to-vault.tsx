@@ -21,9 +21,9 @@ type HookReturnType = [
 
 const ENV = import.meta.env;
 
-type OnSuccessCallback = () => Promise<void> | (() => void);
+type Callback = () => Promise<void> | (() => void);
 
-const useDepositToVault = (vaultContractAddress: string, onSuccess?: OnSuccessCallback): HookReturnType => {
+export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Callback): HookReturnType => {
   const { signer, wallet } = useWallet();
   const isMounted = useIsMounted();
   const [loading, setLoading] = useState(false);
@@ -77,4 +77,51 @@ const useDepositToVault = (vaultContractAddress: string, onSuccess?: OnSuccessCa
   return [{ loading, error }, deposit];
 };
 
-export default useDepositToVault;
+export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: Callback): HookReturnType => {
+  const { signer, wallet } = useWallet();
+  const isMounted = useIsMounted();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Nullable<MetaMaskError>>(null);
+
+  const withdraw = useCallback(async (amount: number) => {
+    if (!signer || !wallet) {
+      console.error(`
+        Attempted to withdraw from vault: ${vaultContractAddress} without a valid signer.
+      `);
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+
+    try {
+      const bigAmount = toAtto(amount);
+      const vault = new Vault__factory(signer).attach(vaultContractAddress);
+      
+      const receipt = await vault.withdraw(bigAmount);
+      await receipt.wait();
+     
+      if (onSuccess) {
+        await onSuccess();
+      }
+    } catch (err) {
+      if (isMounted.current) {
+        setError(err as MetaMaskError);
+      }
+    } finally {
+      if (isMounted.current) {
+        setLoading(false);
+      }
+    }
+  }, [
+    signer,
+    vaultContractAddress,
+    isMounted,
+    setLoading,
+    setError,
+    wallet,
+  ]);
+  
+  return [{ loading, error }, withdraw];
+};
+

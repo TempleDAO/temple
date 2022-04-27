@@ -40,7 +40,7 @@ const createGetVaultRequest = (vaultAddress: string, walletAddress = ''): AxiosR
           tvl
           id
           users(where: {id: "${walletAddress.toLowerCase()}"}) {
-            vaultUserBalances(orderBy: timestamp) {
+            vaultUserBalances(orderBy: timestamp where: { id: "${vaultAddress.toLowerCase()}${walletAddress.toLowerCase()}" }) {
               id
               timestamp
               value
@@ -155,3 +155,8 @@ export const useGetVaultUser = (address: string, skip = false) => {
     error,
   }
 };
+
+export const useClaimFromVault = (vaultAddress: string, ) => {
+
+
+}

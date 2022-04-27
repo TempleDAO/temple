@@ -15,7 +15,7 @@ import { CryptoSelect } from 'components/Input/CryptoSelect';
 import useRequestState, { createMockRequest } from 'hooks/use-request-state';
 import EllipsisLoader from 'components/EllipsisLoader';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
-import useDepositToVault from 'hooks/use-deposit-to-vault';
+import { useDepositToVault } from 'hooks/use-deposit-to-vault';
 import useVaultContext from './useVaultContext';
 import { useWallet } from 'providers/WalletProvider';
 import { toAtto } from 'utils/bigNumber';
@@ -77,7 +77,7 @@ export const Stake = () => {
   const [{ loading: depositLoading, error: depositError }, deposit] = useDepositToVault(vault.id, refreshWalletState);
 
   // UI amount to stake
-  const [stakingAmount, setStakingAmount] = useState<number | ''>('');
+  const [stakingAmount, setStakingAmount] = useState(0);
 
   // Currently selected token
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(
@@ -89,11 +89,11 @@ export const Stake = () => {
     { response: zapRepsonse, error: zapError, isLoading: zapLoading },
   ] = useZappedAssetTempleBalance(
     ticker,
-    toAtto(!stakingAmount ? 0 : stakingAmount)
+    toAtto(stakingAmount)
   );
 
   const handleUpdateStakingAmount = (value: number) => {
-    setStakingAmount(value === 0 ? '' : value);
+    setStakingAmount(value || 0);
 
     // If there is a value present and its not TEMPLE request the zapped value.
     if (ticker !== TICKER_SYMBOL.TEMPLE_TOKEN && !!value) {
@@ -118,7 +118,7 @@ export const Stake = () => {
     : (stakingAmount && zapRepsonse?.templeAmount) || 0;
   const stakeButtonDisabled =
     refreshIsLoading || !templeAmount || depositLoading || zapLoading || (isZap && !!zapError);
-  console.log('refresh loading', refreshIsLoading);
+
   let templeAmountMessage: ReactNode = '';
   if (zapError) {
     templeAmountMessage = zapError.message || 'Something went wrong';
@@ -150,7 +150,7 @@ export const Stake = () => {
             defaultValue={defaultOption}
             onChange={(val: Option) => {
               setTicker(val.value as TICKER_SYMBOL);
-              setStakingAmount('');
+              setStakingAmount(0);
             }}
           />
         </SelectContainer>
