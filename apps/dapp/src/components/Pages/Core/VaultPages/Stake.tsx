@@ -75,13 +75,16 @@ const useZappedAssetTempleBalance = (
 const ENV = import.meta.env;
 
 export const Stake = () => {
-  const { balance } = useWallet();
   const vault = useVaultContext();
+  const { balance } = useWallet();
 
   const [{ loading: depositLoading, error: depositError }, deposit] = useDepositToVault(vault.id);
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
 
+  // UI amount to stake
   const [stakingAmount, setStakingAmount] = useState<number | ''>('');
+
+  // Currently selected token
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(
     dummyOptions[0].value as TICKER_SYMBOL
   );
@@ -118,7 +121,7 @@ export const Stake = () => {
     }
     console.error(`Programming Error: ${ticker} not implemented.`);
     return 0;
-  }
+  };
 
   const tokenBalance = getBalance();
 

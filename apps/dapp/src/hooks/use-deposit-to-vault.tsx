@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { useSigner } from 'wagmi';
 
 import {
   Vault__factory,
@@ -8,6 +7,7 @@ import {
 import { toAtto } from 'utils/bigNumber';
 import useIsMounted from 'hooks/use-is-mounted';
 import { Nullable } from 'types/util';
+import { useWallet } from 'providers/WalletProvider';
 
 type MetaMaskError = Error & { data?: { message: string } };
 
@@ -22,15 +22,16 @@ type HookReturnType = [
 const ENV = import.meta.env;
 
 const useDepositToVault = (vaultContractAddress: string): HookReturnType => {
-  const [{ data: signer }] = useSigner();
+  const { signer, wallet } = useWallet();
   const isMounted = useIsMounted();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Nullable<MetaMaskError>>(null);
 
   const deposit = useCallback(async (amount: number) => {
-    if (!signer) {
+    if (!signer || !wallet) {
       console.error(`
-        Attempted to deposit to vault: ${vaultContractAddress} without a signer.`);
+        Attempted to deposit to vault: ${vaultContractAddress} without a valid signer or wallet address.
+      `);
       return;
     }
     
@@ -39,7 +40,6 @@ const useDepositToVault = (vaultContractAddress: string): HookReturnType => {
 
     try {
       const bigAmount = toAtto(amount);
-      const wallet = await signer.getAddress();
       const temple = new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
       const vault = new Vault__factory(signer).attach(vaultContractAddress);
       const allowance = await temple.allowance(wallet, vault.address);
@@ -64,6 +64,7 @@ const useDepositToVault = (vaultContractAddress: string): HookReturnType => {
     isMounted,
     setLoading,
     setError,
+    wallet,
   ]);
   
   return [{ loading, error }, deposit];
