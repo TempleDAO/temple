@@ -9,7 +9,7 @@ import { Header } from 'styles/vault';
 import VaultContent, {
   VaultButton,
 } from 'components/Pages/Core/VaultPages/VaultContent';
-import { useWithdrawFromVault } from 'hooks/use-deposit-to-vault';
+import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import useVaultContext from './useVaultContext';
 

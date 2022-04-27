@@ -1,9 +1,8 @@
-import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 
 import Loader from 'components/Loader/Loader';
-import { useListCoreVaults } from 'hooks/graphql/use-core-vaults';
+import { useListCoreVaults } from 'hooks/core/subgraph';
 
 const VaultListPage = () => {
   const { vaults, isLoading, error } = useListCoreVaults();
@@ -12,8 +11,12 @@ const VaultListPage = () => {
     return <Loader />;
   }
 
+  if (error) {
+    return <>Something went wrong...</>;
+  }
+
   if (!vaults.length) {
-    return <>No Vaults</>
+    return <>There currently are no vaults.</>;
   }
 
   if (vaults.length === 1) {

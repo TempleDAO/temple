@@ -6,7 +6,7 @@ import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Vault } from 'components/Vault/types';
 import { Spinner } from 'components/LoaderVault/Spinner';
 import { VAULT_CONTRACT_INFO } from 'constants/core';
-import { useGetCoreVault } from 'hooks/graphql/use-core-vaults';
+import { useGetCoreVault } from 'hooks/core/subgraph';
 
 const ENV = import.meta.env;
 

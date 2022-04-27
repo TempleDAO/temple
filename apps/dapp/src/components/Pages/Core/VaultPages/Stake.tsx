@@ -15,7 +15,7 @@ import { CryptoSelect } from 'components/Input/CryptoSelect';
 import useRequestState, { createMockRequest } from 'hooks/use-request-state';
 import EllipsisLoader from 'components/EllipsisLoader';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
-import { useDepositToVault } from 'hooks/use-deposit-to-vault';
+import { useDepositToVault } from 'hooks/core/use-deposit-to-vault';
 import useVaultContext from './useVaultContext';
 import { useWallet } from 'providers/WalletProvider';
 import { toAtto } from 'utils/bigNumber';
