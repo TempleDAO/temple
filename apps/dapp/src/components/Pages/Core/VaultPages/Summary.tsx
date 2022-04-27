@@ -22,7 +22,6 @@ export const Summary = () => {
   return (
     <VaultContent>
       <Title>{vault.months} MONTH</Title>
-      {/* <Text1>Vault</Text1> */}
       <Text2
         light
         as="a"

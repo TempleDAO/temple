@@ -1,5 +1,12 @@
+interface Subgraphs {
+  templeCore: string;
+}
+
+interface Tokens {
+  temple: string;
+}
+
 export interface Environment {
-  subgraph: {
-    templeCore: string;
-  };
+  subgraph: Subgraphs;
+  tokens?: Tokens;
 }

@@ -55,11 +55,6 @@ const dummyCurrencyToTemple: Record<TICKER_SYMBOL, number> = {
 
 const defaultOption = { value: '$TEMPLE', label: 'TEMPLE' };
 
-const useStakeAssetRequest = (token: TICKER_SYMBOL, amount: BigNumber) => {
-  const stakeAssetRequest = createMockRequest({ success: true }, 1000, true);
-  return useRequestState(() => stakeAssetRequest(token, amount));
-};
-
 const useZappedAssetTempleBalance = (
   token: TICKER_SYMBOL,
   amount: BigNumber
@@ -89,9 +84,6 @@ export const Stake = () => {
     dummyOptions[0].value as TICKER_SYMBOL
   );
 
-  const [stakeAssetsRequest, { isLoading: stakeLoading, error: stakeError }] =
-    useStakeAssetRequest(ticker, toAtto(!stakingAmount ? 0 : stakingAmount));
-
   const [
     zapAssetRequest,
     { response: zapRepsonse, error: zapError, isLoading: zapLoading },
@@ -99,11 +91,6 @@ export const Stake = () => {
     ticker,
     toAtto(!stakingAmount ? 0 : stakingAmount)
   );
-
-  const handleTickerUpdate = (val: Option) => {
-    setTicker(val.value as TICKER_SYMBOL);
-    setStakingAmount('');
-  };
 
   const handleUpdateStakingAmount = (value: number) => {
     setStakingAmount(value === 0 ? '' : value);
@@ -114,7 +101,7 @@ export const Stake = () => {
     }
   };
 
-  const getBalance = () => {
+  const getTokenBalanceForCurrentTicker = () => {
     switch (ticker) {
       case TICKER_SYMBOL.TEMPLE_TOKEN:
         return balance.temple;
@@ -123,23 +110,15 @@ export const Stake = () => {
     return 0;
   };
 
-  const tokenBalance = getBalance();
-
-  const handleHintClick = () => {
-    handleUpdateStakingAmount(tokenBalance);
-  };
-
-  useEffect(() => {
-    handleTickerUpdate(defaultOption);
-  }, []);
+  const tokenBalance = getTokenBalanceForCurrentTicker();
 
   const isZap = ticker !== TICKER_SYMBOL.TEMPLE_TOKEN;
   const templeAmount = !isZap
     ? stakingAmount
     : (stakingAmount && zapRepsonse?.templeAmount) || 0;
   const stakeButtonDisabled =
-    refreshIsLoading || !templeAmount || depositLoading || stakeLoading || zapLoading || (isZap && !!zapError);
-
+    refreshIsLoading || !templeAmount || depositLoading || zapLoading || (isZap && !!zapError);
+  console.log('refresh loading', refreshIsLoading);
   let templeAmountMessage: ReactNode = '';
   if (zapError) {
     templeAmountMessage = zapError.message || 'Something went wrong';
@@ -169,7 +148,10 @@ export const Stake = () => {
           <CryptoSelect
             options={dummyOptions}
             defaultValue={defaultOption}
-            onChange={handleTickerUpdate}
+            onChange={(val: Option) => {
+              setTicker(val.value as TICKER_SYMBOL);
+              setStakingAmount('');
+            }}
           />
         </SelectContainer>
       </DepositContainer>
@@ -177,7 +159,9 @@ export const Stake = () => {
         tickerSymbol={ticker}
         handleChange={handleUpdateStakingAmount}
         hint={`Balance: ${formatNumber(tokenBalance)}`}
-        onHintClick={handleHintClick}
+        onHintClick={() => {
+          handleUpdateStakingAmount(tokenBalance);
+        }}
         isNumber
         placeholder={'0.00'}
         value={stakingAmount}
@@ -185,7 +169,7 @@ export const Stake = () => {
       <AmountInTemple>{isZap && templeAmountMessage}</AmountInTemple>
       {!!error && <ErrorLabel>{error}</ErrorLabel>}
       <VaultButton
-        label={'stake'}
+        label="Stake"
         autoWidth
         disabled={stakeButtonDisabled}
         loading={refreshIsLoading || depositLoading}

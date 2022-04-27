@@ -48,7 +48,8 @@ const useDepositToVault = (vaultContractAddress: string): HookReturnType => {
         await temple.increaseAllowance(vault.address, bigAmount);
       }
 
-      await vault.deposit(bigAmount);
+      const receipt = await vault.deposit(bigAmount);
+      await receipt.wait();
     } catch (err) {
       if (isMounted.current) {
         setError(err as MetaMaskError);
@@ -68,6 +69,6 @@ const useDepositToVault = (vaultContractAddress: string): HookReturnType => {
   ]);
   
   return [{ loading, error }, deposit];
-}
+};
 
 export default useDepositToVault;
