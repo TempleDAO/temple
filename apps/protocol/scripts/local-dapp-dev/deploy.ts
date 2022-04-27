@@ -170,6 +170,8 @@ async function main() {
     fei.address
   );
 
+  await mineNBlocks(5);
+
   const templeRouter = await new TempleStableAMMRouter__factory(owner).deploy(
     templeToken.address,
     treasury.address,
