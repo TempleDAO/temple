@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
 import { VaultInput } from 'components/Input/VaultInput';
@@ -11,48 +11,64 @@ import VaultContent, {
 } from 'components/Pages/Core/VaultPages/VaultContent';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
+import { useGetCoreVaultUserDeposits } from 'hooks/core/subgraph';
+import Loader from 'components/Loader/Loader';
 import useVaultContext from './useVaultContext';
+import { Nullable } from 'types/util';
 
 export const Claim = () => {
   const vault = useVaultContext();
+  const { isLoading: balancesLoading, vaultUserBalances } = useGetCoreVaultUserDeposits(vault.id);
   const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
   const [{ loading: withdrawIsLoading, error }, withdraw] = useWithdrawFromVault(vault.id, async () => {
     await refreshWalletState();
-    // TODO Refetch wallet from graph.
   });
-  const [amount, setAmount] = useState(0);
 
-  // TODO Fix type errors
-  // @ts-ignore 
-  const claimableAmount = vault.users?.[0]?.vaultUserBalances?.[0]?.amount || 0;
+  const claimableAmount = vaultUserBalances?.[0]?.amount || 0;
+ 
+  const [vaultBalance, setVaultBalance] = useState<Nullable<number>>(null);
+  useEffect(() => {
+    if (vaultBalance !== null || balancesLoading) {
+      return;
+    }
+    setVaultBalance(Number(claimableAmount));
+  }, [vaultBalance, setVaultBalance, balancesLoading, claimableAmount]);
+  
+  
+  const [amount, setAmount] = useState(0);
 
   const buttonIsDisabled = (
     refreshLoading ||
     withdrawIsLoading ||
     !amount || 
-    amount > claimableAmount
+    amount > (vaultBalance || 0)
   );
+
+  let claimLabel = null;
+  if (vaultBalance !== null) {
+    claimLabel = vaultBalance > 0 ? (
+      <ClaimableLabel>
+        Claimable Temple
+          <TempleAmountLink
+            onClick={() => copyBalance(vaultBalance, setAmount)}
+          >
+            {formatNumberWithCommas(vaultBalance)}
+          </TempleAmountLink>
+      </ClaimableLabel>
+    ) : (
+      <ClaimableLabel>
+        Nothing to claim
+        <TempleAmountLink>
+          &nbsp; {/* Note: this node is here for formatting/spacing */}
+        </TempleAmountLink>
+      </ClaimableLabel>
+    );
+  }
 
   return (
     <VaultContent>
       <Header>Claim</Header>
-      {claimableAmount > 0 ? (
-        <ClaimableLabel>
-          Claimable Temple
-            <TempleAmountLink
-              onClick={() => copyBalance(claimableAmount, setAmount)}
-            >
-              {formatNumberWithCommas(claimableAmount)}
-            </TempleAmountLink>
-        </ClaimableLabel>
-      ) : (
-        <ClaimableLabel>
-          Nothing to claim
-          <TempleAmountLink>
-            &nbsp; {/* Note: this node is here for formatting/spacing */}
-          </TempleAmountLink>
-        </ClaimableLabel>
-      )}
+      {claimLabel}
       <VaultInput
         tickerSymbol={TICKER_SYMBOL.TEMPLE_TOKEN}
         handleChange={(value: number) => {
@@ -72,6 +88,12 @@ export const Claim = () => {
         disabled={buttonIsDisabled}
         onClick={async () => {
           await withdraw(amount);
+          setVaultBalance((balance) => {
+            if (!balance) {
+              return balance;
+            }
+            return balance - amount;
+          });
           setAmount(0);
         }}
       />

@@ -1,4 +1,4 @@
-import { differenceInSeconds } from 'date-fns';
+import { differenceInSeconds, formatDistance } from 'date-fns';
 import { Entry, Vault, MarkerType } from '../types';
 
 export const SECONDS_IN_MONTH = 2_629_800;
@@ -10,9 +10,15 @@ export const processData = (originalData: any) => {
   data.now = new Date(Date.now());
   data.entries = []
 
+  // const now = new Date(Date.now())
+  // // const x =new Date(data.periodDuration);
+  // console.log(formatDistance(now, new Date(Number(data.periodDuration) + now.getTime())));
+
   data.currentCycle = getCurrentCycle(data.startDate, data.months, data.now);
 
-  data.entries = data.entries.map((e: any) => {
+  const deposits = (data.users?.[0]?.desposits || []);
+  console.log(deposits)
+  data.entries = deposits.map((e: any) => {
     const entry = { ...e }; // shallow copy
     entry.entryDate = new Date(entry.entryDate as Date);
     entry.percent = calculatePercent(entry, data);

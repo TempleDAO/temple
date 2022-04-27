@@ -83,6 +83,7 @@ const createGetVaultUserRequest = (address: string): AxiosRequestConfig => {
           id
           timestamp
           totalBalance
+          periodDuration
           deposits {
             id
             timestamp
@@ -92,6 +93,27 @@ const createGetVaultUserRequest = (address: string): AxiosRequestConfig => {
     },
   };
 };
+
+
+const creatGetUserBalances = (vaultAddress: string, walletAddress: string): AxiosRequestConfig => {
+  return {
+    method: 'post',
+    url: env.subgraph.templeCore,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: {
+      query: `{
+        vaultUserBalances(orderBy: timestamp where: { id: "${vaultAddress.toLowerCase()}${walletAddress.toLowerCase()}" }) {
+          id
+          timestamp
+          value
+          amount
+        }
+      }`,
+    },
+  };
+}
 
 export const useListCoreVaults = () => {
   const getVaults = useCallback(() => axios(createGetCoreVaultsRequest()), []);
@@ -138,25 +160,32 @@ export const useGetCoreVault = (vaultAddress: string) => {
   };
 };
 
-export const useGetVaultUser = (address: string, skip = false) => {
-  const getVaultUser = useCallback(() => axios(createGetVaultUserRequest(address)), [address]);
-  const [request, { response, isLoading, error }] = useRequestState(getVaultUser);
+export const useGetCoreVaultUserDeposits = (vaultAddress: string) => {
+  const { wallet, isConnecting } = useWallet();
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const getVault = useCallback(
+    () => axios(creatGetUserBalances(vaultAddress, wallet || '')), [vaultAddress, wallet]);
+
+  const [request, { response, error }] = useRequestState(getVault);
+
+  const wrappedRequest = useCallback(async () => {
+    setIsLoading(true);
+    await request();
+    setIsLoading(false);
+  }, [request, setIsLoading]);
 
   useEffect(() => {
-    if (skip) {
+    if (isConnecting || !wallet) {
       return;
     }
-    request();
-  }, [request]);
+
+    wrappedRequest();
+  }, [request, isConnecting, wallet]);
 
   return {
-    user: response?.data?.data?.user || null,
     isLoading,
     error,
-  }
+    vaultUserBalances: response?.data?.data?.vaultUserBalances || [],
+  };
 };
-
-export const useClaimFromVault = (vaultAddress: string, ) => {
-
-
-}
