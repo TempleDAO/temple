@@ -36,24 +36,34 @@ const createGetVaultRequest = (vaultAddress: string, walletAddress = ''): AxiosR
     },
     data: {
       query: `{
-        vault(id: "${vaultAddress}") {
-          id
-          name
-          joiningFee
-          periodDuration
-          shareBoostFactor
-          symbol
-          templeToken
-          timestamp
+        vault(id: "${vaultAddress.toLowerCase()}") {
           tvl
-          firstPeriodStartTimestamp
-          enterExitWindowDuration
-          users(where: {id:"${walletAddress}"}) {
-            id
-            vaultUserBalances {
+          id
+          users(where: {id: "${walletAddress.toLowerCase()}"}) {
+            vaultUserBalances(orderBy: timestamp) {
               id
+              timestamp
+              value
+              amount
+            }
+            id
+            totalBalance
+            depositsBalance
+            deposits {
+              amount
+              id
+              timestamp
+              value
             }
           }
+          timestamp
+          templeToken
+          symbol
+          shareBoostFactor
+          periodDuration
+          name
+          joiningFee
+          enterExitWindowDuration
         }
       }`,
     },
@@ -100,7 +110,7 @@ export const useListCoreVaults = () => {
 
 export const useGetCoreVault = (vaultAddress: string) => {
   const { wallet, isConnecting } = useWallet();
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   
   const getVault = useCallback(
     () => axios(createGetVaultRequest(vaultAddress, wallet || '')), [vaultAddress, wallet]);
@@ -113,9 +123,9 @@ export const useGetCoreVault = (vaultAddress: string) => {
     }
 
     const getVault = async () => {
-      setLoading(true);
+      setIsLoading(true);
       await request();
-      setLoading(false);
+      setIsLoading(false);
     };
 
     getVault();
@@ -123,7 +133,7 @@ export const useGetCoreVault = (vaultAddress: string) => {
 
   return {
     vault: response?.data?.data?.vault || null,
-    isLoading: loading || requestPending,
+    isLoading: isLoading || requestPending,
     error,
   };
 };

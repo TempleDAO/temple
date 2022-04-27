@@ -21,7 +21,9 @@ type HookReturnType = [
 
 const ENV = import.meta.env;
 
-const useDepositToVault = (vaultContractAddress: string): HookReturnType => {
+type OnSuccessCallback = () => Promise<void> | (() => void);
+
+const useDepositToVault = (vaultContractAddress: string, onSuccess?: OnSuccessCallback): HookReturnType => {
   const { signer, wallet } = useWallet();
   const isMounted = useIsMounted();
   const [loading, setLoading] = useState(false);
@@ -50,6 +52,10 @@ const useDepositToVault = (vaultContractAddress: string): HookReturnType => {
 
       const receipt = await vault.deposit(bigAmount);
       await receipt.wait();
+     
+      if (onSuccess) {
+        await onSuccess();
+      }
     } catch (err) {
       if (isMounted.current) {
         setError(err as MetaMaskError);

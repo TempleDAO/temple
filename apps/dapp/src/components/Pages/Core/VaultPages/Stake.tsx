@@ -73,8 +73,8 @@ export const Stake = () => {
   const vault = useVaultContext();
   const { balance } = useWallet();
 
-  const [{ loading: depositLoading, error: depositError }, deposit] = useDepositToVault(vault.id);
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
+  const [{ loading: depositLoading, error: depositError }, deposit] = useDepositToVault(vault.id, refreshWalletState);
 
   // UI amount to stake
   const [stakingAmount, setStakingAmount] = useState<number | ''>('');
@@ -176,7 +176,6 @@ export const Stake = () => {
         onClick={async () => {
           const amountToDeposit = !stakingAmount ? 0 : stakingAmount;
           await deposit(amountToDeposit);
-          refreshWalletState();
           setStakingAmount(0);
         }}
       />
