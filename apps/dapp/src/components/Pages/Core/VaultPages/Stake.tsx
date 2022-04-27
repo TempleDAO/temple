@@ -14,22 +14,11 @@ import { VaultInput } from 'components/Input/VaultInput';
 import { CryptoSelect } from 'components/Input/CryptoSelect';
 import useRequestState, { createMockRequest } from 'hooks/use-request-state';
 import EllipsisLoader from 'components/EllipsisLoader';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import useDepositToVault from 'hooks/use-deposit-to-vault';
 import useVaultContext from './useVaultContext';
 import { useWallet } from 'providers/WalletProvider';
-import { fromAtto, toAtto } from 'utils/bigNumber';
-import {
-  ERC20,
-  ERC20__factory,
-  TempleERC20Token__factory,
-  LockedOGTemple__factory,
-  TempleStaking__factory,
-  OGTemple__factory,
-  TempleTeamPayments__factory,
-  LockedOGTempleDeprecated__factory,
-} from 'types/typechain';
-import { useSigner } from 'wagmi';
-import { useMemo } from 'react';
+import { toAtto } from 'utils/bigNumber';
 
 // This dummy data will be replaced by the actual contracts
 const dummyOptions = [
@@ -90,12 +79,12 @@ export const Stake = () => {
   const vault = useVaultContext();
 
   const [{ loading: depositLoading, error: depositError }, deposit] = useDepositToVault(vault.id);
+  const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
 
   const [stakingAmount, setStakingAmount] = useState<number | ''>('');
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(
     dummyOptions[0].value as TICKER_SYMBOL
   );
-  // const [walletCurrencyBalance, setWalletCurrencyBalance] = useState<number>(0);
 
   const [stakeAssetsRequest, { isLoading: stakeLoading, error: stakeError }] =
     useStakeAssetRequest(ticker, toAtto(!stakingAmount ? 0 : stakingAmount));
@@ -122,8 +111,19 @@ export const Stake = () => {
     }
   };
 
+  const getBalance = () => {
+    switch (ticker) {
+      case TICKER_SYMBOL.TEMPLE_TOKEN:
+        return balance.temple;
+    }
+    console.error(`Programming Error: ${ticker} not implemented.`);
+    return 0;
+  }
+
+  const tokenBalance = getBalance();
+
   const handleHintClick = () => {
-    handleUpdateStakingAmount(walletCurrencyBalance);
+    handleUpdateStakingAmount(tokenBalance);
   };
 
   useEffect(() => {
@@ -135,7 +135,7 @@ export const Stake = () => {
     ? stakingAmount
     : (stakingAmount && zapRepsonse?.templeAmount) || 0;
   const stakeButtonDisabled =
-    !templeAmount || depositLoading || stakeLoading || zapLoading || (isZap && !!zapError);
+    refreshIsLoading || !templeAmount || depositLoading || stakeLoading || zapLoading || (isZap && !!zapError);
 
   let templeAmountMessage: ReactNode = '';
   if (zapError) {
@@ -173,7 +173,7 @@ export const Stake = () => {
       <VaultInput
         tickerSymbol={ticker}
         handleChange={handleUpdateStakingAmount}
-        hint={`Balance: ${formatNumber(walletCurrencyBalance)}`}
+        hint={`Balance: ${formatNumber(tokenBalance)}`}
         onHintClick={handleHintClick}
         isNumber
         placeholder={'0.00'}
@@ -185,10 +185,11 @@ export const Stake = () => {
         label={'stake'}
         autoWidth
         disabled={stakeButtonDisabled}
-        loading={depositLoading}
+        loading={refreshIsLoading || depositLoading}
         onClick={async () => {
           const amountToDeposit = !stakingAmount ? 0 : stakingAmount;
           await deposit(amountToDeposit);
+          refreshWalletState();
           setStakingAmount(0);
         }}
       />

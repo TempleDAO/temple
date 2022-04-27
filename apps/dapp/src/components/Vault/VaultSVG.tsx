@@ -46,7 +46,6 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
     // setMarkerPosition(marketCenterInSVGCoords);
     // setSelectedEntry(entryData);
   };
-
   const vault = processData(data);
   return isDesktop ? (
     <VaultDesktop

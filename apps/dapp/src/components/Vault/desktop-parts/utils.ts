@@ -3,11 +3,16 @@ import { Entry, Vault, MarkerType } from '../types';
 
 export const SECONDS_IN_MONTH = 2_629_800;
 
-export const processData = (originalData: Vault) => {
+export const processData = (originalData: any) => {
   const data = { ...originalData }; // shallow copy
+
+  data.startDate = new Date(data.firstPeriodStartTimestamp!);
+  data.now = new Date(Date.now());
+  data.entries = []
+
   data.currentCycle = getCurrentCycle(data.startDate, data.months, data.now);
 
-  data.entries = data.entries.map((e) => {
+  data.entries = data.entries.map((e: any) => {
     const entry = { ...e }; // shallow copy
     entry.entryDate = new Date(entry.entryDate as Date);
     entry.percent = calculatePercent(entry, data);

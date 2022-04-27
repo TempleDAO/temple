@@ -5,7 +5,7 @@ import {
   useState,
 } from 'react';
 import { BigNumber, Signer } from 'ethers';
-import { useAccount, useSigner, useNetwork, useProvider } from 'wagmi';
+import { useAccount, useSigner, useNetwork, useProvider, useConnect } from 'wagmi';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
 import { useNotification } from 'providers/NotificationProvider';
@@ -49,6 +49,7 @@ const INITIAL_STATE: WalletState = {
   },
   wallet: null,
   isConnected: false,
+  isConnecting: false,
   connectWallet: noop,
   changeWalletAddress: noop,
   signer: null,
@@ -66,11 +67,12 @@ const WalletContext = createContext<WalletState>(INITIAL_STATE);
 export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
   
-  const [{ data: signer }] = useSigner();
+  const [{ data: signer, loading: signerLoading }] = useSigner();
   const [{ data: network }] = useNetwork();
-  const [{ data: accountData }] = useAccount();
+  const [{ data: accountData, loading: accountLoading }] = useAccount();
+  const [{ loading: connectLoading }] = useConnect();
   const provider = useProvider();
-
+  
   const { openNotification } = useNotification();
   const [balanceState, setBalanceState] = useState<Balance>(
     INITIAL_STATE.balance
@@ -238,7 +240,8 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     <WalletContext.Provider
       value={{
         balance: balanceState,
-        isConnected,
+        isConnected: isConnected,
+        isConnecting: signerLoading || connectLoading || accountLoading,
         wallet: walletAddress || null,
         connectWallet,
         changeWalletAddress,

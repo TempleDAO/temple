@@ -137,7 +137,8 @@ export interface WalletState {
   balance: Balance;
   signer: Nullable<Signer>;
   network: Nullable<Network>;
-
+  
+  isConnecting: boolean;
   isConnected: boolean;
 
   connectWallet(): void;
