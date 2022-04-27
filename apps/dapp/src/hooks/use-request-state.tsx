@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
 import { Nullable } from 'types/util';
 
-type Request<T> = () => Promise<T>;
+type Request<T, A extends any> = (args?: A) => Promise<T>;
 
-export const createMockRequest = <T extends object>(
+export const createMockRequest = <T extends any>(
   response: T,
   requestTimeMs = 500,
   canThrowError = false,
@@ -29,22 +29,23 @@ type RequestResponseState<T> = {
   response: Nullable<T>,
 };
 
-type UseRequestStateReturnType<T extends object> = [
-  () => Promise<void>,
+type UseRequestStateReturnType<T extends any, A extends any> = [
+  (args?: A) => Promise<Nullable<T>>,
   RequestResponseState<T>,
 ];
 
-const useRequestState = <T extends object>(request: Request<T>): UseRequestStateReturnType<T> => {
+const useRequestState = <T extends any, A extends any>(request: Request<T, A>): UseRequestStateReturnType<T, A> => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Nullable<Error>>(null);
   const [response, setResponse] = useState<Nullable<T>>(null);
   
-  const wrappedRequest = useCallback(async () => {
+  const wrappedRequest = useCallback(async (args?: A) => {
     setError(null);
     setIsLoading(true);
 
+    let response: Nullable<T> = null;
     try {
-      const response = await request();
+      response = await request(args);
       setResponse(response);
     } catch (error) {
       setResponse(null);
@@ -52,6 +53,7 @@ const useRequestState = <T extends object>(request: Request<T>): UseRequestState
     } finally {
       setIsLoading(false);
     }
+    return response;
   }, [request, setIsLoading, setResponse, setError]);
 
   return [
