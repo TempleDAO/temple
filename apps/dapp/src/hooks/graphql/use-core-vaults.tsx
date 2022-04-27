@@ -1,14 +1,14 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import axios, { AxiosRequestConfig } from 'axios';
 
 import useRequestState from 'hooks/use-request-state';
 import { useWallet } from 'providers/WalletProvider';
-import { useState } from 'react';
+import env from 'constants/env';
 
 const createGetCoreVaultsRequest = (): AxiosRequestConfig => {
   return {
     method: 'post',
-    url: 'http://localhost:8000/subgraphs/name/templedao-core',
+    url: env.subgraph.templeCore,
     headers: {
       'Content-Type': 'application/json',
     },
@@ -30,7 +30,7 @@ const createGetCoreVaultsRequest = (): AxiosRequestConfig => {
 const createGetVaultRequest = (vaultAddress: string, walletAddress = ''): AxiosRequestConfig => {
   return {
     method: 'post',
-    url: 'http://localhost:8000/subgraphs/name/templedao-core',
+    url: env.subgraph.templeCore,
     headers: {
       'Content-Type': 'application/json',
     },
@@ -63,7 +63,7 @@ const createGetVaultRequest = (vaultAddress: string, walletAddress = ''): AxiosR
 const createGetVaultUserRequest = (address: string): AxiosRequestConfig => {
   return {
     method: 'post',
-    url: 'http://localhost:8000/subgraphs/name/templedao-core',
+    url: env.subgraph.templeCore,
     headers: {
       'Content-Type': 'application/json',
     },

@@ -1,5 +1,5 @@
 export interface Environment {
-  graph: {
-    vaultsHandler: string;
+  subgraph: {
+    templeCore: string;
   };
 }

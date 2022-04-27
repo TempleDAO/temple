@@ -1,8 +1,8 @@
 import { Environment } from './types';
 
 const development: Environment = {
-  graph: {
-    vaultsHandler: 'http://localhost:8000/subgraphs/name/templedao-core/graphql'
+  subgraph: {
+    templeCore: 'https://api.thegraph.com/subgraphs/name/templedao-core',
   },
 };
 
