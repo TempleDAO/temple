@@ -36,14 +36,23 @@ export const Claim = () => {
   return (
     <VaultContent>
       <Header>Claim</Header>
-      <ClaimableLabel>
-        Claimable Temple
-        <TempleAmountLink
-          onClick={() => copyBalance(claimableAmount, setAmount)}
-        >
-          {formatNumberWithCommas(claimableAmount)}
-        </TempleAmountLink>
-      </ClaimableLabel>
+      {claimableAmount > 0 ? (
+        <ClaimableLabel>
+          Claimable Temple
+            <TempleAmountLink
+              onClick={() => copyBalance(claimableAmount, setAmount)}
+            >
+              {formatNumberWithCommas(claimableAmount)}
+            </TempleAmountLink>
+        </ClaimableLabel>
+      ) : (
+        <ClaimableLabel>
+          Nothing to claim
+          <TempleAmountLink>
+            &nbsp; {/* Note: this node is here for formatting/spacing */}
+          </TempleAmountLink>
+        </ClaimableLabel>
+      )}
       <VaultInput
         tickerSymbol={TICKER_SYMBOL.TEMPLE_TOKEN}
         handleChange={(value: number) => {
