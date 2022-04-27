@@ -9,7 +9,7 @@
     "remove-local": "graph remove --node http://localhost:8020/ templedao-core",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 templedao-core",
     "graph:setup": "./scripts/graph-node-setup.sh",
-    "graph:start": "cd graph-node/docker && docker compose up",
+    "graph:start": "rm -rf graph-node/docker/data && cd graph-node/docker && docker compose up",
     "graph:stop": "cd graph-node/docker && docker compose down"
   },
   "dependencies": {
