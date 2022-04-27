@@ -89,7 +89,6 @@ ReactDOM.render(
               <Route path="trade" element={<Trade />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
-              { import.meta.env.DEV && <Route path="timestone" element={<TimeStone/>} /> }
             </Route>
             <Route
               path="/the-temple"
