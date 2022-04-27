@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { Nullable } from 'types/util';
+import { Nullable, Maybe } from 'types/util';
 
-type Request<T, A extends any> = (args?: A) => Promise<T>;
+type Request<T extends any> = ((...args: any[]) => Promise<T>) | (() => Promise<T>);
 
 export const createMockRequest = <T extends any>(
   response: T,
@@ -29,23 +29,23 @@ type RequestResponseState<T> = {
   response: Nullable<T>,
 };
 
-type UseRequestStateReturnType<T extends any, A extends any> = [
-  (args?: A) => Promise<Nullable<T>>,
+type UseRequestStateReturnType<T extends any> = [
+  Request<Maybe<T>>,
   RequestResponseState<T>,
 ];
 
-const useRequestState = <T extends any, A extends any>(request: Request<T, A>): UseRequestStateReturnType<T, A> => {
+const useRequestState = <T extends any>(request: Request<T>): UseRequestStateReturnType<T> => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Nullable<Error>>(null);
   const [response, setResponse] = useState<Nullable<T>>(null);
   
-  const wrappedRequest = useCallback(async (args?: A) => {
+  const wrappedRequest = useCallback(async (...args) => {
     setError(null);
     setIsLoading(true);
 
-    let response: Nullable<T> = null;
+    let response: Maybe<T>;
     try {
-      response = await request(args);
+      response = await request(...args);
       setResponse(response);
     } catch (error) {
       setResponse(null);
@@ -62,7 +62,7 @@ const useRequestState = <T extends any, A extends any>(request: Request<T, A>): 
       isLoading,
       error,
       response,
-    }
+    },
   ];
 };
 

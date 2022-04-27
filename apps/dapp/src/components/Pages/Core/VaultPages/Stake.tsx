@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, ReactNode } from 'react';
 import styled from 'styled-components';
 import { BigNumber } from 'ethers';
 
@@ -19,6 +19,7 @@ import { useDepositToVault } from 'hooks/core/use-deposit-to-vault';
 import useVaultContext from './useVaultContext';
 import { useWallet } from 'providers/WalletProvider';
 import { toAtto } from 'utils/bigNumber';
+import { MetaMaskError } from 'hooks/core/types';
 
 // This dummy data will be replaced by the actual contracts
 const OPTIONS = [
@@ -61,7 +62,7 @@ export const Stake = () => {
   const { balance } = useWallet();
 
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
-  const [{ loading: depositLoading, error: depositError }, deposit] = useDepositToVault(vault.id, refreshWalletState);
+  const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, refreshWalletState);
 
   // UI amount to stake
   const [stakingAmount, setStakingAmount] = useState(0);
@@ -124,7 +125,7 @@ export const Stake = () => {
     );
   }
 
-  const error = !!depositError && (depositError.data?.message || depositError.message || 'Something went wrong');
+  const error = !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
 
   return (
     <VaultContent>
