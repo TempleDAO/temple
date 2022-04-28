@@ -71,6 +71,15 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         selectedToken.address
       );
 
+      // if this sell is going to defend, auto-select FEI
+      if (isIvSwap(sellQuote, value)) {
+        setIsFraxHidden(true);
+        setSelectedToken({
+          symbol: dropdownOptions[0].label,
+          address: dropdownOptions[0].value,
+        });
+      }
+
       setRewards(fromAtto(sellQuote || BigNumber.from(0) || 0));
     } else {
       setRewards('');
