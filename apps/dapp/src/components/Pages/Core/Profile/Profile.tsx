@@ -37,7 +37,7 @@ const ProfilePage = () => {
 
   const tabs = getTabs(
     isLoading,
-    [vaults],
+    vaults,
     0,
     balance.ogTemple,
     faith.lifeTimeFaith
