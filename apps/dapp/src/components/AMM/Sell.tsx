@@ -66,7 +66,10 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const handleUpdateTempleAmount = async (value: number | '') => {
     setTempleAmount(value === 0 ? '' : value);
     if (value) {
-      const sellQuote = await getSellQuote(toAtto(value));
+      const sellQuote = await getSellQuote(
+        toAtto(value),
+        selectedToken.address
+      );
 
       // if this sell is going to defend, auto-select FEI
       if (isIvSwap(sellQuote, value)) {
@@ -94,7 +97,10 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         const minAmountOut = templeAmount * templePrice * (1 - slippage / 100);
         setMinAmountOut(minAmountOut);
 
-        const sellQuote = await getSellQuote(toAtto(templeAmount));
+        const sellQuote = await getSellQuote(
+          toAtto(templeAmount),
+          selectedToken.address
+        );
 
         if (minAmountOut <= rewards || isIvSwap(sellQuote, templeAmount)) {
           await sell(
