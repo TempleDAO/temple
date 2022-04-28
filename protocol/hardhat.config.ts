@@ -5,6 +5,7 @@ import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ganache'; // for testing
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
+import "hardhat-contract-sizer";
 
 // NOTE: Any tasks that depend on the generated typechain makes the build flaky.
 //       Favour scripts instead
@@ -73,8 +74,8 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      allowUnlimitedContractSize: true,
-      chainId: 31337,
+//    allowUnlimitedContractSize: true,
+      chainId: 1337
     },
     rinkeby: {
       url: process.env.RINKEBY_RPC_URL || '',
@@ -106,4 +107,7 @@ module.exports = {
   mocha: {
     timeout: 120000,
   },
+  contractSizer: {
+    alphaSort: true,
+  }
 };
