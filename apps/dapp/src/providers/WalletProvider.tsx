@@ -21,13 +21,13 @@ import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
 import { WalletState, Balance } from 'providers/types';
 import {
-  ERC20,
   ERC20__factory,
   TempleERC20Token__factory,
   TempleStaking__factory,
   OGTemple__factory,
   TempleTeamPayments__factory,
   LockedOGTempleDeprecated__factory,
+  ERC20
 } from 'types/typechain';
 import {
   TEMPLE_ADDRESS,
