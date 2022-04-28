@@ -126,6 +126,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       } else {
         setStableCoinWalletAmount(balance.stableCoin);
       }
+      getSellQuote(toAtto(Number(templeAmount)), selectedToken.address);
     };
     if (balance) {
       setBalanceState();
