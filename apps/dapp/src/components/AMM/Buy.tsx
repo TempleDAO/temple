@@ -96,7 +96,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       } else {
         setStableCoinWalletAmount(balance.stableCoin);
       }
-      getBuyQuote(toAtto(Number(stableCoinAmount)), selectedToken.address);
+      handleUpdateStableCoinAmount(stableCoinAmount);
     };
     if (balance) {
       setBalanceState();
