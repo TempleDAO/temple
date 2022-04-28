@@ -56,6 +56,7 @@ const createGetVaultRequest = (vaultAddress: string, walletAddress = ''): AxiosR
               value
             }
           }
+          firstPeriodStartTimestamp
           timestamp
           templeToken
           symbol

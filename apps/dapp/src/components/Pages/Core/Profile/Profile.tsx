@@ -24,6 +24,7 @@ import texture5 from 'assets/images/dashboard-4.png';
 
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
+import { useListCoreVaults } from 'hooks/core/subgraph';
 import { PageWrapper } from '../utils';
 
 const STAT_CARD_HEIGHT = '5rem';
@@ -32,11 +33,11 @@ const PIE_AREA_HEIGHT = '10rem';
 const ProfilePage = () => {
   const { getBalance, balance } = useWallet();
   const { faith } = useFaith();
-  // const { isLoading, data } = useMockVaultData('abc');
+  const { isLoading, vaults } = useListCoreVaults();
 
   const tabs = getTabs(
-    false,
-    [],
+    isLoading,
+    [vaults],
     0,
     balance.ogTemple,
     faith.lifeTimeFaith

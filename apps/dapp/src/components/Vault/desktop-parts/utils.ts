@@ -1,26 +1,25 @@
-import { differenceInSeconds, formatDistance } from 'date-fns';
+import { differenceInSeconds } from 'date-fns';
 import { Entry, Vault, MarkerType } from '../types';
 
-export const SECONDS_IN_MONTH = 2_629_800;
+export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
 
 export const processData = (originalData: any) => {
   const data = { ...originalData }; // shallow copy
 
-  data.startDate = new Date(data.firstPeriodStartTimestamp!);
+  // All timestamps are in seconds and need to be converted to MS.
+  data.startDate = new Date(Number(data.firstPeriodStartTimestamp) * 1000);
+  // The current timestamp
   data.now = new Date(Date.now());
-  data.entries = []
-
-  // const now = new Date(Date.now())
-  // // const x =new Date(data.periodDuration);
-  // console.log(formatDistance(now, new Date(Number(data.periodDuration) + now.getTime())));
-
+  // periodDuration is the number of months.
+  data.months = Number(data.periodDuration) / SECONDS_IN_MONTH;
+  data.tvl = Number(data.tvl);
   data.currentCycle = getCurrentCycle(data.startDate, data.months, data.now);
 
-  const deposits = (data.users?.[0]?.desposits || []);
-  console.log(deposits)
+  const deposits = (data.users?.[0]?.deposits || []);
   data.entries = deposits.map((e: any) => {
     const entry = { ...e }; // shallow copy
-    entry.entryDate = new Date(entry.entryDate as Date);
+    // Convert to milliseconds
+    entry.entryDate = new Date((Number(entry.timestamp) * 1000));
     entry.percent = calculatePercent(entry, data);
     entry.inZone = calculateInZone(entry, data);
     entry.type = calculateEntryType(entry);
