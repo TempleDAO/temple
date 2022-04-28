@@ -1,0 +1,19 @@
+{
+  "name": "@temple/core-subgraph",
+  "version": "0.1.0",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --product hosted-service templedao/templedao-core",
+    "create-local": "graph create --node http://localhost:8020/ templedao-core",
+    "remove-local": "graph remove --node http://localhost:8020/ templedao-core",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 templedao-core",
+    "graph:setup": "./scripts/graph-node-setup.sh",
+    "graph:start": "rm -rf graph-node/docker/data && cd graph-node/docker && docker compose up",
+    "graph:stop": "cd graph-node/docker && docker compose down"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "^0.28.1",
+    "@graphprotocol/graph-ts": "^0.26.0"
+  }
+}

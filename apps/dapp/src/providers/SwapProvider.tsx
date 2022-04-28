@@ -4,7 +4,7 @@ import {
   createContext,
   PropsWithChildren,
 } from 'react';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, Signer} from 'ethers';
 
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
@@ -56,7 +56,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
   const getTemplePrice = async (
     walletAddress: string,
-    signerState: ethers.providers.JsonRpcSigner
+    signerState: Signer
   ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
@@ -80,7 +80,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     setTemplePrice(price);
   };
 
-  const getIv = async (walletAddress: string, signerState: ethers.providers.JsonRpcSigner) => {
+  const getIv = async (walletAddress: string, signerState: Signer) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }

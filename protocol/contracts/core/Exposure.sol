@@ -129,7 +129,7 @@ contract Exposure is Ownable, RebasingERC20 {
      * Throws if called by an actor that cannot mint
      */
     modifier onlyMinter() {
-        require(canMint[msg.sender], "Strategy: caller is not a vault");
+        require(canMint[msg.sender], "Exposure: caller is not a vault");
         _;
     }
 
@@ -137,7 +137,7 @@ contract Exposure is Ownable, RebasingERC20 {
      * Throws if called by an actor that cannot manage minters
      */
     modifier onlyMinterManager() {
-        require(msg.sender == canManageMinters || msg.sender == owner(), "Strategy: caller is not a minter or owner");
+        require(msg.sender == canManageMinters || msg.sender == owner(), "Exposure: caller is not a minter or owner");
         _;
     }
 
@@ -149,5 +149,5 @@ contract Exposure is Ownable, RebasingERC20 {
 }
 
 interface ILiquidator {
-    function toTemple(uint256 amount, address toAccount) external view returns (uint256);
+    function toTemple(uint256 amount, address toAccount) external returns (uint256);
 }

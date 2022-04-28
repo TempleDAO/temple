@@ -4,7 +4,7 @@ import {
   createContext,
   PropsWithChildren,
 } from 'react';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, ethers, Signer } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
 import { useNotification } from 'providers/NotificationProvider';
@@ -57,7 +57,7 @@ export const FaithProvider = (props: PropsWithChildren<{}>) => {
 
   const getFaith = async (
     walletAddress: string,
-    signerState: ethers.providers.JsonRpcSigner
+    signerState: Signer
   ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();

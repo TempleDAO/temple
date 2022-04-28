@@ -45,6 +45,8 @@
     "test": "hardhat test",
     "local-node": "hardhat node",
     "local-deploy": "hardhat run --network localhost scripts/local-dapp-dev/deploy.ts",
+    "core:sample": "hardhat run --network localhost scripts/local-dapp-dev/populate-vaults-predictable.ts",
+    "core:sample:random": "hardhat run --network localhost scripts/local-dapp-dev/populate-vaults-random.ts",
     "hardhat:local": "hardhat --network localhost",
     "hardhat:testnet": "hardhat --network rinkeby",
     "hardhat:mainnet": "hardhat --network mainnet",

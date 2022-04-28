@@ -1,17 +1,13 @@
-import React, {
+import {
   createContext,
   PropsWithChildren,
   useContext,
-  useEffect,
   useState,
 } from 'react';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, Signer } from 'ethers';
+import { useAccount, useSigner, useNetwork, useProvider } from 'wagmi';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
-import {
-  Network,
-} from '@ethersproject/providers';
-// Circular dependency
-import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
+
 import { useNotification } from 'providers/NotificationProvider';
 import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -23,13 +19,11 @@ import {
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
-import { Nullable } from 'types/util';
-import { WalletState, Balance, ETH_ACTIONS } from 'providers/types';
+import { WalletState, Balance } from 'providers/types';
 import {
   ERC20,
   ERC20__factory,
   TempleERC20Token__factory,
-  LockedOGTemple__factory,
   TempleStaking__factory,
   OGTemple__factory,
   TempleTeamPayments__factory,
@@ -39,10 +33,7 @@ import {
   TEMPLE_ADDRESS,
   STABLE_COIN_ADDRESS,
   TEMPLE_STAKING_ADDRESS,
-  TEMPLE_CASHBACK_ADDRESS,
   LOCKED_OG_TEMPLE_ADDRESS,
-  LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
-  VITE_PUBLIC_CLAIM_GAS_LIMIT,
 } from 'providers/env';
 
 // We want to save gas burn $ for the Templars,
@@ -53,12 +44,11 @@ const INITIAL_STATE: WalletState = {
   balance: {
     stableCoin: 0,
     temple: 0,
-    ogTempleLocked: 0,
     ogTempleLockedClaimable: 0,
     ogTemple: 0,
   },
   wallet: null,
-  isConnected: () => false,
+  isConnected: false,
   connectWallet: noop,
   changeWalletAddress: noop,
   signer: null,
@@ -75,123 +65,54 @@ const WalletContext = createContext<WalletState>(INITIAL_STATE);
 
 export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
-  const [provider, setProvider] = useState<Nullable<ethers.providers.Web3Provider>>(null);
-  const [network, setNetwork] = useState<Nullable<Network>>(null);
-  const [signerState, setSignerState] = useState<Nullable<ethers.providers.JsonRpcSigner>>(null);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  
+  const [{ data: signer }] = useSigner();
+  const [{ data: network }] = useNetwork();
+  const [{ data: accountData }] = useAccount();
+  const provider = useProvider();
+
+  const { openNotification } = useNotification();
   const [balanceState, setBalanceState] = useState<Balance>(
     INITIAL_STATE.balance
   );
 
-  const { openNotification } = useNotification();
-  const refreshWalletState = useRefreshWalletState();
-
-  useEffect(() => {
-    interactWithMetamask(undefined, true).then();
-    if (typeof window !== undefined) {
-      const { ethereum } = window;
-
-      if (ethereum && ethereum.isMetaMask) {
-        ethereum.on('accountsChanged', () => {
-          window.location.reload();
-        });
-        ethereum.on('chainChanged', () => {
-          window.location.reload();
-        });
-      }
-
-      return () => {
-        ethereum.removeListener('accountsChanged');
-        ethereum.removeListener('networkChanged');
-      };
-    }
-  }, []);
-
-  const isConnected = (): boolean => {
-    // only trigger once window is loaded
-    if (typeof window !== undefined) {
-      const ethereum = window.ethereum;
-      if (ethereum) {
-        return ethereum.isConnected();
-      }
-    }
-    return false;
-  };
-
-  const interactWithMetamask = async (
-    action?: ETH_ACTIONS,
-    syncConnected?: boolean
-  ) => {
-    if (typeof window !== undefined) {
-      const { ethereum } = window;
-
-      if (ethereum && ethereum.isMetaMask) {
-        const provider = new ethers.providers.Web3Provider(
-          ethereum
-        );
-
-        if (action) {
-          await provider.send(action, [
-            {
-              eth_accounts: {},
-            },
-          ]);
-        }
-
-        const signer = provider.getSigner();
-        const accounts = await provider.listAccounts();
-        if (accounts.length > 0) {
-          const wallet: string = await signer.getAddress();
-          setSignerState(signer);
-          setProvider(provider);
-          setNetwork(await provider.getNetwork());
-          setWalletAddress(wallet);
-          // Circular dependency
-          await refreshWalletState();
-        }
-      } else {
-        console.error('Please add MetaMask to your browser');
-      }
-    }
-  };
+  const chain = network?.chain;
+  const walletAddress = accountData?.address;
+  const isConnected = !!walletAddress;
 
   const connectWallet = async () => {
-    await interactWithMetamask(ETH_ACTIONS.REQUEST_ACCOUNTS);
+    throw new Error('Deprecated');
   };
 
   const changeWalletAddress = async () => {
-    await interactWithMetamask(ETH_ACTIONS.REQUEST_PERMISSIONS);
+    throw new Error('Deprecated');
   };
 
   const getBalance = async (
     walletAddress: string,
-    signerState: ethers.providers.JsonRpcSigner
+    signer: Signer
   ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
 
-    const stableCoinContract = new ERC20__factory(signerState).attach(
+    const stableCoinContract = new ERC20__factory(signer).attach(
       STABLE_COIN_ADDRESS
     );
 
     const ogLockedTemple = new LockedOGTempleDeprecated__factory(
-      signerState
+      signer
     ).attach(LOCKED_OG_TEMPLE_ADDRESS);
 
-    const OGTEMPLE_LOCKED_DEVOTION = new LockedOGTemple__factory(
-      signerState
-    ).attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS);
-
     const templeStakingContract = new TempleStaking__factory(
-      signerState
+      signer
     ).attach(TEMPLE_STAKING_ADDRESS);
 
-    const OG_TEMPLE_CONTRACT = new OGTemple__factory(signerState).attach(
+    const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(
       await templeStakingContract.OG_TEMPLE()
     );
 
-    const templeContract = new TempleERC20Token__factory(signerState).attach(
+    const templeContract = new TempleERC20Token__factory(signer).attach(
       TEMPLE_ADDRESS
     );
 
@@ -201,7 +122,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
     // get the locked OG temple
     const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber();
-    let ogTempleLocked = 0;
     let ogTempleLockedClaimable = 0;
     const templeLockedPromises = [];
     for (let i = 0; i < lockedNum; i++) {
@@ -211,7 +131,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     const now = formatNumberFixedDecimals(Date.now() / 1000, 0);
     const templeLocked = await Promise.all(templeLockedPromises);
     templeLocked.map((x) => {
-      ogTempleLocked += fromAtto(x.BalanceOGTemple);
       if (x.LockedUntilTimestamp.lte(BigNumber.from(now))) {
         ogTempleLockedClaimable += fromAtto(x.BalanceOGTemple);
       }
@@ -222,25 +141,20 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     );
     const temple = fromAtto(await templeContract.balanceOf(walletAddress));
 
-    const lockedOGTempleEntry = await OGTEMPLE_LOCKED_DEVOTION.ogTempleLocked(
-      walletAddress
-    );
-
     return {
       stableCoin: fromAtto(stableCoinBalance),
       temple: temple,
-      ogTempleLocked: ogTempleLocked + fromAtto(lockedOGTempleEntry.amount),
       ogTemple: ogTemple >= 1 ? ogTemple : 0,
       ogTempleLockedClaimable: ogTempleLockedClaimable,
     };
   };
 
   const updateBalance = async () => {
-    if (!walletAddress || !signerState) {
+    if (!walletAddress || !signer) {
       return;
     }
 
-    const balance = await getBalance(walletAddress, signerState);
+    const balance = await getBalance(walletAddress, signer);
     setBalanceState(balance);
   };
 
@@ -295,12 +209,12 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
   ): Promise<TransactionReceipt | void> => {}
 
   const collectTempleTeamPayment = async (epoch: TEAM_PAYMENTS_EPOCHS) => {
-    if (walletAddress && signerState) {
+    if (walletAddress && signer) {
       const fixedTeamPaymentAddress =
         TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[epoch];
 
       const teamPaymentContract = new TempleTeamPayments__factory(
-        signerState
+        signer
       ).attach(fixedTeamPaymentAddress);
 
       const collectTxn = await teamPaymentContract.claim();
@@ -323,13 +237,16 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       value={{
         balance: balanceState,
         isConnected,
-        wallet: walletAddress,
+        wallet: walletAddress || null,
         connectWallet,
         changeWalletAddress,
         ensureAllowance,
         claim,
-        signer: signerState,
-        network,
+        signer: signer || null,
+        network: !chain ? null : {
+          chainId: chain.id,
+          name: chain.name || '',
+        },
         getCurrentEpoch,
         getBalance: updateBalance,
         updateBalance,

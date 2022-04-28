@@ -1,5 +1,5 @@
 import { Network } from '@ethersproject/providers';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, ethers, Signer } from 'ethers';
 
 import { Nullable } from 'types/util';
 import { ERC20 } from 'types/typechain';
@@ -24,7 +24,6 @@ export enum ETH_ACTIONS {
 export type Balance = {
   stableCoin: number;
   temple: number;
-  ogTempleLocked: number;
   ogTempleLockedClaimable: number;
   ogTemple: number;
 };
@@ -136,10 +135,10 @@ export interface WalletState {
   wallet: Nullable<string>;
   // current
   balance: Balance;
-  signer: Nullable<ethers.providers.JsonRpcSigner>;
+  signer: Nullable<Signer>;
   network: Nullable<Network>;
 
-  isConnected(): boolean;
+  isConnected: boolean;
 
   connectWallet(): void;
 

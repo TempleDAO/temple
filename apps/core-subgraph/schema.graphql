@@ -1,0 +1,135 @@
+type Metric @entity {
+  id: ID!
+  timestamp: BigInt!
+  volume: BigDecimal!
+  volumeUSD: BigDecimal!
+  tvl: BigDecimal!
+  tvlUSD: BigDecimal!
+  vaultCount: BigInt!
+  exposureCount: BigInt!
+  tfrCount: BigInt!
+  tokenCount: BigInt!
+  userCount: BigInt!
+}
+
+type MetricDayData @entity {
+  id: ID!
+  timestamp: BigInt!
+  metric: Metric!
+  volume: BigDecimal!
+  volumeUSD: BigDecimal!
+  tvl: BigDecimal!
+  tvlUSD: BigDecimal!
+  vaultCount: BigInt!
+  exposureCount: BigInt!
+  tfrCount: BigInt!
+  tokenCount: BigInt!
+  userCount: BigInt!
+}
+
+type Exposure @entity {
+  id: ID!
+  timestamp: BigInt!
+  name: String!
+  symbol: String!
+  revalToken: String!
+  reval: BigInt!
+  mintManager: String!
+  liquidator: String!
+}
+
+type TreasuryFarmingRevenue @entity {
+  id: ID!
+  timestamp: BigInt!
+  exposure: Exposure!
+  totalShares: BigInt!
+  lifetimeAccRevenueScaledByShare: BigInt!
+}
+
+type Vault @entity {
+  id: ID!
+  timestamp: BigInt!
+  name: String!
+  symbol: String!
+  templeToken: String!
+  periodDuration: BigInt!
+  enterExitWindowDuration: BigInt!
+  shareBoostFactor: BigDecimal!
+  joiningFee: String!
+  firstPeriodStartTimestamp: BigInt!
+  users: [User!]!
+  tvl: BigDecimal!
+  vaultHourDatas: [VaultHourData!]! @derivedFrom(field: "vault")
+}
+
+type VaultHourData @entity {
+  id: ID!
+  timestamp: BigInt!
+  vault: Vault!
+  name: String!
+  symbol: String!
+  templeToken: String!
+  periodDuration: BigInt!
+  enterExitWindowDuration: BigInt!
+  shareBoostFactor: BigDecimal!
+  joiningFee: String!
+  firstPeriodStartTimestamp: BigInt!
+  users: [User!]!
+  tvl: BigDecimal!
+}
+
+type User @entity {
+  id: ID!
+  timestamp: BigInt!
+  vaultUserBalances: [VaultUserBalance!]! @derivedFrom(field: "user")
+  deposits: [Deposit!]! @derivedFrom(field: "user")
+  withdraws: [Withdraw!]! @derivedFrom(field: "user")
+  userDayDatas: [UserDayData!]! @derivedFrom(field: "user")
+  depositsBalance: BigDecimal!
+  withdrawsBalance: BigDecimal!
+  totalBalance: BigDecimal!
+}
+
+type UserDayData @entity {
+  id: ID!
+  timestamp: BigInt!
+  user: User!
+  depositsBalance: BigDecimal!
+  withdrawsBalance: BigDecimal!
+  totalBalance: BigDecimal!
+}
+
+type VaultUserBalance @entity {
+  id: ID!
+  timestamp: BigInt!
+  vault: Vault!
+  user: User!
+  token: Token!
+  amount: BigDecimal!
+  value: BigDecimal!
+}
+
+type Deposit @entity {
+  id: ID!
+  timestamp: BigInt!
+  vault: Vault!
+  user: User!
+  token: Token!
+  amount: BigDecimal!
+  value: BigDecimal!
+}
+
+type Withdraw @entity {
+  id: ID!
+  timestamp: BigInt!
+  vault: Vault!
+  user: User!
+  token: Token!
+  amount: BigDecimal!
+  value: BigDecimal!
+}
+
+type Token @entity {
+  id: ID!
+  timestamp: BigInt!
+}
