@@ -1,18 +1,15 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
+
 import { Vault__factory } from 'types/typechain';
 import { toAtto } from 'utils/bigNumber';
-import useIsMounted from 'hooks/use-is-mounted';
-import { Nullable } from 'types/util';
 import { useWallet } from 'providers/WalletProvider';
-import { Callback, MetaMaskError, HookReturnType } from './types';
+import { Callback } from './types';
+import useRequestState from 'hooks/use-request-state';
+import { useNotification } from 'providers/NotificationProvider';
 
-const ENV = import.meta.env;
-
-export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: Callback): HookReturnType => {
+export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: Callback) => {
   const { signer, wallet } = useWallet();
-  const isMounted = useIsMounted();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Nullable<MetaMaskError>>(null);
+  const { openNotification } = useNotification();
 
   const withdraw = useCallback(async (amount: number) => {
     if (!signer || !wallet) {
@@ -21,38 +18,28 @@ export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: C
       `);
       return;
     }
-    
-    setLoading(true);
-    setError(null);
 
-    try {
-      const bigAmount = toAtto(amount);
-      const vault = new Vault__factory(signer).attach(vaultContractAddress);
-      
-      const receipt = await vault.withdraw(bigAmount);
-      await receipt.wait();
-     
-      if (onSuccess) {
-        await onSuccess();
-      }
-    } catch (err) {
-      if (isMounted.current) {
-        setError(err as MetaMaskError);
-      }
-    } finally {
-      if (isMounted.current) {
-        setLoading(false);
-      }
+    const bigAmount = toAtto(amount);
+    const vault = new Vault__factory(signer).attach(vaultContractAddress);
+    
+    const receipt = await vault.withdraw(bigAmount);
+    await receipt.wait();
+
+    openNotification({
+      title: 'Withdraw success',
+      hash: receipt.hash,
+    });
+    
+    if (onSuccess) {
+      await onSuccess();
     }
   }, [
     signer,
     vaultContractAddress,
-    isMounted,
-    setLoading,
-    setError,
     wallet,
+    openNotification,
   ]);
   
-  return [{ loading, error }, withdraw];
+  return useRequestState(withdraw);
 };
 
