@@ -180,7 +180,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       await ensureAllowance(
         TICKER_SYMBOL.TEMPLE_TOKEN,
         TEMPLE,
-        isIvSwap ? TEMPLE_IV_SWAP_ADDRESS : TEMPLE_V2_ROUTER_ADDRESS,
+        TEMPLE_V2_ROUTER_ADDRESS,
         amountInTemple
       );
 
