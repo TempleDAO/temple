@@ -24,7 +24,6 @@ import texture5 from 'assets/images/dashboard-4.png';
 
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
-// import { useMockVaultData } from '../Vault';
 import { PageWrapper } from '../utils';
 
 const STAT_CARD_HEIGHT = '5rem';
@@ -146,6 +145,7 @@ const ProfileOverview = styled.section`
   grid-template-columns: 1fr;
   gap: 2rem;
   margin-bottom: 2rem;
+  
   ${phoneAndAbove(`
     grid-template-columns: 1fr 1fr;
   `)}
@@ -156,6 +156,7 @@ const ProfileMeta = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.75rem;
+
   ${phoneAndAbove(`
     padding-right: 0.75rem;
     grid-template-columns: 60% 40%;

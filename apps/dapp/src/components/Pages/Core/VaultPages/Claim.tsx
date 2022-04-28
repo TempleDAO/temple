@@ -11,11 +11,8 @@ import VaultContent, {
 } from 'components/Pages/Core/VaultPages/VaultContent';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
-import { useGetCoreVaultUserDeposits } from 'hooks/core/subgraph';
-import Loader from 'components/Loader/Loader';
 import useVaultContext from './useVaultContext';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
-import { Nullable } from 'types/util';
 import { useWallet } from 'providers/WalletProvider';
 
 export const Claim = () => {
@@ -83,7 +80,7 @@ export const Claim = () => {
         <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>
       )}
       <VaultButton
-        label={'claim'}
+        label="Claim"
         autoWidth
         marginTop={error ? '0.5rem' : '3.5rem'}
         disabled={buttonIsDisabled}
