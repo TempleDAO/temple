@@ -4,7 +4,7 @@ import axios, { AxiosRequestConfig } from 'axios';
 import useRequestState from 'hooks/use-request-state';
 import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
-import { processData } from 'components/Vault/desktop-parts/utils';
+import { createVault } from 'components/Vault/desktop-parts/utils';
 
 const createGetCoreVaultsRequest = (): AxiosRequestConfig => {
   return {
@@ -160,9 +160,9 @@ export const useGetCoreVault = (vaultAddress: string) => {
     if (!vaultData) {
       return null;
     }
-    return processData(vaultData)
+    return createVault(vaultData)
   }, [vaultData]);
-  
+
   return {
     vault,
     isLoading: isLoading || requestPending,

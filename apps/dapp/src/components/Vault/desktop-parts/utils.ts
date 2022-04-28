@@ -3,7 +3,7 @@ import { Entry, Vault, MarkerType } from '../types';
 
 export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
 
-export const processData = (originalData: any): Vault => {
+export const createVault = (originalData: any): Vault => {
   const data = { ...originalData }; // shallow copy
 
   // All timestamps are in seconds and need to be converted to MS.
