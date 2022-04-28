@@ -121,12 +121,12 @@ export const FaithProvider = (props: PropsWithChildren<{}>) => {
       );
 
       const walletOGTEMPLE = await OG_TEMPLE.balanceOf(wallet);
-      await ensureAllowance(
-        TICKER_SYMBOL.OG_TEMPLE_TOKEN,
-        OG_TEMPLE,
-        LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
-        walletOGTEMPLE
-      );
+      // await ensureAllowance(
+      //   TICKER_SYMBOL.OG_TEMPLE_TOKEN,
+      //   OG_TEMPLE,
+      //   LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
+      //   walletOGTEMPLE
+      // );
 
       const faithVerificationTXN = await DEVOTION.lockAndVerify(
         walletOGTEMPLE,
