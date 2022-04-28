@@ -3,7 +3,7 @@ import { Entry, Vault, MarkerType } from '../types';
 
 export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
 
-export const processData = (originalData: any) => {
+export const processData = (originalData: any): Vault => {
   const data = { ...originalData }; // shallow copy
 
   // All timestamps are in seconds and need to be converted to MS.
@@ -68,12 +68,13 @@ const calculatePercent = (entry: Entry, vault: Vault) => {
   const now = vault.now;
   const entryStartDate = entry.entryDate!;
   const diff = differenceInSeconds(now, entryStartDate);
-  if (diff < 0)
+  if (diff < 0) {
     console.error(
       'Data Error: Current date is less than entry date',
       entry,
       vault
     );
+  }
   const totalSecondsThisCycle = SECONDS_IN_MONTH * vault.months;
   const secondsIntoThisCycle = diff % totalSecondsThisCycle;
   const percent = secondsIntoThisCycle / totalSecondsThisCycle;

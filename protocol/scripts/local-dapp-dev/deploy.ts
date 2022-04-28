@@ -274,6 +274,16 @@ async function main() {
     joiningFee.address
   );
 
+  const vaultTx = await opsManager.createVault(
+    "Temple 1 Month Vault",
+    "TV_1MO",
+    60 * 60 * 24 * 30, // 30 days
+    60 * 60 * 24, // 1 day
+    { p: 1, q : 1}
+  );
+
+  let vault = await extractDeployedAddress(vaultTx, 'CreateVault');
+
   const exposureTx = await opsManager.createExposure(
     "Stable Exposure",
     "STBCXP",

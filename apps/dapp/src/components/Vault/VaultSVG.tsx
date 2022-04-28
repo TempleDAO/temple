@@ -13,7 +13,7 @@ type Props = {
   data: Vault;
 };
 
-export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
+export const VaultSVG = ({ data: vault, children }: PropsWithChildren<Props>) => {
   const selectedNav = useSelectedPage();
   const vaultRef = useRef<VaultRef>(null);
   const [selectedEntry, setSelectedEntry] = useState<Entry>();
@@ -46,7 +46,7 @@ export const VaultSVG = ({ data, children }: PropsWithChildren<Props>) => {
     // setMarkerPosition(marketCenterInSVGCoords);
     // setSelectedEntry(entryData);
   };
-  const vault = processData(data);
+
   return isDesktop ? (
     <VaultDesktop
       ref={vaultRef}

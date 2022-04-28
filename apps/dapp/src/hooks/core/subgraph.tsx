@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import axios, { AxiosRequestConfig } from 'axios';
 
 import useRequestState from 'hooks/use-request-state';
 import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
+import { processData } from 'components/Vault/desktop-parts/utils';
 
 const createGetCoreVaultsRequest = (): AxiosRequestConfig => {
   return {
@@ -154,8 +155,16 @@ export const useGetCoreVault = (vaultAddress: string) => {
     getVault();
   }, [request, isConnecting]);
 
+  const vaultData = response?.data?.data?.vault;
+  const vault = useMemo(() => {
+    if (!vaultData) {
+      return null;
+    }
+    return processData(vaultData)
+  }, [vaultData]);
+  
   return {
-    vault: response?.data?.data?.vault || null,
+    vault,
     isLoading: isLoading || requestPending,
     error,
   };
