@@ -61,7 +61,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const iv = dashboardMetrics?.iv || 0.65;
 
   const isIvSwap = (quote: BigNumber | void, value: number) =>
-    !!quote && fromAtto(quote) < value * iv;
+    !!quote && fromAtto(quote) <= value * iv;
 
   const handleUpdateTempleAmount = async (value: number | '') => {
     setTempleAmount(value === 0 ? '' : value);
@@ -70,15 +70,6 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         toAtto(value),
         selectedToken.address
       );
-
-      // if this sell is going to defend, auto-select FEI
-      if (isIvSwap(sellQuote, value)) {
-        setIsFraxHidden(true);
-        setSelectedToken({
-          symbol: dropdownOptions[0].label,
-          address: dropdownOptions[0].value,
-        });
-      } else setIsFraxHidden(false);
 
       setRewards(fromAtto(sellQuote || BigNumber.from(0) || 0));
     } else {
