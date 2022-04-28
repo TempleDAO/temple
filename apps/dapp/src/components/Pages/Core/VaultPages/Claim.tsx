@@ -23,7 +23,7 @@ export const Claim = () => {
   const { wallet, signer } = useWallet();
   const [getBalance, { response: balanceResponse, isLoading: getBalanceLoading }] = useVaultBalance(vault.id);
   const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
-  const [{ loading: withdrawIsLoading, error }, withdraw] = useWithdrawFromVault(vault.id, async () => {
+  const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault.id, async () => {
     await refreshWalletState();
     await getBalance();
   });
