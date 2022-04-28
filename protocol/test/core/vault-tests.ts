@@ -36,6 +36,7 @@ describe("Temple Core Vault", async () => {
     vault = await new Vault__factory(owner).deploy(
         "Temple 1m Vault",
         "TV_1M",
+        "TV_EXAMPLE_1M",
         templeToken.address,
         60 * 5,
         60,

@@ -54,15 +54,20 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     /// @dev Where to query the fee (per hour) when joining the vault
     JoiningFee public joiningFee;
 
+    /// @dev Grouping Identifier to allow downstream to group together vault instances into a single logical vault
+    string public identifier;
+
     constructor(
         string memory _name,
         string memory _symbol,
+        string memory _identifier,
         IERC20 _templeToken,
         uint256 _periodDuration,
         uint256 _enterExitWindowDuration,
         Rational memory _shareBoostFactory,
         JoiningFee _joiningFee
     ) EIP712(_name, "1") ERC20(_name, _symbol)  {
+        identifier = _identifier;
         templeToken = _templeToken;
         periodDuration = _periodDuration;
         enterExitWindowDuration = _enterExitWindowDuration;

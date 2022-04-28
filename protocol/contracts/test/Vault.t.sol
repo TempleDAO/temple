@@ -33,6 +33,7 @@ contract VaultTest is TempleTest {
         vault = new Vault(
             "Temple 5 Min Vault",
             "T5MV",
+            "TV_EXAMPLE_5M",
             temple,
             FIVE_MIN_DURATION,
             60,

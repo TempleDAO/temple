@@ -50,11 +50,12 @@ contract OpsManager is Ownable {
     function createVault(
         string memory name,
         string memory symbol,
+        string memory identifier,
         uint256 periodDuration,
         uint256 enterExitWindowDuration,
         Rational memory shareBoostFactory
     ) external onlyOwner {
-        Vault vault = new Vault(name, symbol, templeToken, periodDuration, enterExitWindowDuration, shareBoostFactory, joiningFee);
+        Vault vault = new Vault(name, symbol, identifier, templeToken, periodDuration, enterExitWindowDuration, shareBoostFactory, joiningFee);
         activeVaults[address(vault)] = true;
         emit CreateVault(address(vault));
     }
