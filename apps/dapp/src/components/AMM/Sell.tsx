@@ -18,6 +18,7 @@ import { useSwap } from 'providers/SwapProvider';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
 import { STABLE_COIN_ADDRESS, FEI_ADDRESS } from 'providers/env';
+import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
 
 interface SizeProps {
   small?: boolean;
@@ -41,8 +42,8 @@ const dropdownOptions = [
 
 export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const { balance, getBalance, updateBalance } = useWallet();
-  const { sell, getSellQuote, templePrice, updateTemplePrice, iv, updateIv } =
-    useSwap();
+  const { sell, getSellQuote, templePrice, updateTemplePrice } = useSwap();
+  const dashboardMetrics = useRefreshableDashboardMetrics();
 
   const [stableCoinWalletAmount, setStableCoinWalletAmount] =
     useState<number>(0);
@@ -57,6 +58,8 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   });
   const [isFraxHidden, setIsFraxHidden] = useState(true);
 
+  const iv = dashboardMetrics?.iv || 0.65;
+
   const isIvSwap = (quote: BigNumber | void, value: number) =>
     !!quote && fromAtto(quote) < value * iv;
 
@@ -65,7 +68,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
     if (value) {
       const sellQuote = await getSellQuote(toAtto(value));
 
-      // if this sell is going to IVSwap, auto-select FEI
+      // if this sell is going to defend, auto-select FEI
       if (isIvSwap(sellQuote, value)) {
         setIsFraxHidden(true);
         setSelectedToken({
@@ -127,7 +130,6 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
     async function onMount() {
       await updateBalance();
       await updateTemplePrice();
-      await updateIv();
       setRewards('');
       setMinAmountOut(0);
 
