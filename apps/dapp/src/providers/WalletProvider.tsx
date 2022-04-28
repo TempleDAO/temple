@@ -4,7 +4,7 @@ import {
   useContext,
   useState,
 } from 'react';
-import { BigNumber, Signer } from 'ethers';
+import { BigNumber, Signer, BaseContract } from 'ethers';
 import { useAccount, useSigner, useNetwork, useProvider, useConnect } from 'wagmi';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
