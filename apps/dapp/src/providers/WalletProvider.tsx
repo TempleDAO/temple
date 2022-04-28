@@ -179,7 +179,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
    * @param spender
    * @param minAllowance
    */
-  const ensureAllowance = async (
+   const ensureAllowance = async (
     tokenName: string,
     // Should be ERC20, need to update Typechain (fix is in 8.0.x)
     erc20Token: any,
@@ -187,7 +187,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     minAllowance: BigNumber
   ) => {
     // pre-condition
-    if (!walletAddress || !signer) {
+    if (!walletAddress) {
       throw new NoWalletAddressError();
     }
 

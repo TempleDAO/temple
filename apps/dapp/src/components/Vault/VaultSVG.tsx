@@ -1,8 +1,6 @@
 import { useRef, useState, PropsWithChildren } from 'react';
 
-import { useOutsideClick } from '../../hooks/use-outside-click';
 import { Entry, Point, Vault, VaultRef } from './types';
-import { processData } from './desktop-parts/utils';
 import { useMediaQuery } from 'react-responsive';
 import { VaultDesktop } from './VaultDesktop';
 import { VaultMobile } from './VaultMobile';
@@ -23,28 +21,8 @@ export const VaultSVG = ({ data: vault, children }: PropsWithChildren<Props>) =>
     query: queryPhone,
   });
 
-  // useOutsideClick(vaultRef.current?.popupRef!, () => {
-  //   setSelectedEntry(undefined);
-  // });
-
   const markerClick = (entryData: Entry, markerEl: SVGElement) => {
     console.log(`marker clicked: `, entryData);
-    // const markerBox = markerEl.getBoundingClientRect();
-    // const markerCenterInScreenCoords = {
-    //   x: markerBox.x + markerBox.width / 2,
-    //   y: markerBox.y + markerBox.height / 2,
-    // };
-
-    // const point = DOMPoint.fromPoint(markerCenterInScreenCoords);
-    // const marketCenterInSVGCoords = point.matrixTransform(
-    //   vaultRef.current?.svgRef?.getScreenCTM()?.inverse()
-    // );
-    // // offset so the location is in the circle not the top left of bubble
-    // marketCenterInSVGCoords.x -= 125;
-    // marketCenterInSVGCoords.y -= 147;
-
-    // setMarkerPosition(marketCenterInSVGCoords);
-    // setSelectedEntry(entryData);
   };
 
   return isDesktop ? (
