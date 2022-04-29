@@ -11,7 +11,7 @@ dataSources:
     name: OpsManager
     network: mainnet
     source:
-      address: '0x2e2ed0cfd3ad2f1d34481277b3204d807ca2f8c2'
+      address: '0xd8a5a9b31c3c0232e196d518e89fd8bf83acad43'
       abi: OpsManager
       startBlock: 1
     mapping:
