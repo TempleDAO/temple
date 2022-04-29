@@ -3,11 +3,12 @@ import { MutableRefObject, ReactNode } from 'react';
 export type Entry = {
   id: string | number;
   entryDate?: Date;
-  amount?: number; // TODO: do we need a BigNumber type here?
+  amount: string; // TODO: do we need a BigNumber type here?
   percent?: number;
   inZone?: boolean;
   type?: MarkerType;
   currentCycle?: number;
+  value: string;
 };
 
 export type Vault = {
@@ -19,11 +20,16 @@ export type Vault = {
   entries: Entry[];
   currentCycle?: number;
   zoneEmpty?: boolean;
+  endDate: Date;
 };
 
 export type VaultGroup = {
   id: string;
+  name: string;
+  months: number;
   vaults: Vault[];
+  startDate: Date;
+  endDate: Date;
 }
 
 export type VaultProps = {

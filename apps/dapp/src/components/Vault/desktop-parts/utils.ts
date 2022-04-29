@@ -1,23 +1,45 @@
-import { differenceInSeconds } from 'date-fns';
+import { differenceInSeconds, addSeconds } from 'date-fns';
 
-import { GraphVault } from 'hooks/core/types';
-import { Entry, Vault, MarkerType } from '../types';
+import { GraphVault, GraphVaultGroup } from 'hooks/core/types';
+import { Entry, Vault, VaultGroup, MarkerType } from '../types';
 
 export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
 
+export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGroup => {
+  const vaults = subgraphVaultGroup.vaults.map((vault) => createVault(vault));
+  const orderedVaults = vaults.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+  const { startDate, endDate, months } = orderedVaults[0];
+
+  return {
+    ...subgraphVaultGroup,
+    name: subgraphVaultGroup.id,
+    vaults: orderedVaults,
+    startDate,
+    endDate,
+    months,
+  };
+}
+
+// return numCylces * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
+
 export const createVault = (subgraphVault: GraphVault): Vault => {
   const startDate = new Date(Number(subgraphVault.firstPeriodStartTimestamp) * 1000);
+
   // The current timestamp
   const now = new Date(Date.now());
   // periodDuration is the number of months.
   const months = Number(subgraphVault.periodDuration) / SECONDS_IN_MONTH;
+
+  const durationSeconds = months * SECONDS_IN_MONTH;
+  const endDate = addSeconds(startDate, durationSeconds);
+
   const tvl = Number(subgraphVault.tvl);
   const currentCycle = getCurrentCycle(startDate, months, now);
   const entries = (subgraphVault.users?.[0]?.vaultUserBalances || []).map((balance) => {
     // Convert to milliseconds
     const entryDate = new Date((Number(balance.timestamp) * 1000));
-    const percent = calculatePercent(entryDate, now, months);
-    const inZone = calculateInZone(percent, months);
+    const percent = calculatePercent(now, endDate, months);
+    const inZone = calculateInZone(percent, months, startDate);
     const type = calculateEntryType(inZone);
     const currentCycle = getCurrentCycle(
       entryDate,
@@ -32,6 +54,8 @@ export const createVault = (subgraphVault: GraphVault): Vault => {
       inZone,
       type,
       currentCycle,
+      value: balance.value,
+      amount: balance.amount,
     };
   });
 
@@ -43,6 +67,7 @@ export const createVault = (subgraphVault: GraphVault): Vault => {
     tvl,
     currentCycle,
     entries,
+    endDate,
   };
 
   maybeInsertEmptyMarker(vault);
@@ -60,6 +85,8 @@ const maybeInsertEmptyMarker = (vault: Vault) => {
       id: 'empty',
       inZone: true,
       type: MarkerType.EMPTY,
+      amount: '',
+      value: '',
     };
     emptyEntry.percent = calculateEmptyPercent(vault);
     vault.entries.push(emptyEntry);
@@ -68,7 +95,14 @@ const maybeInsertEmptyMarker = (vault: Vault) => {
 
 // we treat the zone the same as a "percent", so the calculations for it are the same
 // and we use the percent value as a comparison to determine if we're in or out of the zone
-const calculateInZone = (entryPercent: number, months: number) => {
+//
+// Note: the following is the logic found inside the vault contract for determining if in enterExit window.
+// return numCylces * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
+//
+const calculateInZone = (entryPercent: number, months: number, startDate: Date) => {
+  // TODO: do we want to have a period duratio of something other than a month ever?
+  const periodDuration = SECONDS_IN_MONTH;
+  return (months * periodDuration + (startDate.getTime() / 1000)) > (new Date(Date.now()).getTime() / 1000)
   const zonePercent = 1 / months;
   return entryPercent! < zonePercent;
 };
@@ -78,9 +112,9 @@ const calculateEntryType = (entryInZone: boolean) => {
   return entryInZone ? MarkerType.ZONE : MarkerType.STAKING;
 };
 
-// Calculate percet based on now to marker end of cycle
-const calculatePercent = (entryStartDate: Date, now: Date, months: number) => {
-  const diff = differenceInSeconds(now, entryStartDate);
+// Calculate percent based on now to marker end of cycle
+const calculatePercent = (now: Date, endDate: Date, months: number) => {
+  const diff = differenceInSeconds(endDate, now);
   if (diff < 0) {
     console.error(
       'Data Error: Current date is less than entry date',

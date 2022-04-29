@@ -154,7 +154,7 @@ export const Stake = () => {
         placeholder={'0.00'}
         value={stakingAmount}
       />
-      <AmountInTemple>{isZap && templeAmountMessage}</AmountInTemple>
+      {!!(isZap && templeAmountMessage) && <AmountInTemple>{templeAmountMessage}</AmountInTemple>}
       {!!error && <ErrorLabel>{error}</ErrorLabel>}
       <VaultButton
         label="Stake"
@@ -189,7 +189,7 @@ const AmountInTemple = styled.span`
 const ErrorLabel = styled.span`
   color: ${theme.palette.enclave.chaos};
   display: block;
-  margin: 0 0 1rem;
+  margin: 1rem;
 `;
 
 const DepositContainer = styled.div`

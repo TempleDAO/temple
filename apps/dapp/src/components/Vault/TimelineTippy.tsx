@@ -31,8 +31,7 @@ const TimelineTippy = ({ vault, entry, children }: Props) => {
     <Tippy
       content={
         <TippyDiv>
-          {amount} Temple<br />
-          Entry Date: {startDate}<br />
+          {amount} $TEMPLE<br />
           Vesting Date: {endDate}
         </TippyDiv>
       } 

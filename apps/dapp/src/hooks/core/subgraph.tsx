@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import axios, { AxiosRequestConfig } from 'axios';
+import axios from 'axios';
 
 import useRequestState from 'hooks/use-request-state';
 import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
-import { createVault } from 'components/Vault/desktop-parts/utils';
+import { createVaultGroup } from 'components/Vault/desktop-parts/utils';
 
 import {
   SubGraphQuery,
@@ -121,12 +121,7 @@ export const useListCoreVaultGroups = () => {
       return [];
     }
 
-    return groups.map(({ vaults, id }) => {
-      return {
-        id,
-        vaults: vaults.map((vault) => createVault(vault)),
-      };
-    });
+    return groups.map((vaultGroup) => createVaultGroup(vaultGroup));
   }, [groups]);
 
   return {
@@ -167,10 +162,7 @@ export const useGetVaultGroup = (vaultGroupId: string) => {
       return null;
     }
     
-    return {
-      ...vaultGroup,
-      vaults: vaultGroup.vaults.map((vault) => createVault(vault)),
-    };
+    return createVaultGroup(vaultGroup);
   }, [vaultGroup]);
 
   return {
