@@ -1,6 +1,6 @@
 import { useRef, useState, PropsWithChildren } from 'react';
 
-import { Entry, Point, Vault, VaultRef } from './types';
+import { Entry, Point, VaultGroup, VaultRef } from './types';
 import { useMediaQuery } from 'react-responsive';
 import { VaultDesktop } from './VaultDesktop';
 import { VaultMobile } from './VaultMobile';
@@ -8,7 +8,7 @@ import { useSelectedPage } from './useSelectedPage';
 import { queryPhone } from 'styles/breakpoints';
 
 type Props = {
-  data: Vault;
+  data: VaultGroup;
 };
 
 export const VaultSVG = ({ data: vault, children }: PropsWithChildren<Props>) => {

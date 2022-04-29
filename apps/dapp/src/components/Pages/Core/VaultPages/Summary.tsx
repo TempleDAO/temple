@@ -12,7 +12,7 @@ import useVaultContext from './useVaultContext';
 
 export const Summary = () => {
   const navigate = useNavigate();
-  const vault = useVaultContext();
+  const { activeVault: vault } = useVaultContext();
 
   const onClickLink = (e: SyntheticEvent) => {
     e.preventDefault();

@@ -58,7 +58,7 @@ const useZappedAssetTempleBalance = (
 const ENV = import.meta.env;
 
 export const Stake = () => {
-  const vault = useVaultContext();
+  const { activeVault: vault } = useVaultContext();
   const { balance } = useWallet();
 
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();

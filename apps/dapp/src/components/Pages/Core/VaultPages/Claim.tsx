@@ -16,11 +16,18 @@ import { useVaultBalance } from 'hooks/core/use-vault-balance';
 import { useWallet } from 'providers/WalletProvider';
 
 export const Claim = () => {
-  const vault = useVaultContext();
+  const { activeVault: vault } = useVaultContext();
+
+  useEffect(() => {
+    if (!vault) {
+      console.error('MISSING VAULT')
+    }
+  }, [vault]);
+
   const { wallet, signer } = useWallet();
   const [getBalance, { response: balanceResponse, isLoading: getBalanceLoading }] = useVaultBalance(vault.id);
   const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
-  const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault.id, async () => {
+  const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault!.id, async () => {
     await refreshWalletState();
     await getBalance();
   });
