@@ -13,7 +13,7 @@
     "graph:stop": "cd graph-node/docker && docker compose down"
   },
   "dependencies": {
-    "@graphprotocol/graph-cli": "^0.28.1",
+    "@graphprotocol/graph-cli": "^0.29.0",
     "@graphprotocol/graph-ts": "^0.26.0"
   }
 }
