@@ -26,13 +26,15 @@ const VaultListPage = () => {
   }
 
   return (
-    <>
+    <ul>
       {vaults.map((vaultGroup) => (
-        <Link to={`/core/dapp/vaults/${vaultGroup.id}/summary`}>
-          {vaultGroup.id}
-        </Link>
+        <li key={vaultGroup.id}>
+          <Link to={`/core/dapp/vaults/${vaultGroup.id}/summary`}>
+            {vaultGroup.id}
+          </Link>
+        </li>
       ))}
-    </>
+    </ul>
   );
 };
 
