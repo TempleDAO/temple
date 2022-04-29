@@ -370,12 +370,12 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         TEMPLE_ADDRESS
       );
 
-      // await ensureAllowance(
-      //   TICKER_SYMBOL.TEMPLE_TOKEN,
-      //   TEMPLE,
-      //   TEMPLE_STAKING_ADDRESS,
-      //   amountToStake
-      // );
+      await ensureAllowance(
+        TICKER_SYMBOL.TEMPLE_TOKEN,
+        TEMPLE,
+        TEMPLE_STAKING_ADDRESS,
+        amountToStake
+      );
 
       const balance = await TEMPLE.balanceOf(wallet);
       const verifiedAmountToStake = amountToStake.lt(balance)

@@ -8,13 +8,14 @@ import { Nullable } from 'types/util';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 import { useNotification } from 'providers/NotificationProvider';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 import { Callback } from './types';
 
 const ENV = import.meta.env;
 
 export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Callback) => {
-  const { signer, wallet } = useWallet();
+  const { signer, wallet, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
 
   const handler = useCallback(async (amount: number) => {
@@ -28,17 +29,13 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
     const bigAmount = toAtto(amount);
     const temple = new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
     const vault = new Vault__factory(signer).attach(vaultContractAddress);
-    const allowance = await temple.allowance(wallet, vault.address);
-
-    if (allowance.lt(bigAmount)) {
-      const approval = await temple.increaseAllowance(vault.address, bigAmount);
-      await approval.wait();
-      
-      openNotification({
-        title: 'Temple allowance approved',
-        hash: approval.hash,
-      });
-    }
+  
+    await ensureAllowance(
+      TICKER_SYMBOL.TEMPLE_TOKEN,
+      temple,
+      vault.address,
+      bigAmount,
+    );
 
     const receipt = await vault.deposit(bigAmount);
     await receipt.wait();

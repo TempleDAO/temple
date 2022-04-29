@@ -4,7 +4,7 @@ import {
   useContext,
   useState,
 } from 'react';
-import { BigNumber, Signer } from 'ethers';
+import { BigNumber, Signer,  } from 'ethers';
 import { useAccount, useSigner, useNetwork, useProvider, useConnect } from 'wagmi';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
@@ -27,7 +27,7 @@ import {
   OGTemple__factory,
   TempleTeamPayments__factory,
   LockedOGTempleDeprecated__factory,
-  ERC20
+  ERC20,
 } from 'types/typechain';
 import {
   TEMPLE_ADDRESS,
@@ -171,6 +171,14 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     // block timestamps are in seconds no ms
     return currentBlockTimestamp * 1000;
   };
+
+  interface ERC20Like {
+    allowance(
+      owner: string,
+      spender: string,
+      overrides?: any
+    ): Promise<[BigNumber]>;
+  }
 
   /**
    * Always use this to increase allowance for TOKENS

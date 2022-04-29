@@ -172,12 +172,12 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         TEMPLE_IV_SWAP_ADDRESS
       );
 
-      // await ensureAllowance(
-      //   TICKER_SYMBOL.TEMPLE_TOKEN,
-      //   TEMPLE,
-      //   isIvSwap ? TEMPLE_IV_SWAP_ADDRESS : TEMPLE_V2_ROUTER_ADDRESS,
-      //   amountInTemple
-      // );
+      await ensureAllowance(
+        TICKER_SYMBOL.TEMPLE_TOKEN,
+        TEMPLE,
+        isIvSwap ? TEMPLE_IV_SWAP_ADDRESS : TEMPLE_V2_ROUTER_ADDRESS,
+        amountInTemple
+      );
 
       const balance = await TEMPLE.balanceOf(wallet);
       const verifiedAmountInTemple = amountInTemple.lt(balance)

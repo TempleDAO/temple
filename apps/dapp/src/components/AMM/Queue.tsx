@@ -69,12 +69,12 @@ export const Queue: FC<QueueProps> = ({ small }) => {
           await TEMPLE_STAKING.OG_TEMPLE()
         );
 
-        // await ensureAllowance(
-        //   TICKER_SYMBOL.OG_TEMPLE_TOKEN,
-        //   OG_TEMPLE_TOKEN,
-        //   TEMPLE_STAKING_ADDRESS,
-        //   toAtto(OGTAmount)
-        // );
+        await ensureAllowance(
+          TICKER_SYMBOL.OG_TEMPLE_TOKEN,
+          OG_TEMPLE_TOKEN,
+          TEMPLE_STAKING_ADDRESS,
+          toAtto(OGTAmount)
+        );
 
         await unstake(toAtto(OGTAmount));
 
