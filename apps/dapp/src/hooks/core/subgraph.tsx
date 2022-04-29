@@ -41,6 +41,7 @@ const createGetVaultGroupsQuery = (walletAddress = ''): SubGraphQuery => ({
       vaults {
         tvl
         id
+        periodDuration
         ${createVaultUserFragment(walletAddress)}
         firstPeriodStartTimestamp
         timestamp
@@ -64,6 +65,7 @@ const createVaultGroupQuery = (vaultGroupId: string, walletAddress = ''): SubGra
       vaults {
         tvl
         id
+        periodDuration
         ${createVaultUserFragment(walletAddress)}
         firstPeriodStartTimestamp
         timestamp
