@@ -58,27 +58,30 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
   const getTemplePrice = async (
     walletAddress: string,
-    signerState: JsonRpcSigner
+    signerState: JsonRpcSigner,
+    selectedToken = STABLE_COIN_ADDRESS
   ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
+    const pairAddress =
+      selectedToken === FEI_ADDRESS ? FEI_PAIR_ADDRESS : TEMPLE_V2_PAIR_ADDRESS;
 
     const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory(
       signerState
-    ).attach(TEMPLE_V2_PAIR_ADDRESS);
+    ).attach(pairAddress);
 
     const { _reserve0, _reserve1 } = await TEMPLE_UNISWAP_V2_PAIR.getReserves();
 
     return fromAtto(_reserve1) / fromAtto(_reserve0);
   };
 
-  const updateTemplePrice = async () => {
+  const updateTemplePrice = async (selectedToken = STABLE_COIN_ADDRESS) => {
     if (!wallet || !signer) {
       return;
     }
 
-    const price = await getTemplePrice(wallet, signer);
+    const price = await getTemplePrice(wallet, signer, selectedToken);
     setTemplePrice(price);
   };
 

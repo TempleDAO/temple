@@ -78,6 +78,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
           symbol: dropdownOptions[0].label,
           address: dropdownOptions[0].value,
         });
+        updateTemplePrice(dropdownOptions[0].value);
       }
 
       setRewards(fromAtto(sellQuote || BigNumber.from(0) || 0));
@@ -119,14 +120,16 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   };
 
   useEffect(() => {
-    const setBalanceState = () => {
+    const setBalanceState = async () => {
       setTempleWalletAmount(balance.temple);
+
       if (selectedToken.symbol === TICKER_SYMBOL.FEI) {
         setStableCoinWalletAmount(balance.fei);
       } else {
         setStableCoinWalletAmount(balance.stableCoin);
       }
-      handleUpdateTempleAmount(templeAmount);
+      await handleUpdateTempleAmount(templeAmount);
+      await updateTemplePrice(selectedToken.address);
     };
     if (balance) {
       setBalanceState();
@@ -136,7 +139,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   useEffect(() => {
     async function onMount() {
       await updateBalance();
-      await updateTemplePrice();
+
       setRewards('');
       setMinAmountOut(0);
 
@@ -144,6 +147,8 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       if (templePrice > iv * 1.02) {
         setIsFraxHidden(false);
       }
+
+      await updateTemplePrice(selectedToken.address);
     }
 
     onMount();
@@ -190,11 +195,12 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
             : {
                 kind: 'select',
                 cryptoOptions: dropdownOptions,
-                onCryptoChange: (e) =>
+                onCryptoChange: (e) => {
                   setSelectedToken({
                     address: e.value.toString(),
                     symbol: e.label as TICKER_SYMBOL,
-                  }),
+                  });
+                },
                 defaultValue: dropdownOptions[0],
               }
         }

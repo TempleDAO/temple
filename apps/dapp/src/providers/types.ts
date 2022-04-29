@@ -140,7 +140,7 @@ export interface SwapService {
     sellTokenAddress?: string
   ): Promise<BigNumber | void>;
 
-  updateTemplePrice(): Promise<void>;
+  updateTemplePrice(selectedToken?: string): Promise<void>;
 
   updateIv(): Promise<void>;
 }

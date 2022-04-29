@@ -89,14 +89,16 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   };
 
   useEffect(() => {
-    const setBalanceState = () => {
+    const setBalanceState = async () => {
       setTempleWalletAmount(balance.temple);
+
       if (selectedToken.symbol === TICKER_SYMBOL.FEI) {
         setStableCoinWalletAmount(balance.fei);
       } else {
         setStableCoinWalletAmount(balance.stableCoin);
       }
-      handleUpdateStableCoinAmount(stableCoinAmount);
+      await handleUpdateStableCoinAmount(stableCoinAmount);
+      await updateTemplePrice(selectedToken.address);
     };
     if (balance) {
       setBalanceState();
