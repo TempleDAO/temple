@@ -6,7 +6,7 @@ import StatsCard from 'components/StatsCard/StatsCard';
 import { Tabs } from 'components/Tabs/Tabs';
 import type { Tab } from 'components/Tabs/Tabs';
 
-import type { Vault } from 'components/Vault/types';
+import type { VaultGroup } from 'components/Vault/types';
 
 import { ProfileVaults } from './components/ProfileVaults';
 import { ProfileLegacyTemple } from './components/ProfileLegacyTemple';
@@ -108,7 +108,7 @@ const ProfilePage = () => {
 
 function getTabs(
   isLoading: boolean,
-  vaults: Vault[],
+  vaults: VaultGroup[],
   lockedOgtBalance: number,
   ogtBalance: number,
   faithBalance: number

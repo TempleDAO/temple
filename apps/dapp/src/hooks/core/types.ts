@@ -2,7 +2,12 @@ export type Callback = () => Promise<void> | (() => void);
 
 export type MetaMaskError = Error & { data?: { message: string } };
 
-export interface VaultFragment {
+export interface GraphVaultGroup {
+  id: string;
+  vaults: GraphVault[];
+}
+
+export interface GraphVault {
   id: string;
   tvl: string;
   firstPeriodStartTimestamp: string;
@@ -14,39 +19,38 @@ export interface VaultFragment {
   name: string;
   joiningFee: string;
   enterExitWindowDuration: string;
-
-  // tvl
-  // id
-  // users(where: {id: "${walletAddress.toLowerCase()}"}) {
-  //   vaultUserBalances(orderBy: timestamp where: { id: "${vaultAddress.toLowerCase()}${walletAddress.toLowerCase()}" }) {
-  //     id
-  //     timestamp
-  //     value
-  //     amount
-  //   }
-  //   id
-  //   totalBalance
-  //   depositsBalance
-  //   deposits {
-  //     amount
-  //     id
-  //     timestamp
-  //     value
-  //   }
-  // }
-  // firstPeriodStartTimestamp
-  // timestamp
-  // templeToken
-  // symbol
-  // shareBoostFactor
-  // periodDuration
-  // name
-  // joiningFee
-  // enterExitWindowDuration
+  users: GraphUser[];
 }
 
-export interface UserFragment {
+export interface GraphUser {
   id: string;
   totalBalance: string;
   depositsBalance: string;
+  vaultUserBalances: GraphVaultUserBalance[];
+  deposits: GraphDeposit[];
 }
+
+export interface GraphDeposit {
+  id: string;
+  amount: string;
+  value: string;
+  timestamp: string;
+}
+
+export interface GraphVaultUserBalance {
+  id: string;
+  timestamp: string;
+  value: string;
+  amount: string;
+}
+
+export interface SubGraphResponse<T extends object> {
+  data?: T;
+}
+
+export interface SubGraphQuery {
+  query: string;
+}
+
+export type GetVaultGroupsResponse = SubGraphResponse<{ vaultGroups: GraphVaultGroup[] }>;
+export type GetVaultResponse = SubGraphResponse<{ vault: GraphVault }>;

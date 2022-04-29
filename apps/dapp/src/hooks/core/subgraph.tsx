@@ -6,114 +6,96 @@ import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
 import { createVault } from 'components/Vault/desktop-parts/utils';
 
-const createGetCoreVaultsRequest = (walletAddress = ''): AxiosRequestConfig => {
-  return {
-    method: 'post',
-    url: env.subgraph.templeCore,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: {
-      query: `{
-        vaults {
-          tvl
+import {
+  SubGraphQuery,
+  GetVaultGroupsResponse,
+  GetVaultResponse,
+} from './types'
+
+const createGetVaultGroupsQuery = (walletAddress = ''): SubGraphQuery => ({
+  query: `{
+    vaultGroups {
+      id
+      vaults {
+        tvl
+        id
+        users(where: {id: "${walletAddress.toLowerCase()}"}) {
           id
-          users(where: {id: "${walletAddress.toLowerCase()}"}) {
+          totalBalance
+          depositsBalance
+          deposits {
+            amount
             id
-            totalBalance
-            depositsBalance
-            deposits {
-              amount
-              id
-              timestamp
-              value
-            }
+            timestamp
+            value
           }
-          firstPeriodStartTimestamp
-          timestamp
-          templeToken
-          symbol
-          shareBoostFactor
-          periodDuration
-          name
-          joiningFee
-          enterExitWindowDuration
         }
-      }`,
-    },
-  };
-};
+        firstPeriodStartTimestamp
+        timestamp
+        templeToken
+        symbol
+        shareBoostFactor
+        periodDuration
+        name
+        joiningFee
+        enterExitWindowDuration
+      }
+    }
+  }`,
+});
 
 
-const createGetVaultRequest = (vaultAddress: string, walletAddress = ''): AxiosRequestConfig => {
-  return {
-    method: 'post',
-    url: env.subgraph.templeCore,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: {
-      query: `{
-        vault(id: "${vaultAddress.toLowerCase()}") {
-          tvl
-          id
-          users(where: {id: "${walletAddress.toLowerCase()}"}) {
-            vaultUserBalances(orderBy: timestamp where: { id: "${vaultAddress.toLowerCase()}${walletAddress.toLowerCase()}" }) {
-              id
-              timestamp
-              value
-              amount
-            }
-            id
-            totalBalance
-            depositsBalance
-            deposits {
-              amount
-              id
-              timestamp
-              value
-            }
-          }
-          firstPeriodStartTimestamp
-          timestamp
-          templeToken
-          symbol
-          shareBoostFactor
-          periodDuration
-          name
-          joiningFee
-          enterExitWindowDuration
-        }
-      }`,
-    },
-  };
-};
-
-const creatGetUserBalances = (vaultAddress: string, walletAddress: string): AxiosRequestConfig => {
-  return {
-    method: 'post',
-    url: env.subgraph.templeCore,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: {
-      query: `{
-        vaultUserBalances(orderBy: timestamp where: { id: "${vaultAddress.toLowerCase()}${walletAddress.toLowerCase()}" }) {
+const createGetVaultRequest = (vaultAddress: string, walletAddress = ''): SubGraphQuery => ({
+  query: `{
+    vault(id: "${vaultAddress.toLowerCase()}") {
+      tvl
+      id
+      users(where: {id: "${walletAddress.toLowerCase()}"}) {
+        vaultUserBalances(orderBy: timestamp) {
           id
           timestamp
           value
           amount
         }
-      }`,
-    },
-  };
-}
+        id
+        totalBalance
+        depositsBalance
+        deposits {
+          amount
+          id
+          timestamp
+          value
+        }
+      }
+      firstPeriodStartTimestamp
+      timestamp
+      templeToken
+      symbol
+      shareBoostFactor
+      periodDuration
+      name
+      joiningFee
+      enterExitWindowDuration
+    }
+  }`,
+});
+
+const creatGetUserBalances = (vaultAddress: string, walletAddress: string): SubGraphQuery => ({
+  query: `{
+    vaultUserBalances(orderBy: timestamp where: { id: "${vaultAddress.toLowerCase()}${walletAddress.toLowerCase()}" }) {
+      id
+      timestamp
+      value
+      amount
+    }
+  }`,
+});
 
 export const useListCoreVaults = () => {
   const { wallet, isConnecting } = useWallet();
   const [isLoading, setIsLoading] = useState(true);
 
-  const getVaults = useCallback(() => axios(createGetCoreVaultsRequest(wallet || '')), [wallet]);
+  const getVaults = useCallback(() => axios.post<GetVaultGroupsResponse>(env.subgraph.templeCore, createGetVaultGroupsQuery(wallet || '')), [wallet]);
   const [request, { response, isLoading: requestPending, error }] = useRequestState(getVaults);
 
   useEffect(() => {
@@ -130,13 +112,18 @@ export const useListCoreVaults = () => {
     getVault();
   }, [request, isConnecting]);
 
-  const vaultData = response?.data?.data?.vaults;
+  const groups = response?.data?.data?.vaultGroups;
   const vaults = useMemo(() => {
-    if (!vaultData) {
+    if (!groups) {
       return [];
     }
-    return vaultData.map((vault: any) => createVault(vault));
-  }, [vaultData]);
+    return groups.map(({ vaults, id }) => {
+      return {
+        id,
+        vaults: vaults.map((vault) => createVault(vault)),
+      };
+    });
+  }, [groups]);
 
   return {
     vaults,
@@ -149,8 +136,8 @@ export const useGetCoreVault = (vaultAddress: string) => {
   const { wallet, isConnecting } = useWallet();
   const [isLoading, setIsLoading] = useState(true);
   
-  const getVault = useCallback(
-    () => axios(createGetVaultRequest(vaultAddress, wallet || '')), [vaultAddress, wallet]);
+  const getVault = useCallback(() => 
+    axios.post<GetVaultResponse>(env.subgraph.templeCore, createGetVaultRequest(vaultAddress, wallet || '')), [vaultAddress, wallet]);
 
   const [request, { response, isLoading: requestPending, error }] = useRequestState(getVault);
   
@@ -187,8 +174,8 @@ export const useGetCoreVaultUserDeposits = (vaultAddress: string) => {
   const { wallet, isConnecting } = useWallet();
   const [isLoading, setIsLoading] = useState(true);
   
-  const getVault = useCallback(
-    () => axios(creatGetUserBalances(vaultAddress, wallet || '')), [vaultAddress, wallet]);
+  const getVault = useCallback(() => 
+    axios.post(env.subgraph.templeCore, creatGetUserBalances(vaultAddress, wallet || '')), [vaultAddress, wallet]);
 
   const [request, { response, error }] = useRequestState(getVault);
 

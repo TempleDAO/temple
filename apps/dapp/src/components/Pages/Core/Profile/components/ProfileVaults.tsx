@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 import { Body, Cell, Head, Row, Table } from 'components/Table/Table';
-import type { Vault } from 'components/Vault/types';
+import type { VaultGroup } from 'components/Vault/types';
 import Loader from 'components/Loader/Loader';
 import { Button } from 'components/Button/Button';
 
@@ -13,7 +13,7 @@ import { Container, Subheading } from '../styles';
 
 interface IProps {
   isLoading?: boolean;
-  vaults: Vault[];
+  vaults: VaultGroup[];
 }
 
 export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaults }) => {
@@ -46,15 +46,17 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaults }) => {
                 </Row>
               </Head>
               <Body>
-                {vault.entries.map((entry) => {
-                  const entryDate = entry.entryDate ?? new Date();
-                  return (
-                    <Row key={`${vault.id}${entry.id}`}>
-                      <Cell>{format(vault.startDate, 'dd MMM yy')}</Cell>
-                      <Cell>{format(entryDate, 'dd MMM yy')}</Cell>
-                      <Cell>{entry.amount}</Cell>
-                    </Row>
-                  );
+                {vault.vaults.flatMap((vault) => {
+                  return vault.entries.map((entry) => {
+                    const entryDate = entry.entryDate ?? new Date();
+                    return (
+                      <Row key={`${vault.id}${entry.id}`}>
+                        <Cell>{format(vault.startDate, 'dd MMM yy')}</Cell>
+                        <Cell>{format(entryDate, 'dd MMM yy')}</Cell>
+                        <Cell>{entry.amount}</Cell>
+                      </Row>
+                    );
+                  });
                 })}
               </Body>
             </Table>

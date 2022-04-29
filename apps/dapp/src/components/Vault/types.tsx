@@ -21,6 +21,11 @@ export type Vault = {
   zoneEmpty?: boolean;
 };
 
+export type VaultGroup = {
+  id: string;
+  vaults: Vault[];
+}
+
 export type VaultProps = {
   vault: Vault;
   selectedNav: VaultPage;
