@@ -10,16 +10,16 @@ import {
 function toAtto(n: number) {
     return BigNumber.from(10).pow(18).mul(n);
   }
-  
+
   function fromAtto(n: BigNumber) {
     return n.div(BigNumber.from(10).pow(18)).toNumber();
   }
 
   const TEMPLE_ADDR = '0x5FbDB2315678afecb367f032d93F642f64180aa3'
-  const VAULT_ADDR = '0x1d3591a131f6C1951dae5a4dE3AfEF0Fc1d63e64'
+  const VAULT_ADDR = '0x84E69A00be98f17E2e988308e14A6d619396ef3F'
 
   const ONE_HOUR = 60*60;
-  
+
   async function main() {
     const [owner, account1, account2, account3, account4] = await ethers.getSigners();
 
@@ -37,7 +37,7 @@ function toAtto(n: number) {
     await templeToken.connect(account2).increaseAllowance(vault.address, toAtto(30000));
     await templeToken.connect(account3).increaseAllowance(vault.address, toAtto(30000));
     await templeToken.connect(account4).increaseAllowance(vault.address, toAtto(30000));
-    
+
     await vault.connect(account1).deposit(toAtto(100));
     await vault.connect(account2).deposit(toAtto(300));
 
