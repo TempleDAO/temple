@@ -10,6 +10,7 @@ type Metric @entity {
   tfrCount: BigInt!
   tokenCount: BigInt!
   userCount: BigInt!
+  vaultGroupCount: BigInt!
 }
 
 type MetricDayData @entity {
@@ -25,6 +26,7 @@ type MetricDayData @entity {
   tfrCount: BigInt!
   tokenCount: BigInt!
   userCount: BigInt!
+  vaultGroupCount: BigInt!
 }
 
 type Exposure @entity {
@@ -46,6 +48,12 @@ type TreasuryFarmingRevenue @entity {
   lifetimeAccRevenueScaledByShare: BigInt!
 }
 
+type VaultGroup @entity {
+  id: ID!
+  timestamp: BigInt!
+  vaults: [Vault!]! @derivedFrom(field: "vaultGroup")
+}
+
 type Vault @entity {
   id: ID!
   timestamp: BigInt!
@@ -59,6 +67,7 @@ type Vault @entity {
   firstPeriodStartTimestamp: BigInt!
   users: [User!]!
   tvl: BigDecimal!
+  vaultGroup: VaultGroup!
   vaultHourDatas: [VaultHourData!]! @derivedFrom(field: "vault")
 }
 
@@ -76,6 +85,7 @@ type VaultHourData @entity {
   firstPeriodStartTimestamp: BigInt!
   users: [User!]!
   tvl: BigDecimal!
+  vaultGroup: VaultGroup!
 }
 
 type User @entity {

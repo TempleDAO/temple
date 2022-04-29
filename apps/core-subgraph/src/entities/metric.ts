@@ -19,6 +19,7 @@ export function getMetric(): Metric {
     metric.tfrCount = BIG_INT_0
     metric.tokenCount = BIG_INT_0
     metric.userCount = BIG_INT_0
+    metric.vaultGroupCount = BIG_INT_0
   }
 
   return metric as Metric
@@ -50,5 +51,6 @@ export function updateOrCreateDayData(metric: Metric, timestamp: BigInt): void {
   dayData.tfrCount = metric.tfrCount
   dayData.tokenCount = metric.tokenCount
   dayData.userCount = metric.userCount
+  dayData.vaultGroupCount = metric.vaultGroupCount
   dayData.save()
 }
