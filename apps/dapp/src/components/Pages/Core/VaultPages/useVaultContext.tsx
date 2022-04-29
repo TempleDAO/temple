@@ -1,9 +1,9 @@
 import { useOutletContext } from 'react-router-dom';
 
-import { Vault } from 'components/Vault/types';
+import { VaultGroup } from 'components/Vault/types';
 
 const useVaultContext = () => {
-  const { vault } = useOutletContext<{ vault: Vault }>();
+  const { vault } = useOutletContext<{ vault: VaultGroup }>();
   return vault;
 };
 

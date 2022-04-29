@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Vault } from 'components/Vault/types';
 import { Spinner } from 'components/LoaderVault/Spinner';
-import { useGetCoreVault } from 'hooks/core/subgraph';
+import { useGetVaultGroup } from 'hooks/core/subgraph';
 
 const ENV = import.meta.env;
 
@@ -32,7 +32,7 @@ const ENV = import.meta.env;
 
 const VaultPage = () => {
   const { vaultId } = useParams();
-  const { isLoading, vault, error } = useGetCoreVault(vaultId || '');
+  const { isLoading, vault, error } = useGetVaultGroup(vaultId || '');
 
   if (isLoading) {
     return <Spinner />;

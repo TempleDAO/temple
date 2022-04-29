@@ -2,10 +2,10 @@ import { Navigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 
 import Loader from 'components/Loader/Loader';
-import { useListCoreVaults } from 'hooks/core/subgraph';
+import { useListCoreVaultGroups } from 'hooks/core/subgraph';
 
 const VaultListPage = () => {
-  const { vaults, isLoading, error } = useListCoreVaults();
+  const { vaults, isLoading, error } = useListCoreVaultGroups();
 
   if (isLoading) {
     return <Loader />;
@@ -27,9 +27,9 @@ const VaultListPage = () => {
 
   return (
     <>
-      {vaults.map((vault: any) => (
-        <Link to={`/core/dapp/vaults/${vault.id}/summary`}>
-          {vault.name}
+      {vaults.map((vaultGroup) => (
+        <Link to={`/core/dapp/vaults/${vaultGroup.id}/summary`}>
+          {vaultGroup.id}
         </Link>
       ))}
     </>

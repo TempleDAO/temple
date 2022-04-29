@@ -53,4 +53,4 @@ export interface SubGraphQuery {
 }
 
 export type GetVaultGroupsResponse = SubGraphResponse<{ vaultGroups: GraphVaultGroup[] }>;
-export type GetVaultResponse = SubGraphResponse<{ vault: GraphVault }>;
+export type GetVaultResponse = SubGraphResponse<{ vaultGroup: GraphVaultGroup }>;

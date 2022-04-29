@@ -27,7 +27,7 @@ export type VaultGroup = {
 }
 
 export type VaultProps = {
-  vault: Vault;
+  vault: VaultGroup;
   selectedNav: VaultPage;
   markerClick: (entryData: Entry, markerEl: SVGElement) => void;
   selectedEntry: Entry;

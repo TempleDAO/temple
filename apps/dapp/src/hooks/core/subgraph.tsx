@@ -12,6 +12,28 @@ import {
   GetVaultResponse,
 } from './types'
 
+const createVaultUserFragment = (walletAddress = '') => {
+  return `
+    users(where: {id: "${walletAddress.toLowerCase()}"}) {
+      id
+      totalBalance
+      depositsBalance
+      deposits(orderBy: timestamp) {
+        amount
+        id
+        timestamp
+        value
+      }
+      vaultUserBalances(orderBy: timestamp) {
+        id
+        timestamp
+        value
+        amount
+      }
+    }
+  `;
+}
+
 const createGetVaultGroupsQuery = (walletAddress = ''): SubGraphQuery => ({
   query: `{
     vaultGroups {
@@ -19,17 +41,7 @@ const createGetVaultGroupsQuery = (walletAddress = ''): SubGraphQuery => ({
       vaults {
         tvl
         id
-        users(where: {id: "${walletAddress.toLowerCase()}"}) {
-          id
-          totalBalance
-          depositsBalance
-          deposits {
-            amount
-            id
-            timestamp
-            value
-          }
-        }
+        ${createVaultUserFragment(walletAddress)}
         firstPeriodStartTimestamp
         timestamp
         templeToken
@@ -45,37 +57,24 @@ const createGetVaultGroupsQuery = (walletAddress = ''): SubGraphQuery => ({
 });
 
 
-const createGetVaultRequest = (vaultAddress: string, walletAddress = ''): SubGraphQuery => ({
+const createVaultGroupQuery = (vaultGroupId: string, walletAddress = ''): SubGraphQuery => ({
   query: `{
-    vault(id: "${vaultAddress.toLowerCase()}") {
-      tvl
+    vaultGroup(id: "${vaultGroupId.toLowerCase()}") {
       id
-      users(where: {id: "${walletAddress.toLowerCase()}"}) {
-        vaultUserBalances(orderBy: timestamp) {
-          id
-          timestamp
-          value
-          amount
-        }
+      vaults {
+        tvl
         id
-        totalBalance
-        depositsBalance
-        deposits {
-          amount
-          id
-          timestamp
-          value
-        }
+        ${createVaultUserFragment(walletAddress)}
+        firstPeriodStartTimestamp
+        timestamp
+        templeToken
+        symbol
+        shareBoostFactor
+        periodDuration
+        name
+        joiningFee
+        enterExitWindowDuration
       }
-      firstPeriodStartTimestamp
-      timestamp
-      templeToken
-      symbol
-      shareBoostFactor
-      periodDuration
-      name
-      joiningFee
-      enterExitWindowDuration
     }
   }`,
 });
@@ -91,11 +90,15 @@ const creatGetUserBalances = (vaultAddress: string, walletAddress: string): SubG
   }`,
 });
 
-export const useListCoreVaults = () => {
+export const useListCoreVaultGroups = () => {
   const { wallet, isConnecting } = useWallet();
   const [isLoading, setIsLoading] = useState(true);
 
-  const getVaults = useCallback(() => axios.post<GetVaultGroupsResponse>(env.subgraph.templeCore, createGetVaultGroupsQuery(wallet || '')), [wallet]);
+  const getVaults = useCallback(() => {
+    const query = createGetVaultGroupsQuery(wallet || '');
+    return axios.post<GetVaultGroupsResponse>(env.subgraph.templeCore, query);
+  }, [wallet]);
+
   const [request, { response, isLoading: requestPending, error }] = useRequestState(getVaults);
 
   useEffect(() => {
@@ -117,6 +120,7 @@ export const useListCoreVaults = () => {
     if (!groups) {
       return [];
     }
+
     return groups.map(({ vaults, id }) => {
       return {
         id,
@@ -132,12 +136,14 @@ export const useListCoreVaults = () => {
   };
 };
 
-export const useGetCoreVault = (vaultAddress: string) => {
+export const useGetVaultGroup = (vaultGroupId: string) => {
   const { wallet, isConnecting } = useWallet();
   const [isLoading, setIsLoading] = useState(true);
   
-  const getVault = useCallback(() => 
-    axios.post<GetVaultResponse>(env.subgraph.templeCore, createGetVaultRequest(vaultAddress, wallet || '')), [vaultAddress, wallet]);
+  const getVault = useCallback(() => {
+    const query = createVaultGroupQuery(vaultGroupId, wallet || '');
+    return axios.post<GetVaultResponse>(env.subgraph.templeCore, query);
+  }, [vaultGroupId, wallet]);
 
   const [request, { response, isLoading: requestPending, error }] = useRequestState(getVault);
   
@@ -155,13 +161,17 @@ export const useGetCoreVault = (vaultAddress: string) => {
     getVault();
   }, [request, isConnecting]);
 
-  const vaultData = response?.data?.data?.vault;
+  const vaultGroup = response?.data?.data?.vaultGroup;
   const vault = useMemo(() => {
-    if (!vaultData) {
+    if (!vaultGroup) {
       return null;
     }
-    return createVault(vaultData)
-  }, [vaultData]);
+    
+    return {
+      ...vaultGroup,
+      vaults: vaultGroup.vaults.map((vault) => createVault(vault)),
+    };
+  }, [vaultGroup]);
 
   return {
     vault,
@@ -174,8 +184,10 @@ export const useGetCoreVaultUserDeposits = (vaultAddress: string) => {
   const { wallet, isConnecting } = useWallet();
   const [isLoading, setIsLoading] = useState(true);
   
-  const getVault = useCallback(() => 
-    axios.post(env.subgraph.templeCore, creatGetUserBalances(vaultAddress, wallet || '')), [vaultAddress, wallet]);
+  const getVault = useCallback(() => {
+    const query = creatGetUserBalances(vaultAddress, wallet || '');
+    return axios.post(env.subgraph.templeCore, query);
+  }, [vaultAddress, wallet]);
 
   const [request, { response, error }] = useRequestState(getVault);
 

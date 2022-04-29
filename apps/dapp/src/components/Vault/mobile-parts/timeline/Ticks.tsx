@@ -1,7 +1,11 @@
-import { Vault } from 'components/Vault/types';
+import { VaultGroup } from 'components/Vault/types';
 
-export const Ticks = ({ vault }: { vault: Vault }) => {
-  const { months } = vault;
+interface Props {
+  vault: VaultGroup;
+}
+
+export const Ticks = ({ vault }: Props) => {
+  const { months } = vault.vaults[0];
 
   const tickComponents: Record<number, JSX.Element> = {
     12: (

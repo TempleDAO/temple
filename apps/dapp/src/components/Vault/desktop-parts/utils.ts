@@ -13,9 +13,9 @@ export const createVault = (subgraphVault: GraphVault): Vault => {
   const months = Number(subgraphVault.periodDuration) / SECONDS_IN_MONTH;
   const tvl = Number(subgraphVault.tvl);
   const currentCycle = getCurrentCycle(startDate, months, now);
-  const entries = (subgraphVault.users?.[0]?.deposits || []).map((deposit) => {
+  const entries = (subgraphVault.users?.[0]?.vaultUserBalances || []).map((balance) => {
     // Convert to milliseconds
-    const entryDate = new Date((Number(deposit.timestamp) * 1000));
+    const entryDate = new Date((Number(balance.timestamp) * 1000));
     const percent = calculatePercent(entryDate, now, months);
     const inZone = calculateInZone(percent, months);
     const type = calculateEntryType(inZone);
@@ -26,7 +26,7 @@ export const createVault = (subgraphVault: GraphVault): Vault => {
     );
 
     return {
-      id: deposit.id,
+      id: balance.id,
       entryDate,
       percent,
       inZone,
