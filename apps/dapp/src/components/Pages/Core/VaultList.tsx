@@ -3,20 +3,33 @@ import { Link } from 'react-router-dom';
 
 import Loader from 'components/Loader/Loader';
 import { useListCoreVaultGroups } from 'hooks/core/subgraph';
+import { CenterScreenWrapper } from 'components/Pages/Core/styles';
 
 const VaultListPage = () => {
   const { vaults, isLoading, error } = useListCoreVaultGroups();
 
   if (isLoading) {
-    return <Loader />;
+    return (
+      <CenterScreenWrapper>
+        <Loader />
+      </CenterScreenWrapper>
+    );
   }
 
   if (error) {
-    return <>Something went wrong...</>;
+    return (
+      <CenterScreenWrapper>
+        <h2>Something went wrong...</h2>
+      </CenterScreenWrapper>
+    );
   }
 
   if (!vaults.length) {
-    return <>There currently are no vaults.</>;
+    return (
+      <CenterScreenWrapper>
+        <h2>There currently are no vaults.</h2>
+      </CenterScreenWrapper>
+    );
   }
 
   if (vaults.length === 1) {
@@ -26,7 +39,7 @@ const VaultListPage = () => {
   }
 
   return (
-    <ul>
+    <CenterScreenWrapper>
       {vaults.map((vaultGroup) => (
         <li key={vaultGroup.id}>
           <Link to={`/core/dapp/vaults/${vaultGroup.id}/summary`}>
@@ -34,7 +47,7 @@ const VaultListPage = () => {
           </Link>
         </li>
       ))}
-    </ul>
+    </CenterScreenWrapper>
   );
 };
 

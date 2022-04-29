@@ -153,7 +153,7 @@ const MenuItem: FC<MenuItemProps> = ({
 
 const SELECTOR_WIDTH = 23; // pixels
 export const NAV_MOBILE_HEIGHT_PIXELS = 52; // pixels
-export const NAV_DESKTOP_HEIGHT_PIXELS = 68; // pixels
+export const NAV_DESKTOP_HEIGHT_PIXELS = 52; // pixels
 
 // Component Colors
 const COLOR_NAV_SHADOW_DESKTOP = '0px 0px 0.3125rem rgba(222, 92, 6, 0.5)';
