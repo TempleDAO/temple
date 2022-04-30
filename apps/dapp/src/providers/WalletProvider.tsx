@@ -172,14 +172,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     return currentBlockTimestamp * 1000;
   };
 
-  interface ERC20Like {
-    allowance(
-      owner: string,
-      spender: string,
-      overrides?: any
-    ): Promise<[BigNumber]>;
-  }
-
   /**
    * Always use this to increase allowance for TOKENS
    * @param tokenName
@@ -187,7 +179,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
    * @param spender
    * @param minAllowance
    */
-   const ensureAllowance = async (
+  const ensureAllowance = async (
     tokenName: string,
     // Should be ERC20, need to update Typechain (fix is in 8.0.x)
     erc20Token: any,
