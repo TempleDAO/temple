@@ -34,7 +34,6 @@ import logicImage from 'assets/images/logic.png';
 import structureImage from 'assets/images/structure.png';
 import orderImage from 'assets/images/order.png';
 
-
 const CHART_EMBED_MIN_WIDTH = 520;
 const CHART_EMBED_HEIGHT = 400;
 const CHART_HEIGHT = 500;
@@ -128,21 +127,6 @@ const Dashboard = ({ routingHelper }: CustomRoutingPageProps) => {
               stat={`$${formatNumber(dashboardMetrics?.templeValue)}`}
               backgroundColor={theme.palette.brand75}
               backgroundImageUrl={texture1}
-              heightPercentage={50}
-            />
-          </Flex>
-
-          <Flex
-            layout={{
-              kind: 'item',
-              smallMargin: true,
-            }}
-          >
-            <StatsCard
-              label="Risk Free Value"
-              stat={`$${formatNumber(dashboardMetrics?.riskFreeValue)}`}
-              backgroundColor={theme.palette.brand75}
-              backgroundImageUrl={texture4}
               heightPercentage={50}
             />
           </Flex>
