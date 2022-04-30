@@ -34,6 +34,9 @@ contract LockedOGTemple {
     * _unlockDelaySeconds: Delay to add to block.timestamp will pick max btw block.timestamp + _unlockDelaySeconds > lockEntry.lockedUntilTimestamp
     */
     function lockFor(address _staker, uint256 _amountOGTemple, uint256 _unlockDelaySeconds) public {
+        // pull tokens
+        SafeERC20.safeTransferFrom(ogTempleToken, msg.sender, address(this), _amountOGTemple);
+
         LockedEntry storage lockEntry = ogTempleLocked[_staker];
 
         lockEntry.amount += _amountOGTemple;
@@ -42,7 +45,6 @@ contract LockedOGTemple {
             lockEntry.lockedUntilTimestamp = newLockedUntilTimestamp;
         }
 
-        SafeERC20.safeTransferFrom(ogTempleToken, _staker, address(this), _amountOGTemple);
         emit Lock(_staker, _amountOGTemple, lockEntry.amount, lockEntry.lockedUntilTimestamp);
     }
 
