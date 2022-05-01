@@ -61,7 +61,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         uint256 _periodDuration,
         uint256 _enterExitWindowDuration,
         Rational memory _shareBoostFactory,
-        JoiningFee _joiningFee
+        JoiningFee _joiningFee,
+        uint256 _firstPeriodStartTimestamp
     ) EIP712(_name, "1") ERC20(_name, _symbol)  {
         templeToken = _templeToken;
         periodDuration = _periodDuration;
@@ -69,7 +70,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         shareBoostFactor = _shareBoostFactory;
         joiningFee = _joiningFee;
 
-        firstPeriodStartTimestamp = block.timestamp;
+        firstPeriodStartTimestamp = _firstPeriodStartTimestamp;
     }
 
     /**

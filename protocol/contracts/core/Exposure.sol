@@ -149,5 +149,5 @@ contract Exposure is Ownable, RebasingERC20 {
 }
 
 interface ILiquidator {
-    function toTemple(uint256 amount, address toAccount) external returns (uint256);
+    function toTemple(uint256 amount, address toAccount) external;
 }

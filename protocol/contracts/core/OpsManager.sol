@@ -41,16 +41,21 @@ contract OpsManager is Ownable {
     }
 
     /**
-     * @notice Create a new vault
+     * @notice Create a new vault instance.
+     *
+     * @dev for any given time period (eg. 1 month), we expect
+     * their to be multiple vault instances to allow users to
+     * join continously.
      */
-    function createVault(
+    function createVaultInstance(
         string memory name,
         string memory symbol,
         uint256 periodDuration,
         uint256 enterExitWindowDuration,
-        Rational memory shareBoostFactory
+        Rational memory shareBoostFactory,
+        uint256 firstPeriodStartTimestamp
     ) external onlyOwner {
-        Vault vault = new Vault(name, symbol, templeToken, periodDuration, enterExitWindowDuration, shareBoostFactory, joiningFee);
+        Vault vault = new Vault(name, symbol, templeToken, periodDuration, enterExitWindowDuration, shareBoostFactory, joiningFee, firstPeriodStartTimestamp);
         activeVaults[address(vault)] = true;
         emit CreateVault(address(vault));
     }
