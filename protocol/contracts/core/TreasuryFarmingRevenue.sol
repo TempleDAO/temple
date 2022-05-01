@@ -6,8 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Exposure.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title Account for revenue earned from farming temple's Treasury
  *
@@ -42,20 +40,13 @@ contract TreasuryFarmingRevenue is Ownable {
     }
 
     /**
-     * @dev increase revenue for a given token.
-     *
-     * Operationally, must always balance shares before adding revenue, as
-     * any added revenue is automatically allocated to the current share
-     * breakdown
+     * @dev increase revenue for a given token
      */
     function addRevenue(uint256 revenueEarned) onlyOwner public {
         lifetimeAccRevenueScaledByShare += revenueEarned * SCALING_FACTOR / totalShares;
         emit RevenueEarned(revenueEarned, lifetimeAccRevenueScaledByShare);
     }
 
-    /**
-     * @dev Increase shares held by account
-     */
     function increaseShares(address account, uint256 amount) onlyOwner external {
         claimFor(account);
 
@@ -81,11 +72,10 @@ contract TreasuryFarmingRevenue is Ownable {
 
     /// @dev Claim revenue for a given (account,token)
     function claimFor(address account) public {
-        // TODO(butlerji): confirm this check is redundant and delete
-        // if (shares[account] == 0) {
-        //     // FarmingRevenue: no shares for account, nothing to claim
-        //     return;
-        // }
+        if (shares[account] > 0) {
+            // FarmingRevenue: no shares for account, nothing to claim
+            return;
+        }
 
         uint256 totalScaled = shares[account] * lifetimeAccRevenueScaledByShare;
         uint256 unclaimedScaled = totalScaled - claimedByScaled[account];
