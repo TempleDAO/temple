@@ -34,10 +34,10 @@ contract OpsManager is Ownable {
     function createExposure(
         string memory name,
         string memory symbol,
-        ERC20 revalToken
+        IERC20 revalToken
     ) external onlyOwner  {
         Exposure exposure = OpsManagerLib.createExposure(name, symbol, revalToken, activeExposures, pools);
-        emit CreateExposure(address(exposure), address(pools[exposure]));
+        emit CreateExposure(address(exposure), address(pools[revalToken]));
     }
 
     /**
@@ -61,24 +61,46 @@ contract OpsManager is Ownable {
     }
 
     /**
-     * @notice Account for revenue earned by minting shares in a given strategy
-     *
-     * @dev pre-condition expected to hold is all vaults that are not in their
-     * entry/exit period have been rebalanced and are holding the correct portion
-     * of shares expected in TreasuryFarmingRevenue
+     * @notice Rebalance a set of vaults share of primary revenue earned
      */
-    function addRevenue(Exposure[] memory exposures, uint256 amount) external onlyOwner {
-        for (uint256 i = 0; i < exposures.length; i++) {
-            pools[exposures[i]].addRevenue(amount);
-        }
-    }
-
     function rebalance(Vault[] memory vaults, IERC20 exposureToken) external {
         require(address(pools[exposureToken]) != address(0), "No exposure/revenue farming pool for the given ERC20 Token");
 
         for (uint256 i = 0; i < vaults.length; i++) {
             require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
             OpsManagerLib.rebalance(vaults[i], pools[exposureToken]);
+        }
+    }
+
+    /**
+     * @notice Account for revenue earned from primary farming activites
+     *
+     * @dev pre-condition expected to hold is all vaults that are not in their
+     * entry/exit period have been rebalanced and are holding the correct portion
+     * of shares expected in TreasuryFarmingRevenue
+     */
+    function addRevenue(IERC20[] memory exposureTokens, uint256[] memory amounts) external onlyOwner {
+        require(exposureTokens.length == amounts.length, "Exposures and amounts array must be the same length");
+
+        for (uint256 i = 0; i < exposureTokens.length; i++) {
+            pools[exposureTokens[i]].addRevenue(amounts[i]);
+        }
+    }
+
+    /**
+     * @notice Update mark to market of temple's various exposures
+     */
+    function updateExposureReval(IERC20[] memory exposureTokens, uint256[] memory revals) external onlyOwner {
+        require(exposureTokens.length == revals.length, "Exposures and reval amounts array must be the same length");
+
+        for (uint256 i = 0; i < exposureTokens.length; i++) {
+            Exposure exposure = pools[exposureTokens[i]].exposure();
+            uint256 currentReval = exposure.reval();
+            if (currentReval > revals[i]) {
+                exposure.decreaseReval(currentReval - revals[i]);
+            } else {
+                exposure.increaseReval(revals[i] - currentReval);
+            }
         }
     }
 
@@ -100,9 +122,13 @@ contract OpsManager is Ownable {
     /**
      * @notice For the given vaults, liquidate their exposures back to temple
      */
-    // TODO(butler): operationally, is this better to be a list of ERC20 address
-    // (will be consistent with all other RPC methods, but add some gas)
-    function liquidateExposures(Vault[] memory vaults, Exposure[] memory exposures) external {
+    function liquidateExposures(Vault[] memory vaults, IERC20[] memory exposureTokens) external {
+        Exposure[] memory exposures = new Exposure[](exposureTokens.length);
+
+        for (uint256 i = 0; i < exposureTokens.length; i++) {
+            exposures[i] = pools[exposureTokens[i]].exposure();
+        }
+
         for (uint256 i = 0; i < vaults.length; i++) {
             require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
             vaults[i].redeemExposures(exposures);
