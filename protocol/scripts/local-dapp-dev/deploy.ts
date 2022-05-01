@@ -20,9 +20,7 @@ import {
   AcceleratedExitQueue__factory,
   TempleIVSwap__factory,
   JoiningFee__factory,
-  Vault__factory,
   OpsManager__factory,
-  Exposure__factory,
 } from '../../typechain';
 import { writeFile } from 'fs/promises';
 
@@ -260,15 +258,11 @@ async function main() {
   );
   await stablecToken.mint(templeIVSwap.address, toAtto(1000000));
 
-  // create a temple vault (for testing)
-  // NOTE(butlerji): this is an example only, expect FE team to create whatever they need
   const joiningFee = await new JoiningFee__factory(owner).deploy(
     toAtto(1),
   );
 
-
   const opsManagerLib = await (await ethers.getContractFactory("OpsManagerLib")).connect(owner).deploy();
-
   const opsManager = await new OpsManager__factory({ "contracts/core/OpsManagerLib.sol:OpsManagerLib" : opsManagerLib.address }, owner).deploy(
     templeToken.address,
     joiningFee.address
