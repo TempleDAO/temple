@@ -12,9 +12,9 @@ library OpsManagerLib {
     function createExposure(
         string memory name, 
         string memory symbol, 
-        ERC20 revalToken, 
+        IERC20 revalToken, 
         Exposure[] storage activeExposures, 
-        mapping(Exposure => TreasuryFarmingRevenue) storage pools
+        mapping(IERC20 => TreasuryFarmingRevenue) storage pools
     ) public returns (Exposure) {
         // Create position and transfer ownership to the caller
         Exposure exposure = new Exposure(name, symbol, revalToken, address(this));
@@ -22,28 +22,27 @@ library OpsManagerLib {
         exposure.transferOwnership(msg.sender);
 
         // Create a FarmingRevenue pool associated with this exposure
-        pools[exposure] = new TreasuryFarmingRevenue(exposure);
-        exposure.setMinterState(address(pools[exposure]), true);
+        pools[revalToken] = new TreasuryFarmingRevenue(exposure);
+        exposure.setMinterState(address(pools[revalToken]), true);
 
         return exposure;
     }
 
     function rebalance(
         Vault vault, 
-        Exposure exposure, 
-        mapping(Exposure => TreasuryFarmingRevenue) storage pools
+        TreasuryFarmingRevenue farmingPool
     ) public {
         require(vault.inEnterExitWindow(), "FarmingRevenueMnager: Cannot rebalance vaults in their exit/entry window");
 
-        uint256 currentRevenueShare = pools[exposure].shares(address(vault));
+        uint256 currentRevenueShare = farmingPool.shares(address(vault));
         uint256 targetRevenueShare = vault.targetRevenueShare();
 
         if (targetRevenueShare > currentRevenueShare) {
-                pools[exposure].increaseShares(address(vault), targetRevenueShare - currentRevenueShare);
-            } else if (targetRevenueShare < currentRevenueShare) {
-                pools[exposure].decreaseShares(address(vault), currentRevenueShare - targetRevenueShare);
-            } else {
-                pools[exposure].claimFor(address(vault));
+            farmingPool.increaseShares(address(vault), targetRevenueShare - currentRevenueShare);
+        } else if (targetRevenueShare < currentRevenueShare) {
+            farmingPool.decreaseShares(address(vault), currentRevenueShare - targetRevenueShare);
+        } else {
+            farmingPool.claimFor(address(vault));
         }
     }
 
@@ -54,9 +53,8 @@ library OpsManagerLib {
      */
     function requiresRebalance(
         Vault[] memory vaults, 
-        Exposure exposure, 
-        mapping(Exposure => TreasuryFarmingRevenue
-    ) storage pools) public view returns (bool[] memory) {
+        TreasuryFarmingRevenue farmingPool
+    ) public view returns (bool[] memory) {
         bool[] memory requiresUpdate = new bool[](vaults.length);
 
         for (uint256 i = 0; i < vaults.length; i++) {
@@ -64,7 +62,7 @@ library OpsManagerLib {
                 continue;
             }
 
-            requiresUpdate[i] = pools[exposure].shares(address(vaults[i])) != vaults[i].targetRevenueShare();
+            requiresUpdate[i] = farmingPool.shares(address(vaults[i])) != vaults[i].targetRevenueShare();
         }
 
         return requiresUpdate;

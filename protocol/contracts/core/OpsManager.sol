@@ -10,11 +10,13 @@ import "./Rational.sol";
 import "./JoiningFee.sol";
 import "./OpsManagerLib.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title Manage all active treasury farmining revenue.
  */
 contract OpsManager is Ownable {
-    mapping(Exposure => TreasuryFarmingRevenue) public pools;
+    mapping(IERC20 => TreasuryFarmingRevenue) public pools;
     Exposure[] public activeExposures;
     mapping(address => bool) public activeVaults;
 
@@ -66,10 +68,12 @@ contract OpsManager is Ownable {
         }
     }
 
-    function rebalance(Vault[] memory vaults, Exposure exposure) external {
+    function rebalance(Vault[] memory vaults, IERC20 exposureToken) external {
+        require(address(pools[exposureToken]) != address(0), "No exposure/revenue farming pool for the given ERC20 Token");
+
         for (uint256 i = 0; i < vaults.length; i++) {
             require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
-            OpsManagerLib.rebalance(vaults[i], exposure, pools);
+            OpsManagerLib.rebalance(vaults[i], pools[exposureToken]);
         }
     }
 
@@ -79,16 +83,20 @@ contract OpsManager is Ownable {
      * keep the accounts and compounding up to date at a faster rate than the automated
      * ops process
      */
-    function claim(Vault[] memory vaults, Exposure exposure) external {
+    function claim(Vault[] memory vaults, IERC20 exposureToken) external {
+        require(address(pools[exposureToken]) != address(0), "No exposure/revenue farming pool for the given ERC20 Token");
+
         for (uint256 i = 0; i < vaults.length; i++) {
             require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
-            pools[exposure].claimFor(address(vaults[i]));
+            pools[exposureToken].claimFor(address(vaults[i]));
         }
     }
 
     /**
      * @notice For the given vaults, liquidate their exposures back to temple
      */
+    // TODO(butler): operationally, is this better to be a list of ERC20 address
+    // (will be consistent with all other RPC methods, but add some gas)
     function liquidateExposures(Vault[] memory vaults, Exposure[] memory exposures) external {
         for (uint256 i = 0; i < vaults.length; i++) {
             require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
@@ -101,8 +109,8 @@ contract OpsManager is Ownable {
      * that vault requires a rebalance before updating revenue attributed to a particular
      * exposure
      */
-    function requiresRebalance(Vault[] memory vaults, Exposure exposure) external view returns (bool[] memory) {
-        return OpsManagerLib.requiresRebalance(vaults, exposure, pools);
+    function requiresRebalance(Vault[] memory vaults, IERC20 exposureToken) external view returns (bool[] memory) {
+        return OpsManagerLib.requiresRebalance(vaults, pools[exposureToken]);
     }
 
     event CreateVault(address vault);

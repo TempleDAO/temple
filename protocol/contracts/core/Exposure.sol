@@ -40,7 +40,7 @@ contract Exposure is Ownable, RebasingERC20 {
      * All two of these values are immutable: they can only be set once during
      * construction.
      */
-    constructor(string memory _name, string memory _symbol, ERC20 _revalToken, address _canManageMinters) ERC20(_name, _symbol) { 
+    constructor(string memory _name, string memory _symbol, IERC20 _revalToken, address _canManageMinters) ERC20(_name, _symbol) { 
         revalToken = _revalToken;
         canManageMinters = _canManageMinters;
     }
