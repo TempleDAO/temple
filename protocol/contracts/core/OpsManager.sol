@@ -105,21 +105,6 @@ contract OpsManager is Ownable {
     }
 
     /**
-     * @notice claim revenue attributed to the given vault, into the given exposure
-     * @dev not required to be called, exposed if vault users want to spend the gas to
-     * keep the accounts and compounding up to date at a faster rate than the automated
-     * ops process
-     */
-    function claim(Vault[] memory vaults, IERC20 exposureToken) external {
-        require(address(pools[exposureToken]) != address(0), "No exposure/revenue farming pool for the given ERC20 Token");
-
-        for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
-            pools[exposureToken].claimFor(address(vaults[i]));
-        }
-    }
-
-    /**
      * @notice For the given vaults, liquidate their exposures back to temple
      */
     function liquidateExposures(Vault[] memory vaults, IERC20[] memory exposureTokens) external {
