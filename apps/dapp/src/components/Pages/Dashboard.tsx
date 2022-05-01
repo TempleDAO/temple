@@ -3,6 +3,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import Embed from 'components/Embed/Embed';
+import Image from 'components/Image/Image';
 import BackButton from 'components/Button/BackButton';
 import StatsCard from 'components/StatsCard/StatsCard';
 import { PriceChart } from 'components/Charts/PriceChart';
@@ -12,6 +13,8 @@ import { theme } from 'styles/theme';
 import { formatNumber, formatMillions } from 'utils/formatter';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
 import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
+
+import duneLogo from 'assets/images/dune-logo.png';
 
 import texture1 from 'assets/images/texture-1.svg';
 import texture2 from 'assets/images/texture-2.svg';
@@ -107,7 +110,14 @@ const Dashboard = ({ routingHelper }: CustomRoutingPageProps) => {
   return (
     <>
       <PageWrapper>
-        <h3>Temple Price</h3>
+        <DuneDashboardLink
+          href={'https://dune.com/templedao/Temple-AMM-Key-Metrics'}
+          target={'_blank'}
+          rel="noreferrer"
+        >
+          <Image src={duneLogo} alt={''} width={24} height={24} />
+          <span>Go to Dune Dashboard</span>
+        </DuneDashboardLink>
         <Flex
           layout={{
             kind: 'container',
@@ -577,6 +587,20 @@ const PageWrapper = styled.div`
 const ChartContainer = styled.div`
   width: 100%;
   height: ${CHART_HEIGHT}px;
+`;
+
+const DuneDashboardLink = styled.a`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+
+  span {
+    display: inline-block;
+    margin-left: 0.625rem;
+    font-size: 1rem;
+    text-decoration: underline;
+  }
 `;
 
 export default Dashboard;
