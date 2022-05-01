@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { deployAndAirdropTemple, fromAtto, mineForwardSeconds, toAtto } from "../helpers";
-import { BigNumber, Signer } from "ethers";
+import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, toAtto } from "../helpers";
+import { Signer } from "ethers";
 import { 
   IERC20,
   JoiningFee,
@@ -42,7 +42,8 @@ describe("Temple Core Vault", async () => {
         60 * 5,
         60,
         { p: 1, q: 1},
-        joiningFee.address
+        joiningFee.address,
+        await blockTimestamp()
     )
 
     await templeToken.connect(alan).increaseAllowance(vault.address, toAtto(1000000));

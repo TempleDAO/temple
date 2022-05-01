@@ -16,7 +16,7 @@ contract NoopLiquidator is ILiquidator {
         templeToken = _templeToken;
     }
 
-    function toTemple(uint256 amount, address toAccount) external override returns (uint256) {
+    function toTemple(uint256 amount, address toAccount) external override {
         templeToken.mint(toAccount, amount);
     }
 }
