@@ -106,6 +106,38 @@ describe("Temple Core Vault", async () => {
       .to.changeTokenBalance(templeToken, ben, toAtto(100));
   })
 
+  it('Handles InEnterExitWindow when firstPeriodStartTimeStamp is in the future', async () => {
+    const futureTimestamp = await blockTimestamp() + 3600; 
+    const futureVault = await new Vault__factory(owner).deploy(
+      "Temple 1m Vault",
+      "TV_1M",
+      templeToken.address,
+      60 * 5,
+      60,
+      { p: 1, q: 1},
+      joiningFee.address,
+      futureTimestamp
+    )
+
+    await futureVault.inEnterExitWindow();
+  })
+
+  it.only('Handles correctly when periodDuration == enterExitPeriodDuration', async () => {
+    const futureTimestamp = await blockTimestamp(); 
+    const futureVault = await new Vault__factory(owner).deploy(
+      "Temple 1m Vault",
+      "TV_1M",
+      templeToken.address,
+      60 * 5,
+      60 * 5,
+      { p: 1, q: 1},
+      joiningFee.address,
+      futureTimestamp
+    )
+
+    await futureVault.inEnterExitWindow();
+  })
+
   xit("cannot redeem exposures when outside of the entry/exit window", async () => {
     // TODO(butler): write test
     fail("Unimplemented");
