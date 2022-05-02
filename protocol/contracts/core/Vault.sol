@@ -157,6 +157,10 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     function inEnterExitWindow() public view returns (bool) {
+        if (block.timestamp < firstPeriodStartTimestamp) {
+            return false;
+        }
+
         uint256 numCylces = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
         return numCylces * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
     }
