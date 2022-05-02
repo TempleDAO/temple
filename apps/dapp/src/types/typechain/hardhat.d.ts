@@ -101,18 +101,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IWETH__factory>;
     getContractFactory(
-      name: "IUniswapV3SwapCallback",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IUniswapV3SwapCallback__factory>;
-    getContractFactory(
-      name: "IQuoter",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IQuoter__factory>;
-    getContractFactory(
-      name: "ISwapRouter",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ISwapRouter__factory>;
-    getContractFactory(
       name: "AcceleratedExitQueue",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.AcceleratedExitQueue__factory>;
@@ -157,21 +145,37 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.AMMWhitelist__factory>;
     getContractFactory(
-      name: "AutoHarvestKeeper",
+      name: "Exposure",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.AutoHarvestKeeper__factory>;
+    ): Promise<Contracts.Exposure__factory>;
     getContractFactory(
-      name: "KeeperCompatibleInterface",
+      name: "ILiquidator",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.KeeperCompatibleInterface__factory>;
+    ): Promise<Contracts.ILiquidator__factory>;
+    getContractFactory(
+      name: "JoiningFee",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.JoiningFee__factory>;
+    getContractFactory(
+      name: "OpsManager",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.OpsManager__factory>;
+    getContractFactory(
+      name: "RebasingERC20",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.RebasingERC20__factory>;
+    getContractFactory(
+      name: "TreasuryFarmingRevenue",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TreasuryFarmingRevenue__factory>;
+    getContractFactory(
+      name: "Vault",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Vault__factory>;
     getContractFactory(
       name: "LockedOGTempleDeprecated",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.LockedOGTempleDeprecated__factory>;
-    getContractFactory(
-      name: "OpeningCeremony",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.OpeningCeremony__factory>;
     getContractFactory(
       name: "Devotion",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -205,6 +209,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.FakeERC20__factory>;
     getContractFactory(
+      name: "NoopLiquidator",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.NoopLiquidator__factory>;
+    getContractFactory(
       name: "TestTreasuryAllocation",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestTreasuryAllocation__factory>;
@@ -229,10 +237,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.OGTemple__factory>;
     getContractFactory(
-      name: "TempleCashback",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.TempleCashback__factory>;
-    getContractFactory(
       name: "TempleERC20Token",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleERC20Token__factory>;
@@ -248,18 +252,6 @@ declare module "hardhat/types/runtime" {
       name: "TempleTreasury",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleTreasury__factory>;
-    getContractFactory(
-      name: "TreasuryManagementProxy",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.TreasuryManagementProxy__factory>;
-    getContractFactory(
-      name: "IUniswapRouter",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IUniswapRouter__factory>;
-    getContractFactory(
-      name: "Zap",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Zap__factory>;
 
     getContractAt(
       name: "AccessControl",
@@ -372,21 +364,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IWETH>;
     getContractAt(
-      name: "IUniswapV3SwapCallback",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IUniswapV3SwapCallback>;
-    getContractAt(
-      name: "IQuoter",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IQuoter>;
-    getContractAt(
-      name: "ISwapRouter",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.ISwapRouter>;
-    getContractAt(
       name: "AcceleratedExitQueue",
       address: string,
       signer?: ethers.Signer
@@ -442,25 +419,45 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.AMMWhitelist>;
     getContractAt(
-      name: "AutoHarvestKeeper",
+      name: "Exposure",
       address: string,
       signer?: ethers.Signer
-    ): Promise<Contracts.AutoHarvestKeeper>;
+    ): Promise<Contracts.Exposure>;
     getContractAt(
-      name: "KeeperCompatibleInterface",
+      name: "ILiquidator",
       address: string,
       signer?: ethers.Signer
-    ): Promise<Contracts.KeeperCompatibleInterface>;
+    ): Promise<Contracts.ILiquidator>;
+    getContractAt(
+      name: "JoiningFee",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.JoiningFee>;
+    getContractAt(
+      name: "OpsManager",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.OpsManager>;
+    getContractAt(
+      name: "RebasingERC20",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.RebasingERC20>;
+    getContractAt(
+      name: "TreasuryFarmingRevenue",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TreasuryFarmingRevenue>;
+    getContractAt(
+      name: "Vault",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Vault>;
     getContractAt(
       name: "LockedOGTempleDeprecated",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.LockedOGTempleDeprecated>;
-    getContractAt(
-      name: "OpeningCeremony",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.OpeningCeremony>;
     getContractAt(
       name: "Devotion",
       address: string,
@@ -502,6 +499,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.FakeERC20>;
     getContractAt(
+      name: "NoopLiquidator",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.NoopLiquidator>;
+    getContractAt(
       name: "TestTreasuryAllocation",
       address: string,
       signer?: ethers.Signer
@@ -532,11 +534,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.OGTemple>;
     getContractAt(
-      name: "TempleCashback",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.TempleCashback>;
-    getContractAt(
       name: "TempleERC20Token",
       address: string,
       signer?: ethers.Signer
@@ -556,21 +553,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TempleTreasury>;
-    getContractAt(
-      name: "TreasuryManagementProxy",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.TreasuryManagementProxy>;
-    getContractAt(
-      name: "IUniswapRouter",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IUniswapRouter>;
-    getContractAt(
-      name: "Zap",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Zap>;
 
     // default types
     getContractFactory(
