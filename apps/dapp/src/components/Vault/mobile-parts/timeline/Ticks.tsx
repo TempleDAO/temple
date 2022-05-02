@@ -5,7 +5,6 @@ interface Props {
 }
 
 export const Ticks = ({ vault }: Props) => {
-  const { months } = vault.vaults[0];
 
   const tickComponents: Record<number, JSX.Element> = {
     12: (

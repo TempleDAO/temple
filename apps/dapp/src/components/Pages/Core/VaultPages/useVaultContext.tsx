@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 
 import { VaultGroup } from 'components/Vault/types';
@@ -15,7 +15,7 @@ const useVaultContext = () => {
       console.error(`VaultGroupError: There is no currently active vault for VaultGroup: ${vaultGroup.id}.`);
     }
   }, [activeVault]);
-
+  console.log(vaultGroup)
   return {
     vaultGroup,
     activeVault: activeVault!,

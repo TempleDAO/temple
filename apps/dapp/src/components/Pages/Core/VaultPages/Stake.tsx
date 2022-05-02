@@ -155,7 +155,7 @@ export const Stake = () => {
         value={stakingAmount}
       />
       {!!(isZap && templeAmountMessage) && <AmountInTemple>{templeAmountMessage}</AmountInTemple>}
-      {!!error && <ErrorLabel>{error}</ErrorLabel>}
+      <ErrorLabel>{error}</ErrorLabel>
       <VaultButton
         label="Stake"
         autoWidth

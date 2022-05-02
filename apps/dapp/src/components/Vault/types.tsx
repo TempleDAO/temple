@@ -13,21 +13,27 @@ export type Entry = {
 
 export type Vault = {
   id: string;
+  // duration of vault in months (30 days)
   months: number;
+  // tvl of vault instance
   tvl: number;
   now: Date;
+  // Start of vault instance
   startDate: Date;
   entries: Entry[];
   currentCycle?: number;
   zoneEmpty?: boolean;
   endDate: Date;
+  // Is the vault in an enter/exit period.
   inZone: boolean;
 };
 
 export type VaultGroup = {
   id: string;
   name: string;
+  // duration of vault in months (30 days)
   months: number;
+  // Underlying vault instances.
   vaults: Vault[];
   startDate: Date;
   endDate: Date;

@@ -18,9 +18,7 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
     endDate,
     months,
   };
-}
-
-// return numCylces * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
+};
 
 export const createVault = (subgraphVault: GraphVault): Vault => {
   const startDate = new Date(Number(subgraphVault.firstPeriodStartTimestamp) * 1000);
@@ -96,6 +94,10 @@ const maybeInsertEmptyMarker = (vault: Vault) => {
   }
 };
 
+
+// Calculate if the vault is in an enter/exit window.
+// Note: the following is the logic found inside the vault contract for determining if in enterExit window.
+// return numCylces * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
 const calculateInZoneVaultInstance = (startDate: Date, months: number) => {
   const periodDuration = SECONDS_IN_MONTH;
   const nowSeconds = new Date(Date.now()).getTime() / 1000;
@@ -105,10 +107,6 @@ const calculateInZoneVaultInstance = (startDate: Date, months: number) => {
 
 // we treat the zone the same as a "percent", so the calculations for it are the same
 // and we use the percent value as a comparison to determine if we're in or out of the zone
-//
-// Note: the following is the logic found inside the vault contract for determining if in enterExit window.
-// return numCylces * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
-//
 const calculateInZone = (entryPercent: number, months: number) => {
   // TODO: do we want to have a period duratio of something other than a month ever?
   const zonePercent = 1 / months;
