@@ -10,6 +10,7 @@ import { getOrCreateToken } from './token'
 import { toDecimal } from '../utils/decimals'
 import { getVault, updateVault } from './vault'
 import { getOrCreateVaultUserBalance, updateVaultUserBalance } from './vaultUserBalance'
+import { getVaultGroup, updateVaultGroup } from './vaultGroup'
 
 
 export function createWithdraw(event: WithdrawEvent): Withdraw {
@@ -32,6 +33,10 @@ export function createWithdraw(event: WithdrawEvent): Withdraw {
   withdraw.vault = vault.id
   vault.tvl = vault.tvl.minus(amount)
   updateVault(vault, timestamp)
+
+  const vaultGroup = getVaultGroup(vault.name)
+  vaultGroup.tvl = vaultGroup.tvl.minus(amount)
+  updateVaultGroup(vaultGroup, timestamp)
 
   const user = getOrCreateUser(event.params.account, timestamp)
   withdraw.user = user.id

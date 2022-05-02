@@ -51,6 +51,7 @@ type TreasuryFarmingRevenue @entity {
 type VaultGroup @entity {
   id: ID!
   timestamp: BigInt!
+  tvl: BigDecimal!
   vaults: [Vault!]! @derivedFrom(field: "vaultGroup")
 }
 

@@ -28,6 +28,12 @@ export function getOrCreateVaultGroup(groupID: string, timestamp: BigInt): Vault
   return vaultGroup as VaultGroup
 }
 
+export function getVaultGroup(groupID: string): VaultGroup {
+  const vaultGroup = VaultGroup.load(groupID)
+
+  return vaultGroup as VaultGroup
+}
+
 export function updateVaultGroup(vaultGroup: VaultGroup, timestamp: BigInt): void {
   vaultGroup.timestamp = timestamp
   vaultGroup.save()
