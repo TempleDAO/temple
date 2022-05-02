@@ -15,8 +15,8 @@ function toAtto(n: number) {
     return n.div(BigNumber.from(10).pow(18)).toNumber();
   }
 
-  const TEMPLE_ADDR = '0x5FbDB2315678afecb367f032d93F642f64180aa3'
-  const VAULT_ADDR = '0x84E69A00be98f17E2e988308e14A6d619396ef3F'
+  const TEMPLE_ADDR = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+  const VAULT_ADDR = '0x84E69A00be98f17E2e988308e14A6d619396ef3F';
 
   const ONE_HOUR = 60*60;
 
@@ -26,11 +26,11 @@ function toAtto(n: number) {
     // get temple addr
 
     const templeToken = await new TempleERC20Token__factory(owner).attach(
-        TEMPLE_ADDR
+      TEMPLE_ADDR
     );
 
     const vault = await new Vault__factory(owner).attach(
-        VAULT_ADDR
+      VAULT_ADDR
     );
 
     await templeToken.connect(account1).increaseAllowance(vault.address, toAtto(30000));

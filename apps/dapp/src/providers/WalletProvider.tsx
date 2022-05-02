@@ -179,7 +179,8 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
    */
   const ensureAllowance = async (
     tokenName: string,
-    token: ERC20,
+    // Should be ERC20, need to update Typechain (fix is in 8.0.x)
+    erc20Token: any,
     spender: string,
     minAllowance: BigNumber
   ) => {
@@ -188,6 +189,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
+    const token = erc20Token as ERC20;
     const allowance = await token.allowance(walletAddress, spender);
 
     if (allowance.lt(minAllowance)) {

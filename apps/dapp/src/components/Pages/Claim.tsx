@@ -19,16 +19,15 @@ import { ProgressAnimation } from 'components/Loader/ProgressAnimation';
 import { BigNumber } from '@ethersproject/bignumber';
 import { fromAtto } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
-import { TempleCashback__factory } from 'types/typechain';
 
 const ENV_VARS = import.meta.env;
-const TEMPLE_CASHBACK_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_CASHBACK_ADDRESS;
 
 // Map filenames to dropdown name
 type ClaimFile = {
   file: ClaimType;
   name: string;
 };
+
 const relevantClaims: ClaimFile[] = [
   {
     file: ClaimType.GAS_REFUND_OC_PUZZLES as ActiveClaim,
@@ -270,36 +269,6 @@ function useTempleCashback() {
     else setAllocation(0);
     if (dispatch) dispatch({ type: 'fileChange' });
   }, [activeClaim, wallet]);
-
-  // checks if user has already claimed their allocation
-  useEffect(() => {
-    async function isAllocationAlreadyClaimed() {
-      if (
-        signer &&
-        wallet &&
-        activeClaim &&
-        claims[activeClaim][wallet.toLowerCase()]
-      ) {
-        const templeCashback = new TempleCashback__factory(signer).attach(
-          TEMPLE_CASHBACK_ADDRESS
-        );
-
-        let allocationClaimed;
-        if (claims[activeClaim][wallet.toLowerCase()]) {
-          allocationClaimed = await templeCashback.usedNonces(
-            wallet,
-            BigNumber.from(claims[activeClaim][wallet.toLowerCase()]?.nonce)
-          );
-        }
-
-        if (allocationClaimed) {
-          dispatch({ type: 'success', claim: activeClaim });
-        }
-      }
-    }
-
-    isAllocationAlreadyClaimed();
-  }, [signer, activeClaim]);
 
   const [state, dispatch] = useReducer(reducer, {
     ...cashbackInitialState,
