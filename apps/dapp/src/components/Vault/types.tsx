@@ -21,6 +21,7 @@ export type Vault = {
   currentCycle?: number;
   zoneEmpty?: boolean;
   endDate: Date;
+  inZone: boolean;
 };
 
 export type VaultGroup = {

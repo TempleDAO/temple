@@ -35,11 +35,13 @@ export const createVault = (subgraphVault: GraphVault): Vault => {
 
   const tvl = Number(subgraphVault.tvl);
   const currentCycle = getCurrentCycle(startDate, months, now);
+  const inZone = calculateInZoneVaultInstance(startDate, months);
+  
   const entries = (subgraphVault.users?.[0]?.vaultUserBalances || []).map((balance) => {
     // Convert to milliseconds
     const entryDate = new Date((Number(balance.timestamp) * 1000));
     const percent = calculatePercent(now, endDate, months);
-    const inZone = calculateInZone(percent, months, startDate);
+    const inZone = calculateInZone(percent, months);
     const type = calculateEntryType(inZone);
     const currentCycle = getCurrentCycle(
       entryDate,
@@ -68,6 +70,7 @@ export const createVault = (subgraphVault: GraphVault): Vault => {
     currentCycle,
     entries,
     endDate,
+    inZone,
   };
 
   maybeInsertEmptyMarker(vault);
@@ -93,16 +96,21 @@ const maybeInsertEmptyMarker = (vault: Vault) => {
   }
 };
 
+const calculateInZoneVaultInstance = (startDate: Date, months: number) => {
+  const periodDuration = SECONDS_IN_MONTH;
+  const nowSeconds = new Date(Date.now()).getTime() / 1000;
+  const startSeconds = startDate.getTime() / 1000;
+  return months * periodDuration + startSeconds > nowSeconds;
+};
+
 // we treat the zone the same as a "percent", so the calculations for it are the same
 // and we use the percent value as a comparison to determine if we're in or out of the zone
 //
 // Note: the following is the logic found inside the vault contract for determining if in enterExit window.
 // return numCylces * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
 //
-const calculateInZone = (entryPercent: number, months: number, startDate: Date) => {
+const calculateInZone = (entryPercent: number, months: number) => {
   // TODO: do we want to have a period duratio of something other than a month ever?
-  const periodDuration = SECONDS_IN_MONTH;
-  return (months * periodDuration + (startDate.getTime() / 1000)) > (new Date(Date.now()).getTime() / 1000)
   const zonePercent = 1 / months;
   return entryPercent! < zonePercent;
 };
