@@ -35,5 +35,13 @@ jobs:
         with:
           version: nightly
 
+      # weird bug with forge needing to be built twice
+      - run: forge build
+        continue-on-error: true
+        working-directory: protocol
+
+      - run: forge build
+        working-directory: protocol
+
       - run: forge test -vvvv --gas-report
         working-directory: protocol
