@@ -14,6 +14,6 @@ const getEnvironmentConfig = (env: string) => {
   throw new Error(`Programming Error: Invalid vite env: ${env}`);
 }
 
-const environemntConfig = getEnvironmentConfig(ENV);
+const environmentConfig = getEnvironmentConfig(ENV);
 
-export default environemntConfig;
+export default environmentConfig;
