@@ -8,7 +8,7 @@ export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
 export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGroup => {
   const vaults = subgraphVaultGroup.vaults.map((vault) => createVault(vault));
   const orderedVaults = vaults.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
-  const { startDate, months } = orderedVaults[0];
+  const { startDate, months, enterExitWindowDurationSeconds, periodDurationSeconds } = orderedVaults[0];
 
   // Sum all sub vaults tvl.
   const tvl = vaults.reduce((total, { tvl }) => total + tvl, 0);
@@ -20,6 +20,8 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
     startDate,
     months,
     tvl,
+    enterExitWindowDurationSeconds,
+    periodDurationSeconds,
   };
 };
 
