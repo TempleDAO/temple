@@ -33,11 +33,11 @@ const PIE_AREA_HEIGHT = '10rem';
 const ProfilePage = () => {
   const { getBalance, balance } = useWallet();
   const { faith } = useFaith();
-  const { isLoading, vaults } = useListCoreVaultGroups();
+  const { isLoading, vaultGroups } = useListCoreVaultGroups();
 
   const tabs = getTabs(
     isLoading,
-    vaults,
+    vaultGroups,
     0,
     balance.ogTemple,
     faith.lifeTimeFaith

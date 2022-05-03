@@ -8,7 +8,7 @@ import { CenterScreenWrapper } from 'components/Pages/Core/styles';
 
 const VaultPage = () => {
   const { vaultId } = useParams();
-  const { isLoading, vault, error } = useGetVaultGroup(vaultId || '');
+  const { isLoading, vaultGroup, error } = useGetVaultGroup(vaultId || '');
 
   if (isLoading) {
     return (
@@ -26,7 +26,7 @@ const VaultPage = () => {
     );
   }
 
-  if (!vault) {
+  if (!vaultGroup) {
     return (
       <CenterScreenWrapper>
         <h2>Invalid Vault.</h2>
@@ -40,8 +40,8 @@ const VaultPage = () => {
   return (
     <>
       <CenterScreenWrapper>
-        <VaultSVG data={vault}>
-          <Outlet context={{ vault }} />
+        <VaultSVG vaultGroup={vaultGroup}>
+          <Outlet context={{ vaultGroup }} />
         </VaultSVG>
       </CenterScreenWrapper>
     </>

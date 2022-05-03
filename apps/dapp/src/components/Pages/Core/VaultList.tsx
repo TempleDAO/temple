@@ -6,7 +6,7 @@ import { useListCoreVaultGroups } from 'hooks/core/subgraph';
 import { CenterScreenWrapper } from 'components/Pages/Core/styles';
 
 const VaultListPage = () => {
-  const { vaults, isLoading, error } = useListCoreVaultGroups();
+  const { vaultGroups, isLoading, error } = useListCoreVaultGroups();
 
   if (isLoading) {
     return (
@@ -24,7 +24,7 @@ const VaultListPage = () => {
     );
   }
 
-  if (!vaults.length) {
+  if (!vaultGroups.length) {
     return (
       <CenterScreenWrapper>
         <h2>There currently are no vaults.</h2>
@@ -32,15 +32,15 @@ const VaultListPage = () => {
     );
   }
 
-  if (vaults.length === 1) {
+  if (vaultGroups.length === 1) {
     return (
-      <Navigate replace to={`/core/dapp/vaults/${vaults[0].id}/summary`} />
+      <Navigate replace to={`/core/dapp/vaults/${vaultGroups[0].id}/summary`} />
     );
   }
 
   return (
     <CenterScreenWrapper>
-      {vaults.map((vaultGroup) => (
+      {vaultGroups.map((vaultGroup) => (
         <li key={vaultGroup.id}>
           <Link to={`/core/dapp/vaults/${vaultGroup.id}/summary`}>
             {vaultGroup.id}

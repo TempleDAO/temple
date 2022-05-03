@@ -5,11 +5,11 @@ import { Ticks } from './timeline/Ticks';
 import TimelineTippy from '../TimelineTippy'
 
 type Props = {
-  vault: VaultGroup;
+  vaultGroup: VaultGroup;
 };
 
-export const Timeline = ({ vault }: Props) => {
-  const vaultsWithBalances = vault.vaults.filter(({ entries }) => entries.length > 0);
+export const Timeline = ({ vaultGroup }: Props) => {
+  const vaultsWithBalances = vaultGroup.vaults.filter(({ entries }) => entries.length > 0);
   const markers = vaultsWithBalances.flatMap((vault, i) => {
     return vault.entries.map((entry) => {
       return (
@@ -28,7 +28,7 @@ export const Timeline = ({ vault }: Props) => {
   return (
     <>
       <BGTrack />
-      <Ticks vault={vault} />
+      <Ticks vaultGroup={vaultGroup} />
       {markers}
     </>
   );

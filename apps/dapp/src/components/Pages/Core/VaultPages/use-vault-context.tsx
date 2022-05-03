@@ -4,11 +4,8 @@ import { useOutletContext } from 'react-router-dom';
 import { VaultGroup } from 'components/Vault/types';
 
 const useVaultContext = () => {
-  const { vault: vaultGroup } = useOutletContext<{ vault: VaultGroup }>();
-  
-  const activeVault = useMemo(() => {
-    return vaultGroup.vaults.find(({ inZone }) => inZone);
-  }, [vaultGroup]);
+  const { vaultGroup } = useOutletContext<{ vaultGroup: VaultGroup }>();
+  const activeVault = vaultGroup.vaults.find(({ inZone }) => inZone);
 
   useEffect(() => {
     if (!activeVault) {

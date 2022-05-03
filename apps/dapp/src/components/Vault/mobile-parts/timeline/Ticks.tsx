@@ -1,10 +1,10 @@
 import { VaultGroup } from 'components/Vault/types';
 
 interface Props {
-  vault: VaultGroup;
+  vaultGroup: VaultGroup;
 }
 
-export const Ticks = ({ vault }: Props) => {
+export const Ticks = ({ vaultGroup }: Props) => {
 
   const tickComponents: Record<number, JSX.Element> = {
     12: (
@@ -171,7 +171,7 @@ export const Ticks = ({ vault }: Props) => {
 
   return (
     <g id="ticks">
-      {tickComponents[vault.months]}
+      {tickComponents[vaultGroup.months]}
       <circle
         id="timeline-end-marker"
         cx={297.143}

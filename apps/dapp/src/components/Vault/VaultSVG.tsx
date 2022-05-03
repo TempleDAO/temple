@@ -8,10 +8,10 @@ import { useSelectedPage } from './useSelectedPage';
 import { queryPhone } from 'styles/breakpoints';
 
 type Props = {
-  data: VaultGroup;
+  vaultGroup: VaultGroup;
 };
 
-export const VaultSVG = ({ data: vault, children }: PropsWithChildren<Props>) => {
+export const VaultSVG = ({ vaultGroup, children }: PropsWithChildren<Props>) => {
   const selectedNav = useSelectedPage();
   const vaultRef = useRef<VaultRef>(null);
   const [selectedEntry, setSelectedEntry] = useState<Entry>();
@@ -28,7 +28,7 @@ export const VaultSVG = ({ data: vault, children }: PropsWithChildren<Props>) =>
   return isDesktop ? (
     <VaultDesktop
       ref={vaultRef}
-      vault={vault}
+      vaultGroup={vaultGroup}
       selectedNav={selectedNav!}
       markerClick={markerClick}
       markerPosition={markerPosition}
@@ -38,7 +38,7 @@ export const VaultSVG = ({ data: vault, children }: PropsWithChildren<Props>) =>
   ) : (
     <VaultMobile
       ref={vaultRef}
-      vault={vault}
+      vaultGroup={vaultGroup}
       selectedNav={selectedNav!}
       markerClick={markerClick}
       markerPosition={markerPosition}

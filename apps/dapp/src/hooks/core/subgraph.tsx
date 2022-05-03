@@ -81,17 +81,6 @@ const createVaultGroupQuery = (vaultGroupId: string, walletAddress = ''): SubGra
   }`,
 });
 
-const creatGetUserBalances = (vaultAddress: string, walletAddress: string): SubGraphQuery => ({
-  query: `{
-    vaultUserBalances(orderBy: timestamp where: { id: "${vaultAddress.toLowerCase()}${walletAddress.toLowerCase()}" }) {
-      id
-      timestamp
-      value
-      amount
-    }
-  }`,
-});
-
 export const useListCoreVaultGroups = () => {
   const { wallet, isConnecting } = useWallet();
   const [isLoading, setIsLoading] = useState(true);
@@ -117,17 +106,11 @@ export const useListCoreVaultGroups = () => {
     getVault();
   }, [request, isConnecting]);
 
-  const groups = response?.data?.data?.vaultGroups;
-  const vaults = useMemo(() => {
-    if (!groups) {
-      return [];
-    }
-
-    return groups.map((vaultGroup) => createVaultGroup(vaultGroup));
-  }, [groups]);
+  const groups = response?.data?.data?.vaultGroups || [];
+  const vaultGroups = groups.map((vaultGroup) => createVaultGroup(vaultGroup));
 
   return {
-    vaults,
+    vaultGroups,
     isLoading: isLoading || requestPending,
     error,
   };
@@ -159,49 +142,10 @@ export const useGetVaultGroup = (vaultGroupId: string) => {
   }, [request, isConnecting]);
 
   const vaultGroup = response?.data?.data?.vaultGroup;
-  const vault = useMemo(() => {
-    if (!vaultGroup) {
-      return null;
-    }
-    
-    return createVaultGroup(vaultGroup);
-  }, [vaultGroup]);
 
   return {
-    vault,
+    vaultGroup: !vaultGroup ? null : createVaultGroup(vaultGroup),
     isLoading: isLoading || requestPending,
     error,
-  };
-};
-
-export const useGetCoreVaultUserDeposits = (vaultAddress: string) => {
-  const { wallet, isConnecting } = useWallet();
-  const [isLoading, setIsLoading] = useState(true);
-  
-  const getVault = useCallback(() => {
-    const query = creatGetUserBalances(vaultAddress, wallet || '');
-    return axios.post(env.subgraph.templeCore, query);
-  }, [vaultAddress, wallet]);
-
-  const [request, { response, error }] = useRequestState(getVault);
-
-  const wrappedRequest = useCallback(async () => {
-    setIsLoading(true);
-    await request();
-    setIsLoading(false);
-  }, [request, setIsLoading]);
-
-  useEffect(() => {
-    if (isConnecting || !wallet) {
-      return;
-    }
-
-    wrappedRequest();
-  }, [request, isConnecting, wallet]);
-
-  return {
-    isLoading,
-    error,
-    vaultUserBalances: response?.data?.data?.vaultUserBalances || [],
   };
 };
