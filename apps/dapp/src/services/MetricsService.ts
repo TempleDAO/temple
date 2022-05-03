@@ -149,7 +149,7 @@ export class MetricsService {
     const ENV = ENV_VARS.VITE_ENV;
 
     this.provider =
-      ENV === 'development'
+      (ENV === 'preview' || ENV === 'local')
         ? new ethers.providers.Web3Provider(window.ethereum)
         : new ethers.providers.AlchemyProvider(
             ALCHEMY_PROVIDER_NETWORK,
