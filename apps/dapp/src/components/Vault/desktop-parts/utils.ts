@@ -10,6 +10,9 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
   const orderedVaults = vaults.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
   const { startDate, endDate, months } = orderedVaults[0];
 
+  // Sum all sub vaults tvl.
+  const tvl = vaults.reduce((total, { tvl }) => total + tvl, 0);
+  console.log(vaults)
   return {
     ...subgraphVaultGroup,
     name: subgraphVaultGroup.id,
@@ -17,41 +20,45 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
     startDate,
     endDate,
     months,
+    tvl,
   };
 };
 
 export const createVault = (subgraphVault: GraphVault): Vault => {
-  const startDate = new Date(Number(subgraphVault.firstPeriodStartTimestamp) * 1000);
+  const startDateSeconds = Number(subgraphVault.firstPeriodStartTimestamp);
+  // Vault startdate
+  const startDate = new Date(startDateSeconds * 1000);
 
   // The current timestamp
   const now = new Date(Date.now());
+
+  // Duration of vault
+  const periodDurationSeconds = Number(subgraphVault.periodDuration);
+
   // periodDuration is the number of months.
-  const months = Number(subgraphVault.periodDuration) / SECONDS_IN_MONTH;
+  const months = periodDurationSeconds / SECONDS_IN_MONTH;
 
-  const durationSeconds = months * SECONDS_IN_MONTH;
-  const endDate = addSeconds(startDate, durationSeconds);
-
+  // Vault end date
+  const endDate = addSeconds(startDate, periodDurationSeconds);
+  
+  // Vault fields
+  const enterExitWindowDurationSeconds = Number(subgraphVault.enterExitWindowDuration);
   const tvl = Number(subgraphVault.tvl);
   const currentCycle = getCurrentCycle(startDate, months, now);
-  const inZone = calculateInZoneVaultInstance(startDate, months);
+  const vaultIsInZone = calculateInZoneVaultInstance(
+    now, startDate, currentCycle, periodDurationSeconds, enterExitWindowDurationSeconds)
   
   const entries = (subgraphVault.users?.[0]?.vaultUserBalances || []).map((balance) => {
     // Convert to milliseconds
     const entryDate = new Date((Number(balance.timestamp) * 1000));
-    const percent = calculatePercent(now, endDate, months);
-    const inZone = calculateInZone(percent, months);
-    const type = calculateEntryType(inZone);
-    const currentCycle = getCurrentCycle(
-      entryDate,
-      months,
-      now,
-    );
+    const percent = calculatePercent(months, currentCycle, now, startDate);
+    const type = calculateEntryType(vaultIsInZone);
 
     return {
       id: balance.id,
       entryDate,
       percent,
-      inZone,
+      inZone: vaultIsInZone,
       type,
       currentCycle,
       value: balance.value,
@@ -68,9 +75,13 @@ export const createVault = (subgraphVault: GraphVault): Vault => {
     currentCycle,
     entries,
     endDate,
-    inZone,
+    enterExitWindowDurationSeconds,
+    periodDurationSeconds,
+    // Temporarily default to false.
+    inZone: vaultIsInZone,
   };
 
+  
   maybeInsertEmptyMarker(vault);
   
   return vault;
@@ -79,7 +90,7 @@ export const createVault = (subgraphVault: GraphVault): Vault => {
 // If there is no other marker currently in the zone
 // (because it cycled), then we should show the empty "Enter" marker
 const maybeInsertEmptyMarker = (vault: Vault) => {
-  const zoneEmpty = !vault.entries.some(({ inZone }) => inZone);
+  const zoneEmpty = !vault.entries.length;
   vault.zoneEmpty = zoneEmpty;
   if (zoneEmpty) {
     const emptyEntry: Entry = {
@@ -97,12 +108,24 @@ const maybeInsertEmptyMarker = (vault: Vault) => {
 
 // Calculate if the vault is in an enter/exit window.
 // Note: the following is the logic found inside the vault contract for determining if in enterExit window.
+// uint256 numCylces = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
 // return numCylces * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
-const calculateInZoneVaultInstance = (startDate: Date, months: number) => {
-  const periodDuration = SECONDS_IN_MONTH;
-  const nowSeconds = new Date(Date.now()).getTime() / 1000;
+const calculateInZoneVaultInstance = (
+  now: Date,
+  startDate: Date,
+  currentCycle: number,
+  periodDurationSeconds: number,
+  enterExitWindowDurationSeconds: number,
+) => {
+  const nowSeconds = now.getTime() / 1000;
   const startSeconds = startDate.getTime() / 1000;
-  return months * periodDuration + startSeconds > nowSeconds;
+
+  if (currentCycle < 0) {
+    // Vault hasn't begun yet.
+    return false;
+  }
+
+  return currentCycle * periodDurationSeconds + startSeconds + enterExitWindowDurationSeconds > nowSeconds;
 };
 
 // we treat the zone the same as a "percent", so the calculations for it are the same
@@ -119,8 +142,9 @@ const calculateEntryType = (entryInZone: boolean) => {
 };
 
 // Calculate percent based on now to marker end of cycle
-const calculatePercent = (now: Date, endDate: Date, months: number) => {
-  const diff = differenceInSeconds(endDate, now);
+const calculatePercent = (months: number, currentCycle: number, now: Date, startDate: Date) => {
+  const entryStartDate = startDate;
+  const diff = differenceInSeconds(now, entryStartDate);
   if (diff < 0) {
     console.error(
       'Data Error: Current date is less than entry date',
@@ -129,6 +153,7 @@ const calculatePercent = (now: Date, endDate: Date, months: number) => {
   const totalSecondsThisCycle = SECONDS_IN_MONTH * months;
   const secondsIntoThisCycle = diff % totalSecondsThisCycle;
   const percent = secondsIntoThisCycle / totalSecondsThisCycle;
+  console.log(percent)
   return percent;
 };
 
@@ -152,10 +177,10 @@ const calculateEmptyPercent = (vault: Vault) => {
 // how many cycles since the vault started:
 // months_since_start = seconds_since_vault_start / seconds_in_months
 // cycles_since_start = floor(months_since_start / vault_months)
-const getCurrentCycle = (startDate: Date, numMonths: number, now: Date) => {
+const getCurrentCycle = (startDate: Date, months: number, now: Date) => {
   const monthsSinceStart =
     differenceInSeconds(now, startDate) / SECONDS_IN_MONTH;
-  const cyclesSinceStart = Math.floor(monthsSinceStart / numMonths);
+  const cyclesSinceStart = Math.floor(monthsSinceStart / months);
 
   return cyclesSinceStart;
 };

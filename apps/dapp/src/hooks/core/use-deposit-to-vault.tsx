@@ -1,10 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import {
   Vault__factory,
   TempleERC20Token__factory,
 } from 'types/typechain';
 import { toAtto } from 'utils/bigNumber';
-import { Nullable } from 'types/util';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 import { useNotification } from 'providers/NotificationProvider';
@@ -25,7 +24,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
       `);
       return;
     }
-    
+
     const bigAmount = toAtto(amount);
     const temple = new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
     const vault = new Vault__factory(signer).attach(vaultContractAddress);

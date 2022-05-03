@@ -17,7 +17,7 @@ import useVaultContext from './useVaultContext';
 import VaultContent from './VaultContent';
 
 const Timing = () => {
-  const vault = useVaultContext();
+  const { vaultGroup } = useVaultContext();
   
   return (
     <VaultContent>
@@ -39,29 +39,31 @@ const Timing = () => {
             </Row>
           </Head>
           <Body>
-            {(vault.entries || []).map((entry) => (
-              <Row key={entry.id}>
-                <Cell>
-                  {entry.entryDate
-                    ? format(entry.entryDate, 'MMM d, yyyy')
-                    : ''}
-                </Cell>
-                <Cell $align="center">$T {entry.amount}</Cell>
-                <Cell $align="center">
-                  {getFormattedEntryCycle(entry.currentCycle)}
-                </Cell>
-                <Cell
-                  $icon={entry.inZone ? 'claim' : undefined}
-                  $align="center"
-                >
-                  {entry.inZone ? 'YES' : getVaultClaimableFormatted(vault)}
-                </Cell>
-              </Row>
-            ))}
+            {(vaultGroup.vaults || []).flatMap((vault) => (
+              vault.entries.map((entry) => (
+                <Row key={entry.id}>
+                  <Cell>
+                    {entry.entryDate
+                      ? format(entry.entryDate, 'MMM d, yyyy')
+                      : ''}
+                  </Cell>
+                  <Cell $align="center">$T {entry.amount}</Cell>
+                  <Cell $align="center">
+                    {getFormattedEntryCycle(entry.currentCycle)}
+                  </Cell>
+                  <Cell
+                    $icon={entry.inZone ? 'claim' : undefined}
+                    $align="center"
+                  >
+                    {entry.inZone ? 'YES' : getVaultClaimableFormatted(vault)}
+                  </Cell>
+                </Row>
+              )
+            )))}
           </Body>
         </Table>
       </TableWrapper>
-      <Duration>{vault.months} Months</Duration>
+      <Duration>{vaultGroup.months} Months</Duration>
     </VaultContent>
   );
 };

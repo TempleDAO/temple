@@ -21,11 +21,17 @@ export type Vault = {
   // Start of vault instance
   startDate: Date;
   entries: Entry[];
-  currentCycle?: number;
+
+
+  // 0 index, how many times has the vault looped/cycled
+  currentCycle: number;
   zoneEmpty?: boolean;
   endDate: Date;
   // Is the vault in an enter/exit period.
   inZone: boolean;
+  
+  enterExitWindowDurationSeconds: number;
+  periodDurationSeconds: number;
 };
 
 export type VaultGroup = {
@@ -37,6 +43,7 @@ export type VaultGroup = {
   vaults: Vault[];
   startDate: Date;
   endDate: Date;
+  tvl: number;
 }
 
 export type VaultProps = {

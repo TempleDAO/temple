@@ -15,7 +15,7 @@ const useVaultContext = () => {
       console.error(`VaultGroupError: There is no currently active vault for VaultGroup: ${vaultGroup.id}.`);
     }
   }, [activeVault]);
-  console.log(vaultGroup)
+
   return {
     vaultGroup,
     activeVault: activeVault!,
