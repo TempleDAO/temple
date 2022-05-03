@@ -6,13 +6,13 @@ import MetamaskErrorPage from 'components/MetamaskError/MetamaskError';
 
 const ENV_VARS = import.meta.env;
 const ENVIRONMENT = ENV_VARS.VITE_ENV;
+const IS_DEVELOPMENT = ENVIRONMENT === 'local' || ENVIRONMENT === 'preview';
 
 export function withWallet<T>(WrappedComponent: ComponentType<T>) {
   const HOCWithWallet = (props: T) => {
     const { wallet, connectWallet, network } = useWallet();
 
-    const isValidNetwork = () =>
-      ENVIRONMENT == 'development' || network?.chainId == 1;
+    const isValidNetwork = () => IS_DEVELOPMENT|| network?.chainId == 1;
 
     return (
       window.ethereum ? (
