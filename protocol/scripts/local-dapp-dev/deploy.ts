@@ -36,7 +36,6 @@ function fromAtto(n: BigNumber) {
 
 async function extractDeployedAddress(tx: ContractTransaction, eventName: string) : Promise<string> {
   let result = 'FAILED TO FIND';
-
   await tx.wait(0).then(receipt => {
     let event = receipt.events?.filter(evt => {
       if (evt.event) {
@@ -267,22 +266,13 @@ async function main() {
     toAtto(1),
   );
 
-  // const opsManagerLib = await (await ethers.getContractFactory("OpsManagerLib")).connect(owner).deploy();
 
-  const opsManager = await new OpsManager__factory(owner).deploy(
+  const opsManagerLib = await (await ethers.getContractFactory("OpsManagerLib")).connect(owner).deploy();
+
+  const opsManager = await new OpsManager__factory({ "contracts/core/OpsManagerLib.sol:OpsManagerLib" : opsManagerLib.address }, owner).deploy(
     templeToken.address,
     joiningFee.address
   );
-
-  const vaultTx = await opsManager.createVault(
-    "Temple 1 Month Vault",
-    "TV_1MO",
-    60 * 60 * 24 * 30, //30 days
-    60 * 60 * 24, // 1 day
-    { p: 1, q : 1}
-  );
-
-  let vault = await extractDeployedAddress(vaultTx, 'CreateVault');
 
   const exposureTx = await opsManager.createExposure(
     "Stable Exposure",
@@ -291,6 +281,55 @@ async function main() {
   );
 
   let exposure = await extractDeployedAddress(exposureTx, 'CreateExposure');
+
+
+  const oneDay = 60 * 60 * 24;
+  const vaultTx1 = await opsManager.createVault(
+    "temple-1m-vault",
+    "TPL-1M-V1",
+    oneDay * 30,
+    oneDay,
+    { p: 1, q : 1}
+  );
+
+  let vault1 = await extractDeployedAddress(vaultTx1, 'CreateVault');
+
+  await ethers.provider.send('evm_increaseTime', [oneDay * 7]);
+
+  const vaultTx2 = await opsManager.createVault(
+    "temple-1m-vault",
+    "TPL-1M-V2",
+    oneDay * 30,
+    oneDay,
+    { p: 1, q : 1}
+  );
+
+  let vault2 = await extractDeployedAddress(vaultTx2, 'CreateVault');
+
+  await ethers.provider.send('evm_increaseTime', [oneDay * 7]);
+
+  const vaultTx3 = await opsManager.createVault(
+    "temple-1m-vault",
+    "TPL-1M-V3",
+    oneDay * 30,
+    oneDay,
+    { p: 1, q : 1}
+  );
+
+  let vault3 = await extractDeployedAddress(vaultTx3, 'CreateVault');
+
+  await ethers.provider.send('evm_increaseTime', [oneDay * 7]);
+
+  const vaultTx4 = await opsManager.createVault(
+    "temple-1m-vault",
+    "TPL-1M-V4",
+    oneDay * 30,
+    oneDay,
+    { p: 1, q : 1}
+  );
+
+  let vault4 = await extractDeployedAddress(vaultTx4, 'CreateVault');
+
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
@@ -310,8 +349,11 @@ async function main() {
 
     TEMPLE_IV_SWAP: templeIVSwap.address,
     TEMPLE_VAULT_OPS_MANAGER: opsManager.address,
-    TEMPLE_VAULT_5_MIN: vault,
     TEMPLE_VAULT_STABLEC_EXPOSURE: exposure,
+    TEMPLE_VAULT_1_M_1: vault1,
+    TEMPLE_VAULT_1_M_2: vault2,
+    TEMPLE_VAULT_1_M_3: vault3,
+    TEMPLE_VAULT_1_M_4: vault4,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys

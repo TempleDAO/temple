@@ -3,6 +3,8 @@ import { BigNumber, BigNumberish, ContractFactory, Signer } from "ethers";
 import { expect } from "chai";
 import { TempleERC20Token, TempleERC20Token__factory } from "../typechain";
 
+export const NULL_ADDR = "0x0000000000000000000000000000000000000000"
+
 export async function shouldThrow(p: Promise<any>, matches: RegExp) {
   try {
     await p;

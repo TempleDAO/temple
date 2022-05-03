@@ -8,6 +8,7 @@ import { Vault as VaultContract } from '../../generated/OpsManager/Vault'
 import { BIG_INT_1, BIG_DECIMAL_0 } from '../utils/constants'
 import { hourFromTimestamp } from '../utils/dates'
 import { getMetric, updateMetric } from './metric'
+import { getOrCreateVaultGroup } from './vaultGroup'
 
 
 export function createVault(event: CreateVault): void {
@@ -42,6 +43,9 @@ export function createVault(event: CreateVault): void {
   vault.firstPeriodStartTimestamp = firstPeriodStartTimestamp
   vault.users = []
   vault.tvl = BIG_DECIMAL_0
+
+  const vaultGroup = getOrCreateVaultGroup(name, event.block.timestamp)
+  vault.vaultGroup = vaultGroup.id
   vault.save()
 
   updateOrCreateHourData(vault, event.block.timestamp)
@@ -82,5 +86,6 @@ export function updateOrCreateHourData(vault: Vault, timestamp: BigInt): void {
   hourData.firstPeriodStartTimestamp = vault.firstPeriodStartTimestamp
   hourData.users = vault.users
   hourData.tvl = vault.tvl
+  hourData.vaultGroup = vault.vaultGroup
   hourData.save()
 }
