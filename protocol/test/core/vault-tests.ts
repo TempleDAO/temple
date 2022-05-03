@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, toAtto } from "../helpers";
+import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, mineToTimestamp, toAtto } from "../helpers";
 import { Signer } from "ethers";
 import { 
   IERC20,
@@ -106,7 +106,7 @@ describe("Temple Core Vault", async () => {
       .to.changeTokenBalance(templeToken, ben, toAtto(100));
   })
 
-  it('Handles InEnterExitWindow when firstPeriodStartTimeStamp is in the future', async () => {
+  it("Handles InEnterExitWindow when firstPeriodStartTimeStamp is in the future", async () => {
     const futureTimestamp = await blockTimestamp() + 3600; 
     const futureVault = await new Vault__factory(owner).deploy(
       "Temple 1m Vault",
@@ -122,7 +122,7 @@ describe("Temple Core Vault", async () => {
     await futureVault.inEnterExitWindow();
   })
 
-  it.only('Handles correctly when periodDuration == enterExitPeriodDuration', async () => {
+  it("Handles correctly when periodDuration == enterExitPeriodDuration", async () => {
     const futureTimestamp = await blockTimestamp(); 
     const futureVault = await new Vault__factory(owner).deploy(
       "Temple 1m Vault",
@@ -136,6 +136,28 @@ describe("Temple Core Vault", async () => {
     )
 
     await futureVault.inEnterExitWindow();
+  })
+
+  it("Doesn't attempt to deposit when joining fee is higher that deposit amount", async () => {
+      const now = await blockTimestamp();
+      await mineToTimestamp((now+2592000)-86400); // with default 1 temple per hour, fee will be around 690
+
+      const pastVault = await new Vault__factory(owner).deploy(
+        "Temple 3m Vault",
+        "TV_3M",
+        templeToken.address,
+        7776000,
+        2592000,
+        { p: 1, q: 1},
+        joiningFee.address,
+        1651528784
+      );
+
+      await expect(pastVault.connect(alan).deposit(toAtto(600)))
+        .to.be.revertedWith("Vault: Cannot join when fee is higher than amount");
+
+      // clean up evm
+      await ethers.provider.send("hardhat_reset", []);
   })
 
   xit("cannot redeem exposures when outside of the entry/exit window", async () => {

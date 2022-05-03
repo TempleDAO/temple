@@ -161,8 +161,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
             return false;
         }
 
-        uint256 numCylces = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
-        return numCylces * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
+        uint256 numCycles = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
+        return numCycles * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
     }
 
     /**
@@ -198,6 +198,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         require(inEnterExitWindow(), "Vault: Cannot join vault when outside of enter/exit window");
 
         uint256 fee = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));
+        require(fee < _amount, "Vault: Cannot join when fee is higher than amount");
         uint256 amountStaked = _amount - fee;
 
         if (_amount > 0) {
