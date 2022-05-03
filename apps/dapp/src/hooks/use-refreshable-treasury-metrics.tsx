@@ -1,18 +1,40 @@
 import { useEffect, useState } from 'react';
 import useInterval from 'use-interval';
-import { MetricsService, TreasuryMetrics } from 'services/MetricsService';
+import { TreasuryMetrics } from 'services/MetricsService';
+import { fetchSubgraph } from 'utils/subgraph';
 
 export default function useRefreshableTreasuryMetrics() {
   const [treasuryMetrics, setTreasuryMetrics] =
     useState<TreasuryMetrics | null>(null);
 
-  async function refreshMetrics() {
-    if (window.ethereum) {
-      const metricsService = new MetricsService();
+  async function getTreasuryMetrics(): Promise<TreasuryMetrics> {
+    const response = await fetchSubgraph(
+      `{
+          protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
+            lockedStables
+            epochPercentageYield
+            templePrice
+          }
+        }`
+    );
 
-      const treasuryMetrics = await metricsService.getTreasuryMetrics();
-      setTreasuryMetrics(treasuryMetrics);
-    }
+    const data = response?.data?.protocolMetrics?.[0] || {};
+
+    const epy = parseFloat(data.epochPercentageYield);
+    const templeApy = Math.trunc((Math.pow(epy + 1, 365.25) - 1) * 100);
+    const templePrice = parseFloat(data.templePrice);
+    const lockedStables = parseFloat(data.lockedStables);
+
+    return {
+      templeValue: templePrice,
+      templeApy,
+      treasuryValue: lockedStables,
+    };
+  }
+
+  async function refreshMetrics() {
+    const treasuryMetrics = await getTreasuryMetrics();
+    setTreasuryMetrics(treasuryMetrics);
   }
 
   const clearInterval = useInterval(refreshMetrics, 5 * 60 * 1000, true);
