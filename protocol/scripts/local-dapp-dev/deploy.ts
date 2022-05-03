@@ -276,13 +276,33 @@ async function main() {
 
   const vaultTx = await opsManager.createVault(
     "temple-3m-vault",
-    "TV_3MO",
+    "tmpl-1mo-1",
     60 * 60 * 24 * 30 * 3, // 90 days
     60 * 60 * 24 * 30, // 30 days
     { p: 1, q : 1}
   );
+  const oneDay = 60 * 60 * 24;
 
   let vault = await extractDeployedAddress(vaultTx, 'CreateVault');
+
+  await ethers.provider.send('evm_increaseTime', [oneDay * 30]);
+
+  const vaultTx30_2 = await opsManager.createVault(
+    "temple-3m-vault",
+    "tmpl-1mo-2",
+    60 * 60 * 24 * 30 * 3, // 90 days
+    60 * 60 * 24 * 30, // 30 days
+    { p: 1, q : 1}
+  );
+  await ethers.provider.send('evm_increaseTime', [oneDay * 30]);
+
+  const vaultTx30_3 = await opsManager.createVault(
+    "temple-3m-vault",
+    "tmpl-1mo-3",
+    60 * 60 * 24 * 30 * 3, // 90 days
+    60 * 60 * 24 * 30, // 30 days
+    { p: 1, q : 1}
+  );
 
   const exposureTx = await opsManager.createExposure(
     "Stable Exposure",
@@ -293,7 +313,6 @@ async function main() {
   let exposure = await extractDeployedAddress(exposureTx, 'CreateExposure');
 
 
-  const oneDay = 60 * 60 * 24;
   const vaultTx1 = await opsManager.createVault(
     "temple-1m-vault",
     "TPL-1M-V1",
@@ -364,6 +383,8 @@ async function main() {
     TEMPLE_VAULT_1_M_2: vault2,
     TEMPLE_VAULT_1_M_3: vault3,
     TEMPLE_VAULT_1_M_4: vault4,
+
+    JOINING_FEE_ADDRESS: joiningFee.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys
