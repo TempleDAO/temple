@@ -19,14 +19,16 @@ export const Claim = () => {
   const { activeVault: vault } = useVaultContext();
 
   const { wallet, signer } = useWallet();
+
+  const [amount, setAmount] = useState(0);
   const [getBalance, { response: balanceResponse, isLoading: getBalanceLoading }] = useVaultBalance(vault.id);
   const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
   const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault!.id, async () => {
     await refreshWalletState();
     await getBalance();
+    setAmount(0);
   });
   
-  const [amount, setAmount] = useState(0);
 
   useEffect(() => {
     if (!wallet || !signer) {
@@ -87,7 +89,6 @@ export const Claim = () => {
         disabled={buttonIsDisabled}
         onClick={async () => {
           await withdraw(amount);
-          setAmount(0);
         }}
       />
     </VaultContent>
