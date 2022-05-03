@@ -150,7 +150,7 @@ describe("Temple Core Ops Manager", async () => {
     expect(await vault2.firstPeriodStartTimestamp()).equals(firstVaultstartTime+3600);
   })
 
-  it.only("End to end flow", async () => {
+  it("End to end flow", async () => {
     const firstVaultstartTime = await blockTimestamp()
 
     // create some vaults
@@ -220,9 +220,10 @@ describe("Temple Core Ops Manager", async () => {
 
     opsManager.rebalance([vault1Addr], fxsToken.address);
 
+    // TODO: Scoop finish
     // Add revenue to each each exposure
     // TODO implement + check unclaimed revenue is as expected
-    opsManager.addRevenue([fxsToken.address], [toAtto(10000)]);
+    //opsManager.addRevenue([fxsToken.address], [toAtto(10000)]);
 
     // where do we check shares?
   

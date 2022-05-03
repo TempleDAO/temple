@@ -28,10 +28,9 @@ contract JoiningFee is Ownable {
             feePerHour = defaultHourlyJoiningFee;
         }
 
-        uint256 numCylces = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
-        
+        uint256 numCycles = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
         // NOTE: divide before fee is the correct setup here, as the fee should be discrete per hour
-        return (block.timestamp - (numCylces * periodDuration) - firstPeriodStartTimestamp) / 3600 * feePerHour;
+        return (block.timestamp - (numCycles * periodDuration) - firstPeriodStartTimestamp) / 3600 * feePerHour;
     }
 
     function setHourlyJoiningFeeFor(address vault, uint256 amount) external onlyOwner {
