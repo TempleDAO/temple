@@ -5,11 +5,13 @@ import useRequestState from 'hooks/use-request-state';
 import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
 import { createVaultGroup } from 'components/Vault/desktop-parts/utils';
+import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 
 import {
   SubGraphQuery,
   GetVaultGroupsResponse,
-  GetVaultResponse,
+  GetVaultGroupResponse,
+  GraphVaultGroup,
 } from './types'
 
 const createVaultUserFragment = (walletAddress = '') => {
@@ -85,28 +87,25 @@ export const useListCoreVaultGroups = () => {
   const { wallet, isConnecting } = useWallet();
   const [isLoading, setIsLoading] = useState(true);
 
-  const getVaults = useCallback(() => {
-    const query = createGetVaultGroupsQuery(wallet || '');
-    return axios.post<GetVaultGroupsResponse>(env.subgraph.templeCore, query);
-  }, [wallet]);
-
-  const [request, { response, isLoading: requestPending, error }] = useRequestState(getVaults);
+  const [request, { response, isLoading: requestPending, error }] = useSubgraphRequest<GetVaultGroupsResponse>(
+    env.subgraph.templeCore,
+    createGetVaultGroupsQuery(wallet || ''),
+  );
 
   useEffect(() => {
     if (isConnecting) {
       return;
     }
 
-    const getVault = async () => {
-      setIsLoading(true);
+    const requestVaultGroups = async () => {
       await request();
       setIsLoading(false);
     };
 
-    getVault();
+    requestVaultGroups();
   }, [request, isConnecting]);
 
-  const groups = response?.data?.data?.vaultGroups || [];
+  const groups = response?.data?.vaultGroups || [];
   const vaultGroups = groups.map((vaultGroup) => createVaultGroup(vaultGroup));
 
   return {
@@ -119,13 +118,11 @@ export const useListCoreVaultGroups = () => {
 export const useGetVaultGroup = (vaultGroupId: string) => {
   const { wallet, isConnecting } = useWallet();
   const [isLoading, setIsLoading] = useState(true);
-  
-  const getVault = useCallback(() => {
-    const query = createVaultGroupQuery(vaultGroupId, wallet || '');
-    return axios.post<GetVaultResponse>(env.subgraph.templeCore, query);
-  }, [vaultGroupId, wallet]);
 
-  const [request, { response, isLoading: requestPending, error }] = useRequestState(getVault);
+  const [request, { response, isLoading: requestPending, error }] = useSubgraphRequest<GetVaultGroupResponse>(
+    env.subgraph.templeCore,
+    createVaultGroupQuery(vaultGroupId, wallet || '')
+  );
   
   useEffect(() => {
     if (isConnecting) {
@@ -133,7 +130,6 @@ export const useGetVaultGroup = (vaultGroupId: string) => {
     }
 
     const getVault = async () => {
-      setIsLoading(true);
       await request();
       setIsLoading(false);
     };
@@ -141,7 +137,7 @@ export const useGetVaultGroup = (vaultGroupId: string) => {
     getVault();
   }, [request, isConnecting]);
 
-  const vaultGroup = response?.data?.data?.vaultGroup;
+  const vaultGroup = response?.data?.vaultGroup;
 
   return {
     vaultGroup: !vaultGroup ? null : createVaultGroup(vaultGroup),

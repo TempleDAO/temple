@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Nullable, Maybe } from 'types/util';
 
 type Request<T extends any> = ((...args: any[]) => Promise<T>) | (() => Promise<T>);
@@ -38,14 +38,19 @@ const useRequestState = <T extends any>(request: Request<T>): UseRequestStateRet
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Nullable<Error>>(null);
   const [response, setResponse] = useState<Nullable<T>>(null);
+  const requestRef = useRef(request);
   
   const wrappedRequest = useCallback(async (...args) => {
+    if (!requestRef.current) {
+      return;
+    }
+
     setError(null);
     setIsLoading(true);
 
     let response: Maybe<T>;
     try {
-      response = await request(...args);
+      response = await requestRef.current(...args);
       setResponse(response);
     } catch (error) {
       setResponse(null);
@@ -54,7 +59,7 @@ const useRequestState = <T extends any>(request: Request<T>): UseRequestStateRet
       setIsLoading(false);
     }
     return response;
-  }, [request, setIsLoading, setResponse, setError]);
+  }, [requestRef, setIsLoading, setResponse, setError]);
 
   return [
     wrappedRequest,
