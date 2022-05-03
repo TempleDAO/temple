@@ -1,9 +1,9 @@
 import { Environment } from './types';
 
-const development: Environment = {
+const env: Environment = {
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao-core',
   },
 };
 
-export default development;
+export default env;
