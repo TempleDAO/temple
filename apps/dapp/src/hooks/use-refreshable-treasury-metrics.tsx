@@ -33,8 +33,12 @@ export default function useRefreshableTreasuryMetrics() {
   }
 
   async function refreshMetrics() {
-    const treasuryMetrics = await getTreasuryMetrics();
-    setTreasuryMetrics(treasuryMetrics);
+    try {
+      const treasuryMetrics = await getTreasuryMetrics();
+      setTreasuryMetrics(treasuryMetrics);
+    } catch (error) {
+      console.info(error);
+    }
   }
 
   const clearInterval = useInterval(refreshMetrics, 5 * 60 * 1000, true);
