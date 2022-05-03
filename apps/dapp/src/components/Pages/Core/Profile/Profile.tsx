@@ -108,7 +108,7 @@ const ProfilePage = () => {
 
 function getTabs(
   isLoading: boolean,
-  vaults: VaultGroup[],
+  vaultGroups: VaultGroup[],
   lockedOgtBalance: number,
   ogtBalance: number,
   faithBalance: number
@@ -116,7 +116,7 @@ function getTabs(
   const tabs = [
     {
       label: 'Vaults',
-      content: <ProfileVaults isLoading={isLoading} vaults={vaults} />,
+      content: <ProfileVaults isLoading={isLoading} vaultGroups={vaultGroups} />,
     },
     { label: 'Transactions', content: <ProfileTransactions /> },
     { label: 'Discord', content: <ProfileDiscordData /> },
