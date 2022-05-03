@@ -34,9 +34,8 @@ export const useRefreshWalletState = (): [{ isLoading: boolean; }, () => Promise
         updateTemplePrice(),
         updateCurrentEpoch(),
         updateBalance(),
-        // Error
-        // updateFaith(), 
-        // updateLockedEntries(),
+        updateFaith(), 
+        updateLockedEntries(),
         updateExitQueueData(),
         updateApy(),
         updateIv(),

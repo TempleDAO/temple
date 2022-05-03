@@ -26,14 +26,12 @@ export const Timeline = ({ vault }: Props) => {
     });
   });
 
-  const months = vault.vaults[0].months;
-
   return (
     <g id="vault-timeline">
       <TimelineBackground />
       <TimelineChannel />
       <TimelineStartEndMarkers />
-      <TimelineTicks months={months} />
+      <TimelineTicks months={vault.months} />
       {markers}
     </g>
   );
