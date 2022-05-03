@@ -10,7 +10,7 @@ export default function useRefreshableAccountMetrics() {
   const [accountMetrics, setAccountMetrics] = useState<AccountMetrics | null>(
     null
   );
-  const refreshWalletState = useRefreshWalletState();
+  const [_, refreshWalletState] = useRefreshWalletState();
   const { exitQueueData } = useStaking();
 
   const metricsService = useMemo(() => new MetricsService(), []);

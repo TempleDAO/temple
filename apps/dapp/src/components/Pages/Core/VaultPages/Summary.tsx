@@ -6,36 +6,34 @@ import Tooltip from 'components/Tooltip/Tooltip';
 
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberWithCommas } from 'utils/formatter';
-import { Header } from 'styles/vault';
 import VaultContent from './VaultContent';
-import useVaultContext from './useVaultContext';
+import useVaultContext from './use-vault-context';
 
 export const Summary = () => {
   const navigate = useNavigate();
-  const vault = useVaultContext();
+  const { vaultGroup } = useVaultContext();
 
   const onClickLink = (e: SyntheticEvent) => {
     e.preventDefault();
-    navigate(`/core/dapp/vaults/${vault.id}/strategy`);
+    navigate(`/core/dapp/vaults/${vaultGroup.id}/strategy`);
   };
 
   return (
     <VaultContent>
-      <Title>{vault.months} MONTH</Title>
-      {/* <Text1>Vault</Text1> */}
+      <Title>{vaultGroup.months} MONTH</Title>
       <Text2
         light
         as="a"
-        href={`/core/dapp/vaults/${vault.id}/strategy`}
+        href={`/core/dapp/vaults/${vaultGroup.id}/strategy`}
         onClick={onClickLink}
       >
-        {vault.months > 1
+        {vaultGroup.months > 1
           ? 'MONTHLY CVX REINVESTMENT STRATEGY'
           : 'NO LOCK, MONTHLY YIELD'}
       </Text2>
 
       <Text3>
-        {`TVL: $${formatNumberWithCommas(vault.tvl)} `}
+        {`TVL: $${formatNumberWithCommas(vaultGroup.tvl)} `}
         <Tooltip
           content="Total volume locked for all instances of this maturity"
           inline={true}

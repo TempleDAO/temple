@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
 import { useStaking } from 'providers/StakingProvider';
@@ -7,7 +7,8 @@ import { useFaith } from 'providers/FaithProvider';
 /**
  * Load new data for the connected wallet
  */
-export const useRefreshWalletState = () => {
+export const useRefreshWalletState = (): [{ isLoading: boolean; }, () => Promise<void> ] => {
+  const [isLoading, setIsLoading] = useState(false);
   const { updateTemplePrice, updateIv } = useSwap();
   const { updateFaith } = useFaith();
   const {
@@ -21,16 +22,19 @@ export const useRefreshWalletState = () => {
     getExitQueueData: updateExitQueueData,
   } = useStaking();
 
-  return useCallback(async () => {
+  const refresh = useCallback(async () => {
     if (!isConnected) {
       return;
     }
+
+    setIsLoading(true);
+
     try {
       await Promise.all([
         updateTemplePrice(),
         updateCurrentEpoch(),
         updateBalance(),
-        updateFaith(),
+        updateFaith(), 
         updateLockedEntries(),
         updateExitQueueData(),
         updateApy(),
@@ -38,6 +42,8 @@ export const useRefreshWalletState = () => {
       ]);
     } catch (e) {
       console.error('Failed to refresh wallet state', e);
+    } finally { 
+      setIsLoading(false);
     }
   }, [
     isConnected,
@@ -48,5 +54,13 @@ export const useRefreshWalletState = () => {
     updateLockedEntries,
     updateExitQueueData,
     updateApy,
+    setIsLoading,
   ]);
+
+  return [
+    {
+      isLoading,
+    },
+    refresh,
+  ];
 };

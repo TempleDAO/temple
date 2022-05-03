@@ -31,7 +31,7 @@ export const Stake: FC<StakeProps> = ({ small }) => {
   const [templeAmount, setTempleAmount] = useState<number | ''>('');
   const [templeWalletAmount, setTempleWalletAmount] = useState<number>(0);
 
-  const refreshWalletState = useRefreshWalletState();
+  const [_, refreshWalletState] = useRefreshWalletState();
 
   const handleUpdateTempleAmmount = async (value: number) => {
     setTempleAmount(value === 0 ? '' : value);

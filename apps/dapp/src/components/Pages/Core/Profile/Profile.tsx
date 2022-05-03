@@ -6,7 +6,7 @@ import StatsCard from 'components/StatsCard/StatsCard';
 import { Tabs } from 'components/Tabs/Tabs';
 import type { Tab } from 'components/Tabs/Tabs';
 
-import type { Vault } from 'components/Vault/types';
+import type { VaultGroup } from 'components/Vault/types';
 
 import { ProfileVaults } from './components/ProfileVaults';
 import { ProfileLegacyTemple } from './components/ProfileLegacyTemple';
@@ -24,7 +24,7 @@ import texture5 from 'assets/images/dashboard-4.png';
 
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
-import { useMockVaultData } from '../Vault';
+import { useListCoreVaultGroups } from 'hooks/core/subgraph';
 import { PageWrapper } from '../utils';
 
 const STAT_CARD_HEIGHT = '5rem';
@@ -33,11 +33,11 @@ const PIE_AREA_HEIGHT = '10rem';
 const ProfilePage = () => {
   const { getBalance, balance } = useWallet();
   const { faith } = useFaith();
-  const { isLoading, data } = useMockVaultData('abc');
+  const { isLoading, vaultGroups } = useListCoreVaultGroups();
 
   const tabs = getTabs(
     isLoading,
-    [data],
+    vaultGroups,
     0,
     balance.ogTemple,
     faith.lifeTimeFaith
@@ -108,7 +108,7 @@ const ProfilePage = () => {
 
 function getTabs(
   isLoading: boolean,
-  vaults: Vault[],
+  vaultGroups: VaultGroup[],
   lockedOgtBalance: number,
   ogtBalance: number,
   faithBalance: number
@@ -116,7 +116,7 @@ function getTabs(
   const tabs = [
     {
       label: 'Vaults',
-      content: <ProfileVaults isLoading={isLoading} vaults={vaults} />,
+      content: <ProfileVaults isLoading={isLoading} vaultGroups={vaultGroups} />,
     },
     { label: 'Transactions', content: <ProfileTransactions /> },
     { label: 'Discord', content: <ProfileDiscordData /> },
@@ -146,6 +146,7 @@ const ProfileOverview = styled.section`
   grid-template-columns: 1fr;
   gap: 2rem;
   margin-bottom: 2rem;
+  
   ${phoneAndAbove(`
     grid-template-columns: 1fr 1fr;
   `)}
@@ -156,6 +157,7 @@ const ProfileMeta = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.75rem;
+
   ${phoneAndAbove(`
     padding-right: 0.75rem;
     grid-template-columns: 60% 40%;

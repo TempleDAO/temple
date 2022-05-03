@@ -75,6 +75,7 @@ export default defineConfig({
       enums: path.resolve(__dirname, 'src/enums'),
       data: path.resolve(__dirname, 'src/data'),
       types: path.resolve(__dirname, 'src/types'),
+      constants: path.resolve(__dirname, 'src/constants'),
     },
   },
   envPrefix: 'VITE',

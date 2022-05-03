@@ -24,7 +24,6 @@ function toAtto(n: number) {
     const [owner, account1, account2, account3, account4] = await ethers.getSigners();
 
     // get temple addr
-
     const templeToken = await new TempleERC20Token__factory(owner).attach(
       TEMPLE_ADDR
     );
