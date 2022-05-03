@@ -226,6 +226,13 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         emit Withdraw(_account, _amount);
     }
 
+
+    /// @dev ****** for testing. Delete before pushing to mainnet
+    /// change a vault's start time (so we can fast forward in and out of lock/unlock windows)
+    function decreaseStartTime(uint256 delta) external onlyOwner {
+        firstPeriodStartTimestamp -= delta;
+    }
+
     event Deposit(address account, uint256 amount);
     event Withdraw(address account, uint256 amount);
 }

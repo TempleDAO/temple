@@ -129,6 +129,16 @@ contract OpsManager is Ownable {
         return OpsManagerLib.requiresRebalance(vaults, pools[exposureToken]);
     }
 
+
+    /// @dev ****** for testing. Delete before pushing to mainnet
+    /// change a set of vault's start time (so we can fast forward in and out of lock/unlock windows)
+    function decreaseStartTime(Vault[] memory vaults, uint256 delta) external onlyOwner {
+        for (uint256 i = 0; i < vaults.length; i++) {
+            require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
+            vaults[i].decreaseStartTime(delta);
+        }
+    }
+
     event CreateVault(address vault);
     event CreateExposure(address exposure, address primaryRevenue);
 }
