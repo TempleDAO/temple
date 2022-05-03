@@ -197,8 +197,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     function depositFor(address _account, uint256 _amount) private {
         require(inEnterExitWindow(), "Vault: Cannot join vault when outside of enter/exit window");
 
-        uint256 fee = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));
-        require(fee < _amount, "Vault: Cannot join when fee is higher than amount");
+        uint256 feePerTempleScaledPerHour = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));
+        uint256 fee = _amount * feePerTempleScaledPerHour / 1e18;
         uint256 amountStaked = _amount - fee;
 
         if (_amount > 0) {
