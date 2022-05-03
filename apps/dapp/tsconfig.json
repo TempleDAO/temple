@@ -17,7 +17,8 @@
       "hoc/*": ["./hoc/*"],
       "enums/*": ["./enums/*"],
       "data/*": ["./data/*"],
-      "types/*": ["./types/*"]
+      "types/*": ["./types/*"],
+      "constants/*": ["./constants/*"],
     }
   },
   "include": ["**/*.ts", "**/*.tsx","**/*.json"],

@@ -1,5 +1,5 @@
 import { Network } from '@ethersproject/providers';
-import { BigNumber, ethers, Signer } from 'ethers';
+import { BigNumber, Signer } from 'ethers';
 
 import { Nullable } from 'types/util';
 import { ClaimType } from 'enums/claim-type';
@@ -136,7 +136,8 @@ export interface WalletState {
   balance: Balance;
   signer: Nullable<Signer>;
   network: Nullable<Network>;
-
+  
+  isConnecting: boolean;
   isConnected: boolean;
 
   connectWallet(): void;

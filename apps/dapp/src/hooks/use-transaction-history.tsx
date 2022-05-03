@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios, { AxiosRequestConfig } from 'axios';
 
 import { TempleAddress, TEMPLE_ADDRESS_LABELS } from 'enums/addresses';
@@ -183,7 +183,7 @@ function formatSwap(swap: SwapHistoryResponse): TransactionRecord {
 function createBalancesRequest(wallet: string): AxiosRequestConfig {
   return {
     method: 'post',
-    url: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balances',
+    url: `https://api.thegraph.com/subgraphs/name/templedao/templedao-balances`,
     headers: {
       'Content-Type': 'application/json',
     },
