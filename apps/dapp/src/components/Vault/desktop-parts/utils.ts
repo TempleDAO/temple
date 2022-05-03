@@ -12,7 +12,7 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
 
   // Sum all sub vaults tvl.
   const tvl = vaults.reduce((total, { tvl }) => total + tvl, 0);
-  console.log(vaults)
+
   return {
     ...subgraphVaultGroup,
     name: subgraphVaultGroup.id,
