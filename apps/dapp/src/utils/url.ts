@@ -1,5 +1,3 @@
-import env from 'constants/env';
-
 const ENV_VARS = import.meta.env;
 
 export const createDiscordUserUrl = (userId: string) => {
