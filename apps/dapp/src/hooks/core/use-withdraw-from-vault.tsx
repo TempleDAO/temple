@@ -1,5 +1,3 @@
-import { useCallback } from 'react';
-
 import { Vault__factory } from 'types/typechain';
 import { toAtto } from 'utils/bigNumber';
 import { useWallet } from 'providers/WalletProvider';
@@ -11,7 +9,7 @@ export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: C
   const { signer, wallet } = useWallet();
   const { openNotification } = useNotification();
 
-  const withdraw = useCallback(async (amount: number) => {
+  const withdraw = async (amount: number) => {
     if (!signer || !wallet) {
       console.error(`
         Attempted to withdraw from vault: ${vaultContractAddress} without a valid signer.
@@ -33,12 +31,7 @@ export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: C
     if (onSuccess) {
       await onSuccess();
     }
-  }, [
-    signer,
-    vaultContractAddress,
-    wallet,
-    openNotification,
-  ]);
+  };
   
   return useRequestState(withdraw);
 };
