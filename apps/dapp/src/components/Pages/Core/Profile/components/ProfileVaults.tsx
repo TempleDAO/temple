@@ -1,5 +1,4 @@
 import React from 'react';
-import styled from 'styled-components';
 import { format } from 'date-fns';
 
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -13,17 +12,17 @@ import { Container, Subheading } from '../styles';
 
 interface IProps {
   isLoading?: boolean;
-  vaults: VaultGroup[];
+  vaultGroups: VaultGroup[];
 }
 
-export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaults }) => {
+export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups }) => {
   if (isLoading) {
     <Container>
       <Loader />
     </Container>;
   }
 
-  if (!vaults.length) {
+  if (!vaultGroups.length) {
     return (
       <Container>
         <Button isSmall as="a" label="Enter a vault" href="/core/dapp/vaults" />
@@ -33,10 +32,10 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaults }) => {
 
   return (
     <>
-      {vaults.map((vault) => {
+      {vaultGroups.map((vaultGroup) => {
         return (
-          <div key={vault.id}>
-            <Subheading>{`${vault.id}`}</Subheading>
+          <div key={vaultGroup.id}>
+            <Subheading>{`${vaultGroup.id}`}</Subheading>
             <Table $expand>
               <Head>
                 <Row>
@@ -46,7 +45,7 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaults }) => {
                 </Row>
               </Head>
               <Body>
-                {vault.vaults.flatMap((vault) => {
+                {vaultGroup.vaults.flatMap((vault) => {
                   return vault.entries.map((entry) => {
                     const entryDate = entry.entryDate ?? new Date();
                     return (
