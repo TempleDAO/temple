@@ -1,5 +1,4 @@
 import { useParams, Outlet, Link } from 'react-router-dom';
-import styled from 'styled-components';
 
 import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Spinner } from 'components/LoaderVault/Spinner';
@@ -47,9 +46,5 @@ const VaultPage = () => {
     </>
   );
 };
-
-const Wrapper = styled.div`
-  display: flex;
-`;
 
 export default VaultPage;
