@@ -27,14 +27,13 @@ const chains = [chain.mainnet, chain.rinkeby, LOCAL_CHAIN];
 const defaultChain = chain.mainnet;
 
 const ENV_VARS = import.meta.env;
-const ENV = ENV_VARS.VITE_ENV;
 const ALCHEMY_PROVIDER_NETWORK = ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK;
 const ALCHEMY_API_KEY = ENV_VARS.VITE_ALCHEMY_API_KEY;
+const ENV = ENV_VARS.VITE_ENV;
 
 type ProviderConfig = { chainId?: number; connector?: Connector };
 const provider = ({ chainId }: ProviderConfig) => {
   if (ENV === 'production') {
-    // We always use Alchemy in prod.
     return new providers.AlchemyProvider(
       ALCHEMY_PROVIDER_NETWORK,
       ALCHEMY_API_KEY
