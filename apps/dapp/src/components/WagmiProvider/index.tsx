@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { providers } from 'ethers';
+import { providers, getDefaultProvider } from 'ethers';
 import { BaseProvider } from '@ethersproject/providers';
 import { 
   Provider,
@@ -33,13 +33,19 @@ const ALCHEMY_API_KEY = ENV_VARS.VITE_ALCHEMY_API_KEY;
 
 type ProviderConfig = { chainId?: number; connector?: Connector };
 const provider = ({ chainId }: ProviderConfig) => {
-  const provider = ENV === 'development'
-    ? new providers.Web3Provider(window.ethereum)
-    : new providers.AlchemyProvider(
+  if (ENV === 'production') {
+    // We always use Alchemy in prod.
+    return new providers.AlchemyProvider(
       ALCHEMY_PROVIDER_NETWORK,
       ALCHEMY_API_KEY
-    );
-  return provider as unknown as BaseProvider;
+    ) as unknown as BaseProvider;
+  }
+
+  if (window.ethereum) {
+    return new providers.Web3Provider(window.ethereum) as unknown as BaseProvider;
+  }
+  
+  return getDefaultProvider() as BaseProvider;
 };
 
 type ConnectorsConfig = { chainId?: number };
