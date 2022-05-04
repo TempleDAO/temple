@@ -10,7 +10,8 @@
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 templedao-core",
     "graph:setup": "./scripts/graph-node-setup.sh",
     "graph:start": "rm -rf graph-node/docker/data && cd graph-node/docker && docker compose up",
-    "graph:stop": "cd graph-node/docker && docker compose down"
+    "graph:stop": "cd graph-node/docker && docker compose down",
+    "lfg":"yarn codegen && yarn build && yarn create-local && yarn deploy-local"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "^0.29.0",
