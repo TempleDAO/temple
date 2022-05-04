@@ -18,6 +18,7 @@ import frax3crv_fRewardsABI from 'data/abis/frax3crv-fRewardPool';
 import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { fetchSubgraph } from 'utils/subgraph';
+import { isDevelopmentEnv } from 'utils/helpers';
 import axios from 'axios';
 
 export interface ProtocolMetrics {
@@ -149,7 +150,7 @@ export class MetricsService {
     const ENV = ENV_VARS.VITE_ENV;
 
     this.provider =
-      ENV === 'development'
+      isDevelopmentEnv()
         ? new ethers.providers.Web3Provider(window.ethereum)
         : new ethers.providers.AlchemyProvider(
             ALCHEMY_PROVIDER_NETWORK,
