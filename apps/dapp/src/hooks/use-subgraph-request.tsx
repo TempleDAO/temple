@@ -8,7 +8,7 @@ export const useSubgraphRequest = <R extends SubGraphResponse<object>>(subgraphU
     try {
       const { data } = await axios.post(subgraphUrl, query);
       
-      if (!data.errors) {
+      if (data.errors) {
         const firstErrorMessage = data.errors[0].message;
         throw new Error(firstErrorMessage);
       }
