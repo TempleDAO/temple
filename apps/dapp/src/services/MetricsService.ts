@@ -381,8 +381,9 @@ export class MetricsService {
    * Helper to get the stake transactions
    */
   private getStakedOGTempleTransactions = async (walletAddress: string) => {
-    const response = await fetchSubgraph(
-      `{
+    try {
+      const response = await fetchSubgraph(
+        `{
         stakes(where: {templar: "${walletAddress.toLowerCase()}"}) {
           templar {
             id
@@ -409,8 +410,12 @@ export class MetricsService {
           timestamp
         }
       }`
-    );
-    return response?.data ?? { stakes: [], unstakes: [] };
+      );
+      return response?.data ?? { stakes: [], unstakes: [] };
+    } catch (error) {
+      console.info(error);
+      return { stakes: [], unstakes: [] };
+    }
   };
 
   private getProtocolMetrics = async (): Promise<ProtocolMetrics> => {
