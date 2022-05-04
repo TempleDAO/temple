@@ -19,6 +19,7 @@ import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { fetchSubgraph } from 'utils/subgraph';
 import { Nullable } from 'types/util';
+import { isDevelopmentEnv } from 'utils/helpers';
 import axios from 'axios';
 
 export interface ProtocolMetrics {
@@ -162,7 +163,7 @@ export class MetricsService {
     const ENV = ENV_VARS.VITE_ENV;
 
     this.provider =
-      ENV === 'development'
+      isDevelopmentEnv()
         ? new ethers.providers.Web3Provider(window.ethereum)
         : new ethers.providers.AlchemyProvider(
             ALCHEMY_PROVIDER_NETWORK,
