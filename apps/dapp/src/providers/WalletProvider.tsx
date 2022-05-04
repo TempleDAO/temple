@@ -80,7 +80,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
   const chain = network?.chain;
   const walletAddress = accountData?.address;
-  const isConnected = !!walletAddress;
+  const isConnected = !!walletAddress && !!signer;
 
   const connectWallet = async () => {
     throw new Error('Deprecated');
