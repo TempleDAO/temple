@@ -45,7 +45,7 @@ export interface GraphVaultUserBalance {
 }
 
 export interface SubGraphResponse<T extends object> {
-  data?: T;
+  data?: T & { errors?: string[] };
 }
 
 export interface SubGraphQuery {
