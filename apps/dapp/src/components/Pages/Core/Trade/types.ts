@@ -2,8 +2,8 @@ import { CryptoValue, CryptoSelector } from 'components/Input/Input';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 export enum SwapMode {
-  BUY = 'BUY',
-  SELL = 'SELL',
+  Buy = 'BUY',
+  Sell = 'SELL',
 }
 
 type SwapInputConfig = CryptoSelector | CryptoValue;
@@ -31,6 +31,10 @@ export interface SwapReducerState {
   mode: SwapMode;
   inputToken: TICKER_SYMBOL;
   outputToken: TICKER_SYMBOL;
+  inputValue: string;
+  quoteValue: number;
+  inputTokenBalance: number;
+  outputTokenBalance: number;
   inputConfig: SwapInputConfig;
   outputConfig: SwapInputConfig;
 }

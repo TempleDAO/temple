@@ -96,6 +96,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           textAlign: 'center',
           width: '100%',
           fontWeight: 'bold',
+          fontSize: '1.25rem',
           color: theme.palette.brandLight,
         }),
         valueContainer: (base) => ({

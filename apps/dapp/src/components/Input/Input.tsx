@@ -1,6 +1,6 @@
 import React, { InputHTMLAttributes, KeyboardEvent } from 'react';
 import styled, { css } from 'styled-components';
-import { tabletAndAbove } from 'styles/breakpoints';
+import { phoneAndAbove, tabletAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
 import {
   InputSelect,
@@ -8,6 +8,8 @@ import {
   SelectTempleDaoOptions,
 } from '../InputSelect/InputSelect';
 
+import divider from 'assets/images/divider.svg';
+import { pixelsToRems } from 'styles/mixins';
 interface SizeProps {
   small?: boolean;
 }
@@ -41,7 +43,7 @@ export interface InputProps
   isNumber?: boolean;
 
   // Callback for input value change
-  handleChange?(value: number): void;
+  handleChange?(value: number | string): void;
 
   onHintClick?(): void;
 
@@ -49,6 +51,7 @@ export interface InputProps
   // in the buy/sell amm
   pairTop?: boolean;
   pairBottom?: boolean;
+  hasDivider?: boolean;
 }
 
 /**
@@ -66,6 +69,7 @@ export const Input = ({
   small,
   pairTop,
   pairBottom,
+  hasDivider,
   ...props
 }: InputProps) => {
   const renderCrypto = () => {
@@ -146,6 +150,7 @@ export const Input = ({
           </InputHint>
         )}
       </InputTokenWrapper>
+      {hasDivider && <Divider />}
       <InputStyled
         small={small}
         onChange={handleInputChange}
@@ -211,8 +216,13 @@ const InputTokenWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-around;
-  width: 9.25rem /* 148/16 */;
+  justify-content: space-between;
+  width: 10rem /* 148/16 */;
+  min-width: ${pixelsToRems(120)}rem;
+  p {
+    font-size: 1.25rem;
+    margin-top: 1rem;
+  }
 `;
 
 interface InputHintProps {
@@ -221,9 +231,10 @@ interface InputHintProps {
 
 export const InputHint = styled.small<InputHintProps>`
   color: ${theme.palette.brandLight};
-  font-size: 10px;
+  font-size: ${pixelsToRems(10)}rem;
   text-align: center;
   text-transform: uppercase;
+  margin-bottom: 0.5rem;
   ${(props) =>
     props.hasAction &&
     css`
@@ -262,4 +273,21 @@ const Ticker = styled.p`
   margin: 0;
   color: ${theme.palette.brandLight};
   font-weight: bold;
+`;
+
+const Divider = styled.div`
+  display: none;
+  position: absolute;
+  width: ${pixelsToRems(10)}rem;
+  height: 80%;
+  left: ${pixelsToRems(160)}rem;
+  top: 10%;
+  bottom: 10%;
+  background: url(${divider});
+  background-repeat: no-repeat;
+  background-size: cover;
+
+  ${phoneAndAbove(`
+    display: inline-block;
+  `)};
 `;
