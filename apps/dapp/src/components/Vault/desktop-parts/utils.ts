@@ -1,48 +1,51 @@
 import { differenceInSeconds, addSeconds } from 'date-fns';
 
 import { GraphVault, GraphVaultGroup } from 'hooks/core/types';
-import { Entry, Vault, VaultGroup, MarkerType } from '../types';
+import { Vault, VaultGroup, MarkerType, Marker } from '../types';
 
 export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
 
 export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGroup => {
   const vaults = subgraphVaultGroup.vaults.map((vault) => createVault(vault));
-  const orderedVaults = vaults.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
-  const { startDate, months, enterExitWindowDurationSeconds, periodDurationSeconds } = orderedVaults[0];
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+  const orderedVaults = vaults
+    .sort((a, b) => a.startDate!.getTime() - b.startDate!.getTime())
+    .map((vault, index) => {
+      vault.letter = letters[index];
+      return vault as Vault;
+    });
+
+  const { startDate, enterExitWindowDurationSeconds, periodDurationSeconds } = orderedVaults[0];
 
   const periods = periodDurationSeconds / enterExitWindowDurationSeconds;
+  const tvl = vaults.reduce((total, { tvl }) => total + tvl!, 0);
 
-  // Sum all sub vaults tvl.
-  const tvl = vaults.reduce((total, { tvl }) => total + tvl, 0);
-
-  return {
+  const vaultGroup: Partial<VaultGroup> = {
     ...subgraphVaultGroup,
     name: subgraphVaultGroup.id,
     vaults: orderedVaults,
     startDate,
-    months,
+    months: periods, // roughly.. only used for the label at end of timeline
     tvl,
     enterExitWindowDurationSeconds,
     periodDurationSeconds,
     periods,
   };
+
+  vaultGroup.markers = getMarkers(vaultGroup as VaultGroup);
+
+  return vaultGroup as VaultGroup;
 };
 
-export const createVault = (subgraphVault: GraphVault): Vault => {
+export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
   const startDateSeconds = Number(subgraphVault.firstPeriodStartTimestamp);
-  // Vault startdate
   const startDate = new Date(startDateSeconds * 1000);
-
-  // The current timestamp
-  const now = new Date(Date.now());
-
-  // Duration of vault
+  // const fakeTime = 41 * 60 * 60 * 24 * 1000;
+  const fakeTime = 0;
+  const now = new Date(Date.now() + fakeTime);
   const periodDurationSeconds = Number(subgraphVault.periodDuration);
-
-  // periodDuration is the number of months.
   const months = periodDurationSeconds / SECONDS_IN_MONTH;
 
-  // Vault fields
   const enterExitWindowDurationSeconds = Number(subgraphVault.enterExitWindowDuration);
   const tvl = Number(subgraphVault.tvl);
   const currentCycle = getCurrentCycle(startDate, months, now);
@@ -54,58 +57,60 @@ export const createVault = (subgraphVault: GraphVault): Vault => {
     enterExitWindowDurationSeconds
   );
 
-  const entries = (subgraphVault.users?.[0]?.vaultUserBalances || []).map((balance) => {
-    // Convert to milliseconds
-    const entryDate = new Date(Number(balance.timestamp) * 1000);
-    const percent = calculatePercent(months, currentCycle, now, startDate);
-    const type = calculateEntryType(vaultIsInZone);
-
-    return {
-      id: balance.id,
-      entryDate,
-      percent,
-      inZone: vaultIsInZone,
-      type,
-      currentCycle,
-      value: balance.value,
-      amount: balance.amount,
-    };
-  });
-
-  const vault = {
+  const vault: Partial<Vault> = {
     id: subgraphVault.id,
-    startDate,
     now,
-    months,
+    startDate,
     tvl,
-    currentCycle,
-    entries,
     enterExitWindowDurationSeconds,
     periodDurationSeconds,
-    inZone: vaultIsInZone,
+    isActive: vaultIsInZone,
   };
-
-  maybeInsertEmptyMarker(vault);
 
   return vault;
 };
 
-// If there is no other marker currently in the zone
-// (because it cycled), then we should show the empty "Enter" marker
-const maybeInsertEmptyMarker = (vault: Vault) => {
-  const zoneEmpty = !vault.entries.length;
-  vault.zoneEmpty = zoneEmpty;
-  if (zoneEmpty) {
-    const emptyEntry: Entry = {
-      id: 'empty',
-      inZone: true,
-      type: MarkerType.EMPTY,
-      amount: '',
-      value: '',
+const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>): Marker[] => {
+  const markers = [];
+  for (const [i, vault] of vaultGroup.vaults.entries()) {
+    const marker: Partial<Marker> = {
+      id: `marker-s${i}`,
+      amount: vault.tvl,
+      percent: calculatePercent(vault),
+      inZone: vault.isActive,
+      type: MarkerType.HIDDEN,
+      vaultLetter: vault.letter,
     };
-    emptyEntry.percent = calculateEmptyPercent(vault);
-    vault.entries.push(emptyEntry);
+
+    marker.unlockDate = calculateUnlockDate(vault, marker as Marker);
+
+    if (marker.amount! > 0) {
+      marker.type = MarkerType.STAKING;
+      if (marker.inZone) {
+        marker.type = MarkerType.STAKING_IN_ZONE;
+      }
+    } else {
+      if (marker.inZone) {
+        marker.type = MarkerType.EMPTY;
+      }
+    }
+
+    markers.push(marker as Marker);
   }
+
+  return markers;
+};
+
+const calculateUnlockDate = (vault: Vault, marker: Marker) => {
+  if (vault.isActive) return 'NOW';
+
+  const diff = differenceInSeconds(vault.now, vault.startDate);
+  const secondsIntoThisCycle = diff % vault.periodDurationSeconds;
+  const secondsUntillEndOfSycle = vault.periodDurationSeconds - secondsIntoThisCycle;
+
+  const endDate = addSeconds(vault.now, secondsUntillEndOfSycle);
+
+  return endDate;
 };
 
 // Calculate if the vault is in an enter/exit window.
@@ -130,42 +135,11 @@ const calculateInZoneVaultInstance = (
   return currentCycle * periodDurationSeconds + startSeconds + enterExitWindowDurationSeconds > nowSeconds;
 };
 
-// we treat the zone the same as a "percent", so the calculations for it are the same
-// and we use the percent value as a comparison to determine if we're in or out of the zone
-const calculateInZone = (entryPercent: number, months: number) => {
-  // TODO: do we want to have a period duratio of something other than a month ever?
-  const zonePercent = 1 / months;
-  return entryPercent! < zonePercent;
-};
-
-// returns enum of EMPTY | STAKING | ZONE
-const calculateEntryType = (entryInZone: boolean) => {
-  return entryInZone ? MarkerType.ZONE : MarkerType.STAKING;
-};
-
 // Calculate percent based on now to marker end of cycle
-const calculatePercent = (months: number, currentCycle: number, now: Date, startDate: Date) => {
-  const entryStartDate = startDate;
-  const diff = differenceInSeconds(now, entryStartDate);
-  if (diff < 0) {
-    console.error('Data Error: Current date is less than entry date');
-  }
-  const totalSecondsThisCycle = SECONDS_IN_MONTH * months;
-  const secondsIntoThisCycle = diff % totalSecondsThisCycle;
-  const percent = secondsIntoThisCycle / totalSecondsThisCycle;
-  return percent;
-};
-
-// Calculate percet based on now to marker end of cycle
-const calculateEmptyPercent = (vault: Vault) => {
-  const secondsSinceVaultStart = differenceInSeconds(vault.now, vault.startDate);
-  if (secondsSinceVaultStart < 0) {
-    console.error('Data Error: Current date is less than entry date', vault);
-  }
-  const totalSecondsThisCycle = SECONDS_IN_MONTH * vault.months;
-  const secondsIntoThisCycle = secondsSinceVaultStart % totalSecondsThisCycle;
-  const secondsIntoZone = secondsIntoThisCycle % SECONDS_IN_MONTH;
-  const percent = secondsIntoZone / totalSecondsThisCycle;
+const calculatePercent = (vault: Vault) => {
+  const diff = differenceInSeconds(vault.now, vault.startDate);
+  const secondsIntoThisCycle = diff % vault.periodDurationSeconds;
+  const percent = secondsIntoThisCycle / vault.periodDurationSeconds;
 
   return percent;
 };

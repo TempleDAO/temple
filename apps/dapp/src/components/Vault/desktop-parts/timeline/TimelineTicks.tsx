@@ -28,7 +28,7 @@ export const TimelineTicks = ({ vault }: Props) => {
   return (
     <g id="dynamic-timeline" clipPath="url(#clip0_4015_16261)">
       <text
-        id="12 MO"
+        id="label"
         fill="#351F11"
         xmlSpace="preserve"
         style={{
@@ -78,7 +78,7 @@ export const TimelineTicks = ({ vault }: Props) => {
 };
 
 const makeTick = (id: number, angle: number) => (
-  <g id={`tick-${id}`} transform={`rotate(${angle} 502.066 502.066)`}>
+  <g key={id} id={`tick-${id}`} transform={`rotate(${angle} 502.066 502.066)`}>
     <path
       id="tick"
       fillRule="evenodd"
