@@ -44,6 +44,7 @@ export type VaultGroup = {
   tvl: number;
   enterExitWindowDurationSeconds: number;
   periodDurationSeconds: number;
+  periods: number;
 }
 
 export type VaultProps = {

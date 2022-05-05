@@ -10,6 +10,8 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
   const orderedVaults = vaults.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
   const { startDate, months, enterExitWindowDurationSeconds, periodDurationSeconds } = orderedVaults[0];
 
+  const periods = periodDurationSeconds / enterExitWindowDurationSeconds;
+
   // Sum all sub vaults tvl.
   const tvl = vaults.reduce((total, { tvl }) => total + tvl, 0);
 
@@ -22,6 +24,7 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
     tvl,
     enterExitWindowDurationSeconds,
     periodDurationSeconds,
+    periods,
   };
 };
 
@@ -44,11 +47,16 @@ export const createVault = (subgraphVault: GraphVault): Vault => {
   const tvl = Number(subgraphVault.tvl);
   const currentCycle = getCurrentCycle(startDate, months, now);
   const vaultIsInZone = calculateInZoneVaultInstance(
-    now, startDate, currentCycle, periodDurationSeconds, enterExitWindowDurationSeconds)
-  
+    now,
+    startDate,
+    currentCycle,
+    periodDurationSeconds,
+    enterExitWindowDurationSeconds
+  );
+
   const entries = (subgraphVault.users?.[0]?.vaultUserBalances || []).map((balance) => {
     // Convert to milliseconds
-    const entryDate = new Date((Number(balance.timestamp) * 1000));
+    const entryDate = new Date(Number(balance.timestamp) * 1000);
     const percent = calculatePercent(months, currentCycle, now, startDate);
     const type = calculateEntryType(vaultIsInZone);
 
@@ -77,9 +85,8 @@ export const createVault = (subgraphVault: GraphVault): Vault => {
     inZone: vaultIsInZone,
   };
 
-  
   maybeInsertEmptyMarker(vault);
-  
+
   return vault;
 };
 
@@ -101,7 +108,6 @@ const maybeInsertEmptyMarker = (vault: Vault) => {
   }
 };
 
-
 // Calculate if the vault is in an enter/exit window.
 // Note: the following is the logic found inside the vault contract for determining if in enterExit window.
 // uint256 numCylces = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
@@ -111,7 +117,7 @@ const calculateInZoneVaultInstance = (
   startDate: Date,
   currentCycle: number,
   periodDurationSeconds: number,
-  enterExitWindowDurationSeconds: number,
+  enterExitWindowDurationSeconds: number
 ) => {
   const nowSeconds = now.getTime() / 1000;
   const startSeconds = startDate.getTime() / 1000;
@@ -142,9 +148,7 @@ const calculatePercent = (months: number, currentCycle: number, now: Date, start
   const entryStartDate = startDate;
   const diff = differenceInSeconds(now, entryStartDate);
   if (diff < 0) {
-    console.error(
-      'Data Error: Current date is less than entry date',
-    );
+    console.error('Data Error: Current date is less than entry date');
   }
   const totalSecondsThisCycle = SECONDS_IN_MONTH * months;
   const secondsIntoThisCycle = diff % totalSecondsThisCycle;
@@ -154,10 +158,7 @@ const calculatePercent = (months: number, currentCycle: number, now: Date, start
 
 // Calculate percet based on now to marker end of cycle
 const calculateEmptyPercent = (vault: Vault) => {
-  const secondsSinceVaultStart = differenceInSeconds(
-    vault.now,
-    vault.startDate
-  );
+  const secondsSinceVaultStart = differenceInSeconds(vault.now, vault.startDate);
   if (secondsSinceVaultStart < 0) {
     console.error('Data Error: Current date is less than entry date', vault);
   }
@@ -173,8 +174,7 @@ const calculateEmptyPercent = (vault: Vault) => {
 // months_since_start = seconds_since_vault_start / seconds_in_months
 // cycles_since_start = floor(months_since_start / vault_months)
 const getCurrentCycle = (startDate: Date, months: number, now: Date) => {
-  const monthsSinceStart =
-    differenceInSeconds(now, startDate) / SECONDS_IN_MONTH;
+  const monthsSinceStart = differenceInSeconds(now, startDate) / SECONDS_IN_MONTH;
   const cyclesSinceStart = Math.floor(monthsSinceStart / months);
 
   return cyclesSinceStart;
@@ -186,5 +186,4 @@ const getCurrentCycle = (startDate: Date, months: number, now: Date) => {
 // end of the timeline. Start being at -72 (or whatever) and end being at 72 (degrees)
 // so if we know a marker is 15% into a cycle, then we know what degree to
 // put it at.
-export const lerp = (v0: number, v1: number, t: number) =>
-  v0 * (1 - t) + v1 * t;
+export const lerp = (v0: number, v1: number, t: number) => v0 * (1 - t) + v1 * t;
