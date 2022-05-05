@@ -284,51 +284,59 @@ async function main() {
 
 
   const oneDay = 60 * 60 * 24;
-  const vaultTx1 = await opsManager.createVault(
-    "temple-1m-vault",
-    "TPL-1M-V1",
-    oneDay * 30,
-    oneDay,
-    { p: 1, q : 1}
-  );
+  const period = oneDay * 30;
+  const window = oneDay * 10
+  const numberOfSubVaults = period / window
+  if (period % window) throw new Error('Vault period should divide perfectly by vault window')
 
-  let vault1 = await extractDeployedAddress(vaultTx1, 'CreateVault');
+  for (let i = 0; i < numberOfSubVaults; i++) {
+    const vaultTx = await opsManager.createVault(
+      "temple-1m-vault",
+      "TPL-1M-V1",
+      period,
+      window,
+      { p: 1, q : 1}
+    );
+  
+    let vault = await extractDeployedAddress(vaultTx, 'CreateVault');
+  
+    await ethers.provider.send('evm_increaseTime', [window]);
+  }
 
-  await ethers.provider.send('evm_increaseTime', [oneDay * 7]);
+  // const vaultTx1 = await opsManager.createVault(
+  //   "temple-1m-vault",
+  //   "TPL-1M-V1",
+  //   oneDay * 30,
+  //   oneDay * 10,
+  //   { p: 1, q : 1}
+  // );
 
-  const vaultTx2 = await opsManager.createVault(
-    "temple-1m-vault",
-    "TPL-1M-V2",
-    oneDay * 30,
-    oneDay,
-    { p: 1, q : 1}
-  );
+  // let vault1 = await extractDeployedAddress(vaultTx1, 'CreateVault');
 
-  let vault2 = await extractDeployedAddress(vaultTx2, 'CreateVault');
+  // await ethers.provider.send('evm_increaseTime', [oneDay * 10]);
 
-  await ethers.provider.send('evm_increaseTime', [oneDay * 7]);
+  // const vaultTx2 = await opsManager.createVault(
+  //   "temple-1m-vault",
+  //   "TPL-1M-V2",
+  //   oneDay * 30,
+  //   oneDay,
+  //   { p: 1, q : 1}
+  // );
 
-  const vaultTx3 = await opsManager.createVault(
-    "temple-1m-vault",
-    "TPL-1M-V3",
-    oneDay * 30,
-    oneDay,
-    { p: 1, q : 1}
-  );
+  // let vault2 = await extractDeployedAddress(vaultTx2, 'CreateVault');
 
-  let vault3 = await extractDeployedAddress(vaultTx3, 'CreateVault');
+  // await ethers.provider.send('evm_increaseTime', [oneDay * 7]);
 
-  await ethers.provider.send('evm_increaseTime', [oneDay * 7]);
+  // const vaultTx3 = await opsManager.createVault(
+  //   "temple-1m-vault",
+  //   "TPL-1M-V3",
+  //   oneDay * 30,
+  //   oneDay,
+  //   { p: 1, q : 1}
+  // );
 
-  const vaultTx4 = await opsManager.createVault(
-    "temple-1m-vault",
-    "TPL-1M-V4",
-    oneDay * 30,
-    oneDay,
-    { p: 1, q : 1}
-  );
+  // let vault3 = await extractDeployedAddress(vaultTx3, 'CreateVault');
 
-  let vault4 = await extractDeployedAddress(vaultTx4, 'CreateVault');
 
 
   // Print config required to run dApp
@@ -350,10 +358,10 @@ async function main() {
     TEMPLE_IV_SWAP: templeIVSwap.address,
     TEMPLE_VAULT_OPS_MANAGER: opsManager.address,
     TEMPLE_VAULT_STABLEC_EXPOSURE: exposure,
-    TEMPLE_VAULT_1_M_1: vault1,
-    TEMPLE_VAULT_1_M_2: vault2,
-    TEMPLE_VAULT_1_M_3: vault3,
-    TEMPLE_VAULT_1_M_4: vault4,
+    // TEMPLE_VAULT_1_M_1: vault1,
+    // TEMPLE_VAULT_1_M_2: vault2,
+    // TEMPLE_VAULT_1_M_3: vault3,
+    // TEMPLE_VAULT_1_M_4: vault4,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys
