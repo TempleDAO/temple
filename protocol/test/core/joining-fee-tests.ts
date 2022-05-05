@@ -35,7 +35,7 @@ describe("Joining Fee", async () => {
         expect(ownerFee).equals(toAtto(3));
     });
 
-    it.only('Linear progression on fee until next cycle', async () => {
+    it('Linear progression on fee until next cycle', async () => {
         const expectedFees = [
             {fees:[0,24,48,72,96,120,144,168,192,216,0], period: 864000, defaultFee: toAtto(1)},
             {fees:[0,0.24,0.48,0.72,0.96,1.2,1.44,1.68,1.92,2.16,0], period:864000, defaultFee: toAtto(0.01)},
