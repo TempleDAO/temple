@@ -150,7 +150,7 @@ describe("Temple Core Vault", async () => {
         2592000,
         { p: 1, q: 1},
         joiningFee.address,
-        1651528784
+        now
       );
 
       await expect(pastVault.connect(alan).deposit(toAtto(600)))
