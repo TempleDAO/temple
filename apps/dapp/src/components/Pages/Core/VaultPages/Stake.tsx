@@ -65,7 +65,7 @@ export const Stake = () => {
   const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, refreshWalletState);
 
   // UI amount to stake
-  const [stakingAmount, setStakingAmount] = useState(0);
+  const [stakingAmount, setStakingAmount] = useState<string | number>('');
 
   // Currently selected token
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(
@@ -77,11 +77,11 @@ export const Stake = () => {
     { response: zapRepsonse, error: zapError, isLoading: zapLoading },
   ] = useZappedAssetTempleBalance(
     ticker,
-    toAtto(stakingAmount)
+    toAtto(Number(stakingAmount || 0))
   );
 
-  const handleUpdateStakingAmount = (value: number) => {
-    setStakingAmount(value || 0);
+  const handleUpdateStakingAmount = (value: number | string) => {
+    setStakingAmount(Number(value) === 0 ? '' : value);
 
     // If there is a value present and its not TEMPLE request the zapped value.
     if (ticker !== TICKER_SYMBOL.TEMPLE_TOKEN && !!value) {
@@ -138,7 +138,7 @@ export const Stake = () => {
             defaultValue={OPTIONS[0]}
             onChange={(val: Option) => {
               setTicker(val.value as TICKER_SYMBOL);
-              setStakingAmount(0);
+              handleUpdateStakingAmount(0);
             }}
           />
         </SelectContainer>
