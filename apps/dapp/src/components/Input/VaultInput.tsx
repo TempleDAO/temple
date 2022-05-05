@@ -84,9 +84,7 @@ export const VaultInput = ({
   };
 
   return (
-    <InputWrapper
-      isDisabled={disabled}
-    >
+    <InputWrapper isDisabled={disabled}>
       <InputTokenWrapper>
         {rendertTickerSymbol()}
         {hint && (
@@ -147,7 +145,6 @@ const InputTokenWrapper = styled.div`
   align-items: center;
   justify-content: space-around;
   width: 9.25rem /* 148/16 */;
-  padding: 0.4rem 0 0;
 `;
 
 export const InputStyled = styled.input<SizeProps>`
@@ -163,7 +160,7 @@ export const InputStyled = styled.input<SizeProps>`
   height: 100%;
   text-align: right;
   padding-left: 1.5rem;
-  padding-bottom: .5rem;
+  padding-bottom: 0.5rem;
   ${({ small }) => small && `font-size: 1.5rem`};
 
   // remove input number controls ^ v
