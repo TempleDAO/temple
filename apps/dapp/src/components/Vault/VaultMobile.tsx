@@ -10,7 +10,7 @@ import { Timeline } from './mobile-parts/Timeline';
 import { VaultProps, VaultRef } from './types';
 
 export const VaultMobile = forwardRef<VaultRef, VaultProps>(
-  ({ vaultGroup, selectedNav, markerClick, children }, ref) => {
+  ({ vaultGroup, selectedNav, children }, ref) => {
     const svgRef = useRef<SVGSVGElement>(null);
     const popupRef = useRef(null);
 

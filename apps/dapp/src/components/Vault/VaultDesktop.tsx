@@ -17,9 +17,6 @@ export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
     {
       vaultGroup,
       selectedNav,
-      markerClick,
-      selectedEntry,
-      markerPosition,
       children,
     },
     ref
