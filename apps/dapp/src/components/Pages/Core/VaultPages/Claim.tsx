@@ -20,7 +20,7 @@ export const Claim = () => {
 
   const { wallet, signer } = useWallet();
 
-  const [amount, setAmount] = useState(0);
+  const [amount, setAmount] = useState<string | number>('');
   const [getBalance, { response: balanceResponse, isLoading: getBalanceLoading }] = useVaultBalance(vault.id);
   const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
   const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault!.id, async () => {
@@ -29,7 +29,6 @@ export const Claim = () => {
     setAmount(0);
   });
   
-
   useEffect(() => {
     if (!wallet || !signer) {
       return;
@@ -37,6 +36,10 @@ export const Claim = () => {
 
     getBalance();
   }, [getBalance, wallet, signer]);
+
+  const handleUpdateAmount = (amount: number | string) => {
+    setAmount(Number(amount) === 0 ? '' : amount);
+  };
 
   const vaultBalance = balanceResponse || 0;
 
@@ -52,7 +55,7 @@ export const Claim = () => {
     <ClaimableLabel>
       Claimable Temple
         <TempleAmountLink
-          onClick={() => copyBalance(vaultBalance, setAmount)}
+          onClick={() => copyBalance(vaultBalance, handleUpdateAmount)}
         >
           {formatNumberWithCommas(vaultBalance)}
         </TempleAmountLink>
@@ -72,9 +75,7 @@ export const Claim = () => {
       {claimLabel}
       <VaultInput
         tickerSymbol={TICKER_SYMBOL.TEMPLE_TOKEN}
-        handleChange={(value: number) => {
-          setAmount(value || 0);
-        }}
+        handleChange={handleUpdateAmount}
         isNumber
         placeholder="0.00"
         value={amount}
