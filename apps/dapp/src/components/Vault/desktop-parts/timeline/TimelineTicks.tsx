@@ -27,6 +27,22 @@ export const TimelineTicks = ({ vault }: Props) => {
 
   return (
     <g id="dynamic-timeline" clipPath="url(#clip0_4015_16261)">
+      <text
+        id="12 MO"
+        fill="#351F11"
+        xmlSpace="preserve"
+        style={{
+          whiteSpace: 'pre',
+        }}
+        fontFamily="Caviar Dreams"
+        fontSize={12}
+        fontWeight="bold"
+        letterSpacing=".15em"
+      >
+        <tspan x={783.481} y={526.065}>
+          {`${vault.months} MO.`}
+        </tspan>
+      </text>
       <g id="track">
         <mask
           id="mask0_4015_16261"
