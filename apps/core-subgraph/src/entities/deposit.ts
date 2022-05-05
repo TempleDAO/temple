@@ -10,6 +10,7 @@ import { getOrCreateToken } from './token'
 import { toDecimal } from '../utils/decimals'
 import { getVault, updateVault } from './vault'
 import { getOrCreateVaultUserBalance, updateVaultUserBalance } from './vaultUserBalance'
+import { getVaultGroup, updateVaultGroup } from './vaultGroup'
 
 
 export function createDeposit(event: DepositEvent): Deposit {
@@ -32,6 +33,10 @@ export function createDeposit(event: DepositEvent): Deposit {
   deposit.vault = vault.id
   vault.tvl = vault.tvl.plus(amount)
   updateVault(vault, timestamp)
+
+  const vaultGroup = getVaultGroup(vault.name)
+  vaultGroup.tvl = vaultGroup.tvl.plus(amount)
+  updateVaultGroup(vaultGroup, timestamp)
 
   const user = getOrCreateUser(event.params.account, timestamp)
   deposit.user = user.id

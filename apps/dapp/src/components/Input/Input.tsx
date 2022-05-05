@@ -217,7 +217,7 @@ const InputTokenWrapper = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  width: 10rem /* 148/16 */;
+  width: 9.25rem /* 148/16 */;
   min-width: ${pixelsToRems(120)}rem;
   p {
     font-size: 1.25rem;

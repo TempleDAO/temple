@@ -4,8 +4,8 @@ import {
   useContext,
   useState,
 } from 'react';
-import { BigNumber, Signer } from 'ethers';
-import { useAccount, useSigner, useNetwork, useProvider } from 'wagmi';
+import { BigNumber, Signer,  } from 'ethers';
+import { useAccount, useSigner, useNetwork, useProvider, useConnect } from 'wagmi';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
 import { useNotification } from 'providers/NotificationProvider';
@@ -21,13 +21,13 @@ import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
 import { WalletState, Balance } from 'providers/types';
 import {
-  ERC20,
   ERC20__factory,
   TempleERC20Token__factory,
   TempleStaking__factory,
   OGTemple__factory,
   TempleTeamPayments__factory,
   LockedOGTempleDeprecated__factory,
+  ERC20,
 } from 'types/typechain';
 import {
   TEMPLE_ADDRESS,
@@ -49,6 +49,7 @@ const INITIAL_STATE: WalletState = {
   },
   wallet: null,
   isConnected: false,
+  isConnecting: false,
   connectWallet: noop,
   changeWalletAddress: noop,
   signer: null,
@@ -66,11 +67,12 @@ const WalletContext = createContext<WalletState>(INITIAL_STATE);
 export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
   
-  const [{ data: signer }] = useSigner();
+  const [{ data: signer, loading: signerLoading }] = useSigner();
   const [{ data: network }] = useNetwork();
-  const [{ data: accountData }] = useAccount();
+  const [{ data: accountData, loading: accountLoading }] = useAccount();
+  const [{ loading: connectLoading }] = useConnect();
   const provider = useProvider();
-
+  
   const { openNotification } = useNotification();
   const [balanceState, setBalanceState] = useState<Balance>(
     INITIAL_STATE.balance
@@ -78,7 +80,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
   const chain = network?.chain;
   const walletAddress = accountData?.address;
-  const isConnected = !!walletAddress;
+  const isConnected = !!walletAddress && !!signer;
 
   const connectWallet = async () => {
     throw new Error('Deprecated');
@@ -179,7 +181,8 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
    */
   const ensureAllowance = async (
     tokenName: string,
-    token: ERC20,
+    // Should be ERC20, need to update Typechain (fix is in 8.0.x)
+    erc20Token: any,
     spender: string,
     minAllowance: BigNumber
   ) => {
@@ -188,6 +191,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
+    const token = erc20Token as ERC20;
     const allowance = await token.allowance(walletAddress, spender);
 
     if (allowance.lt(minAllowance)) {
@@ -236,7 +240,8 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     <WalletContext.Provider
       value={{
         balance: balanceState,
-        isConnected,
+        isConnected: isConnected,
+        isConnecting: signerLoading || connectLoading || accountLoading,
         wallet: walletAddress || null,
         connectWallet,
         changeWalletAddress,

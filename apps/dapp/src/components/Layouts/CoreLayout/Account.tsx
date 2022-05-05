@@ -13,8 +13,8 @@ import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import Tooltip from 'components/Tooltip/Tooltip';
 
 export const Account = () => {
-  const { isConnected } = useWallet();
-  const refreshWalletState = useRefreshWalletState();
+  const { isConnected, wallet, isConnecting } = useWallet();
+  const [_, refreshWalletState] = useRefreshWalletState();
   const [isConnectorMenuOpen, setIsConnectMenuOpen] = useState(false);
   const didRefreshWalletState = useRef(false);
 
@@ -25,15 +25,19 @@ export const Account = () => {
   // Maybe we want to move this to CoreLayout or some top level (but below Providers)
   // App component in the future.
   useEffect(() => {
+    if (isConnecting) {
+      return;
+    }
+
     // User connected to the app.  Fetch wallet state once.
-    if (isConnected && !didRefreshWalletState.current) {
+    if (isConnected && wallet && !didRefreshWalletState.current) {
       didRefreshWalletState.current = true;
       refreshWalletState();
     } else if (didRefreshWalletState.current && !isConnected) {
       // User disconnected from the app.
       didRefreshWalletState.current = false;
     }
-  }, [isConnected, refreshWalletState, didRefreshWalletState]);
+  }, [isConnected, wallet, isConnecting, refreshWalletState, didRefreshWalletState]);
 
   return (
     <>

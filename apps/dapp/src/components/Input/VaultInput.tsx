@@ -56,7 +56,7 @@ export const VaultInput = ({
 
     // We need this extra validation here to catch multiple, or ending, dots
     if (isNumber) {
-      const multiplePeriods = val.indexOf('.') != val.lastIndexOf('.');
+      const multiplePeriods = val.indexOf('.') !== val.lastIndexOf('.');
       const endPeriod = val.charAt(val.length - 1) === '.';
 
       if (multiplePeriods) {
@@ -82,7 +82,7 @@ export const VaultInput = ({
       event.preventDefault();
     }
   };
-
+  
   return (
     <InputWrapper isDisabled={disabled}>
       <InputTokenWrapper>
@@ -119,7 +119,7 @@ export const InputWrapper = styled.div<InputWrapperProps>`
   position: relative;
   margin-bottom: 0.2rem;
   padding: 0.5rem;
-    background-color: ${(props) => props.theme.palette.dark};
+  background-color: ${(props) => props.theme.palette.dark};
   height: 6.5rem /* 104/16 */;
   border: 0.125rem  /* 2/16 */ solid ${(props) => props.theme.palette.brand};
   // width will be manage by layout case by case
@@ -142,7 +142,7 @@ const InputTokenWrapper = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-around;
   width: 9.25rem /* 148/16 */;
 `;

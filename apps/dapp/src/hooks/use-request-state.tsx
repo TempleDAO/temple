@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
-import { Nullable } from 'types/util';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Nullable, Maybe } from 'types/util';
 
-type Request<T> = () => Promise<T>;
+type Request<T extends any> = ((...args: any[]) => Promise<T>) | (() => Promise<T>);
 
-export const createMockRequest = <T extends object>(
+export const createMockRequest = <T extends any>(
   response: T,
   requestTimeMs = 500,
   canThrowError = false,
@@ -29,22 +29,29 @@ type RequestResponseState<T> = {
   response: Nullable<T>,
 };
 
-type UseRequestStateReturnType<T extends object> = [
-  () => Promise<void>,
+type UseRequestStateReturnType<T extends any> = [
+  Request<Maybe<T>>,
   RequestResponseState<T>,
 ];
 
-const useRequestState = <T extends object>(request: Request<T>): UseRequestStateReturnType<T> => {
+const useRequestState = <T extends any>(request: Request<T>): UseRequestStateReturnType<T> => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Nullable<Error>>(null);
   const [response, setResponse] = useState<Nullable<T>>(null);
+  const requestRef = useRef(request);
+
+  useEffect(() => {
+    // Keep ref consistent with latest function passed in.
+    requestRef.current = request;
+  }, [request, requestRef]);
   
-  const wrappedRequest = useCallback(async () => {
+  const wrappedRequest = useCallback(async (...args) => {
     setError(null);
     setIsLoading(true);
 
+    let response: Maybe<T>;
     try {
-      const response = await request();
+      response = await requestRef.current(...args);
       setResponse(response);
     } catch (error) {
       setResponse(null);
@@ -52,7 +59,8 @@ const useRequestState = <T extends object>(request: Request<T>): UseRequestState
     } finally {
       setIsLoading(false);
     }
-  }, [request, setIsLoading, setResponse, setError]);
+    return response;
+  }, [requestRef, setIsLoading, setResponse, setError]);
 
   return [
     wrappedRequest,
@@ -60,7 +68,7 @@ const useRequestState = <T extends object>(request: Request<T>): UseRequestState
       isLoading,
       error,
       response,
-    }
+    },
   ];
 };
 

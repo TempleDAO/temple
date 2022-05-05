@@ -1,8 +1,7 @@
 import { Network } from '@ethersproject/providers';
-import { BigNumber, ethers, Signer } from 'ethers';
+import { BigNumber, Signer } from 'ethers';
 
 import { Nullable } from 'types/util';
-import { ERC20 } from 'types/typechain';
 import { ClaimType } from 'enums/claim-type';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
@@ -137,7 +136,8 @@ export interface WalletState {
   balance: Balance;
   signer: Nullable<Signer>;
   network: Nullable<Network>;
-
+  
+  isConnecting: boolean;
   isConnected: boolean;
 
   connectWallet(): void;
@@ -158,7 +158,8 @@ export interface WalletState {
 
   ensureAllowance(
     tokenName: string,
-    token: ERC20,
+    // Should be ERC20, need to update Typechain (fix is in 8.0.x)
+    erc20Token: any,
     spender: string,
     minAllowance: BigNumber
   ): Promise<void>;
