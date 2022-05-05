@@ -20,6 +20,7 @@ import useVaultContext from './use-vault-context';
 import { useWallet } from 'providers/WalletProvider';
 import { toAtto } from 'utils/bigNumber';
 import { MetaMaskError } from 'hooks/core/types';
+import { useHasVaultAllowance } from 'hooks/core/use-token-approval-state'
 
 // This dummy data will be replaced by the actual contracts
 const OPTIONS = [
@@ -59,11 +60,16 @@ const ENV = import.meta.env;
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
-  
-  const { balance } = useWallet();
+  const { balance, signer, wallet } = useWallet();
 
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
   const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, refreshWalletState);
+  const [{ allowance, isLoading: aLoading }, increaseAllowance] = useHasVaultAllowance(vault.id);
+
+  console.log(`
+    Allowance: ${allowance}
+    IsLoading: ${aLoading}
+  `);
 
   // UI amount to stake
   const [stakingAmount, setStakingAmount] = useState<string | number>('');
@@ -130,7 +136,17 @@ export const Stake = () => {
 
   return (
     <VaultContent>
-      <Header>Stake</Header>
+      <p>
+        <br /><br /><br />
+        allowance: <>{allowance}</><br />
+        isLoading: <>{aLoading ? 'Loading!' : 'No!'}</><br/>
+        {allowance === 0 && (
+          <button onClick={() => increaseAllowance()}>
+            increase allowance
+          </button>
+        )}
+      </p>
+      {/* <Header>Stake</Header>
       <DepositContainer>
         DEPOSIT{' '}
         <SelectContainer>
@@ -167,7 +183,7 @@ export const Stake = () => {
           await deposit(amountToDeposit);
           setStakingAmount(0);
         }}
-      />
+      /> */}
     </VaultContent>
   );
 };
