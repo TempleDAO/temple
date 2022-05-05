@@ -59,6 +59,7 @@ const ENV = import.meta.env;
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
+  
   const { balance } = useWallet();
 
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
