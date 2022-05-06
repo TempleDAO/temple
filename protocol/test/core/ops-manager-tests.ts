@@ -150,7 +150,7 @@ describe("Temple Core Ops Manager", async () => {
     expect(await vault2.firstPeriodStartTimestamp()).equals(firstVaultstartTime+3600);
   })
 
-  xit("End to end flow", async () => {
+  it("End to end flow", async () => {
     const firstVaultstartTime = await blockTimestamp()
 
     // create some vaults
