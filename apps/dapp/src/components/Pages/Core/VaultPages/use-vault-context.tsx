@@ -5,7 +5,7 @@ import { VaultGroup } from 'components/Vault/types';
 
 const useVaultContext = () => {
   const { vaultGroup } = useOutletContext<{ vaultGroup: VaultGroup }>();
-  const activeVault = vaultGroup.vaults.find(({ inZone }) => inZone);
+  const activeVault = vaultGroup.vaults.find(({ isActive }) => isActive);
 
   useEffect(() => {
     if (!activeVault) {
