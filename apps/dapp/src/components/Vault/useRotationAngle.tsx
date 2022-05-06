@@ -2,6 +2,7 @@ import { useRef, useEffect, useState, RefObject } from 'react';
 import { VaultPage } from './types';
 
 const TIMING: Record<number, number> = {
+  0: 400,
   1: 400,
   2: 700,
   3: 800,
