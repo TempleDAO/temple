@@ -39,7 +39,6 @@ export type VaultGroup = {
 };
 
 export type VaultProps = {
-  vaultGroup: VaultGroup;
   selectedNav: VaultPage;
   children: ReactNode;
 };

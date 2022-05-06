@@ -1,17 +1,13 @@
-import { useRef, PropsWithChildren } from 'react';
+import { useRef, FC } from 'react';
 
-import { VaultGroup, VaultRef } from './types';
+import { VaultRef } from './types';
 import { useMediaQuery } from 'react-responsive';
 import { VaultDesktop } from './VaultDesktop';
 import { VaultMobile } from './VaultMobile';
 import { useSelectedPage } from './useSelectedPage';
 import { queryPhone } from 'styles/breakpoints';
 
-type Props = {
-  vaultGroup: VaultGroup;
-};
-
-export const VaultSVG = ({ vaultGroup, children }: PropsWithChildren<Props>) => {
+export const VaultSVG: FC = ({ children }) => {
   const selectedNav = useSelectedPage();
   const vaultRef = useRef<VaultRef>(null);
 
@@ -20,8 +16,8 @@ export const VaultSVG = ({ vaultGroup, children }: PropsWithChildren<Props>) => 
   });
 
   return isDesktop ? (
-    <VaultDesktop ref={vaultRef} vaultGroup={vaultGroup} selectedNav={selectedNav!} children={children} />
+    <VaultDesktop ref={vaultRef} selectedNav={selectedNav!} children={children} />
   ) : (
-    <VaultMobile ref={vaultRef} vaultGroup={vaultGroup} selectedNav={selectedNav!} children={children} />
+    <VaultMobile ref={vaultRef} selectedNav={selectedNav!} children={children} />
   );
 };

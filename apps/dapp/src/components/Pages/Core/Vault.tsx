@@ -43,7 +43,7 @@ const VaultPage = () => {
   return (
     <VaultContextProvider vaultGroup={vaultGroup}>
       <CenterScreenWrapper>
-        <VaultSVG vaultGroup={vaultGroup}>
+        <VaultSVG>
           <Outlet />
         </VaultSVG>
       </CenterScreenWrapper>
