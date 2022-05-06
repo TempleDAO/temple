@@ -10,11 +10,13 @@ import "./Rational.sol";
 import "./JoiningFee.sol";
 import "./OpsManagerLib.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title Manage all active treasury farmining revenue.
  */
 contract OpsManager is Ownable {
-    mapping(Exposure => TreasuryFarmingRevenue) public pools;
+    mapping(IERC20 => TreasuryFarmingRevenue) public pools;
     Exposure[] public activeExposures;
     mapping(address => bool) public activeVaults;
 
@@ -32,64 +34,86 @@ contract OpsManager is Ownable {
     function createExposure(
         string memory name,
         string memory symbol,
-        ERC20 revalToken
+        IERC20 revalToken
     ) external onlyOwner  {
         Exposure exposure = OpsManagerLib.createExposure(name, symbol, revalToken, activeExposures, pools);
-        emit CreateExposure(address(exposure), address(pools[exposure]));
+        emit CreateExposure(address(exposure), address(pools[revalToken]));
     }
 
     /**
-     * @notice Create a new vault
+     * @notice Create a new vault instance.
+     *
+     * @dev for any given time period (eg. 1 month), we expect
+     * their to be multiple vault instances to allow users to
+     * join continously.
      */
-    function createVault(
+    function createVaultInstance(
         string memory name,
         string memory symbol,
         uint256 periodDuration,
         uint256 enterExitWindowDuration,
-        Rational memory shareBoostFactory
+        Rational memory shareBoostFactory,
+        uint256 firstPeriodStartTimestamp
     ) external onlyOwner {
-        Vault vault = new Vault(name, symbol, templeToken, periodDuration, enterExitWindowDuration, shareBoostFactory, joiningFee);
+        Vault vault = new Vault(name, symbol, templeToken, periodDuration, enterExitWindowDuration, shareBoostFactory, joiningFee, firstPeriodStartTimestamp);
         activeVaults[address(vault)] = true;
-        emit CreateVault(address(vault));
+        emit CreateVaultInstance(address(vault));
     }
 
     /**
-     * @notice Account for revenue earned by minting shares in a given strategy
+     * @notice Rebalance a set of vaults share of primary revenue earned
+     */
+    function rebalance(Vault[] memory vaults, IERC20 exposureToken) external {
+        require(address(pools[exposureToken]) != address(0), "No exposure/revenue farming pool for the given ERC20 Token");
+
+        for (uint256 i = 0; i < vaults.length; i++) {
+            require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
+            OpsManagerLib.rebalance(vaults[i], pools[exposureToken]);
+        }
+    }
+
+    /**
+     * @notice Account for revenue earned from primary farming activites
      *
      * @dev pre-condition expected to hold is all vaults that are not in their
      * entry/exit period have been rebalanced and are holding the correct portion
      * of shares expected in TreasuryFarmingRevenue
      */
-    function addRevenue(Exposure[] memory exposures, uint256 amount) external onlyOwner {
-        for (uint256 i = 0; i < exposures.length; i++) {
-            pools[exposures[i]].addRevenue(amount);
-        }
-    }
+    function addRevenue(IERC20[] memory exposureTokens, uint256[] memory amounts) external onlyOwner {
+        require(exposureTokens.length == amounts.length, "Exposures and amounts array must be the same length");
 
-    function rebalance(Vault[] memory vaults, Exposure exposure) external {
-        for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
-            OpsManagerLib.rebalance(vaults[i], exposure, pools);
+        for (uint256 i = 0; i < exposureTokens.length; i++) {
+            pools[exposureTokens[i]].addRevenue(amounts[i]);
         }
     }
 
     /**
-     * @notice claim revenue attributed to the given vault, into the given exposure
-     * @dev not required to be called, exposed if vault users want to spend the gas to
-     * keep the accounts and compounding up to date at a faster rate than the automated
-     * ops process
+     * @notice Update mark to market of temple's various exposures
      */
-    function claim(Vault[] memory vaults, Exposure exposure) external {
-        for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
-            pools[exposure].claimFor(address(vaults[i]));
+    function updateExposureReval(IERC20[] memory exposureTokens, uint256[] memory revals) external onlyOwner {
+        require(exposureTokens.length == revals.length, "Exposures and reval amounts array must be the same length");
+
+        for (uint256 i = 0; i < exposureTokens.length; i++) {
+            Exposure exposure = pools[exposureTokens[i]].exposure();
+            uint256 currentReval = exposure.reval();
+            if (currentReval > revals[i]) {
+                exposure.decreaseReval(currentReval - revals[i]);
+            } else {
+                exposure.increaseReval(revals[i] - currentReval);
+            }
         }
     }
 
     /**
      * @notice For the given vaults, liquidate their exposures back to temple
      */
-    function liquidateExposures(Vault[] memory vaults, Exposure[] memory exposures) external {
+    function liquidateExposures(Vault[] memory vaults, IERC20[] memory exposureTokens) external {
+        Exposure[] memory exposures = new Exposure[](exposureTokens.length);
+
+        for (uint256 i = 0; i < exposureTokens.length; i++) {
+            exposures[i] = pools[exposureTokens[i]].exposure();
+        }
+
         for (uint256 i = 0; i < vaults.length; i++) {
             require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
             vaults[i].redeemExposures(exposures);
@@ -101,10 +125,20 @@ contract OpsManager is Ownable {
      * that vault requires a rebalance before updating revenue attributed to a particular
      * exposure
      */
-    function requiresRebalance(Vault[] memory vaults, Exposure exposure) external view returns (bool[] memory) {
-        return OpsManagerLib.requiresRebalance(vaults, exposure, pools);
+    function requiresRebalance(Vault[] memory vaults, IERC20 exposureToken) external view returns (bool[] memory) {
+        return OpsManagerLib.requiresRebalance(vaults, pools[exposureToken]);
     }
 
-    event CreateVault(address vault);
+
+    /// @dev ****** for testing. Delete before pushing to mainnet
+    /// change a set of vault's start time (so we can fast forward in and out of lock/unlock windows)
+    function decreaseStartTime(Vault[] memory vaults, uint256 delta) external onlyOwner {
+        for (uint256 i = 0; i < vaults.length; i++) {
+            require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
+            vaults[i].decreaseStartTime(delta);
+        }
+    }
+
+    event CreateVaultInstance(address vault);
     event CreateExposure(address exposure, address primaryRevenue);
 }

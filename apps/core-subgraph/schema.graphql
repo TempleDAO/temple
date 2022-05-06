@@ -117,6 +117,7 @@ type VaultUserBalance @entity {
   user: User!
   token: Token!
   amount: BigDecimal!
+  staked: BigDecimal!
   value: BigDecimal!
 }
 
@@ -127,6 +128,7 @@ type Deposit @entity {
   user: User!
   token: Token!
   amount: BigDecimal!
+  staked: BigDecimal!
   value: BigDecimal!
 }
 

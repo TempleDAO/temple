@@ -20,9 +20,7 @@ import {
   AcceleratedExitQueue__factory,
   TempleIVSwap__factory,
   JoiningFee__factory,
-  Vault__factory,
   OpsManager__factory,
-  Exposure__factory,
 } from '../../typechain';
 import { writeFile } from 'fs/promises';
 
@@ -263,18 +261,15 @@ async function main() {
   );
   await stablecToken.mint(templeIVSwap.address, toAtto(1000000));
 
-  // create a temple vault (for testing)
-  // NOTE(butlerji): this is an example only, expect FE team to create whatever they need
-  const joiningFee = await new JoiningFee__factory(owner).deploy(toAtto(1));
+  const joiningFee = await new JoiningFee__factory(owner).deploy(
+    100000000000000,
+  );
 
-  const opsManagerLib = await (await ethers.getContractFactory('OpsManagerLib'))
-    .connect(owner)
-    .deploy();
-
-  const opsManager = await new OpsManager__factory(
-    { 'contracts/core/OpsManagerLib.sol:OpsManagerLib': opsManagerLib.address },
-    owner
-  ).deploy(templeToken.address, joiningFee.address);
+  const opsManagerLib = await (await ethers.getContractFactory("OpsManagerLib")).connect(owner).deploy();
+  const opsManager = await new OpsManager__factory({ "contracts/core/OpsManagerLib.sol:OpsManagerLib" : opsManagerLib.address }, owner).deploy(
+    templeToken.address,
+    joiningFee.address
+  );
 
   const exposureTx = await opsManager.createExposure(
     'Stable Exposure',
@@ -292,15 +287,17 @@ async function main() {
     throw new Error('Vault period should divide perfectly by vault window');
 
   for (let i = 0; i < numberOfSubVaults; i++) {
-    const vaultTx = await opsManager.createVault(
-      'temple-test-vault',
-      'TPL-TST-V1',
+    const vaultTx = await opsManager.createVaultInstance(
+      "temple-1m-vault",
+      "TPL-1M-V1",
       period,
       window,
-      { p: 1, q: 1 }
+      { p: 1, q : 1},
+      Math.floor(Date.now() / 1000) + i * window
     );
 
-    let vault = await extractDeployedAddress(vaultTx, 'CreateVault');
+    let vault = await extractDeployedAddress(vaultTx, 'createVaultInstance');
+    console.log(vault);
 
     await ethers.provider.send('evm_increaseTime', [window]);
   }
