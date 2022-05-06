@@ -61,7 +61,7 @@ const useVaultGroupReducer = () => {
         return {
           ...state,
           [instanceAddress]: {
-            ...state.address,
+            ...state[instanceAddress],
             isLoading,
           },
         };
@@ -77,7 +77,7 @@ const useVaultGroupReducer = () => {
       default:
         return state;
     }
-  }
+  };
 
   const [state, dispatch] = useReducer(reducer, {});
   

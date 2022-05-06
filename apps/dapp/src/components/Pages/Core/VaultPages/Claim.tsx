@@ -32,7 +32,7 @@ export const Claim = () => {
       return;
     }
 
-    getBalance();
+    //getBalance();
   }, [getBalance, wallet, signer]);
 
   const handleUpdateAmount = (amount: number | string) => {
