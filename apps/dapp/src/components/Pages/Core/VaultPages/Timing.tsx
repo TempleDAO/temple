@@ -36,7 +36,7 @@ const Timing = () => {
               const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
               return (
                 <Row key={marker.id}>
-                  <Cell $align="center">{marker.vaultLetter}</Cell>
+                  <Cell $align="center">{marker.label}</Cell>
                   <Cell $align="center">{marker.amount} $T</Cell>
                   <Cell $align="center">{unlockValue}</Cell>
                 </Row>

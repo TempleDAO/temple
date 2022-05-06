@@ -7,7 +7,7 @@ export type Marker = {
   inZone: boolean;
   type: MarkerType;
   unlockDate: Date | 'NOW';
-  vaultLetter: string;
+  label: string;
 };
 
 export type Vault = {
@@ -17,7 +17,7 @@ export type Vault = {
   // Start of vault instance
   startDate: Date;
   isActive: boolean;
-  letter: string;
+  label: string;
   enterExitWindowDurationSeconds: number;
   periodDurationSeconds: number;
 };
@@ -38,9 +38,6 @@ export type VaultGroup = {
 export type VaultProps = {
   vaultGroup: VaultGroup;
   selectedNav: VaultPage;
-  // markerClick: (entryData: Marker, markerEl: SVGElement) => void;
-  // selectedEntry: Marker;
-  // markerPosition: Point;
   children: ReactNode;
 };
 

@@ -26,7 +26,7 @@ export const Timeline = ({ vaultGroup }: Props) => {
       <TimelineBackground />
       <TimelineChannel />
       <TimelineStartEndMarkers />
-      <TimelineTicks vault={vaultGroup} />
+      <TimelineTicks vaultGroup={vaultGroup} />
       {markers}
     </g>
   );

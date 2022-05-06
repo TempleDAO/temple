@@ -303,42 +303,6 @@ async function main() {
     await ethers.provider.send('evm_increaseTime', [window]);
   }
 
-  // const vaultTx1 = await opsManager.createVault(
-  //   "temple-1m-vault",
-  //   "TPL-1M-V1",
-  //   oneDay * 30,
-  //   oneDay * 10,
-  //   { p: 1, q : 1}
-  // );
-
-  // let vault1 = await extractDeployedAddress(vaultTx1, 'CreateVault');
-
-  // await ethers.provider.send('evm_increaseTime', [oneDay * 10]);
-
-  // const vaultTx2 = await opsManager.createVault(
-  //   "temple-1m-vault",
-  //   "TPL-1M-V2",
-  //   oneDay * 30,
-  //   oneDay,
-  //   { p: 1, q : 1}
-  // );
-
-  // let vault2 = await extractDeployedAddress(vaultTx2, 'CreateVault');
-
-  // await ethers.provider.send('evm_increaseTime', [oneDay * 7]);
-
-  // const vaultTx3 = await opsManager.createVault(
-  //   "temple-1m-vault",
-  //   "TPL-1M-V3",
-  //   oneDay * 30,
-  //   oneDay,
-  //   { p: 1, q : 1}
-  // );
-
-  // let vault3 = await extractDeployedAddress(vaultTx3, 'CreateVault');
-
-
-
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
     EXIT_QUEUE_ADDRESS: exitQueue.address,

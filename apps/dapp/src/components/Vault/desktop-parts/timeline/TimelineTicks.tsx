@@ -2,27 +2,28 @@ import { VaultGroup } from 'components/Vault/types';
 import { lerp } from '../utils';
 
 type Props = {
-  vault: VaultGroup;
+  vaultGroup: VaultGroup;
 };
 
-export const TimelineTicks = ({ vault }: Props) => {
+export const TimelineTicks = ({ vaultGroup }: Props) => {
   const minAngleTrack = 161;
   const maxAngleTrack = 2;
   const minAngleTick = -80.5;
   const maxAngleTick = 80.5;
-  const percent = vault.enterExitWindowDurationSeconds / vault.periodDurationSeconds;
-  const periods = vault.periods;
+  const percent = vaultGroup.enterExitWindowDurationSeconds / vaultGroup.periodDurationSeconds;
+  const periods = vaultGroup.periods;
 
   const trackAngle = lerp(minAngleTrack, maxAngleTrack, percent);
 
   const ticks = [];
-  ticks.push(makeTick(1001, minAngleTick));
-  ticks.push(makeTick(1002, maxAngleTick));
+
+  ticks.push(<Tick key={1001} id={1001} angle={minAngleTick} />);
+  ticks.push(<Tick key={1002} id={1002} angle={maxAngleTick} />);
 
   for (let i = 1; i < periods; i++) {
     const angleDelta = (maxAngleTick * 2) / periods;
     const angle = minAngleTick + angleDelta * i;
-    ticks.push(makeTick(i, angle));
+    ticks.push(<Tick key={i} id={i} angle={angle} />);
   }
 
   return (
@@ -40,7 +41,7 @@ export const TimelineTicks = ({ vault }: Props) => {
         letterSpacing=".15em"
       >
         <tspan x={783.481} y={526.065}>
-          {`${vault.months} MO.`}
+          {`${vaultGroup.months} MO.`}
         </tspan>
       </text>
       <g id="track">
@@ -77,8 +78,8 @@ export const TimelineTicks = ({ vault }: Props) => {
   );
 };
 
-const makeTick = (id: number, angle: number) => (
-  <g key={id} id={`tick-${id}`} transform={`rotate(${angle} 502.066 502.066)`}>
+const Tick = ({ id, angle }: { id: number; angle: number }) => (
+  <g id={`tick-${id}`} transform={`rotate(${angle} 502.066 502.066)`}>
     <path
       id="tick"
       fillRule="evenodd"

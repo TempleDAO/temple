@@ -7,11 +7,10 @@ export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
 
 export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGroup => {
   const vaults = subgraphVaultGroup.vaults.map((vault) => createVault(vault));
-  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
   const orderedVaults = vaults
     .sort((a, b) => a.startDate!.getTime() - b.startDate!.getTime())
     .map((vault, index) => {
-      vault.letter = letters[index];
+      vault.label = String.fromCharCode(65 + index);
       return vault as Vault;
     });
 
@@ -79,7 +78,7 @@ const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>): Marker[] => {
       percent: calculatePercent(vault),
       inZone: vault.isActive,
       type: MarkerType.HIDDEN,
-      vaultLetter: vault.letter,
+      label: vault.label,
     };
 
     marker.unlockDate = calculateUnlockDate(vault, marker as Marker);
@@ -89,10 +88,8 @@ const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>): Marker[] => {
       if (marker.inZone) {
         marker.type = MarkerType.STAKING_IN_ZONE;
       }
-    } else {
-      if (marker.inZone) {
-        marker.type = MarkerType.EMPTY;
-      }
+    } else if (marker.inZone) {
+      marker.type = MarkerType.EMPTY;
     }
 
     markers.push(marker as Marker);

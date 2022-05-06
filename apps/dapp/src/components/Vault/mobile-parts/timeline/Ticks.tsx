@@ -17,7 +17,7 @@ export const Ticks = ({ vaultGroup }: Props) => {
   const distBetween = maxDistance / periods;
   for (let i = 1; i < periods; i++) {
     const distance = distBetween * i;
-    ticks.push(makeTick(i, distance));
+    ticks.push(<Tick key={i} id={i} distance={distance} />);
   }
 
   return (
@@ -94,7 +94,7 @@ export const Ticks = ({ vaultGroup }: Props) => {
   );
 };
 
-const makeTick = (id: number, distance: number) => (
+const Tick = ({ id, distance }: { id: number; distance: number }) => (
   <g key={id} id={`tick-${id}`} transform={`translate(${distance})`}>
     <path id="three-month-tickmark" d="M23 549.297V554.755M23 523.297V528.755" stroke="#351F11" />
   </g>
