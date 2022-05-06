@@ -92,7 +92,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     OPS_MANAGER_LIB: '0xe10db2b548012F659d0f856cdf86897c61238A79',
     OPS_MANAGER: '0xf7D5a97B122dd7D5366045DE76d4791Ac5428da5',
 
-    MULTISIG: '',
+    MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
   },
   mainnet: {
     // No longer active/unused
