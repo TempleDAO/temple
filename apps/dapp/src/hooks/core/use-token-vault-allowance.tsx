@@ -7,17 +7,30 @@ import useRequestState from 'hooks/use-request-state';
 
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { useEffect } from 'react';
-import { BigNumber } from 'ethers';
+import { Signer } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 const ENV = import.meta.env;
 
 const DEFAULT_ALLOWANCE = toAtto(100000000);
 
-export const useHasVaultAllowance = (vaultContractAddress: string): [{ allowance: null | number, isLoading: boolean }, () => Promise<void>] => {
+const createTokenFactoryInstance = (ticker: TICKER_SYMBOL, signer: Signer) => {
+  switch (ticker) {
+    case TICKER_SYMBOL.TEMPLE_TOKEN:
+      return new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
+  }
+  throw new Error('Unsupported Token');
+};
+
+type HookReturnType = [{ allowance: null | number, isLoading: boolean }, () => Promise<void>];
+
+export const useTokenVaultAllowance = (
+  vaultContractAddress: string,
+  ticker: TICKER_SYMBOL = TICKER_SYMBOL.TEMPLE_TOKEN,
+): HookReturnType => {
   const { signer, wallet, isConnected } = useWallet();
   const { openNotification } = useNotification();
-  const skip = !signer || !wallet; 
   
   const getTokenAllowance = async () => {
     if (!signer || !wallet) {
@@ -25,9 +38,9 @@ export const useHasVaultAllowance = (vaultContractAddress: string): [{ allowance
       return;
     }
 
-    const temple = new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
+    const token = createTokenFactoryInstance(ticker, signer);
     const vault = new Vault__factory(signer).attach(vaultContractAddress);
-    const allowance = await temple.allowance(wallet, vault.address);
+    const allowance = await token.allowance(wallet, vault.address);
     return allowance;
   };
   
@@ -35,8 +48,7 @@ export const useHasVaultAllowance = (vaultContractAddress: string): [{ allowance
     getAllowanceRequest,
     {
       isLoading: getAllowanceLoading,
-      error: getAllowanceError,
-      response: allowance 
+      response: allowance,
     },
   ] = useRequestState(getTokenAllowance);
 
@@ -46,8 +58,8 @@ export const useHasVaultAllowance = (vaultContractAddress: string): [{ allowance
       return;
     }
 
-    const temple = new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
-    const approveTXN = await temple.approve(vaultContractAddress, DEFAULT_ALLOWANCE);
+    const token = createTokenFactoryInstance(ticker, signer);
+    const approveTXN = await token.approve(vaultContractAddress, DEFAULT_ALLOWANCE);
     await approveTXN.wait();
   
     openNotification({
@@ -62,8 +74,6 @@ export const useHasVaultAllowance = (vaultContractAddress: string): [{ allowance
     increaseAllowanceRequest, 
     { 
       isLoading: increaseAllowanceLoading,
-      error: allowanceError,
-      response
     },
   ] = useRequestState(increaseAllowance);
 
@@ -71,17 +81,19 @@ export const useHasVaultAllowance = (vaultContractAddress: string): [{ allowance
     if (!isConnected) {
       return;
     }
+    
     getAllowanceRequest();
   }, [
     isConnected,
     vaultContractAddress,
     getAllowanceRequest,
+    ticker,
   ]);
 
   return [
     {
       allowance: !allowance ? null : fromAtto(allowance),
-      isLoading: getAllowanceLoading,
+      isLoading: getAllowanceLoading || increaseAllowanceLoading,
     },
     increaseAllowanceRequest
   ];
