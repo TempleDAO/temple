@@ -1,29 +1,23 @@
-import { VaultGroup } from '../types';
+import { MarkerType, VaultGroup } from '../types';
 import { BGTrack } from './timeline/BGTrack';
 import { Marker } from './timeline/Marker';
 import { Ticks } from './timeline/Ticks';
-import TimelineTippy from '../TimelineTippy'
+import TimelineTippy from '../TimelineTippy';
 
 type Props = {
   vaultGroup: VaultGroup;
 };
 
 export const Timeline = ({ vaultGroup }: Props) => {
-  const vaultsWithBalances = vaultGroup.vaults.filter(({ entries }) => entries.length > 0);
-  const markers = vaultsWithBalances.flatMap((vault, i) => {
-    return vault.entries.map((entry) => {
+  const markers = vaultGroup.markers
+    .filter((marker) => marker.type !== MarkerType.HIDDEN)
+    .map((marker) => {
       return (
-        <TimelineTippy
-          vault={vault}
-          entry={entry}
-          key={`${entry.id}${i}`}
-        >
-          <Marker entry={entry} />
+        <TimelineTippy marker={marker} key={marker.id}>
+          <Marker marker={marker} />
         </TimelineTippy>
       );
     });
-  });
-
 
   return (
     <>

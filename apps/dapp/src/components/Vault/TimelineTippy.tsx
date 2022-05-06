@@ -2,39 +2,30 @@ import { ReactElement, JSXElementConstructor } from 'react';
 
 import Tippy from '@tippyjs/react';
 import { roundArrow } from 'tippy.js';
-import { format, addSeconds } from 'date-fns';
+import { format, isDate } from 'date-fns';
 
-import { Entry, Vault } from 'components/Vault/types';
+import { Marker } from 'components/Vault/types';
 import { TippyDiv } from 'components/Tooltip/Tooltip';
-import { SECONDS_IN_MONTH } from './desktop-parts/utils';
 
 type Props = {
-  vault: Vault;
-  entry: Entry;
+  marker: Marker;
   // Tippy has weird typing for children.
   children: ReactElement<any, string | JSXElementConstructor<any>>;
 };
 
-const TimelineTippy = ({ vault, entry, children }: Props) => {
-  if (!entry.entryDate) {
-    return null;
-  }
-  
-  const amount = entry.amount;
-  const startDate = format(entry.entryDate, 'MMM do');
-  const endDate = format(
-    addSeconds(entry.entryDate!, SECONDS_IN_MONTH * vault.months),
-    'MMM do'
-  );
+const TimelineTippy = ({ marker, children }: Props) => {
+  const amount = marker.amount;
+  const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
 
   return (
     <Tippy
       content={
         <TippyDiv>
-          {amount} $TEMPLE<br />
-          Vesting Date: {endDate}
+          {amount} $TEMPLE
+          <br />
+          Unlock Date: {unlockValue}
         </TippyDiv>
-      } 
+      }
       animation="scale-subtle"
       duration={250}
       arrow={roundArrow}
@@ -43,6 +34,6 @@ const TimelineTippy = ({ vault, entry, children }: Props) => {
       {children}
     </Tippy>
   );
-}
+};
 
 export default TimelineTippy;
