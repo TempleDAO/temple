@@ -294,6 +294,7 @@ async function main() {
     );
 
     let vault = await extractDeployedAddress(vaultTx, 'createVaultInstance');
+    console.log(vault);
 
     await ethers.provider.send('evm_increaseTime', [window]);
   }
