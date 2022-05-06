@@ -37,4 +37,5 @@ export interface SwapReducerState {
   outputTokenBalance: number;
   inputConfig: SwapInputConfig;
   outputConfig: SwapInputConfig;
+  buttonLabel: string;
 }

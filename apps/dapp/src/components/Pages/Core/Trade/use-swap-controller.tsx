@@ -1,9 +1,9 @@
 import { Option } from 'components/InputSelect/InputSelect';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { useCallback, useReducer } from 'react';
+import { useReducer } from 'react';
 import { TOKENS_BY_MODE } from './constants';
 import { SwapReducerAction, SwapReducerState, SwapMode } from './types';
-import { buildSelectConfig, buildValueConfig } from './utils';
+import { buildSelectConfig, buildValueConfig, createButtonLabel } from './utils';
 
 const INITIAL_STATE: SwapReducerState = {
   mode: SwapMode.Buy,
@@ -15,6 +15,7 @@ const INITIAL_STATE: SwapReducerState = {
   outputTokenBalance: 0,
   inputConfig: buildSelectConfig(TICKER_SYMBOL.FRAX, SwapMode.Buy),
   outputConfig: buildValueConfig(TICKER_SYMBOL.TEMPLE_TOKEN),
+  buttonLabel: createButtonLabel(TICKER_SYMBOL.FRAX, TICKER_SYMBOL.TEMPLE_TOKEN, SwapMode.Buy),
 };
 
 export function useSwapController() {
@@ -22,9 +23,7 @@ export function useSwapController() {
 
   // Handles selection of a new value in the select dropdown
   const handleSelectChange = (event: Option) => {
-    const token = Object.values(TOKENS_BY_MODE[state.mode]).find(
-      (token) => token === event.value
-    );
+    const token = Object.values(TOKENS_BY_MODE[state.mode]).find((token) => token === event.value);
 
     if (!token) {
       throw new Error('Invalid token selected');
@@ -72,10 +71,7 @@ export function useSwapController() {
   };
 }
 
-function reducer(
-  state: SwapReducerState,
-  action: SwapReducerAction
-): SwapReducerState {
+function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReducerState {
   switch (action.type) {
     case 'changeMode': {
       return action.value === SwapMode.Buy
@@ -88,10 +84,8 @@ function reducer(
             inputToken: INITIAL_STATE.outputToken,
             outputToken: INITIAL_STATE.inputToken,
             inputConfig: buildValueConfig(INITIAL_STATE.outputToken),
-            outputConfig: buildSelectConfig(
-              INITIAL_STATE.inputToken,
-              SwapMode.Sell
-            ),
+            outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, SwapMode.Sell),
+            buttonLabel: createButtonLabel(INITIAL_STATE.outputToken, INITIAL_STATE.inputToken, SwapMode.Sell),
           };
     }
 
@@ -102,12 +96,14 @@ function reducer(
         inputValue: INITIAL_STATE.inputValue,
         inputTokenBalance: action.value.balance,
         quoteValue: INITIAL_STATE.quoteValue,
+        buttonLabel: createButtonLabel(action.value.token, state.outputToken, state.mode),
       };
 
     case 'changeOutputToken':
       return {
         ...state,
         outputToken: action.value.token,
+        buttonLabel: createButtonLabel(state.inputToken, action.value.token, state.mode),
       };
 
     case 'changeInputValue':

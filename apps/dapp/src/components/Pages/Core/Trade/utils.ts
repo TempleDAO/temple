@@ -12,10 +12,7 @@ export function buildValueConfig(token: TICKER_SYMBOL): CryptoValue {
 }
 
 // See apps/dapp/src/components/Input/Input.tsx
-export function buildSelectConfig(
-  defaultToken: TICKER_SYMBOL,
-  mode: SwapMode
-): CryptoSelector {
+export function buildSelectConfig(defaultToken: TICKER_SYMBOL, mode: SwapMode): CryptoSelector {
   const defaultOption = {
     value: defaultToken,
     label: defaultToken,
@@ -32,4 +29,15 @@ export function buildSelectConfig(
     defaultValue: defaultOption,
     onCryptoChange: () => {},
   };
+}
+
+export function createButtonLabel(inputToken: TICKER_SYMBOL, outputToken: TICKER_SYMBOL, swapMode: SwapMode): string {
+  switch (swapMode) {
+    case SwapMode.Buy:
+      return `Buy ${outputToken} with ${inputToken}`;
+    case SwapMode.Sell:
+      return `Sell ${inputToken} for ${outputToken}`;
+    default:
+      return 'Swap';
+  }
 }

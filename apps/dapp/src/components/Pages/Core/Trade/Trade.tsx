@@ -2,10 +2,7 @@ import styled from 'styled-components';
 
 import { Input } from 'components/Input/Input';
 import { CoreButton } from 'components/Button/CoreButton';
-import {
-  NAV_MOBILE_HEIGHT_PIXELS,
-  NAV_DESKTOP_HEIGHT_PIXELS,
-} from 'components/Layouts/CoreLayout/Header';
+import { NAV_MOBILE_HEIGHT_PIXELS, NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
 import arrow from 'assets/icons/amm-arrow.svg';
 import { pixelsToRems } from 'styles/mixins';
 import { phoneAndAbove } from 'styles/breakpoints';
@@ -17,23 +14,13 @@ import { PageWrapper } from '../utils';
 import { formatNumberWithCommas } from 'utils/formatter';
 
 export const Trade = () => {
-  const {
-    state,
-    handleSelectChange,
-    handleInputChange,
-    handleChangeMode,
-    handleHintClick,
-  } = useSwapController();
+  const { state, handleSelectChange, handleInputChange, handleChangeMode, handleHintClick } = useSwapController();
 
   const inputCryptoConfig =
-    state.mode === SwapMode.Buy
-      ? { ...state.inputConfig, onCryptoChange: handleSelectChange }
-      : state.inputConfig;
+    state.mode === SwapMode.Buy ? { ...state.inputConfig, onCryptoChange: handleSelectChange } : state.inputConfig;
 
   const outputCryptoConfig =
-    state.mode === SwapMode.Sell
-      ? { ...state.outputConfig, onCryptoChange: handleSelectChange }
-      : state.outputConfig;
+    state.mode === SwapMode.Sell ? { ...state.outputConfig, onCryptoChange: handleSelectChange } : state.outputConfig;
 
   return (
     <PageWrapper>
@@ -49,30 +36,21 @@ export const Trade = () => {
               placeholder="0"
               onHintClick={handleHintClick}
               min={0}
-              hint={`Balance: ${formatNumberWithCommas(
-                state.inputTokenBalance
-              )}`}
+              hint={`Balance: ${formatNumberWithCommas(state.inputTokenBalance)}`}
               hasDivider
             />
             <Spacer />
             <Input
               crypto={outputCryptoConfig}
               value={formatNumberWithCommas(state.quoteValue)}
-              hint={`Balance: ${formatNumberWithCommas(
-                state.outputTokenBalance
-              )}`}
+              hint={`Balance: ${formatNumberWithCommas(state.outputTokenBalance)}`}
               disabled
               hasDivider
             />
-            <InvertButton
-              onClick={handleChangeMode}
-              isBuy={state.mode === SwapMode.Buy}
-            />
+            <InvertButton onClick={handleChangeMode} />
           </InputsContainer>
           <Spacer />
-          <SwapButton
-            label={`Exchange ${state.inputToken} for ${state.outputToken}`}
-          />
+          <SwapButton label={state.buttonLabel} />
         </SwapContainer>
       </Container>
     </PageWrapper>
@@ -109,7 +87,7 @@ const InputsContainer = styled.div`
   position: relative;
 `;
 
-const InvertButton = styled(CoreButton)<{ isBuy?: boolean }>`
+const InvertButton = styled(CoreButton)`
   position: absolute;
   height: 2.5rem /* 40/16 */;
   width: 2.5rem /* 40/16 */;
@@ -133,7 +111,7 @@ const Spacer = styled.div`
 `;
 
 const SwapButton = styled(CoreButton)`
-  font-size: 1rem;
+  font-size: 1.2rem;
   ${phoneAndAbove(`
     font-size: 1.5rem;
   `)}
