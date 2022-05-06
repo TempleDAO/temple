@@ -21,6 +21,7 @@ export type Vault = {
   label: string;
   enterExitWindowDurationSeconds: number;
   periodDurationSeconds: number;
+  amountStaked: number;
 };
 
 export type VaultGroup = {
