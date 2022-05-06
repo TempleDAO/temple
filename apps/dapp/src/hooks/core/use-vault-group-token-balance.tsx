@@ -1,5 +1,5 @@
-import { useEffect, useState, useReducer } from 'react';
-import { errors, Signer } from 'ethers';
+import { useEffect, useReducer } from 'react';
+import { Signer } from 'ethers';
 
 import {
   Vault__factory,
