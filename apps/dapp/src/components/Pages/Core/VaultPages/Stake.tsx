@@ -20,6 +20,7 @@ import useVaultContext from './use-vault-context';
 import { useWallet } from 'providers/WalletProvider';
 import { toAtto } from 'utils/bigNumber';
 import { MetaMaskError } from 'hooks/core/types';
+import { useTokenVaultAllowance } from 'hooks/core/use-token-vault-allowance'
 
 // This dummy data will be replaced by the actual contracts
 const OPTIONS = [
@@ -55,23 +56,21 @@ const useZappedAssetTempleBalance = (
   return useRequestState(() => zapAssetRequest(token, amount));
 };
 
-const ENV = import.meta.env;
-
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
-  
-  const { balance } = useWallet();
-
-  const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
-  const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, refreshWalletState);
-
-  // UI amount to stake
-  const [stakingAmount, setStakingAmount] = useState<string | number>('');
+  const { balance, isConnected } = useWallet();
 
   // Currently selected token
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(
     OPTIONS[0].value as TICKER_SYMBOL
   );
+
+  const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
+  const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, refreshWalletState);
+  const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(vault.id, ticker);
+
+  // UI amount to stake
+  const [stakingAmount, setStakingAmount] = useState<string | number>('');
 
   const [
     zapAssetRequest,
@@ -105,8 +104,16 @@ export const Stake = () => {
   const templeAmount = !isZap
     ? stakingAmount
     : (stakingAmount && zapRepsonse?.templeAmount) || 0;
-  const stakeButtonDisabled =
-    refreshIsLoading || !templeAmount || depositLoading || zapLoading || (isZap && !!zapError);
+  
+  const stakeButtonDisabled = (
+    !isConnected ||
+    refreshIsLoading || 
+    !templeAmount ||
+    depositLoading ||
+    zapLoading || 
+    allowanceLoading ||
+    (isZap && !!zapError)
+  );
 
   let templeAmountMessage: ReactNode = '';
   if (zapError) {
@@ -157,17 +164,29 @@ export const Stake = () => {
       />
       {!!(isZap && templeAmountMessage) && <AmountInTemple>{templeAmountMessage}</AmountInTemple>}
       <ErrorLabel>{error}</ErrorLabel>
-      <VaultButton
-        label="Stake"
-        autoWidth
-        disabled={stakeButtonDisabled}
-        loading={refreshIsLoading || depositLoading}
-        onClick={async () => {
-          const amountToDeposit = !stakingAmount ? 0 : stakingAmount;
-          await deposit(amountToDeposit);
-          setStakingAmount(0);
-        }}
-      />
+      {allowance === 0 && (
+        <VaultButton
+          label="Approve Allowance"
+          autoWidth
+          disabled={allowanceLoading}
+          onClick={async () => {
+            return increaseAllowance();
+          }}
+        />
+      )}
+      {allowance !== 0 && (
+        <VaultButton
+          label="Stake"
+          autoWidth
+          disabled={stakeButtonDisabled}
+          loading={refreshIsLoading || depositLoading}
+          onClick={async () => {
+            const amountToDeposit = !stakingAmount ? 0 : stakingAmount;
+            await deposit(amountToDeposit);
+            setStakingAmount(0);
+          }}
+        />
+      )}
     </VaultContent>
   );
 };

@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { lerp } from 'components/Vault/desktop-parts/utils';
 import { VaultGroup } from 'components/Vault/types';
 
@@ -19,6 +20,9 @@ export const Ticks = ({ vaultGroup }: Props) => {
     const distance = distBetween * i;
     ticks.push(<Tick key={i} id={i} distance={distance} />);
   }
+
+  const startLabel = format(vaultGroup.cycleStart, 'LLL d');
+  const endLabel = format(vaultGroup.cycleEnd, 'LLL d');
 
   return (
     <g id="ticks">
@@ -69,13 +73,12 @@ export const Ticks = ({ vaultGroup }: Props) => {
         letterSpacing="0.15em"
       >
         <tspan x={282.603} y={516.975}>
-          {`${vaultGroup.months} MO.`}
+          {endLabel}
         </tspan>
       </text>
       <circle id="timeline-end-marker" cx={297.143} cy={538.765} r={3.39414} fill="#BD7B4F" />
       <circle id="timeline-start-marker" cx={23.3238} cy={538.765} r={3.39414} fill="#BD7B4F" />
       <text
-        id="START"
         fill="#351F11"
         xmlSpace="preserve"
         style={{
@@ -87,7 +90,7 @@ export const Ticks = ({ vaultGroup }: Props) => {
         letterSpacing="0.15em"
       >
         <tspan x={9.79098} y={516.975}>
-          {'START'}
+          {startLabel}
         </tspan>
       </text>
     </g>
