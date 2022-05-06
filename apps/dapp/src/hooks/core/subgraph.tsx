@@ -28,6 +28,7 @@ const createVaultUserFragment = (walletAddress = '') => {
         timestamp
         value
         amount
+        staked
       }
     }
   `;
