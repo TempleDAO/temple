@@ -15,12 +15,7 @@ import {
 } from "ethers";
 import { FunctionFragment, Result } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
-import type {
-  TypedEventFilter,
-  TypedEvent,
-  TypedListener,
-  OnEvent,
-} from "./common";
+import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
 export interface NoopLiquidatorInterface extends utils.Interface {
   contractName: "NoopLiquidator";
@@ -84,7 +79,7 @@ export interface NoopLiquidator extends BaseContract {
       amount: BigNumberish,
       toAccount: string,
       overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    ): Promise<void>;
   };
 
   filters: {};

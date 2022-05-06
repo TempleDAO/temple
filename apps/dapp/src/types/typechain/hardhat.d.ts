@@ -161,6 +161,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.OpsManager__factory>;
     getContractFactory(
+      name: "OpsManagerLib",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.OpsManagerLib__factory>;
+    getContractFactory(
       name: "RebasingERC20",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.RebasingERC20__factory>;
@@ -438,6 +442,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.OpsManager>;
+    getContractAt(
+      name: "OpsManagerLib",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.OpsManagerLib>;
     getContractAt(
       name: "RebasingERC20",
       address: string,
