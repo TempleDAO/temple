@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Nullable, Maybe } from 'types/util';
+import useIsMounted from 'hooks/use-is-mounted';
 
 type Request<T extends any> = ((...args: any[]) => Promise<T>) | (() => Promise<T>);
 
@@ -35,6 +36,7 @@ type UseRequestStateReturnType<T extends any> = [
 ];
 
 const useRequestState = <T extends any>(request: Request<T>): UseRequestStateReturnType<T> => {
+  const isMounted = useIsMounted();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Nullable<Error>>(null);
   const [response, setResponse] = useState<Nullable<T>>(null);
@@ -52,15 +54,21 @@ const useRequestState = <T extends any>(request: Request<T>): UseRequestStateRet
     let response: Maybe<T>;
     try {
       response = await requestRef.current(...args);
-      setResponse(response);
+      if (isMounted.current) {
+        setResponse(response);
+      }
     } catch (error) {
-      setResponse(null);
-      setError(error as Error);
+      if (isMounted.current) {
+        setResponse(null);
+        setError(error as Error);
+      }
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
     return response;
-  }, [requestRef, setIsLoading, setResponse, setError]);
+  }, [requestRef, setIsLoading, setResponse, setError, isMounted]);
 
   return [
     wrappedRequest,
