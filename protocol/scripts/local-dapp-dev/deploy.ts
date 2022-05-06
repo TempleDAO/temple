@@ -259,7 +259,7 @@ async function main() {
   await stablecToken.mint(templeIVSwap.address, toAtto(1000000));
 
   const joiningFee = await new JoiningFee__factory(owner).deploy(
-    toAtto(1),
+    100000000000000,
   );
 
   const opsManagerLib = await (await ethers.getContractFactory("OpsManagerLib")).connect(owner).deploy();
