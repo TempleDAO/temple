@@ -32,6 +32,9 @@ export interface DeployedContracts {
   DEVOTION: string,
   TEMPLE_IV_SWAP: string,
 
+  OPS_MANAGER: string,
+  OPS_MANAGER_LIB: string,
+
   MULTISIG: string,
 }
 
@@ -86,7 +89,10 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     DEVOTION: '0x262Eb109183B7f1b4Aa36c136C6A27e9a0c9210F',
     TEMPLE_IV_SWAP: '',
 
-    MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
+    OPS_MANAGER_LIB: '0xe10db2b548012F659d0f856cdf86897c61238A79',
+    OPS_MANAGER: '0xf7D5a97B122dd7D5366045DE76d4791Ac5428da5',
+
+    MULTISIG: '',
   },
   mainnet: {
     // No longer active/unused
@@ -128,6 +134,8 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     LOCKED_OG_TEMPLE: '',
     DEVOTION: '',
     TEMPLE_IV_SWAP: '0xb0D978C8Be39C119922B99f483cD8C4092f0EA56',
+    OPS_MANAGER: '',
+    OPS_MANAGER_LIB: '',
   },
   localhost: {
     // No longer active/unused
@@ -163,6 +171,8 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     LOCKED_OG_TEMPLE: process.env.LOCKED_OG_TEMPLE || '',
     DEVOTION: process.env.DEVOTION || '',
     TEMPLE_IV_SWAP: process.env.TEMPLE_IV_SWAP || '',
+    OPS_MANAGER: process.env.OPS_MANAGER || '',
+    OPS_MANAGER_LIB: process.env.OPS_MANAGER_LIB || '',
 
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
   }
