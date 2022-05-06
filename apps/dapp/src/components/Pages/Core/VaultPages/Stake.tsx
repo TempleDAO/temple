@@ -56,8 +56,6 @@ const useZappedAssetTempleBalance = (
   return useRequestState(() => zapAssetRequest(token, amount));
 };
 
-const ENV = import.meta.env;
-
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
   const { balance, isConnected } = useWallet();
@@ -70,11 +68,6 @@ export const Stake = () => {
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
   const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, refreshWalletState);
   const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(vault.id, ticker);
-
-  console.log(`
-    Allowance: ${allowance}
-    IsLoading: ${allowanceLoading}
-  `);
 
   // UI amount to stake
   const [stakingAmount, setStakingAmount] = useState<string | number>('');
