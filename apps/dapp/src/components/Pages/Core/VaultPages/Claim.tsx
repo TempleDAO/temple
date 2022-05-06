@@ -6,9 +6,7 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberWithCommas } from 'utils/formatter';
 import { copyBalance } from 'components/AMM/helpers/methods';
 import { Header } from 'styles/vault';
-import VaultContent, {
-  VaultButton,
-} from 'components/Pages/Core/VaultPages/VaultContent';
+import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import useVaultContext from './use-vault-context';
@@ -28,7 +26,7 @@ export const Claim = () => {
     await getBalance();
     setAmount(0);
   });
-  
+
   useEffect(() => {
     if (!wallet || !signer) {
       return;
@@ -43,31 +41,27 @@ export const Claim = () => {
 
   const vaultBalance = balanceResponse || 0;
 
-  const buttonIsDisabled = (
-    getBalanceLoading ||
-    refreshLoading ||
-    withdrawIsLoading ||
-    !amount || 
-    amount > (vaultBalance || 0)
-  );
+  const buttonIsDisabled =
+    getBalanceLoading || refreshLoading || withdrawIsLoading || !amount || amount > (vaultBalance || 0);
 
-  const claimLabel = vaultBalance > 0 ? (
-    <ClaimableLabel>
-      Claimable Temple
-        <TempleAmountLink
-          onClick={() => copyBalance(vaultBalance, handleUpdateAmount)}
-        >
+  const claimLabel =
+    vaultBalance > 0 ? (
+      <ClaimableLabel>
+        Claimable Temple
+        <TempleAmountLink onClick={() => copyBalance(vaultBalance, handleUpdateAmount)}>
           {formatNumberWithCommas(vaultBalance)}
         </TempleAmountLink>
-    </ClaimableLabel>
-  ) : (
-    <ClaimableLabel>
-      Nothing to claim
-      <TempleAmountLink>
-        &nbsp; {/* Note: this node is here for formatting/spacing */}
-      </TempleAmountLink>
-    </ClaimableLabel>
-  );
+      </ClaimableLabel>
+    ) : (
+      <ClaimableLabel>
+        Nothing to claim
+        <TempleAmountLink>&nbsp; {/* Note: this node is here for formatting/spacing */}</TempleAmountLink>
+      </ClaimableLabel>
+    );
+
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
 
   return (
     <VaultContent>
@@ -80,9 +74,7 @@ export const Claim = () => {
         placeholder="0.00"
         value={amount}
       />
-      {!!error && (
-        <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>
-      )}
+      {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
       <VaultButton
         label="Claim"
         autoWidth

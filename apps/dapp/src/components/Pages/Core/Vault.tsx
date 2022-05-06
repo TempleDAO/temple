@@ -18,6 +18,7 @@ const VaultPage = () => {
   }
 
   if (error) {
+    console.error(error)
     return (
       <CenterScreenWrapper>
         <h2>Something went wrong</h2>
