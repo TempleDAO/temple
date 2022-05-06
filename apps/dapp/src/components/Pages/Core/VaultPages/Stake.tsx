@@ -21,6 +21,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { toAtto } from 'utils/bigNumber';
 import { MetaMaskError } from 'hooks/core/types';
 import { useTokenVaultAllowance } from 'hooks/core/use-token-vault-allowance'
+import { useVaultBalance } from 'hooks/core/use-vault-balance';
 
 // This dummy data will be replaced by the actual contracts
 const OPTIONS = [
@@ -65,8 +66,12 @@ export const Stake = () => {
     OPTIONS[0].value as TICKER_SYMBOL
   );
 
+  const [_, refreshBalance] = useVaultBalance(vault.id);
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
-  const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, refreshWalletState);
+  const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, async () => {
+    refreshBalance();
+    refreshWalletState();
+  });
   const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(vault.id, ticker);
 
   // UI amount to stake

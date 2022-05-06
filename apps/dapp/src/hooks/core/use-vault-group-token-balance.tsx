@@ -159,7 +159,6 @@ export const useVaultGroupBalances = (vaultGroup: Nullable<VaultGroup>) => {
 
   const fetchVaultBalance = async (vaultAddress: string) => {
     if (!signer || !wallet) {
-      console.error(`Attempted to fetch vault ${vaultAddress} without a signer or wallet.`);
       return;
     }
 
