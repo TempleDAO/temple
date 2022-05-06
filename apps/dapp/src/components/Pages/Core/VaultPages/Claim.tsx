@@ -11,12 +11,9 @@ import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
-import { useWallet } from 'providers/WalletProvider';
 
 export const Claim = () => {
   const { activeVault: vault } = useVaultContext();
-
-  const { wallet, signer } = useWallet();
 
   const [amount, setAmount] = useState<string | number>('');
   const [{ balance, isLoading: getBalanceLoading }, getBalance] = useVaultBalance(vault.id);
@@ -26,14 +23,6 @@ export const Claim = () => {
     await getBalance();
     setAmount(0);
   });
-
-  useEffect(() => {
-    if (!wallet || !signer) {
-      return;
-    }
-
-    //getBalance();
-  }, [getBalance, wallet, signer]);
 
   const handleUpdateAmount = (amount: number | string) => {
     setAmount(Number(amount) === 0 ? '' : amount);
