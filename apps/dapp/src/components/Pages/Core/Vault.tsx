@@ -4,10 +4,13 @@ import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Spinner } from 'components/LoaderVault/Spinner';
 import { useGetVaultGroup } from 'hooks/core/subgraph';
 import { CenterScreenWrapper } from 'components/Pages/Core/styles';
+import  { useVaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
+import { VaultContextProvider } from './VaultContext';
 
 const VaultPage = () => {
   const { vaultId } = useParams();
   const { isLoading, vaultGroup, error } = useGetVaultGroup(vaultId || '');
+  const { balances, fetchVaultBalance: refetchVaultBalance } = useVaultGroupBalances(vaultGroup);
 
   if (isLoading) {
     return (
@@ -18,7 +21,7 @@ const VaultPage = () => {
   }
 
   if (error) {
-    console.error(error)
+    console.error(error);
     return (
       <CenterScreenWrapper>
         <h2>Something went wrong</h2>
@@ -38,13 +41,13 @@ const VaultPage = () => {
   }
 
   return (
-    <>
+    <VaultContextProvider vaultGroup={vaultGroup}>
       <CenterScreenWrapper>
         <VaultSVG vaultGroup={vaultGroup}>
-          <Outlet context={{ vaultGroup }} />
+          <Outlet />
         </VaultSVG>
       </CenterScreenWrapper>
-    </>
+    </VaultContextProvider>
   );
 };
 

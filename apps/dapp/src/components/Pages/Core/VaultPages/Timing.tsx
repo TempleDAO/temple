@@ -1,13 +1,9 @@
 import styled from 'styled-components';
-import { formatDistance, format, addSeconds, isDate } from 'date-fns';
+import { format, isDate } from 'date-fns';
 
 import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Table';
 
-import { SECONDS_IN_MONTH } from 'components/Vault/desktop-parts/utils';
-import { Vault } from 'components/Vault/types';
-
-import { pixelsToRems } from 'styles/mixins';
-import useVaultContext from './use-vault-context';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import VaultContent from './VaultContent';
 
 const Timing = () => {

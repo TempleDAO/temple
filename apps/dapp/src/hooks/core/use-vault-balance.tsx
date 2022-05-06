@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   Vault__factory,
 } from 'types/typechain';
@@ -5,22 +6,55 @@ import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 
 import { fromAtto } from 'utils/bigNumber';
+import { Nullable } from 'types/util';
 
-export const useVaultBalance = (vaultContractAddress: string) => {
-  const { signer, wallet } = useWallet();
+type HookResponseType = [
+  {
+    isLoading: boolean;
+    balance: Nullable<number>,
+    error: Nullable<Error>,
+  },
+  () => Promise<void>,
+] 
+
+export const useVaultBalance = (vaultContractAddress: string): HookResponseType => {
+  const { signer, wallet, isConnected } = useWallet();
   
   const getBalance = async () => {
     if (!signer || !wallet) {
       console.error(`
-        Attempted to deposit to vault: ${vaultContractAddress} without a valid signer or wallet address.
+        Attempted to getBalance for vault: ${vaultContractAddress} without a valid signer or wallet address.
       `);
       return;
     }
 
     const vault = new Vault__factory(signer).attach(vaultContractAddress);
-    const balance = await vault.balanceOf(wallet);
-    return fromAtto(balance);
+    const shares = await vault.shareBalanceOf(wallet);
+    const tokenShareBalance = await vault.toTokenAmount(shares);
+    return fromAtto(tokenShareBalance);
   };
+
+  const [getBalanceRequest, { isLoading, error, response: balance }] = useRequestState(getBalance);
+
+  useEffect(() => {
+    if (!isConnected) {
+      return;
+    }
+
+    getBalanceRequest();
+  }, [
+    isConnected,
+    vaultContractAddress,
+    getBalanceRequest,
+  ]);
   
-  return useRequestState(getBalance);
+
+  return [
+    {
+      isLoading,
+      balance,
+      error,
+    },
+    getBalanceRequest,
+  ];
 };
