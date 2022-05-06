@@ -16,7 +16,7 @@ function toAtto(n: number) {
   }
 
   const TEMPLE_ADDR = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-  const VAULT_ADDR = '0x84E69A00be98f17E2e988308e14A6d619396ef3F';
+  const VAULT_ADDR = '0x094Cdf3273265A664014e58ad40e295dA6330A09';
 
   const ONE_HOUR = 60*60;
 

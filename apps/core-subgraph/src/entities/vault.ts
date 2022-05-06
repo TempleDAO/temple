@@ -2,7 +2,7 @@ import { Address, BigInt } from '@graphprotocol/graph-ts'
 
 import { Vault, VaultHourData } from '../../generated/schema'
 import { Vault as VaultTemplate } from '../../generated/templates'
-import { CreateVault } from '../../generated/OpsManager/OpsManager'
+import { CreateVaultInstance } from '../../generated/OpsManager/OpsManager'
 import { Vault as VaultContract } from '../../generated/OpsManager/Vault'
 
 import { BIG_INT_1, BIG_DECIMAL_0 } from '../utils/constants'
@@ -11,7 +11,7 @@ import { getMetric, updateMetric } from './metric'
 import { getOrCreateVaultGroup } from './vaultGroup'
 
 
-export function createVault(event: CreateVault): void {
+export function createVault(event: CreateVaultInstance): void {
   const metric = getMetric()
   metric.vaultCount = metric.vaultCount.plus(BIG_INT_1)
   updateMetric(metric, event.block.timestamp)

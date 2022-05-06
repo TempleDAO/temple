@@ -284,16 +284,17 @@ async function main() {
   if (period % window) throw new Error('Vault period should divide perfectly by vault window')
 
   for (let i = 0; i < numberOfSubVaults; i++) {
-    const vaultTx = await opsManager.createVault(
+    const vaultTx = await opsManager.createVaultInstance(
       "temple-1m-vault",
       "TPL-1M-V1",
       period,
       window,
-      { p: 1, q : 1}
+      { p: 1, q : 1},
+      Math.floor(Date.now() / 1000) + i * window
     );
-  
-    let vault = await extractDeployedAddress(vaultTx, 'CreateVault');
-  
+
+    let vault = await extractDeployedAddress(vaultTx, 'createVaultInstance');
+
     await ethers.provider.send('evm_increaseTime', [window]);
   }
 

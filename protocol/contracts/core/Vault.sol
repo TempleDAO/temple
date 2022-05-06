@@ -85,7 +85,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     /**
      * @notice Deposit for another user (gassless for the temple owner)
      * (assuming the owner has given authority to the caller to act on their behalf)
-     * 
+     *
      * @dev amount is explicitly _not_ part of the digest, as in the common use case
      * the owner often doesn't know exactly how much will be locked (example, AMM buy with
      * immediate lock). We do capture the max however to mitigate any possibly attack vectors
@@ -113,7 +113,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     /**
      * @notice Withdraw for another user (gasless for the vault token holder)
      * (assuming the owner has given authority for the caller to act on their behalf)
-     * 
+     *
      * @dev amount is explicit, to allow use case of partial vault withdrawals
      */
     function withdrawFor(address owner, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
@@ -208,7 +208,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
             SafeERC20.safeTransferFrom(templeToken, _account, address(this), _amount);
         }
 
-        emit Deposit(_account, _amount);
+        emit Deposit(_account, _amount, amountStaked);
     }
 
     /**
@@ -235,6 +235,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         firstPeriodStartTimestamp -= delta;
     }
 
-    event Deposit(address account, uint256 amount);
+    event Deposit(address account, uint256 amount, uint256 amountStaked);
     event Withdraw(address account, uint256 amount);
 }
