@@ -38,10 +38,7 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
 
   vaultGroup.cycleStart = addSeconds(startDate, cyclesSinceStart * periodDurationSeconds);
   vaultGroup.cycleEnd = addSeconds(vaultGroup.cycleStart, periodDurationSeconds);  
-  console.log('HERE: ', vaultGroup.cycleStart)
-  console.log(`${format(vaultGroup.cycleStart, 'h:mm:ss')} : ${format(vaultGroup.cycleEnd, 'h:mm:ss')}`)
-  
-  console.log('------')
+
   return vaultGroup as VaultGroup;
 };
 
