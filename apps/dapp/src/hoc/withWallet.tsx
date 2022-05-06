@@ -3,16 +3,13 @@ import styled from 'styled-components';
 import { Button } from 'components/Button/Button';
 import { useWallet } from 'providers/WalletProvider';
 import MetamaskErrorPage from 'components/MetamaskError/MetamaskError';
-
-const ENV_VARS = import.meta.env;
-const ENVIRONMENT = ENV_VARS.VITE_ENV;
+import { isDevelopmentEnv } from 'utils/helpers';
 
 export function withWallet<T>(WrappedComponent: ComponentType<T>) {
   const HOCWithWallet = (props: T) => {
     const { wallet, connectWallet, network } = useWallet();
 
-    const isValidNetwork = () =>
-      ENVIRONMENT == 'development' || network?.chainId == 1;
+    const isValidNetwork = () => isDevelopmentEnv() || network?.chainId == 1;
 
     return (
       window.ethereum ? (

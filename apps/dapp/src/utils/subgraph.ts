@@ -1,3 +1,10 @@
+export class SubgraphQueryError extends Error {
+  constructor(graphqlErrors: any[]) {
+    super(graphqlErrors.map((errorPath) => errorPath.message).join(';'));
+    this.name = 'SubgraphQueryError';
+  }
+}
+
 export const fetchSubgraph = async (query: string) => {
   const result = await fetch(
     'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
@@ -13,5 +20,9 @@ export const fetchSubgraph = async (query: string) => {
     }
   );
   const response = await result.json();
+
+  if (response.errors) {
+    throw new SubgraphQueryError(response.errors);
+  }
   return response;
 };
