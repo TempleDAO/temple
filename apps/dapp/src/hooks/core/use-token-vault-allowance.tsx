@@ -10,6 +10,7 @@ import useRequestState from 'hooks/use-request-state';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { useNotification } from 'providers/NotificationProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { Nullable } from 'types/util';
 
 const ENV = import.meta.env;
 
@@ -23,7 +24,7 @@ const createTokenFactoryInstance = (ticker: TICKER_SYMBOL, signer: Signer) => {
   throw new Error('Unsupported Token');
 };
 
-type HookReturnType = [{ allowance: null | number, isLoading: boolean }, () => Promise<void>];
+type HookReturnType = [{ allowance: Nullable<number>, isLoading: boolean }, () => Promise<void>];
 
 export const useTokenVaultAllowance = (
   vaultContractAddress: string,
