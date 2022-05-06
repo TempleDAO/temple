@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { VaultGroup } from 'components/Vault/types';
 import { lerp } from '../utils';
 
@@ -26,8 +27,27 @@ export const TimelineTicks = ({ vaultGroup }: Props) => {
     ticks.push(<Tick key={i} id={i} angle={angle} />);
   }
 
+  const startLabel = format(vaultGroup.cycleStart, 'LLL d');
+  const endLabel = format(vaultGroup.cycleEnd, 'LLL d');
+
   return (
     <g id="dynamic-timeline" clipPath="url(#clip0_4015_16261)">
+      <text
+        id="START"
+        fill="#351F11"
+        xmlSpace="preserve"
+        style={{
+          whiteSpace: 'pre',
+        }}
+        fontFamily="Caviar Dreams"
+        fontSize={12}
+        fontWeight="bold"
+        letterSpacing=".15em"
+      >
+        <tspan x={175.161} y={526.065}>
+          {startLabel}
+        </tspan>
+      </text>
       <text
         id="label"
         fill="#351F11"
@@ -41,7 +61,7 @@ export const TimelineTicks = ({ vaultGroup }: Props) => {
         letterSpacing=".15em"
       >
         <tspan x={783.481} y={526.065}>
-          {`${vaultGroup.months} MO.`}
+          {endLabel}
         </tspan>
       </text>
       <g id="track">
