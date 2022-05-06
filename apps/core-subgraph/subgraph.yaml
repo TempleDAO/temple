@@ -37,8 +37,8 @@ dataSources:
       eventHandlers:
         - event: CreateExposure(address,address)
           handler: onCreateExposure
-        - event: CreateVault(address)
-          handler: onCreateVault
+        - event: CreateVaultInstance(address)
+          handler: onCreateVaultInstance
 templates:
   # Exposures
   - kind: ethereum/contract
@@ -139,7 +139,7 @@ templates:
         - name: Vault
           file: ./abis/Vault.json
       eventHandlers:
-        - event: Deposit(address,uint256)
+        - event: Deposit(address,uint256,uint256)
           handler: onDeposit
         - event: Withdraw(address,uint256)
           handler: onWithdraw
