@@ -11,7 +11,8 @@
     "graph:setup": "./scripts/graph-node-setup.sh",
     "graph:start": "rm -rf graph-node/docker/data && cd graph-node/docker && docker compose up",
     "graph:stop": "cd graph-node/docker && docker compose down",
-    "lfg":"yarn codegen && yarn build && yarn create-local && yarn deploy-local"
+    "lfg":"yarn codegen && yarn build && yarn create-local && yarn deploy-local",
+    "graph:restart": "yarn create-local && yarn deploy-local"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "^0.29.0",

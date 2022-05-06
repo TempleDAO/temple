@@ -1,13 +1,7 @@
 import styled from 'styled-components';
-import { formatDistance, format, addSeconds } from 'date-fns';
+import { formatDistance, format, addSeconds, isDate } from 'date-fns';
 
-import {
-  Table as BaseTable,
-  Head,
-  Row,
-  Body,
-  Cell,
-} from 'components/Table/Table';
+import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Table';
 
 import { SECONDS_IN_MONTH } from 'components/Vault/desktop-parts/utils';
 import { Vault } from 'components/Vault/types';
@@ -18,7 +12,7 @@ import VaultContent from './VaultContent';
 
 const Timing = () => {
   const { vaultGroup } = useVaultContext();
-  
+
   return (
     <VaultContent>
       <Header>Timing</Header>
@@ -26,12 +20,11 @@ const Timing = () => {
         <Table $expand>
           <Head>
             <Row>
-              <Cell as="th">Entry Date</Cell>
               <Cell $align="center" as="th">
-                Amount
+                Sub-Vault
               </Cell>
               <Cell $align="center" as="th">
-                Cycle
+                Amount
               </Cell>
               <Cell $align="center" as="th">
                 Claimable
@@ -39,27 +32,16 @@ const Timing = () => {
             </Row>
           </Head>
           <Body>
-            {(vaultGroup.vaults || []).flatMap((vault) => (
-              vault.entries.map((entry) => (
-                <Row key={entry.id}>
-                  <Cell>
-                    {entry.entryDate
-                      ? format(entry.entryDate, 'MMM d, yyyy')
-                      : ''}
-                  </Cell>
-                  <Cell $align="center">$T {entry.amount}</Cell>
-                  <Cell $align="center">
-                    {getFormattedEntryCycle(entry.currentCycle)}
-                  </Cell>
-                  <Cell
-                    $icon={entry.inZone ? 'claim' : undefined}
-                    $align="center"
-                  >
-                    {entry.inZone ? 'YES' : getVaultClaimableFormatted(vault)}
-                  </Cell>
+            {vaultGroup.markers.map((marker) => {
+              const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
+              return (
+                <Row key={marker.id}>
+                  <Cell $align="center">{marker.label}</Cell>
+                  <Cell $align="center">{marker.amount} $T</Cell>
+                  <Cell $align="center">{unlockValue}</Cell>
                 </Row>
-              )
-            )))}
+              );
+            })}
           </Body>
         </Table>
       </TableWrapper>
@@ -68,37 +50,7 @@ const Timing = () => {
   );
 };
 
-const getVaultClaimableFormatted = (vault: Vault) => {
-  const currentCycle = (vault.currentCycle || 0) + 1;
-  const endOfCurrentCycle = SECONDS_IN_MONTH * vault.months * currentCycle;
-  const vaultEndDate = addSeconds(vault.startDate!, endOfCurrentCycle);
-  return formatDistance(Date.now(), vaultEndDate);
-};
-
-const getFormattedEntryCycle = (cycleNumber = 0) => {
-  cycleNumber = cycleNumber + 1;
-  switch (cycleNumber) {
-    case 1:
-      return '1st';
-    case 2:
-      return '2nd';
-    case 3:
-      return '3rd';
-    default:
-      return `${cycleNumber}th`;
-  }
-};
-
 const COLOR_HEADER_SHADOW = '0px 4px 7.48px rgba(222, 92, 6, 0.5)';
-
-const Wrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  padding: calc(${pixelsToRems(10)}rem + 1.25rem) 1.25rem 1rem;
-  width: 80%;
-  margin: 0 auto;
-  height: 100%;
-`;
 
 const TableWrapper = styled.div`
   height: 18.1875rem; /* 291/16 */

@@ -1,6 +1,5 @@
 import React from 'react';
-import { format } from 'date-fns';
-
+import { format, isDate } from 'date-fns';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 import { Body, Cell, Head, Row, Table } from 'components/Table/Table';
@@ -40,22 +39,21 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups }) => {
               <Head>
                 <Row>
                   <Cell as="th">Start date</Cell>
-                  <Cell as="th">Entry Date</Cell>
+                  <Cell as="th">Unlock Date</Cell>
                   <Cell as="th">{TICKER_SYMBOL.TEMPLE_TOKEN} amount</Cell>
                 </Row>
               </Head>
               <Body>
-                {vaultGroup.vaults.flatMap((vault) => {
-                  return vault.entries.map((entry) => {
-                    const entryDate = entry.entryDate ?? new Date();
-                    return (
-                      <Row key={`${vault.id}${entry.id}`}>
-                        <Cell>{format(vault.startDate, 'dd MMM yy')}</Cell>
-                        <Cell>{format(entryDate, 'dd MMM yy')}</Cell>
-                        <Cell>{entry.amount}</Cell>
-                      </Row>
-                    );
-                  });
+                {vaultGroup.markers.map((marker) => {
+                  const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
+                  // TODO: THIS needs to be improved
+                  return (
+                    <Row key={`${vaultGroup.id}${marker.id}`}>
+                      <Cell>{format(vaultGroup.startDate, 'dd MMM yy')}</Cell>
+                      <Cell>{unlockValue}</Cell>
+                      <Cell>{marker.amount}</Cell>
+                    </Row>
+                  );
                 })}
               </Body>
             </Table>
