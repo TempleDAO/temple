@@ -63,7 +63,7 @@ export const useTokenVaultAllowance = (
     await approveTXN.wait();
   
     openNotification({
-      title: `Allowance approved`,
+      title: `${ticker} allowance approved`,
       hash: approveTXN.hash,
     });
 
