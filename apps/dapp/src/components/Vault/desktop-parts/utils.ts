@@ -1,4 +1,4 @@
-import { differenceInSeconds, addSeconds } from 'date-fns';
+import { differenceInSeconds, addSeconds, subSeconds, format } from 'date-fns';
 
 import { GraphVault, GraphVaultGroup } from 'hooks/core/types';
 import { Vault, VaultGroup, MarkerType, Marker } from '../types';
@@ -14,7 +14,7 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
       return vault as Vault;
     });
 
-  const { startDate, enterExitWindowDurationSeconds, periodDurationSeconds } = orderedVaults[0];
+  const {now, startDate, enterExitWindowDurationSeconds, periodDurationSeconds } = orderedVaults[0];
 
   const periods = periodDurationSeconds / enterExitWindowDurationSeconds;
   const tvl = vaults.reduce((total, { tvl }) => total + tvl!, 0);
@@ -32,7 +32,16 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
   };
 
   vaultGroup.markers = getMarkers(vaultGroup as VaultGroup);
+  
+  const secondsSinceStart = differenceInSeconds(now, startDate);
+  const cyclesSinceStart = Math.floor(secondsSinceStart / periodDurationSeconds);
 
+  vaultGroup.cycleStart = addSeconds(startDate, cyclesSinceStart * periodDurationSeconds);
+  vaultGroup.cycleEnd = addSeconds(vaultGroup.cycleStart, periodDurationSeconds);  
+  console.log('HERE: ', vaultGroup.cycleStart)
+  console.log(`${format(vaultGroup.cycleStart, 'h:mm:ss')} : ${format(vaultGroup.cycleEnd, 'h:mm:ss')}`)
+  
+  console.log('------')
   return vaultGroup as VaultGroup;
 };
 
@@ -65,7 +74,7 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
     periodDurationSeconds,
     isActive: vaultIsInZone,
   };
-
+  
   return vault;
 };
 
@@ -81,8 +90,8 @@ const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>): Marker[] => {
       label: vault.label,
     };
 
-    marker.unlockDate = calculateUnlockDate(vault, marker as Marker);
-
+    marker.unlockDate = calculateUnlockDate(vault);
+    marker.windowEndDate = calculateWindowEndDate(vault);
     if (marker.amount! > 0) {
       marker.type = MarkerType.STAKING;
       if (marker.inZone) {
@@ -98,7 +107,7 @@ const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>): Marker[] => {
   return markers;
 };
 
-const calculateUnlockDate = (vault: Vault, marker: Marker) => {
+const calculateUnlockDate = (vault: Vault) => {
   if (vault.isActive) return 'NOW';
 
   const diff = differenceInSeconds(vault.now, vault.startDate);
@@ -108,6 +117,14 @@ const calculateUnlockDate = (vault: Vault, marker: Marker) => {
   const endDate = addSeconds(vault.now, secondsUntillEndOfSycle);
 
   return endDate;
+};
+
+const calculateWindowEndDate = (vault: Vault) => {
+  const secondsSinceStart = differenceInSeconds(vault.now, vault.startDate);
+  const secondsIntoWindow = secondsSinceStart % vault.enterExitWindowDurationSeconds;
+  const secondsUntilEndOfWindow = vault.enterExitWindowDurationSeconds - secondsIntoWindow;
+
+  return addSeconds(vault.now, secondsUntilEndOfWindow);
 };
 
 // Calculate if the vault is in an enter/exit window.

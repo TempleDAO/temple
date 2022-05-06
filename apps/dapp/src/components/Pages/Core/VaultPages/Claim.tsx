@@ -69,6 +69,8 @@ export const Claim = () => {
     </ClaimableLabel>
   );
 
+  if (error) console.error(error)
+  
   return (
     <VaultContent>
       <Header>Claim</Header>
