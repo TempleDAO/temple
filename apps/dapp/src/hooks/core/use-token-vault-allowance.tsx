@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { Signer } from 'ethers';
 import {
   Vault__factory,
   TempleERC20Token__factory,
@@ -6,8 +8,6 @@ import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 
 import { fromAtto, toAtto } from 'utils/bigNumber';
-import { useEffect } from 'react';
-import { Signer } from 'ethers';
 import { useNotification } from 'providers/NotificationProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
