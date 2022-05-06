@@ -28,6 +28,8 @@ import "hardhat/console.sol";
  * into the next vault cycle.
  */
 contract Vault is EIP712, Ownable, RebasingERC20 {
+    uint256 constant public ENTER_EXIT_WINDOW_BUFFER = 60 * 5; // 5 minute buffer
+
     using Counters for Counters.Counter;
     mapping(address => Counters.Counter) public _nonces;
 
@@ -162,7 +164,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         }
 
         uint256 numCycles = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
-        return numCycles * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
+        return numCycles * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration + ENTER_EXIT_WINDOW_BUFFER > block.timestamp;
     }
 
     /**
