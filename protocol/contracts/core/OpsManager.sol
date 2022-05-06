@@ -29,7 +29,7 @@ contract OpsManager is Ownable {
     }
 
     /**
-     * @notice Create a new Exposure
+     * @notice Create a new Exposure + associated pool
      */
     function createExposure(
         string memory name,

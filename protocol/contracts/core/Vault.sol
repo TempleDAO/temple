@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./RebasingERC20.sol";
 import "./Rational.sol";
 import "./Exposure.sol";
+import "./SharedVaultTreasury.sol";
 import "./JoiningFee.sol";
 
 import "hardhat/console.sol";
@@ -39,7 +40,16 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     // solhint-disable-next-line var-name-mixedcase
     bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner, uint256 amount, uint256 deadline, uint256 nonce)");
 
+    // temple token which users deposit/withdraw
     IERC20 public templeToken;
+
+    // Vaults don't hold temple directly, there is a specific
+    // exposure in which all deposited temple is moved into
+    Exposure public templeExposureToken;
+
+    // Vaults don't hold temple directly, there is a specific
+    // exposure in which all deposited temple is moved into
+    SharedVaultTreasury public sharedVaultTreasury;
 
     /// @dev timestamp (in seconds) of the first period in this vault
     uint256 public firstPeriodStartTimestamp;
@@ -129,7 +139,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     function targetRevenueShare() external view returns (uint256) {
-        return templeToken.balanceOf(address(this)) * shareBoostFactor.p / shareBoostFactor.q;
+        return templeExposureToken.balanceOf(address(this)) * shareBoostFactor.p / shareBoostFactor.q;
     }
 
     /// @dev redeem a specific vault's exposure back into temple
@@ -144,7 +154,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     function amountPerShare() public view override returns (uint256 p, uint256 q) {
-        p = templeToken.balanceOf(address(this));
+        p = templeExposureToken.balanceOf(address(this));
         q = totalShares;
 
         // NOTE(butlerji): Assuming this is fairly cheap in gas, as it gets called
@@ -205,7 +215,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
         if (_amount > 0) {
             _mint(_account, amountStaked);
-            SafeERC20.safeTransferFrom(templeToken, _account, address(this), _amount);
+            SafeERC20.safeTransferFrom(templeToken, _account, address(sharedVaultTreasury), _amount);
+            templeExposureToken.mint(address(this), _amount);
         }
 
         emit Deposit(_account, _amount);
@@ -223,8 +234,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         if (_amount > 0) {
              _burn(_account, _amount);
         }
-        SafeERC20.safeTransfer(templeToken, msg.sender, _amount);
 
+        sharedVaultTreasury.toTemple(_amount, msg.sender);
         emit Withdraw(_account, _amount);
     }
 

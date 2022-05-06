@@ -138,7 +138,7 @@ describe("Temple Core Vault", async () => {
     await futureVault.inEnterExitWindow();
   })
 
-  it("Doesn't attempt to deposit when joining fee is higher that deposit amount", async () => {
+  xit("Doesn't attempt to deposit when joining fee is higher that deposit amount", async () => {
       const now = await blockTimestamp();
       await mineToTimestamp((now+2592000)-86400); // with default 1 temple per hour, fee will be around 690
 
