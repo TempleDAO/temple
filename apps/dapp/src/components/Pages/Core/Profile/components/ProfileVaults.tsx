@@ -48,10 +48,10 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups }) => {
                   const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
                   // TODO: THIS needs to be improved
                   return (
-                    <Row key={`${vaultGroup.id}${marker.id}`}>
+                    <Row key={`${vaultGroup.id}${marker.vaultId}`}>
                       <Cell>{format(vaultGroup.startDate, 'dd MMM yy')}</Cell>
                       <Cell>{unlockValue}</Cell>
-                      <Cell>{marker.amount}</Cell>
+                      <Cell>{marker.staked}</Cell>
                     </Row>
                   );
                 })}

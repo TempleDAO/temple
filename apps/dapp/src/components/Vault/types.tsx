@@ -1,8 +1,8 @@
 import { MutableRefObject, ReactNode } from 'react';
 
 export type Marker = {
-  id: string | number;
-  amount: number; // TODO: do we need a BigNumber type here?
+  vaultId: string;
+  staked: number; // TODO: do we need a BigNumber type here?
   percent: number;
   inZone: boolean;
   type: MarkerType;
@@ -21,6 +21,7 @@ export type Vault = {
   label: string;
   enterExitWindowDurationSeconds: number;
   periodDurationSeconds: number;
+  amountStaked: number;
 };
 
 export type VaultGroup = {
@@ -39,7 +40,6 @@ export type VaultGroup = {
 };
 
 export type VaultProps = {
-  vaultGroup: VaultGroup;
   selectedNav: VaultPage;
   children: ReactNode;
 };

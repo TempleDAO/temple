@@ -4,6 +4,7 @@ import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Spinner } from 'components/LoaderVault/Spinner';
 import { useGetVaultGroup } from 'hooks/core/subgraph';
 import { CenterScreenWrapper } from 'components/Pages/Core/styles';
+import { VaultContextProvider } from './VaultContext';
 
 const VaultPage = () => {
   const { vaultId } = useParams();
@@ -18,7 +19,7 @@ const VaultPage = () => {
   }
 
   if (error) {
-    console.error(error)
+    console.error(error);
     return (
       <CenterScreenWrapper>
         <h2>Something went wrong</h2>
@@ -38,13 +39,13 @@ const VaultPage = () => {
   }
 
   return (
-    <>
+    <VaultContextProvider vaultGroup={vaultGroup}>
       <CenterScreenWrapper>
-        <VaultSVG vaultGroup={vaultGroup}>
-          <Outlet context={{ vaultGroup }} />
+        <VaultSVG>
+          <Outlet />
         </VaultSVG>
       </CenterScreenWrapper>
-    </>
+    </VaultContextProvider>
   );
 };
 
