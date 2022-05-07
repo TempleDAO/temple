@@ -83,7 +83,7 @@ const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>): Marker[] => {
   for (const [i, vault] of vaultGroup.vaults.entries()) {
     const marker: Partial<Marker> = {
       id: `marker-s${i}`,
-      amount: vault.tvl,
+      amount: vault.amountStaked,
       percent: calculatePercent(vault),
       inZone: vault.isActive,
       type: MarkerType.HIDDEN,
