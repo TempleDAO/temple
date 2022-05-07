@@ -10,17 +10,18 @@ import { RingButtons } from './desktop-parts/RingButtons';
 import { Timeline } from './desktop-parts/timeline/Timeline';
 import { pixelsToRems } from 'styles/mixins';
 import { NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { VaultProps, VaultRef } from './types';
 
 export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
   (
     {
-      vaultGroup,
       selectedNav,
       children,
     },
     ref
   ) => {
+    const { vaultGroup } =  useVaultContext();
     const svgRef = useRef<SVGSVGElement>(null);
     const popupRef = useRef(null);
 

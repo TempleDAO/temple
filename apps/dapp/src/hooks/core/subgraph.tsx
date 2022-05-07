@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useState, useMemo } from 'react';
-import axios from 'axios';
+import { useEffect, useState } from 'react';
 
-import useRequestState from 'hooks/use-request-state';
 import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
 import { createVaultGroup } from 'components/Vault/desktop-parts/utils';
@@ -11,7 +9,6 @@ import {
   SubGraphQuery,
   GetVaultGroupsResponse,
   GetVaultGroupResponse,
-  GraphVaultGroup,
 } from './types'
 
 const createVaultUserFragment = (walletAddress = '') => {
@@ -31,6 +28,7 @@ const createVaultUserFragment = (walletAddress = '') => {
         timestamp
         value
         amount
+        staked
       }
     }
   `;
