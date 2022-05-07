@@ -7,7 +7,7 @@ import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import VaultContent from './VaultContent';
 
 const Timing = () => {
-  const { vaultGroup } = useVaultContext();
+  const { vaultGroup, balances } = useVaultContext();
 
   return (
     <VaultContent>
@@ -20,7 +20,10 @@ const Timing = () => {
                 Sub-Vault
               </Cell>
               <Cell $align="center" as="th">
-                Amount
+                Staked
+              </Cell>
+              <Cell $align="center" as="th">
+                Balance
               </Cell>
               <Cell $align="center" as="th">
                 Claimable
@@ -31,9 +34,10 @@ const Timing = () => {
             {vaultGroup.markers.map((marker) => {
               const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
               return (
-                <Row key={marker.id}>
+                <Row key={marker.vaultId}>
                   <Cell $align="center">{marker.label}</Cell>
-                  <Cell $align="center">{marker.amount} $T</Cell>
+                  <Cell $align="center">{marker.staked} $T</Cell>
+                  <Cell $align="center">{balances[marker.vaultId]?.balance || 0} $T</Cell>
                   <Cell $align="center">{unlockValue}</Cell>
                 </Row>
               );

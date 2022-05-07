@@ -1,8 +1,8 @@
 import { MutableRefObject, ReactNode } from 'react';
 
 export type Marker = {
-  id: string | number;
-  amount: number; // TODO: do we need a BigNumber type here?
+  vaultId: string;
+  staked: number; // TODO: do we need a BigNumber type here?
   percent: number;
   inZone: boolean;
   type: MarkerType;

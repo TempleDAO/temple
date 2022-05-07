@@ -81,18 +81,18 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
 const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>): Marker[] => {
   const markers = [];
   for (const [i, vault] of vaultGroup.vaults.entries()) {
-    const marker: Partial<Marker> = {
-      id: `marker-s${i}`,
-      amount: vault.amountStaked,
+    const marker = {
+      vaultId: vault.id,
+      staked: vault.amountStaked,
       percent: calculatePercent(vault),
       inZone: vault.isActive,
       type: MarkerType.HIDDEN,
       label: vault.label,
+      unlockDate: calculateUnlockDate(vault),
+      windowEndDate: calculateWindowEndDate(vault),
     };
 
-    marker.unlockDate = calculateUnlockDate(vault);
-    marker.windowEndDate = calculateWindowEndDate(vault);
-    if (marker.amount! > 0) {
+    if (marker.staked > 0) {
       marker.type = MarkerType.STAKING;
       if (marker.inZone) {
         marker.type = MarkerType.STAKING_IN_ZONE;
