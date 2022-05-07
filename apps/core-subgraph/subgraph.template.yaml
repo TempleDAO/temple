@@ -9,11 +9,11 @@ dataSources:
   # Ops Manager
   - kind: ethereum/contract
     name: OpsManager
-    network: rinkeby
+    network: {{network}}
     source:
-      address: '0xf7D5a97B122dd7D5366045DE76d4791Ac5428da5'
+      address: '{{opsManager.address}}'
       abi: OpsManager
-      startBlock: 10631173
+      startBlock: {{opsManager.startBlock}}
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -43,7 +43,7 @@ templates:
   # Exposures
   - kind: ethereum/contract
     name: Exposure
-    network: rinkeby
+    network: {{network}}
     source:
       abi: Exposure
     mapping:
@@ -80,7 +80,7 @@ templates:
   # Treasury Farming Revenues
   - kind: ethereum/contract
     name: TreasuryFarmingRevenue
-    network: rinkeby
+    network: {{network}}
     source:
       abi: TreasuryFarmingRevenue
     mapping:
@@ -115,7 +115,7 @@ templates:
   # Vaults
   - kind: ethereum/contract
     name: Vault
-    network: rinkeby
+    network: {{network}}
     source:
       abi: Vault
     mapping:
