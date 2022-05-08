@@ -40,7 +40,6 @@ export interface InputProps extends SizeProps, InputHTMLAttributes<HTMLInputElem
   handleChange?(value: number | string): void;
 
   onHintClick?(): void;
-
   hasDivider?: boolean;
   suffix?: string;
 }

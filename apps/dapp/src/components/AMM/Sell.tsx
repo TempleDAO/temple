@@ -2,13 +2,7 @@ import React, { FC, useEffect, useState } from 'react';
 import { Input } from 'components/Input/Input';
 import { BigNumber } from 'ethers';
 import { formatNumber } from 'utils/formatter';
-import {
-  ConvoFlowTitle,
-  SwapArrows,
-  TitleWrapper,
-  Spacer,
-  ViewContainer,
-} from 'components/AMM/helpers/components';
+import { ConvoFlowTitle, SwapArrows, TitleWrapper, Spacer, ViewContainer } from 'components/AMM/helpers/components';
 import { copyBalance } from 'components/AMM/helpers/methods';
 import Slippage from 'components/Slippage/Slippage';
 import { Button } from 'components/Button/Button';
@@ -31,8 +25,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const { balance, getBalance, updateBalance } = useWallet();
   const { sell, getSellQuote, templePrice, iv, updateIv } = useSwap();
 
-  const [stableCoinWalletAmount, setStableCoinWalletAmount] =
-    useState<number>(0);
+  const [stableCoinWalletAmount, setStableCoinWalletAmount] = useState<number>(0);
   const [rewards, setRewards] = useState<number | ''>('');
   const [templeWalletAmount, setTempleWalletAmount] = useState<number>(0);
   const [slippage, setSlippage] = useState<number>(1);
@@ -42,9 +35,7 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const handleUpdateTempleAmount = async (value: number | '') => {
     setTempleAmount(value === 0 ? '' : value);
     if (value) {
-      setRewards(
-        fromAtto((await getSellQuote(toAtto(value))) || BigNumber.from(0) || 0)
-      );
+      setRewards(fromAtto((await getSellQuote(toAtto(value))) || BigNumber.from(0) || 0));
     } else {
       setRewards('');
     }
@@ -97,28 +88,19 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   return (
     <ViewContainer>
       <TitleWrapper>
-        <ConvoFlowTitle>
-          {small ? 'EXCHANGE $TEMPLE FOR $FRAX' : 'ARE YOU SURE, TEMPLAR?'}
-        </ConvoFlowTitle>
+        <ConvoFlowTitle>{small ? 'EXCHANGE $TEMPLE FOR $FRAX' : 'ARE YOU SURE, TEMPLAR?'}</ConvoFlowTitle>
       </TitleWrapper>
       <Input
         small={small}
         hint={`Balance: ${formatNumber(templeWalletAmount)}`}
-        onHintClick={() =>
-          copyBalance(templeWalletAmount, handleUpdateTempleAmount)
-        }
+        onHintClick={() => copyBalance(templeWalletAmount, handleUpdateTempleAmount)}
         crypto={{ kind: 'value', value: TICKER_SYMBOL.TEMPLE_TOKEN }}
         max={templeWalletAmount}
         min={0}
         value={templeAmount}
-        handleChange={
-          ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true'
-            ? noop
-            : handleUpdateTempleAmount
-        }
+        handleChange={ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true' ? noop : handleUpdateTempleAmount}
         placeholder={'0.00'}
         isNumber
-        pairTop
       />
       <SwapArrows onClick={onSwapArrowClick} small />
       <Input
@@ -129,16 +111,11 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         value={formatNumber(rewards as number)}
         placeholder={'0.00'}
         disabled
-        pairBottom
       />
       <Slippage
         label={`${TICKER_SYMBOL.TEMPLE_TOKEN}: (${formatNumber(templePrice)})`}
         value={slippage}
-        onChange={
-          ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true'
-            ? noop
-            : handleUpdateSlippageForSell
-        }
+        onChange={ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true' ? noop : handleUpdateSlippageForSell}
       />
       <Spacer small={small} />
       <Button
@@ -146,18 +123,10 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         label={
           minAmountOut > rewards
             ? 'increase slippage'
-            : `${
-                small
-                  ? 'EXCHANGE $TEMPLE FOR $FRAX'
-                  : `RENOUNCE YOUR ${TICKER_SYMBOL.TEMPLE_TOKEN}`
-              }`
+            : `${small ? 'EXCHANGE $TEMPLE FOR $FRAX' : `RENOUNCE YOUR ${TICKER_SYMBOL.TEMPLE_TOKEN}`}`
         }
         isUppercase
-        onClick={
-          ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true'
-            ? noop
-            : handleSurrenderTemple
-        }
+        onClick={ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true' ? noop : handleSurrenderTemple}
         disabled={
           ENV_VARS.VITE_PUBLIC_AMM_STOPPED === 'true' ||
           templeAmount == 0 ||
