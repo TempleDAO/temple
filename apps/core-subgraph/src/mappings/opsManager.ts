@@ -1,5 +1,5 @@
 import { log } from '@graphprotocol/graph-ts'
-import { CreateVault, CreateExposure } from '../../generated/OpsManager/OpsManager'
+import { CreateVaultInstance, CreateExposure } from '../../generated/OpsManager/OpsManager'
 
 import { createVault } from '../entities/vault'
 import { createTreasuryFarmingRevenue } from '../entities/treasuryFarmingRevenue'
@@ -11,6 +11,6 @@ export function onCreateExposure(event: CreateExposure): void {
     createTreasuryFarmingRevenue(event)
 }
 
-export function onCreateVault(event: CreateVault): void {
+export function onCreateVaultInstance(event: CreateVaultInstance): void {
     createVault(event)
 }

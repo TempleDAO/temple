@@ -37,7 +37,8 @@ contract VaultTest is TempleTest {
             FIVE_MIN_DURATION,
             60,
             rational,
-            joiningFee
+            joiningFee,
+            100
         );
 
         temple.addMinter(address(this));
