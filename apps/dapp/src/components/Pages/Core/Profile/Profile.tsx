@@ -34,12 +34,11 @@ const PIE_AREA_HEIGHT = '10rem';
 const ProfilePage = () => {
   const { getBalance, balance, wallet } = useWallet();
   const { faith } = useFaith();
-  const { isLoading, vaultGroups } = useListCoreVaultGroups();
-  const { balances } = useVaultGroupBalances(vaultGroups);
+  const { isLoading: vaultGroupsLoading, vaultGroups } = useListCoreVaultGroups();
+  const { balances, isLoading: vaultGroupBalancesLoading } = useVaultGroupBalances(vaultGroups);
 
-  console.log(balances)
   const tabs = getTabs(
-    isLoading,
+    vaultGroupsLoading,
     vaultGroups,
     0,
     balance.ogTemple,
@@ -56,49 +55,82 @@ const ProfilePage = () => {
     }, 0);
   }, 0);
 
+  const totalBalancesAcrossVaults = Object.values(balances).reduce((balance, vaultGroup) => {
+    return balance + Object.values(vaultGroup).reduce((vaultGroupBalance, vault) => {
+      return vaultGroupBalance + (vault.balance || 0);
+    }, 0);
+  }, 0);
+
+  const claimableVaults = new Set(vaultGroups.flatMap((vaultGroup) => {
+    return vaultGroup.markers.filter(({ unlockDate }) => unlockDate === 'NOW').map(({ vaultId }) => vaultId);
+  }));
+
+  const claimableBalance = Object.values(balances).reduce((claimable, vaultGroup) => {
+    const groupClaimable = Object.entries(vaultGroup).reduce((total, [address, vaultBalance]) => {
+      if (!claimableVaults.has(address)) {
+        return total;
+      }
+      return total + (vaultBalance.balance || 0);
+    }, 0);
+    return claimable + groupClaimable;
+  }, 0);
+
+  const isLoading = vaultGroupsLoading || vaultGroupBalancesLoading;
+  const totalEarned = totalBalancesAcrossVaults - totalStakedAcrossAllVaults;
+
   return (
     <PageWrapper>
       <h3>Profile</h3>
       {wallet ? (
         <>
-          {/* <ProfileOverview>
+          <ProfileOverview>
             <ProfileMeta>
-              <StatsCard
-                label="Stat 1"
-                stat="0"
-                backgroundColor={theme.palette.brand75}
-                backgroundImageUrl={texture1}
-                smallStatFont
-                isSquare={false}
-                height={STAT_CARD_HEIGHT}
-              />
-              <StatsCard
-                label="Stat 2"
-                stat="0"
-                backgroundColor={theme.palette.brand75}
-                backgroundImageUrl={texture2}
-                smallStatFont
-                isSquare={false}
-                height={STAT_CARD_HEIGHT}
-              />
-              <StatsCard
-                label="Stat 3"
-                stat="0"
-                backgroundColor={theme.palette.brand75}
-                backgroundImageUrl={texture4}
-                smallStatFont
-                isSquare={false}
-                height={STAT_CARD_HEIGHT}
-              />
-              <StatsCard
-                label="Stat 4"
-                stat="0"
-                backgroundColor={theme.palette.brand75}
-                backgroundImageUrl={texture5}
-                smallStatFont
-                isSquare={false}
-                height={STAT_CARD_HEIGHT}
-              />
+              <StatCards>
+                <StatsCard
+                  label="$Temple Deposited"
+                  stat={totalStakedAcrossAllVaults}
+                  backgroundColor={theme.palette.brand75}
+                  backgroundImageUrl={texture1}
+                  smallStatFont
+                  isSquare={false}
+                  height={STAT_CARD_HEIGHT}
+                  className="stat"
+                  isLoading={isLoading}
+                />
+                <StatsCard
+                  label="$Temple Locked"
+                  stat={totalBalancesAcrossVaults}
+                  backgroundColor={theme.palette.brand75}
+                  backgroundImageUrl={texture2}
+                  smallStatFont
+                  isSquare={false}
+                  height={STAT_CARD_HEIGHT}
+                  className="stat"
+                  isLoading={isLoading}
+                />
+                <StatsCard
+                  label="$Temple Earned"
+                  stat={totalEarned}
+                  backgroundColor={theme.palette.brand75}
+                  backgroundImageUrl={texture4}
+                  smallStatFont
+                  isSquare={false}
+                  height={STAT_CARD_HEIGHT}
+                  className="stat"
+                  isLoading={isLoading}
+                />
+                <StatsCard
+                  label="$Temple Claimable"
+                  stat={claimableBalance}
+                  backgroundColor={theme.palette.brand75}
+                  backgroundImageUrl={texture5}
+                  smallStatFont
+                  isSquare={false}
+                  className="stat"
+                  height={STAT_CARD_HEIGHT}
+                  isLoading={isLoading}
+                />
+              </StatCards>
               <StatsCard
                 stat={`pie chart goes here`}
                 heightPercentage={40}
@@ -107,10 +139,9 @@ const ProfilePage = () => {
                 className="stats-pie"
                 smallStatFont
                 isSquare={false}
-                height={PIE_AREA_HEIGHT}
               />
             </ProfileMeta>
-          </ProfileOverview> */}
+          </ProfileOverview>
           <Tabs tabs={tabs} />
         </>
       ) : (
@@ -162,10 +193,6 @@ const ProfileOverview = styled.section`
   grid-template-columns: 1fr;
   gap: 2rem;
   margin-bottom: 2rem;
-  
-  ${phoneAndAbove(`
-    grid-template-columns: 1fr 1fr;
-  `)}
 `;
 
 const ProfileMeta = styled.div`
@@ -175,13 +202,15 @@ const ProfileMeta = styled.div`
   gap: 0.75rem;
 
   ${phoneAndAbove(`
-    padding-right: 0.75rem;
-    grid-template-columns: 60% 40%;
-    grid-template-rows: 1fr 1fr 2fr;
-    .stats-pie {
-      grid-column: 1 / -1;
-    }
+    grid-template-columns: 1fr 1fr;
   `)}
+`;
+
+const StatCards = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 0.75rem;
 `;
 
 export default ProfilePage;
