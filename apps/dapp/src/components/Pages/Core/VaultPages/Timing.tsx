@@ -1,17 +1,13 @@
 import styled from 'styled-components';
-import { formatDistance, format, addSeconds, isDate } from 'date-fns';
+import { format, isDate } from 'date-fns';
 
 import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Table';
 
-import { SECONDS_IN_MONTH } from 'components/Vault/desktop-parts/utils';
-import { Vault } from 'components/Vault/types';
-
-import { pixelsToRems } from 'styles/mixins';
-import useVaultContext from './use-vault-context';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import VaultContent from './VaultContent';
 
 const Timing = () => {
-  const { vaultGroup } = useVaultContext();
+  const { vaultGroup, balances } = useVaultContext();
 
   return (
     <VaultContent>
@@ -24,7 +20,10 @@ const Timing = () => {
                 Sub-Vault
               </Cell>
               <Cell $align="center" as="th">
-                Amount
+                Staked
+              </Cell>
+              <Cell $align="center" as="th">
+                Balance
               </Cell>
               <Cell $align="center" as="th">
                 Claimable
@@ -35,9 +34,10 @@ const Timing = () => {
             {vaultGroup.markers.map((marker) => {
               const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
               return (
-                <Row key={marker.id}>
+                <Row key={marker.vaultId}>
                   <Cell $align="center">{marker.label}</Cell>
-                  <Cell $align="center">{marker.amount} $T</Cell>
+                  <Cell $align="center">{marker.staked} $T</Cell>
+                  <Cell $align="center">{balances[marker.vaultId]?.balance || 0} $T</Cell>
                   <Cell $align="center">{unlockValue}</Cell>
                 </Row>
               );

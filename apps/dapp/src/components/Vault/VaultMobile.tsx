@@ -5,12 +5,14 @@ import styled from 'styled-components';
 import { pixelsToRems } from 'styles/mixins';
 import { Definitions } from './mobile-parts/Definitions';
 import { Header } from './mobile-parts/Header';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { Nav } from './mobile-parts/Nav';
 import { Timeline } from './mobile-parts/Timeline';
 import { VaultProps, VaultRef } from './types';
 
 export const VaultMobile = forwardRef<VaultRef, VaultProps>(
-  ({ vaultGroup, selectedNav, children }, ref) => {
+  ({ selectedNav, children }, ref) => {
+    const { vaultGroup } = useVaultContext();
     const svgRef = useRef<SVGSVGElement>(null);
     const popupRef = useRef(null);
 

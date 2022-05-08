@@ -7,7 +7,7 @@ import Tooltip from 'components/Tooltip/Tooltip';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberWithCommas } from 'utils/formatter';
 import VaultContent from './VaultContent';
-import useVaultContext from './use-vault-context';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 
 export const Summary = () => {
   const navigate = useNavigate();

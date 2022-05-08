@@ -15,7 +15,7 @@ export const Timeline = ({ vaultGroup }: Props) => {
     .filter((marker) => marker.type !== MarkerType.HIDDEN)
     .map((marker) => {
       return (
-        <TimelineTippy marker={marker} key={marker.id}>
+        <TimelineTippy marker={marker} key={marker.vaultId}>
           <Marker marker={marker} />
         </TimelineTippy>
       );

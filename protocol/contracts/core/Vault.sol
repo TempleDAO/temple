@@ -28,6 +28,8 @@ import "hardhat/console.sol";
  * into the next vault cycle.
  */
 contract Vault is EIP712, Ownable, RebasingERC20 {
+    uint256 constant public ENTER_EXIT_WINDOW_BUFFER = 60 * 5; // 5 minute buffer
+
     using Counters for Counters.Counter;
     mapping(address => Counters.Counter) public _nonces;
 
@@ -61,7 +63,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         uint256 _periodDuration,
         uint256 _enterExitWindowDuration,
         Rational memory _shareBoostFactory,
-        JoiningFee _joiningFee
+        JoiningFee _joiningFee,
+        uint256 _firstPeriodStartTimestamp
     ) EIP712(_name, "1") ERC20(_name, _symbol)  {
         templeToken = _templeToken;
         periodDuration = _periodDuration;
@@ -69,7 +72,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         shareBoostFactor = _shareBoostFactory;
         joiningFee = _joiningFee;
 
-        firstPeriodStartTimestamp = block.timestamp;
+        firstPeriodStartTimestamp = _firstPeriodStartTimestamp;
     }
 
     /**
@@ -82,7 +85,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     /**
      * @notice Deposit for another user (gassless for the temple owner)
      * (assuming the owner has given authority to the caller to act on their behalf)
-     * 
+     *
      * @dev amount is explicitly _not_ part of the digest, as in the common use case
      * the owner often doesn't know exactly how much will be locked (example, AMM buy with
      * immediate lock). We do capture the max however to mitigate any possibly attack vectors
@@ -110,7 +113,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     /**
      * @notice Withdraw for another user (gasless for the vault token holder)
      * (assuming the owner has given authority for the caller to act on their behalf)
-     * 
+     *
      * @dev amount is explicit, to allow use case of partial vault withdrawals
      */
     function withdrawFor(address owner, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
@@ -156,8 +159,12 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     function inEnterExitWindow() public view returns (bool) {
-        uint256 numCylces = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
-        return numCylces * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
+        if (block.timestamp < firstPeriodStartTimestamp) {
+            return false;
+        }
+
+        uint256 numCycles = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
+        return numCycles * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration + ENTER_EXIT_WINDOW_BUFFER > block.timestamp;
     }
 
     /**
@@ -192,7 +199,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     function depositFor(address _account, uint256 _amount) private {
         require(inEnterExitWindow(), "Vault: Cannot join vault when outside of enter/exit window");
 
-        uint256 fee = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));
+        uint256 feePerTempleScaledPerHour = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));
+        uint256 fee = _amount * feePerTempleScaledPerHour / 1e18;
         uint256 amountStaked = _amount - fee;
 
         if (_amount > 0) {
@@ -200,7 +208,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
             SafeERC20.safeTransferFrom(templeToken, _account, address(this), _amount);
         }
 
-        emit Deposit(_account, _amount);
+        emit Deposit(_account, _amount, amountStaked);
     }
 
     /**
@@ -220,6 +228,13 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         emit Withdraw(_account, _amount);
     }
 
-    event Deposit(address account, uint256 amount);
+
+    /// @dev ****** for testing. Delete before pushing to mainnet
+    /// change a vault's start time (so we can fast forward in and out of lock/unlock windows)
+    function decreaseStartTime(uint256 delta) external onlyOwner {
+        firstPeriodStartTimestamp -= delta;
+    }
+
+    event Deposit(address account, uint256 amount, uint256 amountStaked);
     event Withdraw(address account, uint256 amount);
 }

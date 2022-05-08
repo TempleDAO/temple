@@ -20,9 +20,7 @@ import {
   AcceleratedExitQueue__factory,
   TempleIVSwap__factory,
   JoiningFee__factory,
-  Vault__factory,
   OpsManager__factory,
-  Exposure__factory,
 } from '../../typechain';
 import { writeFile } from 'fs/promises';
 
@@ -34,19 +32,22 @@ function fromAtto(n: BigNumber) {
   return n.div(BigNumber.from(10).pow(18)).toNumber();
 }
 
-async function extractDeployedAddress(tx: ContractTransaction, eventName: string) : Promise<string> {
+async function extractDeployedAddress(
+  tx: ContractTransaction,
+  eventName: string
+): Promise<string> {
   let result = 'FAILED TO FIND';
-  await tx.wait(0).then(receipt => {
-    let event = receipt.events?.filter(evt => {
+  await tx.wait(0).then((receipt) => {
+    let event = receipt.events?.filter((evt) => {
       if (evt.event) {
-        return evt.event === eventName
-      };
+        return evt.event === eventName;
+      }
     })[0];
 
     if (event?.args) {
-      result = event.args[0]
+      result = event.args[0];
     }
-  })
+  });
 
   return result;
 }
@@ -187,7 +188,7 @@ async function main() {
   const ammOps = await new TempleFraxAMMOps__factory(owner).deploy(
     templeToken.address,
     templeRouter.address,
-    treasury.address, /* XXX: Unuse */
+    treasury.address /* XXX: Unuse */,
     stablecToken.address,
     treasury.address,
     pair.address
@@ -256,50 +257,48 @@ async function main() {
   const templeIVSwap = await new TempleIVSwap__factory(owner).deploy(
     templeToken.address,
     stablecToken.address,
-    {temple: 100, frax: 65}, /* iv */
+    { temple: 100, frax: 65 } /* iv */
   );
   await stablecToken.mint(templeIVSwap.address, toAtto(1000000));
 
-  // create a temple vault (for testing)
-  // NOTE(butlerji): this is an example only, expect FE team to create whatever they need
   const joiningFee = await new JoiningFee__factory(owner).deploy(
-    toAtto(1),
+    100000000000000,
   );
 
-
   const opsManagerLib = await (await ethers.getContractFactory("OpsManagerLib")).connect(owner).deploy();
-
   const opsManager = await new OpsManager__factory({ "contracts/core/OpsManagerLib.sol:OpsManagerLib" : opsManagerLib.address }, owner).deploy(
     templeToken.address,
     joiningFee.address
   );
 
   const exposureTx = await opsManager.createExposure(
-    "Stable Exposure",
-    "STBCXP",
+    'Stable Exposure',
+    'STBCXP',
     stablecToken.address
   );
 
   let exposure = await extractDeployedAddress(exposureTx, 'CreateExposure');
 
+  const period = 30 * 60; // 30 min
+  const window = 5  * 60; // 5 min
 
-  const oneDay = 60 * 60 * 24;
-  const period = oneDay * 30;
-  const window = oneDay * 10
-  const numberOfSubVaults = period / window
-  if (period % window) throw new Error('Vault period should divide perfectly by vault window')
+  const numberOfSubVaults = period / window;
+  if (period % window)
+    throw new Error('Vault period should divide perfectly by vault window');
 
   for (let i = 0; i < numberOfSubVaults; i++) {
-    const vaultTx = await opsManager.createVault(
+    const vaultTx = await opsManager.createVaultInstance(
       "temple-1m-vault",
       "TPL-1M-V1",
       period,
       window,
-      { p: 1, q : 1}
+      { p: 1, q : 1},
+      Math.floor(Date.now() / 1000) + i * window
     );
-  
-    let vault = await extractDeployedAddress(vaultTx, 'CreateVault');
-  
+
+    let vault = await extractDeployedAddress(vaultTx, 'createVaultInstance');
+    console.log(vault);
+
     await ethers.provider.send('evm_increaseTime', [window]);
   }
 
@@ -333,20 +332,20 @@ async function main() {
     LOCALDEV_VERIFER_EXTERNAL_PRIVATE_KEY: verifier.privateKey,
   };
 
-  await writeFile('../shared/stack/deployed-addr.txt', '')
+  await writeFile('../shared/stack/deployed-addr.txt', '');
 
-  let newVarsToWrite = ''
+  let newVarsToWrite = '';
   console.log();
   console.log('=========================================');
   console.log('*** Copy/pasta into .env.local for dApp dev\n\n');
   for (const envvar in contract_address) {
-    let line = `VITE_PUBLIC_${envvar}=${contract_address[envvar]}`
+    let line = `VITE_PUBLIC_${envvar}=${contract_address[envvar]}`;
 
     console.log(line);
-    newVarsToWrite += line + `\n`
+    newVarsToWrite += line + `\n`;
   }
 
-  await writeFile('../shared/stack/deployed-addr.txt', newVarsToWrite)
+  await writeFile('../shared/stack/deployed-addr.txt', newVarsToWrite);
 
   console.log();
   console.log('=========================================');

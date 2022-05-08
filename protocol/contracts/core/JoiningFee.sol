@@ -9,6 +9,9 @@ import "hardhat/console.sol";
  * @title Configurable joining fee per vault
  * @notice Implementation assumes a default, we can then tweak on a 
  * vault by vault basis
+ *
+ * Calc returns a value with units temple / templeScaled / hour (which a vault then multiplies by the temple
+ * to be staked to work out the actual fee)
  */
 contract JoiningFee is Ownable {
     uint256 public defaultHourlyJoiningFee;
@@ -18,6 +21,8 @@ contract JoiningFee is Ownable {
         defaultHourlyJoiningFee = _defaultHourlyJoiningFee;
     }
 
+    /// @notice Fee multiplier, returned value is in temple / templeScaled / hour.
+    /// scaling factor is 1e18
     function calc(
         uint256 firstPeriodStartTimestamp,
         uint256 periodDuration,
@@ -28,10 +33,9 @@ contract JoiningFee is Ownable {
             feePerHour = defaultHourlyJoiningFee;
         }
 
-        uint256 numCylces = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
-        
+        uint256 numCycles = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
         // NOTE: divide before fee is the correct setup here, as the fee should be discrete per hour
-        return (block.timestamp - (numCylces * periodDuration) - firstPeriodStartTimestamp) / 3600 * feePerHour;
+        return (block.timestamp - (numCycles * periodDuration) - firstPeriodStartTimestamp) / 3600 * feePerHour;
     }
 
     function setHourlyJoiningFeeFor(address vault, uint256 amount) external onlyOwner {
