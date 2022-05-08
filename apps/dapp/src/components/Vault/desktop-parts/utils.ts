@@ -62,7 +62,8 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
     enterExitWindowDurationSeconds
   );
 
-  const amountStaked = Number(subgraphVault.users[0]?.vaultUserBalances[0]?.staked || 0);
+  const userBalances = (subgraphVault.users[0]?.vaultUserBalances || []);
+  const vaultUserBalance = userBalances.find(({ id }) => id.startsWith(subgraphVault.id));
 
   const vault: Partial<Vault> = {
     id: subgraphVault.id,
@@ -72,7 +73,7 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
     enterExitWindowDurationSeconds,
     periodDurationSeconds,
     isActive: vaultIsInZone,
-    amountStaked,
+    amountStaked: Number(vaultUserBalance?.staked || 0),
   };
   
   return vault;

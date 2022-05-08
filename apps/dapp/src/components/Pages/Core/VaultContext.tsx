@@ -1,14 +1,14 @@
 import { createContext, FC, useEffect, useContext } from 'react';
 
 import { VaultGroup, Vault } from 'components/Vault/types';
-import { useVaultGroupBalances, VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
+import { useVaultGroupBalances, VaultGroupBalance } from 'hooks/core/use-vault-group-token-balance';
 import { asyncNoop } from 'utils/helpers';
 import { Nullable } from 'types/util';
 
 interface VaultContextType {
   vaultGroup: Nullable<VaultGroup>;
   activeVault: Nullable<Vault>;
-  balances: VaultGroupBalances;
+  balances: VaultGroupBalance;
   refreshVaultBalance: (address: string) => Promise<void>,
 }
 
@@ -24,8 +24,7 @@ interface Props {
 }
 
 export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
-  const { balances, fetchVaultBalance: refetchVaultBalance } = useVaultGroupBalances(vaultGroup);
-
+  const { balances, fetchVaultBalance: refetchVaultBalance } = useVaultGroupBalances([vaultGroup]);
   const activeVault = vaultGroup.vaults.find(({ isActive }) => isActive)!;
 
   useEffect(() => {
@@ -37,7 +36,7 @@ export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
   return (
     <VaultContext.Provider
       value={{
-        balances,
+        balances: balances[vaultGroup.id] || {},
         refreshVaultBalance: refetchVaultBalance,
         vaultGroup,
         activeVault,

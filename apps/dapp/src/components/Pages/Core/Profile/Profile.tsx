@@ -26,15 +26,18 @@ import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
 import { useListCoreVaultGroups } from 'hooks/core/subgraph';
 import { PageWrapper } from '../utils';
+import { useVaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
 const STAT_CARD_HEIGHT = '5rem';
 const PIE_AREA_HEIGHT = '10rem';
 
 const ProfilePage = () => {
-  const { getBalance, balance } = useWallet();
+  const { getBalance, balance, wallet } = useWallet();
   const { faith } = useFaith();
   const { isLoading, vaultGroups } = useListCoreVaultGroups();
+  const { balances } = useVaultGroupBalances(vaultGroups);
 
+  console.log(balances)
   const tabs = getTabs(
     isLoading,
     vaultGroups,
@@ -47,61 +50,74 @@ const ProfilePage = () => {
     getBalance();
   }, []);
 
+  const totalStakedAcrossAllVaults = vaultGroups.reduce((total, vaultGroup) => {
+    return total + vaultGroup.vaults.reduce((total, vault) => {
+      return total + vault.amountStaked;
+    }, 0);
+  }, 0);
+
   return (
     <PageWrapper>
       <h3>Profile</h3>
-      <ProfileOverview>
-        <ProfileMeta>
-          <StatsCard
-            label="Stat 1"
-            stat="0"
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture1}
-            smallStatFont
-            isSquare={false}
-            height={STAT_CARD_HEIGHT}
-          />
-          <StatsCard
-            label="Stat 2"
-            stat="0"
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture2}
-            smallStatFont
-            isSquare={false}
-            height={STAT_CARD_HEIGHT}
-          />
-          <StatsCard
-            label="Stat 3"
-            stat="0"
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture4}
-            smallStatFont
-            isSquare={false}
-            height={STAT_CARD_HEIGHT}
-          />
-          <StatsCard
-            label="Stat 4"
-            stat="0"
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture5}
-            smallStatFont
-            isSquare={false}
-            height={STAT_CARD_HEIGHT}
-          />
-          <StatsCard
-            stat={`pie chart goes here`}
-            heightPercentage={40}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture3}
-            className="stats-pie"
-            smallStatFont
-            isSquare={false}
-            height={PIE_AREA_HEIGHT}
-          />
-        </ProfileMeta>
-      </ProfileOverview>
-
-      <Tabs tabs={tabs} />
+      {wallet ? (
+        <>
+          {/* <ProfileOverview>
+            <ProfileMeta>
+              <StatsCard
+                label="Stat 1"
+                stat="0"
+                backgroundColor={theme.palette.brand75}
+                backgroundImageUrl={texture1}
+                smallStatFont
+                isSquare={false}
+                height={STAT_CARD_HEIGHT}
+              />
+              <StatsCard
+                label="Stat 2"
+                stat="0"
+                backgroundColor={theme.palette.brand75}
+                backgroundImageUrl={texture2}
+                smallStatFont
+                isSquare={false}
+                height={STAT_CARD_HEIGHT}
+              />
+              <StatsCard
+                label="Stat 3"
+                stat="0"
+                backgroundColor={theme.palette.brand75}
+                backgroundImageUrl={texture4}
+                smallStatFont
+                isSquare={false}
+                height={STAT_CARD_HEIGHT}
+              />
+              <StatsCard
+                label="Stat 4"
+                stat="0"
+                backgroundColor={theme.palette.brand75}
+                backgroundImageUrl={texture5}
+                smallStatFont
+                isSquare={false}
+                height={STAT_CARD_HEIGHT}
+              />
+              <StatsCard
+                stat={`pie chart goes here`}
+                heightPercentage={40}
+                backgroundColor={theme.palette.brand75}
+                backgroundImageUrl={texture3}
+                className="stats-pie"
+                smallStatFont
+                isSquare={false}
+                height={PIE_AREA_HEIGHT}
+              />
+            </ProfileMeta>
+          </ProfileOverview> */}
+          <Tabs tabs={tabs} />
+        </>
+      ) : (
+        <>
+          <h4>Please connect your wallet</h4>
+        </>
+      )}
     </PageWrapper>
   );
 };
