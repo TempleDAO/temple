@@ -1,0 +1,7 @@
+{
+    "network": "rinkeby",
+    "opsManager": {
+        "address": "0xf7D5a97B122dd7D5366045DE76d4791Ac5428da5",
+        "startBlock": "10631173"
+    }
+}

@@ -18,11 +18,12 @@ export function createDeposit(event: DepositEvent): Deposit {
 
   let timestamp = event.block.timestamp
   let amount = toDecimal(event.params.amount, 18)
-  metric.tvl = metric.tvl.plus(amount)
-  metric.volume = metric.tvl.plus(amount)
+  let staked = toDecimal(event.params.amountStaked, 18)
+  metric.tvl = metric.tvl.plus(staked)
+  metric.volume = metric.volume.plus(amount)
 
   let tokenPrice = BigDecimal.fromString('0.69')
-  metric.tvlUSD = metric.tvlUSD.plus(amount.times(tokenPrice))
+  metric.tvlUSD = metric.tvlUSD.plus(staked.times(tokenPrice))
   metric.volumeUSD = metric.volumeUSD.plus(amount.times(tokenPrice))
   updateMetric(metric, timestamp)
 
@@ -31,17 +32,17 @@ export function createDeposit(event: DepositEvent): Deposit {
 
   const vault = getVault(event.transaction.to as Address)
   deposit.vault = vault.id
-  vault.tvl = vault.tvl.plus(amount)
+  vault.tvl = vault.tvl.plus(staked)
   updateVault(vault, timestamp)
 
   const vaultGroup = getVaultGroup(vault.name)
-  vaultGroup.tvl = vaultGroup.tvl.plus(amount)
+  vaultGroup.tvl = vaultGroup.tvl.plus(staked)
   updateVaultGroup(vaultGroup, timestamp)
 
   const user = getOrCreateUser(event.params.account, timestamp)
   deposit.user = user.id
-  user.depositsBalance = user.depositsBalance.plus(amount)
-  user.totalBalance = user.totalBalance.plus(amount)
+  user.depositsBalance = user.depositsBalance.plus(staked)
+  user.totalBalance = user.totalBalance.plus(staked)
   updateUser(user, timestamp)
 
   const token = getOrCreateToken(TEMPLE_LOCAL_ADDRESS, timestamp)
@@ -49,12 +50,14 @@ export function createDeposit(event: DepositEvent): Deposit {
 
   let vub = getOrCreateVaultUserBalance(vault, user, timestamp)
   vub.amount = vub.amount.plus(amount)
-  vub.value = vub.value.plus(amount.times(tokenPrice))
+  vub.staked = vub.staked.plus(staked)
+  vub.value = vub.value.plus(staked.times(tokenPrice))
   vub.token = token.id
   updateVaultUserBalance(vub, timestamp)
 
   deposit.amount = amount
-  deposit.value = amount.times(tokenPrice)
+  deposit.staked = staked
+  deposit.value = staked.times(tokenPrice)
   deposit.save()
 
   let users = vault.users

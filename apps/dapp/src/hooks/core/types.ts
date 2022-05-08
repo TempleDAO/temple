@@ -42,6 +42,7 @@ export interface GraphVaultUserBalance {
   timestamp: string;
   value: string;
   amount: string;
+  staked: string;
 }
 
 export interface SubGraphResponse<T extends object> {
