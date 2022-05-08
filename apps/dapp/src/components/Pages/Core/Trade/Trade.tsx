@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import styled from 'styled-components';
 
 import { Input } from 'components/Input/Input';
 import { CoreButton } from 'components/Button/CoreButton';
+import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { NAV_MOBILE_HEIGHT_PIXELS, NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
 import arrow from 'assets/icons/amm-arrow.svg';
 import { pixelsToRems } from 'styles/mixins';
@@ -12,10 +14,13 @@ import { useSwapController } from './use-swap-controller';
 
 import { PageWrapper } from '../utils';
 import { formatNumberWithCommas } from 'utils/formatter';
+import { Button } from 'components/Button/Button';
+
+import Gear from 'assets/icons/gear.svg';
 
 export const Trade = () => {
   const { state, handleSelectChange, handleInputChange, handleChangeMode, handleHintClick } = useSwapController();
-
+  const [isSlippageModalOpen, setIsSlippageModalOpen] = useState(false);
   const inputCryptoConfig =
     state.mode === SwapMode.Buy ? { ...state.inputConfig, onCryptoChange: handleSelectChange } : state.inputConfig;
 
@@ -25,8 +30,15 @@ export const Trade = () => {
   return (
     <PageWrapper>
       <h3>Trade</h3>
+      <TransactionSettingsModal
+        isOpen={isSlippageModalOpen}
+        onClose={() => setIsSlippageModalOpen(false)}
+        onChange={(e) => console.log(e)}
+      />
+
       <Container>
         <SwapContainer>
+          <SettingsButton onClick={() => setIsSlippageModalOpen(true)} />
           <InputsContainer>
             <Input
               crypto={inputCryptoConfig}
@@ -108,6 +120,29 @@ const InvertButton = styled(CoreButton)`
 
 const Spacer = styled.div`
   height: 0.625rem /* 10/16 */;
+`;
+
+const SettingsButton = styled(Button)`
+  position: relative;
+  left: calc(50% - 0.5rem);
+  background-color: transparent;
+  background: url(${Gear});
+  background-repeat: no-repeat;
+  background-size: fill;
+  filter: brightness(0.75);
+  border: none;
+
+  max-height: 1.5rem;
+  max-width: 1.5rem;
+
+  margin-bottom: 0.75rem;
+
+  transition: 500ms ease;
+
+  :hover:not(:disabled) {
+    background-color: transparent;
+    filter: brightness(1);
+  }
 `;
 
 const SwapButton = styled(CoreButton)`
