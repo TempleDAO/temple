@@ -172,27 +172,28 @@ export const useVaultGroupBalances = (vaultGroups: Nullable<VaultGroup[]>) => {
     fetchVaultGroupBalances,
   ]);
 
-  const fetchVaultBalance = async (vaultAddress: string) => {
+  const fetchVaultBalance = async (vaultGroupId: string, vaultAddress: string) => {
     if (!signer || !wallet) {
       return;
     }
 
-    // try {
-    //   setVaultInstanceLoading(vaultAddress, true);
-    //   const [_, balance] = await getVaultInstanceBalance(vaultAddress, wallet, signer);
-    //   if (isMounted.current) {
-    //     setVaultInstanceBalance(vaultAddress, balance);
-    //     setVaultInstanceLoading(vaultAddress, false);
-    //   }
-    // } catch (err) {
-    //   console.error(`Failed to refetch Vault ${vaultAddress} balance`);
-    //   if (isMounted.current) {
-    //     setVaultInstanceLoading(vaultAddress, false);
-    //   }
-    // }
+    try {
+      setVaultInstanceLoading(vaultGroupId, vaultAddress, true);
+      const { balance } = await getVaultInstanceBalance(vaultAddress, wallet, signer);
+      if (isMounted.current) {
+        setVaultInstanceBalance(vaultGroupId, vaultAddress, balance);
+        setVaultInstanceLoading(vaultGroupId, vaultAddress, false);
+      }
+    } catch (err) {
+      console.error(`Failed to refetch Vault ${vaultAddress} balance`);
+      if (isMounted.current) {
+        setVaultInstanceLoading(vaultGroupId, vaultAddress, false);
+      }
+    }
   };
   
-  const isLoading = groupRequestLoading || Object.values(balances).some(({ isLoading }) => isLoading);
+  const isLoading = groupRequestLoading || 
+    Object.values(balances).some((vaultGroup) => Object.values(vaultGroup).some((vault) => vault.isLoading));
 
   return {
     error,

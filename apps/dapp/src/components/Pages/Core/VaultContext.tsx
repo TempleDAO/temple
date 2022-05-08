@@ -37,7 +37,7 @@ export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
     <VaultContext.Provider
       value={{
         balances: balances[vaultGroup.id] || {},
-        refreshVaultBalance: refetchVaultBalance,
+        refreshVaultBalance: (vaultAddress: string) => refetchVaultBalance(vaultGroup.id, vaultAddress),
         vaultGroup,
         activeVault,
       }}
