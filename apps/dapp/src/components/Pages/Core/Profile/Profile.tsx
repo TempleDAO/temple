@@ -153,7 +153,7 @@ const ProfilePage = () => {
         </>
       ) : (
         <>
-          <h4>Please connect your wallet</h4>
+          <h4>Please connect your wallet...</h4>
         </>
       )}
     </PageWrapper>
