@@ -5,6 +5,11 @@ import { Vault, VaultGroup, MarkerType, Marker } from '../types';
 
 export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
 
+const createDateFromSeconds = (dateInSeconds: string | number) => {
+  const dateMs = Number(dateInSeconds) * 1000;
+  return new Date(dateMs);
+};
+
 export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGroup => {
   const vaults = subgraphVaultGroup.vaults.map((vault) => createVault(vault));
   const orderedVaults = vaults
@@ -43,8 +48,7 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
 };
 
 export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
-  const startDateSeconds = Number(subgraphVault.firstPeriodStartTimestamp);
-  const startDate = new Date(startDateSeconds * 1000);
+  const startDate = createDateFromSeconds(subgraphVault.firstPeriodStartTimestamp);
   // const fakeTime = 41 * 60 * 60 * 24 * 1000;
   const fakeTime = 0;
   const now = new Date(Date.now() + fakeTime);
@@ -62,8 +66,24 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
     enterExitWindowDurationSeconds
   );
 
-  const userBalances = (subgraphVault.users[0]?.vaultUserBalances || []);
+  const user = subgraphVault.users[0];
+  const userBalances = (user?.vaultUserBalances || []);
   const vaultUserBalance = userBalances.find(({ id }) => id.startsWith(subgraphVault.id));
+
+  const deposits = (user?.deposits || []).map((deposit) => ({
+    id: deposit.id,
+    timestamp: createDateFromSeconds(deposit.timestamp),
+    amount: Number(deposit.amount),
+    staked: Number(deposit.staked),
+    value: Number(deposit.value),
+  }));
+
+  const withdraws = (user?.withdraws || []).map((withdraw) => ({
+    id: withdraw.id,
+    timestamp: createDateFromSeconds(withdraw.timestamp),
+    amount: Number(withdraw.amount),
+    value: Number(withdraw.value),
+  }))
 
   const vault: Partial<Vault> = {
     id: subgraphVault.id,
@@ -74,6 +94,8 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
     periodDurationSeconds,
     isActive: vaultIsInZone,
     amountStaked: Number(vaultUserBalance?.staked || 0),
+    deposits,
+    withdraws,
   };
   
   return vault;

@@ -6,15 +6,17 @@ import { Body, Cell, Head, Row, Table } from 'components/Table/Table';
 import type { VaultGroup } from 'components/Vault/types';
 import Loader from 'components/Loader/Loader';
 import { Button } from 'components/Button/Button';
+import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
 import { Container, Subheading } from '../styles';
 
 interface IProps {
   isLoading?: boolean;
   vaultGroups: VaultGroup[];
+  vaultGroupBalances: VaultGroupBalances;
 }
 
-export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups }) => {
+export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultGroupBalances }) => {
   if (isLoading) {
     <Container>
       <Loader />
@@ -32,25 +34,29 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups }) => {
   return (
     <>
       {vaultGroups.map((vaultGroup) => {
+        const balances = vaultGroupBalances[vaultGroup.id] || {};
         return (
           <div key={vaultGroup.id}>
             <Subheading>{`${vaultGroup.id}`}</Subheading>
             <Table $expand>
               <Head>
                 <Row>
-                  <Cell as="th">Start date</Cell>
-                  <Cell as="th">Unlock Date</Cell>
-                  <Cell as="th">{TICKER_SYMBOL.TEMPLE_TOKEN} amount</Cell>
+                  <Cell as="th">Sub-Vault</Cell>
+                  <Cell as="th">Staked</Cell>
+                  <Cell as="th">Balance</Cell>
+                  <Cell as="th">Claimable</Cell>
                 </Row>
               </Head>
               <Body>
                 {vaultGroup.markers.map((marker) => {
                   const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
+                  const balance = balances[marker.vaultId]?.balance || 0;
                   // TODO: THIS needs to be improved
                   return (
                     <Row key={`${vaultGroup.id}${marker.vaultId}`}>
                       <Cell>{format(vaultGroup.startDate, 'dd MMM yy')}</Cell>
                       <Cell>{unlockValue}</Cell>
+                      <Cell>{balance}</Cell>
                       <Cell>{marker.staked}</Cell>
                     </Row>
                   );

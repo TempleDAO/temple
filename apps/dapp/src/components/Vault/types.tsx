@@ -22,6 +22,17 @@ export type Vault = {
   enterExitWindowDurationSeconds: number;
   periodDurationSeconds: number;
   amountStaked: number;
+  deposits: {
+    id: string;
+    timestamp: Date;
+    amount: number;
+    staked: number;
+  }[];
+  withdraws: {
+    id: string;
+    timestamp: Date;
+    amount: number;
+  }[];
 };
 
 export type VaultGroup = {

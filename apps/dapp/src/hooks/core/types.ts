@@ -27,10 +27,11 @@ export interface GraphUser {
   totalBalance: string;
   depositsBalance: string;
   vaultUserBalances: GraphVaultUserBalance[];
-  deposits: GraphDeposit[];
+  deposits: (GraphVaultTransaction & { staked: string })[];
+  withdraws: GraphVaultTransaction[];
 }
 
-export interface GraphDeposit {
+export interface GraphVaultTransaction {
   id: string;
   amount: string;
   value: string;

@@ -26,7 +26,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
 import { useListCoreVaultGroups } from 'hooks/core/subgraph';
 import { PageWrapper } from '../utils';
-import { useVaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
+import { useVaultGroupBalances, VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
 const STAT_CARD_HEIGHT = '5rem';
 const PIE_AREA_HEIGHT = '10rem';
@@ -42,7 +42,8 @@ const ProfilePage = () => {
     vaultGroups,
     0,
     balance.ogTemple,
-    faith.lifeTimeFaith
+    faith.lifeTimeFaith,
+    balances,
   );
 
   useEffect(() => {
@@ -158,12 +159,19 @@ function getTabs(
   vaultGroups: VaultGroup[],
   lockedOgtBalance: number,
   ogtBalance: number,
-  faithBalance: number
+  faithBalance: number,
+  vaultGroupBalances: VaultGroupBalances,
 ): Tab[] {
   const tabs = [
     {
       label: 'Vaults',
-      content: <ProfileVaults isLoading={isLoading} vaultGroups={vaultGroups} />,
+      content: (
+        <ProfileVaults
+          isLoading={isLoading}
+          vaultGroupBalances={vaultGroupBalances}
+          vaultGroups={vaultGroups}
+        />
+      ),
     },
     { label: 'Transactions', content: <ProfileTransactions /> },
     { label: 'Discord', content: <ProfileDiscordData /> },

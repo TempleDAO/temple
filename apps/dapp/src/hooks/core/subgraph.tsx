@@ -22,6 +22,13 @@ const createVaultUserFragment = (walletAddress = '') => {
         id
         timestamp
         value
+        staked
+      }
+      withdraws(orderBy: timestamp) {
+        amount
+        id
+        timestamp
+        value
       }
       vaultUserBalances(orderBy: timestamp) {
         id
