@@ -242,8 +242,6 @@ interface InputStyledProps extends SizeProps {
 export const InputStyled = styled.input<InputStyledProps>`
   // common
   ${theme.typography.h3};
-
-  color: ${theme.palette.light};
   color: ${theme.palette.brandLight};
   background-color: transparent;
   border: none;
