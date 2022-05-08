@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import { Input } from 'components/Input/Input';
@@ -19,8 +19,11 @@ import { Button } from 'components/Button/Button';
 import Gear from 'assets/icons/gear.svg';
 
 export const Trade = () => {
-  const { state, handleSelectChange, handleInputChange, handleChangeMode, handleHintClick } = useSwapController();
+  const { state, handleSelectChange, handleInputChange, handleChangeMode, handleHintClick, handleTxSettingsUpdate } =
+    useSwapController();
+
   const [isSlippageModalOpen, setIsSlippageModalOpen] = useState(false);
+
   const inputCryptoConfig =
     state.mode === SwapMode.Buy ? { ...state.inputConfig, onCryptoChange: handleSelectChange } : state.inputConfig;
 
@@ -33,7 +36,7 @@ export const Trade = () => {
       <TransactionSettingsModal
         isOpen={isSlippageModalOpen}
         onClose={() => setIsSlippageModalOpen(false)}
-        onChange={(e) => console.log(e)}
+        onChange={(settings) => handleTxSettingsUpdate(settings)}
       />
 
       <Container>

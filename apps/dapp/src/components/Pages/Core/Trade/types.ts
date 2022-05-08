@@ -1,4 +1,5 @@
 import { CryptoValue, CryptoSelector } from 'components/Input/Input';
+import { TransactionSettings } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 export enum SwapMode {
@@ -20,7 +21,7 @@ export type SwapReducerAction =
     }
   | { type: 'changeInputValue'; value: string }
   | { type: 'changeQuoteValue'; value: number }
-  | { type: 'changeSlippageValue'; value: number }
+  | { type: 'changeTxSettings'; value: TransactionSettings }
   | { type: 'changeInputTokenBalance'; value: number }
   | { type: 'startTx' }
   | { type: 'endTx' }
@@ -35,6 +36,8 @@ export interface SwapReducerState {
   quoteValue: number;
   inputTokenBalance: number;
   outputTokenBalance: number;
+  slippageTolerance: number;
+  deadlineMinutes: number;
   inputConfig: SwapInputConfig;
   outputConfig: SwapInputConfig;
   buttonLabel: string;

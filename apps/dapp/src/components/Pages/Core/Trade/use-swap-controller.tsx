@@ -1,4 +1,5 @@
 import { Option } from 'components/InputSelect/InputSelect';
+import { TransactionSettings } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useReducer } from 'react';
 import { TOKENS_BY_MODE } from './constants';
@@ -13,6 +14,8 @@ const INITIAL_STATE: SwapReducerState = {
   quoteValue: 0,
   inputTokenBalance: 0,
   outputTokenBalance: 0,
+  slippageTolerance: 1,
+  deadlineMinutes: 20,
   inputConfig: buildSelectConfig(TICKER_SYMBOL.FRAX, SwapMode.Buy),
   outputConfig: buildValueConfig(TICKER_SYMBOL.TEMPLE_TOKEN),
   buttonLabel: createButtonLabel(TICKER_SYMBOL.FRAX, TICKER_SYMBOL.TEMPLE_TOKEN, SwapMode.Buy),
@@ -62,12 +65,20 @@ export function useSwapController() {
     dispatch({ type: 'changeInputValue', value: `${state.inputTokenBalance}` });
   };
 
+  const handleTxSettingsUpdate = (settings: TransactionSettings) => {
+    dispatch({
+      type: 'changeTxSettings',
+      value: settings,
+    });
+  };
+
   return {
     state,
     handleSelectChange,
     handleInputChange,
     handleChangeMode,
     handleHintClick,
+    handleTxSettingsUpdate,
   };
 }
 
@@ -111,6 +122,13 @@ function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReduce
 
     case 'changeQuoteValue':
       return { ...state, quoteValue: action.value };
+
+    case 'changeTxSettings':
+      return {
+        ...state,
+        slippageTolerance: action.value.slippageTolerance,
+        deadlineMinutes: action.value.deadlineMinutes,
+      };
 
     default:
       console.error('Invalid reducer action: ', action);

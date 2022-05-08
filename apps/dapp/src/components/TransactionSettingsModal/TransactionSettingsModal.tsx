@@ -7,7 +7,7 @@ import Tooltip from 'components/Tooltip/Tooltip';
 
 import { limitDeadlineInput, limitSlippageInput } from './utils';
 
-interface TransactionSettings {
+export interface TransactionSettings {
   slippageTolerance: number;
   deadlineMinutes: number;
 }
