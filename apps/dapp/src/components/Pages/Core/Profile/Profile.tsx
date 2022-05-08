@@ -143,7 +143,13 @@ const ProfilePage = () => {
               />
             </ProfileMeta>
           </ProfileOverview>
-          <Tabs tabs={tabs} />
+          {/* <Tabs tabs={tabs} /> */}
+          <ProfileVaults
+            isLoading={isLoading}
+            vaultGroupBalances={balances}
+            vaultGroups={vaultGroups}
+          />
+          <ProfileTransactions />
         </>
       ) : (
         <>

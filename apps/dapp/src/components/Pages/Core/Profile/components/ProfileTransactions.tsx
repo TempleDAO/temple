@@ -8,15 +8,17 @@ import { Body, Cell, Head, Row, Table } from 'components/Table/Table';
 
 import { useTransactionHistory } from 'hooks/use-transaction-history';
 
-import { Container, Subheading } from '../styles';
+import { Container, Subheading, CenterContainer } from '../styles';
 import { formatNumber } from 'utils/formatter';
 
 export const ProfileTransactions = () => {
   const { transactions, isLoading, error } = useTransactionHistory();
+  const header = <Subheading>Transactions</Subheading>;
 
   if (isLoading) {
     return (
       <Container>
+        {header}
         <Loader />
       </Container>
     );
@@ -25,7 +27,7 @@ export const ProfileTransactions = () => {
   if (error) {
     return (
       <Container>
-        <Subheading>Error getting transactions</Subheading>
+        {header}
         <p>{error.message}</p>
       </Container>
     );
@@ -35,8 +37,11 @@ export const ProfileTransactions = () => {
     return (
       <>
         <Container>
-          <Subheading>No transactions</Subheading>
-          <Button isSmall as="a" href="/core/trade" label="Trade" />
+          {header}
+          <CenterContainer>
+            <Subheading textAlign="center">No transactions</Subheading>
+            <Button isSmall as="a" href="/core/trade" label="Trade" />
+          </CenterContainer>
         </Container>
       </>
     );
@@ -44,6 +49,7 @@ export const ProfileTransactions = () => {
 
   return (
     <>
+      {header}
       <Table $expand>
         <Head>
           <Row>

@@ -18,9 +18,11 @@ interface IProps {
 
 export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultGroupBalances }) => {
   if (isLoading) {
-    <Container>
-      <Loader />
-    </Container>;
+    return (
+      <Container>
+        <Loader />
+      </Container>
+    );
   }
 
   if (!vaultGroups.length) {
@@ -37,7 +39,7 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultG
         const balances = vaultGroupBalances[vaultGroup.id] || {};
         return (
           <div key={vaultGroup.id}>
-            <Subheading>{`${vaultGroup.id}`}</Subheading>
+            <Subheading>{vaultGroup.id}</Subheading>
             <Table $expand>
               <Head>
                 <Row>
@@ -53,11 +55,11 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultG
                   const balance = balances[marker.vaultId]?.balance || 0;
                   // TODO: THIS needs to be improved
                   return (
-                    <Row key={`${vaultGroup.id}${marker.vaultId}`}>
-                      <Cell>{format(vaultGroup.startDate, 'dd MMM yy')}</Cell>
-                      <Cell>{unlockValue}</Cell>
-                      <Cell>{balance}</Cell>
+                    <Row key={marker.vaultId}>
+                      <Cell>{marker.label}</Cell>
                       <Cell>{marker.staked}</Cell>
+                      <Cell>{balance}</Cell>
+                      <Cell>{unlockValue}</Cell>
                     </Row>
                   );
                 })}
