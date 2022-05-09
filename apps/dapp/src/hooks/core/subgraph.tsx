@@ -39,7 +39,19 @@ const createVaultUserFragment = (walletAddress = '') => {
       }
     }
   `;
-}
+};
+
+export const createVaultsUserQuery = (walletAddress: string, vaultAddress = '') => ({
+  query: `{
+    vaultGroups {
+      id
+      vaults {
+        id
+        ${createVaultUserFragment(walletAddress)}
+      }
+    }
+  }`,
+});
 
 const createGetVaultGroupsQuery = (walletAddress = ''): SubGraphQuery => ({
   query: `{
