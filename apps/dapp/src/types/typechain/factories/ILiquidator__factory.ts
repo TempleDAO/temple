@@ -21,13 +21,7 @@ const _abi = [
       },
     ],
     name: "toTemple",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
+    outputs: [],
     stateMutability: "nonpayable",
     type: "function",
   },
