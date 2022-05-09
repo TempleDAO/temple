@@ -1,8 +1,8 @@
 import { createContext, FC, useEffect, useContext } from 'react';
 
 import { VaultGroup, Vault } from 'components/Vault/types';
-import { useVaultGroupBalances, VaultGroupBalance } from 'hooks/core/use-vault-group-token-balance';
-import { asyncNoop } from 'utils/helpers';
+import { useVaultGroupBalances, VaultGroupBalance, Operation } from 'hooks/core/use-vault-group-token-balance';
+import { asyncNoop, noop } from 'utils/helpers';
 import { Nullable } from 'types/util';
 
 interface VaultContextType {
@@ -10,11 +10,13 @@ interface VaultContextType {
   activeVault: Nullable<Vault>;
   balances: VaultGroupBalance;
   refreshVaultBalance: (address: string) => Promise<void>,
+  optimisticallyUpdateVaultStaked: (address: string, operation: Operation, amount: number) => void;
 }
 
 export const VaultContext = createContext<VaultContextType>({
   balances: {},
   refreshVaultBalance: asyncNoop,
+  optimisticallyUpdateVaultStaked: noop,
   vaultGroup: null,
   activeVault: null,
 });
@@ -24,7 +26,11 @@ interface Props {
 }
 
 export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
-  const { balances, fetchVaultBalance: refetchVaultBalance } = useVaultGroupBalances([vaultGroup]);
+  const {
+    balances,
+    fetchVaultBalance: refetchVaultBalance,
+    optimisticallyUpdateVaultStaked: updateStakedAmount,
+  } = useVaultGroupBalances([vaultGroup]);
   const activeVault = vaultGroup.vaults.find(({ isActive }) => isActive)!;
 
   useEffect(() => {
@@ -33,13 +39,23 @@ export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
     }
   }, [activeVault]);
 
+  const refreshVaultBalance = (vaultAddress: string) => refetchVaultBalance(vaultGroup.id, vaultAddress);
+  const optimisticallyUpdateVaultStaked =
+    (vaultAddress: string, operation: Operation, amount: number) => updateStakedAmount(
+      vaultGroup.id,
+      vaultAddress,
+      operation,
+      amount,
+    );
+
   return (
     <VaultContext.Provider
       value={{
         balances: balances[vaultGroup.id] || {},
-        refreshVaultBalance: (vaultAddress: string) => refetchVaultBalance(vaultGroup.id, vaultAddress),
+        refreshVaultBalance,
         vaultGroup,
         activeVault,
+        optimisticallyUpdateVaultStaked,
       }}
     >
       {children}

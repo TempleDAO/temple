@@ -40,7 +40,7 @@ enum ActionType {
 
 type ContractAddressPayload<P extends object> = { vaultAddress: string; } & P;
 
-type Operation = 'increase' | 'decrease';
+export type Operation = 'increase' | 'decrease';
 
 type Actions = 
   Action<ActionType.SetVaultGroupLoading, { isLoading: boolean }> |
@@ -131,7 +131,7 @@ const useVaultGroupReducer = () => {
       dispatch({ type: ActionType.SetVaultInstanceLoading, payload: { vaultGroupId, vaultAddress, isLoading} }),
     setVaultInstanceBalance: (vaultGroupId: string, vaultAddress: string, balance: number) => 
       dispatch({ type: ActionType.SetVaultInstanceBalance, payload: { vaultGroupId, vaultAddress, balance } }),
-    optimistcallyUpdateVaultStaked: (vaultGroupId: string, vaultAddress: string, operation: Operation, amount: number) =>
+    optimisticallyUpdateVaultStaked: (vaultGroupId: string, vaultAddress: string, operation: Operation, amount: number) =>
       dispatch({ type: ActionType.OptimisticallyUpdateVaultStaked, payload: { vaultAddress, vaultGroupId, operation, amount }}),
   };
 };
@@ -160,6 +160,7 @@ export const useVaultGroupBalances = (vaultGroups: Nullable<VaultGroup[]>) => {
     setVaultGroupBalance,
     setVaultInstanceLoading,
     setVaultInstanceBalance,
+    optimisticallyUpdateVaultStaked
   } = useVaultGroupReducer()
 
   const getVaultGroupBalances = async () => {
@@ -241,5 +242,6 @@ export const useVaultGroupBalances = (vaultGroups: Nullable<VaultGroup[]>) => {
     isLoading,
     fetchVaultBalance,
     refetchVaultGroupBalances: fetchVaultGroupBalances,
+    optimisticallyUpdateVaultStaked, 
   };
 };
