@@ -14,32 +14,32 @@ import { FunctionFragment, Result } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
 import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
-export interface IERC165Interface extends utils.Interface {
-  contractName: "IERC165";
+export interface OpsManagerLibInterface extends utils.Interface {
+  contractName: "OpsManagerLib";
   functions: {
-    "supportsInterface(bytes4)": FunctionFragment;
+    "requiresRebalance(Vault[],TreasuryFarmingRevenue)": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: "supportsInterface",
-    values: [BytesLike]
+    functionFragment: "requiresRebalance",
+    values: [any[], string]
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "supportsInterface",
+    functionFragment: "requiresRebalance",
     data: BytesLike
   ): Result;
 
   events: {};
 }
 
-export interface IERC165 extends BaseContract {
-  contractName: "IERC165";
+export interface OpsManagerLib extends BaseContract {
+  contractName: "OpsManagerLib";
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
 
-  interface: IERC165Interface;
+  interface: OpsManagerLibInterface;
 
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
@@ -61,36 +61,41 @@ export interface IERC165 extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
-    supportsInterface(
-      interfaceId: BytesLike,
+    requiresRebalance(
+      vaults: any[],
+      farmingPool: string,
       overrides?: CallOverrides
-    ): Promise<[boolean]>;
+    ): Promise<[boolean[]]>;
   };
 
-  supportsInterface(
-    interfaceId: BytesLike,
+  requiresRebalance(
+    vaults: any[],
+    farmingPool: string,
     overrides?: CallOverrides
-  ): Promise<boolean>;
+  ): Promise<boolean[]>;
 
   callStatic: {
-    supportsInterface(
-      interfaceId: BytesLike,
+    requiresRebalance(
+      vaults: any[],
+      farmingPool: string,
       overrides?: CallOverrides
-    ): Promise<boolean>;
+    ): Promise<boolean[]>;
   };
 
   filters: {};
 
   estimateGas: {
-    supportsInterface(
-      interfaceId: BytesLike,
+    requiresRebalance(
+      vaults: any[],
+      farmingPool: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    supportsInterface(
-      interfaceId: BytesLike,
+    requiresRebalance(
+      vaults: any[],
+      farmingPool: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };

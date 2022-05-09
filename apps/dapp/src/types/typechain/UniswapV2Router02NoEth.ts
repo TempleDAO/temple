@@ -16,12 +16,7 @@ import {
 } from "ethers";
 import { FunctionFragment, Result } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
-import type {
-  TypedEventFilter,
-  TypedEvent,
-  TypedListener,
-  OnEvent,
-} from "./common";
+import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
 export interface UniswapV2Router02NoEthInterface extends utils.Interface {
   contractName: "UniswapV2Router02NoEth";
