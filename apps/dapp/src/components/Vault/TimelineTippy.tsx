@@ -16,13 +16,15 @@ type Props = {
 };
 
 const TimelineTippy = ({ marker, children }: Props) => {
-  const [{ balance, isLoading }] = useVaultBalance(marker.vaultId);
-  const amount = marker.staked;
+  const [{ balance, staked, isLoading }] = useVaultBalance(marker.vaultId);
+  const amount = staked || 0;
   const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
 
   let content;
-
-  if (isLoading) {
+  console.log(balance)
+  if (amount === 0) {
+    return null;
+  } else if (isLoading) {
     content = (
       <TippyDiv>
         <Loader />

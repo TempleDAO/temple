@@ -2,7 +2,7 @@ import {
   Vault__factory,
   TempleERC20Token__factory,
 } from 'types/typechain';
-import { toAtto } from 'utils/bigNumber';
+import { toAtto, fromAtto } from 'utils/bigNumber';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 import { useNotification } from 'providers/NotificationProvider';
@@ -35,12 +35,21 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
       bigAmount,
     );
 
-    const receipt = await vault.deposit(bigAmount);
-    await receipt.wait();
+  
+    const tx = await vault.deposit(bigAmount);
     
+    
+
+    const receipt = await tx.wait();
+
+     // @ts-ignore
+     const depositEvent = await vault.filters.Deposit(null);
+     const events = await vault.queryFilter(depositEvent)
+       console.log('events ', events)
+
     openNotification({
       title: 'Deposit success',
-      hash: receipt.hash,
+      hash: tx.hash,
     });
 
     if (onSuccess) {

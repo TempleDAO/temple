@@ -16,7 +16,7 @@ import useRequestState, { createMockRequest } from 'hooks/use-request-state';
 import EllipsisLoader from 'components/EllipsisLoader';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useDepositToVault } from 'hooks/core/use-deposit-to-vault';
-import { useVaultContext } from 'components/Pages/Core/VaultContext';
+import { useVaultContext, Operation } from 'components/Pages/Core/VaultContext';
 import { useWallet } from 'providers/WalletProvider';
 import { toAtto } from 'utils/bigNumber';
 import { MetaMaskError } from 'hooks/core/types';
@@ -58,8 +58,11 @@ const useZappedAssetTempleBalance = (
 };
 
 export const Stake = () => {
-  const { activeVault: vault } = useVaultContext();
+  const { activeVault: vault, optimisticallyUpdateVaultStaked } = useVaultContext();
   const { balance, isConnected } = useWallet();
+
+   // UI amount to stake
+   const [stakingAmount, setStakingAmount] = useState<string | number>('');
 
   // Currently selected token
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(
@@ -70,12 +73,11 @@ export const Stake = () => {
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
   const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, async () => {
     refreshBalance();
+    // TODO: should be staking amount - joining fee.
+    optimisticallyUpdateVaultStaked(vault.id, Operation.Increase, Number(stakingAmount));
     refreshWalletState();
   });
   const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(vault.id, ticker);
-
-  // UI amount to stake
-  const [stakingAmount, setStakingAmount] = useState<string | number>('');
 
   const [
     zapAssetRequest,

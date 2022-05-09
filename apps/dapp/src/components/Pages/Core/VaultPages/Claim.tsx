@@ -9,17 +9,18 @@ import { Header } from 'styles/vault';
 import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
-import { useVaultContext } from 'components/Pages/Core/VaultContext';
+import { useVaultContext, Operation } from 'components/Pages/Core/VaultContext';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
 
 export const Claim = () => {
-  const { activeVault: vault } = useVaultContext();
+  const { activeVault: vault, optimisticallyUpdateVaultStaked } = useVaultContext();
 
   const [amount, setAmount] = useState<string | number>('');
   const [{ balance, isLoading: getBalanceLoading }, getBalance] = useVaultBalance(vault.id);
   const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
   const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault!.id, async () => {
     await refreshWalletState();
+    optimisticallyUpdateVaultStaked(vault.id, Operation.Decrease, Number(amount));
     await getBalance();
     setAmount(0);
   });
@@ -64,6 +65,7 @@ export const Claim = () => {
         isNumber
         placeholder="0.00"
         value={amount}
+        disabled={vaultBalance <= 0}
       />
       {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
       <VaultButton

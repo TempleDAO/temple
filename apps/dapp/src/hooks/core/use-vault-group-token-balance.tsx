@@ -40,7 +40,10 @@ enum ActionType {
 
 type ContractAddressPayload<P extends object> = { vaultAddress: string; } & P;
 
-export type Operation = 'increase' | 'decrease';
+export enum Operation {
+  Increase,
+  Decrease,
+};
 
 type Actions = 
   Action<ActionType.SetVaultGroupLoading, { isLoading: boolean }> |
@@ -63,11 +66,12 @@ const vaultGroupReducer = (state: VaultGroupBalance, action: Actions): VaultGrou
     case ActionType.SetVaultGroupBalance: {
       return {
         ...state,
-        ...action.payload.balances.reduce((acc, { vaultAddress, balance }) => ({
+        ...action.payload.balances.reduce((acc, { vaultAddress, balance, staked }) => ({
           ...acc,
           [vaultAddress]: {
             ...state[vaultAddress],
             balance,
+            staked,
           },
         }), {}),
       };
@@ -95,7 +99,7 @@ const vaultGroupReducer = (state: VaultGroupBalance, action: Actions): VaultGrou
     case ActionType.OptimisticallyUpdateVaultStaked: {
       const { vaultAddress, amount, operation } = action.payload;
       const currentStake = state[action.payload.vaultAddress].staked || 0;
-      const nextStake = operation === 'increase' ? currentStake + amount : currentStake - amount;
+      const nextStake = operation === Operation.Increase ? currentStake + amount : currentStake - amount;
       return {
         ...state,
         [vaultAddress]: {
@@ -174,13 +178,10 @@ export const useVaultGroupBalances = (vaultGroups: Nullable<VaultGroup[]>) => {
 
       try {
         const response = await Promise.all(vaultGroup!.vaults.map(({ id: vaultAddress, amountStaked }) => {
-          return (async () => {
-            const contractBalance = await getVaultInstanceBalance(vaultAddress, wallet, signer);
-            return {
-              ...contractBalance,
-              staked: amountStaked || 0,
-            };
-          })();
+          return getVaultInstanceBalance(vaultAddress, wallet, signer).then((response) => ({
+            ...response,
+            staked: amountStaked || 0,
+          }));
         }));
 
         if (isMounted.current) {

@@ -13,6 +13,8 @@ interface VaultContextType {
   optimisticallyUpdateVaultStaked: (address: string, operation: Operation, amount: number) => void;
 }
 
+export { Operation };
+
 export const VaultContext = createContext<VaultContextType>({
   balances: {},
   refreshVaultBalance: asyncNoop,
