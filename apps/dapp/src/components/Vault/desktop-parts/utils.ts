@@ -89,10 +89,10 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
 export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: VaultGroupBalance): Marker[] => {
   const markers  = [];
   for (const [i, vault] of vaultGroup.vaults.entries()) {
-    const vaultBalances = balances[vault.id] || {};
+    const vaultBalance = balances[vault.id] || {};
     const marker = {
       vaultId: vault.id,
-      staked: vaultBalances.staked || 0,
+      staked: vaultBalance.staked || 0,
       percent: calculatePercent(vault),
       inZone: vault.isActive,
       type: MarkerType.HIDDEN,
