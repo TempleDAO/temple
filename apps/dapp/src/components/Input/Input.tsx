@@ -158,7 +158,7 @@ export const InputWrapper = styled.div<InputWrapperProps>`
   display: flex;
   position: relative;
   margin-bottom: 0.2rem;
-  padding: 0.5rem;
+  padding: 0.7rem 0.5rem;
   background-color: ${(props) => props.theme.palette.dark};
   height: ${({ small }) => (small ? '4rem' : '5.5rem')};
 

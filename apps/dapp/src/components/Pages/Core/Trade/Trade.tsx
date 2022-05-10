@@ -88,7 +88,6 @@ const SwapContainer = styled.div`
   justify-content: center;
   flex-direction: column;
   position: relative;
-  padding: 0.3125rem /* 5/16 */;
 `;
 
 const InputsContainer = styled.div`
@@ -124,7 +123,7 @@ const Spacer = styled.div`
 
 const SettingsButton = styled.button`
   position: relative;
-  left: calc(50% - 0.5rem);
+  left: calc(50% - 0.75rem);
   background-color: transparent;
   background: url(${Gear});
   background-repeat: no-repeat;
