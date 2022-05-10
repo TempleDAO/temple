@@ -54,16 +54,5 @@ export interface SubGraphQuery {
   query: string;
 }
 
-interface GetVaultUserBalancesResponse {
-  vaultGroups: {
-    id: string;
-    vaults: {
-      id: string;
-      users: GraphUser[];
-    }[];
-  }[];
-}
-
 export type GetVaultGroupsResponse = SubGraphResponse<{ vaultGroups: GraphVaultGroup[] }>;
 export type GetVaultGroupResponse = SubGraphResponse<{ vaultGroup: GraphVaultGroup }>;
-export type GetVaultUserBalanceResponse = SubGraphResponse<GetVaultUserBalancesResponse>;
