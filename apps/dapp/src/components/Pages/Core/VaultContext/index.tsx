@@ -33,6 +33,7 @@ export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
     fetchVaultBalance: refetchVaultBalance,
     optimisticallyUpdateVaultStaked: updateStakedAmount,
   } = useVaultGroupBalances([vaultGroup]);
+
   const activeVault = vaultGroup.vaults.find(({ isActive }) => isActive)!;
 
   useEffect(() => {

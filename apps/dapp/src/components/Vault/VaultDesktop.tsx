@@ -21,7 +21,7 @@ export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
     },
     ref
   ) => {
-    const { vaultGroup } =  useVaultContext();
+    const { vaultGroup } = useVaultContext();
     const svgRef = useRef<SVGSVGElement>(null);
     const popupRef = useRef(null);
 

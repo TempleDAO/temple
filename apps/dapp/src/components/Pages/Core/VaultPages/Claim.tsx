@@ -9,20 +9,19 @@ import { Header } from 'styles/vault';
 import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
-import { useVaultContext, Operation } from 'components/Pages/Core/VaultContext';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
 
 export const Claim = () => {
-  const { activeVault: vault, optimisticallyUpdateVaultStaked } = useVaultContext();
+  const { activeVault: vault } = useVaultContext();
 
   const [amount, setAmount] = useState<string | number>('');
   const [{ balance, isLoading: getBalanceLoading }, getBalance] = useVaultBalance(vault.id);
   const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
   const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault!.id, async () => {
     await refreshWalletState();
-    optimisticallyUpdateVaultStaked(vault.id, Operation.Decrease, Number(amount));
     await getBalance();
-    setAmount(0);
+    setAmount('');
   });
 
   const handleUpdateAmount = (amount: number | string) => {

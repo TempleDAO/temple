@@ -21,7 +21,7 @@ const TimelineTippy = ({ marker, children }: Props) => {
   const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
 
   let content;
-  console.log(balance)
+
   if (amount === 0) {
     return null;
   } else if (isLoading) {

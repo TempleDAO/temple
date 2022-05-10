@@ -12,9 +12,6 @@ import { fromAtto } from 'utils/bigNumber';
 import { VaultGroup } from 'components/Vault/types';
 import { Nullable } from 'types/util';
 import useIsMounted from 'hooks/use-is-mounted';
-import { createVaultsUserQuery } from './subgraph';
-import { GetVaultUserBalanceResponse } from './types';
-import env from 'constants/env';
 
 export interface VaultGroupBalance {
   [vaultAddress: string]: {
@@ -98,7 +95,7 @@ const vaultGroupReducer = (state: VaultGroupBalance, action: Actions): VaultGrou
     }
     case ActionType.OptimisticallyUpdateVaultStaked: {
       const { vaultAddress, amount, operation } = action.payload;
-      const currentStake = state[action.payload.vaultAddress].staked || 0;
+      const currentStake = state[vaultAddress]?.staked || 0;
       const nextStake = operation === Operation.Increase ? currentStake + amount : currentStake - amount;
       return {
         ...state,

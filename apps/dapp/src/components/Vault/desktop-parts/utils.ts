@@ -2,6 +2,7 @@ import { differenceInSeconds, addSeconds, subSeconds, format } from 'date-fns';
 
 import { GraphVault, GraphVaultGroup } from 'hooks/core/types';
 import { Vault, VaultGroup, MarkerType, Marker } from '../types';
+import { VaultGroupBalance } from 'hooks/core/use-vault-group-token-balance';
 
 export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
 
@@ -36,7 +37,7 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
     periods,
   };
 
-  vaultGroup.markers = getMarkers(vaultGroup as VaultGroup);
+  vaultGroup.markers = getMarkers(vaultGroup as VaultGroup, {});
   
   const secondsSinceStart = differenceInSeconds(now, startDate);
   const cyclesSinceStart = Math.floor(secondsSinceStart / periodDurationSeconds);
@@ -70,21 +71,6 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
   const userBalances = (user?.vaultUserBalances || []);
   const vaultUserBalance = userBalances.find(({ id }) => id.startsWith(subgraphVault.id));
 
-  const deposits = (user?.deposits || []).map((deposit) => ({
-    id: deposit.id,
-    timestamp: createDateFromSeconds(deposit.timestamp),
-    amount: Number(deposit.amount),
-    staked: Number(deposit.staked),
-    value: Number(deposit.value),
-  }));
-
-  const withdraws = (user?.withdraws || []).map((withdraw) => ({
-    id: withdraw.id,
-    timestamp: createDateFromSeconds(withdraw.timestamp),
-    amount: Number(withdraw.amount),
-    value: Number(withdraw.value),
-  }))
-
   const vault: Partial<Vault> = {
     id: subgraphVault.id,
     now,
@@ -92,21 +78,23 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
     tvl,
     enterExitWindowDurationSeconds,
     periodDurationSeconds,
+    startDateSeconds: Number(subgraphVault.firstPeriodStartTimestamp),
     isActive: vaultIsInZone,
     amountStaked: Number(vaultUserBalance?.staked || 0),
-    deposits,
-    withdraws,
   };
   
+  vault.unlockDate = calculateUnlockDate(vault as Vault);
+
   return vault;
 };
 
-const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>): Marker[] => {
+export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: VaultGroupBalance): Marker[] => {
   const markers = [];
   for (const [i, vault] of vaultGroup.vaults.entries()) {
+    const vaultBalances = balances[vault.id] || {};
     const marker = {
       vaultId: vault.id,
-      staked: vault.amountStaked,
+      staked: vaultBalances.staked || 0,
       percent: calculatePercent(vault),
       inZone: vault.isActive,
       type: MarkerType.HIDDEN,

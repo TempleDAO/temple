@@ -19,20 +19,11 @@ export type Vault = {
   startDate: Date;
   isActive: boolean;
   label: string;
+  startDateSeconds: number;
   enterExitWindowDurationSeconds: number;
   periodDurationSeconds: number;
   amountStaked: number;
-  deposits: {
-    id: string;
-    timestamp: Date;
-    amount: number;
-    staked: number;
-  }[];
-  withdraws: {
-    id: string;
-    timestamp: Date;
-    amount: number;
-  }[];
+  unlockDate: Date | 'NOW';
 };
 
 export type VaultGroup = {

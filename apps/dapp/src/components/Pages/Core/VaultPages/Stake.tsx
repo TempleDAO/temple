@@ -73,10 +73,9 @@ export const Stake = () => {
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
   const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, async () => {
     refreshBalance();
-    // TODO: should be staking amount - joining fee.
-    optimisticallyUpdateVaultStaked(vault.id, Operation.Increase, Number(stakingAmount));
     refreshWalletState();
   });
+  
   const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(vault.id, ticker);
 
   const [
