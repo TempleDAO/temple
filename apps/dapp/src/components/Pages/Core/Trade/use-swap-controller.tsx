@@ -49,9 +49,8 @@ export function useSwapController() {
 
   const handleInputChange = (value: string) => {
     const numericValue = Number(value);
-    dispatch({ type: 'changeInputValue', value: value });
-    const quote = numericValue * 0.65;
-    dispatch({ type: 'changeQuoteValue', value: quote ?? 0 });
+    dispatch({ type: 'changeInputValue', value: numericValue === 0 ? '' : value });
+    dispatch({ type: 'changeQuoteValue', value: 0 });
   };
 
   const handleChangeMode = () => {
@@ -62,7 +61,7 @@ export function useSwapController() {
   };
 
   const handleHintClick = () => {
-    dispatch({ type: 'changeInputValue', value: `${state.inputTokenBalance}` });
+    handleInputChange(`${state.inputTokenBalance}`);
   };
 
   const handleTxSettingsUpdate = (settings: TransactionSettings) => {

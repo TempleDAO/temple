@@ -158,9 +158,9 @@ export const InputWrapper = styled.div<InputWrapperProps>`
   display: flex;
   position: relative;
   margin-bottom: 0.2rem;
-  padding: 0.5rem 0.25rem;
+  padding: 0.5rem;
   background-color: ${(props) => props.theme.palette.dark};
-  height: ${({ small }) => (small ? '4rem' : '6.5rem')};
+  height: ${({ small }) => (small ? '4rem' : '5.5rem')};
 
   border: 0.125rem /* 2/16 */ solid ${(props) => props.theme.palette.brand};
   // width will be manage by layout case by case
@@ -168,7 +168,7 @@ export const InputWrapper = styled.div<InputWrapperProps>`
   border-radius: 1rem;
 
   ${tabletAndAbove(`
-    padding: 1rem 1.5rem;
+    padding: 0.7rem 1.5rem;
   `)}
 
   ${({ small }) =>
@@ -198,7 +198,7 @@ const InputTokenWrapper = styled.div<SizeProps>`
   min-width: ${pixelsToRems(120)}rem;
   p {
     font-size: 1.25rem;
-    margin-top: 1rem;
+    margin-top: 0.55rem;
   }
 
   ${({ small }) =>
@@ -229,7 +229,7 @@ export const InputHint = styled.small<InputHintProps>`
     css`
       background-color: ${(props) => props.theme.palette.brand50};
       border-radius: 0.25em;
-      padding: 0.0625rem /* 1/16 */ 0.25rem /* 4/16 */;
+      padding: 0.0625rem 0.5rem;
       cursor: pointer;
     `}
 `;

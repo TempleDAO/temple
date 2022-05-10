@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import { Input } from 'components/Input/Input';
-import { CoreButton } from 'components/Button/CoreButton';
+import { VaultButton } from '../VaultPages/VaultContent';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { NAV_MOBILE_HEIGHT_PIXELS, NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
 import arrow from 'assets/icons/amm-arrow.svg';
@@ -14,7 +14,6 @@ import { useSwapController } from './use-swap-controller';
 
 import { PageWrapper } from '../utils';
 import { formatNumberWithCommas } from 'utils/formatter';
-import { Button } from 'components/Button/Button';
 
 import Gear from 'assets/icons/gear.svg';
 
@@ -52,7 +51,6 @@ export const Trade = () => {
               onHintClick={handleHintClick}
               min={0}
               hint={`Balance: ${formatNumberWithCommas(state.inputTokenBalance)}`}
-              hasDivider
             />
             <Spacer />
             <Input
@@ -60,7 +58,6 @@ export const Trade = () => {
               value={formatNumberWithCommas(state.quoteValue)}
               hint={`Balance: ${formatNumberWithCommas(state.outputTokenBalance)}`}
               disabled
-              hasDivider
             />
             <InvertButton onClick={handleChangeMode} />
           </InputsContainer>
@@ -102,11 +99,11 @@ const InputsContainer = styled.div`
   position: relative;
 `;
 
-const InvertButton = styled(CoreButton)`
+const InvertButton = styled.button`
   position: absolute;
-  height: 2.5rem /* 40/16 */;
-  width: 2.5rem /* 40/16 */;
-  top: calc(50% - 1.25rem);
+  height: 2.5rem;
+  width: 2.5rem;
+  top: calc(50% - 1.35rem);
   left: calc(50% - 1.25rem);
   border: none;
   cursor: pointer;
@@ -122,10 +119,10 @@ const InvertButton = styled(CoreButton)`
 `;
 
 const Spacer = styled.div`
-  height: 0.625rem /* 10/16 */;
+  height: ${pixelsToRems(10)}rem;
 `;
 
-const SettingsButton = styled(Button)`
+const SettingsButton = styled.button`
   position: relative;
   left: calc(50% - 0.5rem);
   background-color: transparent;
@@ -135,8 +132,8 @@ const SettingsButton = styled(Button)`
   filter: brightness(0.75);
   border: none;
 
-  max-height: 1.5rem;
-  max-width: 1.5rem;
+  height: 1.5rem;
+  width: 1.5rem;
 
   margin-bottom: 0.75rem;
 
@@ -145,12 +142,13 @@ const SettingsButton = styled(Button)`
   :hover:not(:disabled) {
     background-color: transparent;
     filter: brightness(1);
+    cursor: pointer;
   }
 `;
 
-const SwapButton = styled(CoreButton)`
+const SwapButton = styled(VaultButton)`
+  width: 70%;
   font-size: 1.2rem;
-  ${phoneAndAbove(`
-    font-size: 1.5rem;
-  `)}
+  letter-spacing: 0.25rem;
+  transition: 500ms ease;
 `;
