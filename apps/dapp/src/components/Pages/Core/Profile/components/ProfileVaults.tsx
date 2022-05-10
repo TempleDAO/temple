@@ -53,8 +53,6 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultG
                 {vaultGroup.vaults.map((vault) => {
                   const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
                   const vaultBalance = balances[vault.id] || {};
-                  // const balance = balances[vault.id]?.balance || 0;
-                  // // TODO: THIS needs to be improved
                   return (
                     <Row key={vault.id}>
                       <Cell $align="center">{vault.label}</Cell>

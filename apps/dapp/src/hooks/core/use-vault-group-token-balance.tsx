@@ -1,6 +1,5 @@
 import { useEffect, useReducer } from 'react';
 import { Signer } from 'ethers';
-import axios from 'axios';
 
 import {
   Vault__factory,
@@ -13,12 +12,14 @@ import { VaultGroup } from 'components/Vault/types';
 import { Nullable } from 'types/util';
 import useIsMounted from 'hooks/use-is-mounted';
 
+interface VaultBalance {
+  isLoading: boolean;
+  balance: Nullable<number>;
+  staked: Nullable<number>;
+}
+
 export interface VaultGroupBalance {
-  [vaultAddress: string]: {
-    isLoading: boolean;
-    balance: Nullable<number>;
-    staked: Nullable<number>;
-  };
+  [vaultAddress: string]: VaultBalance;
 }
 
 export interface VaultGroupBalances {

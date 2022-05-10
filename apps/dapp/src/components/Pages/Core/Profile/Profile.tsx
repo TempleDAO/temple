@@ -63,7 +63,7 @@ const ProfilePage = () => {
   }, 0);
 
   const claimableVaults = new Set(vaultGroups.flatMap((vaultGroup) => {
-    return vaultGroup.markers.filter(({ unlockDate }) => unlockDate === 'NOW').map(({ vaultId }) => vaultId);
+    return vaultGroup.vaults.filter(({ unlockDate }) => unlockDate === 'NOW').map(({ id }) => id);
   }));
 
   const claimableBalance = Object.values(balances).reduce((claimable, vaultGroup) => {
@@ -143,7 +143,6 @@ const ProfilePage = () => {
               />
             </ProfileMeta>
           </ProfileOverview>
-          {/* <Tabs tabs={tabs} /> */}
           <ProfileVaults
             isLoading={isLoading}
             vaultGroupBalances={balances}

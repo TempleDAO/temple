@@ -37,8 +37,6 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
     periods,
   };
 
-  vaultGroup.markers = getMarkers(vaultGroup as VaultGroup, {});
-  
   const secondsSinceStart = differenceInSeconds(now, startDate);
   const cyclesSinceStart = Math.floor(secondsSinceStart / periodDurationSeconds);
 
@@ -89,7 +87,7 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
 };
 
 export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: VaultGroupBalance): Marker[] => {
-  const markers = [];
+  const markers  = [];
   for (const [i, vault] of vaultGroup.vaults.entries()) {
     const vaultBalances = balances[vault.id] || {};
     const marker = {
