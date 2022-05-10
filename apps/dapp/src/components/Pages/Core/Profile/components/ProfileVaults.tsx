@@ -50,16 +50,17 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultG
                 </Row>
               </Head>
               <Body>
-                {vaultGroup.markers.map((marker) => {
-                  const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
-                  const balance = balances[marker.vaultId]?.balance || 0;
-                  // TODO: THIS needs to be improved
+                {vaultGroup.vaults.map((vault) => {
+                  const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
+                  const vaultBalance = balances[vault.id] || {};
+                  // const balance = balances[vault.id]?.balance || 0;
+                  // // TODO: THIS needs to be improved
                   return (
-                    <Row key={marker.vaultId}>
-                      <Cell>{marker.label}</Cell>
-                      <Cell>{marker.staked}</Cell>
-                      <Cell>{balance}</Cell>
-                      <Cell>{unlockValue}</Cell>
+                    <Row key={vault.id}>
+                      <Cell $align="center">{vault.label}</Cell>
+                      <Cell $align="center">{vaultBalance.staked || 0} $T</Cell>
+                      <Cell $align="center">{vaultBalance.balance || 0} $T</Cell>
+                      <Cell $align="center">{unlockValue}</Cell>
                     </Row>
                   );
                 })}
