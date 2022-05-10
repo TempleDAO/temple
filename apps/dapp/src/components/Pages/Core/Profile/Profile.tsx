@@ -32,19 +32,9 @@ const STAT_CARD_HEIGHT = '5rem';
 const PIE_AREA_HEIGHT = '10rem';
 
 const ProfilePage = () => {
-  const { getBalance, balance, wallet } = useWallet();
-  const { faith } = useFaith();
+  const { getBalance, wallet } = useWallet();
   const { isLoading: vaultGroupsLoading, vaultGroups } = useListCoreVaultGroups();
   const { balances, isLoading: vaultGroupBalancesLoading } = useVaultGroupBalances(vaultGroups);
-
-  const tabs = getTabs(
-    vaultGroupsLoading,
-    vaultGroups,
-    0,
-    balance.ogTemple,
-    faith.lifeTimeFaith,
-    balances,
-  );
 
   useEffect(() => {
     getBalance();
