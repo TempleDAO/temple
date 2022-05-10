@@ -31,7 +31,6 @@ export type VaultGroup = {
   name: string;
   months: number;
   vaults: Vault[];
-  // markers: Marker[];
   startDate: Date;
   tvl: number;
   enterExitWindowDurationSeconds: number;
