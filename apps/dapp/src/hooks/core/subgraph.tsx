@@ -17,19 +17,6 @@ const createVaultUserFragment = (walletAddress = '') => {
       id
       totalBalance
       depositsBalance
-      deposits(orderBy: timestamp) {
-        amount
-        id
-        timestamp
-        value
-        staked
-      }
-      withdraws(orderBy: timestamp) {
-        amount
-        id
-        timestamp
-        value
-      }
       vaultUserBalances(orderBy: timestamp) {
         id
         timestamp
