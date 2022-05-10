@@ -165,7 +165,7 @@ export const Stake = () => {
           handleUpdateStakingAmount(tokenBalance);
         }}
         isNumber
-        placeholder={'0.00'}
+        placeholder="0.00"
         value={stakingAmount}
       />
       {!!(isZap && templeAmountMessage) && <AmountInTemple>{templeAmountMessage}</AmountInTemple>}
@@ -189,7 +189,7 @@ export const Stake = () => {
           onClick={async () => {
             const amountToDeposit = !stakingAmount ? 0 : stakingAmount;
             await deposit(amountToDeposit);
-            setStakingAmount(0);
+            setStakingAmount('');
           }}
         />
       )}
