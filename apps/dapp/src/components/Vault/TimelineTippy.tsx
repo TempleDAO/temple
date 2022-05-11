@@ -22,9 +22,7 @@ const TimelineTippy = ({ marker, children }: Props) => {
 
   let content;
 
-  if (amount === 0) {
-    return null;
-  } else if (isLoading) {
+  if (isLoading) {
     content = (
       <TippyDiv>
         <Loader />

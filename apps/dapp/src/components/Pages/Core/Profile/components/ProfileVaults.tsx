@@ -36,7 +36,6 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultG
   return (
     <>
       {vaultGroups.map((vaultGroup) => {
-        const balances = vaultGroupBalances[vaultGroup.id] || {};
         return (
           <div key={vaultGroup.id}>
             <Subheading>{vaultGroup.id}</Subheading>
@@ -52,7 +51,7 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultG
               <Body>
                 {vaultGroup.vaults.map((vault) => {
                   const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
-                  const vaultBalance = balances[vault.id] || {};
+                  const vaultBalance = vaultGroupBalances[vault.id] || {};
                   return (
                     <Row key={vault.id}>
                       <Cell $align="center">{vault.label}</Cell>

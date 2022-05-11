@@ -1,14 +1,14 @@
 import { createContext, FC, useEffect, useContext } from 'react';
 
 import { VaultGroup, Vault } from 'components/Vault/types';
-import { useVaultGroupBalances, VaultGroupBalance, Operation } from 'hooks/core/use-vault-group-token-balance';
+import { useVaultGroupBalances, Operation, VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 import { asyncNoop, noop } from 'utils/helpers';
 import { Nullable } from 'types/util';
 
 interface VaultContextType {
   vaultGroup: Nullable<VaultGroup>;
   activeVault: Nullable<Vault>;
-  balances: VaultGroupBalance;
+  balances: VaultGroupBalances;
   refreshVaultBalance: (address: string) => Promise<void>,
   optimisticallyUpdateVaultStaked: (address: string, operation: Operation, amount: number) => void;
 }
@@ -30,7 +30,7 @@ interface Props {
 export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
   const {
     balances,
-    fetchVaultBalance: refetchVaultBalance,
+    fetchVaultBalance,
     optimisticallyUpdateVaultStaked: updateStakedAmount,
   } = useVaultGroupBalances([vaultGroup]);
 
@@ -42,20 +42,25 @@ export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
     }
   }, [activeVault]);
 
-  const refreshVaultBalance = (vaultAddress: string) => refetchVaultBalance(vaultGroup.id, vaultAddress);
   const optimisticallyUpdateVaultStaked =
     (vaultAddress: string, operation: Operation, amount: number) => updateStakedAmount(
-      vaultGroup.id,
       vaultAddress,
       operation,
       amount,
     );
 
+  const getBalances = (balances: VaultGroupBalances, vaultGroup: VaultGroup) => {
+    return vaultGroup.vaults.reduce((acc, { id }) => ({
+      ...acc,
+      [id]: balances[id] || {},
+    }), {});
+  };
+
   return (
     <VaultContext.Provider
       value={{
-        balances: balances[vaultGroup.id] || {},
-        refreshVaultBalance,
+        balances: getBalances(balances, vaultGroup),
+        refreshVaultBalance: fetchVaultBalance,
         vaultGroup,
         activeVault,
         optimisticallyUpdateVaultStaked,

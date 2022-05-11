@@ -40,30 +40,24 @@ const ProfilePage = () => {
     getBalance();
   }, []);
 
-  const totalStakedAcrossAllVaults = vaultGroups.reduce((total, vaultGroup) => {
-    return total + vaultGroup.vaults.reduce((total, vault) => {
-      return total + vault.amountStaked;
-    }, 0);
+  const totalStakedAcrossAllVaults = Object.values(balances).reduce((total, vault) => {
+    return total + (vault?.staked || 0);
   }, 0);
 
-  const totalBalancesAcrossVaults = Object.values(balances).reduce((balance, vaultGroup) => {
-    return balance + Object.values(vaultGroup).reduce((vaultGroupBalance, vault) => {
-      return vaultGroupBalance + (vault.balance || 0);
-    }, 0);
+  const totalBalancesAcrossVaults = Object.values(balances).reduce((balance, vault) => {
+    return balance + (vault.balance || 0);
   }, 0);
 
   const claimableVaults = new Set(vaultGroups.flatMap((vaultGroup) => {
     return vaultGroup.vaults.filter(({ unlockDate }) => unlockDate === 'NOW').map(({ id }) => id);
   }));
 
-  const claimableBalance = Object.values(balances).reduce((claimable, vaultGroup) => {
-    const groupClaimable = Object.entries(vaultGroup).reduce((total, [address, vaultBalance]) => {
-      if (!claimableVaults.has(address)) {
-        return total;
-      }
-      return total + (vaultBalance.balance || 0);
-    }, 0);
-    return claimable + groupClaimable;
+  const claimableBalance = Object.entries(balances).reduce((total, [address, vault]) => {
+    if (!claimableVaults.has(address)) {
+      return total;
+    }
+
+    return total + (vault.balance || 0)
   }, 0);
 
   const isLoading = vaultGroupsLoading || vaultGroupBalancesLoading;

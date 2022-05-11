@@ -18,19 +18,15 @@ interface VaultBalance {
   staked: Nullable<number>;
 }
 
-export interface VaultGroupBalance {
-  [vaultAddress: string]: VaultBalance;
-}
-
 export interface VaultGroupBalances {
-  [vaultGroupId: string]: VaultGroupBalance;
+  [vaultAddress: string]: VaultBalance;
 };
 
-type Action<A extends ActionType, P extends object> = { type: A, payload: { vaultGroupId: string; } & P };
+type Action<A extends ActionType, P extends object> = { type: A, payload: P };
 
 enum ActionType {
-  SetVaultGroupLoading,
-  SetVaultGroupBalance,
+  SetVaultsLoading,
+  SetVaultBalances,
   SetVaultInstanceLoading,
   SetVaultInstanceBalance,
   OptimisticallyUpdateVaultStaked,
@@ -44,24 +40,28 @@ export enum Operation {
 };
 
 type Actions = 
-  Action<ActionType.SetVaultGroupLoading, { isLoading: boolean }> |
-  Action<ActionType.SetVaultGroupBalance, { balances: ContractAddressPayload<{ balance: number, staked: number }>[] }> |
+  Action<ActionType.SetVaultsLoading, { vaultAddresses: string[], isLoading: boolean }> |
+  Action<ActionType.SetVaultBalances, { balances: ContractAddressPayload<{ balance: number, staked: number }>[] }> |
   Action<ActionType.SetVaultInstanceLoading, ContractAddressPayload<{ isLoading: boolean }>> |
   Action<ActionType.SetVaultInstanceBalance, ContractAddressPayload<{ balance: number }>> |
   Action<ActionType.OptimisticallyUpdateVaultStaked, ContractAddressPayload<{ operation: Operation, amount: number }>>;
 
-const vaultGroupReducer = (state: VaultGroupBalance, action: Actions): VaultGroupBalance => {
+const reducer = (state: VaultGroupBalances, action: Actions): VaultGroupBalances => {
   switch (action.type) {
-    case ActionType.SetVaultGroupLoading: {
-      return Object.entries(state).reduce((acc, [vaultAddress, state]) => ({
-        ...acc,
-        [vaultAddress]: {
-          ...state,
-          isLoading: action.payload.isLoading,
-        },
-      }), {});
+    case ActionType.SetVaultsLoading: {
+      const { vaultAddresses, isLoading } = action.payload;
+      return {
+        ...state,
+        ...vaultAddresses.reduce((acc, address) => ({
+          ...acc,
+          [address]: {
+            ...state[address],
+            isLoading,
+          },
+        }), {}),
+      };
     }
-    case ActionType.SetVaultGroupBalance: {
+    case ActionType.SetVaultBalances: {
       return {
         ...state,
         ...action.payload.balances.reduce((acc, { vaultAddress, balance, staked }) => ({
@@ -112,29 +112,20 @@ const vaultGroupReducer = (state: VaultGroupBalance, action: Actions): VaultGrou
 };
 
 const useVaultGroupReducer = () => {
-  const reducer = (state: VaultGroupBalances, action: Actions): VaultGroupBalances => {
-    const { vaultGroupId } = action.payload;
-    const currentVaultGroupState = state[vaultGroupId] || {};
-    return {
-      ...state,
-      [vaultGroupId]: vaultGroupReducer(currentVaultGroupState, action),
-    };
-  };
-
   const [state, dispatch] = useReducer(reducer, {});
   
   return {
     balances: state,
-    setVaultGroupLoading: (vaultGroupId: string, isLoading: boolean) =>
-      dispatch({ type: ActionType.SetVaultGroupLoading, payload: { vaultGroupId, isLoading } }),
-    setVaultGroupBalance: (vaultGroupId: string, balances: ContractAddressPayload<{ balance: number, staked: number }>[] ) => 
-      dispatch({ type: ActionType.SetVaultGroupBalance, payload: { vaultGroupId, balances } }),
-    setVaultInstanceLoading: (vaultGroupId: string, vaultAddress: string, isLoading: boolean) =>
-      dispatch({ type: ActionType.SetVaultInstanceLoading, payload: { vaultGroupId, vaultAddress, isLoading} }),
-    setVaultInstanceBalance: (vaultGroupId: string, vaultAddress: string, balance: number) => 
-      dispatch({ type: ActionType.SetVaultInstanceBalance, payload: { vaultGroupId, vaultAddress, balance } }),
-    optimisticallyUpdateVaultStaked: (vaultGroupId: string, vaultAddress: string, operation: Operation, amount: number) =>
-      dispatch({ type: ActionType.OptimisticallyUpdateVaultStaked, payload: { vaultAddress, vaultGroupId, operation, amount }}),
+    setVaultsLoading: (vaultAddresses: string[], isLoading: boolean) =>
+      dispatch({ type: ActionType.SetVaultsLoading, payload: { vaultAddresses, isLoading } }),
+    setVaultBalances: (balances: ContractAddressPayload<{ balance: number, staked: number }>[] ) => 
+      dispatch({ type: ActionType.SetVaultBalances, payload: { balances } }),
+    setVaultInstanceLoading: (vaultAddress: string, isLoading: boolean) =>
+      dispatch({ type: ActionType.SetVaultInstanceLoading, payload: { vaultAddress, isLoading} }),
+    setVaultInstanceBalance: ( vaultAddress: string, balance: number) => 
+      dispatch({ type: ActionType.SetVaultInstanceBalance, payload: { vaultAddress, balance } }),
+    optimisticallyUpdateVaultStaked: (vaultAddress: string, operation: Operation, amount: number) =>
+      dispatch({ type: ActionType.OptimisticallyUpdateVaultStaked, payload: { vaultAddress, operation, amount }}),
   };
 };
 
@@ -158,12 +149,12 @@ export const useVaultGroupBalances = (vaultGroups: Nullable<VaultGroup[]>) => {
   const { signer, wallet, isConnected } = useWallet();
   const {
     balances,
-    setVaultGroupLoading,
-    setVaultGroupBalance,
+    setVaultsLoading,
+    setVaultBalances,
     setVaultInstanceLoading,
     setVaultInstanceBalance,
     optimisticallyUpdateVaultStaked
-  } = useVaultGroupReducer()
+  } = useVaultGroupReducer();
 
   const getVaultGroupBalances = async () => {
     if (!signer || !wallet || !vaultGroups?.length) {
@@ -172,7 +163,8 @@ export const useVaultGroupBalances = (vaultGroups: Nullable<VaultGroup[]>) => {
     }
 
     return Promise.all(vaultGroups.map(async (vaultGroup) => {
-      setVaultGroupLoading(vaultGroup.id, true);
+      const vaultIds = vaultGroup.vaults.map(({ id }) => id);
+      setVaultsLoading(vaultIds, true);
 
       try {
         const response = await Promise.all(vaultGroup!.vaults.map(({ id: vaultAddress, amountStaked }) => {
@@ -183,12 +175,12 @@ export const useVaultGroupBalances = (vaultGroups: Nullable<VaultGroup[]>) => {
         }));
 
         if (isMounted.current) {
-          setVaultGroupBalance(vaultGroup.id, response);
-          setVaultGroupLoading(vaultGroup.id, false);
+          setVaultBalances(response);
+          setVaultsLoading(vaultIds, false);
         }
       } catch (err) {
         if (isMounted.current) {
-          setVaultGroupLoading(vaultGroup.id, false);
+          setVaultsLoading(vaultIds, false);
         }
         
         throw err;
@@ -212,22 +204,22 @@ export const useVaultGroupBalances = (vaultGroups: Nullable<VaultGroup[]>) => {
     fetchVaultGroupBalances,
   ]);
 
-  const fetchVaultBalance = async (vaultGroupId: string, vaultAddress: string) => {
+  const fetchVaultBalance = async (vaultAddress: string) => {
     if (!signer || !wallet) {
       return;
     }
 
     try {
-      setVaultInstanceLoading(vaultGroupId, vaultAddress, true);
+      setVaultInstanceLoading(vaultAddress, true);
       const { balance } = await getVaultInstanceBalance(vaultAddress, wallet, signer);
       if (isMounted.current) {
-        setVaultInstanceBalance(vaultGroupId, vaultAddress, balance);
-        setVaultInstanceLoading(vaultGroupId, vaultAddress, false);
+        setVaultInstanceBalance(vaultAddress, balance);
+        setVaultInstanceLoading(vaultAddress, false);
       }
     } catch (err) {
       console.error(`Failed to refetch Vault ${vaultAddress} balance`);
       if (isMounted.current) {
-        setVaultInstanceLoading(vaultGroupId, vaultAddress, false);
+        setVaultInstanceLoading(vaultAddress, false);
       }
     }
   };

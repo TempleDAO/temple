@@ -2,7 +2,7 @@ import { differenceInSeconds, addSeconds, subSeconds, format } from 'date-fns';
 
 import { GraphVault, GraphVaultGroup } from 'hooks/core/types';
 import { Vault, VaultGroup, MarkerType, Marker } from '../types';
-import { VaultGroupBalance } from 'hooks/core/use-vault-group-token-balance';
+import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
 export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
 
@@ -86,7 +86,7 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
   return vault;
 };
 
-export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: VaultGroupBalance): Marker[] => {
+export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: VaultGroupBalances): Marker[] => {
   const markers  = [];
   for (const [i, vault] of vaultGroup.vaults.entries()) {
     const vaultBalance = balances[vault.id] || {};
