@@ -31,13 +31,14 @@ const Timing = () => {
             </Row>
           </Head>
           <Body>
-            {vaultGroup.markers.map((marker) => {
-              const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
+            {vaultGroup.vaults.map((vault) => {
+              const vaultBalance = balances[vault.id] || {};
+              const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
               return (
-                <Row key={marker.vaultId}>
-                  <Cell $align="center">{marker.label}</Cell>
-                  <Cell $align="center">{marker.staked} $T</Cell>
-                  <Cell $align="center">{balances[marker.vaultId]?.balance || 0} $T</Cell>
+                <Row key={vault.id}>
+                  <Cell $align="center">{vault.label}</Cell>
+                  <Cell $align="center">{vaultBalance.staked || 0} $T</Cell>
+                  <Cell $align="center">{vaultBalance.balance || 0} $T</Cell>
                   <Cell $align="center">{unlockValue}</Cell>
                 </Row>
               );

@@ -19,9 +19,11 @@ export type Vault = {
   startDate: Date;
   isActive: boolean;
   label: string;
+  startDateSeconds: number;
   enterExitWindowDurationSeconds: number;
   periodDurationSeconds: number;
   amountStaked: number;
+  unlockDate: Date | 'NOW';
 };
 
 export type VaultGroup = {
@@ -29,7 +31,6 @@ export type VaultGroup = {
   name: string;
   months: number;
   vaults: Vault[];
-  markers: Marker[];
   startDate: Date;
   tvl: number;
   enterExitWindowDurationSeconds: number;

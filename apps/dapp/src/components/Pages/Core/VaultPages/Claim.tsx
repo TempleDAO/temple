@@ -21,7 +21,7 @@ export const Claim = () => {
   const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault!.id, async () => {
     await refreshWalletState();
     await getBalance();
-    setAmount(0);
+    setAmount('');
   });
 
   const handleUpdateAmount = (amount: number | string) => {
@@ -64,6 +64,7 @@ export const Claim = () => {
         isNumber
         placeholder="0.00"
         value={amount}
+        disabled={vaultBalance <= 0}
       />
       {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
       <VaultButton

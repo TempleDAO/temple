@@ -1,12 +1,14 @@
 // @ts-nocheck
-import React, { ReactChild } from 'react';
+import { ReactChild } from 'react';
 import styled, { css } from 'styled-components';
 import { transparentize } from 'polished';
+
+import Loader from 'components/Loader/Loader';
 
 interface StatsCardProps {
   className?: string;
   label?: string;
-  stat: string;
+  stat: string | number;
   fontColor?: string;
   statDelta?: number;
   backgroundColor?: string;
@@ -17,6 +19,7 @@ interface StatsCardProps {
   smallStatFont?: boolean;
   isSquare?: boolean;
   height?: string;
+  isLoading?: boolean;
 }
 
 const StatsCard = ({
@@ -33,6 +36,7 @@ const StatsCard = ({
   smallStatFont,
   isSquare = true,
   height = '100%',
+  isLoading = false,
 }: StatsCardProps) => {
   const deltaLabel = `${statDelta >= 0 ? '▲' : '▼'} ${(statDelta * 100).toFixed(
     2
@@ -53,15 +57,19 @@ const StatsCard = ({
           isSquare={isSquare}
           height={height}
         >
-          <div>
-            {statDelta && <Pill fontColor={fontColor}>{deltaLabel}</Pill>}
-          </div>
-          <div>
-            {label ? <StatLabel>{label.toUpperCase()}</StatLabel> : null}
-            <Stat smallFont={smallStatFont}>
-              {stat?.toString().toUpperCase()}
-            </Stat>
-          </div>
+          {isLoading ? <Loader /> : (
+            <>
+              <div>
+                {statDelta && <Pill fontColor={fontColor}>{deltaLabel}</Pill>}
+              </div>
+              <div>
+                {label ? <StatLabel>{label.toUpperCase()}</StatLabel> : null}
+                <Stat smallFont={smallStatFont}>
+                  {stat?.toString().toUpperCase()}
+                </Stat>
+              </div>
+            </>
+          )}
         </CardStyled>
       </SquareWrapper>
       {description ? (

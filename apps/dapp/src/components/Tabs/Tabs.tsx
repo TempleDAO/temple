@@ -30,9 +30,7 @@ export const Tabs = ({ tabs, onChange = noop }: TabsProps) => {
   const [activeTab, setActiveTab] = useState<string>(tabs[0].label);
 
   const getTabsContents = () => {
-    const activeTabData: Tab | undefined = tabs.filter(
-      (tab) => tab.label === activeTab
-    )[0];
+    const activeTabData = tabs.find((tab) => tab.label === activeTab);
     if (activeTabData?.disabledMessage) {
       return (
         <>
