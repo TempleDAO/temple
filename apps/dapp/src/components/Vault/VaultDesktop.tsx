@@ -21,7 +21,7 @@ export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
     },
     ref
   ) => {
-    const { vaultGroup } =  useVaultContext();
+    const { vaultGroup } = useVaultContext();
     const svgRef = useRef<SVGSVGElement>(null);
     const popupRef = useRef(null);
 
@@ -46,7 +46,7 @@ export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
               navigate(`/core/dapp/vaults/${vaultGroup.id}/${page}`);
             }}
           />
-          <Timeline vaultGroup={vaultGroup} />
+          <Timeline />
           <InnerRing selected={selectedNav} />
           <ForeignObject x="241.5" y="239.5" width="520" height="520">
             <Content>{children}</Content>

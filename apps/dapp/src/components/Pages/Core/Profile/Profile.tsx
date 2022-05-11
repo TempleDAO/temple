@@ -26,82 +26,119 @@ import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
 import { useListCoreVaultGroups } from 'hooks/core/subgraph';
 import { PageWrapper } from '../utils';
+import { useVaultGroupBalances, VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
 const STAT_CARD_HEIGHT = '5rem';
 const PIE_AREA_HEIGHT = '10rem';
 
 const ProfilePage = () => {
-  const { getBalance, balance } = useWallet();
-  const { faith } = useFaith();
-  const { isLoading, vaultGroups } = useListCoreVaultGroups();
-
-  const tabs = getTabs(
-    isLoading,
-    vaultGroups,
-    0,
-    balance.ogTemple,
-    faith.lifeTimeFaith
-  );
+  const { getBalance, wallet } = useWallet();
+  const { isLoading: vaultGroupsLoading, vaultGroups } = useListCoreVaultGroups();
+  const { balances, isLoading: vaultGroupBalancesLoading } = useVaultGroupBalances(vaultGroups);
 
   useEffect(() => {
     getBalance();
   }, []);
 
+  const totalStakedAcrossAllVaults = Object.values(balances).reduce((total, vault) => {
+    return total + (vault?.staked || 0);
+  }, 0);
+
+  const totalBalancesAcrossVaults = Object.values(balances).reduce((balance, vault) => {
+    return balance + (vault.balance || 0);
+  }, 0);
+
+  const claimableVaults = new Set(vaultGroups.flatMap((vaultGroup) => {
+    return vaultGroup.vaults.filter(({ unlockDate }) => unlockDate === 'NOW').map(({ id }) => id);
+  }));
+
+  const claimableBalance = Object.entries(balances).reduce((total, [address, vault]) => {
+    if (!claimableVaults.has(address)) {
+      return total;
+    }
+
+    return total + (vault.balance || 0)
+  }, 0);
+
+  const isLoading = vaultGroupsLoading || vaultGroupBalancesLoading;
+  const totalEarned = totalBalancesAcrossVaults - totalStakedAcrossAllVaults;
+
   return (
     <PageWrapper>
       <h3>Profile</h3>
-      <ProfileOverview>
-        <ProfileMeta>
-          <StatsCard
-            label="Stat 1"
-            stat="0"
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture1}
-            smallStatFont
-            isSquare={false}
-            height={STAT_CARD_HEIGHT}
+      {wallet ? (
+        <>
+          <ProfileOverview>
+            <ProfileMeta>
+              <StatCards>
+                <StatsCard
+                  label="$Temple Deposited"
+                  stat={totalStakedAcrossAllVaults}
+                  backgroundColor={theme.palette.brand75}
+                  backgroundImageUrl={texture1}
+                  smallStatFont
+                  isSquare={false}
+                  height={STAT_CARD_HEIGHT}
+                  className="stat"
+                  isLoading={isLoading}
+                />
+                <StatsCard
+                  label="$Temple Locked"
+                  stat={totalBalancesAcrossVaults}
+                  backgroundColor={theme.palette.brand75}
+                  backgroundImageUrl={texture2}
+                  smallStatFont
+                  isSquare={false}
+                  height={STAT_CARD_HEIGHT}
+                  className="stat"
+                  isLoading={isLoading}
+                />
+                <StatsCard
+                  label="$Temple Earned"
+                  stat={totalEarned}
+                  backgroundColor={theme.palette.brand75}
+                  backgroundImageUrl={texture4}
+                  smallStatFont
+                  isSquare={false}
+                  height={STAT_CARD_HEIGHT}
+                  className="stat"
+                  isLoading={isLoading}
+                />
+                <StatsCard
+                  label="$Temple Claimable"
+                  stat={claimableBalance}
+                  backgroundColor={theme.palette.brand75}
+                  backgroundImageUrl={texture5}
+                  smallStatFont
+                  isSquare={false}
+                  className="stat"
+                  height={STAT_CARD_HEIGHT}
+                  isLoading={isLoading}
+                />
+              </StatCards>
+              <StatsCard
+                stat={`pie chart goes here`}
+                heightPercentage={40}
+                backgroundColor={theme.palette.brand75}
+                backgroundImageUrl={texture3}
+                className="stats-pie"
+                smallStatFont
+                isSquare={false}
+              />
+            </ProfileMeta>
+          </ProfileOverview>
+          <ProfileVaults
+            isLoading={isLoading}
+            vaultGroupBalances={balances}
+            vaultGroups={vaultGroups}
           />
-          <StatsCard
-            label="Stat 2"
-            stat="0"
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture2}
-            smallStatFont
-            isSquare={false}
-            height={STAT_CARD_HEIGHT}
-          />
-          <StatsCard
-            label="Stat 3"
-            stat="0"
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture4}
-            smallStatFont
-            isSquare={false}
-            height={STAT_CARD_HEIGHT}
-          />
-          <StatsCard
-            label="Stat 4"
-            stat="0"
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture5}
-            smallStatFont
-            isSquare={false}
-            height={STAT_CARD_HEIGHT}
-          />
-          <StatsCard
-            stat={`pie chart goes here`}
-            heightPercentage={40}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture3}
-            className="stats-pie"
-            smallStatFont
-            isSquare={false}
-            height={PIE_AREA_HEIGHT}
-          />
-        </ProfileMeta>
-      </ProfileOverview>
-
-      <Tabs tabs={tabs} />
+          <ProfileTransactions />
+        </>
+      ) : (
+        <>
+          <h4>Please connect your wallet...</h4>
+        </>
+      )}
     </PageWrapper>
   );
 };
@@ -111,12 +148,19 @@ function getTabs(
   vaultGroups: VaultGroup[],
   lockedOgtBalance: number,
   ogtBalance: number,
-  faithBalance: number
+  faithBalance: number,
+  vaultGroupBalances: VaultGroupBalances,
 ): Tab[] {
   const tabs = [
     {
       label: 'Vaults',
-      content: <ProfileVaults isLoading={isLoading} vaultGroups={vaultGroups} />,
+      content: (
+        <ProfileVaults
+          isLoading={isLoading}
+          vaultGroupBalances={vaultGroupBalances}
+          vaultGroups={vaultGroups}
+        />
+      ),
     },
     { label: 'Transactions', content: <ProfileTransactions /> },
     { label: 'Discord', content: <ProfileDiscordData /> },
@@ -146,10 +190,6 @@ const ProfileOverview = styled.section`
   grid-template-columns: 1fr;
   gap: 2rem;
   margin-bottom: 2rem;
-  
-  ${phoneAndAbove(`
-    grid-template-columns: 1fr 1fr;
-  `)}
 `;
 
 const ProfileMeta = styled.div`
@@ -159,13 +199,15 @@ const ProfileMeta = styled.div`
   gap: 0.75rem;
 
   ${phoneAndAbove(`
-    padding-right: 0.75rem;
-    grid-template-columns: 60% 40%;
-    grid-template-rows: 1fr 1fr 2fr;
-    .stats-pie {
-      grid-column: 1 / -1;
-    }
+    grid-template-columns: 1fr 1fr;
   `)}
+`;
+
+const StatCards = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 0.75rem;
 `;
 
 export default ProfilePage;

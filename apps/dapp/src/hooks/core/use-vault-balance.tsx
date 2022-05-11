@@ -5,6 +5,7 @@ type HookResponseType = [
   {
     isLoading: boolean;
     balance: Nullable<number>,
+    staked: Nullable<number>,
   },
   () => Promise<void>,
 ] 
@@ -12,7 +13,7 @@ type HookResponseType = [
 export const useVaultBalance = (vaultContractAddress: string): HookResponseType => {
   const { balances, refreshVaultBalance } = useVaultContext();
   const fetchBalance = () => refreshVaultBalance(vaultContractAddress);
-  const vaultBalance = balances[vaultContractAddress] || { isLoading: false, balance: 0 };
+  const vaultBalance = balances[vaultContractAddress] || { isLoading: false, balance: 0, staked: 0, };
 
   return [
     vaultBalance,
