@@ -17,12 +17,6 @@ const createVaultUserFragment = (walletAddress = '') => {
       id
       totalBalance
       depositsBalance
-      deposits(orderBy: timestamp) {
-        amount
-        id
-        timestamp
-        value
-      }
       vaultUserBalances(orderBy: timestamp) {
         id
         timestamp
@@ -32,7 +26,7 @@ const createVaultUserFragment = (walletAddress = '') => {
       }
     }
   `;
-}
+};
 
 const createGetVaultGroupsQuery = (walletAddress = ''): SubGraphQuery => ({
   query: `{

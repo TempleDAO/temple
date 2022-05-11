@@ -27,14 +27,6 @@ export interface GraphUser {
   totalBalance: string;
   depositsBalance: string;
   vaultUserBalances: GraphVaultUserBalance[];
-  deposits: GraphDeposit[];
-}
-
-export interface GraphDeposit {
-  id: string;
-  amount: string;
-  value: string;
-  timestamp: string;
 }
 
 export interface GraphVaultUserBalance {

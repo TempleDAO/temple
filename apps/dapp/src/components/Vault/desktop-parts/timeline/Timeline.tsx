@@ -3,15 +3,15 @@ import { TimelineTicks } from './TimelineTicks';
 import { TimelineStartEndMarkers } from './TimelineStartEndMarkers';
 import { TimelineChannel } from './TimelineChannel';
 import { TimelineBackground } from './TimelineBackground';
-import { MarkerType, VaultGroup } from 'components/Vault/types';
+import { MarkerType } from 'components/Vault/types';
 import TimelineTippy from '../../TimelineTippy';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
+import { getMarkers } from 'components/Vault/desktop-parts/utils';
 
-type Props = {
-  vaultGroup: VaultGroup;
-};
-
-export const Timeline = ({ vaultGroup }: Props) => {
-  const markers = vaultGroup.markers
+export const Timeline = () => {
+  const { vaultGroup, balances } = useVaultContext();
+  
+  const markers = getMarkers(vaultGroup, balances)
     .filter((marker) => marker.type !== MarkerType.HIDDEN)
     .map((marker) => {
       return (
