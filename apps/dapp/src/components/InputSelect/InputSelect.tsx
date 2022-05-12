@@ -23,7 +23,7 @@ export interface SelectTempleDaoProps {
  */
 /* FIXME(typing): Get the props right `& any` */
 export const InputSelect = (props: SelectTempleDaoProps) => {
-  const selectHeight = '2.75rem';
+  const selectHeight = '2rem';
   return (
     <Select
       {...props}
@@ -48,9 +48,8 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
       styles={{
         control: (base) => ({
           ...base,
-          background: `${theme.palette.gradients.dark}`,
           border: `0.0625rem  /* 1/16 */ solid ${theme.palette.brand}`,
-          borderRadius: `calc(${selectHeight} / 2)`,
+          borderRadius: `calc(${selectHeight} / 4)`,
           boxShadow: 'none',
           fontSize: '1rem',
           textTransform: 'uppercase',
@@ -71,9 +70,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           base,
           padding: 0,
           color: theme.palette.light,
-          maxHeight: props.maxMenuItems
-            ? `calc(${props.maxMenuItems} * ${selectHeight})`
-            : 'none',
+          maxHeight: props.maxMenuItems ? `calc(${props.maxMenuItems} * ${selectHeight})` : 'none',
           overflowY: 'auto',
         }),
         option: (base, state) => ({
@@ -96,6 +93,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           textAlign: 'center',
           width: '100%',
           fontWeight: 'bold',
+          fontSize: '1.25rem',
           color: theme.palette.brandLight,
         }),
         valueContainer: (base) => ({
@@ -103,9 +101,7 @@ export const InputSelect = (props: SelectTempleDaoProps) => {
           padding: 0,
         }),
         dropdownIndicator: (base, state) => ({
-          color: state.isFocused
-            ? theme.palette.brandLight
-            : theme.palette.brand,
+          color: state.isFocused ? theme.palette.brandLight : theme.palette.brand,
           display: 'flex',
           transform: state.isFocused ? 'rotateX(180deg)' : 'none',
           transition: 'transform 250ms linear',
