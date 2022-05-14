@@ -76,8 +76,10 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       // if this sell is going to defend or price in this token is,
       // too low, auto-select FEI
       if (
-        isIvSwap(sellQuote, value) ||
-        templePrice <= iv * ENV_VARS.VITE_PUBLIC_FRAX_SELL_DISABLED_IV_MULTIPLE
+        !isFraxHidden &&
+        (isIvSwap(sellQuote, value) ||
+          templePrice <=
+            iv * ENV_VARS.VITE_PUBLIC_FRAX_SELL_DISABLED_IV_MULTIPLE)
       ) {
         setIsFraxHidden(true);
         setSelectedToken({
