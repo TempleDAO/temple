@@ -259,8 +259,8 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       {selectedToken.symbol === TICKER_SYMBOL.STABLE_TOKEN && (
         <SellInfo>
           <p>
-            {`We're now using ${TICKER_SYMBOL.FEI} for ${TICKER_SYMBOL.TEMPLE_TOKEN}
-            Defend`}
+            Be advised that TempleDAO will use $FEI instead of $FRAX for Temple
+            Defense at 1:1
           </p>
           <Tooltip
             content={`If this transaction causes the ${TICKER_SYMBOL.TEMPLE_TOKEN} AMM to defend its intrinsic value price by burning ${TICKER_SYMBOL.TEMPLE_TOKEN}, you will receive ${TICKER_SYMBOL.FEI} for this sale.`}
@@ -277,7 +277,9 @@ const SellInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
-  justify-content: center;
+  text-align: center;
+  max-width: ${400 / 16}rem;
+  margin: auto;
   color: ${({ theme }) => theme.palette.brandLight};
   p {
     font-size: 1rem;
