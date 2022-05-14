@@ -201,6 +201,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
         uint256 feePerTempleScaledPerHour = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));
         uint256 fee = _amount * feePerTempleScaledPerHour / 1e18;
+
+        require(_amount > fee, "Vault: Cannot join when fee is higher than amount");
         uint256 amountStaked = _amount - fee;
 
         if (_amount > 0) {
