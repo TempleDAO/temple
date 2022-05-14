@@ -50,6 +50,6 @@
     "local-fork": "hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/5uWfALq4t1xR49V3EW5bBZEE4xh97l-A --fork-block-number 13205117"
   },
   "engines": {
-    "node": "14.x"
+    "node": ">=16.0.0"
   }
 }
