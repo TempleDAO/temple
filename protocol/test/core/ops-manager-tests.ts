@@ -213,8 +213,6 @@ describe("Temple Core Ops Manager", async () => {
     // TODO implement + check shares are as we expect
 
     let needRebal = await opsManager.requiresRebalance([vault1Addr, vault2Addr], fxsToken.address);
-    console.log(await vault1Alan.firstPeriodStartTimestamp())
-
     await mineForwardSeconds(3601 + 300); // just make sure vault1 is closed [account for buffer (300s)]
     needRebal = await opsManager.requiresRebalance([vault1Addr, vault2Addr], fxsToken.address);
     expect (needRebal).to.eql([true, false]);
