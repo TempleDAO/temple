@@ -1,4 +1,5 @@
 import React, { FC, useEffect, useState } from 'react';
+import styled from 'styled-components';
 import { Input } from 'components/Input/Input';
 import { BigNumber } from 'ethers';
 import { formatNumber } from 'utils/formatter';
@@ -12,6 +13,7 @@ import {
 import { copyBalance } from 'components/AMM/helpers/methods';
 import Slippage from 'components/Slippage/Slippage';
 import { Button } from 'components/Button/Button';
+import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
@@ -71,8 +73,12 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         selectedToken.address
       );
 
-      // if this sell is going to defend, auto-select FEI
-      if (isIvSwap(sellQuote, value)) {
+      // if this sell is going to defend or price in this token is,
+      // too low, auto-select FEI
+      if (
+        isIvSwap(sellQuote, value) ||
+        templePrice <= iv * ENV_VARS.VITE_PUBLIC_FRAX_SELL_DISABLED_IV_MULTIPLE
+      ) {
         setIsFraxHidden(true);
         setSelectedToken({
           symbol: dropdownOptions[0].label,
@@ -121,6 +127,8 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
   useEffect(() => {
     const setBalanceState = async () => {
+      await updateTemplePrice(selectedToken.address);
+
       setTempleWalletAmount(balance.temple);
 
       if (selectedToken.symbol === TICKER_SYMBOL.FEI) {
@@ -129,7 +137,6 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
         setStableCoinWalletAmount(balance.stableCoin);
       }
       await handleUpdateTempleAmount(templeAmount);
-      await updateTemplePrice(selectedToken.address);
     };
     if (balance) {
       setBalanceState();
@@ -144,7 +151,10 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
       setMinAmountOut(0);
 
       // only allow selling for FRAX if we are out of IV swap territory
-      if (templePrice > iv * 1.02) {
+      if (
+        templePrice >
+        iv * ENV_VARS.VITE_PUBLIC_FRAX_SELL_DISABLED_IV_MULTIPLE
+      ) {
         setIsFraxHidden(false);
       }
 
@@ -244,6 +254,30 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
           templeAmount > templeWalletAmount
         }
       />
+      {selectedToken.symbol === TICKER_SYMBOL.STABLE_TOKEN && (
+        <SellInfo>
+          <p>
+            {`We're now using ${TICKER_SYMBOL.FEI} for ${TICKER_SYMBOL.TEMPLE_TOKEN}
+            Defend`}
+          </p>
+          <Tooltip
+            content={`If this transaction causes the ${TICKER_SYMBOL.TEMPLE_TOKEN} AMM to defend its intrinsic value price by burning ${TICKER_SYMBOL.TEMPLE_TOKEN}, you will receive ${TICKER_SYMBOL.FEI} for this sale.`}
+          >
+            <TooltipIcon />
+          </Tooltip>
+        </SellInfo>
+      )}
     </ViewContainer>
   );
 };
+
+const SellInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: center;
+  color: ${({ theme }) => theme.palette.brandLight};
+  p {
+    font-size: 1rem;
+  }
+`;
