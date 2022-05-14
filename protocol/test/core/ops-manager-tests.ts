@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, NULL_ADDR, toAtto } from "../helpers";
 import { ContractTransaction, Event, Signer } from "ethers";
-import { 
+import {
   Exposure__factory,
   FakeERC20,
   FakeERC20__factory,
@@ -29,9 +29,9 @@ describe("Temple Core Ops Manager", async () => {
   let ben: Signer;
 
   async function extractEvent(
-      tx: ContractTransaction, 
-      eventName: string, 
-      expectedLength: number, 
+      tx: ContractTransaction,
+      eventName: string,
+      expectedLength: number,
       evtToExtract: number
   ) : Promise<Event> {
     let events = await (await tx.wait()).events?.filter(evt => evt.event === eventName);
@@ -72,7 +72,7 @@ describe("Temple Core Ops Manager", async () => {
 
     const evt1 = await extractEvent(createExposureTx1, "CreateExposure", 1, 0);
     const evt2 = await extractEvent(createExposureTx2, "CreateExposure", 1, 0);
-    
+
     // Check event args are not empty
     expect(evt1.args!!.exposure).not.empty;
     expect(evt1.args!!.primaryRevenue).not.empty;
@@ -124,7 +124,7 @@ describe("Temple Core Ops Manager", async () => {
 
     // Check event args are not empty
     expect(evt1.args!!.vault).not.empty;
-    
+
     // Check OpsManager storage updated correctly
     expect(await opsManager.activeVaults(evt1.args!!.vault)).to.be.true;
 
@@ -174,14 +174,14 @@ describe("Temple Core Ops Manager", async () => {
 
     // create two exposures as a result of our farming activities
     const fxsExposureAddr = (await extractEvent(await opsManager.createExposure(
-      "Temple FXS Exposure", 
-      "TE-FXS", 
+      "Temple FXS Exposure",
+      "TE-FXS",
       fxsToken.address
     ), "CreateExposure", 1, 0)).args!!.exposure;
 
     const crvExposureAddr = (await extractEvent(await opsManager.createExposure(
-      "Temple CRV Exposure", 
-      "TE-CRV", 
+      "Temple CRV Exposure",
+      "TE-CRV",
       crvToken.address
     ), "CreateExposure", 1, 0)).args!!.exposure;
 
@@ -200,21 +200,22 @@ describe("Temple Core Ops Manager", async () => {
     const benAddr = await ben.getAddress();
 
     // Deposit temple into the current open vault
-    
+
     await templeTokenAlan.increaseAllowance(vault1Alan.address, toAtto(100000));
     await vault1Alan.deposit(toAtto(10000));
-    
+
     await templeTokenBen.increaseAllowance(vault1Ben.address, toAtto(100000));
     await vault1Ben.deposit(toAtto(50000));
-    
+
     // Fast forward to close vault, and rebalance open vault
     // with revenue share. Before callign rebalance, check
     // which vaults require a rebalance
     // TODO implement + check shares are as we expect
 
     let needRebal = await opsManager.requiresRebalance([vault1Addr, vault2Addr], fxsToken.address);
-    expect (needRebal).to.eql([false, false]);
-    await mineForwardSeconds(3601); // just make sure vault1 is closed
+    console.log(await vault1Alan.firstPeriodStartTimestamp())
+
+    await mineForwardSeconds(3601 + 300); // just make sure vault1 is closed [account for buffer (300s)]
     needRebal = await opsManager.requiresRebalance([vault1Addr, vault2Addr], fxsToken.address);
     expect (needRebal).to.eql([true, false]);
 
@@ -226,7 +227,7 @@ describe("Temple Core Ops Manager", async () => {
     //opsManager.addRevenue([fxsToken.address], [toAtto(10000)]);
 
     // where do we check shares?
-  
+
 
     // Claim a vaults share of primary revenue, via the
     // rebalance method
