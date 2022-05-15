@@ -73,6 +73,8 @@ export function useSwapController() {
         value: { token, balance: getTokenBalance(token) },
       });
     }
+
+    updateTemplePrice();
   };
 
   const handleInputChange = async (value: string) => {
@@ -125,23 +127,29 @@ export function useSwapController() {
   };
 
   const handleBuy = async () => {
-    const tokenAmount = Number(state.inputValue);
-    const buyQuote = await getBuyQuote(toAtto(tokenAmount));
-
-    if (!tokenAmount || !buyQuote) {
+    if (!isPairToken(state.inputToken)) {
+      console.error('Invalid input token');
       return;
+    } else {
+      const tokenAmount = Number(state.inputValue);
+
+      const buyQuote = await getBuyQuote(toAtto(tokenAmount), state.inputToken);
+
+      if (!tokenAmount || !buyQuote) {
+        return;
+      }
+
+      const minAmountOut = (tokenAmount / templePrice) * (1 - state.slippageTolerance / 100);
+
+      if (minAmountOut > fromAtto(buyQuote)) {
+        dispatch({
+          type: 'slippageTooHigh',
+        });
+        return;
+      }
+
+      await buy(toAtto(tokenAmount), toAtto(minAmountOut), state.inputToken, state.deadlineMinutes);
     }
-
-    const minAmountOut = (tokenAmount / templePrice) * (1 - state.slippageTolerance / 100);
-
-    if (minAmountOut > fromAtto(buyQuote)) {
-      dispatch({
-        type: 'slippageTooHigh',
-      });
-      return;
-    }
-
-    await buy(toAtto(tokenAmount), toAtto(minAmountOut), state.deadlineMinutes);
   };
 
   const handleSell = async () => {

@@ -118,7 +118,12 @@ export interface SwapService {
   templePrice: number;
   iv: number;
 
-  buy(amountIn: BigNumber, minAmountOutTemple: BigNumber, deadlineInMinutes?: number): Promise<void>;
+  buy(
+    amountIn: BigNumber,
+    minAmountOutTemple: BigNumber,
+    token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI,
+    deadlineInMinutes?: number
+  ): Promise<void>;
 
   sell(
     amountInTemple: BigNumber,

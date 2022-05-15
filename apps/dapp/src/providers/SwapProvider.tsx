@@ -9,6 +9,8 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop } from 'utils/helpers';
 import { fromAtto } from 'utils/bigNumber';
+import { getCurrentBlockTimestamp } from 'utils/dates';
+
 import {
   ERC20__factory,
   TempleERC20Token__factory,
@@ -92,27 +94,30 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     setIv(iv);
   };
 
-  const buy = async (amountIn: BigNumber, minAmountOutTemple: BigNumber, deadlineInMinutes = 20) => {
+  const buy = async (
+    amountIn: BigNumber,
+    minAmountOutTemple: BigNumber,
+    token: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI = TICKER_SYMBOL.FRAX,
+    deadlineInMinutes = 20
+  ) => {
     if (wallet && signer) {
-      const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
-      const STABLE_TOKEN = new ERC20__factory(signer).attach(FRAX_ADDRESS);
-      const DEADLINE_IN_SECONDS = deadlineInMinutes * 60;
+      const tokenAddress = token === TICKER_SYMBOL.FEI ? FEI_ADDRESS : FRAX_ADDRESS;
+      const ammRouter = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
+      const tokenContract = new ERC20__factory(signer).attach(tokenAddress);
 
-      const balance = await STABLE_TOKEN.balanceOf(wallet);
+      const balance = await tokenContract.balanceOf(wallet);
       const verifiedAmountIn = amountIn.lt(balance) ? amountIn : balance;
 
-      const provider = new ethers.providers.JsonRpcProvider();
-      const currentBlockNumber = await provider.getBlockNumber();
-      const currentBlockTimestamp = (await provider.getBlock(currentBlockNumber)).timestamp;
+      const deadlineInSeconds = deadlineInMinutes * 60;
+      const currentBlockTimestamp = await getCurrentBlockTimestamp();
+      const deadline = formatNumberFixedDecimals(currentBlockTimestamp + deadlineInSeconds, 0);
 
-      const deadline = formatNumberFixedDecimals(currentBlockTimestamp + DEADLINE_IN_SECONDS, 0);
+      await ensureAllowance(token, tokenContract, TEMPLE_V2_ROUTER_ADDRESS, amountIn);
 
-      await ensureAllowance(TICKER_SYMBOL.STABLE_TOKEN, STABLE_TOKEN, TEMPLE_V2_ROUTER_ADDRESS, amountIn);
-
-      const buyTXN = await AMM_ROUTER.swapExactStableForTemple(
+      const buyTXN = await ammRouter.swapExactStableForTemple(
         verifiedAmountIn,
         minAmountOutTemple,
-        FRAX_ADDRESS,
+        tokenAddress,
         wallet,
         deadline,
         {
@@ -122,7 +127,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       await buyTXN.wait();
       // Show feedback to user
       openNotification({
-        title: `Sacrificed ${TICKER_SYMBOL.STABLE_TOKEN}`,
+        title: `Sacrificed ${token}`,
         hash: buyTXN.hash,
       });
     }
@@ -145,9 +150,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       const TEMPLE = new TempleERC20Token__factory(signer).attach(TEMPLE_ADDRESS);
       const DEADLINE_IN_SECONDS = deadlineInMinutes * 60;
 
-      const provider = new ethers.providers.JsonRpcProvider();
-      const currentBlockNumber = await provider.getBlockNumber();
-      const currentBlockTimestamp = (await provider.getBlock(currentBlockNumber)).timestamp;
+      const currentBlockTimestamp = await getCurrentBlockTimestamp();
 
       await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, TEMPLE, TEMPLE_V2_ROUTER_ADDRESS, amountInTemple);
 
