@@ -142,27 +142,33 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const sell = async (
     amountInTemple: BigNumber,
     minAmountOutFrax: BigNumber,
+    token: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI = TICKER_SYMBOL.FRAX,
     isIvSwap = false,
     deadlineInMinutes = 20
   ) => {
     if (wallet && signer) {
-      const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
-      const TEMPLE = new TempleERC20Token__factory(signer).attach(TEMPLE_ADDRESS);
-      const DEADLINE_IN_SECONDS = deadlineInMinutes * 60;
+      let tokenAddress = token === TICKER_SYMBOL.FEI ? FEI_ADDRESS : FRAX_ADDRESS;
+      const ammRouter = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
+      const templeContract = new TempleERC20Token__factory(signer).attach(tokenAddress);
 
+      if (isIvSwap) {
+        tokenAddress = FEI_ADDRESS;
+      }
+
+      const deadlineInSeconds = deadlineInMinutes * 60;
       const currentBlockTimestamp = await getCurrentBlockTimestamp();
 
-      await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, TEMPLE, TEMPLE_V2_ROUTER_ADDRESS, amountInTemple);
+      await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, templeContract, TEMPLE_V2_ROUTER_ADDRESS, amountInTemple);
 
-      const balance = await TEMPLE.balanceOf(wallet);
+      const balance = await templeContract.balanceOf(wallet);
       const verifiedAmountInTemple = amountInTemple.lt(balance) ? amountInTemple : balance;
 
-      const deadline = formatNumberFixedDecimals(currentBlockTimestamp + DEADLINE_IN_SECONDS, 0);
+      const deadline = formatNumberFixedDecimals(currentBlockTimestamp + deadlineInSeconds, 0);
 
-      const sellTx = await AMM_ROUTER.swapExactTempleForStable(
+      const sellTx = await ammRouter.swapExactTempleForStable(
         verifiedAmountInTemple,
         minAmountOutFrax,
-        FRAX_ADDRESS,
+        tokenAddress,
         wallet,
         deadline,
         {

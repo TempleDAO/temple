@@ -128,7 +128,8 @@ export interface SwapService {
   sell(
     amountInTemple: BigNumber,
     minAmountOutFrax: BigNumber,
-    isIvSwap: boolean,
+    token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI,
+    isIvSwap?: boolean,
     deadlineInMinutes?: number
   ): Promise<void>;
 
