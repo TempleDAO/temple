@@ -120,7 +120,12 @@ export interface SwapService {
 
   buy(amountIn: BigNumber, minAmountOutTemple: BigNumber, deadlineInMinutes?: number): Promise<void>;
 
-  sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber, isIvSwap: boolean): Promise<void>;
+  sell(
+    amountInTemple: BigNumber,
+    minAmountOutFrax: BigNumber,
+    isIvSwap: boolean,
+    deadlineInMinutes?: number
+  ): Promise<void>;
 
   getSellQuote(amountToSell: BigNumber, token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<BigNumber | void>;
 

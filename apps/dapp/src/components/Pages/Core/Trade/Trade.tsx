@@ -37,10 +37,11 @@ export const Trade = () => {
     state.mode === SwapMode.Sell ? { ...state.outputConfig, onCryptoChange: handleSelectChange } : state.outputConfig;
 
   const isButtonDisabled =
-    state.isTransactionPending ||
-    state.inputTokenBalance === 0 ||
-    Number(state.inputValue) > state.inputTokenBalance ||
-    state.inputValue === '';
+    !state.isSlippageTooHigh &&
+    (state.isTransactionPending ||
+      state.inputTokenBalance === 0 ||
+      Number(state.inputValue) > state.inputTokenBalance ||
+      state.inputValue === '');
 
   return (
     <PageWrapper>

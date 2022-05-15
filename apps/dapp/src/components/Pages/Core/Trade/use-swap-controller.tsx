@@ -30,7 +30,7 @@ const INITIAL_STATE: SwapReducerState = {
 export function useSwapController() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
-  const { getBuyQuote, getSellQuote, templePrice, updateTemplePrice, buy } = useSwap();
+  const { getBuyQuote, getSellQuote, templePrice, updateTemplePrice, buy, sell, iv } = useSwap();
 
   useEffect(() => {
     const onMount = async () => {
@@ -145,7 +145,29 @@ export function useSwapController() {
   };
 
   const handleSell = async () => {
-    console.log('selling');
+    const templeAmount = Number(state.inputValue);
+    const sellQuote = await getSellQuote(toAtto(templeAmount));
+
+    if (!templeAmount || !sellQuote) {
+      return;
+    }
+
+    const minAmountOut = templeAmount * templePrice * (1 - state.slippageTolerance / 100);
+    console.log('min amount out = ' + minAmountOut);
+    console.log('sell quote = ' + fromAtto(sellQuote));
+
+    // If there is a sell quote and it is below what you'd get selling at IV
+    // the sale is directed to the IV Swap contract to prevent the AMM price to dip below IV
+    const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
+
+    if (minAmountOut > fromAtto(sellQuote)) {
+      dispatch({
+        type: 'slippageTooHigh',
+      });
+      return;
+    }
+
+    await sell(toAtto(templeAmount), toAtto(minAmountOut), isIvSwap, state.deadlineMinutes);
   };
 
   const getTokenBalance = (token: TICKER_SYMBOL): number => {
@@ -268,8 +290,6 @@ function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReduce
       return {
         ...state,
         isTransactionPending: false,
-        inputValue: INITIAL_STATE.inputValue,
-        quoteValue: INITIAL_STATE.quoteValue,
       };
 
     case 'slippageTooHigh':

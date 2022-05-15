@@ -134,19 +134,29 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
    * @param minAmountOutFrax: % user is giving as slippage
    * @param isIvSwap: should sale be directed to TempleIvSwap contract
    */
-  const sell = async (amountInTemple: BigNumber, minAmountOutFrax: BigNumber, isIvSwap = false) => {
+  const sell = async (
+    amountInTemple: BigNumber,
+    minAmountOutFrax: BigNumber,
+    isIvSwap = false,
+    deadlineInMinutes = 20
+  ) => {
     if (wallet && signer) {
       const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
       const TEMPLE = new TempleERC20Token__factory(signer).attach(TEMPLE_ADDRESS);
+      const DEADLINE_IN_SECONDS = deadlineInMinutes * 60;
+
+      const provider = new ethers.providers.JsonRpcProvider();
+      const currentBlockNumber = await provider.getBlockNumber();
+      const currentBlockTimestamp = (await provider.getBlock(currentBlockNumber)).timestamp;
 
       await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, TEMPLE, TEMPLE_V2_ROUTER_ADDRESS, amountInTemple);
 
       const balance = await TEMPLE.balanceOf(wallet);
       const verifiedAmountInTemple = amountInTemple.lt(balance) ? amountInTemple : balance;
 
-      const deadline = formatNumberFixedDecimals(Date.now() + DEADLINE, 0);
+      const deadline = formatNumberFixedDecimals(currentBlockTimestamp + DEADLINE_IN_SECONDS, 0);
 
-      const sellTx = await AMM_ROUTER.swapExactStableForTemple(
+      const sellTx = await AMM_ROUTER.swapExactTempleForStable(
         verifiedAmountInTemple,
         minAmountOutFrax,
         FRAX_ADDRESS,
