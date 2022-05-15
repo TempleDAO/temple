@@ -2,10 +2,13 @@ import { Option } from 'components/InputSelect/InputSelect';
 import { TransactionSettings } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useWallet } from 'providers/WalletProvider';
+import { useSwap } from 'providers/SwapProvider';
 import { useEffect, useReducer } from 'react';
 import { TOKENS_BY_MODE } from './constants';
 import { SwapReducerAction, SwapReducerState, SwapMode } from './types';
 import { buildSelectConfig, buildValueConfig, createButtonLabel } from './utils';
+import { fromAtto, toAtto } from 'utils/bigNumber';
+import { BigNumber } from 'ethers';
 
 const INITIAL_STATE: SwapReducerState = {
   mode: SwapMode.Buy,
@@ -25,6 +28,7 @@ const INITIAL_STATE: SwapReducerState = {
 export function useSwapController() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
+  const { getBuyQuote, getSellQuote } = useSwap();
 
   useEffect(() => {
     const onMount = async () => {
@@ -68,10 +72,15 @@ export function useSwapController() {
     }
   };
 
-  const handleInputChange = (value: string) => {
+  const handleInputChange = async (value: string) => {
     const numericValue = Number(value);
     dispatch({ type: 'changeInputValue', value: numericValue === 0 ? '' : value });
-    dispatch({ type: 'changeQuoteValue', value: 0 });
+    if (!value) {
+      dispatch({ type: 'changeQuoteValue', value: 0 });
+    } else {
+      const quote = await fetchQuote(numericValue);
+      dispatch({ type: 'changeQuoteValue', value: quote });
+    }
   };
 
   const handleChangeMode = () => {
@@ -103,6 +112,24 @@ export function useSwapController() {
       default:
         return 0;
     }
+  }
+
+  async function fetchQuote(value = 0): Promise<number> {
+    let quote: BigNumber | void = toAtto(value);
+    if (state.mode === SwapMode.Buy) {
+      quote = await getBuyQuote(toAtto(value));
+    }
+
+    if (state.mode === SwapMode.Sell) {
+      quote = await getSellQuote(toAtto(value));
+    }
+
+    if (!quote) {
+      console.error("couldn't fetch quote");
+      return 0;
+    }
+
+    return fromAtto(quote);
   }
 
   return {
