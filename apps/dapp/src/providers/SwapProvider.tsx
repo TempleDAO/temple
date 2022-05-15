@@ -56,7 +56,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
-    const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory(signerState).attach(FRAX_ADDRESS);
+    const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory(signerState).attach(TEMPLE_V2_FRAX_PAIR_ADDRESS);
 
     const { _reserve0, _reserve1 } = await TEMPLE_UNISWAP_V2_PAIR.getReserves();
 
@@ -133,8 +133,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     if (wallet && signer) {
       const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
       const TEMPLE = new TempleERC20Token__factory(signer).attach(TEMPLE_ADDRESS);
-
-      const TEMPLE_IV_SWAP = new TempleIVSwap__factory(signer).attach(TEMPLE_IV_SWAP_ADDRESS);
 
       await ensureAllowance(
         TICKER_SYMBOL.TEMPLE_TOKEN,

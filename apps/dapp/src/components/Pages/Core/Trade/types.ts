@@ -23,6 +23,7 @@ export type SwapReducerAction =
   | { type: 'changeQuoteValue'; value: number }
   | { type: 'changeTxSettings'; value: TransactionSettings }
   | { type: 'changeInputTokenBalance'; value: number }
+  | { type: 'changeOutputTokenBalance'; value: number }
   | { type: 'startTx' }
   | { type: 'endTx' }
   | { type: 'slippageTooHigh' };

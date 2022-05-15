@@ -30,8 +30,20 @@ export function useSwapController() {
     const onMount = async () => {
       await updateBalance();
     };
+
     onMount();
   }, []);
+
+  useEffect(() => {
+    dispatch({
+      type: 'changeInputTokenBalance',
+      value: getTokenBalance(state.inputToken),
+    });
+    dispatch({
+      type: 'changeOutputTokenBalance',
+      value: getTokenBalance(state.outputToken),
+    });
+  }, [state.mode, balance]);
 
   // Handles selection of a new value in the select dropdown
   const handleSelectChange = (event: Option) => {
@@ -131,12 +143,24 @@ function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReduce
         buttonLabel: createButtonLabel(action.value.token, state.outputToken, state.mode),
       };
 
+    case 'changeInputTokenBalance':
+      return {
+        ...state,
+        inputTokenBalance: action.value,
+      };
+
     case 'changeOutputToken':
       return {
         ...state,
         outputToken: action.value.token,
         outputTokenBalance: action.value.balance,
         buttonLabel: createButtonLabel(state.inputToken, action.value.token, state.mode),
+      };
+
+    case 'changeOutputTokenBalance':
+      return {
+        ...state,
+        outputTokenBalance: action.value,
       };
 
     case 'changeInputValue':
