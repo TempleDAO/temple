@@ -1,5 +1,5 @@
 import { useState, useContext, createContext, PropsWithChildren } from 'react';
-import { BigNumber, Signer } from 'ethers';
+import { BigNumber, ethers, providers, Signer } from 'ethers';
 
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
@@ -92,20 +92,25 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     setIv(iv);
   };
 
-  const buy = async (amountInFrax: BigNumber, minAmountOutTemple: BigNumber) => {
+  const buy = async (amountIn: BigNumber, minAmountOutTemple: BigNumber, deadlineInMinutes = 20) => {
     if (wallet && signer) {
       const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
       const STABLE_TOKEN = new ERC20__factory(signer).attach(FRAX_ADDRESS);
-
-      await ensureAllowance(TICKER_SYMBOL.STABLE_TOKEN, STABLE_TOKEN, TEMPLE_V2_ROUTER_ADDRESS, amountInFrax);
+      const DEADLINE_IN_SECONDS = deadlineInMinutes * 60;
 
       const balance = await STABLE_TOKEN.balanceOf(wallet);
-      const verifiedAmountInFrax = amountInFrax.lt(balance) ? amountInFrax : balance;
+      const verifiedAmountIn = amountIn.lt(balance) ? amountIn : balance;
 
-      const deadline = formatNumberFixedDecimals(Date.now() / 1000 + DEADLINE, 0);
+      const provider = new ethers.providers.JsonRpcProvider();
+      const currentBlockNumber = await provider.getBlockNumber();
+      const currentBlockTimestamp = (await provider.getBlock(currentBlockNumber)).timestamp;
+
+      const deadline = formatNumberFixedDecimals(currentBlockTimestamp + DEADLINE_IN_SECONDS, 0);
+
+      await ensureAllowance(TICKER_SYMBOL.STABLE_TOKEN, STABLE_TOKEN, TEMPLE_V2_ROUTER_ADDRESS, amountIn);
 
       const buyTXN = await AMM_ROUTER.swapExactStableForTemple(
-        verifiedAmountInFrax,
+        verifiedAmountIn,
         minAmountOutTemple,
         FRAX_ADDRESS,
         wallet,
@@ -134,17 +139,12 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
       const TEMPLE = new TempleERC20Token__factory(signer).attach(TEMPLE_ADDRESS);
 
-      await ensureAllowance(
-        TICKER_SYMBOL.TEMPLE_TOKEN,
-        TEMPLE,
-        isIvSwap ? TEMPLE_IV_SWAP_ADDRESS : TEMPLE_V2_ROUTER_ADDRESS,
-        amountInTemple
-      );
+      await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, TEMPLE, TEMPLE_V2_ROUTER_ADDRESS, amountInTemple);
 
       const balance = await TEMPLE.balanceOf(wallet);
       const verifiedAmountInTemple = amountInTemple.lt(balance) ? amountInTemple : balance;
 
-      const deadline = formatNumberFixedDecimals(Date.now() / 1000 + DEADLINE, 0);
+      const deadline = formatNumberFixedDecimals(Date.now() + DEADLINE, 0);
 
       const sellTx = await AMM_ROUTER.swapExactStableForTemple(
         verifiedAmountInTemple,

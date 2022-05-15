@@ -8,7 +8,7 @@ import { TOKENS_BY_MODE } from './constants';
 import { SwapReducerAction, SwapReducerState, SwapMode } from './types';
 import { buildSelectConfig, buildValueConfig, createButtonLabel, isPairToken } from './utils';
 import { fromAtto, toAtto } from 'utils/bigNumber';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 
 const INITIAL_STATE: SwapReducerState = {
   mode: SwapMode.Buy,
@@ -23,16 +23,19 @@ const INITIAL_STATE: SwapReducerState = {
   inputConfig: buildSelectConfig(TICKER_SYMBOL.FRAX, SwapMode.Buy),
   outputConfig: buildValueConfig(TICKER_SYMBOL.TEMPLE_TOKEN),
   buttonLabel: createButtonLabel(TICKER_SYMBOL.FRAX, TICKER_SYMBOL.TEMPLE_TOKEN, SwapMode.Buy),
+  isTransactionPending: false,
+  isSlippageTooHigh: false,
 };
 
 export function useSwapController() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
-  const { getBuyQuote, getSellQuote } = useSwap();
+  const { getBuyQuote, getSellQuote, templePrice, updateTemplePrice, buy } = useSwap();
 
   useEffect(() => {
     const onMount = async () => {
       await updateBalance();
+      await updateTemplePrice();
     };
 
     onMount();
@@ -101,7 +104,51 @@ export function useSwapController() {
     });
   };
 
-  function getTokenBalance(token: TICKER_SYMBOL): number {
+  const handleTransaction = async () => {
+    dispatch({
+      type: 'startTx',
+    });
+    console.log('tx starting');
+    if (state.mode === SwapMode.Buy) {
+      await handleBuy();
+    }
+
+    if (state.mode === SwapMode.Sell) {
+      await handleSell();
+    }
+
+    updateBalance();
+
+    dispatch({
+      type: 'endTx',
+    });
+  };
+
+  const handleBuy = async () => {
+    const tokenAmount = Number(state.inputValue);
+    const buyQuote = await getBuyQuote(toAtto(tokenAmount));
+
+    if (!tokenAmount || !buyQuote) {
+      return;
+    }
+
+    const minAmountOut = (tokenAmount / templePrice) * (1 - state.slippageTolerance / 100);
+
+    if (minAmountOut > fromAtto(buyQuote)) {
+      dispatch({
+        type: 'slippageTooHigh',
+      });
+      return;
+    }
+
+    await buy(toAtto(tokenAmount), toAtto(minAmountOut), state.deadlineMinutes);
+  };
+
+  const handleSell = async () => {
+    console.log('selling');
+  };
+
+  const getTokenBalance = (token: TICKER_SYMBOL): number => {
     switch (token) {
       case TICKER_SYMBOL.FRAX:
         return balance.frax;
@@ -112,9 +159,9 @@ export function useSwapController() {
       default:
         return 0;
     }
-  }
+  };
 
-  async function fetchQuote(value = 0): Promise<number> {
+  const fetchQuote = async (value = 0): Promise<number> => {
     let quote: BigNumber | void = toAtto(value);
 
     if (state.mode === SwapMode.Buy && isPairToken(state.inputToken)) {
@@ -133,7 +180,7 @@ export function useSwapController() {
     }
 
     return fromAtto(quote);
-  }
+  };
 
   return {
     state,
@@ -142,6 +189,7 @@ export function useSwapController() {
     handleChangeMode,
     handleHintClick,
     handleTxSettingsUpdate,
+    handleTransaction,
   };
 }
 
@@ -205,8 +253,30 @@ function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReduce
     case 'changeTxSettings':
       return {
         ...state,
+        isSlippageTooHigh: false,
         slippageTolerance: action.value.slippageTolerance,
         deadlineMinutes: action.value.deadlineMinutes,
+        buttonLabel: createButtonLabel(state.inputToken, state.outputToken, state.mode),
+      };
+    case 'startTx':
+      return {
+        ...state,
+        isTransactionPending: true,
+      };
+
+    case 'endTx':
+      return {
+        ...state,
+        isTransactionPending: false,
+        inputValue: INITIAL_STATE.inputValue,
+        quoteValue: INITIAL_STATE.quoteValue,
+      };
+
+    case 'slippageTooHigh':
+      return {
+        ...state,
+        isSlippageTooHigh: true,
+        buttonLabel: 'INCREASE SLIPPAGE TOLERANCE',
       };
 
     default:

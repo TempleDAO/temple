@@ -118,9 +118,9 @@ export interface SwapService {
   templePrice: number;
   iv: number;
 
-  buy(amountInFrax: BigNumber, minAmountOutTemple: BigNumber): void;
+  buy(amountIn: BigNumber, minAmountOutTemple: BigNumber, deadlineInMinutes?: number): Promise<void>;
 
-  sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber, isIvSwap: boolean): void;
+  sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber, isIvSwap: boolean): Promise<void>;
 
   getSellQuote(amountToSell: BigNumber, token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<BigNumber | void>;
 

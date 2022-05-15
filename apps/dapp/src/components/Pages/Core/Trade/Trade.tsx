@@ -18,8 +18,15 @@ import { formatNumberWithCommas } from 'utils/formatter';
 import Gear from 'assets/icons/gear.svg';
 
 export const Trade = () => {
-  const { state, handleSelectChange, handleInputChange, handleChangeMode, handleHintClick, handleTxSettingsUpdate } =
-    useSwapController();
+  const {
+    state,
+    handleSelectChange,
+    handleInputChange,
+    handleChangeMode,
+    handleHintClick,
+    handleTxSettingsUpdate,
+    handleTransaction,
+  } = useSwapController();
 
   const [isSlippageModalOpen, setIsSlippageModalOpen] = useState(false);
 
@@ -28,6 +35,12 @@ export const Trade = () => {
 
   const outputCryptoConfig =
     state.mode === SwapMode.Sell ? { ...state.outputConfig, onCryptoChange: handleSelectChange } : state.outputConfig;
+
+  const isButtonDisabled =
+    state.isTransactionPending ||
+    state.inputTokenBalance === 0 ||
+    Number(state.inputValue) > state.inputTokenBalance ||
+    state.inputValue === '';
 
   return (
     <PageWrapper>
@@ -62,7 +75,11 @@ export const Trade = () => {
             <InvertButton onClick={handleChangeMode} />
           </InputsContainer>
           <Spacer />
-          <SwapButton label={state.buttonLabel} />
+          <SwapButton
+            label={state.buttonLabel}
+            onClick={state.isSlippageTooHigh ? () => setIsSlippageModalOpen(true) : handleTransaction}
+            disabled={isButtonDisabled}
+          />
         </SwapContainer>
       </Container>
     </PageWrapper>
