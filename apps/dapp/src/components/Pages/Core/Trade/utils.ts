@@ -41,3 +41,7 @@ export function createButtonLabel(inputToken: TICKER_SYMBOL, outputToken: TICKER
       return 'Swap';
   }
 }
+
+export function isPairToken(token: TICKER_SYMBOL): token is TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI {
+  return Boolean(token === TICKER_SYMBOL.FRAX || TICKER_SYMBOL.FEI);
+}

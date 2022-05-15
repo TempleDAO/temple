@@ -5,6 +5,7 @@ import { Nullable } from 'types/util';
 import { ClaimType } from 'enums/claim-type';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
@@ -121,9 +122,9 @@ export interface SwapService {
 
   sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber, isIvSwap: boolean): void;
 
-  getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
+  getSellQuote(amountToSell: BigNumber, token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<BigNumber | void>;
 
-  getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
+  getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<BigNumber | void>;
 
   updateTemplePrice(): Promise<void>;
 

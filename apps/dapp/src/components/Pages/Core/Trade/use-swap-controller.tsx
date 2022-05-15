@@ -6,7 +6,7 @@ import { useSwap } from 'providers/SwapProvider';
 import { useEffect, useReducer } from 'react';
 import { TOKENS_BY_MODE } from './constants';
 import { SwapReducerAction, SwapReducerState, SwapMode } from './types';
-import { buildSelectConfig, buildValueConfig, createButtonLabel } from './utils';
+import { buildSelectConfig, buildValueConfig, createButtonLabel, isPairToken } from './utils';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { BigNumber } from 'ethers';
 
@@ -116,13 +116,16 @@ export function useSwapController() {
 
   async function fetchQuote(value = 0): Promise<number> {
     let quote: BigNumber | void = toAtto(value);
-    if (state.mode === SwapMode.Buy) {
-      quote = await getBuyQuote(toAtto(value));
+
+    if (state.mode === SwapMode.Buy && isPairToken(state.inputToken)) {
+      quote = await getBuyQuote(toAtto(value), state.inputToken);
     }
 
-    if (state.mode === SwapMode.Sell) {
-      quote = await getSellQuote(toAtto(value));
+    if (state.mode === SwapMode.Sell && isPairToken(state.outputToken)) {
+      quote = await getSellQuote(toAtto(value), state.outputToken);
     }
+
+    // zap quote
 
     if (!quote) {
       console.error("couldn't fetch quote");
@@ -179,8 +182,11 @@ function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReduce
     case 'changeOutputToken':
       return {
         ...state,
+        inputToken: action.value.token,
+        inputValue: INITIAL_STATE.inputValue,
         outputToken: action.value.token,
         outputTokenBalance: action.value.balance,
+        quoteValue: INITIAL_STATE.quoteValue,
         buttonLabel: createButtonLabel(state.inputToken, action.value.token, state.mode),
       };
 

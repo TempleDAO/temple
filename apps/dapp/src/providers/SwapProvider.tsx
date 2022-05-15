@@ -167,22 +167,32 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  const getBuyQuote = async (fraxIn: BigNumber): Promise<BigNumber> => {
+  const getBuyQuote = async (
+    amountIn: BigNumber,
+    token: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI = TICKER_SYMBOL.FRAX
+  ): Promise<BigNumber> => {
     if (wallet && signer) {
       const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
 
-      const amountOut = await AMM_ROUTER.swapExactStableForTempleQuote(TEMPLE_V2_FRAX_PAIR_ADDRESS, fraxIn);
+      const pair = token === TICKER_SYMBOL.FEI ? TEMPLE_V2_FEI_PAIR_ADDRESS : TEMPLE_V2_FRAX_PAIR_ADDRESS;
+
+      const amountOut = await AMM_ROUTER.swapExactStableForTempleQuote(pair, amountIn);
 
       return amountOut;
     }
     return BigNumber.from(0);
   };
 
-  const getSellQuote = async (amountToSell: BigNumber) => {
+  const getSellQuote = async (
+    amountToSell: BigNumber,
+    token: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI = TICKER_SYMBOL.FRAX
+  ) => {
     if (wallet && signer) {
       const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
 
-      const { amountOut } = await AMM_ROUTER.swapExactTempleForStableQuote(TEMPLE_V2_FRAX_PAIR_ADDRESS, amountToSell);
+      const pair = token === TICKER_SYMBOL.FEI ? TEMPLE_V2_FEI_PAIR_ADDRESS : TEMPLE_V2_FRAX_PAIR_ADDRESS;
+
+      const { amountOut } = await AMM_ROUTER.swapExactTempleForStableQuote(pair, amountToSell);
 
       return amountOut;
     }
