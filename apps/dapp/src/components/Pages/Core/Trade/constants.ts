@@ -1,8 +1,8 @@
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
-const { FRAX, FEI, ETH, USDC } = TICKER_SYMBOL;
+const { FRAX, FEI } = TICKER_SYMBOL;
 
-const buyTokens = new Set([FRAX, FEI, ETH, USDC]);
+const buyTokens = new Set([FRAX, FEI]);
 const sellTokens = new Set([FRAX, FEI]);
 
 export const TOKENS_BY_MODE = {
