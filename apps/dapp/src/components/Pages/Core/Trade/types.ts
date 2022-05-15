@@ -17,7 +17,7 @@ export type SwapReducerAction =
     }
   | {
       type: 'changeOutputToken';
-      value: { token: TICKER_SYMBOL };
+      value: { token: TICKER_SYMBOL; balance: number };
     }
   | { type: 'changeInputValue'; value: string }
   | { type: 'changeQuoteValue'; value: number }

@@ -21,7 +21,8 @@ export enum ETH_ACTIONS {
 }
 
 export type Balance = {
-  stableCoin: number;
+  frax: number;
+  fei: number;
   temple: number;
   ogTempleLockedClaimable: number;
   ogTemple: number;
@@ -80,21 +81,21 @@ export interface StakingService {
 
   getJoinQueueData(ogtAmount: BigNumber): Promise<JoinQueueData | void>;
 
-  getExitQueueData(): Promise<void>
+  getExitQueueData(): Promise<void>;
 
-  updateLockedEntries(): Promise<void>
+  updateLockedEntries(): Promise<void>;
 
   claimOgTemple(lockedEntryIndex: number): Promise<void>;
 
   getRewardsForOGT(ogtAmount: number): Promise<number | void>;
 
-  updateApy(): Promise<void>
+  updateApy(): Promise<void>;
 }
 
 export interface FaithService {
   faith: FaithBalance;
 
-  updateFaith(): Promise<void>
+  updateFaith(): Promise<void>;
 
   verifyFaith(lockingPeriod?: number): Promise<void>;
 
@@ -112,7 +113,7 @@ export interface FaithService {
   ): Promise<TransactionReceipt | void>;
 }
 
-export interface SwapService { 
+export interface SwapService {
   templePrice: number;
   iv: number;
 
@@ -124,9 +125,9 @@ export interface SwapService {
 
   getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
 
-  updateTemplePrice(): Promise<void>
-  
-  updateIv(): Promise<void>
+  updateTemplePrice(): Promise<void>;
+
+  updateIv(): Promise<void>;
 }
 
 export interface WalletState {
@@ -136,7 +137,7 @@ export interface WalletState {
   balance: Balance;
   signer: Nullable<Signer>;
   network: Nullable<Network>;
-  
+
   isConnecting: boolean;
   isConnected: boolean;
 
@@ -147,14 +148,12 @@ export interface WalletState {
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
 
   getBalance(): Promise<Balance | void>;
-  
+
   updateBalance(): Promise<void>;
 
   getCurrentEpoch(): Promise<void | number>;
 
-  collectTempleTeamPayment(
-    epoch: TEAM_PAYMENTS_EPOCHS
-  ): Promise<void | TransactionReceipt>;
+  collectTempleTeamPayment(epoch: TEAM_PAYMENTS_EPOCHS): Promise<void | TransactionReceipt>;
 
   ensureAllowance(
     tokenName: string,

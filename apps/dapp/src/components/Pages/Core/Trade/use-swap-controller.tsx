@@ -1,7 +1,8 @@
 import { Option } from 'components/InputSelect/InputSelect';
 import { TransactionSettings } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { useReducer } from 'react';
+import { useWallet } from 'providers/WalletProvider';
+import { useEffect, useReducer } from 'react';
 import { TOKENS_BY_MODE } from './constants';
 import { SwapReducerAction, SwapReducerState, SwapMode } from './types';
 import { buildSelectConfig, buildValueConfig, createButtonLabel } from './utils';
@@ -23,6 +24,14 @@ const INITIAL_STATE: SwapReducerState = {
 
 export function useSwapController() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+  const { balance, updateBalance } = useWallet();
+
+  useEffect(() => {
+    const onMount = async () => {
+      await updateBalance();
+    };
+    onMount();
+  }, []);
 
   // Handles selection of a new value in the select dropdown
   const handleSelectChange = (event: Option) => {
@@ -35,14 +44,14 @@ export function useSwapController() {
     if (state.mode === SwapMode.Buy) {
       dispatch({
         type: 'changeInputToken',
-        value: { token, balance: 0 },
+        value: { token, balance: getTokenBalance(token) },
       });
     }
 
     if (state.mode === SwapMode.Sell) {
       dispatch({
         type: 'changeOutputToken',
-        value: { token },
+        value: { token, balance: getTokenBalance(token) },
       });
     }
   };
@@ -70,6 +79,19 @@ export function useSwapController() {
       value: settings,
     });
   };
+
+  function getTokenBalance(token: TICKER_SYMBOL): number {
+    switch (token) {
+      case TICKER_SYMBOL.FRAX:
+        return balance.frax;
+      case TICKER_SYMBOL.FEI:
+        return balance.fei;
+      case TICKER_SYMBOL.TEMPLE_TOKEN:
+        return balance.temple;
+      default:
+        return 0;
+    }
+  }
 
   return {
     state,
@@ -113,6 +135,7 @@ function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReduce
       return {
         ...state,
         outputToken: action.value.token,
+        outputTokenBalance: action.value.balance,
         buttonLabel: createButtonLabel(state.inputToken, action.value.token, state.mode),
       };
 
