@@ -44,7 +44,7 @@ export const TimelineTicks = ({ vaultGroup }: Props) => {
         fontWeight="bold"
         letterSpacing=".15em"
       >
-        <tspan x={175.161} y={526.065}>
+        <tspan x={170} y={526}>
           {startLabel}
         </tspan>
       </text>
