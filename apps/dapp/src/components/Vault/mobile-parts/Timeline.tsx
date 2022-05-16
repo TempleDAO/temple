@@ -1,10 +1,10 @@
-import { MarkerType, VaultGroup } from '../types';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
+import { getMarkers } from 'components/Vault/utils';
+import { MarkerType } from '../types';
 import { BGTrack } from './timeline/BGTrack';
 import { Marker } from './timeline/Marker';
 import { Ticks } from './timeline/Ticks';
 import TimelineTippy from '../TimelineTippy';
-import { useVaultContext } from 'components/Pages/Core/VaultContext';
-import { getMarkers } from 'components/Vault/desktop-parts/utils';
 
 export const Timeline = () => {
   const { vaultGroup, balances } = useVaultContext();

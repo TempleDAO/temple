@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { VaultGroup } from 'components/Vault/types';
-import { lerp } from '../utils';
+import { lerp } from '../../utils';
 
 type Props = {
   vaultGroup: VaultGroup;
