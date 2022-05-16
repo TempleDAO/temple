@@ -39,6 +39,7 @@ dataSources:
           handler: onCreateExposure
         - event: CreateVaultInstance(address)
           handler: onCreateVaultInstance
+{{#hasScheduler}}
   # Access Controlled Offchain Aggregator
   - kind: ethereum/contract
     name: HourlyScheduler
@@ -72,6 +73,7 @@ dataSources:
       eventHandlers:
         - event: AnswerUpdated(indexed int256,indexed uint256,uint256)
           handler: onAnswerUpdated
+{{/hasScheduler}}
 templates:
   # Exposures
   - kind: ethereum/contract
