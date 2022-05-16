@@ -2,8 +2,14 @@ import { differenceInSeconds, addSeconds, subSeconds, format } from 'date-fns';
 
 import { GraphVault, GraphVaultGroup } from 'hooks/core/types';
 import { Vault, VaultGroup, MarkerType, Marker } from '../types';
+import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
 export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
+
+const createDateFromSeconds = (dateInSeconds: string | number) => {
+  const dateMs = Number(dateInSeconds) * 1000;
+  return new Date(dateMs);
+};
 
 export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGroup => {
   const vaults = subgraphVaultGroup.vaults.map((vault) => createVault(vault));
@@ -31,8 +37,6 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
     periods,
   };
 
-  vaultGroup.markers = getMarkers(vaultGroup as VaultGroup);
-  
   const secondsSinceStart = differenceInSeconds(now, startDate);
   const cyclesSinceStart = Math.floor(secondsSinceStart / periodDurationSeconds);
 
@@ -43,8 +47,7 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
 };
 
 export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
-  const startDateSeconds = Number(subgraphVault.firstPeriodStartTimestamp);
-  const startDate = new Date(startDateSeconds * 1000);
+  const startDate = createDateFromSeconds(subgraphVault.firstPeriodStartTimestamp);
   // const fakeTime = 41 * 60 * 60 * 24 * 1000;
   const fakeTime = 0;
   const now = new Date(Date.now() + fakeTime);
@@ -62,6 +65,10 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
     enterExitWindowDurationSeconds
   );
 
+  const user = subgraphVault.users[0];
+  const userBalances = (user?.vaultUserBalances || []);
+  const vaultUserBalance = userBalances.find(({ id }) => id.startsWith(subgraphVault.id));
+
   const vault: Partial<Vault> = {
     id: subgraphVault.id,
     now,
@@ -69,27 +76,32 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
     tvl,
     enterExitWindowDurationSeconds,
     periodDurationSeconds,
+    startDateSeconds: Number(subgraphVault.firstPeriodStartTimestamp),
     isActive: vaultIsInZone,
+    amountStaked: Number(vaultUserBalance?.staked || 0),
   };
   
+  vault.unlockDate = calculateUnlockDate(vault as Vault);
+
   return vault;
 };
 
-const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>): Marker[] => {
-  const markers = [];
+export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: VaultGroupBalances): Marker[] => {
+  const markers  = [];
   for (const [i, vault] of vaultGroup.vaults.entries()) {
-    const marker: Partial<Marker> = {
-      id: `marker-s${i}`,
-      amount: vault.tvl,
+    const vaultBalance = balances[vault.id] || {};
+    const marker = {
+      vaultId: vault.id,
+      staked: vaultBalance.staked || 0,
       percent: calculatePercent(vault),
       inZone: vault.isActive,
       type: MarkerType.HIDDEN,
       label: vault.label,
+      unlockDate: calculateUnlockDate(vault),
+      windowEndDate: calculateWindowEndDate(vault),
     };
 
-    marker.unlockDate = calculateUnlockDate(vault);
-    marker.windowEndDate = calculateWindowEndDate(vault);
-    if (marker.amount! > 0) {
+    if (marker.staked > 0) {
       marker.type = MarkerType.STAKING;
       if (marker.inZone) {
         marker.type = MarkerType.STAKING_IN_ZONE;

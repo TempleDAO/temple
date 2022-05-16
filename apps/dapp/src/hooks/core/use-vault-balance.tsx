@@ -1,26 +1,22 @@
-import {
-  Vault__factory,
-} from 'types/typechain';
-import { useWallet } from 'providers/WalletProvider';
-import useRequestState from 'hooks/use-request-state';
+import { Nullable } from 'types/util';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 
-import { fromAtto } from 'utils/bigNumber';
+type HookResponseType = [
+  {
+    isLoading: boolean;
+    balance: Nullable<number>,
+    staked: Nullable<number>,
+  },
+  () => Promise<void>,
+] 
 
-export const useVaultBalance = (vaultContractAddress: string) => {
-  const { signer, wallet } = useWallet();
-  
-  const getBalance = async () => {
-    if (!signer || !wallet) {
-      console.error(`
-        Attempted to deposit to vault: ${vaultContractAddress} without a valid signer or wallet address.
-      `);
-      return;
-    }
+export const useVaultBalance = (vaultContractAddress: string): HookResponseType => {
+  const { balances, refreshVaultBalance } = useVaultContext();
+  const fetchBalance = () => refreshVaultBalance(vaultContractAddress);
+  const vaultBalance = balances[vaultContractAddress] || { isLoading: false, balance: 0, staked: 0, };
 
-    const vault = new Vault__factory(signer).attach(vaultContractAddress);
-    const balance = await vault.balanceOf(wallet);
-    return fromAtto(balance);
-  };
-  
-  return useRequestState(getBalance);
+  return [
+    vaultBalance,
+    fetchBalance,
+  ];
 };

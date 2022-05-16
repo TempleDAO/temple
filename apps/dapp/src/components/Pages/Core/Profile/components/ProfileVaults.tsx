@@ -6,19 +6,23 @@ import { Body, Cell, Head, Row, Table } from 'components/Table/Table';
 import type { VaultGroup } from 'components/Vault/types';
 import Loader from 'components/Loader/Loader';
 import { Button } from 'components/Button/Button';
+import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
 import { Container, Subheading } from '../styles';
 
 interface IProps {
   isLoading?: boolean;
   vaultGroups: VaultGroup[];
+  vaultGroupBalances: VaultGroupBalances;
 }
 
-export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups }) => {
+export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultGroupBalances }) => {
   if (isLoading) {
-    <Container>
-      <Loader />
-    </Container>;
+    return (
+      <Container>
+        <Loader />
+      </Container>
+    );
   }
 
   if (!vaultGroups.length) {
@@ -34,24 +38,26 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups }) => {
       {vaultGroups.map((vaultGroup) => {
         return (
           <div key={vaultGroup.id}>
-            <Subheading>{`${vaultGroup.id}`}</Subheading>
+            <Subheading>{vaultGroup.id}</Subheading>
             <Table $expand>
               <Head>
                 <Row>
-                  <Cell as="th">Start date</Cell>
-                  <Cell as="th">Unlock Date</Cell>
-                  <Cell as="th">{TICKER_SYMBOL.TEMPLE_TOKEN} amount</Cell>
+                  <Cell as="th">Sub-Vault</Cell>
+                  <Cell as="th">Staked</Cell>
+                  <Cell as="th">Balance</Cell>
+                  <Cell as="th">Claimable</Cell>
                 </Row>
               </Head>
               <Body>
-                {vaultGroup.markers.map((marker) => {
-                  const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
-                  // TODO: THIS needs to be improved
+                {vaultGroup.vaults.map((vault) => {
+                  const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
+                  const vaultBalance = vaultGroupBalances[vault.id] || {};
                   return (
-                    <Row key={`${vaultGroup.id}${marker.id}`}>
-                      <Cell>{format(vaultGroup.startDate, 'dd MMM yy')}</Cell>
-                      <Cell>{unlockValue}</Cell>
-                      <Cell>{marker.amount}</Cell>
+                    <Row key={vault.id}>
+                      <Cell $align="center">{vault.label}</Cell>
+                      <Cell $align="center">{vaultBalance.staked || 0} $T</Cell>
+                      <Cell $align="center">{vaultBalance.balance || 0} $T</Cell>
+                      <Cell $align="center">{unlockValue}</Cell>
                     </Row>
                   );
                 })}

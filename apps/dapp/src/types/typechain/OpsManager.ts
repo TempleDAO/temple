@@ -15,12 +15,7 @@ import {
 } from "ethers";
 import { FunctionFragment, Result, EventFragment } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
-import type {
-  TypedEventFilter,
-  TypedEvent,
-  TypedListener,
-  OnEvent,
-} from "./common";
+import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
 export type RationalStruct = { p: BigNumberish; q: BigNumberish };
 
@@ -34,10 +29,10 @@ export interface OpsManagerInterface extends utils.Interface {
   functions: {
     "activeExposures(uint256)": FunctionFragment;
     "activeVaults(address)": FunctionFragment;
-    "addRevenue(address[],uint256)": FunctionFragment;
-    "claim(address[],address)": FunctionFragment;
+    "addRevenue(address[],uint256[])": FunctionFragment;
     "createExposure(string,string,address)": FunctionFragment;
-    "createVault(string,string,uint256,uint256,(uint256,uint256))": FunctionFragment;
+    "createVaultInstance(string,string,uint256,uint256,(uint256,uint256),uint256)": FunctionFragment;
+    "decreaseStartTime(address[],uint256)": FunctionFragment;
     "joiningFee()": FunctionFragment;
     "liquidateExposures(address[],address[])": FunctionFragment;
     "owner()": FunctionFragment;
@@ -47,6 +42,7 @@ export interface OpsManagerInterface extends utils.Interface {
     "requiresRebalance(address[],address)": FunctionFragment;
     "templeToken()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
+    "updateExposureReval(address[],uint256[])": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -59,19 +55,26 @@ export interface OpsManagerInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "addRevenue",
-    values: [string[], BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "claim",
-    values: [string[], string]
+    values: [string[], BigNumberish[]]
   ): string;
   encodeFunctionData(
     functionFragment: "createExposure",
     values: [string, string, string]
   ): string;
   encodeFunctionData(
-    functionFragment: "createVault",
-    values: [string, string, BigNumberish, BigNumberish, RationalStruct]
+    functionFragment: "createVaultInstance",
+    values: [
+      string,
+      string,
+      BigNumberish,
+      BigNumberish,
+      RationalStruct,
+      BigNumberish
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "decreaseStartTime",
+    values: [string[], BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "joiningFee",
@@ -103,6 +106,10 @@ export interface OpsManagerInterface extends utils.Interface {
     functionFragment: "transferOwnership",
     values: [string]
   ): string;
+  encodeFunctionData(
+    functionFragment: "updateExposureReval",
+    values: [string[], BigNumberish[]]
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "activeExposures",
@@ -113,13 +120,16 @@ export interface OpsManagerInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "addRevenue", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "claim", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "createExposure",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "createVault",
+    functionFragment: "createVaultInstance",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "decreaseStartTime",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "joiningFee", data: BytesLike): Result;
@@ -146,15 +156,19 @@ export interface OpsManagerInterface extends utils.Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "updateExposureReval",
+    data: BytesLike
+  ): Result;
 
   events: {
     "CreateExposure(address,address)": EventFragment;
-    "CreateVault(address)": EventFragment;
+    "CreateVaultInstance(address)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "CreateExposure"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "CreateVault"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "CreateVaultInstance"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
 }
 
@@ -165,9 +179,10 @@ export type CreateExposureEvent = TypedEvent<
 
 export type CreateExposureEventFilter = TypedEventFilter<CreateExposureEvent>;
 
-export type CreateVaultEvent = TypedEvent<[string], { vault: string }>;
+export type CreateVaultInstanceEvent = TypedEvent<[string], { vault: string }>;
 
-export type CreateVaultEventFilter = TypedEventFilter<CreateVaultEvent>;
+export type CreateVaultInstanceEventFilter =
+  TypedEventFilter<CreateVaultInstanceEvent>;
 
 export type OwnershipTransferredEvent = TypedEvent<
   [string, string],
@@ -213,14 +228,8 @@ export interface OpsManager extends BaseContract {
     activeVaults(arg0: string, overrides?: CallOverrides): Promise<[boolean]>;
 
     addRevenue(
-      exposures: string[],
-      amount: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    claim(
-      vaults: string[],
-      exposure: string,
+      exposureTokens: string[],
+      amounts: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -231,12 +240,19 @@ export interface OpsManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    createVault(
+    createVaultInstance(
       name: string,
       symbol: string,
       periodDuration: BigNumberish,
       enterExitWindowDuration: BigNumberish,
       shareBoostFactory: RationalStruct,
+      firstPeriodStartTimestamp: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    decreaseStartTime(
+      vaults: string[],
+      delta: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -244,7 +260,7 @@ export interface OpsManager extends BaseContract {
 
     liquidateExposures(
       vaults: string[],
-      exposures: string[],
+      exposureTokens: string[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -254,7 +270,7 @@ export interface OpsManager extends BaseContract {
 
     rebalance(
       vaults: string[],
-      exposure: string,
+      exposureToken: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -264,7 +280,7 @@ export interface OpsManager extends BaseContract {
 
     requiresRebalance(
       vaults: string[],
-      exposure: string,
+      exposureToken: string,
       overrides?: CallOverrides
     ): Promise<[boolean[]]>;
 
@@ -272,6 +288,12 @@ export interface OpsManager extends BaseContract {
 
     transferOwnership(
       newOwner: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    updateExposureReval(
+      exposureTokens: string[],
+      revals: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
@@ -284,14 +306,8 @@ export interface OpsManager extends BaseContract {
   activeVaults(arg0: string, overrides?: CallOverrides): Promise<boolean>;
 
   addRevenue(
-    exposures: string[],
-    amount: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  claim(
-    vaults: string[],
-    exposure: string,
+    exposureTokens: string[],
+    amounts: BigNumberish[],
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -302,12 +318,19 @@ export interface OpsManager extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  createVault(
+  createVaultInstance(
     name: string,
     symbol: string,
     periodDuration: BigNumberish,
     enterExitWindowDuration: BigNumberish,
     shareBoostFactory: RationalStruct,
+    firstPeriodStartTimestamp: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  decreaseStartTime(
+    vaults: string[],
+    delta: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -315,7 +338,7 @@ export interface OpsManager extends BaseContract {
 
   liquidateExposures(
     vaults: string[],
-    exposures: string[],
+    exposureTokens: string[],
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -325,7 +348,7 @@ export interface OpsManager extends BaseContract {
 
   rebalance(
     vaults: string[],
-    exposure: string,
+    exposureToken: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -335,7 +358,7 @@ export interface OpsManager extends BaseContract {
 
   requiresRebalance(
     vaults: string[],
-    exposure: string,
+    exposureToken: string,
     overrides?: CallOverrides
   ): Promise<boolean[]>;
 
@@ -343,6 +366,12 @@ export interface OpsManager extends BaseContract {
 
   transferOwnership(
     newOwner: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  updateExposureReval(
+    exposureTokens: string[],
+    revals: BigNumberish[],
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -355,14 +384,8 @@ export interface OpsManager extends BaseContract {
     activeVaults(arg0: string, overrides?: CallOverrides): Promise<boolean>;
 
     addRevenue(
-      exposures: string[],
-      amount: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    claim(
-      vaults: string[],
-      exposure: string,
+      exposureTokens: string[],
+      amounts: BigNumberish[],
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -373,12 +396,19 @@ export interface OpsManager extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    createVault(
+    createVaultInstance(
       name: string,
       symbol: string,
       periodDuration: BigNumberish,
       enterExitWindowDuration: BigNumberish,
       shareBoostFactory: RationalStruct,
+      firstPeriodStartTimestamp: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    decreaseStartTime(
+      vaults: string[],
+      delta: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -386,7 +416,7 @@ export interface OpsManager extends BaseContract {
 
     liquidateExposures(
       vaults: string[],
-      exposures: string[],
+      exposureTokens: string[],
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -396,7 +426,7 @@ export interface OpsManager extends BaseContract {
 
     rebalance(
       vaults: string[],
-      exposure: string,
+      exposureToken: string,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -404,7 +434,7 @@ export interface OpsManager extends BaseContract {
 
     requiresRebalance(
       vaults: string[],
-      exposure: string,
+      exposureToken: string,
       overrides?: CallOverrides
     ): Promise<boolean[]>;
 
@@ -412,6 +442,12 @@ export interface OpsManager extends BaseContract {
 
     transferOwnership(
       newOwner: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    updateExposureReval(
+      exposureTokens: string[],
+      revals: BigNumberish[],
       overrides?: CallOverrides
     ): Promise<void>;
   };
@@ -426,8 +462,10 @@ export interface OpsManager extends BaseContract {
       primaryRevenue?: null
     ): CreateExposureEventFilter;
 
-    "CreateVault(address)"(vault?: null): CreateVaultEventFilter;
-    CreateVault(vault?: null): CreateVaultEventFilter;
+    "CreateVaultInstance(address)"(
+      vault?: null
+    ): CreateVaultInstanceEventFilter;
+    CreateVaultInstance(vault?: null): CreateVaultInstanceEventFilter;
 
     "OwnershipTransferred(address,address)"(
       previousOwner?: string | null,
@@ -448,14 +486,8 @@ export interface OpsManager extends BaseContract {
     activeVaults(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     addRevenue(
-      exposures: string[],
-      amount: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    claim(
-      vaults: string[],
-      exposure: string,
+      exposureTokens: string[],
+      amounts: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -466,12 +498,19 @@ export interface OpsManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    createVault(
+    createVaultInstance(
       name: string,
       symbol: string,
       periodDuration: BigNumberish,
       enterExitWindowDuration: BigNumberish,
       shareBoostFactory: RationalStruct,
+      firstPeriodStartTimestamp: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    decreaseStartTime(
+      vaults: string[],
+      delta: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -479,7 +518,7 @@ export interface OpsManager extends BaseContract {
 
     liquidateExposures(
       vaults: string[],
-      exposures: string[],
+      exposureTokens: string[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -489,7 +528,7 @@ export interface OpsManager extends BaseContract {
 
     rebalance(
       vaults: string[],
-      exposure: string,
+      exposureToken: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -499,7 +538,7 @@ export interface OpsManager extends BaseContract {
 
     requiresRebalance(
       vaults: string[],
-      exposure: string,
+      exposureToken: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -507,6 +546,12 @@ export interface OpsManager extends BaseContract {
 
     transferOwnership(
       newOwner: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    updateExposureReval(
+      exposureTokens: string[],
+      revals: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
@@ -523,14 +568,8 @@ export interface OpsManager extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     addRevenue(
-      exposures: string[],
-      amount: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    claim(
-      vaults: string[],
-      exposure: string,
+      exposureTokens: string[],
+      amounts: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -541,12 +580,19 @@ export interface OpsManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    createVault(
+    createVaultInstance(
       name: string,
       symbol: string,
       periodDuration: BigNumberish,
       enterExitWindowDuration: BigNumberish,
       shareBoostFactory: RationalStruct,
+      firstPeriodStartTimestamp: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    decreaseStartTime(
+      vaults: string[],
+      delta: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -554,7 +600,7 @@ export interface OpsManager extends BaseContract {
 
     liquidateExposures(
       vaults: string[],
-      exposures: string[],
+      exposureTokens: string[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -567,7 +613,7 @@ export interface OpsManager extends BaseContract {
 
     rebalance(
       vaults: string[],
-      exposure: string,
+      exposureToken: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -577,7 +623,7 @@ export interface OpsManager extends BaseContract {
 
     requiresRebalance(
       vaults: string[],
-      exposure: string,
+      exposureToken: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -585,6 +631,12 @@ export interface OpsManager extends BaseContract {
 
     transferOwnership(
       newOwner: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    updateExposureReval(
+      exposureTokens: string[],
+      revals: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

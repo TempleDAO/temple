@@ -4,10 +4,12 @@ import { useWallet } from 'providers/WalletProvider';
 import { Callback } from './types';
 import useRequestState from 'hooks/use-request-state';
 import { useNotification } from 'providers/NotificationProvider';
+import { Operation, useVaultContext } from 'components/Pages/Core/VaultContext';
 
 export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: Callback) => {
   const { signer, wallet } = useWallet();
   const { openNotification } = useNotification();
+  const { optimisticallyUpdateVaultStaked } = useVaultContext();
 
   const withdraw = async (amount: number) => {
     if (!signer || !wallet) {
@@ -22,6 +24,8 @@ export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: C
     
     const receipt = await vault.withdraw(bigAmount);
     await receipt.wait();
+
+    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Decrease, amount);
 
     openNotification({
       title: 'Withdraw success',

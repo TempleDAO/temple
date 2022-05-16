@@ -49,6 +49,7 @@ export function createWithdraw(event: WithdrawEvent): Withdraw {
 
   let vub = getOrCreateVaultUserBalance(vault, user, timestamp)
   vub.amount = vub.amount.minus(amount)
+  vub.staked = vub.staked.minus(amount)
   vub.value = vub.value.minus(amount.times(tokenPrice))
   vub.token = token.id
   updateVaultUserBalance(vub, timestamp)

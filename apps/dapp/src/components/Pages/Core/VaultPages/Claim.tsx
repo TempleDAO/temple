@@ -9,37 +9,26 @@ import { Header } from 'styles/vault';
 import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
-import useVaultContext from './use-vault-context';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
-import { useWallet } from 'providers/WalletProvider';
 
 export const Claim = () => {
   const { activeVault: vault } = useVaultContext();
 
-  const { wallet, signer } = useWallet();
-
   const [amount, setAmount] = useState<string | number>('');
-  const [getBalance, { response: balanceResponse, isLoading: getBalanceLoading }] = useVaultBalance(vault.id);
+  const [{ balance, isLoading: getBalanceLoading }, getBalance] = useVaultBalance(vault.id);
   const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
   const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault!.id, async () => {
     await refreshWalletState();
     await getBalance();
-    setAmount(0);
+    setAmount('');
   });
-
-  useEffect(() => {
-    if (!wallet || !signer) {
-      return;
-    }
-
-    getBalance();
-  }, [getBalance, wallet, signer]);
 
   const handleUpdateAmount = (amount: number | string) => {
     setAmount(Number(amount) === 0 ? '' : amount);
   };
 
-  const vaultBalance = balanceResponse || 0;
+  const vaultBalance = balance || 0;
 
   const buttonIsDisabled =
     getBalanceLoading || refreshLoading || withdrawIsLoading || !amount || amount > (vaultBalance || 0);
@@ -60,7 +49,9 @@ export const Claim = () => {
     );
 
   useEffect(() => {
-    console.error(error);
+    if (error) {
+      console.error(error);
+    }
   }, [error]);
 
   return (
@@ -73,6 +64,7 @@ export const Claim = () => {
         isNumber
         placeholder="0.00"
         value={amount}
+        disabled={vaultBalance <= 0}
       />
       {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
       <VaultButton

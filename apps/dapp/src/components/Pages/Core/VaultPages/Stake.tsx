@@ -16,11 +16,12 @@ import useRequestState, { createMockRequest } from 'hooks/use-request-state';
 import EllipsisLoader from 'components/EllipsisLoader';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useDepositToVault } from 'hooks/core/use-deposit-to-vault';
-import useVaultContext from './use-vault-context';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useWallet } from 'providers/WalletProvider';
 import { toAtto } from 'utils/bigNumber';
 import { MetaMaskError } from 'hooks/core/types';
 import { useTokenVaultAllowance } from 'hooks/core/use-token-vault-allowance'
+import { useVaultBalance } from 'hooks/core/use-vault-balance';
 
 // This dummy data will be replaced by the actual contracts
 const OPTIONS = [
@@ -60,17 +61,22 @@ export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
   const { balance, isConnected } = useWallet();
 
+   // UI amount to stake
+   const [stakingAmount, setStakingAmount] = useState<string | number>('');
+
   // Currently selected token
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(
     OPTIONS[0].value as TICKER_SYMBOL
   );
 
+  const [_, refreshBalance] = useVaultBalance(vault.id);
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
-  const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, refreshWalletState);
+  const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, async () => {
+    refreshBalance();
+    refreshWalletState();
+  });
+  
   const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(vault.id, ticker);
-
-  // UI amount to stake
-  const [stakingAmount, setStakingAmount] = useState<string | number>('');
 
   const [
     zapAssetRequest,
@@ -159,7 +165,7 @@ export const Stake = () => {
           handleUpdateStakingAmount(tokenBalance);
         }}
         isNumber
-        placeholder={'0.00'}
+        placeholder="0.00"
         value={stakingAmount}
       />
       {!!(isZap && templeAmountMessage) && <AmountInTemple>{templeAmountMessage}</AmountInTemple>}
@@ -183,7 +189,7 @@ export const Stake = () => {
           onClick={async () => {
             const amountToDeposit = !stakingAmount ? 0 : stakingAmount;
             await deposit(amountToDeposit);
-            setStakingAmount(0);
+            setStakingAmount('');
           }}
         />
       )}
