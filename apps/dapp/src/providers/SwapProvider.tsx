@@ -1,10 +1,5 @@
-import {
-  useState,
-  useContext,
-  createContext,
-  PropsWithChildren,
-} from 'react';
-import { BigNumber, Signer} from 'ethers';
+import { useState, useContext, createContext, PropsWithChildren } from 'react';
+import { BigNumber, Signer } from 'ethers';
 
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
@@ -17,15 +12,17 @@ import { fromAtto } from 'utils/bigNumber';
 import {
   ERC20__factory,
   TempleERC20Token__factory,
-  TempleFraxAMMRouter__factory,
+  TempleStableAMMRouter__factory,
   TempleUniswapV2Pair__factory,
   TempleIVSwap__factory,
 } from 'types/typechain';
 import {
   TEMPLE_ADDRESS,
-  STABLE_COIN_ADDRESS,
+  FRAX_ADDRESS,
+  FEI_ADDRESS,
   TEMPLE_V2_ROUTER_ADDRESS,
-  TEMPLE_V2_PAIR_ADDRESS,
+  TEMPLE_V2_FRAX_PAIR_ADDRESS,
+  TEMPLE_V2_FEI_PAIR_ADDRESS,
   TEMPLE_IV_SWAP_ADDRESS,
   VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT,
   VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT,
@@ -54,17 +51,12 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const { wallet, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
 
-  const getTemplePrice = async (
-    walletAddress: string,
-    signerState: Signer
-  ) => {
+  const getTemplePrice = async (walletAddress: string, signerState: Signer) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
 
-    const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory(
-      signerState
-    ).attach(TEMPLE_V2_PAIR_ADDRESS);
+    const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory(signerState).attach(FRAX_ADDRESS);
 
     const { _reserve0, _reserve1 } = await TEMPLE_UNISWAP_V2_PAIR.getReserves();
 
@@ -85,9 +77,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
-    const TEMPLE_IV_SWAP = new TempleIVSwap__factory(signerState).attach(
-      TEMPLE_IV_SWAP_ADDRESS
-    );
+    const TEMPLE_IV_SWAP = new TempleIVSwap__factory(signerState).attach(TEMPLE_IV_SWAP_ADDRESS);
 
     const { frax, temple } = await TEMPLE_IV_SWAP.iv();
     return fromAtto(frax) / fromAtto(temple);
@@ -102,38 +92,22 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     setIv(iv);
   };
 
-  const buy = async (
-    amountInFrax: BigNumber,
-    minAmountOutTemple: BigNumber
-  ) => {
+  const buy = async (amountInFrax: BigNumber, minAmountOutTemple: BigNumber) => {
     if (wallet && signer) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signer).attach(
-        TEMPLE_V2_ROUTER_ADDRESS
-      );
-      const STABLE_TOKEN = new ERC20__factory(signer).attach(
-        STABLE_COIN_ADDRESS
-      );
+      const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
+      const STABLE_TOKEN = new ERC20__factory(signer).attach(FRAX_ADDRESS);
 
-      await ensureAllowance(
-        TICKER_SYMBOL.STABLE_TOKEN,
-        STABLE_TOKEN,
-        TEMPLE_V2_ROUTER_ADDRESS,
-        amountInFrax
-      );
+      await ensureAllowance(TICKER_SYMBOL.STABLE_TOKEN, STABLE_TOKEN, TEMPLE_V2_ROUTER_ADDRESS, amountInFrax);
 
       const balance = await STABLE_TOKEN.balanceOf(wallet);
-      const verifiedAmountInFrax = amountInFrax.lt(balance)
-        ? amountInFrax
-        : balance;
+      const verifiedAmountInFrax = amountInFrax.lt(balance) ? amountInFrax : balance;
 
-      const deadline = formatNumberFixedDecimals(
-        Date.now() / 1000 + DEADLINE,
-        0
-      );
+      const deadline = formatNumberFixedDecimals(Date.now() / 1000 + DEADLINE, 0);
 
-      const buyTXN = await AMM_ROUTER.swapExactFraxForTemple(
+      const buyTXN = await AMM_ROUTER.swapExactStableForTemple(
         verifiedAmountInFrax,
         minAmountOutTemple,
+        FRAX_ADDRESS,
         wallet,
         deadline,
         {
@@ -155,22 +129,12 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
    * @param minAmountOutFrax: % user is giving as slippage
    * @param isIvSwap: should sale be directed to TempleIvSwap contract
    */
-  const sell = async (
-    amountInTemple: BigNumber,
-    minAmountOutFrax: BigNumber,
-    isIvSwap = false
-  ) => {
+  const sell = async (amountInTemple: BigNumber, minAmountOutFrax: BigNumber, isIvSwap = false) => {
     if (wallet && signer) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signer).attach(
-        TEMPLE_V2_ROUTER_ADDRESS
-      );
-      const TEMPLE = new TempleERC20Token__factory(signer).attach(
-        TEMPLE_ADDRESS
-      );
+      const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
+      const TEMPLE = new TempleERC20Token__factory(signer).attach(TEMPLE_ADDRESS);
 
-      const TEMPLE_IV_SWAP = new TempleIVSwap__factory(signer).attach(
-        TEMPLE_IV_SWAP_ADDRESS
-      );
+      const TEMPLE_IV_SWAP = new TempleIVSwap__factory(signer).attach(TEMPLE_IV_SWAP_ADDRESS);
 
       await ensureAllowance(
         TICKER_SYMBOL.TEMPLE_TOKEN,
@@ -180,34 +144,20 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       );
 
       const balance = await TEMPLE.balanceOf(wallet);
-      const verifiedAmountInTemple = amountInTemple.lt(balance)
-        ? amountInTemple
-        : balance;
+      const verifiedAmountInTemple = amountInTemple.lt(balance) ? amountInTemple : balance;
 
-      const deadline = formatNumberFixedDecimals(
-        Date.now() / 1000 + DEADLINE,
-        0
+      const deadline = formatNumberFixedDecimals(Date.now() / 1000 + DEADLINE, 0);
+
+      const sellTx = await AMM_ROUTER.swapExactStableForTemple(
+        verifiedAmountInTemple,
+        minAmountOutFrax,
+        FRAX_ADDRESS,
+        wallet,
+        deadline,
+        {
+          gasLimit: VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
+        }
       );
-
-      let sellTx;
-
-      if (isIvSwap) {
-        sellTx = await TEMPLE_IV_SWAP.swapTempleForIV(
-          verifiedAmountInTemple,
-          wallet,
-          deadline
-        );
-      } else {
-        sellTx = await AMM_ROUTER.swapExactTempleForFrax(
-          verifiedAmountInTemple,
-          minAmountOutFrax,
-          wallet,
-          deadline,
-          {
-            gasLimit: VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
-          }
-        );
-      }
 
       await sellTx.wait();
 
@@ -221,27 +171,20 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
   const getBuyQuote = async (fraxIn: BigNumber): Promise<BigNumber> => {
     if (wallet && signer) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signer).attach(
-        TEMPLE_V2_ROUTER_ADDRESS
-      );
+      const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
 
-      const { amountOutAMM, amountOutProtocol } =
-        await AMM_ROUTER.swapExactFraxForTempleQuote(fraxIn);
+      const amountOut = await AMM_ROUTER.swapExactStableForTempleQuote(TEMPLE_V2_FRAX_PAIR_ADDRESS, fraxIn);
 
-      return amountOutAMM.add(amountOutProtocol);
+      return amountOut;
     }
     return BigNumber.from(0);
   };
 
   const getSellQuote = async (amountToSell: BigNumber) => {
     if (wallet && signer) {
-      const AMM_ROUTER = new TempleFraxAMMRouter__factory(signer).attach(
-        TEMPLE_V2_ROUTER_ADDRESS
-      );
+      const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
 
-      const { amountOut } = await AMM_ROUTER.swapExactTempleForFraxQuote(
-        amountToSell
-      );
+      const { amountOut } = await AMM_ROUTER.swapExactTempleForStableQuote(TEMPLE_V2_FRAX_PAIR_ADDRESS, amountToSell);
 
       return amountOut;
     }
