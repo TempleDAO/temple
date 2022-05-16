@@ -39,6 +39,39 @@ dataSources:
           handler: onCreateExposure
         - event: CreateVaultInstance(address)
           handler: onCreateVaultInstance
+  # Access Controlled Offchain Aggregator
+  - kind: ethereum/contract
+    name: HourlyScheduler
+    network: {{network}}
+    source:
+      address: '{{hourlyScheduler.address}}'
+      abi: OffchainAggregator
+      startBlock: {{hourlyScheduler.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/mappings/hourlyScheduler.ts
+      entities:
+        - HourlyScheduler
+      abis:
+        - name: OffchainAggregator
+          file: ./abis/OffchainAggregator.json
+        - name: OpsManager
+          file: ./abis/OpsManager.json
+        - name: Exposure
+          file: ./abis/Exposure.json
+        - name: JoiningFee
+          file: ./abis/JoiningFee.json
+        - name: RebasingERC20
+          file: ./abis/RebasingERC20.json
+        - name: TreasuryFarmingRevenue
+          file: ./abis/TreasuryFarmingRevenue.json
+        - name: Vault
+          file: ./abis/Vault.json
+      eventHandlers:
+        - event: AnswerUpdated(indexed int256,indexed uint256,uint256)
+          handler: onAnswerUpdated
 templates:
   # Exposures
   - kind: ethereum/contract
