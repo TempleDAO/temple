@@ -8,6 +8,7 @@ import { Sell } from 'components/AMM/Sell';
 import { Stake } from 'components/AMM/Stake';
 import { Unlock } from 'components/AMM/Unlock';
 import { Withdraw } from 'components/AMM/Withdraw';
+import { Mint } from 'components/AMM/Mint';
 import Image from 'components/Image/Image';
 import withWallet from 'hoc/withWallet';
 import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
@@ -22,6 +23,8 @@ const ENV_VARS = import.meta.env;
 export enum AMMView {
   BUY = 'BUY',
   STAKE = 'STAKE',
+
+  MINT = 'MINT', //added by 0xcandle
 
   UNLOCK = 'UNLOCK',
   JOIN_QUEUE = 'JOIN_QUEUE',
@@ -74,6 +77,8 @@ const AMMAltars = ({ routingHelper, view }: CustomRoutingPageProps & { view: AMM
         ) : (
           <h4>The Altar room is quiet for now. You feel a sense of peace.</h4>
         );
+      case AMMView.MINT:
+        return <Mint />;
       default:
         return null;
     }
@@ -81,7 +86,7 @@ const AMMAltars = ({ routingHelper, view }: CustomRoutingPageProps & { view: AMM
 
   const getBackgroundImage = () => {
     let bgImage = '';
-    if (activeAMMView === AMMView.BUY || activeAMMView === AMMView.STAKE) {
+    if (activeAMMView === AMMView.BUY || activeAMMView === AMMView.STAKE || activeAMMView === AMMView.MINT) {
       bgImage = EnterBgImage;
     }
     if (

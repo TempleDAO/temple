@@ -5,11 +5,15 @@ import { useWallet } from 'providers/WalletProvider';
 import MetamaskErrorPage from 'components/MetamaskError/MetamaskError';
 import { isDevelopmentEnv } from 'utils/helpers';
 
+import { useConnect } from 'wagmi'; //added by 0xcandle
+
 export function withWallet<T>(WrappedComponent: ComponentType<T>) {
   const HOCWithWallet = (props: T) => {
     const { wallet, connectWallet, network } = useWallet();
 
     const isValidNetwork = () => isDevelopmentEnv() || network?.chainId == 1;
+
+    const [{ data, error }, connect] = useConnect(); // added by 0xcandle
 
     return (
       window.ethereum ? (
@@ -42,14 +46,28 @@ export function withWallet<T>(WrappedComponent: ComponentType<T>) {
               <h4>Who knocks on the Temple gates?</h4>
               <br />
               <br />
-              <span>
+              {/* <span>
                 <Button
                   label={'connect metamask'}
                   onClick={connectWallet}
                   isSmall
                   isUppercase
                 />
-              </span>
+              </span> Comment by 0xcandle: I replaced this part with what comes right below (the wagmi useconnect)*/} 
+              <div>
+                {data.connectors.map((connector) => (
+                  <Button
+                    disabled={!connector.ready}
+                    key={connector.id}
+                    onClick={() => connect(connector)}
+                  >
+                    {connector.name}
+                    {!connector.ready && ' (unsupported)'}
+                  </Button>
+                ))}
+
+                {error && <div>{error?.message ?? 'Failed to connect'}</div>}
+              </div>
             </WithWalletContainer>
           )}
         </>

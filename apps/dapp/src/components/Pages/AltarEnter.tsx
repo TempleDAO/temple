@@ -87,7 +87,7 @@ const EnterPage = ({ routingHelper }: CustomRoutingPageProps) => {
             src={glowRight}
             title="Stake"
             onClick={() =>
-              changePageTo(AMMView.STAKE)
+              changePageTo(AMMView.MINT)
             }
             style={{
               transform: `scale(${1 * bgDimensions.scaleW}%)`,

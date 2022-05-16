@@ -24,7 +24,7 @@ export const LOCAL_CHAIN = {
 };
 
 const chains = [chain.mainnet, chain.rinkeby, LOCAL_CHAIN];
-const defaultChain = chain.mainnet;
+const defaultChain = LOCAL_CHAIN; //change back to chain.mainnet
 
 const ENV_VARS = import.meta.env;
 const ALCHEMY_PROVIDER_NETWORK = ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK;
