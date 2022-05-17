@@ -35,7 +35,9 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
   const handleUpdateTempleAmount = async (value: number | '') => {
     setTempleAmount(value === 0 ? '' : value);
     if (value) {
-      setRewards(fromAtto((await getSellQuote(toAtto(value))) || BigNumber.from(0) || 0));
+      const quote = await getSellQuote(toAtto(value));
+      const amountOut = quote?.amountOut ?? BigNumber.from(0);
+      setRewards(fromAtto(amountOut));
     } else {
       setRewards('');
     }
@@ -54,10 +56,8 @@ export const Sell: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
         const sellQuote = await getSellQuote(toAtto(templeAmount));
 
-        const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
-
-        if (minAmountOut <= rewards || isIvSwap) {
-          await sell(toAtto(templeAmount), toAtto(minAmountOut), isIvSwap);
+        if (!!sellQuote && minAmountOut <= rewards) {
+          await sell(toAtto(templeAmount), toAtto(minAmountOut), TICKER_SYMBOL.FRAX, sellQuote.priceBelowIV);
           getBalance();
           handleUpdateTempleAmount(0);
         }

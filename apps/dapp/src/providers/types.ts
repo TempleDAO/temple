@@ -133,7 +133,10 @@ export interface SwapService {
     deadlineInMinutes?: number
   ): Promise<void>;
 
-  getSellQuote(amountToSell: BigNumber, token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<BigNumber | void>;
+  getSellQuote(
+    amountToSell: BigNumber,
+    token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI
+  ): Promise<{ amountOut: BigNumber; priceBelowIV: boolean } | void>;
 
   getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<BigNumber | void>;
 

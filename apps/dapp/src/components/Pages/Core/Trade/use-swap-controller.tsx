@@ -9,6 +9,7 @@ import { SwapReducerAction, SwapReducerState, SwapMode } from './types';
 import { buildSelectConfig, buildValueConfig, createButtonLabel, isPairToken } from './utils';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { BigNumber, ethers } from 'ethers';
+import { FRAX_SELL_DISABLED_IV_MULTIPLE } from 'providers/env';
 
 const INITIAL_STATE: SwapReducerState = {
   mode: SwapMode.Buy,
@@ -25,19 +26,26 @@ const INITIAL_STATE: SwapReducerState = {
   buttonLabel: createButtonLabel(TICKER_SYMBOL.FRAX, TICKER_SYMBOL.TEMPLE_TOKEN, SwapMode.Buy),
   isTransactionPending: false,
   isSlippageTooHigh: false,
+  isFraxSellDisabled: true,
 };
 
 export function useSwapController() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
-  const { getBuyQuote, getSellQuote, templePrice, updateTemplePrice, buy, sell, iv } = useSwap();
+  const { getBuyQuote, getSellQuote, templePrice, updateTemplePrice, buy, sell, iv, updateIv } = useSwap();
 
   useEffect(() => {
     const onMount = async () => {
       await updateBalance();
       await updateTemplePrice();
-    };
+      await updateIv();
 
+      if (templePrice > iv * FRAX_SELL_DISABLED_IV_MULTIPLE) {
+        dispatch({
+          type: 'enableFraxSell',
+        });
+      }
+    };
     onMount();
   }, []);
 
@@ -60,16 +68,17 @@ export function useSwapController() {
       throw new Error('Invalid token selected');
     }
 
-    if (state.mode === SwapMode.Buy) {
+    if (state.mode === SwapMode.Sell) {
       dispatch({
-        type: 'changeInputToken',
+        type: 'changeOutputToken',
         value: { token, balance: getTokenBalance(token) },
       });
     }
 
-    if (state.mode === SwapMode.Sell) {
+    if (state.mode === SwapMode.Buy) {
+      console.log('changing input token to ' + token);
       dispatch({
-        type: 'changeOutputToken',
+        type: 'changeInputToken',
         value: { token, balance: getTokenBalance(token) },
       });
     }
@@ -164,21 +173,27 @@ export function useSwapController() {
       }
 
       const minAmountOut = templeAmount * templePrice * (1 - state.slippageTolerance / 100);
-      console.log('min amount out = ' + minAmountOut);
-      console.log('sell quote = ' + fromAtto(sellQuote));
 
-      // If there is a sell quote and it is below what you'd get selling at IV
-      // the sale is directed to the IV Swap contract to prevent the AMM price to dip below IV
-      const isIvSwap = !!sellQuote && fromAtto(sellQuote) < templeAmount * iv;
+      if (sellQuote.priceBelowIV && !state.isFraxSellDisabled) {
+        dispatch({
+          type: 'disableFraxSell',
+        });
+      }
 
-      if (minAmountOut > fromAtto(sellQuote)) {
+      if (minAmountOut > fromAtto(sellQuote.amountOut)) {
         dispatch({
           type: 'slippageTooHigh',
         });
         return;
       }
 
-      await sell(toAtto(templeAmount), toAtto(minAmountOut), state.inputToken, isIvSwap, state.deadlineMinutes);
+      await sell(
+        toAtto(templeAmount),
+        toAtto(minAmountOut),
+        state.inputToken,
+        sellQuote.priceBelowIV,
+        state.deadlineMinutes
+      );
     }
   };
 
@@ -203,7 +218,23 @@ export function useSwapController() {
     }
 
     if (state.mode === SwapMode.Sell && isPairToken(state.outputToken)) {
-      quote = await getSellQuote(toAtto(value), state.outputToken);
+      const sellQuote = await getSellQuote(toAtto(value), state.outputToken);
+
+      quote = sellQuote && sellQuote.amountOut;
+
+      if (sellQuote) {
+        if (!state.isFraxSellDisabled && sellQuote.priceBelowIV) {
+          dispatch({
+            type: 'disableFraxSell',
+          });
+        }
+
+        if (state.isFraxSellDisabled && !sellQuote.priceBelowIV) {
+          dispatch({
+            type: 'enableFraxSell',
+          });
+        }
+      }
     }
 
     // zap quote
@@ -233,15 +264,21 @@ function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReduce
       return action.value === SwapMode.Buy
         ? {
             ...INITIAL_STATE,
+            isFraxSellDisabled: state.isFraxSellDisabled,
           }
         : {
             ...INITIAL_STATE,
             mode: SwapMode.Sell,
             inputToken: INITIAL_STATE.outputToken,
-            outputToken: INITIAL_STATE.inputToken,
+            outputToken: state.isFraxSellDisabled ? TICKER_SYMBOL.FEI : INITIAL_STATE.inputToken,
             inputConfig: buildValueConfig(INITIAL_STATE.outputToken),
-            outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, SwapMode.Sell),
-            buttonLabel: createButtonLabel(INITIAL_STATE.outputToken, INITIAL_STATE.inputToken, SwapMode.Sell),
+            outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, SwapMode.Sell, state.isFraxSellDisabled),
+            buttonLabel: createButtonLabel(
+              INITIAL_STATE.outputToken,
+              state.isFraxSellDisabled ? TICKER_SYMBOL.FEI : INITIAL_STATE.inputToken,
+              SwapMode.Sell
+            ),
+            isFraxSellDisabled: state.isFraxSellDisabled,
           };
     }
 
@@ -264,7 +301,6 @@ function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReduce
     case 'changeOutputToken':
       return {
         ...state,
-        inputToken: action.value.token,
         inputValue: INITIAL_STATE.inputValue,
         outputToken: action.value.token,
         outputTokenBalance: action.value.balance,
@@ -301,6 +337,8 @@ function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReduce
     case 'endTx':
       return {
         ...state,
+        inputValue: state.isSlippageTooHigh ? state.inputValue : INITIAL_STATE.inputValue,
+        quoteValue: state.isSlippageTooHigh ? state.quoteValue : INITIAL_STATE.quoteValue,
         isTransactionPending: false,
       };
 
@@ -309,6 +347,32 @@ function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReduce
         ...state,
         isSlippageTooHigh: true,
         buttonLabel: 'INCREASE SLIPPAGE TOLERANCE',
+      };
+
+    case 'disableFraxSell':
+      return {
+        ...state,
+        isFraxSellDisabled: true,
+        outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, SwapMode.Sell, true),
+        outputToken: TICKER_SYMBOL.FEI,
+        buttonLabel:
+          state.mode === SwapMode.Sell
+            ? createButtonLabel(state.inputToken, TICKER_SYMBOL.FEI, state.mode)
+            : state.buttonLabel,
+      };
+
+    case 'enableFraxSell':
+      return {
+        ...state,
+        isFraxSellDisabled: false,
+        outputConfig:
+          state.mode === SwapMode.Sell
+            ? buildSelectConfig(INITIAL_STATE.inputToken, state.mode, false)
+            : state.outputConfig,
+        buttonLabel:
+          state.mode === SwapMode.Sell
+            ? createButtonLabel(state.inputToken, INITIAL_STATE.inputToken, state.mode)
+            : state.buttonLabel,
       };
 
     default:

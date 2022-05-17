@@ -1,5 +1,5 @@
 import { useState, useContext, createContext, PropsWithChildren } from 'react';
-import { BigNumber, ethers, providers, Signer } from 'ethers';
+import { BigNumber, Signer } from 'ethers';
 
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
@@ -16,22 +16,18 @@ import {
   TempleERC20Token__factory,
   TempleStableAMMRouter__factory,
   TempleUniswapV2Pair__factory,
-  TempleIVSwap__factory,
+  TempleTreasury__factory,
 } from 'types/typechain';
 import {
-  TEMPLE_ADDRESS,
   FRAX_ADDRESS,
   FEI_ADDRESS,
   TEMPLE_V2_ROUTER_ADDRESS,
   TEMPLE_V2_FRAX_PAIR_ADDRESS,
   TEMPLE_V2_FEI_PAIR_ADDRESS,
-  TEMPLE_IV_SWAP_ADDRESS,
   VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT,
   VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT,
+  TREASURY_ADDRESS,
 } from 'providers/env';
-
-// our default deadline is 20 minutes
-const DEADLINE = 20 * 60;
 
 const INITIAL_STATE: SwapService = {
   templePrice: 0,
@@ -79,10 +75,10 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
-    const TEMPLE_IV_SWAP = new TempleIVSwap__factory(signerState).attach(TEMPLE_IV_SWAP_ADDRESS);
+    const templeTreasury = new TempleTreasury__factory(signerState).attach(TREASURY_ADDRESS);
 
-    const { frax, temple } = await TEMPLE_IV_SWAP.iv();
-    return fromAtto(frax) / fromAtto(temple);
+    const { stablec, temple } = await templeTreasury.intrinsicValueRatio();
+    return fromAtto(stablec) / fromAtto(temple);
   };
 
   const updateIv = async () => {
@@ -211,11 +207,17 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
       const pair = token === TICKER_SYMBOL.FEI ? TEMPLE_V2_FEI_PAIR_ADDRESS : TEMPLE_V2_FRAX_PAIR_ADDRESS;
 
-      const { amountOut } = await AMM_ROUTER.swapExactTempleForStableQuote(pair, amountToSell);
+      const { amountOut, priceBelowIV } = await AMM_ROUTER.swapExactTempleForStableQuote(pair, amountToSell);
 
-      return amountOut;
+      return {
+        amountOut: amountOut,
+        priceBelowIV: priceBelowIV,
+      };
     }
-    return BigNumber.from(0);
+    return {
+      amountOut: BigNumber.from(0),
+      priceBelowIV: false,
+    };
   };
 
   return (

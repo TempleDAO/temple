@@ -26,7 +26,9 @@ export type SwapReducerAction =
   | { type: 'changeOutputTokenBalance'; value: number }
   | { type: 'startTx' }
   | { type: 'endTx' }
-  | { type: 'slippageTooHigh' };
+  | { type: 'slippageTooHigh' }
+  | { type: 'disableFraxSell' }
+  | { type: 'enableFraxSell' };
 
 export interface SwapReducerState {
   /*forceRefreshNonce: number;*/
@@ -44,4 +46,5 @@ export interface SwapReducerState {
   buttonLabel: string;
   isTransactionPending: boolean;
   isSlippageTooHigh: boolean;
+  isFraxSellDisabled: boolean;
 }
