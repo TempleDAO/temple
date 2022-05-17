@@ -127,7 +127,7 @@ export interface SwapService {
 
   sell(
     amountInTemple: BigNumber,
-    minAmountOutFrax: BigNumber,
+    minAmountOut: BigNumber,
     token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI,
     isIvSwap?: boolean,
     deadlineInMinutes?: number
