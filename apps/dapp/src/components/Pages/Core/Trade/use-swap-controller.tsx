@@ -179,11 +179,7 @@ export function useSwapController() {
 
       const minAmountOut = templeAmount * templePrice * (1 - state.slippageTolerance / 100);
 
-      if (sellQuote.priceBelowIV && !state.isFraxSellDisabled) {
-        dispatch({
-          type: 'disableFraxSell',
-        });
-      }
+      console.log('min aamount out = ' + minAmountOut);
 
       if (minAmountOut > fromAtto(sellQuote.amountOut)) {
         dispatch({

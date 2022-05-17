@@ -26,6 +26,7 @@ import {
   VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT,
   VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT,
   TREASURY_ADDRESS,
+  TEMPLE_ADDRESS,
 } from 'providers/env';
 
 const INITIAL_STATE: SwapService = {
@@ -137,7 +138,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
    */
   const sell = async (
     amountInTemple: BigNumber,
-    minAmountOutFrax: BigNumber,
+    minAmountOut: BigNumber,
     token: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI = TICKER_SYMBOL.FRAX,
     isIvSwap = false,
     deadlineInMinutes = 20
@@ -145,7 +146,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     if (wallet && signer) {
       let tokenAddress = token === TICKER_SYMBOL.FEI ? FEI_ADDRESS : FRAX_ADDRESS;
       const ammRouter = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
-      const templeContract = new TempleERC20Token__factory(signer).attach(tokenAddress);
+      const templeContract = new TempleERC20Token__factory(signer).attach(TEMPLE_ADDRESS);
 
       if (isIvSwap) {
         tokenAddress = FEI_ADDRESS;
@@ -162,7 +163,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
       const sellTx = await ammRouter.swapExactTempleForStable(
         verifiedAmountInTemple,
-        minAmountOutFrax,
+        minAmountOut,
         tokenAddress,
         wallet,
         deadline,
