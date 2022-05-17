@@ -1,15 +1,19 @@
+import { useEffect, useReducer } from 'react';
+import { BigNumber, ethers } from 'ethers';
+
 import { Option } from 'components/InputSelect/InputSelect';
 import { TransactionSettings } from 'components/TransactionSettingsModal/TransactionSettingsModal';
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
-import { useEffect, useReducer } from 'react';
+import { FRAX_SELL_DISABLED_IV_MULTIPLE } from 'providers/env';
+
+import { fromAtto, toAtto } from 'utils/bigNumber';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+
 import { TOKENS_BY_MODE } from './constants';
 import { SwapReducerAction, SwapReducerState, SwapMode } from './types';
 import { buildSelectConfig, buildValueConfig, createButtonLabel, isPairToken } from './utils';
-import { fromAtto, toAtto } from 'utils/bigNumber';
-import { BigNumber, ethers } from 'ethers';
-import { FRAX_SELL_DISABLED_IV_MULTIPLE } from 'providers/env';
 
 const INITIAL_STATE: SwapReducerState = {
   mode: SwapMode.Buy,
@@ -88,6 +92,7 @@ export function useSwapController() {
     }
   };
 
+  // Handles user input
   const handleInputChange = async (value: string) => {
     const numericValue = Number(value);
     dispatch({ type: 'changeInputValue', value: numericValue === 0 ? '' : value });
@@ -99,6 +104,7 @@ export function useSwapController() {
     }
   };
 
+  // Handles swapping between buy and sell
   const handleChangeMode = () => {
     if (state.inputToken !== TICKER_SYMBOL.FRAX && state.outputToken !== TICKER_SYMBOL.FRAX) {
       updateTemplePrice(TICKER_SYMBOL.FRAX);
@@ -114,6 +120,7 @@ export function useSwapController() {
     handleInputChange(`${state.inputTokenBalance}`);
   };
 
+  // Handles user input of slippage tolerance and deadline
   const handleTxSettingsUpdate = (settings: TransactionSettings) => {
     dispatch({
       type: 'changeTxSettings',
@@ -179,8 +186,6 @@ export function useSwapController() {
       }
 
       const minAmountOut = templeAmount * templePrice * (1 - state.slippageTolerance / 100);
-
-      console.log('min aamount out = ' + minAmountOut);
 
       if (minAmountOut > fromAtto(sellQuote.amountOut)) {
         dispatch({
