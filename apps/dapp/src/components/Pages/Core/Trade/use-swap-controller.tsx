@@ -11,30 +11,13 @@ import { FRAX_SELL_DISABLED_IV_MULTIPLE } from 'providers/env';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
-import { TOKENS_BY_MODE } from './constants';
+import { INITIAL_STATE, TOKENS_BY_MODE } from './constants';
 import { SwapReducerAction, SwapReducerState, SwapMode } from './types';
 import { buildSelectConfig, buildValueConfig, createButtonLabel, isPairToken } from './utils';
-
-const INITIAL_STATE: SwapReducerState = {
-  mode: SwapMode.Buy,
-  inputToken: TICKER_SYMBOL.FRAX,
-  outputToken: TICKER_SYMBOL.TEMPLE_TOKEN,
-  inputValue: '',
-  quoteValue: 0,
-  inputTokenBalance: 0,
-  outputTokenBalance: 0,
-  slippageTolerance: 1,
-  deadlineMinutes: 20,
-  inputConfig: buildSelectConfig(TICKER_SYMBOL.FRAX, SwapMode.Buy),
-  outputConfig: buildValueConfig(TICKER_SYMBOL.TEMPLE_TOKEN),
-  buttonLabel: createButtonLabel(TICKER_SYMBOL.FRAX, TICKER_SYMBOL.TEMPLE_TOKEN, SwapMode.Buy),
-  isTransactionPending: false,
-  isSlippageTooHigh: false,
-  isFraxSellDisabled: true,
-};
+import { swapReducer } from './reducer';
 
 export function useSwapController() {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+  const [state, dispatch] = useReducer(swapReducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
   const { getBuyQuote, getSellQuote, templePrice, updateTemplePrice, buy, sell, iv, updateIv } = useSwap();
 
@@ -104,7 +87,6 @@ export function useSwapController() {
     }
   };
 
-  // Handles swapping between buy and sell
   const handleChangeMode = () => {
     if (state.inputToken !== TICKER_SYMBOL.FRAX && state.outputToken !== TICKER_SYMBOL.FRAX) {
       updateTemplePrice(TICKER_SYMBOL.FRAX);
@@ -120,7 +102,6 @@ export function useSwapController() {
     handleInputChange(`${state.inputTokenBalance}`);
   };
 
-  // Handles user input of slippage tolerance and deadline
   const handleTxSettingsUpdate = (settings: TransactionSettings) => {
     dispatch({
       type: 'changeTxSettings',
@@ -246,8 +227,6 @@ export function useSwapController() {
       }
     }
 
-    // zap quote
-
     if (!quote) {
       console.error("couldn't fetch quote");
       return 0;
@@ -265,130 +244,4 @@ export function useSwapController() {
     handleTxSettingsUpdate,
     handleTransaction,
   };
-}
-
-function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReducerState {
-  switch (action.type) {
-    case 'changeMode': {
-      return action.value === SwapMode.Buy
-        ? {
-            ...INITIAL_STATE,
-            isFraxSellDisabled: state.isFraxSellDisabled,
-          }
-        : {
-            ...INITIAL_STATE,
-            mode: SwapMode.Sell,
-            inputToken: INITIAL_STATE.outputToken,
-            outputToken: state.isFraxSellDisabled ? TICKER_SYMBOL.FEI : INITIAL_STATE.inputToken,
-            inputConfig: buildValueConfig(INITIAL_STATE.outputToken),
-            outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, SwapMode.Sell, state.isFraxSellDisabled),
-            buttonLabel: createButtonLabel(
-              INITIAL_STATE.outputToken,
-              state.isFraxSellDisabled ? TICKER_SYMBOL.FEI : INITIAL_STATE.inputToken,
-              SwapMode.Sell
-            ),
-            isFraxSellDisabled: state.isFraxSellDisabled,
-          };
-    }
-
-    case 'changeInputToken':
-      return {
-        ...state,
-        inputToken: action.value.token,
-        inputValue: INITIAL_STATE.inputValue,
-        inputTokenBalance: action.value.balance,
-        quoteValue: INITIAL_STATE.quoteValue,
-        buttonLabel: createButtonLabel(action.value.token, state.outputToken, state.mode),
-      };
-
-    case 'changeInputTokenBalance':
-      return {
-        ...state,
-        inputTokenBalance: action.value,
-      };
-
-    case 'changeOutputToken':
-      return {
-        ...state,
-        inputValue: INITIAL_STATE.inputValue,
-        outputToken: action.value.token,
-        outputTokenBalance: action.value.balance,
-        quoteValue: INITIAL_STATE.quoteValue,
-        buttonLabel: createButtonLabel(state.inputToken, action.value.token, state.mode),
-      };
-
-    case 'changeOutputTokenBalance':
-      return {
-        ...state,
-        outputTokenBalance: action.value,
-      };
-
-    case 'changeInputValue':
-      return { ...state, inputValue: action.value };
-
-    case 'changeQuoteValue':
-      return { ...state, quoteValue: action.value };
-
-    case 'changeTxSettings':
-      return {
-        ...state,
-        isSlippageTooHigh: false,
-        slippageTolerance: action.value.slippageTolerance,
-        deadlineMinutes: action.value.deadlineMinutes,
-        buttonLabel: createButtonLabel(state.inputToken, state.outputToken, state.mode),
-      };
-    case 'startTx':
-      return {
-        ...state,
-        isTransactionPending: true,
-      };
-
-    case 'endTx':
-      return {
-        ...state,
-        inputValue: state.isSlippageTooHigh ? state.inputValue : INITIAL_STATE.inputValue,
-        quoteValue: state.isSlippageTooHigh ? state.quoteValue : INITIAL_STATE.quoteValue,
-        isTransactionPending: false,
-      };
-
-    case 'slippageTooHigh':
-      return {
-        ...state,
-        isSlippageTooHigh: true,
-        buttonLabel: 'INCREASE SLIPPAGE TOLERANCE',
-      };
-
-    case 'disableFraxSell':
-      return {
-        ...state,
-        isFraxSellDisabled: true,
-        outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, SwapMode.Sell, true),
-        outputToken: TICKER_SYMBOL.FEI,
-        outputTokenBalance: action.feiBalance,
-        buttonLabel:
-          state.mode === SwapMode.Sell
-            ? createButtonLabel(state.inputToken, TICKER_SYMBOL.FEI, state.mode)
-            : state.buttonLabel,
-      };
-
-    case 'enableFraxSell':
-      return {
-        ...state,
-        isFraxSellDisabled: false,
-        outputToken: state.mode === SwapMode.Sell ? INITIAL_STATE.inputToken : state.outputToken,
-        outputTokenBalance: state.mode === SwapMode.Sell ? action.fraxBalance : state.outputTokenBalance,
-        outputConfig:
-          state.mode === SwapMode.Sell
-            ? buildSelectConfig(INITIAL_STATE.inputToken, state.mode, false)
-            : state.outputConfig,
-        buttonLabel:
-          state.mode === SwapMode.Sell
-            ? createButtonLabel(state.inputToken, INITIAL_STATE.inputToken, state.mode)
-            : state.buttonLabel,
-      };
-
-    default:
-      console.error('Invalid reducer action: ', action);
-      return state;
-  }
 }

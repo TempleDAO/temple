@@ -1,13 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 
 import { Input } from 'components/Input/Input';
-import { VaultButton } from '../VaultPages/VaultContent';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { NAV_MOBILE_HEIGHT_PIXELS, NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
-import arrow from 'assets/icons/amm-arrow.svg';
-import { pixelsToRems } from 'styles/mixins';
-import { phoneAndAbove } from 'styles/breakpoints';
+import { VaultButton } from '../VaultPages/VaultContent';
 
 import { SwapMode } from './types';
 import { useSwapController } from './use-swap-controller';
@@ -15,6 +12,10 @@ import { useSwapController } from './use-swap-controller';
 import { PageWrapper } from '../utils';
 import { formatNumberWithCommas } from 'utils/formatter';
 
+import { pixelsToRems } from 'styles/mixins';
+import { phoneAndAbove } from 'styles/breakpoints';
+
+import arrow from 'assets/icons/amm-arrow.svg';
 import Gear from 'assets/icons/gear.svg';
 
 export const Trade = () => {
