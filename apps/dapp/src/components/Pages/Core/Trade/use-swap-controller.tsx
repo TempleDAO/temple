@@ -12,8 +12,8 @@ import { fromAtto, toAtto } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 import { INITIAL_STATE, TOKENS_BY_MODE } from './constants';
-import { SwapReducerAction, SwapReducerState, SwapMode } from './types';
-import { buildSelectConfig, buildValueConfig, createButtonLabel, isPairToken } from './utils';
+import { SwapMode } from './types';
+import { isPairToken } from './utils';
 import { swapReducer } from './reducer';
 
 export function useSwapController() {
