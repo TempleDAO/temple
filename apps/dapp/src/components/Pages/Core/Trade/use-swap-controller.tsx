@@ -210,6 +210,8 @@ export function useSwapController() {
 
       quote = sellQuote && sellQuote.amountOut;
 
+      const isPriceNearIv = templePrice > iv * FRAX_SELL_DISABLED_IV_MULTIPLE;
+
       if (sellQuote) {
         if (!state.isFraxSellDisabled && sellQuote.priceBelowIV) {
           dispatch({
@@ -218,7 +220,7 @@ export function useSwapController() {
           });
         }
 
-        if (state.isFraxSellDisabled && !sellQuote.priceBelowIV) {
+        if (state.isFraxSellDisabled && !sellQuote.priceBelowIV && !isPriceNearIv) {
           dispatch({
             type: 'enableFraxSell',
             fraxBalance: balance.frax,
