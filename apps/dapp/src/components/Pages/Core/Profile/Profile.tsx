@@ -1,5 +1,6 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
+import { subDays } from 'date-fns';
 
 import StatsCard from 'components/StatsCard/StatsCard';
 
@@ -21,7 +22,7 @@ import { useFaith } from 'providers/FaithProvider';
 import { useListCoreVaultGroups, createUserTransactionsQuery } from 'hooks/core/subgraph';
 import { PageWrapper } from '../utils';
 import { useVaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
-import { FlexibleXYPlot, XAxis, YAxis, LineSeries, Crosshair } from 'react-vis';
+import { FlexibleXYPlot, XAxis, YAxis, LineSeries, Crosshair, ChartLabel } from 'react-vis';
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import env from 'constants/env';
 import { Nullable } from 'types/util';
@@ -44,11 +45,7 @@ interface TransactionResponse {
   }
 }
 
-const ProfilePage = () => {
-  const { getBalance, wallet, balance } = useWallet();
-  const { faith } = useFaith();
-  const { isLoading: vaultGroupsLoading, vaultGroups } = useListCoreVaultGroups();
-  const { balances, isLoading: vaultGroupBalancesLoading } = useVaultGroupBalances(vaultGroups);
+const useChartData = (wallet: string, totalBalance: number) => {
   const [fetchTransactions, { response, isLoading: depositsLoading, error }] = useSubgraphRequest<TransactionResponse>(
     env.subgraph.templeCore,
     createUserTransactionsQuery(wallet || ''),
@@ -58,10 +55,73 @@ const ProfilePage = () => {
     if (!wallet) {
       return;
     }
-    fetchTransactions().catch((err) =>{
-      console.log('err =>', err);
-    })
+    fetchTransactions();
   }, [fetchTransactions, wallet]);
+
+  const user = response?.data?.user;
+  return useMemo(() => {
+    const now = new Date(Date.now());
+
+    if (!user) {
+      return {
+        data: [{ x: now.getTime(), y: 250 }],
+        xDomain: [subDays(now, 7).getTime(), now.getTime()],
+        yDomain: [0, 5000],
+      };
+    }
+
+    const merged = [...user.deposits.map((deposit) => ({
+      type: 'deposit',
+      amount: Number(deposit.amount),
+      timestamp: new Date(Number(deposit.timestamp) * 1000),
+      id: deposit.id,
+    })),
+    ...user.withdraws.map((withdraw) => ({
+      type: 'withdraw',
+      amount: Number(withdraw.amount),
+      timestamp: new Date(Number(withdraw.timestamp) * 1000),
+      id: withdraw.id,
+    }))];
+
+    const sortedByDate = merged.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    const dataPoints = sortedByDate.reduce<{ y: number; x: number, d: Date, }[]>((acc, transaction) => {
+      const lastBalance = acc[acc.length - 1]?.y || 0;
+      const nextBalance = transaction.type === 'deposit' ? lastBalance + transaction.amount : lastBalance - transaction.amount;
+  
+      acc.push({
+        d: transaction.timestamp,
+        x: transaction.timestamp.getTime(),
+        y: nextBalance,
+      });
+  
+      return acc;
+    }, []);
+    
+    dataPoints.push({
+      d: now,
+      x: now.getTime(),
+      y: totalBalance,
+    });
+
+    const largest = [...dataPoints].sort((a, b) => b.y - a.y)[0]?.y || 0;
+    console.log(largest)
+    const largestBalance = largest + 500;
+    const yDomain = [0, largestBalance];
+    const xDomain = [dataPoints[0]?.x || 0, now.getTime()];
+
+    return {
+      data: dataPoints,
+      xDomain,
+      yDomain,
+    };
+  }, [user, totalBalance]);
+}
+
+const ProfilePage = () => {
+  const { getBalance, wallet, balance } = useWallet();
+  const { faith } = useFaith();
+  const { isLoading: vaultGroupsLoading, vaultGroups } = useListCoreVaultGroups();
+  const { balances, isLoading: vaultGroupBalancesLoading } = useVaultGroupBalances(vaultGroups);
 
   useEffect(() => {
     if (!wallet) {
@@ -82,6 +142,8 @@ const ProfilePage = () => {
     return vaultGroup.vaults.filter(({ unlockDate }) => unlockDate === 'NOW').map(({ id }) => id);
   }));
 
+  const { data, yDomain, xDomain } = useChartData(wallet || '', totalBalancesAcrossVaults);
+
   const claimableBalance = Object.entries(balances).reduce((total, [address, vault]) => {
     if (!claimableVaults.has(address)) {
       return total;
@@ -97,54 +159,8 @@ const ProfilePage = () => {
   const faithBalance = faith.lifeTimeFaith;
   const hasLegacyTemple = !!ogTempleBalance || !!lockedOGTempleBalance || !!faithBalance;
 
-  const user = response?.data?.user;
-  const mergedTransactions = useMemo(() => {
-    if (!user) {
-      return [];
-    }
-    // const withdraws
-    const merged = [...user.deposits.map((deposit) => ({
-      type: 'deposit',
-      amount: Number(deposit.amount),
-      timestamp: new Date(Number(deposit.timestamp) * 1000),
-      id: deposit.id,
-    })),
-    ...user.withdraws.map((withdraw) => ({
-      type: 'withdraw',
-      amount: Number(withdraw.amount),
-      timestamp: new Date(Number(withdraw.timestamp) * 1000),
-      id: withdraw.id,
-    }))];
-
-    return merged.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-  }, [user]);
-  console.log('merged', mergedTransactions)
-  const data = mergedTransactions.reduce<{ y: number; x: number, d: Date, }[]>((acc, transaction) => {
-    const lastBalance = acc[acc.length - 1]?.y || 0;
-    const nextBalance = transaction.type === 'deposit' ? lastBalance + transaction.amount : lastBalance - transaction.amount;
-
-    acc.push({
-      d: transaction.timestamp,
-      x: transaction.timestamp.getTime(),
-      y: nextBalance,
-    });
-
-    return acc;
-  }, []);
-
-  const now = new Date(Date.now());
-
-  data.push({
-    d: now,
-    x: now.getTime(),
-    y: totalBalancesAcrossVaults,
-  });
-
-  const largest = [...data].sort((a, b) => b.y - a.y)[0]?.y || 0;
-  console.log(largest)
-  const largestBalance = largest + 500;
-  const yDomain = [0, largestBalance];
-  const xDomain = [data[0]?.x || 0, now.getTime()];
+  
+  const chartEmptyRef = useRef<SVGTextElement>(null);
 
   return (
     <PageWrapper>
@@ -199,15 +215,6 @@ const ProfilePage = () => {
                   isLoading={isLoading}
                 />
               </StatCards>
-              {/* <StatsCard
-                stat={`pie chart goes here`}
-                heightPercentage={40}
-                backgroundColor={theme.palette.brand75}
-                backgroundImageUrl={texture3}
-                className="stats-pie"
-                smallStatFont
-                isSquare={false}
-              /> */}
               <FlexibleXYPlot
                 xType="time"
                 xDomain={xDomain}
@@ -225,7 +232,7 @@ const ProfilePage = () => {
                       fontSize: 10,
                     },
                   }}
-                  tickTotal={data.length}
+                  tickTotal={8}
                 />
                 <YAxis
                   style={{
@@ -233,17 +240,29 @@ const ProfilePage = () => {
                     ticks: { stroke: '#6b6b76' },
                     text: { stroke: 'none', fill: '#6b6b76', fontWeight: 600 },
                   }}
+                  tickTotal={5}
                   tickFormat={(v) => `${v} $T`}
                 />
                 <LineSeries
                   data={data}
                   color="#696766"
-                  //@ts-ignore
+                  // @ts-ignore
                   strokeWidth={2}
                   onNearestX={(...args: any[]) => {
                     console.log(...args);
                   }}
                 />
+                {data.length === 0 && (
+                  <ChartLabel
+                    text="No transaction history"
+                    includeMargin={false}
+                    xPercent={0.5}
+                    yPercent={0.5}
+                    style={{
+                      transform: 'translate(-50, 0)',
+                    }}
+                  />
+                )}
               </FlexibleXYPlot>
             </ProfileMeta>
           </ProfileOverview>
