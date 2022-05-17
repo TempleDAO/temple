@@ -43,6 +43,7 @@ export function useSwapController() {
       if (templePrice > iv * FRAX_SELL_DISABLED_IV_MULTIPLE) {
         dispatch({
           type: 'enableFraxSell',
+          fraxBalance: balance.frax,
         });
       }
     };
@@ -227,12 +228,14 @@ export function useSwapController() {
         if (!state.isFraxSellDisabled && sellQuote.priceBelowIV) {
           dispatch({
             type: 'disableFraxSell',
+            feiBalance: balance.fei,
           });
         }
 
         if (state.isFraxSellDisabled && !sellQuote.priceBelowIV) {
           dispatch({
             type: 'enableFraxSell',
+            fraxBalance: balance.frax,
           });
         }
       }
@@ -356,6 +359,7 @@ function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReduce
         isFraxSellDisabled: true,
         outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, SwapMode.Sell, true),
         outputToken: TICKER_SYMBOL.FEI,
+        outputTokenBalance: action.feiBalance,
         buttonLabel:
           state.mode === SwapMode.Sell
             ? createButtonLabel(state.inputToken, TICKER_SYMBOL.FEI, state.mode)
@@ -366,6 +370,8 @@ function reducer(state: SwapReducerState, action: SwapReducerAction): SwapReduce
       return {
         ...state,
         isFraxSellDisabled: false,
+        outputToken: state.mode === SwapMode.Sell ? INITIAL_STATE.inputToken : state.outputToken,
+        outputTokenBalance: state.mode === SwapMode.Sell ? action.fraxBalance : state.outputTokenBalance,
         outputConfig:
           state.mode === SwapMode.Sell
             ? buildSelectConfig(INITIAL_STATE.inputToken, state.mode, false)
