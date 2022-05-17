@@ -139,8 +139,7 @@ export class MetricsService {
     const SERVER_PRIVATE_KEY = ENV_VARS.VITE_SERVER_PRIVATE_KEY;
     const TEMPLE_STAKING_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS;
     const PAIR_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS;
-    const ROUTER_ADDRESS =
-      ENV_VARS.VITE_PUBLIC_FEI_TEST_TEMPLE_V2_ROUTER_ADDRESS;
+    const ROUTER_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS;
     const AMM_OPS_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS;
     const LOCKED_OG_TEMPLE_ADDRESS =
       ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS;
@@ -150,13 +149,12 @@ export class MetricsService {
     const FARMING_WALLET_ADDRESS = ENV_VARS.VITE_PUBLIC_FARMING_WALLET_ADDRESS;
     const ENV = ENV_VARS.VITE_ENV;
 
-    this.provider =
-      isDevelopmentEnv()
-        ? new ethers.providers.Web3Provider(window.ethereum)
-        : new ethers.providers.AlchemyProvider(
-            ALCHEMY_PROVIDER_NETWORK,
-            ALCHEMY_API_KEY
-          );
+    this.provider = isDevelopmentEnv()
+      ? new ethers.providers.Web3Provider(window.ethereum)
+      : new ethers.providers.AlchemyProvider(
+          ALCHEMY_PROVIDER_NETWORK,
+          ALCHEMY_API_KEY
+        );
 
     this.signer = new ethers.Wallet(SERVER_PRIVATE_KEY, this.provider);
 
