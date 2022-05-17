@@ -107,10 +107,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
       const deadlineInSeconds = deadlineInMinutes * 60;
       const deadline = formatNumberFixedDecimals(Date.now() / 1000 + deadlineInSeconds, 0);
-      console.log(`date.now / 1000 = ${Date.now() / 1000}`);
-      console.log(`deadline = ` + deadline);
-      const oldDeadline = 20 * 60;
-      console.log(`old deadline calc = ${Date.now() / 1000 + oldDeadline}`);
 
       await ensureAllowance(token, tokenContract, TEMPLE_V2_ROUTER_ADDRESS, amountIn);
 
