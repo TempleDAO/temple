@@ -1,54 +1,59 @@
-import { ethers, network } from "hardhat";
-import { BaseContract, BigNumber, ContractFactory, ContractTransaction } from "ethers";
+import { ethers, network } from 'hardhat';
+import {
+  BaseContract,
+  BigNumber,
+  ContractFactory,
+  ContractTransaction,
+} from 'ethers';
 
 export interface DeployedContracts {
-  FRAX: string,
+  FRAX: string;
   PRESALE_ALLOCATION: string;
-  TEMPLE: string
-  OLD_EXIT_QUEUE: string
-  EXIT_QUEUE: string
-  ACCELERATED_EXIT_QUEUE: string
-  STAKING: string
-  LEGACY_LOCKED_OG_TEMPLE: string,
-  TREASURY: string,
-  PRESALE: string,
-  SANDALWOOD_TOKEN: string,
-  TREASURY_MANAGEMENT: string,
-  OPENING_CEREMONY: string,
-  OPENING_CEREMONY_VERIFIER: string,
+  TEMPLE: string;
+  OLD_EXIT_QUEUE: string;
+  EXIT_QUEUE: string;
+  ACCELERATED_EXIT_QUEUE: string;
+  STAKING: string;
+  LEGACY_LOCKED_OG_TEMPLE: string;
+  TREASURY: string;
+  PRESALE: string;
+  SANDALWOOD_TOKEN: string;
+  TREASURY_MANAGEMENT: string;
+  OPENING_CEREMONY: string;
+  OPENING_CEREMONY_VERIFIER: string;
 
-  TEMPLE_TEAM_FIXED_PAYMENTS: string,
-  TEMPLE_TEAM_EPOCH_2: string,
-  TEMPLE_TEAM_CONTIGENT_PAYMENTS: string,
-  TEMPLE_V2_PAIR: string,
-  TEMPLE_V2_FEI_PAIR: string,
-  TEMPLE_V2_ROUTER: string,
-  TEMPLE_AMM_OPS: string,
-  AMM_WHITELIST: string,
-  TEMPLE_CASHBACK: string,
+  TEMPLE_TEAM_FIXED_PAYMENTS: string;
+  TEMPLE_TEAM_EPOCH_2: string;
+  TEMPLE_TEAM_CONTIGENT_PAYMENTS: string;
+  TEMPLE_V2_PAIR: string;
+  TEMPLE_V2_FEI_PAIR: string;
+  TEMPLE_V2_ROUTER: string;
+  TEMPLE_AMM_OPS: string;
+  AMM_WHITELIST: string;
+  TEMPLE_CASHBACK: string;
 
-  FAITH: string,
-  FAITH_AIRDROP: string,
-  LOCKED_OG_TEMPLE: string,
-  DEVOTION: string,
-  TEMPLE_IV_SWAP: string,
+  FAITH: string;
+  FAITH_AIRDROP: string;
+  LOCKED_OG_TEMPLE: string;
+  DEVOTION: string;
+  TEMPLE_IV_SWAP: string;
 
-  MULTISIG: string,
+  MULTISIG: string;
 }
 
 export interface PolygonContracts {
-  SANDALWOOD_TOKEN: string,
-  OPENING_CEREMONY_QUEST: string,
+  SANDALWOOD_TOKEN: string;
+  OPENING_CEREMONY_QUEST: string;
 }
 
-export const POLYGON_CONTRACTS: {[key: string]: PolygonContracts} = {
+export const POLYGON_CONTRACTS: { [key: string]: PolygonContracts } = {
   matic: {
     SANDALWOOD_TOKEN: '0xe99e95ec6DCae4c85806F13CDf1351aE0FEf55Be', // bridged: 0x4FA80013F5d13DB10f2c5DC2987081cb48c7c069
-    OPENING_CEREMONY_QUEST: '0x17d723436740F2852274192dA27F65116ECd011E'
-  }
-}
+    OPENING_CEREMONY_QUEST: '0x17d723436740F2852274192dA27F65116ECd011E',
+  },
+};
 
-export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
+export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
   rinkeby: {
     // No longer active/unused
     PRESALE_ALLOCATION: '0x321518CCaf0f815Eff4A219951269A93BA45A5f8',
@@ -78,9 +83,9 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_TEAM_CONTIGENT_PAYMENTS: '',
 
     TEMPLE_V2_PAIR: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
-    // TEMPLE_V2_FEI_PAIR: 'TODO: Update',
+    TEMPLE_V2_FEI_PAIR: '0x519462fD548D0Ba1e7d380Ed7F3DA10Cab912Fa7',
     // TEMPLE_V2_ROUTER: '0xb50341AF85763d2D997F4ba764EbBdfAeeC0E07d', // old
-    // TEMPLE_V2_ROUTER: 'TODO Update',
+    TEMPLE_V2_ROUTER: '0x459E8c845D5e11d50E5f42Cd51650a86aF1Af5B1',
 
     TEMPLE_AMM_OPS: '0xe04D90A6d408D25c96Aea5Be018853c604bE794a',
     TEMPLE_CASHBACK: '0x2FDac592c53A8d64183f727ee125c9bB997484D9',
@@ -101,11 +106,11 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     OPENING_CEREMONY: '0xA2642dF0139faeBB1D45526a46d5c54B805Be02c',
     OPENING_CEREMONY_VERIFIER: '0x8ed9a9980E4C7e87eDf8DA13Fc2ba53802BBa117',
     OLD_EXIT_QUEUE: '0xfaeadcd9cb6870a5df09e403e4dcfcf1a6f20a0c',
-    AMM_WHITELIST: '0x3fAEb34Ab68709DCa02D6B48A03256317b338896', 
+    AMM_WHITELIST: '0x3fAEb34Ab68709DCa02D6B48A03256317b338896',
 
     // From network/environment
     FRAX: '0x853d955acef822db058eb8505911ed77f175b99e',
-    MULTISIG: "0x4D6175d58C5AceEf30F546C0d5A557efFa53A950",
+    MULTISIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
 
     // Active contrats
     TEMPLE: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
@@ -162,7 +167,8 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TREASURY_MANAGEMENT: process.env.TREASURY_MANAGEMENT || '',
     TEMPLE_TEAM_FIXED_PAYMENTS: process.env.TEMPLE_TEAM_FIXED_PAYMENTS || '',
     TEMPLE_TEAM_EPOCH_2: process.env.TEMPLE_TEAM_EPOCH_2 || '',
-    TEMPLE_TEAM_CONTIGENT_PAYMENTS: process.env.TEMPLE_TEAM_CONTIGENT_PAYMENTS || '',
+    TEMPLE_TEAM_CONTIGENT_PAYMENTS:
+      process.env.TEMPLE_TEAM_CONTIGENT_PAYMENTS || '',
     TEMPLE_V2_PAIR: process.env.TEMPLE_V2_PAIR || '',
     TEMPLE_V2_FEI_PAIR: process.env.TEMPLE_V2_FEI_PAIR || '',
     TEMPLE_V2_ROUTER: process.env.TEMPLE_V2_ROUTER || '',
@@ -176,15 +182,17 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_IV_SWAP: process.env.TEMPLE_IV_SWAP || '',
 
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
-  }
-}
+  },
+};
 
 /**
  * Current block timestamp
  */
 export const blockTimestamp = async () => {
-  return (await ethers.provider.getBlock(await ethers.provider.getBlockNumber())).timestamp;
-}
+  return (
+    await ethers.provider.getBlock(await ethers.provider.getBlockNumber())
+  ).timestamp;
+};
 
 /** number to attos (what all our contracts expect) */
 export function toAtto(n: number): BigNumber {
@@ -205,27 +213,36 @@ export async function mine(tx: Promise<ContractTransaction>) {
  * Typesafe helper that works on contract factories to create, deploy, wait till deploy completes
  * and output useful commands to setup etherscan with contract code
  */
-export async function deployAndMine<T extends BaseContract, D extends (...args: any[]) => Promise<T>>(
-                name: string,
-                factory: ContractFactory,
-                deploy: D,
-                ...args: Parameters<D>): Promise<T> {
-
+export async function deployAndMine<
+  T extends BaseContract,
+  D extends (...args: any[]) => Promise<T>
+>(
+  name: string,
+  factory: ContractFactory,
+  deploy: D,
+  ...args: Parameters<D>
+): Promise<T> {
   if (factory.deploy !== deploy) {
     throw new Error("Contract factory and deploy method don't match");
   }
 
-  const renderedArgs: string = args.map(a => a.toString()).join(' ');
+  const renderedArgs: string = args.map((a) => a.toString()).join(' ');
 
-  console.log(`*******Deploying ${name} on ${network.name} with args ${renderedArgs}`);
-  const contract = await factory.deploy(...args) as T;
-  console.log(`Deployed... waiting for transaction to mine: ${contract.deployTransaction.hash}`);
+  console.log(
+    `*******Deploying ${name} on ${network.name} with args ${renderedArgs}`
+  );
+  const contract = (await factory.deploy(...args)) as T;
+  console.log(
+    `Deployed... waiting for transaction to mine: ${contract.deployTransaction.hash}`
+  );
   console.log();
   await contract.deployed();
   console.log('Contract deployed');
   console.log(`${name}=${contract.address}`);
   console.log(`export ${name}=${contract.address}`);
-  console.log(`yarn hardhat verify --network ${network.name} ${contract.address} ${renderedArgs}`);
+  console.log(
+    `yarn hardhat verify --network ${network.name} ${contract.address} ${renderedArgs}`
+  );
   console.log('********************\n');
 
   return contract;
@@ -236,20 +253,28 @@ export async function deployAndMine<T extends BaseContract, D extends (...args: 
  */
 export function expectAddressWithPrivateKey() {
   if (network.name == 'mainnet' && !process.env.MAINNET_ADDRESS_PRIVATE_KEY) {
-    throw new Error("Missing environment variable MAINNET_ADDRESS_PRIVATE_KEY. A mainnet address private key with eth is required to deploy/manage contracts");
+    throw new Error(
+      'Missing environment variable MAINNET_ADDRESS_PRIVATE_KEY. A mainnet address private key with eth is required to deploy/manage contracts'
+    );
   }
 
   if (network.name == 'rinkeby' && !process.env.RINKEBY_ADDRESS_PRIVATE_KEY) {
-    throw new Error("Missing environment variable RINKEBY_ADDRESS_PRIVATE_KEY. A mainnet address private key with eth is required to deploy/manage contracts");
+    throw new Error(
+      'Missing environment variable RINKEBY_ADDRESS_PRIVATE_KEY. A mainnet address private key with eth is required to deploy/manage contracts'
+    );
   }
 }
 
-const expectedEnvvars: {[key: string]: string[]} = {
-  mainnet: ['MAINNET_ADDRESS_PRIVATE_KEY', 'MAINNET_RPC_URL', 'MAINNET_GAS_IN_GWEI'],
+const expectedEnvvars: { [key: string]: string[] } = {
+  mainnet: [
+    'MAINNET_ADDRESS_PRIVATE_KEY',
+    'MAINNET_RPC_URL',
+    'MAINNET_GAS_IN_GWEI',
+  ],
   rinkeby: ['RINKEBY_ADDRESS_PRIVATE_KEY', 'RINKEBY_RPC_URL'],
   matic: ['MATIC_ADDRESS_PRIVATE_KEY', 'MATIC_RPC_URL'],
   localhost: [],
-}
+};
 
 /**
  * Check if the required environment variables exist
