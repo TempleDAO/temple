@@ -58,6 +58,3 @@ export function createButtonLabel(inputToken: TICKER_SYMBOL, outputToken: TICKER
 export function isPairToken(token: TICKER_SYMBOL): token is TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI {
   return Boolean(token === TICKER_SYMBOL.FRAX || TICKER_SYMBOL.FEI);
 }
-
-export const isIvSwap = (quote: BigNumber | void, templeAmount: number, iv: number) =>
-  !!quote && fromAtto(quote) <= templeAmount * iv;

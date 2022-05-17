@@ -140,7 +140,7 @@ export interface SwapService {
 
   getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<BigNumber | void>;
 
-  updateTemplePrice(): Promise<void>;
+  updateTemplePrice(token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<void>;
 
   updateIv(): Promise<void>;
 }

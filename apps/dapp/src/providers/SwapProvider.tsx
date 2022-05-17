@@ -9,7 +9,6 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop } from 'utils/helpers';
 import { fromAtto } from 'utils/bigNumber';
-import { getCurrentBlockTimestamp } from 'utils/dates';
 
 import {
   ERC20__factory,
@@ -49,24 +48,26 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const { wallet, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
 
-  const getTemplePrice = async (walletAddress: string, signerState: Signer) => {
+  const getTemplePrice = async (walletAddress: string, signerState: Signer, pairAddress: string) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
 
-    const TEMPLE_UNISWAP_V2_PAIR = new TempleUniswapV2Pair__factory(signerState).attach(TEMPLE_V2_FRAX_PAIR_ADDRESS);
+    const pairContract = new TempleUniswapV2Pair__factory(signerState).attach(pairAddress);
 
-    const { _reserve0, _reserve1 } = await TEMPLE_UNISWAP_V2_PAIR.getReserves();
+    const { _reserve0, _reserve1 } = await pairContract.getReserves();
 
     return fromAtto(_reserve1) / fromAtto(_reserve0);
   };
 
-  const updateTemplePrice = async () => {
+  const updateTemplePrice = async (token: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI = TICKER_SYMBOL.FRAX) => {
     if (!wallet || !signer) {
       return;
     }
 
-    const price = await getTemplePrice(wallet, signer);
+    const pair = token === TICKER_SYMBOL.FEI ? TEMPLE_V2_FEI_PAIR_ADDRESS : TEMPLE_V2_FRAX_PAIR_ADDRESS;
+
+    const price = await getTemplePrice(wallet, signer, pair);
     setTemplePrice(price);
   };
 
@@ -105,8 +106,11 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       const verifiedAmountIn = amountIn.lt(balance) ? amountIn : balance;
 
       const deadlineInSeconds = deadlineInMinutes * 60;
-      const currentBlockTimestamp = await getCurrentBlockTimestamp();
-      const deadline = formatNumberFixedDecimals(currentBlockTimestamp + deadlineInSeconds, 0);
+      const deadline = formatNumberFixedDecimals(Date.now() / 1000 + deadlineInSeconds, 0);
+      console.log(`date.now / 1000 = ${Date.now() / 1000}`);
+      console.log(`deadline = ` + deadline);
+      const oldDeadline = 20 * 60;
+      console.log(`old deadline calc = ${Date.now() / 1000 + oldDeadline}`);
 
       await ensureAllowance(token, tokenContract, TEMPLE_V2_ROUTER_ADDRESS, amountIn);
 
@@ -152,14 +156,13 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       }
 
       const deadlineInSeconds = deadlineInMinutes * 60;
-      const currentBlockTimestamp = await getCurrentBlockTimestamp();
 
       await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, templeContract, TEMPLE_V2_ROUTER_ADDRESS, amountInTemple);
 
       const balance = await templeContract.balanceOf(wallet);
       const verifiedAmountInTemple = amountInTemple.lt(balance) ? amountInTemple : balance;
 
-      const deadline = formatNumberFixedDecimals(currentBlockTimestamp + deadlineInSeconds, 0);
+      const deadline = formatNumberFixedDecimals(Date.now() / 1000 + deadlineInSeconds, 0);
 
       const sellTx = await ammRouter.swapExactTempleForStable(
         verifiedAmountInTemple,

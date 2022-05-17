@@ -76,14 +76,15 @@ export function useSwapController() {
     }
 
     if (state.mode === SwapMode.Buy) {
-      console.log('changing input token to ' + token);
       dispatch({
         type: 'changeInputToken',
         value: { token, balance: getTokenBalance(token) },
       });
     }
 
-    updateTemplePrice();
+    if (isPairToken(token)) {
+      updateTemplePrice(token);
+    }
   };
 
   const handleInputChange = async (value: string) => {
@@ -98,6 +99,10 @@ export function useSwapController() {
   };
 
   const handleChangeMode = () => {
+    if (state.inputToken !== TICKER_SYMBOL.FRAX && state.outputToken !== TICKER_SYMBOL.FRAX) {
+      updateTemplePrice(TICKER_SYMBOL.FRAX);
+    }
+
     dispatch({
       type: 'changeMode',
       value: state.mode === SwapMode.Buy ? SwapMode.Sell : SwapMode.Buy,
@@ -119,7 +124,6 @@ export function useSwapController() {
     dispatch({
       type: 'startTx',
     });
-    console.log('tx starting');
     if (state.mode === SwapMode.Buy) {
       await handleBuy();
     }
@@ -128,7 +132,8 @@ export function useSwapController() {
       await handleSell();
     }
 
-    updateBalance();
+    await updateBalance();
+    await updateTemplePrice();
 
     dispatch({
       type: 'endTx',
