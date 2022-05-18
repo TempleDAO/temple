@@ -89,4 +89,5 @@ const VaultButton = styled(BaseVaultButton)`
 
 const Header = styled.h3`
   margin-bottom: 1rem;
+  text-align: center;
 `;

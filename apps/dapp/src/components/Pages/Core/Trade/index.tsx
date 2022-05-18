@@ -23,22 +23,31 @@ const TradeRoutes = () => {
       />
       <PageWrapper>
         <Container>
-          <MenuWrapper>
-            <Menu>
-              <TradeLink to="/core/dapp/trade">Trade</TradeLink>
-              <TradeLink to="/core/dapp/trade/unstake">Unstake / Withdraw</TradeLink>
-            </Menu>
-            <SettingsButton onClick={() => setIsSlippageModalOpen(true)} />
-          </MenuWrapper>
-          <Routes>
-            <Route path="/" element={<Trade {...swapController} />} />
-            <Route path="/unstake" element={<Unstake />} />
-          </Routes>
+          <Wrapper>
+            <MenuWrapper>
+              <Menu>
+                <TradeLink to="/core/dapp/trade">Trade</TradeLink>
+                <TradeLink to="/core/dapp/trade/unstake">Unstake / Withdraw</TradeLink>
+              </Menu>
+              <SettingsButton onClick={() => setIsSlippageModalOpen(true)} />
+            </MenuWrapper>
+            <Routes>
+              <Route path="/" element={<Trade {...swapController} />} />
+              <Route path="/unstake" element={<Unstake />} />
+            </Routes>
+          </Wrapper>
         </Container>
       </PageWrapper>
     </>
   );
 };
+
+const Wrapper = styled.div`
+  background: #1D1A1A;
+  padding: 1.5rem 2rem 2.5rem;
+  border-radius: 2rem;
+  box-shadow: 0 0 5rem rgba(0, 0, 0, .1);
+`;
 
 const MenuWrapper = styled.div`
   display: flex;
@@ -46,7 +55,7 @@ const MenuWrapper = styled.div`
   align-items: center;
   width: 100%;
   max-width: 36.0625rem; // 577px
-  margin: 0 auto 1rem;
+  margin: 0 auto 1.25rem;
   justify-content: space-between;
 `;
 
@@ -59,7 +68,6 @@ const Menu = styled.div`
 const TradeLink = styled(Link)`
   margin-right: 1rem;
   padding: .5rem 0;
-  background: ${theme.palette.dark75};
   display: block;
 `;
 
