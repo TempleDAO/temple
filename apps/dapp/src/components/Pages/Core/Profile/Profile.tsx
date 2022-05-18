@@ -12,17 +12,16 @@ import { theme } from 'styles/theme';
 
 import texture1 from 'assets/images/texture-1.svg';
 import texture2 from 'assets/images/texture-2.svg';
-import texture3 from 'assets/images/texture-3.svg';
 import texture4 from 'assets/images/texture-4.svg';
 import texture5 from 'assets/images/dashboard-4.png';
-import { curveCatmullRom } from 'd3-shape';
 
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
 import { useListCoreVaultGroups, createUserTransactionsQuery } from 'hooks/core/subgraph';
 import { PageWrapper } from '../utils';
+import { createDateFromSeconds } from 'components/Vault/utils';
 import { useVaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
-import { FlexibleXYPlot, XAxis, YAxis, LineSeries, Crosshair, ChartLabel } from 'react-vis';
+import { FlexibleXYPlot, XAxis, YAxis, LineSeries, ChartLabel } from 'react-vis';
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import env from 'constants/env';
 import { Nullable } from 'types/util';
@@ -245,13 +244,13 @@ const useChartData = (wallet: string, totalBalance: number) => {
     const merged = [...user.deposits.map((deposit) => ({
       type: 'deposit',
       amount: Number(deposit.amount),
-      timestamp: new Date(Number(deposit.timestamp) * 1000),
+      timestamp: createDateFromSeconds(deposit.timestamp),
       id: deposit.id,
     })),
     ...user.withdraws.map((withdraw) => ({
       type: 'withdraw',
       amount: Number(withdraw.amount),
-      timestamp: new Date(Number(withdraw.timestamp) * 1000),
+      timestamp: createDateFromSeconds(withdraw.timestamp),
       id: withdraw.id,
     }))];
 
