@@ -26,14 +26,6 @@ export type Vault = {
   unlockDate: Date | 'NOW';
 };
 
-export type Transaction = {
-  id: string;
-  timestamp: Date;
-  amount: number;
-  vaultAddress: string;
-  type: 'deposit' | 'withdraw';
-}
-
 export type VaultGroup = {
   id: string;
   name: string;
