@@ -30,93 +30,6 @@ import { Nullable } from 'types/util';
 const STAT_CARD_HEIGHT = '5rem';
 const PIE_AREA_HEIGHT = '10rem';
 
-interface Transaction {
-  id: string;
-  timestamp: string;
-  amount: string;
-}
-
-interface TransactionResponse {
-  data?: {
-    user: Nullable<{
-      deposits: Transaction[];
-      withdraws: Transaction[];
-    }>;
-  }
-}
-
-const useChartData = (wallet: string, totalBalance: number) => {
-  const [fetchTransactions, { response, isLoading: depositsLoading, error }] = useSubgraphRequest<TransactionResponse>(
-    env.subgraph.templeCore,
-    createUserTransactionsQuery(wallet || ''),
-  );
-
-  useEffect(() => {
-    if (!wallet) {
-      return;
-    }
-    fetchTransactions();
-  }, [fetchTransactions, wallet]);
-
-  const user = response?.data?.user;
-  return useMemo(() => {
-    const now = new Date(Date.now());
-
-    if (!user) {
-      return {
-        data: [{ x: now.getTime(), y: 250 }],
-        xDomain: [subDays(now, 7).getTime(), now.getTime()],
-        yDomain: [0, 5000],
-      };
-    }
-
-    const merged = [...user.deposits.map((deposit) => ({
-      type: 'deposit',
-      amount: Number(deposit.amount),
-      timestamp: new Date(Number(deposit.timestamp) * 1000),
-      id: deposit.id,
-    })),
-    ...user.withdraws.map((withdraw) => ({
-      type: 'withdraw',
-      amount: Number(withdraw.amount),
-      timestamp: new Date(Number(withdraw.timestamp) * 1000),
-      id: withdraw.id,
-    }))];
-
-    const sortedByDate = merged.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-    const dataPoints = sortedByDate.reduce<{ y: number; x: number, d: Date, }[]>((acc, transaction) => {
-      const lastBalance = acc[acc.length - 1]?.y || 0;
-      const nextBalance = transaction.type === 'deposit' ? lastBalance + transaction.amount : lastBalance - transaction.amount;
-  
-      acc.push({
-        d: transaction.timestamp,
-        x: transaction.timestamp.getTime(),
-        y: nextBalance,
-      });
-  
-      return acc;
-    }, []);
-    
-    dataPoints.push({
-      d: now,
-      x: now.getTime(),
-      y: totalBalance,
-    });
-
-    const largest = [...dataPoints].sort((a, b) => b.y - a.y)[0]?.y || 0;
-    console.log(largest)
-    const largestBalance = largest + 500;
-    const yDomain = [0, largestBalance];
-    const xDomain = [dataPoints[0]?.x || 0, now.getTime()];
-
-    return {
-      data: dataPoints,
-      xDomain,
-      yDomain,
-    };
-  }, [user, totalBalance]);
-}
-
 const ProfilePage = () => {
   const { getBalance, wallet, balance } = useWallet();
   const { faith } = useFaith();
@@ -158,9 +71,6 @@ const ProfilePage = () => {
   const ogTempleBalance = balance.ogTemple;
   const faithBalance = faith.lifeTimeFaith;
   const hasLegacyTemple = !!ogTempleBalance || !!lockedOGTempleBalance || !!faithBalance;
-
-  
-  const chartEmptyRef = useRef<SVGTextElement>(null);
 
   return (
     <PageWrapper>
@@ -217,6 +127,7 @@ const ProfilePage = () => {
               </StatCards>
               <FlexibleXYPlot
                 xType="time"
+                dontCheckIfEmpty
                 xDomain={xDomain}
                 yDomain={yDomain}
                 margin={{left: 70}}
@@ -290,6 +201,94 @@ const ProfilePage = () => {
       )}
     </PageWrapper>
   );
+};
+
+
+interface Transaction {
+  id: string;
+  timestamp: string;
+  amount: string;
+}
+
+interface TransactionResponse {
+  data?: {
+    user: Nullable<{
+      deposits: Transaction[];
+      withdraws: Transaction[];
+    }>;
+  }
+}
+
+const useChartData = (wallet: string, totalBalance: number) => {
+  const [fetchTransactions, { response }] = useSubgraphRequest<TransactionResponse>(
+    env.subgraph.templeCore,
+    createUserTransactionsQuery(wallet || ''),
+  );
+
+  useEffect(() => {
+    if (!wallet) {
+      return;
+    }
+    fetchTransactions();
+  }, [fetchTransactions, wallet]);
+
+  const user = response?.data?.user;
+  
+  return useMemo(() => {
+    const now = new Date(Date.now());
+
+    if (!user) {
+      return {
+        data: [],
+        xDomain: [subDays(now, 7).getTime(), now.getTime()],
+        yDomain: [0, 5000],
+      };
+    }
+
+    const merged = [...user.deposits.map((deposit) => ({
+      type: 'deposit',
+      amount: Number(deposit.amount),
+      timestamp: new Date(Number(deposit.timestamp) * 1000),
+      id: deposit.id,
+    })),
+    ...user.withdraws.map((withdraw) => ({
+      type: 'withdraw',
+      amount: Number(withdraw.amount),
+      timestamp: new Date(Number(withdraw.timestamp) * 1000),
+      id: withdraw.id,
+    }))];
+
+    const sortedByDate = merged.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    const dataPoints = sortedByDate.reduce<{ y: number; x: number, d: Date }[]>((acc, transaction) => {
+      const lastBalance = acc[acc.length - 1]?.y || 0;
+      const nextBalance = transaction.type === 'deposit' ? lastBalance + transaction.amount : lastBalance - transaction.amount;
+  
+      acc.push({
+        d: transaction.timestamp,
+        x: transaction.timestamp.getTime(),
+        y: nextBalance,
+      });
+  
+      return acc;
+    }, []);
+    
+    dataPoints.push({
+      d: now,
+      x: now.getTime(),
+      y: totalBalance,
+    });
+
+    const largest = [...dataPoints].sort((a, b) => b.y - a.y)[0]?.y || 0;
+    const largestBalance = largest + 500;
+    const yDomain = [0, largestBalance];
+    const xDomain = [dataPoints[0]?.x || 0, now.getTime()];
+
+    return {
+      data: dataPoints,
+      xDomain,
+      yDomain,
+    };
+  }, [user, totalBalance]);
 };
 
 const ProfileOverview = styled.section`
