@@ -1,12 +1,12 @@
 import { differenceInSeconds, addSeconds, subSeconds, format } from 'date-fns';
 
 import { GraphVault, GraphVaultGroup } from 'hooks/core/types';
-import { Vault, VaultGroup, MarkerType, Marker } from '../types';
+import { Vault, VaultGroup, MarkerType, Marker } from './types';
 import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
 export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
 
-const createDateFromSeconds = (dateInSeconds: string | number) => {
+export const createDateFromSeconds = (dateInSeconds: string | number) => {
   const dateMs = Number(dateInSeconds) * 1000;
   return new Date(dateMs);
 };
