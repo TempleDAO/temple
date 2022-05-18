@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { lerp } from 'components/Vault/desktop-parts/utils';
+import { lerp } from 'components/Vault/utils';
 import { VaultGroup } from 'components/Vault/types';
 
 interface Props {

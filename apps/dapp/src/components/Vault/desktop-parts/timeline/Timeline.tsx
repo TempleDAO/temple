@@ -6,7 +6,7 @@ import { TimelineBackground } from './TimelineBackground';
 import { MarkerType } from 'components/Vault/types';
 import TimelineTippy from '../../TimelineTippy';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
-import { getMarkers } from 'components/Vault/desktop-parts/utils';
+import { getMarkers } from 'components/Vault/utils';
 
 export const Timeline = () => {
   const { vaultGroup, balances } = useVaultContext();

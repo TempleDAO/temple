@@ -27,6 +27,8 @@ export interface GraphUser {
   totalBalance: string;
   depositsBalance: string;
   vaultUserBalances: GraphVaultUserBalance[];
+  withdraws: GraphVaultTransaction[];
+  deposits: GraphVaultTransaction[];
 }
 
 export interface GraphVaultUserBalance {
@@ -35,6 +37,12 @@ export interface GraphVaultUserBalance {
   value: string;
   amount: string;
   staked: string;
+}
+
+export interface GraphVaultTransaction {
+  id: string;
+  timestamp: string;
+  amount: string;
 }
 
 export interface SubGraphResponse<T extends object> {
