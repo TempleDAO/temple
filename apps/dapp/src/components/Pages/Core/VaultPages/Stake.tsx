@@ -172,7 +172,7 @@ export const Stake = () => {
       <ErrorLabel>{error}</ErrorLabel>
       {allowance === 0 && (
         <VaultButton
-          label="Approve Allowance"
+          label="Approve"
           autoWidth
           disabled={allowanceLoading}
           onClick={async () => {
