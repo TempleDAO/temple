@@ -159,9 +159,6 @@ const ProfilePage = () => {
                   color="#696766"
                   // @ts-ignore
                   strokeWidth={2}
-                  onNearestX={(...args: any[]) => {
-                    console.log(...args);
-                  }}
                 />
                 {data.length === 0 && (
                   <ChartLabel
