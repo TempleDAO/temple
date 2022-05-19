@@ -60,7 +60,7 @@ const useZappedAssetTempleBalance = (
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
-  const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] = useVaultJoiningFee(vault);
+  const [getVaultJoiningFee, { response: joiningFeeResponse }] = useVaultJoiningFee(vault);
   const { balance, isConnected } = useWallet();
 
   useEffect(() => {
@@ -176,7 +176,7 @@ export const Stake = () => {
         value={stakingAmount}
       />
       {!!(isZap && templeAmountMessage) && <AmountInTemple>{templeAmountMessage}</AmountInTemple>}
-      { <JoiningFee>Joining Fee: {joiningFeeResponse || 1} $T</JoiningFee>}
+      {!!joiningFeeResponse && <JoiningFee>Joining Fee: {joiningFeeResponse || 1} $T</JoiningFee>}
       <ErrorLabel>{error}</ErrorLabel>
       {allowance === 0 && (
         <VaultButton
