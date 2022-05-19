@@ -52,7 +52,7 @@ const useZappedAssetTempleBalance = (token: TICKER_SYMBOL, amount: BigNumber) =>
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
-  let [getVaultJoiningFee, { response: joiningFeeResponse }] = useVaultJoiningFee(vault);
+  const [getVaultJoiningFee, { response: joiningFeeResponse }] = useVaultJoiningFee(vault);
   const { balance, isConnected } = useWallet();
 
   useEffect(() => {
@@ -126,8 +126,6 @@ export const Stake = () => {
       </>
     );
   }
-  joiningFeeResponse = 1.2;
-  console.log('joiningFeeResponse', joiningFeeResponse);
   const error =
     !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
 
