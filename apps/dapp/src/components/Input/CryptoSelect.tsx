@@ -1,3 +1,4 @@
+import { ComponentProps } from 'react';
 import Select from 'react-select';
 import { theme } from 'styles/theme';
 
@@ -17,10 +18,12 @@ export interface CryptoSelectProps {
   maxMenuItems?: number;
 }
 
+type Props = Omit<ComponentProps<typeof Select>, 'classNamePrefix' | 'menuPlacement' | 'theme' | 'styles'> & CryptoSelectProps;
+
 /**
  * UI component for selecting currency to deposit/stake
  */
-export const CryptoSelect = (props: CryptoSelectProps) => {
+export const CryptoSelect = (props: Props) => {
   const selectHeight = '2.5rem';
   return (
     <Select

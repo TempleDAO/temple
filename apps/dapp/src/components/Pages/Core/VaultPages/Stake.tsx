@@ -1,4 +1,4 @@
-import { useState, ReactNode } from 'react';
+import { useState, ReactNode, useEffect } from 'react';
 import styled from 'styled-components';
 import { BigNumber } from 'ethers';
 
@@ -22,16 +22,17 @@ import { toAtto } from 'utils/bigNumber';
 import { MetaMaskError } from 'hooks/core/types';
 import { useTokenVaultAllowance } from 'hooks/core/use-token-vault-allowance'
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
+import { useVaultJoiningFee } from 'hooks/core/use-vault-joining-fee';
 
 // This dummy data will be replaced by the actual contracts
 const OPTIONS = [
   { value: '$TEMPLE', label: 'TEMPLE' },
-  { value: '$OGTEMPLE', label: 'OGTEMPLE' },
+  // { value: '$OGTEMPLE', label: 'OGTEMPLE' },
   { value: 'FAITH', label: 'FAITH' },
-  { value: '$FRAX', label: 'FRAX' },
-  { value: '$ETH', label: 'ETH' },
-  { value: '$USDC', label: 'USDC' },
-  { value: '$FEI', label: 'FEI' },
+  // { value: '$FRAX', label: 'FRAX' },
+  // { value: '$ETH', label: 'ETH' },
+  // { value: '$USDC', label: 'USDC' },
+  // { value: '$FEI', label: 'FEI' },
 ];
 
 // This dummy data will be replaced by the actual contracts
@@ -59,7 +60,12 @@ const useZappedAssetTempleBalance = (
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
+  const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] = useVaultJoiningFee(vault);
   const { balance, isConnected } = useWallet();
+
+  useEffect(() => {
+    getVaultJoiningFee();
+  }, [getVaultJoiningFee]);
 
    // UI amount to stake
    const [stakingAmount, setStakingAmount] = useState<string | number>('');
@@ -148,6 +154,7 @@ export const Stake = () => {
         DEPOSIT{' '}
         <SelectContainer>
           <CryptoSelect
+            isSearchable={false}
             options={OPTIONS}
             defaultValue={OPTIONS[0]}
             onChange={(val: Option) => {
@@ -169,6 +176,7 @@ export const Stake = () => {
         value={stakingAmount}
       />
       {!!(isZap && templeAmountMessage) && <AmountInTemple>{templeAmountMessage}</AmountInTemple>}
+      { <JoiningFee>Joining Fee: {joiningFeeResponse || 1} $T</JoiningFee>}
       <ErrorLabel>{error}</ErrorLabel>
       {allowance === 0 && (
         <VaultButton
@@ -223,4 +231,10 @@ const DepositContainer = styled.div`
   font-size: 1.5rem;
   padding: 1.5rem 0 1.2rem;
   display: inline-block;
+`;
+
+const JoiningFee = styled.span`
+  color: ${theme.palette.brandLight};
+  display: block;
+  padding: 1rem 0 0;
 `;
