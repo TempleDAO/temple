@@ -53,7 +53,7 @@ export const CryptoSelect = (props: Props) => {
           border: `0.0625rem  /* 1/16 */ solid ${theme.palette.brand}`,
           borderRadius: `calc(${selectHeight} / 2)`,
           boxShadow: 'none',
-          fontSize: '1.5rem',
+          fontSize: '1.3rem',
           textTransform: 'uppercase',
           textAlign: 'left',
           padding: '0 0.5rem',

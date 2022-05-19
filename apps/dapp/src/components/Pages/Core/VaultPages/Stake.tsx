@@ -3,9 +3,7 @@ import styled from 'styled-components';
 import { BigNumber } from 'ethers';
 
 import { Option } from 'components/InputSelect/InputSelect';
-import VaultContent, {
-  VaultButton,
-} from 'components/Pages/Core/VaultPages/VaultContent';
+import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumber } from 'utils/formatter';
 import { Header } from 'styles/vault';
@@ -20,15 +18,16 @@ import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useWallet } from 'providers/WalletProvider';
 import { toAtto } from 'utils/bigNumber';
 import { MetaMaskError } from 'hooks/core/types';
-import { useTokenVaultAllowance } from 'hooks/core/use-token-vault-allowance'
+import { useTokenVaultAllowance } from 'hooks/core/use-token-vault-allowance';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
 import { useVaultJoiningFee } from 'hooks/core/use-vault-joining-fee';
+import Tooltip from 'components/Tooltip/Tooltip';
 
 // This dummy data will be replaced by the actual contracts
 const OPTIONS = [
   { value: '$TEMPLE', label: 'TEMPLE' },
   // { value: '$OGTEMPLE', label: 'OGTEMPLE' },
-  { value: 'FAITH', label: 'FAITH' },
+  { value: 'FAITH', label: 'TEMPLE & FAITH' },
   // { value: '$FRAX', label: 'FRAX' },
   // { value: '$ETH', label: 'ETH' },
   // { value: '$USDC', label: 'USDC' },
@@ -46,34 +45,25 @@ const dummyCurrencyToTemple: Record<TICKER_SYMBOL, number> = {
   $FEI: 9293,
 };
 
-const useZappedAssetTempleBalance = (
-  token: TICKER_SYMBOL,
-  amount: BigNumber
-) => {
-  const zapAssetRequest = createMockRequest(
-    { templeAmount: dummyCurrencyToTemple[token] },
-    1000,
-    true
-  );
+const useZappedAssetTempleBalance = (token: TICKER_SYMBOL, amount: BigNumber) => {
+  const zapAssetRequest = createMockRequest({ templeAmount: dummyCurrencyToTemple[token] }, 1000, true);
   return useRequestState(() => zapAssetRequest(token, amount));
 };
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
-  const [getVaultJoiningFee, { response: joiningFeeResponse }] = useVaultJoiningFee(vault);
+  let [getVaultJoiningFee, { response: joiningFeeResponse }] = useVaultJoiningFee(vault);
   const { balance, isConnected } = useWallet();
 
   useEffect(() => {
     getVaultJoiningFee();
   }, [getVaultJoiningFee]);
 
-   // UI amount to stake
-   const [stakingAmount, setStakingAmount] = useState<string | number>('');
+  // UI amount to stake
+  const [stakingAmount, setStakingAmount] = useState<string | number>('');
 
   // Currently selected token
-  const [ticker, setTicker] = useState<TICKER_SYMBOL>(
-    OPTIONS[0].value as TICKER_SYMBOL
-  );
+  const [ticker, setTicker] = useState<TICKER_SYMBOL>(OPTIONS[0].value as TICKER_SYMBOL);
 
   const [_, refreshBalance] = useVaultBalance(vault.id);
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
@@ -81,16 +71,11 @@ export const Stake = () => {
     refreshBalance();
     refreshWalletState();
   });
-  
+
   const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(vault.id, ticker);
 
-  const [
-    zapAssetRequest,
-    { response: zapRepsonse, error: zapError, isLoading: zapLoading },
-  ] = useZappedAssetTempleBalance(
-    ticker,
-    toAtto(Number(stakingAmount || 0))
-  );
+  const [zapAssetRequest, { response: zapRepsonse, error: zapError, isLoading: zapLoading }] =
+    useZappedAssetTempleBalance(ticker, toAtto(Number(stakingAmount || 0)));
 
   const handleUpdateStakingAmount = (value: number | string) => {
     setStakingAmount(Number(value) === 0 ? '' : value);
@@ -113,19 +98,16 @@ export const Stake = () => {
   const tokenBalance = getTokenBalanceForCurrentTicker();
 
   const isZap = ticker !== TICKER_SYMBOL.TEMPLE_TOKEN;
-  const templeAmount = !isZap
-    ? stakingAmount
-    : (stakingAmount && zapRepsonse?.templeAmount) || 0;
-  
-  const stakeButtonDisabled = (
+  const templeAmount = !isZap ? stakingAmount : (stakingAmount && zapRepsonse?.templeAmount) || 0;
+
+  const stakeButtonDisabled =
     !isConnected ||
-    refreshIsLoading || 
+    refreshIsLoading ||
     !templeAmount ||
     depositLoading ||
-    zapLoading || 
+    zapLoading ||
     allowanceLoading ||
-    (isZap && !!zapError)
-  );
+    (isZap && !!zapError);
 
   let templeAmountMessage: ReactNode = '';
   if (zapError) {
@@ -144,14 +126,16 @@ export const Stake = () => {
       </>
     );
   }
-
-  const error = !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
+  joiningFeeResponse = 1.2;
+  console.log('joiningFeeResponse', joiningFeeResponse);
+  const error =
+    !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
 
   return (
     <VaultContent>
       <Header>Stake</Header>
       <DepositContainer>
-        DEPOSIT{' '}
+        Deposit{' '}
         <SelectContainer>
           <CryptoSelect
             isSearchable={false}
@@ -176,7 +160,17 @@ export const Stake = () => {
         value={stakingAmount}
       />
       {!!(isZap && templeAmountMessage) && <AmountInTemple>{templeAmountMessage}</AmountInTemple>}
-      {!!joiningFeeResponse && <JoiningFee>Joining Fee: {joiningFeeResponse} $T</JoiningFee>}
+      {!!joiningFeeResponse && (
+        <JoiningFee>
+          <Tooltip
+            content={`The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increases as the end of a joining window.`}
+            inline={true}
+          >
+            Joining Fee{' '}
+          </Tooltip>
+          : {joiningFeeResponse} $T
+        </JoiningFee>
+      )}
       <ErrorLabel>{error}</ErrorLabel>
       {allowance === 0 && (
         <VaultButton
@@ -237,4 +231,5 @@ const JoiningFee = styled.span`
   color: ${theme.palette.brandLight};
   display: block;
   padding: 1rem 0 0;
+  font-size: 1.4rem;
 `;
