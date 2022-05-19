@@ -16,7 +16,7 @@ interface CryptoSelector {
   defaultValue?: Option;
 
   // Callback for cryptoSelector value change
-  onCryptoChange?(): void;
+  onCryptoChange?(e: Option): void;
 }
 
 interface CryptoValue {
@@ -76,6 +76,7 @@ export const Input = ({
           options={cryptoOptions}
           defaultValue={defaultValue}
           onChange={onCryptoChange}
+          isSmall={small}
         />
       );
     }
@@ -133,7 +134,7 @@ export const Input = ({
         disabled={disabled}
         {...props}
       />
-      <InputCrypto>{renderCrypto()}</InputCrypto>
+      <InputCrypto isSmall={small}>{renderCrypto()}</InputCrypto>
       {hint && (
         <InputHint
           hasAction={!!onHintClick}
@@ -186,7 +187,7 @@ export const InputWrapper = styled.div<InputWrapperProps>`
     `}
 `;
 
-export const InputCrypto = styled.div`
+export const InputCrypto = styled.div<{ isSmall?: boolean }>`
   position: absolute;
   top: 0.5rem /* 6/16 */;
   left: 2rem;
@@ -203,8 +204,8 @@ export const InputCrypto = styled.div`
   }
 
   .Select__control {
-    margin-top: -0.375rem /* -6/16 */;
-    margin-right: -0.375rem /* -6/16 */;
+    margin-top: ${({ isSmall }) => (isSmall ? '-0.625rem' : '-0.375rem')};
+    margin-right: ${({ isSmall }) => (isSmall ? '3rem' : '-0.375rem')};
   }
 `;
 
