@@ -9,8 +9,10 @@ import {
   JoiningFee__factory,
   OpsManager,
   OpsManager__factory,
+  NoopLiquidator__factory,
   TempleERC20Token,
   TempleERC20Token__factory,
+  TreasuryFarmingRevenue__factory,
   Vault__factory,
 } from "../../typechain";
 import { expect } from "chai";
