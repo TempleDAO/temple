@@ -45,6 +45,8 @@ import {
   LOCKED_OG_TEMPLE_ADDRESS,
   LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
   VITE_PUBLIC_CLAIM_GAS_LIMIT,
+  FEI_ADDRESS,
+  FEI_PAIR_ADDRESS,
 } from 'providers/env';
 
 // We want to save gas burn $ for the Templars,
@@ -54,6 +56,7 @@ const DEFAULT_ALLOWANCE = toAtto(100000000);
 const INITIAL_STATE: WalletState = {
   balance: {
     stableCoin: 0,
+    fei: 0,
     temple: 0,
     ogTempleLocked: 0,
     ogTempleLockedClaimable: 0,
@@ -177,6 +180,8 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       STABLE_COIN_ADDRESS
     );
 
+    const feiContract = new ERC20__factory(signerState).attach(FEI_ADDRESS);
+
     const ogLockedTemple = new LockedOGTempleDeprecated__factory(
       signerState
     ).attach(LOCKED_OG_TEMPLE_ADDRESS);
@@ -200,6 +205,8 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     const stableCoinBalance: BigNumber = await stableCoinContract.balanceOf(
       walletAddress
     );
+
+    const feiBalance: BigNumber = await feiContract.balanceOf(walletAddress);
 
     // get the locked OG temple
     const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber();
@@ -231,6 +238,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     return {
       stableCoin: fromAtto(stableCoinBalance),
       temple: temple,
+      fei: fromAtto(feiBalance),
       ogTempleLocked: ogTempleLocked + fromAtto(lockedOGTempleEntry.amount),
       ogTemple: ogTemple >= 1 ? ogTemple : 0,
       ogTempleLockedClaimable: ogTempleLockedClaimable,
