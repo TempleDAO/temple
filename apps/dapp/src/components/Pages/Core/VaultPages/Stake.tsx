@@ -176,7 +176,7 @@ export const Stake = () => {
         value={stakingAmount}
       />
       {!!(isZap && templeAmountMessage) && <AmountInTemple>{templeAmountMessage}</AmountInTemple>}
-      {!!joiningFeeResponse && <JoiningFee>Joining Fee: {joiningFeeResponse || 1} $T</JoiningFee>}
+      {!!joiningFeeResponse && <JoiningFee>Joining Fee: {joiningFeeResponse} $T</JoiningFee>}
       <ErrorLabel>{error}</ErrorLabel>
       {allowance === 0 && (
         <VaultButton
