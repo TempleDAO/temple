@@ -149,13 +149,12 @@ export class MetricsService {
     const FARMING_WALLET_ADDRESS = ENV_VARS.VITE_PUBLIC_FARMING_WALLET_ADDRESS;
     const ENV = ENV_VARS.VITE_ENV;
 
-    this.provider =
-      isDevelopmentEnv()
-        ? new ethers.providers.Web3Provider(window.ethereum)
-        : new ethers.providers.AlchemyProvider(
-            ALCHEMY_PROVIDER_NETWORK,
-            ALCHEMY_API_KEY
-          );
+    this.provider = isDevelopmentEnv()
+      ? new ethers.providers.Web3Provider(window.ethereum)
+      : new ethers.providers.AlchemyProvider(
+          ALCHEMY_PROVIDER_NETWORK,
+          ALCHEMY_API_KEY
+        );
 
     this.signer = new ethers.Wallet(SERVER_PRIVATE_KEY, this.provider);
 
