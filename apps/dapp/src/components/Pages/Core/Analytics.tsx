@@ -1,4 +1,3 @@
-import React from 'react';
 import styled from 'styled-components';
 
 import Embed from 'components/Embed/Embed';
@@ -6,14 +5,11 @@ import StatsCard from 'components/StatsCard/StatsCard';
 import { PriceChart } from 'components/Charts/PriceChart';
 import { Spacer } from 'components/AMM/helpers/components';
 import { theme } from 'styles/theme';
-import { formatNumber, formatMillions } from 'utils/formatter';
+import { formatMillions } from 'utils/formatter';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
 import { phoneAndAbove } from 'styles/breakpoints';
 
-import texture1 from 'assets/images/texture-1.svg';
-import texture2 from 'assets/images/texture-2.svg';
 import texture3 from 'assets/images/texture-3.svg';
-import texture4 from 'assets/images/texture-4.svg';
 
 import background1 from 'assets/images/dashboard-1.png';
 import background2 from 'assets/images/dashboard-2.png';
@@ -34,8 +30,7 @@ import { PageWrapper } from './utils';
 const CHART_EMBED_HEIGHT = 400;
 const CHART_HEIGHT = 500;
 
-const DUNE_TREASURY_CHART =
-  'https://dune.xyz/embeds/321490/612067/621fe92e-859a-4525-be32-33631910b83c';
+const DUNE_TREASURY_CHART = 'https://dune.xyz/embeds/321490/612067/621fe92e-859a-4525-be32-33631910b83c';
 
 const AnalyticsPage = () => {
   const dashboardMetrics = useRefreshableDashboardMetrics();
@@ -43,35 +38,6 @@ const AnalyticsPage = () => {
   return (
     <PageWrapper>
       <h3>Temple Price</h3>
-      <GridLayout id="grid" columnCount={3}>
-        <ItemWrapper id="wrapper">
-          <StatsCard
-            label="Temple Price"
-            stat={`$${formatNumber(dashboardMetrics?.templeValue || 0)}`}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture1}
-            heightPercentage={50}
-          />
-        </ItemWrapper>
-        <ItemWrapper>
-          <StatsCard
-            label="Risk Free Value"
-            stat={`$${formatNumber(dashboardMetrics?.riskFreeValue || 0)}`}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture4}
-            heightPercentage={50}
-          />
-        </ItemWrapper>
-        <ItemWrapper>
-          <StatsCard
-            label="Intrinsic Value"
-            stat={`$${formatNumber(dashboardMetrics?.iv || 0)}`}
-            backgroundColor={theme.palette.brand75}
-            backgroundImageUrl={texture2}
-            heightPercentage={50}
-          />
-        </ItemWrapper>
-      </GridLayout>
 
       <ChartContainer>
         <PriceChart />
@@ -90,10 +56,7 @@ const AnalyticsPage = () => {
 
       <Spacer small />
 
-      <Embed
-        src={DUNE_TREASURY_CHART}
-        height={CHART_EMBED_HEIGHT}
-      />
+      <Embed src={DUNE_TREASURY_CHART} height={CHART_EMBED_HEIGHT} />
 
       <Spacer small />
 
@@ -111,10 +74,9 @@ const AnalyticsPage = () => {
         <ItemWrapper>
           <StatsCard
             label="Fully Diluted Valuation"
-            stat={`$${formatMillions(dashboardMetrics ? (
-              dashboardMetrics?.templeTotalSupply *
-              dashboardMetrics?.templeValue
-            ) : 0)}`}
+            stat={`$${formatMillions(
+              dashboardMetrics ? dashboardMetrics?.templeTotalSupply * dashboardMetrics?.templeValue : 0
+            )}`}
             backgroundColor={theme.palette.dark}
             darken
             fontColor={theme.palette.light}
@@ -242,16 +204,17 @@ const ChartContainer = styled.div`
 const GridLayout = styled.section<{ columnCount: number }>`
   display: grid;
   grid-template-columns: 1fr;
-  grid-column-gap: .75rem;
+  grid-column-gap: 0.75rem;
   padding: 0;
 
-  ${({ columnCount }) => phoneAndAbove(`
+  ${({ columnCount }) =>
+    phoneAndAbove(`
     grid-template-columns: repeat(${columnCount}, 1fr);
   `)}
 `;
 
 const ItemWrapper = styled.div`
-  margin: 0 0 .75rem;
+  margin: 0 0 0.75rem;
 
   ${phoneAndAbove(`
     margin: 0;
