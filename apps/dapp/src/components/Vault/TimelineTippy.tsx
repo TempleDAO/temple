@@ -32,7 +32,7 @@ const TimelineTippy = ({ marker, children }: Props) => {
     content = (
       <TippyDiv>
         This empty Marker represents the available window to make a deposit in this sub-vault ({marker.label}). This
-        will will end in {formatDistance(marker.windowEndDate, Date.now())}
+        will end in {formatDistance(marker.windowEndDate, Date.now())}
       </TippyDiv>
     );
   } else {

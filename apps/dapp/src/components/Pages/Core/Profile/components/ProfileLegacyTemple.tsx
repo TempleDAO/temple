@@ -16,6 +16,8 @@ import background3 from 'assets/images/dashboard-3.png';
 import background4 from 'assets/images/dashboard-4.png';
 import texture2 from 'assets/images/texture-2.svg';
 
+import { Container, Subheading } from '../styles';
+
 interface IProps {
   lockedOgTempleBalance?: number;
   ogTempleBalance?: number;
@@ -28,7 +30,8 @@ export const ProfileLegacyTemple: React.FC<IProps> = ({
   faithBalance = 0,
 }) => {
   return (
-    <>
+    <Container>
+      <Subheading>Temple Legacy</Subheading>
       <LegacyTempleArea>
         <StatsCard
           label={`${TICKER_SYMBOL.OG_TEMPLE_TOKEN} (Locked)`}
@@ -59,7 +62,7 @@ export const ProfileLegacyTemple: React.FC<IProps> = ({
       <LegacyTempleArea>
         <Button label={`Redeem ${TICKER_SYMBOL.TEMPLE_TOKEN}`} isSmall />
       </LegacyTempleArea>
-    </>
+    </Container>
   );
 };
 

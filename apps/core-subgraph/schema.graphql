@@ -63,6 +63,7 @@ type VaultGroup @entity {
   timestamp: BigInt!
   tvl: BigDecimal!
   opsManager: OpsManager!
+  vaults: [Vault!]! @derivedFrom(field: "vaultGroup")
   vaultGroupDayDatas: [VaultGroupDayData!]! @derivedFrom(field: "vaultGroup")
 }
 

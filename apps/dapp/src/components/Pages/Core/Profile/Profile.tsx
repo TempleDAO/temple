@@ -1,44 +1,46 @@
-import React, { useEffect } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { subDays } from 'date-fns';
 
 import StatsCard from 'components/StatsCard/StatsCard';
-import { Tabs } from 'components/Tabs/Tabs';
-import type { Tab } from 'components/Tabs/Tabs';
-
-import type { VaultGroup } from 'components/Vault/types';
 
 import { ProfileVaults } from './components/ProfileVaults';
 import { ProfileLegacyTemple } from './components/ProfileLegacyTemple';
-import { ProfileDiscordData } from './components/ProfileDiscordData';
-import { ProfileTransactions } from './components/ProfileTransactions';
 
 import { phoneAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
 
 import texture1 from 'assets/images/texture-1.svg';
 import texture2 from 'assets/images/texture-2.svg';
-import texture3 from 'assets/images/texture-3.svg';
 import texture4 from 'assets/images/texture-4.svg';
 import texture5 from 'assets/images/dashboard-4.png';
 
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
-import { useListCoreVaultGroups } from 'hooks/core/subgraph';
+import { useListCoreVaultGroups, createUserTransactionsQuery } from 'hooks/core/subgraph';
 import { PageWrapper } from '../utils';
-import { useVaultGroupBalances, VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
+import { createDateFromSeconds } from 'components/Vault/utils';
+import { useVaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
+import { FlexibleXYPlot, XAxis, YAxis, LineSeries, ChartLabel } from 'react-vis';
+import { useSubgraphRequest } from 'hooks/use-subgraph-request';
+import env from 'constants/env';
+import { Nullable } from 'types/util';
 
 const STAT_CARD_HEIGHT = '5rem';
 const PIE_AREA_HEIGHT = '10rem';
 
 const ProfilePage = () => {
-  const { getBalance, wallet } = useWallet();
+  const { getBalance, wallet, balance } = useWallet();
+  const { faith } = useFaith();
   const { isLoading: vaultGroupsLoading, vaultGroups } = useListCoreVaultGroups();
   const { balances, isLoading: vaultGroupBalancesLoading } = useVaultGroupBalances(vaultGroups);
 
   useEffect(() => {
+    if (!wallet) {
+      return;
+    }
     getBalance();
-  }, []);
+  }, [wallet]);
 
   const totalStakedAcrossAllVaults = Object.values(balances).reduce((total, vault) => {
     return total + (vault?.staked || 0);
@@ -52,6 +54,8 @@ const ProfilePage = () => {
     return vaultGroup.vaults.filter(({ unlockDate }) => unlockDate === 'NOW').map(({ id }) => id);
   }));
 
+  const { data, yDomain, xDomain } = useChartData(wallet || '', totalBalancesAcrossVaults);
+
   const claimableBalance = Object.entries(balances).reduce((total, [address, vault]) => {
     if (!claimableVaults.has(address)) {
       return total;
@@ -62,6 +66,10 @@ const ProfilePage = () => {
 
   const isLoading = vaultGroupsLoading || vaultGroupBalancesLoading;
   const totalEarned = totalBalancesAcrossVaults - totalStakedAcrossAllVaults;
+  const lockedOGTempleBalance = balance.ogTempleLockedClaimable;
+  const ogTempleBalance = balance.ogTemple;
+  const faithBalance = faith.lifeTimeFaith;
+  const hasLegacyTemple = !!ogTempleBalance || !!lockedOGTempleBalance || !!faithBalance;
 
   return (
     <PageWrapper>
@@ -116,23 +124,71 @@ const ProfilePage = () => {
                   isLoading={isLoading}
                 />
               </StatCards>
-              <StatsCard
-                stat={`pie chart goes here`}
-                heightPercentage={40}
-                backgroundColor={theme.palette.brand75}
-                backgroundImageUrl={texture3}
-                className="stats-pie"
-                smallStatFont
-                isSquare={false}
-              />
+              <FlexibleXYPlot
+                xType="time"
+                dontCheckIfEmpty
+                xDomain={xDomain}
+                yDomain={yDomain}
+                margin={{left: 70}}
+                height={250}
+              >
+                <XAxis
+                  style={{
+                    line: { stroke: '#2b2a2d' },
+                    ticks: { stroke: '#6b6b76' },
+                    text: {
+                      stroke: 'none',
+                      fill: '#6b6b76',
+                      fontSize: 10,
+                    },
+                  }}
+                  tickTotal={8}
+                />
+                <YAxis
+                  style={{
+                    line: { stroke: '#2b2a2d' },
+                    ticks: { stroke: '#6b6b76' },
+                    text: { stroke: 'none', fill: '#6b6b76', fontWeight: 600 },
+                  }}
+                  tickTotal={5}
+                  tickFormat={(v) => `${v} $T`}
+                />
+                <LineSeries
+                  data={data}
+                  color="#696766"
+                  // @ts-ignore
+                  strokeWidth={2}
+                />
+                {data.length === 0 && (
+                  <ChartLabel
+                    text="No transaction history"
+                    includeMargin={false}
+                    xPercent={0.5}
+                    yPercent={0.5}
+                    style={{
+                      transform: 'translate(-50, 0)',
+                    }}
+                  />
+                )}
+              </FlexibleXYPlot>
             </ProfileMeta>
           </ProfileOverview>
-          <ProfileVaults
-            isLoading={isLoading}
-            vaultGroupBalances={balances}
-            vaultGroups={vaultGroups}
-          />
-          <ProfileTransactions />
+          <SectionWrapper>
+            <ProfileVaults
+              isLoading={isLoading}
+              vaultGroupBalances={balances}
+              vaultGroups={vaultGroups}
+            />
+          </SectionWrapper>
+          {hasLegacyTemple && (
+            <SectionWrapper>
+              <ProfileLegacyTemple
+                lockedOgTempleBalance={lockedOGTempleBalance}
+                ogTempleBalance={ogTempleBalance}
+                faithBalance={faithBalance}
+              />
+            </SectionWrapper>
+          )}
         </>
       ) : (
         <>
@@ -143,46 +199,93 @@ const ProfilePage = () => {
   );
 };
 
-function getTabs(
-  isLoading: boolean,
-  vaultGroups: VaultGroup[],
-  lockedOgtBalance: number,
-  ogtBalance: number,
-  faithBalance: number,
-  vaultGroupBalances: VaultGroupBalances,
-): Tab[] {
-  const tabs = [
-    {
-      label: 'Vaults',
-      content: (
-        <ProfileVaults
-          isLoading={isLoading}
-          vaultGroupBalances={vaultGroupBalances}
-          vaultGroups={vaultGroups}
-        />
-      ),
-    },
-    { label: 'Transactions', content: <ProfileTransactions /> },
-    { label: 'Discord', content: <ProfileDiscordData /> },
-  ];
 
-  const hasLegacyTemple = !!ogtBalance || !!lockedOgtBalance || !!faithBalance;
-
-  if (hasLegacyTemple) {
-    tabs.push({
-      label: `Legacy ${TICKER_SYMBOL.TEMPLE_TOKEN}`,
-      content: (
-        <ProfileLegacyTemple
-          lockedOgTempleBalance={lockedOgtBalance}
-          ogTempleBalance={ogtBalance}
-          faithBalance={faithBalance}
-        />
-      ),
-    });
-  }
-
-  return tabs;
+interface Transaction {
+  id: string;
+  timestamp: string;
+  amount: string;
 }
+
+interface TransactionResponse {
+  data?: {
+    user: Nullable<{
+      deposits: Transaction[];
+      withdraws: Transaction[];
+    }>;
+  }
+}
+
+const useChartData = (wallet: string, totalBalance: number) => {
+  const [fetchTransactions, { response }] = useSubgraphRequest<TransactionResponse>(
+    env.subgraph.templeCore,
+    createUserTransactionsQuery(wallet || ''),
+  );
+
+  useEffect(() => {
+    if (!wallet) {
+      return;
+    }
+    fetchTransactions();
+  }, [fetchTransactions, wallet]);
+
+  const user = response?.data?.user;
+  
+  return useMemo(() => {
+    const now = new Date(Date.now());
+
+    if (!user) {
+      return {
+        data: [],
+        xDomain: [subDays(now, 7).getTime(), now.getTime()],
+        yDomain: [0, 5000],
+      };
+    }
+
+    const merged = [...user.deposits.map((deposit) => ({
+      type: 'deposit',
+      amount: Number(deposit.amount),
+      timestamp: createDateFromSeconds(deposit.timestamp),
+      id: deposit.id,
+    })),
+    ...user.withdraws.map((withdraw) => ({
+      type: 'withdraw',
+      amount: Number(withdraw.amount),
+      timestamp: createDateFromSeconds(withdraw.timestamp),
+      id: withdraw.id,
+    }))];
+
+    const sortedByDate = merged.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    const dataPoints = sortedByDate.reduce<{ y: number; x: number, d: Date }[]>((acc, transaction) => {
+      const lastBalance = acc[acc.length - 1]?.y || 0;
+      const nextBalance = transaction.type === 'deposit' ? lastBalance + transaction.amount : lastBalance - transaction.amount;
+  
+      acc.push({
+        d: transaction.timestamp,
+        x: transaction.timestamp.getTime(),
+        y: nextBalance,
+      });
+  
+      return acc;
+    }, []);
+    
+    dataPoints.push({
+      d: now,
+      x: now.getTime(),
+      y: totalBalance,
+    });
+
+    const largest = [...dataPoints].sort((a, b) => b.y - a.y)[0]?.y || 0;
+    const largestBalance = largest + 500;
+    const yDomain = [0, largestBalance];
+    const xDomain = [dataPoints[0]?.x || 0, now.getTime()];
+
+    return {
+      data: dataPoints,
+      xDomain,
+      yDomain,
+    };
+  }, [user, totalBalance]);
+};
 
 const ProfileOverview = styled.section`
   padding: 0;
@@ -208,6 +311,10 @@ const StatCards = styled.div`
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
   gap: 0.75rem;
+`;
+
+const SectionWrapper = styled.div`
+  margin-bottom: 1rem;
 `;
 
 export default ProfilePage;
