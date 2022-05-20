@@ -100,7 +100,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         address signer = ECDSA.recover(digest, v, r, s);
 
         // TODO: Scoop - do we need this? Figure out why signature isn't verifying anymore
-        //require(signer == owner, "Vault: invalid signature");
+        require(signer == owner, "Vault: invalid signature");
 
         depositFor(msg.sender, owner, amount);
     }

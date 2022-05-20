@@ -20,6 +20,7 @@ import {
   JoiningFee__factory,
   OpsManager__factory,
   TempleStableAMMRouter__factory,
+  VaultActions__factory
 } from '../../typechain';
 import { writeFile } from 'fs/promises';
 
@@ -37,11 +38,14 @@ async function extractDeployedAddress(
 ): Promise<string> {
   let result = 'FAILED TO FIND';
   await tx.wait(0).then((receipt) => {
+    
     let event = receipt.events?.filter((evt) => {
       if (evt.event) {
         return evt.event === eventName;
       }
     })[0];
+
+    console.log(event)
 
     if (event?.args) {
       result = event.args[0];
@@ -235,6 +239,9 @@ async function main() {
 
   // Devotion
   const faith = await new Faith__factory(owner).deploy();
+  //await faith.addManager(await owner.getAddress());
+  //await faith.gain(await account1.getAddress(), toAtto(10000));
+  //await faith.gain(await account2.getAddress(), toAtto(5000));
 
   // add liquidity to AMM
   const expiryDate = (): number => Math.floor(Date.now() / 1000) + 900;
@@ -296,6 +303,13 @@ async function main() {
     await ethers.provider.send('evm_increaseTime', [window]);
   }
 
+  const vaultProxy = await new VaultActions__factory(owner).deploy(
+    ogTempleToken.address,
+    templeToken.address,
+    templeStaking.address,
+    faith.address
+  );
+
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
     EXIT_QUEUE_ADDRESS: exitQueue.address,
@@ -317,6 +331,7 @@ async function main() {
     TEMPLE_IV_SWAP: templeIVSwap.address,
     TEMPLE_VAULT_OPS_MANAGER: opsManager.address,
     TEMPLE_VAULT_STABLEC_EXPOSURE: exposure,
+    TEMPLE_VAULT_PROXY: vaultProxy.address,
     // TEMPLE_VAULT_1_M_1: vault1,
     // TEMPLE_VAULT_1_M_2: vault2,
     // TEMPLE_VAULT_1_M_3: vault3,

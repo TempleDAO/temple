@@ -151,7 +151,7 @@ describe("Vault Actions", async () => {
     expect(await vault.balanceOf(alanAddr)).equals(expectedAmount);
   })
 
-  it.only("Can withdraw from exit queue and stake", async () => {
+  it("Can unstake and deposit into vault", async () => {
     let alanStake = await new TempleStaking__factory(alan).attach(STAKING.address);
     let alanTemple = await new TempleERC20Token__factory(alan).attach(TEMPLE.address);
     let alanOgTemple = await new OGTemple__factory(alan).attach(OGTEMPLE.address);

@@ -19,7 +19,7 @@ contract VaultTest is TempleTest {
     address constant debbie = address(0xc0ffee);
 
     uint256 constant ONE_HUNDRED_K = 100000000000000000000000;
-    uint256 constant FIVE_MIN_DURATION = 60*5;
+    uint256 constant THIRTY_MIN_DURATION = 60*30;
 
     bytes constant OUTSIDE_ENTER_WINDOW_ERR = bytes("Vault: Cannot join vault when outside of enter/exit window");
     bytes constant OUTSIDE_EXIT_WINDOW_ERR = bytes("Vault: Cannot exit vault when outside of enter/exit window");
@@ -34,7 +34,7 @@ contract VaultTest is TempleTest {
             "Temple 5 Min Vault",
             "T5MV",
             temple,
-            FIVE_MIN_DURATION,
+            THIRTY_MIN_DURATION,
             60,
             rational,
             joiningFee,
@@ -101,7 +101,7 @@ contract VaultTest is TempleTest {
         assertEq(ONE_HUNDRED_K/2, vault.balanceOf(alice));
         
         // fast forward seconds
-        vm.warp(160);
+        vm.warp(160+vault.ENTER_EXIT_WINDOW_BUFFER());
     
         vm.expectRevert(OUTSIDE_ENTER_WINDOW_ERR);
         vault.deposit(ONE_HUNDRED_K/2);
@@ -110,6 +110,9 @@ contract VaultTest is TempleTest {
 
     // This shouldn't fail? 
     function testFuzzWithdrawFor(uint256 amount) public {
+        // bound the fuzzing input - I doubt we'll ever hit someone depositing 366 trillion temple
+        vm.assume(amount < 340282366920938463463374607431768211455);
+        
         // build user
         uint256 priv = 0xBEEF;
         address sally = vm.addr(priv);
@@ -143,10 +146,9 @@ contract VaultTest is TempleTest {
         assertEq(temple.balanceOf(address(this)), amount);
     }
 
-    function testFuzzDepositFor() public {
-        uint256 amount = 100000000000000000000;
+    function testFuzzDepositFor(uint256 amount) public {
         // bound the fuzzing input - I doubt we'll ever hit someone depositing 366 trillion temple
-        //vm.assume(amount < 340282366920938463463374607431768211455);
+        vm.assume(amount < 340282366920938463463374607431768211455);
 
         // build user
         uint256 priv = 0xBEEF;
@@ -182,6 +184,9 @@ contract VaultTest is TempleTest {
     }
 
     function testFuzzDepositWithdraw(uint256 amount) public {
+        // bound the fuzzing input - I doubt we'll ever hit someone depositing 366 trillion temple
+        vm.assume(amount < 340282366920938463463374607431768211455);
+        
         // mint
         temple.mint(alice, amount);
 
@@ -205,7 +210,7 @@ contract VaultTest is TempleTest {
         temple.increaseAllowance(address(vault), ONE_HUNDRED_K);
         vault.deposit(ONE_HUNDRED_K);
     
-        vm.warp(160);
+        vm.warp(160+vault.ENTER_EXIT_WINDOW_BUFFER());
         
         vm.expectRevert(OUTSIDE_EXIT_WINDOW_ERR);
         vault.withdraw(ONE_HUNDRED_K);
@@ -222,7 +227,7 @@ contract VaultTest is TempleTest {
         bool inWindow = vault.inEnterExitWindow();
         assertTrue(inWindow);
 
-        vm.warp(100+(60*3));
+        vm.warp(100+(60*3)+vault.ENTER_EXIT_WINDOW_BUFFER());
         inWindow = vault.inEnterExitWindow();
         assertFalse(inWindow);
     }
