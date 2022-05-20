@@ -34,10 +34,10 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     mapping(address => Counters.Counter) public _nonces;
 
     // solhint-disable-next-line var-name-mixedcase
-    bytes32 public immutable DEPOSIT_FOR_TYPEHASH = keccak256("depositFor(address owner, uint256 maxAmount, uint256 deadline, uint256 nonce)");
+    bytes32 public immutable DEPOSIT_FOR_TYPEHASH = keccak256("depositFor(address owner,uint256 maxAmount,uint256 deadline,uint256 nonce)");
 
     // solhint-disable-next-line var-name-mixedcase
-    bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner, uint256 amount, uint256 deadline, uint256 nonce)");
+    bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner,uint256 amount,uint256 deadline,uint256 nonce)");
 
     IERC20 public templeToken;
 
@@ -92,6 +92,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
      */
     function depositFor(address owner, uint256 amount, uint256 maxAmount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
         require(block.timestamp <= deadline, "Vault: expired deadline");
+        require(msg.sender != owner, "Vault: depositFor should use different sender to owner");
         require(amount <= maxAmount, "Vault: amount must be less than authorized maxAmount");
 
         bytes32 structHash = keccak256(abi.encode(DEPOSIT_FOR_TYPEHASH, owner, maxAmount, deadline, _useNonce(owner)));
@@ -100,7 +101,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
         require(signer == owner, "Vault: invalid signature");
 
-        depositFor(owner, amount);
+        depositFor(msg.sender, owner, amount);
     }
 
     /**
@@ -191,12 +192,16 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         nonce.increment();
     }
 
+    function depositFor(address _account, uint256 _amount) private {
+        depositFor(msg.sender, _account, _amount);
+    }
+
     /**
      * @dev shared private implementation of depositFor. Must be private, to prevent
      * security issue where anyone can deposit (and lock) for another account, once
      * said account as approved this contract to pull temple funds.
      */
-    function depositFor(address _account, uint256 _amount) private {
+    function depositFor(address _sender, address _account, uint256 _amount) private {
         require(inEnterExitWindow(), "Vault: Cannot join vault when outside of enter/exit window");
 
         uint256 feePerTempleScaledPerHour = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));
@@ -207,7 +212,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
         if (_amount > 0) {
             _mint(_account, amountStaked);
-            SafeERC20.safeTransferFrom(templeToken, _account, address(this), _amount);
+            SafeERC20.safeTransferFrom(templeToken, _sender, address(this), _amount);
         }
 
         emit Deposit(_account, _amount, amountStaked);
