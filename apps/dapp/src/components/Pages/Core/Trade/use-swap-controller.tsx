@@ -13,10 +13,11 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 import { INITIAL_STATE, TOKENS_BY_MODE } from './constants';
 import { SwapMode } from './types';
-import { isPairToken } from './utils';
+import { isTokenFraxOrFei } from './utils';
 import { swapReducer } from './reducer';
 
 export function useSwapController() {
+  const { wallet } = useWallet();
   const [state, dispatch] = useReducer(swapReducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
   const { getBuyQuote, getSellQuote, templePrice, updateTemplePrice, buy, sell, iv, updateIv } = useSwap();
@@ -35,7 +36,7 @@ export function useSwapController() {
       }
     };
     onMount();
-  }, []);
+  }, [wallet]);
 
   useEffect(() => {
     dispatch({
@@ -70,7 +71,7 @@ export function useSwapController() {
       });
     }
 
-    if (isPairToken(token)) {
+    if (isTokenFraxOrFei(token)) {
       updateTemplePrice(token);
     }
   };
@@ -130,7 +131,7 @@ export function useSwapController() {
   };
 
   const handleBuy = async () => {
-    if (!isPairToken(state.inputToken)) {
+    if (!isTokenFraxOrFei(state.inputToken)) {
       console.error('Invalid input token');
       return;
     } else {
@@ -139,6 +140,7 @@ export function useSwapController() {
       const buyQuote = await getBuyQuote(toAtto(tokenAmount), state.inputToken);
 
       if (!tokenAmount || !buyQuote) {
+        console.error("Couldn't get buy quote");
         return;
       }
 
@@ -156,13 +158,14 @@ export function useSwapController() {
   };
 
   const handleSell = async () => {
-    if (!isPairToken(state.inputToken)) {
-      console.error('Invalid input token');
+    if (!isTokenFraxOrFei(state.outputToken)) {
+      console.error('Invalid output token');
     } else {
       const templeAmount = Number(state.inputValue);
       const sellQuote = await getSellQuote(toAtto(templeAmount));
 
       if (!templeAmount || !sellQuote) {
+        console.error("Couldn't get sell quote");
         return;
       }
 
@@ -178,7 +181,7 @@ export function useSwapController() {
       await sell(
         toAtto(templeAmount),
         toAtto(minAmountOut),
-        state.inputToken,
+        state.outputToken,
         sellQuote.priceBelowIV,
         state.deadlineMinutes
       );
@@ -199,16 +202,17 @@ export function useSwapController() {
   };
 
   const fetchQuote = async (value = 0): Promise<number> => {
-    let quote: BigNumber | void = toAtto(value);
+    let quote: BigNumber = toAtto(value);
 
-    if (state.mode === SwapMode.Buy && isPairToken(state.inputToken)) {
-      quote = await getBuyQuote(toAtto(value), state.inputToken);
+    if (state.mode === SwapMode.Buy && isTokenFraxOrFei(state.inputToken)) {
+      const buyQuote = await getBuyQuote(toAtto(value), state.inputToken);
+      quote = buyQuote ?? BigNumber.from(0);
     }
 
-    if (state.mode === SwapMode.Sell && isPairToken(state.outputToken)) {
+    if (state.mode === SwapMode.Sell && isTokenFraxOrFei(state.outputToken)) {
       const sellQuote = await getSellQuote(toAtto(value), state.outputToken);
 
-      quote = sellQuote && sellQuote.amountOut;
+      quote = sellQuote ? sellQuote.amountOut : BigNumber.from(0);
 
       const isPriceNearIv = templePrice < iv * FRAX_SELL_DISABLED_IV_MULTIPLE;
 

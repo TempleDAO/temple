@@ -55,6 +55,6 @@ export function createButtonLabel(inputToken: TICKER_SYMBOL, outputToken: TICKER
   }
 }
 
-export function isPairToken(token: TICKER_SYMBOL): token is TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI {
-  return Boolean(token === TICKER_SYMBOL.FRAX || TICKER_SYMBOL.FEI);
+export function isTokenFraxOrFei(token: TICKER_SYMBOL): token is TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI {
+  return token === TICKER_SYMBOL.FRAX || token === TICKER_SYMBOL.FEI;
 }

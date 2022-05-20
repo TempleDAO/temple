@@ -1,5 +1,5 @@
 import { Network } from '@ethersproject/providers';
-import { BigNumber, Signer } from 'ethers';
+import { BigNumber, ContractReceipt, Signer } from 'ethers';
 
 import { Nullable } from 'types/util';
 import { ClaimType } from 'enums/claim-type';
@@ -123,7 +123,7 @@ export interface SwapService {
     minAmountOutTemple: BigNumber,
     token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI,
     deadlineInMinutes?: number
-  ): Promise<void>;
+  ): Promise<ContractReceipt | void>;
 
   sell(
     amountInTemple: BigNumber,
@@ -131,7 +131,7 @@ export interface SwapService {
     token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI,
     isIvSwap?: boolean,
     deadlineInMinutes?: number
-  ): Promise<void>;
+  ): Promise<ContractReceipt | void>;
 
   getSellQuote(
     amountToSell: BigNumber,
