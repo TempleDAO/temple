@@ -108,23 +108,17 @@ describe("Vault Actions", async () => {
       await VAULT_ACTIONS.allowSpendingForVault(vault.address);
   });
 
-  it("Can deposit using Temple + Faith", async () => {
+  it.only("Can deposit using Temple + Faith", async () => {
     const alanAddr = await alan.getAddress();
-    await FAITH.gain(alanAddr, toAtto(10000));
+    await FAITH.gain(alanAddr, toAtto(200));
 
     const nonce = await vault.nonces(alanAddr);
     const deadline = await blockTimestamp() + (60*20);
     
     const faith = await FAITH.balances(alanAddr);
-    const alanTempleDeposit = toAtto(1000);
-    //uint256 amount = (_amountTemple * Math.min(13, 10*(1+(10*_amountFaith)/(25*_amountTemple))))/10;
-    //kek
-    const curve = toAtto(1).add(ethers.BigNumber.from(10).mul(ethers.BigNumber.from(10).mul(faith.usableFaith).div(ethers.BigNumber.from(25).mul(alanTempleDeposit))));
+    const alanTempleDeposit = toAtto(565);
     
-    const maxMult = ethers.BigNumber.from(13);
-    
-    const multipler = maxMult.lt(curve) ? maxMult : curve;
-    const expectedAmount = alanTempleDeposit.mul(multipler).div(10);
+    const expectedAmount = await VAULT_ACTIONS.getFaithMultiplier(faith.usableFaith, alanTempleDeposit);
     console.log(expectedAmount);
 
     const domain = {
