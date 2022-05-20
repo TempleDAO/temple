@@ -52,8 +52,8 @@ describe("Vault Actions", async () => {
 
     EXIT_QUEUE = await new ExitQueue__factory(owner).deploy(
         TEMPLE.address,
-        toAtto(10), /* max per epoch */
-        toAtto(10), /* max per address per epoch */
+        toAtto(1000), /* max per epoch */
+        toAtto(1000), /* max per address per epoch */
         5, /* epoch size, in blocks */
       )
        
@@ -152,7 +152,7 @@ describe("Vault Actions", async () => {
     console.log(fromAtto(await vault.balanceOf(alanAddr)));
   })
 
-  xit("Can withdraw from exit queue and stake", async () => {
+  it.only("Can withdraw from exit queue and stake", async () => {
     let alanStake = await new TempleStaking__factory(alan).attach(STAKING.address);
     let alanTemple = await new TempleERC20Token__factory(alan).attach(TEMPLE.address);
     let alanOgTemple = await new OGTemple__factory(alan).attach(OGTEMPLE.address);
@@ -160,6 +160,7 @@ describe("Vault Actions", async () => {
 
     await alanTemple.increaseAllowance(STAKING.address, toAtto(1000000))
     await alanTemple.increaseAllowance(vault.address, toAtto(100000));
+    await alanTemple.increaseAllowance(VAULT_ACTIONS.address, toAtto(100000));
     await alanStake.stake(toAtto(1000));
     await alanOgTemple.increaseAllowance(STAKING.address, toAtto(10000000000))
     
@@ -205,7 +206,7 @@ describe("Vault Actions", async () => {
     
     let signature = await alan._signTypedData(domain, types, msg);
     const split = ethers.utils.splitSignature(signature);
-    //await alanOGTSwap.withdrawExitQueueAndDepositIntoVault(Amount, vault.address,deadline, split.v,split.r,split.s);
+    await alanOGTSwap.withdrawExitQueueAndDepositIntoVault(Amount, vault.address,deadline, split.v,split.r,split.s);
     
     expect(await vault.balanceOf(await alan.getAddress())).equals(toAtto(1000));
     expect(await TEMPLE.balanceOf(await alan.getAddress())).equals(toAtto(0));

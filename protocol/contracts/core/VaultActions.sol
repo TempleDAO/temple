@@ -65,7 +65,7 @@ contract VaultActions is Ownable{
         vault.depositFor(msg.sender, amount, amount, deadline, v, r, s);
     }
 
-    /* IGNORE - WIP
+    
     function withdrawExitQueueAndDepositIntoVault(uint256 _amount, Vault vault, uint256 deadline,uint8 v, bytes32 r, bytes32 s) public {
         (uint256 amount, uint256 firstExitEpoch, uint256 LastExitEpoch) = exitQueue.userData(msg.sender);
         uint256 diff = LastExitEpoch - firstExitEpoch;
@@ -76,7 +76,7 @@ contract VaultActions is Ownable{
         
         acelExitQueue.withdrawEpochsFor(epochs, epochs.length, msg.sender, v,r,s);
         depositTempleFor(_amount, vault, deadline, v, r, s);
-    }*/
+    }
 
     function depositTempleFor(uint256 _amount, Vault vault, uint256 deadline,uint8 v, bytes32 r, bytes32 s) public {
         SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amount);
