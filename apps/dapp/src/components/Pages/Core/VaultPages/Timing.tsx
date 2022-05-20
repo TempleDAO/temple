@@ -30,7 +30,7 @@ const Timing = () => {
               </Cell>
             </Row>
           </Head>
-          <Body>
+          <StyledBody>
             {vaultGroup.vaults.map((vault) => {
               const vaultBalance = balances[vault.id] || {};
               const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
@@ -43,7 +43,7 @@ const Timing = () => {
                 </Row>
               );
             })}
-          </Body>
+          </StyledBody>
         </Table>
       </TableWrapper>
       <Duration>{vaultGroup.months} Months</Duration>
@@ -60,6 +60,10 @@ const TableWrapper = styled.div`
 const Table = styled(BaseTable)`
   margin-bottom: 3.375rem; /* 54/16 */
 `;
+
+const StyledBody = styled(Body)`
+  font-size: 1rem;
+`
 
 const Header = styled.h2`
   margin: 0 0 3.625rem; /* 58/16 */

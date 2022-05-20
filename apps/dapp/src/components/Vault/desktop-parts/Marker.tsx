@@ -1,7 +1,8 @@
 import { forwardRef } from 'react';
 import styled from 'styled-components';
+
 import { Marker as MarkerTypeDef, MarkerType } from '../types';
-import { lerp } from './utils';
+import { lerp } from '../utils';
 
 const MIN_ANGLE = 80.5;
 const MAX_ANGLE = -80.5;

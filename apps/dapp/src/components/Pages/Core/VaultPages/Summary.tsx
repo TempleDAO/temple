@@ -35,7 +35,7 @@ export const Summary = () => {
       <Text3>
         {`TVL: $${formatNumberWithCommas(vaultGroup.tvl)} `}
         <Tooltip
-          content="Total volume locked for all instances of this maturity"
+          content="Total Value Locked for this vault"
           inline={true}
         >
           ⓘ
