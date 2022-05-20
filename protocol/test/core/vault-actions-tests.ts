@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, mineNBlocks, NULL_ADDR, toAtto } from "../helpers";
+import { blockTimestamp, deployAndAirdropTemple, toAtto } from "../helpers";
 import { Signer } from "ethers";
 import {
     AcceleratedExitQueue,
@@ -22,7 +22,6 @@ import {
   Faith
 } from "../../typechain";
 import { expect } from "chai";
-import { fail } from "assert";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { _TypedDataEncoder } from "ethers/lib/utils";
 
@@ -80,35 +79,36 @@ describe("Vault Actions", async () => {
       VAULT_ACTIONS = await new VaultActions__factory(owner).deploy(
         OGTEMPLE.address,
         TEMPLE.address,
-        ACCEL_EXIT_QUEUE.address,
-        EXIT_QUEUE.address,
         STAKING.address,
         FAITH.address
       );
 
+      await TEMPLE.mint(STAKING.address, toAtto(100000));
+      await STAKING.setExitQueue(VAULT_ACTIONS.address);
+
       await FAITH.addManager(await owner.getAddress());
       await FAITH.addManager(VAULT_ACTIONS.address);
 
-        joiningFee = await new JoiningFee__factory(owner).deploy(
-            toAtto(0.0001),
-        );
+      joiningFee = await new JoiningFee__factory(owner).deploy(
+          toAtto(0.0001),
+      );
 
-        vault = await new Vault__factory(owner).deploy(
-            "Temple 1m Vault",
-            "TV_1M",
-            TEMPLE.address,
-            60 * 10,
-            60,
-            { p: 1, q: 1},
-            joiningFee.address,
-            await blockTimestamp()
-        )
+      vault = await new Vault__factory(owner).deploy(
+          "Temple 1m Vault",
+          "TV_1M",
+          TEMPLE.address,
+          60 * 10,
+          60,
+          { p: 1, q: 1},
+          joiningFee.address,
+          await blockTimestamp()
+      )
 
       await TEMPLE.mint(VAULT_ACTIONS.address, toAtto(1000000));
-      await VAULT_ACTIONS.allowSpendingForVault(vault.address);
+      //await VAULT_ACTIONS.allowSpendingForVault(vault.address);
   });
 
-  it.only("Can deposit using Temple + Faith", async () => {
+  it("Can deposit using Temple + Faith", async () => {
     const alanAddr = await alan.getAddress();
     await FAITH.gain(alanAddr, toAtto(200));
 
@@ -119,7 +119,6 @@ describe("Vault Actions", async () => {
     const alanTempleDeposit = toAtto(565);
     
     const expectedAmount = await VAULT_ACTIONS.getFaithMultiplier(faith.usableFaith, alanTempleDeposit);
-    console.log(expectedAmount);
 
     const domain = {
       name: await vault.name(),
@@ -149,7 +148,7 @@ describe("Vault Actions", async () => {
 
     await TEMPLE.connect(alan).increaseAllowance(VAULT_ACTIONS.address, toAtto(10000))
     await VAULT_ACTIONS.connect(alan).depositTempleWithFaith(alanTempleDeposit, faith.usableFaith,vault.address,deadline, split.v,split.r,split.s)
-    console.log(fromAtto(await vault.balanceOf(alanAddr)));
+    expect(await vault.balanceOf(alanAddr)).equals(expectedAmount);
   })
 
   it.only("Can withdraw from exit queue and stake", async () => {
@@ -162,22 +161,11 @@ describe("Vault Actions", async () => {
     await alanTemple.increaseAllowance(vault.address, toAtto(100000));
     await alanTemple.increaseAllowance(VAULT_ACTIONS.address, toAtto(100000));
     await alanStake.stake(toAtto(1000));
+    await alanOgTemple.increaseAllowance(VAULT_ACTIONS.address, toAtto(10000000000))
     await alanOgTemple.increaseAllowance(STAKING.address, toAtto(10000000000))
     
     const ogtBal = await OGTEMPLE.balanceOf(await alan.getAddress())
-
-    await alanStake.unstake(ogtBal);
-    
-    await mineNBlocks(1000);
-    let inWindow = await vault.inEnterExitWindow();
-
-    while (!inWindow) {
-        await mineNBlocks(1);
-        inWindow = await vault.inEnterExitWindow();
-    }
-    
-    const {Amount} = await EXIT_QUEUE.userData(await alan.getAddress())
-
+    const amount = await STAKING.balance(ogtBal);
     const nonce = await vault.nonces(await alan.getAddress());
     const deadline = await blockTimestamp() + (60*20);
 
@@ -199,16 +187,17 @@ describe("Vault Actions", async () => {
 
     const msg = {
         owner: await alan.getAddress(),
-        maxAmount: Amount,
+        maxAmount: amount,
         deadline: deadline,
         nonce: nonce
     }
     
     let signature = await alan._signTypedData(domain, types, msg);
     const split = ethers.utils.splitSignature(signature);
-    await alanOGTSwap.withdrawExitQueueAndDepositIntoVault(Amount, vault.address,deadline, split.v,split.r,split.s);
     
-    expect(await vault.balanceOf(await alan.getAddress())).equals(toAtto(1000));
+    await alanOGTSwap.unstakeAndDepositIntoVault(ogtBal, vault.address,deadline, split.v,split.r,split.s);
+    
+    expect(await vault.balanceOf(await alan.getAddress())).equals(amount);
     expect(await TEMPLE.balanceOf(await alan.getAddress())).equals(toAtto(0));
   });
 });

@@ -143,7 +143,11 @@ contract VaultTest is TempleTest {
         assertEq(temple.balanceOf(address(this)), amount);
     }
 
-    function testFuzzDepositFor(uint256 amount) public {
+    function testFuzzDepositFor() public {
+        uint256 amount = 100000000000000000000;
+        // bound the fuzzing input - I doubt we'll ever hit someone depositing 366 trillion temple
+        //vm.assume(amount < 340282366920938463463374607431768211455);
+
         // build user
         uint256 priv = 0xBEEF;
         address sally = vm.addr(priv);
@@ -166,6 +170,9 @@ contract VaultTest is TempleTest {
         );
 
         temple.mint(sally, amount);
+        temple.mint(address(this), amount);
+        temple.increaseAllowance(address(vault), amount);
+
         vm.prank(sally);
         temple.increaseAllowance(address(vault), amount);
         vault.depositFor(sally, amount, amount, deadline, v, r, s);
