@@ -2,6 +2,8 @@ import { CryptoValue, CryptoSelector } from 'components/Input/Input';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { SwapMode } from './types';
 import { TOKENS_BY_MODE } from './constants';
+import { BigNumber } from 'ethers';
+import { fromAtto } from 'utils/bigNumber';
 
 // See apps/dapp/src/components/Input/Input.tsx
 export function buildValueConfig(token: TICKER_SYMBOL): CryptoValue {
@@ -12,7 +14,11 @@ export function buildValueConfig(token: TICKER_SYMBOL): CryptoValue {
 }
 
 // See apps/dapp/src/components/Input/Input.tsx
-export function buildSelectConfig(defaultToken: TICKER_SYMBOL, mode: SwapMode): CryptoSelector {
+export function buildSelectConfig(
+  defaultToken: TICKER_SYMBOL,
+  mode: SwapMode,
+  isFraxSellDisabled?: boolean
+): CryptoSelector | CryptoValue {
   const defaultOption = {
     value: defaultToken,
     label: defaultToken,
@@ -22,6 +28,13 @@ export function buildSelectConfig(defaultToken: TICKER_SYMBOL, mode: SwapMode): 
     value: token,
     label: token,
   }));
+
+  if (mode === SwapMode.Sell && isFraxSellDisabled) {
+    return {
+      kind: 'value',
+      value: TICKER_SYMBOL.FEI,
+    };
+  }
 
   return {
     kind: 'select',
@@ -40,4 +53,8 @@ export function createButtonLabel(inputToken: TICKER_SYMBOL, outputToken: TICKER
     default:
       return 'Swap';
   }
+}
+
+export function isTokenFraxOrFei(token: TICKER_SYMBOL): token is TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI {
+  return token === TICKER_SYMBOL.FRAX || token === TICKER_SYMBOL.FEI;
 }
