@@ -1,13 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 
 import { Input } from 'components/Input/Input';
-import { VaultButton } from '../VaultPages/VaultContent';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { NAV_MOBILE_HEIGHT_PIXELS, NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
-import arrow from 'assets/icons/amm-arrow.svg';
-import { pixelsToRems } from 'styles/mixins';
-import { phoneAndAbove } from 'styles/breakpoints';
+import { VaultButton } from '../VaultPages/VaultContent';
 
 import { SwapMode } from './types';
 import { useSwapController } from './use-swap-controller';
@@ -15,11 +12,22 @@ import { useSwapController } from './use-swap-controller';
 import { PageWrapper } from '../utils';
 import { formatNumberWithCommas } from 'utils/formatter';
 
+import { pixelsToRems } from 'styles/mixins';
+import { phoneAndAbove } from 'styles/breakpoints';
+
+import arrow from 'assets/icons/amm-arrow.svg';
 import Gear from 'assets/icons/gear.svg';
 
 export const Trade = () => {
-  const { state, handleSelectChange, handleInputChange, handleChangeMode, handleHintClick, handleTxSettingsUpdate } =
-    useSwapController();
+  const {
+    state,
+    handleSelectChange,
+    handleInputChange,
+    handleChangeMode,
+    handleHintClick,
+    handleTxSettingsUpdate,
+    handleTransaction,
+  } = useSwapController();
 
   const [isSlippageModalOpen, setIsSlippageModalOpen] = useState(false);
 
@@ -28,6 +36,13 @@ export const Trade = () => {
 
   const outputCryptoConfig =
     state.mode === SwapMode.Sell ? { ...state.outputConfig, onCryptoChange: handleSelectChange } : state.outputConfig;
+
+  const isButtonDisabled =
+    !state.isSlippageTooHigh &&
+    (state.isTransactionPending ||
+      state.inputTokenBalance === 0 ||
+      Number(state.inputValue) > state.inputTokenBalance ||
+      state.inputValue === '');
 
   return (
     <PageWrapper>
@@ -62,7 +77,11 @@ export const Trade = () => {
             <InvertButton onClick={handleChangeMode} />
           </InputsContainer>
           <Spacer />
-          <SwapButton label={state.buttonLabel} />
+          <SwapButton
+            label={state.buttonLabel}
+            onClick={state.isSlippageTooHigh ? () => setIsSlippageModalOpen(true) : handleTransaction}
+            disabled={isButtonDisabled}
+          />
         </SwapContainer>
       </Container>
     </PageWrapper>

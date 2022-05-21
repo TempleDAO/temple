@@ -61,7 +61,7 @@ export const Buy: FC<BuyProps> = ({ onSwapArrowClick, small }) => {
 
   useEffect(() => {
     if (balance) {
-      setStableCoinWalletAmount(balance.stableCoin);
+      setStableCoinWalletAmount(balance.frax);
       setTempleWalletAmount(balance.temple);
     }
   }, [balance]);

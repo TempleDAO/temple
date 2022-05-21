@@ -224,12 +224,14 @@ export const InputHint = styled.small<InputHintProps>`
   font-size: ${pixelsToRems(10)}rem;
   text-align: center;
   text-transform: uppercase;
+  width: max-content;
+
   ${(props) =>
     props.hasAction &&
     css`
       background-color: ${(props) => props.theme.palette.brand50};
       border-radius: 0.25em;
-      padding: 0.0625rem 0.5rem;
+      padding: 0.0625rem 0.25rem;
       cursor: pointer;
     `}
 `;
