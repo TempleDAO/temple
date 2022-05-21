@@ -196,6 +196,9 @@ async function main() {
     pair.address
   );
 
+  await pair.setRouter(templeRouter.address);
+  await feiPair.setRouter(templeRouter.address);
+
   await templeToken.mint(owner.address, toAtto(10000000));
   await frax.mint(owner.address, toAtto(10000000));
   await fei.mint(owner.address, toAtto(10000000));

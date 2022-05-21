@@ -17,15 +17,18 @@ export type SwapReducerAction =
     }
   | {
       type: 'changeOutputToken';
-      value: { token: TICKER_SYMBOL };
+      value: { token: TICKER_SYMBOL; balance: number };
     }
   | { type: 'changeInputValue'; value: string }
   | { type: 'changeQuoteValue'; value: number }
   | { type: 'changeTxSettings'; value: TransactionSettings }
   | { type: 'changeInputTokenBalance'; value: number }
+  | { type: 'changeOutputTokenBalance'; value: number }
   | { type: 'startTx' }
   | { type: 'endTx' }
-  | { type: 'slippageTooHigh' };
+  | { type: 'slippageTooHigh' }
+  | { type: 'disableFraxSell'; feiBalance: number }
+  | { type: 'enableFraxSell'; fraxBalance: number };
 
 export interface SwapReducerState {
   /*forceRefreshNonce: number;*/
@@ -41,4 +44,7 @@ export interface SwapReducerState {
   inputConfig: SwapInputConfig;
   outputConfig: SwapInputConfig;
   buttonLabel: string;
+  isTransactionPending: boolean;
+  isSlippageTooHigh: boolean;
+  isFraxSellDisabled: boolean;
 }

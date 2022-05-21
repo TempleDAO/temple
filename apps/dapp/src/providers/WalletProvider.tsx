@@ -21,7 +21,13 @@ import {
   LockedOGTempleDeprecated__factory,
   ERC20,
 } from 'types/typechain';
-import { TEMPLE_ADDRESS, FRAX_ADDRESS, TEMPLE_STAKING_ADDRESS, LOCKED_OG_TEMPLE_ADDRESS } from 'providers/env';
+import {
+  TEMPLE_ADDRESS,
+  FRAX_ADDRESS,
+  TEMPLE_STAKING_ADDRESS,
+  LOCKED_OG_TEMPLE_ADDRESS,
+  FEI_ADDRESS,
+} from 'providers/env';
 
 // We want to save gas burn $ for the Templars,
 // so we approving 1M up front, so only 1 approve TXN is required for approve
@@ -29,7 +35,8 @@ const DEFAULT_ALLOWANCE = toAtto(100000000);
 
 const INITIAL_STATE: WalletState = {
   balance: {
-    stableCoin: 0,
+    frax: 0,
+    fei: 0,
     temple: 0,
     ogTempleLockedClaimable: 0,
     ogTemple: 0,
@@ -80,7 +87,9 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
-    const stableCoinContract = new ERC20__factory(signer).attach(FRAX_ADDRESS);
+    const fraxContract = new ERC20__factory(signer).attach(FRAX_ADDRESS);
+
+    const feiContract = new ERC20__factory(signer).attach(FEI_ADDRESS);
 
     const ogLockedTemple = new LockedOGTempleDeprecated__factory(signer).attach(LOCKED_OG_TEMPLE_ADDRESS);
 
@@ -90,10 +99,12 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
     const templeContract = new TempleERC20Token__factory(signer).attach(TEMPLE_ADDRESS);
 
-    const stableCoinBalance: BigNumber = await stableCoinContract.balanceOf(walletAddress);
+    const fraxBalance: BigNumber = await fraxContract.balanceOf(walletAddress);
+
+    const feiBalance: BigNumber = await feiContract.balanceOf(walletAddress);
 
     // get the locked OG temple
-    const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber();
+    const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber() ?? 0;
     let ogTempleLockedClaimable = 0;
     const templeLockedPromises = [];
     for (let i = 0; i < lockedNum; i++) {
@@ -112,7 +123,8 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     const temple = fromAtto(await templeContract.balanceOf(walletAddress));
 
     return {
-      stableCoin: fromAtto(stableCoinBalance),
+      frax: fromAtto(fraxBalance),
+      fei: fromAtto(feiBalance),
       temple: temple,
       ogTemple: ogTemple >= 1 ? ogTemple : 0,
       ogTempleLockedClaimable: ogTempleLockedClaimable,

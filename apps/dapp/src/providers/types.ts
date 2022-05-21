@@ -1,10 +1,11 @@
 import { Network } from '@ethersproject/providers';
-import { BigNumber, Signer } from 'ethers';
+import { BigNumber, ContractReceipt, Signer } from 'ethers';
 
 import { Nullable } from 'types/util';
 import { ClaimType } from 'enums/claim-type';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
@@ -21,7 +22,8 @@ export enum ETH_ACTIONS {
 }
 
 export type Balance = {
-  stableCoin: number;
+  frax: number;
+  fei: number;
   temple: number;
   ogTempleLockedClaimable: number;
   ogTemple: number;
@@ -80,21 +82,21 @@ export interface StakingService {
 
   getJoinQueueData(ogtAmount: BigNumber): Promise<JoinQueueData | void>;
 
-  getExitQueueData(): Promise<void>
+  getExitQueueData(): Promise<void>;
 
-  updateLockedEntries(): Promise<void>
+  updateLockedEntries(): Promise<void>;
 
   claimOgTemple(lockedEntryIndex: number): Promise<void>;
 
   getRewardsForOGT(ogtAmount: number): Promise<number | void>;
 
-  updateApy(): Promise<void>
+  updateApy(): Promise<void>;
 }
 
 export interface FaithService {
   faith: FaithBalance;
 
-  updateFaith(): Promise<void>
+  updateFaith(): Promise<void>;
 
   verifyFaith(lockingPeriod?: number): Promise<void>;
 
@@ -112,21 +114,35 @@ export interface FaithService {
   ): Promise<TransactionReceipt | void>;
 }
 
-export interface SwapService { 
+export interface SwapService {
   templePrice: number;
   iv: number;
 
-  buy(amountInFrax: BigNumber, minAmountOutTemple: BigNumber): void;
+  buy(
+    amountIn: BigNumber,
+    minAmountOutTemple: BigNumber,
+    token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI,
+    deadlineInMinutes?: number
+  ): Promise<ContractReceipt | void>;
 
-  sell(amountInTemple: BigNumber, minAmountOutFrax: BigNumber, isIvSwap: boolean): void;
+  sell(
+    amountInTemple: BigNumber,
+    minAmountOut: BigNumber,
+    token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI,
+    isIvSwap?: boolean,
+    deadlineInMinutes?: number
+  ): Promise<ContractReceipt | void>;
 
-  getSellQuote(amountToSell: BigNumber): Promise<BigNumber | void>;
+  getSellQuote(
+    amountToSell: BigNumber,
+    token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI
+  ): Promise<{ amountOut: BigNumber; priceBelowIV: boolean } | void>;
 
-  getBuyQuote(amountToBuy: BigNumber): Promise<BigNumber | void>;
+  getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<BigNumber | void>;
 
-  updateTemplePrice(): Promise<void>
-  
-  updateIv(): Promise<void>
+  updateTemplePrice(token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<void>;
+
+  updateIv(): Promise<void>;
 }
 
 export interface WalletState {
@@ -136,7 +152,7 @@ export interface WalletState {
   balance: Balance;
   signer: Nullable<Signer>;
   network: Nullable<Network>;
-  
+
   isConnecting: boolean;
   isConnected: boolean;
 
@@ -147,14 +163,12 @@ export interface WalletState {
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
 
   getBalance(): Promise<Balance | void>;
-  
+
   updateBalance(): Promise<void>;
 
   getCurrentEpoch(): Promise<void | number>;
 
-  collectTempleTeamPayment(
-    epoch: TEAM_PAYMENTS_EPOCHS
-  ): Promise<void | TransactionReceipt>;
+  collectTempleTeamPayment(epoch: TEAM_PAYMENTS_EPOCHS): Promise<void | TransactionReceipt>;
 
   ensureAllowance(
     tokenName: string,
