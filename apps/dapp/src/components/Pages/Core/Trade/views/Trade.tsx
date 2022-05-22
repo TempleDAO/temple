@@ -4,7 +4,7 @@ import { Input } from 'components/Input/Input';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 
 import { SwapMode } from '../types';
-import { useSwapController,  } from '../use-swap-controller';
+import { useSwapController } from '../use-swap-controller';
 
 import { formatNumberWithCommas } from 'utils/formatter';
 

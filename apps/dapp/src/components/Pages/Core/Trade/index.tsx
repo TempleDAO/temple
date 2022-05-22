@@ -1,20 +1,15 @@
-import { useState, FC } from 'react';
-import { Route, Routes, Link as BaseLink, useLocation, useResolvedPath, useMatch } from 'react-router-dom';
+import { FC } from 'react';
+import { Route, Routes, Link as BaseLink, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
-import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { Trade } from './views/Trade';
 import { Unstake } from './views/Unstake';
 import { Stake } from './views/Stake';
 import { PageWrapper } from '../utils';
-import { Container, SettingsButton, } from './styles';
-import { theme } from 'styles/theme';
-import { useSwapController } from './use-swap-controller';
+import { Container } from './styles';
 import { tabletAndAbove } from 'styles/breakpoints';
 
 const TradeRoutes = () => {
-  const swapController = useSwapController();
-
   return (
     <>
       <PageWrapper>
