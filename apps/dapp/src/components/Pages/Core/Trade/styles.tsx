@@ -15,7 +15,6 @@ export const Container = styled.section`
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-direction: column;
 
   ${phoneAndAbove(`
     margin-top: ${pixelsToRems(NAV_DESKTOP_HEIGHT_PIXELS)}rem;
@@ -63,6 +62,7 @@ export const Spacer = styled.div`
 
 export const SettingsButton = styled.button`
   position: relative;
+  left: calc(50% - 0.75rem);
   background-color: transparent;
   background: url(${Gear});
   background-repeat: no-repeat;
@@ -72,6 +72,8 @@ export const SettingsButton = styled.button`
 
   height: 1.5rem;
   width: 1.5rem;
+
+  margin-bottom: 0.75rem;
 
   transition: 500ms ease;
 

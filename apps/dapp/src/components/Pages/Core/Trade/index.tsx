@@ -3,8 +3,8 @@ import { Route, Routes, Link, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
-import { Trade } from './views/Trade';
-import { Unstake } from './views/Unstake';
+import { Trade } from './Trade';
+import { Unstake } from './Unstake';
 import { PageWrapper } from '../utils';
 import { Container, SettingsButton, } from './styles';
 import { theme } from 'styles/theme';
@@ -32,7 +32,7 @@ const TradeRoutes = () => {
               <SettingsButton onClick={() => setIsSlippageModalOpen(true)} />
             </MenuWrapper>
             <Routes>
-              <Route path="/" element={<Trade {...swapController} />} />
+              <Route path="/" element={<Trade {...swapController} setIsSlippageModalOpen={setIsSlippageModalOpen} />} />
               <Route path="/unstake" element={<Unstake />} />
             </Routes>
           </Wrapper>
