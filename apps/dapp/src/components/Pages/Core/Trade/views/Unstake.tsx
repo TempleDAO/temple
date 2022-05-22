@@ -38,7 +38,7 @@ export const Unstake = () => {
   };
 
   return (
-    <div>
+    <>
       <Header>Unstake OGTemple</Header>
       <InputWrapper>
         <Input
@@ -61,26 +61,30 @@ export const Unstake = () => {
       >
         Unstake
       </CtaButton>
-      <Header>Withdraw</Header>
-      <InputWrapper>
-        <Input
-          crypto={{
-            kind: 'value',
-            value: TICKER_SYMBOL.TEMPLE_TOKEN,
-          }}
-          isNumber
-          disabled
-          value={exitQueueData.claimableTemple}
-          min={0}
-        />
-      </InputWrapper>
-      <CtaButton
-        disabled={exitQueueData.claimableTemple <= 0 || unstakeLoading}
-        onClick={() => claimAvailableTemple()}
-      >
-        {unstakeLoading ? <Loader /> : `Withdraw ${exitQueueData.claimableTemple > 0 ? `${exitQueueData.claimableTemple} Temple` : ''}`}
-      </CtaButton>
-    </div>
+      {exitQueueData.claimableTemple > 0 && (
+        <>
+          <Header>Withdraw</Header>
+          <InputWrapper>
+            <Input
+              crypto={{
+                kind: 'value',
+                value: TICKER_SYMBOL.TEMPLE_TOKEN,
+              }}
+              isNumber
+              disabled
+              value={exitQueueData.claimableTemple}
+              min={0}
+            />
+          </InputWrapper>
+          <CtaButton
+            disabled={exitQueueData.claimableTemple <= 0 || unstakeLoading}
+            onClick={() => claimAvailableTemple()}
+          >
+            {unstakeLoading ? <Loader /> : `Withdraw ${exitQueueData.claimableTemple > 0 ? `${exitQueueData.claimableTemple} Temple` : ''}`}
+          </CtaButton>
+        </>
+      )}
+    </>
   );
 };
 
