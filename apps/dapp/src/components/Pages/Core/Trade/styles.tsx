@@ -62,7 +62,6 @@ export const Spacer = styled.div`
 
 export const SettingsButton = styled.button`
   position: relative;
-  left: calc(50% - 0.75rem);
   background-color: transparent;
   background: url(${Gear});
   background-repeat: no-repeat;
@@ -73,8 +72,6 @@ export const SettingsButton = styled.button`
   height: 1.5rem;
   width: 1.5rem;
 
-  margin-bottom: 0.75rem;
-
   transition: 500ms ease;
 
   :hover:not(:disabled) {
@@ -84,9 +81,19 @@ export const SettingsButton = styled.button`
   }
 `;
 
-export const SwapButton = styled(VaultButton)`
-  width: 70%;
+export const CtaButton = styled(VaultButton)`
+  width: auto;
   font-size: 1.2rem;
   letter-spacing: 0.25rem;
   transition: 500ms ease;
+  margin: 0 auto;
+`;
+
+export const Header = styled.h3`
+  margin: 0 0 1rem;
+  text-align: left;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
 `;

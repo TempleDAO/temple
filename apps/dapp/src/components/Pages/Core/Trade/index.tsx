@@ -1,52 +1,61 @@
-import { useState } from 'react';
-import { Route, Routes, Link, useLocation } from 'react-router-dom';
+import { useState, FC } from 'react';
+import { Route, Routes, Link as BaseLink, useLocation, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
-import { Trade } from './Trade';
-import { Unstake } from './Unstake';
+import { Trade } from './views/Trade';
+import { Unstake } from './views/Unstake';
+import { Stake } from './views/Stake';
 import { PageWrapper } from '../utils';
 import { Container, SettingsButton, } from './styles';
 import { theme } from 'styles/theme';
 import { useSwapController } from './use-swap-controller';
+import { tabletAndAbove } from 'styles/breakpoints';
 
 const TradeRoutes = () => {
   const swapController = useSwapController();
-  const [isSlippageModalOpen, setIsSlippageModalOpen] = useState(false);
 
   return (
     <>
-      <TransactionSettingsModal
-        isOpen={isSlippageModalOpen}
-        onClose={() => setIsSlippageModalOpen(false)}
-        onChange={(settings) => swapController.handleTxSettingsUpdate(settings)}
-      />
       <PageWrapper>
         <Container>
-          <Wrapper>
+          <div>
             <MenuWrapper>
               <Menu>
                 <TradeLink to="/core/dapp/trade">Trade</TradeLink>
                 <TradeLink to="/core/dapp/trade/unstake">Unstake / Withdraw</TradeLink>
+                <TradeLink to="/core/dapp/trade/stake">Stake</TradeLink>
               </Menu>
-              <SettingsButton onClick={() => setIsSlippageModalOpen(true)} />
             </MenuWrapper>
-            <Routes>
-              <Route path="/" element={<Trade {...swapController} setIsSlippageModalOpen={setIsSlippageModalOpen} />} />
-              <Route path="/unstake" element={<Unstake />} />
-            </Routes>
-          </Wrapper>
+            <Wrapper>
+              <Routes>
+                <Route path="/" element={<Trade />} />
+                <Route path="/unstake" element={<Unstake />} />
+                <Route path="/stake" element={<Stake />} />
+              </Routes>
+            </Wrapper>
+          </div>
         </Container>
       </PageWrapper>
     </>
   );
 };
 
+const TradeLink: FC<{ to: string }> = (props) => {
+  const resolved = useResolvedPath(props.to);
+  const match = useMatch({ path: resolved.pathname, end: true });
+  return (
+    <Link {...props} $isActive={!!match} />
+  );
+};
+
 const Wrapper = styled.div`
-  background: #1D1A1A;
-  padding: 1.5rem 2rem 2.5rem;
-  border-radius: 2rem;
-  box-shadow: 0 0 5rem rgba(0, 0, 0, .1);
+  ${tabletAndAbove(`
+    padding: 1.5rem 2rem 2.5rem;
+    border-radius: 2rem;
+    box-shadow: 0 0 5rem #1D1A1A;
+    max-width: 40rem;
+  `)}
 `;
 
 const MenuWrapper = styled.div`
@@ -54,8 +63,8 @@ const MenuWrapper = styled.div`
   flex-direction: row;
   align-items: center;
   width: 100%;
-  max-width: 36.0625rem; // 577px
-  margin: 0 auto 1.25rem;
+  max-width: 40rem;
+  margin: 0 auto 1.5rem;
   justify-content: space-between;
 `;
 
@@ -65,10 +74,11 @@ const Menu = styled.div`
   align-items: center;
 `;
 
-const TradeLink = styled(Link)`
-  margin-right: 1rem;
-  padding: .5rem 0;
+const Link = styled(BaseLink)<{ $isActive: boolean }>`
+  padding: .5rem 1rem;
+  border-radius: .5rem;
   display: block;
+  background: ${({ $isActive, theme }) => $isActive ? '#1D1A1A' : 'transparent'};
 `;
 
 export default TradeRoutes;

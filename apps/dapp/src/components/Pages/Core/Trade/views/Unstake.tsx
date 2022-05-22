@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 
-import { VaultButton as BaseVaultButton } from '../VaultPages/VaultContent';
 import { useStaking } from 'providers/StakingProvider';
 import { useWallet } from 'providers/WalletProvider';
 import { Input } from 'components/Input/Input';
@@ -9,6 +8,12 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberWithCommas } from 'utils/formatter';
 import { useUnstakeOGTemple } from 'hooks/core/use-unstake-ogtemple';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
+import Loader from 'components/Loader/Loader';
+
+import { 
+  Header,
+  CtaButton,
+} from '../styles';
 
 export const Unstake = () => {
   const { balance } = useWallet();
@@ -50,44 +55,35 @@ export const Unstake = () => {
           hint={`Balance: ${formatNumberWithCommas(balance.ogTemple)}`}
         />
       </InputWrapper>
-      <VaultButton
+      <CtaButton
         disabled={unstakeLoading || !unstakeAmount || balance.ogTemple <= 0}
         onClick={() => unstake(unstakeAmount)}
       >
         Unstake
-      </VaultButton>
-      <Header>Withdraw Temple</Header>
+      </CtaButton>
+      <Header>Withdraw</Header>
       <InputWrapper>
-      <Input
-        crypto={{
-          kind: 'value',
-          value: TICKER_SYMBOL.TEMPLE_TOKEN,
-        }}
-        isNumber
-        disabled
-        value={exitQueueData.claimableTemple}
-        min={0}
-      />
-    </InputWrapper>
-      <VaultButton
-        disabled={exitQueueData.claimableTemple <= 0}
+        <Input
+          crypto={{
+            kind: 'value',
+            value: TICKER_SYMBOL.TEMPLE_TOKEN,
+          }}
+          isNumber
+          disabled
+          value={exitQueueData.claimableTemple}
+          min={0}
+        />
+      </InputWrapper>
+      <CtaButton
+        disabled={exitQueueData.claimableTemple <= 0 || unstakeLoading}
         onClick={() => claimAvailableTemple()}
       >
-        Withdraw {exitQueueData.claimableTemple > 0 ? `${exitQueueData.claimableTemple} Temple` : ''}
-      </VaultButton>
+        {unstakeLoading ? <Loader /> : `Withdraw ${exitQueueData.claimableTemple > 0 ? `${exitQueueData.claimableTemple} Temple` : ''}`}
+      </CtaButton>
     </div>
   );
 };
 
 const InputWrapper = styled.div`
   margin-bottom: 1rem;
-`;
-
-const VaultButton = styled(BaseVaultButton)`
-  margin: 0 auto;
-`;
-
-const Header = styled.h3`
-  margin-bottom: 1rem;
-  text-align: center;
 `;

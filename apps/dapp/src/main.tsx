@@ -82,7 +82,7 @@ ReactDOM.render(
                 <Route path="strategy" element={<Strategy />} />
                 <Route path="timing" element={<Timing />} />
               </Route>
-              <Route path="trade*" element={<TradeRoutes />} />
+              <Route path="trade/*" element={<TradeRoutes />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
