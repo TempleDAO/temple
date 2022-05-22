@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 
-import { VaultButton as BaseVaultButton } from '../../VaultPages/VaultContent';
-import { useStaking } from 'providers/StakingProvider';
 import { useWallet } from 'providers/WalletProvider';
 import { Input } from 'components/Input/Input';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
