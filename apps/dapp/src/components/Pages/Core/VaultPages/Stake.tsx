@@ -76,8 +76,6 @@ export const Stake = () => {
 
   const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(vault.id, ticker);
   
-  
-
   const [zapAssetRequest, { response: zapRepsonse, error: zapError, isLoading: zapLoading }] =
     useZappedAssetTempleBalance(ticker, toAtto(Number(stakingAmount || 0)));
 
