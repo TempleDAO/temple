@@ -76,13 +76,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     /**
-     * @notice Deposit temple into a vault
-     */
-    function deposit(uint256 amount) public {
-        depositFor(msg.sender, amount);
-    }
-
-    /**
      * @notice Deposit for another user (gassless for the temple owner)
      * (assuming the owner has given authority to the caller to act on their behalf)
      *
@@ -99,7 +92,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, v, r, s);
 
-        // TODO: Scoop - do we need this? Figure out why signature isn't verifying anymore
         require(signer == owner, "Vault: invalid signature");
 
         depositFor(msg.sender, owner, amount);
@@ -193,16 +185,19 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         nonce.increment();
     }
 
-    function depositFor(address _account, uint256 _amount) private {
-        depositFor(msg.sender, _account, _amount);
+    /**
+    * @notice Deposit temple into a vault
+    */
+    function deposit(uint256 amount) public {
+        depositFor(msg.sender, amount);
     }
 
     /**
-     * @dev shared private implementation of depositFor. Must be private, to prevent
-     * security issue where anyone can deposit (and lock) for another account, once
-     * said account as approved this contract to pull temple funds.
+     * @dev shared implementation of depositFor. Allows callers to deposit and lock on behalf of _account. 
+            Care needs to be taken when calling this to ensure that the caller is passing the correct args in,
+            otherwise they may mistakenly lock _sender funds attributed to a wallet they have no control over.
      */
-    function depositFor(address _sender, address _account, uint256 _amount) private {
+    function depositFor(address _sender, address _account, uint256 _amount) public {
         require(inEnterExitWindow(), "Vault: Cannot join vault when outside of enter/exit window");
 
         uint256 feePerTempleScaledPerHour = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));

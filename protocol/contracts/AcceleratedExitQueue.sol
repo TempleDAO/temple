@@ -6,7 +6,6 @@ import "./TempleERC20Token.sol";
 import "./ExitQueue.sol";
 import "./TempleStaking.sol";
 
-import "hardhat/console.sol";
 
 // import "hardhat/console.sol";
 
@@ -71,9 +70,9 @@ contract AcceleratedExitQueue is Ownable, IExitQueue {
         exitQueue.setOwedTemple(_users, _amounts);
     }
 
-    function migrateTempleFromEpochs(uint256[] memory epochs, uint256 length, uint256 expectedAmountTemple, address owner) internal {
+    function migrateTempleFromEpochs(uint256[] memory epochs, uint256 length, uint256 expectedAmountTemple) internal {
         uint256 templeBalancePreMigrate = templeToken.balanceOf(address(this));
-        exitQueue.migrate(owner, epochs, length, this);
+        exitQueue.migrate(msg.sender, epochs, length, this);
         require((templeToken.balanceOf(address(this)) - templeBalancePreMigrate) == expectedAmountTemple, "Balance increase should be equal to a user's bag for a given exit queue epoch");
     }
 
@@ -86,7 +85,7 @@ contract AcceleratedExitQueue is Ownable, IExitQueue {
         for (uint256 i=0; i<length; i++) {
             allocation += exitQueue.currentEpochAllocation(msg.sender, epochs[i]);
         }
-        migrateTempleFromEpochs(epochs, length, allocation, msg.sender);
+        migrateTempleFromEpochs(epochs, length, allocation);
         SafeERC20.safeIncreaseAllowance(templeToken, address(staking), allocation);
         staking.stakeFor(msg.sender, allocation);
     }
@@ -95,28 +94,16 @@ contract AcceleratedExitQueue is Ownable, IExitQueue {
      * Withdraw processed epochs, at an accelerated rate
      */
     function withdrawEpochs(uint256[] memory epochs, uint256 length) external {
-        withdrawEpochs(epochs, length, msg.sender);
-    }
-
-    function withdrawEpochsFor(uint256[] memory epochs, uint256 length, address owner, uint8 v, bytes32 r, bytes32 s) external {
-        // check signature is valid
-
-        withdrawEpochs(epochs, length, owner);
-    }
-
-
-
-    function withdrawEpochs(uint256[] memory epochs, uint256 length, address owner) internal {
         uint256 totalAmount;
         uint256 maxExitableEpoch = currentEpoch();
 
         for (uint i = 0; i < length; i++) {
             require(epochs[i] < maxExitableEpoch, "Can only withdraw from processed epochs");
-            totalAmount += exitQueue.currentEpochAllocation(owner, epochs[i]);
+            totalAmount += exitQueue.currentEpochAllocation(msg.sender, epochs[i]);
         }
 
-        migrateTempleFromEpochs(epochs, length, totalAmount, owner);
-        SafeERC20.safeTransfer(templeToken, owner, totalAmount);
+        migrateTempleFromEpochs(epochs, length, totalAmount);
+        SafeERC20.safeTransfer(templeToken, msg.sender, totalAmount);
     }
 
     /**

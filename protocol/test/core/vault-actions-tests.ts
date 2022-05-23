@@ -10,8 +10,8 @@ import {
     JoiningFee__factory,
   OGTemple,
   OGTemple__factory,
-  VaultActions,
-  VaultActions__factory,
+  VaultProxy,
+  VaultProxy__factory,
   TempleERC20Token,
   TempleERC20Token__factory,
   TempleStaking,
@@ -19,18 +19,19 @@ import {
   Vault, 
   Vault__factory,
   Faith__factory,
-  Faith
+  Faith,
+  InstantExitQueue__factory
 } from "../../typechain";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { _TypedDataEncoder } from "ethers/lib/utils";
 
-describe("Vault Actions", async () => {
+describe.only("Vault Proxy", async () => {
   let TEMPLE: TempleERC20Token;
   let EXIT_QUEUE: ExitQueue;
   let STAKING: TempleStaking;
   let ACCEL_EXIT_QUEUE: AcceleratedExitQueue;
-  let VAULT_ACTIONS: VaultActions;
+  let VAULT_PROXY: VaultProxy;
   let OGTEMPLE: OGTemple;
   let FAITH: Faith;
   let vault: Vault;
@@ -76,7 +77,7 @@ describe("Vault Actions", async () => {
 
       FAITH = await new Faith__factory(owner).deploy();
 
-      VAULT_ACTIONS = await new VaultActions__factory(owner).deploy(
+      VAULT_PROXY = await new VaultProxy__factory(owner).deploy(
         OGTEMPLE.address,
         TEMPLE.address,
         STAKING.address,
@@ -84,10 +85,16 @@ describe("Vault Actions", async () => {
       );
 
       await TEMPLE.mint(STAKING.address, toAtto(100000));
-      await STAKING.setExitQueue(VAULT_ACTIONS.address);
+
+      const INSTANT_EXIT_QUEUE = await new InstantExitQueue__factory(owner).deploy(
+        STAKING.address,
+        TEMPLE.address
+      );
+
+      await STAKING.setExitQueue(INSTANT_EXIT_QUEUE.address);
 
       await FAITH.addManager(await owner.getAddress());
-      await FAITH.addManager(VAULT_ACTIONS.address);
+      await FAITH.addManager(VAULT_PROXY.address);
 
       joiningFee = await new JoiningFee__factory(owner).deploy(
           toAtto(0.0001),
@@ -104,7 +111,7 @@ describe("Vault Actions", async () => {
           await blockTimestamp()
       )
 
-      await TEMPLE.mint(VAULT_ACTIONS.address, toAtto(1000000));
+      await TEMPLE.mint(VAULT_PROXY.address, toAtto(1000000));
       //await VAULT_ACTIONS.allowSpendingForVault(vault.address);
   });
 
@@ -118,7 +125,7 @@ describe("Vault Actions", async () => {
     const faith = await FAITH.balances(alanAddr);
     const alanTempleDeposit = toAtto(565);
     
-    const expectedAmount = await VAULT_ACTIONS.getFaithMultiplier(faith.usableFaith, alanTempleDeposit);
+    const expectedAmount = await VAULT_PROXY.getFaithMultiplier(faith.usableFaith, alanTempleDeposit);
 
     const domain = {
       name: await vault.name(),
@@ -146,8 +153,8 @@ describe("Vault Actions", async () => {
     let signature = await alan._signTypedData(domain, types, msg);
     const split = ethers.utils.splitSignature(signature);
 
-    await TEMPLE.connect(alan).increaseAllowance(VAULT_ACTIONS.address, toAtto(10000))
-    await VAULT_ACTIONS.connect(alan).depositTempleWithFaith(alanTempleDeposit, faith.usableFaith,vault.address,deadline, split.v,split.r,split.s)
+    await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(10000))
+    await VAULT_PROXY.connect(alan).depositTempleWithFaith(alanTempleDeposit, faith.usableFaith,vault.address,deadline, split.v,split.r,split.s)
     expect(await vault.balanceOf(alanAddr)).equals(expectedAmount);
   })
 
@@ -155,49 +162,18 @@ describe("Vault Actions", async () => {
     let alanStake = await new TempleStaking__factory(alan).attach(STAKING.address);
     let alanTemple = await new TempleERC20Token__factory(alan).attach(TEMPLE.address);
     let alanOgTemple = await new OGTemple__factory(alan).attach(OGTEMPLE.address);
-    let alanOGTSwap = await new VaultActions__factory(alan).attach(VAULT_ACTIONS.address);
+    let alanOGTSwap = await new VaultProxy__factory(alan).attach(VAULT_PROXY.address);
 
-    await alanTemple.increaseAllowance(STAKING.address, toAtto(1000000))
-    await alanTemple.increaseAllowance(vault.address, toAtto(100000));
-    await alanTemple.increaseAllowance(VAULT_ACTIONS.address, toAtto(100000));
-    await alanStake.stake(toAtto(1000));
-    await alanOgTemple.increaseAllowance(VAULT_ACTIONS.address, toAtto(10000000000))
-    await alanOgTemple.increaseAllowance(STAKING.address, toAtto(10000000000))
+    await alanTemple.increaseAllowance(STAKING.address, toAtto(100000));
+    await alanStake.stake(toAtto(200));
+    await alanOgTemple.increaseAllowance(VAULT_PROXY.address, toAtto(10000))
     
     const ogtBal = await OGTEMPLE.balanceOf(await alan.getAddress())
     const amount = await STAKING.balance(ogtBal);
-    const nonce = await vault.nonces(await alan.getAddress());
-    const deadline = await blockTimestamp() + (60*20);
 
-    const domain = {
-        name: await vault.name(),
-        version: '1',
-        chainId: await alan.getChainId(),
-        verifyingContract: vault.address
-    };
+    await alanOGTSwap.unstakeAndDepositIntoVault(ogtBal, vault.address);
 
-    const types = {
-        depositFor : [
-            { name: "owner", type: "address"},
-            { name: "maxAmount", type: "uint256"},
-            { name: "deadline", type: "uint256"},
-            { name: "nonce", type: "uint256"}
-        ]
-    };
-
-    const msg = {
-        owner: await alan.getAddress(),
-        maxAmount: amount,
-        deadline: deadline,
-        nonce: nonce
-    }
-    
-    let signature = await alan._signTypedData(domain, types, msg);
-    const split = ethers.utils.splitSignature(signature);
-    
-    await alanOGTSwap.unstakeAndDepositIntoVault(ogtBal, vault.address,deadline, split.v,split.r,split.s);
-    
     expect(await vault.balanceOf(await alan.getAddress())).equals(amount);
-    expect(await TEMPLE.balanceOf(await alan.getAddress())).equals(toAtto(0));
+    expect(await TEMPLE.balanceOf(await alan.getAddress())).equals(toAtto(800));
   });
 });

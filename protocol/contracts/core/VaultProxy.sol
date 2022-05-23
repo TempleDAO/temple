@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./Vault.sol";
 import "../ABDKMathQuad.sol";
-import {IExitQueue} from "../ExitQueue.sol";
 import "../OGTemple.sol";
 import "../TempleERC20Token.sol";
 import "../TempleStaking.sol";
@@ -17,7 +16,7 @@ import "hardhat/console.sol";
 /**
     @notice A proxy contract for interacting with Temple Vaults. 
  */
-contract VaultActions is Ownable, IExitQueue{
+contract VaultProxy is Ownable {
     using ABDKMathQuad for bytes16;
     OGTemple ogTemple;
     TempleERC20Token temple;
@@ -36,18 +35,10 @@ contract VaultActions is Ownable, IExitQueue{
         faith = _faith;
     }
 
-    bytes16 private MAX_MULT = 0x3fff4ccccccccccccccccccccccccccc; // 1.3
-    bytes16 private TA_MULT = 0x40004000000000000000000000000000; // 2.5
+    bytes16 private constant MAX_MULT = 0x3fff4ccccccccccccccccccccccccccc; // 1.3
+    bytes16 private constant TA_MULT = 0x40004000000000000000000000000000; // 2.5
 
-    function join(address _exiter, uint256 _amount) override external {
-        require(msg.sender == address(templeStaking), "only staking contract");
-        {
-            _exiter;
-        }     
-        SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amount);
-    }
-
-    function getFaithMultiplier(uint256 _amountFaith, uint256 _amountTemple) view public returns (uint256) {
+    function getFaithMultiplier(uint256 _amountFaith, uint256 _amountTemple) pure public returns (uint256) {
         // Tl = Ta * min(1.3, (1+faith/2.5*Ta))
         bytes16 amountFaith = ABDKMathQuad.fromUInt(_amountFaith);
         bytes16 amountTemple = ABDKMathQuad.fromUInt(_amountTemple);
@@ -70,14 +61,18 @@ contract VaultActions is Ownable, IExitQueue{
         vault.depositFor(msg.sender, amount, amount, deadline, v, r, s);
     }
     
-    function unstakeAndDepositIntoVault(uint256 _amount, Vault vault, uint256 deadline,uint8 v, bytes32 r, bytes32 s) public {
-        SafeERC20.safeIncreaseAllowance(ogTemple, address(templeStaking), _amount);
-        SafeERC20.safeTransferFrom(ogTemple, msg.sender, address(this), _amount);
-        uint256 expectedTemple = templeStaking.balance(_amount);
+    function unstakeAndDepositIntoVault(uint256 _amountOGT, Vault vault) public {
+        SafeERC20.safeIncreaseAllowance(ogTemple, address(templeStaking), _amountOGT);
+        SafeERC20.safeTransferFrom(ogTemple, msg.sender, address(this), _amountOGT);
+        uint256 expectedTemple = templeStaking.balance(_amountOGT);
         
-        templeStaking.unstake(_amount);
+        uint256 templeBeforeBalance = temple.balanceOf(address(this));
+        templeStaking.unstake(_amountOGT);
+        uint256 templeAfterBalance = temple.balanceOf(address(this));
+        require(templeAfterBalance > templeBeforeBalance, "Vault Proxy: no Temple received when unstaking");
+
         SafeERC20.safeIncreaseAllowance(temple, address(vault), expectedTemple);
-        vault.depositFor(msg.sender, expectedTemple, expectedTemple, deadline, v, r, s);
+        vault.depositFor(address(this), msg.sender, expectedTemple);
     }
 
     function depositTempleFor(uint256 _amount, Vault vault, uint256 deadline,uint8 v, bytes32 r, bytes32 s) public {
