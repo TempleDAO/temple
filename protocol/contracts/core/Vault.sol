@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./RebasingERC20.sol";
 import "./Rational.sol";
 import "./Exposure.sol";
-import "./SharedVaultTreasury.sol";
+import "./VaultedTemple.sol";
 import "./JoiningFee.sol";
 
 import "hardhat/console.sol";
@@ -49,7 +49,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
     // Vaults don't hold temple directly, there is a specific
     // exposure in which all deposited temple is moved into
-    SharedVaultTreasury public sharedVaultTreasury;
+    VaultedTemple public vaultedTemple;
 
     /// @dev timestamp (in seconds) of the first period in this vault
     uint256 public firstPeriodStartTimestamp;
@@ -215,7 +215,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
         if (_amount > 0) {
             _mint(_account, amountStaked);
-            SafeERC20.safeTransferFrom(templeToken, _account, address(sharedVaultTreasury), _amount);
+            SafeERC20.safeTransferFrom(templeToken, _account, address(vaultedTemple), _amount);
             templeExposureToken.mint(address(this), _amount);
         }
 
@@ -235,7 +235,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
              _burn(_account, _amount);
         }
 
-        sharedVaultTreasury.toTemple(_amount, msg.sender);
+        templeExposureToken.redeem(_amount, msg.sender);
         emit Withdraw(_account, _amount);
     }
 

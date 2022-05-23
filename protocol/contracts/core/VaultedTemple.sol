@@ -8,14 +8,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Exposure.sol";
 
 /**
- * @title Treasury for all temple in all vaults
+ * @title All temple in all vaults
  *
  * @dev A vault doesn't hold any temple, it holds a synthetic exposure
  * (Temple Exposure). The same as all other exposures.
  *
  * One key difference is this temple is accessible by the protocol
  * to use as collateral on lending platforms to give leverage to
- * our primary revenue strategies.
+ * our farming strategies.
  *
  * This is also an Exposure's liquidator, as a vault, when a user
  * is withdrawing will liquidate it's temple exposure and return
@@ -32,7 +32,7 @@ import "./Exposure.sol";
  * eventually, we expect to automate this as we bake in the temple
  * dao leverage strategy.
  */
-contract SharedVaultTreasury is ILiquidator, Ownable {
+contract VaultedTemple is ILiquidator, Ownable {
     IERC20 templeToken;
     address templeExposure;
 

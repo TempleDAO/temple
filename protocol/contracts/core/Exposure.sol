@@ -99,12 +99,18 @@ contract Exposure is Ownable, RebasingERC20 {
      * @dev redeem the callers share of this exposure back to temple
      */
     function redeem() external {
-        uint256 balance = balanceOf(msg.sender);
+        redeem(balanceOf(msg.sender), msg.sender);
+    }
+
+    /**
+     * @dev redeem the callers share of this exposure back to temple
+     */
+    function redeem(uint256 amount, address to) external {
         _burn(msg.sender, balance);
         reval -= balance;
 
         if (address(liquidator) != address(0)) {
-            liquidator.toTemple(balance, msg.sender);
+            liquidator.toTemple(balance, to);
         }
 
         emit Redeem(address(revalToken), msg.sender, balance);
