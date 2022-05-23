@@ -189,7 +189,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     * @notice Deposit temple into a vault
     */
     function deposit(uint256 amount) public {
-        depositFor(msg.sender, amount);
+        depositFor(msg.sender, msg.sender, amount);
     }
 
     /**

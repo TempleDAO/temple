@@ -18,10 +18,11 @@ import "hardhat/console.sol";
  */
 contract VaultProxy is Ownable {
     using ABDKMathQuad for bytes16;
-    OGTemple ogTemple;
-    TempleERC20Token temple;
-    TempleStaking templeStaking;
-    Faith faith;
+    /** @notice Tokens / Contracted required for the proxy contract  */
+    OGTemple public ogTemple;
+    TempleERC20Token public temple;
+    TempleStaking public templeStaking;
+    Faith public faith;
 
     constructor(
         OGTemple _ogTemple,
@@ -38,6 +39,10 @@ contract VaultProxy is Ownable {
     bytes16 private constant MAX_MULT = 0x3fff4ccccccccccccccccccccccccccc; // 1.3
     bytes16 private constant TA_MULT = 0x40004000000000000000000000000000; // 2.5
 
+    /**
+        @notice Given an amount of Faith and Temple, apply the boosting curve and produce the amount of boosted Temple one can expect to receive.
+                Formula is BoostedTemple = TempleProvided * min(1.3, (1+faith/(2.5*TempleProvided)))
+     */
     function getFaithMultiplier(uint256 _amountFaith, uint256 _amountTemple) pure public returns (uint256) {
         // Tl = Ta * min(1.3, (1+faith/2.5*Ta))
         bytes16 amountFaith = ABDKMathQuad.fromUInt(_amountFaith);
@@ -48,19 +53,23 @@ contract VaultProxy is Ownable {
         return ABDKMathQuad.toUInt(amountTemple.mul(mult));
     }
 
-    function allowSpendingForVault(address vault) external onlyOwner {
-        temple.increaseAllowance(vault, 100000000000000000000000000000);
-    }
-
-    function depositTempleWithFaith(uint256 _amountTemple, uint112 _amountFaith, Vault vault, uint256 deadline,uint8 v, bytes32 r, bytes32 s) public {
+    /**
+        @notice Takes provided faith and Temple, applies the boost then immediate deposits into a vault
+     */
+    function depositTempleWithFaith(uint256 _amountTemple, uint112 _amountFaith, Vault vault) public {
         faith.redeem(msg.sender, _amountFaith);
-        // Tl = Ta * min(1.3, (1+faith/2.5*Ta))
-        uint256 amount = getFaithMultiplier(_amountFaith, _amountTemple);
+        uint256 boostedAmount = getFaithMultiplier(_amountFaith, _amountTemple);
         SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amountTemple);
-        SafeERC20.safeIncreaseAllowance(temple, address(vault), amount);
-        vault.depositFor(msg.sender, amount, amount, deadline, v, r, s);
+        SafeERC20.safeIncreaseAllowance(temple, address(vault), boostedAmount);
+        vault.depositFor(address(this), msg.sender, boostedAmount);
     }
     
+    /**
+        @notice Takes OGT from the user, unstakes from the staking contract and then immediately deposits into a vault
+
+        @dev This is loosely coupled with the InstantExitQueue insomuch that this function assumes the staking contract
+             exit queue has been set to instantly withdraw, otherwise this function will fail.
+     */
     function unstakeAndDepositIntoVault(uint256 _amountOGT, Vault vault) public {
         SafeERC20.safeIncreaseAllowance(ogTemple, address(templeStaking), _amountOGT);
         SafeERC20.safeTransferFrom(ogTemple, msg.sender, address(this), _amountOGT);
@@ -75,6 +84,10 @@ contract VaultProxy is Ownable {
         vault.depositFor(address(this), msg.sender, expectedTemple);
     }
 
+    /**
+        @notice A proxy function for depositing into a vault; useful if we wish to limit number of approvals to one, rather than for each underlying 
+                vault instance. 
+     */
     function depositTempleFor(uint256 _amount, Vault vault, uint256 deadline,uint8 v, bytes32 r, bytes32 s) public {
         SafeERC20.safeIncreaseAllowance(temple, address(vault), _amount);
         SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amount);

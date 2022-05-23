@@ -127,35 +127,11 @@ describe.only("Vault Proxy", async () => {
     
     const expectedAmount = await VAULT_PROXY.getFaithMultiplier(faith.usableFaith, alanTempleDeposit);
 
-    const domain = {
-      name: await vault.name(),
-      version: '1',
-      chainId: await alan.getChainId(),
-      verifyingContract: vault.address
-    };
-
-    const types = {
-        depositFor : [
-            { name: "owner", type: "address"},
-            { name: "maxAmount", type: "uint256"},
-            { name: "deadline", type: "uint256"},
-            { name: "nonce", type: "uint256"}
-        ]
-    };
-
-    const msg = {
-        owner: await alan.getAddress(),
-        maxAmount: expectedAmount,
-        deadline: deadline,
-        nonce: nonce
-    }
-
-    let signature = await alan._signTypedData(domain, types, msg);
-    const split = ethers.utils.splitSignature(signature);
-
     await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(10000))
-    await VAULT_PROXY.connect(alan).depositTempleWithFaith(alanTempleDeposit, faith.usableFaith,vault.address,deadline, split.v,split.r,split.s)
+    await VAULT_PROXY.connect(alan).depositTempleWithFaith(alanTempleDeposit, faith.usableFaith,vault.address);
     expect(await vault.balanceOf(alanAddr)).equals(expectedAmount);
+    // ensure we've burnt it all
+    expect(await (await FAITH.balances(alanAddr)).usableFaith).equals(0);
   })
 
   it("Can unstake and deposit into vault", async () => {
