@@ -52,8 +52,10 @@ const useZappedAssetTempleBalance = (token: TICKER_SYMBOL, amount: BigNumber) =>
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
-  const [getVaultJoiningFee, { response: joiningFeeResponse }] = useVaultJoiningFee(vault);
   const { balance, isConnected } = useWallet();
+
+  const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] = useVaultJoiningFee(vault);
+  const joiningFee = joiningFeeLoading ? null : (joiningFeeResponse || 0);
 
   useEffect(() => {
     getVaultJoiningFee();
@@ -73,7 +75,7 @@ export const Stake = () => {
   });
 
   const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(vault.id, ticker);
-
+  
   const [zapAssetRequest, { response: zapRepsonse, error: zapError, isLoading: zapLoading }] =
     useZappedAssetTempleBalance(ticker, toAtto(Number(stakingAmount || 0)));
 
@@ -158,15 +160,15 @@ export const Stake = () => {
         value={stakingAmount}
       />
       {!!(isZap && templeAmountMessage) && <AmountInTemple>{templeAmountMessage}</AmountInTemple>}
-      {!!joiningFeeResponse && (
+      {joiningFee !== null && (
         <JoiningFee>
           <Tooltip
-            content={`The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increases as the end of a joining window.`}
-            inline={true}
+            content="The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increases the further we are into the joining period."
+            inline
           >
             Joining Fee{' '}
           </Tooltip>
-          : {joiningFeeResponse} $T
+          : {joiningFee} $T
         </JoiningFee>
       )}
       <ErrorLabel>{error}</ErrorLabel>
