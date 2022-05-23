@@ -1,6 +1,12 @@
-import { acceptMetamaskAccessRequest, confirmMetamaskTransaction, getLoggedInWalletAddress } from '../util';
+import { acceptMetamaskAccessRequest, getLoggedInWalletAddress } from '../util';
+import { ethers } from 'ethers';
 
-describe('Smoke tests', () => {
+const network = new ethers.providers.JsonRpcProvider();
+
+const FIVE_MINUTES = 300_000;
+const TWO_SECONDS = 2_000;
+
+describe('E2E Stake and Claim tests', () => {
   let metamaskWalletAddress;
 
   before(() => {
@@ -33,23 +39,94 @@ describe('Smoke tests', () => {
     });
   });
 
-  context('Stake', () => {
-    it(`should navigate to stake`, () => {
+  function evmFastForward(ms) {
+    return new Cypress.Promise((resolve, reject) => {
+      network.send('evm_increaseTime', [ms]).then(() => {
+        network.send('evm_mine', []).then(() => {
+          resolve('done');
+        });
+      });
+    });
+  }
+
+  context('Sub-vault 1', () => {
+    it(`should stake in SV1`, () => {
       cy.get('path[id="stake-button-target"]').trigger('click', { force: true });
-      const templeInput = cy.findByPlaceholderText('0.00');
-      templeInput.type('2112');
+      cy.findByPlaceholderText('0.00').type('1000');
 
       cy.contains('button', 'Approve').click();
       cy.confirmMetamaskPermissionToSpend();
 
       cy.contains('button', 'Stake').click();
-      cy.confirmMetamaskTransaction({ gasFee: 10000, gasLimit: 1000000 }).then((confirmed) => {
-        expect(confirmed).to.be.true;
-        cy.wait(10000);
-        cy.get('path[id="claim-button-target"]').trigger('click', { force: true });
-        cy.contains('Claimable Temple').should('exist');
-        cy.contains('2,112').should('exist');
-      });
+      cy.confirmMetamaskTransaction({ gasFee: 10000, gasLimit: 1000000 });
+
+      cy.get('path[id="claim-button-target"]').trigger('click', { force: true });
+      cy.contains('Claimable Temple').should('exist');
+      cy.contains('1,000').should('exist');
+      cy.get('g[id=sun-marker]') // first deposit has one sun marker
+        .should('have.length', 1);
+    });
+  });
+
+  context('Sub-vault 2', () => {
+    // before(() => {
+    //   cy.wrap(null).then(() => {
+    //     return evmFastForward(FIVE_MINUTES).then((res) => expect(res).to.equal('done'));
+    //   });
+    // });
+
+    it(`should stake in SV2`, () => {
+      // second subvault
+      const now = new Date();
+      cy.clock(now).tick(FIVE_MINUTES);
+      // cy.wait(FIVE_MINUTES);
+
+      cy.get('path[id="stake-button-target"]').trigger('click', { force: true });
+      cy.findByPlaceholderText('0.00').type('1000');
+
+      cy.contains('button', 'Approve').click();
+      cy.confirmMetamaskPermissionToSpend();
+
+      cy.contains('button', 'Stake').click();
+      cy.confirmMetamaskTransaction({ gasFee: 10000, gasLimit: 1000000 });
+
+      cy.get('path[id="claim-button-target"]').trigger('click', { force: true });
+      cy.contains('Claimable Temple').should('exist');
+      cy.contains('1,000').should('exist');
+      // 2nd deposit has sun marker and a timeline marker
+      cy.get('g[id=sun-marker]').should('have.length', 1);
+      cy.get('g[id=deposited-timeline-marker]').should('have.length', 1);
+    });
+  });
+
+  context('Sub-vault 3', () => {
+    // before(() => {
+    //   cy.wrap(null).then(() => {
+    //     return evmFastForward(FIVE_MINUTES).then((res) => expect(res).to.equal('done'));
+    //   });
+    // });
+
+    it(`should stake in SV3`, () => {
+      // second subvault
+      const now = new Date();
+      cy.clock(now).tick(FIVE_MINUTES);
+      // cy.wait(FIVE_MINUTES);
+
+      cy.get('path[id="stake-button-target"]').trigger('click', { force: true });
+      cy.findByPlaceholderText('0.00').type('1000');
+
+      cy.contains('button', 'Approve').click();
+      cy.confirmMetamaskPermissionToSpend();
+
+      cy.contains('button', 'Stake').click();
+      cy.confirmMetamaskTransaction({ gasFee: 10000, gasLimit: 1000000 });
+
+      cy.get('path[id="claim-button-target"]').trigger('click', { force: true });
+      cy.contains('Claimable Temple').should('exist');
+      cy.contains('1,000').should('exist');
+      // 2nd deposit has sun marker and a timeline marker
+      cy.get('g[id=sun-marker]').should('have.length', 1);
+      cy.get('g[id=deposited-timeline-marker]').should('have.length', 2);
     });
   });
 });

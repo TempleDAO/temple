@@ -16,7 +16,8 @@
     "version:release": "standard-version",
     "version:prerelease": "standard-version --prerelease beta",
     "build-with-stats": "tsc && BUILD_STATS=true vite build",
-    "test:e2e": "env-cmd -f .env.local synpress run"
+    "test:e2e": "env-cmd -f .env.local synpress run --noExit",
+    "test:synpress:open": "env-cmd -f .env.local synpress open"
   },
   "dependencies": {
     "@tippyjs/react": "^4.2.6",

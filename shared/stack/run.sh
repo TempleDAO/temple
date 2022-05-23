@@ -4,8 +4,9 @@
 trap "exit" INT TERM ERR
 trap "kill 0" EXIT
 
-# Compile and deploy contracts
+# Clean hardhat, compile and deploy contracts
 cd protocol 
+yarn clean
 yarn compile
 yarn local-node & 
 
@@ -20,10 +21,24 @@ while [[ "$(curl -s -o /dev/null --request POST -w ''%{http_code}'' 'localhost:8
 echo 'Node is alive' 
 echo 'Deploying'
 
+# start graph node 
+# cd ..
+# cd apps/core-subgraph
+# yarn graph:start &
+
+# back to protocol
+# cd ../../protocol
 yarn local-deploy
 
 # back to root
 cd ..
+
+# deploy subgraph
+#cd apps/core-subgraph
+#yarn lfg:local
+
+# back to root
+#cd ..
 
 # Appends new env vars and updates any env vars that differ
 input="shared/stack/deployed-addr.txt"
