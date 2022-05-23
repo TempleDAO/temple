@@ -24,7 +24,7 @@ import { Claim as VaultClaim } from 'components/Pages/Core/VaultPages/Claim';
 import { Stake } from 'components/Pages/Core/VaultPages/Stake';
 import { Summary } from 'components/Pages/Core/VaultPages/Summary';
 import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
-import { Trade } from 'components/Pages/Core/Trade/Trade';
+import TradeRoutes from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
 
 // Separate Chunks
@@ -82,7 +82,7 @@ ReactDOM.render(
                 <Route path="strategy" element={<Strategy />} />
                 <Route path="timing" element={<Timing />} />
               </Route>
-              <Route path="trade" element={<Trade />} />
+              <Route path="trade/*" element={<TradeRoutes />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
