@@ -24,7 +24,7 @@ const BaseVaultButton = styled(Button).attrs(
   border-radius: 12px;
   letter-spacing: 0.5rem;
   text-transform: uppercase;
-  width: 50%;
+  width: auto;
   transition: none;
 `;
 
