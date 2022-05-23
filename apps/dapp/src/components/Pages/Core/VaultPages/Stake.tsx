@@ -165,7 +165,7 @@ export const Stake = () => {
       {joiningFee !== null && (
         <JoiningFee>
           <Tooltip
-            content="The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increases as the end of a joining window."
+            content="The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increase the further we are into the joining period."
             inline
           >
             Joining Fee{' '}
