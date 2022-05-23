@@ -7,7 +7,7 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberWithCommas } from 'utils/formatter';
 import { useStakeTemple } from 'hooks/core/use-stake-temple';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
-import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
+import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
 import Loader from 'components/Loader/Loader';
 import { formatNumber } from 'utils/formatter';
 
@@ -19,7 +19,7 @@ import {
 export const Stake = () => {
   const { balance } = useWallet();
   const [_, refreshWallet] = useRefreshWalletState();
-  const dashboardMetrics = useRefreshableDashboardMetrics();
+  const treasuryMetrics = useRefreshableTreasuryMetrics();
   const [stakeAmount, setStakeAmount] = useState<string | number>('');
   const [stake, { isLoading: stakeLoading }] = useStakeTemple(() => {
     refreshWallet();
@@ -39,7 +39,7 @@ export const Stake = () => {
     <div>
       <Header>
         <span>Stake</span>
-        <span>{formatNumber(dashboardMetrics?.templeApy || 0)}% apy</span>
+        <span>{formatNumber(treasuryMetrics?.templeApy || 0)}% apy</span>
       </Header>
       <InputWrapper>
         <Input
