@@ -175,7 +175,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
             Care needs to be taken when calling this to ensure that the caller is passing the correct args in,
             otherwise they may mistakenly lock _sender funds attributed to a wallet they have no control over.
      */
-    function depositFor(address _sender, address _account, uint256 _amount) public {
+    function depositFor(address _funder, address _account, uint256 _amount) public {
         require(inEnterExitWindow(), "Vault: Cannot join vault when outside of enter/exit window");
 
         uint256 feePerTempleScaledPerHour = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));
@@ -186,7 +186,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
         if (_amount > 0) {
             _mint(_account, amountStaked);
-            SafeERC20.safeTransferFrom(templeToken, _sender, address(this), _amount);
+            SafeERC20.safeTransferFrom(templeToken, _funder, address(this), _amount);
         }
 
         emit Deposit(_account, _amount, amountStaked);
