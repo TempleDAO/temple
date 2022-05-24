@@ -82,7 +82,7 @@ module.exports = {
       accounts: process.env.RINKEBY_ADDRESS_PRIVATE_KEY
         ? [process.env.RINKEBY_ADDRESS_PRIVATE_KEY]
         : [],
-      gasPrice: 2000000000,
+      gasPrice: 8000000000,
     },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
