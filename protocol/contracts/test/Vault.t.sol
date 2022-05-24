@@ -146,43 +146,6 @@ contract VaultTest is TempleTest {
         assertEq(temple.balanceOf(address(this)), amount);
     }
 
-    function testFuzzDepositFor(uint256 amount) public {
-        // bound the fuzzing input - I doubt we'll ever hit someone depositing 366 trillion temple
-        vm.assume(amount < 340282366920938463463374607431768211455);
-
-        // build user
-        uint256 priv = 0xBEEF;
-        address sally = vm.addr(priv);
-
-        uint256 deadline = 250;
-
-        uint256 nonce = vault.nonces(sally);
-        bytes32 data = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                vault.DOMAIN_SEPARATOR(),
-                keccak256(abi.encode(vault.DEPOSIT_FOR_TYPEHASH(), sally, amount, deadline, nonce))
-            )
-        ); 
-
-         // create signature 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            priv,
-            data
-        );
-
-        temple.mint(sally, amount);
-        temple.mint(address(this), amount);
-        temple.increaseAllowance(address(vault), amount);
-
-        vm.prank(sally);
-        temple.increaseAllowance(address(vault), amount);
-        vault.depositFor(sally, amount, amount, deadline, v, r, s);
-
-        uint256 tokenBalance = vault.toTokenAmount(vault.shareBalanceOf(sally));
-        assertEq(tokenBalance, amount);
-    }
-
     function testFuzzDepositWithdraw(uint256 amount) public {
         // bound the fuzzing input - I doubt we'll ever hit someone depositing 366 trillion temple
         vm.assume(amount < 340282366920938463463374607431768211455);
