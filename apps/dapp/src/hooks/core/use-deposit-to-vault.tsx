@@ -45,10 +45,12 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
       bigAmount,
     );
 
+    const bigUsableFaith = toAtto(usableFaith);
+
     let expectedAmount = amount;
     // compute total deposit with faith
     if (token === TICKER_SYMBOL.FAITH) {
-      const templeWithFaithAmount = await vaultProxy.getFaithMultiplier(usableFaith, bigAmount);
+      const templeWithFaithAmount = await vaultProxy.getFaithMultiplier(bigUsableFaith, bigAmount);
       expectedAmount = fromAtto(templeWithFaithAmount);
     }
 
@@ -59,7 +61,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
     if (token === TICKER_SYMBOL.TEMPLE_TOKEN) {
       tx = await vaultProxy.depositTempleFor(bigAmount, vaultContractAddress);
     } else if (token === TICKER_SYMBOL.FAITH) {
-      tx = await vaultProxy.depositTempleWithFaith(bigAmount, usableFaith, vaultContractAddress);
+      tx = await vaultProxy.depositTempleWithFaith(bigAmount, bigUsableFaith, vaultContractAddress);
     } else {
       throw new Error(`Programming Error: Unsupported token: ${token}`);
     }
