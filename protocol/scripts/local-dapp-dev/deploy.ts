@@ -240,9 +240,9 @@ async function main() {
 
   // Devotion
   const faith = await new Faith__factory(owner).deploy();
-  //await faith.addManager(await owner.getAddress());
-  //await faith.gain(await account1.getAddress(), toAtto(10000));
-  //await faith.gain(await account2.getAddress(), toAtto(5000));
+  await faith.addManager(await owner.getAddress());
+  await faith.gain(await account1.getAddress(), toAtto(10000));
+  await faith.gain(await account2.getAddress(), toAtto(5000));
 
   // add liquidity to AMM
   const expiryDate = (): number => Math.floor(Date.now() / 1000) + 900;
@@ -310,6 +310,8 @@ async function main() {
     templeStaking.address,
     faith.address
   );
+
+  await faith.addManager(vaultProxy.address);
 
   const instantExitQueue = await new InstantExitQueue__factory(owner).deploy(
     templeStaking.address,
