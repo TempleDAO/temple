@@ -28,6 +28,8 @@ const OPTIONS = [
   { value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' },
 ];
 
+const ENV = import.meta.env;
+
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
   const { balance, isConnected } = useWallet();
@@ -54,7 +56,10 @@ export const Stake = () => {
     refreshWalletState();
   });
 
-  const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(vault.id, ticker);
+  const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(
+    ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY,
+    ticker,
+  );
   
   const handleUpdateStakingAmount = (value: number | string) => {
     setStakingAmount(Number(value) === 0 ? '' : value);

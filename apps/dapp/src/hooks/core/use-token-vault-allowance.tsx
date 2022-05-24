@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Signer } from 'ethers';
 import {
-  Vault__factory,
+  VaultProxy__factory,
   TempleERC20Token__factory,
 } from 'types/typechain';
 import { useWallet } from 'providers/WalletProvider';
@@ -42,7 +42,7 @@ export const useTokenVaultAllowance = (
     }
 
     const token = createTokenFactoryInstance(ticker, signer);
-    const vault = new Vault__factory(signer).attach(vaultContractAddress);
+    const vault = new VaultProxy__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY);
     const allowance = await token.allowance(wallet, vault.address);
     return allowance;
   };
@@ -62,7 +62,7 @@ export const useTokenVaultAllowance = (
     }
 
     const token = createTokenFactoryInstance(ticker, signer);
-    const approveTXN = await token.approve(vaultContractAddress, DEFAULT_ALLOWANCE);
+    const approveTXN = await token.approve(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY, DEFAULT_ALLOWANCE);
     await approveTXN.wait();
   
     openNotification({

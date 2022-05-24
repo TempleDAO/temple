@@ -2,7 +2,7 @@
     "network": "mainnet",
     "hasScheduler": false,
     "opsManager": {
-        "address": "0xA4899D35897033b927acFCf422bc745916139776",
+        "address": "0x5c74c94173F05dA1720953407cbb920F3DF9f887",
         "startBlock": "1"
     }
 }
