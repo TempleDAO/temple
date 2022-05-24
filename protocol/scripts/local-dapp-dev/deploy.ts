@@ -20,7 +20,8 @@ import {
   JoiningFee__factory,
   OpsManager__factory,
   TempleStableAMMRouter__factory,
-  VaultProxy__factory
+  VaultProxy__factory,
+  InstantExitQueue__factory,
 } from '../../typechain';
 import { writeFile } from 'fs/promises';
 
@@ -310,6 +311,13 @@ async function main() {
     faith.address
   );
 
+  const instantExitQueue = await new InstantExitQueue__factory(owner).deploy(
+    templeStaking.address,
+    templeToken.address
+  );
+
+  await templeStaking.setExitQueue(instantExitQueue.address);
+
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
     EXIT_QUEUE_ADDRESS: exitQueue.address,
@@ -327,6 +335,7 @@ async function main() {
     TEMPLE_V2_ROUTER_ADDRESS: templeRouter.address,
     TEMPLE_ROUTER_WHITELIST: 'removed',
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
+    INSTANT_EXIT_QUEUE_ADDRESS: instantExitQueue.address,
 
     TEMPLE_IV_SWAP: templeIVSwap.address,
     TEMPLE_VAULT_OPS_MANAGER: opsManager.address,
