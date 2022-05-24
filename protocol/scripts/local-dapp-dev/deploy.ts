@@ -241,6 +241,8 @@ async function main() {
   // Devotion
   const faith = await new Faith__factory(owner).deploy();
   await faith.addManager(await owner.getAddress());
+
+  console.log('ACCOUNT 1 ADDRESS => ', await account1.getAddress(), '\n\n\n\n')
   await faith.gain(await account1.getAddress(), toAtto(10000));
   await faith.gain(await account2.getAddress(), toAtto(5000));
 
@@ -310,6 +312,7 @@ async function main() {
     templeStaking.address,
     faith.address
   );
+  await templeToken.mint(vaultProxy.address, toAtto(1000000));
 
   await faith.addManager(vaultProxy.address);
 
@@ -338,6 +341,7 @@ async function main() {
     TEMPLE_ROUTER_WHITELIST: 'removed',
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
     INSTANT_EXIT_QUEUE_ADDRESS: instantExitQueue.address,
+    TEMPLE_FAITH_ADDRESS: faith.address,
 
     TEMPLE_IV_SWAP: templeIVSwap.address,
     TEMPLE_VAULT_OPS_MANAGER: opsManager.address,
