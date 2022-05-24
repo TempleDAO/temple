@@ -46,8 +46,9 @@ export interface GraphVaultTransaction {
 }
 
 export interface SubGraphResponse<T extends object> {
-  data?: T & { errors?: string[] };
-}
+  data?: T;
+  errors?: { message: string }[];
+};
 
 export interface SubGraphQuery {
   query: string;

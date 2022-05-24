@@ -58,7 +58,7 @@ export const Stake = () => {
       </InputWrapper>
       <CtaButton
         disabled={!stakeAmount || stakeAmount > balance.temple || stakeLoading}
-        onClick={() => stake(stakeAmount)}
+        onClick={() => stake(Number(stakeAmount))}
       >
         {stakeLoading ? <Loader /> : `Stake $Temple`}
       </CtaButton>

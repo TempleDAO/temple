@@ -23,32 +23,10 @@ import { useVaultBalance } from 'hooks/core/use-vault-balance';
 import { useVaultJoiningFee } from 'hooks/core/use-vault-joining-fee';
 import Tooltip from 'components/Tooltip/Tooltip';
 
-// This dummy data will be replaced by the actual contracts
 const OPTIONS = [
-  { value: '$TEMPLE', label: 'TEMPLE' },
-  // { value: '$OGTEMPLE', label: 'OGTEMPLE' },
-  { value: 'FAITH', label: 'TEMPLE & FAITH' },
-  // { value: '$FRAX', label: 'FRAX' },
-  // { value: '$ETH', label: 'ETH' },
-  // { value: '$USDC', label: 'USDC' },
-  // { value: '$FEI', label: 'FEI' },
+  { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' },
+  { value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' },
 ];
-
-// This dummy data will be replaced by the actual contracts
-const dummyCurrencyToTemple: Record<TICKER_SYMBOL, number> = {
-  $FRAX: 423,
-  $TEMPLE: 343334,
-  $OGTEMPLE: 502933,
-  FAITH: 554,
-  $ETH: 14454,
-  $USDC: 49233,
-  $FEI: 9293,
-};
-
-const useZappedAssetTempleBalance = (token: TICKER_SYMBOL, amount: BigNumber) => {
-  const zapAssetRequest = createMockRequest({ templeAmount: dummyCurrencyToTemple[token] }, 1000, true);
-  return useRequestState(() => zapAssetRequest(token, amount));
-};
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
@@ -78,21 +56,15 @@ export const Stake = () => {
 
   const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(vault.id, ticker);
   
-  const [zapAssetRequest, { response: zapRepsonse, error: zapError, isLoading: zapLoading }] =
-    useZappedAssetTempleBalance(ticker, toAtto(Number(stakingAmount || 0)));
-
   const handleUpdateStakingAmount = (value: number | string) => {
     setStakingAmount(Number(value) === 0 ? '' : value);
-
-    // If there is a value present and its not TEMPLE request the zapped value.
-    if (ticker !== TICKER_SYMBOL.TEMPLE_TOKEN && !!value) {
-      zapAssetRequest();
-    }
   };
 
   const getTokenBalanceForCurrentTicker = () => {
     switch (ticker) {
       case TICKER_SYMBOL.TEMPLE_TOKEN:
+        return balance.temple;
+      case TICKER_SYMBOL.FAITH:
         return balance.temple;
     }
     console.error(`Programming Error: ${ticker} not implemented.`);
@@ -100,36 +72,15 @@ export const Stake = () => {
   };
 
   const tokenBalance = getTokenBalanceForCurrentTicker();
-
-  const isZap = ticker !== TICKER_SYMBOL.TEMPLE_TOKEN;
-  const templeAmount = !isZap ? stakingAmount : (stakingAmount && zapRepsonse?.templeAmount) || 0;
+  const templeAmount = stakingAmount || 0;
 
   const stakeButtonDisabled =
     !isConnected ||
     refreshIsLoading ||
     !templeAmount ||
     depositLoading ||
-    zapLoading ||
-    allowanceLoading ||
-    (isZap && !!zapError);
+    allowanceLoading;
 
-  let templeAmountMessage: ReactNode = '';
-  if (zapError) {
-    templeAmountMessage = zapError.message || 'Something went wrong';
-  } else if (zapLoading) {
-    templeAmountMessage = (
-      <>
-        Staking <EllipsisLoader />
-      </>
-    );
-  } else if (zapRepsonse && !!stakingAmount) {
-    templeAmountMessage = (
-      <>
-        Staking {zapRepsonse.templeAmount} {TICKER_SYMBOL.TEMPLE_TOKEN}
-        {' \u00A0'}
-      </>
-    );
-  }
   const error =
     !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
 
@@ -161,7 +112,6 @@ export const Stake = () => {
         placeholder="0.00"
         value={stakingAmount}
       />
-      {!!(isZap && templeAmountMessage) && <AmountInTemple>{templeAmountMessage}</AmountInTemple>}
       {joiningFee !== null && (
         <JoiningFee>
           <Tooltip
@@ -191,8 +141,8 @@ export const Stake = () => {
           disabled={stakeButtonDisabled}
           loading={refreshIsLoading || depositLoading}
           onClick={async () => {
-            const amountToDeposit = !stakingAmount ? 0 : stakingAmount;
-            await deposit(amountToDeposit);
+            const amountToDeposit = !stakingAmount ? 0 : Number(stakingAmount);
+            await deposit(ticker, amountToDeposit);
             setStakingAmount('');
           }}
         />

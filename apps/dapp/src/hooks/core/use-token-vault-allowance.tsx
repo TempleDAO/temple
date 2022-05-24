@@ -19,6 +19,8 @@ const DEFAULT_ALLOWANCE = toAtto(100000000);
 const createTokenFactoryInstance = (ticker: TICKER_SYMBOL, signer: Signer) => {
   switch (ticker) {
     case TICKER_SYMBOL.TEMPLE_TOKEN:
+    // We consider Faith to be equivallent to the Temple token.
+    case TICKER_SYMBOL.FAITH:
       return new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
   }
   throw new Error('Unsupported Token');

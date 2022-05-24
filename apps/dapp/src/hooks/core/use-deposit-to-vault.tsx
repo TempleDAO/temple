@@ -1,8 +1,11 @@
+import { ContractTransaction, Signer } from 'ethers';
+
 import {
   Vault__factory,
   TempleERC20Token__factory,
+  VaultProxy__factory,
 } from 'types/typechain';
-import { toAtto } from 'utils/bigNumber';
+import { fromAtto, toAtto } from 'utils/bigNumber';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 import { useNotification } from 'providers/NotificationProvider';
@@ -11,17 +14,19 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { Callback } from './types';
 import { useVaultContext, Operation } from 'components/Pages/Core/VaultContext';
 import { useVaultJoiningFee } from './use-vault-joining-fee';
+import { useFaith } from 'providers/FaithProvider';
 
 const ENV = import.meta.env;
 
 export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Callback) => {
   const { signer, wallet, ensureAllowance } = useWallet();
+  const { faith: { usableFaith } } = useFaith();
   const { optimisticallyUpdateVaultStaked, activeVault } = useVaultContext();
   const [getVaultJoiningFee] = useVaultJoiningFee(activeVault);
 
   const { openNotification } = useNotification();
 
-  const handler = async (amount: number) => {
+  const handler = async (token: TICKER_SYMBOL, amount: number) => {
     if (!signer || !wallet) {
       console.error(`
         Attempted to deposit to vault: ${vaultContractAddress} without a valid signer or wallet address.
@@ -31,21 +36,37 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
 
     const bigAmount = toAtto(amount);
     const temple = new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
-    const vault = new Vault__factory(signer).attach(vaultContractAddress);
+    const vaultProxy = new VaultProxy__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY);
     
     await ensureAllowance(
       TICKER_SYMBOL.TEMPLE_TOKEN,
       temple,
-      vault.address,
+      vaultProxy.address,
       bigAmount,
     );
 
+    let expectedAmount = amount;
+    // compute total deposit with faith
+    if (token === TICKER_SYMBOL.FAITH) {
+      const templeWithFaithAmount = await vaultProxy.getFaithMultiplier(usableFaith, bigAmount);
+      expectedAmount = fromAtto(templeWithFaithAmount);
+    }
+
     const fee = await getVaultJoiningFee() || 0;
-    const tx = await vault.deposit(bigAmount);
     
+    // Deposit through vault proxy.
+    let tx: ContractTransaction;
+    if (token === TICKER_SYMBOL.TEMPLE_TOKEN) {
+      tx = await vaultProxy.depositTempleFor(bigAmount, vaultContractAddress);
+    } else if (token === TICKER_SYMBOL.FAITH) {
+      tx = await vaultProxy.depositTempleWithFaith(bigAmount, usableFaith, vaultContractAddress);
+    } else {
+      throw new Error(`Programming Error: Unsupported token: ${token}`);
+    }
+
     await tx.wait();
 
-    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Increase, amount - fee);
+    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Increase, expectedAmount - fee);
 
     openNotification({
       title: 'Deposit success',

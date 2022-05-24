@@ -57,7 +57,7 @@ export const Unstake = () => {
       </InputWrapper>
       <CtaButton
         disabled={unstakeLoading || !unstakeAmount || balance.ogTemple <= 0}
-        onClick={() => unstake(unstakeAmount)}
+        onClick={() => unstake(Number(unstakeAmount))}
       >
         Unstake
       </CtaButton>
