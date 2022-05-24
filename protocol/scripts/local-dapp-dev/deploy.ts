@@ -290,7 +290,7 @@ async function main() {
       Math.floor(Date.now() / 1000) + i * window
     );
 
-    let vault = await extractDeployedAddress(vaultTx, 'createVaultInstance');
+    let vault = await extractDeployedAddress(vaultTx, 'CreateVaultInstance');
     console.log(vault);
 
     await ethers.provider.send('evm_increaseTime', [window]);

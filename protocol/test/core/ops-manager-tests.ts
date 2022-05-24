@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, NULL_ADDR, toAtto } from "../helpers";
 import { ContractTransaction, Event, Signer } from "ethers";
-import { 
+import {
   Exposure__factory,
   FakeERC20,
   FakeERC20__factory,
@@ -9,8 +9,10 @@ import {
   JoiningFee__factory,
   OpsManager,
   OpsManager__factory,
+  NoopLiquidator__factory,
   TempleERC20Token,
   TempleERC20Token__factory,
+  TreasuryFarmingRevenue__factory,
   Vault__factory,
 } from "../../typechain";
 import { expect } from "chai";
@@ -29,9 +31,9 @@ describe("Temple Core Ops Manager", async () => {
   let ben: Signer;
 
   async function extractEvent(
-      tx: ContractTransaction, 
-      eventName: string, 
-      expectedLength: number, 
+      tx: ContractTransaction,
+      eventName: string,
+      expectedLength: number,
       evtToExtract: number
   ) : Promise<Event> {
     let events = await (await tx.wait()).events?.filter(evt => evt.event === eventName);
@@ -72,7 +74,7 @@ describe("Temple Core Ops Manager", async () => {
 
     const evt1 = await extractEvent(createExposureTx1, "CreateExposure", 1, 0);
     const evt2 = await extractEvent(createExposureTx2, "CreateExposure", 1, 0);
-    
+
     // Check event args are not empty
     expect(evt1.args!!.exposure).not.empty;
     expect(evt1.args!!.primaryRevenue).not.empty;
@@ -124,7 +126,7 @@ describe("Temple Core Ops Manager", async () => {
 
     // Check event args are not empty
     expect(evt1.args!!.vault).not.empty;
-    
+
     // Check OpsManager storage updated correctly
     expect(await opsManager.activeVaults(evt1.args!!.vault)).to.be.true;
 
@@ -150,7 +152,7 @@ describe("Temple Core Ops Manager", async () => {
     expect(await vault2.firstPeriodStartTimestamp()).equals(firstVaultstartTime+3600);
   })
 
-  xit("End to end flow", async () => {
+  it("End to end flow", async () => {
     const firstVaultstartTime = await blockTimestamp()
 
     // create some vaults
@@ -189,6 +191,8 @@ describe("Temple Core Ops Manager", async () => {
     const vault2Alan = await new Vault__factory(alan).attach(vault2Addr);
     const templeTokenAlan = await new TempleERC20Token__factory(alan).attach(templeToken.address);
 
+    const ENTER_EXIT_BUFFER = await (await vault1Alan.ENTER_EXIT_WINDOW_BUFFER()).toNumber();
+
     const vault1Ben = await new Vault__factory(ben).attach(vault1Addr);
     const vault2Ben = await new Vault__factory(ben).attach(vault2Addr);
     const templeTokenBen = await new TempleERC20Token__factory(ben).attach(templeToken.address);
@@ -196,47 +200,56 @@ describe("Temple Core Ops Manager", async () => {
     const fxsExposure = await new Exposure__factory(owner).attach(fxsExposureAddr);
     const crvExposure = await new Exposure__factory(owner).attach(crvExposureAddr);
 
+    const noopLiquidator = await new NoopLiquidator__factory(owner).deploy(templeToken.address);
+    await fxsExposure.setLiqidator(noopLiquidator.address);
+    await crvExposure.setLiqidator(noopLiquidator.address);
+    templeToken.addMinter(noopLiquidator.address);
+
+    const fxsFarmingAddr = await opsManager.pools(fxsToken.address);
+    const fxsFarming = await new TreasuryFarmingRevenue__factory(owner).attach(fxsFarmingAddr);
+
     const alanAddr = await alan.getAddress();
     const benAddr = await ben.getAddress();
 
     // Deposit temple into the current open vault
     
     await templeTokenAlan.increaseAllowance(vault1Alan.address, toAtto(100000));
-    await vault1Alan.deposit(toAtto(10000));
+    await vault1Alan.deposit(toAtto(75));
     
+    expect(await vault1Alan.balanceOf(alanAddr)).equals(toAtto(75));
+
     await templeTokenBen.increaseAllowance(vault1Ben.address, toAtto(100000));
-    await vault1Ben.deposit(toAtto(50000));
+    await vault1Ben.deposit(toAtto(25));
+
+    expect(await vault1Ben.balanceOf(benAddr)).equals(toAtto(25));
+
     
     // Fast forward to close vault, and rebalance open vault
     // with revenue share. Before callign rebalance, check
     // which vaults require a rebalance
-    // TODO implement + check shares are as we expect
 
     let needRebal = await opsManager.requiresRebalance([vault1Addr, vault2Addr], fxsToken.address);
     expect (needRebal).to.eql([false, false]);
-    await mineForwardSeconds(3601); // just make sure vault1 is closed
+    await mineForwardSeconds(3600+ENTER_EXIT_BUFFER); // just make sure vault1 is closed
     needRebal = await opsManager.requiresRebalance([vault1Addr, vault2Addr], fxsToken.address);
     expect (needRebal).to.eql([true, false]);
 
-    opsManager.rebalance([vault1Addr], fxsToken.address);
+    await opsManager.rebalance([vault1Addr], fxsToken.address);
 
-    // TODO: Scoop finish
-    // Add revenue to each each exposure
     // TODO implement + check unclaimed revenue is as expected
-    //opsManager.addRevenue([fxsToken.address], [toAtto(10000)]);
-
-    // where do we check shares?
-  
+    await opsManager.addRevenue([fxsToken.address], [toAtto(10000)]);
+    needRebal = await opsManager.requiresRebalance([vault1Addr, vault2Addr], fxsToken.address);
 
     // Claim a vaults share of primary revenue, via the
     // rebalance method
-    // TODO implement + check unclaimed revenue is as expected
-
-    // Claim a vaults share of primary revenue, via the
-    // rebalance method
-    // TODO implement + check unclaimed revenue is as expected
+    await opsManager.rebalance([vault1Addr], fxsToken.address);
 
     // liquidate a vaults exposure
+    await mineForwardSeconds(23*3600); // get back into window
+    await opsManager.liquidateExposures([vault1Addr],[fxsToken.address]);
+    expect(await vault1Alan.balanceOf(alanAddr)).equals(toAtto(7575));
+    expect(await vault1Ben.balanceOf(benAddr)).equals(toAtto(2525));
+    
     // TODO implement - for now just confirm the necessary
     // events fire so we can do this process manually
   })
