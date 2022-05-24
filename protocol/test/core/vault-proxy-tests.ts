@@ -26,7 +26,7 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { _TypedDataEncoder } from "ethers/lib/utils";
 
-describe.only("Vault Proxy", async () => {
+describe("Vault Proxy", async () => {
   let TEMPLE: TempleERC20Token;
   let EXIT_QUEUE: ExitQueue;
   let STAKING: TempleStaking;
@@ -112,16 +112,12 @@ describe.only("Vault Proxy", async () => {
       )
 
       await TEMPLE.mint(VAULT_PROXY.address, toAtto(1000000));
-      //await VAULT_ACTIONS.allowSpendingForVault(vault.address);
   });
 
   it("Can deposit using Temple + Faith", async () => {
     const alanAddr = await alan.getAddress();
     await FAITH.gain(alanAddr, toAtto(200));
 
-    const nonce = await vault.nonces(alanAddr);
-    const deadline = await blockTimestamp() + (60*20);
-    
     const faith = await FAITH.balances(alanAddr);
     const alanTempleDeposit = toAtto(565);
     

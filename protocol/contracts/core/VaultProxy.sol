@@ -1,7 +1,7 @@
 pragma solidity ^0.8.4;
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./Vault.sol";
 import "../ABDKMathQuad.sol";
@@ -16,7 +16,7 @@ import "hardhat/console.sol";
 /**
     @notice A proxy contract for interacting with Temple Vaults. 
  */
-contract VaultProxy is Ownable {
+contract VaultProxy {
     using ABDKMathQuad for bytes16;
     /** @notice Tokens / Contracted required for the proxy contract  */
     OGTemple public ogTemple;
@@ -56,7 +56,7 @@ contract VaultProxy is Ownable {
     /**
         @notice Takes provided faith and Temple, applies the boost then immediate deposits into a vault
      */
-    function depositTempleWithFaith(uint256 _amountTemple, uint112 _amountFaith, Vault vault) public {
+    function depositTempleWithFaith(uint256 _amountTemple, uint112 _amountFaith, Vault vault) external {
         faith.redeem(msg.sender, _amountFaith);
         uint256 boostedAmount = getFaithMultiplier(_amountFaith, _amountTemple);
         SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amountTemple);
@@ -70,7 +70,7 @@ contract VaultProxy is Ownable {
         @dev This is loosely coupled with the InstantExitQueue insomuch that this function assumes the staking contract
              exit queue has been set to instantly withdraw, otherwise this function will fail.
      */
-    function unstakeAndDepositIntoVault(uint256 _amountOGT, Vault vault) public {
+    function unstakeAndDepositIntoVault(uint256 _amountOGT, Vault vault) external {
         SafeERC20.safeIncreaseAllowance(ogTemple, address(templeStaking), _amountOGT);
         SafeERC20.safeTransferFrom(ogTemple, msg.sender, address(this), _amountOGT);
         uint256 expectedTemple = templeStaking.balance(_amountOGT);
@@ -88,10 +88,10 @@ contract VaultProxy is Ownable {
         @notice A proxy function for depositing into a vault; useful if we wish to limit number of approvals to one, rather than for each underlying 
                 vault instance. 
      */
-    function depositTempleFor(uint256 _amount, Vault vault, uint256 deadline,uint8 v, bytes32 r, bytes32 s) public {
+    function depositTempleFor(uint256 _amount, Vault vault) public {
         SafeERC20.safeIncreaseAllowance(temple, address(vault), _amount);
         SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amount);
-        vault.depositFor(msg.sender, _amount, _amount, deadline, v,r,s);
+        vault.depositFor(address(this), msg.sender, _amount);
     }
 
     //todo add escape hatch for ERC20 in this contract
