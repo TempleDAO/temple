@@ -283,8 +283,11 @@ async function main() {
 
   let exposure = await extractDeployedAddress(exposureTx, 'CreateExposure');
 
-  const period = 30 * 60; // 30 min
-  const window = 5 * 60; // 5 min
+  const THIRTY_MINUTES = 30 * 60;
+  const FIVE_MINUTES = 5 * 60;
+
+  const period = Number(process.env.E2E_TEST_DEPLOY_PERIOD) || THIRTY_MINUTES;
+  const window = Number(process.env.E2E_TEST_DEPLOY_WINDOW) || FIVE_MINUTES;
 
   const numberOfSubVaults = period / window;
   if (period % window)
