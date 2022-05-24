@@ -1,11 +1,9 @@
-import { useState, ReactNode } from 'react';
+import { useState, ReactNode, useEffect } from 'react';
 import styled from 'styled-components';
 import { BigNumber } from 'ethers';
 
 import { Option } from 'components/InputSelect/InputSelect';
-import VaultContent, {
-  VaultButton,
-} from 'components/Pages/Core/VaultPages/VaultContent';
+import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumber } from 'utils/formatter';
 import { Header } from 'styles/vault';
@@ -20,18 +18,20 @@ import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useWallet } from 'providers/WalletProvider';
 import { toAtto } from 'utils/bigNumber';
 import { MetaMaskError } from 'hooks/core/types';
-import { useTokenVaultAllowance } from 'hooks/core/use-token-vault-allowance'
+import { useTokenVaultAllowance } from 'hooks/core/use-token-vault-allowance';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
+import { useVaultJoiningFee } from 'hooks/core/use-vault-joining-fee';
+import Tooltip from 'components/Tooltip/Tooltip';
 
 // This dummy data will be replaced by the actual contracts
 const OPTIONS = [
   { value: '$TEMPLE', label: 'TEMPLE' },
-  { value: '$OGTEMPLE', label: 'OGTEMPLE' },
-  { value: 'FAITH', label: 'FAITH' },
-  { value: '$FRAX', label: 'FRAX' },
-  { value: '$ETH', label: 'ETH' },
-  { value: '$USDC', label: 'USDC' },
-  { value: '$FEI', label: 'FEI' },
+  // { value: '$OGTEMPLE', label: 'OGTEMPLE' },
+  { value: 'FAITH', label: 'TEMPLE & FAITH' },
+  // { value: '$FRAX', label: 'FRAX' },
+  // { value: '$ETH', label: 'ETH' },
+  // { value: '$USDC', label: 'USDC' },
+  // { value: '$FEI', label: 'FEI' },
 ];
 
 // This dummy data will be replaced by the actual contracts
@@ -45,15 +45,8 @@ const dummyCurrencyToTemple: Record<TICKER_SYMBOL, number> = {
   $FEI: 9293,
 };
 
-const useZappedAssetTempleBalance = (
-  token: TICKER_SYMBOL,
-  amount: BigNumber
-) => {
-  const zapAssetRequest = createMockRequest(
-    { templeAmount: dummyCurrencyToTemple[token] },
-    1000,
-    true
-  );
+const useZappedAssetTempleBalance = (token: TICKER_SYMBOL, amount: BigNumber) => {
+  const zapAssetRequest = createMockRequest({ templeAmount: dummyCurrencyToTemple[token] }, 1000, true);
   return useRequestState(() => zapAssetRequest(token, amount));
 };
 
@@ -61,13 +54,18 @@ export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
   const { balance, isConnected } = useWallet();
 
-   // UI amount to stake
-   const [stakingAmount, setStakingAmount] = useState<string | number>('');
+  const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] = useVaultJoiningFee(vault);
+  const joiningFee = joiningFeeLoading ? null : (joiningFeeResponse || 0);
+
+  useEffect(() => {
+    getVaultJoiningFee();
+  }, [getVaultJoiningFee]);
+
+  // UI amount to stake
+  const [stakingAmount, setStakingAmount] = useState<string | number>('');
 
   // Currently selected token
-  const [ticker, setTicker] = useState<TICKER_SYMBOL>(
-    OPTIONS[0].value as TICKER_SYMBOL
-  );
+  const [ticker, setTicker] = useState<TICKER_SYMBOL>(OPTIONS[0].value as TICKER_SYMBOL);
 
   const [_, refreshBalance] = useVaultBalance(vault.id);
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
@@ -75,16 +73,11 @@ export const Stake = () => {
     refreshBalance();
     refreshWalletState();
   });
-  
-  const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(vault.id, ticker);
 
-  const [
-    zapAssetRequest,
-    { response: zapRepsonse, error: zapError, isLoading: zapLoading },
-  ] = useZappedAssetTempleBalance(
-    ticker,
-    toAtto(Number(stakingAmount || 0))
-  );
+  const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(vault.id, ticker);
+  
+  const [zapAssetRequest, { response: zapRepsonse, error: zapError, isLoading: zapLoading }] =
+    useZappedAssetTempleBalance(ticker, toAtto(Number(stakingAmount || 0)));
 
   const handleUpdateStakingAmount = (value: number | string) => {
     setStakingAmount(Number(value) === 0 ? '' : value);
@@ -107,19 +100,16 @@ export const Stake = () => {
   const tokenBalance = getTokenBalanceForCurrentTicker();
 
   const isZap = ticker !== TICKER_SYMBOL.TEMPLE_TOKEN;
-  const templeAmount = !isZap
-    ? stakingAmount
-    : (stakingAmount && zapRepsonse?.templeAmount) || 0;
-  
-  const stakeButtonDisabled = (
+  const templeAmount = !isZap ? stakingAmount : (stakingAmount && zapRepsonse?.templeAmount) || 0;
+
+  const stakeButtonDisabled =
     !isConnected ||
-    refreshIsLoading || 
+    refreshIsLoading ||
     !templeAmount ||
     depositLoading ||
-    zapLoading || 
+    zapLoading ||
     allowanceLoading ||
-    (isZap && !!zapError)
-  );
+    (isZap && !!zapError);
 
   let templeAmountMessage: ReactNode = '';
   if (zapError) {
@@ -138,16 +128,17 @@ export const Stake = () => {
       </>
     );
   }
-
-  const error = !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
+  const error =
+    !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
 
   return (
     <VaultContent>
       <Header>Stake</Header>
       <DepositContainer>
-        DEPOSIT{' '}
+        Deposit{' '}
         <SelectContainer>
           <CryptoSelect
+            isSearchable={false}
             options={OPTIONS}
             defaultValue={OPTIONS[0]}
             onChange={(val: Option) => {
@@ -169,10 +160,21 @@ export const Stake = () => {
         value={stakingAmount}
       />
       {!!(isZap && templeAmountMessage) && <AmountInTemple>{templeAmountMessage}</AmountInTemple>}
+      {joiningFee !== null && (
+        <JoiningFee>
+          <Tooltip
+            content="The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increases the further we are into the joining period."
+            inline
+          >
+            Joining Fee{' '}
+          </Tooltip>
+          : {joiningFee} $T
+        </JoiningFee>
+      )}
       <ErrorLabel>{error}</ErrorLabel>
       {allowance === 0 && (
         <VaultButton
-          label="Approve Allowance"
+          label="Approve"
           autoWidth
           disabled={allowanceLoading}
           onClick={async () => {
@@ -223,4 +225,11 @@ const DepositContainer = styled.div`
   font-size: 1.5rem;
   padding: 1.5rem 0 1.2rem;
   display: inline-block;
+`;
+
+const JoiningFee = styled.span`
+  color: ${theme.palette.brandLight};
+  display: block;
+  padding: 1rem 0 0;
+  font-size: 1.4rem;
 `;

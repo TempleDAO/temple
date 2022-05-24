@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import styled from 'styled-components';
 
-import { lerp } from 'components/Vault/desktop-parts/utils';
+import { lerp } from 'components/Vault/utils';
 import { Marker as MarkerTypeDef, MarkerType } from 'components/Vault/types';
 
 type Props = {

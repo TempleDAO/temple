@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
-import { createVaultGroup } from 'components/Vault/desktop-parts/utils';
+import { createVaultGroup } from 'components/Vault/utils';
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 
 import {
@@ -23,6 +23,16 @@ const createVaultUserFragment = (walletAddress = '') => {
         value
         amount
         staked
+      }
+      deposits(orderBy: timestamp) {
+        id
+        amount
+        timestamp
+      }
+      withdraws(orderBy: timestamp) {
+        id
+        amount
+        timestamp
       }
     }
   `;
@@ -51,6 +61,25 @@ const createGetVaultGroupsQuery = (walletAddress = ''): SubGraphQuery => ({
   }`,
 });
 
+export const createUserTransactionsQuery = (walletAddress: string): SubGraphQuery => {
+  return {
+    query: `{
+      user(id: "${walletAddress.toLowerCase()}") {
+        id
+        deposits(orderBy: timestamp) {
+          id
+          timestamp
+          amount
+        }
+        withdraws(orderBy: timestamp) {
+          id
+          timestamp
+          amount
+        }
+      }
+    }`,
+  };
+};
 
 const createVaultGroupQuery = (vaultGroupId: string, walletAddress = ''): SubGraphQuery => ({
   query: `{

@@ -1,10 +1,5 @@
-import {
-  createContext,
-  PropsWithChildren,
-  useContext,
-  useState,
-} from 'react';
-import { BigNumber, Signer,  } from 'ethers';
+import { createContext, PropsWithChildren, useContext, useState } from 'react';
+import { BigNumber, Signer } from 'ethers';
 import { useAccount, useSigner, useNetwork, useProvider, useConnect } from 'wagmi';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
@@ -12,10 +7,7 @@ import { useNotification } from 'providers/NotificationProvider';
 import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { ClaimType } from 'enums/claim-type';
-import {
-  TEAM_PAYMENTS_EPOCHS,
-  TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH,
-} from 'enums/team-payment';
+import { TEAM_PAYMENTS_EPOCHS, TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH } from 'enums/team-payment';
 import { fromAtto, toAtto } from 'utils/bigNumber';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
@@ -31,9 +23,10 @@ import {
 } from 'types/typechain';
 import {
   TEMPLE_ADDRESS,
-  STABLE_COIN_ADDRESS,
+  FRAX_ADDRESS,
   TEMPLE_STAKING_ADDRESS,
   LOCKED_OG_TEMPLE_ADDRESS,
+  FEI_ADDRESS,
 } from 'providers/env';
 
 // We want to save gas burn $ for the Templars,
@@ -42,7 +35,8 @@ const DEFAULT_ALLOWANCE = toAtto(100000000);
 
 const INITIAL_STATE: WalletState = {
   balance: {
-    stableCoin: 0,
+    frax: 0,
+    fei: 0,
     temple: 0,
     ogTempleLockedClaimable: 0,
     ogTemple: 0,
@@ -66,17 +60,15 @@ const WalletContext = createContext<WalletState>(INITIAL_STATE);
 
 export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
-  
+
   const [{ data: signer, loading: signerLoading }] = useSigner();
   const [{ data: network }] = useNetwork();
   const [{ data: accountData, loading: accountLoading }] = useAccount();
   const [{ loading: connectLoading }] = useConnect();
   const provider = useProvider();
-  
+
   const { openNotification } = useNotification();
-  const [balanceState, setBalanceState] = useState<Balance>(
-    INITIAL_STATE.balance
-  );
+  const [balanceState, setBalanceState] = useState<Balance>(INITIAL_STATE.balance);
 
   const chain = network?.chain;
   const walletAddress = accountData?.address;
@@ -90,40 +82,29 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     throw new Error('Deprecated');
   };
 
-  const getBalance = async (
-    walletAddress: string,
-    signer: Signer
-  ) => {
+  const getBalance = async (walletAddress: string, signer: Signer) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
 
-    const stableCoinContract = new ERC20__factory(signer).attach(
-      STABLE_COIN_ADDRESS
-    );
+    const fraxContract = new ERC20__factory(signer).attach(FRAX_ADDRESS);
 
-    const ogLockedTemple = new LockedOGTempleDeprecated__factory(
-      signer
-    ).attach(LOCKED_OG_TEMPLE_ADDRESS);
+    const feiContract = new ERC20__factory(signer).attach(FEI_ADDRESS);
 
-    const templeStakingContract = new TempleStaking__factory(
-      signer
-    ).attach(TEMPLE_STAKING_ADDRESS);
+    const ogLockedTemple = new LockedOGTempleDeprecated__factory(signer).attach(LOCKED_OG_TEMPLE_ADDRESS);
 
-    const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(
-      await templeStakingContract.OG_TEMPLE()
-    );
+    const templeStakingContract = new TempleStaking__factory(signer).attach(TEMPLE_STAKING_ADDRESS);
 
-    const templeContract = new TempleERC20Token__factory(signer).attach(
-      TEMPLE_ADDRESS
-    );
+    const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(await templeStakingContract.OG_TEMPLE());
 
-    const stableCoinBalance: BigNumber = await stableCoinContract.balanceOf(
-      walletAddress
-    );
+    const templeContract = new TempleERC20Token__factory(signer).attach(TEMPLE_ADDRESS);
+
+    const fraxBalance: BigNumber = await fraxContract.balanceOf(walletAddress);
+
+    const feiBalance: BigNumber = await feiContract.balanceOf(walletAddress);
 
     // get the locked OG temple
-    const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber();
+    const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber() ?? 0;
     let ogTempleLockedClaimable = 0;
     const templeLockedPromises = [];
     for (let i = 0; i < lockedNum; i++) {
@@ -138,13 +119,12 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       }
     });
 
-    const ogTemple = fromAtto(
-      await OG_TEMPLE_CONTRACT.balanceOf(walletAddress)
-    );
+    const ogTemple = fromAtto(await OG_TEMPLE_CONTRACT.balanceOf(walletAddress));
     const temple = fromAtto(await templeContract.balanceOf(walletAddress));
 
     return {
-      stableCoin: fromAtto(stableCoinBalance),
+      frax: fromAtto(fraxBalance),
+      fei: fromAtto(feiBalance),
       temple: temple,
       ogTemple: ogTemple >= 1 ? ogTemple : 0,
       ogTempleLockedClaimable: ogTempleLockedClaimable,
@@ -166,8 +146,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     }
 
     const blockNumber = await provider.getBlockNumber();
-    const currentBlockTimestamp = (await provider.getBlock(blockNumber))
-      .timestamp;
+    const currentBlockTimestamp = (await provider.getBlock(blockNumber)).timestamp;
     // block timestamps are in seconds no ms
     return currentBlockTimestamp * 1000;
   };
@@ -208,18 +187,13 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
   };
 
   // TODO: remove as part of #239
-  const claim = async(
-    claimType: ClaimType
-  ): Promise<TransactionReceipt | void> => {}
+  const claim = async (claimType: ClaimType): Promise<TransactionReceipt | void> => {};
 
   const collectTempleTeamPayment = async (epoch: TEAM_PAYMENTS_EPOCHS) => {
     if (walletAddress && signer) {
-      const fixedTeamPaymentAddress =
-        TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[epoch];
+      const fixedTeamPaymentAddress = TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[epoch];
 
-      const teamPaymentContract = new TempleTeamPayments__factory(
-        signer
-      ).attach(fixedTeamPaymentAddress);
+      const teamPaymentContract = new TempleTeamPayments__factory(signer).attach(fixedTeamPaymentAddress);
 
       const collectTxn = await teamPaymentContract.claim();
 
@@ -248,10 +222,12 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
         ensureAllowance,
         claim,
         signer: signer || null,
-        network: !chain ? null : {
-          chainId: chain.id,
-          name: chain.name || '',
-        },
+        network: !chain
+          ? null
+          : {
+              chainId: chain.id,
+              name: chain.name || '',
+            },
         getCurrentEpoch,
         getBalance: updateBalance,
         updateBalance,

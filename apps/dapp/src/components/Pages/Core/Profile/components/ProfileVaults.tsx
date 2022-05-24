@@ -1,6 +1,6 @@
 import React from 'react';
 import { format, isDate } from 'date-fns';
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import styled from 'styled-components'
 
 import { Body, Cell, Head, Row, Table } from 'components/Table/Table';
 import type { VaultGroup } from 'components/Vault/types';
@@ -34,11 +34,12 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultG
   }
 
   return (
-    <>
+    <Container>
+      <Subheading>Vaults</Subheading>
       {vaultGroups.map((vaultGroup) => {
         return (
           <div key={vaultGroup.id}>
-            <Subheading>{vaultGroup.id}</Subheading>
+            <VaultHeader>{vaultGroup.id}</VaultHeader>
             <Table $expand>
               <Head>
                 <Row>
@@ -54,10 +55,10 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultG
                   const vaultBalance = vaultGroupBalances[vault.id] || {};
                   return (
                     <Row key={vault.id}>
-                      <Cell $align="center">{vault.label}</Cell>
-                      <Cell $align="center">{vaultBalance.staked || 0} $T</Cell>
-                      <Cell $align="center">{vaultBalance.balance || 0} $T</Cell>
-                      <Cell $align="center">{unlockValue}</Cell>
+                      <Cell>{vault.label}</Cell>
+                      <Cell>{vaultBalance.staked || 0} $T</Cell>
+                      <Cell>{vaultBalance.balance || 0} $T</Cell>
+                      <Cell>{unlockValue}</Cell>
                     </Row>
                   );
                 })}
@@ -66,6 +67,11 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultG
           </div>
         );
       })}
-    </>
+    </Container>
   );
 };
+
+const VaultHeader = styled.h4`
+  font-size: 1.25rem;
+  margin: 0 0 1rem;
+`;
