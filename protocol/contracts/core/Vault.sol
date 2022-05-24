@@ -34,9 +34,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     mapping(address => Counters.Counter) public _nonces;
 
     // solhint-disable-next-line var-name-mixedcase
-    bytes32 public immutable DEPOSIT_FOR_TYPEHASH = keccak256("depositFor(address owner,uint256 maxAmount,uint256 deadline,uint256 nonce)");
-
-    // solhint-disable-next-line var-name-mixedcase
     bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner,uint256 amount,uint256 deadline,uint256 nonce)");
 
     IERC20 public templeToken;
@@ -79,7 +76,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
      * @notice Withdraw temple (and any earned revenue) from the vault
      */
     function withdraw(uint256 amount) public {
-        withdrawFor(msg.sender, amount);
+        withdrawFor(msg.sender, msg.sender, amount);
     }
 
     /**
@@ -97,7 +94,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
         require(signer == owner, "Vault: invalid signature");
 
-        withdrawFor(owner, amount);
+        withdrawFor(owner, msg.sender, amount);
     }
 
     function targetRevenueShare() external view returns (uint256) {
@@ -198,13 +195,13 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
      * depositFor (as there are no locks), however still a nucance if an account is
      * exited from a vault without consent.
      */
-    function withdrawFor(address _account, uint256 _amount) private {
+    function withdrawFor(address _account, address _to, uint256 _amount) private {
         require(inEnterExitWindow(), "Vault: Cannot exit vault when outside of enter/exit window");
 
         if (_amount > 0) {
              _burn(_account, _amount);
         }
-        SafeERC20.safeTransfer(templeToken, msg.sender, _amount);
+        SafeERC20.safeTransfer(templeToken, _to, _amount);
 
         emit Withdraw(_account, _amount);
     }
