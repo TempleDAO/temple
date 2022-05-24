@@ -8,7 +8,6 @@ import "../ABDKMathQuad.sol";
 import "../OGTemple.sol";
 import "../TempleERC20Token.sol";
 import "../TempleStaking.sol";
-import "../core/Vault.sol";
 import "../devotion/Faith.sol";
 
 import "hardhat/console.sol";
