@@ -55,11 +55,13 @@ export const Stake = () => {
   const { balance, isConnected } = useWallet();
 
   const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] = useVaultJoiningFee(vault);
-  const joiningFee = joiningFeeLoading ? null : (joiningFeeResponse || 0);
+  const joiningFee = (!isConnected || joiningFeeLoading) ? null : (joiningFeeResponse || 0);
 
   useEffect(() => {
-    getVaultJoiningFee();
-  }, [getVaultJoiningFee]);
+    if (isConnected) {
+      getVaultJoiningFee();
+    }
+  }, [isConnected, getVaultJoiningFee]);
 
   // UI amount to stake
   const [stakingAmount, setStakingAmount] = useState<string | number>('');
