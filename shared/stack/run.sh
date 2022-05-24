@@ -2,11 +2,11 @@
 
 protocolDeployCommand="local-deploy";
 
-if [ $1 == "e2e" ]; then
-    protocolDeployCommand="local-deploy-e2e";
+if [ ${1:-local} == "e2e" ]; then
+    protocolDeployCommand="local-deploy-e2e-test";
 fi
 
-echo $protocolDeployCommand
+echo "Using $protocolDeployCommand"
 
 # Group our processes so ctrl+c will stop them all
 trap "exit" INT TERM ERR
@@ -36,7 +36,7 @@ echo 'Deploying'
 
 # back to protocol
 # cd ../../protocol
-yarn local-deploy
+yarn $protocolDeployCommand
 
 # back to root
 cd ..
