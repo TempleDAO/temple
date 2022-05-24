@@ -76,28 +76,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     /**
-     * @notice Deposit for another user (gassless for the temple owner)
-     * (assuming the owner has given authority to the caller to act on their behalf)
-     *
-     * @dev amount is explicitly _not_ part of the digest, as in the common use case
-     * the owner often doesn't know exactly how much will be locked (example, AMM buy with
-     * immediate lock). We do capture the max however to mitigate any possibly attack vectors
-     */
-    function depositFor(address owner, uint256 amount, uint256 maxAmount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
-        require(block.timestamp <= deadline, "Vault: expired deadline");
-        require(msg.sender != owner, "Vault: depositFor should use different sender to owner");
-        require(amount <= maxAmount, "Vault: amount must be less than authorized maxAmount");
-
-        bytes32 structHash = keccak256(abi.encode(DEPOSIT_FOR_TYPEHASH, owner, maxAmount, deadline, _useNonce(owner)));
-        bytes32 digest = _hashTypedDataV4(structHash);
-        address signer = ECDSA.recover(digest, v, r, s);
-
-        require(signer == owner, "Vault: invalid signature");
-
-        depositFor(msg.sender, owner, amount);
-    }
-
-    /**
      * @notice Withdraw temple (and any earned revenue) from the vault
      */
     function withdraw(uint256 amount) public {

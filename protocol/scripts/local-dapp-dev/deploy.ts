@@ -20,7 +20,7 @@ import {
   JoiningFee__factory,
   OpsManager__factory,
   TempleStableAMMRouter__factory,
-  VaultActions__factory
+  VaultProxy__factory
 } from '../../typechain';
 import { writeFile } from 'fs/promises';
 
@@ -303,7 +303,7 @@ async function main() {
     await ethers.provider.send('evm_increaseTime', [window]);
   }
 
-  const vaultProxy = await new VaultActions__factory(owner).deploy(
+  const vaultProxy = await new VaultProxy__factory(owner).deploy(
     ogTempleToken.address,
     templeToken.address,
     templeStaking.address,
