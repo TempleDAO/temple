@@ -53,8 +53,7 @@
     "hardhat:mainnet": "hardhat --network mainnet",
     "hardhat:matic": "hardhat --network matic",
     "local-metrics": "hardhat run --network localhost scripts/metrics.ts",
-    "local-fork": "hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/5uWfALq4t1xR49V3EW5bBZEE4xh97l-A --fork-block-number 13205117",
-    "core:e2e:deposit": "hardhat run --network localhost scripts/local-dapp-dev/initial-temple.ts"
+    "local-fork": "hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/5uWfALq4t1xR49V3EW5bBZEE4xh97l-A --fork-block-number 13205117"
   },
   "engines": {
     "node": ">=16.0.0"
