@@ -29,7 +29,7 @@ export function createWithdraw(event: WithdrawEvent): Withdraw {
   const withdraw = new Withdraw(event.transaction.hash.toHexString())
   withdraw.timestamp = timestamp
 
-  const vault = getVault(event.transaction.to as Address)
+  const vault = getVault(event.address as Address)
   withdraw.vault = vault.id
   vault.tvl = vault.tvl.minus(amount)
   updateVault(vault, timestamp)

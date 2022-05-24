@@ -30,7 +30,7 @@ export function createDeposit(event: DepositEvent): Deposit {
   const deposit = new Deposit(event.transaction.hash.toHexString())
   deposit.timestamp = timestamp
 
-  const vault = getVault(event.transaction.to as Address)
+  const vault = getVault(event.address as Address)
   deposit.vault = vault.id
   vault.tvl = vault.tvl.plus(staked)
   updateVault(vault, timestamp)
