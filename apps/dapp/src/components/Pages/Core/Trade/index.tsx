@@ -18,8 +18,8 @@ const TradeRoutes = () => {
             <MenuWrapper>
               <Menu>
                 <TradeLink to="/core/dapp/trade">Trade</TradeLink>
-                <TradeLink to="/core/dapp/trade/unstake">Unstake / Withdraw</TradeLink>
                 <TradeLink to="/core/dapp/trade/stake">Stake</TradeLink>
+                <TradeLink to="/core/dapp/trade/unstake">Unstake</TradeLink>
               </Menu>
             </MenuWrapper>
             <Wrapper>

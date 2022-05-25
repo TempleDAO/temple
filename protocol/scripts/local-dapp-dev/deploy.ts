@@ -20,7 +20,8 @@ import {
   JoiningFee__factory,
   OpsManager__factory,
   TempleStableAMMRouter__factory,
-  VaultProxy__factory
+  VaultProxy__factory,
+  InstantExitQueue__factory,
 } from '../../typechain';
 import { writeFile } from 'fs/promises';
 
@@ -239,9 +240,11 @@ async function main() {
 
   // Devotion
   const faith = await new Faith__factory(owner).deploy();
-  //await faith.addManager(await owner.getAddress());
-  //await faith.gain(await account1.getAddress(), toAtto(10000));
-  //await faith.gain(await account2.getAddress(), toAtto(5000));
+  await faith.addManager(await owner.getAddress());
+
+  console.log('ACCOUNT 1 ADDRESS => ', await account1.getAddress(), '\n\n\n\n')
+  await faith.gain(await account1.getAddress(), toAtto(10000));
+  await faith.gain(await account2.getAddress(), toAtto(5000));
 
   // add liquidity to AMM
   const expiryDate = (): number => Math.floor(Date.now() / 1000) + 900;
@@ -309,6 +312,16 @@ async function main() {
     templeStaking.address,
     faith.address
   );
+  await templeToken.mint(vaultProxy.address, toAtto(1000000));
+
+  await faith.addManager(vaultProxy.address);
+
+  const instantExitQueue = await new InstantExitQueue__factory(owner).deploy(
+    templeStaking.address,
+    templeToken.address
+  );
+
+  await templeStaking.setExitQueue(instantExitQueue.address);
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
@@ -327,6 +340,8 @@ async function main() {
     TEMPLE_V2_ROUTER_ADDRESS: templeRouter.address,
     TEMPLE_ROUTER_WHITELIST: 'removed',
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
+    INSTANT_EXIT_QUEUE_ADDRESS: instantExitQueue.address,
+    TEMPLE_FAITH_ADDRESS: faith.address,
 
     TEMPLE_IV_SWAP: templeIVSwap.address,
     TEMPLE_VAULT_OPS_MANAGER: opsManager.address,

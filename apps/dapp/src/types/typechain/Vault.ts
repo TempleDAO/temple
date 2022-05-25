@@ -27,7 +27,6 @@ export type RationalStructOutput = [BigNumber, BigNumber] & {
 export interface VaultInterface extends utils.Interface {
   contractName: "Vault";
   functions: {
-    "DEPOSIT_FOR_TYPEHASH()": FunctionFragment;
     "DOMAIN_SEPARATOR()": FunctionFragment;
     "ENTER_EXIT_WINDOW_BUFFER()": FunctionFragment;
     "WITHDRAW_FOR_TYPEHASH()": FunctionFragment;
@@ -40,7 +39,7 @@ export interface VaultInterface extends utils.Interface {
     "decreaseAllowance(address,uint256)": FunctionFragment;
     "decreaseStartTime(uint256)": FunctionFragment;
     "deposit(uint256)": FunctionFragment;
-    "depositFor(address,uint256,uint256,uint256,uint8,bytes32,bytes32)": FunctionFragment;
+    "depositFor(address,address,uint256)": FunctionFragment;
     "enterExitWindowDuration()": FunctionFragment;
     "firstPeriodStartTimestamp()": FunctionFragment;
     "inEnterExitWindow()": FunctionFragment;
@@ -68,10 +67,6 @@ export interface VaultInterface extends utils.Interface {
     "withdrawFor(address,uint256,uint256,uint8,bytes32,bytes32)": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "DEPOSIT_FOR_TYPEHASH",
-    values?: undefined
-  ): string;
   encodeFunctionData(
     functionFragment: "DOMAIN_SEPARATOR",
     values?: undefined
@@ -113,15 +108,7 @@ export interface VaultInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "depositFor",
-    values: [
-      string,
-      BigNumberish,
-      BigNumberish,
-      BigNumberish,
-      BigNumberish,
-      BytesLike,
-      BytesLike
-    ]
+    values: [string, string, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "enterExitWindowDuration",
@@ -219,10 +206,6 @@ export interface VaultInterface extends utils.Interface {
     ]
   ): string;
 
-  decodeFunctionResult(
-    functionFragment: "DEPOSIT_FOR_TYPEHASH",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "DOMAIN_SEPARATOR",
     data: BytesLike
@@ -413,8 +396,6 @@ export interface Vault extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
-    DEPOSIT_FOR_TYPEHASH(overrides?: CallOverrides): Promise<[string]>;
-
     DOMAIN_SEPARATOR(overrides?: CallOverrides): Promise<[string]>;
 
     ENTER_EXIT_WINDOW_BUFFER(overrides?: CallOverrides): Promise<[BigNumber]>;
@@ -463,13 +444,9 @@ export interface Vault extends BaseContract {
     ): Promise<ContractTransaction>;
 
     depositFor(
-      owner: string,
-      amount: BigNumberish,
-      maxAmount: BigNumberish,
-      deadline: BigNumberish,
-      v: BigNumberish,
-      r: BytesLike,
-      s: BytesLike,
+      _funder: string,
+      _account: string,
+      _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -567,8 +544,6 @@ export interface Vault extends BaseContract {
     ): Promise<ContractTransaction>;
   };
 
-  DEPOSIT_FOR_TYPEHASH(overrides?: CallOverrides): Promise<string>;
-
   DOMAIN_SEPARATOR(overrides?: CallOverrides): Promise<string>;
 
   ENTER_EXIT_WINDOW_BUFFER(overrides?: CallOverrides): Promise<BigNumber>;
@@ -614,13 +589,9 @@ export interface Vault extends BaseContract {
   ): Promise<ContractTransaction>;
 
   depositFor(
-    owner: string,
-    amount: BigNumberish,
-    maxAmount: BigNumberish,
-    deadline: BigNumberish,
-    v: BigNumberish,
-    r: BytesLike,
-    s: BytesLike,
+    _funder: string,
+    _account: string,
+    _amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -715,8 +686,6 @@ export interface Vault extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    DEPOSIT_FOR_TYPEHASH(overrides?: CallOverrides): Promise<string>;
-
     DOMAIN_SEPARATOR(overrides?: CallOverrides): Promise<string>;
 
     ENTER_EXIT_WINDOW_BUFFER(overrides?: CallOverrides): Promise<BigNumber>;
@@ -759,13 +728,9 @@ export interface Vault extends BaseContract {
     deposit(amount: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
     depositFor(
-      owner: string,
-      amount: BigNumberish,
-      maxAmount: BigNumberish,
-      deadline: BigNumberish,
-      v: BigNumberish,
-      r: BytesLike,
-      s: BytesLike,
+      _funder: string,
+      _account: string,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -906,8 +871,6 @@ export interface Vault extends BaseContract {
   };
 
   estimateGas: {
-    DEPOSIT_FOR_TYPEHASH(overrides?: CallOverrides): Promise<BigNumber>;
-
     DOMAIN_SEPARATOR(overrides?: CallOverrides): Promise<BigNumber>;
 
     ENTER_EXIT_WINDOW_BUFFER(overrides?: CallOverrides): Promise<BigNumber>;
@@ -951,13 +914,9 @@ export interface Vault extends BaseContract {
     ): Promise<BigNumber>;
 
     depositFor(
-      owner: string,
-      amount: BigNumberish,
-      maxAmount: BigNumberish,
-      deadline: BigNumberish,
-      v: BigNumberish,
-      r: BytesLike,
-      s: BytesLike,
+      _funder: string,
+      _account: string,
+      _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1051,10 +1010,6 @@ export interface Vault extends BaseContract {
   };
 
   populateTransaction: {
-    DEPOSIT_FOR_TYPEHASH(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     DOMAIN_SEPARATOR(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     ENTER_EXIT_WINDOW_BUFFER(
@@ -1108,13 +1063,9 @@ export interface Vault extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     depositFor(
-      owner: string,
-      amount: BigNumberish,
-      maxAmount: BigNumberish,
-      deadline: BigNumberish,
-      v: BigNumberish,
-      r: BytesLike,
-      s: BytesLike,
+      _funder: string,
+      _account: string,
+      _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

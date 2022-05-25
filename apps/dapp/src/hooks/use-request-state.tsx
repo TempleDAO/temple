@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Nullable, Maybe } from 'types/util';
 import useIsMounted from 'hooks/use-is-mounted';
 
-type Request<T extends any> = ((...args: any[]) => Promise<T>) | (() => Promise<T>);
+type Request<T extends any, Args extends any[]> = ((...args: Args) => Promise<T>) | (() => Promise<T>);
 
 export const createMockRequest = <T extends any>(
   response: T,
@@ -30,16 +30,16 @@ type RequestResponseState<T> = {
   response: Nullable<T>,
 };
 
-type UseRequestStateReturnType<T extends any> = [
-  Request<Maybe<T>>,
+type UseRequestStateReturnType<T extends any, Args extends any[]> = [
+  Request<Maybe<T>, Args>,
   RequestResponseState<T>,
 ];
 
-const useRequestState = <T extends any>(request: Request<T>): UseRequestStateReturnType<T> => {
+const useRequestState = <Resp extends any, Args extends any[]>(request: Request<Resp, Args>): UseRequestStateReturnType<Resp, Args> => {
   const isMounted = useIsMounted();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Nullable<Error>>(null);
-  const [response, setResponse] = useState<Nullable<T>>(null);
+  const [response, setResponse] = useState<Nullable<Resp>>(null);
   const requestRef = useRef(request);
 
   useEffect(() => {
@@ -47,11 +47,11 @@ const useRequestState = <T extends any>(request: Request<T>): UseRequestStateRet
     requestRef.current = request;
   }, [request, requestRef]);
   
-  const wrappedRequest = useCallback(async (...args) => {
+  const wrappedRequest = useCallback(async (...args: Args) => {
     setError(null);
     setIsLoading(true);
 
-    let response: Maybe<T>;
+    let response: Maybe<Resp>;
     try {
       response = await requestRef.current(...args);
       if (isMounted.current) {

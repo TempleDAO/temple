@@ -38,7 +38,7 @@ export const Stake = () => {
   return (
     <div>
       <Header>
-        <span>Stake</span>
+        <span>Stake $Temple</span>
         <span>{formatNumber(treasuryMetrics?.templeApy || 0)}% apy</span>
       </Header>
       <InputWrapper>
@@ -58,7 +58,7 @@ export const Stake = () => {
       </InputWrapper>
       <CtaButton
         disabled={!stakeAmount || stakeAmount > balance.temple || stakeLoading}
-        onClick={() => stake(stakeAmount)}
+        onClick={() => stake(Number(stakeAmount))}
       >
         {stakeLoading ? <Loader /> : `Stake $Temple`}
       </CtaButton>
