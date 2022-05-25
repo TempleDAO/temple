@@ -1,4 +1,4 @@
-import { ContractTransaction, Signer } from 'ethers';
+import { BigNumber, ContractTransaction, Signer } from 'ethers';
 
 import {
   Vault__factory,
@@ -47,11 +47,12 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
 
     const bigUsableFaith = toAtto(usableFaith);
 
-    let expectedAmount = amount;
-    // compute total deposit with faith
+    let expectedDepositAmount = amount;
+    // If the user is depositing with FAITH, the will get a boosted amount of TEMPLE deposited.
+    // we need to calculate the deposit amount plus the amount of TEMPLE the FAITH converts to.
     if (token === TICKER_SYMBOL.FAITH) {
       const templeWithFaithAmount = await vaultProxy.getFaithMultiplier(bigUsableFaith, bigAmount);
-      expectedAmount = fromAtto(templeWithFaithAmount);
+      expectedDepositAmount = fromAtto(templeWithFaithAmount);
     }
 
     const fee = await getVaultJoiningFee() || 0;
@@ -68,7 +69,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
 
     await tx.wait();
 
-    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Increase, expectedAmount - fee);
+    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Increase, expectedDepositAmount - fee);
 
     openNotification({
       title: 'Deposit success',
