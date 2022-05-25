@@ -19,7 +19,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
 import { useListCoreVaultGroups, createUserTransactionsQuery } from 'hooks/core/subgraph';
 import { PageWrapper } from '../utils';
-import { createDateFromSeconds } from 'components/Vault/utils';
+import { createDateFromSeconds, formatTemple } from 'components/Vault/utils';
 import { useVaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 import { FlexibleXYPlot, XAxis, YAxis, LineSeries, ChartLabel } from 'react-vis';
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
@@ -81,7 +81,7 @@ const ProfilePage = () => {
               <StatCards>
                 <StatsCard
                   label="$Temple Deposited"
-                  stat={totalStakedAcrossAllVaults}
+                  stat={formatTemple(totalStakedAcrossAllVaults)}
                   backgroundColor={theme.palette.brand75}
                   backgroundImageUrl={texture1}
                   smallStatFont
@@ -92,7 +92,7 @@ const ProfilePage = () => {
                 />
                 <StatsCard
                   label="$Temple Locked"
-                  stat={totalBalancesAcrossVaults}
+                  stat={formatTemple(totalBalancesAcrossVaults)}
                   backgroundColor={theme.palette.brand75}
                   backgroundImageUrl={texture2}
                   smallStatFont
@@ -103,7 +103,7 @@ const ProfilePage = () => {
                 />
                 <StatsCard
                   label="$Temple Earned"
-                  stat={totalEarned}
+                  stat={formatTemple(totalEarned)}
                   backgroundColor={theme.palette.brand75}
                   backgroundImageUrl={texture4}
                   smallStatFont
@@ -114,7 +114,7 @@ const ProfilePage = () => {
                 />
                 <StatsCard
                   label="$Temple Claimable"
-                  stat={claimableBalance}
+                  stat={formatTemple(claimableBalance)}
                   backgroundColor={theme.palette.brand75}
                   backgroundImageUrl={texture5}
                   smallStatFont
