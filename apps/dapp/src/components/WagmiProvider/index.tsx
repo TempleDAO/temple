@@ -50,7 +50,7 @@ const provider = ({ chainId }: ProviderConfig) => {
 type ConnectorsConfig = { chainId?: number };
 const connectors = ({ chainId }: ConnectorsConfig) => {
   const rpcUrl = chains.find(({ id }) => id === chainId)?.rpcUrls?.[0] ?? defaultChain.rpcUrls[0];
-  
+  console.log('rpcUrl => ', rpcUrl, '\n\n')
   return [
     new InjectedConnector({ chains, options: { shimDisconnect: true } }),
     new WalletConnectConnector({
@@ -71,7 +71,6 @@ const connectors = ({ chainId }: ConnectorsConfig) => {
 
 export const WagmiProvider: FC = ({ children }) => (
   <Provider
-    autoConnect
     provider={provider}
     connectors={connectors}
   >
