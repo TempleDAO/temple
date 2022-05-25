@@ -15,7 +15,9 @@
     "build-storybook": "build-storybook",
     "version:release": "standard-version",
     "version:prerelease": "standard-version --prerelease beta",
-    "build-with-stats": "tsc && BUILD_STATS=true vite build"
+    "build-with-stats": "tsc && BUILD_STATS=true vite build",
+    "test:e2e": "env-cmd -f .env.local synpress run --noExit",
+    "test:synpress:open": "env-cmd -f .env.local synpress open"
   },
   "dependencies": {
     "@tippyjs/react": "^4.2.6",
@@ -48,10 +50,12 @@
     "@commitlint/cli": "^15.0.0",
     "@commitlint/config-conventional": "^15.0.0",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@playwright/test": "^1.21.1",
     "@storybook/addon-actions": "^6.4.9",
     "@storybook/addon-essentials": "^6.4.9",
     "@storybook/addon-links": "^6.4.9",
     "@storybook/react": "^6.4.9",
+    "@synthetixio/synpress": "^1.2.0",
     "@typechain/ethers-v5": "^7.0.1",
     "@types/babel__core": "^7.1.16",
     "@types/d3-shape": "^3.0.2",
@@ -71,6 +75,8 @@
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.2.3",
     "babel-plugin-macros": "^3.1.0",
+    "cypress": "^9.6.1",
+    "env-cmd": "^10.1.0",
     "eslint": "^8.3.0",
     "eslint-plugin-react": "^7.27.1",
     "eslint-plugin-react-hooks": "^4.3.0",

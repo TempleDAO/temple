@@ -45,7 +45,7 @@ export const Stake = () => {
   // Currently selected token
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(OPTIONS[0].value as TICKER_SYMBOL);
 
-  const [_, refreshBalance] = useVaultBalance(vault.id);
+  const [_, refreshBalance] = useVaultBalance(vault?.id);
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
   const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, async () => {
     refreshBalance();

@@ -39,14 +39,13 @@ async function extractDeployedAddress(
 ): Promise<string> {
   let result = 'FAILED TO FIND';
   await tx.wait(0).then((receipt) => {
-    
     let event = receipt.events?.filter((evt) => {
       if (evt.event) {
         return evt.event === eventName;
       }
     })[0];
 
-    console.log(event)
+    console.log(event);
 
     if (event?.args) {
       result = event.args[0];
@@ -242,7 +241,7 @@ async function main() {
   const faith = await new Faith__factory(owner).deploy();
   await faith.addManager(await owner.getAddress());
 
-  console.log('ACCOUNT 1 ADDRESS => ', await account1.getAddress(), '\n\n\n\n')
+  console.log('ACCOUNT 1 ADDRESS => ', await account1.getAddress(), '\n\n\n\n');
   await faith.gain(await account1.getAddress(), toAtto(10000));
   await faith.gain(await account2.getAddress(), toAtto(5000));
 
@@ -283,8 +282,13 @@ async function main() {
 
   let exposure = await extractDeployedAddress(exposureTx, 'CreateExposure');
 
-  const period = 30 * 60; // 30 min
-  const window = 5 * 60; // 5 min
+  const THIRTY_MINUTES = 30 * 60;
+  const FIVE_MINUTES = 5 * 60;
+
+  const period = Number(process.env.E2E_TEST_DEPLOY_PERIOD) || THIRTY_MINUTES;
+  const window = Number(process.env.E2E_TEST_DEPLOY_WINDOW) || FIVE_MINUTES;
+
+  console.log(`Using vault period ${period} and entry window ${window}`);
 
   const numberOfSubVaults = period / window;
   if (period % window)

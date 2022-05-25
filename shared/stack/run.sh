@@ -1,11 +1,20 @@
 #!/bin/bash
 
+protocolDeployCommand="local-deploy";
+
+if [ ${1:-local} == "e2e" ]; then
+    protocolDeployCommand="local-deploy-e2e-test";
+fi
+
+echo "Using $protocolDeployCommand"
+
 # Group our processes so ctrl+c will stop them all
 trap "exit" INT TERM ERR
 trap "kill 0" EXIT
 
-# Compile and deploy contracts
+# Clean hardhat, compile and deploy contracts
 cd protocol 
+yarn clean
 yarn compile
 yarn local-node & 
 
@@ -20,7 +29,7 @@ while [[ "$(curl -s -o /dev/null --request POST -w ''%{http_code}'' 'localhost:8
 echo 'Node is alive' 
 echo 'Deploying'
 
-yarn local-deploy
+yarn $protocolDeployCommand
 
 # back to root
 cd ..
