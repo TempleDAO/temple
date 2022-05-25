@@ -11,6 +11,7 @@ import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
+import { formatTemple } from 'components/Vault/utils';
 
 export const Claim = () => {
   const { activeVault: vault } = useVaultContext();
@@ -38,7 +39,7 @@ export const Claim = () => {
       <ClaimableLabel>
         Claimable Temple
         <TempleAmountLink onClick={() => copyBalance(vaultBalance, handleUpdateAmount)}>
-          {formatNumberWithCommas(vaultBalance)}
+          {formatTemple(vaultBalance)}
         </TempleAmountLink>
       </ClaimableLabel>
     ) : (

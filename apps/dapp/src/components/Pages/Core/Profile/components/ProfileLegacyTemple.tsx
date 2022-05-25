@@ -17,6 +17,7 @@ import background4 from 'assets/images/dashboard-4.png';
 import texture2 from 'assets/images/texture-2.svg';
 
 import { Container, Subheading } from '../styles';
+import { formatTemple } from 'components/Vault/utils';
 
 interface IProps {
   lockedOgTempleBalance?: number;
@@ -35,19 +36,19 @@ export const ProfileLegacyTemple: React.FC<IProps> = ({
       <LegacyTempleArea>
         <StatsCard
           label={`${TICKER_SYMBOL.OG_TEMPLE_TOKEN} (Locked)`}
-          stat={formatNumberWithCommas(lockedOgTempleBalance)}
+          stat={formatTemple(lockedOgTempleBalance)}
           backgroundImageUrl={background3}
           darken
         />
         <StatsCard
           label={`${TICKER_SYMBOL.OG_TEMPLE_TOKEN} (Unlocked)`}
-          stat={formatNumberWithCommas(ogTempleBalance)}
+          stat={formatTemple(ogTempleBalance)}
           backgroundImageUrl={background1}
           darken
         />
         <StatsCard
           label={TICKER_SYMBOL.FAITH}
-          stat={formatNumberWithCommas(faithBalance)}
+          stat={formatTemple(faithBalance)}
           backgroundColor={background2}
           backgroundImageUrl={texture2}
           darken

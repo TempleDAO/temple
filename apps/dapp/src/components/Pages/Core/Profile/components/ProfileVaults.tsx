@@ -9,6 +9,7 @@ import { Button } from 'components/Button/Button';
 import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
 import { Container, Subheading } from '../styles';
+import { formatTemple } from 'components/Vault/utils';
 
 interface IProps {
   isLoading?: boolean;
@@ -56,8 +57,8 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultG
                   return (
                     <Row key={vault.id}>
                       <Cell>{vault.label}</Cell>
-                      <Cell>{vaultBalance.staked || 0} $T</Cell>
-                      <Cell>{vaultBalance.balance || 0} $T</Cell>
+                      <Cell>{formatTemple(vaultBalance.staked)} $T</Cell>
+                      <Cell>{formatTemple(vaultBalance.balance)} $T</Cell>
                       <Cell>{unlockValue}</Cell>
                     </Row>
                   );

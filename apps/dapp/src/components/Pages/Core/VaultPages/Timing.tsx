@@ -5,6 +5,7 @@ import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Tabl
 
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import VaultContent from './VaultContent';
+import { formatTemple } from 'components/Vault/utils';
 
 const Timing = () => {
   const { vaultGroup, balances } = useVaultContext();
@@ -37,8 +38,8 @@ const Timing = () => {
               return (
                 <Row key={vault.id}>
                   <Cell $align="center">{vault.label}</Cell>
-                  <Cell $align="center">{vaultBalance.staked || 0} $T</Cell>
-                  <Cell $align="center">{vaultBalance.balance || 0} $T</Cell>
+                  <Cell $align="center">{formatTemple(vaultBalance.staked)} $T</Cell>
+                  <Cell $align="center">{formatTemple(vaultBalance.balance)} $T</Cell>
                   <Cell $align="center">{unlockValue}</Cell>
                 </Row>
               );
@@ -63,7 +64,7 @@ const Table = styled(BaseTable)`
 
 const StyledBody = styled(Body)`
   font-size: 1rem;
-`
+`;
 
 const Header = styled.h2`
   margin: 0 0 3.625rem; /* 58/16 */
