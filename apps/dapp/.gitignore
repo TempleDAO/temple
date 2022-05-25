@@ -31,3 +31,7 @@ node_modules
 .DS_Store
 dist
 *.local
+/test-results/
+/dist-pw/
+/tests/e2e/videos/
+/tests/e2e/screenshots/
