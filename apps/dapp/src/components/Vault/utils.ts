@@ -87,7 +87,9 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
 };
 
 export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: VaultGroupBalances): Marker[] => {
-  const markers  = [];
+  const markers = [];
+  // @ts-ignore
+  window.markers = [];
   for (const [i, vault] of vaultGroup.vaults.entries()) {
     const vaultBalance = balances[vault.id] || {};
     const marker = {
@@ -111,6 +113,11 @@ export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: Va
     }
 
     markers.push(marker as Marker);
+
+    // TODO: Remove this later
+    // @ts-ignore
+    window.markers.push(marker);
+    console.log()
   }
 
   return markers;
