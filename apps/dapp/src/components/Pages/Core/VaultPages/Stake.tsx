@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 
 import { Option } from 'components/InputSelect/InputSelect';
@@ -18,11 +18,7 @@ import { useTokenVaultProxyAllowance } from 'hooks/core/use-token-vault-proxy-al
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
 import { useVaultJoiningFee } from 'hooks/core/use-vault-joining-fee';
 import Tooltip from 'components/Tooltip/Tooltip';
-
-const OPTIONS = [
-  { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' },
-  { value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' },
-];
+import { useFaith } from 'providers/FaithProvider';
 
 const ENV = import.meta.env;
 
@@ -41,9 +37,7 @@ export const Stake = () => {
 
   // UI amount to stake
   const [stakingAmount, setStakingAmount] = useState<string | number>('');
-
-  // Currently selected token
-  const [ticker, setTicker] = useState<TICKER_SYMBOL>(OPTIONS[0].value as TICKER_SYMBOL);
+  const { options, ticker, setTicker } = useStakeOptions();
 
   const [_, refreshBalance] = useVaultBalance(vault?.id);
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
@@ -72,7 +66,7 @@ export const Stake = () => {
   };
 
   const tokenBalance = getTokenBalanceForCurrentTicker();
-  const templeAmount = stakingAmount || 0;
+  const templeAmount = Number(stakingAmount || 0);
 
   const stakeButtonDisabled =
     !isConnected ||
@@ -92,8 +86,8 @@ export const Stake = () => {
         <SelectContainer>
           <CryptoSelect
             isSearchable={false}
-            options={OPTIONS}
-            defaultValue={OPTIONS[0]}
+            options={options}
+            defaultValue={options[0]}
             onChange={(val: Option) => {
               setTicker(val.value as TICKER_SYMBOL);
               handleUpdateStakingAmount(0);
@@ -112,7 +106,7 @@ export const Stake = () => {
         placeholder="0.00"
         value={stakingAmount}
       />
-      {joiningFee !== null && (
+      {(joiningFee !== null &&  !!templeAmount) && (
         <JoiningFee>
           <Tooltip
             content="The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increases the further we are into the joining period."
@@ -120,7 +114,7 @@ export const Stake = () => {
           >
             Joining Fee{' '}
           </Tooltip>
-          : {joiningFee} $T
+          : {joiningFee * templeAmount} $T
         </JoiningFee>
       )}
       <ErrorLabel>{error}</ErrorLabel>
@@ -150,6 +144,27 @@ export const Stake = () => {
     </VaultContent>
   );
 };
+
+const useStakeOptions = () => {
+  const { faith: { usableFaith } } = useFaith();
+
+  const options = [
+    { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' },
+  ];
+
+  if (usableFaith > 0) {
+    options.push({ value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' });
+  }
+
+  const [ticker, setTicker] = useState<TICKER_SYMBOL>(options[0].value as TICKER_SYMBOL);
+
+  return {
+    options,
+    ticker,
+    setTicker,
+  };
+};
+
 
 const SelectContainer = styled.div`
   margin: 0 auto;

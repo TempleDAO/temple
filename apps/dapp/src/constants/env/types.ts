@@ -2,11 +2,11 @@ interface Subgraphs {
   templeCore: string;
 }
 
-interface Tokens {
-  temple: string;
+interface Contracts {
+  vaultProxy: string;
 }
 
 export interface Environment {
   subgraph: Subgraphs;
-  tokens?: Tokens;
+  contracts: Contracts;
 }
