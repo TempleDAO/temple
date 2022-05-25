@@ -28,8 +28,7 @@ const createTokenFactoryInstance = (ticker: TICKER_SYMBOL, signer: Signer) => {
 
 type HookReturnType = [{ allowance: Nullable<number>, isLoading: boolean }, () => Promise<void>];
 
-export const useTokenVaultAllowance = (
-  vaultContractAddress: string,
+export const useTokenVaultProxyAllowance = (
   ticker: TICKER_SYMBOL = TICKER_SYMBOL.TEMPLE_TOKEN,
 ): HookReturnType => {
   const { signer, wallet, isConnected } = useWallet();
@@ -88,7 +87,6 @@ export const useTokenVaultAllowance = (
     getAllowanceRequest();
   }, [
     isConnected,
-    vaultContractAddress,
     getAllowanceRequest,
     ticker,
   ]);

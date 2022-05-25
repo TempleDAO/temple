@@ -1,6 +1,5 @@
-import { useState, ReactNode, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { BigNumber } from 'ethers';
 
 import { Option } from 'components/InputSelect/InputSelect';
 import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
@@ -10,15 +9,12 @@ import { Header } from 'styles/vault';
 import { theme } from 'styles/theme';
 import { VaultInput } from 'components/Input/VaultInput';
 import { CryptoSelect } from 'components/Input/CryptoSelect';
-import useRequestState, { createMockRequest } from 'hooks/use-request-state';
-import EllipsisLoader from 'components/EllipsisLoader';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useDepositToVault } from 'hooks/core/use-deposit-to-vault';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useWallet } from 'providers/WalletProvider';
-import { toAtto } from 'utils/bigNumber';
 import { MetaMaskError } from 'hooks/core/types';
-import { useTokenVaultAllowance } from 'hooks/core/use-token-vault-allowance';
+import { useTokenVaultProxyAllowance } from 'hooks/core/use-token-vault-proxy-allowance';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
 import { useVaultJoiningFee } from 'hooks/core/use-vault-joining-fee';
 import Tooltip from 'components/Tooltip/Tooltip';
@@ -56,8 +52,7 @@ export const Stake = () => {
     refreshWalletState();
   });
 
-  const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultAllowance(
-    ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY,
+  const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultProxyAllowance(
     ticker,
   );
   
