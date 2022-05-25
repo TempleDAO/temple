@@ -1874,16 +1874,6 @@
     debug "^3.1.0"
     lodash.once "^4.1.1"
 
-"@depay/web3-blockchains@^4.5.0":
-  version "4.5.0"
-  resolved "https://registry.yarnpkg.com/@depay/web3-blockchains/-/web3-blockchains-4.5.0.tgz#b959b3cb57300a4d163b26ea42aee792ad89d3ce"
-  integrity sha512-UhHb+uRjEnQRNC65Jdnq9dP9ANg/gzO8IE5eXx3uG6rr1rTAmq0jRmB447JtPDgestZ/BDOryhHSWUlGT6ak7Q==
-
-"@depay/web3-mock@^11.7.0":
-  version "11.7.0"
-  resolved "https://registry.yarnpkg.com/@depay/web3-mock/-/web3-mock-11.7.0.tgz#587b2ab7de4b7728360f351c9d827cf921a30270"
-  integrity sha512-MDdkiNXCZtibWTt/W9kylzdE/Ft8OnDX/W5gCzncZrA1hGZbZgX9ySlvQ2avvngWBw89I8WAlY4EUHUWn/UM0g==
-
 "@discoveryjs/json-ext@^0.5.3":
   version "0.5.6"
   resolved "https://registry.yarnpkg.com/@discoveryjs/json-ext/-/json-ext-0.5.6.tgz#d5e0706cf8c6acd8c6032f8d54070af261bbbb2f"
@@ -14162,7 +14152,7 @@ hardhat-watcher@^2.1.1:
   dependencies:
     chokidar "^3.4.3"
 
-hardhat@^2.9.3:
+hardhat@2.9.4:
   version "2.9.4"
   resolved "https://registry.yarnpkg.com/hardhat/-/hardhat-2.9.4.tgz#ecb587f98ae9b14b66c9d401bf970669f4335013"
   integrity sha512-7hpJz1lXz3H/1shcI284xgQ9WPdXGMuXKoNj8ySJKG7pdifB/lNs1o+Kx/P4TKFwhOiGQYH51/wS2NHKI+dPfg==

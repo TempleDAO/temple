@@ -49,8 +49,6 @@
     "@babel/core": "^7.16.0",
     "@commitlint/cli": "^15.0.0",
     "@commitlint/config-conventional": "^15.0.0",
-    "@depay/web3-blockchains": "^4.5.0",
-    "@depay/web3-mock": "^11.7.0",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@playwright/test": "^1.21.1",
     "@storybook/addon-actions": "^6.4.9",
