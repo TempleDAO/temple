@@ -1,6 +1,8 @@
 import {
   OGTemple__factory,
   TempleStaking__factory,
+  InstantExitQueue__factory,
+  VaultProxy__factory
 } from 'types/typechain';
 
 import useRequestState from 'hooks/use-request-state';

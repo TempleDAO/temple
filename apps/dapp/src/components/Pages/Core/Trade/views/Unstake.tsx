@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 
-import { useStaking } from 'providers/StakingProvider';
 import { useWallet } from 'providers/WalletProvider';
 import { Input } from 'components/Input/Input';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -18,10 +17,6 @@ import {
 export const Unstake = () => {
   const { balance } = useWallet();
   const [_, refreshWallet] = useRefreshWalletState();
-  const {
-    exitQueueData,
-    claimAvailableTemple,
-  } = useStaking();
   const [unstakeAmount, setUnstakeAmount] = useState<string | number>('');
   const [unstake, { isLoading: unstakeLoading }] = useUnstakeOGTemple(() => {
     refreshWallet();
@@ -39,7 +34,7 @@ export const Unstake = () => {
 
   return (
     <>
-      <Header>Unstake OGTemple</Header>
+      <Header>Unstake $OGTemple</Header>
       <InputWrapper>
         <Input
           crypto={{
@@ -61,29 +56,6 @@ export const Unstake = () => {
       >
         Unstake
       </CtaButton>
-      {exitQueueData.claimableTemple > 0 && (
-        <>
-          <Header>Withdraw</Header>
-          <InputWrapper>
-            <Input
-              crypto={{
-                kind: 'value',
-                value: TICKER_SYMBOL.TEMPLE_TOKEN,
-              }}
-              isNumber
-              disabled
-              value={exitQueueData.claimableTemple}
-              min={0}
-            />
-          </InputWrapper>
-          <CtaButton
-            disabled={exitQueueData.claimableTemple <= 0 || unstakeLoading}
-            onClick={() => claimAvailableTemple()}
-          >
-            {unstakeLoading ? <Loader /> : `Withdraw ${exitQueueData.claimableTemple > 0 ? `${exitQueueData.claimableTemple} Temple` : ''}`}
-          </CtaButton>
-        </>
-      )}
     </>
   );
 };
