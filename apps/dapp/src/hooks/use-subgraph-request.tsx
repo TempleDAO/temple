@@ -6,10 +6,10 @@ import useRequestState from './use-request-state';
 export const useSubgraphRequest = <R extends SubGraphResponse<object>>(subgraphUrl: string, query: SubGraphQuery) => {
   const subgraphRequest = async () => {
     try {
-      const { data } = await axios.post(subgraphUrl, query);
+      const { data } = await axios.post<R>(subgraphUrl, query);
       
-      if (data.errors) {
-        const firstErrorMessage = data.errors[0].message;
+      if ((data?.errors || []).length > 0) {
+        const firstErrorMessage = data.errors![0].message;
         throw new Error(firstErrorMessage);
       }
 
@@ -19,5 +19,5 @@ export const useSubgraphRequest = <R extends SubGraphResponse<object>>(subgraphU
     }
   };
 
-  return useRequestState<R>(subgraphRequest)
+  return useRequestState(subgraphRequest)
 };

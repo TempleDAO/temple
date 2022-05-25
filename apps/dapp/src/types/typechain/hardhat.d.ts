@@ -137,6 +137,18 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleIVSwap__factory>;
     getContractFactory(
+      name: "ITempleTreasury",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ITempleTreasury__factory>;
+    getContractFactory(
+      name: "ITempleTWAP",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ITempleTWAP__factory>;
+    getContractFactory(
+      name: "TempleStableAMMRouter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TempleStableAMMRouter__factory>;
+    getContractFactory(
       name: "TempleUniswapV2Pair",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TempleUniswapV2Pair__factory>;
@@ -152,6 +164,10 @@ declare module "hardhat/types/runtime" {
       name: "ILiquidator",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ILiquidator__factory>;
+    getContractFactory(
+      name: "InstantExitQueue",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.InstantExitQueue__factory>;
     getContractFactory(
       name: "JoiningFee",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -176,6 +192,10 @@ declare module "hardhat/types/runtime" {
       name: "Vault",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Vault__factory>;
+    getContractFactory(
+      name: "VaultProxy",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.VaultProxy__factory>;
     getContractFactory(
       name: "LockedOGTempleDeprecated",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -413,6 +433,21 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.TempleIVSwap>;
     getContractAt(
+      name: "ITempleTreasury",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ITempleTreasury>;
+    getContractAt(
+      name: "ITempleTWAP",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ITempleTWAP>;
+    getContractAt(
+      name: "TempleStableAMMRouter",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TempleStableAMMRouter>;
+    getContractAt(
       name: "TempleUniswapV2Pair",
       address: string,
       signer?: ethers.Signer
@@ -432,6 +467,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ILiquidator>;
+    getContractAt(
+      name: "InstantExitQueue",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.InstantExitQueue>;
     getContractAt(
       name: "JoiningFee",
       address: string,
@@ -462,6 +502,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Vault>;
+    getContractAt(
+      name: "VaultProxy",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.VaultProxy>;
     getContractAt(
       name: "LockedOGTempleDeprecated",
       address: string,

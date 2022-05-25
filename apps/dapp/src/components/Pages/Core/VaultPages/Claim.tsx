@@ -73,7 +73,7 @@ export const Claim = () => {
         marginTop={error ? '0.5rem' : '3.5rem'}
         disabled={buttonIsDisabled}
         onClick={async () => {
-          await withdraw(amount);
+          await withdraw(Number(amount));
         }}
       />
     </VaultContent>

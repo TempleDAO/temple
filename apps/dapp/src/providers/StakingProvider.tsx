@@ -431,7 +431,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         await unstakeTXN.wait();
         // Show feedback to user
         openNotification({
-          title: `Queue joined`,
+          title: 'Unstake successful',
           hash: unstakeTXN.hash,
         });
       } catch (e) {

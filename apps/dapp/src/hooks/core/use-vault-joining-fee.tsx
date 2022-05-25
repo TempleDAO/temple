@@ -31,5 +31,5 @@ export const useVaultJoiningFee = (vault: Vault) => {
     return await getVaultJoiningFee(signer, vault);
   };
 
-  return useRequestState<Maybe<number>>(getJoiningFee);
+  return useRequestState(getJoiningFee);
 };

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Signer } from 'ethers';
 import {
-  Vault__factory,
+  VaultProxy__factory,
   TempleERC20Token__factory,
 } from 'types/typechain';
 import { useWallet } from 'providers/WalletProvider';
@@ -19,6 +19,10 @@ const DEFAULT_ALLOWANCE = toAtto(100000000);
 const createTokenFactoryInstance = (ticker: TICKER_SYMBOL, signer: Signer) => {
   switch (ticker) {
     case TICKER_SYMBOL.TEMPLE_TOKEN:
+    // When depositing FAITH, it is actually Temple. Faith represents the intent
+    // to include a user's FAITH balance in addition to the $Temple amount the user 
+    // wants to deposit.
+    case TICKER_SYMBOL.FAITH:
       return new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
   }
   throw new Error('Unsupported Token');
@@ -26,8 +30,7 @@ const createTokenFactoryInstance = (ticker: TICKER_SYMBOL, signer: Signer) => {
 
 type HookReturnType = [{ allowance: Nullable<number>, isLoading: boolean }, () => Promise<void>];
 
-export const useTokenVaultAllowance = (
-  vaultContractAddress: string,
+export const useTokenVaultProxyAllowance = (
   ticker: TICKER_SYMBOL = TICKER_SYMBOL.TEMPLE_TOKEN,
 ): HookReturnType => {
   const { signer, wallet, isConnected } = useWallet();
@@ -40,7 +43,7 @@ export const useTokenVaultAllowance = (
     }
 
     const token = createTokenFactoryInstance(ticker, signer);
-    const vault = new Vault__factory(signer).attach(vaultContractAddress);
+    const vault = new VaultProxy__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY);
     const allowance = await token.allowance(wallet, vault.address);
     return allowance;
   };
@@ -60,7 +63,7 @@ export const useTokenVaultAllowance = (
     }
 
     const token = createTokenFactoryInstance(ticker, signer);
-    const approveTXN = await token.approve(vaultContractAddress, DEFAULT_ALLOWANCE);
+    const approveTXN = await token.approve(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY, DEFAULT_ALLOWANCE);
     await approveTXN.wait();
   
     openNotification({
@@ -86,7 +89,6 @@ export const useTokenVaultAllowance = (
     getAllowanceRequest();
   }, [
     isConnected,
-    vaultContractAddress,
     getAllowanceRequest,
     ticker,
   ]);
