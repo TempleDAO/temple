@@ -27,9 +27,6 @@ export const TimelineTicks = ({ vaultGroup }: Props) => {
     ticks.push(<Tick key={i} id={i} angle={angle} />);
   }
 
-  const startLabel = format(vaultGroup.cycleStart, 'LLL d');
-  const endLabel = format(vaultGroup.cycleEnd, 'LLL d');
-
   return (
     <g id="dynamic-timeline" clipPath="url(#clip0_4015_16261)">
       <text
@@ -44,8 +41,8 @@ export const TimelineTicks = ({ vaultGroup }: Props) => {
         fontWeight="bold"
         letterSpacing=".15em"
       >
-        <tspan x={170} y={526}>
-          {startLabel}
+        <tspan x={178} y={526}>
+          Start
         </tspan>
       </text>
       <text
@@ -60,8 +57,8 @@ export const TimelineTicks = ({ vaultGroup }: Props) => {
         fontWeight="bold"
         letterSpacing=".15em"
       >
-        <tspan x={783.481} y={526.065}>
-          {endLabel}
+        <tspan x={793.481} y={526.065}>
+         End
         </tspan>
       </text>
       <g id="track">

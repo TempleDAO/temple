@@ -72,8 +72,8 @@ export const Ticks = ({ vaultGroup }: Props) => {
         fontWeight="bold"
         letterSpacing="0.15em"
       >
-        <tspan x={282.603} y={516.975}>
-          {endLabel}
+        <tspan x={288} y={516.975}>
+          End
         </tspan>
       </text>
       <circle id="timeline-end-marker" cx={297.143} cy={538.765} r={3.39414} fill="#BD7B4F" />
@@ -89,8 +89,8 @@ export const Ticks = ({ vaultGroup }: Props) => {
         fontWeight="bold"
         letterSpacing="0.15em"
       >
-        <tspan x={9.79098} y={516.975}>
-          {startLabel}
+        <tspan x={12} y={516.975}>
+          Start
         </tspan>
       </text>
     </g>
