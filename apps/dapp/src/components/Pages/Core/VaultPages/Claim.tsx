@@ -39,7 +39,7 @@ export const Claim = () => {
       <ClaimableLabel>
         Claimable Temple
         <TempleAmountLink onClick={() => copyBalance(vaultBalance, handleUpdateAmount)}>
-          {formatTemple(vaultBalance)}
+          {vaultBalance}
         </TempleAmountLink>
       </ClaimableLabel>
     ) : (

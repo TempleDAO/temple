@@ -188,11 +188,10 @@ const getCurrentCycle = (startDate: Date, months: number, now: Date) => {
 // put it at.
 export const lerp = (v0: number, v1: number, t: number) => v0 * (1 - t) + v1 * t;
 
-
 export const formatTemple = (templeValue: Nullable<number>) => {
   if (!templeValue) {
     return '0';
   }
 
-  return millify(templeValue);
+  return millify(templeValue, {precision: 2});
 };
