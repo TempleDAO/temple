@@ -27,6 +27,8 @@ export const useRefreshWalletState = (): [{ isLoading: boolean; }, () => Promise
       return;
     }
 
+    return;
+
     setIsLoading(true);
 
     try {
