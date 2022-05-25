@@ -8,6 +8,7 @@ import { Marker, MarkerType } from 'components/Vault/types';
 import { TippyDiv } from 'components/Tooltip/Tooltip';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
 import Loader from 'components/Loader/Loader';
+import { formatTemple } from './utils';
 
 type Props = {
   marker: Marker;
@@ -40,7 +41,7 @@ const TimelineTippy = ({ marker, children }: Props) => {
       marker.unlockDate === 'NOW' ? 'It is unlocked and claimable.' : `It will unlock on ${unlockValue}`;
     content = (
       <TippyDiv>
-        You have deposited {amount} $TEMPLE in sub-vault {marker.label}. The $TEMPLE balance is now {balance}. <br/> {unlockString}
+        You have deposited {formatTemple(amount)} $TEMPLE in sub-vault {marker.label}. The $TEMPLE balance is now {formatTemple(balance)}. <br/> {unlockString}
       </TippyDiv>
     );
   }

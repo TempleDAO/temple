@@ -1,8 +1,11 @@
 import { differenceInSeconds, addSeconds, subSeconds, format } from 'date-fns';
+import { millify } from 'millify';
 
 import { GraphVault, GraphVaultGroup } from 'hooks/core/types';
 import { Vault, VaultGroup, MarkerType, Marker } from './types';
 import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
+
+import { Nullable } from 'types/util';
 
 export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
 
@@ -184,3 +187,11 @@ const getCurrentCycle = (startDate: Date, months: number, now: Date) => {
 // so if we know a marker is 15% into a cycle, then we know what degree to
 // put it at.
 export const lerp = (v0: number, v1: number, t: number) => v0 * (1 - t) + v1 * t;
+
+export const formatTemple = (templeValue: Nullable<number>) => {
+  if (!templeValue) {
+    return '0';
+  }
+
+  return millify(templeValue, {precision: 2});
+};
