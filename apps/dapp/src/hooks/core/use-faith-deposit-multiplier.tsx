@@ -31,5 +31,5 @@ export const useFaithDepositMultiplier = () => {
     return fromAtto(templeWithFaithAmount);
   };
 
-  return useRequestState(handler);
+  return useRequestState(handler, { purgeResponseOnRefetch: true });
 };
