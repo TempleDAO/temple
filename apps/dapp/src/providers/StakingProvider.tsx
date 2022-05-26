@@ -228,15 +228,6 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     };
   };
 
-  const updateExitQueueData = async () => {
-    if (!wallet || !signer) {
-      return;
-    }
-
-    const exitQueueData = await getExitQueueData(wallet, signer);
-    setExitQueueData(exitQueueData);
-  };
-
   const updateApy = async () => {
     if (!wallet || !signer) {
       return;
@@ -505,6 +496,15 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         hash: withdrawTXN.hash,
       });
     }
+  };
+
+  const updateExitQueueData = async () => {
+    if (!wallet || !signer) {
+      return;
+    }
+
+    // const exitQueueData = await getExitQueueData(wallet, signer);
+    // setExitQueueData(exitQueueData);
   };
 
   return (

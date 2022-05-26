@@ -8,7 +8,6 @@ import { fromAtto } from 'utils/bigNumber';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 import { Vault } from 'components/Vault/types';
-import { Maybe } from 'types/util';
 
 const getVaultJoiningFee = async (signer: Signer, activeVault: Vault) => {
   const vault = new Vault__factory(signer).attach(activeVault.id);
@@ -19,6 +18,9 @@ const getVaultJoiningFee = async (signer: Signer, activeVault: Vault) => {
   return fromAtto(bigNumberFee);
 };
 
+// This call returns the joining fee per Temple deposited. 
+// To calculate the joining fee for a deposit the response from `getVaultJoiningFee`
+// should be multiplied by the number of Temple being deposited.
 export const useVaultJoiningFee = (vault: Vault) => {
   const { signer } = useWallet();
 
