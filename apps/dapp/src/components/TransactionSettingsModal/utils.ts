@@ -1,12 +1,17 @@
 export const limitSlippageInput = (input: number): number => {
-  if (input < 0) return 0;
   if (input > 100) return 100;
 
   return input;
 };
 
-export const limitDeadlineInput = (input: number): number => {
-  if (input < 1) return 1;
+export const handleBlur = (value: number, minValue: number, defaultValue: number) => {
+  if (value <= 0) {
+    return defaultValue;
+  }
 
-  return input;
+  if (value < minValue) {
+    return minValue;
+  }
+
+  return value;
 };

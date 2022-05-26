@@ -5,7 +5,7 @@ import { Input } from 'components/Input/Input';
 import { Popover } from 'components/Popover';
 import Tooltip from 'components/Tooltip/Tooltip';
 
-import { limitDeadlineInput, limitSlippageInput } from './utils';
+import { limitSlippageInput, handleBlur } from './utils';
 
 export interface TransactionSettings {
   slippageTolerance: number;
@@ -17,17 +17,21 @@ interface IProps {
   onClose: () => void;
   onChange: (settings: TransactionSettings) => void;
   defaultSlippage?: number;
+  minSlippage?: number;
   defaultDeadline?: number;
+  minDeadline?: number;
 }
 
 export const TransactionSettingsModal: React.FC<IProps> = ({
   isOpen,
   onClose,
   onChange,
-  defaultSlippage = 1,
+  defaultSlippage = 0.5,
+  minSlippage = 0.1,
   defaultDeadline = 20,
+  minDeadline = 3,
 }) => {
-  const [slippage, setSlippage] = useState(defaultSlippage);
+  const [slippage, setSlippage] = useState<number>(defaultSlippage);
   const [deadline, setDeadline] = useState(defaultDeadline);
 
   const tooltipContent = (
@@ -63,12 +67,17 @@ export const TransactionSettingsModal: React.FC<IProps> = ({
         max={100}
         value={slippage}
         type={'number'}
+        placeholder="0"
         isNumber
         onChange={(e) => {
-          const numValue = limitSlippageInput(Number(e.target.value));
-          setSlippage(numValue);
+          const value = limitSlippageInput(Number(e.target.value));
+          setSlippage(value);
+        }}
+        onBlur={() => {
+          const value = handleBlur(slippage, minSlippage, defaultSlippage);
+          setSlippage(value);
           onChange({
-            slippageTolerance: numValue,
+            slippageTolerance: value,
             deadlineMinutes: deadline,
           });
         }}
@@ -91,11 +100,14 @@ export const TransactionSettingsModal: React.FC<IProps> = ({
         min={0}
         value={deadline}
         onChange={(e) => {
-          const numValue = limitDeadlineInput(Number(e.target.value));
-          setDeadline(numValue);
+          setDeadline(Number(e.target.value));
+        }}
+        onBlur={() => {
+          const value = handleBlur(deadline, minDeadline, defaultDeadline);
+          setDeadline(value);
           onChange({
             slippageTolerance: slippage,
-            deadlineMinutes: numValue,
+            deadlineMinutes: value,
           });
         }}
         small
