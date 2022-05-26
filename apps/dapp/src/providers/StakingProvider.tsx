@@ -162,8 +162,6 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
-    return;
-
     const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(
       EXIT_QUEUE_ADDRESS
     );
@@ -505,10 +503,8 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
       return;
     }
 
-    const exitQueueData = await getExitQueueData(wallet, signer);
-    if (exitQueueData) {
-      setExitQueueData(exitQueueData);
-    }
+    // const exitQueueData = await getExitQueueData(wallet, signer);
+    // setExitQueueData(exitQueueData);
   };
 
   return (
