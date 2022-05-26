@@ -32,6 +32,14 @@ export const Unstake = () => {
     }
   };
 
+  const numberAmount = Number(unstakeAmount || 0);
+  const buttonIsDisabled = (
+    unstakeLoading || 
+    !unstakeAmount || 
+    balance.ogTemple <= 0 || 
+    numberAmount > balance.ogTemple
+  );
+
   return (
     <>
       <Header>Unstake $OGTemple</Header>
@@ -51,8 +59,8 @@ export const Unstake = () => {
         />
       </InputWrapper>
       <CtaButton
-        disabled={unstakeLoading || !unstakeAmount || balance.ogTemple <= 0}
-        onClick={() => unstake(Number(unstakeAmount))}
+        disabled={buttonIsDisabled}
+        onClick={() => unstake(numberAmount)}
       >
         Unstake
       </CtaButton>

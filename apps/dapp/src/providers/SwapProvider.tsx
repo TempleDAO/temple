@@ -67,7 +67,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     }
 
     const pair = token === TICKER_SYMBOL.FEI ? TEMPLE_V2_FEI_PAIR_ADDRESS : TEMPLE_V2_FRAX_PAIR_ADDRESS;
-
     const price = await getTemplePrice(wallet, signer, pair);
     setTemplePrice(price);
   };

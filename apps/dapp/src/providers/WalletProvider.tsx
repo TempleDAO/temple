@@ -49,7 +49,6 @@ const INITIAL_STATE: WalletState = {
   signer: null,
   network: null,
   claim: asyncNoop,
-  getCurrentEpoch: asyncNoop,
   getBalance: asyncNoop,
   updateBalance: asyncNoop,
   collectTempleTeamPayment: asyncNoop,
@@ -65,7 +64,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const [{ data: network }] = useNetwork();
   const [{ data: accountData, loading: accountLoading }] = useAccount();
   const [{ loading: connectLoading }] = useConnect();
-  const provider = useProvider();
 
   const { openNotification } = useNotification();
   const [balanceState, setBalanceState] = useState<Balance>(INITIAL_STATE.balance);
@@ -138,17 +136,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
     const balance = await getBalance(walletAddress, signer);
     setBalanceState(balance);
-  };
-
-  const getCurrentEpoch = async (): Promise<void | number> => {
-    if (!provider) {
-      return;
-    }
-
-    const blockNumber = await provider.getBlockNumber();
-    const currentBlockTimestamp = (await provider.getBlock(blockNumber)).timestamp;
-    // block timestamps are in seconds no ms
-    return currentBlockTimestamp * 1000;
   };
 
   /**
@@ -228,7 +215,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
               chainId: chain.id,
               name: chain.name || '',
             },
-        getCurrentEpoch,
         getBalance: updateBalance,
         updateBalance,
         collectTempleTeamPayment,

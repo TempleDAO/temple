@@ -35,12 +35,17 @@ type UseRequestStateReturnType<T extends any, Args extends any[]> = [
   RequestResponseState<T>,
 ];
 
-const useRequestState = <Resp extends any, Args extends any[]>(request: Request<Resp, Args>): UseRequestStateReturnType<Resp, Args> => {
+interface Options {
+  purgeResponseOnRefetch?: boolean;
+}
+
+const useRequestState = <Resp extends any, Args extends any[]>(request: Request<Resp, Args>, options?: Options): UseRequestStateReturnType<Resp, Args> => {
   const isMounted = useIsMounted();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Nullable<Error>>(null);
   const [response, setResponse] = useState<Nullable<Resp>>(null);
   const requestRef = useRef(request);
+  const purgeResponse = options?.purgeResponseOnRefetch || false;
 
   useEffect(() => {
     // Keep ref consistent with latest function passed in.
@@ -50,6 +55,10 @@ const useRequestState = <Resp extends any, Args extends any[]>(request: Request<
   const wrappedRequest = useCallback(async (...args: Args) => {
     setError(null);
     setIsLoading(true);
+
+    if (purgeResponse) {
+      setResponse(null);
+    }
 
     let response: Maybe<Resp>;
     try {
@@ -68,7 +77,7 @@ const useRequestState = <Resp extends any, Args extends any[]>(request: Request<
       }
     }
     return response;
-  }, [requestRef, setIsLoading, setResponse, setError, isMounted]);
+  }, [requestRef, setIsLoading, setResponse, setError, isMounted, purgeResponse]);
 
   return [
     wrappedRequest,

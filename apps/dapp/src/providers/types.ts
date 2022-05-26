@@ -166,8 +166,6 @@ export interface WalletState {
 
   updateBalance(): Promise<void>;
 
-  getCurrentEpoch(): Promise<void | number>;
-
   collectTempleTeamPayment(epoch: TEAM_PAYMENTS_EPOCHS): Promise<void | TransactionReceipt>;
 
   ensureAllowance(
