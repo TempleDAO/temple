@@ -26,8 +26,8 @@ export const useRefreshWalletState = (): [{ isLoading: boolean; }, () => Promise
     if (!isConnected) {
       return;
     }
-
-    return;
+    
+    console.log('refresh wallet state called \n\n');
 
     setIsLoading(true);
 

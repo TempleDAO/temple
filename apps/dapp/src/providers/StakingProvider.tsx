@@ -232,8 +232,9 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     if (!wallet || !signer) {
       return;
     }
-
+    console.log('updateExitQueueData start');
     const exitQueueData = await getExitQueueData(wallet, signer);
+    console.log('updateExitQueueData end')
     setExitQueueData(exitQueueData);
   };
 
@@ -241,8 +242,9 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     if (!wallet || !signer) {
       return;
     }
-
+    console.log('updateApy start')
     const apy = await getApy(wallet, signer);
+    console.log('updateApy end')
     setApy(apy);
   };
 
@@ -250,8 +252,9 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     if (!wallet || !signer) {
       return;
     }
-
+    console.log('updateLockedEntries start')
     const lockedEntries = await getLockedEntries(wallet, signer);
+    console.log('updateLockedEntries end')
     setLockedEntries(lockedEntries);
   };
 

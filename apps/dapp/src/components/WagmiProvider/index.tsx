@@ -71,6 +71,7 @@ const connectors = ({ chainId }: ConnectorsConfig) => {
 
 export const WagmiProvider: FC = ({ children }) => (
   <Provider
+    autoConnect
     provider={provider}
     connectors={connectors}
   >

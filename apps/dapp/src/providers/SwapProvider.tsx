@@ -67,8 +67,9 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     }
 
     const pair = token === TICKER_SYMBOL.FEI ? TEMPLE_V2_FEI_PAIR_ADDRESS : TEMPLE_V2_FRAX_PAIR_ADDRESS;
-
+    console.log('updateTemplePrice start');
     const price = await getTemplePrice(wallet, signer, pair);
+    console.log('updateTemplePrice end');
     setTemplePrice(price);
   };
 
@@ -87,8 +88,9 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     if (!wallet || !signer) {
       return;
     }
-
+    console.log('updateIV start')
     const iv = await getIv(wallet, signer);
+    console.log('updateIV end')
     setIv(iv);
   };
 

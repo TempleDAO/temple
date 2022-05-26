@@ -84,7 +84,9 @@ export const FaithProvider = (props: PropsWithChildren<{}>) => {
       return;
     }
 
+    console.log('updateFaith start')
     const faith = await getFaith(wallet, signer);
+    console.log('updateFaith end')
     setFaith(faith);
   };
 
