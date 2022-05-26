@@ -27,7 +27,6 @@ import env from 'constants/env';
 import { Nullable } from 'types/util';
 
 const STAT_CARD_HEIGHT = '5rem';
-const PIE_AREA_HEIGHT = '10rem';
 
 const ProfilePage = () => {
   const { getBalance, wallet, balance } = useWallet();
@@ -68,7 +67,7 @@ const ProfilePage = () => {
   const totalEarned = totalBalancesAcrossVaults - totalStakedAcrossAllVaults;
   const lockedOGTempleBalance = balance.ogTempleLockedClaimable;
   const ogTempleBalance = balance.ogTemple;
-  const faithBalance = faith.lifeTimeFaith;
+  const faithBalance = faith.usableFaith;
   const hasLegacyTemple = !!ogTempleBalance || !!lockedOGTempleBalance || !!faithBalance;
 
   return (
