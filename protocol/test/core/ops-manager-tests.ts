@@ -80,7 +80,7 @@ describe("Temple Core Ops Manager", async () => {
     // Check OpsManager storage updated correctly
     const exposure1Addr = evt1.args!!.exposure;
     expect(await opsManager.pools(fxsToken.address)).equals(evt1.args!!.primaryRevenue);
-    expect(await opsManager.activeExposures(0)).equals(exposure1Addr)
+    expect(await opsManager.revalTokens(0)).equals(fxsToken.address)
 
     // Check deployed exposure matches what we expect
     const exposure1 = await new Exposure__factory(owner).attach(exposure1Addr);
@@ -92,7 +92,7 @@ describe("Temple Core Ops Manager", async () => {
     expect(evt2.args!!.primaryRevenue).not.empty;
     const exposure2Addr = evt2.args!!.exposure;
     expect(await opsManager.pools(crvToken.address)).equals(evt2.args!!.primaryRevenue);
-    expect(await opsManager.activeExposures(1)).equals(exposure2Addr)
+    expect(await opsManager.revalTokens(1)).equals(crvToken.address)
 
     const exposure2 = await new Exposure__factory(owner).attach(exposure2Addr);
     expect (await exposure2.name()).equals("Temple CRV Exposure");

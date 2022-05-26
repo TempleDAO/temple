@@ -18,6 +18,7 @@ import "hardhat/console.sol";
  */
 contract OpsManager is Ownable {
     mapping(IERC20 => TreasuryFarmingRevenue) public pools;
+    address[] public revalTokens;
     mapping(address => bool) public activeVaults;
 
     IERC20 public immutable templeToken;
@@ -43,6 +44,7 @@ contract OpsManager is Ownable {
         IERC20 revalToken
     ) external onlyOwner  {
         Exposure exposure = OpsManagerLib.createExposure(name, symbol, revalToken, pools);
+        revalTokens.push(address(revalToken));
         emit CreateExposure(address(exposure), address(pools[revalToken]));
     }
 
