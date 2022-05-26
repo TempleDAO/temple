@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Exposure.sol";
 import "./TreasuryFarmingRevenue.sol";
 import "./Vault.sol";
+import "./VaultedTemple.sol";
 import "./Rational.sol";
 import "./JoiningFee.sol";
 import "./OpsManagerLib.sol";
@@ -17,15 +18,20 @@ import "hardhat/console.sol";
  */
 contract OpsManager is Ownable {
     mapping(IERC20 => TreasuryFarmingRevenue) public pools;
-    Exposure[] public activeExposures;
     mapping(address => bool) public activeVaults;
 
-    IERC20 public templeToken;
+    IERC20 public immutable templeToken;
     JoiningFee public joiningFee;
+    Exposure public templeExposure;
+    VaultedTemple public vaultedTemple;
 
     constructor(IERC20 _templeToken, JoiningFee _joiningFee) {
         templeToken = _templeToken;
         joiningFee = _joiningFee;
+
+        templeExposure = new Exposure("vaulted temple", "V_TEMPLE", _templeToken, address(this));
+        vaultedTemple = new VaultedTemple(_templeToken, address(templeExposure));
+        templeExposure.setLiqidator(vaultedTemple);
     }
 
     /**
@@ -36,7 +42,7 @@ contract OpsManager is Ownable {
         string memory symbol,
         IERC20 revalToken
     ) external onlyOwner  {
-        Exposure exposure = OpsManagerLib.createExposure(name, symbol, revalToken, activeExposures, pools);
+        Exposure exposure = OpsManagerLib.createExposure(name, symbol, revalToken, pools);
         emit CreateExposure(address(exposure), address(pools[revalToken]));
     }
 
@@ -55,8 +61,20 @@ contract OpsManager is Ownable {
         Rational memory shareBoostFactory,
         uint256 firstPeriodStartTimestamp
     ) external onlyOwner {
-        Vault vault = new Vault(name, symbol, templeToken, periodDuration, enterExitWindowDuration, shareBoostFactory, joiningFee, firstPeriodStartTimestamp);
+        Vault vault = new Vault(
+            name, 
+            symbol,
+            templeToken,
+            templeExposure,
+            address(vaultedTemple),
+            periodDuration,
+            enterExitWindowDuration,
+            shareBoostFactory,
+            joiningFee,
+            firstPeriodStartTimestamp
+        );
         activeVaults[address(vault)] = true;
+        templeExposure.setMinterState(address(vault), true);
         emit CreateVaultInstance(address(vault));
     }
 

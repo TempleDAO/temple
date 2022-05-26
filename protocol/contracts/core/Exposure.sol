@@ -105,15 +105,15 @@ contract Exposure is Ownable, RebasingERC20 {
     /**
      * @dev redeem the callers share of this exposure back to temple
      */
-    function redeem(uint256 amount, address to) external {
-        _burn(msg.sender, balance);
-        reval -= balance;
+    function redeem(uint256 amount, address to) public {
+        _burn(msg.sender, amount);
+        reval -= amount;
 
         if (address(liquidator) != address(0)) {
-            liquidator.toTemple(balance, to);
+            liquidator.toTemple(amount, to);
         }
 
-        emit Redeem(address(revalToken), msg.sender, balance);
+        emit Redeem(address(revalToken), msg.sender, amount);
     }
 
     function amountPerShare() public view override returns (uint256 p, uint256 q) {

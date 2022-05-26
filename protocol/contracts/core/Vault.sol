@@ -10,7 +10,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./RebasingERC20.sol";
 import "./Rational.sol";
 import "./Exposure.sol";
-import "./VaultedTemple.sol";
 import "./JoiningFee.sol";
 
 import "hardhat/console.sol";
@@ -44,9 +43,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     // exposure in which all deposited temple is moved into
     Exposure public templeExposureToken;
 
-    // Vaults don't hold temple directly, there is a specific
-    // exposure in which all deposited temple is moved into
-    VaultedTemple public vaultedTemple;
+    // All vaulted temple is held collectively (allows the DAO to use this collectively in leverage positions)
+    address public vaultedTempleAccount;
 
     /// @dev timestamp (in seconds) of the first period in this vault
     uint256 public firstPeriodStartTimestamp;
@@ -67,6 +65,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         string memory _name,
         string memory _symbol,
         IERC20 _templeToken,
+        Exposure _templeExposureToken,
+        address _vaultedTempleAccount,
         uint256 _periodDuration,
         uint256 _enterExitWindowDuration,
         Rational memory _shareBoostFactory,
@@ -74,6 +74,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         uint256 _firstPeriodStartTimestamp
     ) EIP712(_name, "1") ERC20(_name, _symbol)  {
         templeToken = _templeToken;
+        templeExposureToken = _templeExposureToken;
+        vaultedTempleAccount = _vaultedTempleAccount;
         periodDuration = _periodDuration;
         enterExitWindowDuration = _enterExitWindowDuration;
         shareBoostFactor = _shareBoostFactory;
