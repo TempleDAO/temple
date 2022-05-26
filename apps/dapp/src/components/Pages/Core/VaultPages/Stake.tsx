@@ -26,7 +26,7 @@ const ENV = import.meta.env;
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
-  const { balance, isConnected } = useWallet();
+  const { isConnected } = useWallet();
 
   const [
     getFaithDepositMultiplier, 
@@ -44,7 +44,7 @@ export const Stake = () => {
 
   // UI amount to stake
   const [stakingAmount, setStakingAmount] = useState<string | number>('');
-  const { options, ticker, setTicker, usableFaith } = useStakeOptions();
+  const { options, ticker, setTicker, balances } = useStakeOptions();
 
   const [_, refreshBalance] = useVaultBalance(vault?.id);
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
@@ -60,9 +60,9 @@ export const Stake = () => {
   const handleUpdateStakingAmount = (value: number | string) => {
     const amount = Number(value || 0);
     
-    setStakingAmount(amount);
+    setStakingAmount(amount === 0 ? '' : amount);
     
-    if (amount > 0 && ticker === TICKER_SYMBOL.FAITH && usableFaith > 0) {
+    if (amount > 0 && ticker === TICKER_SYMBOL.FAITH && balances.faith > 0) {
       // Get the faith bonus amount
       getFaithDepositMultiplier(amount);
     }
@@ -71,9 +71,11 @@ export const Stake = () => {
   const getTokenBalanceForCurrentTicker = () => {
     switch (ticker) {
       case TICKER_SYMBOL.TEMPLE_TOKEN:
-        return balance.temple;
+        return balances.temple;
       case TICKER_SYMBOL.FAITH:
-        return balance.temple;
+        return balances.temple;
+      case TICKER_SYMBOL.OG_TEMPLE_TOKEN:
+        return balances.ogTemple;
     }
     console.error(`Programming Error: ${ticker} not implemented.`);
     return 0;
@@ -93,12 +95,12 @@ export const Stake = () => {
     !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
 
   let faithBoostMessage: ReactNode = null;
-  if (ticker === TICKER_SYMBOL.FAITH && usableFaith > 0 && templeAmount > 0) {
+  if (ticker === TICKER_SYMBOL.FAITH && balances.faith > 0 && templeAmount > 0) {
     if (faithMultiplierLoading) {
       faithBoostMessage = <EllipsisLoader />;
     } else if (faithDepositMultiplier) {
       const bonusAmount = faithDepositMultiplier - templeAmount;
-      faithBoostMessage = <>Burn all your FAITH ({usableFaith}) and receive {bonusAmount.toFixed(2)} bonus TEMPLE.</>
+      faithBoostMessage = <>Burn all your FAITH ({balances.faith}) and receive {bonusAmount.toFixed(2)} bonus TEMPLE.</>
     }
   }
 
@@ -171,6 +173,7 @@ export const Stake = () => {
 };
 
 const useStakeOptions = () => {
+  const { balance } = useWallet();
   const { faith: { usableFaith } } = useFaith();
 
   const options = [
@@ -181,13 +184,21 @@ const useStakeOptions = () => {
     options.push({ value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' });
   }
 
+  if (balance.ogTemple > 0) {
+    options.push({ value: TICKER_SYMBOL.OG_TEMPLE_TOKEN, label: 'OGTemple' });
+  }
+
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(options[0].value as TICKER_SYMBOL);
 
   return {
     options,
     ticker,
     setTicker,
-    usableFaith,
+    balances: {
+      faith: usableFaith,
+      temple: balance.temple,
+      ogTemple: balance.ogTemple,
+    },
   };
 };
 
