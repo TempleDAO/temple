@@ -122,9 +122,6 @@ export function useSwapController() {
       await handleSell();
     }
 
-    await updateBalance();
-    await updateTemplePrice();
-
     dispatch({
       type: 'endTx',
     });
@@ -153,7 +150,15 @@ export function useSwapController() {
         return;
       }
 
-      await buy(toAtto(tokenAmount), toAtto(minAmountOut), state.inputToken, state.deadlineMinutes);
+      const txReceipt = await buy(toAtto(tokenAmount), toAtto(minAmountOut), state.inputToken, state.deadlineMinutes);
+
+      if (txReceipt) {
+        await updateBalance();
+        await updateTemplePrice();
+        dispatch({
+          type: 'txSuccess',
+        });
+      }
     }
   };
 
@@ -178,13 +183,21 @@ export function useSwapController() {
         return;
       }
 
-      await sell(
+      const txReceipt = await sell(
         toAtto(templeAmount),
         toAtto(minAmountOut),
         state.outputToken,
         sellQuote.priceBelowIV,
         state.deadlineMinutes
       );
+
+      if (txReceipt) {
+        await updateBalance();
+        await updateTemplePrice();
+        dispatch({
+          type: 'txSuccess',
+        });
+      }
     }
   };
 

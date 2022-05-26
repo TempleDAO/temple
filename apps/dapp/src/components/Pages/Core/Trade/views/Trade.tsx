@@ -8,15 +8,7 @@ import { useSwapController } from '../use-swap-controller';
 
 import { formatNumberWithCommas } from 'utils/formatter';
 
-import {
-  SwapContainer,
-  InputsContainer,
-  SettingsButton,
-  Spacer,
-  InvertButton,
-  CtaButton,
-  Header,
-} from '../styles';
+import { SwapContainer, InputsContainer, SettingsButton, Spacer, InvertButton, CtaButton, Header } from '../styles';
 
 export const Trade = () => {
   const {
