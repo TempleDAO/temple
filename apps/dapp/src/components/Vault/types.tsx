@@ -1,32 +1,47 @@
 import { MutableRefObject, ReactNode } from 'react';
 
-export type Entry = {
-  id: string | number;
-  entryDate?: Date;
-  amount?: number; // TODO: do we need a BigNumber type here?
-  percent?: number;
-  inZone?: boolean;
-  type?: MarkerType;
-  currentCycle?: number;
+export type Marker = {
+  vaultId: string;
+  staked: number; // TODO: do we need a BigNumber type here?
+  percent: number;
+  inZone: boolean;
+  type: MarkerType;
+  unlockDate: Date | 'NOW';
+  windowEndDate: Date;
+  label: string;
 };
 
 export type Vault = {
   id: string;
-  months: number;
   tvl: number;
   now: Date;
+  // Start of vault instance
   startDate: Date;
-  entries: Entry[];
-  currentCycle?: number;
-  zoneEmpty?: boolean;
+  isActive: boolean;
+  label: string;
+  startDateSeconds: number;
+  enterExitWindowDurationSeconds: number;
+  periodDurationSeconds: number;
+  amountStaked: number;
+  unlockDate: Date | 'NOW';
+};
+
+export type VaultGroup = {
+  id: string;
+  name: string;
+  months: number;
+  vaults: Vault[];
+  startDate: Date;
+  tvl: number;
+  enterExitWindowDurationSeconds: number;
+  periodDurationSeconds: number;
+  periods: number;
+  cycleStart: Date; // Date of this cycle's start
+  cycleEnd: Date;   // Date of current cycle's
 };
 
 export type VaultProps = {
-  vault: Vault;
   selectedNav: VaultPage;
-  markerClick: (entryData: Entry, markerEl: SVGElement) => void;
-  selectedEntry: Entry;
-  markerPosition: Point;
   children: ReactNode;
 };
 
@@ -37,8 +52,9 @@ export type Point = {
 
 export enum MarkerType {
   EMPTY,
+  STAKING_IN_ZONE,
   STAKING,
-  ZONE,
+  HIDDEN,
 }
 
 export type VaultPage = 'claim' | 'stake' | 'summary' | 'strategy' | 'timing';

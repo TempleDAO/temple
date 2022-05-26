@@ -19,6 +19,7 @@ import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { fetchSubgraph } from 'utils/subgraph';
 import { Nullable } from 'types/util';
+import { isDevelopmentEnv } from 'utils/helpers';
 import axios from 'axios';
 
 export interface ProtocolMetrics {
@@ -162,7 +163,7 @@ export class MetricsService {
     const ENV = ENV_VARS.VITE_ENV;
 
     this.provider =
-      ENV === 'development'
+      isDevelopmentEnv()
         ? new ethers.providers.Web3Provider(window.ethereum)
         : new ethers.providers.AlchemyProvider(
             ALCHEMY_PROVIDER_NETWORK,
@@ -393,8 +394,9 @@ export class MetricsService {
    * Helper to get the stake transactions
    */
   private getStakedOGTempleTransactions = async (walletAddress: string) => {
-    const response = await fetchSubgraph(
-      `{
+    try {
+      const response = await fetchSubgraph(
+        `{
         stakes(where: {templar: "${walletAddress.toLowerCase()}"}) {
           templar {
             id
@@ -421,8 +423,12 @@ export class MetricsService {
           timestamp
         }
       }`
-    );
-    return response?.data ?? { stakes: [], unstakes: [] };
+      );
+      return response?.data ?? { stakes: [], unstakes: [] };
+    } catch (error) {
+      console.info(error);
+      return { stakes: [], unstakes: [] };
+    }
   };
 
   private getProtocolMetrics = async (): Promise<ProtocolMetrics> => {

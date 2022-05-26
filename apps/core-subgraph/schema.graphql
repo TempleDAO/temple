@@ -29,6 +29,14 @@ type MetricDayData @entity {
   vaultGroupCount: BigInt!
 }
 
+type OpsManager @entity {
+  id: ID!
+  timestamp: BigInt!
+  vaultGroups: [VaultGroup!]!
+  exposures: [Exposure!]!
+  treasuryFarmingRevenues: [TreasuryFarmingRevenue!]!
+}
+
 type Exposure @entity {
   id: ID!
   timestamp: BigInt!
@@ -38,6 +46,7 @@ type Exposure @entity {
   reval: BigInt!
   mintManager: String!
   liquidator: String!
+  opsManager: OpsManager!
 }
 
 type TreasuryFarmingRevenue @entity {
@@ -46,12 +55,24 @@ type TreasuryFarmingRevenue @entity {
   exposure: Exposure!
   totalShares: BigInt!
   lifetimeAccRevenueScaledByShare: BigInt!
+  opsManager: OpsManager!
 }
 
 type VaultGroup @entity {
   id: ID!
   timestamp: BigInt!
+  tvl: BigDecimal!
+  opsManager: OpsManager!
   vaults: [Vault!]! @derivedFrom(field: "vaultGroup")
+  vaultGroupDayDatas: [VaultGroupDayData!]! @derivedFrom(field: "vaultGroup")
+}
+
+type VaultGroupDayData @entity {
+  id: ID!
+  timestamp: BigInt!
+  vaultGroup: VaultGroup!
+  tvl: BigDecimal!
+  opsManager: OpsManager!
 }
 
 type Vault @entity {
@@ -116,6 +137,7 @@ type VaultUserBalance @entity {
   user: User!
   token: Token!
   amount: BigDecimal!
+  staked: BigDecimal!
   value: BigDecimal!
 }
 
@@ -126,6 +148,7 @@ type Deposit @entity {
   user: User!
   token: Token!
   amount: BigDecimal!
+  staked: BigDecimal!
   value: BigDecimal!
 }
 

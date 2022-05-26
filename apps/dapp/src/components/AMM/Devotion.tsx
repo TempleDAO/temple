@@ -48,7 +48,7 @@ const Devotion = () => {
   const [hasVerifiedFaith, setHasVerifiedFaith] = useState(false);
   const [minimumLockPeriodDays, setMinimumLockPeriodDays] = useState(0);
 
-  const refreshWalletState = useRefreshWalletState();
+  const [_, refreshWalletState] = useRefreshWalletState();
 
   const getDevotionData = useCallback(
     async (signer: Signer) => {

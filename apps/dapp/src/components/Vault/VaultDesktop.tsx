@@ -10,20 +10,18 @@ import { RingButtons } from './desktop-parts/RingButtons';
 import { Timeline } from './desktop-parts/timeline/Timeline';
 import { pixelsToRems } from 'styles/mixins';
 import { NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { VaultProps, VaultRef } from './types';
 
 export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
   (
     {
-      vault,
       selectedNav,
-      markerClick,
-      selectedEntry,
-      markerPosition,
       children,
     },
     ref
   ) => {
+    const { vaultGroup } = useVaultContext();
     const svgRef = useRef<SVGSVGElement>(null);
     const popupRef = useRef(null);
 
@@ -45,10 +43,10 @@ export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
           <RingButtons
             selected={selectedNav}
             onClickButton={(page) => {
-              navigate(`/core/dapp/vaults/${vault.id}/${page}`);
+              navigate(`/core/dapp/vaults/${vaultGroup.id}/${page}`);
             }}
           />
-          <Timeline vault={vault} />
+          <Timeline />
           <InnerRing selected={selectedNav} />
           <ForeignObject x="241.5" y="239.5" width="520" height="520">
             <Content>{children}</Content>

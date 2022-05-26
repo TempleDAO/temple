@@ -39,7 +39,7 @@ describe("Temple Core Vault", async () => {
         "Temple 1m Vault",
         "TV_1M",
         templeToken.address,
-        60 * 5,
+        60 * 10,
         60,
         { p: 1, q: 1},
         joiningFee.address,
@@ -54,7 +54,13 @@ describe("Temple Core Vault", async () => {
     await expect(() => vault.connect(alan).deposit(toAtto(100)))
       .to.changeTokenBalance(vault, alan, toAtto(100));
 
+    // can still deposit during 5 minute buffer period
     await mineForwardSeconds(60);
+    await expect(() => vault.connect(alan).deposit(toAtto(100)))
+      .to.changeTokenBalance(vault, alan, toAtto(100));
+
+    // Post buffer, can no longer join
+    await mineForwardSeconds(60 * 5);
     await expect(vault.connect(alan).deposit(toAtto(100)))
         .to.be.revertedWith("Vault: Cannot join vault when outside of enter/exit window");
   }) 
@@ -63,13 +69,21 @@ describe("Temple Core Vault", async () => {
     await expect(() => vault.connect(alan).deposit(toAtto(100)))
       .to.changeTokenBalance(vault, alan, toAtto(100));
 
+    // can still withdraw during 5 minute buffer period
     await mineForwardSeconds(60);
-    await expect(vault.connect(alan).withdraw(toAtto(100)))
+    await expect(() => vault.connect(alan).withdraw(toAtto(50)))
+        .to.changeTokenBalance(templeToken, alan, toAtto(50));
+
+
+    // post buffer, can no longer withdraw
+    await mineForwardSeconds(60 * 5);
+    await expect(vault.connect(alan).withdraw(toAtto(10)))
         .to.be.revertedWith("Vault: Cannot exit vault when outside of enter/exit window");
 
+    // can withdraw again with the vault cycles
     await mineForwardSeconds(60 * 4);
-    await expect(() => vault.connect(alan).withdraw(toAtto(100)))
-        .to.changeTokenBalance(templeToken, alan, toAtto(100));
+    await expect(() => vault.connect(alan).withdraw(toAtto(50)))
+        .to.changeTokenBalance(templeToken, alan, toAtto(50));
   })
 
   it("Multi-staker deposit then withdraw", async () => {
@@ -138,7 +152,7 @@ describe("Temple Core Vault", async () => {
     await futureVault.inEnterExitWindow();
   })
 
-  xit("Doesn't attempt to deposit when joining fee is higher that deposit amount", async () => {
+  it("Doesn't attempt to deposit when joining fee is higher that deposit amount", async () => {
       const now = await blockTimestamp();
       await mineToTimestamp((now+2592000)-86400); // with default 1 temple per hour, fee will be around 690
 

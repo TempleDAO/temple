@@ -1,0 +1,8 @@
+{
+    "network": "mainnet",
+    "hasScheduler": false,
+    "opsManager": {
+        "address": "0x5c74c94173F05dA1720953407cbb920F3DF9f887",
+        "startBlock": "1"
+    }
+}

@@ -57,7 +57,7 @@ contract OpsManager is Ownable {
     ) external onlyOwner {
         Vault vault = new Vault(name, symbol, templeToken, periodDuration, enterExitWindowDuration, shareBoostFactory, joiningFee, firstPeriodStartTimestamp);
         activeVaults[address(vault)] = true;
-        emit CreateVault(address(vault));
+        emit CreateVaultInstance(address(vault));
     }
 
     /**
@@ -139,6 +139,6 @@ contract OpsManager is Ownable {
         }
     }
 
-    event CreateVault(address vault);
+    event CreateVaultInstance(address vault);
     event CreateExposure(address exposure, address primaryRevenue);
 }

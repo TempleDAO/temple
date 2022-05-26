@@ -3,14 +3,12 @@ import { BigNumber, ContractTransaction } from 'ethers';
 import { ethers } from 'hardhat';
 import { blockTimestamp, mineNBlocks } from '../../test/helpers';
 import {
-  AMMWhitelist__factory,
   ExitQueue__factory,
   Faith__factory,
   FakeERC20__factory,
   OGTemple__factory,
   TempleERC20Token__factory,
   TempleFraxAMMOps__factory,
-  TempleFraxAMMRouter__factory,
   TempleStaking__factory,
   TempleTeamPayments__factory,
   LockedOGTempleDeprecated__factory,
@@ -21,6 +19,9 @@ import {
   TempleIVSwap__factory,
   JoiningFee__factory,
   OpsManager__factory,
+  TempleStableAMMRouter__factory,
+  VaultProxy__factory,
+  InstantExitQueue__factory,
 } from '../../typechain';
 import { writeFile } from 'fs/promises';
 
@@ -32,19 +33,24 @@ function fromAtto(n: BigNumber) {
   return n.div(BigNumber.from(10).pow(18)).toNumber();
 }
 
-async function extractDeployedAddress(tx: ContractTransaction, eventName: string) : Promise<string> {
+async function extractDeployedAddress(
+  tx: ContractTransaction,
+  eventName: string
+): Promise<string> {
   let result = 'FAILED TO FIND';
-  await tx.wait(0).then(receipt => {
-    let event = receipt.events?.filter(evt => {
+  await tx.wait(0).then((receipt) => {
+    let event = receipt.events?.filter((evt) => {
       if (evt.event) {
-        return evt.event === eventName
-      };
+        return evt.event === eventName;
+      }
     })[0];
 
+    console.log(event);
+
     if (event?.args) {
-      result = event.args[0]
+      result = event.args[0];
     }
-  })
+  });
 
   return result;
 }
@@ -77,13 +83,12 @@ async function main() {
     await templeStaking.OG_TEMPLE()
   );
 
-  const stablecToken = await new FakeERC20__factory(owner).deploy(
-    'FRAX',
-    'FRAX'
-  );
+  const frax = await new FakeERC20__factory(owner).deploy('FRAX', 'FRAX');
+  const fei = await new FakeERC20__factory(owner).deploy('FEI', 'FEI');
+
   const treasury = await new TempleTreasury__factory(owner).deploy(
     templeToken.address,
-    stablecToken.address
+    frax.address
   );
   await templeToken.addMinter(treasury.address);
 
@@ -91,17 +96,17 @@ async function main() {
     owner
   ).deploy(ogTempleToken.address);
 
-  // mint fake stablecToken into all test accounts
   const accounts = await ethers.getSigners();
 
-  // mint some stablecToken into all test accounts
+  // mint some frax and frei into all test accounts
   for (const account of accounts) {
     const address = await account.getAddress();
-    await stablecToken.mint(address, toAtto(15000));
+    await frax.mint(address, toAtto(15000));
+    await fei.mint(address, toAtto(15000));
   }
 
   // Seed mint to bootstrap treasury
-  await stablecToken.increaseAllowance(treasury.address, 100);
+  await frax.increaseAllowance(treasury.address, 100);
   await treasury.seedMint(100, 1000);
 
   const verifier = ethers.Wallet.createRandom();
@@ -167,55 +172,60 @@ async function main() {
   const pair = await new TempleUniswapV2Pair__factory(owner).deploy(
     await owner.getAddress(),
     templeToken.address,
-    stablecToken.address
+    frax.address
   );
-  const templeRouter = await new TempleFraxAMMRouter__factory(owner).deploy(
-    pair.address,
+
+  const feiPair = await new TempleUniswapV2Pair__factory(owner).deploy(
+    await owner.getAddress(),
     templeToken.address,
-    stablecToken.address,
-    treasury.address,
-    treasury.address,
-    { frax: 100000, temple: 9000 },
-    100 /* threshold decay per block */,
-    { frax: 1000000, temple: 1000000 },
-    { frax: 1000000, temple: 100000 }
+    fei.address
   );
+
+  const templeRouter = await new TempleStableAMMRouter__factory(owner).deploy(
+    templeToken.address,
+    treasury.address,
+    fei.address
+  );
+
+  await templeRouter.addPair(frax.address, pair.address);
+  await templeRouter.addPair(fei.address, feiPair.address);
 
   // Contract where we send frax earned by treasury
   const ammOps = await new TempleFraxAMMOps__factory(owner).deploy(
     templeToken.address,
     templeRouter.address,
-    treasury.address, /* XXX: Unuse */
-    stablecToken.address,
+    treasury.address /* XXX: Unuse */,
+    frax.address,
     treasury.address,
     pair.address
   );
 
   await pair.setRouter(templeRouter.address);
-  await templeToken.addMinter(templeRouter.address);
-  await templeRouter.setProtocolMintEarningsAccount(ammOps.address);
+  await feiPair.setRouter(templeRouter.address);
 
-  // Add liquidity to the AMM
-  templeToken.mint(owner.address, toAtto(10000000));
-  stablecToken.mint(owner.address, toAtto(10000000));
+  await templeToken.mint(owner.address, toAtto(10000000));
+  await frax.mint(owner.address, toAtto(10000000));
+  await fei.mint(owner.address, toAtto(10000000));
   await templeToken.increaseAllowance(templeRouter.address, toAtto(10000000));
-  await stablecToken.increaseAllowance(templeRouter.address, toAtto(10000000));
+  await frax.increaseAllowance(templeRouter.address, toAtto(10000000));
+  await fei.increaseAllowance(templeRouter.address, toAtto(10000000));
   await templeRouter.addLiquidity(
     toAtto(100000),
     toAtto(1000000),
     1,
     1,
+    frax.address,
     await owner.getAddress(),
     (await blockTimestamp()) + 900
   );
-
-  // Make temple router open access
-  await templeRouter.toggleOpenAccess();
-
-  // AMMWhitelist
-  const ammWhitelist = await new AMMWhitelist__factory(owner).deploy(
-    templeRouter.address,
-    verifier.address
+  await templeRouter.addLiquidity(
+    toAtto(100000),
+    toAtto(1000000),
+    1,
+    1,
+    fei.address,
+    await owner.getAddress(),
+    (await blockTimestamp()) + 900
   );
 
   // acceleated exit queue
@@ -229,6 +239,11 @@ async function main() {
 
   // Devotion
   const faith = await new Faith__factory(owner).deploy();
+  await faith.addManager(await owner.getAddress());
+
+  console.log('ACCOUNT 1 ADDRESS => ', await account1.getAddress(), '\n\n\n\n');
+  await faith.gain(await account1.getAddress(), toAtto(10000));
+  await faith.gain(await account2.getAddress(), toAtto(5000));
 
   // add liquidity to AMM
   const expiryDate = (): number => Math.floor(Date.now() / 1000) + 900;
@@ -236,100 +251,88 @@ async function main() {
     templeRouter.address,
     toAtto(10000000000)
   );
-  await stablecToken.increaseAllowance(
-    templeRouter.address,
-    toAtto(10000000000)
-  );
-  await templeRouter.addLiquidity(
-    toAtto(100000),
-    toAtto(100000),
-    1,
-    1,
-    await owner.getAddress(),
-    expiryDate()
-  );
+  await frax.increaseAllowance(templeRouter.address, toAtto(10000000000));
 
   // create and initialise contract that allows a permissionless
   // swap @ IV
   const templeIVSwap = await new TempleIVSwap__factory(owner).deploy(
     templeToken.address,
-    stablecToken.address,
-    {temple: 100, frax: 65}, /* iv */
+    frax.address,
+    { temple: 100, frax: 65 } /* iv */
   );
-  await stablecToken.mint(templeIVSwap.address, toAtto(1000000));
+  await frax.mint(templeIVSwap.address, toAtto(1000000));
 
   const joiningFee = await new JoiningFee__factory(owner).deploy(
-    toAtto(1),
+    100000000000000
   );
 
-  const opsManagerLib = await (await ethers.getContractFactory("OpsManagerLib")).connect(owner).deploy();
-  const opsManager = await new OpsManager__factory({ "contracts/core/OpsManagerLib.sol:OpsManagerLib" : opsManagerLib.address }, owner).deploy(
-    templeToken.address,
-    joiningFee.address
-  );
+  const opsManagerLib = await (await ethers.getContractFactory('OpsManagerLib'))
+    .connect(owner)
+    .deploy();
+  const opsManager = await new OpsManager__factory(
+    { 'contracts/core/OpsManagerLib.sol:OpsManagerLib': opsManagerLib.address },
+    owner
+  ).deploy(templeToken.address, joiningFee.address);
 
   const exposureTx = await opsManager.createExposure(
-    "Stable Exposure",
-    "STBCXP",
-    stablecToken.address
+    'Stable Exposure',
+    'STBCXP',
+    frax.address
   );
 
   let exposure = await extractDeployedAddress(exposureTx, 'CreateExposure');
 
+  const THIRTY_MINUTES = 30 * 60;
+  const FIVE_MINUTES = 5 * 60;
 
-  const oneDay = 60 * 60 * 24;
-  const vaultTx1 = await opsManager.createVault(
-    "temple-1m-vault",
-    "TPL-1M-V1",
-    oneDay * 30,
-    oneDay,
-    { p: 1, q : 1}
+  const period = Number(process.env.E2E_TEST_DEPLOY_PERIOD) || THIRTY_MINUTES;
+  const window = Number(process.env.E2E_TEST_DEPLOY_WINDOW) || FIVE_MINUTES;
+
+  console.log(`Using vault period ${period} and entry window ${window}`);
+
+  const numberOfSubVaults = period / window;
+  if (period % window)
+    throw new Error('Vault period should divide perfectly by vault window');
+
+  for (let i = 0; i < numberOfSubVaults; i++) {
+    const vaultTx = await opsManager.createVaultInstance(
+      'temple-1m-vault',
+      'TPL-1M-V1',
+      period,
+      window,
+      { p: 1, q: 1 },
+      Math.floor(Date.now() / 1000) + i * window
+    );
+
+    let vault = await extractDeployedAddress(vaultTx, 'CreateVaultInstance');
+    console.log(vault);
+
+    await ethers.provider.send('evm_increaseTime', [window]);
+  }
+
+  const vaultProxy = await new VaultProxy__factory(owner).deploy(
+    ogTempleToken.address,
+    templeToken.address,
+    templeStaking.address,
+    faith.address
+  );
+  await templeToken.mint(vaultProxy.address, toAtto(1000000));
+
+  await faith.addManager(vaultProxy.address);
+
+  const instantExitQueue = await new InstantExitQueue__factory(owner).deploy(
+    templeStaking.address,
+    templeToken.address
   );
 
-  let vault1 = await extractDeployedAddress(vaultTx1, 'CreateVault');
-
-  await ethers.provider.send('evm_increaseTime', [oneDay * 7]);
-
-  const vaultTx2 = await opsManager.createVault(
-    "temple-1m-vault",
-    "TPL-1M-V2",
-    oneDay * 30,
-    oneDay,
-    { p: 1, q : 1}
-  );
-
-  let vault2 = await extractDeployedAddress(vaultTx2, 'CreateVault');
-
-  await ethers.provider.send('evm_increaseTime', [oneDay * 7]);
-
-  const vaultTx3 = await opsManager.createVault(
-    "temple-1m-vault",
-    "TPL-1M-V3",
-    oneDay * 30,
-    oneDay,
-    { p: 1, q : 1}
-  );
-
-  let vault3 = await extractDeployedAddress(vaultTx3, 'CreateVault');
-
-  await ethers.provider.send('evm_increaseTime', [oneDay * 7]);
-
-  const vaultTx4 = await opsManager.createVault(
-    "temple-1m-vault",
-    "TPL-1M-V4",
-    oneDay * 30,
-    oneDay,
-    { p: 1, q : 1}
-  );
-
-  let vault4 = await extractDeployedAddress(vaultTx4, 'CreateVault');
-
+  await templeStaking.setExitQueue(instantExitQueue.address);
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
     EXIT_QUEUE_ADDRESS: exitQueue.address,
     LOCKED_OG_TEMPLE_ADDRESS: lockedOgTemple_old.address,
-    STABLE_COIN_ADDRESS: stablecToken.address,
+    STABLE_COIN_ADDRESS: frax.address,
+    FEI_ADDRESS: fei.address,
     TEMPLE_ADDRESS: templeToken.address,
     TEMPLE_STAKING_ADDRESS: templeStaking.address,
     TREASURY_ADDRESS: treasury.address,
@@ -337,17 +340,21 @@ async function main() {
     TEMPLE_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixed.address,
     TEMPLE_TEAM_CONTIGENT_PAYMENTS_ADDRESS: teamPaymentsContigent.address,
     TEMPLE_V2_PAIR_ADDRESS: pair.address,
+    TEMPLE_V2_FEI_PAIR_ADDRESS: feiPair.address,
     TEMPLE_V2_ROUTER_ADDRESS: templeRouter.address,
-    TEMPLE_ROUTER_WHITELIST: ammWhitelist.address,
+    TEMPLE_ROUTER_WHITELIST: 'removed',
     ACCELERATED_EXIT_QUEUE_ADDRESS: acceleratedExitQueue.address,
+    INSTANT_EXIT_QUEUE_ADDRESS: instantExitQueue.address,
+    TEMPLE_FAITH_ADDRESS: faith.address,
 
     TEMPLE_IV_SWAP: templeIVSwap.address,
     TEMPLE_VAULT_OPS_MANAGER: opsManager.address,
     TEMPLE_VAULT_STABLEC_EXPOSURE: exposure,
-    TEMPLE_VAULT_1_M_1: vault1,
-    TEMPLE_VAULT_1_M_2: vault2,
-    TEMPLE_VAULT_1_M_3: vault3,
-    TEMPLE_VAULT_1_M_4: vault4,
+    TEMPLE_VAULT_PROXY: vaultProxy.address,
+    // TEMPLE_VAULT_1_M_1: vault1,
+    // TEMPLE_VAULT_1_M_2: vault2,
+    // TEMPLE_VAULT_1_M_3: vault3,
+    // TEMPLE_VAULT_1_M_4: vault4,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys
@@ -355,20 +362,20 @@ async function main() {
     LOCALDEV_VERIFER_EXTERNAL_PRIVATE_KEY: verifier.privateKey,
   };
 
-  await writeFile('../shared/stack/deployed-addr.txt', '')
+  await writeFile('../shared/stack/deployed-addr.txt', '');
 
-  let newVarsToWrite = ''
+  let newVarsToWrite = '';
   console.log();
   console.log('=========================================');
   console.log('*** Copy/pasta into .env.local for dApp dev\n\n');
   for (const envvar in contract_address) {
-    let line = `VITE_PUBLIC_${envvar}=${contract_address[envvar]}`
+    let line = `VITE_PUBLIC_${envvar}=${contract_address[envvar]}`;
 
     console.log(line);
-    newVarsToWrite += line + `\n`
+    newVarsToWrite += line + `\n`;
   }
 
-  await writeFile('../shared/stack/deployed-addr.txt', newVarsToWrite)
+  await writeFile('../shared/stack/deployed-addr.txt', newVarsToWrite);
 
   console.log();
   console.log('=========================================');

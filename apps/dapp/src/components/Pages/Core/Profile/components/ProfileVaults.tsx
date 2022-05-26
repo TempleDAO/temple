@@ -1,29 +1,32 @@
 import React from 'react';
-import styled from 'styled-components';
-import { format } from 'date-fns';
-
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { format, isDate } from 'date-fns';
+import styled from 'styled-components'
 
 import { Body, Cell, Head, Row, Table } from 'components/Table/Table';
-import type { Vault } from 'components/Vault/types';
+import type { VaultGroup } from 'components/Vault/types';
 import Loader from 'components/Loader/Loader';
 import { Button } from 'components/Button/Button';
+import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
 import { Container, Subheading } from '../styles';
+import { formatTemple } from 'components/Vault/utils';
 
 interface IProps {
   isLoading?: boolean;
-  vaults: Vault[];
+  vaultGroups: VaultGroup[];
+  vaultGroupBalances: VaultGroupBalances;
 }
 
-export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaults }) => {
+export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultGroupBalances }) => {
   if (isLoading) {
-    <Container>
-      <Loader />
-    </Container>;
+    return (
+      <Container>
+        <Loader />
+      </Container>
+    );
   }
 
-  if (!vaults.length) {
+  if (!vaultGroups.length) {
     return (
       <Container>
         <Button isSmall as="a" label="Enter a vault" href="/core/dapp/vaults" />
@@ -32,27 +35,31 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaults }) => {
   }
 
   return (
-    <>
-      {vaults.map((vault) => {
+    <Container>
+      <Subheading>Vaults</Subheading>
+      {vaultGroups.map((vaultGroup) => {
         return (
-          <div key={vault.id}>
-            <Subheading>{`${vault.id}`}</Subheading>
+          <div key={vaultGroup.id}>
+            <VaultHeader>{vaultGroup.id}</VaultHeader>
             <Table $expand>
               <Head>
                 <Row>
-                  <Cell as="th">Start date</Cell>
-                  <Cell as="th">Entry Date</Cell>
-                  <Cell as="th">{TICKER_SYMBOL.TEMPLE_TOKEN} amount</Cell>
+                  <Cell as="th">Sub-Vault</Cell>
+                  <Cell as="th">Staked</Cell>
+                  <Cell as="th">Balance</Cell>
+                  <Cell as="th">Claimable</Cell>
                 </Row>
               </Head>
               <Body>
-                {vault.entries.map((entry) => {
-                  const entryDate = entry.entryDate ?? new Date();
+                {vaultGroup.vaults.map((vault) => {
+                  const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
+                  const vaultBalance = vaultGroupBalances[vault.id] || {};
                   return (
-                    <Row key={`${vault.id}${entry.id}`}>
-                      <Cell>{format(vault.startDate, 'dd MMM yy')}</Cell>
-                      <Cell>{format(entryDate, 'dd MMM yy')}</Cell>
-                      <Cell>{entry.amount}</Cell>
+                    <Row key={vault.id}>
+                      <Cell>{vault.label}</Cell>
+                      <Cell>{formatTemple(vaultBalance.staked)} $T</Cell>
+                      <Cell>{formatTemple(vaultBalance.balance)} $T</Cell>
+                      <Cell>{unlockValue}</Cell>
                     </Row>
                   );
                 })}
@@ -61,6 +68,11 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaults }) => {
           </div>
         );
       })}
-    </>
+    </Container>
   );
 };
+
+const VaultHeader = styled.h4`
+  font-size: 1.25rem;
+  margin: 0 0 1rem;
+`;

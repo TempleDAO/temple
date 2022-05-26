@@ -3,32 +3,30 @@ import { TimelineTicks } from './TimelineTicks';
 import { TimelineStartEndMarkers } from './TimelineStartEndMarkers';
 import { TimelineChannel } from './TimelineChannel';
 import { TimelineBackground } from './TimelineBackground';
-import { Vault } from 'components/Vault/types';
-import TimelineTippy from '../../TimelineTippy'
+import { MarkerType } from 'components/Vault/types';
+import TimelineTippy from '../../TimelineTippy';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
+import { getMarkers } from 'components/Vault/utils';
 
-type Props = {
-  vault: Vault;
-};
-
-export const Timeline = ({ vault }: Props) => {
-  const markers = vault.entries.map((entry) => {
-    return (
-      <TimelineTippy
-        vault={vault}
-        entry={entry}
-        key={entry.id}
-      >
-        <Marker data={entry} />
-      </TimelineTippy>
-    );
-  });
+export const Timeline = () => {
+  const { vaultGroup, balances } = useVaultContext();
+  
+  const markers = getMarkers(vaultGroup, balances)
+    .filter((marker) => marker.type !== MarkerType.HIDDEN)
+    .map((marker) => {
+      return (
+        <TimelineTippy marker={marker} key={marker.vaultId}>
+          <Marker marker={marker} />
+        </TimelineTippy>
+      );
+    });
 
   return (
     <g id="vault-timeline">
       <TimelineBackground />
       <TimelineChannel />
       <TimelineStartEndMarkers />
-      <TimelineTicks months={vault.months} />
+      <TimelineTicks vaultGroup={vaultGroup} />
       {markers}
     </g>
   );
