@@ -84,7 +84,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
-    console.log('get current balance start')
+
     const fraxContract = new ERC20__factory(signer).attach(FRAX_ADDRESS);
 
     const feiContract = new ERC20__factory(signer).attach(FEI_ADDRESS);
@@ -119,7 +119,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
     const ogTemple = fromAtto(await OG_TEMPLE_CONTRACT.balanceOf(walletAddress));
     const temple = fromAtto(await templeContract.balanceOf(walletAddress));
-    console.log('get current balance end')
 
     return {
       frax: fromAtto(fraxBalance),
