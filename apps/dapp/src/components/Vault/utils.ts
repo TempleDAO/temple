@@ -117,7 +117,6 @@ export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: Va
     // TODO: Remove this later
     // @ts-ignore
     window.markers.push(marker);
-    console.log()
   }
 
   return markers;
