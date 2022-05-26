@@ -162,6 +162,8 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
+    return;
+
     const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(
       EXIT_QUEUE_ADDRESS
     );
@@ -233,9 +235,9 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
       return;
     }
     console.log('updateExitQueueData start');
-    const exitQueueData = await getExitQueueData(wallet, signer);
+    // const exitQueueData = await getExitQueueData(wallet, signer);
     console.log('updateExitQueueData end')
-    setExitQueueData(exitQueueData);
+    // setExitQueueData(exitQueueData);
   };
 
   const updateApy = async () => {
