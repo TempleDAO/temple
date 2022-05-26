@@ -32,9 +32,9 @@
     "@nomiclabs/hardhat-waffle": "^2.0.0",
     "@types/lodash": "^4.14.175",
     "chai": "^4.3.4",
-    "ethereum-waffle": "^3.0.0",
+    "ethereum-waffle": "^3.4.4",
     "ethers": "^5.0.0",
-    "hardhat": "^2.8.3",
+    "hardhat": "2.9.4",
     "hardhat-contract-sizer": "^2.5.1",
     "mocha": "^9.2.2"
   },
@@ -45,6 +45,7 @@
     "test": "hardhat test",
     "local-node": "hardhat node",
     "local-deploy": "hardhat run --network localhost scripts/local-dapp-dev/deploy.ts",
+    "local-deploy-e2e-test": "env-cmd -f ../apps/dapp/.env.local hardhat run --network localhost scripts/local-dapp-dev/deploy.ts",
     "core:sample": "hardhat run --network localhost scripts/local-dapp-dev/populate-vaults-predictable.ts",
     "core:sample:random": "hardhat run --network localhost scripts/local-dapp-dev/populate-vaults-random.ts",
     "hardhat:local": "hardhat --network localhost",
@@ -55,6 +56,6 @@
     "local-fork": "hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/5uWfALq4t1xR49V3EW5bBZEE4xh97l-A --fork-block-number 13205117"
   },
   "engines": {
-    "node": "14.x"
+    "node": ">=16.0.0"
   }
 }

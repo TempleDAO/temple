@@ -1,185 +1,196 @@
 import { useState, useEffect, ReactNode } from 'react';
 import styled from 'styled-components';
-import { BigNumber } from 'ethers';
 
 import { Option } from 'components/InputSelect/InputSelect';
-import VaultContent, {
-  VaultButton,
-} from 'components/Pages/Core/VaultPages/VaultContent';
+import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumber } from 'utils/formatter';
 import { Header } from 'styles/vault';
 import { theme } from 'styles/theme';
 import { VaultInput } from 'components/Input/VaultInput';
 import { CryptoSelect } from 'components/Input/CryptoSelect';
-import useRequestState, { createMockRequest } from 'hooks/use-request-state';
-import { toAtto } from 'utils/bigNumber';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
+import { useDepositToVault } from 'hooks/core/use-deposit-to-vault';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
+import { useWallet } from 'providers/WalletProvider';
+import { MetaMaskError } from 'hooks/core/types';
+import { useTokenVaultProxyAllowance } from 'hooks/core/use-token-vault-proxy-allowance';
+import { useVaultBalance } from 'hooks/core/use-vault-balance';
+import { useVaultJoiningFee } from 'hooks/core/use-vault-joining-fee';
+import Tooltip from 'components/Tooltip/Tooltip';
+import { useFaith } from 'providers/FaithProvider';
+import { useFaithDepositMultiplier } from 'hooks/core/use-faith-deposit-multiplier';
 import EllipsisLoader from 'components/EllipsisLoader';
 
-// This dummy data will be replaced by the actual contracts
-const dummyOptions = [
-  { value: '$TEMPLE', label: 'TEMPLE' },
-  { value: '$OGTEMPLE', label: 'OGTEMPLE' },
-  { value: 'FAITH', label: 'FAITH' },
-  { value: '$FRAX', label: 'FRAX' },
-  { value: '$ETH', label: 'ETH' },
-  { value: '$USDC', label: 'USDC' },
-  { value: '$FEI', label: 'FEI' },
-];
-
-// This dummy data will be replaced by the actual contracts
-const dummyWalletBalances = {
-  $FRAX: 4834,
-  $TEMPLE: 12834,
-  $OGTEMPLE: 41834,
-  FAITH: 3954,
-  $ETH: 12,
-  $USDC: 402,
-  $FEI: 945,
-};
-
-// This dummy data will be replaced by the actual contracts
-const dummyCurrencyToTemple: Record<TICKER_SYMBOL, number> = {
-  $FRAX: 423,
-  $TEMPLE: 343334,
-  $OGTEMPLE: 502933,
-  FAITH: 554,
-  $ETH: 14454,
-  $USDC: 49233,
-  $FEI: 9293,
-};
-
-const defaultOption = { value: '$TEMPLE', label: 'TEMPLE' };
-
-const useStakeAssetRequest = (token: TICKER_SYMBOL, amount: BigNumber) => {
-  const stakeAssetRequest = createMockRequest({ success: true }, 1000, true);
-  return useRequestState(() => stakeAssetRequest(token, amount));
-};
-
-const useZappedAssetTempleBalance = (
-  token: TICKER_SYMBOL,
-  amount: BigNumber
-) => {
-  const zapAssetRequest = createMockRequest(
-    { templeAmount: dummyCurrencyToTemple[token] },
-    1000,
-    true
-  );
-  return useRequestState(() => zapAssetRequest(token, amount));
-};
+const ENV = import.meta.env;
 
 export const Stake = () => {
-  const [stakingAmount, setStakingAmount] = useState<number | ''>('');
-  const [ticker, setTicker] = useState<TICKER_SYMBOL>(
-    dummyOptions[0].value as TICKER_SYMBOL
-  );
-  const [walletCurrencyBalance, setWalletCurrencyBalance] = useState<number>(0);
-
-  const [stakeAssetsRequest, { isLoading: stakeLoading, error: stakeError }] =
-    useStakeAssetRequest(ticker, toAtto(!stakingAmount ? 0 : stakingAmount));
+  const { activeVault: vault } = useVaultContext();
+  const { balance, isConnected } = useWallet();
 
   const [
-    zapAssetRequest,
-    { response: zapRepsonse, error: zapError, isLoading: zapLoading },
-  ] = useZappedAssetTempleBalance(
+    getFaithDepositMultiplier, 
+    { response: faithDepositMultiplier, isLoading: faithMultiplierLoading },
+  ] = useFaithDepositMultiplier();
+
+  const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] = useVaultJoiningFee(vault);
+  const joiningFee = (!isConnected || joiningFeeLoading) ? null : (joiningFeeResponse || 0);
+
+  useEffect(() => {
+    if (isConnected) {
+      getVaultJoiningFee();
+    }
+  }, [isConnected, getVaultJoiningFee]);
+
+  // UI amount to stake
+  const [stakingAmount, setStakingAmount] = useState<string | number>('');
+  const { options, ticker, setTicker, usableFaith } = useStakeOptions();
+
+  const [_, refreshBalance] = useVaultBalance(vault?.id);
+  const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
+  const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, async () => {
+    refreshBalance();
+    refreshWalletState();
+  });
+
+  const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultProxyAllowance(
     ticker,
-    toAtto(!stakingAmount ? 0 : stakingAmount)
   );
-
-  const handleTickerUpdate = (val: Option) => {
-    setTicker(val.value as TICKER_SYMBOL);
-    setWalletCurrencyBalance(
-      dummyWalletBalances[
-        val.value as keyof typeof dummyWalletBalances
-      ] as number
-    );
-    setStakingAmount('');
-  };
-
-  const handleUpdateStakingAmount = (value: number) => {
-    setStakingAmount(value === 0 ? '' : value);
-
-    // If there is a value present and its not TEMPLE request the zapped value.
-    if (ticker !== TICKER_SYMBOL.TEMPLE_TOKEN && !!value) {
-      zapAssetRequest();
+  
+  const handleUpdateStakingAmount = (value: number | string) => {
+    const amount = Number(value || 0);
+    
+    setStakingAmount(amount);
+    
+    if (amount > 0 && ticker === TICKER_SYMBOL.FAITH && usableFaith > 0) {
+      // Get the faith bonus amount
+      getFaithDepositMultiplier(amount);
     }
   };
 
-  const handleHintClick = () => {
-    handleUpdateStakingAmount(walletCurrencyBalance);
+  const getTokenBalanceForCurrentTicker = () => {
+    switch (ticker) {
+      case TICKER_SYMBOL.TEMPLE_TOKEN:
+        return balance.temple;
+      case TICKER_SYMBOL.FAITH:
+        return balance.temple;
+    }
+    console.error(`Programming Error: ${ticker} not implemented.`);
+    return 0;
   };
 
-  useEffect(() => {
-    handleTickerUpdate(defaultOption);
-  }, []);
+  const tokenBalance = getTokenBalanceForCurrentTicker();
+  const templeAmount = Number(stakingAmount || 0);
 
-  const isZap = ticker !== TICKER_SYMBOL.TEMPLE_TOKEN;
-  const templeAmount = !isZap
-    ? stakingAmount
-    : (stakingAmount && zapRepsonse?.templeAmount) || 0;
   const stakeButtonDisabled =
-    !templeAmount || stakeLoading || zapLoading || (isZap && !!zapError);
+    !isConnected ||
+    refreshIsLoading ||
+    !templeAmount ||
+    depositLoading ||
+    allowanceLoading;
 
-  let templeAmountMessage: ReactNode = '';
-  if (zapError) {
-    templeAmountMessage = zapError.message || 'Something went wrong';
-  } else if (zapLoading) {
-    templeAmountMessage = (
-      <>
-        Staking <EllipsisLoader />
-      </>
-    );
-  } else if (zapRepsonse && !!stakingAmount) {
-    templeAmountMessage = (
-      <>
-        Staking {zapRepsonse.templeAmount} {TICKER_SYMBOL.TEMPLE_TOKEN}
-        {' \u00A0'}
-      </>
-    );
+  const error =
+    !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
+
+  let faithBoostMessage: ReactNode = null;
+  if (ticker === TICKER_SYMBOL.FAITH && usableFaith > 0 && templeAmount > 0) {
+    if (faithMultiplierLoading) {
+      faithBoostMessage = <EllipsisLoader />;
+    } else if (faithDepositMultiplier) {
+      const bonusAmount = faithDepositMultiplier - templeAmount;
+      faithBoostMessage = <>Burn all your FAITH ({usableFaith}) and receive {bonusAmount.toFixed(2)} bonus TEMPLE.</>
+    }
   }
 
   return (
     <VaultContent>
       <Header>Stake</Header>
       <DepositContainer>
-        DEPOSIT{' '}
+        Deposit{' '}
         <SelectContainer>
           <CryptoSelect
-            options={dummyOptions}
-            defaultValue={defaultOption}
-            onChange={handleTickerUpdate}
+            isSearchable={false}
+            options={options}
+            defaultValue={options[0]}
+            onChange={(val: Option) => {
+              setTicker(val.value as TICKER_SYMBOL);
+              handleUpdateStakingAmount(0);
+            }}
           />
         </SelectContainer>
       </DepositContainer>
       <VaultInput
         tickerSymbol={ticker}
         handleChange={handleUpdateStakingAmount}
-        hint={`Balance: ${formatNumber(walletCurrencyBalance)}`}
-        onHintClick={handleHintClick}
+        hint={`Balance: ${formatNumber(tokenBalance)}`}
+        onHintClick={() => {
+          handleUpdateStakingAmount(tokenBalance);
+        }}
         isNumber
-        placeholder={'0.00'}
+        placeholder="0.00"
         value={stakingAmount}
       />
-      <AmountInTemple>{isZap && templeAmountMessage}</AmountInTemple>
-      {!!stakeError && (
-        <ErrorLabel>{stakeError.message || 'Something went wrong'}</ErrorLabel>
+      {!!faithBoostMessage && <AmountInTemple>{faithBoostMessage}</AmountInTemple>} 
+      {(joiningFee !== null && !!templeAmount) && (
+        <JoiningFee>
+          <Tooltip
+            content="The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increases the further we are into the joining period."
+            inline
+          >
+            Joining Fee{' '}
+          </Tooltip>
+          : {joiningFee * templeAmount} $T
+        </JoiningFee>
       )}
-
-      <VaultButton
-        label={'stake'}
-        autoWidth
-        disabled={stakeButtonDisabled}
-        onClick={async () => {
-          try {
-            return stakeAssetsRequest();
-          } catch (error) {
-            // intentionally empty, handled in hook
-          }
-        }}
-      />
+      {<ErrorLabel>{error}</ErrorLabel>}
+      {allowance === 0 && (
+        <VaultButton
+          label="Approve"
+          autoWidth
+          disabled={allowanceLoading}
+          onClick={async () => {
+            return increaseAllowance();
+          }}
+        />
+      )}
+      {allowance !== 0 && (
+        <VaultButton
+          label="Stake"
+          autoWidth
+          disabled={stakeButtonDisabled}
+          loading={refreshIsLoading || depositLoading}
+          onClick={async () => {
+            const amountToDeposit = !stakingAmount ? 0 : Number(stakingAmount);
+            await deposit(ticker, amountToDeposit);
+            setStakingAmount('');
+          }}
+        />
+      )}
     </VaultContent>
   );
 };
+
+const useStakeOptions = () => {
+  const { faith: { usableFaith } } = useFaith();
+
+  const options = [
+    { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' },
+  ];
+
+  if (usableFaith > 0) {
+    options.push({ value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' });
+  }
+
+  const [ticker, setTicker] = useState<TICKER_SYMBOL>(options[0].value as TICKER_SYMBOL);
+
+  return {
+    options,
+    ticker,
+    setTicker,
+    usableFaith,
+  };
+};
+
 
 const SelectContainer = styled.div`
   margin: 0 auto;
@@ -192,14 +203,13 @@ const SelectContainer = styled.div`
 const AmountInTemple = styled.span`
   color: ${theme.palette.brandLight};
   display: block;
-  margin: 1rem 0;
-  height: 1.5rem;
+  margin: 1rem 0 0;
 `;
 
 const ErrorLabel = styled.span`
   color: ${theme.palette.enclave.chaos};
   display: block;
-  margin: 0 0 1rem;
+  margin: 1rem 0 0;
 `;
 
 const DepositContainer = styled.div`
@@ -207,4 +217,11 @@ const DepositContainer = styled.div`
   font-size: 1.5rem;
   padding: 1.5rem 0 1.2rem;
   display: inline-block;
+`;
+
+const JoiningFee = styled.span`
+  color: ${theme.palette.brandLight};
+  display: block;
+  padding: 1rem 0 0;
+  font-size: 1.4rem;
 `;

@@ -5,12 +5,14 @@ import styled from 'styled-components';
 import { pixelsToRems } from 'styles/mixins';
 import { Definitions } from './mobile-parts/Definitions';
 import { Header } from './mobile-parts/Header';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { Nav } from './mobile-parts/Nav';
 import { Timeline } from './mobile-parts/Timeline';
 import { VaultProps, VaultRef } from './types';
 
 export const VaultMobile = forwardRef<VaultRef, VaultProps>(
-  ({ vault, selectedNav, markerClick, children }, ref) => {
+  ({ selectedNav, children }, ref) => {
+    const { vaultGroup } = useVaultContext();
     const svgRef = useRef<SVGSVGElement>(null);
     const popupRef = useRef(null);
 
@@ -31,7 +33,7 @@ export const VaultMobile = forwardRef<VaultRef, VaultProps>(
             <Nav
               selected={selectedNav}
               onClickButton={(page) => {
-                navigate(`/core/dapp/vaults/${vault.id}/${page}`);
+                navigate(`/core/dapp/vaults/${vaultGroup.id}/${page}`);
               }}
             />
             <Header />
@@ -41,7 +43,7 @@ export const VaultMobile = forwardRef<VaultRef, VaultProps>(
         <Content>{children}</Content>
         <div>
           <svg width="100%" viewBox="1 503 320 65" fill="none">
-            <Timeline vault={vault} />
+            <Timeline />
           </svg>
         </div>
       </BoundingBox>

@@ -1,40 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 import { useAccount, useConnect, useNetwork } from 'wagmi';
 
-import { useWallet } from 'providers/WalletProvider';
 import { ConnectorPopover } from './ConnectorPopover';
 import TruncatedAddress from 'components/TruncatedAddress';
 import Loader from 'components/Loader/Loader';
 import { Button as BaseButton } from 'components/Button/Button';
 import { WrongNetworkPopover } from './WrongNetworkPopover';
-import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 
 import Tooltip from 'components/Tooltip/Tooltip';
 
 export const Account = () => {
-  const { isConnected } = useWallet();
-  const refreshWalletState = useRefreshWalletState();
   const [isConnectorMenuOpen, setIsConnectMenuOpen] = useState(false);
-  const didRefreshWalletState = useRef(false);
-
-  // Note(Fujisawa): this is not necessarily an ideal place to put this.  We 
-  // need to fetch the users wallet state at the time they connect to the app.
-  // Previously we were doing this in WalletProvider which was a circular import.
-  // This logic needs to happen somewhere below the Providers in the component tree.
-  // Maybe we want to move this to CoreLayout or some top level (but below Providers)
-  // App component in the future.
-  useEffect(() => {
-    // User connected to the app.  Fetch wallet state once.
-    if (isConnected && !didRefreshWalletState.current) {
-      didRefreshWalletState.current = true;
-      refreshWalletState();
-    } else if (didRefreshWalletState.current && !isConnected) {
-      // User disconnected from the app.
-      didRefreshWalletState.current = false;
-    }
-  }, [isConnected, refreshWalletState, didRefreshWalletState]);
-
   return (
     <>
       <AccountButton

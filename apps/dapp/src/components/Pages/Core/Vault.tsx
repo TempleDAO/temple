@@ -1,70 +1,52 @@
-import { useState, useEffect } from 'react';
-import { useParams, Outlet } from 'react-router-dom';
-import styled from 'styled-components';
+import { useParams, Outlet, Link } from 'react-router-dom';
 
 import { VaultSVG } from 'components/Vault/VaultSVG';
-import { Vault } from 'components/Vault/types';
 import { Spinner } from 'components/LoaderVault/Spinner';
-
-const vaultData: { [key: string]: Vault } = {
-  abc: {
-    id: 'abc',
-    months: 3,
-    tvl: 12000050,
-    now: new Date('6/15/22'),
-    startDate: new Date('4/1/22'),
-    entries: [
-      {
-        id: 1,
-        entryDate: new Date('4/1/2022'),
-        amount: 5300,
-      },
-      {
-        id: 2,
-        entryDate: new Date('5/30/2022'),
-        amount: 2500,
-      },
-    ],
-  },
-};
-
-export const useMockVaultData = (id: string) => {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 750);
-  }, [setIsLoading]);
-
-  return { isLoading, data: vaultData[id], error: !vaultData[id] };
-};
+import { useGetVaultGroup } from 'hooks/core/subgraph';
+import { CenterScreenWrapper } from 'components/Pages/Core/styles';
+import { VaultContextProvider } from './VaultContext';
 
 const VaultPage = () => {
   const { vaultId } = useParams();
-  const { isLoading, data, error } = useMockVaultData(vaultId || '');
+  const { isLoading, vaultGroup, error } = useGetVaultGroup(vaultId || '');
 
   if (isLoading) {
-    return <Spinner />;
+    return (
+      <CenterScreenWrapper>
+        <Spinner />
+      </CenterScreenWrapper>
+    );
   }
 
-  if (!data || error) {
-    return <div>Something went wrong</div>;
+  if (error) {
+    console.error(error);
+    return (
+      <CenterScreenWrapper>
+        <h2>Something went wrong</h2>
+      </CenterScreenWrapper>
+    );
+  }
+
+  if (!vaultGroup) {
+    return (
+      <CenterScreenWrapper>
+        <h2>Invalid Vault.</h2>
+        <Link to="/core/dapp/vaults">
+          Go To Vaults
+        </Link>
+      </CenterScreenWrapper>
+    )
   }
 
   return (
-    <>
-      <Wrapper>
-        <VaultSVG data={data}>
-          <Outlet context={{ vault: data }} />
+    <VaultContextProvider vaultGroup={vaultGroup}>
+      <CenterScreenWrapper>
+        <VaultSVG>
+          <Outlet />
         </VaultSVG>
-      </Wrapper>
-    </>
+      </CenterScreenWrapper>
+    </VaultContextProvider>
   );
 };
-
-const Wrapper = styled.div`
-  display: flex;
-`;
 
 export default VaultPage;

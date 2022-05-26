@@ -2,44 +2,55 @@ import { ReactElement, JSXElementConstructor } from 'react';
 
 import Tippy from '@tippyjs/react';
 import { roundArrow } from 'tippy.js';
-import { format, addSeconds } from 'date-fns';
+import { format, isDate, formatDistance } from 'date-fns';
 
-import { Entry, Vault } from 'components/Vault/types';
+import { Marker, MarkerType } from 'components/Vault/types';
 import { TippyDiv } from 'components/Tooltip/Tooltip';
-import { SECONDS_IN_MONTH } from './desktop-parts/utils';
+import { useVaultBalance } from 'hooks/core/use-vault-balance';
+import Loader from 'components/Loader/Loader';
+import { formatTemple } from './utils';
 
 type Props = {
-  vault: Vault;
-  entry: Entry;
+  marker: Marker;
   // Tippy has weird typing for children.
   children: ReactElement<any, string | JSXElementConstructor<any>>;
 };
 
-const TimelineTippy = ({ vault, entry, children }: Props) => {
-  const amount = entry.amount;
-  const startDate = format(entry.entryDate!, 'MMM do');
-  const endDate = format(
-    addSeconds(entry.entryDate!, SECONDS_IN_MONTH * vault.months),
-    'MMM do'
-  );
+const TimelineTippy = ({ marker, children }: Props) => {
+  const [{ balance, staked, isLoading }] = useVaultBalance(marker.vaultId);
+  const amount = staked || 0;
+  const unlockValue = isDate(marker.unlockDate) ? format(marker.unlockDate as Date, 'MMM do') : 'now';
+
+  let content;
+
+  if (isLoading) {
+    content = (
+      <TippyDiv>
+        <Loader />
+      </TippyDiv>
+    );
+  } else if (marker.type === MarkerType.EMPTY) {
+    content = (
+      <TippyDiv>
+        This empty Marker represents the available window to make a deposit in this sub-vault ({marker.label}). This
+        will end in {formatDistance(marker.windowEndDate, Date.now())}
+      </TippyDiv>
+    );
+  } else {
+    const unlockString =
+      marker.unlockDate === 'NOW' ? 'It is unlocked and claimable.' : `It will unlock on ${unlockValue}`;
+    content = (
+      <TippyDiv>
+        You have deposited {formatTemple(amount)} $TEMPLE in sub-vault {marker.label}. The $TEMPLE balance is now {formatTemple(balance)}. <br/> {unlockString}
+      </TippyDiv>
+    );
+  }
 
   return (
-    <Tippy
-      content={
-        <TippyDiv>
-          {amount} Temple<br />
-          Entry Date: {startDate}<br />
-          Vesting Date: {endDate}
-        </TippyDiv>
-      } 
-      animation="scale-subtle"
-      duration={250}
-      arrow={roundArrow}
-      trigger="click"
-    >
+    <Tippy content={content} animation="scale-subtle" duration={250} arrow={roundArrow} trigger="click">
       {children}
     </Tippy>
   );
-}
+};
 
 export default TimelineTippy;

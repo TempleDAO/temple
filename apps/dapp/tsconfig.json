@@ -17,9 +17,10 @@
       "hoc/*": ["./hoc/*"],
       "enums/*": ["./enums/*"],
       "data/*": ["./data/*"],
-      "types/*": ["./types/*"]
+      "types/*": ["./types/*"],
+      "constants/*": ["./constants/*"],
     }
   },
   "include": ["**/*.ts", "**/*.tsx","**/*.json"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "tests/e2e"]
 }

@@ -1,6 +1,8 @@
-import { Button } from 'components/Button/Button';
-import { PropsWithChildren } from 'react';
+import { PropsWithChildren, ComponentProps } from 'react';
 import styled from 'styled-components';
+
+import { useWallet } from 'providers/WalletProvider';
+import { Button } from 'components/Button/Button';
 
 const VaultContent = ({ children }: PropsWithChildren<{}>) => {
   return <Content>{children}</Content>;
@@ -14,7 +16,7 @@ const Content = styled.div`
   height: 100%;
 `;
 
-export const VaultButton = styled(Button).attrs(
+const BaseVaultButton = styled(Button).attrs(
   (props: { marginTop: string }) => props
 )`
   align-self: center;
@@ -22,8 +24,24 @@ export const VaultButton = styled(Button).attrs(
   border-radius: 12px;
   letter-spacing: 0.5rem;
   text-transform: uppercase;
-  width: 50%;
+  width: auto;
   transition: none;
 `;
+
+export const VaultButton = (props: ComponentProps<typeof BaseVaultButton>) => {
+  const { isConnected } = useWallet();
+
+  if (!isConnected) {
+    // User needs to be connected to perform vault actions.
+    return (
+      <BaseVaultButton
+        disabled
+        label="Connect Wallet"
+      />
+    );
+  }
+
+  return <BaseVaultButton {...props} />;
+} 
 
 export default VaultContent;

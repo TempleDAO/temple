@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react';
-import { Nullable } from 'types/util';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Nullable, Maybe } from 'types/util';
+import useIsMounted from 'hooks/use-is-mounted';
 
-type Request<T> = () => Promise<T>;
+type Request<T extends any, Args extends any[]> = ((...args: Args) => Promise<T>) | (() => Promise<T>);
 
-export const createMockRequest = <T extends object>(
+export const createMockRequest = <T extends any>(
   response: T,
   requestTimeMs = 500,
   canThrowError = false,
@@ -29,30 +30,54 @@ type RequestResponseState<T> = {
   response: Nullable<T>,
 };
 
-type UseRequestStateReturnType<T extends object> = [
-  () => Promise<void>,
+type UseRequestStateReturnType<T extends any, Args extends any[]> = [
+  Request<Maybe<T>, Args>,
   RequestResponseState<T>,
 ];
 
-const useRequestState = <T extends object>(request: Request<T>): UseRequestStateReturnType<T> => {
+interface Options {
+  purgeResponseOnRefetch?: boolean;
+}
+
+const useRequestState = <Resp extends any, Args extends any[]>(request: Request<Resp, Args>, options?: Options): UseRequestStateReturnType<Resp, Args> => {
+  const isMounted = useIsMounted();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Nullable<Error>>(null);
-  const [response, setResponse] = useState<Nullable<T>>(null);
+  const [response, setResponse] = useState<Nullable<Resp>>(null);
+  const requestRef = useRef(request);
+  const purgeResponse = options?.purgeResponseOnRefetch || false;
+
+  useEffect(() => {
+    // Keep ref consistent with latest function passed in.
+    requestRef.current = request;
+  }, [request, requestRef]);
   
-  const wrappedRequest = useCallback(async () => {
+  const wrappedRequest = useCallback(async (...args: Args) => {
     setError(null);
     setIsLoading(true);
 
-    try {
-      const response = await request();
-      setResponse(response);
-    } catch (error) {
+    if (purgeResponse) {
       setResponse(null);
-      setError(error as Error);
-    } finally {
-      setIsLoading(false);
     }
-  }, [request, setIsLoading, setResponse, setError]);
+
+    let response: Maybe<Resp>;
+    try {
+      response = await requestRef.current(...args);
+      if (isMounted.current) {
+        setResponse(response);
+      }
+    } catch (error) {
+      if (isMounted.current) {
+        setResponse(null);
+        setError(error as Error);
+      }
+    } finally {
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
+    }
+    return response;
+  }, [requestRef, setIsLoading, setResponse, setError, isMounted, purgeResponse]);
 
   return [
     wrappedRequest,
@@ -60,7 +85,7 @@ const useRequestState = <T extends object>(request: Request<T>): UseRequestState
       isLoading,
       error,
       response,
-    }
+    },
   ];
 };
 

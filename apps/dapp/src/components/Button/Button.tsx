@@ -9,6 +9,7 @@ export interface ButtonProps
     HTMLProps<HTMLButtonElement> {
   type?: 'submit' | 'reset' | 'button' | undefined;
   label?: string;
+  loading?: boolean; 
 
   onClick?(): Promise<void> | void;
 }
@@ -24,6 +25,7 @@ export const Button = ({
   isUppercase = false,
   showArrow,
   children,
+  loading: externalLoading,
   ...props
 }: ButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -63,6 +65,7 @@ export const Button = ({
     }
   };
 
+  const loading = externalLoading || isLoading;
   const buttonContent = label || children;
   return (
     // @ts-ignore expected multiple children
@@ -74,7 +77,7 @@ export const Button = ({
       showArrow={showArrow}
       {...props}
     >
-      {isLoading ? (
+      {loading ? (
         <Loader iconSize={32} />
       ) : (
         <>

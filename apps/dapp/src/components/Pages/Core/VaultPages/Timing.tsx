@@ -1,24 +1,15 @@
 import styled from 'styled-components';
-import { formatDistance, format, addSeconds } from 'date-fns';
+import { format, isDate } from 'date-fns';
 
-import {
-  Table as BaseTable,
-  Head,
-  Row,
-  Body,
-  Cell,
-} from 'components/Table/Table';
+import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Table';
 
-import { SECONDS_IN_MONTH } from 'components/Vault/desktop-parts/utils';
-import { Vault } from 'components/Vault/types';
-
-import { pixelsToRems } from 'styles/mixins';
-import useVaultContext from './useVaultContext';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import VaultContent from './VaultContent';
+import { formatTemple } from 'components/Vault/utils';
 
 const Timing = () => {
-  const vault = useVaultContext();
-  
+  const { vaultGroup, balances } = useVaultContext();
+
   return (
     <VaultContent>
       <Header>Timing</Header>
@@ -26,77 +17,42 @@ const Timing = () => {
         <Table $expand>
           <Head>
             <Row>
-              <Cell as="th">Entry Date</Cell>
               <Cell $align="center" as="th">
-                Amount
+                Sub-Vault
               </Cell>
               <Cell $align="center" as="th">
-                Cycle
+                Staked
+              </Cell>
+              <Cell $align="center" as="th">
+                Balance
               </Cell>
               <Cell $align="center" as="th">
                 Claimable
               </Cell>
             </Row>
           </Head>
-          <Body>
-            {(vault.entries || []).map((entry) => (
-              <Row key={entry.id}>
-                <Cell>
-                  {entry.entryDate
-                    ? format(entry.entryDate, 'MMM d, yyyy')
-                    : ''}
-                </Cell>
-                <Cell $align="center">$T {entry.amount}</Cell>
-                <Cell $align="center">
-                  {getFormattedEntryCycle(entry.currentCycle)}
-                </Cell>
-                <Cell
-                  $icon={entry.inZone ? 'claim' : undefined}
-                  $align="center"
-                >
-                  {entry.inZone ? 'YES' : getVaultClaimableFormatted(vault)}
-                </Cell>
-              </Row>
-            ))}
-          </Body>
+          <StyledBody>
+            {vaultGroup.vaults.map((vault) => {
+              const vaultBalance = balances[vault.id] || {};
+              const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
+              return (
+                <Row key={vault.id}>
+                  <Cell $align="center">{vault.label}</Cell>
+                  <Cell $align="center">{formatTemple(vaultBalance.staked)} $T</Cell>
+                  <Cell $align="center">{formatTemple(vaultBalance.balance)} $T</Cell>
+                  <Cell $align="center">{unlockValue}</Cell>
+                </Row>
+              );
+            })}
+          </StyledBody>
         </Table>
       </TableWrapper>
-      <Duration>{vault.months} Months</Duration>
+      <Duration>{vaultGroup.months} Months</Duration>
     </VaultContent>
   );
 };
 
-const getVaultClaimableFormatted = (vault: Vault) => {
-  const currentCycle = (vault.currentCycle || 0) + 1;
-  const endOfCurrentCycle = SECONDS_IN_MONTH * vault.months * currentCycle;
-  const vaultEndDate = addSeconds(vault.startDate!, endOfCurrentCycle);
-  return formatDistance(Date.now(), vaultEndDate);
-};
-
-const getFormattedEntryCycle = (cycleNumber = 0) => {
-  cycleNumber = cycleNumber + 1;
-  switch (cycleNumber) {
-    case 1:
-      return '1st';
-    case 2:
-      return '2nd';
-    case 3:
-      return '3rd';
-    default:
-      return `${cycleNumber}th`;
-  }
-};
-
 const COLOR_HEADER_SHADOW = '0px 4px 7.48px rgba(222, 92, 6, 0.5)';
-
-const Wrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  padding: calc(${pixelsToRems(10)}rem + 1.25rem) 1.25rem 1rem;
-  width: 80%;
-  margin: 0 auto;
-  height: 100%;
-`;
 
 const TableWrapper = styled.div`
   height: 18.1875rem; /* 291/16 */
@@ -104,6 +60,10 @@ const TableWrapper = styled.div`
 
 const Table = styled(BaseTable)`
   margin-bottom: 3.375rem; /* 54/16 */
+`;
+
+const StyledBody = styled(Body)`
+  font-size: 1rem;
 `;
 
 const Header = styled.h2`

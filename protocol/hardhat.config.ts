@@ -75,14 +75,14 @@ module.exports = {
   networks: {
     hardhat: {
 //    allowUnlimitedContractSize: true,
-      chainId: 1337
+      chainId: 31337
     },
     rinkeby: {
       url: process.env.RINKEBY_RPC_URL || '',
       accounts: process.env.RINKEBY_ADDRESS_PRIVATE_KEY
         ? [process.env.RINKEBY_ADDRESS_PRIVATE_KEY]
         : [],
-      gasPrice: 2000000000,
+      gasPrice: 8000000000,
     },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',

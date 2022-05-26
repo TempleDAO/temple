@@ -28,14 +28,13 @@ import "hardhat/console.sol";
  * into the next vault cycle.
  */
 contract Vault is EIP712, Ownable, RebasingERC20 {
+    uint256 constant public ENTER_EXIT_WINDOW_BUFFER = 60 * 5; // 5 minute buffer
+
     using Counters for Counters.Counter;
     mapping(address => Counters.Counter) public _nonces;
 
     // solhint-disable-next-line var-name-mixedcase
-    bytes32 public immutable DEPOSIT_FOR_TYPEHASH = keccak256("depositFor(address owner, uint256 maxAmount, uint256 deadline, uint256 nonce)");
-
-    // solhint-disable-next-line var-name-mixedcase
-    bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner, uint256 amount, uint256 deadline, uint256 nonce)");
+    bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner,uint256 amount,uint256 deadline,uint256 nonce)");
 
     IERC20 public templeToken;
 
@@ -61,7 +60,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         uint256 _periodDuration,
         uint256 _enterExitWindowDuration,
         Rational memory _shareBoostFactory,
-        JoiningFee _joiningFee
+        JoiningFee _joiningFee,
+        uint256 _firstPeriodStartTimestamp
     ) EIP712(_name, "1") ERC20(_name, _symbol)  {
         templeToken = _templeToken;
         periodDuration = _periodDuration;
@@ -69,48 +69,20 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         shareBoostFactor = _shareBoostFactory;
         joiningFee = _joiningFee;
 
-        firstPeriodStartTimestamp = block.timestamp;
-    }
-
-    /**
-     * @notice Deposit temple into a vault
-     */
-    function deposit(uint256 amount) public {
-        depositFor(msg.sender, amount);
-    }
-
-    /**
-     * @notice Deposit for another user (gassless for the temple owner)
-     * (assuming the owner has given authority to the caller to act on their behalf)
-     * 
-     * @dev amount is explicitly _not_ part of the digest, as in the common use case
-     * the owner often doesn't know exactly how much will be locked (example, AMM buy with
-     * immediate lock). We do capture the max however to mitigate any possibly attack vectors
-     */
-    function depositFor(address owner, uint256 amount, uint256 maxAmount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
-        require(block.timestamp <= deadline, "Vault: expired deadline");
-        require(amount <= maxAmount, "Vault: amount must be less than authorized maxAmount");
-
-        bytes32 structHash = keccak256(abi.encode(DEPOSIT_FOR_TYPEHASH, owner, maxAmount, deadline, _useNonce(owner)));
-        bytes32 digest = _hashTypedDataV4(structHash);
-        address signer = ECDSA.recover(digest, v, r, s);
-
-        require(signer == owner, "Vault: invalid signature");
-
-        depositFor(owner, amount);
+        firstPeriodStartTimestamp = _firstPeriodStartTimestamp;
     }
 
     /**
      * @notice Withdraw temple (and any earned revenue) from the vault
      */
     function withdraw(uint256 amount) public {
-        withdrawFor(msg.sender, amount);
+        withdrawFor(msg.sender, msg.sender, amount);
     }
 
     /**
      * @notice Withdraw for another user (gasless for the vault token holder)
      * (assuming the owner has given authority for the caller to act on their behalf)
-     * 
+     *
      * @dev amount is explicit, to allow use case of partial vault withdrawals
      */
     function withdrawFor(address owner, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
@@ -122,7 +94,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
         require(signer == owner, "Vault: invalid signature");
 
-        withdrawFor(owner, amount);
+        withdrawFor(owner, msg.sender, amount);
     }
 
     function targetRevenueShare() external view returns (uint256) {
@@ -156,8 +128,12 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     function inEnterExitWindow() public view returns (bool) {
-        uint256 numCylces = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
-        return numCylces * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration > block.timestamp;
+        if (block.timestamp < firstPeriodStartTimestamp) {
+            return false;
+        }
+
+        uint256 numCycles = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
+        return numCycles * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration + ENTER_EXIT_WINDOW_BUFFER > block.timestamp;
     }
 
     /**
@@ -185,22 +161,32 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     /**
-     * @dev shared private implementation of depositFor. Must be private, to prevent
-     * security issue where anyone can deposit (and lock) for another account, once
-     * said account as approved this contract to pull temple funds.
+    * @notice Deposit temple into a vault
+    */
+    function deposit(uint256 amount) public {
+        depositFor(msg.sender, msg.sender, amount);
+    }
+
+    /**
+     * @dev shared implementation of depositFor. Allows callers to deposit and lock on behalf of _account. 
+            Care needs to be taken when calling this to ensure that the caller is passing the correct args in,
+            otherwise they may mistakenly lock _sender funds attributed to a wallet they have no control over.
      */
-    function depositFor(address _account, uint256 _amount) private {
+    function depositFor(address _funder, address _account, uint256 _amount) public {
         require(inEnterExitWindow(), "Vault: Cannot join vault when outside of enter/exit window");
 
-        uint256 fee = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));
+        uint256 feePerTempleScaledPerHour = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));
+        uint256 fee = _amount * feePerTempleScaledPerHour / 1e18;
+
+        require(_amount > fee, "Vault: Cannot join when fee is higher than amount");
         uint256 amountStaked = _amount - fee;
 
         if (_amount > 0) {
             _mint(_account, amountStaked);
-            SafeERC20.safeTransferFrom(templeToken, _account, address(this), _amount);
+            SafeERC20.safeTransferFrom(templeToken, _funder, address(this), _amount);
         }
 
-        emit Deposit(_account, _amount);
+        emit Deposit(_account, _amount, amountStaked);
     }
 
     /**
@@ -209,17 +195,24 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
      * depositFor (as there are no locks), however still a nucance if an account is
      * exited from a vault without consent.
      */
-    function withdrawFor(address _account, uint256 _amount) private {
+    function withdrawFor(address _account, address _to, uint256 _amount) private {
         require(inEnterExitWindow(), "Vault: Cannot exit vault when outside of enter/exit window");
 
         if (_amount > 0) {
              _burn(_account, _amount);
         }
-        SafeERC20.safeTransfer(templeToken, msg.sender, _amount);
+        SafeERC20.safeTransfer(templeToken, _to, _amount);
 
         emit Withdraw(_account, _amount);
     }
 
-    event Deposit(address account, uint256 amount);
+
+    /// @dev ****** for testing. Delete before pushing to mainnet
+    /// change a vault's start time (so we can fast forward in and out of lock/unlock windows)
+    function decreaseStartTime(uint256 delta) external onlyOwner {
+        firstPeriodStartTimestamp -= delta;
+    }
+
+    event Deposit(address account, uint256 amount, uint256 amountStaked);
     event Withdraw(address account, uint256 amount);
 }
