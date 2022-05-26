@@ -21,7 +21,7 @@ export const INITIAL_STATE: SwapReducerState = {
   quoteValue: 0,
   inputTokenBalance: 0,
   outputTokenBalance: 0,
-  slippageTolerance: 1,
+  slippageTolerance: 0.5,
   deadlineMinutes: 20,
   inputConfig: buildSelectConfig(TICKER_SYMBOL.FRAX, SwapMode.Buy),
   outputConfig: buildValueConfig(TICKER_SYMBOL.TEMPLE_TOKEN),
