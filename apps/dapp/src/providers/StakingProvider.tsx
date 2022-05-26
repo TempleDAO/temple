@@ -230,16 +230,6 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     };
   };
 
-  const updateExitQueueData = async () => {
-    if (!wallet || !signer) {
-      return;
-    }
-    console.log('updateExitQueueData start');
-    // const exitQueueData = await getExitQueueData(wallet, signer);
-    console.log('updateExitQueueData end')
-    // setExitQueueData(exitQueueData);
-  };
-
   const updateApy = async () => {
     if (!wallet || !signer) {
       return;
@@ -509,6 +499,17 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         title: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN} claimed`,
         hash: withdrawTXN.hash,
       });
+    }
+  };
+
+  const updateExitQueueData = async () => {
+    if (!wallet || !signer) {
+      return;
+    }
+
+    const exitQueueData = await getExitQueueData(wallet, signer);
+    if (exitQueueData) {
+      setExitQueueData(exitQueueData);
     }
   };
 
