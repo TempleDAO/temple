@@ -59,7 +59,7 @@ contract VaultProxy {
         faith.redeem(msg.sender, _amountFaith);
         uint256 boostedAmount = getFaithMultiplier(_amountFaith, _amountTemple);
         SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amountTemple);
-        SafeERC20.safeIncreaseAllowance(temple, address(vault), boostedAmount);
+        SafeERC20.safeIncreaseAllowance(temple, vault.vaultedTempleAccount(), boostedAmount);
         vault.depositFor(address(this), msg.sender, boostedAmount);
     }
     
@@ -79,7 +79,7 @@ contract VaultProxy {
         uint256 templeAfterBalance = temple.balanceOf(address(this));
         require(templeAfterBalance > templeBeforeBalance, "Vault Proxy: no Temple received when unstaking");
 
-        SafeERC20.safeIncreaseAllowance(temple, address(vault), expectedTemple);
+        SafeERC20.safeIncreaseAllowance(temple, vault.vaultedTempleAccount(), expectedTemple);
         vault.depositFor(address(this), msg.sender, expectedTemple);
     }
 
@@ -88,7 +88,7 @@ contract VaultProxy {
                 vault instance. 
      */
     function depositTempleFor(uint256 _amount, Vault vault) public {
-        SafeERC20.safeIncreaseAllowance(temple, address(vault), _amount);
+        SafeERC20.safeIncreaseAllowance(temple, vault.vaultedTempleAccount(), _amount);
         SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amount);
         vault.depositFor(address(this), msg.sender, _amount);
     }
