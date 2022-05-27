@@ -83,9 +83,13 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
     case 'endTx':
       return {
         ...state,
+        isTransactionPending: false,
+      };
+    case 'txSuccess':
+      return {
+        ...state,
         inputValue: state.isSlippageTooHigh ? state.inputValue : INITIAL_STATE.inputValue,
         quoteValue: state.isSlippageTooHigh ? state.quoteValue : INITIAL_STATE.quoteValue,
-        isTransactionPending: false,
       };
 
     case 'slippageTooHigh':
