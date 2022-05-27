@@ -64,6 +64,8 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
       tx = await vaultProxy.depositTempleFor(bigAmount, vaultContractAddress);
     } else if (token === TICKER_SYMBOL.FAITH) {
       tx = await vaultProxy.depositTempleWithFaith(bigAmount, bigUsableFaith, vaultContractAddress);
+    } else if (token === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
+      tx = await vaultProxy.unstakeAndDepositIntoVault(bigAmount, vaultContractAddress);
     } else {
       throw new Error(`Programming Error: Unsupported token: ${token}`);
     }

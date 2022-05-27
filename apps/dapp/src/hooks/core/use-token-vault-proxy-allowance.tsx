@@ -3,6 +3,8 @@ import { Signer } from 'ethers';
 import {
   VaultProxy__factory,
   TempleERC20Token__factory,
+  OGTemple__factory,
+  TempleStaking__factory,
 } from 'types/typechain';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
@@ -16,7 +18,7 @@ const ENV = import.meta.env;
 
 const DEFAULT_ALLOWANCE = toAtto(100000000);
 
-const createTokenFactoryInstance = (ticker: TICKER_SYMBOL, signer: Signer) => {
+const createTokenFactoryInstance = async (ticker: TICKER_SYMBOL, signer: Signer) => {
   switch (ticker) {
     case TICKER_SYMBOL.TEMPLE_TOKEN:
     // When depositing FAITH, it is actually Temple. Faith represents the intent
@@ -24,6 +26,10 @@ const createTokenFactoryInstance = (ticker: TICKER_SYMBOL, signer: Signer) => {
     // wants to deposit.
     case TICKER_SYMBOL.FAITH:
       return new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
+    case TICKER_SYMBOL.OG_TEMPLE_TOKEN:
+      const templeStakingContract = new TempleStaking__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS);
+      const address = await templeStakingContract.OG_TEMPLE();  
+      return new OGTemple__factory(signer).attach(address);
   }
   throw new Error('Unsupported Token');
 };
@@ -42,7 +48,7 @@ export const useTokenVaultProxyAllowance = (
       return;
     }
 
-    const token = createTokenFactoryInstance(ticker, signer);
+    const token = await createTokenFactoryInstance(ticker, signer);
     const vault = new VaultProxy__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY);
     const allowance = await token.allowance(wallet, vault.address);
     return allowance;
@@ -62,7 +68,7 @@ export const useTokenVaultProxyAllowance = (
       return;
     }
 
-    const token = createTokenFactoryInstance(ticker, signer);
+    const token = await createTokenFactoryInstance(ticker, signer);
     const approveTXN = await token.approve(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY, DEFAULT_ALLOWANCE);
     await approveTXN.wait();
   
