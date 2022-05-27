@@ -12,7 +12,7 @@ import "./Rational.sol";
 import "./Exposure.sol";
 import "./JoiningFee.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 /**
  * @title A temple investment vault, allows deposits and withdrawals on a set period (eg. monthly)
