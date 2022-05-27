@@ -10,7 +10,7 @@ import "../TempleERC20Token.sol";
 import "../TempleStaking.sol";
 import "../devotion/Faith.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 /**
     @notice A proxy contract for interacting with Temple Vaults. 

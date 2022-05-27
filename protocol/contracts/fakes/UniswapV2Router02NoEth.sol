@@ -16,7 +16,7 @@ import '@uniswap/v2-periphery/contracts/libraries/SafeMath.sol';
 import '@uniswap/v2-periphery/contracts/interfaces/IERC20.sol';
 import '@uniswap/v2-periphery/contracts/interfaces/IWETH.sol';
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 contract UniswapV2Router02NoEth is IUniswapV2Router02 {
     using SafeMath for uint;
