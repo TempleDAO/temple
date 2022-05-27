@@ -114,36 +114,30 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
     await ensureAllowance(token, tokenContract, TEMPLE_V2_ROUTER_ADDRESS, amountIn);
 
-    const buyTXN = await ammRouter.swapExactStableForTemple(
-      verifiedAmountIn,
-      minAmountOutTemple,
-      tokenAddress,
-      wallet,
-      deadline,
-      {
-        gasLimit: VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT || 300000,
-      }
-    );
+    try {
+      const buyTXN = await ammRouter.swapExactStableForTemple(
+        verifiedAmountIn,
+        minAmountOutTemple,
+        tokenAddress,
+        wallet,
+        deadline,
+        {
+          gasLimit: VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT || 300000,
+        }
+      );
+      const txReceipt = await buyTXN.wait();
 
-    if (!buyTXN) {
-      console.error('Error processing transaction');
+      // Show feedback to user
+      openNotification({
+        title: `Sacrificed ${token}`,
+        hash: buyTXN.hash,
+      });
+
+      return txReceipt;
+    } catch (e) {
+      console.error("Couldn't complete buy transaction", e);
       return;
     }
-
-    const txReceipt = await buyTXN.wait();
-
-    if (!txReceipt) {
-      console.error('Error processing transaction');
-      return;
-    }
-
-    // Show feedback to user
-    openNotification({
-      title: `Sacrificed ${token}`,
-      hash: buyTXN.hash,
-    });
-
-    return txReceipt;
   };
 
   /**
@@ -181,36 +175,31 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
     const deadline = formatNumberFixedDecimals(Date.now() / 1000 + deadlineInSeconds, 0);
 
-    const sellTx = await ammRouter.swapExactTempleForStable(
-      verifiedAmountInTemple,
-      minAmountOut,
-      tokenAddress,
-      wallet,
-      deadline,
-      {
-        gasLimit: VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
-      }
-    );
+    try {
+      const sellTx = await ammRouter.swapExactTempleForStable(
+        verifiedAmountInTemple,
+        minAmountOut,
+        tokenAddress,
+        wallet,
+        deadline,
+        {
+          gasLimit: VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
+        }
+      );
 
-    if (!sellTx) {
-      console.error('Error processing transaction');
+      const txReceipt = await sellTx.wait();
+
+      // Show feedback to user
+      openNotification({
+        title: `${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
+        hash: sellTx.hash,
+      });
+
+      return txReceipt;
+    } catch (e) {
+      console.error("Couldn't complete sell transaction", e);
       return;
     }
-
-    const txReceipt = await sellTx.wait();
-
-    if (!txReceipt) {
-      console.error('Error processing transaction');
-      return;
-    }
-
-    // Show feedback to user
-    openNotification({
-      title: `${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
-      hash: sellTx.hash,
-    });
-
-    return txReceipt;
   };
 
   const getBuyQuote = async (

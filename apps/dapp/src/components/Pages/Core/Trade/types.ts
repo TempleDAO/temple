@@ -26,6 +26,7 @@ export type SwapReducerAction =
   | { type: 'changeOutputTokenBalance'; value: number }
   | { type: 'startTx' }
   | { type: 'endTx' }
+  | { type: 'txSuccess' }
   | { type: 'slippageTooHigh' }
   | { type: 'disableFraxSell'; feiBalance: number }
   | { type: 'enableFraxSell'; fraxBalance: number };

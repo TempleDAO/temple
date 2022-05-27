@@ -5,7 +5,7 @@ import { Input } from 'components/Input/Input';
 import { Popover } from 'components/Popover';
 import Tooltip from 'components/Tooltip/Tooltip';
 
-import { limitDeadlineInput, limitSlippageInput } from './utils';
+import { limitInput, handleBlur } from './utils';
 
 export interface TransactionSettings {
   slippageTolerance: number;
@@ -17,18 +17,26 @@ interface IProps {
   onClose: () => void;
   onChange: (settings: TransactionSettings) => void;
   defaultSlippage?: number;
+  minSlippage?: number;
+  maxSlippage?: number;
   defaultDeadline?: number;
+  minDeadline?: number;
+  maxDeadline?: number;
 }
 
 export const TransactionSettingsModal: React.FC<IProps> = ({
   isOpen,
   onClose,
   onChange,
-  defaultSlippage = 1,
+  defaultSlippage = 0.5,
+  minSlippage = 0.1,
+  maxSlippage = 100,
   defaultDeadline = 20,
+  minDeadline = 3,
+  maxDeadline = 9999,
 }) => {
-  const [slippage, setSlippage] = useState(defaultSlippage);
-  const [deadline, setDeadline] = useState(defaultDeadline);
+  const [slippage, setSlippage] = useState<number | ''>(defaultSlippage);
+  const [deadline, setDeadline] = useState<number | ''>(defaultDeadline);
 
   const tooltipContent = (
     <TooltipContent>
@@ -52,11 +60,12 @@ export const TransactionSettingsModal: React.FC<IProps> = ({
       <Input
         crypto={{ kind: 'value', value: 'SLIPPAGE' }}
         hint="DEFAULT"
+        placeholder="0"
         onHintClick={() => {
           setSlippage(defaultSlippage);
           onChange({
             slippageTolerance: defaultSlippage,
-            deadlineMinutes: deadline,
+            deadlineMinutes: Number(deadline),
           });
         }}
         min={0}
@@ -65,11 +74,15 @@ export const TransactionSettingsModal: React.FC<IProps> = ({
         type={'number'}
         isNumber
         onChange={(e) => {
-          const numValue = limitSlippageInput(Number(e.target.value));
-          setSlippage(numValue);
+          const value = limitInput(e.target.value);
+          setSlippage(value);
+        }}
+        onBlur={() => {
+          const value = handleBlur(Number(slippage), minSlippage, maxSlippage, defaultSlippage);
+          setSlippage(value);
           onChange({
-            slippageTolerance: numValue,
-            deadlineMinutes: deadline,
+            slippageTolerance: value,
+            deadlineMinutes: Number(deadline),
           });
         }}
         small
@@ -82,7 +95,7 @@ export const TransactionSettingsModal: React.FC<IProps> = ({
         onHintClick={() => {
           setDeadline(defaultDeadline);
           onChange({
-            slippageTolerance: slippage,
+            slippageTolerance: Number(slippage),
             deadlineMinutes: defaultDeadline,
           });
         }}
@@ -91,11 +104,15 @@ export const TransactionSettingsModal: React.FC<IProps> = ({
         min={0}
         value={deadline}
         onChange={(e) => {
-          const numValue = limitDeadlineInput(Number(e.target.value));
-          setDeadline(numValue);
+          const value = limitInput(e.target.value);
+          setDeadline(value);
+        }}
+        onBlur={() => {
+          const value = handleBlur(Number(deadline), minDeadline, maxDeadline, defaultDeadline);
+          setDeadline(value);
           onChange({
-            slippageTolerance: slippage,
-            deadlineMinutes: numValue,
+            slippageTolerance: Number(slippage),
+            deadlineMinutes: value,
           });
         }}
         small
