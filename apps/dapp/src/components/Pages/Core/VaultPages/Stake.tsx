@@ -29,6 +29,15 @@ export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
   const { isConnected } = useWallet();
 
+  const {
+    options,
+    ticker,
+    setTicker,
+    balances,
+    stakingAmount,
+    setStakingAmount,
+  } = useStakeOptions();
+
   const [
     getFaithDepositMultiplier, 
     { response: faithDepositMultiplier, isLoading: faithMultiplierLoading },
@@ -42,10 +51,6 @@ export const Stake = () => {
       getVaultJoiningFee();
     }
   }, [isConnected, getVaultJoiningFee]);
-
-  // UI amount to stake
-  const [stakingAmount, setStakingAmount] = useState<string | number>('');
-  const { options, ticker, setTicker, balances } = useStakeOptions();
 
   const [getOGStakingValue, { response: stakingValue }] = useOGTempleStakingValue();
 
@@ -188,6 +193,7 @@ export const Stake = () => {
 const useStakeOptions = () => {
   const { balance: { temple, ogTemple } } = useWallet();
   const { faith: { usableFaith } } = useFaith();
+  const [stakingAmount, setStakingAmount] = useState<string | number>('');
 
   const options = [
     { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' },
@@ -207,6 +213,8 @@ const useStakeOptions = () => {
     options,
     ticker,
     setTicker,
+    stakingAmount,
+    setStakingAmount,
     balances: {
       faith: usableFaith,
       temple,
