@@ -130,6 +130,8 @@ contract OpsManager is Ownable {
 
     /**
      * @notice Add temple to vaults
+     * @dev expects both lists to be the same size, as we zip and process them
+     * as tuples
      */
     function increaseVaultTemple(Vault[] memory vaults, uint256[] memory amountsTemple) external {
         require(vaults.length == amountsTemple.length, "vaults and amounts array must be the same length");
@@ -142,6 +144,8 @@ contract OpsManager is Ownable {
 
     /**
      * @notice For the given vaults, liquidate their exposures back to temple
+     * @dev expects both lists to be the same size, as we zip and process them
+     * as tuples
      */
     function liquidateExposures(Vault[] memory vaults, IERC20[] memory exposureTokens) external {
         Exposure[] memory exposures = new Exposure[](exposureTokens.length);
