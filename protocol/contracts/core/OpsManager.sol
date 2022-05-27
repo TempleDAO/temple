@@ -129,6 +129,18 @@ contract OpsManager is Ownable {
     }
 
     /**
+     * @notice Add temple to vaults
+     */
+    function increaseVaultTemple(Vault[] memory vaults, uint256[] memory amountsTemple) external {
+        require(vaults.length == amountsTemple.length, "vaults and amounts array must be the same length");
+
+        for (uint256 i = 0; i < vaults.length; i++) {
+            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid vault in array");
+            templeExposure.mint(address(vaults[i]), amountsTemple[i]);
+        }
+    }
+
+    /**
      * @notice For the given vaults, liquidate their exposures back to temple
      */
     function liquidateExposures(Vault[] memory vaults, IERC20[] memory exposureTokens) external {
@@ -139,7 +151,7 @@ contract OpsManager is Ownable {
         }
 
         for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid/inactive vault in array");
+            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid vault in array");
             vaults[i].redeemExposures(exposures);
         }
     }
