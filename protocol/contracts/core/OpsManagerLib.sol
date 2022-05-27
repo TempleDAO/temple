@@ -30,7 +30,7 @@ library OpsManagerLib {
         Vault vault, 
         TreasuryFarmingRevenue farmingPool
     ) public {
-        require(!vault.inEnterExitWindow(), "FarmingRevenueMnager: Cannot rebalance vaults in their exit/entry window");
+        require(!vault.inEnterExitWindow(), "FarmingRevenueManager: Cannot rebalance vaults in their exit/entry window");
 
         uint256 currentRevenueShare = farmingPool.shares(address(vault));
         uint256 targetRevenueShare = vault.targetRevenueShare();

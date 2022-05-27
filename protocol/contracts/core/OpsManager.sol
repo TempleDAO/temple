@@ -87,7 +87,7 @@ contract OpsManager is Ownable {
         require(address(pools[exposureToken]) != address(0), "No exposure/revenue farming pool for the given ERC20 Token");
 
         for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
+            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid/inactive vault in array");
             OpsManagerLib.rebalance(vaults[i], pools[exposureToken]);
         }
     }
@@ -135,7 +135,7 @@ contract OpsManager is Ownable {
         }
 
         for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
+            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid/inactive vault in array");
             vaults[i].redeemExposures(exposures);
         }
     }
@@ -154,7 +154,7 @@ contract OpsManager is Ownable {
     /// change a set of vault's start time (so we can fast forward in and out of lock/unlock windows)
     function decreaseStartTime(Vault[] memory vaults, uint256 delta) external onlyOwner {
         for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
+            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid/inactive vault in array");
             vaults[i].decreaseStartTime(delta);
         }
     }
