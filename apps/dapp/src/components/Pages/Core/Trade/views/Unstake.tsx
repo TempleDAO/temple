@@ -42,7 +42,7 @@ export const Unstake = () => {
 
   return (
     <>
-      <Header>Unstake $OGTemple</Header>
+      <Header>Unstake {TICKER_SYMBOL.OG_TEMPLE_TOKEN}</Header>
       <InputWrapper>
         <Input
           crypto={{
