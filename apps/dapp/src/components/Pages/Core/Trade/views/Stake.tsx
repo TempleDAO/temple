@@ -39,7 +39,7 @@ export const Stake = () => {
     <div>
       <Header>
         <span>Stake $Temple</span>
-        <span>{formatNumber(treasuryMetrics?.templeApy || 0)}% apy</span>
+        <span>{formatNumber(treasuryMetrics?.templeApy || 0)}% APY</span>
       </Header>
       <InputWrapper>
         <Input
