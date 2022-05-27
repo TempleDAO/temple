@@ -20,6 +20,7 @@ contract OpsManager is Ownable {
     mapping(IERC20 => TreasuryFarmingRevenue) public pools;
     address[] public revalTokens;
     mapping(address => bool) public activeVaults;
+    address[] allVaults;
 
     IERC20 public immutable templeToken;
     JoiningFee public joiningFee;
@@ -75,7 +76,10 @@ contract OpsManager is Ownable {
             joiningFee,
             firstPeriodStartTimestamp
         );
+
         activeVaults[address(vault)] = true;
+        allVaults.push(address(vault));
+
         templeExposure.setMinterState(address(vault), true);
         emit CreateVaultInstance(address(vault));
     }
