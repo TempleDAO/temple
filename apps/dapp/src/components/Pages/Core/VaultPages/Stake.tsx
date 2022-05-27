@@ -21,6 +21,7 @@ import Tooltip from 'components/Tooltip/Tooltip';
 import { useFaith } from 'providers/FaithProvider';
 import { useFaithDepositMultiplier } from 'hooks/core/use-faith-deposit-multiplier';
 import EllipsisLoader from 'components/EllipsisLoader';
+import { useOGTempleStakingValue } from 'hooks/core/use-ogtemple-staking-value';
 
 const ENV = import.meta.env;
 
@@ -46,6 +47,8 @@ export const Stake = () => {
   const [stakingAmount, setStakingAmount] = useState<string | number>('');
   const { options, ticker, setTicker, balances } = useStakeOptions();
 
+  const [getOGStakingValue, { response: stakingValue }] = useOGTempleStakingValue();
+
   const [_, refreshBalance] = useVaultBalance(vault?.id);
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
   const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, async () => {
@@ -62,9 +65,14 @@ export const Stake = () => {
     
     setStakingAmount(amount === 0 ? '' : amount);
     
-    if (amount > 0 && ticker === TICKER_SYMBOL.FAITH && balances.faith > 0) {
-      // Get the faith bonus amount
+    if (amount < 0) {
+      return;
+    }
+
+    if (ticker === TICKER_SYMBOL.FAITH) {
       getFaithDepositMultiplier(amount);
+    } else if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
+      getOGStakingValue(amount);
     }
   };
 
@@ -81,27 +89,32 @@ export const Stake = () => {
     return 0;
   };
 
+
   const tokenBalance = getTokenBalanceForCurrentTicker();
-  const templeAmount = Number(stakingAmount || 0);
+  const numberStakingAmount = Number(stakingAmount || 0);
+  const stakeAmountExceedsTokenBalance = numberStakingAmount > tokenBalance;
 
   const stakeButtonDisabled =
     !isConnected ||
+    stakeAmountExceedsTokenBalance ||
     refreshIsLoading ||
-    !templeAmount ||
+    !numberStakingAmount ||
     depositLoading ||
     allowanceLoading;
 
   const error =
     !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
 
-  let faithBoostMessage: ReactNode = null;
-  if (ticker === TICKER_SYMBOL.FAITH && balances.faith > 0 && templeAmount > 0) {
+  let zapMessage: ReactNode = null;
+  if (ticker === TICKER_SYMBOL.FAITH && balances.faith > 0 && numberStakingAmount > 0) {
     if (faithMultiplierLoading) {
-      faithBoostMessage = <EllipsisLoader />;
+      zapMessage = <EllipsisLoader />;
     } else if (faithDepositMultiplier) {
-      const bonusAmount = faithDepositMultiplier - templeAmount;
-      faithBoostMessage = <>Burn all your FAITH ({balances.faith}) and receive {bonusAmount.toFixed(2)} bonus TEMPLE.</>
+      const bonusAmount = faithDepositMultiplier - numberStakingAmount;
+      zapMessage = <>Burn all your FAITH ({balances.faith}) and receive {bonusAmount.toFixed(2)} bonus TEMPLE.</>
     }
+  } else if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN && balances.ogTemple > 0 && (stakingValue || 0) > 0) {
+    zapMessage = <>Unstake {numberStakingAmount} OGTemple and deposit {stakingValue} TEMPLE.</>;
   }
 
   return (
@@ -132,8 +145,8 @@ export const Stake = () => {
         placeholder="0.00"
         value={stakingAmount}
       />
-      {!!faithBoostMessage && <AmountInTemple>{faithBoostMessage}</AmountInTemple>} 
-      {(joiningFee !== null && !!templeAmount) && (
+      {!stakeAmountExceedsTokenBalance && !!zapMessage && <AmountInTemple>{zapMessage}</AmountInTemple>} 
+      {(joiningFee !== null && !!numberStakingAmount) && (
         <JoiningFee>
           <Tooltip
             content="The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increases the further we are into the joining period."
@@ -141,7 +154,7 @@ export const Stake = () => {
           >
             Joining Fee{' '}
           </Tooltip>
-          : {joiningFee * templeAmount} $T
+          : {joiningFee * numberStakingAmount} $T
         </JoiningFee>
       )}
       {<ErrorLabel>{error}</ErrorLabel>}
@@ -173,7 +186,7 @@ export const Stake = () => {
 };
 
 const useStakeOptions = () => {
-  const { balance } = useWallet();
+  const { balance: { temple, ogTemple } } = useWallet();
   const { faith: { usableFaith } } = useFaith();
 
   const options = [
@@ -184,7 +197,7 @@ const useStakeOptions = () => {
     options.push({ value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' });
   }
 
-  if (balance.ogTemple > 0) {
+  if (ogTemple > 0) {
     options.push({ value: TICKER_SYMBOL.OG_TEMPLE_TOKEN, label: 'OGTemple' });
   }
 
@@ -196,8 +209,8 @@ const useStakeOptions = () => {
     setTicker,
     balances: {
       faith: usableFaith,
-      temple: balance.temple,
-      ogTemple: balance.ogTemple,
+      temple,
+      ogTemple,
     },
   };
 };
