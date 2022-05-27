@@ -38,7 +38,7 @@ export const Stake = () => {
   return (
     <div>
       <Header>
-        <span>Stake $Temple</span>
+        <span>Stake {TICKER_SYMBOL.TEMPLE_TOKEN}</span>
         <span>{formatNumber(treasuryMetrics?.templeApy || 0)}% APY</span>
       </Header>
       <InputWrapper>
