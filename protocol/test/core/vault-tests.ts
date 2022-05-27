@@ -3,11 +3,15 @@ import { expect } from "chai";
 import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, mineToTimestamp, toAtto } from "../helpers";
 import { Signer } from "ethers";
 import { 
+  Exposure,
+  Exposure__factory,
   IERC20,
   JoiningFee,
   JoiningFee__factory,
   TempleERC20Token, 
   Vault, 
+  VaultedTemple, 
+  VaultedTemple__factory, 
   Vault__factory
 } from "../../typechain";
 import { fail } from "assert";
@@ -15,6 +19,8 @@ import { mkRebasingERC20TestSuite } from "./rebasing-erc20-testsuite";
 
 describe("Temple Core Vault", async () => {
   let vault: Vault;
+  let templeExposure: Exposure;
+  let vaultedTemple: VaultedTemple;
   let templeToken: TempleERC20Token;
   let joiningFee: JoiningFee;
 
@@ -35,10 +41,24 @@ describe("Temple Core Vault", async () => {
         toAtto(1),
     );
 
+    templeExposure = await new Exposure__factory(owner).deploy(
+      "temple exposure",
+      "TPL-VAULT-EXPOSURE",
+      templeToken.address,
+      await owner.getAddress(),
+    )
+
+    vaultedTemple = await new VaultedTemple__factory(owner).deploy(
+      templeToken.address,
+      templeExposure.address
+    );
+
     vault = await new Vault__factory(owner).deploy(
         "Temple 1m Vault",
         "TV_1M",
         templeToken.address,
+        templeExposure.address,
+        vaultedTemple.address,
         60 * 10,
         60,
         { p: 1, q: 1},
@@ -126,6 +146,8 @@ describe("Temple Core Vault", async () => {
       "Temple 1m Vault",
       "TV_1M",
       templeToken.address,
+      templeExposure.address,
+      vaultedTemple.address,
       60 * 5,
       60,
       { p: 1, q: 1},
@@ -142,6 +164,8 @@ describe("Temple Core Vault", async () => {
       "Temple 1m Vault",
       "TV_1M",
       templeToken.address,
+      templeExposure.address,
+      vaultedTemple.address,
       60 * 5,
       60 * 5,
       { p: 1, q: 1},
@@ -160,6 +184,8 @@ describe("Temple Core Vault", async () => {
         "Temple 3m Vault",
         "TV_3M",
         templeToken.address,
+        templeExposure.address,
+        vaultedTemple.address,
         7776000,
         2592000,
         { p: 1, q: 1},
