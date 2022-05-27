@@ -65,7 +65,7 @@ export const Stake = () => {
     
     setStakingAmount(amount === 0 ? '' : amount);
     
-    if (amount < 0) {
+    if (amount <= 0) {
       return;
     }
 
@@ -145,7 +145,7 @@ export const Stake = () => {
         placeholder="0.00"
         value={stakingAmount}
       />
-      {!stakeAmountExceedsTokenBalance && !!zapMessage && <AmountInTemple>{zapMessage}</AmountInTemple>} 
+      {!stakeAmountExceedsTokenBalance && !!numberStakingAmount && !!zapMessage && <AmountInTemple>{zapMessage}</AmountInTemple>} 
       {(joiningFee !== null && !!numberStakingAmount) && (
         <JoiningFee>
           <Tooltip
