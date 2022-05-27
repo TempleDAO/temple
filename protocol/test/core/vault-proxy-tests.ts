@@ -20,7 +20,9 @@ import {
   Vault__factory,
   Faith__factory,
   Faith,
-  InstantExitQueue__factory
+  InstantExitQueue__factory,
+  Exposure__factory,
+  VaultedTemple__factory
 } from "../../typechain";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -100,10 +102,26 @@ describe("Vault Proxy", async () => {
           toAtto(0.0001),
       );
 
+      const templeExposure = await new Exposure__factory(owner).deploy(
+        "temple exposure",
+        "TPL-VAULT-EXPOSURE",
+        TEMPLE.address,
+        await owner.getAddress(),
+      )
+
+      const vaultedTemple = await new VaultedTemple__factory(owner).deploy(
+        TEMPLE.address,
+        templeExposure.address
+      );
+
+      await templeExposure.setLiqidator(vaultedTemple.address);
+
       vault = await new Vault__factory(owner).deploy(
           "Temple 1m Vault",
           "TV_1M",
           TEMPLE.address,
+          templeExposure.address,
+          vaultedTemple.address,
           60 * 10,
           60,
           { p: 1, q: 1},
