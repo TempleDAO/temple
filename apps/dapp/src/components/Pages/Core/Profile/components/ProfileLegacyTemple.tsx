@@ -47,7 +47,7 @@ export const ProfileLegacyTemple: React.FC<IProps> = ({
           darken
         />
         <StatsCard
-          label={TICKER_SYMBOL.FAITH}
+          label={`Usable ${TICKER_SYMBOL.FAITH}`}
           stat={formatTemple(faithBalance)}
           backgroundColor={background2}
           backgroundImageUrl={texture2}

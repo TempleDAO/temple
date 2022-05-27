@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 import { useAccount, useConnect, useNetwork } from 'wagmi';
 
-import { useWallet } from 'providers/WalletProvider';
 import { ConnectorPopover } from './ConnectorPopover';
 import TruncatedAddress from 'components/TruncatedAddress';
 import Loader from 'components/Loader/Loader';

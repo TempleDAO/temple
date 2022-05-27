@@ -15,6 +15,7 @@ import { Callback } from './types';
 import { useVaultContext, Operation } from 'components/Pages/Core/VaultContext';
 import { useVaultJoiningFee } from './use-vault-joining-fee';
 import { useFaith } from 'providers/FaithProvider';
+import { useFaithDepositMultiplier } from './use-faith-deposit-multiplier';
 
 const ENV = import.meta.env;
 
@@ -23,6 +24,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
   const { faith: { usableFaith } } = useFaith();
   const { optimisticallyUpdateVaultStaked, activeVault } = useVaultContext();
   const [getVaultJoiningFee] = useVaultJoiningFee(activeVault);
+  const [getFaithDepositMultiplier] = useFaithDepositMultiplier();
 
   const { openNotification } = useNotification();
 
@@ -51,8 +53,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
     // If the user is depositing with FAITH, the will get a boosted amount of TEMPLE deposited.
     // we need to calculate the deposit amount plus the amount of TEMPLE the FAITH converts to.
     if (token === TICKER_SYMBOL.FAITH) {
-      const templeWithFaithAmount = await vaultProxy.getFaithMultiplier(bigUsableFaith, bigAmount);
-      expectedDepositAmount = fromAtto(templeWithFaithAmount);
+      expectedDepositAmount = await getFaithDepositMultiplier(amount) || amount;
     }
 
     const fee = await getVaultJoiningFee() || 0;

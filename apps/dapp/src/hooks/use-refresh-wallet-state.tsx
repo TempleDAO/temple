@@ -13,8 +13,7 @@ export const useRefreshWalletState = (): [{ isLoading: boolean; }, () => Promise
   const { updateFaith } = useFaith();
   const {
     isConnected,
-    getBalance: updateBalance,
-    getCurrentEpoch: updateCurrentEpoch,
+    updateBalance,
   } = useWallet();
   const {
     updateApy,
@@ -32,7 +31,6 @@ export const useRefreshWalletState = (): [{ isLoading: boolean; }, () => Promise
     try {
       await Promise.all([
         updateTemplePrice(),
-        updateCurrentEpoch(),
         updateBalance(),
         updateFaith(), 
         updateLockedEntries(),
@@ -48,7 +46,6 @@ export const useRefreshWalletState = (): [{ isLoading: boolean; }, () => Promise
   }, [
     isConnected,
     updateTemplePrice,
-    updateCurrentEpoch,
     updateBalance,
     updateFaith,
     updateLockedEntries,

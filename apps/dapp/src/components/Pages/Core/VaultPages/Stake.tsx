@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
 import styled from 'styled-components';
 
 import { Option } from 'components/InputSelect/InputSelect';
@@ -18,17 +18,20 @@ import { useTokenVaultProxyAllowance } from 'hooks/core/use-token-vault-proxy-al
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
 import { useVaultJoiningFee } from 'hooks/core/use-vault-joining-fee';
 import Tooltip from 'components/Tooltip/Tooltip';
-
-const OPTIONS = [
-  { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' },
-  { value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' },
-];
+import { useFaith } from 'providers/FaithProvider';
+import { useFaithDepositMultiplier } from 'hooks/core/use-faith-deposit-multiplier';
+import EllipsisLoader from 'components/EllipsisLoader';
 
 const ENV = import.meta.env;
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
   const { balance, isConnected } = useWallet();
+
+  const [
+    getFaithDepositMultiplier, 
+    { response: faithDepositMultiplier, isLoading: faithMultiplierLoading },
+  ] = useFaithDepositMultiplier();
 
   const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] = useVaultJoiningFee(vault);
   const joiningFee = (!isConnected || joiningFeeLoading) ? null : (joiningFeeResponse || 0);
@@ -41,9 +44,7 @@ export const Stake = () => {
 
   // UI amount to stake
   const [stakingAmount, setStakingAmount] = useState<string | number>('');
-
-  // Currently selected token
-  const [ticker, setTicker] = useState<TICKER_SYMBOL>(OPTIONS[0].value as TICKER_SYMBOL);
+  const { options, ticker, setTicker, usableFaith } = useStakeOptions();
 
   const [_, refreshBalance] = useVaultBalance(vault?.id);
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
@@ -57,7 +58,14 @@ export const Stake = () => {
   );
   
   const handleUpdateStakingAmount = (value: number | string) => {
-    setStakingAmount(Number(value) === 0 ? '' : value);
+    const amount = Number(value || 0);
+    
+    setStakingAmount(amount);
+    
+    if (amount > 0 && ticker === TICKER_SYMBOL.FAITH && usableFaith > 0) {
+      // Get the faith bonus amount
+      getFaithDepositMultiplier(amount);
+    }
   };
 
   const getTokenBalanceForCurrentTicker = () => {
@@ -72,7 +80,7 @@ export const Stake = () => {
   };
 
   const tokenBalance = getTokenBalanceForCurrentTicker();
-  const templeAmount = stakingAmount || 0;
+  const templeAmount = Number(stakingAmount || 0);
 
   const stakeButtonDisabled =
     !isConnected ||
@@ -84,6 +92,16 @@ export const Stake = () => {
   const error =
     !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
 
+  let faithBoostMessage: ReactNode = null;
+  if (ticker === TICKER_SYMBOL.FAITH && usableFaith > 0 && templeAmount > 0) {
+    if (faithMultiplierLoading) {
+      faithBoostMessage = <EllipsisLoader />;
+    } else if (faithDepositMultiplier) {
+      const bonusAmount = faithDepositMultiplier - templeAmount;
+      faithBoostMessage = <>Burn all your FAITH ({usableFaith}) and receive {bonusAmount.toFixed(2)} bonus TEMPLE.</>
+    }
+  }
+
   return (
     <VaultContent>
       <Header>Stake</Header>
@@ -92,8 +110,8 @@ export const Stake = () => {
         <SelectContainer>
           <CryptoSelect
             isSearchable={false}
-            options={OPTIONS}
-            defaultValue={OPTIONS[0]}
+            options={options}
+            defaultValue={options[0]}
             onChange={(val: Option) => {
               setTicker(val.value as TICKER_SYMBOL);
               handleUpdateStakingAmount(0);
@@ -112,7 +130,8 @@ export const Stake = () => {
         placeholder="0.00"
         value={stakingAmount}
       />
-      {joiningFee !== null && (
+      {!!faithBoostMessage && <AmountInTemple>{faithBoostMessage}</AmountInTemple>} 
+      {(joiningFee !== null && !!templeAmount) && (
         <JoiningFee>
           <Tooltip
             content="The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increases the further we are into the joining period."
@@ -120,10 +139,10 @@ export const Stake = () => {
           >
             Joining Fee{' '}
           </Tooltip>
-          : {joiningFee} $T
+          : {joiningFee * templeAmount} $T
         </JoiningFee>
       )}
-      <ErrorLabel>{error}</ErrorLabel>
+      {<ErrorLabel>{error}</ErrorLabel>}
       {allowance === 0 && (
         <VaultButton
           label="Approve"
@@ -151,6 +170,28 @@ export const Stake = () => {
   );
 };
 
+const useStakeOptions = () => {
+  const { faith: { usableFaith } } = useFaith();
+
+  const options = [
+    { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' },
+  ];
+
+  if (usableFaith > 0) {
+    options.push({ value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' });
+  }
+
+  const [ticker, setTicker] = useState<TICKER_SYMBOL>(options[0].value as TICKER_SYMBOL);
+
+  return {
+    options,
+    ticker,
+    setTicker,
+    usableFaith,
+  };
+};
+
+
 const SelectContainer = styled.div`
   margin: 0 auto;
   width: 50%;
@@ -162,14 +203,13 @@ const SelectContainer = styled.div`
 const AmountInTemple = styled.span`
   color: ${theme.palette.brandLight};
   display: block;
-  margin: 1rem 0;
-  height: 1.5rem;
+  margin: 1rem 0 0;
 `;
 
 const ErrorLabel = styled.span`
   color: ${theme.palette.enclave.chaos};
   display: block;
-  margin: 1rem;
+  margin: 1rem 0 0;
 `;
 
 const DepositContainer = styled.div`
