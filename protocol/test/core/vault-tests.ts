@@ -66,6 +66,8 @@ describe("Temple Core Vault", async () => {
         await blockTimestamp()
     )
 
+    await templeExposure.setMinterState(vault.address, true);
+
     await templeToken.connect(alan).increaseAllowance(vault.address, toAtto(1000000));
     await templeToken.connect(ben).increaseAllowance(vault.address, toAtto(1000000));
   });
