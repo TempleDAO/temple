@@ -53,6 +53,8 @@ describe("Temple Core Vault", async () => {
       templeExposure.address
     );
 
+    await templeExposure.setLiqidator(vaultedTemple.address);
+
     vault = await new Vault__factory(owner).deploy(
         "Temple 1m Vault",
         "TV_1M",
@@ -95,7 +97,6 @@ describe("Temple Core Vault", async () => {
     await mineForwardSeconds(60);
     await expect(() => vault.connect(alan).withdraw(toAtto(50)))
         .to.changeTokenBalance(templeToken, alan, toAtto(50));
-
 
     // post buffer, can no longer withdraw
     await mineForwardSeconds(60 * 5);

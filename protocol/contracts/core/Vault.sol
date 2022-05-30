@@ -212,7 +212,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         require(inEnterExitWindow(), "Vault: Cannot exit vault when outside of enter/exit window");
 
         if (_amount > 0) {
-             _burn(_account, _amount);
+            _burn(_account, _amount);
         }
 
         templeExposureToken.redeemAmount(_amount, msg.sender);
