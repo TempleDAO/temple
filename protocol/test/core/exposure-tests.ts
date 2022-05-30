@@ -51,7 +51,7 @@ describe("Temple Core Exposures", async () => {
 
   it("Only owner or mint manager can set/change minter state", async () => {
     await expect(exposure.connect(alan).setMinterState(await ben.getAddress(), true))
-      .to.revertedWith("Exposure: caller is not a minter or owner");
+      .to.revertedWith("Exposure: caller is not a minter manager or owner");
 
     expect(await exposure.canMint(await ben.getAddress())).eq(false);
     await exposure.connect(minterManager).setMinterState(await ben.getAddress(), true)

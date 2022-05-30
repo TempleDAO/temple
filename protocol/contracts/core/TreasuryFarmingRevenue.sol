@@ -44,9 +44,8 @@ contract TreasuryFarmingRevenue is Ownable {
     /**
      * @dev increase revenue for a given token.
      *
-     * Operationally, must always balance shares before adding revenue, as
-     * any added revenue is automatically allocated to the current share
-     * breakdown
+     * Please ser, rebalance as many vaults as possible before adding revenue.
+     * Revenue is automatically allocated to the current share breakdown
      */
     function addRevenue(uint256 revenueEarned) onlyOwner public {
         lifetimeAccRevenueScaledByShare += revenueEarned * SCALING_FACTOR / totalShares;
