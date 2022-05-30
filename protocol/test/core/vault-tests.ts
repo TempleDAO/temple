@@ -69,6 +69,7 @@ describe("Temple Core Vault", async () => {
     )
 
     await templeExposure.setMinterState(vault.address, true);
+    await templeExposure.setMinterState(await owner.getAddress(), true);
 
     await templeToken.connect(alan).increaseAllowance(vault.address, toAtto(1000000));
     await templeToken.connect(ben).increaseAllowance(vault.address, toAtto(1000000));
@@ -128,8 +129,10 @@ describe("Temple Core Vault", async () => {
     await expect(() => vault.connect(alan).deposit(toAtto(100)))
       .to.changeTokenBalance(vault, alan, toAtto(100));
 
-    await expect(() => templeToken.transfer(vault.address, toAtto(100)))
-      .to.changeTokenBalance(vault, alan, toAtto(100));
+    await expect(async () => { 
+      await templeToken.transfer(vaultedTemple.address, toAtto(100))
+      await templeExposure.mint(vault.address, toAtto(100))
+    }).to.changeTokenBalance(vault, alan, toAtto(100));
 
     await expect(() => vault.connect(ben).deposit(toAtto(100)))
       .to.changeTokenBalance(vault, ben, toAtto(100));
