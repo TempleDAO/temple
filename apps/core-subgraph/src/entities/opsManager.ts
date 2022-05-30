@@ -1,14 +1,15 @@
 import { BigInt } from '@graphprotocol/graph-ts'
 
-import { OPS_MANAGER_LOCAL } from '../utils/constants'
 import { OpsManager } from '../../generated/schema'
+
+import { OPS_MANAGER } from '../utils/constants'
 
 
 export function getOpsManager(): OpsManager {
-  let opsManager = OpsManager.load(OPS_MANAGER_LOCAL)
+  let opsManager = OpsManager.load(OPS_MANAGER)
 
   if (opsManager === null) {
-    opsManager = new OpsManager(OPS_MANAGER_LOCAL)
+    opsManager = new OpsManager(OPS_MANAGER)
     opsManager.vaultGroups = []
     opsManager.exposures = []
     opsManager.treasuryFarmingRevenues = []

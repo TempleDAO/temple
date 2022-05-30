@@ -4,7 +4,7 @@ import { CreateExposure } from '../../generated/OpsManager/OpsManager'
 import { TreasuryFarmingRevenue } from '../../generated/schema'
 import { TreasuryFarmingRevenue as TreasuryFarmingRevenueContract } from '../../generated/OpsManager/TreasuryFarmingRevenue'
 
-import { BIG_DECIMAL_0, BIG_INT_0, BIG_INT_1 } from '../utils/constants'
+import { BIG_INT_0, BIG_INT_1 } from '../utils/constants'
 import { getExposure } from './exposure'
 import { getMetric, updateMetric } from './metric'
 
@@ -18,9 +18,9 @@ export function createTreasuryFarmingRevenue(event: CreateExposure): TreasuryFar
   tfr.timestamp = event.block.timestamp
 
   const tfrContract = TreasuryFarmingRevenueContract.bind(event.params.exposure)
-  let totalShares = tfrContract.totalShares()
+  const totalShares = tfrContract.totalShares()
   let lifetimeAccRevenueScaledByShare = BIG_INT_0
-  let lifetimeRevenue = tfrContract.try_lifetimeAccRevenueScaledByShare()
+  const lifetimeRevenue = tfrContract.try_lifetimeAccRevenueScaledByShare()
   if (!lifetimeRevenue.reverted) {
     lifetimeAccRevenueScaledByShare = lifetimeRevenue.value
   }
@@ -35,7 +35,7 @@ export function createTreasuryFarmingRevenue(event: CreateExposure): TreasuryFar
 }
 
 export function getTreasuryFarmingRevenue(address: Address): TreasuryFarmingRevenue {
-  let tfr = TreasuryFarmingRevenue.load(address.toHexString())
+  const tfr = TreasuryFarmingRevenue.load(address.toHexString())
 
   return tfr as TreasuryFarmingRevenue
 }

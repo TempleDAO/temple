@@ -1,11 +1,11 @@
 import { BigInt } from '@graphprotocol/graph-ts'
 
-import { BIG_DECIMAL_0, BIG_INT_1 } from '../utils/constants'
-
 import { VaultGroup, VaultGroupDayData } from '../../generated/schema'
+
 import { getMetric, updateMetric } from './metric'
 import { getOpsManager, updateOpsManager } from './opsManager'
 import { dayFromTimestamp } from '../utils/dates'
+import { BIG_INT_1 } from '../utils/constants'
 
 
 export function createVaultGroup(groupID: string, timestamp: BigInt): VaultGroup {
