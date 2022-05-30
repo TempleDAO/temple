@@ -32,6 +32,7 @@ contract OpsManager is Ownable {
         joiningFee = _joiningFee;
 
         templeExposure = new Exposure("vaulted temple", "V_TEMPLE", _templeToken, address(this));
+        templeExposure.setMinterState(address(this), true);
         vaultedTemple = new VaultedTemple(_templeToken, address(templeExposure));
         templeExposure.setLiqidator(vaultedTemple);
     }
