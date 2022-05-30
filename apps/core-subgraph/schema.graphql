@@ -62,6 +62,7 @@ type VaultGroup @entity {
   id: ID!
   timestamp: BigInt!
   tvl: BigDecimal!
+  volume: BigDecimal!
   opsManager: OpsManager!
   vaults: [Vault!]! @derivedFrom(field: "vaultGroup")
   vaultGroupDayDatas: [VaultGroupDayData!]! @derivedFrom(field: "vaultGroup")
@@ -72,6 +73,7 @@ type VaultGroupDayData @entity {
   timestamp: BigInt!
   vaultGroup: VaultGroup!
   tvl: BigDecimal!
+  volume: BigDecimal!
   opsManager: OpsManager!
 }
 
@@ -88,6 +90,7 @@ type Vault @entity {
   firstPeriodStartTimestamp: BigInt!
   users: [User!]!
   tvl: BigDecimal!
+  userCount: BigInt!
   vaultGroup: VaultGroup!
 }
 

@@ -3,9 +3,15 @@ import { BigInt } from '@graphprotocol/graph-ts'
 import { User, Vault, VaultUserBalance } from '../../generated/schema'
 
 import { BIG_DECIMAL_0 } from '../utils/constants'
+import { updateVault } from './vault'
 
 
 export function createVaultUserBalance(vault: Vault, user: User, timestamp: BigInt): VaultUserBalance {
+  const users = vault.users
+  users.push(user.id)
+  vault.users = users
+  updateVault(vault, timestamp)
+
   const vubID = vault.id + user.id
   const vub = new VaultUserBalance(vubID)
   vub.timestamp = timestamp

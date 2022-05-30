@@ -1,4 +1,4 @@
-import { Address, BigDecimal, ethereum } from '@graphprotocol/graph-ts'
+import { Address, ethereum } from '@graphprotocol/graph-ts'
 
 import { Deposit as DepositEvent } from '../../generated/OpsManager/Vault'
 import { Deposit } from '../../generated/schema'
@@ -10,34 +10,28 @@ import { toDecimal } from '../utils/decimals'
 import { getVault, updateVault } from './vault'
 import { getOrCreateVaultUserBalance, updateVaultUserBalance } from './vaultUserBalance'
 import { getVaultGroup, updateVaultGroup } from './vaultGroup'
-import { TEMPLE_LOCAL_ADDRESS } from '../utils/constants'
+import { BIG_DECIMAL_0, BIG_INT_1, TEMPLE_LOCAL_ADDRESS } from '../utils/constants'
 import { getTemplePrice } from '../utils/prices'
 
 
 export function createDeposit(event: DepositEvent): Deposit {
-  const metric = getMetric()
-
   const timestamp = event.block.timestamp
   const amount = toDecimal(event.params.amount, 18)
   const staked = toDecimal(event.params.amountStaked, 18)
-  metric.tvl = metric.tvl.plus(staked)
-  metric.volume = metric.volume.plus(amount)
-
   const tokenPrice = getTemplePrice()
-  metric.tvlUSD = metric.tvlUSD.plus(staked.times(tokenPrice))
-  metric.volumeUSD = metric.volumeUSD.plus(amount.times(tokenPrice))
-  updateMetric(metric, timestamp)
 
   const deposit = new Deposit(event.transaction.hash.toHexString())
   deposit.timestamp = timestamp
 
+  const token = getOrCreateToken(TEMPLE_LOCAL_ADDRESS, timestamp)
+  deposit.token = token.id
+
   const vault = getVault(event.address as Address)
   deposit.vault = vault.id
-  vault.tvl = vault.tvl.plus(staked)
-  updateVault(vault, timestamp)
 
   const vaultGroup = getVaultGroup(vault.name)
   vaultGroup.tvl = vaultGroup.tvl.plus(staked)
+  vaultGroup.volume = vaultGroup.volume.plus(staked)
   updateVaultGroup(vaultGroup, timestamp)
 
   const user = getOrCreateUser(event.params.account, timestamp)
@@ -46,25 +40,31 @@ export function createDeposit(event: DepositEvent): Deposit {
   user.totalBalance = user.totalBalance.plus(staked)
   updateUser(user, timestamp)
 
-  const token = getOrCreateToken(TEMPLE_LOCAL_ADDRESS, timestamp)
-  deposit.token = token.id
-
   const vub = getOrCreateVaultUserBalance(vault, user, timestamp)
-  vub.amount = vub.amount.plus(amount)
+  const oldStaked = vub.staked
   vub.staked = vub.staked.plus(staked)
+  vub.amount = vub.amount.plus(amount)
   vub.value = vub.value.plus(staked.times(tokenPrice))
   vub.token = token.id
   updateVaultUserBalance(vub, timestamp)
+
+  vault.tvl = vault.tvl.plus(staked)
+  if (oldStaked == BIG_DECIMAL_0) {
+    vault.userCount = vault.userCount.plus(BIG_INT_1)
+  }
+  updateVault(vault, timestamp)
+
+  const metric = getMetric()
+  metric.tvl = metric.tvl.plus(staked)
+  metric.volume = metric.volume.plus(amount)
+  metric.tvlUSD = metric.tvlUSD.plus(staked.times(tokenPrice))
+  metric.volumeUSD = metric.volumeUSD.plus(amount.times(tokenPrice))
+  updateMetric(metric, timestamp)
 
   deposit.amount = amount
   deposit.staked = staked
   deposit.value = staked.times(tokenPrice)
   deposit.save()
-
-  const users = vault.users
-  users.push(user.id)
-  vault.users = users
-  updateVault(vault, timestamp)
 
   return deposit as Deposit
 }
