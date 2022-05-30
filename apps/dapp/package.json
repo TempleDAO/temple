@@ -20,6 +20,9 @@
     "test:synpress:open": "env-cmd -f .env.local synpress open"
   },
   "dependencies": {
+    "@sentry/integrations": "^7.0.0",
+    "@sentry/react": "^7.0.0",
+    "@sentry/tracing": "^7.0.0",
     "@tippyjs/react": "^4.2.6",
     "axios": "^0.24.0",
     "buffer": "^6.0.3",

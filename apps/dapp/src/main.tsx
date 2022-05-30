@@ -2,8 +2,11 @@ import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { GlobalStyle } from 'styles/GlobalStyle';
+import * as Sentry from '@sentry/react';
+import { BrowserTracing } from '@sentry/tracing';
+import { CaptureConsole } from '@sentry/integrations';
 
+import { GlobalStyle } from 'styles/GlobalStyle';
 import { AppProvider } from 'providers/AppProvider';
 
 import NotificationManager from 'components/Notification/NotificationManager';
@@ -26,6 +29,8 @@ import { Summary } from 'components/Pages/Core/VaultPages/Summary';
 import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
 import TradeRoutes from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
+
+import env from 'constants/env';
 
 // Separate Chunks
 const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
@@ -58,6 +63,20 @@ const LazyPage = ({ component: Component }: LazyPageProps) => (
     <Component />
   </Suspense>
 );
+
+if (env.sentry) {
+  Sentry.init({
+    dsn: env.sentry.dsn,
+    integrations: [
+      new BrowserTracing(),
+      new CaptureConsole({
+        levels: ['error'],
+      }),
+    ],
+    tracesSampleRate: 0.2,
+    environment: env.sentry.environment,
+  });
+}
 
 ReactDOM.render(
   <React.StrictMode>
