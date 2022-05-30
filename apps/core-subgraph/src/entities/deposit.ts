@@ -1,7 +1,6 @@
 import { Address, BigDecimal, ethereum } from '@graphprotocol/graph-ts'
 
-import { BIG_DECIMAL_0, BIG_INT_1, TEMPLE_LOCAL_ADDRESS } from '../utils/constants'
-import { Deposit as DepositEvent, Deposit__Params } from '../../generated/OpsManager/Vault'
+import { Deposit as DepositEvent } from '../../generated/OpsManager/Vault'
 import { Deposit } from '../../generated/schema'
 
 import { getMetric, updateMetric } from './metric'
@@ -11,18 +10,20 @@ import { toDecimal } from '../utils/decimals'
 import { getVault, updateVault } from './vault'
 import { getOrCreateVaultUserBalance, updateVaultUserBalance } from './vaultUserBalance'
 import { getVaultGroup, updateVaultGroup } from './vaultGroup'
+import { TEMPLE_LOCAL_ADDRESS } from '../utils/constants'
+import { getTemplePrice } from '../utils/prices'
 
 
 export function createDeposit(event: DepositEvent): Deposit {
   const metric = getMetric()
 
-  let timestamp = event.block.timestamp
-  let amount = toDecimal(event.params.amount, 18)
-  let staked = toDecimal(event.params.amountStaked, 18)
+  const timestamp = event.block.timestamp
+  const amount = toDecimal(event.params.amount, 18)
+  const staked = toDecimal(event.params.amountStaked, 18)
   metric.tvl = metric.tvl.plus(staked)
   metric.volume = metric.volume.plus(amount)
 
-  let tokenPrice = BigDecimal.fromString('0.69')
+  const tokenPrice = getTemplePrice()
   metric.tvlUSD = metric.tvlUSD.plus(staked.times(tokenPrice))
   metric.volumeUSD = metric.volumeUSD.plus(amount.times(tokenPrice))
   updateMetric(metric, timestamp)
@@ -48,7 +49,7 @@ export function createDeposit(event: DepositEvent): Deposit {
   const token = getOrCreateToken(TEMPLE_LOCAL_ADDRESS, timestamp)
   deposit.token = token.id
 
-  let vub = getOrCreateVaultUserBalance(vault, user, timestamp)
+  const vub = getOrCreateVaultUserBalance(vault, user, timestamp)
   vub.amount = vub.amount.plus(amount)
   vub.staked = vub.staked.plus(staked)
   vub.value = vub.value.plus(staked.times(tokenPrice))
@@ -60,7 +61,7 @@ export function createDeposit(event: DepositEvent): Deposit {
   deposit.value = staked.times(tokenPrice)
   deposit.save()
 
-  let users = vault.users
+  const users = vault.users
   users.push(user.id)
   vault.users = users
   updateVault(vault, timestamp)
@@ -69,7 +70,7 @@ export function createDeposit(event: DepositEvent): Deposit {
 }
 
 export function getDeposit(eth_transaction: ethereum.Transaction): Deposit {
-  let deposit = Deposit.load(eth_transaction.hash.toHexString())
+  const deposit = Deposit.load(eth_transaction.hash.toHexString())
 
   return deposit as Deposit
 }
