@@ -25,7 +25,7 @@ contract Exposure is Ownable, RebasingERC20 {
     mapping(address => bool) public canMint;
 
     /// @dev actor that can add/remove minters
-    address public canManageMinters;
+    address public minterManager;
 
     /// @dev if set, automatically liquidates position and transfers temple
     /// minted as a result to the appropriate vault
@@ -40,9 +40,9 @@ contract Exposure is Ownable, RebasingERC20 {
      * All two of these values are immutable: they can only be set once during
      * construction.
      */
-    constructor(string memory _name, string memory _symbol, IERC20 _revalToken, address _canManageMinters) ERC20(_name, _symbol) { 
+    constructor(string memory _name, string memory _symbol, IERC20 _revalToken, address _minterManager) ERC20(_name, _symbol) {
         revalToken = _revalToken;
-        canManageMinters = _canManageMinters;
+        minterManager = _minterManager;
     }
 
     /**
@@ -84,7 +84,7 @@ contract Exposure is Ownable, RebasingERC20 {
 
     /**
      * @notice Generate new strategy shares
-     * 
+     *
      * @dev Only callable by minters. Increases a minters share of
      * a strategy
      */
@@ -143,7 +143,7 @@ contract Exposure is Ownable, RebasingERC20 {
      * Throws if called by an actor that cannot manage minters
      */
     modifier onlyMinterManager() {
-        require(msg.sender == canManageMinters || msg.sender == owner(), "Exposure: caller is not a minter or owner");
+        require(msg.sender == minterManager || msg.sender == owner(), "Exposure: caller is not a minter manager or owner");
         _;
     }
 
