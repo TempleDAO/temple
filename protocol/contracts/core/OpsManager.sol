@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Exposure.sol";
 import "./TreasuryFarmingRevenue.sol";
 import "./Vault.sol";
+import "./VaultedTemple.sol";
 import "./Rational.sol";
 import "./JoiningFee.sol";
 import "./OpsManagerLib.sol";
@@ -17,26 +18,34 @@ import "hardhat/console.sol";
  */
 contract OpsManager is Ownable {
     mapping(IERC20 => TreasuryFarmingRevenue) public pools;
-    Exposure[] public activeExposures;
+    address[] public revalTokens;
     mapping(address => bool) public activeVaults;
+    address[] allVaults;
 
-    IERC20 public templeToken;
+    IERC20 public immutable templeToken;
     JoiningFee public joiningFee;
+    Exposure public templeExposure;
+    VaultedTemple public vaultedTemple;
 
     constructor(IERC20 _templeToken, JoiningFee _joiningFee) {
         templeToken = _templeToken;
         joiningFee = _joiningFee;
+
+        templeExposure = new Exposure("vaulted temple", "V_TEMPLE", _templeToken, address(this));
+        vaultedTemple = new VaultedTemple(_templeToken, address(templeExposure));
+        templeExposure.setLiqidator(vaultedTemple);
     }
 
     /**
-     * @notice Create a new Exposure
+     * @notice Create a new Exposure + associated pool
      */
     function createExposure(
         string memory name,
         string memory symbol,
         IERC20 revalToken
     ) external onlyOwner  {
-        Exposure exposure = OpsManagerLib.createExposure(name, symbol, revalToken, activeExposures, pools);
+        Exposure exposure = OpsManagerLib.createExposure(name, symbol, revalToken, pools);
+        revalTokens.push(address(revalToken));
         emit CreateExposure(address(exposure), address(pools[revalToken]));
     }
 
@@ -55,8 +64,23 @@ contract OpsManager is Ownable {
         Rational memory shareBoostFactory,
         uint256 firstPeriodStartTimestamp
     ) external onlyOwner {
-        Vault vault = new Vault(name, symbol, templeToken, periodDuration, enterExitWindowDuration, shareBoostFactory, joiningFee, firstPeriodStartTimestamp);
+        Vault vault = new Vault(
+            name, 
+            symbol,
+            templeToken,
+            templeExposure,
+            address(vaultedTemple),
+            periodDuration,
+            enterExitWindowDuration,
+            shareBoostFactory,
+            joiningFee,
+            firstPeriodStartTimestamp
+        );
+
         activeVaults[address(vault)] = true;
+        allVaults.push(address(vault));
+
+        templeExposure.setMinterState(address(vault), true);
         emit CreateVaultInstance(address(vault));
     }
 
@@ -67,7 +91,7 @@ contract OpsManager is Ownable {
         require(address(pools[exposureToken]) != address(0), "No exposure/revenue farming pool for the given ERC20 Token");
 
         for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
+            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid/inactive vault in array");
             OpsManagerLib.rebalance(vaults[i], pools[exposureToken]);
         }
     }
@@ -105,7 +129,23 @@ contract OpsManager is Ownable {
     }
 
     /**
+     * @notice Add temple to vaults
+     * @dev expects both lists to be the same size, as we zip and process them
+     * as tuples
+     */
+    function increaseVaultTemple(Vault[] memory vaults, uint256[] memory amountsTemple) external {
+        require(vaults.length == amountsTemple.length, "vaults and amounts array must be the same length");
+
+        for (uint256 i = 0; i < vaults.length; i++) {
+            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid vault in array");
+            templeExposure.mint(address(vaults[i]), amountsTemple[i]);
+        }
+    }
+
+    /**
      * @notice For the given vaults, liquidate their exposures back to temple
+     * @dev expects both lists to be the same size, as we zip and process them
+     * as tuples
      */
     function liquidateExposures(Vault[] memory vaults, IERC20[] memory exposureTokens) external {
         Exposure[] memory exposures = new Exposure[](exposureTokens.length);
@@ -115,7 +155,7 @@ contract OpsManager is Ownable {
         }
 
         for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
+            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid vault in array");
             vaults[i].redeemExposures(exposures);
         }
     }
@@ -134,7 +174,7 @@ contract OpsManager is Ownable {
     /// change a set of vault's start time (so we can fast forward in and out of lock/unlock windows)
     function decreaseStartTime(Vault[] memory vaults, uint256 delta) external onlyOwner {
         for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueMnager: invalid/inactive vault in array");
+            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid/inactive vault in array");
             vaults[i].decreaseStartTime(delta);
         }
     }

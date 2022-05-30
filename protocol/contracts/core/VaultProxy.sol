@@ -60,7 +60,7 @@ contract VaultProxy {
         uint256 boostedAmount = getFaithMultiplier(_amountFaith, _amountTemple);
         SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amountTemple);
         SafeERC20.safeIncreaseAllowance(temple, address(vault), boostedAmount);
-        vault.depositFor(address(this), msg.sender, boostedAmount);
+        vault.depositFor(msg.sender, boostedAmount);
     }
     
     /**
@@ -80,7 +80,7 @@ contract VaultProxy {
         require(templeAfterBalance > templeBeforeBalance, "Vault Proxy: no Temple received when unstaking");
 
         SafeERC20.safeIncreaseAllowance(temple, address(vault), expectedTemple);
-        vault.depositFor(address(this), msg.sender, expectedTemple);
+        vault.depositFor(msg.sender, expectedTemple);
     }
 
     /**
@@ -90,7 +90,7 @@ contract VaultProxy {
     function depositTempleFor(uint256 _amount, Vault vault) public {
         SafeERC20.safeIncreaseAllowance(temple, address(vault), _amount);
         SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amount);
-        vault.depositFor(address(this), msg.sender, _amount);
+        vault.depositFor(msg.sender, _amount);
     }
 
     //todo add escape hatch for ERC20 in this contract
