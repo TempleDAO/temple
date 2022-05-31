@@ -12,6 +12,26 @@ If developing on Windows, some scripts are currently written in bash so WSL is r
 
 This project uses yarn workspaces to share common dependencies between all the applications. Before attempting to run any of the apps, you'll want to run `yarn install` from the root of the project. 
 
+### Quick Start 
+
+**This script is still experimental so your mileage may vary**
+
+At the root of the project, running `yarn run:stack` will attempt to:  
+* compile the contracts
+* run a local hardhat node 
+* deploy the contracts to said node
+* copy deployed contract addresses to dapps config file
+* copy hardhat factories into the dapp 
+* run the dapp in dev mode
+
+The script groups the child processes so issuing a single `SIGINT` (ctrl+c) should stop all the processes. 
+
+Requirements:  
+* bash
+* rsync
+* sed
+* grep
+
 ### Contracts (/Protocol)
 #### Local Deployment
 The protocol app uses hardhat for development. The following steps will compile the contracts and deploy to a local hardhat node

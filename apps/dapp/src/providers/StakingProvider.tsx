@@ -1,11 +1,10 @@
-import React, {
+import {
   useState,
   createContext,
   useContext,
   PropsWithChildren,
 } from 'react';
-import { BigNumber } from 'ethers';
-import { JsonRpcSigner } from '@ethersproject/providers';
+import { BigNumber, ethers, Signer } from 'ethers';
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
 import { getEpochsToDays } from 'providers/util';
@@ -81,7 +80,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
   const { wallet, signer, updateBalance, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
 
-  const getApy = async (walletAddress: string, signerState: JsonRpcSigner) => {
+  const getApy = async (walletAddress: string, signerState: Signer) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
@@ -97,7 +96,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
   const getRewardsForOGTemple = async (
     walletAddress: string,
-    signerState: JsonRpcSigner,
+    signerState: Signer,
     ogtAmount: number
   ) => {
     if (!walletAddress) {
@@ -113,7 +112,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
   const getLockedEntries = async (
     walletAddress: string,
-    signerState: JsonRpcSigner
+    signerState: Signer
   ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
@@ -158,7 +157,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
   const getExitQueueData = async (
     walletAddress: string,
-    signerState: JsonRpcSigner
+    signerState: Signer
   ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
@@ -233,15 +232,6 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
       totalTempleOwned,
       claimableEpochs,
     };
-  };
-
-  const updateExitQueueData = async () => {
-    if (!wallet || !signer) {
-      return;
-    }
-
-    const exitQueueData = await getExitQueueData(wallet, signer);
-    setExitQueueData(exitQueueData);
   };
 
   const updateApy = async () => {
@@ -438,7 +428,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         await unstakeTXN.wait();
         // Show feedback to user
         openNotification({
-          title: `Queue joined`,
+          title: 'Unstake successful',
           hash: unstakeTXN.hash,
         });
       } catch (e) {
@@ -513,6 +503,15 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         hash: withdrawTXN.hash,
       });
     }
+  };
+
+  const updateExitQueueData = async () => {
+    if (!wallet || !signer) {
+      return;
+    }
+
+    // const exitQueueData = await getExitQueueData(wallet, signer);
+    // setExitQueueData(exitQueueData);
   };
 
   return (

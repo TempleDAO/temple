@@ -1,0 +1,7 @@
+'ds-test/=lib/ds-test/src/',
+'@openzeppelin=lib/openzeppelin-contracts/',
+'@uniswap/lib/contracts/=lib/solidity-lib/contracts/',
+'@uniswap/v2-core/contracts/=lib/v2-core/contracts/',
+'@uniswap/v2-periphery/contracts/=lib/v2-periphery/contracts/',
+'@uniswap/v3-core/contracts/=lib/v3-core/contracts/',
+'@uniswap/v3-periphery/contracts/=lib/v3-periphery/contracts/'

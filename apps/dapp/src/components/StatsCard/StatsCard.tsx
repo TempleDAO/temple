@@ -1,12 +1,14 @@
-//@ts-nocheck
-import React from 'react';
-import styled from 'styled-components';
+// @ts-nocheck
+import { ReactChild } from 'react';
+import styled, { css } from 'styled-components';
 import { transparentize } from 'polished';
+
+import Loader from 'components/Loader/Loader';
 
 interface StatsCardProps {
   className?: string;
   label?: string;
-  stat: string;
+  stat: string | number;
   fontColor?: string;
   statDelta?: number;
   backgroundColor?: string;
@@ -14,6 +16,10 @@ interface StatsCardProps {
   description?: ReactChild;
   darken?: boolean;
   heightPercentage?: number;
+  smallStatFont?: boolean;
+  isSquare?: boolean;
+  height?: string;
+  isLoading?: boolean;
 }
 
 const StatsCard = ({
@@ -27,6 +33,10 @@ const StatsCard = ({
   description,
   darken,
   heightPercentage,
+  smallStatFont,
+  isSquare = true,
+  height = '100%',
+  isLoading = false,
 }: StatsCardProps) => {
   const deltaLabel = `${statDelta >= 0 ? '▲' : '▼'} ${(statDelta * 100).toFixed(
     2
@@ -34,20 +44,32 @@ const StatsCard = ({
 
   return (
     <FlexCol className={className}>
-      <SquareWrapper heightPercentage={heightPercentage}>
+      <SquareWrapper
+        heightPercentage={heightPercentage}
+        isSquare={isSquare}
+        height={height}
+      >
         <CardStyled
           backgroundColor={backgroundColor}
           backgroundImageUrl={backgroundImageUrl}
           fontColor={fontColor}
           darken={darken}
+          isSquare={isSquare}
+          height={height}
         >
-          <div>
-            {statDelta && <Pill fontColor={fontColor}>{deltaLabel}</Pill>}
-          </div>
-          <div>
-            {label ? <StatLabel>{label.toUpperCase()}</StatLabel> : null}
-            <Stat>{stat?.toString().toUpperCase()}</Stat>
-          </div>
+          {isLoading ? <Loader /> : (
+            <>
+              <div>
+                {statDelta && <Pill fontColor={fontColor}>{deltaLabel}</Pill>}
+              </div>
+              <div>
+                {label ? <StatLabel>{label.toUpperCase()}</StatLabel> : null}
+                <Stat smallFont={smallStatFont}>
+                  {stat?.toString().toUpperCase()}
+                </Stat>
+              </div>
+            </>
+          )}
         </CardStyled>
       </SquareWrapper>
       {description ? (
@@ -60,6 +82,8 @@ const StatsCard = ({
 interface CardWrapperProps {
   background?: string;
   fontColor?: string;
+  isSquare?: boolean;
+  height?: string;
 }
 
 const FlexCol = styled.div`
@@ -71,7 +95,7 @@ const FlexCol = styled.div`
 const CardStyled = styled.div<CardWrapperProps>`
   position: absolute;
   width: 100%;
-  height: 100%;
+  height: ${({ isSquare, height }) => (isSquare ? '100%' : height)};
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -93,10 +117,15 @@ const CardStyled = styled.div<CardWrapperProps>`
   border: 1px solid ${(props) => props.theme.palette.brand};
 `;
 
-const SquareWrapper = styled.div`
+const SquareWrapper = styled.div<{ isSquare: boolean; height: string }>`
   position: relative;
   width: 100%;
-  padding-bottom: ${(props) => props.heightPercentage || '100'}%;
+  height: ${({ height }) =>  height};
+  ${({ isSquare }) =>
+    isSquare &&
+    css`
+      padding-bottom: ${(props) => props.heightPercentage || '100'}%;
+    `}
 `;
 
 const Pill = styled.div`
@@ -108,8 +137,9 @@ const Pill = styled.div`
   ${(props) => props.theme.typography.meta};
 `;
 
-const Stat = styled.strong`
-  ${(props) => props.theme.typography.h2};
+const Stat = styled.strong<{ smallFont?: boolean }>`
+  ${(props) =>
+    props.smallFont ? props.theme.typography.h4 : props.theme.typography.h2};
   font-weight: 900;
   display: block;
   width: 100%;

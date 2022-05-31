@@ -1,10 +1,10 @@
-import { JsonRpcSigner } from '@ethersproject/providers';
+import { useEffect, useState } from 'react';
+import styled from 'styled-components';
+import { Signer } from 'ethers';
+
 import devotionImage from 'assets/images/DEVOTION.svg';
-import growthImage from 'assets/images/GROWTH.svg';
 import Image from 'components/Image/Image';
 import { useWallet } from 'providers/WalletProvider';
-import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
 import { Devotion__factory } from 'types/typechain';
 
 const ENV_VARS = import.meta.env;
@@ -27,7 +27,7 @@ const DevotionCTA = () => {
   const { signer } = useWallet();
   const [devotionActive, setDevotionActive] = useState(false);
 
-  const getStatus = async (signer: JsonRpcSigner) => {
+  const getStatus = async (signer: Signer) => {
     const DEVOTION = new Devotion__factory(signer).attach(
       TEMPLE_DEVOTION_ADDRESS
     );
@@ -39,7 +39,9 @@ const DevotionCTA = () => {
   };
 
   useEffect(() => {
-    if (signer) getStatus(signer);
+    if (signer) {
+      getStatus(signer);
+    }
   }, [signer]);
 
   return (

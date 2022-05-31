@@ -1,12 +1,15 @@
-import React, { HTMLProps, useState } from 'react';
+import { HTMLProps, useState } from 'react';
 import styled, { css } from 'styled-components';
 
 import Loader from '../Loader/Loader';
 import useIsMounted from 'hooks/use-is-mounted';
 
-export interface ButtonProps extends ButtonStyledProps, HTMLProps<HTMLButtonElement> {
+export interface ButtonProps
+  extends ButtonStyledProps,
+    HTMLProps<HTMLButtonElement> {
   type?: 'submit' | 'reset' | 'button' | undefined;
-  label: string;
+  label?: string;
+  loading?: boolean; 
 
   onClick?(): Promise<void> | void;
 }
@@ -21,6 +24,8 @@ export const Button = ({
   isSmall = false,
   isUppercase = false,
   showArrow,
+  children,
+  loading: externalLoading,
   ...props
 }: ButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -60,6 +65,8 @@ export const Button = ({
     }
   };
 
+  const loading = externalLoading || isLoading;
+  const buttonContent = label || children;
   return (
     // @ts-ignore expected multiple children
     <ButtonStyled
@@ -70,12 +77,12 @@ export const Button = ({
       showArrow={showArrow}
       {...props}
     >
-      {isLoading ? (
+      {loading ? (
         <Loader iconSize={32} />
       ) : (
         <>
           <ButtonLabel isUppercase={isUppercase} isSmall={isSmall}>
-            {label}
+            {buttonContent}
           </ButtonLabel>
           {showArrow && <i>&#10146;</i>}
         </>

@@ -19,16 +19,7 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberWithCommas } from 'utils/formatter';
 import { Nullable } from 'types/util';
 
-export interface DiscordUser {
-  user_id: string;
-  user_name: string;
-  guild_name: string;
-  enclave: string;
-  engagementlast7days: string;
-  engagementlast30days: string;
-  engagementalltime: SVGStringList;
-  roles: string[];
-}
+import { DiscordUser } from 'hooks/use-discord-data';
 
 const ENV_VARS = import.meta.env;
 const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL;
@@ -189,12 +180,12 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
                   <RightAlign hidden={!discordData}>
                     <ProfileMetric
                       label={`Activity 7 Days`}
-                      value={`${discordData?.engagementlast7days}`}
+                      value={`${discordData?.engagementLast7Days}`}
                     />
 
                     <ProfileMetric
                       label={`Activity All Time`}
-                      value={`${discordData?.engagementalltime}`}
+                      value={`${discordData?.engagementAllTime}`}
                     />
                   </RightAlign>
                 </DiscordMetricsContainer>
@@ -209,7 +200,7 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
                 alignItems: 'center',
               }}
             >
-              <ProfileHeader username={discordData?.guild_name} />
+              <ProfileHeader username={discordData?.guildName} />
               <AccessoriesTemplate
                 enclave={discordData?.enclave?.toLowerCase() || ''}
               />

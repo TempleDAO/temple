@@ -1,9 +1,11 @@
-import { JsonRpcSigner, Network } from '@ethersproject/providers';
-import { BigNumber } from 'ethers';
-import { ERC20 } from 'types/typechain';
+import { Network } from '@ethersproject/providers';
+import { BigNumber, ContractReceipt, Signer } from 'ethers';
+
+import { Nullable } from 'types/util';
 import { ClaimType } from 'enums/claim-type';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
@@ -20,7 +22,7 @@ export enum ETH_ACTIONS {
 }
 
 export type Balance = {
-  stableCoin: number;
+  frax: number;
   temple: number;
   fei: number;
   ogTempleLocked: number;
@@ -120,40 +122,40 @@ export interface SwapService {
   buy(
     amountIn: BigNumber,
     minAmountOutTemple: BigNumber,
-    stablecoinAddress?: string
-  ): void;
+    token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI,
+    deadlineInMinutes?: number
+  ): Promise<ContractReceipt | void>;
 
   sell(
     amountInTemple: BigNumber,
-    minAmountOutFrax: BigNumber,
-    isIvSwap: boolean,
-    stablecoinAddress?: string
-  ): void;
+    minAmountOut: BigNumber,
+    token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI,
+    isIvSwap?: boolean,
+    deadlineInMinutes?: number
+  ): Promise<ContractReceipt | void>;
 
   getSellQuote(
     amountToSell: BigNumber,
-    buyTokenAddress?: string
-  ): Promise<BigNumber | void>;
+    token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI
+  ): Promise<{ amountOut: BigNumber; priceBelowIV: boolean } | void>;
 
-  getBuyQuote(
-    amountIn: BigNumber,
-    sellTokenAddress?: string
-  ): Promise<BigNumber | void>;
+  getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<BigNumber | void>;
 
-  updateTemplePrice(selectedToken?: string): Promise<void>;
+  updateTemplePrice(token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<void>;
 
   updateIv(): Promise<void>;
 }
 
 export interface WalletState {
   // has the user connected a wallet to the dapp
-  wallet: string | null;
+  wallet: Nullable<string>;
   // current
   balance: Balance;
-  signer: JsonRpcSigner | null;
-  network: Network | null;
+  signer: Nullable<Signer>;
+  network: Nullable<Network>;
 
-  isConnected(): boolean;
+  isConnecting: boolean;
+  isConnected: boolean;
 
   connectWallet(): void;
 
@@ -165,15 +167,14 @@ export interface WalletState {
 
   updateBalance(): Promise<void>;
 
-  getCurrentEpoch(): Promise<void | number>;
+  updateBalance(): Promise<void>;
 
-  collectTempleTeamPayment(
-    epoch: TEAM_PAYMENTS_EPOCHS
-  ): Promise<void | TransactionReceipt>;
+  collectTempleTeamPayment(epoch: TEAM_PAYMENTS_EPOCHS): Promise<void | TransactionReceipt>;
 
   ensureAllowance(
     tokenName: string,
-    token: ERC20,
+    // Should be ERC20, need to update Typechain (fix is in 8.0.x)
+    erc20Token: any,
     spender: string,
     minAllowance: BigNumber
   ): Promise<void>;

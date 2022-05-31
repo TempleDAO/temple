@@ -5,6 +5,9 @@ import caviarDreams from 'assets/fonts/CaviarDreams/CaviarDreams.ttf';
 import caviarDreamsBold from 'assets/fonts/CaviarDreams/CaviarDreams_Bold.ttf';
 import caviarDreamsBoldItalic from 'assets/fonts/CaviarDreams/CaviarDreams_BoldItalic.ttf';
 import caviarDreamsItalic from 'assets/fonts/CaviarDreams/CaviarDreams_Italic.ttf';
+import { tabletAndAbove } from './breakpoints';
+
+export const ROOT_FONT_SIZE = 16;
 
 export const GlobalStyle = createGlobalStyle`
 
@@ -19,7 +22,7 @@ export const GlobalStyle = createGlobalStyle`
 
   @font-face {
     font-family: "Caviar Dreams";
-    src: url(${caviarDreams});i
+    src: url(${caviarDreams});
     font-style: normal;
     font-weight: 400;
     font-display: swap;
@@ -61,11 +64,16 @@ export const GlobalStyle = createGlobalStyle`
   body {
     font-family: Caviar Dreams, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
     Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-    font-size: 16px;
+    font-size: ${ROOT_FONT_SIZE}px;
     background-color: ${theme.palette.dark};
     color: ${theme.palette.light};
     overflow-x: hidden;
     margin: 0px;
+    min-height: 100vh;
+    min-width: 320px;
+    ${tabletAndAbove(`
+      min-width: 100vw;
+    `)}
   }
 
   h1,
@@ -86,7 +94,6 @@ export const GlobalStyle = createGlobalStyle`
   h2 {
     font-size: 2.25rem /* 36/16 */;
     line-height: 4.1875rem /* 67/16 */;
-    margin-bottom: 3rem  /* 48/16 */
   }
 
   h3 {
@@ -154,19 +161,19 @@ export const GlobalStyle = createGlobalStyle`
     &-brand {
       color: ${theme.palette.brand};
     }
-    
+
     &-brandLight {
       color: ${theme.palette.brandLight};
     }
-    
+
     &-brandDark {
       color: ${theme.palette.brandDark};
     }
-    
+
     &-brandDarker {
       color: ${theme.palette.brandDarker};
     }
-    
+
     &-dark {
       color: ${theme.palette.dark};
     }
@@ -189,4 +196,33 @@ export const GlobalStyle = createGlobalStyle`
     }
   }
 
+  // Scrollbars
+  /* width */
+  ::-webkit-scrollbar {
+    width: 0.375rem  /* 6/16 */;
+  }
+
+  /* Track */
+  ::-webkit-scrollbar-track {
+    width: 1px;
+    box-shadow: inset 0 0 0.3125rem  /* 5/16 */ ${theme.palette.light50};
+    border-radius: 0.3125rem  /* 5/16 */;
+  }
+
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background-color: ${theme.palette.brand};
+    box-shadow: 0 0 0.25rem  /* 4/16 */ ${theme.palette.brandDark};
+    border-radius: 0.1875rem  /* 3/16 */;
+  }
+
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: ${theme.palette.brandDark};
+  }
+
+  // Tippy arrow global style
+  .tippy-svg-arrow {
+    fill: ${theme.palette.brand};
+  }
 `;

@@ -1,30 +1,33 @@
 import React, { InputHTMLAttributes, KeyboardEvent } from 'react';
 import styled, { css } from 'styled-components';
-import {
-  InputSelect,
-  Option,
-  SelectTempleDaoOptions,
-} from '../InputSelect/InputSelect';
+import { phoneAndAbove, tabletAndAbove } from 'styles/breakpoints';
+import { theme } from 'styles/theme';
+import { InputSelect, Option, SelectTempleDaoOptions } from '../InputSelect/InputSelect';
 
+import divider from 'assets/images/divider.svg';
+import { pixelsToRems } from 'styles/mixins';
 interface SizeProps {
   small?: boolean;
 }
-interface CryptoSelector {
+
+export interface CryptoSelector {
   kind: 'select';
   // A selector for the crypto, must provide onCryptoChange
   cryptoOptions: SelectTempleDaoOptions;
   defaultValue?: Option;
+  // use to limit the number of elements shown in the selector at anytime
+  maxSelectorItems?: number;
 
   // Callback for cryptoSelector value change
-  onCryptoChange?(e: Option): void;
+  onCryptoChange?(option: Option): void;
 }
 
-interface CryptoValue {
+export interface CryptoValue {
   kind: 'value';
   value: string;
 }
 
-interface InputProps extends SizeProps, InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends SizeProps, InputHTMLAttributes<HTMLInputElement> {
   // extra information for the input
   hint?: string;
   // options for the crypto in the input
@@ -34,14 +37,11 @@ interface InputProps extends SizeProps, InputHTMLAttributes<HTMLInputElement> {
   isNumber?: boolean;
 
   // Callback for input value change
-  handleChange?(value: number): void;
+  handleChange?(value: number | string): void;
 
   onHintClick?(): void;
-
-  // Sets styling for the two inputs that are paired
-  // in the buy/sell amm
-  pairTop?: boolean;
-  pairBottom?: boolean;
+  hasDivider?: boolean;
+  suffix?: string;
 }
 
 /**
@@ -57,8 +57,8 @@ export const Input = ({
   value,
   disabled,
   small,
-  pairTop,
-  pairBottom,
+  hasDivider,
+  suffix,
   ...props
 }: InputProps) => {
   const renderCrypto = () => {
@@ -67,16 +67,17 @@ export const Input = ({
     }
 
     if (crypto.kind === 'value') {
-      return <Ticker small={small}>{crypto.value}</Ticker>;
+      return <Ticker>{crypto.value}</Ticker>;
     }
     if (crypto.kind === 'select') {
-      const { cryptoOptions, defaultValue, onCryptoChange } = crypto;
+      const { cryptoOptions, defaultValue, onCryptoChange, maxSelectorItems } = crypto;
       return (
         <InputSelect
           options={cryptoOptions}
           defaultValue={defaultValue}
           onChange={onCryptoChange}
           isSmall={small}
+          maxMenuItems={maxSelectorItems}
         />
       );
     }
@@ -119,12 +120,22 @@ export const Input = ({
   };
 
   return (
-    <InputWrapper
-      isDisabled={disabled}
-      small={small}
-      pairTop={pairTop}
-      pairBottom={pairBottom}
-    >
+    <InputWrapper isDisabled={disabled} small={small}>
+      <InputTokenWrapper small={small}>
+        {renderCrypto()}
+        {hint && (
+          <InputHint
+            hasAction={!!onHintClick}
+            onClick={() => {
+              if (onHintClick) onHintClick();
+            }}
+          >
+            {hint}
+          </InputHint>
+        )}
+      </InputTokenWrapper>
+      {hasDivider && <Divider />}
+
       <InputStyled
         small={small}
         onChange={handleInputChange}
@@ -132,81 +143,77 @@ export const Input = ({
         type={type}
         value={value}
         disabled={disabled}
+        suffix={suffix}
         {...props}
       />
-      <InputCrypto isSmall={small}>{renderCrypto()}</InputCrypto>
-      {hint && (
-        <InputHint
-          hasAction={!!onHintClick}
-          onClick={() => {
-            if (onHintClick) onHintClick();
-          }}
-        >
-          {hint}
-        </InputHint>
-      )}
+      {suffix && <Suffix small={small}>{suffix}</Suffix>}
     </InputWrapper>
   );
 };
 
 interface InputWrapperProps extends SizeProps {
   isDisabled?: boolean;
-  pairTop?: boolean;
-  pairBottom?: boolean;
 }
 
 export const InputWrapper = styled.div<InputWrapperProps>`
+  display: flex;
   position: relative;
   margin-bottom: 0.2rem;
-  padding: 0 2rem /* 12/16 */;
-  background-color: ${(props) => props.theme.palette.brand25};
-  height: ${({ small }) => (small ? '4' : '4.75')}rem;
-  border: 0.0625rem /* 1/16 */ solid ${(props) => props.theme.palette.brand};
+  padding: 0.7rem 0.5rem;
+  background-color: ${(props) => props.theme.palette.dark};
+  height: ${({ small }) => (small ? '4rem' : '5.5rem')};
+
+  border: 0.125rem /* 2/16 */ solid ${(props) => props.theme.palette.brand};
   // width will be manage by layout case by case
   width: 100%;
-  ${(props) => {
-    const margin = props.small ? '-13px' : '-18px';
-    if (props.pairTop) {
-      return css`
-        margin-bottom: ${margin};
-        color: pink;
-      `;
-    }
-    if (props.pairBottom) {
-      return css`
-        margin-top: ${margin};
-        color: blue;
-      `;
-    }
-  }}}
+  border-radius: 1rem;
+
+  ${tabletAndAbove(`
+    padding: 0.7rem 1.5rem;
+  `)}
+
+  ${({ small }) =>
+    small &&
+    css`
+      padding: 0.5rem;
+
+      ${tabletAndAbove(`
+        padding: 0.5rem;
+      `)}
+    `}
 
   ${(props) =>
     props.isDisabled &&
     css`
-      background-color: ${(props) => props.theme.palette.dark};
+      background-color: ${(props) => props.theme.palette.brand25};
     `}
 `;
 
-export const InputCrypto = styled.div<{ isSmall?: boolean }>`
-  position: absolute;
-  top: 0.5rem /* 6/16 */;
-  left: 2rem;
-  text-align: left;
-  width: 10.5rem;
-
-  h3 {
-    margin: 0;
-    width: auto;
+const InputTokenWrapper = styled.div<SizeProps>`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: 9.25rem;
+  min-width: ${pixelsToRems(120)}rem;
+  p {
+    font-size: 1.25rem;
+    margin-top: 0.55rem;
   }
 
-  & > * {
-    line-height: 1;
-  }
-
-  .Select__control {
-    margin-top: ${({ isSmall }) => (isSmall ? '-0.625rem' : '-0.375rem')};
-    margin-right: ${({ isSmall }) => (isSmall ? '3rem' : '-0.375rem')};
-  }
+  ${({ small }) =>
+    small &&
+    css`
+      align-items: left;
+      width: unset;
+      min-width: unset;
+      padding: 0.25rem;
+      p {
+        font-size: 1rem;
+        margin: 0;
+      }
+    `}
 `;
 
 interface InputHintProps {
@@ -214,31 +221,43 @@ interface InputHintProps {
 }
 
 export const InputHint = styled.small<InputHintProps>`
-  position: absolute;
-  bottom: 0.75rem /* 12/16 */;
-  left: 2rem;
-  color: ${(props) => props.theme.palette.light};
+  color: ${theme.palette.brandLight};
+  font-size: ${pixelsToRems(10)}rem;
+  text-align: center;
+  text-transform: uppercase;
+  width: max-content;
+
   ${(props) =>
     props.hasAction &&
     css`
       background-color: ${(props) => props.theme.palette.brand50};
-      padding: 0.0625rem /* 1/16 */ 0.25rem /* 4/16 */;
       border-radius: 0.25em;
+      padding: 0.0625rem 0.25rem;
       cursor: pointer;
     `}
 `;
 
-export const InputStyled = styled.input<SizeProps>`
+interface InputStyledProps extends SizeProps {
+  suffix?: string;
+}
+
+export const InputStyled = styled.input<InputStyledProps>`
   // common
-  color: ${(props) => props.theme.palette.light};
+  ${theme.typography.h3};
+  color: ${theme.palette.brandLight};
   background-color: transparent;
   border: none;
-  ${(props) => props.theme.typography.h3};
   outline: none;
   width: 100%;
   height: 100%;
   text-align: right;
+  padding-left: 1.5rem;
+
   ${({ small }) => small && `font-size: 1.5rem`};
+  ${({ suffix, small }) =>
+    suffix &&
+    `padding-right:
+    ${small ? `${suffix.length / 1.2}em` : `${suffix.length / 1.5}em`}`};
 
   // remove input number controls ^ v
   &[type='number']::-webkit-inner-spin-button,
@@ -246,10 +265,38 @@ export const InputStyled = styled.input<SizeProps>`
     appearance: none;
     margin: 0;
   }
+
   appearance: textfield;
 `;
 
-const Ticker = styled.h3<SizeProps>`
-  display: inline-block;
-  ${({ small }) => small && 'font-size: 1.2rem'};
+const Ticker = styled.p`
+  margin: 0;
+  color: ${theme.palette.brandLight};
+  font-weight: bold;
+`;
+
+const Divider = styled.div`
+  display: none;
+  position: absolute;
+  width: ${pixelsToRems(10)}rem;
+  height: 80%;
+  left: ${pixelsToRems(160)}rem;
+  top: 10%;
+  bottom: 10%;
+  background: url(${divider});
+  background-repeat: no-repeat;
+  background-size: cover;
+
+  ${phoneAndAbove(`
+    display: inline-block;
+  `)};
+`;
+
+const Suffix = styled.p<SizeProps>`
+  ${theme.typography.h3};
+  color: ${theme.palette.brandLight};
+  ${({ small }) => small && `font-size: 1rem`};
+  position: absolute;
+  bottom: ${({ small }) => (small ? `0.1rem` : '0.8rem')};
+  right: 0.75rem;
 `;
