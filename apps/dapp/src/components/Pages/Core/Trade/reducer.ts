@@ -128,6 +128,13 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
             : state.buttonLabel,
       };
 
+    case 'setError': {
+      return {
+        ...state,
+        error: action.value,
+      };
+    }
+
     default:
       console.error('Invalid reducer action: ', action);
       return state;

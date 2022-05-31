@@ -20,10 +20,11 @@ export function useSwapController() {
   const { wallet } = useWallet();
   const [state, dispatch] = useReducer(swapReducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
-  const { getBuyQuote, getSellQuote, templePrice, updateTemplePrice, buy, sell, iv, updateIv } = useSwap();
+  const { getBuyQuote, getSellQuote, templePrice, updateTemplePrice, buy, sell, iv, updateIv, error } = useSwap();
 
   useEffect(() => {
     const onMount = async () => {
+      console.log('wallet connected');
       await updateBalance();
       await updateTemplePrice();
       await updateIv();
@@ -34,6 +35,15 @@ export function useSwapController() {
           fraxBalance: balance.frax,
         });
       }
+
+      dispatch({
+        type: 'changeInputTokenBalance',
+        value: getTokenBalance(state.inputToken),
+      });
+      dispatch({
+        type: 'changeOutputTokenBalance',
+        value: getTokenBalance(state.outputToken),
+      });
     };
     onMount();
   }, [wallet]);
@@ -48,6 +58,19 @@ export function useSwapController() {
       value: getTokenBalance(state.outputToken),
     });
   }, [state.mode, balance]);
+
+  useEffect(() => {
+    const setErrorMessage = () => {
+      if (wallet) {
+        dispatch({
+          type: 'setError',
+          value: error,
+        });
+      }
+    };
+
+    setErrorMessage();
+  }, [error]);
 
   // Handles selection of a new value in the select dropdown
   const handleSelectChange = (event: Option) => {

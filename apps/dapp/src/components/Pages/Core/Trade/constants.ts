@@ -29,4 +29,5 @@ export const INITIAL_STATE: SwapReducerState = {
   isTransactionPending: false,
   isSlippageTooHigh: false,
   isFraxSellDisabled: true,
+  error: null,
 };
