@@ -143,6 +143,8 @@ export interface SwapService {
   updateTemplePrice(token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<void>;
 
   updateIv(): Promise<void>;
+
+  error: Error | null;
 }
 
 export interface WalletState {

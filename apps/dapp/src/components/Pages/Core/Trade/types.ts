@@ -29,7 +29,8 @@ export type SwapReducerAction =
   | { type: 'txSuccess' }
   | { type: 'slippageTooHigh' }
   | { type: 'disableFraxSell'; feiBalance: number }
-  | { type: 'enableFraxSell'; fraxBalance: number };
+  | { type: 'enableFraxSell'; fraxBalance: number }
+  | { type: 'setError'; value: Error | null };
 
 export interface SwapReducerState {
   /*forceRefreshNonce: number;*/
@@ -48,4 +49,5 @@ export interface SwapReducerState {
   isTransactionPending: boolean;
   isSlippageTooHigh: boolean;
   isFraxSellDisabled: boolean;
+  error: Error | null;
 }

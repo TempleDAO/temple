@@ -8,7 +8,16 @@ import { useSwapController } from '../use-swap-controller';
 
 import { formatNumberWithCommas } from 'utils/formatter';
 
-import { SwapContainer, InputsContainer, SettingsButton, Spacer, InvertButton, CtaButton, Header } from '../styles';
+import {
+  SwapContainer,
+  InputsContainer,
+  SettingsButton,
+  Spacer,
+  InvertButton,
+  CtaButton,
+  Header,
+  ErrorLabel,
+} from '../styles';
 
 export const Trade = () => {
   const {
@@ -74,6 +83,7 @@ export const Trade = () => {
           disabled={isButtonDisabled}
         />
       </SwapContainer>
+      {state.error && <ErrorLabel>{state.error.message}</ErrorLabel>}
     </>
   );
 };
