@@ -3,10 +3,10 @@ import styled from 'styled-components';
 const StrategyContainer = styled.div`
   color: #ffdec9;
   font-size: 1.5rem;
-  margin: 30px 20px 0px 20px;
-  height: 300px;
+  margin: 1.875rem 1.25rem 0rem 1.25rem;
+  height: 18.75rem;
   text-align: left;
-  padding: 10px;
+  padding: 0.625rem;
   overflow-x: hidden;
   overflow-y: scroll;
 `;

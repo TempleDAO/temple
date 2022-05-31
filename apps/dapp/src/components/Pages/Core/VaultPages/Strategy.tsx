@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import VaultContent from 'components/Pages/Core/VaultPages/VaultContent';
 
@@ -11,6 +11,12 @@ export const Strategy = () => {
   const { vaultGroup } = useVaultContext();
   const id = vaultGroup.id;
   const strategyContent = strategies[id] || DefaultText;
+  
+  useEffect(() => {
+    if (strategyContent === DefaultText) {
+      console.error(`Programming Error: Falling back to default strategy text for vault ${id}`);
+    }
+ }, [strategyContent, id]);
 
   return (
     <VaultContent>
