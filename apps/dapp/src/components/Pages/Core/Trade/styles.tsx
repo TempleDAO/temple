@@ -2,11 +2,13 @@ import styled from 'styled-components';
 
 import { VaultButton } from '../VaultPages/VaultContent';
 import { NAV_MOBILE_HEIGHT_PIXELS, NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
+
 import arrow from 'assets/icons/amm-arrow.svg';
+import Gear from 'assets/icons/gear.svg';
+
 import { pixelsToRems } from 'styles/mixins';
 import { phoneAndAbove } from 'styles/breakpoints';
-
-import Gear from 'assets/icons/gear.svg';
+import { theme } from 'styles/theme';
 
 export const Container = styled.section`
   margin-top: ${pixelsToRems(NAV_MOBILE_HEIGHT_PIXELS)}rem;
@@ -96,4 +98,15 @@ export const Header = styled.h3`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+`;
+
+export const ErrorLabel = styled.span`
+  color: ${theme.palette.enclave.chaos};
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  width: 95vw;
+  max-width: 36rem;
+  margin: 1rem 0;
+  text-align: center;
 `;
