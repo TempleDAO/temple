@@ -93,7 +93,6 @@ const NotificationStyled = styled.div<NotificationStyledProps>`
     `}
   h5 {
     text-overflow: ellipsis;
-    white-space: nowrap;
     overflow: hidden;
     margin: 0 0 1rem;
   }
