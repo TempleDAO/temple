@@ -17,7 +17,7 @@ import {
 export const Unstake = () => {
   const { balance } = useWallet();
   const [_, refreshWallet] = useRefreshWalletState();
-  const [unstakeAmount, setUnstakeAmount] = useState<string | number>('');
+  const [unstakeAmount, setUnstakeAmount] = useState<string>('');
   const [unstake, { isLoading: unstakeLoading }] = useUnstakeOGTemple(() => {
     refreshWallet();
     setUnstakeAmount('');
@@ -28,11 +28,11 @@ export const Unstake = () => {
     if (numberAmount === 0) {
       setUnstakeAmount('');
     } else {
-      setUnstakeAmount(numberAmount);
+      setUnstakeAmount(amount);
     }
   };
 
-  const numberAmount = Number(unstakeAmount || 0);
+  const numberAmount = parseFloat(unstakeAmount || '0');
   const buttonIsDisabled = (
     unstakeLoading || 
     !unstakeAmount || 
@@ -53,7 +53,7 @@ export const Unstake = () => {
           isNumber
           value={unstakeAmount}
           placeholder="0"
-          onHintClick={() => setUnstakeAmount(balance.ogTemple)}
+          onHintClick={() => setUnstakeAmount(`${balance.ogTemple}`)}
           min={0}
           hint={`Balance: ${formatNumberWithCommas(balance.ogTemple)}`}
         />
