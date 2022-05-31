@@ -65,10 +65,11 @@ export const Stake = () => {
     ticker,
   );
   
-  const handleUpdateStakingAmount = (value: number | string) => {
-    const amount = Number(value || 0);
+  const handleUpdateStakingAmount = (_value: string | number) => {
+    const value = _value as string; // value is actually only ever going to be string
+    const amount = parseFloat(value || '0');
     
-    setStakingAmount(amount === 0 ? '' : amount);
+    setStakingAmount(amount === 0 ? '' : value);
     
     if (amount <= 0) {
       return;
@@ -96,7 +97,7 @@ export const Stake = () => {
 
 
   const tokenBalance = getTokenBalanceForCurrentTicker();
-  const numberStakingAmount = Number(stakingAmount || 0);
+  const numberStakingAmount = stakingAmount ? parseFloat(stakingAmount) : 0;
   const stakeAmountExceedsTokenBalance = numberStakingAmount > tokenBalance;
 
   const stakeButtonDisabled =
@@ -180,7 +181,7 @@ export const Stake = () => {
           disabled={stakeButtonDisabled}
           loading={refreshIsLoading || depositLoading}
           onClick={async () => {
-            const amountToDeposit = !stakingAmount ? 0 : Number(stakingAmount);
+            const amountToDeposit = !stakingAmount ? 0 : parseFloat(stakingAmount);
             await deposit(ticker, amountToDeposit);
             setStakingAmount('');
           }}
@@ -193,7 +194,7 @@ export const Stake = () => {
 const useStakeOptions = () => {
   const { balance: { temple, ogTemple } } = useWallet();
   const { faith: { usableFaith } } = useFaith();
-  const [stakingAmount, setStakingAmount] = useState<string | number>('');
+  const [stakingAmount, setStakingAmount] = useState('');
 
   const options = [
     { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' },
