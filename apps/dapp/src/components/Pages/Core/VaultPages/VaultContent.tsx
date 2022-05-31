@@ -22,7 +22,7 @@ const BaseVaultButton = styled(Button).attrs(
   align-self: center;
   margin-top: ${(props) => props.marginTop || '0rem'};
   border-radius: 12px;
-  letter-spacing: 0.5rem;
+  letter-spacing: 0.4rem;
   text-transform: uppercase;
   width: auto;
   transition: none;
@@ -36,6 +36,7 @@ export const VaultButton = (props: ComponentProps<typeof BaseVaultButton>) => {
     return (
       <BaseVaultButton
         disabled
+        marginTop={props.marginTop}
         label="Connect Wallet"
       />
     );
