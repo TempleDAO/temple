@@ -67,7 +67,7 @@ export const Stake = () => {
   
   const handleUpdateStakingAmount = (_value: string | number) => {
     const value = _value as string; // value is actually only ever going to be string
-    const amount = parseFloat(value);
+    const amount = parseFloat(value || '0');
     
     setStakingAmount(amount === 0 ? '' : value);
     
