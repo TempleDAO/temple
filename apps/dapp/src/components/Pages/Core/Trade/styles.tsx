@@ -105,7 +105,8 @@ export const ErrorLabel = styled.span`
   display: inline-block;
   max-width: 100%;
   overflow: hidden;
-  width: 80vw;
-  max-width: ${pixelsToRems(550)}rem;
-  margin: 1rem auto;
+  width: 95vw;
+  max-width: 36rem;
+  margin: 1rem 0;
+  text-align: center;
 `;
