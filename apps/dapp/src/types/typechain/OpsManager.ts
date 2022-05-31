@@ -27,12 +27,12 @@ export type RationalStructOutput = [BigNumber, BigNumber] & {
 export interface OpsManagerInterface extends utils.Interface {
   contractName: "OpsManager";
   functions: {
-    "activeExposures(uint256)": FunctionFragment;
     "activeVaults(address)": FunctionFragment;
     "addRevenue(address[],uint256[])": FunctionFragment;
     "createExposure(string,string,address)": FunctionFragment;
     "createVaultInstance(string,string,uint256,uint256,(uint256,uint256),uint256)": FunctionFragment;
     "decreaseStartTime(address[],uint256)": FunctionFragment;
+    "increaseVaultTemple(address[],uint256[])": FunctionFragment;
     "joiningFee()": FunctionFragment;
     "liquidateExposures(address[],address[])": FunctionFragment;
     "owner()": FunctionFragment;
@@ -40,15 +40,14 @@ export interface OpsManagerInterface extends utils.Interface {
     "rebalance(address[],address)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "requiresRebalance(address[],address)": FunctionFragment;
+    "revalTokens(uint256)": FunctionFragment;
+    "templeExposure()": FunctionFragment;
     "templeToken()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
     "updateExposureReval(address[],uint256[])": FunctionFragment;
+    "vaultedTemple()": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "activeExposures",
-    values: [BigNumberish]
-  ): string;
   encodeFunctionData(
     functionFragment: "activeVaults",
     values: [string]
@@ -77,6 +76,10 @@ export interface OpsManagerInterface extends utils.Interface {
     values: [string[], BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "increaseVaultTemple",
+    values: [string[], BigNumberish[]]
+  ): string;
+  encodeFunctionData(
     functionFragment: "joiningFee",
     values?: undefined
   ): string;
@@ -99,6 +102,14 @@ export interface OpsManagerInterface extends utils.Interface {
     values: [string[], string]
   ): string;
   encodeFunctionData(
+    functionFragment: "revalTokens",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "templeExposure",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "templeToken",
     values?: undefined
   ): string;
@@ -110,11 +121,11 @@ export interface OpsManagerInterface extends utils.Interface {
     functionFragment: "updateExposureReval",
     values: [string[], BigNumberish[]]
   ): string;
+  encodeFunctionData(
+    functionFragment: "vaultedTemple",
+    values?: undefined
+  ): string;
 
-  decodeFunctionResult(
-    functionFragment: "activeExposures",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "activeVaults",
     data: BytesLike
@@ -130,6 +141,10 @@ export interface OpsManagerInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "decreaseStartTime",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "increaseVaultTemple",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "joiningFee", data: BytesLike): Result;
@@ -149,6 +164,14 @@ export interface OpsManagerInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "revalTokens",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "templeExposure",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "templeToken",
     data: BytesLike
   ): Result;
@@ -158,6 +181,10 @@ export interface OpsManagerInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "updateExposureReval",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "vaultedTemple",
     data: BytesLike
   ): Result;
 
@@ -220,11 +247,6 @@ export interface OpsManager extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
-    activeExposures(
-      arg0: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[string]>;
-
     activeVaults(arg0: string, overrides?: CallOverrides): Promise<[boolean]>;
 
     addRevenue(
@@ -256,6 +278,12 @@ export interface OpsManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    increaseVaultTemple(
+      vaults: string[],
+      amountsTemple: BigNumberish[],
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     joiningFee(overrides?: CallOverrides): Promise<[string]>;
 
     liquidateExposures(
@@ -284,6 +312,13 @@ export interface OpsManager extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[boolean[]]>;
 
+    revalTokens(
+      arg0: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[string]>;
+
+    templeExposure(overrides?: CallOverrides): Promise<[string]>;
+
     templeToken(overrides?: CallOverrides): Promise<[string]>;
 
     transferOwnership(
@@ -296,12 +331,9 @@ export interface OpsManager extends BaseContract {
       revals: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-  };
 
-  activeExposures(
-    arg0: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<string>;
+    vaultedTemple(overrides?: CallOverrides): Promise<[string]>;
+  };
 
   activeVaults(arg0: string, overrides?: CallOverrides): Promise<boolean>;
 
@@ -334,6 +366,12 @@ export interface OpsManager extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  increaseVaultTemple(
+    vaults: string[],
+    amountsTemple: BigNumberish[],
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   joiningFee(overrides?: CallOverrides): Promise<string>;
 
   liquidateExposures(
@@ -362,6 +400,10 @@ export interface OpsManager extends BaseContract {
     overrides?: CallOverrides
   ): Promise<boolean[]>;
 
+  revalTokens(arg0: BigNumberish, overrides?: CallOverrides): Promise<string>;
+
+  templeExposure(overrides?: CallOverrides): Promise<string>;
+
   templeToken(overrides?: CallOverrides): Promise<string>;
 
   transferOwnership(
@@ -375,12 +417,9 @@ export interface OpsManager extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  callStatic: {
-    activeExposures(
-      arg0: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<string>;
+  vaultedTemple(overrides?: CallOverrides): Promise<string>;
 
+  callStatic: {
     activeVaults(arg0: string, overrides?: CallOverrides): Promise<boolean>;
 
     addRevenue(
@@ -412,6 +451,12 @@ export interface OpsManager extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    increaseVaultTemple(
+      vaults: string[],
+      amountsTemple: BigNumberish[],
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     joiningFee(overrides?: CallOverrides): Promise<string>;
 
     liquidateExposures(
@@ -438,6 +483,10 @@ export interface OpsManager extends BaseContract {
       overrides?: CallOverrides
     ): Promise<boolean[]>;
 
+    revalTokens(arg0: BigNumberish, overrides?: CallOverrides): Promise<string>;
+
+    templeExposure(overrides?: CallOverrides): Promise<string>;
+
     templeToken(overrides?: CallOverrides): Promise<string>;
 
     transferOwnership(
@@ -450,6 +499,8 @@ export interface OpsManager extends BaseContract {
       revals: BigNumberish[],
       overrides?: CallOverrides
     ): Promise<void>;
+
+    vaultedTemple(overrides?: CallOverrides): Promise<string>;
   };
 
   filters: {
@@ -478,11 +529,6 @@ export interface OpsManager extends BaseContract {
   };
 
   estimateGas: {
-    activeExposures(
-      arg0: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     activeVaults(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     addRevenue(
@@ -514,6 +560,12 @@ export interface OpsManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    increaseVaultTemple(
+      vaults: string[],
+      amountsTemple: BigNumberish[],
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     joiningFee(overrides?: CallOverrides): Promise<BigNumber>;
 
     liquidateExposures(
@@ -542,6 +594,13 @@ export interface OpsManager extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    revalTokens(
+      arg0: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    templeExposure(overrides?: CallOverrides): Promise<BigNumber>;
+
     templeToken(overrides?: CallOverrides): Promise<BigNumber>;
 
     transferOwnership(
@@ -554,14 +613,11 @@ export interface OpsManager extends BaseContract {
       revals: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
+
+    vaultedTemple(overrides?: CallOverrides): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    activeExposures(
-      arg0: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     activeVaults(
       arg0: string,
       overrides?: CallOverrides
@@ -596,6 +652,12 @@ export interface OpsManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    increaseVaultTemple(
+      vaults: string[],
+      amountsTemple: BigNumberish[],
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     joiningFee(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     liquidateExposures(
@@ -627,6 +689,13 @@ export interface OpsManager extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    revalTokens(
+      arg0: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    templeExposure(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     templeToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     transferOwnership(
@@ -639,5 +708,7 @@ export interface OpsManager extends BaseContract {
       revals: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
+
+    vaultedTemple(overrides?: CallOverrides): Promise<PopulatedTransaction>;
   };
 }
