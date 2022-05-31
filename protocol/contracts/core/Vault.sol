@@ -36,7 +36,15 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     // solhint-disable-next-line var-name-mixedcase
     bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner,uint256 amount,uint256 deadline,uint256 nonce)");
 
+    // temple token which users deposit/withdraw
     IERC20 public templeToken;
+
+    // Vaults don't hold temple directly, there is a specific
+    // exposure in which all deposited temple is moved into
+    Exposure public templeExposureToken;
+
+    // All vaulted temple is held collectively (allows the DAO to use this collectively in leverage positions)
+    address public vaultedTempleAccount;
 
     /// @dev timestamp (in seconds) of the first period in this vault
     uint256 public firstPeriodStartTimestamp;
@@ -57,6 +65,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         string memory _name,
         string memory _symbol,
         IERC20 _templeToken,
+        Exposure _templeExposureToken,
+        address _vaultedTempleAccount,
         uint256 _periodDuration,
         uint256 _enterExitWindowDuration,
         Rational memory _shareBoostFactory,
@@ -64,6 +74,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         uint256 _firstPeriodStartTimestamp
     ) EIP712(_name, "1") ERC20(_name, _symbol)  {
         templeToken = _templeToken;
+        templeExposureToken = _templeExposureToken;
+        vaultedTempleAccount = _vaultedTempleAccount;
         periodDuration = _periodDuration;
         enterExitWindowDuration = _enterExitWindowDuration;
         shareBoostFactor = _shareBoostFactory;
@@ -98,7 +110,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     function targetRevenueShare() external view returns (uint256) {
-        return templeToken.balanceOf(address(this)) * shareBoostFactor.p / shareBoostFactor.q;
+        return templeExposureToken.balanceOf(address(this)) * shareBoostFactor.p / shareBoostFactor.q;
     }
 
     /// @dev redeem a specific vault's exposure back into temple
@@ -113,7 +125,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     function amountPerShare() public view override returns (uint256 p, uint256 q) {
-        p = templeToken.balanceOf(address(this));
+        p = templeExposureToken.balanceOf(address(this));
         q = totalShares;
 
         // NOTE(butlerji): Assuming this is fairly cheap in gas, as it gets called
@@ -164,7 +176,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     * @notice Deposit temple into a vault
     */
     function deposit(uint256 amount) public {
-        depositFor(msg.sender, msg.sender, amount);
+        depositFor(msg.sender, amount);
     }
 
     /**
@@ -172,7 +184,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
             Care needs to be taken when calling this to ensure that the caller is passing the correct args in,
             otherwise they may mistakenly lock _sender funds attributed to a wallet they have no control over.
      */
-    function depositFor(address _funder, address _account, uint256 _amount) public {
+    function depositFor(address _account, uint256 _amount) public {
         require(inEnterExitWindow(), "Vault: Cannot join vault when outside of enter/exit window");
 
         uint256 feePerTempleScaledPerHour = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));
@@ -183,7 +195,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
         if (_amount > 0) {
             _mint(_account, amountStaked);
-            SafeERC20.safeTransferFrom(templeToken, _funder, address(this), _amount);
+            SafeERC20.safeTransferFrom(templeToken, msg.sender, vaultedTempleAccount, _amount);
+            templeExposureToken.mint(address(this), _amount);
         }
 
         emit Deposit(_account, _amount, amountStaked);
@@ -199,10 +212,10 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         require(inEnterExitWindow(), "Vault: Cannot exit vault when outside of enter/exit window");
 
         if (_amount > 0) {
-             _burn(_account, _amount);
+            _burn(_account, _amount);
         }
-        SafeERC20.safeTransfer(templeToken, _to, _amount);
 
+        templeExposureToken.redeemAmount(_amount, msg.sender);
         emit Withdraw(_account, _amount);
     }
 

@@ -13,12 +13,10 @@ library OpsManagerLib {
         string memory name, 
         string memory symbol, 
         IERC20 revalToken, 
-        Exposure[] storage activeExposures, 
         mapping(IERC20 => TreasuryFarmingRevenue) storage pools
     ) public returns (Exposure) {
         // Create position and transfer ownership to the caller
         Exposure exposure = new Exposure(name, symbol, revalToken, address(this));
-        activeExposures.push(exposure);
         exposure.transferOwnership(msg.sender);
 
         // Create a FarmingRevenue pool associated with this exposure
@@ -32,7 +30,7 @@ library OpsManagerLib {
         Vault vault, 
         TreasuryFarmingRevenue farmingPool
     ) public {
-        require(!vault.inEnterExitWindow(), "FarmingRevenueMnager: Cannot rebalance vaults in their exit/entry window");
+        require(!vault.inEnterExitWindow(), "FarmingRevenueManager: Cannot rebalance vaults in their exit/entry window");
 
         uint256 currentRevenueShare = farmingPool.shares(address(vault));
         uint256 targetRevenueShare = vault.targetRevenueShare();
