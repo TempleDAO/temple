@@ -20,7 +20,7 @@ import { theme } from 'styles/theme';
 import { phoneAndAbove } from 'styles/breakpoints';
 
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
-import templeDaoLogo from 'assets/images/sun-art.svg';
+import templeDaoLogo from 'assets/images/sun-art-new.svg';
 import hamburger from 'assets/icons/core-hamburger.svg';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';

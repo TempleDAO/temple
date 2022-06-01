@@ -2,7 +2,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import sunImage from 'assets/images/sun-art.svg';
+import sunImage from 'assets/images/sun-art-new.svg';
 import banner from 'assets/images/profile-header-bg.png';
 
 interface ProfileHeaderProps {
