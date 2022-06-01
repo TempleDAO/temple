@@ -10,7 +10,7 @@ import { toDecimal } from '../utils/decimals'
 import { getVault, updateVault } from './vault'
 import { getOrCreateVaultUserBalance, updateVaultUserBalance } from './vaultUserBalance'
 import { getVaultGroup, updateVaultGroup } from './vaultGroup'
-import { BIG_DECIMAL_0, BIG_INT_1, TEMPLE_LOCAL_ADDRESS } from '../utils/constants'
+import { BIG_DECIMAL_0, BIG_INT_1, TEMPLE_ADDRESS } from '../utils/constants'
 import { getTemplePrice } from '../utils/prices'
 
 
@@ -22,7 +22,7 @@ export function createWithdraw(event: WithdrawEvent): Withdraw {
   const withdraw = new Withdraw(event.transaction.hash.toHexString())
   withdraw.timestamp = timestamp
 
-  const token = getOrCreateToken(TEMPLE_LOCAL_ADDRESS, timestamp)
+  const token = getOrCreateToken(TEMPLE_ADDRESS, timestamp)
   withdraw.token = token.id
 
   const vault = getVault(event.address as Address)
