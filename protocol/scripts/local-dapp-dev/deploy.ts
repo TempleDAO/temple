@@ -45,8 +45,6 @@ async function extractDeployedAddress(
       }
     })[0];
 
-    console.log(event);
-
     if (event?.args) {
       result = event.args[0];
     }
@@ -274,13 +272,7 @@ async function main() {
     owner
   ).deploy(templeToken.address, joiningFee.address);
 
-  const exposureTx = await opsManager.createExposure(
-    'Stable Exposure',
-    'STBCXP',
-    frax.address
-  );
-
-  let exposure = await extractDeployedAddress(exposureTx, 'CreateExposure');
+  const vaultedTempleAddr = await opsManager.vaultedTemple();
 
   const THIRTY_MINUTES = 30 * 60;
   const FIVE_MINUTES = 5 * 60;
@@ -349,7 +341,7 @@ async function main() {
 
     TEMPLE_IV_SWAP: templeIVSwap.address,
     TEMPLE_VAULT_OPS_MANAGER: opsManager.address,
-    TEMPLE_VAULT_STABLEC_EXPOSURE: exposure,
+    TEMPLE_VAULTED_TEMPLE: vaultedTempleAddr,
     TEMPLE_VAULT_PROXY: vaultProxy.address,
     // TEMPLE_VAULT_1_M_1: vault1,
     // TEMPLE_VAULT_1_M_2: vault2,

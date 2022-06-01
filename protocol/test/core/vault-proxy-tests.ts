@@ -129,6 +129,8 @@ describe("Vault Proxy", async () => {
           await blockTimestamp()
       )
 
+      await templeExposure.setMinterState(vault.address, true);
+
       await TEMPLE.mint(VAULT_PROXY.address, toAtto(1000000));
   });
 
