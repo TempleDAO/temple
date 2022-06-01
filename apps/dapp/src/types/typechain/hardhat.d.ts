@@ -193,6 +193,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Vault__factory>;
     getContractFactory(
+      name: "VaultedTemple",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.VaultedTemple__factory>;
+    getContractFactory(
       name: "VaultProxy",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.VaultProxy__factory>;
@@ -502,6 +506,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Vault>;
+    getContractAt(
+      name: "VaultedTemple",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.VaultedTemple>;
     getContractAt(
       name: "VaultProxy",
       address: string,

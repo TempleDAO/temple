@@ -34,6 +34,9 @@ export interface DeployedContracts {
 
   OPS_MANAGER: string,
   OPS_MANAGER_LIB: string,
+  JOINING_FEE: string,
+  INSTANT_EXIT_QUEUE: string,
+  VAULT_PROXY: string,
 
   MULTISIG: string,
 }
@@ -89,8 +92,11 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     DEVOTION: '0x262Eb109183B7f1b4Aa36c136C6A27e9a0c9210F',
     TEMPLE_IV_SWAP: '',
 
-    OPS_MANAGER_LIB: '0xe10db2b548012F659d0f856cdf86897c61238A79',
-    OPS_MANAGER: '0xf7D5a97B122dd7D5366045DE76d4791Ac5428da5',
+    OPS_MANAGER_LIB: '0x3475Ce39cc2c631713106A23F06502Bbdc38D5fD',
+    OPS_MANAGER: '0xCd149AA0e0bf1dE590B55aa1aD108aC362552164',
+    JOINING_FEE: '0x8dFEeCCacda824450a4e912454d6ba0E6aF24c1a',
+    INSTANT_EXIT_QUEUE: '0x8d6b1383355D378e22871D24029e98c7ABD02544',
+    VAULT_PROXY: '0x3db952D2071d2dc721417d8089F6838f9E44C205',
 
     MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
   },
@@ -136,6 +142,9 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_IV_SWAP: '0xb0D978C8Be39C119922B99f483cD8C4092f0EA56',
     OPS_MANAGER: '',
     OPS_MANAGER_LIB: '',
+    JOINING_FEE: '',
+    INSTANT_EXIT_QUEUE: '',
+    VAULT_PROXY: '',
   },
   localhost: {
     // No longer active/unused
@@ -173,6 +182,9 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_IV_SWAP: process.env.TEMPLE_IV_SWAP || '',
     OPS_MANAGER: process.env.OPS_MANAGER || '',
     OPS_MANAGER_LIB: process.env.OPS_MANAGER_LIB || '',
+    JOINING_FEE: process.env.JOINING_FEE || '',
+    INSTANT_EXIT_QUEUE: process.env.INSTANT_EXIT_QUEUE || '',
+    VAULT_PROXY: process.env.VAULT_PROXY || '',
 
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
   }

@@ -39,7 +39,7 @@ export interface VaultInterface extends utils.Interface {
     "decreaseAllowance(address,uint256)": FunctionFragment;
     "decreaseStartTime(uint256)": FunctionFragment;
     "deposit(uint256)": FunctionFragment;
-    "depositFor(address,address,uint256)": FunctionFragment;
+    "depositFor(address,uint256)": FunctionFragment;
     "enterExitWindowDuration()": FunctionFragment;
     "firstPeriodStartTimestamp()": FunctionFragment;
     "inEnterExitWindow()": FunctionFragment;
@@ -55,6 +55,7 @@ export interface VaultInterface extends utils.Interface {
     "shareBoostFactor()": FunctionFragment;
     "symbol()": FunctionFragment;
     "targetRevenueShare()": FunctionFragment;
+    "templeExposureToken()": FunctionFragment;
     "templeToken()": FunctionFragment;
     "toSharesAmount(uint256)": FunctionFragment;
     "toTokenAmount(uint256)": FunctionFragment;
@@ -63,6 +64,7 @@ export interface VaultInterface extends utils.Interface {
     "transfer(address,uint256)": FunctionFragment;
     "transferFrom(address,address,uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
+    "vaultedTempleAccount()": FunctionFragment;
     "withdraw(uint256)": FunctionFragment;
     "withdrawFor(address,uint256,uint256,uint8,bytes32,bytes32)": FunctionFragment;
   };
@@ -108,7 +110,7 @@ export interface VaultInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "depositFor",
-    values: [string, string, BigNumberish]
+    values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "enterExitWindowDuration",
@@ -159,6 +161,10 @@ export interface VaultInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "templeExposureToken",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "templeToken",
     values?: undefined
   ): string;
@@ -189,6 +195,10 @@ export interface VaultInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "vaultedTempleAccount",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "withdraw",
@@ -283,6 +293,10 @@ export interface VaultInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "templeExposureToken",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "templeToken",
     data: BytesLike
   ): Result;
@@ -309,6 +323,10 @@ export interface VaultInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "vaultedTempleAccount",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
@@ -444,7 +462,6 @@ export interface Vault extends BaseContract {
     ): Promise<ContractTransaction>;
 
     depositFor(
-      _funder: string,
       _account: string,
       _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -494,6 +511,8 @@ export interface Vault extends BaseContract {
 
     targetRevenueShare(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    templeExposureToken(overrides?: CallOverrides): Promise<[string]>;
+
     templeToken(overrides?: CallOverrides): Promise<[string]>;
 
     toSharesAmount(
@@ -527,6 +546,8 @@ export interface Vault extends BaseContract {
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    vaultedTempleAccount(overrides?: CallOverrides): Promise<[string]>;
 
     withdraw(
       amount: BigNumberish,
@@ -589,7 +610,6 @@ export interface Vault extends BaseContract {
   ): Promise<ContractTransaction>;
 
   depositFor(
-    _funder: string,
     _account: string,
     _amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -636,6 +656,8 @@ export interface Vault extends BaseContract {
 
   targetRevenueShare(overrides?: CallOverrides): Promise<BigNumber>;
 
+  templeExposureToken(overrides?: CallOverrides): Promise<string>;
+
   templeToken(overrides?: CallOverrides): Promise<string>;
 
   toSharesAmount(
@@ -669,6 +691,8 @@ export interface Vault extends BaseContract {
     newOwner: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
+
+  vaultedTempleAccount(overrides?: CallOverrides): Promise<string>;
 
   withdraw(
     amount: BigNumberish,
@@ -728,7 +752,6 @@ export interface Vault extends BaseContract {
     deposit(amount: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
     depositFor(
-      _funder: string,
       _account: string,
       _amount: BigNumberish,
       overrides?: CallOverrides
@@ -773,6 +796,8 @@ export interface Vault extends BaseContract {
 
     targetRevenueShare(overrides?: CallOverrides): Promise<BigNumber>;
 
+    templeExposureToken(overrides?: CallOverrides): Promise<string>;
+
     templeToken(overrides?: CallOverrides): Promise<string>;
 
     toSharesAmount(
@@ -806,6 +831,8 @@ export interface Vault extends BaseContract {
       newOwner: string,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    vaultedTempleAccount(overrides?: CallOverrides): Promise<string>;
 
     withdraw(amount: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
@@ -914,7 +941,6 @@ export interface Vault extends BaseContract {
     ): Promise<BigNumber>;
 
     depositFor(
-      _funder: string,
       _account: string,
       _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -959,6 +985,8 @@ export interface Vault extends BaseContract {
 
     targetRevenueShare(overrides?: CallOverrides): Promise<BigNumber>;
 
+    templeExposureToken(overrides?: CallOverrides): Promise<BigNumber>;
+
     templeToken(overrides?: CallOverrides): Promise<BigNumber>;
 
     toSharesAmount(
@@ -992,6 +1020,8 @@ export interface Vault extends BaseContract {
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
+
+    vaultedTempleAccount(overrides?: CallOverrides): Promise<BigNumber>;
 
     withdraw(
       amount: BigNumberish,
@@ -1063,7 +1093,6 @@ export interface Vault extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     depositFor(
-      _funder: string,
       _account: string,
       _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -1120,6 +1149,10 @@ export interface Vault extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    templeExposureToken(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     templeToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     toSharesAmount(
@@ -1152,6 +1185,10 @@ export interface Vault extends BaseContract {
     transferOwnership(
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    vaultedTempleAccount(
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     withdraw(
