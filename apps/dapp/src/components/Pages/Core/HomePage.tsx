@@ -1,12 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useMediaQuery } from 'react-responsive';
 import styled, { css } from 'styled-components';
-import Lottie from 'react-lottie';
 
 import { Button, ButtonProps } from 'components/Button/Button';
 import * as breakpoints from 'styles/breakpoints';
 import { Flex } from 'components/Layout/Flex';
 import Metrics from 'components/Metrics/Metrics';
+import { Lottie } from 'components/Lottie';
 
 import circleBgImage from 'assets/images/circle-bg.svg';
 import eyeImage from 'assets/images/eye.svg';
@@ -28,15 +28,6 @@ const HomePage = () => {
     query: breakpoints.queryMinTablet,
   });
   const navigate = useNavigate();
-
-  const aniOptions = {
-    loop: true,
-    autoplay: true,
-    animationData: animationData,
-    rendererSettings: {
-      preserveAspectRatio: 'xMidYMid slice',
-    },
-  };
 
   return (
     <>
@@ -83,7 +74,7 @@ const HomePage = () => {
         <RowCell>
           <SunGateWrapper>
             <TempleDaoSun>
-              <Lottie options={aniOptions} height={400} width={400} />
+              <Lottie animationData={animationData} height={400} width={400} />
             </TempleDaoSun>
             <ResponsiveImage src={gateImage} alt={'Temple DAO'} />
           </SunGateWrapper>
