@@ -34,6 +34,8 @@ dataSources:
           file: ./abis/TreasuryFarmingRevenue.json
         - name: Vault
           file: ./abis/Vault.json
+        - name: TemplePair
+          file: ./abis/TemplePair.json
       eventHandlers:
         - event: CreateExposure(address,address)
           handler: onCreateExposure
@@ -70,6 +72,8 @@ dataSources:
           file: ./abis/TreasuryFarmingRevenue.json
         - name: Vault
           file: ./abis/Vault.json
+        - name: TemplePair
+          file: ./abis/TemplePair.json
       eventHandlers:
         - event: AnswerUpdated(indexed int256,indexed uint256,uint256)
           handler: onAnswerUpdated
@@ -101,6 +105,8 @@ templates:
           file: ./abis/TreasuryFarmingRevenue.json
         - name: Vault
           file: ./abis/Vault.json
+        - name: TemplePair
+          file: ./abis/TemplePair.json
       eventHandlers:
         - event: IncreaseReval(uint256,uint256)
           handler: onIncreaseReval
@@ -138,6 +144,8 @@ templates:
           file: ./abis/TreasuryFarmingRevenue.json
         - name: Vault
           file: ./abis/Vault.json
+        - name: TemplePair
+          file: ./abis/TemplePair.json
       eventHandlers:
         - event: IncreaseShares(address,uint256)
           handler: onIncreaseShares
@@ -173,6 +181,8 @@ templates:
           file: ./abis/TreasuryFarmingRevenue.json
         - name: Vault
           file: ./abis/Vault.json
+        - name: TemplePair
+          file: ./abis/TemplePair.json
       eventHandlers:
         - event: Deposit(address,uint256,uint256)
           handler: onDeposit

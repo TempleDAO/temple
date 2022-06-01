@@ -20,16 +20,12 @@ import {
   TempleTeamPayments__factory,
   LockedOGTempleDeprecated__factory,
   ERC20,
-  LockedOGTemple__factory,
 } from 'types/typechain';
 import {
   TEMPLE_ADDRESS,
   FRAX_ADDRESS,
   TEMPLE_STAKING_ADDRESS,
   LOCKED_OG_TEMPLE_ADDRESS,
-  LOCKED_OG_TEMPLE_DEVOTION_ADDRESS,
-  VITE_PUBLIC_CLAIM_GAS_LIMIT,
-  FEI_PAIR_ADDRESS,
   FEI_ADDRESS,
 } from 'providers/env';
 
@@ -44,7 +40,6 @@ const INITIAL_STATE: WalletState = {
     temple: 0,
     ogTempleLockedClaimable: 0,
     ogTemple: 0,
-    ogTempleLocked: 0,
   },
   wallet: null,
   isConnected: false,
@@ -96,8 +91,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
     const ogLockedTemple = new LockedOGTempleDeprecated__factory(signer).attach(LOCKED_OG_TEMPLE_ADDRESS);
 
-    const OGTEMPLE_LOCKED_DEVOTION = new LockedOGTemple__factory(signer).attach(LOCKED_OG_TEMPLE_DEVOTION_ADDRESS);
-
     const templeStakingContract = new TempleStaking__factory(signer).attach(TEMPLE_STAKING_ADDRESS);
 
     const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(await templeStakingContract.OG_TEMPLE());
@@ -110,7 +103,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
     // get the locked OG temple
     const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber() ?? 0;
-    let ogTempleLocked = 0;
     let ogTempleLockedClaimable = 0;
     const templeLockedPromises = [];
     for (let i = 0; i < lockedNum; i++) {
@@ -128,13 +120,10 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     const ogTemple = fromAtto(await OG_TEMPLE_CONTRACT.balanceOf(walletAddress));
     const temple = fromAtto(await templeContract.balanceOf(walletAddress));
 
-    const lockedOGTempleEntry = await OGTEMPLE_LOCKED_DEVOTION.ogTempleLocked(walletAddress);
-
     return {
       frax: fromAtto(fraxBalance),
       fei: fromAtto(feiBalance),
       temple: temple,
-      ogTempleLocked: ogTempleLocked + fromAtto(lockedOGTempleEntry.amount),
       ogTemple: ogTemple >= 1 ? ogTemple : 0,
       ogTempleLockedClaimable: ogTempleLockedClaimable,
     };

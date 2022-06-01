@@ -237,6 +237,7 @@ describe("Temple Core Ops Manager", async () => {
 
     // TODO implement + check unclaimed revenue is as expected
     await opsManager.addRevenue([fxsToken.address], [toAtto(10000)]);
+    await opsManager.increaseVaultTemple([vault1Addr],[toAtto(10000)]);
     needRebal = await opsManager.requiresRebalance([vault1Addr, vault2Addr], fxsToken.address);
 
     // Claim a vaults share of primary revenue, via the
@@ -248,7 +249,7 @@ describe("Temple Core Ops Manager", async () => {
     await opsManager.liquidateExposures([vault1Addr],[fxsToken.address]);
     expect(await vault1Alan.balanceOf(alanAddr)).equals(toAtto(7575));
     expect(await vault1Ben.balanceOf(benAddr)).equals(toAtto(2525));
-    
+
     // TODO implement - for now just confirm the necessary
     // events fire so we can do this process manually
   })

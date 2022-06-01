@@ -13,20 +13,18 @@ import { fromAtto } from 'utils/bigNumber';
 import {
   ERC20__factory,
   TempleERC20Token__factory,
-  TempleIVSwap__factory,
   TempleStableAMMRouter__factory,
   TempleUniswapV2Pair__factory,
   TempleTreasury__factory,
 } from 'types/typechain';
 import {
   FRAX_ADDRESS,
+  FEI_ADDRESS,
   TEMPLE_V2_ROUTER_ADDRESS,
   TEMPLE_V2_FRAX_PAIR_ADDRESS,
   TEMPLE_V2_FEI_PAIR_ADDRESS,
   VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT,
   VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT,
-  FEI_PAIR_ADDRESS,
-  FEI_ADDRESS,
   TREASURY_ADDRESS,
   TEMPLE_ADDRESS,
 } from 'providers/env';
@@ -40,6 +38,7 @@ const INITIAL_STATE: SwapService = {
   getBuyQuote: asyncNoop,
   updateTemplePrice: asyncNoop,
   updateIv: asyncNoop,
+  error: null,
 };
 
 const SwapContext = createContext(INITIAL_STATE);
@@ -47,6 +46,7 @@ const SwapContext = createContext(INITIAL_STATE);
 export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const [templePrice, setTemplePrice] = useState(INITIAL_STATE.templePrice);
   const [iv, setIv] = useState(INITIAL_STATE.iv);
+  const [error, setError] = useState<Error | null>(null);
 
   const { wallet, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
@@ -65,8 +65,14 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
   const updateTemplePrice = async (token: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI = TICKER_SYMBOL.FRAX) => {
     if (!wallet || !signer) {
+      setError({
+        name: 'Missing wallet or signer',
+        message: "Couldn't update temple price - unable to get wallet or signer",
+      });
       return;
     }
+
+    setError(null);
 
     const pair = token === TICKER_SYMBOL.FEI ? TEMPLE_V2_FEI_PAIR_ADDRESS : TEMPLE_V2_FRAX_PAIR_ADDRESS;
     const price = await getTemplePrice(wallet, signer, pair);
@@ -101,8 +107,14 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   ) => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
+      setError({
+        name: 'Missing wallet or signer',
+        message: "Couldn't fetch buy quote - unable to get wallet or signer",
+      });
       return;
     }
+
+    setError(null);
 
     const tokenAddress = token === TICKER_SYMBOL.FEI ? FEI_ADDRESS : FRAX_ADDRESS;
     const ammRouter = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
@@ -137,7 +149,12 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
       return txReceipt;
     } catch (e) {
-      console.error("Couldn't complete buy transaction", e);
+      // 4001 is user manually cancelling transaction,
+      // so we don't want to return it as an error
+      if ((e as any).code !== 4001) {
+        console.error("Couldn't complete buy transaction", e);
+        setError(e as Error);
+      }
       return;
     }
   };
@@ -157,8 +174,14 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   ) => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
+      setError({
+        name: 'Missing wallet or signer',
+        message: "Couldn't complete sell transaction - unable to get wallet or signer",
+      });
       return;
     }
+
+    setError(null);
 
     let tokenAddress = token === TICKER_SYMBOL.FEI ? FEI_ADDRESS : FRAX_ADDRESS;
     const ammRouter = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
@@ -199,7 +222,12 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
       return txReceipt;
     } catch (e) {
-      console.error("Couldn't complete sell transaction", e);
+      // 4001 is user manually cancelling transaction,
+      // so we don't want to return it as an error
+      if ((e as any).code !== 4001) {
+        console.error("Couldn't complete sell transaction", e);
+        setError(e as Error);
+      }
       return;
     }
   };
@@ -210,8 +238,14 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   ): Promise<BigNumber> => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
+      setError({
+        name: 'Missing wallet or signer',
+        message: "Couldn't complete buy transaction - unable to get wallet or signer",
+      });
       return BigNumber.from(0);
     }
+
+    setError(null);
 
     const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
 
@@ -228,12 +262,17 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   ) => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
-
+      setError({
+        name: 'Missing wallet or signer',
+        message: "Couldn't fetch sell quote - unable to get wallet or signer",
+      });
       return {
         amountOut: BigNumber.from(0),
         priceBelowIV: false,
       };
     }
+
+    setError(null);
 
     const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
 
@@ -258,6 +297,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         getSellQuote,
         updateTemplePrice,
         updateIv,
+        error,
       }}
     >
       {props.children}

@@ -1,24 +1,20 @@
+//@ts-nocheck
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import styled from 'styled-components';
-
-import RegisterToken from 'components/RegisterToken/RegisterToken';
-import { TEMPLE_TOKEN } from 'constants/tokens';
 import AccessoriesTemplate from 'components/Accessories/AccessoriesTemplate';
 import BackButton from 'components/Button/BackButton';
 import EnclaveCard from 'components/EnclaveCard/EnclaveCard';
-import { Flex, FlexStyled } from 'components/Layout/Flex';
+import { FlexStyled } from 'components/Layout/Flex';
 import ProfileHeader from 'components/ProfileHeader/ProfileHeader';
 import ProfileMetric from 'components/ProfileMetric/ProfileMetric';
 import withWallet from 'hoc/withWallet';
-import { useFaith } from 'providers/FaithProvider';
 import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
 import useFetchStoreDiscordUser from 'hooks/use-fetch-store-discord-user';
 import useRefreshableAccountMetrics from 'hooks/use-refreshable-account-metrics';
+import { useWallet } from 'providers/WalletProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import styled from 'styled-components';
 import { formatNumberWithCommas } from 'utils/formatter';
-import { Nullable } from 'types/util';
-
 import { DiscordUser } from 'hooks/use-discord-data';
 
 const ENV_VARS = import.meta.env;
@@ -27,15 +23,15 @@ const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL;
 const Account = ({ routingHelper }: CustomRoutingPageProps) => {
   const { back } = routingHelper;
 
-  const { faith } = useFaith();
-  const [discordData, setDiscordData] = useState<Nullable<DiscordUser>>(null);
+  const { faith } = useWallet();
+  const [discordData, setDiscordData] = useState<DiscordUser>();
   const discordId = useFetchStoreDiscordUser();
   const accountMetrics = useRefreshableAccountMetrics();
 
   useEffect(() => {
     const getDiscordUser = async (
-      userId: Nullable<string>
-    ): Promise<void> => {
+      userId?: string
+    ): Promise<DiscordUser | null> => {
       if (!userId) {
         return;
       }
@@ -173,19 +169,19 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
                 >
                   <RightAlign>
                     <EnclaveCard
-                      enclave={discordData?.enclave?.toLowerCase() || ''}
+                      enclave={discordData?.enclave?.toLowerCase()}
                       unsetDiscrodData={() => setDiscordData(null)}
                     />
                   </RightAlign>
                   <RightAlign hidden={!discordData}>
                     <ProfileMetric
                       label={`Activity 7 Days`}
-                      value={`${discordData?.engagementLast7Days}`}
+                      value={`${discordData?.engagementlast7days}`}
                     />
 
                     <ProfileMetric
                       label={`Activity All Time`}
-                      value={`${discordData?.engagementAllTime}`}
+                      value={`${discordData?.engagementalltime}`}
                     />
                   </RightAlign>
                 </DiscordMetricsContainer>
@@ -200,19 +196,13 @@ const Account = ({ routingHelper }: CustomRoutingPageProps) => {
                 alignItems: 'center',
               }}
             >
-              <ProfileHeader username={discordData?.guildName} />
+              <ProfileHeader username={discordData?.guild_name} />
               <AccessoriesTemplate
-                enclave={discordData?.enclave?.toLowerCase() || ''}
+                enclave={discordData?.enclave?.toLowerCase()}
               />
             </FlexStyled>
           </ProfileWrapper>
         </Container>
-        <Flex layout={{
-          kind: 'container',
-          justifyContent: 'center'
-        }}>
-          <RegisterToken token={TEMPLE_TOKEN}>&nbsp;Add Temple token</RegisterToken>
-        </Flex>
       </PageWrapper>
       <BackButton onClick={back} />
     </>
@@ -244,10 +234,10 @@ const MetricsFlex = styled(FlexStyled)`
   padding-bottom: 1rem;
 `;
 
-const MetricsFlexItem = styled(MetricsFlex)<{ gradientDirection: 'left' | 'right' }>`
+const MetricsFlexItem = styled(MetricsFlex)`
   background-image: linear-gradient(
-    to ${({ gradientDirection }) => gradientDirection},
-    ${({ theme }) => theme.palette.brand25},
+    to ${(props) => props.gradientDirection},
+    ${(props) => props.theme.palette.brand25},
     rgba(0, 0, 0, 0)
   );
 `;

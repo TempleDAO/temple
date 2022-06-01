@@ -5,14 +5,26 @@ import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { dependencies } from './package.json';
 
-const VENDOR_CHUNKS = new Set(['react', 'react-router-dom', 'react-dom', 'styled-components', 'polished']);
+const VENDOR_CHUNKS = new Set([
+  'react',
+  'react-router-dom',
+  'react-dom',
+  'styled-components',
+  'polished',
+]);
 
-const VISUALIZATION_CHUNKS = new Set(['d3-shape', 'react-vis']);
+const VISUALIZATION_CHUNKS = new Set([
+  'd3-shape',
+  'react-vis',
+]);
 
 const renderChunks = (deps: Record<string, string>) => {
   const chunks: Record<string, string[]> = {};
   Object.keys(deps).forEach((dep) => {
-    if (VENDOR_CHUNKS.has(dep) || VISUALIZATION_CHUNKS.has(dep)) {
+    if (
+      VENDOR_CHUNKS.has(dep) ||
+      VISUALIZATION_CHUNKS.has(dep)
+    ) {
       return;
     }
     chunks[dep] = [dep];
@@ -20,7 +32,10 @@ const renderChunks = (deps: Record<string, string>) => {
   return chunks;
 };
 
-const plugins = [react(), legacy()];
+const plugins = [
+  react(),
+  legacy(),
+];
 
 if (process.env.BUILD_STATS) {
   plugins.push(visualizer());
@@ -46,7 +61,7 @@ export default defineConfig({
   },
   define: {
     // WalletLink requires process to be a global.
-    'process.env': {},
+    'process.env': {}
   },
   resolve: {
     alias: {
@@ -61,9 +76,9 @@ export default defineConfig({
       services: path.resolve(__dirname, 'src/services'),
       hoc: path.resolve(__dirname, 'src/hoc'),
       enums: path.resolve(__dirname, 'src/enums'),
-      constants: path.resolve(__dirname, 'src/constants'),
       data: path.resolve(__dirname, 'src/data'),
       types: path.resolve(__dirname, 'src/types'),
+      constants: path.resolve(__dirname, 'src/constants'),
     },
   },
   envPrefix: 'VITE',

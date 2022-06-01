@@ -23,9 +23,8 @@ export enum ETH_ACTIONS {
 
 export type Balance = {
   frax: number;
-  temple: number;
   fei: number;
-  ogTempleLocked: number;
+  temple: number;
   ogTempleLockedClaimable: number;
   ogTemple: number;
 };
@@ -144,6 +143,8 @@ export interface SwapService {
   updateTemplePrice(token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<void>;
 
   updateIv(): Promise<void>;
+
+  error: Error | null;
 }
 
 export interface WalletState {
@@ -164,8 +165,6 @@ export interface WalletState {
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
 
   getBalance(): Promise<Balance | void>;
-
-  updateBalance(): Promise<void>;
 
   updateBalance(): Promise<void>;
 

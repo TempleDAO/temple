@@ -40,7 +40,7 @@ async function main() {
 
     const suffix = ['a','b','c','d','e','f','g','h'];
 
-    const time = await blockTimestamp() + period; // lets ensure we've deployed all
+    const time = await blockTimestamp(); // lets ensure we've deployed all
     console.log(time);
 
     for (let i = 0; i < numOfVaults; i++) {
@@ -60,6 +60,7 @@ async function main() {
         const vaultAddr = await extractDeployedAddress(tx, "CreateVaultInstance");
         console.log(`Deployed vault ${name} with symbol ${symbol} at ${vaultAddr}`);
         console.log(`period: ${period}, window: ${window}, timestamp: ${ts}`);
+        console.log(`yarn hardhat verify --network rinkeby --constructor-args scripts/deploys/rinkeby/30-min-vault-verify/tst-30min-${suffix[i]}.js ${vaultAddr}`)
     }
 }
 

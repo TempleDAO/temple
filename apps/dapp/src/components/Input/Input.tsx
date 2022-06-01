@@ -76,7 +76,6 @@ export const Input = ({
           options={cryptoOptions}
           defaultValue={defaultValue}
           onChange={onCryptoChange}
-          isSmall={small}
           maxMenuItems={maxSelectorItems}
         />
       );

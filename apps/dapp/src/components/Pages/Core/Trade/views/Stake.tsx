@@ -20,7 +20,7 @@ export const Stake = () => {
   const { balance } = useWallet();
   const [_, refreshWallet] = useRefreshWalletState();
   const treasuryMetrics = useRefreshableTreasuryMetrics();
-  const [stakeAmount, setStakeAmount] = useState<string | number>('');
+  const [stakeAmount, setStakeAmount] = useState<string>('');
   const [stake, { isLoading: stakeLoading }] = useStakeTemple(() => {
     refreshWallet();
     setStakeAmount('');
@@ -31,9 +31,11 @@ export const Stake = () => {
     if (numberAmount === 0) {
       setStakeAmount('');
     } else {
-      setStakeAmount(numberAmount);
+      setStakeAmount(amount);
     }
   };
+
+  const numberStakeAmount = parseFloat(stakeAmount || '0');
 
   return (
     <div>
@@ -51,14 +53,14 @@ export const Stake = () => {
           isNumber
           value={stakeAmount}
           placeholder="0"
-          onHintClick={() => setStakeAmount(balance.temple)}
+          onHintClick={() => setStakeAmount(`${balance.temple}`)}
           min={0}
           hint={`Balance: ${formatNumberWithCommas(balance.temple)}`}
         />
       </InputWrapper>
       <CtaButton
-        disabled={!stakeAmount || stakeAmount > balance.temple || stakeLoading}
-        onClick={() => stake(Number(stakeAmount))}
+        disabled={!stakeAmount || numberStakeAmount > balance.temple || stakeLoading}
+        onClick={() => stake(numberStakeAmount)}
       >
         {stakeLoading ? <Loader /> : `Stake $Temple`}
       </CtaButton>
