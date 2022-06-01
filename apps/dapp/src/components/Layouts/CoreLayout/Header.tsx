@@ -217,8 +217,8 @@ const Wrapper = styled.header`
 
 const Logo = styled(Link)`
   display: block;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2.125rem;
+  height: 2.125rem;
   overflow: hidden;
   
 

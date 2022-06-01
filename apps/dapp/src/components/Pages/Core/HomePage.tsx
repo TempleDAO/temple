@@ -270,8 +270,11 @@ const TempleDaoSun = styled.div`
 
   position: absolute;
   transform-origin: center center;
-  transform: translateY(16%);
   translate-origin: center center;
+  transform: translateY(10%);
+  ${breakpoints.tabletAndAbove(`
+    transform: translateY(16%);
+  `)}
 `;
 
 const ButtonGroup = styled.div`
