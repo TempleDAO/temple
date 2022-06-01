@@ -2,9 +2,7 @@ interface Subgraphs {
   templeCore: string;
 }
 
-interface Contracts {
-  vaultProxy: string;
-}
+interface Contracts {}
 
 interface Sentry {
   environment: string;
