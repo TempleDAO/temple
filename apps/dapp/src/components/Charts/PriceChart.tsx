@@ -13,7 +13,7 @@ import Loader from 'components/Loader/Loader';
 import useRefreshablePriceMetrics, {
   PriceMetrics,
 } from 'hooks/use-refreshable-price-metrics';
-import sunImage from 'assets/images/sun-art.svg';
+import sunImage from 'assets/images/sun-art-new.svg';
 import 'react-vis/dist/style.css';
 
 const CHART_SIZE = {

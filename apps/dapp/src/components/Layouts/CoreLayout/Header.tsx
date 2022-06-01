@@ -20,11 +20,13 @@ import { theme } from 'styles/theme';
 import { phoneAndAbove } from 'styles/breakpoints';
 
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
-import templeDaoLogo from 'assets/images/sun-art.svg';
+import templeDaoLogo from 'assets/images/sun-art-new.svg';
 import hamburger from 'assets/icons/core-hamburger.svg';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
+import animationData from 'assets/animations/logo-animation.json';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
 import { Account } from './Account';
+import { Lottie } from 'components/Lottie';
 
 const Header = () => {
   const [isNavOpen, setIsNavOpen] = useState(false);
@@ -41,7 +43,9 @@ const Header = () => {
             $isOpen={isNavOpen}
             onClick={() => setIsNavOpen((isOpen) => !isOpen)}
           />
-          <Logo to="/core">TempleDAO</Logo>
+          <Logo to="/core">
+            <Lottie animationData={animationData} height={36} width={36} />
+          </Logo>
         </MobileNavLeft>
         <Navigation
           isNavOpenMobile={isNavOpen}
@@ -212,12 +216,11 @@ const Wrapper = styled.header`
 `;
 
 const Logo = styled(Link)`
-  ${backgroundImage(templeDaoLogo)}
   display: block;
   width: 1.75rem;
   height: 1.75rem;
   overflow: hidden;
-  text-indent: -999rem;
+  
 
   ${phoneAndAbove(`
     width: 2.125rem;
