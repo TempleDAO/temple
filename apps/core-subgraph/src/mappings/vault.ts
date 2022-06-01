@@ -1,4 +1,3 @@
-import { log } from '@graphprotocol/graph-ts'
 import { Deposit, Withdraw } from '../../generated/OpsManager/Vault'
 
 import { createDeposit } from '../entities/deposit'

@@ -1,6 +1,5 @@
-import { Address, BigDecimal, ethereum } from '@graphprotocol/graph-ts'
+import { Address, ethereum } from '@graphprotocol/graph-ts'
 
-import { BIG_DECIMAL_0, BIG_INT_1, TEMPLE_LOCAL_ADDRESS } from '../utils/constants'
 import { Withdraw as WithdrawEvent } from '../../generated/OpsManager/Vault'
 import { Withdraw } from '../../generated/schema'
 
@@ -11,32 +10,23 @@ import { toDecimal } from '../utils/decimals'
 import { getVault, updateVault } from './vault'
 import { getOrCreateVaultUserBalance, updateVaultUserBalance } from './vaultUserBalance'
 import { getVaultGroup, updateVaultGroup } from './vaultGroup'
+import { BIG_DECIMAL_0, BIG_INT_1, TEMPLE_ADDRESS } from '../utils/constants'
+import { getTemplePrice } from '../utils/prices'
 
 
 export function createWithdraw(event: WithdrawEvent): Withdraw {
-  const metric = getMetric()
-
-  let timestamp = event.block.timestamp
-  let amount = toDecimal(event.params.amount, 18)
-  metric.tvl = metric.tvl.minus(amount)
-  metric.volume = metric.tvl.plus(amount)
-
-  let tokenPrice = BigDecimal.fromString('0.69')
-  metric.tvlUSD = metric.tvlUSD.minus(amount.times(tokenPrice))
-  metric.volumeUSD = metric.volumeUSD.plus(amount.times(tokenPrice))
-  updateMetric(metric, timestamp)
+  const timestamp = event.block.timestamp
+  const amount = toDecimal(event.params.amount, 18)
+  const tokenPrice = getTemplePrice()
 
   const withdraw = new Withdraw(event.transaction.hash.toHexString())
   withdraw.timestamp = timestamp
 
+  const token = getOrCreateToken(TEMPLE_ADDRESS, timestamp)
+  withdraw.token = token.id
+
   const vault = getVault(event.address as Address)
   withdraw.vault = vault.id
-  vault.tvl = vault.tvl.minus(amount)
-  updateVault(vault, timestamp)
-
-  const vaultGroup = getVaultGroup(vault.name)
-  vaultGroup.tvl = vaultGroup.tvl.minus(amount)
-  updateVaultGroup(vaultGroup, timestamp)
 
   const user = getOrCreateUser(event.params.account, timestamp)
   withdraw.user = user.id
@@ -44,15 +34,30 @@ export function createWithdraw(event: WithdrawEvent): Withdraw {
   user.totalBalance = user.totalBalance.minus(amount)
   updateUser(user, timestamp)
 
-  const token = getOrCreateToken(TEMPLE_LOCAL_ADDRESS, timestamp)
-  withdraw.token = token.id
-
-  let vub = getOrCreateVaultUserBalance(vault, user, timestamp)
-  vub.amount = vub.amount.minus(amount)
+  const vub = getOrCreateVaultUserBalance(vault, user, timestamp)
   vub.staked = vub.staked.minus(amount)
+  vub.amount = vub.amount.minus(amount)
   vub.value = vub.value.minus(amount.times(tokenPrice))
   vub.token = token.id
   updateVaultUserBalance(vub, timestamp)
+
+  vault.tvl = vault.tvl.minus(amount)
+  if (vub.staked <= BIG_DECIMAL_0) {
+    vault.userCount = vault.userCount.minus(BIG_INT_1)
+  }
+  updateVault(vault, timestamp)
+
+  const vaultGroup = getVaultGroup(vault.name)
+  vaultGroup.tvl = vaultGroup.tvl.minus(amount)
+  vaultGroup.volume = vaultGroup.volume.plus(amount)
+  updateVaultGroup(vaultGroup, timestamp)
+
+  const metric = getMetric()
+  metric.tvl = metric.tvl.minus(amount)
+  metric.volume = metric.volume.plus(amount)
+  metric.tvlUSD = metric.tvlUSD.minus(amount.times(tokenPrice))
+  metric.volumeUSD = metric.volumeUSD.plus(amount.times(tokenPrice))
+  updateMetric(metric, timestamp)
 
   withdraw.amount = amount
   withdraw.value = amount.times(tokenPrice)

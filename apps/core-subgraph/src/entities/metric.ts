@@ -1,15 +1,16 @@
-import { Address, BigInt } from '@graphprotocol/graph-ts'
+import { BigInt } from '@graphprotocol/graph-ts'
 
-import { BIG_DECIMAL_0, BIG_INT_0, OPS_MANAGER_LOCAL } from '../utils/constants'
-import { dayFromTimestamp } from '../utils/dates'
 import { MetricDayData, Metric } from '../../generated/schema'
+
+import { BIG_DECIMAL_0, BIG_INT_0, OPS_MANAGER } from '../utils/constants'
+import { dayFromTimestamp } from '../utils/dates'
 
 
 export function getMetric(): Metric {
-  let metric = Metric.load(OPS_MANAGER_LOCAL)
+  let metric = Metric.load(OPS_MANAGER)
 
   if (metric === null) {
-    metric = new Metric(OPS_MANAGER_LOCAL)
+    metric = new Metric(OPS_MANAGER)
     metric.volume = BIG_DECIMAL_0
     metric.volumeUSD = BIG_DECIMAL_0
     metric.tvl = BIG_DECIMAL_0

@@ -44,7 +44,7 @@ type Exposure @entity {
   symbol: String!
   revalToken: String!
   reval: BigInt!
-  mintManager: String!
+  minterManager: String!
   liquidator: String!
   opsManager: OpsManager!
 }
@@ -62,6 +62,7 @@ type VaultGroup @entity {
   id: ID!
   timestamp: BigInt!
   tvl: BigDecimal!
+  volume: BigDecimal!
   opsManager: OpsManager!
   vaults: [Vault!]! @derivedFrom(field: "vaultGroup")
   vaultGroupDayDatas: [VaultGroupDayData!]! @derivedFrom(field: "vaultGroup")
@@ -72,6 +73,7 @@ type VaultGroupDayData @entity {
   timestamp: BigInt!
   vaultGroup: VaultGroup!
   tvl: BigDecimal!
+  volume: BigDecimal!
   opsManager: OpsManager!
 }
 
@@ -88,24 +90,7 @@ type Vault @entity {
   firstPeriodStartTimestamp: BigInt!
   users: [User!]!
   tvl: BigDecimal!
-  vaultGroup: VaultGroup!
-  vaultHourDatas: [VaultHourData!]! @derivedFrom(field: "vault")
-}
-
-type VaultHourData @entity {
-  id: ID!
-  timestamp: BigInt!
-  vault: Vault!
-  name: String!
-  symbol: String!
-  templeToken: String!
-  periodDuration: BigInt!
-  enterExitWindowDuration: BigInt!
-  shareBoostFactor: BigDecimal!
-  joiningFee: String!
-  firstPeriodStartTimestamp: BigInt!
-  users: [User!]!
-  tvl: BigDecimal!
+  userCount: BigInt!
   vaultGroup: VaultGroup!
 }
 
