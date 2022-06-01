@@ -1,7 +1,7 @@
 import React from 'react';
 import styled, { css, keyframes } from 'styled-components';
 import Image from 'components/Image/Image';
-import sunImage from 'assets/images/sun-art.svg';
+import sunImage from 'assets/images/sun-art-new.svg';
 
 const sunAnimation = keyframes`
   from {

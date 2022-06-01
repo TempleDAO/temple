@@ -16,7 +16,7 @@ import eyeImage from 'assets/images/eye.svg';
 import gateImage from 'assets/images/gate.svg';
 import planetsImage from 'assets/images/planets.svg';
 import receiveTokenImage from 'assets/images/receive-token.svg';
-import sunImage from 'assets/images/sun-art.svg';
+import sunImage from 'assets/images/sun-art-new.svg';
 import sunsetImage from 'assets/images/sunset.svg';
 
 import { ResponsiveImage } from 'styles/common';

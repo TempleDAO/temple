@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import sunImage from 'assets/images/sun-art.svg';
+import sunImage from 'assets/images/sun-art-new.svg';
 import Image from 'components/Image/Image';
 
 interface LoaderProps {

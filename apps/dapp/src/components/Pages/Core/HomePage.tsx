@@ -6,16 +6,17 @@ import { Button, ButtonProps } from 'components/Button/Button';
 import * as breakpoints from 'styles/breakpoints';
 import { Flex } from 'components/Layout/Flex';
 import Metrics from 'components/Metrics/Metrics';
+import { Lottie } from 'components/Lottie';
 
 import circleBgImage from 'assets/images/circle-bg.svg';
 import eyeImage from 'assets/images/eye.svg';
 import gateImage from 'assets/images/gate.svg';
 import planetsImage from 'assets/images/planets.svg';
-import sunImage from 'assets/images/sun-art.svg';
 import sunsetImage from 'assets/images/sunset.svg';
 
 import { ResponsiveImage } from 'styles/common';
 import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
+import animationData from 'assets/animations/logo-animation.json';
 
 const REWARDS_IMAGE_HEIGHT = 322;
 const EARN_IMAGE_HEIGHT = 450;
@@ -36,21 +37,14 @@ const HomePage = () => {
             <AppLogo>TempleDAO</AppLogo>
           </Link>
           <MenuContainer>
-            <DAppButton
-              label={'launch dapp'}
-              onClick={() => navigate('/core/dapp')}
-              isSmall
-              isUppercase
-            />
+            <DAppButton label={'launch dapp'} onClick={() => navigate('/core/dapp')} isSmall isUppercase />
           </MenuContainer>
         </NavContainer>
       </HeaderStyled>
       <Row>
         <RowCell>
           <EarnBetterYieldsWrapper>
-            <EnableBetterYieldsHeader>
-              Earn Better Yields
-            </EnableBetterYieldsHeader>
+            <EnableBetterYieldsHeader>Earn Better Yields</EnableBetterYieldsHeader>
             <SustainableYieldFarmingText>
               Sustainable yield farming for the passive investor
             </SustainableYieldFarmingText>
@@ -64,23 +58,14 @@ const HomePage = () => {
               )}
               <ButtonContainer>
                 <Link to={'/core/dapp/vaults'}>
-                  <StyledButton
-                    label={`Start Earning`}
-                    isUppercase
-                    isSmall
-                    showArrow
-                  />
+                  <StyledButton label={`Start Earning`} isUppercase isSmall showArrow />
                 </Link>
               </ButtonContainer>
             </ButtonGroup>
             <MetricsWrapper>
               {treasuryMetrics ? (
                 <MetricsWrapper>
-                  <Metrics
-                    treasuryMetrics={treasuryMetrics}
-                    isHome
-                    alignCenter={!isAboveMobile}
-                  />
+                  <Metrics treasuryMetrics={treasuryMetrics} isHome alignCenter={!isAboveMobile} />
                 </MetricsWrapper>
               ) : null}
             </MetricsWrapper>
@@ -89,7 +74,7 @@ const HomePage = () => {
         <RowCell>
           <SunGateWrapper>
             <TempleDaoSun>
-              <ResponsiveImage src={sunImage} alt={'Temple DAO'} />
+              <Lottie animationData={animationData} height={400} width={400} />
             </TempleDaoSun>
             <ResponsiveImage src={gateImage} alt={'Temple DAO'} />
           </SunGateWrapper>
@@ -111,18 +96,11 @@ const HomePage = () => {
           >
             <h2>Sustainable Income</h2>
             <p>
-              Buy and stake $TEMPLE to earn more yield than traditional
-              stablecoin farms. Plus get whale like investment strategies with
-              any size investment.
+              Buy and stake $TEMPLE to earn more yield than traditional stablecoin farms. Plus get whale like investment
+              strategies with any size investment.
             </p>
             <CircleBgWrapper>
-              <ResponsiveImage
-                src={circleBgImage}
-                alt={''}
-                aria-hidden={true}
-                height={322}
-                width={322}
-              />
+              <ResponsiveImage src={circleBgImage} alt={''} aria-hidden={true} height={322} width={322} />
             </CircleBgWrapper>
           </Flex>
           <Flex
@@ -131,12 +109,7 @@ const HomePage = () => {
               justifyContent: 'flex-end',
             }}
           >
-            <ResponsiveImage
-              src={sunsetImage}
-              alt={'Earn Trading Fee'}
-              height={450}
-              width={450}
-            />
+            <ResponsiveImage src={sunsetImage} alt={'Earn Trading Fee'} height={450} width={450} />
           </Flex>
         </Flex>
         <Flex
@@ -150,12 +123,7 @@ const HomePage = () => {
               kind: 'item',
             }}
           >
-            <ResponsiveImage
-              src={eyeImage}
-              alt={'Earn Trading Fee'}
-              height={450}
-              width={450}
-            />
+            <ResponsiveImage src={eyeImage} alt={'Earn Trading Fee'} height={450} width={450} />
           </Flex>
           <Flex
             layout={{
@@ -166,19 +134,12 @@ const HomePage = () => {
           >
             <h2>Reduce Risk</h2>
             <p>
-              Take the risk out of cryptocurrency with our low-volatility stable
-              coin treasury. Reduce your transaction fees and the associated
-              risks that come from interacting with a large number of contracts
-              when moving from farm-to-farm.
+              Take the risk out of cryptocurrency with our low-volatility stable coin treasury. Reduce your transaction
+              fees and the associated risks that come from interacting with a large number of contracts when moving from
+              farm-to-farm.
             </p>
             <CircleBgWrapper rightAlign>
-              <ResponsiveImage
-                src={circleBgImage}
-                alt={''}
-                aria-hidden={true}
-                height={322}
-                width={322}
-              />
+              <ResponsiveImage src={circleBgImage} alt={''} aria-hidden={true} height={322} width={322} />
             </CircleBgWrapper>
           </Flex>
         </Flex>
@@ -197,8 +158,8 @@ const HomePage = () => {
           >
             <h2>Get Extra Rewards</h2>
             <p>
-              Temple token holders receive exclusive airdrops and additional
-              rewards from our "Powered by Temple" projects.
+              Temple token holders receive exclusive airdrops and additional rewards from our "Powered by Temple"
+              projects.
             </p>
             <CircleBgWrapper>
               <ResponsiveImage
@@ -309,14 +270,8 @@ const TempleDaoSun = styled.div`
 
   position: absolute;
   transform-origin: center center;
-  transform: translateY(44%);
+  transform: translateY(16%);
   translate-origin: center center;
-
-  width: 53%;
-
-  img {
-    animation: ${(props) => props.theme.animations.spin};
-  }
 `;
 
 const ButtonGroup = styled.div`
