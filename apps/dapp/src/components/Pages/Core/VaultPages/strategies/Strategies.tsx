@@ -20,6 +20,31 @@ const P = styled.div`
 `;
 
 export const strategies: Record<string, JSX.Element> = {
+  'tst-30min': (
+    <StrategyContainer>
+      <P>
+        <Section>Primary</Section>
+        <ul>
+          <li>FRAX3CRV leveraged farming on Convex</li>
+          <li>cvxCRV/CRV LP farming on Convex</li>
+        </ul>
+      </P>
+      <P>
+        <Section>Secondary</Section>
+        <ul>
+          <li>FRAX/TEMPLE gauge farming on STAX</li>
+        </ul>
+      </P>
+      <P>
+        <Section>Bonuses</Section>
+        <ul>
+          <li>Auto-compunding for long term stakers</li>
+          <li>veFXS bribes</li>
+          <li>Boosted yield through max-locking veFXS</li>
+        </ul>
+      </P>
+    </StrategyContainer>
+  ),
   'temple-1m-vault': (
     <StrategyContainer>
       <P>
@@ -43,7 +68,6 @@ export const strategies: Record<string, JSX.Element> = {
           <li>The bonus is sometimes applied, but every now and then, it's not</li>
         </ul>
       </P>
-
     </StrategyContainer>
   ),
   '1mo-frax3crv': (
