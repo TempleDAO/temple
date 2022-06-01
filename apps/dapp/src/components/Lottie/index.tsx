@@ -16,9 +16,9 @@ export const Lottie = ({ animationData, width, height }: LottieProps) => {
       lottieInstance.current = lottie.loadAnimation({
         animationData,
         container: element.current,
-      })
+      });
     }
-  }, [animationData])
+  }, [animationData]);
 
-  return <div style={{ width, height }} ref={element}></div>
-}
+  return <div style={{ width, height }} ref={element}></div>;
+};
