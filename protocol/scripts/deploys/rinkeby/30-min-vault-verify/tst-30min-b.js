@@ -5,6 +5,6 @@ module.exports = [
     1800,
     300,
     {p:1,q:1},
-    '0x55EE8182B022bF11b7e708372abe97A9aF44beEC',
-    1651877409
+    '0x8dFEeCCacda824450a4e912454d6ba0E6aF24c1a',
+    1654048470
 ]

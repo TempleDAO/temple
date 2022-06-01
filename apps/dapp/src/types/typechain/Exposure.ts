@@ -24,7 +24,6 @@ export interface ExposureInterface extends utils.Interface {
     "amountPerShare()": FunctionFragment;
     "approve(address,uint256)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
-    "canManageMinters()": FunctionFragment;
     "canMint(address)": FunctionFragment;
     "decimals()": FunctionFragment;
     "decreaseAllowance(address,uint256)": FunctionFragment;
@@ -33,9 +32,11 @@ export interface ExposureInterface extends utils.Interface {
     "increaseReval(uint256)": FunctionFragment;
     "liquidator()": FunctionFragment;
     "mint(address,uint256)": FunctionFragment;
+    "minterManager()": FunctionFragment;
     "name()": FunctionFragment;
     "owner()": FunctionFragment;
     "redeem()": FunctionFragment;
+    "redeemAmount(uint256,address)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "reval()": FunctionFragment;
     "revalToken()": FunctionFragment;
@@ -65,10 +66,6 @@ export interface ExposureInterface extends utils.Interface {
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
-  encodeFunctionData(
-    functionFragment: "canManageMinters",
-    values?: undefined
-  ): string;
   encodeFunctionData(functionFragment: "canMint", values: [string]): string;
   encodeFunctionData(functionFragment: "decimals", values?: undefined): string;
   encodeFunctionData(
@@ -95,9 +92,17 @@ export interface ExposureInterface extends utils.Interface {
     functionFragment: "mint",
     values: [string, BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "minterManager",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "redeem", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "redeemAmount",
+    values: [BigNumberish, string]
+  ): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
     values?: undefined
@@ -156,10 +161,6 @@ export interface ExposureInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "canManageMinters",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "canMint", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "decimals", data: BytesLike): Result;
   decodeFunctionResult(
@@ -180,9 +181,17 @@ export interface ExposureInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "liquidator", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "minterManager",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "redeem", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "redeemAmount",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
@@ -349,8 +358,6 @@ export interface Exposure extends BaseContract {
 
     balanceOf(account: string, overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    canManageMinters(overrides?: CallOverrides): Promise<[string]>;
-
     canMint(arg0: string, overrides?: CallOverrides): Promise<[boolean]>;
 
     decimals(overrides?: CallOverrides): Promise<[number]>;
@@ -385,11 +392,19 @@ export interface Exposure extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    minterManager(overrides?: CallOverrides): Promise<[string]>;
+
     name(overrides?: CallOverrides): Promise<[string]>;
 
     owner(overrides?: CallOverrides): Promise<[string]>;
 
     redeem(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    redeemAmount(
+      amount: BigNumberish,
+      to: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -470,8 +485,6 @@ export interface Exposure extends BaseContract {
 
   balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-  canManageMinters(overrides?: CallOverrides): Promise<string>;
-
   canMint(arg0: string, overrides?: CallOverrides): Promise<boolean>;
 
   decimals(overrides?: CallOverrides): Promise<number>;
@@ -506,11 +519,19 @@ export interface Exposure extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  minterManager(overrides?: CallOverrides): Promise<string>;
+
   name(overrides?: CallOverrides): Promise<string>;
 
   owner(overrides?: CallOverrides): Promise<string>;
 
   redeem(
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  redeemAmount(
+    amount: BigNumberish,
+    to: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -588,8 +609,6 @@ export interface Exposure extends BaseContract {
 
     balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    canManageMinters(overrides?: CallOverrides): Promise<string>;
-
     canMint(arg0: string, overrides?: CallOverrides): Promise<boolean>;
 
     decimals(overrides?: CallOverrides): Promise<number>;
@@ -624,11 +643,19 @@ export interface Exposure extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    minterManager(overrides?: CallOverrides): Promise<string>;
+
     name(overrides?: CallOverrides): Promise<string>;
 
     owner(overrides?: CallOverrides): Promise<string>;
 
     redeem(overrides?: CallOverrides): Promise<void>;
+
+    redeemAmount(
+      amount: BigNumberish,
+      to: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
@@ -759,8 +786,6 @@ export interface Exposure extends BaseContract {
 
     balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    canManageMinters(overrides?: CallOverrides): Promise<BigNumber>;
-
     canMint(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     decimals(overrides?: CallOverrides): Promise<BigNumber>;
@@ -795,11 +820,19 @@ export interface Exposure extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    minterManager(overrides?: CallOverrides): Promise<BigNumber>;
+
     name(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     redeem(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    redeemAmount(
+      amount: BigNumberish,
+      to: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -879,8 +912,6 @@ export interface Exposure extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    canManageMinters(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     canMint(
       arg0: string,
       overrides?: CallOverrides
@@ -918,11 +949,19 @@ export interface Exposure extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    minterManager(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     name(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     redeem(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    redeemAmount(
+      amount: BigNumberish,
+      to: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
