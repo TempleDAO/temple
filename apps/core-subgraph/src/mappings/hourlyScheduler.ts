@@ -1,6 +1,6 @@
 import { AnswerUpdated } from '../../generated/HourlyScheduler/OffchainAggregator'
-import { getMetric, updateMetric } from '../entities/metric'
 
+import { getMetric, updateMetric } from '../entities/metric'
 import { getVaultGroups, updateVaultGroups } from '../entities/vaultGroup'
 
 

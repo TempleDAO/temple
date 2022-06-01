@@ -1,9 +1,9 @@
 import { Address, BigInt } from '@graphprotocol/graph-ts'
 
-import { BIG_DECIMAL_0, BIG_INT_1 } from '../utils/constants'
-
 import { Token } from '../../generated/schema'
+
 import { getMetric, updateMetric } from './metric'
+import { BIG_INT_1 } from '../utils/constants'
 
 
 export function createToken(address: Address, timestamp: BigInt): Token {

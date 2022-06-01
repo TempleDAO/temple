@@ -1,4 +1,3 @@
-import { log } from '@graphprotocol/graph-ts'
 import { CreateVaultInstance, CreateExposure } from '../../generated/OpsManager/OpsManager'
 
 import { createVault } from '../entities/vault'

@@ -1,10 +1,10 @@
 import { Address, BigInt } from '@graphprotocol/graph-ts'
 
-import { BIG_DECIMAL_0, BIG_INT_1 } from '../utils/constants'
 import { User, UserDayData } from '../../generated/schema'
 
 import { dayFromTimestamp } from '../utils/dates'
 import { getMetric, updateMetric } from './metric'
+import { BIG_DECIMAL_0, BIG_INT_1 } from '../utils/constants'
 
 
 export function createUser(address: Address, timestamp: BigInt): User {
