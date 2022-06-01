@@ -3,7 +3,6 @@ import { BigNumber, ContractTransaction } from 'ethers';
 import { ethers } from 'hardhat';
 import { blockTimestamp, mineNBlocks } from '../../test/helpers';
 import {
-  Devotion__factory,
   ExitQueue__factory,
   Faith__factory,
   FakeERC20__factory,
@@ -13,19 +12,16 @@ import {
   TempleStaking__factory,
   TempleTeamPayments__factory,
   LockedOGTempleDeprecated__factory,
-  LockedOGTemple__factory,
   TempleTreasury__factory,
   TempleUniswapV2Pair__factory,
   AcceleratedExitQueue,
   AcceleratedExitQueue__factory,
   TempleIVSwap__factory,
-  TempleStableAMMRouter__factory,
   JoiningFee__factory,
   OpsManager__factory,
+  TempleStableAMMRouter__factory,
   VaultProxy__factory,
   InstantExitQueue__factory,
-  TreasuryManagementProxy__factory,
-  TempleCashback__factory,
 } from '../../typechain';
 import { writeFile } from 'fs/promises';
 
@@ -48,8 +44,6 @@ async function extractDeployedAddress(
         return evt.event === eventName;
       }
     })[0];
-
-    console.log(event);
 
     if (event?.args) {
       result = event.args[0];
@@ -94,17 +88,12 @@ async function main() {
     templeToken.address,
     frax.address
   );
-
   await templeToken.addMinter(treasury.address);
 
   const lockedOgTemple_old = await new LockedOGTempleDeprecated__factory(
     owner
   ).deploy(ogTempleToken.address);
-  const lockedOgTemple_new = await new LockedOGTemple__factory(owner).deploy(
-    ogTempleToken.address
-  );
 
-  // mint fake frax and fei into all test accounts
   const accounts = await ethers.getSigners();
 
   // mint some frax and frei into all test accounts
@@ -118,17 +107,7 @@ async function main() {
   await frax.increaseAllowance(treasury.address, 100);
   await treasury.seedMint(100, 1000);
 
-  // Deploy treasury proxy (used for all treasury management going forward)
-  const treasuryManagementProxy = await new TreasuryManagementProxy__factory(
-    owner
-  ).deploy(await owner.getAddress(), treasury.address);
-  await treasury.transferOwnership(treasuryManagementProxy.address);
-
   const verifier = ethers.Wallet.createRandom();
-
-  const templeCashback = await new TempleCashback__factory(owner).deploy(
-    verifier.address
-  );
 
   // stake, lock and exit some temple for a few users
   let nLocks = 1;
@@ -162,27 +141,31 @@ async function main() {
   // // Mine a couple of epochs forward, to help testing
   // await mineNBlocks((await exitQueue.epochSize()).toNumber() * 2);
 
-  // Create team payment contracts
-  const teamPaymentsFixedR1 = await new TempleTeamPayments__factory(
+  // Create 2 versions of the team payment contract (contigent and fixed)
+  const teamPaymentsFixed = await new TempleTeamPayments__factory(owner).deploy(
+    templeToken.address,
+    1,
+    1
+  );
+  const teamPaymentsContigent = await new TempleTeamPayments__factory(
     owner
   ).deploy(templeToken.address, 1, 1);
-  await templeToken.mint(teamPaymentsFixedR1.address, toAtto(1000000));
 
-  await teamPaymentsFixedR1.setAllocation(owner.address, toAtto(1000));
-  const teamPaymentsFixedR2 = await new TempleTeamPayments__factory(
-    owner
-  ).deploy(templeToken.address, 1, 1);
-  await templeToken.mint(teamPaymentsFixedR2.address, toAtto(1000000));
+  templeToken.mint(teamPaymentsFixed.address, toAtto(1000000));
+  templeToken.mint(teamPaymentsContigent.address, toAtto(1000000));
 
-  await teamPaymentsFixedR2.setAllocation(owner.address, toAtto(1000));
+  // Setup payments for first 5 users
+  for (let i = 0; i < 5; i++) {
+    teamPaymentsFixed.setAllocation(
+      accounts[i + 1].address,
+      toAtto(1000 * (i + 1))
+    );
+    teamPaymentsContigent.setAllocation(
+      accounts[i + 1].address,
+      toAtto(1000 * (i + 1))
+    );
+  }
 
-  const teamPaymentsFixedR3 = await new TempleTeamPayments__factory(
-    owner
-  ).deploy(templeToken.address, 1, 1);
-  await templeToken.mint(teamPaymentsFixedR3.address, toAtto(1000000));
-
-  await teamPaymentsFixedR3.setAllocation(owner.address, toAtto(1000));
-  console.log(owner.address);
   // Setup custom AMM with liquidity
   const pair = await new TempleUniswapV2Pair__factory(owner).deploy(
     await owner.getAddress(),
@@ -195,8 +178,6 @@ async function main() {
     templeToken.address,
     fei.address
   );
-
-  await mineNBlocks(5);
 
   const templeRouter = await new TempleStableAMMRouter__factory(owner).deploy(
     templeToken.address,
@@ -211,7 +192,6 @@ async function main() {
   const ammOps = await new TempleFraxAMMOps__factory(owner).deploy(
     templeToken.address,
     templeRouter.address,
-    treasuryManagementProxy.address,
     treasury.address /* XXX: Unuse */,
     frax.address,
     treasury.address,
@@ -220,9 +200,6 @@ async function main() {
 
   await pair.setRouter(templeRouter.address);
   await feiPair.setRouter(templeRouter.address);
-  await templeToken.addMinter(templeRouter.address);
-
-  // Add liquidity to the AMM
 
   await templeToken.mint(owner.address, toAtto(10000000));
   await frax.mint(owner.address, toAtto(10000000));
@@ -248,8 +225,6 @@ async function main() {
     await owner.getAddress(),
     (await blockTimestamp()) + 900
   );
-  // Buy the Dip
-  const faith = await new Faith__factory(owner).deploy();
 
   // acceleated exit queue
   const acceleratedExitQueue: AcceleratedExitQueue =
@@ -260,16 +235,8 @@ async function main() {
     );
   await exitQueue.transferOwnership(acceleratedExitQueue.address);
 
-  const devotion = await new Devotion__factory(owner).deploy(
-    templeToken.address,
-    faith.address,
-    pair.address,
-    lockedOgTemple_new.address,
-    templeStaking.address,
-    60 // 60 seconds
-  );
-
   // Devotion
+  const faith = await new Faith__factory(owner).deploy();
   await faith.addManager(await owner.getAddress());
 
   console.log('ACCOUNT 1 ADDRESS => ', await account1.getAddress(), '\n\n\n\n');
@@ -283,39 +250,12 @@ async function main() {
     toAtto(10000000000)
   );
   await frax.increaseAllowance(templeRouter.address, toAtto(10000000000));
-  await templeRouter.addLiquidity(
-    toAtto(100000),
-    toAtto(100000),
-    1,
-    1,
-    frax.address,
-    await owner.getAddress(),
-    expiryDate()
-  );
-  await devotion.startDevotion(1, 1);
-
-  // Add value to templePrizePool
-  await templeToken.transfer(devotion.address, toAtto(1000));
-  await mineNBlocks(3);
-  await devotion.initiateDevotionFinalHour();
-  await mineNBlocks(3);
-  await devotion.connect(account1);
-  // lock verify account1 OGT
-  const DEVOTION = new Devotion__factory(owner)
-    .attach(devotion.address)
-    .connect(account1);
-  const OG_TEMPLE = new OGTemple__factory(owner)
-    .attach(await templeStaking.OG_TEMPLE())
-    .connect(account1);
-  await OG_TEMPLE.approve(lockedOgTemple_new.address, toAtto(1000000));
-  const amountOGTemple1 = await ogTempleToken.balanceOf(account1.address);
-  console.info(`amountOGTemple1: ${fromAtto(amountOGTemple1)}`);
 
   // create and initialise contract that allows a permissionless
   // swap @ IV
   const templeIVSwap = await new TempleIVSwap__factory(owner).deploy(
     templeToken.address,
-    fei.address,
+    frax.address,
     { temple: 100, frax: 65 } /* iv */
   );
   await frax.mint(templeIVSwap.address, toAtto(1000000));
@@ -332,13 +272,7 @@ async function main() {
     owner
   ).deploy(templeToken.address, joiningFee.address);
 
-  const exposureTx = await opsManager.createExposure(
-    'Stable Exposure',
-    'STBCXP',
-    frax.address
-  );
-
-  let exposure = await extractDeployedAddress(exposureTx, 'CreateExposure');
+  const vaultedTempleAddr = await opsManager.vaultedTemple();
 
   const THIRTY_MINUTES = 30 * 60;
   const FIVE_MINUTES = 5 * 60;
@@ -389,17 +323,14 @@ async function main() {
   const contract_address: { [key: string]: string } = {
     EXIT_QUEUE_ADDRESS: exitQueue.address,
     LOCKED_OG_TEMPLE_ADDRESS: lockedOgTemple_old.address,
-    LOCKED_OG_TEMPLE_ADDRESS_NEW: lockedOgTemple_new.address,
     STABLE_COIN_ADDRESS: frax.address,
     FEI_ADDRESS: fei.address,
     TEMPLE_ADDRESS: templeToken.address,
     TEMPLE_STAKING_ADDRESS: templeStaking.address,
     TREASURY_ADDRESS: treasury.address,
     TEMPLE_AMM_OPS_ADDRESS: ammOps.address,
-    TEMPLE_CASHBACK_ADDRESS: templeCashback.address,
-    TEMPLE_R1_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR1.address,
-    TEMPLE_R2_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR2.address,
-    TEMPLE_R3_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR3.address,
+    TEMPLE_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixed.address,
+    TEMPLE_TEAM_CONTIGENT_PAYMENTS_ADDRESS: teamPaymentsContigent.address,
     TEMPLE_V2_PAIR_ADDRESS: pair.address,
     TEMPLE_V2_FEI_PAIR_ADDRESS: feiPair.address,
     TEMPLE_V2_ROUTER_ADDRESS: templeRouter.address,
@@ -409,9 +340,8 @@ async function main() {
     TEMPLE_FAITH_ADDRESS: faith.address,
 
     TEMPLE_IV_SWAP: templeIVSwap.address,
-    FEI_PAIR_ADDRESS: feiPair.address,
     TEMPLE_VAULT_OPS_MANAGER: opsManager.address,
-    TEMPLE_VAULT_STABLEC_EXPOSURE: exposure,
+    TEMPLE_VAULTED_TEMPLE: vaultedTempleAddr,
     TEMPLE_VAULT_PROXY: vaultProxy.address,
     // TEMPLE_VAULT_1_M_1: vault1,
     // TEMPLE_VAULT_1_M_2: vault2,
