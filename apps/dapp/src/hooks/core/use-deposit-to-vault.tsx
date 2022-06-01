@@ -64,7 +64,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
       tx = await vaultProxy.depositTempleFor(bigAmount, vaultContractAddress);
     } else if (token === TICKER_SYMBOL.FAITH) {
       tx = await vaultProxy.depositTempleWithFaith(bigAmount, bigUsableFaith, vaultContractAddress, {
-        gasLimit: 500000,
+        gasLimit: 200000,
       });
     } else if (token === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
       tx = await vaultProxy.unstakeAndDepositIntoVault(bigAmount, vaultContractAddress);
