@@ -84,7 +84,7 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
     periodDurationSeconds,
     startDateSeconds: Number(subgraphVault.firstPeriodStartTimestamp),
     isActive: vaultIsInZone,
-    amountStaked: parseUnits(vaultUserBalance?.staked || '0.0', 18),
+    amountStaked: parseUnits(vaultUserBalance?.staked || '0', 18),
   };
   
   vault.unlockDate = calculateUnlockDate(vault as Vault);
