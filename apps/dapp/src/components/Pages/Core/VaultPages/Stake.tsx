@@ -68,9 +68,10 @@ export const Stake = () => {
   );
   
   const handleUpdateStakingAmount = (_value: string | number) => {
-    const amount = typeof _value === 'string' ? parseFloat(_value || '0') : _value;
+    const value = _value as string; // value is actually only ever going to be string
+    const amount = parseFloat(value || '0');
     
-    setStakingAmount(amount === 0 ? '' : _value);
+    setStakingAmount(amount === 0 ? '' : value);
     
     if (amount <= 0) {
       return;
@@ -82,14 +83,6 @@ export const Stake = () => {
       getOGStakingValue(amount);
     }
   };
-
-  const getTickerDisplayValue = () => {
-    if (ticker === TICKER_SYMBOL.FAITH) {
-      return TICKER_SYMBOL.TEMPLE_TOKEN;
-    };
-
-    return ticker;
-  }
 
   const getTokenBalanceForCurrentTicker = () => {
     switch (ticker) {
@@ -146,13 +139,13 @@ export const Stake = () => {
             defaultValue={options[0]}
             onChange={(val: Option) => {
               setTicker(val.value as TICKER_SYMBOL);
-              handleUpdateStakingAmount(0);
+              handleUpdateStakingAmount();
             }}
           />
         </SelectContainer>
       </DepositContainer>
       <VaultInput
-        tickerSymbol={getTickerDisplayValue()}
+        tickerSymbol={ticker}
         handleChange={handleUpdateStakingAmount}
         hint={`Balance: ${formatNumber(tokenBalance)}`}
         onHintClick={() => {
