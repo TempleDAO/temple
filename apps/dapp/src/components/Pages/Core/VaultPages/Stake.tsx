@@ -139,7 +139,7 @@ export const Stake = () => {
             defaultValue={options[0]}
             onChange={(val: Option) => {
               setTicker(val.value as TICKER_SYMBOL);
-              handleUpdateStakingAmount();
+              handleUpdateStakingAmount(0);
             }}
           />
         </SelectContainer>
