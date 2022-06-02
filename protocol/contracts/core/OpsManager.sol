@@ -45,6 +45,7 @@ contract OpsManager is Ownable {
         string memory symbol,
         IERC20 revalToken
     ) external onlyOwner  {
+        require(address(pools[revalToken]) == address(0));
         Exposure exposure = OpsManagerLib.createExposure(name, symbol, revalToken, pools);
         revalTokens.push(address(revalToken));
         emit CreateExposure(address(exposure), address(pools[revalToken]));
