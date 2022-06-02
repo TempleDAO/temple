@@ -82,6 +82,14 @@ export const Stake = () => {
     }
   };
 
+  const getTickerDisplayValue = () => {
+    if (ticker === TICKER_SYMBOL.FAITH) {
+      return TICKER_SYMBOL.TEMPLE_TOKEN;
+    };
+
+    return ticker;
+  }
+
   const getTokenBalanceForCurrentTicker = () => {
     switch (ticker) {
       case TICKER_SYMBOL.TEMPLE_TOKEN:
@@ -141,7 +149,7 @@ export const Stake = () => {
         </SelectContainer>
       </DepositContainer>
       <VaultInput
-        tickerSymbol={ticker}
+        tickerSymbol={getTickerDisplayValue()}
         handleChange={handleUpdateStakingAmount}
         hint={`Balance: ${formatNumber(tokenBalance)}`}
         onHintClick={() => {
