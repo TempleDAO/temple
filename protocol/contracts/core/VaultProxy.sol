@@ -77,7 +77,7 @@ contract VaultProxy {
         uint256 templeBeforeBalance = temple.balanceOf(address(this));
         templeStaking.unstake(_amountOGT);
         uint256 templeAfterBalance = temple.balanceOf(address(this));
-        require(templeAfterBalance > templeBeforeBalance, "Vault Proxy: no Temple received when unstaking");
+        require(templeAfterBalance - templeBeforeBalance >= expectedTemple, "Vault Proxy: no Temple received when unstaking");
 
         SafeERC20.safeIncreaseAllowance(temple, address(vault), expectedTemple);
         vault.depositFor(msg.sender, expectedTemple);
