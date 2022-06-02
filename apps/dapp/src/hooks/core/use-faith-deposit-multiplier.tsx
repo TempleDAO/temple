@@ -1,5 +1,5 @@
 import { VaultProxy__factory } from 'types/typechain';
-import { fromAtto, toAtto } from 'utils/bigNumber';
+import { toAtto } from 'utils/bigNumber';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 
@@ -20,7 +20,7 @@ export const useFaithDepositMultiplier = () => {
     // The wallet needs to have usableFaith to get any multiplier. If there is no usableFaith
     // we can skip the contract call and just return the deposit amount.
     if (usableFaith === 0) {
-      return amount;
+      return toAtto(amount);
     }
    
     const vaultProxy = new VaultProxy__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY);
@@ -28,7 +28,7 @@ export const useFaithDepositMultiplier = () => {
     // If the user is depositing with FAITH, the will get a boosted amount of TEMPLE deposited.
     // we need to calculate the deposit amount plus the amount of TEMPLE the FAITH converts to.
     const templeWithFaithAmount = await vaultProxy.getFaithMultiplier(toAtto(usableFaith), toAtto(amount));
-    return fromAtto(templeWithFaithAmount);
+    return templeWithFaithAmount;
   };
 
   return useRequestState(handler, { purgeResponseOnRefetch: true });

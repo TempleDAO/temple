@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
 import { subDays } from 'date-fns';
+import { BigNumber } from 'ethers';
 
 import StatsCard from 'components/StatsCard/StatsCard';
 
@@ -25,8 +26,11 @@ import { FlexibleXYPlot, XAxis, YAxis, LineSeries, ChartLabel } from 'react-vis'
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import env from 'constants/env';
 import { Nullable } from 'types/util';
+import { fromAtto } from 'utils/bigNumber';
 
 const STAT_CARD_HEIGHT = '5rem';
+
+const ZERO = BigNumber.from(0);
 
 const ProfilePage = () => {
   const { getBalance, wallet, balance } = useWallet();
@@ -42,29 +46,29 @@ const ProfilePage = () => {
   }, [wallet]);
 
   const totalStakedAcrossAllVaults = Object.values(balances).reduce((total, vault) => {
-    return total + (vault?.staked || 0);
-  }, 0);
+    return total.add(vault?.staked || ZERO);
+  }, BigNumber.from(0));
 
   const totalBalancesAcrossVaults = Object.values(balances).reduce((balance, vault) => {
-    return balance + (vault.balance || 0);
-  }, 0);
+    return balance.add(vault.balance || ZERO);
+  }, BigNumber.from(0));
 
   const claimableVaults = new Set(vaultGroups.flatMap((vaultGroup) => {
     return vaultGroup.vaults.filter(({ unlockDate }) => unlockDate === 'NOW').map(({ id }) => id);
   }));
 
-  const { data, yDomain, xDomain } = useChartData(wallet || '', totalBalancesAcrossVaults);
+  const { data, yDomain, xDomain } = useChartData(wallet || '', fromAtto(totalBalancesAcrossVaults));
 
   const claimableBalance = Object.entries(balances).reduce((total, [address, vault]) => {
     if (!claimableVaults.has(address)) {
       return total;
     }
 
-    return total + (vault.balance || 0)
-  }, 0);
+    return total.add(vault.balance || ZERO);
+  }, BigNumber.from(0));
 
   const isLoading = vaultGroupsLoading || vaultGroupBalancesLoading;
-  const totalEarned = totalBalancesAcrossVaults - totalStakedAcrossAllVaults;
+  const totalEarned = totalBalancesAcrossVaults.sub(totalStakedAcrossAllVaults);
   const lockedOGTempleBalance = balance.ogTempleLockedClaimable;
   const ogTempleBalance = balance.ogTemple;
   const faithBalance = faith.usableFaith;

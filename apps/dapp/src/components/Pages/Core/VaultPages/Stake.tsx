@@ -1,5 +1,6 @@
 import { useState, useEffect, ReactNode } from 'react';
 import styled from 'styled-components';
+import { BigNumber } from 'ethers';
 
 import { Option } from 'components/InputSelect/InputSelect';
 import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
@@ -21,6 +22,7 @@ import Tooltip from 'components/Tooltip/Tooltip';
 import { useFaith } from 'providers/FaithProvider';
 import { useFaithDepositMultiplier } from 'hooks/core/use-faith-deposit-multiplier';
 import EllipsisLoader from 'components/EllipsisLoader';
+import { toAtto, fromAtto } from 'utils/bigNumber';
 import { useOGTempleStakingValue } from 'hooks/core/use-ogtemple-staking-value';
 
 const ENV = import.meta.env;
@@ -44,7 +46,7 @@ export const Stake = () => {
   ] = useFaithDepositMultiplier();
 
   const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] = useVaultJoiningFee(vault);
-  const joiningFee = (!isConnected || joiningFeeLoading) ? null : (joiningFeeResponse || 0);
+  const joiningFee = (!isConnected || joiningFeeLoading) ? null : (joiningFeeResponse || BigNumber.from(0));
 
   useEffect(() => {
     if (isConnected) {
@@ -124,8 +126,8 @@ export const Stake = () => {
     if (faithMultiplierLoading) {
       zapMessage = <EllipsisLoader />;
     } else if (faithDepositMultiplier) {
-      const bonusAmount = faithDepositMultiplier - numberStakingAmount;
-      zapMessage = <>Burn all your FAITH ({balances.faith}) and receive {bonusAmount.toFixed(2)} bonus TEMPLE.</>
+      const bonusAmount = faithDepositMultiplier.sub(toAtto(numberStakingAmount));
+      zapMessage = <>Burn all your FAITH ({balances.faith}) and receive {fromAtto(bonusAmount)} bonus TEMPLE.</>
     }
   } else if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN && balances.ogTemple > 0 && (stakingValue || 0) > 0) {
     zapMessage = <>Unstake {numberStakingAmount} OGTemple and deposit {stakingValue} TEMPLE.</>;
@@ -168,7 +170,7 @@ export const Stake = () => {
           >
             Joining Fee{' '}
           </Tooltip>
-          : {joiningFee * numberStakingAmount} $T
+          : {fromAtto(joiningFee.mul(numberStakingAmount))} $T
         </JoiningFee>
       )}
       {<ErrorLabel>{error}</ErrorLabel>}

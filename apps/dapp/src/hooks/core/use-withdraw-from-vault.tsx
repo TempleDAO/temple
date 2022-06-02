@@ -25,7 +25,7 @@ export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: C
     const receipt = await vault.withdraw(bigAmount);
     await receipt.wait();
 
-    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Decrease, amount);
+    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Decrease, bigAmount);
 
     openNotification({
       title: 'Withdraw success',

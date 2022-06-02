@@ -1,7 +1,10 @@
 import { differenceInSeconds, addSeconds, subSeconds, format } from 'date-fns';
 import { millify } from 'millify';
+import { BigNumber } from 'ethers';
+import { parseUnits } from 'ethers/lib/utils';
 
 import { GraphVault, GraphVaultGroup } from 'hooks/core/types';
+import { fromAtto, toAtto } from 'utils/bigNumber';
 import { Vault, VaultGroup, MarkerType, Marker } from './types';
 import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
@@ -72,6 +75,9 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
   const userBalances = (user?.vaultUserBalances || []);
   const vaultUserBalance = userBalances.find(({ id }) => id.startsWith(subgraphVault.id));
 
+  console.log('staked', vaultUserBalance?.staked)
+  console.log('as number', fromAtto(parseUnits(vaultUserBalance?.staked || '0', 18)))
+
   const vault: Partial<Vault> = {
     id: subgraphVault.id,
     now,
@@ -81,7 +87,7 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
     periodDurationSeconds,
     startDateSeconds: Number(subgraphVault.firstPeriodStartTimestamp),
     isActive: vaultIsInZone,
-    amountStaked: Number(vaultUserBalance?.staked || 0),
+    amountStaked: parseUnits(vaultUserBalance?.staked || '0.0', 18),
   };
   
   vault.unlockDate = calculateUnlockDate(vault as Vault);
@@ -95,7 +101,7 @@ export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: Va
     const vaultBalance = balances[vault.id] || {};
     const marker = {
       vaultId: vault.id,
-      staked: vaultBalance.staked || 0,
+      staked: fromAtto(vaultBalance.staked || BigNumber.from(0)),
       percent: calculatePercent(vault),
       inZone: vault.isActive,
       type: MarkerType.HIDDEN,
@@ -104,7 +110,8 @@ export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: Va
       windowEndDate: calculateWindowEndDate(vault),
     };
 
-    if (marker.staked > 0) {
+    const amount = Number(vaultBalance.staked || 0);
+    if (amount > 0) {
       marker.type = MarkerType.STAKING;
       if (marker.inZone) {
         marker.type = MarkerType.STAKING_IN_ZONE;
@@ -188,10 +195,12 @@ const getCurrentCycle = (startDate: Date, months: number, now: Date) => {
 // put it at.
 export const lerp = (v0: number, v1: number, t: number) => v0 * (1 - t) + v1 * t;
 
-export const formatTemple = (templeValue: Nullable<number>) => {
+export const formatTemple = (templeValue: Nullable<number | BigNumber>) => {
   if (!templeValue) {
     return '0';
   }
 
-  return millify(templeValue, {precision: 2});
+  const amount = typeof templeValue === 'number' ? templeValue : fromAtto(templeValue);
+
+  return millify(amount, {precision: 2});
 };

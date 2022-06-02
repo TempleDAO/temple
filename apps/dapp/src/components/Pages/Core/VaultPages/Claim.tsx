@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { BigNumber } from 'ethers';
 
 import { VaultInput } from 'components/Input/VaultInput';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -11,7 +12,7 @@ import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
-import { formatTemple } from 'components/Vault/utils';
+import { fromAtto } from 'utils/bigNumber';
 
 export const Claim = () => {
   const { activeVault: vault } = useVaultContext();
@@ -29,17 +30,19 @@ export const Claim = () => {
     setAmount(Number(amount) === 0 ? '' : amount);
   };
 
-  const vaultBalance = balance || 0;
+  const bigAmount = BigNumber.from(amount || 0);
 
   const buttonIsDisabled =
-    getBalanceLoading || refreshLoading || withdrawIsLoading || !amount || amount > (vaultBalance || 0);
+    getBalanceLoading || refreshLoading || withdrawIsLoading || !amount || bigAmount.gt(balance);
+
+  const readableBalance = fromAtto(balance);
 
   const claimLabel =
-    vaultBalance > 0 ? (
+    balance.gt(BigNumber.from(0)) ? (
       <ClaimableLabel>
         Claimable Temple
-        <TempleAmountLink onClick={() => copyBalance(vaultBalance, handleUpdateAmount)}>
-          {vaultBalance}
+        <TempleAmountLink onClick={() => copyBalance(readableBalance, handleUpdateAmount)}>
+          {readableBalance}
         </TempleAmountLink>
       </ClaimableLabel>
     ) : (
@@ -65,7 +68,7 @@ export const Claim = () => {
         isNumber
         placeholder="0.00"
         value={amount}
-        disabled={vaultBalance <= 0}
+        disabled={balance.lte(BigNumber.from(0))}
       />
       {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
       <VaultButton
