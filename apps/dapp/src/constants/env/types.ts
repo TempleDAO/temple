@@ -13,4 +13,5 @@ export interface Environment {
   subgraph: Subgraphs;
   contracts: Contracts;
   sentry?: Sentry;
+  infuraId: string;
 }
