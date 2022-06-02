@@ -46,7 +46,7 @@ export const Stake = () => {
   ] = useFaithDepositMultiplier();
 
   const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] = useVaultJoiningFee(vault);
-  const joiningFee = (!isConnected || joiningFeeLoading) ? null : (joiningFeeResponse || BigNumber.from(0));
+  const joiningFee = (!isConnected || joiningFeeLoading || !joiningFeeResponse) ? null : joiningFeeResponse;
 
   useEffect(() => {
     if (isConnected) {
@@ -68,10 +68,9 @@ export const Stake = () => {
   );
   
   const handleUpdateStakingAmount = (_value: string | number) => {
-    const value = _value as string; // value is actually only ever going to be string
-    const amount = parseFloat(value || '0');
+    const amount = typeof _value === 'string' ? parseFloat(_value || '0') : _value;
     
-    setStakingAmount(amount === 0 ? '' : value);
+    setStakingAmount(amount === 0 ? '' : _value);
     
     if (amount <= 0) {
       return;
@@ -118,8 +117,10 @@ export const Stake = () => {
     depositLoading ||
     allowanceLoading;
 
-  const error =
-    !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
+  const error = !!depositError && (
+    (depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong'
+  );
+    
 
   let zapMessage: ReactNode = null;
   if (ticker === TICKER_SYMBOL.FAITH && balances.faith > 0 && numberStakingAmount > 0) {
@@ -161,7 +162,9 @@ export const Stake = () => {
         placeholder="0.00"
         value={stakingAmount}
       />
-      {!stakeAmountExceedsTokenBalance && !!numberStakingAmount && !!zapMessage && <AmountInTemple>{zapMessage}</AmountInTemple>} 
+      {(!stakeAmountExceedsTokenBalance && !!numberStakingAmount && !!zapMessage) && (
+        <AmountInTemple>{zapMessage}</AmountInTemple>
+      )} 
       {(joiningFee !== null && !!numberStakingAmount) && (
         <JoiningFee>
           <Tooltip
@@ -170,7 +173,7 @@ export const Stake = () => {
           >
             Joining Fee{' '}
           </Tooltip>
-          : {fromAtto(joiningFee.mul(numberStakingAmount))} $T
+          : {fromAtto(joiningFee.mul(toAtto(numberStakingAmount)))} $T
         </JoiningFee>
       )}
       {<ErrorLabel>{error}</ErrorLabel>}

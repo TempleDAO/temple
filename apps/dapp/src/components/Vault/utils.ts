@@ -75,9 +75,6 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
   const userBalances = (user?.vaultUserBalances || []);
   const vaultUserBalance = userBalances.find(({ id }) => id.startsWith(subgraphVault.id));
 
-  console.log('staked', vaultUserBalance?.staked)
-  console.log('as number', fromAtto(parseUnits(vaultUserBalance?.staked || '0', 18)))
-
   const vault: Partial<Vault> = {
     id: subgraphVault.id,
     now,

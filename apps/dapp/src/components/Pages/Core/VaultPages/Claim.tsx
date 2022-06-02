@@ -30,19 +30,22 @@ export const Claim = () => {
     setAmount(Number(amount) === 0 ? '' : amount);
   };
 
-  const bigAmount = BigNumber.from(amount || 0);
+  const numberBalance = fromAtto(balance);
 
-  const buttonIsDisabled =
-    getBalanceLoading || refreshLoading || withdrawIsLoading || !amount || bigAmount.gt(balance);
-
-  const readableBalance = fromAtto(balance);
+  const buttonIsDisabled = (
+    getBalanceLoading ||
+    refreshLoading ||
+    withdrawIsLoading ||
+    !amount ||
+    amount > numberBalance
+  );
 
   const claimLabel =
-    balance.gt(BigNumber.from(0)) ? (
+    numberBalance > 0 ? (
       <ClaimableLabel>
         Claimable Temple
-        <TempleAmountLink onClick={() => copyBalance(readableBalance, handleUpdateAmount)}>
-          {readableBalance}
+        <TempleAmountLink onClick={() => copyBalance(numberBalance, handleUpdateAmount)}>
+          {numberBalance}
         </TempleAmountLink>
       </ClaimableLabel>
     ) : (

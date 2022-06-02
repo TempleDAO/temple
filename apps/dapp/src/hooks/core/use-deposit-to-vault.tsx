@@ -1,4 +1,5 @@
 import { BigNumber, ContractTransaction } from 'ethers';
+import { parseUnits } from 'ethers/lib/utils';
 
 import {
   TempleERC20Token__factory,
