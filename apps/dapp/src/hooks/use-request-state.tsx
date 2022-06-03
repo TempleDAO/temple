@@ -24,15 +24,16 @@ export const createMockRequest = <T extends any>(
   };
 };
 
-type RequestResponseState<T> = {
+type RequestResponseState<T, Args> = {
   isLoading: boolean,
   error: Nullable<Error>,
   response: Nullable<T>,
+  args: Nullable<Args>,
 };
 
 type UseRequestStateReturnType<T extends any, Args extends any[]> = [
   Request<Maybe<T>, Args>,
-  RequestResponseState<T>,
+  RequestResponseState<T, Args>,
 ];
 
 interface Options {
@@ -44,6 +45,7 @@ const useRequestState = <Resp extends any, Args extends any[]>(request: Request<
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Nullable<Error>>(null);
   const [response, setResponse] = useState<Nullable<Resp>>(null);
+  const [args, setArguments] = useState<Nullable<Args>>(null);
   const requestRef = useRef(request);
   const purgeResponse = options?.purgeResponseOnRefetch || false;
 
@@ -55,6 +57,7 @@ const useRequestState = <Resp extends any, Args extends any[]>(request: Request<
   const wrappedRequest = useCallback(async (...args: Args) => {
     setError(null);
     setIsLoading(true);
+    setArguments(args);
 
     if (purgeResponse) {
       setResponse(null);
@@ -85,6 +88,7 @@ const useRequestState = <Resp extends any, Args extends any[]>(request: Request<
       isLoading,
       error,
       response,
+      args,
     },
   ];
 };
