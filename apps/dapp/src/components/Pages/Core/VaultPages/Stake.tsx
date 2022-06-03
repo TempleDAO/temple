@@ -31,7 +31,7 @@ export const Stake = () => {
 
   const { options, ticker, setTicker, balances, stakingAmount, setStakingAmount } = useStakeOptions();
 
-  const [getFaithDepositMultiplier, { response: faithDepositMultiplier, isLoading: faithMultiplierLoading }] =
+  const [getFaithDepositMultiplier, { response: faithDepositMultiplier, isLoading: faithMultiplierLoading, args: faithArgs }] =
     useFaithDepositMultiplier();
 
   const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] =
@@ -100,13 +100,18 @@ export const Stake = () => {
       return null;
     }
 
-    if (ticker === TICKER_SYMBOL.FAITH) {
+    if (ticker === TICKER_SYMBOL.FAITH && faithArgs?.[0] === stakingAmount) {
       if (faithMultiplierLoading) {
         return <EllipsisLoader />;
       }
 
       if (faithDepositMultiplier) {
         const bonusAmount = faithDepositMultiplier.sub(stakingAmountBigNumber);
+        
+        if (bonusAmount.lte(ZERO)) {
+          return null;
+        }
+
         return (
           <>
             Burn all your FAITH ({balances.faith}) and receive {formatNumber(formatBigNumber(bonusAmount))} bonus
@@ -209,7 +214,7 @@ const useStakeOptions = () => {
 
   const options = [{ value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' }];
 
-  if (usableFaith > 0) {
+  if (true) {
     options.push({ value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' });
   }
 
