@@ -103,15 +103,18 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
     // get the locked OG temple
     await updateLockedEntries();
-
+    console.log('locked entries');
+    console.log(lockedEntries);
     let lockedOgtBalance = 0;
 
     if (lockedEntries.length > 0) {
       lockedOgtBalance = lockedEntries.reduce((acc, entry) => {
+        console.log(entry);
         acc.balanceOGTemple += entry.balanceOGTemple;
         return acc;
       }).balanceOGTemple;
     }
+    console.log('ogt balance = ' + lockedOgtBalance);
 
     const ogTemple = fromAtto(await OG_TEMPLE_CONTRACT.balanceOf(walletAddress));
     const temple = fromAtto(await templeContract.balanceOf(walletAddress));
