@@ -82,28 +82,28 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
       <MenuWrapper>
         <Menu id="menu">
           <MenuItem
-            to="/core/dapp/vaults"
+            to="/dapp/vaults"
             onMenuItemActive={onMenuItemActive}
             onClick={onClickMenuItem}
           >
             Vaults
           </MenuItem>
           <MenuItem
-            to="/core/dapp/trade"
+            to="/dapp/trade"
             onMenuItemActive={onMenuItemActive}
             onClick={onClickMenuItem}
           >
             Trade
           </MenuItem>
           <MenuItem
-            to="/core/dapp/profile"
+            to="/dapp/profile"
             onMenuItemActive={onMenuItemActive}
             onClick={onClickMenuItem}
           >
             Profile
           </MenuItem>
           <MenuItem
-            to="/core/dapp/analytics"
+            to="/dapp/analytics"
             onMenuItemActive={onMenuItemActive}
             onClick={onClickMenuItem}
           >

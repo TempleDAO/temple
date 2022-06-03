@@ -85,33 +85,10 @@ ReactDOM.render(
       <BrowserRouter>
         <Routes>
           <>
-            <Route path="/core" element={<PageLayout />}>
+            <Route path="/" element={<PageLayout />}>
               <Route path="" element={<HomePage />} />
               {/* Redirect everything else to the home page */}c
               <Route path="*" element={<Navigate replace to="/" />} />
-            </Route>
-            <Route path="/core/dapp/*" element={<CoreLayout />}>
-              <Route path="" element={<VaultListPage />} />
-
-              <Route path="vaults" element={<VaultListPage />} />
-              <Route path="vaults/:vaultId/*" element={<VaultPage />}>
-                <Route path="claim" element={<VaultClaim />} />
-                <Route path="stake" element={<Stake />} />
-                <Route path="summary" element={<Summary />} />
-                <Route path="strategy" element={<Strategy />} />
-                <Route path="timing" element={<Timing />} />
-              </Route>
-              <Route path="trade/*" element={<TradeRoutes />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="analytics" element={<AnalyticsPage />} />
-            </Route>
-            <Route
-              path="/the-temple"
-              element={<LazyPage component={AmmSpaRoot} />}
-            />
-            <Route path="/dapp" element={<LazyPage component={DAppRoot} />} />
-            <Route path="/" element={<PageLayout />}>
-              <Route path="/" element={<Home />} />
               <Route path="disclaimer" element={<Disclaimer />} />
               <Route
                 path="faith-airdrop"
@@ -125,7 +102,21 @@ ReactDOM.render(
                 path="team-payments"
                 element={<LazyPage component={TeamPayments} />}
               />
-              <Route path="/*" element={<Navigate replace to="/" />} />
+            </Route>
+            <Route path="/dapp/*" element={<CoreLayout />}>
+              <Route path="" element={<VaultListPage />} />
+
+              <Route path="vaults" element={<VaultListPage />} />
+              <Route path="vaults/:vaultId/*" element={<VaultPage />}>
+                <Route path="claim" element={<VaultClaim />} />
+                <Route path="stake" element={<Stake />} />
+                <Route path="summary" element={<Summary />} />
+                <Route path="strategy" element={<Strategy />} />
+                <Route path="timing" element={<Timing />} />
+              </Route>
+              <Route path="trade/*" element={<TradeRoutes />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
           </>
         </Routes>

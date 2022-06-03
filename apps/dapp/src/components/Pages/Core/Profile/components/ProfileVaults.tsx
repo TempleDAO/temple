@@ -29,7 +29,7 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultG
   if (!vaultGroups.length) {
     return (
       <Container>
-        <Button isSmall as="a" label="Enter a vault" href="/core/dapp/vaults" />
+        <Button isSmall as="a" label="Enter a vault" href="/dapp/vaults" />
       </Container>
     );
   }
