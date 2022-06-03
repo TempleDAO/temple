@@ -108,7 +108,6 @@ export const Stake = () => {
         const bonusAmount = faithDepositMultiplier.sub(stakingAmountBigNumber);
         
         if (bonusAmount.lte(ZERO)) {
-          console.log('butter bean')
           return null;
         }
 
