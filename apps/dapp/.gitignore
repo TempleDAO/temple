@@ -26,6 +26,7 @@ yarn-error.log*
 .env.development
 .env.test.local
 .env.production.local
+.env*
 
 node_modules
 .DS_Store
