@@ -59,7 +59,7 @@ export function withWallet<T>(WrappedComponent: ComponentType<T>) {
                   <Button
                     disabled={!connector.ready}
                     key={connector.id}
-                    onClick={() => connect(connector)}
+                    onClick={() => {connect(connector); return;}}
                   >
                     {connector.name}
                     {!connector.ready && ' (unsupported)'}

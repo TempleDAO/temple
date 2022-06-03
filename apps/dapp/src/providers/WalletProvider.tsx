@@ -68,7 +68,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
   
   const [{ data: signer, loading: signerLoading }] = useSigner();
-  const [{ data: network }] = useNetwork();
+  const [{ data: network }, switchNetwork] = useNetwork();
   const [{ data: accountData, loading: accountLoading }] = useAccount();
   const [{ loading: connectLoading }] = useConnect();
   const provider = useProvider();

@@ -19,8 +19,9 @@ if (!window.Buffer) {
 
 // The default WAGMI HardHat Chain has the wrong ChainId.
 export const LOCAL_CHAIN = {
-  ...chain.hardhat,
-  id: 31337,
+  ...chain.mainnet
+  //...chain.hardhat,
+  //id: 31337,
 };
 
 const chains = [chain.mainnet, chain.rinkeby, LOCAL_CHAIN];
