@@ -21,30 +21,22 @@ import Tooltip from 'components/Tooltip/Tooltip';
 import { useFaith } from 'providers/FaithProvider';
 import { useFaithDepositMultiplier } from 'hooks/core/use-faith-deposit-multiplier';
 import EllipsisLoader from 'components/EllipsisLoader';
+import { ZERO } from 'utils/bigNumber';
 import { useOGTempleStakingValue } from 'hooks/core/use-ogtemple-staking-value';
-
-const ENV = import.meta.env;
+import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
   const { isConnected } = useWallet();
 
-  const {
-    options,
-    ticker,
-    setTicker,
-    balances,
-    stakingAmount,
-    setStakingAmount,
-  } = useStakeOptions();
+  const { options, ticker, setTicker, balances, stakingAmount, setStakingAmount } = useStakeOptions();
 
-  const [
-    getFaithDepositMultiplier, 
-    { response: faithDepositMultiplier, isLoading: faithMultiplierLoading },
-  ] = useFaithDepositMultiplier();
+  const [getFaithDepositMultiplier, { response: faithDepositMultiplier, isLoading: faithMultiplierLoading }] =
+    useFaithDepositMultiplier();
 
-  const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] = useVaultJoiningFee(vault);
-  const joiningFee = (!isConnected || joiningFeeLoading) ? null : (joiningFeeResponse || 0);
+  const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] =
+    useVaultJoiningFee(vault);
+  const joiningFee = !isConnected || joiningFeeLoading || !joiningFeeResponse ? null : joiningFeeResponse;
 
   useEffect(() => {
     if (isConnected) {
@@ -61,34 +53,23 @@ export const Stake = () => {
     refreshWalletState();
   });
 
-  const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultProxyAllowance(
-    ticker,
-  );
-  
-  const handleUpdateStakingAmount = (_value: string | number) => {
-    const value = _value as string; // value is actually only ever going to be string
-    const amount = parseFloat(value || '0');
-    
+  const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultProxyAllowance(ticker);
+
+  const handleUpdateStakingAmount = (value: string) => {
+    const amount = Number(value || '0');
+
     setStakingAmount(amount === 0 ? '' : value);
-    
+
     if (amount <= 0) {
       return;
     }
 
     if (ticker === TICKER_SYMBOL.FAITH) {
-      getFaithDepositMultiplier(amount);
+      getFaithDepositMultiplier(value);
     } else if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
-      getOGStakingValue(amount);
+      getOGStakingValue(value);
     }
   };
-
-  const getTickerDisplayValue = () => {
-    if (ticker === TICKER_SYMBOL.FAITH) {
-      return TICKER_SYMBOL.TEMPLE_TOKEN;
-    };
-
-    return ticker;
-  }
 
   const getTokenBalanceForCurrentTicker = () => {
     switch (ticker) {
@@ -103,33 +84,52 @@ export const Stake = () => {
     return 0;
   };
 
-
   const tokenBalance = getTokenBalanceForCurrentTicker();
-  const numberStakingAmount = stakingAmount ? parseFloat(stakingAmount) : 0;
-  const stakeAmountExceedsTokenBalance = numberStakingAmount > tokenBalance;
+  const stakingAmountBigNumber = getBigNumberFromString(stakingAmount);
+  const bigTokenBalance = getBigNumberFromString(tokenBalance.toString());
+  const amountIsOutOfBounds = stakingAmountBigNumber.gt(bigTokenBalance) || stakingAmountBigNumber.lte(ZERO);
 
   const stakeButtonDisabled =
-    !isConnected ||
-    stakeAmountExceedsTokenBalance ||
-    refreshIsLoading ||
-    !numberStakingAmount ||
-    depositLoading ||
-    allowanceLoading;
+    !isConnected || amountIsOutOfBounds || refreshIsLoading || depositLoading || allowanceLoading;
 
   const error =
     !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
 
-  let zapMessage: ReactNode = null;
-  if (ticker === TICKER_SYMBOL.FAITH && balances.faith > 0 && numberStakingAmount > 0) {
-    if (faithMultiplierLoading) {
-      zapMessage = <EllipsisLoader />;
-    } else if (faithDepositMultiplier) {
-      const bonusAmount = faithDepositMultiplier - numberStakingAmount;
-      zapMessage = <>Burn all your FAITH ({balances.faith}) and receive {bonusAmount.toFixed(2)} bonus TEMPLE.</>
+  const getZapMessage = (): ReactNode => {
+    if (amountIsOutOfBounds) {
+      return null;
     }
-  } else if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN && balances.ogTemple > 0 && (stakingValue || 0) > 0) {
-    zapMessage = <>Unstake {numberStakingAmount} OGTemple and deposit {stakingValue} TEMPLE.</>;
-  }
+
+    if (ticker === TICKER_SYMBOL.FAITH) {
+      if (faithMultiplierLoading) {
+        return <EllipsisLoader />;
+      }
+
+      if (faithDepositMultiplier) {
+        const bonusAmount = faithDepositMultiplier.sub(stakingAmountBigNumber);
+        return (
+          <>
+            Burn all your FAITH ({balances.faith}) and receive {formatNumber(formatBigNumber(bonusAmount))} bonus
+            TEMPLE.
+          </>
+        );
+      }
+
+      return null;
+    }
+
+    if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN && balances.ogTemple > 0) {
+      return (
+        <>
+          Unstake {formatNumber(formatBigNumber(stakingAmountBigNumber))} OGTemple and deposit {stakingValue} TEMPLE.
+        </>
+      );
+    }
+
+    return null;
+  };
+
+  const zapMessage = getZapMessage();
 
   return (
     <VaultContent>
@@ -143,24 +143,24 @@ export const Stake = () => {
             defaultValue={options[0]}
             onChange={(val: Option) => {
               setTicker(val.value as TICKER_SYMBOL);
-              handleUpdateStakingAmount(0);
+              handleUpdateStakingAmount('');
             }}
           />
         </SelectContainer>
       </DepositContainer>
       <VaultInput
-        tickerSymbol={getTickerDisplayValue()}
-        handleChange={handleUpdateStakingAmount}
+        tickerSymbol={ticker}
+        handleChange={(value) => handleUpdateStakingAmount(value.toString())}
         hint={`Balance: ${formatNumber(tokenBalance)}`}
         onHintClick={() => {
-          handleUpdateStakingAmount(tokenBalance);
+          handleUpdateStakingAmount(tokenBalance.toString());
         }}
         isNumber
         placeholder="0.00"
         value={stakingAmount}
       />
-      {!stakeAmountExceedsTokenBalance && !!numberStakingAmount && !!zapMessage && <AmountInTemple>{zapMessage}</AmountInTemple>} 
-      {(joiningFee !== null && !!numberStakingAmount) && (
+      {!!zapMessage && <AmountInTemple>{zapMessage}</AmountInTemple>}
+      {joiningFee !== null && !amountIsOutOfBounds && (
         <JoiningFee>
           <Tooltip
             content="The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increases the further we are into the joining period."
@@ -168,7 +168,7 @@ export const Stake = () => {
           >
             Joining Fee{' '}
           </Tooltip>
-          : {joiningFee * numberStakingAmount} $T
+          : {formatBigNumber(joiningFee.mul(stakingAmountBigNumber))} $T
         </JoiningFee>
       )}
       {<ErrorLabel>{error}</ErrorLabel>}
@@ -189,8 +189,7 @@ export const Stake = () => {
           disabled={stakeButtonDisabled}
           loading={refreshIsLoading || depositLoading}
           onClick={async () => {
-            const amountToDeposit = !stakingAmount ? 0 : parseFloat(stakingAmount);
-            await deposit(ticker, amountToDeposit);
+            await deposit(ticker, stakingAmount || '0');
             setStakingAmount('');
           }}
         />
@@ -200,13 +199,15 @@ export const Stake = () => {
 };
 
 const useStakeOptions = () => {
-  const { balance: { temple, ogTemple } } = useWallet();
-  const { faith: { usableFaith } } = useFaith();
+  const {
+    balance: { temple, ogTemple },
+  } = useWallet();
+  const {
+    faith: { usableFaith },
+  } = useFaith();
   const [stakingAmount, setStakingAmount] = useState('');
 
-  const options = [
-    { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' },
-  ];
+  const options = [{ value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' }];
 
   if (usableFaith > 0) {
     options.push({ value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' });
@@ -231,7 +232,6 @@ const useStakeOptions = () => {
     },
   };
 };
-
 
 const SelectContainer = styled.div`
   margin: 0 auto;

@@ -8,6 +8,7 @@ import { Marker, MarkerType } from 'components/Vault/types';
 import { TippyDiv } from 'components/Tooltip/Tooltip';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
 import Loader from 'components/Loader/Loader';
+import { fromAtto } from 'utils/bigNumber';
 import { formatTemple } from './utils';
 
 type Props = {

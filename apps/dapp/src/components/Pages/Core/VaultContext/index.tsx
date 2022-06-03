@@ -1,4 +1,5 @@
 import { createContext, FC, useEffect, useContext } from 'react';
+import { BigNumber } from 'ethers';
 
 import { VaultGroup, Vault } from 'components/Vault/types';
 import { useVaultGroupBalances, Operation, VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
@@ -10,7 +11,7 @@ interface VaultContextType {
   activeVault: Nullable<Vault>;
   balances: VaultGroupBalances;
   refreshVaultBalance: (address: string) => Promise<void>,
-  optimisticallyUpdateVaultStaked: (address: string, operation: Operation, amount: number) => void;
+  optimisticallyUpdateVaultStaked: (address: string, operation: Operation, amount: BigNumber) => void;
 }
 
 export { Operation };
@@ -43,7 +44,7 @@ export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
   }, [activeVault]);
 
   const optimisticallyUpdateVaultStaked =
-    (vaultAddress: string, operation: Operation, amount: number) => updateStakedAmount(
+    (vaultAddress: string, operation: Operation, amount: BigNumber) => updateStakedAmount(
       vaultAddress,
       operation,
       amount,
