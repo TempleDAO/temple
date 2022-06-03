@@ -15,7 +15,7 @@ export const Summary = () => {
 
   const onClickLink = (e: SyntheticEvent) => {
     e.preventDefault();
-    navigate(`/core/dapp/vaults/${vaultGroup.id}/strategy`);
+    navigate(`/dapp/vaults/${vaultGroup.id}/strategy`);
   };
 
   return (
@@ -24,7 +24,7 @@ export const Summary = () => {
       <Text2
         light
         as="a"
-        href={`/core/dapp/vaults/${vaultGroup.id}/strategy`}
+        href={`/dapp/vaults/${vaultGroup.id}/strategy`}
         onClick={onClickLink}
       >
         30 MINUTE TEST VAULT
@@ -43,7 +43,7 @@ export const Summary = () => {
       <Text3>
         Projected APY: 30% {' '}
         <Tooltip
-          content={`Annual Percentage Yield in $, if you were to lock a single ${TICKER_SYMBOL.TEMPLE_TOKEN} token right now.`}
+          content={`Annual Percentage Yield, if you were to lock a single ${TICKER_SYMBOL.TEMPLE_TOKEN} token right now.`}
           inline={true}
         >
           ⓘ
