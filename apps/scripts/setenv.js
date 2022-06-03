@@ -13,23 +13,20 @@ go().catch((err) => {
 
 async function go() {
   const environment = process.argv[2];
-  const projectId = process.argv[3];
-  const file = process.argv[4];
+  const file = process.argv[3];
   if (!['production', 'preview'].includes(environment)) {
     throw new Error('You must pass "preview" or "production" parameters');
-  }
-  if (!projectId) {
-    throw new Error('You must pass projectId as the second parameter');
   }
   if (!file) {
     throw new Error('You must pass env file as the third parameter');
   }
+  
   const v = new Vercel(process.env.TOKEN);
-  const project = await v.get(`/v9/projects/${projectId}?teamId=${TEAM_ID}`);
+  const project = await v.get(`/v9/projects/${SHADOW_PROJECT_ID}?teamId=${TEAM_ID}`);
 
   console.log(`Please confirm:`);
   console.log(`Environment: ${environment}`);
-  console.log(`Vercel Project ID: ${projectId} (${project.name})`);
+  console.log(`Vercel Project ID: ${SHADOW_PROJECT_ID} (${project.name})`);
   console.log(`File: ${file}`);
 
   await pressAnyKey();
