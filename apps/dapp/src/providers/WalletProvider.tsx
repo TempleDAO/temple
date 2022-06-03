@@ -28,6 +28,7 @@ import {
   LOCKED_OG_TEMPLE_ADDRESS,
   FEI_ADDRESS,
 } from 'providers/env';
+import { useStaking } from './StakingProvider';
 
 // We want to save gas burn $ for the Templars,
 // so we approving 1M up front, so only 1 approve TXN is required for approve
@@ -71,6 +72,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const chain = network?.chain;
   const walletAddress = accountData?.address;
   const isConnected = !!walletAddress && !!signer;
+  const { lockedEntries, updateLockedEntries } = useStaking();
 
   const connectWallet = async () => {
     throw new Error('Deprecated');
@@ -89,8 +91,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
     const feiContract = new ERC20__factory(signer).attach(FEI_ADDRESS);
 
-    const ogLockedTemple = new LockedOGTempleDeprecated__factory(signer).attach(LOCKED_OG_TEMPLE_ADDRESS);
-
     const templeStakingContract = new TempleStaking__factory(signer).attach(TEMPLE_STAKING_ADDRESS);
 
     const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(await templeStakingContract.OG_TEMPLE());
@@ -102,20 +102,16 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     const feiBalance: BigNumber = await feiContract.balanceOf(walletAddress);
 
     // get the locked OG temple
-    const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber() ?? 0;
-    let ogTempleLockedClaimable = 0;
-    const templeLockedPromises = [];
-    for (let i = 0; i < lockedNum; i++) {
-      templeLockedPromises.push(ogLockedTemple.locked(walletAddress, i));
-    }
+    await updateLockedEntries();
 
-    const now = formatNumberFixedDecimals(Date.now() / 1000, 0);
-    const templeLocked = await Promise.all(templeLockedPromises);
-    templeLocked.map((x) => {
-      if (x.LockedUntilTimestamp.lte(BigNumber.from(now))) {
-        ogTempleLockedClaimable += fromAtto(x.BalanceOGTemple);
-      }
-    });
+    let lockedOgtBalance = 0;
+
+    if (lockedEntries.length > 0) {
+      lockedOgtBalance = lockedEntries.reduce((acc, entry) => {
+        acc.balanceOGTemple += entry.balanceOGTemple;
+        return acc;
+      }).balanceOGTemple;
+    }
 
     const ogTemple = fromAtto(await OG_TEMPLE_CONTRACT.balanceOf(walletAddress));
     const temple = fromAtto(await templeContract.balanceOf(walletAddress));
@@ -125,7 +121,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       fei: fromAtto(feiBalance),
       temple: temple,
       ogTemple: ogTemple >= 1 ? ogTemple : 0,
-      ogTempleLockedClaimable: ogTempleLockedClaimable,
+      ogTempleLockedClaimable: lockedOgtBalance,
     };
   };
 

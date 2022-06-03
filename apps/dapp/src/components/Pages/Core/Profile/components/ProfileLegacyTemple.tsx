@@ -1,69 +1,68 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
 import { tabletAndAbove } from 'styles/breakpoints';
 
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
-import { formatNumberWithCommas } from 'utils/formatter';
-
 import StatsCard from 'components/StatsCard/StatsCard';
 import { Button } from 'components/Button/Button';
 
-import background1 from 'assets/images/dashboard-1.png';
 import background2 from 'assets/images/dashboard-2.png';
 import background3 from 'assets/images/dashboard-3.png';
-import background4 from 'assets/images/dashboard-4.png';
 import texture2 from 'assets/images/texture-2.svg';
 
 import { Container, Subheading } from '../styles';
 import { formatTemple } from 'components/Vault/utils';
+import { Popover } from 'components/Popover';
+import { Unlock } from 'components/AMM/Unlock';
 
 interface IProps {
   lockedOgTempleBalance?: number;
-  ogTempleBalance?: number;
   faithBalance?: number;
 }
 
-export const ProfileLegacyTemple: React.FC<IProps> = ({
-  lockedOgTempleBalance = 0,
-  ogTempleBalance = 0,
-  faithBalance = 0,
-}) => {
+export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance = 0, faithBalance = 0 }) => {
+  const [isClaimPopoverOpen, setClaimPopoverOpen] = useState(false);
+
   return (
-    <Container>
-      <Subheading>Temple Legacy</Subheading>
-      <LegacyTempleArea>
-        <StatsCard
-          label={`${TICKER_SYMBOL.OG_TEMPLE_TOKEN} (Locked)`}
-          stat={formatTemple(lockedOgTempleBalance)}
-          backgroundImageUrl={background3}
-          darken
-        />
-        <StatsCard
-          label={`${TICKER_SYMBOL.OG_TEMPLE_TOKEN} (Unlocked)`}
-          stat={formatTemple(ogTempleBalance)}
-          backgroundImageUrl={background1}
-          darken
-        />
-        <StatsCard
-          label={`Usable ${TICKER_SYMBOL.FAITH}`}
-          stat={formatTemple(faithBalance)}
-          backgroundColor={background2}
-          backgroundImageUrl={texture2}
-          darken
-        />
-        <StatsCard
-          label={'Redeemable for'}
-          stat={`0 ${TICKER_SYMBOL.TEMPLE_TOKEN}`}
-          backgroundImageUrl={background4}
-          darken
-        />
-      </LegacyTempleArea>
-      <LegacyTempleArea>
-        <Button label={`Redeem ${TICKER_SYMBOL.TEMPLE_TOKEN}`} isSmall />
-      </LegacyTempleArea>
-    </Container>
+    <>
+      <Popover
+        isOpen={isClaimPopoverOpen}
+        closeOnClickOutside
+        onClose={() => setClaimPopoverOpen(false)}
+        showCloseButton={false}
+      >
+        <Unlock />
+      </Popover>
+      <Container>
+        <Subheading>Temple Legacy</Subheading>
+        <LegacyTempleArea>
+          <StatsCard
+            label={`${TICKER_SYMBOL.OG_TEMPLE_TOKEN} Locked from Opening Ceremony`}
+            stat={formatTemple(lockedOgTempleBalance)}
+            backgroundImageUrl={background3}
+            darken
+          />
+          <StatsCard
+            label={`Usable ${TICKER_SYMBOL.FAITH}`}
+            stat={formatTemple(faithBalance)}
+            backgroundColor={background2}
+            backgroundImageUrl={texture2}
+            darken
+          />
+        </LegacyTempleArea>
+        <LegacyTempleArea>
+          {!!lockedOgTempleBalance && (
+            <Button
+              label={`UNLOCK ${TICKER_SYMBOL.OG_TEMPLE_TOKEN}`}
+              isSmall
+              onClick={() => setClaimPopoverOpen(true)}
+            />
+          )}
+        </LegacyTempleArea>
+      </Container>
+    </>
   );
 };
 
@@ -75,9 +74,5 @@ const LegacyTempleArea = styled.div`
 
   ${tabletAndAbove(`
     grid-template-columns: 1fr 1fr 1fr 1fr;
-
-    button {
-      grid-column: 4;
-    }
   `)}
 `;
