@@ -33,7 +33,7 @@ export const VaultMobile = forwardRef<VaultRef, VaultProps>(
             <Nav
               selected={selectedNav}
               onClickButton={(page) => {
-                navigate(`/core/dapp/vaults/${vaultGroup.id}/${page}`);
+                navigate(`/dapp/vaults/${vaultGroup.id}/${page}`);
               }}
             />
             <Header />

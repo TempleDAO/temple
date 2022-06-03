@@ -40,7 +40,7 @@ export const ProfileTransactions = () => {
           {header}
           <CenterContainer>
             <Subheading textAlign="center">No transactions</Subheading>
-            <Button isSmall as="a" href="/core/trade" label="Trade" />
+            <Button isSmall as="a" href="/trade" label="Trade" />
           </CenterContainer>
         </Container>
       </>
