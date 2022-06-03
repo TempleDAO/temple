@@ -2,7 +2,7 @@ import { VaultProxy__factory } from 'types/typechain';
 import { toAtto } from 'utils/bigNumber';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
-import { parseUnits } from 'ethers/lib/utils';
+import { getBigNumberFromString } from 'components/Vault/utils';
 
 import { useFaith } from 'providers/FaithProvider';
 
@@ -18,7 +18,7 @@ export const useFaithDepositMultiplier = () => {
       return;
     }
 
-    const bigAmount = parseUnits(amount);
+    const bigAmount = getBigNumberFromString(amount);
 
     // The wallet needs to have usableFaith to get any multiplier. If there is no usableFaith
     // we can skip the contract call and just return the deposit amount.

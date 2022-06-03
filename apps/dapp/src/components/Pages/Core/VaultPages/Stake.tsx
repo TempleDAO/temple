@@ -22,8 +22,9 @@ import Tooltip from 'components/Tooltip/Tooltip';
 import { useFaith } from 'providers/FaithProvider';
 import { useFaithDepositMultiplier } from 'hooks/core/use-faith-deposit-multiplier';
 import EllipsisLoader from 'components/EllipsisLoader';
-import { toAtto, fromAtto } from 'utils/bigNumber';
+import { toAtto, fromAtto, ZERO } from 'utils/bigNumber';
 import { useOGTempleStakingValue } from 'hooks/core/use-ogtemple-staking-value';
+import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
 
 const ENV = import.meta.env;
 
@@ -67,9 +68,8 @@ export const Stake = () => {
     ticker,
   );
   
-  const handleUpdateStakingAmount = (_value: string | number) => {
-    const value = _value as string; // value is actually only ever going to be string
-    const amount = parseFloat(value || '0');
+  const handleUpdateStakingAmount = (value: string) => {
+    const amount = Number(value || '0');
     
     setStakingAmount(amount === 0 ? '' : value);
     
@@ -98,14 +98,13 @@ export const Stake = () => {
   };
 
   const tokenBalance = getTokenBalanceForCurrentTicker();
-  const numberStakingAmount = stakingAmount ? parseFloat(stakingAmount) : 0;
-  const stakeAmountExceedsTokenBalance = numberStakingAmount > tokenBalance;
+  const stakingAmountBigNumber = getBigNumberFromString(stakingAmount);
+  const amountIsOutOfBounds = stakingAmountBigNumber.gt(tokenBalance) || stakingAmountBigNumber.lte(ZERO);
 
   const stakeButtonDisabled =
     !isConnected ||
-    stakeAmountExceedsTokenBalance ||
+    amountIsOutOfBounds ||
     refreshIsLoading ||
-    !numberStakingAmount ||
     depositLoading ||
     allowanceLoading;
 
@@ -113,18 +112,33 @@ export const Stake = () => {
     (depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong'
   );
     
-
-  let zapMessage: ReactNode = null;
-  if (ticker === TICKER_SYMBOL.FAITH && balances.faith > 0 && numberStakingAmount > 0) {
-    if (faithMultiplierLoading) {
-      zapMessage = <EllipsisLoader />;
-    } else if (faithDepositMultiplier) {
-      const bonusAmount = faithDepositMultiplier.sub(toAtto(numberStakingAmount));
-      zapMessage = <>Burn all your FAITH ({balances.faith}) and receive {fromAtto(bonusAmount)} bonus TEMPLE.</>
+  
+  const getZapMessage = (): ReactNode => {
+    if (amountIsOutOfBounds) {
+      return null;
     }
-  } else if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN && balances.ogTemple > 0 && (stakingValue || 0) > 0) {
-    zapMessage = <>Unstake {numberStakingAmount} OGTemple and deposit {stakingValue} TEMPLE.</>;
+
+    if (ticker === TICKER_SYMBOL.FAITH) {
+      if (faithMultiplierLoading) {
+        return <EllipsisLoader />;
+      }
+
+      if (faithDepositMultiplier) {
+        const bonusAmount = faithDepositMultiplier.sub(stakingAmountBigNumber);
+        return <>Burn all your FAITH ({balances.faith}) and receive {formatBigNumber(bonusAmount)} bonus TEMPLE.</>
+      }
+
+      return null;
+    }
+
+    if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN && balances.ogTemple > 0) {
+      return <>Unstake {formatBigNumber(stakingAmountBigNumber)} OGTemple and deposit {stakingValue} TEMPLE.</>;
+    }
+
+    return null;
   }
+
+  const zapMessage = getZapMessage();
 
   return (
     <VaultContent>
@@ -145,19 +159,19 @@ export const Stake = () => {
       </DepositContainer>
       <VaultInput
         tickerSymbol={ticker}
-        handleChange={handleUpdateStakingAmount}
+        handleChange={(value) => handleUpdateStakingAmount(value.toString())}
         hint={`Balance: ${formatNumber(tokenBalance)}`}
         onHintClick={() => {
-          handleUpdateStakingAmount(`${tokenBalance}`);
+          handleUpdateStakingAmount(tokenBalance.toString());
         }}
         isNumber
         placeholder="0.00"
         value={stakingAmount}
       />
-      {(!stakeAmountExceedsTokenBalance && !!numberStakingAmount && !!zapMessage) && (
+      {!!zapMessage && (
         <AmountInTemple>{zapMessage}</AmountInTemple>
       )} 
-      {(joiningFee !== null && !!numberStakingAmount) && (
+      {(joiningFee !== null && !amountIsOutOfBounds) && (
         <JoiningFee>
           <Tooltip
             content="The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increases the further we are into the joining period."
@@ -165,7 +179,7 @@ export const Stake = () => {
           >
             Joining Fee{' '}
           </Tooltip>
-          : {fromAtto(joiningFee.mul(toAtto(numberStakingAmount)))} $T
+          : {formatBigNumber(joiningFee.mul(stakingAmountBigNumber))} $T
         </JoiningFee>
       )}
       {<ErrorLabel>{error}</ErrorLabel>}

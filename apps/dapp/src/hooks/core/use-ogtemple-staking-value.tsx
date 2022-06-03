@@ -3,7 +3,7 @@ import useRequestState from 'hooks/use-request-state';
 import { useStaking } from 'providers/StakingProvider';
 
 export const useOGTempleStakingValue = () => {
-  const { signer, wallet, balance } = useWallet();
+  const { signer, wallet } = useWallet();
   const { getRewardsForOGT } = useStaking();
 
   const handler = async (amount: string) => {
