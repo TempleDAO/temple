@@ -46,8 +46,6 @@ const ProfilePage = () => {
     }
     updateLockedEntries();
     getBalance();
-    console.log('locked entries(from profile page)');
-    console.log(lockedEntries);
   }, [wallet]);
 
   const totalStakedAcrossAllVaults = Object.values(balances).reduce((total, vault) => {
@@ -76,10 +74,18 @@ const ProfilePage = () => {
 
   const isLoading = vaultGroupsLoading || vaultGroupBalancesLoading;
   const totalEarned = totalBalancesAcrossVaults.sub(totalStakedAcrossAllVaults);
-  const lockedOGTempleBalance = balance.ogTempleLockedClaimable;
-  const ogTempleBalance = balance.ogTemple;
   const faithBalance = faith.usableFaith;
-  const hasLegacyTemple = !!ogTempleBalance || !!lockedOGTempleBalance || !!faithBalance;
+
+  let lockedOGTempleBalance = 0;
+
+  if (lockedEntries.length > 0) {
+    lockedOGTempleBalance = lockedEntries.reduce((acc, entry) => {
+      acc.balanceOGTemple += entry.balanceOGTemple;
+      return acc;
+    }).balanceOGTemple;
+  }
+
+  const hasLegacyTemple = !!lockedOGTempleBalance || !!faithBalance;
 
   return (
     <PageWrapper>

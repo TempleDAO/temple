@@ -9,7 +9,6 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { ClaimType } from 'enums/claim-type';
 import { TEAM_PAYMENTS_EPOCHS, TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH } from 'enums/team-payment';
 import { fromAtto, toAtto } from 'utils/bigNumber';
-import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop, noop } from 'utils/helpers';
 import { WalletState, Balance } from 'providers/types';
 import {
@@ -21,7 +20,6 @@ import {
   ERC20,
 } from 'types/typechain';
 import { TEMPLE_ADDRESS, FRAX_ADDRESS, TEMPLE_STAKING_ADDRESS, FEI_ADDRESS } from 'providers/env';
-import { useStaking } from './StakingProvider';
 
 // We want to save gas burn $ for the Templars,
 // so we approving 1M up front, so only 1 approve TXN is required for approve
@@ -32,7 +30,6 @@ const INITIAL_STATE: WalletState = {
     frax: 0,
     fei: 0,
     temple: 0,
-    ogTempleLockedClaimable: 0,
     ogTemple: 0,
   },
   wallet: null,
@@ -65,7 +62,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const chain = network?.chain;
   const walletAddress = accountData?.address;
   const isConnected = !!walletAddress && !!signer;
-  const { lockedEntries, updateLockedEntries } = useStaking();
 
   const connectWallet = async () => {
     throw new Error('Deprecated');
@@ -94,20 +90,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
     const feiBalance: BigNumber = await feiContract.balanceOf(walletAddress);
 
-    // get the locked OG temple
-    console.log('locked entries');
-    console.log(lockedEntries);
-    let lockedOgtBalance = 0;
-
-    if (lockedEntries.length > 0) {
-      lockedOgtBalance = lockedEntries.reduce((acc, entry) => {
-        console.log(entry);
-        acc.balanceOGTemple += entry.balanceOGTemple;
-        return acc;
-      }).balanceOGTemple;
-    }
-    console.log('ogt balance = ' + lockedOgtBalance);
-
     const ogTemple = fromAtto(await OG_TEMPLE_CONTRACT.balanceOf(walletAddress));
     const temple = fromAtto(await templeContract.balanceOf(walletAddress));
 
@@ -116,7 +98,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       fei: fromAtto(feiBalance),
       temple: temple,
       ogTemple: ogTemple >= 1 ? ogTemple : 0,
-      ogTempleLockedClaimable: lockedOgtBalance,
     };
   };
 
