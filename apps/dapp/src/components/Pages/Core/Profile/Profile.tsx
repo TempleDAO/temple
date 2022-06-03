@@ -29,6 +29,7 @@ import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import env from 'constants/env';
 import { Nullable } from 'types/util';
 import { fromAtto, ZERO } from 'utils/bigNumber';
+import { useStaking } from 'providers/StakingProvider';
 
 const STAT_CARD_HEIGHT = '5rem';
 
@@ -37,12 +38,16 @@ const ProfilePage = () => {
   const { faith } = useFaith();
   const { isLoading: vaultGroupsLoading, vaultGroups } = useListCoreVaultGroups();
   const { balances, isLoading: vaultGroupBalancesLoading } = useVaultGroupBalances(vaultGroups);
+  const { lockedEntries, updateLockedEntries } = useStaking();
 
   useEffect(() => {
     if (!wallet) {
       return;
     }
+    updateLockedEntries();
     getBalance();
+    console.log('locked entries(from profile page)');
+    console.log(lockedEntries);
   }, [wallet]);
 
   const totalStakedAcrossAllVaults = Object.values(balances).reduce((total, vault) => {
