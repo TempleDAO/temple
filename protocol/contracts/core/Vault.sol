@@ -215,7 +215,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
             _burn(_account, _amount);
         }
 
-        templeExposureToken.redeemAmount(_amount, msg.sender);
+        templeExposureToken.redeemAmount(_amount, _to);
         emit Withdraw(_account, _amount);
     }
 
