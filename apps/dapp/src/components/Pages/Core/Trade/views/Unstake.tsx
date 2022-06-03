@@ -9,10 +9,7 @@ import { useUnstakeOGTemple } from 'hooks/core/use-unstake-ogtemple';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import Loader from 'components/Loader/Loader';
 
-import { 
-  Header,
-  CtaButton,
-} from '../styles';
+import { Header, CtaButton } from '../styles';
 
 export const Unstake = () => {
   const { balance } = useWallet();
@@ -22,7 +19,7 @@ export const Unstake = () => {
     refreshWallet();
     setUnstakeAmount('');
   });
-  
+
   const onChange = (amount: string) => {
     const numberAmount = Number(amount);
     if (numberAmount === 0) {
@@ -33,12 +30,7 @@ export const Unstake = () => {
   };
 
   const numberAmount = parseFloat(unstakeAmount || '0');
-  const buttonIsDisabled = (
-    unstakeLoading || 
-    !unstakeAmount || 
-    balance.ogTemple <= 0 || 
-    numberAmount > balance.ogTemple
-  );
+  const buttonIsDisabled = unstakeLoading || !unstakeAmount || balance.ogTemple <= 0 || numberAmount > balance.ogTemple;
 
   return (
     <>
@@ -58,11 +50,8 @@ export const Unstake = () => {
           hint={`Balance: ${formatNumberWithCommas(balance.ogTemple)}`}
         />
       </InputWrapper>
-      <CtaButton
-        disabled={buttonIsDisabled}
-        onClick={() => unstake(numberAmount)}
-      >
-        Unstake
+      <CtaButton disabled={buttonIsDisabled} onClick={() => unstake(numberAmount)}>
+        Unstake {TICKER_SYMBOL.OG_TEMPLE_TOKEN}
       </CtaButton>
     </>
   );
