@@ -99,7 +99,11 @@ export const Stake = () => {
 
   const tokenBalance = getTokenBalanceForCurrentTicker();
   const stakingAmountBigNumber = getBigNumberFromString(stakingAmount);
-  const amountIsOutOfBounds = stakingAmountBigNumber.gt(tokenBalance) || stakingAmountBigNumber.lte(ZERO);
+  const bigTokenBalance = getBigNumberFromString(tokenBalance.toString());
+  const amountIsOutOfBounds = (
+    stakingAmountBigNumber.gt(bigTokenBalance) || 
+    stakingAmountBigNumber.lte(ZERO)
+  );
 
   const stakeButtonDisabled =
     !isConnected ||
