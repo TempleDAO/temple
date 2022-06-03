@@ -104,7 +104,6 @@ export const Stake = () => {
       if (faithMultiplierLoading) {
         return <EllipsisLoader />;
       }
-      console.log('dingo')
       if (faithDepositMultiplier) {
         const bonusAmount = faithDepositMultiplier.sub(stakingAmountBigNumber);
         
