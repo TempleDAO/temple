@@ -4,8 +4,8 @@ import { subDays } from 'date-fns';
 import { FlexibleXYPlot, XAxis, YAxis, LineSeries, ChartLabel } from 'react-vis';
 import { BigNumber } from 'ethers';
 
+import { PageWrapper } from '../utils';
 import StatsCard from 'components/StatsCard/StatsCard';
-
 import { ProfileVaults } from './components/ProfileVaults';
 import { ProfileLegacyTemple } from './components/ProfileLegacyTemple';
 
@@ -17,19 +17,18 @@ import texture2 from 'assets/images/texture-2.svg';
 import texture4 from 'assets/images/texture-4.svg';
 import texture5 from 'assets/images/dashboard-4.png';
 
-import { PageWrapper } from '../utils';
 import { createDateFromSeconds, formatTemple } from 'components/Vault/utils';
+import { Nullable } from 'types/util';
+import { fromAtto, ZERO } from 'utils/bigNumber';
 
 import { useListCoreVaultGroups, createUserTransactionsQuery } from 'hooks/core/subgraph';
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
 import { useVaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
+import { useStaking } from 'providers/StakingProvider';
 
 import env from 'constants/env';
-import { Nullable } from 'types/util';
-import { fromAtto, ZERO } from 'utils/bigNumber';
-import { useStaking } from 'providers/StakingProvider';
 
 const STAT_CARD_HEIGHT = '5rem';
 
@@ -192,9 +191,11 @@ const ProfilePage = () => {
           <SectionWrapper>
             <ProfileVaults isLoading={isLoading} vaultGroupBalances={balances} vaultGroups={vaultGroups} />
           </SectionWrapper>
-          <SectionWrapper>
-            <ProfileLegacyTemple lockedOgTempleBalance={lockedOGTempleBalance} faithBalance={faithBalance} />
-          </SectionWrapper>
+          {hasLegacyTemple && (
+            <SectionWrapper>
+              <ProfileLegacyTemple lockedOgTempleBalance={lockedOGTempleBalance} faithBalance={faithBalance} />
+            </SectionWrapper>
+          )}
         </>
       ) : (
         <>

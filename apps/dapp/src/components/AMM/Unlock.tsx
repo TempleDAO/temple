@@ -24,8 +24,6 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
     async function onMount() {
       await updateLockedEntries();
     }
-    console.log('locked entries (from unlock page)');
-    console.log(lockedEntries);
 
     onMount();
   }, []);

@@ -52,9 +52,15 @@ export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance = 
             darken
           />
         </LegacyTempleArea>
-        <LegacyTempleArea>
-          <Button label={`UNLOCK ${TICKER_SYMBOL.OG_TEMPLE_TOKEN}`} isSmall onClick={() => setClaimPopoverOpen(true)} />
-        </LegacyTempleArea>
+        {!!lockedOgTempleBalance && (
+          <LegacyTempleArea>
+            <Button
+              label={`UNLOCK ${TICKER_SYMBOL.OG_TEMPLE_TOKEN}`}
+              isSmall
+              onClick={() => setClaimPopoverOpen(true)}
+            />
+          </LegacyTempleArea>
+        )}
       </Container>
     </>
   );
