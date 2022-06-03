@@ -14,6 +14,7 @@ const Content = styled.div`
   text-align: center;
   width: 90%;
   height: 100%;
+  overflow-y: auto;
 `;
 
 const BaseVaultButton = styled(Button).attrs(
@@ -26,6 +27,7 @@ const BaseVaultButton = styled(Button).attrs(
   text-transform: uppercase;
   width: auto;
   transition: none;
+  min-height: 4.75rem;
 `;
 
 export const VaultButton = (props: ComponentProps<typeof BaseVaultButton>) => {
