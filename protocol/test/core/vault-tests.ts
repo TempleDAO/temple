@@ -16,6 +16,8 @@ import {
 } from "../../typechain";
 import { fail } from "assert";
 import { mkRebasingERC20TestSuite } from "./rebasing-erc20-testsuite";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { _TypedDataEncoder } from "ethers/lib/utils";
 
 describe("Temple Core Vault", async () => {
   let vault: Vault;
@@ -25,7 +27,7 @@ describe("Temple Core Vault", async () => {
   let joiningFee: JoiningFee;
 
   let owner: Signer;
-  let alan: Signer;
+  let alan: SignerWithAddress;
   let ben: Signer;
 
   beforeEach(async () => {
@@ -204,6 +206,50 @@ describe("Temple Core Vault", async () => {
 
       // clean up evm
       await ethers.provider.send("hardhat_reset", []);
+  })
+
+  it("Correctly handles withdrawFor", async () => {
+    const typehash = "withdrawFor(address owner,address sender,uint256 amount,uint256 deadline,uint256 nonce)";
+
+    const amount = toAtto(100);
+    const deadline = await blockTimestamp() + (60*20);
+
+    const domain = {
+      name: await vault.name(),
+      version: '1',
+      chainId: await alan.getChainId(),
+      verifyingContract: vault.address      
+    };
+
+    const types = {
+      withdrawFor: [
+        {name: "owner", type: "address"},
+        {name: "sender", type: "address"},
+        {name: "amount", type: "uint256"},
+        {name: "deadline", type: "uint256"},
+        {name: "nonce", type: "uint256"}
+      ]
+    }
+
+    const msg = {
+      owner: await alan.getAddress(),
+      sender: await owner.getAddress(),
+      amount: amount,
+      deadline: deadline,
+      nonce: await vault.nonces(await alan.getAddress())
+    }
+
+    const sig = await alan._signTypedData(domain, types, msg);
+    const splitSig = ethers.utils.splitSignature(sig);
+    await vault.connect(alan).deposit(amount);
+
+    const beforeBal = await templeToken.balanceOf(await owner.getAddress());
+
+    await vault.withdrawFor(await alan.getAddress(), amount, deadline, splitSig.v, splitSig.r, splitSig.s);
+
+    const afterBal = await templeToken.balanceOf(await owner.getAddress());
+
+    expect(beforeBal.add(amount)).equals(afterBal);
   })
 
   xit("cannot redeem exposures when outside of the entry/exit window", async () => {

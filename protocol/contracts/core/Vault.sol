@@ -34,7 +34,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     mapping(address => Counters.Counter) public _nonces;
 
     // solhint-disable-next-line var-name-mixedcase
-    bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner,uint256 amount,uint256 deadline,uint256 nonce)");
+    bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner,address sender,uint256 amount,uint256 deadline,uint256 nonce)");
 
     // temple token which users deposit/withdraw
     IERC20 public templeToken;
@@ -100,7 +100,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     function withdrawFor(address owner, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
         require(block.timestamp <= deadline, "Vault: expired deadline");
 
-        bytes32 structHash = keccak256(abi.encode(WITHDRAW_FOR_TYPEHASH, owner, amount, deadline, _useNonce(owner)));
+        bytes32 structHash = keccak256(abi.encode(WITHDRAW_FOR_TYPEHASH, owner, msg.sender, amount, deadline, _useNonce(owner)));
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, v, r, s);
 
