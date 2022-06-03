@@ -17,9 +17,9 @@ const TradeRoutes = () => {
           <div>
             <MenuWrapper>
               <Menu>
-                <TradeLink to="/core/dapp/trade">Trade</TradeLink>
-                <TradeLink to="/core/dapp/trade/stake">Stake</TradeLink>
-                <TradeLink to="/core/dapp/trade/unstake">Unstake</TradeLink>
+                <TradeLink to="/dapp/trade">Trade</TradeLink>
+                <TradeLink to="/dapp/trade/stake">Stake</TradeLink>
+                <TradeLink to="/dapp/trade/unstake">Unstake</TradeLink>
               </Menu>
             </MenuWrapper>
             <Wrapper>
