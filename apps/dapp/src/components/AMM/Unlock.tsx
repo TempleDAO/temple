@@ -5,12 +5,7 @@ import { Flex } from 'components/Layout/Flex';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { useStaking } from 'providers/StakingProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import {
-  ConvoFlowTitle,
-  TitleWrapper,
-  TooltipPadding,
-  ViewContainer,
-} from 'components/AMM/helpers/components';
+import { ConvoFlowTitle, TitleWrapper, TooltipPadding, ViewContainer } from 'components/AMM/helpers/components';
 
 interface UnlockProps {
   onExitClick?: () => void;
@@ -29,6 +24,8 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
     async function onMount() {
       await updateLockedEntries();
     }
+    console.log('locked entries (from unlock page)');
+    console.log(lockedEntries);
 
     onMount();
   }, []);
@@ -36,16 +33,13 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
   return (
     <ViewContainer>
       <TitleWrapper>
-        <ConvoFlowTitle>
-          CLAIM YOUR {TICKER_SYMBOL.OG_TEMPLE_TOKEN}
-        </ConvoFlowTitle>
+        <ConvoFlowTitle>CLAIM YOUR {TICKER_SYMBOL.OG_TEMPLE_TOKEN}</ConvoFlowTitle>
         <TooltipPadding>
           <Tooltip
             content={
               <small>
-                All your $OGTEMPLE in the locking contract are represented here.
-                If your $OGTEMPLE have unlocked, they will be able to be
-                claimed.
+                All your $OGTEMPLE in the locking contract are represented here. If your $OGTEMPLE have unlocked, they
+                will be able to be claimed.
               </small>
             }
             position={'top'}
@@ -54,10 +48,7 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
           </Tooltip>
         </TooltipPadding>
       </TitleWrapper>
-      <ClaimOGTemple
-        lockedEntries={lockedEntries}
-        onClaim={handleClaimOgTemple}
-      />
+      <ClaimOGTemple lockedEntries={lockedEntries} onClaim={handleClaimOgTemple} />
       <Flex
         layout={{
           kind: 'container',
@@ -72,12 +63,7 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
               col: 'half',
             }}
           >
-            <Button
-              label={'RETURN TO ALTAR'}
-              isSmall
-              isUppercase
-              onClick={onReturnClick}
-            />
+            <Button label={'RETURN TO ALTAR'} isSmall isUppercase onClick={onReturnClick} />
           </Flex>
         )}
         {onExitClick && (
@@ -87,12 +73,7 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
               col: 'half',
             }}
           >
-            <Button
-              label={'PROCEED TO EXIT QUEUE'}
-              isSmall
-              isUppercase
-              onClick={onExitClick}
-            />
+            <Button label={'PROCEED TO EXIT QUEUE'} isSmall isUppercase onClick={onExitClick} />
           </Flex>
         )}
       </Flex>
