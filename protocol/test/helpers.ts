@@ -1,10 +1,14 @@
 import { network, ethers } from "hardhat";
-import { BigNumber, BigNumberish, ContractFactory, Signer } from "ethers";
-import { expect } from "chai";
+import { BaseContract, BigNumber, BigNumberish, ContractFactory, Signer } from "ethers";
+import { use as chaiUse, assert, Assertion, expect } from "chai";
 import { TempleERC20Token, TempleERC20Token__factory } from "../typechain";
+import { getAddress } from "ethers/lib/utils";
 
 export const NULL_ADDR = "0x0000000000000000000000000000000000000000"
 
+/// deprecated, use pattern
+/// await expect(/* transaction promise */)
+///     .to.be.revertedWith("Error msg");
 export async function shouldThrow(p: Promise<any>, matches: RegExp) {
   try {
     await p;
@@ -14,6 +18,49 @@ export async function shouldThrow(p: Promise<any>, matches: RegExp) {
   }
 
   expect.fail("Expected error matching: " + matches.source + " none thrown");
+}
+
+export interface ERC20Light {
+  balanceOf: (account: string) => Promise<BigNumber>
+  address: string
+  name: () => Promise<string>
+}
+
+export async function expectBalancesChangeBy(
+  tx: () => Promise<any>, 
+  ...changes: [ERC20Light, Signer|BaseContract, BigNumberish][]
+): Promise<void> {
+  const oldBalances: BigNumber[] = await getBalances(changes);
+  await tx();
+  const newBalances: BigNumber[] = await getBalances(changes);
+
+  for (let i = 0; i < changes.length; i++) {
+    const [token, account, delta] = changes[i];
+    const address = await getAddressOf(account);
+    const expectedChange = BigNumber.from(delta);
+    const actualChange = newBalances[i].sub(oldBalances[i]);
+    assert(expectedChange.eq(actualChange),
+      `Expected "${address}" on token '${await token.name()}' to change balance by ${fromAtto(expectedChange)}, ` +
+        `but it has changed by ${fromAtto(actualChange)}`)
+  }
+}
+
+async function getBalances(changes: [ERC20Light, Signer|BaseContract, BigNumberish][]) {
+  const balances: BigNumber[] = [];
+
+  for (const [token, account, _] of changes) {
+    balances.push(await token.balanceOf(await getAddressOf(account)))
+  }
+
+  return balances;
+}
+
+async function getAddressOf(account: Signer|BaseContract) {
+  if (account instanceof Signer) {
+    return await account.getAddress();
+  } else {
+    return account.address;
+  }
 }
 
 export async function mineNBlocks(numBlocks: number) {
