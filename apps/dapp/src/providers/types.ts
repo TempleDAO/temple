@@ -25,7 +25,6 @@ export type Balance = {
   frax: number;
   fei: number;
   temple: number;
-  ogTempleLockedClaimable: number;
   ogTemple: number;
 };
 
