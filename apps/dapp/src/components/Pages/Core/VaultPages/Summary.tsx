@@ -43,7 +43,7 @@ export const Summary = () => {
       <Text3>
         Projected APY: 30% {' '}
         <Tooltip
-          content={`Annual Percentage Yield in $, if you were to lock a single ${TICKER_SYMBOL.TEMPLE_TOKEN} token right now.`}
+          content={`Annual Percentage Yield, if you were to lock a single ${TICKER_SYMBOL.TEMPLE_TOKEN} token right now.`}
           inline={true}
         >
           ⓘ

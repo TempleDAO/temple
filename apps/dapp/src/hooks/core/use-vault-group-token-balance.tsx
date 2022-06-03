@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react';
-import { Signer } from 'ethers';
+import { BigNumber, Signer } from 'ethers';
 
 import {
   Vault__factory,
@@ -7,15 +7,14 @@ import {
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 
-import { fromAtto } from 'utils/bigNumber';
 import { VaultGroup } from 'components/Vault/types';
 import { Nullable } from 'types/util';
 import useIsMounted from 'hooks/use-is-mounted';
 
 interface VaultBalance {
   isLoading: boolean;
-  balance: Nullable<number>;
-  staked: Nullable<number>;
+  balance: Nullable<BigNumber>;
+  staked: Nullable<BigNumber>;
 }
 
 export interface VaultGroupBalances {
@@ -41,10 +40,10 @@ export enum Operation {
 
 type Actions = 
   Action<ActionType.SetVaultsLoading, { vaultAddresses: string[], isLoading: boolean }> |
-  Action<ActionType.SetVaultBalances, { balances: ContractAddressPayload<{ balance: number, staked: number }>[] }> |
+  Action<ActionType.SetVaultBalances, { balances: ContractAddressPayload<{ balance: BigNumber, staked: BigNumber }>[] }> |
   Action<ActionType.SetVaultInstanceLoading, ContractAddressPayload<{ isLoading: boolean }>> |
-  Action<ActionType.SetVaultInstanceBalance, ContractAddressPayload<{ balance: number }>> |
-  Action<ActionType.OptimisticallyUpdateVaultStaked, ContractAddressPayload<{ operation: Operation, amount: number }>>;
+  Action<ActionType.SetVaultInstanceBalance, ContractAddressPayload<{ balance: BigNumber }>> |
+  Action<ActionType.OptimisticallyUpdateVaultStaked, ContractAddressPayload<{ operation: Operation, amount: BigNumber }>>;
 
 const reducer = (state: VaultGroupBalances, action: Actions): VaultGroupBalances => {
   switch (action.type) {
@@ -96,13 +95,14 @@ const reducer = (state: VaultGroupBalances, action: Actions): VaultGroupBalances
     }
     case ActionType.OptimisticallyUpdateVaultStaked: {
       const { vaultAddress, amount, operation } = action.payload;
-      const currentStake = state[vaultAddress]?.staked || 0;
-      const nextStake = operation === Operation.Increase ? currentStake + amount : currentStake - amount;
+      const zeroBn = BigNumber.from(0);
+      const currentStake = state[vaultAddress]?.staked || zeroBn;
+      const nextStake = operation === Operation.Increase ? currentStake.add(amount) : currentStake.sub(amount);
       return {
         ...state,
         [vaultAddress]: {
           ...state[vaultAddress],
-          staked: nextStake < 0 ? 0 : nextStake,
+          staked: nextStake.lt(zeroBn) ? zeroBn : nextStake,
         },
       };
     }
@@ -118,20 +118,20 @@ const useVaultGroupReducer = () => {
     balances: state,
     setVaultsLoading: (vaultAddresses: string[], isLoading: boolean) =>
       dispatch({ type: ActionType.SetVaultsLoading, payload: { vaultAddresses, isLoading } }),
-    setVaultBalances: (balances: ContractAddressPayload<{ balance: number, staked: number }>[] ) => 
+    setVaultBalances: (balances: ContractAddressPayload<{ balance: BigNumber, staked: BigNumber }>[] ) => 
       dispatch({ type: ActionType.SetVaultBalances, payload: { balances } }),
     setVaultInstanceLoading: (vaultAddress: string, isLoading: boolean) =>
       dispatch({ type: ActionType.SetVaultInstanceLoading, payload: { vaultAddress, isLoading} }),
-    setVaultInstanceBalance: ( vaultAddress: string, balance: number) => 
+    setVaultInstanceBalance: ( vaultAddress: string, balance: BigNumber) => 
       dispatch({ type: ActionType.SetVaultInstanceBalance, payload: { vaultAddress, balance } }),
-    optimisticallyUpdateVaultStaked: (vaultAddress: string, operation: Operation, amount: number) =>
+    optimisticallyUpdateVaultStaked: (vaultAddress: string, operation: Operation, amount: BigNumber) =>
       dispatch({ type: ActionType.OptimisticallyUpdateVaultStaked, payload: { vaultAddress, operation, amount }}),
   };
 };
 
 interface VaultInstanceResponse {
   vaultAddress: string;
-  balance: number;
+  balance: BigNumber;
 }
 
 const getVaultInstanceBalance = async (vaultAddress: string, wallet: string, signer: Signer): Promise<VaultInstanceResponse> => {
@@ -140,7 +140,7 @@ const getVaultInstanceBalance = async (vaultAddress: string, wallet: string, sig
   const tokenShareBalance = await vault.toTokenAmount(shares);
   return {
     vaultAddress,
-    balance: fromAtto(tokenShareBalance),
+    balance: tokenShareBalance,
   };
 };
 

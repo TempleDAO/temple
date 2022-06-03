@@ -1,22 +1,33 @@
-import { Nullable } from 'types/util';
+import { BigNumber } from 'ethers';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
+import { ZERO } from 'utils/bigNumber'
 
 type HookResponseType = [
   {
     isLoading: boolean;
-    balance: Nullable<number>,
-    staked: Nullable<number>,
+    balance: BigNumber,
+    staked: BigNumber,
   },
   () => Promise<void>,
-] 
+];
+
+const DEFAULT_STATE = {
+  isLoading: false,
+  balance: ZERO,
+  staked: ZERO,
+};
 
 export const useVaultBalance = (vaultContractAddress: string): HookResponseType => {
   const { balances, refreshVaultBalance } = useVaultContext();
   const fetchBalance = () => refreshVaultBalance(vaultContractAddress);
-  const vaultBalance = balances[vaultContractAddress] || { isLoading: false, balance: 0, staked: 0, };
+  const vaultBalance = balances[vaultContractAddress] || DEFAULT_STATE;
 
   return [
-    vaultBalance,
+    {
+      isLoading: vaultBalance.isLoading,
+      balance: vaultBalance.balance || DEFAULT_STATE.balance,
+      staked: vaultBalance.staked || DEFAULT_STATE.staked,
+    },
     fetchBalance,
   ];
 };

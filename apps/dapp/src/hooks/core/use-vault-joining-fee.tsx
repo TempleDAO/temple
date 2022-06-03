@@ -15,7 +15,7 @@ const getVaultJoiningFee = async (signer: Signer, activeVault: Vault) => {
   const feeFactory = new JoiningFee__factory(signer).attach(joiningFee);
   const bigNumberFee = await feeFactory.calc(activeVault.startDateSeconds, activeVault.periodDurationSeconds, vault.address);
 
-  return fromAtto(bigNumberFee);
+  return bigNumberFee;
 };
 
 // This call returns the joining fee per Temple deposited. 
