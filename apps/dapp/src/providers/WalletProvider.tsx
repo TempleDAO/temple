@@ -18,16 +18,9 @@ import {
   TempleStaking__factory,
   OGTemple__factory,
   TempleTeamPayments__factory,
-  LockedOGTempleDeprecated__factory,
   ERC20,
 } from 'types/typechain';
-import {
-  TEMPLE_ADDRESS,
-  FRAX_ADDRESS,
-  TEMPLE_STAKING_ADDRESS,
-  LOCKED_OG_TEMPLE_ADDRESS,
-  FEI_ADDRESS,
-} from 'providers/env';
+import { TEMPLE_ADDRESS, FRAX_ADDRESS, TEMPLE_STAKING_ADDRESS, FEI_ADDRESS } from 'providers/env';
 import { useStaking } from './StakingProvider';
 
 // We want to save gas burn $ for the Templars,
@@ -102,7 +95,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     const feiBalance: BigNumber = await feiContract.balanceOf(walletAddress);
 
     // get the locked OG temple
-    await updateLockedEntries();
     console.log('locked entries');
     console.log(lockedEntries);
     let lockedOgtBalance = 0;
