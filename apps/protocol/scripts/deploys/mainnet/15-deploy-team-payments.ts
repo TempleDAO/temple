@@ -19,7 +19,7 @@ async function main() {
 
   const templeTeamPaymentsFactory = new TempleTeamPayments__factory(owner);
   const templeTeamFixedPayments: TempleTeamPayments = await deployAndMine(
-    'TEMPLE_TEAM_FIXED_PAYMENTS', templeTeamPaymentsFactory, templeTeamPaymentsFactory.deploy,
+    'TEMPLE_TEAM_EPOCH_1', templeTeamPaymentsFactory, templeTeamPaymentsFactory.deploy,
     DEPLOYED.TEMPLE,
     13140000, // 5 months in seconds
     Math.round(Date.now()/1000 - 5256000) // 2 months ago

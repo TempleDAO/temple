@@ -22,9 +22,9 @@ export interface DeployedContracts {
   OPENING_CEREMONY: string;
   OPENING_CEREMONY_VERIFIER: string;
 
-  TEMPLE_TEAM_FIXED_PAYMENTS: string;
+  TEMPLE_TEAM_EPOCH_1: string;
   TEMPLE_TEAM_EPOCH_2: string;
-  TEMPLE_TEAM_CONTIGENT_PAYMENTS: string;
+  TEMPLE_TEAM_EPOCH_3: string;
   TEMPLE_V2_PAIR: string;
   TEMPLE_V2_FEI_PAIR: string;
   TEMPLE_V2_ROUTER: string;
@@ -78,9 +78,9 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     // currently not configured, need to swap treasury owner via
     // multisig. Test on rinkeby before doing the same on mainnet
     TREASURY_MANAGEMENT: '0xB9A7F07f5D0ea3AFa454486cffe39ceFec8e136C',
-    TEMPLE_TEAM_FIXED_PAYMENTS: '',
+    TEMPLE_TEAM_EPOCH_1: '',
     TEMPLE_TEAM_EPOCH_2: '',
-    TEMPLE_TEAM_CONTIGENT_PAYMENTS: '',
+    TEMPLE_TEAM_EPOCH_3: '',
 
     TEMPLE_V2_PAIR: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
     TEMPLE_V2_FEI_PAIR: '0x519462fD548D0Ba1e7d380Ed7F3DA10Cab912Fa7',
@@ -125,9 +125,9 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     // before making the change.
     // NOTE: Probably better to just migrate treasury instead
     TREASURY_MANAGEMENT: '0x20bEB455c3b7b0D84091b84c25f51Bc002d92f05', // currently unused
-    TEMPLE_TEAM_FIXED_PAYMENTS: '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
+    TEMPLE_TEAM_EPOCH_1: '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
     TEMPLE_TEAM_EPOCH_2: '0xe0Aafcf26576a53Cbec99481607FB53384909C36',
-    TEMPLE_TEAM_CONTIGENT_PAYMENTS: '',
+    TEMPLE_TEAM_EPOCH_3: '0xf86C2dbD16F05E86bFf72cE89B3C2915812E92D0',
 
     TEMPLE_V2_PAIR: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
     TEMPLE_V2_FEI_PAIR: '0xf994158766e0a4E64c26feCE675186f489EC9107',
@@ -165,10 +165,9 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     LEGACY_LOCKED_OG_TEMPLE: process.env.LEGACY_LOCKED_OG_TEMPLE || '',
     TREASURY: process.env.TREASURY || '',
     TREASURY_MANAGEMENT: process.env.TREASURY_MANAGEMENT || '',
-    TEMPLE_TEAM_FIXED_PAYMENTS: process.env.TEMPLE_TEAM_FIXED_PAYMENTS || '',
+    TEMPLE_TEAM_EPOCH_1: process.env.TEMPLE_TEAM_EPOCH_1 || '',
     TEMPLE_TEAM_EPOCH_2: process.env.TEMPLE_TEAM_EPOCH_2 || '',
-    TEMPLE_TEAM_CONTIGENT_PAYMENTS:
-      process.env.TEMPLE_TEAM_CONTIGENT_PAYMENTS || '',
+    TEMPLE_TEAM_EPOCH_3: process.env.TEMPLE_TEAM_EPOCH_3 || '',
     TEMPLE_V2_PAIR: process.env.TEMPLE_V2_PAIR || '',
     TEMPLE_V2_FEI_PAIR: process.env.TEMPLE_V2_FEI_PAIR || '',
     TEMPLE_V2_ROUTER: process.env.TEMPLE_V2_ROUTER || '',
