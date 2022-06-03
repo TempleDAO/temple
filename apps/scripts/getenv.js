@@ -1,5 +1,5 @@
 require('dotenv').config();
-const Vercel = require('./vercel');
+const Vercel = require('./lib/vercel');
 const PROJECT_ID = process.env.PROJECT_ID;
 const TEAM_ID = process.env.TEAM_ID;
 
@@ -10,7 +10,6 @@ go().catch((err) => {
 
 async function go() {
   const environment = process.argv[2];
-  console.log(environment);
   if (!['production', 'preview'].includes(environment)) {
     throw new Error('You must pass "preview" or "production" parameters');
   }

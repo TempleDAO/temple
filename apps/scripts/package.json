@@ -6,6 +6,7 @@
   "dependencies": {
     "dotenv": "^16.0.1",
     "node-fetch": "^3.2.5",
+    "press-any-key": "^0.1.1",
     "vercel": "^24.2.5"
   }
 }
