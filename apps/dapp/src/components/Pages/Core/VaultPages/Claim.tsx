@@ -4,20 +4,19 @@ import { BigNumber } from 'ethers';
 
 import { VaultInput } from 'components/Input/VaultInput';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { formatNumberWithCommas } from 'utils/formatter';
-import { copyBalance } from 'components/AMM/helpers/methods';
 import { Header } from 'styles/vault';
 import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
-import { fromAtto } from 'utils/bigNumber';
+import { ZERO } from 'utils/bigNumber';
+import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
 
 export const Claim = () => {
   const { activeVault: vault } = useVaultContext();
 
-  const [amount, setAmount] = useState<string | number>('');
+  const [amount, setAmount] = useState<string>('');
   const [{ balance, isLoading: getBalanceLoading }, getBalance] = useVaultBalance(vault.id);
   const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
   const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault!.id, async () => {
@@ -26,26 +25,29 @@ export const Claim = () => {
     setAmount('');
   });
 
-  const handleUpdateAmount = (amount: number | string) => {
+  const handleUpdateAmount = (amount: string) => {
     setAmount(Number(amount) === 0 ? '' : amount);
   };
 
-  const numberBalance = fromAtto(balance);
+  const bigInputValue = getBigNumberFromString(amount);
+  const formattedBalance = formatBigNumber(balance);
 
   const buttonIsDisabled = (
     getBalanceLoading ||
     refreshLoading ||
     withdrawIsLoading ||
     !amount ||
-    amount > numberBalance
+    bigInputValue.gt(balance)
   );
 
   const claimLabel =
-    numberBalance > 0 ? (
+    balance.gt(ZERO) ? (
       <ClaimableLabel>
         Claimable Temple
-        <TempleAmountLink onClick={() => copyBalance(numberBalance, handleUpdateAmount)}>
-          {numberBalance}
+        <TempleAmountLink onClick={() => {
+          handleUpdateAmount(formattedBalance);
+        }}>
+          {formattedBalance}
         </TempleAmountLink>
       </ClaimableLabel>
     ) : (
@@ -67,11 +69,11 @@ export const Claim = () => {
       {claimLabel}
       <VaultInput
         tickerSymbol={TICKER_SYMBOL.TEMPLE_TOKEN}
-        handleChange={handleUpdateAmount}
+        handleChange={(value) => handleUpdateAmount(value.toString())}
         isNumber
         placeholder="0.00"
         value={amount}
-        disabled={balance.lte(BigNumber.from(0))}
+        disabled={balance.lte(ZERO)}
       />
       {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
       <VaultButton
@@ -80,7 +82,7 @@ export const Claim = () => {
         marginTop={error ? '0.5rem' : '3.5rem'}
         disabled={buttonIsDisabled}
         onClick={async () => {
-          await withdraw(Number(amount));
+          await withdraw(amount);
         }}
       />
     </VaultContent>

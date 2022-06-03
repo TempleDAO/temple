@@ -1,6 +1,6 @@
 import { BigNumber } from 'ethers';
-import { Nullable } from 'types/util';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
+import { ZERO } from 'utils/bigNumber'
 
 type HookResponseType = [
   {
@@ -13,8 +13,8 @@ type HookResponseType = [
 
 const DEFAULT_STATE = {
   isLoading: false,
-  balance: BigNumber.from(0),
-  staked: BigNumber.from(0),
+  balance: ZERO,
+  staked: ZERO,
 };
 
 export const useVaultBalance = (vaultContractAddress: string): HookResponseType => {

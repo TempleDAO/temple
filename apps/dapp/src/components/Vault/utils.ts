@@ -1,7 +1,7 @@
 import { differenceInSeconds, addSeconds, subSeconds, format } from 'date-fns';
 import { millify } from 'millify';
 import { BigNumber } from 'ethers';
-import { parseUnits } from 'ethers/lib/utils';
+import { parseUnits, formatUnits } from 'ethers/lib/utils';
 
 import { GraphVault, GraphVaultGroup } from 'hooks/core/types';
 import { fromAtto, toAtto } from 'utils/bigNumber';
@@ -84,7 +84,7 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
     periodDurationSeconds,
     startDateSeconds: Number(subgraphVault.firstPeriodStartTimestamp),
     isActive: vaultIsInZone,
-    amountStaked: parseUnits(vaultUserBalance?.staked || '0', 18),
+    amountStaked: !!vaultUserBalance?.staked ? parseUnits(vaultUserBalance?.staked, 18) : BigNumber.from(0),
   };
   
   vault.unlockDate = calculateUnlockDate(vault as Vault);
@@ -200,4 +200,12 @@ export const formatTemple = (templeValue: Nullable<number | BigNumber>) => {
   const amount = typeof templeValue === 'number' ? templeValue : fromAtto(templeValue);
 
   return millify(amount, {precision: 2});
+};
+
+export const getBigNumberFromString = (number: string) => {
+  return parseUnits(number || '0', 18);
+};
+
+export const formatBigNumber = (number: BigNumber) => {
+  return formatUnits(number, 18);
 };

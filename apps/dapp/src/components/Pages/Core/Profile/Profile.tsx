@@ -26,11 +26,9 @@ import { FlexibleXYPlot, XAxis, YAxis, LineSeries, ChartLabel } from 'react-vis'
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import env from 'constants/env';
 import { Nullable } from 'types/util';
-import { fromAtto } from 'utils/bigNumber';
+import { fromAtto, ZERO } from 'utils/bigNumber';
 
 const STAT_CARD_HEIGHT = '5rem';
-
-const ZERO = BigNumber.from(0);
 
 const ProfilePage = () => {
   const { getBalance, wallet, balance } = useWallet();

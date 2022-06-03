@@ -78,9 +78,9 @@ export const Stake = () => {
     }
 
     if (ticker === TICKER_SYMBOL.FAITH) {
-      getFaithDepositMultiplier(amount);
+      getFaithDepositMultiplier(value);
     } else if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
-      getOGStakingValue(amount);
+      getOGStakingValue(value);
     }
   };
 
@@ -96,7 +96,6 @@ export const Stake = () => {
     console.error(`Programming Error: ${ticker} not implemented.`);
     return 0;
   };
-
 
   const tokenBalance = getTokenBalanceForCurrentTicker();
   const numberStakingAmount = stakingAmount ? parseFloat(stakingAmount) : 0;
@@ -139,7 +138,7 @@ export const Stake = () => {
             defaultValue={options[0]}
             onChange={(val: Option) => {
               setTicker(val.value as TICKER_SYMBOL);
-              handleUpdateStakingAmount(0);
+              handleUpdateStakingAmount('');
             }}
           />
         </SelectContainer>
@@ -149,7 +148,7 @@ export const Stake = () => {
         handleChange={handleUpdateStakingAmount}
         hint={`Balance: ${formatNumber(tokenBalance)}`}
         onHintClick={() => {
-          handleUpdateStakingAmount(tokenBalance);
+          handleUpdateStakingAmount(`${tokenBalance}`);
         }}
         isNumber
         placeholder="0.00"
@@ -187,8 +186,7 @@ export const Stake = () => {
           disabled={stakeButtonDisabled}
           loading={refreshIsLoading || depositLoading}
           onClick={async () => {
-            const amountToDeposit = !stakingAmount ? 0 : parseFloat(stakingAmount);
-            await deposit(ticker, amountToDeposit);
+            await deposit(ticker, stakingAmount || '0');
             setStakingAmount('');
           }}
         />

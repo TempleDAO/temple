@@ -28,7 +28,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
 
   const { openNotification } = useNotification();
 
-  const handler = async (token: TICKER_SYMBOL, amount: number) => {
+  const handler = async (token: TICKER_SYMBOL, amount: string) => {
     if (!signer || !wallet) {
       console.error(`
         Attempted to deposit to vault: ${vaultContractAddress} without a valid signer or wallet address.
@@ -36,7 +36,8 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
       return;
     }
 
-    const bigAmount = toAtto(amount);
+    
+    const bigAmount = parseUnits(amount, 18);
     const temple = new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
     const vaultProxy = new VaultProxy__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY);
     
