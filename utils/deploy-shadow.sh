@@ -1,0 +1,5 @@
+VERCEL_ORG_ID=team_3pLeer9YFMZT6OJjCiIRGt87
+SHADOW_PROJECT_ID=prj_8pXWgfCSXAJKPq3kzPS9BqKDbIwU
+
+DEPLOYMENT_URL=$(VERCEL_ORG_ID=team_3pLeer9YFMZT6OJjCiIRGt87 VERCEL_PROJECT_ID=prj_8pXWgfCSXAJKPq3kzPS9BqKDbIwU vercel -A apps/dapp/vercel.json --scope team_3pLeer9YFMZT6OJjCiIRGt87 --force --prod)
+echo "Shadow Deployment URL is $DEPLOYMENT_URL"
