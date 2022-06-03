@@ -12,6 +12,7 @@ import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useVaultBalance } from 'hooks/core/use-vault-balance';
 import { ZERO } from 'utils/bigNumber';
 import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
+import { formatNumber } from 'utils/formatter';
 
 export const Claim = () => {
   const { activeVault: vault } = useVaultContext();
@@ -32,30 +33,26 @@ export const Claim = () => {
   const bigInputValue = getBigNumberFromString(amount);
   const formattedBalance = formatBigNumber(balance);
 
-  const buttonIsDisabled = (
-    getBalanceLoading ||
-    refreshLoading ||
-    withdrawIsLoading ||
-    !amount ||
-    bigInputValue.gt(balance)
-  );
+  const buttonIsDisabled =
+    getBalanceLoading || refreshLoading || withdrawIsLoading || !amount || bigInputValue.gt(balance);
 
-  const claimLabel =
-    balance.gt(ZERO) ? (
-      <ClaimableLabel>
-        Claimable Temple
-        <TempleAmountLink onClick={() => {
+  const claimLabel = balance.gt(ZERO) ? (
+    <ClaimableLabel>
+      Claimable Temple
+      <TempleAmountLink
+        onClick={() => {
           handleUpdateAmount(formattedBalance);
-        }}>
-          {formattedBalance}
-        </TempleAmountLink>
-      </ClaimableLabel>
-    ) : (
-      <ClaimableLabel>
-        Nothing to claim
-        <TempleAmountLink>&nbsp; {/* Note: this node is here for formatting/spacing */}</TempleAmountLink>
-      </ClaimableLabel>
-    );
+        }}
+      >
+        {formatNumber(formattedBalance)}
+      </TempleAmountLink>
+    </ClaimableLabel>
+  ) : (
+    <ClaimableLabel>
+      Nothing to claim
+      <TempleAmountLink>&nbsp; {/* Note: this node is here for formatting/spacing */}</TempleAmountLink>
+    </ClaimableLabel>
+  );
 
   useEffect(() => {
     if (error) {

@@ -1,6 +1,5 @@
 import { useState, useEffect, ReactNode } from 'react';
 import styled from 'styled-components';
-import { BigNumber } from 'ethers';
 
 import { Option } from 'components/InputSelect/InputSelect';
 import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
@@ -22,32 +21,22 @@ import Tooltip from 'components/Tooltip/Tooltip';
 import { useFaith } from 'providers/FaithProvider';
 import { useFaithDepositMultiplier } from 'hooks/core/use-faith-deposit-multiplier';
 import EllipsisLoader from 'components/EllipsisLoader';
-import { toAtto, fromAtto, ZERO } from 'utils/bigNumber';
+import { ZERO } from 'utils/bigNumber';
 import { useOGTempleStakingValue } from 'hooks/core/use-ogtemple-staking-value';
 import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
-
-const ENV = import.meta.env;
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
   const { isConnected } = useWallet();
 
-  const {
-    options,
-    ticker,
-    setTicker,
-    balances,
-    stakingAmount,
-    setStakingAmount,
-  } = useStakeOptions();
+  const { options, ticker, setTicker, balances, stakingAmount, setStakingAmount } = useStakeOptions();
 
-  const [
-    getFaithDepositMultiplier, 
-    { response: faithDepositMultiplier, isLoading: faithMultiplierLoading },
-  ] = useFaithDepositMultiplier();
+  const [getFaithDepositMultiplier, { response: faithDepositMultiplier, isLoading: faithMultiplierLoading }] =
+    useFaithDepositMultiplier();
 
-  const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] = useVaultJoiningFee(vault);
-  const joiningFee = (!isConnected || joiningFeeLoading || !joiningFeeResponse) ? null : joiningFeeResponse;
+  const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] =
+    useVaultJoiningFee(vault);
+  const joiningFee = !isConnected || joiningFeeLoading || !joiningFeeResponse ? null : joiningFeeResponse;
 
   useEffect(() => {
     if (isConnected) {
@@ -64,15 +53,13 @@ export const Stake = () => {
     refreshWalletState();
   });
 
-  const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultProxyAllowance(
-    ticker,
-  );
-  
+  const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultProxyAllowance(ticker);
+
   const handleUpdateStakingAmount = (value: string) => {
     const amount = Number(value || '0');
-    
+
     setStakingAmount(amount === 0 ? '' : value);
-    
+
     if (amount <= 0) {
       return;
     }
@@ -100,23 +87,14 @@ export const Stake = () => {
   const tokenBalance = getTokenBalanceForCurrentTicker();
   const stakingAmountBigNumber = getBigNumberFromString(stakingAmount);
   const bigTokenBalance = getBigNumberFromString(tokenBalance.toString());
-  const amountIsOutOfBounds = (
-    stakingAmountBigNumber.gt(bigTokenBalance) || 
-    stakingAmountBigNumber.lte(ZERO)
-  );
+  const amountIsOutOfBounds = stakingAmountBigNumber.gt(bigTokenBalance) || stakingAmountBigNumber.lte(ZERO);
 
   const stakeButtonDisabled =
-    !isConnected ||
-    amountIsOutOfBounds ||
-    refreshIsLoading ||
-    depositLoading ||
-    allowanceLoading;
+    !isConnected || amountIsOutOfBounds || refreshIsLoading || depositLoading || allowanceLoading;
 
-  const error = !!depositError && (
-    (depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong'
-  );
-    
-  
+  const error =
+    !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
+
   const getZapMessage = (): ReactNode => {
     if (amountIsOutOfBounds) {
       return null;
@@ -129,18 +107,27 @@ export const Stake = () => {
 
       if (faithDepositMultiplier) {
         const bonusAmount = faithDepositMultiplier.sub(stakingAmountBigNumber);
-        return <>Burn all your FAITH ({balances.faith}) and receive {formatBigNumber(bonusAmount)} bonus TEMPLE.</>
+        return (
+          <>
+            Burn all your FAITH ({balances.faith}) and receive {formatNumber(formatBigNumber(bonusAmount))} bonus
+            TEMPLE.
+          </>
+        );
       }
 
       return null;
     }
 
     if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN && balances.ogTemple > 0) {
-      return <>Unstake {formatBigNumber(stakingAmountBigNumber)} OGTemple and deposit {stakingValue} TEMPLE.</>;
+      return (
+        <>
+          Unstake {formatNumber(formatBigNumber(stakingAmountBigNumber))} OGTemple and deposit {stakingValue} TEMPLE.
+        </>
+      );
     }
 
     return null;
-  }
+  };
 
   const zapMessage = getZapMessage();
 
@@ -172,10 +159,8 @@ export const Stake = () => {
         placeholder="0.00"
         value={stakingAmount}
       />
-      {!!zapMessage && (
-        <AmountInTemple>{zapMessage}</AmountInTemple>
-      )} 
-      {(joiningFee !== null && !amountIsOutOfBounds) && (
+      {!!zapMessage && <AmountInTemple>{zapMessage}</AmountInTemple>}
+      {joiningFee !== null && !amountIsOutOfBounds && (
         <JoiningFee>
           <Tooltip
             content="The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increases the further we are into the joining period."
@@ -214,13 +199,15 @@ export const Stake = () => {
 };
 
 const useStakeOptions = () => {
-  const { balance: { temple, ogTemple } } = useWallet();
-  const { faith: { usableFaith } } = useFaith();
+  const {
+    balance: { temple, ogTemple },
+  } = useWallet();
+  const {
+    faith: { usableFaith },
+  } = useFaith();
   const [stakingAmount, setStakingAmount] = useState('');
 
-  const options = [
-    { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' },
-  ];
+  const options = [{ value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' }];
 
   if (usableFaith > 0) {
     options.push({ value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' });
@@ -245,7 +232,6 @@ const useStakeOptions = () => {
     },
   };
 };
-
 
 const SelectContainer = styled.div`
   margin: 0 auto;
