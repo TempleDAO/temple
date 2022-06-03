@@ -104,11 +104,12 @@ export const Stake = () => {
       if (faithMultiplierLoading) {
         return <EllipsisLoader />;
       }
-
+      console.log('dingo')
       if (faithDepositMultiplier) {
         const bonusAmount = faithDepositMultiplier.sub(stakingAmountBigNumber);
         
         if (bonusAmount.lte(ZERO)) {
+          console.log('butter bean')
           return null;
         }
 
@@ -214,7 +215,7 @@ const useStakeOptions = () => {
 
   const options = [{ value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' }];
 
-  if (true) {
+  if (usableFaith > 0) {
     options.push({ value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' });
   }
 
