@@ -135,7 +135,7 @@ contract OpsManager is Ownable {
      * @dev expects both lists to be the same size, as we zip and process them
      * as tuples
      */
-    function increaseVaultTemple(Vault[] memory vaults, uint256[] memory amountsTemple) external {
+    function increaseVaultTemple(Vault[] memory vaults, uint256[] memory amountsTemple) external onlyOwner {
         require(vaults.length == amountsTemple.length, "vaults and amounts array must be the same length");
 
         for (uint256 i = 0; i < vaults.length; i++) {
