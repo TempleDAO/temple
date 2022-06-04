@@ -23,7 +23,7 @@ async function main() {
         DEPLOYED = DEPLOYED_CONTRACTS[network.name];
     }
 
-    const instantExitQueueFactory = await new InstantExitQueue__factory(owner);
+    const instantExitQueueFactory = new InstantExitQueue__factory(owner);
     const instantExitQueue = await deployAndMine("Instant Exit Queue",
                 instantExitQueueFactory,
                 instantExitQueueFactory.deploy,
