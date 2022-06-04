@@ -149,7 +149,7 @@ contract OpsManager is Ownable {
      * @dev expects both lists to be the same size, as we zip and process them
      * as tuples
      */
-    function liquidateExposures(Vault[] memory vaults, IERC20[] memory exposureTokens) external {
+    function liquidateExposures(Vault[] memory vaults, IERC20[] memory exposureTokens) external onlyOwner {
         Exposure[] memory exposures = new Exposure[](exposureTokens.length);
 
         for (uint256 i = 0; i < exposureTokens.length; i++) {
