@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import { AMMView } from 'components/Pages/AmmAltars';
+import { RelicView } from 'components/Nexus-FE/RelicAltars';
 
 export enum NexusView {
   Account,
@@ -15,7 +16,7 @@ export enum NexusView {
   AltarDevotion,
 }
 
-export type CustomRoutingPage = NexusView | AMMView;
+export type CustomRoutingPage = NexusView | AMMView | RelicView;
 
 type RoutingState = {
   changePageTo(PageComponent: CustomRoutingPage): void;
@@ -42,6 +43,7 @@ function useCustomRouting(
 
   function changePageTo(pageRoute: CustomRoutingPage) {
     setNavHistory((history) => [...history, currentPage]);
+    console.log('from changePageTo: ' + pageRoute);
     setCurrentPage(() => pageRoute);
   }
 

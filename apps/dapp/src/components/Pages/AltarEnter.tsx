@@ -1,6 +1,7 @@
 import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Howl } from 'howler';
 import { AMMView } from 'components/Pages/AmmAltars';
+import { RelicView } from 'components/Nexus-FE/RelicAltars';
 import BackButton from 'components/Button/BackButton';
 import bgImage from 'assets/images/altar-enter-bg.jpg';
 import glowLeft from 'assets/images/AMM_leftcut.png';
@@ -67,9 +68,9 @@ const EnterPage = ({ routingHelper }: CustomRoutingPageProps) => {
         <>
           <BackgroundItem
             src={glowLeft}
-            title="Buy"
+            title="Equip"
             onClick={() =>
-              changePageTo(AMMView.BUY)
+              changePageTo(RelicView.EQUIP)
             }
             style={{
               transform: `scale(${1 * bgDimensions.scaleW}%)`,
@@ -85,9 +86,9 @@ const EnterPage = ({ routingHelper }: CustomRoutingPageProps) => {
           />
           <BackgroundItem
             src={glowRight}
-            title="Stake"
+            title="Mint"
             onClick={() =>
-              changePageTo(AMMView.MINT)
+              changePageTo(RelicView.MINT)
             }
             style={{
               transform: `scale(${1 * bgDimensions.scaleW}%)`,

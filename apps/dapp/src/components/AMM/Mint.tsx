@@ -1035,10 +1035,10 @@ export const Mint: FC<MintProps> = ({ small }) => {
     console.log(await relicItemContract.balanceOf(accountData?.address));
 
     const relicWithSigner = relicItemContract.connect(signer);
-    alert(await relicWithSigner.mintRelic());
+    let tx = await relicWithSigner.mintRelic();
     openNotification({
       title: `Minted Relic`,
-      hash: '0',
+      hash: tx.hash,
     });
   };
 
@@ -1066,7 +1066,7 @@ export const Mint: FC<MintProps> = ({ small }) => {
     <ViewContainer>
       <TitleWrapper>
         <ConvoFlowTitle>
-          {small ? 'Mint' : `${network}`}
+          {small ? 'Mint' : 'Mint Relic Passport'}
         </ConvoFlowTitle>
       </TitleWrapper>
       <Spacer small={small} />

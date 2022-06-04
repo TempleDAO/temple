@@ -11,6 +11,7 @@ import { useHash } from 'hooks/use-query';
 import Spinner from 'components/Loader/Loader';
 import AMMErrorBoundary from 'components/Pages/AMM/AMMErrorBoundary';
 import { AMMView } from 'components/Pages/AmmAltars';
+import { RelicView } from 'components/Nexus-FE/RelicAltars'; // added by 0xcandle
 
 type ExoticComponentWithPreload = React.LazyExoticComponent<
   React.ComponentType<any>
@@ -55,6 +56,9 @@ const AltarDevotion = createLazyPreloadable(
 );
 const AmmAltars = createLazyPreloadable(
   () => import('components/Pages/AmmAltars')
+);
+const RelicAltars = createLazyPreloadable(
+  () => import('components/Nexus-FE/RelicAltars')
 );
 
 const Container = styled.div`
@@ -165,6 +169,19 @@ const CurrentPage = ({ routingHelper }: CustomRoutingPageProps) => {
           <AltarDevotion routingHelper={routingHelper} />
         </Suspense>
       );
+  }
+
+
+  // added by 0xcandle
+  if (routingHelper.currentPage in RelicView) {
+    return (
+      <Suspense fallback={<Loader />}>
+        <RelicAltars
+          routingHelper={routingHelper}
+          view={routingHelper.currentPage}
+        />
+      </Suspense>
+    );
   }
 
   if (routingHelper.currentPage in AMMView) {

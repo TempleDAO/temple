@@ -1,6 +1,7 @@
 import styled from 'styled-components';
 import Image, { ImageProps } from 'components/Image/Image';
 import swapSvg from 'assets/icons/amm-arrow.svg';
+import { flexCenter } from 'styles/mixins';
 
 export const TitleWrapper = styled.div`
   position: relative;
