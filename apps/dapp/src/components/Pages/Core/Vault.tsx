@@ -31,7 +31,7 @@ const VaultPage = () => {
     return (
       <CenterScreenWrapper>
         <h2>Invalid Vault.</h2>
-        <Link to="/core/dapp/vaults">
+        <Link to="/dapp/vaults">
           Go To Vaults
         </Link>
       </CenterScreenWrapper>

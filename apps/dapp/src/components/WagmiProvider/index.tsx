@@ -10,6 +10,7 @@ import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
 import { Buffer } from 'buffer';
 import { InjectedConnector } from 'wagmi/connectors/injected';
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
+import env from 'constants/env';
 
 // polyfill Buffer for client
 // Buffer is required for WalletConnect to work.
@@ -57,6 +58,7 @@ const connectors = ({ chainId }: ConnectorsConfig) => {
       chains,
       options: {
         qrcode: true,
+        infuraId: env.infuraId,
       },
     }),
     new CoinbaseWalletConnector({

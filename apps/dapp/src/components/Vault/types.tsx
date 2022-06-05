@@ -1,8 +1,9 @@
 import { MutableRefObject, ReactNode } from 'react';
+import { BigNumber } from 'ethers';
 
 export type Marker = {
   vaultId: string;
-  staked: number; // TODO: do we need a BigNumber type here?
+  staked: number;
   percent: number;
   inZone: boolean;
   type: MarkerType;
@@ -22,7 +23,7 @@ export type Vault = {
   startDateSeconds: number;
   enterExitWindowDurationSeconds: number;
   periodDurationSeconds: number;
-  amountStaked: number;
+  amountStaked: BigNumber;
   unlockDate: Date | 'NOW';
 };
 

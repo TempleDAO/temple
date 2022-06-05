@@ -10,3 +10,5 @@ export const fromAtto = (bn: BigNumber): number => {
 export const toAtto = (n: number): BigNumber => {
   return parseEther(n.toString());
 };
+
+export const ZERO = Object.freeze(BigNumber.from(0));

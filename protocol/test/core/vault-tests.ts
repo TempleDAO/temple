@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, mineToTimestamp, toAtto } from "../helpers";
-import { Signer } from "ethers";
+import { blockTimestamp, deployAndAirdropTemple, ERC20Light, expectBalancesChangeBy, fromAtto, mineForwardSeconds, mineToTimestamp, toAtto } from "../helpers";
+import { BaseContract, BigNumberish, Signer } from "ethers";
 import { 
   Exposure,
   Exposure__factory,
@@ -30,6 +30,26 @@ describe("Temple Core Vault", async () => {
   let alan: SignerWithAddress;
   let ben: Signer;
 
+  // Helper to generate expected token balance changes for 
+  // vault interactions
+  function vaultTempleTransferBalanceChanges(
+    account: Signer,
+    amount: number
+  ): [ERC20Light, Signer|BaseContract, BigNumberish][] {
+    return [
+      // vault temple book keeping
+      [templeExposure, vault, toAtto(-amount)],
+
+      // actual vaulted temple
+      [templeToken, vaultedTemple, toAtto(-amount)],
+
+      // change in ERC20 allocation for account across
+      // vault and actual temple
+      [templeToken, account, toAtto(amount)],
+      [vault,       account, toAtto(-amount)],
+    ]
+  }
+
   beforeEach(async () => {
     [owner, alan, ben] = await ethers.getSigners();
 
@@ -47,7 +67,6 @@ describe("Temple Core Vault", async () => {
       "temple exposure",
       "TPL-VAULT-EXPOSURE",
       templeToken.address,
-      await owner.getAddress(),
     )
 
     vaultedTemple = await new VaultedTemple__factory(owner).deploy(
@@ -98,8 +117,11 @@ describe("Temple Core Vault", async () => {
 
     // can still withdraw during 5 minute buffer period
     await mineForwardSeconds(60);
-    await expect(() => vault.connect(alan).withdraw(toAtto(50)))
-        .to.changeTokenBalance(templeToken, alan, toAtto(50));
+    
+    await expectBalancesChangeBy(
+      () => vault.connect(alan).withdraw(toAtto(50)),
+      ...vaultTempleTransferBalanceChanges(alan, 50)
+    )
 
     // post buffer, can no longer withdraw
     await mineForwardSeconds(60 * 5);
@@ -108,8 +130,10 @@ describe("Temple Core Vault", async () => {
 
     // can withdraw again with the vault cycles
     await mineForwardSeconds(60 * 4);
-    await expect(() => vault.connect(alan).withdraw(toAtto(50)))
-        .to.changeTokenBalance(templeToken, alan, toAtto(50));
+    await expectBalancesChangeBy(
+      () => vault.connect(alan).withdraw(toAtto(50)),
+      ...vaultTempleTransferBalanceChanges(alan, 50)
+    );
   })
 
   it("Multi-staker deposit then withdraw", async () => {
@@ -121,31 +145,53 @@ describe("Temple Core Vault", async () => {
 
     await mineForwardSeconds(60*5);
 
-    await expect(() => vault.connect(alan).withdraw(toAtto(100)))
-        .to.changeTokenBalance(templeToken, alan, toAtto(100));
-    await expect(() => vault.connect(ben).withdraw(toAtto(100)))
-        .to.changeTokenBalance(templeToken, ben, toAtto(100));
+    await expectBalancesChangeBy(
+      () => vault.connect(alan).withdraw(toAtto(100)),
+      ...vaultTempleTransferBalanceChanges(alan, 100)
+    )
+
+    await expectBalancesChangeBy(
+      () => vault.connect(ben).withdraw(toAtto(100)),
+      ...vaultTempleTransferBalanceChanges(ben, 100)
+    )
   })
 
   it("deposit/withdrawals with rebases", async () => {
     await expect(() => vault.connect(alan).deposit(toAtto(100)))
       .to.changeTokenBalance(vault, alan, toAtto(100));
 
-    await expect(async () => { 
+    await expectBalancesChangeBy(async () => { 
       await templeToken.transfer(vaultedTemple.address, toAtto(100))
       await templeExposure.mint(vault.address, toAtto(100))
-    }).to.changeTokenBalance(vault, alan, toAtto(100));
+    },
+      [templeExposure, vault, toAtto(100)],
+      [vault, alan, toAtto(100)]
+    )
 
-    await expect(() => vault.connect(ben).deposit(toAtto(100)))
-      .to.changeTokenBalance(vault, ben, toAtto(100));
+    await expectBalancesChangeBy(
+      () => vault.connect(ben).deposit(toAtto(100)),
+      ...vaultTempleTransferBalanceChanges(ben, -100)
+    )
 
     await mineForwardSeconds(60*5);
 
-    await expect(() => vault.connect(alan).withdraw(toAtto(200)))
-      .to.changeTokenBalance(templeToken, alan, toAtto(200));
+    await expectBalancesChangeBy(async () => {
+      await vault.connect(alan).withdraw(toAtto(200))
+      await vault.connect(ben).withdraw(toAtto(100))
+    }, 
+      [templeExposure, vault, toAtto(-300)],
 
-    await expect(() => vault.connect(ben).withdraw(toAtto(100)))
-      .to.changeTokenBalance(templeToken, ben, toAtto(100));
+      // actual vaulted temple
+      [templeToken, vaultedTemple, toAtto(-300)],
+
+      // change in ERC20 allocation for account across
+      // vault and actual temple
+      [templeToken, alan, toAtto(200)],
+      [vault,       alan, toAtto(-200)],
+
+      [templeToken, ben, toAtto(100)],
+      [vault,       ben, toAtto(-100)],
+    );
   })
 
   it("Handles InEnterExitWindow when firstPeriodStartTimeStamp is in the future", async () => {

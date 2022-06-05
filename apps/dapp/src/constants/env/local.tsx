@@ -5,6 +5,7 @@ const env: Environment = {
     templeCore: 'http://localhost:8000/subgraphs/name/templedao-core',
   },
   contracts: {},
+  infuraId: 'a2a39f8ae6564913a583c7b6d01c84d6',
 };
 
 export default env;

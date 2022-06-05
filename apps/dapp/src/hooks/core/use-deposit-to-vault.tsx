@@ -1,7 +1,7 @@
-import { BigNumber, ContractTransaction, Signer } from 'ethers';
+import { BigNumber, ContractTransaction } from 'ethers';
+import { parseUnits } from 'ethers/lib/utils';
 
 import {
-  Vault__factory,
   TempleERC20Token__factory,
   VaultProxy__factory,
 } from 'types/typechain';
@@ -28,7 +28,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
 
   const { openNotification } = useNotification();
 
-  const handler = async (token: TICKER_SYMBOL, amount: number) => {
+  const handler = async (token: TICKER_SYMBOL, amount: string) => {
     if (!signer || !wallet) {
       console.error(`
         Attempted to deposit to vault: ${vaultContractAddress} without a valid signer or wallet address.
@@ -36,7 +36,8 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
       return;
     }
 
-    const bigAmount = toAtto(amount);
+    
+    const bigAmount = parseUnits(amount, 18);
     const temple = new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
     const vaultProxy = new VaultProxy__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY);
     
@@ -49,14 +50,14 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
 
     const bigUsableFaith = toAtto(usableFaith);
 
-    let expectedDepositAmount = amount;
+    let expectedDepositAmount = bigAmount;
     // If the user is depositing with FAITH, the will get a boosted amount of TEMPLE deposited.
     // we need to calculate the deposit amount plus the amount of TEMPLE the FAITH converts to.
     if (token === TICKER_SYMBOL.FAITH) {
-      expectedDepositAmount = await getFaithDepositMultiplier(amount) || amount;
+      expectedDepositAmount = await getFaithDepositMultiplier(amount) || bigAmount;
     }
 
-    const fee = await getVaultJoiningFee() || 0;
+    const fee = await getVaultJoiningFee() || BigNumber.from(0);
     
     // Deposit through vault proxy.
     let tx: ContractTransaction;
@@ -74,7 +75,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
 
     await tx.wait();
 
-    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Increase, expectedDepositAmount - fee);
+    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Increase, expectedDepositAmount.sub(fee));
 
     openNotification({
       title: 'Deposit success',

@@ -352,7 +352,6 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
   const stake = async (amountToStake: BigNumber) => {
     if (wallet && signer) {
-      console.info(`staking START`);
       const TEMPLE_STAKING = new TempleStaking__factory(signer).attach(
         TEMPLE_STAKING_ADDRESS
       );

@@ -24,15 +24,18 @@ describe("Joining Fee", async () => {
         await deployJoiningFee();
     });
 
-    it('Setter works correctly', async () => {
+    it('Can set joining fee (both custom and default)', async () => {
         await joiningFee.setHourlyJoiningFeeFor(ethers.constants.AddressZero, toAtto(2));
 
-        const defaultHourly = await joiningFee.defaultHourlyJoiningFee();
-        expect(defaultHourly).equals(toAtto(2));
+        const defaultHourlyFee = await joiningFee.defaultHourlyJoiningFee();
+        expect(defaultHourlyFee).equals(toAtto(2));
 
         await joiningFee.setHourlyJoiningFeeFor(await owner.getAddress(), toAtto(3));
         const ownerFee = await joiningFee.hourlyJoiningFeeFor(await owner.getAddress());
         expect(ownerFee).equals(toAtto(3));
+
+        // setting a custom fee for a particular vault leaves the default unchanged
+        expect(await joiningFee.defaultHourlyJoiningFee()).equals(defaultHourlyFee);
     });
 
     it('Linear progression on fee until next cycle', async () => {
