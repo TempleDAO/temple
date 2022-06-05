@@ -133,7 +133,7 @@ describe("Vault Proxy", async () => {
       await TEMPLE.mint(VAULT_PROXY.address, toAtto(1000000));
   });
 
-  it.only("Only owner can withdraw from contract", async () => {
+  it("Only owner can withdraw from contract", async () => {
     const beforeBal = await TEMPLE.balanceOf(await owner.getAddress());
     const expectedBal = beforeBal.add(toAtto(100));
 
