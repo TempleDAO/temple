@@ -75,6 +75,8 @@ async function main() {
 
     await mine(joiningFee.transferOwnership(DEPLOYED.MULTISIG));
     await mine(opsManager.transferOwnership(DEPLOYED.MULTISIG));
+    await mine(vaultProxy.transferOwnership(DEPLOYED.MULTISIG));
+
     // Vault Proxy isn't ownable 
 
     // print vault details
