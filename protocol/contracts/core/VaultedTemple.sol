@@ -33,8 +33,8 @@ import "./Exposure.sol";
  * dao leverage strategy.
  */
 contract VaultedTemple is ILiquidator, Ownable {
-    IERC20 templeToken;
-    address templeExposure;
+    IERC20 public immutable templeToken;
+    address public immutable templeExposure;
 
     constructor(IERC20 _templeToken, address _templeExposure) {
         templeToken = _templeToken;

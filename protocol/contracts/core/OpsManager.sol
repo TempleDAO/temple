@@ -23,7 +23,7 @@ contract OpsManager is Ownable {
     address[] allVaults;
 
     IERC20 public immutable templeToken;
-    JoiningFee public joiningFee;
+    JoiningFee public immutable joiningFee;
     Exposure public templeExposure;
     VaultedTemple public vaultedTemple;
 
@@ -45,6 +45,7 @@ contract OpsManager is Ownable {
         string memory symbol,
         IERC20 revalToken
     ) external onlyOwner  {
+        require(address(pools[revalToken]) == address(0));
         Exposure exposure = OpsManagerLib.createExposure(name, symbol, revalToken, pools);
         revalTokens.push(address(revalToken));
         emit CreateExposure(address(exposure), address(pools[revalToken]));
@@ -134,7 +135,7 @@ contract OpsManager is Ownable {
      * @dev expects both lists to be the same size, as we zip and process them
      * as tuples
      */
-    function increaseVaultTemple(Vault[] memory vaults, uint256[] memory amountsTemple) external {
+    function increaseVaultTemple(Vault[] memory vaults, uint256[] memory amountsTemple) external onlyOwner {
         require(vaults.length == amountsTemple.length, "vaults and amounts array must be the same length");
 
         for (uint256 i = 0; i < vaults.length; i++) {
@@ -148,7 +149,7 @@ contract OpsManager is Ownable {
      * @dev expects both lists to be the same size, as we zip and process them
      * as tuples
      */
-    function liquidateExposures(Vault[] memory vaults, IERC20[] memory exposureTokens) external {
+    function liquidateExposures(Vault[] memory vaults, IERC20[] memory exposureTokens) external onlyOwner {
         Exposure[] memory exposures = new Exposure[](exposureTokens.length);
 
         for (uint256 i = 0; i < exposureTokens.length; i++) {
@@ -168,16 +169,6 @@ contract OpsManager is Ownable {
      */
     function requiresRebalance(Vault[] memory vaults, IERC20 exposureToken) external view returns (bool[] memory) {
         return OpsManagerLib.requiresRebalance(vaults, pools[exposureToken]);
-    }
-
-
-    /// @dev ****** for testing. Delete before pushing to mainnet
-    /// change a set of vault's start time (so we can fast forward in and out of lock/unlock windows)
-    function decreaseStartTime(Vault[] memory vaults, uint256 delta) external onlyOwner {
-        for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid/inactive vault in array");
-            vaults[i].decreaseStartTime(delta);
-        }
     }
 
     event CreateVaultInstance(address vault);

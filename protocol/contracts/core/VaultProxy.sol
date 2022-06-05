@@ -18,10 +18,10 @@ import "../devotion/Faith.sol";
 contract VaultProxy {
     using ABDKMathQuad for bytes16;
     /** @notice Tokens / Contracted required for the proxy contract  */
-    OGTemple public ogTemple;
-    TempleERC20Token public temple;
-    TempleStaking public templeStaking;
-    Faith public faith;
+    OGTemple public immutable ogTemple;
+    TempleERC20Token public immutable temple;
+    TempleStaking public immutable templeStaking;
+    Faith public immutable faith;
 
     constructor(
         OGTemple _ogTemple,
@@ -72,15 +72,14 @@ contract VaultProxy {
     function unstakeAndDepositIntoVault(uint256 _amountOGT, Vault vault) external {
         SafeERC20.safeIncreaseAllowance(ogTemple, address(templeStaking), _amountOGT);
         SafeERC20.safeTransferFrom(ogTemple, msg.sender, address(this), _amountOGT);
-        uint256 expectedTemple = templeStaking.balance(_amountOGT);
         
         uint256 templeBeforeBalance = temple.balanceOf(address(this));
         templeStaking.unstake(_amountOGT);
         uint256 templeAfterBalance = temple.balanceOf(address(this));
         require(templeAfterBalance > templeBeforeBalance, "Vault Proxy: no Temple received when unstaking");
 
-        SafeERC20.safeIncreaseAllowance(temple, address(vault), expectedTemple);
-        vault.depositFor(msg.sender, expectedTemple);
+        SafeERC20.safeIncreaseAllowance(temple, address(vault), templeAfterBalance - templeBeforeBalance);
+        vault.depositFor(msg.sender, templeAfterBalance - templeBeforeBalance);
     }
 
     /**

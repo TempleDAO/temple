@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "../TempleERC20Token.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 interface ITempleTWAP {
     function update() external;
