@@ -21,7 +21,6 @@ library OpsManagerLib {
         // Create a FarmingRevenue pool associated with this exposure
         pools[revalToken] = new TreasuryFarmingRevenue(exposure);
         exposure.setMinterState(address(pools[revalToken]), true);
-        exposure.transferOwnership(msg.sender);
 
         // transfer exposure ownership back to ops manager, as it manages
         // exposure rebasing
