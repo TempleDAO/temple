@@ -106,7 +106,6 @@ describe("Vault Proxy", async () => {
         "temple exposure",
         "TPL-VAULT-EXPOSURE",
         TEMPLE.address,
-        await owner.getAddress(),
       )
 
       const vaultedTemple = await new VaultedTemple__factory(owner).deploy(

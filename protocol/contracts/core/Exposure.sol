@@ -24,9 +24,6 @@ contract Exposure is Ownable, RebasingERC20 {
     /// in the temple core, only vaults should hold shares in a position
     mapping(address => bool) public canMint;
 
-    /// @dev actor that can add/remove minters
-    address public minterManager;
-
     /// @dev if set, automatically liquidates position and transfers temple
     /// minted as a result to the appropriate vault
     ILiquidator public liquidator;
@@ -40,9 +37,8 @@ contract Exposure is Ownable, RebasingERC20 {
      * All two of these values are immutable: they can only be set once during
      * construction.
      */
-    constructor(string memory _name, string memory _symbol, IERC20 _revalToken, address _minterManager) ERC20(_name, _symbol) {
+    constructor(string memory _name, string memory _symbol, IERC20 _revalToken) ERC20(_name, _symbol) {
         revalToken = _revalToken;
-        minterManager = _minterManager;
     }
 
     /**
@@ -77,7 +73,7 @@ contract Exposure is Ownable, RebasingERC20 {
     /**
      * @dev set/unset an accounts ability to mint exposure tokens
      */
-    function setMinterState(address account, bool state) external onlyMinterManager {
+    function setMinterState(address account, bool state) external onlyOwner {
         canMint[account] = state;
         emit SetMinterState(account, state);
     }
@@ -136,14 +132,6 @@ contract Exposure is Ownable, RebasingERC20 {
      */
     modifier onlyMinter() {
         require(canMint[msg.sender], "Exposure: caller is not a vault");
-        _;
-    }
-
-    /**
-     * Throws if called by an actor that cannot manage minters
-     */
-    modifier onlyMinterManager() {
-        require(msg.sender == minterManager || msg.sender == owner(), "Exposure: caller is not a minter manager or owner");
         _;
     }
 

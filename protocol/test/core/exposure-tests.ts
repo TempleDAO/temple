@@ -17,17 +17,14 @@ describe("Temple Core Exposures", async () => {
   let owner: Signer;
   let alan: Signer;
   let ben: Signer;
-  let minterManager: Signer;
 
   beforeEach(async () => {
-    [owner, alan, ben, minterManager] = await ethers.getSigners();
+    [owner, alan, ben] = await ethers.getSigners();
 
     exposure = await new Exposure__factory(owner).deploy(
         "Test Exposure",
         "TE_FXS",
-        NULL_ADDR,
-        await minterManager.getAddress(),
-    );
+        NULL_ADDR);
 
     await exposure.setMinterState(await owner.getAddress(), true);
   });
@@ -49,12 +46,12 @@ describe("Temple Core Exposures", async () => {
       .to.revertedWith("Ownable: caller is not the owner");
   })
 
-  it("Only owner or mint manager can set/change minter state", async () => {
+  it("Only owner can set/change minter state", async () => {
     await expect(exposure.connect(alan).setMinterState(await ben.getAddress(), true))
-      .to.revertedWith("Exposure: caller is not a minter manager or owner");
+      .to.revertedWith("Ownable: caller is not the owner");
 
     expect(await exposure.canMint(await ben.getAddress())).eq(false);
-    await exposure.connect(minterManager).setMinterState(await ben.getAddress(), true)
+    await exposure.setMinterState(await ben.getAddress(), true)
     expect(await exposure.canMint(await ben.getAddress())).eq(true);
   })
 

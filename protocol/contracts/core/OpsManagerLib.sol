@@ -16,12 +16,15 @@ library OpsManagerLib {
         mapping(IERC20 => TreasuryFarmingRevenue) storage pools
     ) public returns (Exposure) {
         // Create position and transfer ownership to the caller
-        Exposure exposure = new Exposure(name, symbol, revalToken, address(this));
-        exposure.transferOwnership(msg.sender);
+        Exposure exposure = new Exposure(name, symbol, revalToken);
 
         // Create a FarmingRevenue pool associated with this exposure
         pools[revalToken] = new TreasuryFarmingRevenue(exposure);
         exposure.setMinterState(address(pools[revalToken]), true);
+
+        // transfer exposure ownership back to ops manager, as it manages
+        // exposure rebasing
+        exposure.transferOwnership(msg.sender);
 
         return exposure;
     }
