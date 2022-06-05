@@ -20,7 +20,7 @@ contract TreasuryFarmingRevenue is Ownable {
     /// @dev When revenue is claimed, it's accumulated into
     /// an exposure. An exposure is a collection of strategies that is ultimately
     /// accounted for in a given token type (eg. FXS, CVX, Frax etc)
-    Exposure public exposure;
+    Exposure public immutable exposure;
 
     /// @notice total shares held by any account
     mapping(address => uint256) public shares;

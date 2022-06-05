@@ -18,10 +18,10 @@ import "../devotion/Faith.sol";
 contract VaultProxy {
     using ABDKMathQuad for bytes16;
     /** @notice Tokens / Contracted required for the proxy contract  */
-    OGTemple public ogTemple;
-    TempleERC20Token public temple;
-    TempleStaking public templeStaking;
-    Faith public faith;
+    OGTemple public immutable ogTemple;
+    TempleERC20Token public immutable temple;
+    TempleStaking public immutable templeStaking;
+    Faith public immutable faith;
 
     constructor(
         OGTemple _ogTemple,

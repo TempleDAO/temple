@@ -23,7 +23,7 @@ contract OpsManager is Ownable {
     address[] allVaults;
 
     IERC20 public immutable templeToken;
-    JoiningFee public joiningFee;
+    JoiningFee public immutable joiningFee;
     Exposure public templeExposure;
     VaultedTemple public vaultedTemple;
 

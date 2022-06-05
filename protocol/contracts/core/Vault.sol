@@ -37,29 +37,29 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner,address sender,uint256 amount,uint256 deadline,uint256 nonce)");
 
     // temple token which users deposit/withdraw
-    IERC20 public templeToken;
+    IERC20 public immutable templeToken;
 
     // Vaults don't hold temple directly, there is a specific
     // exposure in which all deposited temple is moved into
-    Exposure public templeExposureToken;
+    Exposure public immutable templeExposureToken;
 
     // All vaulted temple is held collectively (allows the DAO to use this collectively in leverage positions)
-    address public vaultedTempleAccount;
+    address public immutable vaultedTempleAccount;
 
     /// @dev timestamp (in seconds) of the first period in this vault
-    uint256 public firstPeriodStartTimestamp;
+    uint256 public immutable firstPeriodStartTimestamp;
 
     /// @dev how often a vault cycles, in seconds
-    uint256 public periodDuration;
+    uint256 public immutable periodDuration;
 
     /// @dev window from cycle start in which accounts can enter/exit the vault
-    uint256 public enterExitWindowDuration;
+    uint256 public immutable enterExitWindowDuration;
 
     /// @dev how many shares in the various strategies does this vault get based on temple deposited
     Rational public shareBoostFactor;
 
     /// @dev Where to query the fee (per hour) when joining the vault
-    JoiningFee public joiningFee;
+    JoiningFee public immutable joiningFee;
 
     constructor(
         string memory _name,
