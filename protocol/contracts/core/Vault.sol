@@ -34,32 +34,32 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     mapping(address => Counters.Counter) public _nonces;
 
     // solhint-disable-next-line var-name-mixedcase
-    bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner,uint256 amount,uint256 deadline,uint256 nonce)");
+    bytes32 public immutable WITHDRAW_FOR_TYPEHASH = keccak256("withdrawFor(address owner,address sender,uint256 amount,uint256 deadline,uint256 nonce)");
 
     // temple token which users deposit/withdraw
-    IERC20 public templeToken;
+    IERC20 public immutable templeToken;
 
     // Vaults don't hold temple directly, there is a specific
     // exposure in which all deposited temple is moved into
-    Exposure public templeExposureToken;
+    Exposure public immutable templeExposureToken;
 
     // All vaulted temple is held collectively (allows the DAO to use this collectively in leverage positions)
-    address public vaultedTempleAccount;
+    address public immutable vaultedTempleAccount;
 
     /// @dev timestamp (in seconds) of the first period in this vault
-    uint256 public firstPeriodStartTimestamp;
+    uint256 public immutable firstPeriodStartTimestamp;
 
     /// @dev how often a vault cycles, in seconds
-    uint256 public periodDuration;
+    uint256 public immutable periodDuration;
 
     /// @dev window from cycle start in which accounts can enter/exit the vault
-    uint256 public enterExitWindowDuration;
+    uint256 public immutable enterExitWindowDuration;
 
     /// @dev how many shares in the various strategies does this vault get based on temple deposited
     Rational public shareBoostFactor;
 
     /// @dev Where to query the fee (per hour) when joining the vault
-    JoiningFee public joiningFee;
+    JoiningFee public immutable joiningFee;
 
     constructor(
         string memory _name,
@@ -100,7 +100,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     function withdrawFor(address owner, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
         require(block.timestamp <= deadline, "Vault: expired deadline");
 
-        bytes32 structHash = keccak256(abi.encode(WITHDRAW_FOR_TYPEHASH, owner, amount, deadline, _useNonce(owner)));
+        bytes32 structHash = keccak256(abi.encode(WITHDRAW_FOR_TYPEHASH, owner, msg.sender, amount, deadline, _useNonce(owner)));
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, v, r, s);
 
@@ -114,7 +114,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
     }
 
     /// @dev redeem a specific vault's exposure back into temple
-    function redeemExposures(Exposure[] memory exposures) external {
+    function redeemExposures(Exposure[] memory exposures) external onlyOwner {
         require(inEnterExitWindow(), "Vault: Cannot redeem when outside of enter/exit window");
 
         for (uint256 i = 0; i < exposures.length; i++) {
@@ -215,15 +215,8 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
             _burn(_account, _amount);
         }
 
-        templeExposureToken.redeemAmount(_amount, msg.sender);
+        templeExposureToken.redeemAmount(_amount, _to);
         emit Withdraw(_account, _amount);
-    }
-
-
-    /// @dev ****** for testing. Delete before pushing to mainnet
-    /// change a vault's start time (so we can fast forward in and out of lock/unlock windows)
-    function decreaseStartTime(uint256 delta) external onlyOwner {
-        firstPeriodStartTimestamp -= delta;
     }
 
     event Deposit(address account, uint256 amount, uint256 amountStaked);
