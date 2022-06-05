@@ -65,7 +65,6 @@ describe("Temple Core Vault", async () => {
       "temple exposure",
       "TPL-VAULT-EXPOSURE",
       templeToken.address,
-      await owner.getAddress(),
     )
 
     vaultedTemple = await new VaultedTemple__factory(owner).deploy(

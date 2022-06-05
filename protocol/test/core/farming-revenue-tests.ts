@@ -17,17 +17,14 @@ describe("Temple Core Farming Revenue Allocation", async () => {
   let owner: Signer;
   let alan: Signer;
   let ben: Signer;
-  let minterManager: Signer;
 
   beforeEach(async () => {
-    [owner, alan, ben, minterManager] = await ethers.getSigners();
+    [owner, alan, ben] = await ethers.getSigners();
 
     exposure = await new Exposure__factory(owner).deploy(
         "Test Exposure",
         "TE_FXS",
-        NULL_ADDR,
-        await minterManager.getAddress(),
-    );
+        NULL_ADDR);
 
     farmingRevenue = await new TreasuryFarmingRevenue__factory(owner).deploy(
       exposure.address
