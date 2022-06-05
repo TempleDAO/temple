@@ -77,8 +77,6 @@ async function main() {
     await mine(opsManager.transferOwnership(DEPLOYED.MULTISIG));
     await mine(vaultProxy.transferOwnership(DEPLOYED.MULTISIG));
 
-    // Vault Proxy isn't ownable 
-
     // print vault details
     console.log(`*********`)
     console.log(`Details for running OpsManager#createVaultInstance for 1month vaults`)
