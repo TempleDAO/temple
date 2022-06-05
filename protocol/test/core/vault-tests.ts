@@ -298,14 +298,32 @@ describe("Temple Core Vault", async () => {
     expect(beforeBal.add(amount)).equals(afterBal);
   })
 
-  xit("cannot redeem exposures when outside of the entry/exit window", async () => {
-    // TODO(butler): write test
-    fail("Unimplemented");
+  it("only vault owner can redeem an exposure", async () => {
+    await expect(vault.connect(alan).redeemExposures([templeExposure.address]))
+      .to.revertedWith("Ownable: caller is not the owner")
   });
 
-  xit("allows redeeming an exposure back to temple", async () => {
-    // TODO(butler): write test
-    fail("Unimplemented");
+  it("only owner can withdraw vaulted temple (for DAO leverage)", async () => {
+    await expect(vaultedTemple.connect(alan)
+      .withdraw(templeToken.address, await alan.getAddress(), 100))
+      .to.revertedWith("Ownable: caller is not the owner")
+
+    await templeToken.mint(vaultedTemple.address, 100);
+
+    await expect(async () => 
+      vaultedTemple.withdraw(templeToken.address, await alan.getAddress(), 100)
+    ).to.changeTokenBalance(templeToken, alan, 100)
+  });
+
+  it("only temple exposure can call toTemple on vaulted temple contract", async () => {
+    await expect(vaultedTemple.toTemple(100, await alan.getAddress()))
+      .to.revertedWith("VaultedTemple: Only TempeExposure can redeem temple on behalf of a vault")
+
+    await templeToken.mint(vaultedTemple.address, 100);
+
+    templeExposure.mint(await alan.getAddress(), 100)
+    await expect(async () => templeExposure.connect(alan).redeem())
+      .to.changeTokenBalance(templeToken, alan, 100)
   });
 
   mkRebasingERC20TestSuite(async () => {

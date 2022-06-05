@@ -109,7 +109,7 @@ contract Exposure is Ownable, RebasingERC20 {
             liquidator.toTemple(amount, to);
         }
 
-        emit Redeem(address(revalToken), msg.sender, amount);
+        emit Redeem(address(revalToken), msg.sender, to, amount);
     }
 
     function amountPerShare() public view override returns (uint256 p, uint256 q) {
@@ -139,7 +139,7 @@ contract Exposure is Ownable, RebasingERC20 {
     event DecreaseReval(uint256 oldVal, uint256 newVal);
     event SetLiquidator(address liquidator);
     event SetMinterState(address account, bool state);
-    event Redeem(address revalToken, address account, uint256 amount);
+    event Redeem(address revalToken, address caller, address to, uint256 amount);
 }
 
 interface ILiquidator {
