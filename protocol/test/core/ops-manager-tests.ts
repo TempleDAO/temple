@@ -152,6 +152,20 @@ describe("Temple Core Ops Manager", async () => {
     expect(await vault2.firstPeriodStartTimestamp()).equals(firstVaultstartTime+3600);
   })
 
+  it("Can successfully call updateExposureReval", async () => {
+    // create two exposures as a result of our farming activities
+    const fxsExposureAddr = (await extractEvent(await opsManager.createExposure(
+      "Temple FXS Exposure", 
+      "TE-FXS", 
+      fxsToken.address
+    ), "CreateExposure", 1, 0)).args!!.exposure;
+
+
+    const exposureOwner = await new Exposure__factory(owner).attach(fxsExposureAddr).owner();
+    expect(exposureOwner).equals(await owner.getAddress());
+    await opsManager.updateExposureReval([fxsToken.address], [toAtto(2000)])
+  })
+
   it("End to end flow, 1 vault", async () => {
     const firstVaultstartTime = await blockTimestamp()
 
@@ -221,17 +235,24 @@ describe("Temple Core Ops Manager", async () => {
     // Start of day 8 pt 5 - call rebalance to keep accounting synced on chain
     await opsManager.rebalance([vault1Addr], fxsToken.address);
 
-    // Start of day 15
+    // Start of day 15 pt 3 - update exposure balance, in this case assuming $5 a token
+    await opsManager.updateExposureReval([fxsToken.address], [toAtto(2000)])
 
+    // Start of day 22 
+    await opsManager.addRevenue([fxsToken.address], [toAtto(10000)])
 
-    // For brevity, will skip Start of day 22
+    await opsManager.rebalance([vault1Addr], fxsToken.address);
 
     // Start of day 28 pt 2 - just before we get to enter exit window, liquidate exposures
     await mineForwardSeconds(23*3600);
     // liquidate a vaults exposure
+    console.log(await templeToken.balanceOf(vault1Addr));
+    console.log(`liquidating`)
     await opsManager.liquidateExposures([vault1Addr],[fxsToken.address]);
+    console.log(await templeToken.balanceOf(vault1Addr));
 
     // Start of day 28 pt 6
+    // Assuming 
     await opsManager.increaseVaultTemple([vault1Addr],[toAtto(10000)]);
     expect(await vault1Alan.balanceOf(alanAddr)).equals(toAtto(7575));
     expect(await vault1Ben.balanceOf(benAddr)).equals(toAtto(2525));
