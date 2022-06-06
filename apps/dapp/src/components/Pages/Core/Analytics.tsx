@@ -9,7 +9,9 @@ import { formatMillions } from 'utils/formatter';
 import useRefreshableDashboardMetrics from 'hooks/use-refreshable-dashboard-metrics';
 import { phoneAndAbove } from 'styles/breakpoints';
 
+import duneLogo from 'assets/images/dune-logo.png';
 import texture3 from 'assets/images/texture-3.svg';
+import Image from 'components/Image/Image';
 
 import background1 from 'assets/images/dashboard-1.png';
 import background2 from 'assets/images/dashboard-2.png';
@@ -37,6 +39,10 @@ const AnalyticsPage = () => {
 
   return (
     <PageWrapper>
+      <DuneDashboardLink href={'https://dune.com/templedao/Temple-AMM-Key-Metrics'} target={'_blank'} rel="noreferrer">
+        <Image src={duneLogo} alt={''} width={24} height={24} />
+        <span>Go to Dune Dashboard</span>
+      </DuneDashboardLink>
       <h3>Temple Price</h3>
 
       <ChartContainer>
@@ -219,6 +225,19 @@ const ItemWrapper = styled.div`
   ${phoneAndAbove(`
     margin: 0;
   `)}
+`;
+
+const DuneDashboardLink = styled.a`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  span {
+    display: inline-block;
+    margin-left: 0.625rem;
+    font-size: 1rem;
+    text-decoration: underline;
+  }
 `;
 
 export default AnalyticsPage;
