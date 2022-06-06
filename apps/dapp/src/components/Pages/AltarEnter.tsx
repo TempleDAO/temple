@@ -72,6 +72,7 @@ const EnterPage = ({ routingHelper }: CustomRoutingPageProps) => {
             onClick={() =>
               changePageTo(RelicView.EQUIP)
             }
+            //look here for new bgitem positioning
             style={{
               transform: `scale(${1 * bgDimensions.scaleW}%)`,
               bottom: `${0.02 * bgDimensions.height}px`,

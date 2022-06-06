@@ -25,13 +25,13 @@ export const Equip: FC<EquipProps> = ({ small }) => {
 
   return (
     <div style={{
-        display: "flex",
-        //backgroundColor: "green",
-        
+        display: "flex"
         }}>
       <RelicItemCard
+      actionType='equip'
       />
       <RelicItemCard
+      actionType='unequip'
       />
     </div>
   );

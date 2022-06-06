@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
 import Image from 'components/Image/Image';
 import { useNotification } from 'providers/NotificationProvider';
+import { useWallet } from 'providers/WalletProvider';
 import crossImage from 'assets/images/cross.svg';
 import openInNewTabImage from 'assets/images/open-in-new.svg';
 
@@ -15,7 +16,7 @@ export type NotificationProps = {
 
 const ENV_VARS = import.meta.env;
 
-const ETHERSCAN_DOMAIN =
+let ETHERSCAN_DOMAIN =
   ENV_VARS.VITE_ENV === 'production'
     ? 'https://etherscan.io'
     : 'https://rinkeby.etherscan.io';
@@ -23,8 +24,25 @@ const ETHERSCAN_DOMAIN =
 const Notification = ({ hash, title }: NotificationProps) => {
   const { closeNotification } = useNotification();
 
+  const { network } = useWallet();
+
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  switch(network?.chainId) {
+    case 1:
+      ETHERSCAN_DOMAIN = 'https://etherscan.io';
+      break;
+    case 4: 
+      ETHERSCAN_DOMAIN = 'https://rinkeby.etherscan.io';
+      break;
+    case 42161:
+      ETHERSCAN_DOMAIN = 'https://arbiscan.io/';
+      break;
+    case 421611:
+      ETHERSCAN_DOMAIN = 'https://testnet.arbiscan.io/';
+      break;
+  }
 
   const close = () => {
     setIsOpen(false);

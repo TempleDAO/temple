@@ -3,7 +3,7 @@ import { ConvoFlowTitle, Spacer, SwapArrows, TitleWrapper, ViewContainer } from 
 import { Button } from 'components/Button/Button';
 import { useWallet, WalletProvider } from 'providers/WalletProvider';
 import styled from 'styled-components';
-import { useNetwork, useAccount } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { useNotification } from 'providers/NotificationProvider';
 import { ethers } from 'ethers';
 
@@ -23,9 +23,9 @@ export const Mint: FC<MintProps> = ({ small }) => {
     const provider = new ethers.providers.Web3Provider(window.ethereum)
     await provider.send("eth_requestAccounts", []);
     const signer = provider.getSigner()
-    
-    const relicItemAddress = '0xA4aECE24B7CD71aBc8D09392e5c9222f29e0758a';
-    const relicItemABI = [
+
+    const relicAddress = '0xA4aECE24B7CD71aBc8D09392e5c9222f29e0758a';
+    const relicABI = [
       {
         "inputs": [],
         "stateMutability": "nonpayable",
@@ -1031,10 +1031,10 @@ export const Mint: FC<MintProps> = ({ small }) => {
         "type": "function"
       }
     ];
-    const relicItemContract = new ethers.Contract(relicItemAddress, relicItemABI, provider)
-    console.log(await relicItemContract.balanceOf(accountData?.address));
+    const relicContract = new ethers.Contract(relicAddress, relicABI, provider)
+    console.log(await relicContract.balanceOf(accountData?.address));
 
-    const relicWithSigner = relicItemContract.connect(signer);
+    const relicWithSigner = relicContract.connect(signer);
     let tx = await relicWithSigner.mintRelic();
     openNotification({
       title: `Minted Relic`,
@@ -1072,19 +1072,14 @@ export const Mint: FC<MintProps> = ({ small }) => {
       <Spacer small={small} />
       <Button
         label={
-          network?.chainId === 421611 ? 'mint' : 'Switch Network to Arbitrum'
+          'mint'
         }
         isUppercase
         isSmall={small}
         //
         onClick={() => {
-          if (network?.chainId === 421611) {
-            console.log('attempting mint')
-            mintPassport();
-          }
-          else {
-            switchToArbitrum();
-          }
+          console.log('attempting mint')
+          mintPassport();
           console.log(`Chain ID: ${network?.chainId} | Name: ${network?.name}`)
         }}
       />

@@ -101,7 +101,7 @@ interface ButtonStyledProps {
 }
 
 export const ButtonStyled = styled.button<ButtonStyledProps>`
-  // common
+  
   background-color: transparent;
   cursor: pointer;
   color: ${(props) => props.theme.palette.brand};

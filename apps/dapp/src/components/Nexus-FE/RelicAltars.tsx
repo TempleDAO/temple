@@ -6,7 +6,8 @@ import { Equip } from 'components/Nexus-FE/Equip';
 import Image from 'components/Image/Image';
 import withWallet from 'hoc/withWallet';
 import { CustomRoutingPageProps } from 'hooks/use-custom-spa-routing';
-
+import { Button } from 'components/Button/Button';
+import { useWallet, WalletProvider } from 'providers/WalletProvider';
 import EnterBgImage from 'assets/images/altar-enter-bg.jpg';
 import ExitBgImage from 'assets/images/altar-exit.jpg';
 import crossImage from 'assets/images/cross.svg';
@@ -28,6 +29,7 @@ export enum RelicView {
 const RelicAltars = ({ routingHelper, view }: CustomRoutingPageProps & { view: RelicView }) => {
   const { back } = routingHelper;
   const [activeRelicView, setActiveRelicView] = useState<RelicView | null>(view);
+  const { network, wallet, signer } = useWallet();
 
   useEffect(() => {
     function onKeyup(e: KeyboardEvent) {
@@ -37,6 +39,25 @@ const RelicAltars = ({ routingHelper, view }: CustomRoutingPageProps & { view: R
     window.addEventListener('keyup', onKeyup);
     return () => window.removeEventListener('keyup', onKeyup);
   }, [back]);
+
+  const switchToArbitrum = () => {
+    if (window.ethereum) {
+      window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [{
+          chainId: "0x66eeb",
+          rpcUrls: ["https://rinkeby.arbitrum.io/rpc"],
+          chainName: "Arbitrum Testnet",
+          nativeCurrency: {
+            name: "ETH",
+            symbol: "ETH",
+            decimals: 18
+          },
+          blockExplorerUrls: ["https://rinkeby-explorer.arbitrum.io/#/"]
+        }]
+      });
+    }
+  }
 
   const renderRelicView = (): ReactNode => {
     console.log('rendering relic view');
@@ -59,14 +80,21 @@ const RelicAltars = ({ routingHelper, view }: CustomRoutingPageProps & { view: R
     return bgImage;
   };
 
+  network?.chainId
+
   return (
     <>
       <Background backgroundUrl={() => getBackgroundImage()}>
-        <NewConvoFlowContent>
+        <ConvoFlowContent>
         <div style={{margin: "auto"}}>
-          {renderRelicView()}
+          {network?.chainId === 421611 ? renderRelicView() : <Button
+                label={'switch network to arbitrum'}
+                isUppercase
+                onClick={() => {switchToArbitrum();
+                }}>
+            </Button>}
         </div>
-        </NewConvoFlowContent>
+        </ConvoFlowContent>
         <OffClickOverlay
           onClick={(e) => {
             if (activeRelicView) {
@@ -81,7 +109,7 @@ const RelicAltars = ({ routingHelper, view }: CustomRoutingPageProps & { view: R
   );
 };
 
-const NewConvoFlowContent = styled.div<NewConvoFlowContentProps>`
+const ConvoFlowContent = styled.div<ConvoFlowContentProps>`
   position: relative;
   z-index: ${(props) => props.theme.zIndexes.max};
   width: 50%;
@@ -140,7 +168,7 @@ const OffClickOverlay = styled.div`
   opacity: 0.75;
 `;
 
-interface NewConvoFlowContentProps {
+interface ConvoFlowContentProps {
   isSmall?: boolean;
   isDisabled?: boolean;
 }
