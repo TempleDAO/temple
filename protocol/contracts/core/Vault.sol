@@ -115,8 +115,6 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
 
     /// @dev redeem a specific vault's exposure back into temple
     function redeemExposures(Exposure[] memory exposures) external onlyOwner {
-        require(inEnterExitWindow(), "Vault: Cannot redeem when outside of enter/exit window");
-
         for (uint256 i = 0; i < exposures.length; i++) {
             exposures[i].redeem();
         }

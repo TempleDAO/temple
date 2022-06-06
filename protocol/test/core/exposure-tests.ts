@@ -55,11 +55,17 @@ describe("Temple Core Exposures", async () => {
     expect(await exposure.canMint(await ben.getAddress())).eq(true);
   })
 
+  it("Only exposure balance holders can redeem", async () => {
+    await expect(exposure.connect(alan).redeemAmount(1, await alan.getAddress()))
+      .to.revertedWith("ERC20: burn amount exceeds balance")
+  })
+
   it("No liquidator by default (Event fired and tracked/handled manually)", async () => {
     await exposure.mint(await alan.getAddress(), toAtto(300))
-    expect(exposure.connect(alan).redeem())
-      .to.emit(exposure.address, "Redeem")
-      .withArgs(NULL_ADDR, await alan.getAddress(), toAtto(300));
+
+     await expect(exposure.connect(alan).redeem())
+       .to.emit(exposure, "Redeem")
+       .withArgs(NULL_ADDR, await alan.getAddress(), await alan.getAddress(), toAtto(300));
   })
 
   it("Test liquidator results in temple back to Exposure share holder", async () => {
