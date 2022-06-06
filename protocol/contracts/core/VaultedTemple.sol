@@ -42,7 +42,7 @@ contract VaultedTemple is ILiquidator, Ownable {
     }
 
     function toTemple(uint256 amount, address toAccount) external override {
-        require(msg.sender == templeExposure, "VaultTempleManager: Only TempeExposure can redeem temple on behalf of a vault");
+        require(msg.sender == templeExposure, "VaultedTemple: Only TempeExposure can redeem temple on behalf of a vault");
         SafeERC20.safeTransfer(templeToken, toAccount, amount);
     }
 

@@ -116,7 +116,7 @@ templates:
           handler: onSetLiquidator
         - event: SetMinterState(address,bool)
           handler: onSetMinterState
-        - event: Redeem(address,address,uint256)
+        - event: Redeem(address,address,address,uint256)
           handler: onRedeem
   # Treasury Farming Revenues
   - kind: ethereum/contract
