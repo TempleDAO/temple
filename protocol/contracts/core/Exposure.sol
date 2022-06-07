@@ -24,9 +24,6 @@ contract Exposure is Ownable, RebasingERC20 {
     /// in the temple core, only vaults should hold shares in a position
     mapping(address => bool) public canMint;
 
-    /// @dev actor that can add/remove minters
-    address public minterManager;
-
     /// @dev if set, automatically liquidates position and transfers temple
     /// minted as a result to the appropriate vault
     ILiquidator public liquidator;
@@ -40,9 +37,8 @@ contract Exposure is Ownable, RebasingERC20 {
      * All two of these values are immutable: they can only be set once during
      * construction.
      */
-    constructor(string memory _name, string memory _symbol, IERC20 _revalToken, address _minterManager) ERC20(_name, _symbol) {
+    constructor(string memory _name, string memory _symbol, IERC20 _revalToken) ERC20(_name, _symbol) {
         revalToken = _revalToken;
-        minterManager = _minterManager;
     }
 
     /**
@@ -77,7 +73,7 @@ contract Exposure is Ownable, RebasingERC20 {
     /**
      * @dev set/unset an accounts ability to mint exposure tokens
      */
-    function setMinterState(address account, bool state) external onlyMinterManager {
+    function setMinterState(address account, bool state) external onlyOwner {
         canMint[account] = state;
         emit SetMinterState(account, state);
     }
@@ -113,7 +109,7 @@ contract Exposure is Ownable, RebasingERC20 {
             liquidator.toTemple(amount, to);
         }
 
-        emit Redeem(address(revalToken), msg.sender, amount);
+        emit Redeem(address(revalToken), msg.sender, to, amount);
     }
 
     function amountPerShare() public view override returns (uint256 p, uint256 q) {
@@ -139,19 +135,11 @@ contract Exposure is Ownable, RebasingERC20 {
         _;
     }
 
-    /**
-     * Throws if called by an actor that cannot manage minters
-     */
-    modifier onlyMinterManager() {
-        require(msg.sender == minterManager || msg.sender == owner(), "Exposure: caller is not a minter manager or owner");
-        _;
-    }
-
     event IncreaseReval(uint256 oldVal, uint256 newVal);
     event DecreaseReval(uint256 oldVal, uint256 newVal);
     event SetLiquidator(address liquidator);
     event SetMinterState(address account, bool state);
-    event Redeem(address revalToken, address account, uint256 amount);
+    event Redeem(address revalToken, address caller, address to, uint256 amount);
 }
 
 interface ILiquidator {

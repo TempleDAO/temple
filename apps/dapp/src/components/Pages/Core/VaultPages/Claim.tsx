@@ -38,7 +38,7 @@ export const Claim = () => {
 
   const claimLabel = balance.gt(ZERO) ? (
     <ClaimableLabel>
-      Claimable Temple
+      Claimable {TICKER_SYMBOL.TEMPLE_TOKEN}
       <TempleAmountLink
         onClick={() => {
           handleUpdateAmount(formattedBalance);

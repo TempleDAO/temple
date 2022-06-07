@@ -31,7 +31,7 @@ export const Stake = () => {
 
   const { options, ticker, setTicker, balances, stakingAmount, setStakingAmount } = useStakeOptions();
 
-  const [getFaithDepositMultiplier, { response: faithDepositMultiplier, isLoading: faithMultiplierLoading }] =
+  const [getFaithDepositMultiplier, { response: faithDepositMultiplier, isLoading: faithMultiplierLoading, args: faithArgs }] =
     useFaithDepositMultiplier();
 
   const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] =
@@ -100,17 +100,22 @@ export const Stake = () => {
       return null;
     }
 
-    if (ticker === TICKER_SYMBOL.FAITH) {
+    if (ticker === TICKER_SYMBOL.FAITH && faithArgs?.[0] === stakingAmount) {
       if (faithMultiplierLoading) {
         return <EllipsisLoader />;
       }
-
       if (faithDepositMultiplier) {
         const bonusAmount = faithDepositMultiplier.sub(stakingAmountBigNumber);
+        
+        if (bonusAmount.lte(ZERO)) {
+          return null;
+        }
+
         return (
           <>
-            Burn all your FAITH ({balances.faith}) and receive {formatNumber(formatBigNumber(bonusAmount))} bonus
-            TEMPLE.
+            Burn all your {TICKER_SYMBOL.FAITH} ({balances.faith}) and receive{' '}
+            {formatNumber(formatBigNumber(bonusAmount))} bonus
+            {TICKER_SYMBOL.TEMPLE_TOKEN}.
           </>
         );
       }
@@ -121,7 +126,8 @@ export const Stake = () => {
     if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN && balances.ogTemple > 0) {
       return (
         <>
-          Unstake {formatNumber(formatBigNumber(stakingAmountBigNumber))} OGTemple and deposit {stakingValue} TEMPLE.
+          Unstake {formatNumber(formatBigNumber(stakingAmountBigNumber))} {TICKER_SYMBOL.OG_TEMPLE_TOKEN} and deposit{' '}
+          {stakingValue} {TICKER_SYMBOL.TEMPLE_TOKEN}.
         </>
       );
     }
@@ -207,14 +213,14 @@ const useStakeOptions = () => {
   } = useFaith();
   const [stakingAmount, setStakingAmount] = useState('');
 
-  const options = [{ value: TICKER_SYMBOL.TEMPLE_TOKEN, label: 'TEMPLE' }];
+  const options = [{ value: TICKER_SYMBOL.TEMPLE_TOKEN, label: `${TICKER_SYMBOL.TEMPLE_TOKEN}` }];
 
   if (usableFaith > 0) {
-    options.push({ value: TICKER_SYMBOL.FAITH, label: 'TEMPLE & FAITH' });
+    options.push({ value: TICKER_SYMBOL.FAITH, label: `${TICKER_SYMBOL.TEMPLE_TOKEN} & ${TICKER_SYMBOL.FAITH}` });
   }
 
   if (ogTemple > 0) {
-    options.push({ value: TICKER_SYMBOL.OG_TEMPLE_TOKEN, label: 'OGTemple' });
+    options.push({ value: TICKER_SYMBOL.OG_TEMPLE_TOKEN, label: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN}` });
   }
 
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(options[0].value as TICKER_SYMBOL);

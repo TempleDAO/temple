@@ -18,10 +18,10 @@ import "../devotion/Faith.sol";
 contract VaultProxy {
     using ABDKMathQuad for bytes16;
     /** @notice Tokens / Contracted required for the proxy contract  */
-    OGTemple public ogTemple;
-    TempleERC20Token public temple;
-    TempleStaking public templeStaking;
-    Faith public faith;
+    OGTemple public immutable ogTemple;
+    TempleERC20Token public immutable temple;
+    TempleStaking public immutable templeStaking;
+    Faith public immutable faith;
 
     constructor(
         OGTemple _ogTemple,
@@ -74,27 +74,14 @@ contract VaultProxy {
     function unstakeOGT(uint256 _amountOGT) private returns (uint256) {
         SafeERC20.safeIncreaseAllowance(ogTemple, address(templeStaking), _amountOGT);
         SafeERC20.safeTransferFrom(ogTemple, msg.sender, address(this), _amountOGT);
-        uint256 expectedTemple = templeStaking.balance(_amountOGT);
         
         uint256 templeBeforeBalance = temple.balanceOf(address(this));
         templeStaking.unstake(_amountOGT);
         uint256 templeAfterBalance = temple.balanceOf(address(this));
         require(templeAfterBalance > templeBeforeBalance, "Vault Proxy: no Temple received when unstaking");
 
-        return expectedTemple;
-    }
-
-    /**
-        @notice Takes OGT from the user, unstakes from the staking contract and then immediately deposits into a vault
-
-        @dev This is loosely coupled with the InstantExitQueue insomuch that this function assumes the staking contract
-             exit queue has been set to instantly withdraw, otherwise this function will fail.
-     */
-    function unstakeAndDepositIntoVault(uint256 _amountOGT, Vault vault) external {
-        uint256 expectedTemple = unstakeOGT(_amountOGT);
-
-        SafeERC20.safeIncreaseAllowance(temple, address(vault), expectedTemple);
-        vault.depositFor(msg.sender, expectedTemple);
+        SafeERC20.safeIncreaseAllowance(temple, address(vault), templeAfterBalance - templeBeforeBalance);
+        vault.depositFor(msg.sender, templeAfterBalance - templeBeforeBalance);
     }
 
     /**

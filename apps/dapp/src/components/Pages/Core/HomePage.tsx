@@ -37,7 +37,7 @@ const HomePage = () => {
             <AppLogo>TempleDAO</AppLogo>
           </Link>
           <MenuContainer>
-            <DAppButton label={'launch dapp'} onClick={() => navigate('/core/dapp')} isSmall isUppercase />
+            <DAppButton label={'launch dapp'} onClick={() => navigate('/dapp')} isSmall isUppercase />
           </MenuContainer>
         </NavContainer>
       </HeaderStyled>
@@ -51,13 +51,13 @@ const HomePage = () => {
             <ButtonGroup>
               {isAboveMobile && (
                 <ButtonContainer>
-                  <Link to={'/core/dapp/trade'}>
+                  <Link to={'/dapp/trade'}>
                     <StyledButton label={`Buy Now $`} isUppercase isSmall />
                   </Link>
                 </ButtonContainer>
               )}
               <ButtonContainer>
-                <Link to={'/core/dapp/vaults'}>
+                <Link to={'/dapp/vaults'}>
                   <StyledButton label={`Start Earning`} isUppercase isSmall showArrow />
                 </Link>
               </ButtonContainer>
