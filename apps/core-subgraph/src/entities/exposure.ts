@@ -21,14 +21,12 @@ export function createExposure(event: CreateExposure): Exposure {
   const symbol = exposureContract.symbol()
   const revalToken = exposureContract.revalToken().toHexString()
   const reval = exposureContract.reval()
-  const minterManager = exposureContract.minterManager().toHexString()
   const liquidator = exposureContract.liquidator().toHexString()
 
   exposure.name = name
   exposure.symbol = symbol
   exposure.revalToken = revalToken
   exposure.reval = reval
-  exposure.minterManager = minterManager
   exposure.liquidator = liquidator
   exposure.save()
 
