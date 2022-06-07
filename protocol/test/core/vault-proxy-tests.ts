@@ -28,7 +28,7 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { _TypedDataEncoder } from "ethers/lib/utils";
 
-describe.only("Vault Proxy", async () => {
+describe("Vault Proxy", async () => {
   let TEMPLE: TempleERC20Token;
   let EXIT_QUEUE: ExitQueue;
   let STAKING: TempleStaking;
@@ -155,7 +155,7 @@ describe.only("Vault Proxy", async () => {
     const ogtBal = await OGTEMPLE.balanceOf(await alan.getAddress())
     const amount = await STAKING.balance(ogtBal);
 
-    await alanOGTSwap.unstakeAndDepositTemple(ogtBal, vault.address);
+    await alanOGTSwap.unstakeAndDepositIntoVault(ogtBal, vault.address);
 
     expect(await vault.balanceOf(await alan.getAddress())).equals(amount);
     expect(await TEMPLE.balanceOf(await alan.getAddress())).equals(toAtto(800));
