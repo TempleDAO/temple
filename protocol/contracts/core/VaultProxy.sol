@@ -71,7 +71,7 @@ contract VaultProxy {
         vault.depositFor(msg.sender, boostedAmount);
     }
 
-    function unstakeAndDepositTemple(uint256 _amountOGT, Vault vault) external {
+    function unstakeAndDepositIntoVault(uint256 _amountOGT, Vault vault) external {
         uint256 unstakedTemple = unstakeOGT(_amountOGT);
         SafeERC20.safeIncreaseAllowance(temple, address(vault), unstakedTemple);
         vault.depositFor(msg.sender, unstakedTemple);
