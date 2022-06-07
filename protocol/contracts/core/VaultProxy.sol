@@ -6,12 +6,15 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Vault.sol";
 import "../ABDKMathQuad.sol";
-import "../OGTemple.sol";
 import "../TempleERC20Token.sol";
-import "../TempleStaking.sol";
-import "../devotion/Faith.sol";
 
-// import "hardhat/console.sol";
+interface TempleStaking {
+    function unstake(uint256 amountOgt) external;
+}
+
+interface Faith {
+    function redeem(address account, uint256 amount) external;
+}
 
 /**
     @notice A proxy contract for interacting with Temple Vaults. 
@@ -19,13 +22,13 @@ import "../devotion/Faith.sol";
 contract VaultProxy is Ownable {
     using ABDKMathQuad for bytes16;
     /** @notice Tokens / Contracted required for the proxy contract  */
-    OGTemple public immutable ogTemple;
+    IERC20 public immutable ogTemple;
     TempleERC20Token public immutable temple;
     TempleStaking public immutable templeStaking;
     Faith public immutable faith;
 
     constructor(
-        OGTemple _ogTemple,
+        IERC20 _ogTemple,
         TempleERC20Token _temple,
         TempleStaking _templeStaking,
         Faith _faith
