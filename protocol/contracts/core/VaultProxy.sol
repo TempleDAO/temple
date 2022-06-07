@@ -11,8 +11,6 @@ import "../TempleERC20Token.sol";
 import "../TempleStaking.sol";
 import "../devotion/Faith.sol";
 
-// import "hardhat/console.sol";
-
 /**
     @notice A proxy contract for interacting with Temple Vaults. 
  */
@@ -64,6 +62,10 @@ contract VaultProxy is Ownable {
         vault.depositFor(msg.sender, boostedAmount);
     }
 
+    /**
+        @notice Takes provided faith and OGT, unstakes the OGT into Temple, applies the boost and then immediately
+        deposits into a vault
+     */
     function unstakeAndDepositTempleWithFaith(uint256 _amountOGT, uint112 _amountFaith, Vault vault) external {
         faith.redeem(msg.sender, _amountFaith);
         uint256 unstakedTemple = unstakeOGT(_amountOGT);
@@ -72,12 +74,19 @@ contract VaultProxy is Ownable {
         vault.depositFor(msg.sender, boostedAmount);
     }
 
+    /**
+        @notice Takes provided OGT, unstakes into Temple and immediately deposits into a vault
+     */
     function unstakeAndDepositIntoVault(uint256 _amountOGT, Vault vault) external {
         uint256 unstakedTemple = unstakeOGT(_amountOGT);
         SafeERC20.safeIncreaseAllowance(temple, address(vault), unstakedTemple);
         vault.depositFor(msg.sender, unstakedTemple);
     }
     
+    /**
+        @notice Private function which will take OGT, unstake it, ensure correct amount came back and then pass back 
+        to the calling function.
+     */
     function unstakeOGT(uint256 _amountOGT) private returns (uint256) {
         SafeERC20.safeIncreaseAllowance(ogTemple, address(templeStaking), _amountOGT);
         SafeERC20.safeTransferFrom(ogTemple, msg.sender, address(this), _amountOGT);
