@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import Loader from 'components/Loader/Loader';
 import { useListCoreVaultGroups } from 'hooks/core/subgraph';
 import { CenterScreenWrapper } from 'components/Pages/Core/styles';
+import { SubgraphError } from 'hooks/core/types';
 
 const VaultListPage = () => {
   const { vaultGroups, isLoading, error } = useListCoreVaultGroups();
@@ -16,11 +17,17 @@ const VaultListPage = () => {
     );
   }
 
+  let errorMessage = 'Something went wrong...';
+
   if (error) {
-    console.error(error)
+    console.error(error);
+    if (error instanceof SubgraphError) {
+      errorMessage = 'Subgraph Unavailable. Please try again later.';
+    }
+
     return (
       <CenterScreenWrapper>
-        <h2>Something went wrong...</h2>
+        <h2>{errorMessage}</h2>
       </CenterScreenWrapper>
     );
   }
@@ -34,18 +41,14 @@ const VaultListPage = () => {
   }
 
   if (vaultGroups.length === 1) {
-    return (
-      <Navigate replace to={`/dapp/vaults/${vaultGroups[0].id}/summary`} />
-    );
+    return <Navigate replace to={`/dapp/vaults/${vaultGroups[0].id}/summary`} />;
   }
 
   return (
     <CenterScreenWrapper>
       {vaultGroups.map((vaultGroup) => (
         <li key={vaultGroup.id}>
-          <Link to={`/dapp/vaults/${vaultGroup.id}/summary`}>
-            {vaultGroup.id}
-          </Link>
+          <Link to={`/dapp/vaults/${vaultGroup.id}/summary`}>{vaultGroup.id}</Link>
         </li>
       ))}
     </CenterScreenWrapper>

@@ -56,3 +56,10 @@ export interface SubGraphQuery {
 
 export type GetVaultGroupsResponse = SubGraphResponse<{ vaultGroups: GraphVaultGroup[] }>;
 export type GetVaultGroupResponse = SubGraphResponse<{ vaultGroup: GraphVaultGroup }>;
+export class SubgraphError extends Error {
+  constructor(public message: string, public cause: Error) {
+    super(message);
+    this.name = "SubgraphError";
+    this.stack = cause.stack;
+  }
+}
