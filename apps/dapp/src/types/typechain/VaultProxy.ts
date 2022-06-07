@@ -27,8 +27,7 @@ export interface VaultProxyInterface extends utils.Interface {
     "ogTemple()": FunctionFragment;
     "temple()": FunctionFragment;
     "templeStaking()": FunctionFragment;
-    "unstakeAndDepositTemple(uint256,address)": FunctionFragment;
-    "unstakeAndDepositTempleWithFaith(uint256,uint112,address)": FunctionFragment;
+    "unstakeAndDepositIntoVault(uint256,address)": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -51,12 +50,8 @@ export interface VaultProxyInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "unstakeAndDepositTemple",
+    functionFragment: "unstakeAndDepositIntoVault",
     values: [BigNumberish, string]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "unstakeAndDepositTempleWithFaith",
-    values: [BigNumberish, BigNumberish, string]
   ): string;
 
   decodeFunctionResult(
@@ -79,11 +74,7 @@ export interface VaultProxyInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "unstakeAndDepositTemple",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "unstakeAndDepositTempleWithFaith",
+    functionFragment: "unstakeAndDepositIntoVault",
     data: BytesLike
   ): Result;
 
@@ -145,15 +136,8 @@ export interface VaultProxy extends BaseContract {
 
     templeStaking(overrides?: CallOverrides): Promise<[string]>;
 
-    unstakeAndDepositTemple(
+    unstakeAndDepositIntoVault(
       _amountOGT: BigNumberish,
-      vault: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    unstakeAndDepositTempleWithFaith(
-      _amountOGT: BigNumberish,
-      _amountFaith: BigNumberish,
       vault: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -186,15 +170,8 @@ export interface VaultProxy extends BaseContract {
 
   templeStaking(overrides?: CallOverrides): Promise<string>;
 
-  unstakeAndDepositTemple(
+  unstakeAndDepositIntoVault(
     _amountOGT: BigNumberish,
-    vault: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  unstakeAndDepositTempleWithFaith(
-    _amountOGT: BigNumberish,
-    _amountFaith: BigNumberish,
     vault: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -227,15 +204,8 @@ export interface VaultProxy extends BaseContract {
 
     templeStaking(overrides?: CallOverrides): Promise<string>;
 
-    unstakeAndDepositTemple(
+    unstakeAndDepositIntoVault(
       _amountOGT: BigNumberish,
-      vault: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    unstakeAndDepositTempleWithFaith(
-      _amountOGT: BigNumberish,
-      _amountFaith: BigNumberish,
       vault: string,
       overrides?: CallOverrides
     ): Promise<void>;
@@ -271,15 +241,8 @@ export interface VaultProxy extends BaseContract {
 
     templeStaking(overrides?: CallOverrides): Promise<BigNumber>;
 
-    unstakeAndDepositTemple(
+    unstakeAndDepositIntoVault(
       _amountOGT: BigNumberish,
-      vault: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    unstakeAndDepositTempleWithFaith(
-      _amountOGT: BigNumberish,
-      _amountFaith: BigNumberish,
       vault: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -313,15 +276,8 @@ export interface VaultProxy extends BaseContract {
 
     templeStaking(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    unstakeAndDepositTemple(
+    unstakeAndDepositIntoVault(
       _amountOGT: BigNumberish,
-      vault: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    unstakeAndDepositTempleWithFaith(
-      _amountOGT: BigNumberish,
-      _amountFaith: BigNumberish,
       vault: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
