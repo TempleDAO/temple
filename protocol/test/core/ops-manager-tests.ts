@@ -163,11 +163,39 @@ describe("Temple Core Ops Manager", async () => {
       fxsToken.address
     ), "CreateExposure", 1, 0)).args!!.exposure;
 
-
-    const exposureOwner = await new Exposure__factory(owner).attach(fxsExposureAddr).owner();
-    //expect(exposureOwner).equals(await owner.getAddress());
-    console.log(opsManager.address);
+    const exposure = await new Exposure__factory(owner).attach(fxsExposureAddr)
+    expect(await exposure.owner()).equals(opsManager.address);
     await opsManager.updateExposureReval([fxsToken.address], [toAtto(2000)])
+    expect(await exposure.reval()).equals(toAtto(2000));
+  })
+
+  it("Can update liquidator for an exposure", async () => {
+    // create two exposures as a result of our farming activities
+    const fxsExposureAddr = (await extractEvent(await opsManager.createExposure(
+      "Temple FXS Exposure", 
+      "TE-FXS", 
+      fxsToken.address
+    ), "CreateExposure", 1, 0)).args!!.exposure;
+
+    const noopLiquidator = await new NoopLiquidator__factory(owner).deploy(templeToken.address);
+    const exposure = new Exposure__factory(owner).attach(fxsExposureAddr);
+    expect(exposure.setLiqidator(noopLiquidator.address)).to.be.revertedWith("Owner: Caller is not the owner");
+    await opsManager.setExposureLiquidator(fxsToken.address, noopLiquidator.address);
+    expect(await exposure.liquidator()).equals(noopLiquidator.address);
+  })
+
+  it("Can successfully set minter state for an exposure", async () => {
+    // create two exposures as a result of our farming activities
+    const fxsExposureAddr = (await extractEvent(await opsManager.createExposure(
+      "Temple FXS Exposure", 
+      "TE-FXS", 
+      fxsToken.address
+    ), "CreateExposure", 1, 0)).args!!.exposure;
+
+    const exposure = new Exposure__factory(owner).attach(fxsExposureAddr);
+    expect(exposure.setMinterState(await alan.getAddress(), true)).to.be.revertedWith("Owner: Caller is not the owner");
+    await opsManager.setExposureMinterState(fxsToken.address, await alan.getAddress(), true);
+    expect(await exposure.canMint(await alan.getAddress())).true;
   })
 
   it("End to end flow, 1 vault", async () => {
@@ -201,7 +229,7 @@ describe("Temple Core Ops Manager", async () => {
     const fxsExposure = await new Exposure__factory(owner).attach(fxsExposureAddr);
 
     const noopLiquidator = await new NoopLiquidator__factory(owner).deploy(templeToken.address);
-    await fxsExposure.setLiqidator(noopLiquidator.address);
+    await opsManager.setExposureLiquidator(fxsToken.address, noopLiquidator.address);
     templeToken.addMinter(noopLiquidator.address);
 
     const alanAddr = await alan.getAddress();
@@ -316,7 +344,7 @@ describe("Temple Core Ops Manager", async () => {
     const fxsExposure = await new Exposure__factory(owner).attach(fxsExposureAddr);
 
     const noopLiquidator = await new NoopLiquidator__factory(owner).deploy(templeToken.address);
-    await fxsExposure.setLiqidator(noopLiquidator.address);
+    await opsManager.setExposureLiquidator(fxsToken.address, noopLiquidator.address);
     templeToken.addMinter(noopLiquidator.address);
 
     const alanAddr = await alan.getAddress();
