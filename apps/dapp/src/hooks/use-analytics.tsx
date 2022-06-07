@@ -1,6 +1,7 @@
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { useEffect, useState } from 'react';
-import { SubGraphResponse } from './types';
+import { SubGraphResponse } from './core/types';
+import env from 'constants/env';
 
 interface IAnalytics {
   treasuryValue: number;
@@ -27,8 +28,6 @@ type IAnalyticsResponse = SubGraphResponse<{
 const QUERY = `{
   protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {id
       treasuryTemple
-      crvRewards
-      cvxRewards
       templeSupply
       templePrice
       templeCirculatingSupply
@@ -47,10 +46,9 @@ export const useAnalytics = () => {
     fullyDilutedTempleSupply: 0,
   });
 
-  const [request, { response, isLoading: requestPending, error }] = useSubgraphRequest<IAnalyticsResponse>(
-    'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
-    { query: QUERY }
-  );
+  const [request, { response, error }] = useSubgraphRequest<IAnalyticsResponse>(env.subgraph.protocolMetrics, {
+    query: QUERY,
+  });
 
   useEffect(() => {
     const requestProtocolData = async () => {
