@@ -125,6 +125,18 @@ describe.only("Vault Proxy", async () => {
       await TEMPLE.mint(VAULT_PROXY.address, toAtto(1000000));
   });
 
+  it("Only owner can withdraw from contract", async () => {
+    const beforeBal = await TEMPLE.balanceOf(await owner.getAddress());
+    const expectedBal = beforeBal.add(toAtto(100));
+
+    await VAULT_PROXY.withdraw(TEMPLE.address, await owner.getAddress(), toAtto(100))
+
+    expect(await TEMPLE.balanceOf(await owner.getAddress())).equals(expectedBal);
+
+    expect(VAULT_PROXY.connect(alan).withdraw(TEMPLE.address, await alan.getAddress(), toAtto(100)))
+                .to.be.revertedWith("Ownable: caller is not the owner");
+  })
+
   it("Can deposit using Temple + Faith", async () => {
     const alanAddr = await alan.getAddress();
     await FAITH.gain(alanAddr, toAtto(200));
