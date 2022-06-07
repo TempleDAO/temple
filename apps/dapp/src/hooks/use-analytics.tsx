@@ -26,12 +26,12 @@ type IAnalyticsResponse = SubGraphResponse<{
 }>;
 
 const QUERY = `{
-  protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {id
-      treasuryTemple
-      templeSupply
-      templePrice
-      templeCirculatingSupply
-      marketCap
+  protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
+    treasuryTemple
+    templeSupply
+    templePrice
+    templeCirculatingSupply
+    marketCap
   }
 }`;
 
