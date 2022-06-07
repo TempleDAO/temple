@@ -11,8 +11,6 @@ import "../TempleERC20Token.sol";
 import "../TempleStaking.sol";
 import "../devotion/Faith.sol";
 
-// import "hardhat/console.sol";
-
 /**
     @notice A proxy contract for interacting with Temple Vaults. 
  */
@@ -56,21 +54,40 @@ contract VaultProxy is Ownable {
     /**
         @notice Takes provided faith and Temple, applies the boost then immediate deposits into a vault
      */
-    function depositTempleWithFaith(uint256 _amountTemple, uint112 _amountFaith, Vault vault) external {
+    function depositTempleWithFaith(uint256 _amountTemple, uint112 _amountFaith, Vault vault) public {
         faith.redeem(msg.sender, _amountFaith);
         uint256 boostedAmount = getFaithMultiplier(_amountFaith, _amountTemple);
         SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amountTemple);
         SafeERC20.safeIncreaseAllowance(temple, address(vault), boostedAmount);
         vault.depositFor(msg.sender, boostedAmount);
     }
-    
-    /**
-        @notice Takes OGT from the user, unstakes from the staking contract and then immediately deposits into a vault
 
-        @dev This is loosely coupled with the InstantExitQueue insomuch that this function assumes the staking contract
-             exit queue has been set to instantly withdraw, otherwise this function will fail.
+    /**
+        @notice Takes provided faith and OGT, unstakes the OGT into Temple, applies the boost and then immediately
+        deposits into a vault
+     */
+    function unstakeAndDepositTempleWithFaith(uint256 _amountOGT, uint112 _amountFaith, Vault vault) external {
+        faith.redeem(msg.sender, _amountFaith);
+        uint256 unstakedTemple = unstakeOGT(_amountOGT);
+        uint256 boostedAmount = getFaithMultiplier(_amountFaith, unstakedTemple);
+        SafeERC20.safeIncreaseAllowance(temple, address(vault), boostedAmount);
+        vault.depositFor(msg.sender, boostedAmount);
+    }
+
+    /**
+        @notice Takes provided OGT, unstakes into Temple and immediately deposits into a vault
      */
     function unstakeAndDepositIntoVault(uint256 _amountOGT, Vault vault) external {
+        uint256 unstakedTemple = unstakeOGT(_amountOGT);
+        SafeERC20.safeIncreaseAllowance(temple, address(vault), unstakedTemple);
+        vault.depositFor(msg.sender, unstakedTemple);
+    }
+    
+    /**
+        @notice Private function which will take OGT, unstake it, ensure correct amount came back and then pass back 
+        to the calling function.
+     */
+    function unstakeOGT(uint256 _amountOGT) private returns (uint256) {
         SafeERC20.safeIncreaseAllowance(ogTemple, address(templeStaking), _amountOGT);
         SafeERC20.safeTransferFrom(ogTemple, msg.sender, address(this), _amountOGT);
         
@@ -79,8 +96,7 @@ contract VaultProxy is Ownable {
         uint256 templeAfterBalance = temple.balanceOf(address(this));
         require(templeAfterBalance > templeBeforeBalance, "Vault Proxy: no Temple received when unstaking");
 
-        SafeERC20.safeIncreaseAllowance(temple, address(vault), templeAfterBalance - templeBeforeBalance);
-        vault.depositFor(msg.sender, templeAfterBalance - templeBeforeBalance);
+        return templeAfterBalance - templeBeforeBalance;
     }
 
     /**
