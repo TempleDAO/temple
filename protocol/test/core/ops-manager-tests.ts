@@ -87,7 +87,7 @@ describe("Temple Core Ops Manager", async () => {
     expect(await opsManager.revalTokens(0)).equals(fxsToken.address)
 
     // Check deployed exposure matches what we expect
-    const exposure1 = await new Exposure__factory(owner).attach(exposure1Addr);
+    const exposure1 = new Exposure__factory(owner).attach(exposure1Addr);
     expect (await exposure1.name()).equals("Temple FXS Exposure");
     expect (await exposure1.symbol()).equals("TE-FXS");
     expect (await exposure1.revalToken()).equals(fxsToken.address);
@@ -98,7 +98,7 @@ describe("Temple Core Ops Manager", async () => {
     expect(await opsManager.pools(crvToken.address)).equals(evt2.args!!.primaryRevenue);
     expect(await opsManager.revalTokens(1)).equals(crvToken.address)
 
-    const exposure2 = await new Exposure__factory(owner).attach(exposure2Addr);
+    const exposure2 = new Exposure__factory(owner).attach(exposure2Addr);
     expect (await exposure2.name()).equals("Temple CRV Exposure");
     expect (await exposure2.symbol()).equals("TE-CRV");
     expect (await exposure2.revalToken()).equals(crvToken.address);
@@ -134,7 +134,7 @@ describe("Temple Core Ops Manager", async () => {
     expect(await opsManager.activeVaults(evt1.args!!.vault)).to.be.true;
 
     // Check deployed contract matches what we would expect
-    const vault1 = await new Vault__factory(owner).attach(evt1.args!!.vault);
+    const vault1 = new Vault__factory(owner).attach(evt1.args!!.vault);
     expect(await vault1.name()).equals("temple-1d-vault")
     expect(await vault1.symbol()).equals("TV-1D-1");
     expect(await vault1.periodDuration()).equals(86400);
@@ -147,7 +147,7 @@ describe("Temple Core Ops Manager", async () => {
 
     expect(await opsManager.activeVaults(evt2.args!!.vault)).to.be.true;
 
-    const vault2 = await new Vault__factory(owner).attach(evt2.args!!.vault);
+    const vault2 = new Vault__factory(owner).attach(evt2.args!!.vault);
     expect(await vault2.name()).equals("temple-1d-vault")
     expect(await vault2.symbol()).equals("TV-1D-2");
     expect(await vault2.periodDuration()).equals(86400);
@@ -175,13 +175,13 @@ describe("Temple Core Ops Manager", async () => {
       firstVaultstartTime,
     ), "CreateVaultInstance",1,0)).args!!.vault;
 
-    const exposure = await new Exposure__factory(owner).attach(fxsExposureAddr)
+    const exposure = new Exposure__factory(owner).attach(fxsExposureAddr)
     expect(await exposure.owner()).equals(opsManager.address);
     
     const vault = new Vault__factory(owner).attach(vault1Addr);
     await templeToken.increaseAllowance(vault.address, toAtto(10000));
     await vault.deposit(toAtto(1000));
-    const ENTER_EXIT_BUFFER = await (await vault.ENTER_EXIT_WINDOW_BUFFER()).toNumber();
+    const ENTER_EXIT_BUFFER = (await vault.ENTER_EXIT_WINDOW_BUFFER()).toNumber();
     await mineForwardSeconds(3600+ENTER_EXIT_BUFFER) 
     // claims initial balance - needed otherwise reverted with panic code 0x12 (Division or modulo division by zero)
     await opsManager.rebalance([vault1Addr], fxsToken.address);
@@ -246,15 +246,15 @@ describe("Temple Core Ops Manager", async () => {
       fxsToken.address
     ), "CreateExposure", 1, 0)).args!!.exposure;
 
-    const vault1Alan = await new Vault__factory(alan).attach(vault1Addr);
-    const templeTokenAlan = await new TempleERC20Token__factory(alan).attach(templeToken.address);
+    const vault1Alan = new Vault__factory(alan).attach(vault1Addr);
+    const templeTokenAlan = new TempleERC20Token__factory(alan).attach(templeToken.address);
 
-    const ENTER_EXIT_BUFFER = await (await vault1Alan.ENTER_EXIT_WINDOW_BUFFER()).toNumber();
+    const ENTER_EXIT_BUFFER = (await vault1Alan.ENTER_EXIT_WINDOW_BUFFER()).toNumber();
 
-    const vault1Ben = await new Vault__factory(ben).attach(vault1Addr);
-    const templeTokenBen = await new TempleERC20Token__factory(ben).attach(templeToken.address);
+    const vault1Ben = new Vault__factory(ben).attach(vault1Addr);
+    const templeTokenBen = new TempleERC20Token__factory(ben).attach(templeToken.address);
 
-    const fxsExposure = await new Exposure__factory(owner).attach(fxsExposureAddr);
+    const fxsExposure = new Exposure__factory(owner).attach(fxsExposureAddr);
 
     const noopLiquidator = await new NoopVaultedTempleLiquidator__factory(owner).deploy(templeToken.address, await opsManager.vaultedTemple());
     await opsManager.setExposureLiquidator(fxsToken.address, noopLiquidator.address);
@@ -297,9 +297,8 @@ describe("Temple Core Ops Manager", async () => {
 
     expect(await fxsExposure.balanceOf(vault1Addr)).equals(toAtto(10000));
 
-    // Start of day 15 pt 3 - update exposure balance, in this case assuming $5 a token
+    // Start of day 15 pt 3 - update exposure balance, in this case assuming 1 $TEMPLE = 1 $FXS 
     // Skip until decision on Q3 is decided
-    //await opsManager.updateExposureReval([fxsToken.address], [toAtto(2000)]);
 
     // Start of day 22 
     await opsManager.addRevenue([fxsToken.address], [toAtto(10000)])
@@ -369,15 +368,13 @@ describe("Temple Core Ops Manager", async () => {
       fxsToken.address
     ), "CreateExposure", 1, 0)).args!!.exposure;
 
-    const ENTER_EXIT_BUFFER = await (await vault1.ENTER_EXIT_WINDOW_BUFFER()).toNumber();
+    const ENTER_EXIT_BUFFER =  (await vault1.ENTER_EXIT_WINDOW_BUFFER()).toNumber();
 
-    const fxsExposure = await new Exposure__factory(owner).attach(fxsExposureAddr);
+    const fxsExposure = new Exposure__factory(owner).attach(fxsExposureAddr);
 
     const noopLiquidator = await new NoopVaultedTempleLiquidator__factory(owner).deploy(templeToken.address, await opsManager.vaultedTemple());
     await opsManager.setExposureLiquidator(fxsToken.address, noopLiquidator.address);
     templeToken.addMinter(noopLiquidator.address);
-
-    const vaultedTempleExposure = new Exposure__factory(owner).attach(await opsManager.templeExposure());
 
     const alanAddr = await alan.getAddress();
     const benAddr = await ben.getAddress();
@@ -413,7 +410,7 @@ describe("Temple Core Ops Manager", async () => {
     // Start of day 8 pt 4 - accounting for how much of each exposure generated by primary revenue is alloc to each vault
     await opsManager.addRevenue([fxsToken.address], [toAtto(10000)]);
     await opsManager.rebalance([vault1Addr, vault3Addr, vault4Addr], fxsToken.address);
-    expect(await fxsExposure.balanceOf(vault1Addr)).equals(toAtto(10000)); 
+    expect(await fxsExposure.balanceOf(vault1Addr)).equals(toAtto(10000)); // 10000/1
     expect(await fxsExposure.balanceOf(vault2Addr)).equals(toAtto(0));
     expect(await fxsExposure.balanceOf(vault3Addr)).equals(toAtto(0));
     expect(await fxsExposure.balanceOf(vault4Addr)).equals(toAtto(0));
@@ -427,8 +424,8 @@ describe("Temple Core Ops Manager", async () => {
     await opsManager.rebalance([vault1Addr, vault2Addr, vault4Addr], fxsToken.address);
     await opsManager.addRevenue([fxsToken.address], [toAtto(10000)]);
     await opsManager.rebalance([vault1Addr, vault2Addr, vault4Addr], fxsToken.address);
-    expect(await fxsExposure.balanceOf(vault1Addr)).equals(toAtto(15000)); 
-    expect(await fxsExposure.balanceOf(vault2Addr)).equals(toAtto(5000));
+    expect(await fxsExposure.balanceOf(vault1Addr)).equals(toAtto(15000)); //10000+(10000/2)
+    expect(await fxsExposure.balanceOf(vault2Addr)).equals(toAtto(5000)); // 10000/2
     expect(await fxsExposure.balanceOf(vault3Addr)).equals(toAtto(0)); // no deposits
     expect(await fxsExposure.balanceOf(vault4Addr)).equals(toAtto(0)); // no deposits
 
@@ -441,9 +438,9 @@ describe("Temple Core Ops Manager", async () => {
     await opsManager.rebalance([vault1Addr, vault2Addr, vault3Addr], fxsToken.address);
     await opsManager.addRevenue([fxsToken.address], [toAtto(10000)]);
     await opsManager.rebalance([vault1Addr, vault2Addr, vault3Addr], fxsToken.address);
-    expect(fromAtto(await fxsExposure.balanceOf(vault1Addr))).approximately(18333.3, 1e-1); 
-    expect(fromAtto(await fxsExposure.balanceOf(vault2Addr))).approximately(8333.3, 1e-1);
-    expect(fromAtto(await fxsExposure.balanceOf(vault3Addr))).approximately(3333.3, 1e-1); 
+    expect(fromAtto(await fxsExposure.balanceOf(vault1Addr))).approximately(18333.3, 1e-1); // 15000 + 10000/3
+    expect(fromAtto(await fxsExposure.balanceOf(vault2Addr))).approximately(8333.3, 1e-1); // 5000 + 10000/3
+    expect(fromAtto(await fxsExposure.balanceOf(vault3Addr))).approximately(3333.3, 1e-1); // 10000/3
     expect(await fxsExposure.balanceOf(vault4Addr)).equals(toAtto(0)); // no deposits
 
     await addDepositToVaults(vault4, toAtto(300), toAtto(100));
@@ -456,8 +453,8 @@ describe("Temple Core Ops Manager", async () => {
     await opsManager.rebalance([vault2Addr, vault3Addr, vault4Addr], fxsToken.address);
     await opsManager.addRevenue([fxsToken.address], [toAtto(10000)]);
     await opsManager.rebalance([vault2Addr, vault3Addr, vault4Addr], fxsToken.address);
-    expect(fromAtto(await fxsExposure.balanceOf(vault1Addr))).approximately(18333.3, 1e-1); 
-    expect(fromAtto(await fxsExposure.balanceOf(vault2Addr))).approximately(9761.9, 1e-1);
+    expect(fromAtto(await fxsExposure.balanceOf(vault1Addr))).approximately(18333.3, 1e-1); // 18333 - no rev share this time, as in window //
+    expect(fromAtto(await fxsExposure.balanceOf(vault2Addr))).approximately(9761.9, 1e-1); // 
     expect(fromAtto(await fxsExposure.balanceOf(vault3Addr))).approximately(4761.9, 1e-1); 
     expect(fromAtto(await fxsExposure.balanceOf(vault4Addr))).approximately(5714.2, 1e-1); 
 
