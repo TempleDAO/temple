@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { blockTimestamp, deployAndAirdropTemple, mineForwardSeconds, toAtto } from "../helpers";
+import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, toAtto } from "../helpers";
 import { Signer } from "ethers";
 import {
     AcceleratedExitQueue,
@@ -144,7 +144,7 @@ describe.only("Vault Proxy", async () => {
   const faithData = [
     {temple: 7000, faith: 5000, expected: 9000},
     {temple: 2345, faith: 10000, expected: 3048.5},
-    {temple: 2345, faith: 100, expected: 2385.4},
+    {temple: 2345, faith: 100, expected: 2385},
     {temple: 100, faith: 2345, expected: 130}
   ];
 
@@ -156,7 +156,7 @@ describe.only("Vault Proxy", async () => {
       await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(10000))
       await VAULT_PROXY.connect(alan).depositTempleWithFaith(toAtto(data.temple), toAtto(data.faith), vault.address);
 
-      expect(await vault.balanceOf(await alan.getAddress())).equals(toAtto(data.expected));
+      expect(fromAtto(await vault.balanceOf(await alan.getAddress()))).approximately(data.expected, 1e-6);
     })
   })
 
