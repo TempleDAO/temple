@@ -11,8 +11,6 @@ import "./Rational.sol";
 import "./JoiningFee.sol";
 import "./OpsManagerLib.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title Manage all active treasury farmining revenue.
  */

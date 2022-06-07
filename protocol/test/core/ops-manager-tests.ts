@@ -15,6 +15,8 @@ import {
   TreasuryFarmingRevenue__factory,
   Vault__factory,
   Vault,
+  OpsManagerLib,
+  OpsManagerLib__factory,
 } from "../../typechain";
 import { expect } from "chai";
 import { fail } from "assert";
@@ -23,6 +25,7 @@ describe("Temple Core Ops Manager", async () => {
   let opsManager: OpsManager;
   let templeToken: TempleERC20Token;
   let joiningFee: JoiningFee;
+  let opsManagerLib: OpsManagerLib;
 
   let fxsToken: FakeERC20;
   let crvToken: FakeERC20;
@@ -56,10 +59,10 @@ describe("Temple Core Ops Manager", async () => {
     );
 
     joiningFee = await new JoiningFee__factory(owner).deploy(
-      toAtto(1),
+      toAtto(0.0001),
     );
 
-    const opsManagerLib = await (await ethers.getContractFactory("OpsManagerLib")).connect(owner).deploy();
+    opsManagerLib = await new OpsManagerLib__factory(owner).deploy();
     opsManager = await new OpsManager__factory({ "contracts/core/OpsManagerLib.sol:OpsManagerLib" : opsManagerLib.address }, owner).deploy(
       templeToken.address,
       joiningFee.address
@@ -162,7 +165,8 @@ describe("Temple Core Ops Manager", async () => {
 
 
     const exposureOwner = await new Exposure__factory(owner).attach(fxsExposureAddr).owner();
-    expect(exposureOwner).equals(await owner.getAddress());
+    //expect(exposureOwner).equals(await owner.getAddress());
+    console.log(opsManager.address);
     await opsManager.updateExposureReval([fxsToken.address], [toAtto(2000)])
   })
 
@@ -236,20 +240,17 @@ describe("Temple Core Ops Manager", async () => {
     await opsManager.rebalance([vault1Addr], fxsToken.address);
 
     // Start of day 15 pt 3 - update exposure balance, in this case assuming $5 a token
-    await opsManager.updateExposureReval([fxsToken.address], [toAtto(2000)])
+    // Skip until decision on Q3 is decided
+    //await opsManager.updateExposureReval([fxsToken.address], [toAtto(2000)]);
 
     // Start of day 22 
     await opsManager.addRevenue([fxsToken.address], [toAtto(10000)])
-
     await opsManager.rebalance([vault1Addr], fxsToken.address);
 
     // Start of day 28 pt 2 - just before we get to enter exit window, liquidate exposures
     await mineForwardSeconds(23*3600);
     // liquidate a vaults exposure
-    console.log(await templeToken.balanceOf(vault1Addr));
-    console.log(`liquidating`)
     await opsManager.liquidateExposures([vault1Addr],[fxsToken.address]);
-    console.log(await templeToken.balanceOf(vault1Addr));
 
     // Start of day 28 pt 6
     // Assuming 
@@ -258,7 +259,7 @@ describe("Temple Core Ops Manager", async () => {
     expect(await vault1Ben.balanceOf(benAddr)).equals(toAtto(2525));
   })
 
-  xit("End to end flow, 4 vaults", async () => {
+  it("End to end flow, 4 vaults", async () => {
     const firstVaultstartTime = await blockTimestamp()
     const enterExitWindowPeriod = 21600;
 
@@ -279,7 +280,7 @@ describe("Temple Core Ops Manager", async () => {
       86400, // 24 hours
       enterExitWindowPeriod, // 6 hours
       {p: 1, q: 1},
-      firstVaultstartTime + 3600,
+      firstVaultstartTime + enterExitWindowPeriod,
     ), "CreateVaultInstance",1,0)).args!!.vault;
     const vault2 = new Vault__factory(owner).attach(vault2Addr);
 
@@ -289,7 +290,7 @@ describe("Temple Core Ops Manager", async () => {
       86400, // 24 hours
       enterExitWindowPeriod, // 6 hours
       {p: 1, q: 1},
-      firstVaultstartTime + (3600*2),
+      firstVaultstartTime + (enterExitWindowPeriod*2),
     ), "CreateVaultInstance",1,0)).args!!.vault;
     const vault3 = new Vault__factory(owner).attach(vault3Addr);
 
@@ -299,7 +300,7 @@ describe("Temple Core Ops Manager", async () => {
       86400, // 24 hours
       enterExitWindowPeriod, // 6 hours
       {p: 1, q: 1},
-      firstVaultstartTime + (3600*3),
+      firstVaultstartTime + (enterExitWindowPeriod*3),
     ), "CreateVaultInstance",1,0)).args!!.vault;
     const vault4 = new Vault__factory(owner).attach(vault4Addr);
 
@@ -310,10 +311,7 @@ describe("Temple Core Ops Manager", async () => {
       fxsToken.address
     ), "CreateExposure", 1, 0)).args!!.exposure;
 
-    const templeTokenAlan = await new TempleERC20Token__factory(alan).attach(templeToken.address);
     const ENTER_EXIT_BUFFER = await (await vault1.ENTER_EXIT_WINDOW_BUFFER()).toNumber();
-
-    const templeTokenBen = await new TempleERC20Token__factory(ben).attach(templeToken.address);
 
     const fxsExposure = await new Exposure__factory(owner).attach(fxsExposureAddr);
 
@@ -327,7 +325,7 @@ describe("Temple Core Ops Manager", async () => {
     // Deposit temple into the current open vault
     // Phase 1 - start of day 0
     
-    addDepositToVaults(vault1, toAtto(75), toAtto(25));
+    await addDepositToVaults(vault1, toAtto(75), toAtto(25));
     expect(await vault1.balanceOf(alanAddr)).equals(toAtto(75));
     expect(await vault1.balanceOf(benAddr)).equals(toAtto(25));
 
@@ -348,28 +346,98 @@ describe("Temple Core Ops Manager", async () => {
     expect(await vault2.inEnterExitWindow()).true;
 
     // Add deposits to vault 2
-    addDepositToVaults(vault2, toAtto(75), toAtto(25));
-    expect(await vault2.balanceOf(alanAddr)).equals(toAtto(75));
-    expect(await vault2.balanceOf(benAddr)).equals(toAtto(25));
+    await addDepositToVaults(vault2, toAtto(75), toAtto(25));
+    expect(await vault1.balanceOf(alanAddr)).equals(toAtto(75));
+    expect(await vault1.balanceOf(benAddr)).equals(toAtto(25));
 
     // Start of day 8 pt 4 - accounting for how much of each exposure generated by primary revenue is alloc to each vault
     await opsManager.addRevenue([fxsToken.address], [toAtto(10000)]);
 
     // Start of day 8 pt 5 - call rebalance to keep accounting synced on chain
-    await opsManager.rebalance([vault1Addr], fxsToken.address);
+    //await opsManager.rebalance([vault1Addr], fxsToken.address);
 
     // For brevity, will skip Start of days 15 & 22
+    await mineForwardSeconds(enterExitWindowPeriod+ENTER_EXIT_BUFFER);
+    await addDepositToVaults(vault3, toAtto(75), toAtto(25));
+    expect(await vault3.balanceOf(alanAddr)).equals(toAtto(75));
+    expect(await vault3.balanceOf(benAddr)).equals(toAtto(25));
+    await mineForwardSeconds(enterExitWindowPeriod+ENTER_EXIT_BUFFER);
+    await addDepositToVaults(vault4, toAtto(300), toAtto(100));
+    expect(await vault4.balanceOf(alanAddr)).equals(toAtto(300));
+    expect(await vault4.balanceOf(benAddr)).equals(toAtto(100));
 
     // Start of day 28 pt 2 - just before we get to enter exit window, liquidate exposures
-    await mineForwardSeconds(22*3600);
+    await mineForwardSeconds(enterExitWindowPeriod+ENTER_EXIT_BUFFER);
     // liquidate a vaults exposure
     await opsManager.liquidateExposures([vault1Addr],[fxsToken.address]);
 
-    await mineForwardSeconds(3600); // get back into window
     // Start of day 28 pt 6
-    await opsManager.increaseVaultTemple([vault1Addr],[toAtto(10000)]);
-    expect(await vault1.balanceOf(alanAddr)).equals(toAtto(7575));
-    expect(await vault1.balanceOf(benAddr)).equals(toAtto(2525));
+    await opsManager.increaseVaultTemple([vault1Addr],[toAtto(2500)]);
+    
+    expect(await vault1.balanceOf(alanAddr)).equals(toAtto(1950));
+    expect(await vault1.balanceOf(benAddr)).equals(toAtto(650));
+    expect(await vault2.balanceOf(alanAddr)).equals(toAtto(75));
+    expect(await vault2.balanceOf(benAddr)).equals(toAtto(25));
+    expect(await vault3.balanceOf(alanAddr)).equals(toAtto(75));
+    expect(await vault3.balanceOf(benAddr)).equals(toAtto(25));
+    expect(await vault4.balanceOf(alanAddr)).equals(toAtto(300));
+    expect(await vault4.balanceOf(benAddr)).equals(toAtto(100));
+
+    // For brevity, just skip to day 8 of week 2
+    // Start of day 28 pt 2 - just before we get to enter exit window, liquidate exposures
+    await mineForwardSeconds(enterExitWindowPeriod+ENTER_EXIT_BUFFER);
+    // liquidate a vaults exposure
+    await opsManager.liquidateExposures([vault2Addr],[fxsToken.address]);
+
+    // Start of day 28 pt 6
+    await opsManager.increaseVaultTemple([vault2Addr],[toAtto(2500)]);
+    
+    expect(await vault1.balanceOf(alanAddr)).equals(toAtto(1950));
+    expect(await vault1.balanceOf(benAddr)).equals(toAtto(650));
+    expect(await vault2.balanceOf(alanAddr)).equals(toAtto(1950));
+    expect(await vault2.balanceOf(benAddr)).equals(toAtto(650));
+    expect(await vault3.balanceOf(alanAddr)).equals(toAtto(75));
+    expect(await vault3.balanceOf(benAddr)).equals(toAtto(25));
+    expect(await vault4.balanceOf(alanAddr)).equals(toAtto(300));
+    expect(await vault4.balanceOf(benAddr)).equals(toAtto(100));
+
+    // vault 3
+    // For brevity, just skip to day 8 of week 2
+    // Start of day 28 pt 2 - just before we get to enter exit window, liquidate exposures
+    await mineForwardSeconds(enterExitWindowPeriod+ENTER_EXIT_BUFFER);
+    // liquidate a vaults exposure
+    await opsManager.liquidateExposures([vault3Addr],[fxsToken.address]);
+
+    // Start of day 28 pt 6
+    await opsManager.increaseVaultTemple([vault3Addr],[toAtto(2500)]);
+    
+    expect(await vault1.balanceOf(alanAddr)).equals(toAtto(1950));
+    expect(await vault1.balanceOf(benAddr)).equals(toAtto(650));
+    expect(await vault2.balanceOf(alanAddr)).equals(toAtto(1950));
+    expect(await vault2.balanceOf(benAddr)).equals(toAtto(650));
+    expect(await vault3.balanceOf(alanAddr)).equals(toAtto(1950));
+    expect(await vault3.balanceOf(benAddr)).equals(toAtto(650));
+    expect(await vault4.balanceOf(alanAddr)).equals(toAtto(300));
+    expect(await vault4.balanceOf(benAddr)).equals(toAtto(100));
+
+    // vault 4
+    // For brevity, just skip to day 8 of week 2
+    // Start of day 28 pt 2 - just before we get to enter exit window, liquidate exposures
+    await mineForwardSeconds(enterExitWindowPeriod+ENTER_EXIT_BUFFER);
+    // liquidate a vaults exposure
+    await opsManager.liquidateExposures([vault4Addr],[fxsToken.address]);
+
+    // Start of day 28 pt 6
+    await opsManager.increaseVaultTemple([vault4Addr],[toAtto(2500)]);
+    
+    expect(await vault1.balanceOf(alanAddr)).equals(toAtto(1950));
+    expect(await vault1.balanceOf(benAddr)).equals(toAtto(650));
+    expect(await vault2.balanceOf(alanAddr)).equals(toAtto(1950));
+    expect(await vault2.balanceOf(benAddr)).equals(toAtto(650));
+    expect(await vault3.balanceOf(alanAddr)).equals(toAtto(1950));
+    expect(await vault3.balanceOf(benAddr)).equals(toAtto(650));
+    expect(await vault4.balanceOf(alanAddr)).equals(toAtto(2175));
+    expect(await vault4.balanceOf(benAddr)).equals(toAtto(725));
   })
 
   async function addDepositToVaults(vault: Vault, amountAlan: BigNumber, amountBen: BigNumber) {
