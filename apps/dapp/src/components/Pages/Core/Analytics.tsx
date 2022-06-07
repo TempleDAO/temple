@@ -28,6 +28,10 @@ import logicImage from 'assets/images/logic.png';
 import structureImage from 'assets/images/structure.png';
 import orderImage from 'assets/images/order.png';
 import { PageWrapper } from './utils';
+import { useAnalytics } from 'hooks/core/use-analytics';
+import { useEffect } from 'react';
+import Loader from 'components/Loader/Loader';
+import { NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
 
 const CHART_EMBED_HEIGHT = 400;
 const CHART_HEIGHT = 500;
@@ -35,7 +39,27 @@ const CHART_HEIGHT = 500;
 const DUNE_TREASURY_CHART = 'https://dune.xyz/embeds/321490/612067/621fe92e-859a-4525-be32-33631910b83c';
 
 const AnalyticsPage = () => {
-  const dashboardMetrics = useRefreshableDashboardMetrics();
+  const { isLoading, analytics, error } = useAnalytics();
+
+  useEffect(() => {
+    console.log(analytics);
+  }, [analytics]);
+
+  if (isLoading) {
+    return (
+      <Container>
+        <Loader />
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container>
+        <p>Error fetching analytics</p>
+      </Container>
+    );
+  }
 
   return (
     <PageWrapper>
@@ -53,7 +77,7 @@ const AnalyticsPage = () => {
       <div>
         <StatsCard
           label="Treasury Value"
-          stat={dashboardMetrics ? `$${formatMillions(dashboardMetrics?.treasuryValue)}` : ''}
+          stat={`$${formatMillions(analytics.treasuryValue)}`}
           backgroundColor={theme.palette.brand75}
           backgroundImageUrl={texture3}
           heightPercentage={25}
@@ -70,7 +94,7 @@ const AnalyticsPage = () => {
         <ItemWrapper>
           <StatsCard
             label="Circulating Market Cap"
-            stat={dashboardMetrics ? `$${formatMillions(dashboardMetrics?.circMCap)}` : ''}
+            stat={formatMillions(analytics.circulatingMarketCap)}
             backgroundColor={theme.palette.dark}
             darken
             fontColor={theme.palette.light}
@@ -80,9 +104,7 @@ const AnalyticsPage = () => {
         <ItemWrapper>
           <StatsCard
             label="Fully Diluted Valuation"
-            stat={`$${formatMillions(
-              dashboardMetrics ? dashboardMetrics?.templeTotalSupply * dashboardMetrics?.templeValue : 0
-            )}`}
+            stat={`$${formatMillions(analytics.fullyDilutedValuation)}`}
             backgroundColor={theme.palette.dark}
             darken
             fontColor={theme.palette.light}
@@ -92,7 +114,7 @@ const AnalyticsPage = () => {
         <ItemWrapper>
           <StatsCard
             label="Circulating TEMPLE supply"
-            stat={`${formatMillions(dashboardMetrics?.circTempleSupply || 0)}`}
+            stat={formatMillions(analytics.circulatingTempleSupply)}
             backgroundColor={theme.palette.dark}
             darken
             fontColor={theme.palette.light}
@@ -102,7 +124,7 @@ const AnalyticsPage = () => {
         <ItemWrapper>
           <StatsCard
             label="Fully Diluted TEMPLE supply"
-            stat={`${formatMillions(dashboardMetrics?.templeTotalSupply || 0)}`}
+            stat={formatMillions(analytics.fullyDilutedTempleSupply)}
             backgroundColor={theme.palette.dark}
             darken
             fontColor={theme.palette.light}
@@ -111,13 +133,13 @@ const AnalyticsPage = () => {
         </ItemWrapper>
       </GridLayout>
 
-      <h3>Community Growth</h3>
+      {/* <h3>Community Growth</h3>
 
       <GridLayout columnCount={3}>
         <ItemWrapper>
           <StatsCard
             label="Discord Users"
-            stat={dashboardMetrics?.socialMetrics?.discord?.totalMembers || ''}
+            stat={0}
             backgroundColor={theme.palette.brand75}
             backgroundImageUrl={background9}
             heightPercentage={50}
@@ -126,7 +148,7 @@ const AnalyticsPage = () => {
         <ItemWrapper>
           <StatsCard
             label="Twitter Followers"
-            stat={dashboardMetrics?.socialMetrics?.twitter_followers_count || ''}
+            stat={0}
             backgroundColor={theme.palette.brand75}
             backgroundImageUrl={background10}
             heightPercentage={50}
@@ -150,7 +172,7 @@ const AnalyticsPage = () => {
         <ItemWrapper>
           <StatsCard
             label="Members in chaos"
-            stat={dashboardMetrics?.socialMetrics?.discord?.enclaveChaos || ''}
+            stat={0}
             backgroundColor={theme.palette.dark}
             darken
             fontColor={theme.palette.light}
@@ -160,7 +182,7 @@ const AnalyticsPage = () => {
         <ItemWrapper>
           <StatsCard
             label="Members in Mystery"
-            stat={dashboardMetrics?.socialMetrics?.discord?.enclaveMystery || ''}
+            stat={0}
             backgroundColor={theme.palette.dark}
             darken
             fontColor={theme.palette.light}
@@ -170,7 +192,7 @@ const AnalyticsPage = () => {
         <ItemWrapper>
           <StatsCard
             label="Members in Logic"
-            stat={dashboardMetrics?.socialMetrics?.discord?.enclaveLogic || ''}
+            stat={0}
             backgroundColor={theme.palette.dark}
             darken
             fontColor={theme.palette.light}
@@ -180,7 +202,7 @@ const AnalyticsPage = () => {
         <ItemWrapper>
           <StatsCard
             label="Members in structure"
-            stat={dashboardMetrics?.socialMetrics?.discord?.enclaveStructure || ''}
+            stat={0}
             backgroundColor={theme.palette.dark}
             darken
             fontColor={theme.palette.light}
@@ -190,14 +212,14 @@ const AnalyticsPage = () => {
         <ItemWrapper>
           <StatsCard
             label="Members in order"
-            stat={dashboardMetrics?.socialMetrics?.discord?.enclaveOrder || ''}
+            stat={0}
             backgroundColor={theme.palette.dark}
             darken
             fontColor={theme.palette.light}
             backgroundImageUrl={orderImage}
           />
         </ItemWrapper>
-      </GridLayout>
+      </GridLayout> */}
     </PageWrapper>
   );
 };
@@ -238,6 +260,15 @@ const DuneDashboardLink = styled.a`
     font-size: 1rem;
     text-decoration: underline;
   }
+`;
+
+const Container = styled.div`
+  width: 100%;
+  height: calc(100vh - ${NAV_DESKTOP_HEIGHT_PIXELS}px);
+  overflow-y: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 `;
 
 export default AnalyticsPage;
