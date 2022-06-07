@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { blockTimestamp, deployAndAirdropTemple, toAtto } from "../helpers";
+import { blockTimestamp, deployAndAirdropTemple, mineForwardSeconds, toAtto } from "../helpers";
 import { Signer } from "ethers";
 import {
     AcceleratedExitQueue,
@@ -44,15 +44,15 @@ describe.only("Vault Proxy", async () => {
   let ben: Signer;
 
   beforeEach(async () => {
-    [owner, alan, ben] = await ethers.getSigners();
+      [owner, alan, ben] = await ethers.getSigners();
 
-    TEMPLE = await deployAndAirdropTemple(
-      owner,
-      [owner, alan, ben],
-      toAtto(1000)
-    );
+      TEMPLE = await deployAndAirdropTemple(
+        owner,
+        [owner, alan, ben],
+        toAtto(1000)
+      );
 
-    EXIT_QUEUE = await new ExitQueue__factory(owner).deploy(
+      EXIT_QUEUE = await new ExitQueue__factory(owner).deploy(
         TEMPLE.address,
         toAtto(1000), /* max per epoch */
         toAtto(1000), /* max per address per epoch */
@@ -66,16 +66,8 @@ describe.only("Vault Proxy", async () => {
         (await blockTimestamp()) - 1,
       );
        
-       await STAKING.setEpy(10,100);
-       OGTEMPLE = new OGTemple__factory(owner).attach(await STAKING.OG_TEMPLE());
-
-       ACCEL_EXIT_QUEUE = await new AcceleratedExitQueue__factory(owner).deploy(
-        TEMPLE.address,
-        EXIT_QUEUE.address,
-        STAKING.address
-      );
-
-      await EXIT_QUEUE.transferOwnership(ACCEL_EXIT_QUEUE.address);
+      await STAKING.setEpy(10,100);
+      OGTEMPLE = new OGTemple__factory(owner).attach(await STAKING.OG_TEMPLE());
 
       FAITH = await new Faith__factory(owner).deploy();
 
@@ -106,7 +98,6 @@ describe.only("Vault Proxy", async () => {
         "temple exposure",
         "TPL-VAULT-EXPOSURE",
         TEMPLE.address,
-        await owner.getAddress(),
       )
 
       const vaultedTemple = await new VaultedTemple__factory(owner).deploy(
@@ -170,13 +161,14 @@ describe.only("Vault Proxy", async () => {
   })
 
   it("Can unstake and deposit into vault", async () => {
-    let alanStake = await new TempleStaking__factory(alan).attach(STAKING.address);
-    let alanTemple = await new TempleERC20Token__factory(alan).attach(TEMPLE.address);
-    let alanOgTemple = await new OGTemple__factory(alan).attach(OGTEMPLE.address);
-    let alanOGTSwap = await new VaultProxy__factory(alan).attach(VAULT_PROXY.address);
+    let alanStake = new TempleStaking__factory(alan).attach(STAKING.address);
+    let alanTemple = new TempleERC20Token__factory(alan).attach(TEMPLE.address);
+    let alanOgTemple = new OGTemple__factory(alan).attach(OGTEMPLE.address);
+    let alanOGTSwap = new VaultProxy__factory(alan).attach(VAULT_PROXY.address);
 
     await alanTemple.increaseAllowance(STAKING.address, toAtto(100000));
     await alanStake.stake(toAtto(200));
+    mineForwardSeconds(40); // 2 epochs
     await alanOgTemple.increaseAllowance(VAULT_PROXY.address, toAtto(10000))
     
     const ogtBal = await OGTEMPLE.balanceOf(await alan.getAddress())

@@ -5,9 +5,6 @@ export interface DeployedContracts {
   FRAX: string,
   PRESALE_ALLOCATION: string;
   TEMPLE: string
-  OLD_EXIT_QUEUE: string
-  EXIT_QUEUE: string
-  ACCELERATED_EXIT_QUEUE: string
   STAKING: string
   LEGACY_LOCKED_OG_TEMPLE: string,
   TREASURY: string,
@@ -61,7 +58,6 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     SANDALWOOD_TOKEN: '0xA7377AbD44F62730271DE322F920037E86e9e5C8', // not bridged onto polygon
     OPENING_CEREMONY: '0x16e3cD38C1ddf24E758B2f3a69a8042d96c220b1',
     OPENING_CEREMONY_VERIFIER: '0x91828143801899e82D1eD6B0Be92ebe61B1D299E',
-    OLD_EXIT_QUEUE: '0x4caA5F5e306f99d07DDB6c17ce9AE5Af3c9B0B1a',
     AMM_WHITELIST: '0x412326Afc6d8E27467e979dc1Ac404887802018a',
 
     // From network/environment
@@ -69,8 +65,6 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
 
     // Active contrats
     TEMPLE: '0x359655dcB8A32479680Af81Eb38eA3Bb2B42Af54',
-    EXIT_QUEUE: '0x5B1ccC64cc9e39BA8d6395fA6Cb4FFCaB3e3069f',
-    ACCELERATED_EXIT_QUEUE: '0x75a89f50cb40aec7Ed237F1Bfab562A60023ebE6',
     STAKING: '0xfF8D8342DC367D66BA20403216d55B1fcC1f284e',
     LEGACY_LOCKED_OG_TEMPLE: '0x564462C807600684965d8A8f57eA190F2F66169C',
     TREASURY: '0xA443355cE4F9c1AA6d68e057a962E86E071B0ed3',
@@ -107,7 +101,6 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     SANDALWOOD_TOKEN: '0x4FA80013F5d13DB10f2c5DC2987081cb48c7c069', // bridged 0xe99e95ec6DCae4c85806F13CDf1351aE0FEf55Be
     OPENING_CEREMONY: '0xA2642dF0139faeBB1D45526a46d5c54B805Be02c',
     OPENING_CEREMONY_VERIFIER: '0x8ed9a9980E4C7e87eDf8DA13Fc2ba53802BBa117',
-    OLD_EXIT_QUEUE: '0xfaeadcd9cb6870a5df09e403e4dcfcf1a6f20a0c',
 
     // From network/environment
     FRAX: '0x853d955acef822db058eb8505911ed77f175b99e',
@@ -115,8 +108,6 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
 
     // Active contrats
     TEMPLE: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
-    EXIT_QUEUE: '0x967591888A5e8aED9D2A920fE4cC726e83d2bca9',
-    ACCELERATED_EXIT_QUEUE: '0xC6d556C34a179a224AEBE42e77c6e76594148B97',
     STAKING: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
     LEGACY_LOCKED_OG_TEMPLE: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
     TREASURY: '0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443',
@@ -143,7 +134,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     OPS_MANAGER: '',
     OPS_MANAGER_LIB: '',
     JOINING_FEE: '',
-    INSTANT_EXIT_QUEUE: '',
+    INSTANT_EXIT_QUEUE: '0x1F667edf04D8ABF8409Bf579a3F1bBf8ec263a85',
     VAULT_PROXY: '',
   },
   localhost: {
@@ -153,15 +144,12 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     SANDALWOOD_TOKEN: process.env.SANDALWOOD_TOKEN || '',
     OPENING_CEREMONY: process.env.OPENING_CEREMONY || '',
     OPENING_CEREMONY_VERIFIER: process.env.OPENING_CEREMONY_VERIFIER || '',
-    OLD_EXIT_QUEUE: process.env.OLD_EXIT_QUEUE || '',
 
     // From network/environment (setup when 00-localhost-env.ts script is run)
     FRAX: process.env.FRAX || '',
 
     // Active contrats
     TEMPLE: process.env.TEMPLE || '',
-    EXIT_QUEUE: process.env.EXIT_QUEUE || '',
-    ACCELERATED_EXIT_QUEUE: process.env.ACCELERATED_EXIT_QUEUE || '',
     STAKING: process.env.STAKING || '',
     LEGACY_LOCKED_OG_TEMPLE: process.env.LEGACY_LOCKED_OG_TEMPLE || '',
     TREASURY: process.env.TREASURY || '',

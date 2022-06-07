@@ -16,6 +16,8 @@ import {
 } from "../../typechain";
 import { fail } from "assert";
 import { mkRebasingERC20TestSuite } from "./rebasing-erc20-testsuite";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { _TypedDataEncoder } from "ethers/lib/utils";
 
 describe("Temple Core Vault", async () => {
   let vault: Vault;
@@ -25,7 +27,7 @@ describe("Temple Core Vault", async () => {
   let joiningFee: JoiningFee;
 
   let owner: Signer;
-  let alan: Signer;
+  let alan: SignerWithAddress;
   let ben: Signer;
 
   // Helper to generate expected token balance changes for 
@@ -65,7 +67,6 @@ describe("Temple Core Vault", async () => {
       "temple exposure",
       "TPL-VAULT-EXPOSURE",
       templeToken.address,
-      await owner.getAddress(),
     )
 
     vaultedTemple = await new VaultedTemple__factory(owner).deploy(
@@ -253,14 +254,76 @@ describe("Temple Core Vault", async () => {
       await ethers.provider.send("hardhat_reset", []);
   })
 
-  xit("cannot redeem exposures when outside of the entry/exit window", async () => {
-    // TODO(butler): write test
-    fail("Unimplemented");
+  it("Correctly handles withdrawFor", async () => {
+    const typehash = "withdrawFor(address owner,address sender,uint256 amount,uint256 deadline,uint256 nonce)";
+
+    const amount = toAtto(100);
+    const deadline = await blockTimestamp() + (60*20);
+
+    const domain = {
+      name: await vault.name(),
+      version: '1',
+      chainId: await alan.getChainId(),
+      verifyingContract: vault.address      
+    };
+
+    const types = {
+      withdrawFor: [
+        {name: "owner", type: "address"},
+        {name: "sender", type: "address"},
+        {name: "amount", type: "uint256"},
+        {name: "deadline", type: "uint256"},
+        {name: "nonce", type: "uint256"}
+      ]
+    }
+
+    const msg = {
+      owner: await alan.getAddress(),
+      sender: await owner.getAddress(),
+      amount: amount,
+      deadline: deadline,
+      nonce: await vault.nonces(await alan.getAddress())
+    }
+
+    const sig = await alan._signTypedData(domain, types, msg);
+    const splitSig = ethers.utils.splitSignature(sig);
+    await vault.connect(alan).deposit(amount);
+
+    const beforeBal = await templeToken.balanceOf(await owner.getAddress());
+
+    await vault.withdrawFor(await alan.getAddress(), amount, deadline, splitSig.v, splitSig.r, splitSig.s);
+
+    const afterBal = await templeToken.balanceOf(await owner.getAddress());
+
+    expect(beforeBal.add(amount)).equals(afterBal);
+  })
+
+  it("only vault owner can redeem an exposure", async () => {
+    await expect(vault.connect(alan).redeemExposures([templeExposure.address]))
+      .to.revertedWith("Ownable: caller is not the owner")
   });
 
-  xit("allows redeeming an exposure back to temple", async () => {
-    // TODO(butler): write test
-    fail("Unimplemented");
+  it("only owner can withdraw vaulted temple (for DAO leverage)", async () => {
+    await expect(vaultedTemple.connect(alan)
+      .withdraw(templeToken.address, await alan.getAddress(), 100))
+      .to.revertedWith("Ownable: caller is not the owner")
+
+    await templeToken.mint(vaultedTemple.address, 100);
+
+    await expect(async () => 
+      vaultedTemple.withdraw(templeToken.address, await alan.getAddress(), 100)
+    ).to.changeTokenBalance(templeToken, alan, 100)
+  });
+
+  it("only temple exposure can call toTemple on vaulted temple contract", async () => {
+    await expect(vaultedTemple.toTemple(100, await alan.getAddress()))
+      .to.revertedWith("VaultedTemple: Only TempeExposure can redeem temple on behalf of a vault")
+
+    await templeToken.mint(vaultedTemple.address, 100);
+
+    templeExposure.mint(await alan.getAddress(), 100)
+    await expect(async () => templeExposure.connect(alan).redeem())
+      .to.changeTokenBalance(templeToken, alan, 100)
   });
 
   mkRebasingERC20TestSuite(async () => {
