@@ -191,4 +191,38 @@ describe("Vault Proxy", async () => {
     expect(await vault.balanceOf(await alan.getAddress())).equals(amount);
     expect(await TEMPLE.balanceOf(await alan.getAddress())).equals(toAtto(800));
   });
+
+  it("Can zap OGT into Vault with Faith boost", async () => {
+    const alanAddr = await alan.getAddress();
+    await FAITH.gain(alanAddr, toAtto(200));
+
+    const faith = await FAITH.balances(alanAddr);
+
+    let alanStake = await new TempleStaking__factory(alan).attach(STAKING.address);
+    let alanTemple = await new TempleERC20Token__factory(alan).attach(TEMPLE.address);
+    let alanOgTemple = await new OGTemple__factory(alan).attach(OGTEMPLE.address);
+    let alanOGTSwap = await new VaultProxy__factory(alan).attach(VAULT_PROXY.address);
+
+    await alanTemple.increaseAllowance(STAKING.address, toAtto(100000));
+    await alanStake.stake(toAtto(200));
+    await alanOgTemple.increaseAllowance(VAULT_PROXY.address, toAtto(10000))
+    
+    const ogtBal = await OGTEMPLE.balanceOf(await alan.getAddress())
+    const amount = await STAKING.balance(ogtBal);
+
+    const expectedAmount = await VAULT_PROXY.getFaithMultiplier(faith.usableFaith, amount);
+    expect(expectedAmount.sub(amount) > amount).true;
+
+    await alanOGTSwap.unstakeAndDepositTempleWithFaith(ogtBal, faith.usableFaith, vault.address);
+
+    expect(await vault.balanceOf(await alan.getAddress())).equals(expectedAmount);
+    expect(await TEMPLE.balanceOf(await alan.getAddress())).equals(toAtto(800));
+  })
+
+  it("Can proxy deposit for any Vault", async() => {
+    await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000));
+    await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
+
+    expect(await vault.balanceOf(await alan.getAddress())).equals(toAtto(100));
+  })
 });
