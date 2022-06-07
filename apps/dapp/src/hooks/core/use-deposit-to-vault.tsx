@@ -68,7 +68,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
         gasLimit: 450000,
       });
     } else if (token === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
-      tx = await vaultProxy.unstakeAndDepositIntoVault(bigAmount, vaultContractAddress);
+      tx = await vaultProxy.unstakeAndDepositTemple(bigAmount, vaultContractAddress);
     } else {
       throw new Error(`Programming Error: Unsupported token: ${token}`);
     }
