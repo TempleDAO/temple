@@ -44,7 +44,6 @@ type Exposure @entity {
   symbol: String!
   revalToken: String!
   reval: BigInt!
-  minterManager: String!
   liquidator: String!
   opsManager: OpsManager!
 }

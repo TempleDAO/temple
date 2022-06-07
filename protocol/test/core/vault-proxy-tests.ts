@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { blockTimestamp, deployAndAirdropTemple, mineForwardSeconds, toAtto } from "../helpers";
+import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, toAtto } from "../helpers";
 import { Signer } from "ethers";
 import {
     AcceleratedExitQueue,
@@ -125,6 +125,18 @@ describe("Vault Proxy", async () => {
       await TEMPLE.mint(VAULT_PROXY.address, toAtto(1000000));
   });
 
+  it("Only owner can withdraw from contract", async () => {
+    const beforeBal = await TEMPLE.balanceOf(await owner.getAddress());
+    const expectedBal = beforeBal.add(toAtto(100));
+
+    await VAULT_PROXY.withdraw(TEMPLE.address, await owner.getAddress(), toAtto(100))
+
+    expect(await TEMPLE.balanceOf(await owner.getAddress())).equals(expectedBal);
+
+    expect(VAULT_PROXY.connect(alan).withdraw(TEMPLE.address, await alan.getAddress(), toAtto(100)))
+                .to.be.revertedWith("Ownable: caller is not the owner");
+  })
+
   it("Can deposit using Temple + Faith", async () => {
     const alanAddr = await alan.getAddress();
     await FAITH.gain(alanAddr, toAtto(200));
@@ -139,6 +151,25 @@ describe("Vault Proxy", async () => {
     expect(await vault.balanceOf(alanAddr)).equals(expectedAmount);
     // ensure we've burnt it all
     expect(await (await FAITH.balances(alanAddr)).usableFaith).equals(0);
+  })
+
+  const faithData = [
+    {temple: 7000, faith: 5000, expected: 9000},
+    {temple: 2345, faith: 10000, expected: 3048.5},
+    {temple: 2345, faith: 100, expected: 2385},
+    {temple: 100, faith: 2345, expected: 130}
+  ];
+
+  faithData.forEach(data => {
+    it(`Deposits ${data.temple} Temple with ${data.faith} faith correctly`, async () => {
+      await TEMPLE.mint(await alan.getAddress(), toAtto(data.temple));
+      await FAITH.gain(await alan.getAddress(), toAtto(data.faith));
+
+      await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(10000))
+      await VAULT_PROXY.connect(alan).depositTempleWithFaith(toAtto(data.temple), toAtto(data.faith), vault.address);
+
+      expect(fromAtto(await vault.balanceOf(await alan.getAddress()))).approximately(data.expected, 1e-6);
+    })
   })
 
   it("Can unstake and deposit into vault", async () => {

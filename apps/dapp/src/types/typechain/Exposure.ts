@@ -32,7 +32,6 @@ export interface ExposureInterface extends utils.Interface {
     "increaseReval(uint256)": FunctionFragment;
     "liquidator()": FunctionFragment;
     "mint(address,uint256)": FunctionFragment;
-    "minterManager()": FunctionFragment;
     "name()": FunctionFragment;
     "owner()": FunctionFragment;
     "redeem()": FunctionFragment;
@@ -91,10 +90,6 @@ export interface ExposureInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "mint",
     values: [string, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "minterManager",
-    values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
@@ -181,10 +176,6 @@ export interface ExposureInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "liquidator", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "minterManager",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "redeem", data: BytesLike): Result;
@@ -242,7 +233,7 @@ export interface ExposureInterface extends utils.Interface {
     "DecreaseReval(uint256,uint256)": EventFragment;
     "IncreaseReval(uint256,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
-    "Redeem(address,address,uint256)": EventFragment;
+    "Redeem(address,address,address,uint256)": EventFragment;
     "SetLiquidator(address)": EventFragment;
     "SetMinterState(address,bool)": EventFragment;
     "Transfer(address,address,uint256)": EventFragment;
@@ -288,8 +279,8 @@ export type OwnershipTransferredEventFilter =
   TypedEventFilter<OwnershipTransferredEvent>;
 
 export type RedeemEvent = TypedEvent<
-  [string, string, BigNumber],
-  { revalToken: string; account: string; amount: BigNumber }
+  [string, string, string, BigNumber],
+  { revalToken: string; caller: string; to: string; amount: BigNumber }
 >;
 
 export type RedeemEventFilter = TypedEventFilter<RedeemEvent>;
@@ -391,8 +382,6 @@ export interface Exposure extends BaseContract {
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-
-    minterManager(overrides?: CallOverrides): Promise<[string]>;
 
     name(overrides?: CallOverrides): Promise<[string]>;
 
@@ -519,8 +508,6 @@ export interface Exposure extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  minterManager(overrides?: CallOverrides): Promise<string>;
-
   name(overrides?: CallOverrides): Promise<string>;
 
   owner(overrides?: CallOverrides): Promise<string>;
@@ -643,8 +630,6 @@ export interface Exposure extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    minterManager(overrides?: CallOverrides): Promise<string>;
-
     name(overrides?: CallOverrides): Promise<string>;
 
     owner(overrides?: CallOverrides): Promise<string>;
@@ -741,12 +726,18 @@ export interface Exposure extends BaseContract {
       newOwner?: string | null
     ): OwnershipTransferredEventFilter;
 
-    "Redeem(address,address,uint256)"(
+    "Redeem(address,address,address,uint256)"(
       revalToken?: null,
-      account?: null,
+      caller?: null,
+      to?: null,
       amount?: null
     ): RedeemEventFilter;
-    Redeem(revalToken?: null, account?: null, amount?: null): RedeemEventFilter;
+    Redeem(
+      revalToken?: null,
+      caller?: null,
+      to?: null,
+      amount?: null
+    ): RedeemEventFilter;
 
     "SetLiquidator(address)"(liquidator?: null): SetLiquidatorEventFilter;
     SetLiquidator(liquidator?: null): SetLiquidatorEventFilter;
@@ -819,8 +810,6 @@ export interface Exposure extends BaseContract {
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
-
-    minterManager(overrides?: CallOverrides): Promise<BigNumber>;
 
     name(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -948,8 +937,6 @@ export interface Exposure extends BaseContract {
       amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
-
-    minterManager(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     name(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 

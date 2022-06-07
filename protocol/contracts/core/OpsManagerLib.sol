@@ -22,11 +22,34 @@ library OpsManagerLib {
         pools[revalToken] = new TreasuryFarmingRevenue(exposure);
         exposure.setMinterState(address(pools[revalToken]), true);
 
-        // transfer exposure ownership back to ops manager, as it manages
-        // exposure rebasing
-        exposure.transferOwnership(msg.sender);
-
         return exposure;
+    }
+
+    /**
+        Proxy function to set a liquidator for a given exposure; needed as OpsManager is the owner of all exposures created
+        with the OpsManager.
+     */
+    function setExposureLiquidator(
+        mapping(IERC20 => TreasuryFarmingRevenue) storage pools, 
+        IERC20 exposureToken, 
+        ILiquidator _liquidator
+    ) public {
+        Exposure exposure = pools[exposureToken].exposure();
+        exposure.setLiqidator(_liquidator);
+    }
+
+    /**
+        Proxy function to set minter state for a given exposure; needed as OpsManager is the owner of all exposures created
+        with the OpsManager.
+     */
+    function setExposureMinterState(
+        mapping(IERC20 => TreasuryFarmingRevenue) storage pools, 
+        IERC20 exposureToken, 
+        address account, 
+        bool state
+    ) public {
+        Exposure exposure = pools[exposureToken].exposure();
+        exposure.setMinterState(account, state);
     }
 
     function rebalance(

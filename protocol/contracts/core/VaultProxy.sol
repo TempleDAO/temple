@@ -1,6 +1,7 @@
 pragma solidity ^0.8.4;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Vault.sol";
@@ -15,7 +16,7 @@ import "../devotion/Faith.sol";
 /**
     @notice A proxy contract for interacting with Temple Vaults. 
  */
-contract VaultProxy {
+contract VaultProxy is Ownable {
     using ABDKMathQuad for bytes16;
     /** @notice Tokens / Contracted required for the proxy contract  */
     OGTemple public immutable ogTemple;
@@ -99,5 +100,17 @@ contract VaultProxy {
         vault.depositFor(msg.sender, _amount);
     }
 
-    //todo add escape hatch for ERC20 in this contract
+    /**
+    * transfer out amount of token to provided address
+    */
+    function withdraw(address token, address to, uint256 amount) external onlyOwner {
+        require(to != address(0), "to address zero");
+
+        if (token == address(0)) {
+            (bool sent,) = payable(to).call{value: amount}("");
+            require(sent, "send failed");
+        } else {
+            SafeERC20.safeTransfer(IERC20(token), to, amount);
+        }
+    }
 }

@@ -11,8 +11,6 @@ import "./Rational.sol";
 import "./JoiningFee.sol";
 import "./OpsManagerLib.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title Manage all active treasury farmining revenue.
  */
@@ -169,6 +167,22 @@ contract OpsManager is Ownable {
      */
     function requiresRebalance(Vault[] memory vaults, IERC20 exposureToken) external view returns (bool[] memory) {
         return OpsManagerLib.requiresRebalance(vaults, pools[exposureToken]);
+    }
+
+    /**
+        Proxy function to set a liquidator for a given exposure; needed as OpsManager is the owner of all exposures created
+        with the OpsManager.
+     */
+    function setExposureLiquidator(IERC20 exposureToken, ILiquidator _liquidator) external onlyOwner {
+        OpsManagerLib.setExposureLiquidator(pools, exposureToken, _liquidator);
+    }
+
+    /**
+        Proxy function to set minter state for a given exposure; needed as OpsManager is the owner of all exposures created
+        with the OpsManager.
+     */
+    function setExposureMinterState(IERC20 exposureToken, address account, bool state) external onlyOwner {
+        OpsManagerLib.setExposureMinterState(pools, exposureToken, account, state);
     }
 
     event CreateVaultInstance(address vault);
