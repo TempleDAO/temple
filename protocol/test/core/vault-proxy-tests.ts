@@ -28,7 +28,7 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { _TypedDataEncoder } from "ethers/lib/utils";
 
-describe.only("Vault Proxy", async () => {
+describe("Vault Proxy", async () => {
   let TEMPLE: TempleERC20Token;
   let EXIT_QUEUE: ExitQueue;
   let STAKING: TempleStaking;

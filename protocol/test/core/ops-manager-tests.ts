@@ -155,7 +155,9 @@ describe("Temple Core Ops Manager", async () => {
     expect(await vault2.firstPeriodStartTimestamp()).equals(firstVaultstartTime+3600);
   })
 
-  it("Can successfully call updateExposureReval", async () => {
+  it.only("Can successfully call updateExposureReval", async () => {
+    const firstVaultstartTime = await blockTimestamp()
+
     // create two exposures as a result of our farming activities
     const fxsExposureAddr = (await extractEvent(await opsManager.createExposure(
       "Temple FXS Exposure", 
@@ -163,10 +165,36 @@ describe("Temple Core Ops Manager", async () => {
       fxsToken.address
     ), "CreateExposure", 1, 0)).args!!.exposure;
 
+    // create some vaults
+    const vault1Addr = (await extractEvent(await opsManager.createVaultInstance(
+      "temple-1d-vault",
+      "TV-1D-1",
+      86400,
+      3600,
+      {p: 1, q: 1},
+      firstVaultstartTime,
+    ), "CreateVaultInstance",1,0)).args!!.vault;
+
     const exposure = await new Exposure__factory(owner).attach(fxsExposureAddr)
     expect(await exposure.owner()).equals(opsManager.address);
+    
+    const vault = new Vault__factory(owner).attach(vault1Addr);
+    await templeToken.increaseAllowance(vault.address, toAtto(10000));
+    await vault.deposit(toAtto(1000));
+    const ENTER_EXIT_BUFFER = await (await vault.ENTER_EXIT_WINDOW_BUFFER()).toNumber();
+    await mineForwardSeconds(3600+ENTER_EXIT_BUFFER) 
+    // claims initial balance - needed otherwise reverted with panic code 0x12 (Division or modulo division by zero)
+    await opsManager.rebalance([vault1Addr], fxsToken.address);
+    await opsManager.addRevenue([fxsToken.address], [toAtto(1000)])
+    expect(await exposure.balanceOf(vault1Addr)).equals(toAtto(0));
+
+    // claim new share of rev
+    await opsManager.rebalance([vault1Addr], fxsToken.address);
+    expect(await exposure.balanceOf(vault1Addr)).equals(toAtto(1000));
+
     await opsManager.updateExposureReval([fxsToken.address], [toAtto(2000)])
     expect(await exposure.reval()).equals(toAtto(2000));
+    expect(await exposure.balanceOf(vault1Addr)).equals(toAtto(2000));
   })
 
   it("Can update liquidator for an exposure", async () => {
