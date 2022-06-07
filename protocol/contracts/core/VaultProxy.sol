@@ -70,6 +70,12 @@ contract VaultProxy {
         SafeERC20.safeIncreaseAllowance(temple, address(vault), boostedAmount);
         vault.depositFor(msg.sender, boostedAmount);
     }
+
+    function unstakeAndDepositTemple(uint256 _amountOGT, Vault vault) external {
+        uint256 unstakedTemple = unstakeOGT(_amountOGT);
+        SafeERC20.safeIncreaseAllowance(temple, address(vault), unstakedTemple);
+        vault.depositFor(msg.sender, unstakedTemple);
+    }
     
     function unstakeOGT(uint256 _amountOGT) private returns (uint256) {
         SafeERC20.safeIncreaseAllowance(ogTemple, address(templeStaking), _amountOGT);
@@ -80,8 +86,7 @@ contract VaultProxy {
         uint256 templeAfterBalance = temple.balanceOf(address(this));
         require(templeAfterBalance > templeBeforeBalance, "Vault Proxy: no Temple received when unstaking");
 
-        SafeERC20.safeIncreaseAllowance(temple, address(vault), templeAfterBalance - templeBeforeBalance);
-        vault.depositFor(msg.sender, templeAfterBalance - templeBeforeBalance);
+        return templeAfterBalance - templeBeforeBalance;
     }
 
     /**

@@ -155,7 +155,7 @@ describe.only("Vault Proxy", async () => {
     const ogtBal = await OGTEMPLE.balanceOf(await alan.getAddress())
     const amount = await STAKING.balance(ogtBal);
 
-    await alanOGTSwap.unstakeAndDepositIntoVault(ogtBal, vault.address);
+    await alanOGTSwap.unstakeAndDepositTemple(ogtBal, vault.address);
 
     expect(await vault.balanceOf(await alan.getAddress())).equals(amount);
     expect(await TEMPLE.balanceOf(await alan.getAddress())).equals(toAtto(800));
@@ -186,5 +186,12 @@ describe.only("Vault Proxy", async () => {
 
     expect(await vault.balanceOf(await alan.getAddress())).equals(expectedAmount);
     expect(await TEMPLE.balanceOf(await alan.getAddress())).equals(toAtto(800));
+  })
+
+  it("Can proxy deposit for any Vault", async() => {
+    await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000));
+    await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
+
+    expect(await vault.balanceOf(await alan.getAddress())).equals(toAtto(100));
   })
 });
