@@ -18,13 +18,20 @@ export const Claim = () => {
   const { activeVault: vault } = useVaultContext();
 
   const [amount, setAmount] = useState<string>('');
-  const [{ balance, isLoading: getBalanceLoading }, getBalance] = useVaultBalance(vault.id);
+  const [{ balance, isLoading: getBalanceLoading, canExit }, getBalance] = useVaultBalance(vault.id);
   const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
   const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault!.id, async () => {
     await refreshWalletState();
     await getBalance();
     setAmount('');
   });
+  const [canWithdraw, setCanWithdraw] = useState(false);
+  useEffect(() => {
+    (async function check() {
+      const exitAllowed = await canExit();
+      setCanWithdraw(exitAllowed);
+    })();
+  }, []);
 
   const handleUpdateAmount = (amount: string) => {
     setAmount(Number(amount) === 0 ? '' : amount);
@@ -36,7 +43,7 @@ export const Claim = () => {
   const buttonIsDisabled =
     getBalanceLoading || refreshLoading || withdrawIsLoading || !amount || bigInputValue.gt(balance);
 
-  const claimLabel = balance.gt(ZERO) ? (
+  const claimLabel = balance.gt(ZERO) && canWithdraw ? (
     <ClaimableLabel>
       Claimable {TICKER_SYMBOL.TEMPLE_TOKEN}
       <TempleAmountLink

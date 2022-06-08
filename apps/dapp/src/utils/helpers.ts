@@ -9,6 +9,8 @@ export const noop = () => {};
 
 export const asyncNoop = async () => {};
 
+export const asyncNoopBool = async ():Promise<boolean> => false;
+
 export const isDevelopmentEnv = () => {
   return ENV.VITE_ENV === 'preview' || ENV.VITE_ENV === 'local';
 };
