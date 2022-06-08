@@ -215,12 +215,16 @@ const useStakeOptions = () => {
 
   const options = [{ value: TICKER_SYMBOL.TEMPLE_TOKEN, label: `${TICKER_SYMBOL.TEMPLE_TOKEN}` }];
 
-  if (usableFaith > 0) {
+  if (temple > 0 && usableFaith > 0) {
     options.push({ value: TICKER_SYMBOL.FAITH, label: `${TICKER_SYMBOL.TEMPLE_TOKEN} & ${TICKER_SYMBOL.FAITH}` });
   }
 
   if (ogTemple > 0) {
     options.push({ value: TICKER_SYMBOL.OG_TEMPLE_TOKEN, label: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN}` });
+
+    if (usableFaith > 0) {
+      options.push({ value: TICKER_SYMBOL.OG_TEMPLE_TOKEN, label: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN} & ${TICKER_SYMBOL.FAITH}` });
+    }
   }
 
   const [ticker, setTicker] = useState<TICKER_SYMBOL>(options[0].value as TICKER_SYMBOL);

@@ -19,6 +19,11 @@ import { useFaithDepositMultiplier } from './use-faith-deposit-multiplier';
 
 const ENV = import.meta.env;
 
+const TICKERS_WITH_BURN = new Set([
+  TICKER_SYMBOL.TEMPLE_TOKEN,
+  TICKER_SYMBOL.OG_TEMPLE_TOKEN,
+]);
+
 export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Callback) => {
   const { signer, wallet, ensureAllowance } = useWallet();
   const { faith: { usableFaith } } = useFaith();
@@ -28,7 +33,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
 
   const { openNotification } = useNotification();
 
-  const handler = async (token: TICKER_SYMBOL, amount: string) => {
+  const handler = async (token: TICKER_SYMBOL, amount: string, useFaith = false) => {
     if (!signer || !wallet) {
       console.error(`
         Attempted to deposit to vault: ${vaultContractAddress} without a valid signer or wallet address.
@@ -36,6 +41,9 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
       return;
     }
 
+    if (useFaith && !TICKERS_WITH_BURN.has(token)) {
+      throw new Error(`Programming Error: Attmeped to burn faith with ${token}`);
+    }
     
     const bigAmount = parseUnits(amount, 18);
     const temple = new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
@@ -53,7 +61,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
     let expectedDepositAmount = bigAmount;
     // If the user is depositing with FAITH, the will get a boosted amount of TEMPLE deposited.
     // we need to calculate the deposit amount plus the amount of TEMPLE the FAITH converts to.
-    if (token === TICKER_SYMBOL.FAITH) {
+    if (useFaith) {
       expectedDepositAmount = await getFaithDepositMultiplier(amount) || bigAmount;
     }
 
@@ -61,12 +69,18 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
     
     // Deposit through vault proxy.
     let tx: ContractTransaction;
-    if (token === TICKER_SYMBOL.TEMPLE_TOKEN) {
+    if (useFaith) {
+      if (token === TICKER_SYMBOL.TEMPLE_TOKEN) {
+        tx = await vaultProxy.depositTempleWithFaith(bigAmount, bigUsableFaith, vaultContractAddress, {
+          gasLimit: 450000,
+        });
+      } else {
+        tx = await vaultProxy.unstakeAndDepositTempleWithFaith(bigAmount, bigUsableFaith, vaultContractAddress, {
+          gasLimit: 450000,
+        });
+      }
+    } else if (token === TICKER_SYMBOL.TEMPLE_TOKEN) {
       tx = await vaultProxy.depositTempleFor(bigAmount, vaultContractAddress);
-    } else if (token === TICKER_SYMBOL.FAITH) {
-      tx = await vaultProxy.depositTempleWithFaith(bigAmount, bigUsableFaith, vaultContractAddress, {
-        gasLimit: 450000,
-      });
     } else if (token === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
       tx = await vaultProxy.unstakeAndDepositIntoVault(bigAmount, vaultContractAddress);
     } else {
