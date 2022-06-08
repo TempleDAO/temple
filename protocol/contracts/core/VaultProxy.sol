@@ -21,6 +21,7 @@ contract VaultProxy is Ownable {
     TempleERC20Token public immutable temple;
     TempleStaking public immutable templeStaking;
     Faith public immutable faith;
+    bool public faithClaimEnabled;
 
     constructor(
         OGTemple _ogTemple,
@@ -32,6 +33,7 @@ contract VaultProxy is Ownable {
         temple = _temple;
         templeStaking = _templeStaking;
         faith = _faith;
+        faithClaimEnabled = true;
     }
 
     bytes16 private constant MAX_MULT = 0x3fff4ccccccccccccccccccccccccccc; // 1.3
@@ -55,6 +57,7 @@ contract VaultProxy is Ownable {
         @notice Takes provided faith and Temple, applies the boost then immediate deposits into a vault
      */
     function depositTempleWithFaith(uint256 _amountTemple, uint112 _amountFaith, Vault vault) public {
+        require(faithClaimEnabled, "VaultProxy: Faith claim no longer enabled");
         faith.redeem(msg.sender, _amountFaith);
         uint256 boostedAmount = getFaithMultiplier(_amountFaith, _amountTemple);
         SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amountTemple);
@@ -67,6 +70,7 @@ contract VaultProxy is Ownable {
         deposits into a vault
      */
     function unstakeAndDepositTempleWithFaith(uint256 _amountOGT, uint112 _amountFaith, Vault vault) external {
+        require(faithClaimEnabled, "VaultProxy: Faith claim no longer enabled");
         faith.redeem(msg.sender, _amountFaith);
         uint256 unstakedTemple = unstakeOGT(_amountOGT);
         uint256 boostedAmount = getFaithMultiplier(_amountFaith, unstakedTemple);
@@ -107,6 +111,13 @@ contract VaultProxy is Ownable {
         SafeERC20.safeIncreaseAllowance(temple, address(vault), _amount);
         SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amount);
         vault.depositFor(msg.sender, _amount);
+    }
+
+    /**
+    * Toggle whether faith is claimable
+    */
+    function toggleFaithClaimEnabled() external onlyOwner {
+        faithClaimEnabled = !faithClaimEnabled;
     }
 
     /**

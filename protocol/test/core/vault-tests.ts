@@ -115,20 +115,26 @@ describe("Temple Core Vault", async () => {
     await expect(() => vault.connect(alan).deposit(toAtto(100)))
       .to.changeTokenBalance(vault, alan, toAtto(100));
 
-    // can still withdraw during 5 minute buffer period
-    await mineForwardSeconds(60);
-    
-    await expectBalancesChangeBy(
-      () => vault.connect(alan).withdraw(toAtto(50)),
-      ...vaultTempleTransferBalanceChanges(alan, 50)
-    )
-
-    // post buffer, can no longer withdraw
-    await mineForwardSeconds(60 * 5);
+    // cannot withdraw in the first vault cycle
     await expect(vault.connect(alan).withdraw(toAtto(10)))
         .to.be.revertedWith("Vault: Cannot exit vault when outside of enter/exit window");
 
-    // can withdraw again with the vault cycles
+    // cannot withdraw in the first vault cycle during the buffer period
+    await mineForwardSeconds(60*2);
+    await expect(vault.connect(alan).withdraw(toAtto(10)))
+        .to.be.revertedWith("Vault: Cannot exit vault when outside of enter/exit window");
+    
+    // can withdraw again with the vault cycles, and every entry/Exit cycle thereafter
+    await mineForwardSeconds(60 * 8);
+    await expectBalancesChangeBy(
+      () => vault.connect(alan).withdraw(toAtto(50)),
+      ...vaultTempleTransferBalanceChanges(alan, 50)
+    );
+
+    await mineForwardSeconds(60 * 6);
+    await expect(vault.connect(alan).withdraw(toAtto(10)))
+        .to.be.revertedWith("Vault: Cannot exit vault when outside of enter/exit window");
+
     await mineForwardSeconds(60 * 4);
     await expectBalancesChangeBy(
       () => vault.connect(alan).withdraw(toAtto(50)),
@@ -143,7 +149,7 @@ describe("Temple Core Vault", async () => {
     expect(fromAtto(await vault.balanceOf(await alan.getAddress()))).eq(100);
     expect(fromAtto(await vault.balanceOf(await ben.getAddress()))).eq(100);
 
-    await mineForwardSeconds(60*5);
+    await mineForwardSeconds(60*10);
 
     await expectBalancesChangeBy(
       () => vault.connect(alan).withdraw(toAtto(100)),
@@ -173,7 +179,7 @@ describe("Temple Core Vault", async () => {
       ...vaultTempleTransferBalanceChanges(ben, -100)
     )
 
-    await mineForwardSeconds(60*5);
+    await mineForwardSeconds(60*10);
 
     await expectBalancesChangeBy(async () => {
       await vault.connect(alan).withdraw(toAtto(200))
@@ -291,6 +297,7 @@ describe("Temple Core Vault", async () => {
 
     const beforeBal = await templeToken.balanceOf(await owner.getAddress());
 
+    await mineForwardSeconds(60 * 10);
     await vault.withdrawFor(await alan.getAddress(), amount, deadline, splitSig.v, splitSig.r, splitSig.s);
 
     const afterBal = await templeToken.balanceOf(await owner.getAddress());

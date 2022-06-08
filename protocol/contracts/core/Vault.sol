@@ -137,13 +137,23 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
         }
     }
 
-    function inEnterExitWindow() public view returns (bool) {
+    function inEnterExitWindow() public view returns (uint256 cycleNumber, bool inWindow) {
         if (block.timestamp < firstPeriodStartTimestamp) {
-            return false;
+            return (0,false);
         }
 
-        uint256 numCycles = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
-        return numCycles * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration + ENTER_EXIT_WINDOW_BUFFER > block.timestamp;
+        cycleNumber = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
+        inWindow = cycleNumber * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration + ENTER_EXIT_WINDOW_BUFFER > block.timestamp;
+    }
+
+    function canEnter() public view returns (bool) {
+        (, bool inWindow) = inEnterExitWindow();
+        return inWindow;
+    }
+
+    function canExit() public view returns (bool) {
+        (uint256 cycleNumber, bool inWindow) = inEnterExitWindow();
+        return inWindow && cycleNumber > 0;
     }
 
     /**
@@ -183,7 +193,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
             otherwise they may mistakenly lock _sender funds attributed to a wallet they have no control over.
      */
     function depositFor(address _account, uint256 _amount) public {
-        require(inEnterExitWindow(), "Vault: Cannot join vault when outside of enter/exit window");
+        require(canEnter(), "Vault: Cannot join vault when outside of enter/exit window");
 
         uint256 feePerTempleScaledPerHour = joiningFee.calc(firstPeriodStartTimestamp, periodDuration, address(this));
         uint256 fee = _amount * feePerTempleScaledPerHour / 1e18;
@@ -207,7 +217,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
      * exited from a vault without consent.
      */
     function withdrawFor(address _account, address _to, uint256 _amount) private {
-        require(inEnterExitWindow(), "Vault: Cannot exit vault when outside of enter/exit window");
+        require(canExit(), "Vault: Cannot exit vault when outside of enter/exit window");
 
         if (_amount > 0) {
             _burn(_account, _amount);

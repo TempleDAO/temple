@@ -399,8 +399,8 @@ describe("Temple Core Ops Manager", async () => {
     needRebal = await opsManager.requiresRebalance([vault1Addr, vault2Addr, vault3Addr, vault4Addr], fxsToken.address);
     expect (needRebal).to.eql([true, false, false, false]);
     await opsManager.rebalance([vault1Addr], fxsToken.address);
-    expect(await vault1.inEnterExitWindow()).false;
-    expect(await vault2.inEnterExitWindow()).true;
+    expect((await vault1.inEnterExitWindow()).inWindow).false;
+    expect((await vault2.inEnterExitWindow()).inWindow).true;
 
     // Add deposits to vault 2
     await addDepositToVaults(vault2, toAtto(75), toAtto(25));
