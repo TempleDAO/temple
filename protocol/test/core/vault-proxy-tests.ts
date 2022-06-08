@@ -137,6 +137,16 @@ describe("Vault Proxy", async () => {
                 .to.be.revertedWith("Ownable: caller is not the owner");
   })
 
+  it("Only owner can toggle if faith claims are enabled/disabled", async () => {
+    expect(await VAULT_PROXY.connect(alan).toggleFaithClaimEnabled())
+      .to.revertedWith("Ownable: caller is not the owner")
+      // .to.revertedWith("VaultProxy: Faith claim no longer enabled")
+
+    expect(await VAULT_PROXY.faithClaimEnabled()).is.true;
+    await VAULT_PROXY.toggleFaithClaimEnabled()
+    expect(await VAULT_PROXY.faithClaimEnabled()).is.false;
+  })
+
   it("Can deposit using Temple + Faith", async () => {
     const alanAddr = await alan.getAddress();
     await FAITH.gain(alanAddr, toAtto(200));
@@ -150,7 +160,14 @@ describe("Vault Proxy", async () => {
     await VAULT_PROXY.connect(alan).depositTempleWithFaith(alanTempleDeposit, faith.usableFaith,vault.address);
     expect(await vault.balanceOf(alanAddr)).equals(expectedAmount);
     // ensure we've burnt it all
-    expect(await (await FAITH.balances(alanAddr)).usableFaith).equals(0);
+    expect((await FAITH.balances(alanAddr)).usableFaith).equals(0);
+  })
+
+  it("Can no longer deposit using Temple + Faith when faith claim is disabled", async () => {
+    await VAULT_PROXY.toggleFaithClaimEnabled()
+
+    await expect(VAULT_PROXY.connect(alan).depositTempleWithFaith(toAtto(100), 100, vault.address))
+      .to.revertedWith("VaultProxy: Faith claim no longer enabled");
   })
 
   const faithData = [
@@ -191,6 +208,13 @@ describe("Vault Proxy", async () => {
     expect(await vault.balanceOf(await alan.getAddress())).equals(amount);
     expect(await TEMPLE.balanceOf(await alan.getAddress())).equals(toAtto(800));
   });
+
+  it("Can no longer unstake Temple and deposit with Faith bonus when faith claim is disabled", async () => {
+    await VAULT_PROXY.toggleFaithClaimEnabled()
+
+    await expect(VAULT_PROXY.connect(alan).unstakeAndDepositTempleWithFaith(toAtto(100), 100, vault.address))
+      .to.revertedWith("VaultProxy: Faith claim no longer enabled");
+  })
 
   it("Can zap OGT into Vault with Faith boost", async () => {
     const alanAddr = await alan.getAddress();

@@ -56,7 +56,8 @@ library OpsManagerLib {
         Vault vault, 
         TreasuryFarmingRevenue farmingPool
     ) public {
-        require(!vault.inEnterExitWindow(), "FarmingRevenueManager: Cannot rebalance vaults in their exit/entry window");
+        (, bool inWindow) = vault.inEnterExitWindow();
+        require(!inWindow, "FarmingRevenueManager: Cannot rebalance vaults in their exit/entry window");
 
         uint256 currentRevenueShare = farmingPool.shares(address(vault));
         uint256 targetRevenueShare = vault.targetRevenueShare();
@@ -82,7 +83,8 @@ library OpsManagerLib {
         bool[] memory requiresUpdate = new bool[](vaults.length);
 
         for (uint256 i = 0; i < vaults.length; i++) {
-            if (vaults[i].inEnterExitWindow()) {
+            (, bool inWindow) = vaults[i].inEnterExitWindow();
+            if (inWindow) {
                 continue;
             }
 
