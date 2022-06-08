@@ -333,6 +333,28 @@ describe("Temple Core Vault", async () => {
       .to.changeTokenBalance(templeToken, alan, 100)
   });
 
+  it("Provides enough information for FE to determine whether deposit is claimable or not", async () => {
+    await vault.connect(alan).deposit(toAtto(100));
+
+    let [cycleNum, inWindow] = await vault.inEnterExitWindow();
+    let canExit = await vault.canExit();
+
+    // We have a deposit, we're in the window and canExit is false
+    expect(inWindow).true;
+    expect(canExit).false;
+    expect(await vault.balanceOf(await alan.getAddress())).equals(toAtto(100));
+    expect(vault.connect(alan).withdraw(toAtto(100))).to.be.revertedWith("Vault: Cannot exit vault when outside of enter/exit window");
+
+    await mineForwardSeconds(60 * 10);
+
+    [cycleNum, inWindow] = await vault.inEnterExitWindow();
+    canExit = await vault.canExit();
+    expect(inWindow).true;
+    expect(canExit).true;
+    expect(await vault.balanceOf(await alan.getAddress())).equals(toAtto(100));
+    vault.connect(alan).withdraw(toAtto(100));
+  })
+
   mkRebasingERC20TestSuite(async () => {
     await vault.connect(alan).deposit(toAtto(300));
     await vault.connect(ben).deposit(toAtto(300));
