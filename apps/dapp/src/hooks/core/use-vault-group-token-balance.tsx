@@ -224,14 +224,6 @@ export const useVaultGroupBalances = (vaultGroups: Nullable<VaultGroup[]>) => {
       }
     }
   };
-
-  const canExit = async (vaultAddress: string):Promise<boolean> => {
-    if (!signer || !wallet) {
-      return false;
-    }
-    const vault = new Vault__factory(signer).attach(vaultAddress);
-    return vault.canExit()
-  }
   
   const isLoading = groupRequestLoading || 
     Object.values(balances).some((vaultGroup) => Object.values(vaultGroup).some((vault) => vault.isLoading));
@@ -241,7 +233,6 @@ export const useVaultGroupBalances = (vaultGroups: Nullable<VaultGroup[]>) => {
     balances,
     isLoading,
     fetchVaultBalance,
-    canExit,
     refetchVaultGroupBalances: fetchVaultGroupBalances,
     optimisticallyUpdateVaultStaked, 
   };

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { BigNumber } from 'ethers';
 
 import { VaultInput } from 'components/Input/VaultInput';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -13,25 +12,24 @@ import { useVaultBalance } from 'hooks/core/use-vault-balance';
 import { ZERO } from 'utils/bigNumber';
 import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
+import { useIsVaultExitable } from 'hooks/core/use-is-vault-exitable';
 
 export const Claim = () => {
   const { activeVault: vault } = useVaultContext();
 
   const [amount, setAmount] = useState<string>('');
-  const [{ balance, isLoading: getBalanceLoading, canExit }, getBalance] = useVaultBalance(vault.id);
+  const [{ balance, isLoading: getBalanceLoading }, getBalance] = useVaultBalance(vault.id);
   const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
   const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault!.id, async () => {
     await refreshWalletState();
     await getBalance();
     setAmount('');
   });
-  const [canWithdraw, setCanWithdraw] = useState(false);
+  const [checkExitStatus, { response: canExit }] = useIsVaultExitable(vault.id);
+  
   useEffect(() => {
-    (async function check() {
-      const exitAllowed = await canExit();
-      setCanWithdraw(exitAllowed);
-    })();
-  }, []);
+    checkExitStatus();
+  }, [checkExitStatus]);
 
   const handleUpdateAmount = (amount: string) => {
     setAmount(Number(amount) === 0 ? '' : amount);
@@ -43,7 +41,7 @@ export const Claim = () => {
   const buttonIsDisabled =
     getBalanceLoading || refreshLoading || withdrawIsLoading || !amount || bigInputValue.gt(balance);
 
-  const claimLabel = balance.gt(ZERO) && canWithdraw ? (
+  const claimLabel = balance.gt(ZERO) && !!canExit ? (
     <ClaimableLabel>
       Claimable {TICKER_SYMBOL.TEMPLE_TOKEN}
       <TempleAmountLink
@@ -77,7 +75,7 @@ export const Claim = () => {
         isNumber
         placeholder="0.00"
         value={amount}
-        disabled={balance.lte(ZERO)}
+        disabled={balance.lte(ZERO) || !canExit}
       />
       {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
       <VaultButton
