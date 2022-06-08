@@ -138,9 +138,8 @@ describe("Vault Proxy", async () => {
   })
 
   it("Only owner can toggle if faith claims are enabled/disabled", async () => {
-    expect(await VAULT_PROXY.connect(alan).toggleFaithClaimEnabled())
-      .to.revertedWith("Ownable: caller is not the owner")
-      // .to.revertedWith("VaultProxy: Faith claim no longer enabled")
+    await expect(VAULT_PROXY.connect(alan).toggleFaithClaimEnabled())
+      .to.be.revertedWith("Ownable: caller is not the owner")
 
     expect(await VAULT_PROXY.faithClaimEnabled()).is.true;
     await VAULT_PROXY.toggleFaithClaimEnabled()
