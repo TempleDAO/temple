@@ -35,9 +35,10 @@ export interface VaultInterface extends utils.Interface {
     "amountPerShare()": FunctionFragment;
     "approve(address,uint256)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
+    "canEnter()": FunctionFragment;
+    "canExit()": FunctionFragment;
     "decimals()": FunctionFragment;
     "decreaseAllowance(address,uint256)": FunctionFragment;
-    "decreaseStartTime(uint256)": FunctionFragment;
     "deposit(uint256)": FunctionFragment;
     "depositFor(address,uint256)": FunctionFragment;
     "enterExitWindowDuration()": FunctionFragment;
@@ -95,14 +96,12 @@ export interface VaultInterface extends utils.Interface {
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
+  encodeFunctionData(functionFragment: "canEnter", values?: undefined): string;
+  encodeFunctionData(functionFragment: "canExit", values?: undefined): string;
   encodeFunctionData(functionFragment: "decimals", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "decreaseAllowance",
     values: [string, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "decreaseStartTime",
-    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "deposit",
@@ -236,13 +235,11 @@ export interface VaultInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "canEnter", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "canExit", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "decimals", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "decreaseAllowance",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "decreaseStartTime",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "deposit", data: BytesLike): Result;
@@ -443,16 +440,15 @@ export interface Vault extends BaseContract {
 
     balanceOf(account: string, overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    canEnter(overrides?: CallOverrides): Promise<[boolean]>;
+
+    canExit(overrides?: CallOverrides): Promise<[boolean]>;
+
     decimals(overrides?: CallOverrides): Promise<[number]>;
 
     decreaseAllowance(
       spender: string,
       subtractedValue: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    decreaseStartTime(
-      delta: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -471,7 +467,11 @@ export interface Vault extends BaseContract {
 
     firstPeriodStartTimestamp(overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    inEnterExitWindow(overrides?: CallOverrides): Promise<[boolean]>;
+    inEnterExitWindow(
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, boolean] & { cycleNumber: BigNumber; inWindow: boolean }
+    >;
 
     increaseAllowance(
       spender: string,
@@ -591,16 +591,15 @@ export interface Vault extends BaseContract {
 
   balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>;
 
+  canEnter(overrides?: CallOverrides): Promise<boolean>;
+
+  canExit(overrides?: CallOverrides): Promise<boolean>;
+
   decimals(overrides?: CallOverrides): Promise<number>;
 
   decreaseAllowance(
     spender: string,
     subtractedValue: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  decreaseStartTime(
-    delta: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -619,7 +618,11 @@ export interface Vault extends BaseContract {
 
   firstPeriodStartTimestamp(overrides?: CallOverrides): Promise<BigNumber>;
 
-  inEnterExitWindow(overrides?: CallOverrides): Promise<boolean>;
+  inEnterExitWindow(
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber, boolean] & { cycleNumber: BigNumber; inWindow: boolean }
+  >;
 
   increaseAllowance(
     spender: string,
@@ -736,6 +739,10 @@ export interface Vault extends BaseContract {
 
     balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>;
 
+    canEnter(overrides?: CallOverrides): Promise<boolean>;
+
+    canExit(overrides?: CallOverrides): Promise<boolean>;
+
     decimals(overrides?: CallOverrides): Promise<number>;
 
     decreaseAllowance(
@@ -743,11 +750,6 @@ export interface Vault extends BaseContract {
       subtractedValue: BigNumberish,
       overrides?: CallOverrides
     ): Promise<boolean>;
-
-    decreaseStartTime(
-      delta: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     deposit(amount: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
@@ -761,7 +763,11 @@ export interface Vault extends BaseContract {
 
     firstPeriodStartTimestamp(overrides?: CallOverrides): Promise<BigNumber>;
 
-    inEnterExitWindow(overrides?: CallOverrides): Promise<boolean>;
+    inEnterExitWindow(
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, boolean] & { cycleNumber: BigNumber; inWindow: boolean }
+    >;
 
     increaseAllowance(
       spender: string,
@@ -922,16 +928,15 @@ export interface Vault extends BaseContract {
 
     balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>;
 
+    canEnter(overrides?: CallOverrides): Promise<BigNumber>;
+
+    canExit(overrides?: CallOverrides): Promise<BigNumber>;
+
     decimals(overrides?: CallOverrides): Promise<BigNumber>;
 
     decreaseAllowance(
       spender: string,
       subtractedValue: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    decreaseStartTime(
-      delta: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1074,16 +1079,15 @@ export interface Vault extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    canEnter(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    canExit(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     decimals(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     decreaseAllowance(
       spender: string,
       subtractedValue: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    decreaseStartTime(
-      delta: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
