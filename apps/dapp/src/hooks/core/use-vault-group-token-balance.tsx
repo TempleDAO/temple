@@ -136,6 +136,7 @@ interface VaultInstanceResponse {
 
 const getVaultInstanceBalance = async (vaultAddress: string, wallet: string, signer: Signer): Promise<VaultInstanceResponse> => {
   const vault = new Vault__factory(signer).attach(vaultAddress);
+  
   const shares = await vault.shareBalanceOf(wallet);
   const tokenShareBalance = await vault.toTokenAmount(shares);
   return {
@@ -223,6 +224,14 @@ export const useVaultGroupBalances = (vaultGroups: Nullable<VaultGroup[]>) => {
       }
     }
   };
+
+  const canExit = async (vaultAddress: string):Promise<boolean> => {
+    if (!signer || !wallet) {
+      return false;
+    }
+    const vault = new Vault__factory(signer).attach(vaultAddress);
+    return vault.canExit()
+  }
   
   const isLoading = groupRequestLoading || 
     Object.values(balances).some((vaultGroup) => Object.values(vaultGroup).some((vault) => vault.isLoading));
@@ -232,6 +241,7 @@ export const useVaultGroupBalances = (vaultGroups: Nullable<VaultGroup[]>) => {
     balances,
     isLoading,
     fetchVaultBalance,
+    canExit,
     refetchVaultGroupBalances: fetchVaultGroupBalances,
     optimisticallyUpdateVaultStaked, 
   };

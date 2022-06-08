@@ -3,7 +3,7 @@ import { BigNumber } from 'ethers';
 
 import { VaultGroup, Vault } from 'components/Vault/types';
 import { useVaultGroupBalances, Operation, VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
-import { asyncNoop, noop } from 'utils/helpers';
+import { asyncNoop, noop, asyncNoopBool } from 'utils/helpers';
 import { Nullable } from 'types/util';
 
 interface VaultContextType {
@@ -11,6 +11,7 @@ interface VaultContextType {
   activeVault: Nullable<Vault>;
   balances: VaultGroupBalances;
   refreshVaultBalance: (address: string) => Promise<void>,
+  canExit: (address: string) => Promise<boolean>,
   optimisticallyUpdateVaultStaked: (address: string, operation: Operation, amount: BigNumber) => void;
 }
 
@@ -20,6 +21,7 @@ export const VaultContext = createContext<VaultContextType>({
   balances: {},
   refreshVaultBalance: asyncNoop,
   optimisticallyUpdateVaultStaked: noop,
+  canExit: asyncNoopBool,
   vaultGroup: null,
   activeVault: null,
 });
@@ -32,6 +34,7 @@ export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
   const {
     balances,
     fetchVaultBalance,
+    canExit,
     optimisticallyUpdateVaultStaked: updateStakedAmount,
   } = useVaultGroupBalances([vaultGroup]);
 
@@ -62,6 +65,7 @@ export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
       value={{
         balances: getBalances(balances, vaultGroup),
         refreshVaultBalance: fetchVaultBalance,
+        canExit,
         vaultGroup,
         activeVault,
         optimisticallyUpdateVaultStaked,

@@ -26,7 +26,7 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
       return vault as Vault;
     });
 
-  const {now, startDate, enterExitWindowDurationSeconds, periodDurationSeconds } = orderedVaults[0];
+  const { now, startDate, enterExitWindowDurationSeconds, periodDurationSeconds } = orderedVaults[0];
 
   const periods = periodDurationSeconds / enterExitWindowDurationSeconds;
   const tvl = vaults.reduce((total, { tvl }) => total + tvl!, 0);
@@ -47,7 +47,7 @@ export const createVaultGroup = (subgraphVaultGroup: GraphVaultGroup): VaultGrou
   const cyclesSinceStart = Math.floor(secondsSinceStart / periodDurationSeconds);
 
   vaultGroup.cycleStart = addSeconds(startDate, cyclesSinceStart * periodDurationSeconds);
-  vaultGroup.cycleEnd = addSeconds(vaultGroup.cycleStart, periodDurationSeconds);  
+  vaultGroup.cycleEnd = addSeconds(vaultGroup.cycleStart, periodDurationSeconds);
 
   return vaultGroup as VaultGroup;
 };
@@ -72,7 +72,7 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
   );
 
   const user = subgraphVault.users[0];
-  const userBalances = (user?.vaultUserBalances || []);
+  const userBalances = user?.vaultUserBalances || [];
   const vaultUserBalance = userBalances.find(({ id }) => id.startsWith(subgraphVault.id));
 
   const vault: Partial<Vault> = {
@@ -80,20 +80,21 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
     now,
     startDate,
     tvl,
+    currentCycle,
     enterExitWindowDurationSeconds,
     periodDurationSeconds,
     startDateSeconds: Number(subgraphVault.firstPeriodStartTimestamp),
     isActive: vaultIsInZone,
     amountStaked: !!vaultUserBalance?.staked ? parseUnits(vaultUserBalance?.staked, 18) : BigNumber.from(0),
   };
-  
+
   vault.unlockDate = calculateUnlockDate(vault as Vault);
 
   return vault;
 };
 
 export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: VaultGroupBalances): Marker[] => {
-  const markers  = [];
+  const markers = [];
   for (const [i, vault] of vaultGroup.vaults.entries()) {
     const vaultBalance = balances[vault.id] || {};
     const marker = {
@@ -109,9 +110,11 @@ export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: Va
 
     const amount = Number(vaultBalance.staked || 0);
     if (amount > 0) {
-      marker.type = MarkerType.STAKING;
-      if (marker.inZone) {
-        marker.type = MarkerType.STAKING_IN_ZONE;
+      marker.type = MarkerType.LOCKED;
+      if (marker.inZone && vault.currentCycle > 0) {
+        marker.type = MarkerType.WITHDRAWABLE;
+      } else {
+        marker.type = MarkerType.LOCKED;
       }
     } else if (marker.inZone) {
       marker.type = MarkerType.EMPTY;
@@ -124,7 +127,12 @@ export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: Va
 };
 
 const calculateUnlockDate = (vault: Vault) => {
-  if (vault.isActive) return 'NOW';
+  // if (vault.isActive && vault.currentCycle === 0) {
+  //   return 'LOCKED';
+  // } else 
+  if (vault.isActive && vault.currentCycle > 0) {
+    return 'NOW';
+  }
 
   const diff = differenceInSeconds(vault.now, vault.startDate);
   const secondsIntoThisCycle = diff % vault.periodDurationSeconds;
@@ -199,7 +207,7 @@ export const formatTemple = (templeValue: Nullable<number | BigNumber>) => {
 
   const amount = typeof templeValue === 'number' ? templeValue : fromAtto(templeValue);
 
-  return millify(amount, {precision: 2});
+  return millify(amount, { precision: 2 });
 };
 
 export const getBigNumberFromString = (number: string) => {
