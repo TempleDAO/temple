@@ -1,11 +1,10 @@
 import { BigNumber, ContractTransaction } from 'ethers';
-import { parseUnits } from 'ethers/lib/utils';
 
 import {
   TempleERC20Token__factory,
   VaultProxy__factory,
 } from 'types/typechain';
-import { fromAtto, toAtto } from 'utils/bigNumber';
+import { toAtto } from 'utils/bigNumber';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 import { useNotification } from 'providers/NotificationProvider';
@@ -15,12 +14,13 @@ import { Callback } from './types';
 import { useVaultContext, Operation } from 'components/Pages/Core/VaultContext';
 import { useVaultJoiningFee } from './use-vault-joining-fee';
 import { useFaith } from 'providers/FaithProvider';
-import { useGetZappedAssetValue } from './use-faith-deposit-multiplier';
+import { useGetZappedAssetValue } from './use-get-zapped-asset-value';
 import { getBigNumberFromString } from 'components/Vault/utils';
+import { ZERO } from 'utils/bigNumber';
 
 const ENV = import.meta.env;
 
-const TICKERS_WITH_BURN = new Set([
+const TICKERS_WITH_FAITH_BURN = new Set([
   TICKER_SYMBOL.TEMPLE_TOKEN,
   TICKER_SYMBOL.OG_TEMPLE_TOKEN,
 ]);
@@ -43,7 +43,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
     }
 
     // Safeguard: if we're using faith, we can only burn with OGTemple or Temple.
-    if (useFaith && !TICKERS_WITH_BURN.has(ticker)) {
+    if (useFaith && !TICKERS_WITH_FAITH_BURN.has(ticker)) {
       throw new Error(`Programming Error: Attmeped to burn faith with ${ticker}`);
     }
     
@@ -65,10 +65,10 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
     // we need to calculate the deposit amount plus the amount of TEMPLE the FAITH converts to.
     if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN || useFaith) {
       const response = await getZappedAssetValue(ticker, amount, useFaith)!;
-      expectedDepositAmount = response!.total!;
+      expectedDepositAmount = response!.total;
     }
 
-    const fee = await getVaultJoiningFee() || BigNumber.from(0);
+    const fee = await getVaultJoiningFee() || ZERO;
     
     // Deposit through vault proxy.
     let tx: ContractTransaction;

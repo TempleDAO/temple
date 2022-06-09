@@ -19,7 +19,7 @@ import { useVaultBalance } from 'hooks/core/use-vault-balance';
 import { useVaultJoiningFee } from 'hooks/core/use-vault-joining-fee';
 import Tooltip from 'components/Tooltip/Tooltip';
 import { useFaith } from 'providers/FaithProvider';
-import { useGetZappedAssetValue } from 'hooks/core/use-faith-deposit-multiplier';
+import { useGetZappedAssetValue } from 'hooks/core/use-get-zapped-asset-value';
 import EllipsisLoader from 'components/EllipsisLoader';
 import { ZERO } from 'utils/bigNumber';
 import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
