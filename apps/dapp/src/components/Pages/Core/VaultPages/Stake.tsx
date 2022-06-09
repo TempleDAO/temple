@@ -19,23 +19,26 @@ import { useVaultBalance } from 'hooks/core/use-vault-balance';
 import { useVaultJoiningFee } from 'hooks/core/use-vault-joining-fee';
 import Tooltip from 'components/Tooltip/Tooltip';
 import { useFaith } from 'providers/FaithProvider';
-import { useFaithDepositMultiplier } from 'hooks/core/use-faith-deposit-multiplier';
+import { useGetZappedAssetValue } from 'hooks/core/use-get-zapped-asset-value';
 import EllipsisLoader from 'components/EllipsisLoader';
 import { ZERO } from 'utils/bigNumber';
-import { useOGTempleStakingValue } from 'hooks/core/use-ogtemple-staking-value';
 import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
   const { isConnected } = useWallet();
 
-  const { options, ticker, setTicker, balances, stakingAmount, setStakingAmount } = useStakeOptions();
+  const { options, option, setOption, balances, stakingAmount, setStakingAmount } = useStakeOptions();
 
-  const [getFaithDepositMultiplier, { response: faithDepositMultiplier, isLoading: faithMultiplierLoading, args: faithArgs }] =
-    useFaithDepositMultiplier();
+  const [getZappedAssetValue, {
+    response: zappedAssetValue,
+    isLoading: zappedAssetLoading,
+    args: zapArgs,
+  }] = useGetZappedAssetValue();
 
   const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] =
     useVaultJoiningFee(vault);
+  
   const joiningFee = !isConnected || joiningFeeLoading || !joiningFeeResponse ? null : joiningFeeResponse;
 
   useEffect(() => {
@@ -44,14 +47,39 @@ export const Stake = () => {
     }
   }, [isConnected, getVaultJoiningFee]);
 
-  const [getOGStakingValue, { response: stakingValue }] = useOGTempleStakingValue();
-
-  const [_, refreshBalance] = useVaultBalance(vault?.id);
+  const [_, refreshBalance] = useVaultBalance(vault.id);
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
   const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, async () => {
     refreshBalance();
-    refreshWalletState();
+    await refreshWalletState();
   });
+
+  const getTickerFromSelectOption = () => {
+    switch (option) {
+      case TICKER_SYMBOL.TEMPLE_TOKEN:
+      case TEMPLE_AND_FAITH:
+        return TICKER_SYMBOL.TEMPLE_TOKEN;
+      case TICKER_SYMBOL.OG_TEMPLE_TOKEN:
+      case OG_TEMPLE_AND_FAITH:
+        return TICKER_SYMBOL.OG_TEMPLE_TOKEN;
+    }
+    console.error(`Programming Error: ${option} not implemented.`);
+  };
+
+  const ticker = getTickerFromSelectOption();
+
+  const getTokenBalanceForSelectedOption = () => {
+    switch (option) {
+      case TICKER_SYMBOL.TEMPLE_TOKEN:
+      case TEMPLE_AND_FAITH:
+        return balances.temple;
+      case TICKER_SYMBOL.OG_TEMPLE_TOKEN:
+      case OG_TEMPLE_AND_FAITH:
+        return balances.ogTemple;
+    }
+    console.error(`Programming Error: ${option} not implemented.`);
+    return 0;
+  };
 
   const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultProxyAllowance(ticker);
 
@@ -64,27 +92,14 @@ export const Stake = () => {
       return;
     }
 
-    if (ticker === TICKER_SYMBOL.FAITH) {
-      getFaithDepositMultiplier(value);
-    } else if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
-      getOGStakingValue(value);
+    if (option !== TICKER_SYMBOL.TEMPLE_TOKEN) {
+      const burnFaith = option === TEMPLE_AND_FAITH || option === OG_TEMPLE_AND_FAITH;
+      const ticker = getTickerFromSelectOption();
+      getZappedAssetValue(ticker!, value, burnFaith);
     }
   };
 
-  const getTokenBalanceForCurrentTicker = () => {
-    switch (ticker) {
-      case TICKER_SYMBOL.TEMPLE_TOKEN:
-        return balances.temple;
-      case TICKER_SYMBOL.FAITH:
-        return balances.temple;
-      case TICKER_SYMBOL.OG_TEMPLE_TOKEN:
-        return balances.ogTemple;
-    }
-    console.error(`Programming Error: ${ticker} not implemented.`);
-    return 0;
-  };
-
-  const tokenBalance = getTokenBalanceForCurrentTicker();
+  const tokenBalance = getTokenBalanceForSelectedOption();
   const stakingAmountBigNumber = getBigNumberFromString(stakingAmount);
   const bigTokenBalance = getBigNumberFromString(tokenBalance.toString());
   const amountIsOutOfBounds = stakingAmountBigNumber.gt(bigTokenBalance) || stakingAmountBigNumber.lte(ZERO);
@@ -100,34 +115,59 @@ export const Stake = () => {
       return null;
     }
 
-    if (ticker === TICKER_SYMBOL.FAITH && faithArgs?.[0] === stakingAmount) {
-      if (faithMultiplierLoading) {
-        return <EllipsisLoader />;
-      }
-      if (faithDepositMultiplier) {
-        const bonusAmount = faithDepositMultiplier.sub(stakingAmountBigNumber);
-        
-        if (bonusAmount.lte(ZERO)) {
-          return null;
-        }
-
-        return (
-          <>
-            Burn all your {TICKER_SYMBOL.FAITH} ({balances.faith}) and receive{' '}
-            {formatNumber(formatBigNumber(bonusAmount))} bonus
-            {TICKER_SYMBOL.TEMPLE_TOKEN}.
-          </>
-        );
-      }
-
+    // Temple is not a zapped asset.
+    if (option === TICKER_SYMBOL.TEMPLE_TOKEN) {
       return null;
     }
 
-    if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN && balances.ogTemple > 0) {
+    // Safeguard against old requests.
+    if (zapArgs?.[0] !== ticker || zapArgs?.[1] !== stakingAmount) {
+      return null;
+    }
+
+    // Request is loading
+    if (zappedAssetLoading) {
+      return <EllipsisLoader />;
+    }
+
+    if (!zappedAssetValue) {
+      return null;
+    }
+
+    const { temple, bonus } = zappedAssetValue;
+
+    // Depositing OGTemple without Faith
+    if (option === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
       return (
         <>
           Unstake {formatNumber(formatBigNumber(stakingAmountBigNumber))} {TICKER_SYMBOL.OG_TEMPLE_TOKEN} and deposit{' '}
-          {stakingValue} {TICKER_SYMBOL.TEMPLE_TOKEN}.
+          {formatNumber(formatBigNumber(temple))} {TICKER_SYMBOL.TEMPLE_TOKEN}.
+        </>
+      );
+    }
+
+    if (bonus.lte(ZERO)) {
+      return null;
+    }
+
+    if (option === TEMPLE_AND_FAITH) {
+      return (
+        <>
+          Burn all your {TICKER_SYMBOL.FAITH} ({balances.faith}) and receive{' '}
+          {formatNumber(formatBigNumber(bonus))} bonus
+          {TICKER_SYMBOL.TEMPLE_TOKEN}.
+        </>
+      );
+    }
+
+    if (option === OG_TEMPLE_AND_FAITH) {
+      return (
+        <>
+          Unstake {formatNumber(formatBigNumber(stakingAmountBigNumber))} {TICKER_SYMBOL.OG_TEMPLE_TOKEN} and deposit{' '}
+          {formatNumber(formatBigNumber(temple))} {TICKER_SYMBOL.TEMPLE_TOKEN}.
+          Burn all your {TICKER_SYMBOL.FAITH} ({balances.faith}) and receive{' '}
+          {formatNumber(formatBigNumber(bonus))} bonus{' '}
+          {TICKER_SYMBOL.TEMPLE_TOKEN}.
         </>
       );
     }
@@ -148,7 +188,7 @@ export const Stake = () => {
             options={options}
             defaultValue={options[0]}
             onChange={(val: Option) => {
-              setTicker(val.value as TICKER_SYMBOL);
+              setOption(val.value as TICKER_SYMBOL);
               handleUpdateStakingAmount('');
             }}
           />
@@ -195,7 +235,8 @@ export const Stake = () => {
           disabled={stakeButtonDisabled}
           loading={refreshIsLoading || depositLoading}
           onClick={async () => {
-            await deposit(ticker, stakingAmount || '0');
+            const burnFaith = option === TEMPLE_AND_FAITH || option === OG_TEMPLE_AND_FAITH;
+            await deposit(ticker!, stakingAmount || '0', burnFaith);
             setStakingAmount('');
           }}
         />
@@ -203,6 +244,14 @@ export const Stake = () => {
     </VaultContent>
   );
 };
+
+
+const TEMPLE_AND_FAITH: `${TICKER_SYMBOL.TEMPLE_TOKEN}${TICKER_SYMBOL.FAITH}` =
+  `${TICKER_SYMBOL.TEMPLE_TOKEN}${TICKER_SYMBOL.FAITH}`;
+const OG_TEMPLE_AND_FAITH: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN}${TICKER_SYMBOL.FAITH}` =
+  `${TICKER_SYMBOL.OG_TEMPLE_TOKEN}${TICKER_SYMBOL.FAITH}`;
+
+type TickerValue = TICKER_SYMBOL | typeof TEMPLE_AND_FAITH | typeof OG_TEMPLE_AND_FAITH;
 
 const useStakeOptions = () => {
   const {
@@ -213,22 +262,48 @@ const useStakeOptions = () => {
   } = useFaith();
   const [stakingAmount, setStakingAmount] = useState('');
 
-  const options = [{ value: TICKER_SYMBOL.TEMPLE_TOKEN, label: `${TICKER_SYMBOL.TEMPLE_TOKEN}` }];
-
-  if (usableFaith > 0) {
-    options.push({ value: TICKER_SYMBOL.FAITH, label: `${TICKER_SYMBOL.TEMPLE_TOKEN} & ${TICKER_SYMBOL.FAITH}` });
-  }
+  const options: { value: TickerValue, label: string}[] = [
+    { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: `${TICKER_SYMBOL.TEMPLE_TOKEN}` },
+  ];
 
   if (ogTemple > 0) {
     options.push({ value: TICKER_SYMBOL.OG_TEMPLE_TOKEN, label: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN}` });
   }
 
-  const [ticker, setTicker] = useState<TICKER_SYMBOL>(options[0].value as TICKER_SYMBOL);
+  if (usableFaith > 0) {
+    if (temple > 0) {
+      options.push({ value: TEMPLE_AND_FAITH, label: `${TICKER_SYMBOL.TEMPLE_TOKEN} & ${TICKER_SYMBOL.FAITH}` });
+    }
+
+    if (ogTemple > 0) {
+      options.push({ value: OG_TEMPLE_AND_FAITH, label: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN} & ${TICKER_SYMBOL.FAITH}` });
+    }
+  }
+
+  const [option, setOption] = useState(options[0].value);
+
+  useEffect(() => {
+    if (option === TICKER_SYMBOL.OG_TEMPLE_TOKEN && ogTemple === 0) {
+      // User deposited all of their OGTemple
+      setOption(TICKER_SYMBOL.TEMPLE_TOKEN);
+    } else if (option === TEMPLE_AND_FAITH && usableFaith === 0) {
+      // User burnt all their Faith with Temple
+      setOption(TICKER_SYMBOL.TEMPLE_TOKEN);
+    } else if (option === OG_TEMPLE_AND_FAITH && usableFaith === 0) {
+      if (ogTemple > 0) {
+        // User burnt all their faith with OGTemple but has remaining OGTemple
+        setOption(TICKER_SYMBOL.OG_TEMPLE_TOKEN);
+      } else {
+        // User burnt all their faith with OGTemple.
+        setOption(TICKER_SYMBOL.TEMPLE_TOKEN);
+      }
+    }
+  }, [option, usableFaith, ogTemple]);
 
   return {
     options,
-    ticker,
-    setTicker,
+    option,
+    setOption,
     stakingAmount,
     setStakingAmount,
     balances: {
