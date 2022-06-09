@@ -127,9 +127,6 @@ export const getMarkers = (vaultGroup: Omit<VaultGroup, 'markers'>, balances: Va
 };
 
 const calculateUnlockDate = (vault: Vault) => {
-  // if (vault.isActive && vault.currentCycle === 0) {
-  //   return 'LOCKED';
-  // } else 
   if (vault.isActive && vault.currentCycle > 0) {
     return 'NOW';
   }
