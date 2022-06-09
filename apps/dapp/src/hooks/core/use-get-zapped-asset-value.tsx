@@ -34,7 +34,7 @@ export const useGetZappedAssetValue = () => {
 
     // The wallet needs to have usableFaith to get any multiplier. If there is no usableFaith
     // we can skip the contract call and just return the deposit amount.
-    if (!withFaith || usableFaith === 0) {
+    if (!withFaith || usableFaith < 1) {
       return {
         temple: bigTempleAmount,
         bonus: ZERO,
