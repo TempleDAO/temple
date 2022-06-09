@@ -57,6 +57,7 @@ export const Stake = () => {
   const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, async () => {
     refreshBalance();
     refreshWalletState();
+    setTicker(TICKER_SYMBOL.TEMPLE_TOKEN);
   });
 
   const getTickerFromSelectOption = () => {
