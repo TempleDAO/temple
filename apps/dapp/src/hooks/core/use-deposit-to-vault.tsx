@@ -17,6 +17,7 @@ import { useFaith } from 'providers/FaithProvider';
 import { useGetZappedAssetValue } from './use-get-zapped-asset-value';
 import { getBigNumberFromString } from 'components/Vault/utils';
 import { ZERO } from 'utils/bigNumber';
+import { createTokenFactoryInstance } from './use-token-vault-proxy-allowance';
 
 const ENV = import.meta.env;
 
@@ -48,12 +49,14 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
     }
     
     const bigAmount = getBigNumberFromString(amount);
-    const temple = new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
     const vaultProxy = new VaultProxy__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY);
-    
+
+    const token = await createTokenFactoryInstance(ticker, signer);
+    // Token should already be approved with a max approval at this
+    // point but this is here as a safeguard.
     await ensureAllowance(
-      TICKER_SYMBOL.TEMPLE_TOKEN,
-      temple,
+      ticker,
+      token,
       vaultProxy.address,
       bigAmount,
     );

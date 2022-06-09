@@ -18,13 +18,9 @@ const ENV = import.meta.env;
 
 const DEFAULT_ALLOWANCE = toAtto(100000000);
 
-const createTokenFactoryInstance = async (ticker: TICKER_SYMBOL, signer: Signer) => {
+export const createTokenFactoryInstance = async (ticker: TICKER_SYMBOL, signer: Signer) => {
   switch (ticker) {
     case TICKER_SYMBOL.TEMPLE_TOKEN:
-    // When depositing FAITH, it is actually Temple. Faith represents the intent
-    // to include a user's FAITH balance in addition to the $Temple amount the user 
-    // wants to deposit.
-    case TICKER_SYMBOL.FAITH:
       return new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
     case TICKER_SYMBOL.OG_TEMPLE_TOKEN:
       const templeStakingContract = new TempleStaking__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS);
