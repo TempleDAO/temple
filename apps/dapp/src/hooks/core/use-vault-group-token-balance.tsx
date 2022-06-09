@@ -136,6 +136,7 @@ interface VaultInstanceResponse {
 
 const getVaultInstanceBalance = async (vaultAddress: string, wallet: string, signer: Signer): Promise<VaultInstanceResponse> => {
   const vault = new Vault__factory(signer).attach(vaultAddress);
+  
   const shares = await vault.shareBalanceOf(wallet);
   const tokenShareBalance = await vault.toTokenAmount(shares);
   return {
