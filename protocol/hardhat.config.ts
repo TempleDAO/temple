@@ -5,11 +5,12 @@ import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ganache'; // for testing
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
-import "hardhat-contract-sizer";
+import 'hardhat-contract-sizer';
 
 // NOTE: Any tasks that depend on the generated typechain makes the build flaky.
 //       Favour scripts instead
-
+if (process.env.NODE_ENV === 'test')
+  console.log('Running HardHat in TEST mode');
 if (!process.env.ETHERSCAN_API_KEY) {
   console.log(
     "NOTE: environment variable ETHERSCAN_API_KEY isn't set. tasks that interact with etherscan won't work"
@@ -20,18 +21,18 @@ if (!process.env.ETHERSCAN_API_KEY) {
 // Go to https://hardhat.org/config/ to learn more
 //
 
-import {subtask} from "hardhat/config";
-import {TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS}  from "hardhat/builtin-tasks/task-names";
+import { subtask } from 'hardhat/config';
+import { TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS } from 'hardhat/builtin-tasks/task-names';
 
-subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS)
-  .setAction(async (_, __, runSuper) => {
+subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS).setAction(
+  async (_, __, runSuper) => {
     const paths = await runSuper();
 
     return paths.filter((p: string) => {
-      return !p.endsWith(".t.sol");
-    }); 
-  });
-
+      return !p.endsWith('.t.sol');
+    });
+  }
+);
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -74,12 +75,18 @@ module.exports = {
   },
   networks: {
     hardhat: {
-//    allowUnlimitedContractSize: true,
+      //    allowUnlimitedContractSize: true,
       chainId: 31337,
-      mining: {
-        auto: true,
-        interval:5000
-      }
+      mining:
+        process.env.NODE_ENV === 'test'
+          ? {
+              auto: false,
+              interval: 0,
+            }
+          : {
+              auto: true,
+              interval: 5000,
+            },
     },
     rinkeby: {
       url: process.env.RINKEBY_RPC_URL || '',
@@ -113,5 +120,5 @@ module.exports = {
   },
   contractSizer: {
     alphaSort: true,
-  }
+  },
 };
