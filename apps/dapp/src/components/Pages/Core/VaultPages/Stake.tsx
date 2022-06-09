@@ -280,7 +280,7 @@ const useStakeOptions = () => {
     }
   }
 
-  const [option, setOption] = useState<TickerValue>(options[0].value as TICKER_SYMBOL);
+  const [option, setOption] = useState(options[0].value);
 
   useEffect(() => {
     if (option === TICKER_SYMBOL.OG_TEMPLE_TOKEN && ogTemple === 0) {
