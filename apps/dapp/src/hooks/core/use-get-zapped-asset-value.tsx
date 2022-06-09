@@ -23,9 +23,9 @@ export const useGetZappedAssetValue = () => {
     }
 
     let bigTempleAmount: BigNumber;
-    if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
+    if (ticker === TICKER_SYMBOL.TEMPLE_TOKEN) {
       bigTempleAmount = getBigNumberFromString(amount);
-    } else if (ticker === TICKER_SYMBOL.TEMPLE_TOKEN) {
+    } else if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
       const stakingValue = await getStakingValue(amount);
       bigTempleAmount = getBigNumberFromString(stakingValue!.toString());
     } else {
@@ -42,7 +42,7 @@ export const useGetZappedAssetValue = () => {
       };
     }
    
-    const vaultProxy = new VaultProxy__factory(signer!).attach(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY);
+    const vaultProxy = new VaultProxy__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY);
     
     // If the user is depositing with FAITH, the will get a boosted amount of TEMPLE deposited.
     // we need to calculate the deposit amount plus the amount of TEMPLE the FAITH converts to.
