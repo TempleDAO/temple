@@ -56,8 +56,7 @@ export const Stake = () => {
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
   const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, async () => {
     refreshBalance();
-    refreshWalletState();
-    setTicker(TICKER_SYMBOL.TEMPLE_TOKEN);
+    await refreshWalletState();
   });
 
   const getTickerFromSelectOption = () => {
@@ -281,6 +280,24 @@ const useStakeOptions = () => {
   }
 
   const [ticker, setTicker] = useState<TickerValue>(options[0].value as TICKER_SYMBOL);
+
+  useEffect(() => {
+    if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN && ogTemple === 0) {
+      // User deposited all of their OGTemple
+      setTicker(TICKER_SYMBOL.TEMPLE_TOKEN);
+    } else if (ticker === TEMPLE_AND_FAITH && usableFaith === 0) {
+      // User burnt all their Faith with Temple
+      setTicker(TICKER_SYMBOL.TEMPLE_TOKEN);
+    } else if (ticker === OG_TEMPLE_AND_FAITH && usableFaith === 0) {
+      if (ogTemple > 0) {
+        // User burnt all their faith with OGTemple but has remaining OGTemple
+        setTicker(TICKER_SYMBOL.OG_TEMPLE_TOKEN);
+      } else {
+        // User burnt all their faith with OGTemple.
+        setTicker(TICKER_SYMBOL.TEMPLE_TOKEN);
+      }
+    }
+  }, [ticker, usableFaith, ogTemple]);
 
   return {
     options,
