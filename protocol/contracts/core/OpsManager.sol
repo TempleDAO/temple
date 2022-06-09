@@ -115,17 +115,7 @@ contract OpsManager is Ownable {
      * @notice Update mark to market of temple's various exposures
      */
     function updateExposureReval(IERC20[] memory exposureTokens, uint256[] memory revals) external onlyOwner {
-        require(exposureTokens.length == revals.length, "Exposures and reval amounts array must be the same length");
-
-        for (uint256 i = 0; i < exposureTokens.length; i++) {
-            Exposure exposure = pools[exposureTokens[i]].exposure();
-            uint256 currentReval = exposure.reval();
-            if (currentReval > revals[i]) {
-                exposure.decreaseReval(currentReval - revals[i]);
-            } else {
-                exposure.increaseReval(revals[i] - currentReval);
-            }
-        }
+        OpsManagerLib.updateExposureReval(exposureTokens, revals, pools);
     }
 
     /**

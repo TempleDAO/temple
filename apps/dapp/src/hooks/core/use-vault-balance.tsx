@@ -1,14 +1,14 @@
 import { BigNumber } from 'ethers';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
-import { ZERO } from 'utils/bigNumber'
+import { ZERO } from 'utils/bigNumber';
 
 type HookResponseType = [
   {
     isLoading: boolean;
-    balance: BigNumber,
-    staked: BigNumber,
+    balance: BigNumber;
+    staked: BigNumber;
   },
-  () => Promise<void>,
+  () => Promise<void>
 ];
 
 const DEFAULT_STATE = {

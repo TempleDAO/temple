@@ -16,6 +16,7 @@ export type Vault = {
   id: string;
   tvl: number;
   now: Date;
+  currentCycle: number;
   // Start of vault instance
   startDate: Date;
   isActive: boolean;
@@ -53,8 +54,8 @@ export type Point = {
 
 export enum MarkerType {
   EMPTY,
-  STAKING_IN_ZONE,
-  STAKING,
+  WITHDRAWABLE,
+  LOCKED,
   HIDDEN,
 }
 

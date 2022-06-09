@@ -37,7 +37,7 @@ const Timing = () => {
               const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
               return (
                 <Row key={vault.id}>
-                  <Cell $align="center">{vault.label}</Cell>
+                  <Cell $align="center">{vault.isActive ? `> ${vault.label} <` : vault.label}</Cell>
                   <Cell $align="center">{formatTemple(vaultBalance.staked)} $T</Cell>
                   <Cell $align="center">{formatTemple(vaultBalance.balance)} $T</Cell>
                   <Cell $align="center">{unlockValue}</Cell>
@@ -47,7 +47,7 @@ const Timing = () => {
           </StyledBody>
         </Table>
       </TableWrapper>
-      <Duration>{vaultGroup.months} Months</Duration>
+      <Duration>{vaultGroup.months} periods in this vault</Duration>
     </VaultContent>
   );
 };

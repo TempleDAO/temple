@@ -13,7 +13,7 @@ import {
   Signer,
   utils,
 } from "ethers";
-import { FunctionFragment, Result } from "@ethersproject/abi";
+import { FunctionFragment, Result, EventFragment } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
 import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
@@ -23,11 +23,18 @@ export interface VaultProxyInterface extends utils.Interface {
     "depositTempleFor(uint256,address)": FunctionFragment;
     "depositTempleWithFaith(uint256,uint112,address)": FunctionFragment;
     "faith()": FunctionFragment;
+    "faithClaimEnabled()": FunctionFragment;
     "getFaithMultiplier(uint256,uint256)": FunctionFragment;
     "ogTemple()": FunctionFragment;
+    "owner()": FunctionFragment;
+    "renounceOwnership()": FunctionFragment;
     "temple()": FunctionFragment;
     "templeStaking()": FunctionFragment;
+    "toggleFaithClaimEnabled()": FunctionFragment;
+    "transferOwnership(address)": FunctionFragment;
     "unstakeAndDepositIntoVault(uint256,address)": FunctionFragment;
+    "unstakeAndDepositTempleWithFaith(uint256,uint112,address)": FunctionFragment;
+    "withdraw(address,address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -40,18 +47,43 @@ export interface VaultProxyInterface extends utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "faith", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "faithClaimEnabled",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "getFaithMultiplier",
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "ogTemple", values?: undefined): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "renounceOwnership",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "temple", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "templeStaking",
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "toggleFaithClaimEnabled",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "transferOwnership",
+    values: [string]
+  ): string;
+  encodeFunctionData(
     functionFragment: "unstakeAndDepositIntoVault",
     values: [BigNumberish, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "unstakeAndDepositTempleWithFaith",
+    values: [BigNumberish, BigNumberish, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "withdraw",
+    values: [string, string, BigNumberish]
   ): string;
 
   decodeFunctionResult(
@@ -64,22 +96,56 @@ export interface VaultProxyInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "faith", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "faithClaimEnabled",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "getFaithMultiplier",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "ogTemple", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "renounceOwnership",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "temple", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "templeStaking",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "toggleFaithClaimEnabled",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "unstakeAndDepositIntoVault",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "unstakeAndDepositTempleWithFaith",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
-  events: {};
+  events: {
+    "OwnershipTransferred(address,address)": EventFragment;
+  };
+
+  getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
 }
+
+export type OwnershipTransferredEvent = TypedEvent<
+  [string, string],
+  { previousOwner: string; newOwner: string }
+>;
+
+export type OwnershipTransferredEventFilter =
+  TypedEventFilter<OwnershipTransferredEvent>;
 
 export interface VaultProxy extends BaseContract {
   contractName: "VaultProxy";
@@ -124,6 +190,8 @@ export interface VaultProxy extends BaseContract {
 
     faith(overrides?: CallOverrides): Promise<[string]>;
 
+    faithClaimEnabled(overrides?: CallOverrides): Promise<[boolean]>;
+
     getFaithMultiplier(
       _amountFaith: BigNumberish,
       _amountTemple: BigNumberish,
@@ -132,13 +200,42 @@ export interface VaultProxy extends BaseContract {
 
     ogTemple(overrides?: CallOverrides): Promise<[string]>;
 
+    owner(overrides?: CallOverrides): Promise<[string]>;
+
+    renounceOwnership(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     temple(overrides?: CallOverrides): Promise<[string]>;
 
     templeStaking(overrides?: CallOverrides): Promise<[string]>;
 
+    toggleFaithClaimEnabled(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    transferOwnership(
+      newOwner: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     unstakeAndDepositIntoVault(
       _amountOGT: BigNumberish,
       vault: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    unstakeAndDepositTempleWithFaith(
+      _amountOGT: BigNumberish,
+      _amountFaith: BigNumberish,
+      vault: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    withdraw(
+      token: string,
+      to: string,
+      amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
@@ -158,6 +255,8 @@ export interface VaultProxy extends BaseContract {
 
   faith(overrides?: CallOverrides): Promise<string>;
 
+  faithClaimEnabled(overrides?: CallOverrides): Promise<boolean>;
+
   getFaithMultiplier(
     _amountFaith: BigNumberish,
     _amountTemple: BigNumberish,
@@ -166,13 +265,42 @@ export interface VaultProxy extends BaseContract {
 
   ogTemple(overrides?: CallOverrides): Promise<string>;
 
+  owner(overrides?: CallOverrides): Promise<string>;
+
+  renounceOwnership(
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   temple(overrides?: CallOverrides): Promise<string>;
 
   templeStaking(overrides?: CallOverrides): Promise<string>;
 
+  toggleFaithClaimEnabled(
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  transferOwnership(
+    newOwner: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   unstakeAndDepositIntoVault(
     _amountOGT: BigNumberish,
     vault: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  unstakeAndDepositTempleWithFaith(
+    _amountOGT: BigNumberish,
+    _amountFaith: BigNumberish,
+    vault: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  withdraw(
+    token: string,
+    to: string,
+    amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -192,6 +320,8 @@ export interface VaultProxy extends BaseContract {
 
     faith(overrides?: CallOverrides): Promise<string>;
 
+    faithClaimEnabled(overrides?: CallOverrides): Promise<boolean>;
+
     getFaithMultiplier(
       _amountFaith: BigNumberish,
       _amountTemple: BigNumberish,
@@ -200,18 +330,52 @@ export interface VaultProxy extends BaseContract {
 
     ogTemple(overrides?: CallOverrides): Promise<string>;
 
+    owner(overrides?: CallOverrides): Promise<string>;
+
+    renounceOwnership(overrides?: CallOverrides): Promise<void>;
+
     temple(overrides?: CallOverrides): Promise<string>;
 
     templeStaking(overrides?: CallOverrides): Promise<string>;
+
+    toggleFaithClaimEnabled(overrides?: CallOverrides): Promise<void>;
+
+    transferOwnership(
+      newOwner: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     unstakeAndDepositIntoVault(
       _amountOGT: BigNumberish,
       vault: string,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    unstakeAndDepositTempleWithFaith(
+      _amountOGT: BigNumberish,
+      _amountFaith: BigNumberish,
+      vault: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    withdraw(
+      token: string,
+      to: string,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
-  filters: {};
+  filters: {
+    "OwnershipTransferred(address,address)"(
+      previousOwner?: string | null,
+      newOwner?: string | null
+    ): OwnershipTransferredEventFilter;
+    OwnershipTransferred(
+      previousOwner?: string | null,
+      newOwner?: string | null
+    ): OwnershipTransferredEventFilter;
+  };
 
   estimateGas: {
     depositTempleFor(
@@ -229,6 +393,8 @@ export interface VaultProxy extends BaseContract {
 
     faith(overrides?: CallOverrides): Promise<BigNumber>;
 
+    faithClaimEnabled(overrides?: CallOverrides): Promise<BigNumber>;
+
     getFaithMultiplier(
       _amountFaith: BigNumberish,
       _amountTemple: BigNumberish,
@@ -237,13 +403,42 @@ export interface VaultProxy extends BaseContract {
 
     ogTemple(overrides?: CallOverrides): Promise<BigNumber>;
 
+    owner(overrides?: CallOverrides): Promise<BigNumber>;
+
+    renounceOwnership(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     temple(overrides?: CallOverrides): Promise<BigNumber>;
 
     templeStaking(overrides?: CallOverrides): Promise<BigNumber>;
 
+    toggleFaithClaimEnabled(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    transferOwnership(
+      newOwner: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     unstakeAndDepositIntoVault(
       _amountOGT: BigNumberish,
       vault: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    unstakeAndDepositTempleWithFaith(
+      _amountOGT: BigNumberish,
+      _amountFaith: BigNumberish,
+      vault: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    withdraw(
+      token: string,
+      to: string,
+      amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
@@ -264,6 +459,8 @@ export interface VaultProxy extends BaseContract {
 
     faith(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    faithClaimEnabled(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     getFaithMultiplier(
       _amountFaith: BigNumberish,
       _amountTemple: BigNumberish,
@@ -272,13 +469,42 @@ export interface VaultProxy extends BaseContract {
 
     ogTemple(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    renounceOwnership(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     temple(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     templeStaking(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    toggleFaithClaimEnabled(
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    transferOwnership(
+      newOwner: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     unstakeAndDepositIntoVault(
       _amountOGT: BigNumberish,
       vault: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    unstakeAndDepositTempleWithFaith(
+      _amountOGT: BigNumberish,
+      _amountFaith: BigNumberish,
+      vault: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    withdraw(
+      token: string,
+      to: string,
+      amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

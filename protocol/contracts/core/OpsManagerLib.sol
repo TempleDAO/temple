@@ -93,4 +93,18 @@ library OpsManagerLib {
 
         return requiresUpdate;
     }
+
+    function updateExposureReval(IERC20[] memory exposureTokens, uint256[] memory revals, mapping(IERC20 => TreasuryFarmingRevenue) storage pools) public {
+        require(exposureTokens.length == revals.length, "Exposures and reval amounts array must be the same length");
+
+        for (uint256 i = 0; i < exposureTokens.length; i++) {
+            Exposure exposure = pools[exposureTokens[i]].exposure();
+            uint256 currentReval = exposure.reval();
+            if (currentReval > revals[i]) {
+                exposure.decreaseReval(currentReval - revals[i]);
+            } else {
+                exposure.increaseReval(revals[i] - currentReval);
+            }
+        }
+    }
 }
