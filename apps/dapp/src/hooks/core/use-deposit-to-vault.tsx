@@ -15,7 +15,8 @@ import { Callback } from './types';
 import { useVaultContext, Operation } from 'components/Pages/Core/VaultContext';
 import { useVaultJoiningFee } from './use-vault-joining-fee';
 import { useFaith } from 'providers/FaithProvider';
-import { useFaithDepositMultiplier } from './use-faith-deposit-multiplier';
+import { useGetZappedAssetValue } from './use-faith-deposit-multiplier';
+import { getBigNumberFromString } from 'components/Vault/utils';
 
 const ENV = import.meta.env;
 
@@ -29,11 +30,11 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
   const { faith: { usableFaith } } = useFaith();
   const { optimisticallyUpdateVaultStaked, activeVault } = useVaultContext();
   const [getVaultJoiningFee] = useVaultJoiningFee(activeVault);
-  const [getFaithDepositMultiplier] = useFaithDepositMultiplier();
+  const [getZappedAssetValue] = useGetZappedAssetValue();
 
   const { openNotification } = useNotification();
 
-  const handler = async (token: TICKER_SYMBOL, amount: string, useFaith = false) => {
+  const handler = async (ticker: TICKER_SYMBOL, amount: string, useFaith = false) => {
     if (!signer || !wallet) {
       console.error(`
         Attempted to deposit to vault: ${vaultContractAddress} without a valid signer or wallet address.
@@ -41,11 +42,12 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
       return;
     }
 
-    if (useFaith && !TICKERS_WITH_BURN.has(token)) {
-      throw new Error(`Programming Error: Attmeped to burn faith with ${token}`);
+    // Safeguard: if we're using faith, we can only burn with OGTemple or Temple.
+    if (useFaith && !TICKERS_WITH_BURN.has(ticker)) {
+      throw new Error(`Programming Error: Attmeped to burn faith with ${ticker}`);
     }
     
-    const bigAmount = parseUnits(amount, 18);
+    const bigAmount = getBigNumberFromString(amount);
     const temple = new TempleERC20Token__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_ADDRESS);
     const vaultProxy = new VaultProxy__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY);
     
@@ -61,8 +63,9 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
     let expectedDepositAmount = bigAmount;
     // If the user is depositing with FAITH, the will get a boosted amount of TEMPLE deposited.
     // we need to calculate the deposit amount plus the amount of TEMPLE the FAITH converts to.
-    if (useFaith) {
-      expectedDepositAmount = await getFaithDepositMultiplier(amount) || bigAmount;
+    if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN || useFaith) {
+      const response = await getZappedAssetValue(ticker, amount, useFaith)!;
+      expectedDepositAmount = response!.total!;
     }
 
     const fee = await getVaultJoiningFee() || BigNumber.from(0);
@@ -70,7 +73,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
     // Deposit through vault proxy.
     let tx: ContractTransaction;
     if (useFaith) {
-      if (token === TICKER_SYMBOL.TEMPLE_TOKEN) {
+      if (ticker === TICKER_SYMBOL.TEMPLE_TOKEN) {
         tx = await vaultProxy.depositTempleWithFaith(bigAmount, bigUsableFaith, vaultContractAddress, {
           gasLimit: 450000,
         });
@@ -79,12 +82,12 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
           gasLimit: 450000,
         });
       }
-    } else if (token === TICKER_SYMBOL.TEMPLE_TOKEN) {
+    } else if (ticker === TICKER_SYMBOL.TEMPLE_TOKEN) {
       tx = await vaultProxy.depositTempleFor(bigAmount, vaultContractAddress);
-    } else if (token === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
+    } else if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
       tx = await vaultProxy.unstakeAndDepositIntoVault(bigAmount, vaultContractAddress);
     } else {
-      throw new Error(`Programming Error: Unsupported token: ${token}`);
+      throw new Error(`Programming Error: Unsupported token: ${ticker}`);
     }
 
     await tx.wait();
