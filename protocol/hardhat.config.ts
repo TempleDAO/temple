@@ -80,7 +80,7 @@ module.exports = {
       mining:
         process.env.NODE_ENV === 'test'
           ? {
-              auto: false,
+              auto: true,
               interval: 0,
             }
           : {
