@@ -61,7 +61,11 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
       bigAmount,
     );
 
-    const bigUsableFaith = toAtto(usableFaith);
+    let bigUsableFaith = ZERO;
+    // Safeguard against calling toAtto on dust. We only count faith as having at least 1 whole Faith.
+    if (usableFaith >= 1) {
+      bigUsableFaith = toAtto(usableFaith);
+    }
 
     let expectedDepositAmount = bigAmount;
     // If the user is depositing with FAITH, the will get a boosted amount of TEMPLE deposited.
