@@ -141,30 +141,33 @@ async function main() {
   // // Mine a couple of epochs forward, to help testing
   // await mineNBlocks((await exitQueue.epochSize()).toNumber() * 2);
 
-  // Create 2 versions of the team payment contract (contigent and fixed)
-  const teamPaymentsFixed = await new TempleTeamPayments__factory(owner).deploy(
-    templeToken.address,
-    1,
-    1
-  );
-  const teamPaymentsContigent = await new TempleTeamPayments__factory(
+  // Create team payment contracts
+  const teamPaymentsFixedR1 = await new TempleTeamPayments__factory(
     owner
   ).deploy(templeToken.address, 1, 1);
+  await templeToken.mint(teamPaymentsFixedR1.address, toAtto(1000000));
 
-  templeToken.mint(teamPaymentsFixed.address, toAtto(1000000));
-  templeToken.mint(teamPaymentsContigent.address, toAtto(1000000));
+  await teamPaymentsFixedR1.setAllocation(owner.address, toAtto(1000));
+  const teamPaymentsFixedR2 = await new TempleTeamPayments__factory(
+    owner
+  ).deploy(templeToken.address, 1, 1);
+  await templeToken.mint(teamPaymentsFixedR2.address, toAtto(1000000));
 
-  // Setup payments for first 5 users
-  for (let i = 0; i < 5; i++) {
-    teamPaymentsFixed.setAllocation(
-      accounts[i + 1].address,
-      toAtto(1000 * (i + 1))
-    );
-    teamPaymentsContigent.setAllocation(
-      accounts[i + 1].address,
-      toAtto(1000 * (i + 1))
-    );
-  }
+  await teamPaymentsFixedR2.setAllocation(owner.address, toAtto(1000));
+
+  const teamPaymentsFixedR3 = await new TempleTeamPayments__factory(
+    owner
+  ).deploy(templeToken.address, 1, 1);
+  await templeToken.mint(teamPaymentsFixedR3.address, toAtto(1000000));
+
+  await teamPaymentsFixedR3.setAllocation(owner.address, toAtto(1000));
+
+  const teamPaymentsFixedR4 = await new TempleTeamPayments__factory(
+    owner
+  ).deploy(templeToken.address, 1, 1);
+  await templeToken.mint(teamPaymentsFixedR4.address, toAtto(1000000));
+
+  await teamPaymentsFixedR4.setAllocation(owner.address, toAtto(1000));
 
   // Setup custom AMM with liquidity
   const pair = await new TempleUniswapV2Pair__factory(owner).deploy(
@@ -327,8 +330,10 @@ async function main() {
     TEMPLE_STAKING_ADDRESS: templeStaking.address,
     TREASURY_ADDRESS: treasury.address,
     TEMPLE_AMM_OPS_ADDRESS: ammOps.address,
-    TEMPLE_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixed.address,
-    TEMPLE_TEAM_CONTIGENT_PAYMENTS_ADDRESS: teamPaymentsContigent.address,
+    TEMPLE_R1_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR1.address,
+    TEMPLE_R2_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR2.address,
+    TEMPLE_R3_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR3.address,
+    TEMPLE_R4_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR4.address,
     TEMPLE_V2_PAIR_ADDRESS: pair.address,
     TEMPLE_V2_FEI_PAIR_ADDRESS: feiPair.address,
     TEMPLE_V2_ROUTER_ADDRESS: templeRouter.address,

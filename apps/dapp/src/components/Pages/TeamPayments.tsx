@@ -1,17 +1,8 @@
-import React, {
-  useEffect,
-  useState,
-  useReducer,
-  useRef,
-  SetStateAction,
-} from 'react';
+import React, { useEffect, useState, useReducer, useRef, SetStateAction } from 'react';
 import styled from 'styled-components';
 
 import { TempleTeamPayments__factory } from 'types/typechain';
-import {
-  TEAM_PAYMENTS_EPOCHS,
-  TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH,
-} from 'enums/team-payment';
+import { TEAM_PAYMENTS_EPOCHS, TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH } from 'enums/team-payment';
 import { fromAtto } from 'utils/bigNumber';
 import withWallet from 'hoc/withWallet';
 import { useWallet } from 'providers/WalletProvider';
@@ -31,7 +22,7 @@ type TeamPaymentsState = ReducerState & {
   allocationFixed: number;
   claimableFixed: number;
   remainingAllocationFixed: number;
-  setSelectedEpoch: React.Dispatch<SetStateAction<number>>;
+  setSelectedEpoch: React.Dispatch<SetStateAction<TEAM_PAYMENTS_EPOCHS>>;
   onCollectTeamFixedPayment(): void;
 };
 
@@ -65,8 +56,10 @@ const TeamPayments = () => {
   };
 
   const dropdownOptions = [
-    { value: TEAM_PAYMENTS_EPOCHS.R1, label: 'Epoch 1' },
-    { value: TEAM_PAYMENTS_EPOCHS.R2, label: 'Epoch 2' },
+    { value: TEAM_PAYMENTS_EPOCHS.R1, label: 'EPOCH 1' },
+    { value: TEAM_PAYMENTS_EPOCHS.R2, label: 'EPOCH 2' },
+    { value: TEAM_PAYMENTS_EPOCHS.R3, label: 'EPOCH 3' },
+    { value: TEAM_PAYMENTS_EPOCHS.R4, label: 'EPOCH 4' },
   ];
 
   return (
@@ -101,9 +94,7 @@ const TeamPayments = () => {
           </EyeArea>
         </div>
 
-        <TotalAllocation
-          title={`Total epoch allocation: ${allocationFixed} $TEMPLE`}
-        >
+        <TotalAllocation title={`Total epoch allocation: ${allocationFixed} $TEMPLE`}>
           Total epoch allocation: {allocationFixed.toLocaleString()} $TEMPLE
         </TotalAllocation>
 
@@ -189,27 +180,20 @@ function useTempleTeamPayments(): TeamPaymentsState {
     const getAllocationAndClaimableAmounts = async () => {
       if (wallet && signer) {
         // Get addresses based on selected epoch
-        const fixedTeamPaymentAddress =
-          TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[selectedEpoch];
+        const fixedTeamPaymentAddress = TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[selectedEpoch];
 
         // Retrieve fixed allocation & claimable amounts
-        const fixedTeamPayments = new TempleTeamPayments__factory(
-          signer
-        ).attach(fixedTeamPaymentAddress);
+        const fixedTeamPayments = new TempleTeamPayments__factory(signer).attach(fixedTeamPaymentAddress);
 
         const fixedAllocation = await fixedTeamPayments.allocation(wallet);
         const fixedClaimedAmount = await fixedTeamPayments.claimed(wallet);
         const convertedFixedAlloc = fromAtto(fixedAllocation);
-        setRemainingAllocationFixed(
-          fromAtto(fixedAllocation.sub(fixedClaimedAmount))
-        );
+        setRemainingAllocationFixed(fromAtto(fixedAllocation.sub(fixedClaimedAmount)));
 
         setAllocationFixed(convertedFixedAlloc);
 
         if (convertedFixedAlloc > 0) {
-          const fixedClaimable = await fixedTeamPayments.calculateClaimable(
-            wallet
-          );
+          const fixedClaimable = await fixedTeamPayments.calculateClaimable(wallet);
           const convertedFixedClaimable = fromAtto(fixedClaimable);
 
           convertedFixedClaimable > 0 && dispatch({ type: 'default-fixed' });
@@ -226,9 +210,7 @@ function useTempleTeamPayments(): TeamPaymentsState {
   async function onCollectTeamFixedPayment() {
     dispatch({ type: 'collect-fixed' });
 
-    const tx = await collectTempleTeamPayment(
-      selectedEpoch
-    );
+    const tx = await collectTempleTeamPayment(selectedEpoch);
 
     if (tx) {
       setClaimed(!claimed);
@@ -250,20 +232,12 @@ function useTempleTeamPayments(): TeamPaymentsState {
   };
 }
 
-function getPupilTransform(
-  imageRef: React.RefObject<HTMLDivElement>,
-  cursorCoords: number[]
-) {
+function getPupilTransform(imageRef: React.RefObject<HTMLDivElement>, cursorCoords: number[]) {
   const headerHeight = 80;
 
   if (imageRef.current) {
     const x = 0 - window.innerWidth / 2 + cursorCoords[0];
-    const y =
-      0 -
-      window.innerHeight / 2 +
-      imageRef.current.offsetTop +
-      cursorCoords[1] -
-      headerHeight;
+    const y = 0 - window.innerHeight / 2 + imageRef.current.offsetTop + cursorCoords[1] - headerHeight;
 
     const values = normalizeTransform(x, y);
     return `translate(${values[0]}px, ${values[1]}px)`;
@@ -324,4 +298,4 @@ const EpochDropdownContainer = styled.div`
   width: 12rem;
 `;
 
-export default withWallet(TeamPayments);
+export default TeamPayments;
