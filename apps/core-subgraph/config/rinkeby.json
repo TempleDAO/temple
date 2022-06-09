@@ -2,11 +2,11 @@
     "network": "rinkeby",
     "hasScheduler": true,
     "opsManager": {
-        "address": "0x58346089d5e81668648DC8c4F8f606262d61337D",
-        "startBlock": "10810957"
+        "address": "0x0647b5CFC9e9B03629Db83E7Aa4d1E25283DD9Cb",
+        "startBlock": "10817951"
     },
     "hourlyScheduler": {
         "address": "0x28D757e89e38Ee5eEfF3eaB330Ad1AB99DD7c9eb",
-        "startBlock": "10810957"
+        "startBlock": "10817951"
     }
 }
