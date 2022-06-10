@@ -33,7 +33,7 @@ import env from 'constants/env';
 const STAT_CARD_HEIGHT = '5rem';
 
 const ProfilePage = () => {
-  const { getBalance, wallet, balance } = useWallet();
+  const { getBalance, wallet } = useWallet();
   const { faith } = useFaith();
   const { isLoading: vaultGroupsLoading, vaultGroups } = useListCoreVaultGroups();
   const { balances, isLoading: vaultGroupBalancesLoading } = useVaultGroupBalances(vaultGroups);
