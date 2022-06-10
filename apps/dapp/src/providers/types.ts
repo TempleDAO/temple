@@ -37,7 +37,7 @@ export type FaithBalance = {
 
 export interface LockedEntry {
   // OG_Temple balance
-  balanceOGTemple: number;
+  balanceOGTemple: BigNumber;
   // timestamp in milliseconds when balance can be unlocked
   lockedUntilTimestamp: number;
   // index in the contract mapping

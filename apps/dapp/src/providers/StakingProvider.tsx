@@ -133,7 +133,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         return {
           // chain timestamp is in second => we need milli
           lockedUntilTimestamp: entry.LockedUntilTimestamp.toNumber() * 1000,
-          balanceOGTemple: fromAtto(entry.BalanceOGTemple),
+          balanceOGTemple: entry.BalanceOGTemple,
           index,
         };
       }
@@ -146,7 +146,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
     const newEntry = await ogLockedTempleNew.ogTempleLocked(walletAddress);
     lockedEntriesVals.push({
-      balanceOGTemple: fromAtto(newEntry.amount),
+      balanceOGTemple: newEntry.amount,
       lockedUntilTimestamp: newEntry.lockedUntilTimestamp.toNumber() * 1000,
       index: lockedEntriesVals.length,
     });
