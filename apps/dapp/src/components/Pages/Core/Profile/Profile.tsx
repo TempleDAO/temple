@@ -84,7 +84,7 @@ const ProfilePage = () => {
     }, lockedOGTempleBalance);
   }
 
-  const hasLegacyTemple = /*lockedOGTempleBalance.eq(ZERO); || */ faithBalance.eq(ZERO);
+  const hasLegacyTemple = lockedOGTempleBalance.eq(ZERO) || faithBalance.eq(ZERO);
 
   return (
     <PageWrapper>
