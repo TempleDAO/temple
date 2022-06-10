@@ -13,7 +13,7 @@ export interface ClaimOGTempleProps {
   onClaim(index: number): void;
 }
 
-const ClaimOGTemple = ({ lockedEntries, onClaim }: ClaimOGTempleProps) => {
+const ClaimOGTemple = ({ lockedEntries = [], onClaim }: ClaimOGTempleProps) => {
   return (
     <>
       {lockedEntries.length > 0 ? (
