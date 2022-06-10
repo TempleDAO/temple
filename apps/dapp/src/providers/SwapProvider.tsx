@@ -8,7 +8,7 @@ import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop } from 'utils/helpers';
-import { fromAtto } from 'utils/bigNumber';
+import { fromAtto, ZERO } from 'utils/bigNumber';
 
 import {
   ERC20__factory,
@@ -238,11 +238,13 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   ): Promise<BigNumber> => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
+      
       setError({
         name: 'Missing wallet or signer',
         message: "Couldn't complete buy transaction - unable to get wallet or signer",
       });
-      return BigNumber.from(0);
+
+      return ZERO;
     }
 
     setError(null);

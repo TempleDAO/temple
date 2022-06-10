@@ -1,10 +1,11 @@
+import React from 'react';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
 import dateFormat from 'dateformat';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { LockedEntry } from 'providers/types';
-import React from 'react';
 import styled from 'styled-components';
+import { fromAtto } from 'utils/bigNumber';
 
 export interface ClaimOGTempleProps {
   lockedEntries: Array<LockedEntry>;
@@ -12,7 +13,7 @@ export interface ClaimOGTempleProps {
   onClaim(index: number): void;
 }
 
-const ClaimOGTemple = ({ lockedEntries, onClaim }: ClaimOGTempleProps) => {
+const ClaimOGTemple = ({ lockedEntries = [], onClaim }: ClaimOGTempleProps) => {
   return (
     <>
       {lockedEntries.length > 0 ? (
@@ -71,7 +72,7 @@ const ClaimOGTemple = ({ lockedEntries, onClaim }: ClaimOGTempleProps) => {
                   }}
                 >
                   <strong className={'color-brand'}>
-                    {le.balanceOGTemple}
+                    {fromAtto(le.balanceOGTemple)}
                   </strong>
                   <ButtonClaim
                     label={'claim'}

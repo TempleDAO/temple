@@ -6,8 +6,8 @@ import {
 import useRequestState from 'hooks/use-request-state';
 import { useWallet } from 'providers/WalletProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { toAtto } from 'utils/bigNumber';
 import { useStaking } from 'providers/StakingProvider';
+import { getBigNumberFromString } from 'components/Vault/utils';
 
 const ENV = import.meta.env;
 
@@ -17,7 +17,7 @@ export const useUnstakeOGTemple = (onSuccess?: Callback) => {
   const { wallet, signer, ensureAllowance } = useWallet();
   const { unstake } = useStaking();
 
-  const unstakeRequest = async (amount: number) => {
+  const unstakeRequest = async (amount: string) => {
     if (!wallet || !signer) {
       console.error('Missing wallet or signer when trying to unstake OGTemple.');
       return;
@@ -26,15 +26,16 @@ export const useUnstakeOGTemple = (onSuccess?: Callback) => {
     const templeStaking = new TempleStaking__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS);
     const ogTempleAddress = await templeStaking.OG_TEMPLE();
     const ogTempleToken = new OGTemple__factory(signer).attach(ogTempleAddress);
+    const bigAmount = getBigNumberFromString(amount);
 
     await ensureAllowance(
       TICKER_SYMBOL.OG_TEMPLE_TOKEN,
       ogTempleToken,
       ENV.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS,
-      toAtto(amount)
+      bigAmount
     );
 
-    await unstake(toAtto(amount));
+    await unstake(bigAmount);
 
     if (onSuccess) {
       await onSuccess();

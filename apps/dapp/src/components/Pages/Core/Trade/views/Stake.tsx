@@ -9,6 +9,8 @@ import { useStakeTemple } from 'hooks/core/use-stake-temple';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
 import Loader from 'components/Loader/Loader';
+import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
+import { ZERO } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 
 import { 
@@ -35,7 +37,7 @@ export const Stake = () => {
     }
   };
 
-  const numberStakeAmount = parseFloat(stakeAmount || '0');
+  const numberStakeAmount = getBigNumberFromString(stakeAmount || '0');
 
   return (
     <div>
@@ -53,14 +55,17 @@ export const Stake = () => {
           isNumber
           value={stakeAmount}
           placeholder="0"
-          onHintClick={() => setStakeAmount(`${balance.temple}`)}
+          onHintClick={() => {
+            const amount = balance.temple.eq(ZERO) ? '' : formatBigNumber(balance.temple);
+            setStakeAmount(amount);
+          }}
           min={0}
-          hint={`Balance: ${formatNumberWithCommas(balance.temple)}`}
+          hint={`Balance: ${formatNumber(formatBigNumber(balance.temple))}`}
         />
       </InputWrapper>
       <CtaButton
-        disabled={!stakeAmount || numberStakeAmount > balance.temple || stakeLoading}
-        onClick={() => stake(numberStakeAmount)}
+        disabled={!stakeAmount || numberStakeAmount.gt(balance.temple) || stakeLoading}
+        onClick={() => stake(stakeAmount)}
       >
         {stakeLoading ? <Loader /> : `Stake $Temple`}
       </CtaButton>
