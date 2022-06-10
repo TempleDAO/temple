@@ -27,7 +27,7 @@ export const useGetZappedAssetValue = () => {
       bigTempleAmount = getBigNumberFromString(amount);
     } else if (ticker === TICKER_SYMBOL.OG_TEMPLE_TOKEN) {
       const stakingValue = await getStakingValue(amount);
-      bigTempleAmount = getBigNumberFromString(stakingValue!.toString());
+      bigTempleAmount = stakingValue!;
     } else {
       throw new Error(`Programming Error: Attempted to get zapped asset value for unsupported token ${ticker}`);
     }

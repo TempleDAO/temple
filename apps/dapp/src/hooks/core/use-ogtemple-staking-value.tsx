@@ -1,6 +1,7 @@
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 import { useStaking } from 'providers/StakingProvider';
+import { getBigNumberFromString } from 'components/Vault/utils';
 
 export const useOGTempleStakingValue = () => {
   const { signer, wallet } = useWallet();
@@ -12,7 +13,8 @@ export const useOGTempleStakingValue = () => {
       return;
     }
 
-    const rewards = await getRewardsForOGT(Number(amount));
+    const bigNumber = getBigNumberFromString(amount);
+    const rewards = await getRewardsForOGT(bigNumber);
     return rewards;
   };
 

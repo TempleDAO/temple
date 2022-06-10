@@ -8,7 +8,7 @@ import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { ClaimType } from 'enums/claim-type';
 import { TEAM_PAYMENTS_EPOCHS, TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH } from 'enums/team-payment';
-import { fromAtto, toAtto } from 'utils/bigNumber';
+import { toAtto } from 'utils/bigNumber';
 import { asyncNoop, noop } from 'utils/helpers';
 import { WalletState, Balance } from 'providers/types';
 import {

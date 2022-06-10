@@ -87,7 +87,7 @@ export interface StakingService {
 
   claimOgTemple(lockedEntryIndex: number): Promise<void>;
 
-  getRewardsForOGT(ogtAmount: number): Promise<number | void>;
+  getRewardsForOGT(ogtAmount: BigNumber): Promise<BigNumber | void>;
 
   updateApy(): Promise<void>;
 }

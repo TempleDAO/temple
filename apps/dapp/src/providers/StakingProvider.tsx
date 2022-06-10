@@ -96,7 +96,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
   const getRewardsForOGTemple = async (
     walletAddress: string,
     signerState: Signer,
-    ogtAmount: number
+    ogtAmount: BigNumber
   ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
@@ -106,7 +106,8 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
       TEMPLE_STAKING_ADDRESS
     );
 
-    return fromAtto(await STAKING.balance(toAtto(ogtAmount)));
+
+    return await STAKING.balance(ogtAmount);
   };
 
   const getLockedEntries = async (
@@ -465,8 +466,8 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
   };
 
   const getRewardsForOGT = async (
-    ogtAmount: number
-  ): Promise<number | void> => {
+    ogtAmount: BigNumber
+  ) => {
     if (!wallet || !signer) {
       return;
     }
