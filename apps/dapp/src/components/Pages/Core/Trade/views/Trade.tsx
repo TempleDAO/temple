@@ -5,8 +5,8 @@ import { TransactionSettingsModal } from 'components/TransactionSettingsModal/Tr
 
 import { SwapMode } from '../types';
 import { useSwapController } from '../use-swap-controller';
-
-import { formatNumberWithCommas } from 'utils/formatter';
+import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
+import { formatNumberWithCommas, formatNumber } from 'utils/formatter';
 
 import {
   SwapContainer,
@@ -18,6 +18,7 @@ import {
   Header,
   ErrorLabel,
 } from '../styles';
+import { ZERO } from 'utils/bigNumber';
 
 export const Trade = () => {
   const {
@@ -37,11 +38,13 @@ export const Trade = () => {
   const outputCryptoConfig =
     state.mode === SwapMode.Sell ? { ...state.outputConfig, onCryptoChange: handleSelectChange } : state.outputConfig;
 
+  const bigInputValue = getBigNumberFromString(state.inputValue || '0');
+  
   const isButtonDisabled =
     !state.isSlippageTooHigh &&
     (state.isTransactionPending ||
-      state.inputTokenBalance === 0 ||
-      Number(state.inputValue) > state.inputTokenBalance ||
+      state.inputTokenBalance.eq(ZERO) ||
+      bigInputValue.gt(state.inputTokenBalance) ||
       state.inputValue === '');
 
   return (
@@ -65,13 +68,13 @@ export const Trade = () => {
             placeholder="0"
             onHintClick={handleHintClick}
             min={0}
-            hint={`Balance: ${formatNumberWithCommas(state.inputTokenBalance)}`}
+            hint={`Balance: ${formatNumber(formatBigNumber(state.inputTokenBalance))}`}
           />
           <Spacer />
           <Input
             crypto={outputCryptoConfig}
-            value={formatNumberWithCommas(state.quoteValue)}
-            hint={`Balance: ${formatNumberWithCommas(state.outputTokenBalance)}`}
+            value={formatNumber(formatBigNumber(state.quoteValue))}
+            hint={`Balance: ${formatNumber(formatBigNumber(state.outputTokenBalance))}`}
             disabled
           />
           <InvertButton onClick={handleChangeMode} />

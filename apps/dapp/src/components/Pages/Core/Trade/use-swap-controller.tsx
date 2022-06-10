@@ -8,8 +8,9 @@ import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
 import { FRAX_SELL_DISABLED_IV_MULTIPLE } from 'providers/env';
 
-import { fromAtto, toAtto } from 'utils/bigNumber';
+import { fromAtto, toAtto, ZERO } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
 
 import { INITIAL_STATE, TOKENS_BY_MODE } from './constants';
 import { SwapMode } from './types';
@@ -104,7 +105,7 @@ export function useSwapController() {
     const numericValue = Number(value);
     dispatch({ type: 'changeInputValue', value: numericValue === 0 ? '' : value });
     if (!value) {
-      dispatch({ type: 'changeQuoteValue', value: 0 });
+      dispatch({ type: 'changeQuoteValue', value: ZERO });
     } else {
       const quote = await fetchQuote(numericValue);
       dispatch({ type: 'changeQuoteValue', value: quote });
@@ -224,7 +225,7 @@ export function useSwapController() {
     }
   };
 
-  const getTokenBalance = (token: TICKER_SYMBOL): number => {
+  const getTokenBalance = (token: TICKER_SYMBOL): BigNumber => {
     switch (token) {
       case TICKER_SYMBOL.FRAX:
         return balance.frax;
@@ -233,22 +234,22 @@ export function useSwapController() {
       case TICKER_SYMBOL.TEMPLE_TOKEN:
         return balance.temple;
       default:
-        return 0;
+        return ZERO;
     }
   };
 
-  const fetchQuote = async (value = 0): Promise<number> => {
+  const fetchQuote = async (value = 0): Promise<BigNumber> => {
     let quote: BigNumber = toAtto(value);
 
     if (state.mode === SwapMode.Buy && isTokenFraxOrFei(state.inputToken)) {
       const buyQuote = await getBuyQuote(toAtto(value), state.inputToken);
-      quote = buyQuote ?? BigNumber.from(0);
+      quote = buyQuote ?? ZERO;
     }
 
     if (state.mode === SwapMode.Sell && isTokenFraxOrFei(state.outputToken)) {
       const sellQuote = await getSellQuote(toAtto(value), state.outputToken);
 
-      quote = sellQuote ? sellQuote.amountOut : BigNumber.from(0);
+      quote = sellQuote ? sellQuote.amountOut : ZERO;
 
       const isPriceNearIv = templePrice < iv * FRAX_SELL_DISABLED_IV_MULTIPLE;
 
@@ -271,10 +272,10 @@ export function useSwapController() {
 
     if (!quote) {
       console.error("couldn't fetch quote");
-      return 0;
+      return ZERO;
     }
 
-    return fromAtto(quote);
+    return quote;
   };
 
   return {
