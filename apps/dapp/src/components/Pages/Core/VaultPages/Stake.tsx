@@ -152,7 +152,7 @@ export const Stake = () => {
     if (option === TEMPLE_AND_FAITH) {
       return (
         <>
-          Burn all your {TICKER_SYMBOL.FAITH} ({balances.faith}) and receive{' '}
+          Burn all your {TICKER_SYMBOL.FAITH} ({formatNumber(formatBigNumber(balances.faith))}) and receive{' '}
           {formatNumber(formatBigNumber(bonus))} bonus
           {TICKER_SYMBOL.TEMPLE_TOKEN}.
         </>
@@ -164,7 +164,7 @@ export const Stake = () => {
         <>
           Unstake {formatNumber(formatBigNumber(stakingAmountBigNumber))} {TICKER_SYMBOL.OG_TEMPLE_TOKEN} and deposit{' '}
           {formatNumber(formatBigNumber(temple))} {TICKER_SYMBOL.TEMPLE_TOKEN}.
-          Burn all your {TICKER_SYMBOL.FAITH} ({balances.faith}) and receive{' '}
+          Burn all your {TICKER_SYMBOL.FAITH} ({formatNumber(formatBigNumber(balances.faith))}) and receive{' '}
           {formatNumber(formatBigNumber(bonus))} bonus{' '}
           {TICKER_SYMBOL.TEMPLE_TOKEN}.
         </>
