@@ -103,7 +103,7 @@ export function useSwapController() {
   // Handles user input
   const handleInputChange = async (value: string) => {
     const bigValue = getBigNumberFromString(value || '0');
-    const isZero  = bigValue.eq(ZERO);
+    const isZero = bigValue.eq(ZERO);
     dispatch({ type: 'changeInputValue', value: isZero ? '' : value });
 
     if (isZero) {
@@ -126,7 +126,8 @@ export function useSwapController() {
   };
 
   const handleHintClick = () => {
-    handleInputChange(`${state.inputTokenBalance}`);
+    const amount = state.inputTokenBalance.eq(ZERO) ? '' : formatBigNumber(state.inputTokenBalance);
+    handleInputChange(amount);
   };
 
   const handleTxSettingsUpdate = (settings: TransactionSettings) => {
@@ -140,6 +141,7 @@ export function useSwapController() {
     dispatch({
       type: 'startTx',
     });
+
     if (state.mode === SwapMode.Buy) {
       await handleBuy();
     }
