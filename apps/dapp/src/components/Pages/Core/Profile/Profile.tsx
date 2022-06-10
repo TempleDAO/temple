@@ -75,16 +75,16 @@ const ProfilePage = () => {
   const totalEarned = totalBalancesAcrossVaults.sub(totalStakedAcrossAllVaults);
   const faithBalance = faith.usableFaith;
 
-  let lockedOGTempleBalance = 0;
+  let lockedOGTempleBalance = BigNumber.from(0);
 
   if (lockedEntries.length > 0) {
     lockedOGTempleBalance = lockedEntries.reduce((acc, entry) => {
-      acc.balanceOGTemple += entry.balanceOGTemple;
+      acc.add(entry.balanceOGTemple);
       return acc;
-    }).balanceOGTemple;
+    }, lockedOGTempleBalance);
   }
 
-  const hasLegacyTemple = !!lockedOGTempleBalance || !!faithBalance;
+  const hasLegacyTemple = lockedOGTempleBalance.eq(ZERO) || faithBalance.eq(ZERO);
 
   return (
     <PageWrapper>
