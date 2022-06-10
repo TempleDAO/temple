@@ -22,15 +22,15 @@ export enum ETH_ACTIONS {
 }
 
 export type Balance = {
-  frax: number;
-  fei: number;
-  temple: number;
-  ogTemple: number;
+  frax: BigNumber;
+  fei: BigNumber;
+  temple: BigNumber;
+  ogTemple: BigNumber;
 };
 
 export type FaithBalance = {
   lifeTimeFaith: number;
-  usableFaith: number;
+  usableFaith: BigNumber;
   totalSupply: number;
   share: number;
 };
