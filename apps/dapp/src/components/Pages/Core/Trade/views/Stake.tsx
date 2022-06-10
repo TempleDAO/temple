@@ -55,7 +55,10 @@ export const Stake = () => {
           isNumber
           value={stakeAmount}
           placeholder="0"
-          onHintClick={() => setStakeAmount(`${balance.temple}`)}
+          onHintClick={() => {
+            const amount = balance.temple.eq(ZERO) ? '' : formatBigNumber(balance.temple);
+            setStakeAmount(amount);
+          }}
           min={0}
           hint={`Balance: ${formatNumber(formatBigNumber(balance.temple))}`}
         />

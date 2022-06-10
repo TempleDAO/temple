@@ -54,7 +54,7 @@ export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance = 
             darken
           />
         </LegacyTempleArea>
-        {!!lockedOgTempleBalance && (
+        {lockedOgTempleBalance.gt(ZERO) && (
           <LegacyTempleArea>
             <Button
               label={`UNLOCK ${TICKER_SYMBOL.OG_TEMPLE_TOKEN}`}

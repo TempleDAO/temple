@@ -46,7 +46,10 @@ export const Unstake = () => {
           isNumber
           value={unstakeAmount}
           placeholder="0"
-          onHintClick={() => setUnstakeAmount(`${balance.ogTemple}`)}
+          onHintClick={() => {
+            const amount = balance.ogTemple.eq(ZERO) ? '' : formatBigNumber(balance.ogTemple);
+            setUnstakeAmount(amount);
+          }}
           min={0}
           hint={`Balance: ${formatNumber(formatBigNumber(balance.ogTemple))}`}
         />
