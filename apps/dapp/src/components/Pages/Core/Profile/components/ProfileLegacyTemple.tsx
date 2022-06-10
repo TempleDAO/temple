@@ -35,7 +35,7 @@ export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance = 
         onClose={() => setClaimPopoverOpen(false)}
         showCloseButton={false}
       >
-        <Unlock />
+        {/* <Unlock /> */}
       </Popover>
       <Container>
         <Subheading>Temple Legacy</Subheading>

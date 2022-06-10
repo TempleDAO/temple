@@ -6,7 +6,6 @@ import {
 import useRequestState from 'hooks/use-request-state';
 import { useWallet } from 'providers/WalletProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { toAtto } from 'utils/bigNumber';
 import { useStaking } from 'providers/StakingProvider';
 import { getBigNumberFromString } from 'components/Vault/utils';
 
