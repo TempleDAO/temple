@@ -63,8 +63,8 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
 
     let bigUsableFaith = ZERO;
     // Safeguard against calling toAtto on dust. We only count faith as having at least 1 whole Faith.
-    if (usableFaith >= 1) {
-      bigUsableFaith = toAtto(usableFaith);
+    if (useFaith) {
+      bigUsableFaith = usableFaith;
     }
 
     let expectedDepositAmount = bigAmount;

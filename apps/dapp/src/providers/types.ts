@@ -22,22 +22,22 @@ export enum ETH_ACTIONS {
 }
 
 export type Balance = {
-  frax: number;
-  fei: number;
-  temple: number;
-  ogTemple: number;
+  frax: BigNumber;
+  fei: BigNumber;
+  temple: BigNumber;
+  ogTemple: BigNumber;
 };
 
 export type FaithBalance = {
   lifeTimeFaith: number;
-  usableFaith: number;
+  usableFaith: BigNumber;
   totalSupply: number;
   share: number;
 };
 
 export interface LockedEntry {
   // OG_Temple balance
-  balanceOGTemple: number;
+  balanceOGTemple: BigNumber;
   // timestamp in milliseconds when balance can be unlocked
   lockedUntilTimestamp: number;
   // index in the contract mapping
@@ -87,7 +87,7 @@ export interface StakingService {
 
   claimOgTemple(lockedEntryIndex: number): Promise<void>;
 
-  getRewardsForOGT(ogtAmount: number): Promise<number | void>;
+  getRewardsForOGT(ogtAmount: BigNumber): Promise<BigNumber | void>;
 
   updateApy(): Promise<void>;
 }

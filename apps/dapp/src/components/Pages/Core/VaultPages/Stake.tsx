@@ -78,7 +78,6 @@ export const Stake = () => {
         return balances.ogTemple;
     }
     console.error(`Programming Error: ${option} not implemented.`);
-    return 0;
   };
 
   const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultProxyAllowance(ticker);
@@ -101,7 +100,7 @@ export const Stake = () => {
 
   const tokenBalance = getTokenBalanceForSelectedOption();
   const stakingAmountBigNumber = getBigNumberFromString(stakingAmount);
-  const bigTokenBalance = getBigNumberFromString(tokenBalance.toString());
+  const bigTokenBalance = tokenBalance!;
   const amountIsOutOfBounds = stakingAmountBigNumber.gt(bigTokenBalance) || stakingAmountBigNumber.lte(ZERO);
 
   const stakeButtonDisabled =
@@ -197,9 +196,9 @@ export const Stake = () => {
       <VaultInput
         tickerSymbol={ticker}
         handleChange={(value) => handleUpdateStakingAmount(value.toString())}
-        hint={`Balance: ${formatNumber(tokenBalance)}`}
+        hint={`Balance: ${formatNumber(formatBigNumber(tokenBalance!))}`}
         onHintClick={() => {
-          handleUpdateStakingAmount(tokenBalance.toString());
+          handleUpdateStakingAmount(formatBigNumber(tokenBalance!));
         }}
         isNumber
         placeholder="0.00"
@@ -266,16 +265,16 @@ const useStakeOptions = () => {
     { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: `${TICKER_SYMBOL.TEMPLE_TOKEN}` },
   ];
 
-  if (ogTemple > 0) {
+  if (ogTemple.gt(ZERO)) {
     options.push({ value: TICKER_SYMBOL.OG_TEMPLE_TOKEN, label: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN}` });
   }
 
-  if (usableFaith >= 1) {
-    if (temple > 0) {
+  if (usableFaith.gt(ZERO)) {
+    if (temple.gt(ZERO)) {
       options.push({ value: TEMPLE_AND_FAITH, label: `${TICKER_SYMBOL.TEMPLE_TOKEN} & ${TICKER_SYMBOL.FAITH}` });
     }
 
-    if (ogTemple > 0) {
+    if (ogTemple.gt(ZERO)) {
       options.push({ value: OG_TEMPLE_AND_FAITH, label: `${TICKER_SYMBOL.OG_TEMPLE_TOKEN} & ${TICKER_SYMBOL.FAITH}` });
     }
   }
@@ -283,14 +282,14 @@ const useStakeOptions = () => {
   const [option, setOption] = useState(options[0].value);
 
   useEffect(() => {
-    if (option === TICKER_SYMBOL.OG_TEMPLE_TOKEN && ogTemple === 0) {
+    if (option === TICKER_SYMBOL.OG_TEMPLE_TOKEN && ogTemple.eq(ZERO)) {
       // User deposited all of their OGTemple
       setOption(TICKER_SYMBOL.TEMPLE_TOKEN);
-    } else if (option === TEMPLE_AND_FAITH && usableFaith < 1) {
+    } else if (option === TEMPLE_AND_FAITH && usableFaith.eq(ZERO)) {
       // User burnt all their Faith with Temple
       setOption(TICKER_SYMBOL.TEMPLE_TOKEN);
-    } else if (option === OG_TEMPLE_AND_FAITH && usableFaith < 1) {
-      if (ogTemple > 0) {
+    } else if (option === OG_TEMPLE_AND_FAITH && usableFaith.eq(ZERO)) {
+      if (ogTemple.gt(ZERO)) {
         // User burnt all their faith with OGTemple but has remaining OGTemple
         setOption(TICKER_SYMBOL.OG_TEMPLE_TOKEN);
       } else {

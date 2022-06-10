@@ -4,7 +4,7 @@ import {
   createContext,
   PropsWithChildren,
 } from 'react';
-import { BigNumber, ethers, Signer } from 'ethers';
+import { BigNumber, Signer } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
 import { useNotification } from 'providers/NotificationProvider';
@@ -32,9 +32,11 @@ import {
   VITE_PUBLIC_CLAIM_FAITH_GAS_LIMIT,
 } from 'providers/env';
 
+import { ZERO } from 'utils/bigNumber';
+
 const INITIAL_STATE: FaithService = {
   faith: {
-    usableFaith: 0,
+    usableFaith: ZERO,
     lifeTimeFaith: 0,
     totalSupply: 0,
     share: 0,
@@ -69,13 +71,14 @@ export const FaithProvider = (props: PropsWithChildren<{}>) => {
     const totalSupply = await FAITH.totalSupply();
     const totalFaithSupply = fromAtto(totalSupply);
     const lifeTimeFaith = fromAtto(faithBalances.lifeTimeFaith);
-    const usableFaith = fromAtto(faithBalances.usableFaith);
+    const usableFaith = faithBalances.usableFaith;
 
     return {
       lifeTimeFaith: lifeTimeFaith,
       usableFaith: usableFaith,
       totalSupply: totalFaithSupply,
-      share: formatNumber((usableFaith * 100) / totalFaithSupply),
+      // TODO
+      share: formatNumber((fromAtto(usableFaith) * 100) / totalFaithSupply),
     };
   };
 

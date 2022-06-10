@@ -33,7 +33,7 @@ import env from 'constants/env';
 const STAT_CARD_HEIGHT = '5rem';
 
 const ProfilePage = () => {
-  const { getBalance, wallet, balance } = useWallet();
+  const { getBalance, wallet } = useWallet();
   const { faith } = useFaith();
   const { isLoading: vaultGroupsLoading, vaultGroups } = useListCoreVaultGroups();
   const { balances, isLoading: vaultGroupBalancesLoading } = useVaultGroupBalances(vaultGroups);
@@ -75,16 +75,16 @@ const ProfilePage = () => {
   const totalEarned = totalBalancesAcrossVaults.sub(totalStakedAcrossAllVaults);
   const faithBalance = faith.usableFaith;
 
-  let lockedOGTempleBalance = 0;
+  let lockedOGTempleBalance = BigNumber.from(0);
 
   if (lockedEntries.length > 0) {
     lockedOGTempleBalance = lockedEntries.reduce((acc, entry) => {
-      acc.balanceOGTemple += entry.balanceOGTemple;
+      acc.add(entry.balanceOGTemple);
       return acc;
-    }).balanceOGTemple;
+    }, lockedOGTempleBalance);
   }
 
-  const hasLegacyTemple = !!lockedOGTempleBalance || !!faithBalance;
+  const hasLegacyTemple = lockedOGTempleBalance.eq(ZERO) || faithBalance.eq(ZERO);
 
   return (
     <PageWrapper>
@@ -189,11 +189,18 @@ const ProfilePage = () => {
             </ProfileMeta>
           </ProfileOverview>
           <SectionWrapper>
-            <ProfileVaults isLoading={isLoading} vaultGroupBalances={balances} vaultGroups={vaultGroups} />
+            <ProfileVaults
+              isLoading={isLoading}
+              vaultGroupBalances={balances}
+              vaultGroups={vaultGroups}
+            />
           </SectionWrapper>
           {hasLegacyTemple && (
             <SectionWrapper>
-              <ProfileLegacyTemple lockedOgTempleBalance={lockedOGTempleBalance} faithBalance={faithBalance} />
+              <ProfileLegacyTemple
+                lockedOgTempleBalance={lockedOGTempleBalance}
+                faithBalance={faithBalance}
+              />
             </SectionWrapper>
           )}
         </>

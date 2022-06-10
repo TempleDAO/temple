@@ -96,7 +96,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
   const getRewardsForOGTemple = async (
     walletAddress: string,
     signerState: Signer,
-    ogtAmount: number
+    ogtAmount: BigNumber
   ) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
@@ -106,7 +106,8 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
       TEMPLE_STAKING_ADDRESS
     );
 
-    return fromAtto(await STAKING.balance(toAtto(ogtAmount)));
+
+    return await STAKING.balance(ogtAmount);
   };
 
   const getLockedEntries = async (
@@ -133,7 +134,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         return {
           // chain timestamp is in second => we need milli
           lockedUntilTimestamp: entry.LockedUntilTimestamp.toNumber() * 1000,
-          balanceOGTemple: fromAtto(entry.BalanceOGTemple),
+          balanceOGTemple: entry.BalanceOGTemple,
           index,
         };
       }
@@ -146,7 +147,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
     const newEntry = await ogLockedTempleNew.ogTempleLocked(walletAddress);
     lockedEntriesVals.push({
-      balanceOGTemple: fromAtto(newEntry.amount),
+      balanceOGTemple: newEntry.amount,
       lockedUntilTimestamp: newEntry.lockedUntilTimestamp.toNumber() * 1000,
       index: lockedEntriesVals.length,
     });
@@ -465,8 +466,8 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
   };
 
   const getRewardsForOGT = async (
-    ogtAmount: number
-  ): Promise<number | void> => {
+    ogtAmount: BigNumber
+  ) => {
     if (!wallet || !signer) {
       return;
     }

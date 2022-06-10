@@ -1,6 +1,6 @@
 import { createContext, PropsWithChildren, useContext, useState } from 'react';
 import { BigNumber, Signer } from 'ethers';
-import { useAccount, useSigner, useNetwork, useProvider, useConnect } from 'wagmi';
+import { useAccount, useSigner, useNetwork, useConnect } from 'wagmi';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
 import { useNotification } from 'providers/NotificationProvider';
@@ -8,7 +8,7 @@ import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { ClaimType } from 'enums/claim-type';
 import { TEAM_PAYMENTS_EPOCHS, TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH } from 'enums/team-payment';
-import { fromAtto, toAtto } from 'utils/bigNumber';
+import { toAtto } from 'utils/bigNumber';
 import { asyncNoop, noop } from 'utils/helpers';
 import { WalletState, Balance } from 'providers/types';
 import {
@@ -20,6 +20,7 @@ import {
   ERC20,
 } from 'types/typechain';
 import { TEMPLE_ADDRESS, FRAX_ADDRESS, TEMPLE_STAKING_ADDRESS, FEI_ADDRESS } from 'providers/env';
+import { ZERO } from 'utils/bigNumber';
 
 // We want to save gas burn $ for the Templars,
 // so we approving 1M up front, so only 1 approve TXN is required for approve
@@ -27,10 +28,10 @@ const DEFAULT_ALLOWANCE = toAtto(100000000);
 
 const INITIAL_STATE: WalletState = {
   balance: {
-    frax: 0,
-    fei: 0,
-    temple: 0,
-    ogTemple: 0,
+    frax: ZERO,
+    fei: ZERO,
+    temple: ZERO,
+    ogTemple: ZERO,
   },
   wallet: null,
   isConnected: false,
@@ -90,14 +91,14 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
     const feiBalance: BigNumber = await feiContract.balanceOf(walletAddress);
 
-    const ogTemple = fromAtto(await OG_TEMPLE_CONTRACT.balanceOf(walletAddress));
-    const temple = fromAtto(await templeContract.balanceOf(walletAddress));
+    const ogTemple = await OG_TEMPLE_CONTRACT.balanceOf(walletAddress);
+    const temple = await templeContract.balanceOf(walletAddress);
 
     return {
-      frax: fromAtto(fraxBalance),
-      fei: fromAtto(feiBalance),
+      frax: fraxBalance,
+      fei: feiBalance,
       temple: temple,
-      ogTemple: ogTemple >= 1 ? ogTemple : 0,
+      ogTemple: ogTemple, // >= 1 ? ogTemple : 0,
     };
   };
 

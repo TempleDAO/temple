@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { BigNumber } from 'ethers';
 
 import { tabletAndAbove } from 'styles/breakpoints';
 
@@ -16,13 +17,14 @@ import { Container, Subheading } from '../styles';
 import { formatTemple } from 'components/Vault/utils';
 import { Popover } from 'components/Popover';
 import { Unlock } from 'components/AMM/Unlock';
+import { ZERO } from 'utils/bigNumber';
 
 interface IProps {
-  lockedOgTempleBalance?: number;
-  faithBalance?: number;
+  lockedOgTempleBalance?: BigNumber;
+  faithBalance?: BigNumber;
 }
 
-export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance = 0, faithBalance = 0 }) => {
+export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance = ZERO, faithBalance = ZERO }) => {
   const [isClaimPopoverOpen, setClaimPopoverOpen] = useState(false);
 
   return (
@@ -52,7 +54,7 @@ export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance = 
             darken
           />
         </LegacyTempleArea>
-        {!!lockedOgTempleBalance && (
+        {lockedOgTempleBalance.gt(ZERO) && (
           <LegacyTempleArea>
             <Button
               label={`UNLOCK ${TICKER_SYMBOL.OG_TEMPLE_TOKEN}`}

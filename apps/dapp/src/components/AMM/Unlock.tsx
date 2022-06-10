@@ -46,7 +46,10 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
           </Tooltip>
         </TooltipPadding>
       </TitleWrapper>
-      <ClaimOGTemple lockedEntries={lockedEntries} onClaim={handleClaimOgTemple} />
+      <ClaimOGTemple
+        lockedEntries={lockedEntries}
+        onClaim={handleClaimOgTemple}
+      />
       <Flex
         layout={{
           kind: 'container',

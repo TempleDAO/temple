@@ -14,7 +14,6 @@ import NotificationManager from 'components/Notification/NotificationManager';
 import PageLayout from 'components/Layouts/Page';
 import Loader from 'components/Loader/Loader';
 
-import Home from 'components/Pages/Home';
 import Disclaimer from 'components/Pages/Disclaimer';
 
 import CoreLayout from 'components/Layouts/CoreLayout';
@@ -33,8 +32,6 @@ import Timing from 'components/Pages/Core/VaultPages/Timing';
 import env from 'constants/env';
 
 // Separate Chunks
-const AmmSpaRoot = React.lazy(() => import('components/Pages/AMM'));
-const DAppRoot = React.lazy(() => import('components/Pages/DAppRoot'));
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
 const FaithAirdrop = React.lazy(() => import('components/Pages/FaithAirdrop'));
 const Claim = React.lazy(() => import('components/Pages/Claim'));
