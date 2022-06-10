@@ -4,10 +4,11 @@ import styled from 'styled-components';
 import { useWallet } from 'providers/WalletProvider';
 import { Input } from 'components/Input/Input';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { formatNumberWithCommas } from 'utils/formatter';
 import { useUnstakeOGTemple } from 'hooks/core/use-unstake-ogtemple';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
-import Loader from 'components/Loader/Loader';
+import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
+import { ZERO } from 'utils/bigNumber';
+import { formatNumber } from 'utils/formatter';
 
 import { Header, CtaButton } from '../styles';
 
@@ -29,8 +30,8 @@ export const Unstake = () => {
     }
   };
 
-  const numberAmount = parseFloat(unstakeAmount || '0');
-  const buttonIsDisabled = unstakeLoading || !unstakeAmount || balance.ogTemple <= 0 || numberAmount > balance.ogTemple;
+  const bigAmount = getBigNumberFromString(unstakeAmount || '0');
+  const buttonIsDisabled = unstakeLoading || !unstakeAmount || balance.ogTemple.lte(ZERO)|| bigAmount.gt(balance.ogTemple);
 
   return (
     <>
@@ -47,10 +48,13 @@ export const Unstake = () => {
           placeholder="0"
           onHintClick={() => setUnstakeAmount(`${balance.ogTemple}`)}
           min={0}
-          hint={`Balance: ${formatNumberWithCommas(balance.ogTemple)}`}
+          hint={`Balance: ${formatNumber(formatBigNumber(balance.ogTemple))}`}
         />
       </InputWrapper>
-      <CtaButton disabled={buttonIsDisabled} onClick={() => unstake(numberAmount)}>
+      <CtaButton
+        disabled={buttonIsDisabled}
+        onClick={() => unstake(unstakeAmount)}
+      >
         Unstake {TICKER_SYMBOL.OG_TEMPLE_TOKEN}
       </CtaButton>
     </>
