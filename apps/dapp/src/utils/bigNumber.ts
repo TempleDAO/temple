@@ -8,16 +8,7 @@ export const fromAtto = (bn: BigNumber): number => {
 };
 
 export const toAtto = (n: number): BigNumber => {
-  const numberString = n.toString();
-  if (numberString.includes('e-')) {
-    const [a, _] = numberString.split('e-');
-    const num = a.split('.').join('');
-    const big = parseUnits(num, 'wei');
-
-    return big;
-  }
-
-  return parseEther(numberString);
+  return parseEther(n.toString());
 };
 
 export const ZERO = Object.freeze(BigNumber.from(0));
