@@ -189,11 +189,18 @@ const ProfilePage = () => {
             </ProfileMeta>
           </ProfileOverview>
           <SectionWrapper>
-            <ProfileVaults isLoading={isLoading} vaultGroupBalances={balances} vaultGroups={vaultGroups} />
+            <ProfileVaults
+              isLoading={isLoading}
+              vaultGroupBalances={balances}
+              vaultGroups={vaultGroups}
+            />
           </SectionWrapper>
           {hasLegacyTemple && (
             <SectionWrapper>
-              <ProfileLegacyTemple lockedOgTempleBalance={lockedOGTempleBalance} faithBalance={faithBalance} />
+              <ProfileLegacyTemple
+                lockedOgTempleBalance={lockedOGTempleBalance}
+                faithBalance={faithBalance}
+              />
             </SectionWrapper>
           )}
         </>
