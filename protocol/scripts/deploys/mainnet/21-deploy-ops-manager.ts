@@ -34,20 +34,20 @@ async function main() {
         DEPLOYED = DEPLOYED_CONTRACTS[network.name];
     }
 
-    const joiningFeeFactory = await new JoiningFee__factory(owner)
+    const joiningFeeFactory = new JoiningFee__factory(owner)
     const joiningFee: JoiningFee = await deployAndMine("Joining Fee", 
                 joiningFeeFactory, 
                 joiningFeeFactory.deploy, 
                 toAtto(0.0001) //TODO - what is our default joining fee?
         )
 
-    const opsManagerLibFactory = await new OpsManagerLib__factory(owner) //await (await ethers.getContractFactory("OpsManagerLib")).connect(owner);
+    const opsManagerLibFactory = new OpsManagerLib__factory(owner) //await (await ethers.getContractFactory("OpsManagerLib")).connect(owner);
     const opsManagerLib: OpsManagerLib = await deployAndMine("Ops Manager Lib", 
                 opsManagerLibFactory, 
                 opsManagerLibFactory.deploy
         )
 
-    const opsManagerFactory = await new OpsManager__factory({ "contracts/core/OpsManagerLib.sol:OpsManagerLib" : opsManagerLib.address }, owner)
+    const opsManagerFactory = new OpsManager__factory({ "contracts/core/OpsManagerLib.sol:OpsManagerLib" : opsManagerLib.address }, owner)
     const opsManager: OpsManager = await deployAndMine("Ops Manager", 
                 opsManagerFactory, 
                 opsManagerFactory.deploy,
@@ -55,7 +55,7 @@ async function main() {
                 joiningFee.address
         )
 
-    const templeStaking = await new TempleStaking__factory(owner).attach(DEPLOYED.STAKING);
+    const templeStaking = new TempleStaking__factory(owner).attach(DEPLOYED.STAKING);
 
     const vaultProxyFactory = await new VaultProxy__factory(owner);
     const vaultProxy: VaultProxy = await deployAndMine("Vault Proxy",
