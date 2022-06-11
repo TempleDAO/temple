@@ -1,10 +1,9 @@
-import { BigNumber, ContractTransaction } from 'ethers';
+import { ContractTransaction } from 'ethers';
 
 import {
   TempleERC20Token__factory,
   VaultProxy__factory,
 } from 'types/typechain';
-import { toAtto } from 'utils/bigNumber';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 import { useNotification } from 'providers/NotificationProvider';
@@ -18,6 +17,7 @@ import { useGetZappedAssetValue } from './use-get-zapped-asset-value';
 import { getBigNumberFromString } from 'components/Vault/utils';
 import { ZERO } from 'utils/bigNumber';
 import { createTokenFactoryInstance } from './use-token-vault-proxy-allowance';
+import { formatJoiningFee } from 'components/Vault/utils';
 
 const ENV = import.meta.env;
 
@@ -74,8 +74,6 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
       const response = await getZappedAssetValue(ticker, amount, useFaith)!;
       expectedDepositAmount = response!.total;
     }
-
-    const fee = await getVaultJoiningFee() || ZERO;
     
     // Deposit through vault proxy.
     let tx: ContractTransaction;
@@ -99,7 +97,10 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
 
     await tx.wait();
 
-    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Increase, expectedDepositAmount.sub(fee));
+    const fee = await getVaultJoiningFee() || ZERO;
+    const totalFee = formatJoiningFee(expectedDepositAmount, fee);
+
+    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Increase, expectedDepositAmount.sub(totalFee));
 
     openNotification({
       title: 'Deposit success',
