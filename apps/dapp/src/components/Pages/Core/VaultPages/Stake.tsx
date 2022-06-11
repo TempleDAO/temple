@@ -22,7 +22,7 @@ import { useFaith } from 'providers/FaithProvider';
 import { useGetZappedAssetValue } from 'hooks/core/use-get-zapped-asset-value';
 import EllipsisLoader from 'components/EllipsisLoader';
 import { ZERO } from 'utils/bigNumber';
-import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
+import { getBigNumberFromString, formatBigNumber, formatJoiningFee } from 'components/Vault/utils';
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
@@ -51,7 +51,7 @@ export const Stake = () => {
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
   const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, async () => {
     refreshBalance();
-    await refreshWalletState();
+    refreshWalletState();
   });
 
   const getTickerFromSelectOption = () => {
@@ -174,7 +174,40 @@ export const Stake = () => {
     return null;
   };
 
+  const getJoiningFeeMessage = (): ReactNode => {
+    if (amountIsOutOfBounds || joiningFee === null) {
+      return null;
+    }
+
+    let depositAmount = stakingAmountBigNumber;
+    if (option !== TICKER_SYMBOL.TEMPLE_TOKEN) {
+      // If the option is not TEMPLE then we need to use the result from the zap request.
+      if (zapArgs?.[0] !== ticker || zapArgs?.[1] !== stakingAmount || !zappedAssetValue) {
+        // Zap request is pending.
+        return null;
+      }
+      // the deposit amount is the total zapped temple + bonuses.
+      depositAmount = zappedAssetValue.total;
+    } 
+
+    return (
+      <JoiningFee>
+        <Tooltip
+          content={
+            'The Joining Fee is meant to offset compounded earnings received by late joiners. ' +
+            'The fee increases the further we are into the joining period.'
+          }
+          inline
+        >
+          Joining Fee{' '}
+        </Tooltip>
+        : {formatNumber(formatBigNumber(formatJoiningFee(depositAmount, joiningFee)))} $T
+      </JoiningFee>
+    );
+  };
+
   const zapMessage = getZapMessage();
+  const joiningFeeMessage = getJoiningFeeMessage();
 
   return (
     <VaultContent>
@@ -205,17 +238,7 @@ export const Stake = () => {
         value={stakingAmount}
       />
       {!!zapMessage && <AmountInTemple>{zapMessage}</AmountInTemple>}
-      {joiningFee !== null && !amountIsOutOfBounds && (
-        <JoiningFee>
-          <Tooltip
-            content="The Joining Fee is meant to offset compounded earnings received by late joiners. The fee increases the further we are into the joining period."
-            inline
-          >
-            Joining Fee{' '}
-          </Tooltip>
-          : {formatBigNumber(joiningFee.mul(stakingAmountBigNumber))} $T
-        </JoiningFee>
-      )}
+      {joiningFeeMessage}
       {<ErrorLabel>{error}</ErrorLabel>}
       {allowance === 0 && (
         <VaultButton

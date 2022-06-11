@@ -1,10 +1,11 @@
-import { differenceInSeconds, addSeconds, subSeconds, format } from 'date-fns';
+import { differenceInSeconds, addSeconds } from 'date-fns';
 import { millify } from 'millify';
 import { BigNumber } from 'ethers';
 import { parseUnits, formatUnits } from 'ethers/lib/utils';
 
 import { GraphVault, GraphVaultGroup } from 'hooks/core/types';
-import { fromAtto, toAtto } from 'utils/bigNumber';
+import { formatNumber } from 'utils/formatter';
+import { fromAtto } from 'utils/bigNumber';
 import { Vault, VaultGroup, MarkerType, Marker } from './types';
 import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
@@ -213,4 +214,8 @@ export const getBigNumberFromString = (number: string) => {
 
 export const formatBigNumber = (number: BigNumber) => {
   return formatUnits(number, 18);
+};
+
+export const formatJoiningFee = (stakeAmount: BigNumber, joiningFee: BigNumber) => {
+  return joiningFee.mul(stakeAmount).div('1000000000000000000');
 };

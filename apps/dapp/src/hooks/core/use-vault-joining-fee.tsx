@@ -4,7 +4,6 @@ import {
   Vault__factory,
   JoiningFee__factory,
 } from 'types/typechain';
-import { fromAtto } from 'utils/bigNumber';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 import { Vault } from 'components/Vault/types';
