@@ -38,7 +38,7 @@ export const Stake = () => {
 
   const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] =
     useVaultJoiningFee(vault);
-  
+
   const joiningFee = !isConnected || joiningFeeLoading || !joiningFeeResponse ? null : joiningFeeResponse;
 
   useEffect(() => {
@@ -153,7 +153,7 @@ export const Stake = () => {
       return (
         <>
           Burn all your {TICKER_SYMBOL.FAITH} ({formatNumber(formatBigNumber(balances.faith))}) and receive{' '}
-          {formatNumber(formatBigNumber(bonus))} bonus
+          {formatNumber(formatBigNumber(bonus))} bonus{' '}
           {TICKER_SYMBOL.TEMPLE_TOKEN}.
         </>
       );
