@@ -16,7 +16,6 @@ import {
   DEPLOYED_CONTRACTS,
   DeployedContracts,
   ensureExpectedEnvvars,
-  toAtto,
   mine,
   blockTimestamp
 } from "../helpers";
@@ -38,7 +37,7 @@ async function main() {
     const joiningFee: JoiningFee = await deployAndMine("Joining Fee", 
                 joiningFeeFactory, 
                 joiningFeeFactory.deploy, 
-                toAtto(0.0001) //TODO - what is our default joining fee?
+                15941331320609
         )
 
     const opsManagerLibFactory = new OpsManagerLib__factory(owner) //await (await ethers.getContractFactory("OpsManagerLib")).connect(owner);
