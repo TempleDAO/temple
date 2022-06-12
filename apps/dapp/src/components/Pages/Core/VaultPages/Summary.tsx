@@ -13,7 +13,7 @@ import EllipsisLoader from 'components/EllipsisLoader';
 
 export const Summary = () => {
   const navigate = useNavigate();
-  const { vaultGroup, activeVault } = useVaultContext();
+  const { vaultGroup } = useVaultContext();
   const { response, isLoading } = useVaultMetrics();
 
   const onClickLink = (e: SyntheticEvent) => {
