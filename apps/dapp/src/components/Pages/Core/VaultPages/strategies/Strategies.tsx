@@ -70,7 +70,7 @@ export const strategies: Record<string, JSX.Element> = {
       </P>
     </StrategyContainer>
   ),
-  '1mo-frax3crv': (
+  '1m-core': (
     <StrategyContainer>
       <P>
         <Section>Primary</Section>
