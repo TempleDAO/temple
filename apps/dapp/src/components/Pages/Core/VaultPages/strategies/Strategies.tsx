@@ -38,7 +38,7 @@ export const strategies: Record<string, JSX.Element> = {
       <P>
         <Section>Bonuses</Section>
         <ul>
-          <li>Auto-compunding for long term stakers</li>
+          <li>Auto-compounding for long term stakers</li>
           <li>veFXS bribes</li>
           <li>Boosted yield through max-locking veFXS</li>
         </ul>
@@ -88,7 +88,7 @@ export const strategies: Record<string, JSX.Element> = {
       <P>
         <Section>Bonuses</Section>
         <ul>
-          <li>Auto-compunding for long term stakers</li>
+          <li>Auto-compounding for long term stakers</li>
           <li>veFXS bribes</li>
           <li>Boosted yield through max-locking veFXS</li>
         </ul>
