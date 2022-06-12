@@ -20,7 +20,6 @@ export const Summary = () => {
     e.preventDefault();
     navigate(`/dapp/vaults/${vaultGroup.id}/strategy`);
   };
-  console.log(response, activeVault.id)
 
   const tvl = response?.data?.metrics[0]?.tvlUSD;
 
