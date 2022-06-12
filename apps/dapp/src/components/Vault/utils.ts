@@ -210,10 +210,10 @@ export const formatTemple = (templeValue: Nullable<number | BigNumber>) => {
 
 export const getBigNumberFromString = (number: string) => {
   try{
-    const b =  parseUnits(number || '0', 18);
-    return b;
+    const bigNumber =  parseUnits(number || '0', 18);
+    return bigNumber;
   }catch(err){
-    console.error(err.message)
+    console.error((err as Error).message)
     return ZERO
   }
 };
