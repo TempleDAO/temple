@@ -9,6 +9,7 @@ import {
   SubGraphQuery,
   GetVaultGroupsResponse,
   GetVaultGroupResponse,
+  GetMetricsResponse,
 } from './types'
 
 const createVaultUserFragment = (walletAddress = '') => {
@@ -103,6 +104,25 @@ const createVaultGroupQuery = (vaultGroupId: string, walletAddress = ''): SubGra
     }
   }`,
 });
+
+export const useVaultMetrics = () => {
+  const [request, resp] = useSubgraphRequest<GetMetricsResponse>(
+    env.subgraph.templeCore,
+    {
+      query: `{
+        metrics {
+          tvlUSD
+        }
+      }`,
+    },
+  );
+
+  useEffect(() => {
+    request();
+  }, [request]);
+
+  return resp;
+};
 
 export const useListCoreVaultGroups = () => {
   const { wallet, isConnecting } = useWallet();
