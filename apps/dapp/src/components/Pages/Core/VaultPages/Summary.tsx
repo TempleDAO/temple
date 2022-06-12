@@ -37,7 +37,7 @@ export const Summary = () => {
       </Text2>
       <Text3>
         <>
-          TVL:{' '}<>{(isLoading || !tvl) ? <EllipsisLoader /> : formatNumberWithCommas(tvl)}</>{' '}
+          TVL:{' '}<>{(isLoading || !tvl) ? <EllipsisLoader /> : `$${formatNumberWithCommas(tvl)}`}</>{' '}
           {!!tvl && (
             <Tooltip
               content="Total Value Locked for this vault"
