@@ -8,12 +8,14 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberWithCommas } from 'utils/formatter';
 import VaultContent from './VaultContent';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
-import { useVaultMetrics} from 'hooks/core/subgraph';
+import { useVaultMetrics } from 'hooks/core/subgraph';
 import EllipsisLoader from 'components/EllipsisLoader';
+import { ZERO } from 'utils/bigNumber';
+import { formatTemple } from 'components/Vault/utils';
 
 export const Summary = () => {
   const navigate = useNavigate();
-  const { vaultGroup } = useVaultContext();
+  const { vaultGroup, balances } = useVaultContext();
   const { response, isLoading } = useVaultMetrics();
 
   const onClickLink = (e: SyntheticEvent) => {
@@ -22,33 +24,29 @@ export const Summary = () => {
   };
 
   const tvl = response?.data?.metrics[0]?.tvlUSD;
-
+  let earningsTotal = ZERO;
+  let depositTotal = ZERO;
+  vaultGroup.vaults.forEach((vault) => {
+    const vaultBalance = balances[vault.id] || {};
+    if (!vaultBalance.staked) return;
+    earningsTotal = earningsTotal.add(vaultBalance?.balance?.sub(vaultBalance?.staked!)!);
+    depositTotal = depositTotal.add(vaultBalance?.staked!);
+  });
   return (
     <VaultContent>
       <Title>1 MONTH</Title>
-      <Text2
-        light
-        as="a"
-        href={`/dapp/vaults/${vaultGroup.id}/strategy`}
-        onClick={onClickLink}
-      >
-        1 Month Vault
-      </Text2>
       <Text3>
         <>
-          TVL:{' '}<>{(isLoading || !tvl) ? <EllipsisLoader /> : `$${formatNumberWithCommas(tvl)}`}</>{' '}
+          TVL: <>{isLoading || !tvl ? <EllipsisLoader /> : `$${formatNumberWithCommas(tvl)}`}</>{' '}
           {!!tvl && (
-            <Tooltip
-              content="Total Value Locked for this vault"
-              inline={true}
-            >
+            <Tooltip content="Total Value Locked for this vault" inline={true}>
               ⓘ
             </Tooltip>
           )}
         </>
       </Text3>
       <Text3>
-        Projected APY: 18% {' '}
+        Projected APY: 18%{' '}
         <Tooltip
           content={`Projected Annual Percentage Yield, if you were to lock a single ${TICKER_SYMBOL.TEMPLE_TOKEN} token right now.`}
           inline={true}
@@ -56,6 +54,14 @@ export const Summary = () => {
           ⓘ
         </Tooltip>
       </Text3>
+      {depositTotal.gt(ZERO) ? (
+        <>
+          <Text3 light> Deposits: {formatTemple(depositTotal)} $TEMPLE </Text3>
+          <Text3 light> Earned: {formatTemple(earningsTotal)} $TEMPLE </Text3>
+        </>
+      ) : (
+        <Text3 light>Deposit TEMPLE to start earning</Text3>
+      )}
     </VaultContent>
   );
 };
@@ -86,8 +92,7 @@ const Text2 = styled.p<{ light?: boolean }>`
   font-size: 1.5rem;
   text-align: center;
   letter-spacing: 0.05em;
-  color: ${({ theme, light }) =>
-    light ? theme.palette.brandLight : theme.palette.brand};
+  color: ${({ theme, light }) => (light ? theme.palette.brandLight : theme.palette.brand)};
   text-shadow: ${COLOR_PERCENTAGE_TEXT_SHADOW};
 `;
 
@@ -98,6 +103,5 @@ const Text3 = styled.div<{ light?: boolean }>`
 
   font-size: 1.5rem;
   text-shadow: ${COLOR_PERCENTAGE_TEXT_SHADOW};
-  color: ${({ theme, light }) =>
-    light ? theme.palette.brandLight : theme.palette.brand};
+  color: ${({ theme, light }) => (light ? theme.palette.brandLight : theme.palette.brand)};
 `;
