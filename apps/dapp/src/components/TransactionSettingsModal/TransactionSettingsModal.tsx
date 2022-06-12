@@ -28,7 +28,7 @@ export const TransactionSettingsModal: React.FC<IProps> = ({
   isOpen,
   onClose,
   onChange,
-  defaultSlippage = 0.5,
+  defaultSlippage = 1.0,
   minSlippage = 0.1,
   maxSlippage = 100,
   defaultDeadline = 20,
