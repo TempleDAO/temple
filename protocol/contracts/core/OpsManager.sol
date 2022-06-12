@@ -65,7 +65,7 @@ contract OpsManager is Ownable {
         string memory symbol,
         uint256 periodDuration,
         uint256 enterExitWindowDuration,
-        Rational memory shareBoostFactory,
+        Rational memory shareBoostFactor,
         uint256 firstPeriodStartTimestamp
     ) external onlyOwner {
         Vault vault = new Vault(
@@ -76,7 +76,7 @@ contract OpsManager is Ownable {
             address(vaultedTemple),
             periodDuration,
             enterExitWindowDuration,
-            shareBoostFactory,
+            shareBoostFactor,
             joiningFee,
             firstPeriodStartTimestamp
         );

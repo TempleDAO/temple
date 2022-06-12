@@ -3,15 +3,7 @@ import { ethers, network } from "hardhat";
 import {
   OpsManager,
   OpsManager__factory,
-  JoiningFee,
-  JoiningFee__factory,
-  VaultProxy,
-  VaultProxy__factory,
-  TempleStaking__factory,
-  OpsManagerLib,
-  OpsManagerLib__factory,
   VaultedTemple__factory,
-  VaultedTemple,
 } from "../../../typechain";
 import {
   deployAndMine,
