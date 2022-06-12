@@ -2,11 +2,11 @@
     "network": "mainnet",
     "hasScheduler": true,
     "opsManager": {
-        "address": "0x3B2c570Eb08a84fCC275F7c5A67A648Fa86cBEB4",
-        "startBlock": "10739526"
+        "address": "0x65fE8BaBF7DA367b2B45cBD748F0490713f84828",
+        "startBlock": "14948085"
     },
     "hourlyScheduler": {
         "address": "0x61eB091ea16A32ea5B880d0b3D09d518c340D750",
-        "startBlock": "10739526"
+        "startBlock": "14948085"
     }
 }
