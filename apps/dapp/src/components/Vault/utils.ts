@@ -5,7 +5,7 @@ import { parseUnits, formatUnits } from 'ethers/lib/utils';
 
 import { GraphVault, GraphVaultGroup } from 'hooks/core/types';
 import { formatNumber } from 'utils/formatter';
-import { fromAtto } from 'utils/bigNumber';
+import { fromAtto, ZERO } from 'utils/bigNumber';
 import { Vault, VaultGroup, MarkerType, Marker } from './types';
 import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
@@ -209,7 +209,16 @@ export const formatTemple = (templeValue: Nullable<number | BigNumber>) => {
 };
 
 export const getBigNumberFromString = (number: string) => {
-  return parseUnits(number || '0', 18);
+  // make sure number doesn't have more than 18 decimals
+  let [int, decimals] = (number || '0').split('.');
+
+  if (decimals && decimals.length > 18) {
+    decimals = decimals.substring(0, 18);
+  }
+  const fixedNumber = decimals ? `${int}.${decimals}` : int;
+  const bigNumber = parseUnits(fixedNumber, 18);
+
+  return bigNumber;
 };
 
 export const formatBigNumber = (number: BigNumber) => {
