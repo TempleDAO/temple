@@ -20,14 +20,14 @@ export const Summary = () => {
 
   return (
     <VaultContent>
-      <Title>30 MIN</Title>
+      <Title>1 MONTH</Title>
       <Text2
         light
         as="a"
         href={`/dapp/vaults/${vaultGroup.id}/strategy`}
         onClick={onClickLink}
       >
-        30 MINUTE TEST VAULT
+        1 Month Vault
       </Text2>
 
       <Text3>
@@ -41,9 +41,9 @@ export const Summary = () => {
       </Text3>
 
       <Text3>
-        Projected APY: 30% {' '}
+        Projected APY: 18% {' '}
         <Tooltip
-          content={`Annual Percentage Yield, if you were to lock a single ${TICKER_SYMBOL.TEMPLE_TOKEN} token right now.`}
+          content={`Projected Annual Percentage Yield, if you were to lock a single ${TICKER_SYMBOL.TEMPLE_TOKEN} token right now.`}
           inline={true}
         >
           ⓘ

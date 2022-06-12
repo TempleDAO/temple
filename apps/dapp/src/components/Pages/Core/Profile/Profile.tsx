@@ -79,12 +79,12 @@ const ProfilePage = () => {
 
   if (lockedEntries.length > 0) {
     lockedOGTempleBalance = lockedEntries.reduce((acc, entry) => {
-      acc.add(entry.balanceOGTemple);
+      acc = acc.add(entry.balanceOGTemple);
       return acc;
     }, lockedOGTempleBalance);
   }
 
-  const hasLegacyTemple = lockedOGTempleBalance.eq(ZERO) || faithBalance.eq(ZERO);
+  const hasLegacyTemple = lockedOGTempleBalance.gt(ZERO) || faithBalance.gt(ZERO);
 
   return (
     <PageWrapper>
