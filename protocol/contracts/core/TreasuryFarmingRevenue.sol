@@ -6,8 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Exposure.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title Account for revenue earned from farming temple's Treasury
  *

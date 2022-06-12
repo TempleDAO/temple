@@ -212,6 +212,17 @@ describe("Temple Core Ops Manager", async () => {
     expect(await exposure.liquidator()).equals(noopLiquidator.address);
   })
 
+  it("Can withdraw temple from shared vault", async () => {
+    const vaultedTemple = new VaultedTemple__factory(owner).attach(await opsManager.vaultedTemple());
+
+    templeToken.mint(vaultedTemple.address, toAtto(100));
+    await expect(vaultedTemple.connect(alan).withdraw(templeToken.address, await alan.getAddress(), toAtto(100)))
+      .to.revertedWith("Ownable: caller is not the owner")
+
+    await expect(async () => vaultedTemple.withdraw(templeToken.address, await owner.getAddress(), toAtto(100)))
+      .to.changeTokenBalance(templeToken, owner, toAtto(100))
+  })
+
   it("Can successfully set minter state for an exposure", async () => {
     // create two exposures as a result of our farming activities
     const fxsExposureAddr = (await extractEvent(await opsManager.createExposure(

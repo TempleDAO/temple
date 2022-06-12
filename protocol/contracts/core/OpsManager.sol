@@ -25,7 +25,10 @@ contract OpsManager is Ownable {
     Exposure public templeExposure;
     VaultedTemple public vaultedTemple;
 
-    constructor(IERC20 _templeToken, JoiningFee _joiningFee) {
+    constructor(
+        IERC20 _templeToken, 
+        JoiningFee _joiningFee
+    ) {
         templeToken = _templeToken;
         joiningFee = _joiningFee;
 
@@ -33,6 +36,7 @@ contract OpsManager is Ownable {
         templeExposure.setMinterState(address(this), true);
         vaultedTemple = new VaultedTemple(_templeToken, address(templeExposure));
         templeExposure.setLiqidator(vaultedTemple);
+        vaultedTemple.transferOwnership(msg.sender);
     }
 
     /**
@@ -61,7 +65,7 @@ contract OpsManager is Ownable {
         string memory symbol,
         uint256 periodDuration,
         uint256 enterExitWindowDuration,
-        Rational memory shareBoostFactory,
+        Rational memory shareBoostFactor,
         uint256 firstPeriodStartTimestamp
     ) external onlyOwner {
         Vault vault = new Vault(
@@ -72,7 +76,7 @@ contract OpsManager is Ownable {
             address(vaultedTemple),
             periodDuration,
             enterExitWindowDuration,
-            shareBoostFactory,
+            shareBoostFactor,
             joiningFee,
             firstPeriodStartTimestamp
         );
@@ -91,7 +95,7 @@ contract OpsManager is Ownable {
         require(address(pools[exposureToken]) != address(0), "No exposure/revenue farming pool for the given ERC20 Token");
 
         for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid/inactive vault in array");
+            require(activeVaults[address(vaults[i])], "OpsManager: invalid/inactive vault in array");
             OpsManagerLib.rebalance(vaults[i], pools[exposureToken]);
         }
     }
@@ -127,7 +131,7 @@ contract OpsManager is Ownable {
         require(vaults.length == amountsTemple.length, "vaults and amounts array must be the same length");
 
         for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid vault in array");
+            require(activeVaults[address(vaults[i])], "OpsManager: invalid vault in array");
             templeExposure.mint(address(vaults[i]), amountsTemple[i]);
         }
     }
@@ -145,7 +149,7 @@ contract OpsManager is Ownable {
         }
 
         for (uint256 i = 0; i < vaults.length; i++) {
-            require(activeVaults[address(vaults[i])], "FarmingRevenueManager: invalid vault in array");
+            require(activeVaults[address(vaults[i])], "OpsManager: invalid vault in array");
             vaults[i].redeemExposures(exposures);
         }
     }
