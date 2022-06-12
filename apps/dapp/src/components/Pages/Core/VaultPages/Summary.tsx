@@ -8,15 +8,20 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberWithCommas } from 'utils/formatter';
 import VaultContent from './VaultContent';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
+import { useVaultMetrics} from 'hooks/core/subgraph';
+import EllipsisLoader from 'components/EllipsisLoader';
 
 export const Summary = () => {
   const navigate = useNavigate();
   const { vaultGroup } = useVaultContext();
+  const { response, isLoading } = useVaultMetrics();
 
   const onClickLink = (e: SyntheticEvent) => {
     e.preventDefault();
     navigate(`/dapp/vaults/${vaultGroup.id}/strategy`);
   };
+
+  const tvl = response?.data?.metrics[0]?.tvlUSD;
 
   return (
     <VaultContent>
@@ -29,17 +34,19 @@ export const Summary = () => {
       >
         1 Month Vault
       </Text2>
-
       <Text3>
-        {`TVL: $${formatNumberWithCommas(vaultGroup.tvl)} `}
-        <Tooltip
-          content="Total Value Locked for this vault"
-          inline={true}
-        >
-          ⓘ
-        </Tooltip>
+        <>
+          TVL:{' '}<>{(isLoading || !tvl) ? <EllipsisLoader /> : `$${formatNumberWithCommas(tvl)}`}</>{' '}
+          {!!tvl && (
+            <Tooltip
+              content="Total Value Locked for this vault"
+              inline={true}
+            >
+              ⓘ
+            </Tooltip>
+          )}
+        </>
       </Text3>
-
       <Text3>
         Projected APY: 18% {' '}
         <Tooltip
