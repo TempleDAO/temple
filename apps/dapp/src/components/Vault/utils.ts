@@ -209,13 +209,16 @@ export const formatTemple = (templeValue: Nullable<number | BigNumber>) => {
 };
 
 export const getBigNumberFromString = (number: string) => {
-  try{
-    const bigNumber =  parseUnits(number || '0', 18);
-    return bigNumber;
-  }catch(err){
-    console.error((err as Error).message)
-    return ZERO
+  // make sure number doesn't have more than 18 decimals
+  let [int, decimals] = (number || '0').split('.');
+
+  if (decimals && decimals.length > 18) {
+    decimals = decimals.substring(0, 18);
   }
+  const fixedNumber = decimals ? `${int}.${decimals}` : int;
+  const bigNumber = parseUnits(fixedNumber, 18);
+
+  return bigNumber;
 };
 
 export const formatBigNumber = (number: BigNumber) => {
