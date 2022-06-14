@@ -7,6 +7,7 @@ import { SwapProvider } from 'providers/SwapProvider';
 import { StakingProvider } from 'providers/StakingProvider';
 import { FaithProvider } from 'providers/FaithProvider';
 import { WagmiProvider } from 'components/WagmiProvider';
+import { PopoverProvider } from './PopoverProvider';
 
 export const AppProvider = (props: PropsWithChildren<{}>) => {
   return (
@@ -16,7 +17,11 @@ export const AppProvider = (props: PropsWithChildren<{}>) => {
           <SwapProvider>
             <StakingProvider>
               <FaithProvider>
-                <ThemeProvider theme={theme}>{props.children}</ThemeProvider>
+                <ThemeProvider theme={theme}>
+                  <PopoverProvider>
+                    {props.children}
+                  </PopoverProvider>
+                </ThemeProvider>
               </FaithProvider>
             </StakingProvider>
           </SwapProvider>

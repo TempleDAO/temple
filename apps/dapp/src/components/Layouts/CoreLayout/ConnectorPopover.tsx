@@ -1,8 +1,7 @@
-import { useEffect, useRef } from 'react';
-import styled, { css } from 'styled-components';
+import { useEffect } from 'react';
+import styled from 'styled-components';
 import { useConnect } from 'wagmi';
 
-import { tabletAndAbove } from 'styles/breakpoints';
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
 import { backgroundImage } from 'styles/mixins';
@@ -37,6 +36,7 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
       isOpen={isOpen}
       onClose={onClose}
       header="Select Wallet"
+      closeOnEscape
     >
       <Menu>
         {connectors.map((connector) => (

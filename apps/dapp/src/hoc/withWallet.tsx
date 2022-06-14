@@ -1,61 +1,33 @@
-import React, { ComponentType } from 'react';
+import { ComponentType } from 'react';
 import styled from 'styled-components';
+
 import { Button } from 'components/Button/Button';
 import { useWallet } from 'providers/WalletProvider';
-import MetamaskErrorPage from 'components/MetamaskError/MetamaskError';
-import { isDevelopmentEnv } from 'utils/helpers';
+import { usePopoverContext, PopoverName } from 'providers/PopoverProvider';
 
-export function withWallet<T>(WrappedComponent: ComponentType<T>) {
+export function withWallet<T extends object>(WrappedComponent: ComponentType<T>) {
   const HOCWithWallet = (props: T) => {
-    const { wallet, connectWallet, network } = useWallet();
+    const { isConnected } = useWallet();
+    const { openPopover } = usePopoverContext();
 
-    const isValidNetwork = () => isDevelopmentEnv() || network?.chainId == 1;
+    if (isConnected) {
+      return <WrappedComponent {...props} />
+    }
 
     return (
-      window.ethereum ? (
-        <>
-          {wallet && isValidNetwork() ? (
-            <WrappedComponent {...props} />
-          ) : wallet && !isValidNetwork() ? (
-            <WithWalletContainer>
-              <h4>Switch to Mainnet to access the Temple</h4>
-              <br />
-              <br />
-              <span>
-                <Button
-                  label={'Change network'}
-                  onClick={() => {
-                    if (window.ethereum) {
-                      window.ethereum.request({
-                        method: 'wallet_switchEthereumChain',
-                        params: [{ chainId: '0x1' }],
-                      });
-                    }
-                  }}
-                  isSmall
-                  isUppercase
-                />
-              </span>
-            </WithWalletContainer>
-          ) : (
-            <WithWalletContainer>
-              <h4>Who knocks on the Temple gates?</h4>
-              <br />
-              <br />
-              <span>
-                <Button
-                  label={'connect metamask'}
-                  onClick={connectWallet}
-                  isSmall
-                  isUppercase
-                />
-              </span>
-            </WithWalletContainer>
-          )}
-        </>
-      ) : (
-        <MetamaskErrorPage />
-      )
+      <WithWalletContainer>
+        <h4>Who knocks on the Temple gates?</h4>
+        <br />
+        <br />
+        <span>
+          <Button
+            label="Connect Wallet"
+            onClick={() => openPopover(PopoverName.Connect)}
+            isSmall
+            isUppercase
+          />
+        </span>
+      </WithWalletContainer>
     );
   };
 

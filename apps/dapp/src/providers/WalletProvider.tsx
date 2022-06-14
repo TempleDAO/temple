@@ -36,8 +36,6 @@ const INITIAL_STATE: WalletState = {
   wallet: null,
   isConnected: false,
   isConnecting: false,
-  connectWallet: noop,
-  changeWalletAddress: noop,
   signer: null,
   network: null,
   claim: asyncNoop,
@@ -63,14 +61,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const chain = activeChain;
   const walletAddress = accountData?.address;
   const isConnected = !!walletAddress && !!signer;
-
-  const connectWallet = async () => {
-    throw new Error('Deprecated');
-  };
-
-  const changeWalletAddress = async () => {
-    throw new Error('Deprecated');
-  };
 
   const getBalance = async (walletAddress: string, signer: Signer) => {
     if (!walletAddress) {
@@ -177,8 +167,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
         isConnected: isConnected,
         isConnecting: signerLoading || connectLoading || accountLoading,
         wallet: walletAddress || null,
-        connectWallet,
-        changeWalletAddress,
         ensureAllowance,
         claim,
         signer: signer || null,

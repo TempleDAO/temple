@@ -391,4 +391,4 @@ const WelcomeImage = styled.img`
   margin-bottom: 50px;
 `;
 
-export default withWallet(TempleCashbackPage);
+export default withWallet<{}>(TempleCashbackPage);

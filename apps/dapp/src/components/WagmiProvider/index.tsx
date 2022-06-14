@@ -11,7 +11,6 @@ import { alchemyProvider } from 'wagmi/providers/alchemy';
 import { infuraProvider } from 'wagmi/providers/infura';
 import { publicProvider } from 'wagmi/providers/public';
 import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
-import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
 import { InjectedConnector } from 'wagmi/connectors/injected';
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
 import env from 'constants/env';
@@ -37,13 +36,13 @@ const { chains, provider } = configureChains(APP_CHAINS, [
   alchemyProvider({ alchemyId: ALCHEMY_API_KEY }),
   infuraProvider({ infuraId: env.infuraId }),
   publicProvider(),
-])
+]);
 
 const connectors = [
-  new CoinbaseWalletConnector({
+  new InjectedConnector({
     chains,
     options: {
-      appName: 'TempleDAO',
+      shimDisconnect: true,
     },
   }),
   new WalletConnectConnector({
@@ -52,10 +51,10 @@ const connectors = [
       qrcode: true,
     },
   }),
-  new InjectedConnector({
+  new CoinbaseWalletConnector({
     chains,
     options: {
-      shimDisconnect: true,
+      appName: 'TempleDAO',
     },
   }),
 ];
