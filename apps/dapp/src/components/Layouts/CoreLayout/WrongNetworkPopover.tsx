@@ -14,7 +14,7 @@ const ENV = ENV_VARS.VITE_ENV;
 const IS_PROD = ENV === 'production';
 
 export const WrongNetworkPopover = () => {
-  const { data: chain, isLoading: loading, error, switchNetwork } = useNetwork();
+  const { activeChain: chain, isLoading: loading, error, switchNetwork } = useNetwork();
   const [dismissedChainId, setDismissedChainId] = useState<Nullable<number>>(null);
   const [isOpen, setIsOpen] = useState(false);
 

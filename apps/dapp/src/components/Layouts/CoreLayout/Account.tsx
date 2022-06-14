@@ -7,6 +7,7 @@ import TruncatedAddress from 'components/TruncatedAddress';
 import Loader from 'components/Loader/Loader';
 import { Button as BaseButton } from 'components/Button/Button';
 import { WrongNetworkPopover } from './WrongNetworkPopover';
+import { LOCAL_CHAIN } from 'components/WagmiProvider';
 
 import Tooltip from 'components/Tooltip/Tooltip';
 
@@ -35,8 +36,10 @@ const AccountButton = ({ onSetConnectMenuOpen }: AccountButtonProps) => {
   const { activeConnector: connector, isConnecting: connectLoading } = useConnect();
   const { data: accountData, isLoading: accountLoading } = useAccount();
   const { disconnect } = useDisconnect();
+
+  const isLocalChain = activeChain?.id === LOCAL_CHAIN.id;
   const { data: ensName } = useEnsName({
-    address: accountData?.address || undefined
+    address: !isLocalChain && accountData?.address || undefined
   });
 
   if (accountLoading || connectLoading || networkLoading) {

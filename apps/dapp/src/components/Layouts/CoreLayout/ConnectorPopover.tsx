@@ -18,9 +18,14 @@ interface Props {
 }
 
 export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
-  const { data, error, isConnecting: loading, connect, isConnected, connectors } = useConnect();
+  const {
+    error,
+    isConnecting: loading,
+    connect,
+    isConnected: connected,
+    connectors,
+  } = useConnect();
 
-  const connected = isConnected;
   useEffect(() => {
     if (connected && isOpen) {
       onClose();
