@@ -52,15 +52,15 @@ const WalletContext = createContext<WalletState>(INITIAL_STATE);
 export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
 
-  const [{ data: signer, loading: signerLoading }] = useSigner();
-  const [{ data: network }] = useNetwork();
-  const [{ data: accountData, loading: accountLoading }] = useAccount();
-  const [{ loading: connectLoading }] = useConnect();
+  const { data: signer, isLoading: signerLoading } = useSigner();
+  const { activeChain } = useNetwork();
+  const { data: accountData, isLoading: accountLoading } = useAccount();
+  const { isConnecting: connectLoading } = useConnect();
 
   const { openNotification } = useNotification();
   const [balanceState, setBalanceState] = useState<Balance>(INITIAL_STATE.balance);
 
-  const chain = network?.chain;
+  const chain = activeChain;
   const walletAddress = accountData?.address;
   const isConnected = !!walletAddress && !!signer;
 

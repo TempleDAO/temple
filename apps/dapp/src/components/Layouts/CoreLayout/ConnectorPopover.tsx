@@ -18,9 +18,9 @@ interface Props {
 }
 
 export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
-  const [{ data, error, loading }, connect] = useConnect();
+  const { data, error, isConnecting: loading, connect, isConnected, connectors } = useConnect();
 
-  const connected = data.connected;
+  const connected = isConnected;
   useEffect(() => {
     if (connected && isOpen) {
       onClose();
@@ -34,7 +34,7 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
       header="Select Wallet"
     >
       <Menu>
-        {data.connectors.map((connector) => (
+        {connectors.map((connector) => (
           <li key={connector.id}>
             <ConnectorButon
               disabled={!connector.ready || loading}
@@ -44,7 +44,7 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
             >
               <ButtonContent>
                 {getConnectorIcon(connector.id)}
-                <span>{getConnectorNiceName(connector.id)} {!connector.ready ? ' (unsupported)' : ''}</span>
+                <span>{connector.name} {!connector.ready ? ' (unsupported)' : ''}</span>
               </ButtonContent>
             </ConnectorButon>
           </li>
@@ -59,16 +59,7 @@ const getConnectorIcon = (connectorId: string) => {
   switch (connectorId) {
     case 'injected': return <Icon bgImg={metamaskIcon} />;
     case 'walletConnect': return <Icon bgImg={walletConnectIcon} />;
-    case 'coinbasewallet': return <Icon bgImg={coinbaseAppIcon} />;
-  }
-  return null;
-};
-
-const getConnectorNiceName = (connectorId: string) => {
-  switch (connectorId) {
-    case 'injected': return 'MetaMask';
-    case 'walletConnect': return 'Wallet Connect';
-    case 'coinbasewallet': return 'Coinbase Wallet';
+    case 'coinbaseWallet': return <Icon bgImg={coinbaseAppIcon} />;
   }
   return null;
 };
