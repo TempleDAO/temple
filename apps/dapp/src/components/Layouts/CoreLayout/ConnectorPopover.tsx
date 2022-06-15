@@ -37,6 +37,7 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
       onClose={onClose}
       header="Select Wallet"
       closeOnEscape
+      closeOnClickOutside
     >
       <Menu>
         {connectors.map((connector) => (
