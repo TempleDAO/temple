@@ -1,4 +1,4 @@
-import { useRef, FC, ReactNode } from 'react';
+import { useRef, FC, ReactNode, useEffect } from 'react';
 import styled, { css } from 'styled-components';
 
 import { tabletAndAbove } from 'styles/breakpoints';
@@ -11,6 +11,7 @@ interface Props {
   onClose: () => void;
   isOpen: boolean;
   closeOnClickOutside?: boolean;
+  closeOnEscape?: boolean;
   showCloseButton?: boolean;
   header?: ReactNode;
 }
@@ -21,6 +22,7 @@ export const Popover: FC<Props> = ({
   isOpen,
   closeOnClickOutside = false,
   showCloseButton = true,
+  closeOnEscape = false,
   children,
   header,
 }) => {
@@ -33,6 +35,24 @@ export const Popover: FC<Props> = ({
 
     onClose();
   });
+
+  useEffect(() => {
+    if (!closeOnEscape || !isOpen) {
+      return;
+    }
+
+    const onEscape = (evt: KeyboardEvent) => {
+      if (evt.key === 'Escape') {
+        onClose();
+      };
+    };
+
+    window.addEventListener('keyup', onEscape);
+
+    return () => {
+      window.removeEventListener('keyup', onEscape);
+    };
+  }, [closeOnEscape, isOpen]);
 
   return (
     <>

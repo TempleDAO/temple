@@ -285,4 +285,4 @@ const RitualContainer = styled.div`
   animation: ${glow} 4s infinite alternate linear;
 `;
 
-export default withWallet(FaithAirdropPage);
+export default withWallet<{}>(FaithAirdropPage);
