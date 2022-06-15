@@ -11,22 +11,20 @@ import { PopoverProvider } from './PopoverProvider';
 
 export const AppProvider = (props: PropsWithChildren<{}>) => {
   return (
-    <NotificationProvider>
-      <WagmiProvider>
-        <WalletProvider>
-          <SwapProvider>
-            <StakingProvider>
-              <FaithProvider>
-                <ThemeProvider theme={theme}>
-                  <PopoverProvider>
-                    {props.children}
-                  </PopoverProvider>
-                </ThemeProvider>
-              </FaithProvider>
-            </StakingProvider>
-          </SwapProvider>
-        </WalletProvider>
-      </WagmiProvider>
-    </NotificationProvider>
+    <ThemeProvider theme={theme}>
+      <NotificationProvider>
+        <WagmiProvider>
+          <WalletProvider>
+            <SwapProvider>
+              <StakingProvider>
+                <FaithProvider>
+                  {props.children}
+                </FaithProvider>
+              </StakingProvider>
+            </SwapProvider>
+          </WalletProvider>
+        </WagmiProvider>
+      </NotificationProvider>
+    </ThemeProvider>
   );
 };

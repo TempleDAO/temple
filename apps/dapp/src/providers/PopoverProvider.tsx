@@ -56,13 +56,11 @@ export const PopoverProvider: FC<{}> = ({ children }) => {
 
   return (
     <PopoverContext.Provider value={{ state, closePopover, openPopover }}>
-      <>
-        <ConnectorPopover
-          isOpen={state[PopoverName.Connect].isOpen}
-          onClose={() => togglePopoverState(PopoverName.Connect, false)}
-        />
-        <WrongNetworkPopover />
-      </>
+      <ConnectorPopover
+        isOpen={state[PopoverName.Connect].isOpen}
+        onClose={() => togglePopoverState(PopoverName.Connect, false)}
+      />
+      <WrongNetworkPopover />
       {children}
     </PopoverContext.Provider>
   );

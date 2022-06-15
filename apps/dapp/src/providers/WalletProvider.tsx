@@ -87,8 +87,8 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     return {
       frax: fraxBalance,
       fei: feiBalance,
-      temple: temple,
-      ogTemple: ogTemple, // >= 1 ? ogTemple : 0,
+      temple,
+      ogTemple,
     };
   };
 
