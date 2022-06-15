@@ -17,8 +17,8 @@ const RelicItemList = [
     '4',
     '5',
     '6',
-    '7',
-    '8'
+    '7'
+
 ];
 
 
@@ -1117,6 +1117,7 @@ const RelicItemGrid = styled.div`
     flex-wrap: wrap;
     align-items: stretch;
     padding: 5px;
+    justify-content: center;
 `
 
 

@@ -21,8 +21,10 @@ export const RelicItem: FC<RelicItemProps> = (props) => {
 const RelicItemBox = styled.div<RelicItemBox>`
   position: relative;
   z-index: ${(props) => props.theme.zIndexes.max};
-  width: 40px;
-  height: 40px;
+  width: 70px;
+  max-width: 70px;
+  height: 70px;
+  max-height: 70px;
   margin: 5px;
   flex-grow: 1;
   cursor: pointer;
