@@ -3,12 +3,12 @@ import styled from 'styled-components';
 
 import { Button } from 'components/Button/Button';
 import { useWallet } from 'providers/WalletProvider';
-import { useAppContext, PopoverName } from 'providers/AppProvider';
+import { useAppContext } from 'providers/AppProvider';
 
 export function withWallet<T extends object>(WrappedComponent: ComponentType<T>) {
   const HOCWithWallet = (props: T) => {
     const { isConnected } = useWallet();
-    const { openPopover } = useAppContext();
+    const { showConnectPopover } = useAppContext();
 
     if (isConnected) {
       return <WrappedComponent {...props} />
@@ -22,7 +22,7 @@ export function withWallet<T extends object>(WrappedComponent: ComponentType<T>)
         <span>
           <Button
             label="Connect Wallet"
-            onClick={() => openPopover(PopoverName.Connect)}
+            onClick={() => showConnectPopover()}
             isSmall
             isUppercase
           />

@@ -5,12 +5,12 @@ import TruncatedAddress from 'components/TruncatedAddress';
 import Loader from 'components/Loader/Loader';
 import { Button as BaseButton } from 'components/Button/Button';
 import { LOCAL_CHAIN } from 'components/WagmiProvider';
-import { useAppContext, PopoverName } from 'providers/AppProvider';
+import { useAppContext } from 'providers/AppProvider';
 
 import Tooltip from 'components/Tooltip/Tooltip';
 
 export const Account = () => {
-  const { openPopover } = useAppContext();
+  const { showConnectPopover } = useAppContext();
   const { activeChain, isLoading: networkLoading } = useNetwork();
   const { activeConnector: connector, isConnecting: connectLoading } = useConnect();
   const { data: accountData, isLoading: accountLoading } = useAccount();
@@ -79,9 +79,7 @@ export const Account = () => {
       isUppercase
       label={"Connect Wallet"}
       role="button"
-      onClick={() => {
-        openPopover(PopoverName.Connect);
-      }}
+      onClick={() => showConnectPopover()}
     />
   );
 }

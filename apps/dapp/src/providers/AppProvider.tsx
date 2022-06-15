@@ -18,50 +18,22 @@ import { noop } from 'utils/helpers';
 import { ConnectorPopover } from 'components/Layouts/CoreLayout/ConnectorPopover';
 import { WrongNetworkPopover } from 'components/Layouts/CoreLayout/WrongNetworkPopover';
 
-export enum PopoverName {
-  Connect = 'Connect'
-}
-
-interface PopoverState {
-  isOpen: boolean;
-}
-
 interface AppProviderState {
-  state: Record<PopoverName, PopoverState>;
-  openPopover: (name: PopoverName) => void;
-  closePopover: (name: PopoverName) => void;
+  showConnectPopover: () => void;
 }
 
 export const INITIAL_STATE: AppProviderState = {
-  state: {
-    [PopoverName.Connect]: {
-      isOpen: false,
-    },
-  },
-  openPopover: noop,
-  closePopover: noop,
+  showConnectPopover: noop,
 };
 
 export const AppContext = createContext<AppProviderState>(INITIAL_STATE);
 
 export const AppProvider = (props: PropsWithChildren<{}>) => {
-  const [state, setState] = useState<AppProviderState['state']>(INITIAL_STATE.state);
+  const [connectPopoverVisible, setConnectPopoverVisibile] = useState(false);
 
-  const togglePopoverState = useCallback((popover: PopoverName, isOpen: boolean) => setState((prevState) => ({
-    ...prevState,
-    [popover]: {
-      ...prevState[popover],
-      isOpen,
-    },
-  })), [setState]);
-
-  const openPopover = useCallback((name: PopoverName) => {
-    togglePopoverState(name, true);
-  }, [togglePopoverState]);
-
-  const closePopover = useCallback((name: PopoverName) => {
-    togglePopoverState(name, false);
-  }, [togglePopoverState]);
+  const showConnectPopover = useCallback(() => {
+    setConnectPopoverVisibile(true);
+  }, [setConnectPopoverVisibile]);
 
   return (
     <NotificationProvider>
@@ -71,10 +43,10 @@ export const AppProvider = (props: PropsWithChildren<{}>) => {
             <StakingProvider>
               <FaithProvider>
                 <ThemeProvider theme={theme}>
-                  <AppContext.Provider value={{ state, closePopover, openPopover }}>
+                  <AppContext.Provider value={{ showConnectPopover }}>
                     <ConnectorPopover
-                      isOpen={state[PopoverName.Connect].isOpen}
-                      onClose={() => togglePopoverState(PopoverName.Connect, false)}
+                      isOpen={connectPopoverVisible}
+                      onClose={() => setConnectPopoverVisibile(false)}
                     />
                     <WrongNetworkPopover />
                     {props.children}
