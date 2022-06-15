@@ -3,12 +3,12 @@ import styled from 'styled-components';
 
 import { Button } from 'components/Button/Button';
 import { useWallet } from 'providers/WalletProvider';
-import { usePopoverContext, PopoverName } from 'providers/PopoverProvider';
+import { useAppContext, PopoverName } from 'providers/AppProvider';
 
 export function withWallet<T extends object>(WrappedComponent: ComponentType<T>) {
   const HOCWithWallet = (props: T) => {
     const { isConnected } = useWallet();
-    const { openPopover } = usePopoverContext();
+    const { openPopover } = useAppContext();
 
     if (isConnected) {
       return <WrappedComponent {...props} />

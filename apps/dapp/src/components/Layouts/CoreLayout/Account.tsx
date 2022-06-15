@@ -5,12 +5,12 @@ import TruncatedAddress from 'components/TruncatedAddress';
 import Loader from 'components/Loader/Loader';
 import { Button as BaseButton } from 'components/Button/Button';
 import { LOCAL_CHAIN } from 'components/WagmiProvider';
-import { usePopoverContext, PopoverName } from 'providers/PopoverProvider';
+import { useAppContext, PopoverName } from 'providers/AppProvider';
 
 import Tooltip from 'components/Tooltip/Tooltip';
 
 export const Account = () => {
-  const { openPopover } = usePopoverContext();
+  const { openPopover } = useAppContext();
   const { activeChain, isLoading: networkLoading } = useNetwork();
   const { activeConnector: connector, isConnecting: connectLoading } = useConnect();
   const { data: accountData, isLoading: accountLoading } = useAccount();
