@@ -189,18 +189,11 @@ const ProfilePage = () => {
             </ProfileMeta>
           </ProfileOverview>
           <SectionWrapper>
-            <ProfileVaults
-              isLoading={isLoading}
-              vaultGroupBalances={balances}
-              vaultGroups={vaultGroups}
-            />
+            <ProfileVaults isLoading={isLoading} vaultGroupBalances={balances} vaultGroups={vaultGroups} />
           </SectionWrapper>
           {hasLegacyTemple && (
             <SectionWrapper>
-              <ProfileLegacyTemple
-                lockedOgTempleBalance={lockedOGTempleBalance}
-                faithBalance={faithBalance}
-              />
+              <ProfileLegacyTemple lockedOgTempleBalance={lockedOGTempleBalance} faithBalance={faithBalance} />
             </SectionWrapper>
           )}
         </>
@@ -284,16 +277,18 @@ const useChartData = (wallet: string, totalBalance: number) => {
       return acc;
     }, []);
 
+    const END_OF_GRAPH_PADDING = 2 * 60 * 1000;
+
     dataPoints.push({
-      d: now,
-      x: now.getTime(),
+      d: new Date(now.getTime() + END_OF_GRAPH_PADDING),
+      x: now.getTime() + END_OF_GRAPH_PADDING,
       y: totalBalance,
     });
 
     const largest = [...dataPoints].sort((a, b) => b.y - a.y)[0]?.y || 0;
     const largestBalance = largest + 500;
     const yDomain = [0, largestBalance];
-    const xDomain = [dataPoints[0]?.x || 0, now.getTime()];
+    const xDomain = [dataPoints[0]?.x || 0, now.getTime() + END_OF_GRAPH_PADDING];
 
     return {
       data: dataPoints,
