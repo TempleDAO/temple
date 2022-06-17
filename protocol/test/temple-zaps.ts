@@ -280,7 +280,7 @@ describe("Temple Stax Core Zaps", async () => {
       await templeToken.transfer(templeZaps.address, fundAmount);
       expect(await templeToken.balanceOf(templeZaps.address)).to.eq(fundAmount);
 
-      const fromToken = templeToken.address;
+      const fromToken = ethers.utils.getAddress(templeToken.address);
       const fromAmount = toAtto(1000);
       const feePerTempleScaledPerHour = await joiningFee.calc(await vault.firstPeriodStartTimestamp(), await vault.periodDuration(), vault.address);
       const fee = fromAmount.mul(feePerTempleScaledPerHour).div(toAtto(1));
@@ -300,7 +300,7 @@ describe("Temple Stax Core Zaps", async () => {
       await templeToken.transfer(templeZaps.address, fundAmount);
       expect(await templeToken.balanceOf(templeZaps.address)).to.eq(fundAmount);
 
-      const fromTokenAddress = FRAX;
+      const fromTokenAddress = ethers.utils.getAddress(FRAX);
       const fromAmount = toAtto(1000);
 
       // fund alice
@@ -349,13 +349,15 @@ describe("Temple Stax Core Zaps", async () => {
       const zapsTempleBalBefore = await templeToken.balanceOf(templeZaps.address);
       const zapsFraxBalBefore = await fraxToken.balanceOf(templeZaps.address);
 
-      await templeZaps.connect(alice).zapInLP(
+      await expect(templeZaps.connect(alice).zapInLP(
         fromToken,
         fromAmount,
         FRAX,
         ZEROEX_EXCHANGE_PROXY,
         "0x"
-      );
+      ))
+      .to.emit(templeZaps, "ZappedInLP");
+      
 
       // ensure no residual tokens
       expect(await fraxToken.balanceOf(templeZaps.address)).to.eq(zapsFraxBalBefore);
@@ -400,7 +402,7 @@ async function zapInTempleFaith(
       "0x"
     ))
     .to.emit(templeZaps, "ZappedTemplePlusFaithInVault")
-    .withArgs(signerAddress, faithAmount, boostedAmount);
+    .withArgs(signerAddress, fromToken.address, fromAmount, faithAmount, boostedAmount);
     
   expect(await templeToken.balanceOf(templeZaps.address)).to.eq(fundAmount.sub(boostedAmount.sub(fromAmountInTemple)));
   expect((await faith.balances(signerAddress)).usableFaith).to.eq(0);

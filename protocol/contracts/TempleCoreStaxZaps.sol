@@ -79,12 +79,12 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
   mapping(address => bool) public permittableTokens;
   mapping(address => bool) public supportedStables;
 
-  event ZappedIn(address indexed sender, address fromToken, uint256 amountReceived);
+  event ZappedIn(address indexed sender, address fromToken, uint256 fromAmount, uint256 amountReceived);
   event TempleRouterSet(address router);
-  event ZappedInLP(address indexed sender, uint256 amountA, uint256 amountB, uint256 liquidity);
-  event ZappedTemplePlusFaithInVault(address indexed sender, uint112 faithAmount, uint256 boostedAmount);
+  event ZappedInLP(address indexed sender, address fromToken, uint256 fromAmount, uint256 amountA, uint256 amountB);
+  event ZappedTemplePlusFaithInVault(address indexed sender, address fromToken, uint256 fromAmount, uint112 faithAmount, uint256 boostedAmount);
   event TokenRecovered(address token, address to, uint256 amount);
-  event ZappedTempleInVault(address indexed sender, uint256 templeAmount);
+  event ZappedTempleInVault(address indexed sender, address fromToken, uint256 fromAmount, uint256 templeAmount);
 
   constructor(
     address _temple,
@@ -211,7 +211,7 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
     // pull tokens
     _pullTokens(_fromToken, _fromAmount);
 
-    _performZapInLP(
+    (uint256 amountA, uint256 amountB) = _performZapInLP(
       _fromToken,
       _fromAmount,
       _stableToken,
@@ -219,6 +219,8 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
       _swapTarget,
       _swapData
     );
+
+    emit ZappedInLP(msg.sender, _fromToken, _fromAmount, amountA, amountB);
   }
 
   /**
@@ -261,7 +263,7 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
     _approveToken(temple, _vault, templeReceived);
     IVault(_vault).depositFor(msg.sender, templeReceived);
 
-    emit ZappedTempleInVault(msg.sender, templeReceived);
+    emit ZappedTempleInVault(msg.sender, _fromToken, _fromAmount, templeReceived);
   }
 
   /**
@@ -316,7 +318,7 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
     // deposit for user
     IVault(vault).depositFor(msg.sender, boostedAmount);
 
-    emit ZappedTemplePlusFaithInVault(msg.sender, faithAmount, boostedAmount);
+    emit ZappedTemplePlusFaithInVault(msg.sender, fromToken, fromAmount, faithAmount, boostedAmount);
   }
 
   function _zapIn(
@@ -343,7 +345,7 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
 
     uint256 amountTemple = _enterTemple(_stableToken, templeReceiver, stableAmountBought, minTempleReceived, ammDeadline);
     
-    emit ZappedIn(msg.sender, fromToken, amountTemple);
+    emit ZappedIn(msg.sender, fromToken, fromAmount, amountTemple);
 
     return amountTemple;
   }
@@ -424,7 +426,7 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
     address _liquidityReceiver,
     address _swapTarget,
     bytes memory _swapData
-  ) internal {
+  ) internal returns (uint256, uint256) {
     address intermediateToken;
     uint256 intermediateAmount;
     // get pair tokens supporting stable coin
@@ -453,7 +455,7 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
     _approveToken(token0, address(templeRouter), amountA);
 
     // add LP
-    _addLiquidity(_stableToken, pair, _liquidityReceiver, amountA, amountB);
+    return  _addLiquidity(_stableToken, pair, _liquidityReceiver, amountA, amountB);
   }
 
   function _swapTokens(
@@ -495,38 +497,51 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
     address _liquidityReceiver,
     uint256 _amountA,
     uint256 _amountB
-  ) internal {
-    // get minimum amounts to use in liquidity addition. use optimal amounts as minimum
-    (uint256 amountAMin, uint256 amountBMin) = _addLiquidityGetMinAmounts(_amountA, _amountB, IUniswapV2Pair(_pair));
-    (uint256 amountA, uint256 amountB, uint256 liquidity) = templeRouter.addLiquidity(
-      _amountA,
-      _amountB,
-      amountAMin,
-      amountBMin,
-      _stableToken,
-      _liquidityReceiver,
-      DEADLINE
-    );
+  ) internal returns (uint256 amountA, uint256 amountB) {
+    // avoid stack too deep
+    {
+      // get minimum amounts to use in liquidity addition. use optimal amounts as minimum
+      (uint256 amountAMin, uint256 amountBMin) = _addLiquidityGetMinAmounts(_amountA, _amountB, IUniswapV2Pair(_pair));
+      ( amountA, amountB,) = templeRouter.addLiquidity(
+        _amountA,
+        _amountB,
+        amountAMin,
+        amountBMin,
+        _stableToken,
+        _liquidityReceiver,
+        DEADLINE
+      );
+    }
 
     // transfer residual
     bool token0IsTemple = IUniswapV2Pair(_pair).token0() == temple;
-    if (_amountA > amountA) {
-      if (token0IsTemple) {
-        _transferToken(IERC20(temple), _liquidityReceiver, _amountA - amountA);
+    _transferResidual(_liquidityReceiver, _stableToken, _amountA, _amountB, amountA, amountB, token0IsTemple);
+  }
+
+  function _transferResidual(
+    address _liquidityReceiver,
+    address _stableToken,
+    uint256 _amountA,
+    uint256 _amountB,
+    uint256 _amountAActual,
+    uint256 _amountBActual,
+    bool _token0IsTemple
+  ) internal {
+    if (_amountA > _amountAActual) {
+      if (_token0IsTemple) {
+        _transferToken(IERC20(temple), _liquidityReceiver, _amountA - _amountAActual);
       } else {
-        _transferToken(IERC20(_stableToken), _liquidityReceiver, _amountA - amountA);
+        _transferToken(IERC20(_stableToken), _liquidityReceiver, _amountA - _amountAActual);
       }
     }
 
-    if (_amountB > amountB) {
-      if (token0IsTemple) {
-        _transferToken(IERC20(_stableToken), _liquidityReceiver, _amountB - amountB);
+    if (_amountB > _amountBActual) {
+      if (_token0IsTemple) {
+        _transferToken(IERC20(_stableToken), _liquidityReceiver, _amountB - _amountBActual);
       } else {
-        _transferToken(IERC20(temple), _liquidityReceiver, _amountB - amountB);
+        _transferToken(IERC20(temple), _liquidityReceiver, _amountB - _amountBActual);
       }
     }
-  
-    emit ZappedInLP(_liquidityReceiver, amountA, amountB, liquidity);
   }
 
   /**
