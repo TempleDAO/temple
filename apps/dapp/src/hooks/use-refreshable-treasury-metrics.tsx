@@ -21,7 +21,9 @@ export default function useRefreshableTreasuryMetrics() {
     const data = response?.data?.protocolMetrics?.[0] || {};
 
     const epy = parseFloat(data.epochPercentageYield);
-    const templeApy = Math.round((Math.pow(epy + 1, 365.25) - 1) * 100);
+    // Temporary hardcoding of APY
+    // const templeApy = Math.round((Math.pow(epy + 1, 365.25) - 1) * 100);
+    const templeApy = 7.00;
     const templePrice = parseFloat(data.templePrice);
     const lockedStables = parseFloat(data.lockedStables);
 
