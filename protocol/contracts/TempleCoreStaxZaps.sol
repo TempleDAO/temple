@@ -52,6 +52,7 @@ interface ITempleStableRouter {
 
 interface IVaultProxy {
   function getFaithMultiplier(uint256 _amountFaith, uint256 _amountTemple) pure external returns (uint256);
+  function faithClaimEnabled() external view returns (bool);
 }
 
 interface IVault {
@@ -66,21 +67,19 @@ interface IUniswapV2Pair {
 
 
 contract TempleCoreStaxZaps is ZapBaseV2_3 {
-
-  bool public faithClaimEnabled;
   
   address public constant FRAX = 0x853d955aCEf822Db058eb8505911ED77F175b99e;
   address public immutable temple;
-  IFaith public faith;
+  IFaith public immutable faith;
+  IVaultProxy public immutable vaultProxy;
   ITempleStableRouter public templeRouter;
-  IVaultProxy public vaultProxy;
 
   uint256 private constant DEADLINE = 0xf000000000000000000000000000000000000000000000000000000000000000;
 
   mapping(address => bool) public permittableTokens;
   mapping(address => bool) public supportedStables;
 
-  event ZappedIn(address indexed sender, uint256 amountReceived);
+  event ZappedIn(address indexed sender, address fromToken, uint256 amountReceived);
   event TempleRouterSet(address router);
   event ZappedInLP(address indexed sender, uint256 amountA, uint256 amountB, uint256 liquidity);
   event ZappedTemplePlusFaithInVault(address indexed sender, uint112 faithAmount, uint256 boostedAmount);
@@ -97,15 +96,6 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
     templeRouter = ITempleStableRouter(_templeRouter);
     faith = IFaith(_faith);
     vaultProxy = IVaultProxy(_vaultProxy);
-
-    faithClaimEnabled = true;
-  }
-
-  /**
-    * @dev Toggle whether faith is claimable
-    */
-  function toggleFaithClaimEnabled() external onlyOwner {
-    faithClaimEnabled = !faithClaimEnabled;
   }
 
   /**
@@ -294,7 +284,7 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
     bytes calldata swapData
   ) external payable whenNotPaused {
     require(permittableTokens[fromToken] == true, "Zaps unsupported for this token");
-    require(faithClaimEnabled, "VaultProxy: Faith claim no longer enabled");
+    require(vaultProxy.faithClaimEnabled(), "VaultProxy: Faith claim no longer enabled");
     // pull temple
     uint256 receivedTempleAmount;
     if (fromToken == temple) {
@@ -353,7 +343,7 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
 
     uint256 amountTemple = _enterTemple(_stableToken, templeReceiver, stableAmountBought, minTempleReceived, ammDeadline);
     
-    emit ZappedIn(msg.sender, amountTemple);
+    emit ZappedIn(msg.sender, fromToken, amountTemple);
 
     return amountTemple;
   }

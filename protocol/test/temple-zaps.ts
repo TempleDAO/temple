@@ -85,7 +85,6 @@ describe("Temple Stax Core Zaps", async () => {
   describe("Admin", async () => {
     it("admin tests", async () => {
       await shouldThrow(templeZaps.connect(alice).setApprovedTargets([ZEROEX_EXCHANGE_PROXY, TEMPLE_STABLE_ROUTER], [true, true]), /Ownable: caller is not the owner/);
-      await shouldThrow(templeZaps.connect(alice).toggleFaithClaimEnabled(), /Ownable: caller is not the owner/);
       await shouldThrow(templeZaps.connect(alice).toggleContractActive(), /Ownable: caller is not the owner/);
       await shouldThrow(templeZaps.connect(alice).setTempleRouter(TEMPLE_STABLE_ROUTER), /Ownable: caller is not the owner/);
       await shouldThrow(templeZaps.connect(alice).setPermittableTokens([FRAX], [true]), /Ownable: caller is not the owner/);
@@ -95,7 +94,6 @@ describe("Temple Stax Core Zaps", async () => {
       // happy paths
       await templeZaps.setApprovedTargets([ZEROEX_EXCHANGE_PROXY, TEMPLE_STABLE_ROUTER], [true, true]);
       await templeZaps.toggleContractActive();
-      await templeZaps.toggleFaithClaimEnabled();
       await templeZaps.setTempleRouter(TEMPLE_STABLE_ROUTER);
       await templeZaps.setPermittableTokens([FRAX], [true]);
       await templeZaps.setSupportedStables([FRAX], [true]);
@@ -106,15 +104,6 @@ describe("Temple Stax Core Zaps", async () => {
       await templeZaps.setApprovedTargets([ZEROEX_EXCHANGE_PROXY, TEMPLE_STABLE_ROUTER], [true, false]);
       expect(await templeZaps.approvedTargets(ZEROEX_EXCHANGE_PROXY)).to.eq(true);
       expect(await templeZaps.approvedTargets(TEMPLE_STABLE_ROUTER)).to.eq(false);
-    });
-
-    it("toggles faith claim", async () => {
-      const currentState = await templeZaps.faithClaimEnabled();
-      await templeZaps.toggleFaithClaimEnabled();
-      expect(await templeZaps.faithClaimEnabled()).to.eq(!currentState);
-      await shouldThrow(templeZaps.zapTempleFaithInVault(
-        await alice.getAddress(), FRAX, 100, 10, FRAX, ZEROEX_EXCHANGE_PROXY, "0x"),
-        /VaultProxy: Faith claim no longer enabled/);
     });
 
     it("toggles contract active", async () => {

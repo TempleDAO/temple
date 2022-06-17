@@ -49,8 +49,6 @@ abstract contract ZapBaseV2_3 is Ownable {
     address _spender,
     uint256 _amount
   ) internal {
-    //SafeERC20.safeIncreaseAllowance(IERC20(token), spender, 0);
-    //SafeERC20.safeIncreaseAllowance(IERC20(token), spender, amount);
     IERC20(_token).safeIncreaseAllowance(_spender, _amount);
   }
 
