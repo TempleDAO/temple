@@ -14,7 +14,7 @@ interface IAnalytics {
 type IAnalyticsResponse = SubGraphResponse<{
   protocolMetrics: [
     {
-      treasuryTemple: number;
+      totalValueLocked: number;
       crvRewards: number;
       cvxRewards: number;
       templeSupply: number;
@@ -27,7 +27,7 @@ type IAnalyticsResponse = SubGraphResponse<{
 
 const QUERY = `{
   protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
-    treasuryTemple
+    totalValueLocked
     templeSupply
     templePrice
     templeCirculatingSupply
@@ -63,7 +63,7 @@ export const useAnalytics = () => {
     if (response?.data) {
       const protocolData = response.data.protocolMetrics[0];
       setAnalytics({
-        treasuryValue: protocolData.treasuryTemple * protocolData.templePrice,
+        treasuryValue: protocolData.totalValueLocked,
         circulatingMarketCap: protocolData.templeCirculatingSupply * protocolData.templePrice,
         fullyDilutedValuation: protocolData.templeSupply * protocolData.templePrice,
         fullyDilutedTempleSupply: protocolData.templeSupply,
