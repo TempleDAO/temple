@@ -157,16 +157,9 @@ export interface WalletState {
   isConnecting: boolean;
   isConnected: boolean;
 
-  connectWallet(): void;
-
-  changeWalletAddress(): void;
-
   claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
-
   getBalance(): Promise<Balance | void>;
-
   updateBalance(): Promise<void>;
-
   collectTempleTeamPayment(epoch: TEAM_PAYMENTS_EPOCHS): Promise<void | TransactionReceipt>;
 
   ensureAllowance(

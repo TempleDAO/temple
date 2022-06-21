@@ -1,8 +1,7 @@
-import { useEffect, useRef } from 'react';
-import styled, { css } from 'styled-components';
+import { useEffect } from 'react';
+import styled from 'styled-components';
 import { useConnect } from 'wagmi';
 
-import { tabletAndAbove } from 'styles/breakpoints';
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
 import { backgroundImage } from 'styles/mixins';
@@ -18,9 +17,14 @@ interface Props {
 }
 
 export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
-  const [{ data, error, loading }, connect] = useConnect();
+  const {
+    error,
+    isConnecting: loading,
+    connect,
+    isConnected: connected,
+    connectors,
+  } = useConnect();
 
-  const connected = data.connected;
   useEffect(() => {
     if (connected && isOpen) {
       onClose();
@@ -32,9 +36,11 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
       isOpen={isOpen}
       onClose={onClose}
       header="Select Wallet"
+      closeOnEscape
+      closeOnClickOutside
     >
       <Menu>
-        {data.connectors.map((connector) => (
+        {connectors.map((connector) => (
           <li key={connector.id}>
             <ConnectorButon
               disabled={!connector.ready || loading}
@@ -44,7 +50,7 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
             >
               <ButtonContent>
                 {getConnectorIcon(connector.id)}
-                <span>{getConnectorNiceName(connector.id)} {!connector.ready ? ' (unsupported)' : ''}</span>
+                <span>{connector.name} {!connector.ready ? ' (unsupported)' : ''}</span>
               </ButtonContent>
             </ConnectorButon>
           </li>
@@ -59,16 +65,7 @@ const getConnectorIcon = (connectorId: string) => {
   switch (connectorId) {
     case 'injected': return <Icon bgImg={metamaskIcon} />;
     case 'walletConnect': return <Icon bgImg={walletConnectIcon} />;
-    case 'coinbasewallet': return <Icon bgImg={coinbaseAppIcon} />;
-  }
-  return null;
-};
-
-const getConnectorNiceName = (connectorId: string) => {
-  switch (connectorId) {
-    case 'injected': return 'MetaMask';
-    case 'walletConnect': return 'Wallet Connect';
-    case 'coinbasewallet': return 'Coinbase Wallet';
+    case 'coinbaseWallet': return <Icon bgImg={coinbaseAppIcon} />;
   }
   return null;
 };

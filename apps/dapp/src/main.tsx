@@ -46,7 +46,7 @@ const LoaderWrapper = styled.div`
 `;
 
 interface LazyPageProps {
-  component: React.LazyExoticComponent<(props: unknown) => JSX.Element>;
+  component: React.LazyExoticComponent<(props: {}) => JSX.Element>;
 }
 
 const LazyPage = ({ component: Component }: LazyPageProps) => (
