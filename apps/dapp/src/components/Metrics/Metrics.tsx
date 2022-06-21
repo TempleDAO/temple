@@ -29,7 +29,6 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter, }: MetricsProps) => {
             imageUrl: cashImage,
             alt: '',
           }}
-          isWhite
           isHome={isHome}
           alignCenter={alignCenter}
         />
