@@ -394,7 +394,6 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
     if (supportedStables[_fromToken]) {
       return _amount;
     }
-
     uint256 valueToSend;
     if (_fromToken == address(0)) {
         require(

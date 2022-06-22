@@ -13,6 +13,10 @@ abstract contract ZapBaseV2_3 is Ownable {
   // swapTarget => approval status
   mapping(address => bool) public approvedTargets;
 
+  receive() external payable {
+    require(msg.sender != tx.origin, "Do not send ETH directly");
+  }
+
   /**
     @dev Adds or removes an approved swapTarget
     * swapTargets should be Zaps and must not be tokens!
@@ -63,10 +67,6 @@ abstract contract ZapBaseV2_3 is Ownable {
     } else {
       balance = IERC20(_token).balanceOf(address(this));
     }
-  }
-
-  receive() external payable {
-    require(msg.sender != tx.origin, "Do not send ETH directly");
   }
 
   // circuit breaker modifiers

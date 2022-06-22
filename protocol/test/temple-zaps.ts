@@ -49,8 +49,8 @@ describe("Temple Stax Core Zaps", async () => {
       params: [
         {
           forking: {
-            jsonRpcUrl: process.env.MAINNET_RPC_URL,
-            blockNumber: Number(process.env.FORK_BLOCK_NUMBER),
+            jsonRpcUrl: process.env.TESTS_MAINNET_RPC_URL,
+            blockNumber: Number(process.env.TESTS_FORK_BLOCK_NUMBER),
           },
         },
       ],
