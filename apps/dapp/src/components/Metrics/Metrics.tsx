@@ -17,7 +17,7 @@ export interface MetricsProps {
 }
 
 const Metrics = ({ treasuryMetrics, isHome, alignCenter, }: MetricsProps) => {
-  const { treasuryValue, templeApy, templeValue } = treasuryMetrics;
+  const { treasuryValue, templeValue } = treasuryMetrics;
 
   return (
     <Wrapper>
@@ -35,8 +35,8 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter, }: MetricsProps) => {
       </ApyWrapper>
       <ApyWrapper>
         <Apy
-          cryptoName={'APY'}
-          value={`${formatNumber(templeApy)}%`}
+          cryptoName={'vAPY'}
+          value={`${formatNumber(9)}%`}
           imageData={{
             imageUrl: tagImage,
             alt: '',
