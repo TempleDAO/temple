@@ -17,7 +17,7 @@ export interface MetricsProps {
 }
 
 const Metrics = ({ treasuryMetrics, isHome, alignCenter, }: MetricsProps) => {
-  const { treasuryValue, templeValue } = treasuryMetrics;
+  const { treasuryValue, templeValue, dynamicVaultApy } = treasuryMetrics;
 
   return (
     <Wrapper>
@@ -36,7 +36,7 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter, }: MetricsProps) => {
       <ApyWrapper>
         <Apy
           cryptoName={'vAPY'}
-          value={`${formatNumber(9)}%`}
+          value={`${formatNumber(dynamicVaultApy)}%`}
           imageData={{
             imageUrl: tagImage,
             alt: '',

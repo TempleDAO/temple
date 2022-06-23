@@ -4,17 +4,21 @@ import { useNavigate } from 'react-router-dom';
 
 import Tooltip from 'components/Tooltip/Tooltip';
 
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { formatNumberWithCommas } from 'utils/formatter';
+import { formatNumber, formatNumberWithCommas } from 'utils/formatter';
 import VaultContent from './VaultContent';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
-import { useVaultMetrics} from 'hooks/core/subgraph';
+import { useVaultMetrics } from 'hooks/core/subgraph';
 import EllipsisLoader from 'components/EllipsisLoader';
+import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
+import { FALLBACK_VAULT_APY } from '../Trade/constants';
 
 export const Summary = () => {
   const navigate = useNavigate();
   const { vaultGroup } = useVaultContext();
   const { response, isLoading } = useVaultMetrics();
+  const treasuryMetrics = useRefreshableTreasuryMetrics();
+
+  const dnyamicApy = treasuryMetrics ? treasuryMetrics.dynamicVaultApy : FALLBACK_VAULT_APY;
 
   const onClickLink = (e: SyntheticEvent) => {
     e.preventDefault();
@@ -26,29 +30,21 @@ export const Summary = () => {
   return (
     <VaultContent>
       <Title>1 MONTH</Title>
-      <Text2
-        light
-        as="a"
-        href={`/dapp/vaults/${vaultGroup.id}/strategy`}
-        onClick={onClickLink}
-      >
+      <Text2 light as="a" href={`/dapp/vaults/${vaultGroup.id}/strategy`} onClick={onClickLink}>
         1 Month Vault
       </Text2>
       <Text3>
         <>
-          TVL:{' '}<>{(isLoading || !tvl) ? <EllipsisLoader /> : `$${formatNumberWithCommas(tvl)}`}</>{' '}
+          TVL: <>{isLoading || !tvl ? <EllipsisLoader /> : `$${formatNumberWithCommas(tvl)}`}</>{' '}
           {!!tvl && (
-            <Tooltip
-              content="Total Value Locked for this vault"
-              inline={true}
-            >
+            <Tooltip content="Total Value Locked for this vault" inline={true}>
               ⓘ
             </Tooltip>
           )}
         </>
       </Text3>
       <Text3>
-        Projected vAPY: 9% {' '}
+        Projected vAPY: {formatNumber(dnyamicApy)}%{' '}
         <Tooltip
           content={`Variable APY is displayed for guidance purposes only. All rewards are subject to change and fluctuate based on vault strategies and market conditions.`}
           inline={true}
@@ -86,8 +82,7 @@ const Text2 = styled.p<{ light?: boolean }>`
   font-size: 1.5rem;
   text-align: center;
   letter-spacing: 0.05em;
-  color: ${({ theme, light }) =>
-    light ? theme.palette.brandLight : theme.palette.brand};
+  color: ${({ theme, light }) => (light ? theme.palette.brandLight : theme.palette.brand)};
   text-shadow: ${COLOR_PERCENTAGE_TEXT_SHADOW};
 `;
 
@@ -98,6 +93,5 @@ const Text3 = styled.div<{ light?: boolean }>`
 
   font-size: 1.5rem;
   text-shadow: ${COLOR_PERCENTAGE_TEXT_SHADOW};
-  color: ${({ theme, light }) =>
-    light ? theme.palette.brandLight : theme.palette.brand};
+  color: ${({ theme, light }) => (light ? theme.palette.brandLight : theme.palette.brand)};
 `;

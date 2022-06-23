@@ -1,11 +1,45 @@
 import { useEffect, useState } from 'react';
 import useInterval from 'use-interval';
 import { TreasuryMetrics } from 'services/MetricsService';
-import { fetchSubgraph } from 'utils/subgraph';
+import { fetchGenericSubgraph, fetchSubgraph } from 'utils/subgraph';
+import env from 'constants/env';
+import { FALLBACK_VAULT_APY } from 'components/Pages/Core/Trade/constants';
 
 export default function useRefreshableTreasuryMetrics() {
-  const [treasuryMetrics, setTreasuryMetrics] =
-    useState<TreasuryMetrics | null>(null);
+  const [treasuryMetrics, setTreasuryMetrics] = useState<TreasuryMetrics | null>(null);
+
+  async function getDynamicApy(): Promise<number> {
+    try {
+      const TOTAL_FARM_EARNINGS_QUERY = `{
+        dayProtocolMetrics(orderBy: timestamp, orderDirection: desc, first: 14) {
+          totalFarmEarnings
+        }
+      }
+      `;
+
+      const farmEarningsResult = await fetchSubgraph(TOTAL_FARM_EARNINGS_QUERY);
+
+      const day1Earnings = farmEarningsResult?.data?.dayProtocolMetrics[13].totalFarmEarnings;
+      const day14Earnings = farmEarningsResult?.data?.dayProtocolMetrics[0].totalFarmEarnings;
+      const dailyEarnings = (day14Earnings - day1Earnings) / 14;
+
+      const VAULT_TVL_QUERY = `{
+        vault(id: "0x402832ec42305cf7123bc9903f693e944484b9c1") {
+          tvlUSD
+        }
+      }`;
+
+      const totalLockedQueryResult = await fetchGenericSubgraph(env.subgraph.templeCore, VAULT_TVL_QUERY);
+
+      const tvl = totalLockedQueryResult?.data?.vault?.tvlUSD;
+      const apy = (dailyEarnings / tvl) * 365 * 100;
+
+      return Math.floor(apy);
+    } catch (error) {
+      console.error(error);
+      return FALLBACK_VAULT_APY;
+    }
+  }
 
   async function getTreasuryMetrics(): Promise<TreasuryMetrics> {
     const response = await fetchSubgraph(
@@ -24,11 +58,13 @@ export default function useRefreshableTreasuryMetrics() {
     const templeApy = Math.round((Math.pow(epy + 1, 365.25) - 1) * 100);
     const templePrice = parseFloat(data.templePrice);
     const lockedStables = parseFloat(data.lockedStables);
+    const dynamicVaultApy = await getDynamicApy();
 
     return {
       templeValue: templePrice,
       templeApy,
       treasuryValue: lockedStables,
+      dynamicVaultApy,
     };
   }
 
