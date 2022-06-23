@@ -7,24 +7,13 @@ import { useNotification } from 'providers/NotificationProvider';
 import { RelicItem } from './RelicItem';
 import { ethers } from 'ethers';
 import { useWallet } from 'providers/WalletProvider';
-
-
-const RelicItemList = [
-    '0',
-    '1',
-    '2',
-    '3',
-    '4',
-    '5',
-    '6',
-    '7'
-
-];
+import { render } from 'react-dom';
 
 
 
 interface RelicItemCardProps {
-    actionType: 'equip' | 'unequip'
+    actionType: 'equip' | 'unequip',
+    RelicItemList: string[],
 }
 
 const relicABI = [
@@ -1080,6 +1069,10 @@ export const RelicItemCard: FC<RelicItemCardProps> = (props) => {
         });
     }
 
+    useEffect(() => {
+
+    }, [props.RelicItemList])
+
     return (
         <RelicItemCardBox>
             <TitleWrapper>
@@ -1088,7 +1081,7 @@ export const RelicItemCard: FC<RelicItemCardProps> = (props) => {
                 </ConvoFlowTitle>
             </TitleWrapper>
             <RelicItemGrid>
-                {RelicItemList.map(entry => (
+                {props.RelicItemList.map(entry => (
                     <RelicItem
                         label={entry}
                         key={entry}

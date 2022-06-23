@@ -2,19 +2,32 @@ import React, { FC, useEffect, useState, useCallback } from 'react';
 import styled, { css } from 'styled-components';
 
 interface RelicItemProps {
-    label?: string;
-    handleClick: () => void;
+  label: string;
+  handleClick: () => void;
 }
 
 export const RelicItem: FC<RelicItemProps> = (props) => {
 
-    return (
-        <RelicItemBox
-        onClick={props.handleClick}
-        >
-            {props.label}
-        </RelicItemBox>
-    );
+  var RelicItemLogo: any
+  const [img, setImg] = useState();
+
+  useEffect(() => {
+    // GET request using fetch inside useEffect React hook
+    fetch('https://myst.mypinata.cloud/ipfs/QmXGQAVU26c33jMxh3K63ok5vCrfTgky91WTsBWEUXPVaX/0.png')
+      .then(response => response.blob())
+      .then(data => { RelicItemLogo = URL.createObjectURL(data); setImg(RelicItemLogo)})
+      .then(() => console.log('here: '+RelicItemLogo));
+
+    // empty dependency array means this effect will only run once (like componentDidMount in classes)
+  }, []);
+
+  return (
+    <RelicItemBox
+      onClick={props.handleClick}
+    >
+      <img src={img} style={{width: '60px', height: '60px'}}></img>
+    </RelicItemBox>
+  );
 
 }
 
@@ -25,6 +38,9 @@ const RelicItemBox = styled.div<RelicItemBox>`
   max-width: 70px;
   height: 70px;
   max-height: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin: 5px;
   flex-grow: 1;
   cursor: pointer;
@@ -46,5 +62,5 @@ const RelicItemBox = styled.div<RelicItemBox>`
   }
 `;
 interface RelicItemBox {
-    isDisabled?: boolean;
-  }
+  isDisabled?: boolean;
+}
