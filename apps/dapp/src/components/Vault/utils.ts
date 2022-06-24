@@ -11,8 +11,6 @@ import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
 import { Nullable } from 'types/util';
 
-export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
-
 export const createDateFromSeconds = (dateInSeconds: string | number) => {
   const dateMs = Number(dateInSeconds) * 1000;
   return new Date(dateMs);
@@ -59,11 +57,12 @@ export const createVault = (subgraphVault: GraphVault): Partial<Vault> => {
   const fakeTime = 0;
   const now = new Date(Date.now() + fakeTime);
   const periodDurationSeconds = Number(subgraphVault.periodDuration);
-  const months = periodDurationSeconds / SECONDS_IN_MONTH;
+  const windowDurationSeconds = Number(subgraphVault.enterExitWindowDuration);
+  const numberOfPeriods = periodDurationSeconds / windowDurationSeconds;
 
   const enterExitWindowDurationSeconds = Number(subgraphVault.enterExitWindowDuration);
   const tvl = Number(subgraphVault.tvl);
-  const currentCycle = getCurrentCycle(startDate, months, now);
+  const currentCycle = getCurrentCycle(startDate, numberOfPeriods, now, windowDurationSeconds);
   const vaultIsInZone = calculateInZoneVaultInstance(
     now,
     startDate,
@@ -181,10 +180,10 @@ const calculatePercent = (vault: Vault) => {
 };
 
 // how many cycles since the vault started:
-// months_since_start = seconds_since_vault_start / seconds_in_months
+// months_since_start = seconds_since_vault_start / seconds_in_window
 // cycles_since_start = floor(months_since_start / vault_months)
-const getCurrentCycle = (startDate: Date, months: number, now: Date) => {
-  const monthsSinceStart = differenceInSeconds(now, startDate) / SECONDS_IN_MONTH;
+const getCurrentCycle = (startDate: Date, months: number, now: Date, windowDuration: number) => {
+  const monthsSinceStart = differenceInSeconds(now, startDate) / windowDuration;
   const cyclesSinceStart = Math.floor(monthsSinceStart / months);
 
   return cyclesSinceStart;
