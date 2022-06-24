@@ -36,7 +36,7 @@ import { NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header'
 const CHART_EMBED_HEIGHT = 400;
 const CHART_HEIGHT = 500;
 
-const DUNE_TREASURY_CHART = 'https://dune.xyz/embeds/321490/612067/621fe92e-859a-4525-be32-33631910b83c';
+const DUNE_VAULTS_CHART = 'https://dune.com/embeds/913738/1597732/855d236e-0c12-4313-8f75-4d4997ef2e82';
 
 const AnalyticsPage = () => {
   const { isLoading, analytics, error } = useAnalytics();
@@ -82,7 +82,7 @@ const AnalyticsPage = () => {
 
       <Spacer small />
 
-      <Embed src={DUNE_TREASURY_CHART} height={CHART_EMBED_HEIGHT} />
+      <Embed src={DUNE_VAULTS_CHART} height={CHART_EMBED_HEIGHT} />
 
       <Spacer small />
 
@@ -129,7 +129,7 @@ const AnalyticsPage = () => {
         </ItemWrapper>
       </GridLayout>
 
-      {/* 
+      {/*
         TODO: Re-enable when backend.templedao.link is restored.
       */}
 
