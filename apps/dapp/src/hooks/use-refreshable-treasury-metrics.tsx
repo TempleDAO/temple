@@ -32,7 +32,8 @@ export default function useRefreshableTreasuryMetrics() {
       const totalLockedQueryResult = await fetchGenericSubgraph(env.subgraph.templeCore, VAULT_TVL_QUERY);
 
       const tvl = totalLockedQueryResult?.data?.vaultGroup?.tvlUSD;
-      const apy = (dailyEarnings / tvl) * 365 * 100;
+      const apr = (dailyEarnings / tvl) * 365 * 100;
+      const apy = ((1 + (apr / 100) / 12) ** 12 - 1) * 100;
 
       return Math.floor(apy);
     } catch (error) {
