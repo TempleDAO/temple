@@ -32,6 +32,7 @@ export interface TreasuryMetrics {
   treasuryValue: number;
   templeApy: number;
   templeValue: number;
+  dynamicVaultApy: number;
 }
 
 export interface DashboardMetrics {
