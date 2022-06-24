@@ -42,6 +42,7 @@ export function createWithdraw(event: WithdrawEvent): Withdraw {
   updateVaultUserBalance(vub, timestamp)
 
   vault.tvl = vault.tvl.minus(amount)
+  vault.tvlUSD = vault.tvlUSD.minus(amount.times(tokenPrice))
   if (vub.staked <= BIG_DECIMAL_0) {
     vault.userCount = vault.userCount.minus(BIG_INT_1)
   }
@@ -49,13 +50,15 @@ export function createWithdraw(event: WithdrawEvent): Withdraw {
 
   const vaultGroup = getVaultGroup(vault.name)
   vaultGroup.tvl = vaultGroup.tvl.minus(amount)
+  vaultGroup.tvlUSD = vaultGroup.tvlUSD.minus(amount.times(tokenPrice))
   vaultGroup.volume = vaultGroup.volume.plus(amount)
+  vaultGroup.volumeUSD = vaultGroup.volumeUSD.plus(amount.times(tokenPrice))
   updateVaultGroup(vaultGroup, timestamp)
 
   const metric = getMetric()
   metric.tvl = metric.tvl.minus(amount)
-  metric.volume = metric.volume.plus(amount)
   metric.tvlUSD = metric.tvlUSD.minus(amount.times(tokenPrice))
+  metric.volume = metric.volume.plus(amount)
   metric.volumeUSD = metric.volumeUSD.plus(amount.times(tokenPrice))
   updateMetric(metric, timestamp)
 

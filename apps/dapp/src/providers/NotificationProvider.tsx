@@ -37,19 +37,20 @@ export const NotificationProvider = (props: PropsWithChildren<{}>) => {
    * removes the notification with `hash`
    */
   const closeNotification = (notificationHash: string) => {
-    const newNotifications = notifications.filter(
-      (n) => n.hash !== notificationHash
-    );
-    setNotifications(newNotifications);
+    setNotifications((notifications) => {
+      return notifications.filter(({ hash }) => hash !== notificationHash);
+    });
   };
 
   /**
    * Adds a notification
    */
   const openNotification = (notification: NotificationProps) => {
-    notifications.push(notification);
     // spreading notifications to get react state to update
-    setNotifications([...notifications]);
+    setNotifications((notifications) => ([
+      ...notifications,
+      notification,
+    ]));
   };
 
   return (
