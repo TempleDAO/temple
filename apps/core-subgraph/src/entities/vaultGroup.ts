@@ -75,7 +75,9 @@ export function updateOrCreateDayData(vaultGroup: VaultGroup, timestamp: BigInt)
   dayData.timestamp = timestamp
   dayData.vaultGroup = vaultGroup.id
   dayData.tvl = vaultGroup.tvl
+  dayData.tvlUSD = vaultGroup.tvlUSD
   dayData.volume = vaultGroup.volume
+  dayData.volumeUSD = vaultGroup.volumeUSD
   dayData.opsManager = vaultGroup.opsManager
   dayData.save()
 }
