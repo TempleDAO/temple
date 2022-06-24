@@ -24,14 +24,14 @@ export default function useRefreshableTreasuryMetrics() {
       const dailyEarnings = (day14Earnings - day1Earnings) / 14;
 
       const VAULT_TVL_QUERY = `{
-        vault(id: "0x402832ec42305cf7123bc9903f693e944484b9c1") {
+        vaultGroup(id: "1m-core") {
           tvlUSD
         }
       }`;
 
       const totalLockedQueryResult = await fetchGenericSubgraph(env.subgraph.templeCore, VAULT_TVL_QUERY);
 
-      const tvl = totalLockedQueryResult?.data?.vault?.tvlUSD;
+      const tvl = totalLockedQueryResult?.data?.vaultGroup?.tvlUSD;
       const apy = (dailyEarnings / tvl) * 365 * 100;
 
       return Math.floor(apy);
