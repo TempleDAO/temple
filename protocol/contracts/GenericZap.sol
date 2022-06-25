@@ -43,13 +43,13 @@ interface IUniswapV2Factory {
 
 interface ICurvePool {
     function coins(uint256 j) external view returns (address);
-    function calc_token_amount(uint256[2] calldata _amounts, bool _is_deposit) external view returns (uint256);
-    function add_liquidity(uint256[2] calldata _amounts, uint256 _min_mint_amount, address destination) external returns (uint256);
-    function get_dy(int128 _from, int128 _to, uint256 _from_amount) external view returns (uint256);
+    function calc_token_amount(uint256[] calldata _amounts, bool _is_deposit) external view returns (uint256);
+    function add_liquidity(uint256[] calldata _amounts, uint256 _min_mint_amount, address destination) external returns (uint256);
+    function get_dy(uint256 _from, uint256 _to, uint256 _from_amount) external view returns (uint256);
     function remove_liquidity(uint256 _amount, uint256[2] calldata _min_amounts) external returns (uint256[2] memory);
     function fee() external view returns (uint256);
     function balanceOf(address account) external view returns (uint256);
-    function exchange(int128 i, int128 j, uint256 dx, uint256 min_dy) external returns (uint256);
+    function exchange(uint256 i, uint256 j, uint256 dx, uint256 min_dy) external returns (uint256);
     function remove_liquidity_imbalance(uint256[2] memory amounts, uint256 _max_burn_amount, address _receiver) external returns (uint256);
 }
 
@@ -63,7 +63,7 @@ contract GenericZap is ZapBaseV2_3 {
   IUniswapV2Router public uniswapV2Router;
 
   address private constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-  ICurveFactory private constant CURVE_FACTORY = 0xB9fC157394Af804a3578134A6585C0dc9cc990d4;
+  ICurveFactory private constant CURVE_FACTORY = ICurveFactory(0xB9fC157394Af804a3578134A6585C0dc9cc990d4);
   uint256 private constant DEADLINE = 0xf000000000000000000000000000000000000000000000000000000000000000;
 
   mapping(address => bool) public permittedTokens;
@@ -172,6 +172,12 @@ contract GenericZap is ZapBaseV2_3 {
     );
   }
 
+  function zapLiquidityBalancerPool(
+
+  ) external payable whenNotPaused {
+
+  }
+
   function zapLiquidityCurvePool(
     address _fromToken,
     uint256 _fromAmount,
@@ -228,7 +234,7 @@ contract GenericZap is ZapBaseV2_3 {
     _pullTokens(_fromToken, _fromAmount);
 
     uint256 nCoins = CURVE_FACTORY.get_n_coins(_pool);
-    address[] memory coins = new address[nCoins]();
+    address[] memory coins = new address[](nCoins);
     uint256 fromTokenIndex = nCoins; // set wrong index as initial
     for (uint i=0; i<nCoins; i++) {
       coins[i] = ICurvePool(_pool).coins(i);
@@ -243,7 +249,7 @@ contract GenericZap is ZapBaseV2_3 {
         _fillQuoteCurve(
           _fromToken, 
           _fromAmount,
-          _coins,
+          coins,
           _swapTarget,
           _swapData
         );
@@ -265,22 +271,22 @@ contract GenericZap is ZapBaseV2_3 {
       coinAmounts[otherIndex] = amountB;
     }
 
-    _addLiquidityCurvePool(
+    uint256 liquidity = _addLiquidityCurvePool(
       _pool,
       _recipient,
       coinAmounts
     );
+
+    emit ZappedLPCurve(_recipient, _fromToken, liquidity, coinAmounts);
   }
 
   function _addLiquidityCurvePool(
     address _pool,
     address _recipient,
     uint256[] memory _amounts
-  ) internal {
-    uint256 minLPMintAmount = ICurvePool(_pool).calc_token_amount(_amounts, _is_deposit);
-    uint256 liquidity = ICurvePool(_pool).add_liquidity(_amounts, minLPMintAmount, _recipient);
-
-    emit ZappedLPCurve(_recipient, _amounts, liquidity);
+  ) internal returns (uint256 liquidity) {
+    uint256 minLPMintAmount = ICurvePool(_pool).calc_token_amount(_amounts, true);
+    liquidity = ICurvePool(_pool).add_liquidity(_amounts, minLPMintAmount, _recipient);
   }
 
   function zapLiquidityUniV2(
@@ -444,7 +450,7 @@ contract GenericZap is ZapBaseV2_3 {
   function _swapCoins(
     address _pool,
     uint256 _fromAmount,
-    uint256[] memory _coins,
+    address[] memory _coins,
     uint256 _fromTokenIndex
   ) internal returns (uint256, uint256, uint256) {
     // add coins in equal parts. assumes two coins
@@ -477,10 +483,6 @@ contract GenericZap is ZapBaseV2_3 {
     IUniswapV2Pair pair = IUniswapV2Pair(_pair);
     address token0 = pair.token0();
     address token1 = pair.token1();
-    /*uint256 intermediateAmountToSwap = _intermediateAmount / 2;
-    unchecked {
-      _intermediateAmount -= intermediateAmountToSwap;
-    }*/
 
     (uint256 res0, uint256 res1,) = pair.getReserves(); 
     if (_intermediateToken == token0) {
@@ -540,13 +542,10 @@ contract GenericZap is ZapBaseV2_3 {
       swapData
     );
     require(amountOut >= amountOutMin, "Not enough tokens out");
-
-    //uint256 amountTemple = _enterTemple(_stableToken, templeReceiver, stableAmountBought, minTempleReceived, ammDeadline);
     
     emit ZappedIn(msg.sender, fromToken, fromAmount, toToken, amountOut);
 
     return amountOut;
-    //return amountTemple;
   }
 
   function _fillQuoteCurve(
@@ -556,11 +555,6 @@ contract GenericZap is ZapBaseV2_3 {
     address _swapTarget,
     bytes memory _swapData
   ) internal returns (uint256, uint256){
-    if (_swapTarget == WETH) {
-      _depositEth(_fromAmount);
-      return _fromAmount;
-    }
-
     uint256 valueToSend;
     if (_fromToken == address(0)) {
       require(
