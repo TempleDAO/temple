@@ -41,11 +41,29 @@ interface IUniswapV2Factory {
     function getPair(address tokenA, address tokenB) external view returns (address pair);
 }
 
+interface ICurvePool {
+    function coins(uint256 j) external view returns (address);
+    function calc_token_amount(uint256[2] calldata _amounts, bool _is_deposit) external view returns (uint256);
+    function add_liquidity(uint256[2] calldata _amounts, uint256 _min_mint_amount, address destination) external returns (uint256);
+    function get_dy(int128 _from, int128 _to, uint256 _from_amount) external view returns (uint256);
+    function remove_liquidity(uint256 _amount, uint256[2] calldata _min_amounts) external returns (uint256[2] memory);
+    function fee() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function exchange(int128 i, int128 j, uint256 dx, uint256 min_dy) external returns (uint256);
+    function remove_liquidity_imbalance(uint256[2] memory amounts, uint256 _max_burn_amount, address _receiver) external returns (uint256);
+}
+
+interface ICurveFactory {
+  function get_n_coins(address pool) external view returns (uint256);
+}
+
+
 contract GenericZap is ZapBaseV2_3 {
 
   IUniswapV2Router public uniswapV2Router;
 
   address private constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+  ICurveFactory private constant CURVE_FACTORY = 0xB9fC157394Af804a3578134A6585C0dc9cc990d4;
   uint256 private constant DEADLINE = 0xf000000000000000000000000000000000000000000000000000000000000000;
 
   mapping(address => bool) public permittedTokens;
@@ -54,8 +72,9 @@ contract GenericZap is ZapBaseV2_3 {
   event ZappedIn(address indexed sender, address fromToken, uint256 fromAmount, address toToken, uint256 amountOut);
 
   event UniswapV2RouterSet(address router);
-  event ZappedLPUniV2(address recipient, address token0, address token1, uint256 amountA, uint256 amountB);
+  event ZappedLPUniV2(address indexed recipient, address token0, address token1, uint256 amountA, uint256 amountB);
   event TokenRecovered(address token, address to, uint256 amount);
+  event ZappedLPCurve(address indexed recipient, address fromToken, uint256 liquidity, uint256[] amounts);
 
   constructor (
     address _router
@@ -153,6 +172,117 @@ contract GenericZap is ZapBaseV2_3 {
     );
   }
 
+  function zapLiquidityCurvePool(
+    address _fromToken,
+    uint256 _fromAmount,
+    address _pool,
+    bool _oneSided,
+    address _swapTarget,
+    bytes memory _swapData
+  ) external payable whenNotPaused {
+    _zapLiquidityCurvePool(
+      _fromToken,
+      _fromAmount,
+      _pool,
+      msg.sender,
+      _oneSided,
+      _swapTarget,
+      _swapData
+    );
+  }
+
+  function zapLiquidityCurvePoolFor(
+    address _fromToken,
+    uint256 _fromAmount,
+    address _pool,
+    address _recipient,
+    bool _oneSided,
+    address _swapTarget,
+    bytes memory _swapData
+  ) external payable whenNotPaused {
+    _zapLiquidityCurvePool(
+      _fromToken,
+      _fromAmount,
+      _pool,
+      _recipient,
+      _oneSided,
+      _swapTarget,
+      _swapData
+    );
+  }
+
+  function _zapLiquidityCurvePool(
+    address _fromToken,
+    uint256 _fromAmount,
+    address _pool,
+    address _recipient,
+    bool _oneSided,
+    address _swapTarget,
+    bytes memory _swapData
+  ) internal {
+    // todo: change to permittedCurveTokens
+    require(permittedTokens[_fromToken] == true, "Zaps unsupported for this token");
+    require(approvedTargets[_swapTarget], "Unapproved target");
+
+    // pull tokens
+    _pullTokens(_fromToken, _fromAmount);
+
+    uint256 nCoins = CURVE_FACTORY.get_n_coins(_pool);
+    address[] memory coins = new address[nCoins]();
+    uint256 fromTokenIndex = nCoins; // set wrong index as initial
+    for (uint i=0; i<nCoins; i++) {
+      coins[i] = ICurvePool(_pool).coins(i);
+      if (_fromToken == coins[i]) {
+        fromTokenIndex = i;
+      }
+    }
+    // fromtoken not a pool coin
+    if (fromTokenIndex == nCoins) {
+      // reuse fromTokenIndex as coin bought index and fromAmount as amount bought
+      (fromTokenIndex, _fromAmount) = 
+        _fillQuoteCurve(
+          _fromToken, 
+          _fromAmount,
+          _coins,
+          _swapTarget,
+          _swapData
+        );
+    }
+    // too populate coin amounts for liquidity addition
+    uint256[] memory coinAmounts = new uint256[](nCoins);
+    // if one-sided liquidity addition
+    if (_oneSided) {
+      coinAmounts[fromTokenIndex] = _fromAmount;
+      _approveToken(coins[fromTokenIndex], _pool, _fromAmount);
+    } else {
+      // todo: approve during swap and save vars?
+      (uint256 amountA, uint256 amountB, uint256 otherIndex) = _swapCoins(_pool, _fromAmount, coins, fromTokenIndex);
+
+      _approveToken(coins[fromTokenIndex], _pool, amountA);
+      _approveToken(coins[otherIndex], _pool, amountB);
+
+      coinAmounts[fromTokenIndex] = amountA;
+      coinAmounts[otherIndex] = amountB;
+    }
+
+    _addLiquidityCurvePool(
+      _pool,
+      _recipient,
+      coinAmounts
+    );
+  }
+
+  function _addLiquidityCurvePool(
+    address _pool,
+    address _recipient,
+    uint256[] memory _amounts
+  ) internal {
+    uint256 minLPMintAmount = ICurvePool(_pool).calc_token_amount(_amounts, _is_deposit);
+    uint256 liquidity = ICurvePool(_pool).add_liquidity(_amounts, minLPMintAmount, _recipient);
+
+    emit ZappedLPCurve(_recipient, _amounts, liquidity);
+  }
+
   function zapLiquidityUniV2(
     address _fromToken,
     uint256 _fromAmount,
@@ -233,11 +363,11 @@ contract GenericZap is ZapBaseV2_3 {
     _approveToken(token1, address(uniswapV2Router), amountB);
     _approveToken(token0, address(uniswapV2Router), amountA);
 
-    _addLiquidity(_pair, _recipient, amountA, amountB, _transferResidual);
+    _addLiquidityUniV2(_pair, _recipient, amountA, amountB, _transferResidual);
     
   }
 
-  function _addLiquidity(
+  function _addLiquidityUniV2(
     address _pair,
     address _recipient,
     uint256 _amountA,
@@ -309,6 +439,34 @@ contract GenericZap is ZapBaseV2_3 {
           (amountA, amountB) = (amountAOptimal, amountBDesired);
       }
     }
+  }
+
+  function _swapCoins(
+    address _pool,
+    uint256 _fromAmount,
+    uint256[] memory _coins,
+    uint256 _fromTokenIndex
+  ) internal returns (uint256, uint256, uint256) {
+    // add coins in equal parts. assumes two coins
+    uint256 amountToSwap = _fromAmount / 2;
+    unchecked {
+      _fromAmount -= amountToSwap;
+    }
+    // calculate amount out and approve
+    // use any other coin in pool as target
+    uint256 otherIndex;
+    for (uint i=0; i<_coins.length; i++) {
+      if (i != _fromTokenIndex) {
+        otherIndex = i;
+        break;
+      }
+    }
+    ICurvePool pool = ICurvePool(_pool);
+    uint256 minAmountOut = pool.get_dy(_fromTokenIndex, otherIndex, amountToSwap);
+    _approveToken(_coins[_fromTokenIndex], _pool, amountToSwap);
+    uint256 amountReceived = pool.exchange(_fromTokenIndex, otherIndex, amountToSwap, minAmountOut);
+
+    return (_fromAmount, amountReceived, otherIndex);
   }
 
   function _swapTokens(
@@ -391,6 +549,56 @@ contract GenericZap is ZapBaseV2_3 {
     //return amountTemple;
   }
 
+  function _fillQuoteCurve(
+    address _fromToken, 
+    uint256 _fromAmount,
+    address[] memory _coins,
+    address _swapTarget,
+    bytes memory _swapData
+  ) internal returns (uint256, uint256){
+    if (_swapTarget == WETH) {
+      _depositEth(_fromAmount);
+      return _fromAmount;
+    }
+
+    uint256 valueToSend;
+    if (_fromToken == address(0)) {
+      require(
+          _fromAmount > 0 && msg.value == _fromAmount,
+          "Invalid _amount: Input ETH mismatch"
+      );
+      valueToSend = _fromAmount;
+    } else {
+      _approveToken(_fromToken, _swapTarget, _fromAmount);
+    }
+    uint256 nCoins = _coins.length;
+    uint256[] memory balancesBefore = new uint256[](nCoins);
+    uint256 i = 0;
+    for (; i<nCoins; i++) {
+      balancesBefore[i] = IERC20(_coins[i]).balanceOf(address(this));
+    }
+
+    _executeSwap(_swapTarget, valueToSend, _swapData);
+
+    uint256 tokenBoughtIndex = nCoins;
+    //uint256 amountBought;
+    uint256 bal;
+    // reuse vars
+    for (i=0; i>nCoins; i++) {
+      bal = IERC20(_coins[i]).balanceOf(address(this));
+      if (bal > balancesBefore[i]) {
+        tokenBoughtIndex = i;
+        //unchecked {
+        //  amountBought = bal - balancesBefore[i];
+        //}
+        break;
+      }
+    }
+    require(tokenBoughtIndex != nCoins, "Invalid swap");
+
+    return (tokenBoughtIndex, bal - balancesBefore[tokenBoughtIndex]);
+  }
+
   function _fillQuote(
     address _fromToken,
     uint256 _fromAmount,
@@ -471,12 +679,12 @@ contract GenericZap is ZapBaseV2_3 {
     uint256 valueToSend;
     if (_fromToken == address(0)) {
       require(
-          _fromAmount > 0 && msg.value == _fromAmount,
-          "Invalid _amount: Input ETH mismatch"
+        _fromAmount > 0 && msg.value == _fromAmount,
+        "Invalid _amount: Input ETH mismatch"
       );
       valueToSend = _fromAmount;
     } else {
-        _approveToken(_fromToken, _swapTarget, _fromAmount);
+      _approveToken(_fromToken, _swapTarget, _fromAmount);
     }
 
     (address _token0, address _token1) = _getPairTokens(_pairAddress);
