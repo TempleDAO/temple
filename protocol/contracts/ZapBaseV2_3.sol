@@ -11,7 +11,9 @@ abstract contract ZapBaseV2_3 is Ownable {
   bool public paused;
 
   // swapTarget => approval status
-  mapping(address => bool) public approvedTargets;
+  //mapping(address => bool) public approvedTargets;
+  // fromToken => swapTarget (per curve, univ2 and balancer) approval status
+  mapping(address => mapping(address => bool)) public approvedTargets;
 
   receive() external payable {
     require(msg.sender != tx.origin, "Do not send ETH directly");
@@ -20,18 +22,20 @@ abstract contract ZapBaseV2_3 is Ownable {
   /**
     @dev Adds or removes an approved swapTarget
     * swapTargets should be Zaps and must not be tokens!
+    @param _tokens An array of tokens
     @param _targets An array of addresses of approved swapTargets
     @param _isApproved An array of booleans if target is approved or not
     */
   function setApprovedTargets(
+    address[] calldata _tokens,
     address[] calldata _targets,
     bool[] calldata _isApproved
   ) external onlyOwner {
     uint256 _length = _isApproved.length;
-    require(_targets.length == _length, "Invalid Input length");
+    require(_targets.length == _length && _tokens.length == _length, "Invalid Input length");
 
     for (uint256 i = 0; i < _length; i++) {
-      approvedTargets[_targets[i]] = _isApproved[i];
+      approvedTargets[_tokens[i]][_targets[i]] = _isApproved[i];
     }
   }
 

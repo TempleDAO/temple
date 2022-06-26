@@ -57,17 +57,77 @@ interface ICurveFactory {
   function get_n_coins(address pool) external view returns (uint256);
 }
 
+interface IAsset {}
+
+interface IBalancerVault {
+  struct JoinPoolRequest {
+    IAsset[] assets;
+    uint256[] maxAmountsIn;
+    bytes userData;
+    bool fromInternalBalance;
+  }
+
+  struct SingleSwap {
+    bytes32 poolId;
+    SwapKind kind;
+    IAsset assetIn;
+    IAsset assetOut;
+    uint256 amount;
+    bytes userData;
+  }
+
+  struct FundManagement {
+    address sender;
+    bool fromInternalBalance;
+    address payable recipient;
+    bool toInternalBalance;
+  }
+
+  enum SwapKind { GIVEN_IN, GIVEN_OUT }
+
+  function swap(
+      SingleSwap memory singleSwap,
+      FundManagement memory funds,
+      uint256 limit,
+      uint256 deadline
+  ) external payable returns (uint256 amountCalculated);
+
+  function joinPool(
+      bytes32 poolId,
+      address sender,
+      address recipient,
+      JoinPoolRequest memory request
+  ) external payable;
+
+  function getPoolTokens(
+    bytes32 poolId
+  ) external view
+    returns (
+      address[] memory tokens,
+      uint256[] memory balances,
+      uint256 lastChangeBlock
+    );
+}
+
 
 contract GenericZap is ZapBaseV2_3 {
 
   IUniswapV2Router public uniswapV2Router;
 
   address private constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-  ICurveFactory private constant CURVE_FACTORY = ICurveFactory(0xB9fC157394Af804a3578134A6585C0dc9cc990d4);
+  ICurveFactory private immutable curveFactory = ICurveFactory(0xB9fC157394Af804a3578134A6585C0dc9cc990d4);
+  IBalancerVault private immutable balancerVault = IBalancerVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
   uint256 private constant DEADLINE = 0xf000000000000000000000000000000000000000000000000000000000000000;
 
-  mapping(address => bool) public permittedTokens;
-  mapping(address => bool) public permittedTargets;
+  //mapping(address => bool) public permittedTokens;
+  //mapping(address => bool) public permittedTargets;
+
+  struct ZapLiquidityRequest {
+    uint248 poolSwapMinAmountOut;
+    bool isOneSidedLiquidityAddition;
+    address otherToken;
+    bytes poolSwapData;
+  }
 
   event ZappedIn(address indexed sender, address fromToken, uint256 fromAmount, address toToken, uint256 amountOut);
 
@@ -87,7 +147,7 @@ contract GenericZap is ZapBaseV2_3 {
    * @param _tokens tokens to permit
    * @param _isPermitted to permit or not
    */
-  function setPermittedTokens(
+  /*function setPermittedTokens(
     address[] calldata _tokens,
     bool[] calldata _isPermitted
   ) external onlyOwner {
@@ -97,14 +157,14 @@ contract GenericZap is ZapBaseV2_3 {
     for (uint256 i = 0; i < _length; i++) {
       permittedTokens[_tokens[i]] = _isPermitted[i];
     }
-  }
+  }*/
 
   /**
    * @dev set permitted targets
    * @param _targets tokens to permit
    * @param _isPermitted to permit or not
    */
-  function setPermittedTargets(
+  /*function setPermittedTargets(
     address[] calldata _targets,
     bool[] calldata _isPermitted
   ) external onlyOwner {
@@ -114,7 +174,7 @@ contract GenericZap is ZapBaseV2_3 {
     for (uint256 i = 0; i < _length; i++) {
       permittedTargets[_targets[i]] = _isPermitted[i];
     }
-  }
+  }*/
 
   /**
    * @notice recover token or ETH
@@ -159,8 +219,9 @@ contract GenericZap is ZapBaseV2_3 {
     address swapTarget,
     bytes calldata swapData
   ) external payable whenNotPaused returns (uint256 amountOut) {
-    require(permittedTokens[fromToken] == true, "Zaps unsupported for this token");
-    require(permittedTargets[swapTarget] == true, "Zaps unsupported for this target");
+    //require(permittedTokens[fromToken] == true, "Zaps unsupported for this token");
+    //require(permittedTargets[swapTarget] == true, "Zaps unsupported for this target");
+    require(approvedTargets[fromToken][swapTarget] == true, "Unsupported token/target");
 
     amountOut = _zapIn(
       fromToken,
@@ -173,9 +234,70 @@ contract GenericZap is ZapBaseV2_3 {
   }
 
   function zapLiquidityBalancerPool(
-
+    address _fromToken,
+    uint256 _fromAmount,
+    uint256 _minAmountOut,
+    bytes32 _poolId,
+    address _swapTarget,
+    bytes memory _swapData,
+    ZapLiquidityRequest memory _zapLiqRequest,
+    IBalancerVault.JoinPoolRequest memory _request
   ) external payable whenNotPaused {
+    require(approvedTargets[_fromToken][_swapTarget] == true, "Unsupported token/target");
 
+    _pullTokens(_fromToken, _fromAmount);
+
+    
+    uint256 tokenIndexBought;
+    uint256 amountBought;
+    //IBalancerPool pool = balancerVault.getPool(_poolId);
+    (address[] memory poolTokens,,) = balancerVault.getPoolTokens(_poolId);
+    uint256 poolTokensLength = poolTokens.length;
+    bool fromTokenIsPoolAsset = false;
+    uint i = 0;
+    for (i=0; i<poolTokensLength; i++) {
+      if (_fromToken == poolTokens[i]) {
+        fromTokenIsPoolAsset = true;
+        tokenIndexBought = i;
+        break;
+      }
+    }
+    // fill order and execute swap
+    if (!fromTokenIsPoolAsset) {
+      (tokenIndexBought, amountBought) = _fillQuoteCurve(
+        _fromToken,
+        _fromAmount,
+        poolTokens,
+        _swapTarget,
+        _swapData
+      );
+      require(amountBought >= _minAmountOut, "Insufficient tokens out");
+    }
+
+    // swap token into 2 parts. use data from func call args , if not one-sided liquidity addition
+    if (!_zapLiqRequest.isOneSidedLiquidityAddition) {
+      uint256 toSwap = amountBought / 2;
+      unchecked {
+        amountBought -= toSwap;
+      }
+      // use vault as target
+      _approveToken(poolTokens[tokenIndexBought], address(balancerVault), toSwap);
+      _executeSwap(address(balancerVault), 0, _zapLiqRequest.poolSwapData);
+      // ensure min amounts out swapped for other token
+      require(_zapLiqRequest.poolSwapMinAmountOut <= IERC20(_zapLiqRequest.otherToken).balanceOf(address(this)), 
+        "Insufficient swap output for other token");
+    }
+
+    // approve tokens iteratively, ensuring contract has right balance each time
+    for (i=0; i<poolTokensLength; i++) {
+      if (_request.maxAmountsIn[i] > 0) {
+        require(IERC20(poolTokens[i]).balanceOf(address(this)) >= _request.maxAmountsIn[i], 
+          "Insufficient asset tokens");
+        _approveToken(poolTokens[i], address(balancerVault), _request.maxAmountsIn[i]);
+      }
+    }
+
+    balancerVault.joinPool(_poolId, msg.sender, msg.sender, _request);
   }
 
   function zapLiquidityCurvePool(
@@ -226,14 +348,14 @@ contract GenericZap is ZapBaseV2_3 {
     address _swapTarget,
     bytes memory _swapData
   ) internal {
-    // todo: change to permittedCurveTokens
-    require(permittedTokens[_fromToken] == true, "Zaps unsupported for this token");
-    require(approvedTargets[_swapTarget], "Unapproved target");
+    //require(permittedTokens[_fromToken] == true, "Zaps unsupported for this token");
+    //require(approvedTargets[_swapTarget], "Unapproved target");
+    require(approvedTargets[_fromToken][_swapTarget] == true, "Unsupported token/target");
 
     // pull tokens
     _pullTokens(_fromToken, _fromAmount);
 
-    uint256 nCoins = CURVE_FACTORY.get_n_coins(_pool);
+    uint256 nCoins = curveFactory.get_n_coins(_pool);
     address[] memory coins = new address[](nCoins);
     uint256 fromTokenIndex = nCoins; // set wrong index as initial
     for (uint i=0; i<nCoins; i++) {
@@ -254,7 +376,7 @@ contract GenericZap is ZapBaseV2_3 {
           _swapData
         );
     }
-    // too populate coin amounts for liquidity addition
+    // to populate coin amounts for liquidity addition
     uint256[] memory coinAmounts = new uint256[](nCoins);
     // if one-sided liquidity addition
     if (_oneSided) {
@@ -339,8 +461,9 @@ contract GenericZap is ZapBaseV2_3 {
     address _swapTarget,
     bytes memory _swapData
   ) internal {
-    require(permittedTokens[_fromToken] == true, "Zaps unsupported for this token");
-    require(approvedTargets[_swapTarget], "Unapproved target");
+    //require(permittedTokens[_fromToken] == true, "Zaps unsupported for this token");
+    //require(approvedTargets[_swapTarget], "Unapproved target");
+    require(approvedTargets[_fromToken][_swapTarget] == true, "Unsupported token/target");
 
     // pull tokens
     _pullTokens(_fromToken, _fromAmount);
@@ -548,6 +671,26 @@ contract GenericZap is ZapBaseV2_3 {
     return amountOut;
   }
 
+  function _fillQuoteBalancer(
+    address _fromToken,
+    uint256 _fromAmount,
+    address[] memory _assets,
+    address _swapTarget,
+    bytes memory _swapData
+  ) internal {
+    uint256 valueToSend;
+    if (_fromToken == address(0)) {
+      require(
+          _fromAmount > 0 && msg.value == _fromAmount,
+          "Invalid _amount: Input ETH mismatch"
+      );
+      valueToSend = _fromAmount;
+    } else {
+      _approveToken(_fromToken, _swapTarget, _fromAmount);
+    }
+
+  }
+
   function _fillQuoteCurve(
     address _fromToken, 
     uint256 _fromAmount,
@@ -717,7 +860,7 @@ contract GenericZap is ZapBaseV2_3 {
     uint256 _valueToSend,
     bytes memory _swapData
   ) internal {
-    require(approvedTargets[_swapTarget], "Target not Authorized");
+    //require(approvedTargets[_fromToken][_swapTarget], "Target not Authorized");
     (bool success,) = _swapTarget.call{value: _valueToSend}(_swapData);
     require(success, "Error Swapping Tokens 1");
   }

@@ -408,7 +408,7 @@ contract TempleCoreStaxZaps is ZapBaseV2_3 {
     // use supported private AMM stable token
     uint256 initialBalance = _getBalance(_stableToken);
 
-    require(approvedTargets[_swapTarget], "Target not Authorized");
+    require(approvedTargets[_fromToken][_swapTarget], "Target not Authorized");
     (bool success,) = _swapTarget.call{value: valueToSend}(_swapData);
     require(success, "Error Swapping Tokens");
     
