@@ -41,7 +41,8 @@ let fraxSigner: Signer;
 let ownerAddress: string;
 let aliceAddress: string;
 
-describe("Temple Stax Core Zaps", async () => {
+console.log(`ENV var ${process.env.TESTS_FORK_BLOCK_NUMBER} ${process.env.TESTS_MAINNET_RPC_URL}`);
+describe.only("Temple Stax Core Zaps", async () => {
 
   before(async () => {
     await network.provider.request({
@@ -59,7 +60,7 @@ describe("Temple Stax Core Zaps", async () => {
 
   beforeEach(async () => {
     [owner, alice] = await ethers.getSigners();
-
+    console.log(`ENV var ${process.env.TESTS_FORK_BLOCK_NUMBER} ${process.env.TESTS_MAINNET_RPC_URL}`);
     binanceSigner = await impersonateAddress(BINANCE_ACCOUNT_8);
     wethSigner = await impersonateAddress(WETH_WHALE);
     fraxSigner = await impersonateAddress(FRAX_WHALE);
@@ -76,13 +77,13 @@ describe("Temple Stax Core Zaps", async () => {
     );
     templeRouter = TempleStableAMMRouter__factory.connect(TEMPLE_STABLE_ROUTER, owner);
 
-    await templeZaps.setApprovedTargets([ZEROEX_EXCHANGE_PROXY, TEMPLE_V2_ROUTER], [true, true]);
-    await templeZaps.setPermittableTokens([FRAX, FEI, USDC, UNI], [true, true, true, true]);
-    await templeZaps.setTempleRouter(TEMPLE_STABLE_ROUTER);
-    await templeZaps.setSupportedStables([FRAX, FEI], [true, true]);
+    //await templeZaps.setApprovedTargets([ZEROEX_EXCHANGE_PROXY, TEMPLE_V2_ROUTER], [true, true]);
+    //await templeZaps.setPermittableTokens([FRAX, FEI, USDC, UNI], [true, true, true, true]);
+    //await templeZaps.setTempleRouter(TEMPLE_STABLE_ROUTER);
+    //await templeZaps.setSupportedStables([FRAX, FEI], [true, true]);
   });
 
-  describe("Admin", async () => {
+  /*describe("Admin", async () => {
     it("admin tests", async () => {
       await shouldThrow(templeZaps.connect(alice).setApprovedTargets([ZEROEX_EXCHANGE_PROXY, TEMPLE_STABLE_ROUTER], [true, true]), /Ownable: caller is not the owner/);
       await shouldThrow(templeZaps.connect(alice).toggleContractActive(), /Ownable: caller is not the owner/);
@@ -363,7 +364,7 @@ describe("Temple Stax Core Zaps", async () => {
       expect(await fraxToken.balanceOf(templeZaps.address)).to.eq(zapsFraxBalBefore);
       expect(await templeToken.balanceOf(templeZaps.address)).to.eq(zapsTempleBalBefore);
     });
-  });
+  });*/
   
 });
 
