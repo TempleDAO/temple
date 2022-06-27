@@ -13,6 +13,7 @@ import background2 from 'assets/images/dashboard-2.png';
 import background3 from 'assets/images/dashboard-3.png';
 import texture2 from 'assets/images/texture-2.svg';
 
+import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { Container, Subheading } from '../styles';
 import { formatTemple } from 'components/Vault/utils';
 import { Popover } from 'components/Popover';
@@ -34,6 +35,22 @@ export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance = 
         closeOnClickOutside
         onClose={() => setClaimPopoverOpen(false)}
         showCloseButton={false}
+        header={
+          <HeaderWrapper>
+            <TitleText>Claim {TICKER_SYMBOL.OG_TEMPLE_TOKEN}</TitleText>
+            <Tooltip
+              content={
+                <>
+                  All your $OGTEMPLE in the locking contract are represented here. If your $OGTEMPLE have unlocked, they
+                  will be able to be claimed.
+                </>
+              }
+              position={'top'}
+            >
+              <TooltipIcon />
+            </Tooltip>
+          </HeaderWrapper>
+        }
       >
         <Unlock />
       </Popover>
@@ -77,4 +94,13 @@ const LegacyTempleArea = styled.div`
   ${tabletAndAbove(`
     grid-template-columns: 1fr 1fr 1fr 1fr;
   `)}
+`;
+
+const HeaderWrapper = styled.div`
+  display: inline-flex;
+  align-items: center;
+`;
+
+const TitleText = styled.div`
+  margin-right: 1rem;
 `;
