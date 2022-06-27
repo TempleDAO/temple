@@ -19,6 +19,9 @@ jobs:
         working-directory: protocol
       - run: yarn test
         working-directory: protocol
+        env:
+          TESTS_FORK_BLOCK_NUMBER: ${{ secrets.TESTS_FORK_BLOCK_NUMBER }}
+          TESTS_MAINNET_RPC_URL: ${{ secrets.TESTS_MAINNET_RPC_URL }}
   fuzzTest:
     if: ${{ false }} # Foundry tests are failing due to compilation error, need to figure out why but don't want to waste any more minutes
     name: Foundry Tests
