@@ -1,11 +1,12 @@
-import React from 'react';
+import { format, isDate } from 'date-fns';
+import styled from 'styled-components';
+
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
-import dateFormat from 'dateformat';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { LockedEntry } from 'providers/types';
-import styled from 'styled-components';
-import { fromAtto } from 'utils/bigNumber';
+import { formatNumber } from 'utils/formatter';
+import { formatBigNumber } from 'components/Vault/utils';
 
 export interface ClaimOGTempleProps {
   lockedEntries: Array<LockedEntry>;
@@ -30,7 +31,11 @@ const ClaimOGTemple = ({ lockedEntries = [], onClaim }: ClaimOGTempleProps) => {
                   col: 'half',
                 }}
               >
-                <strong className={'color-dark'}>CLAIMABLE AT</strong>
+                <FontStyling>
+                  <strong className={'color-dark'}>
+                    CLAIMABLE AT
+                  </strong>
+                </FontStyling>
               </Flex>
               <Flex
                 layout={{
@@ -38,9 +43,11 @@ const ClaimOGTemple = ({ lockedEntries = [], onClaim }: ClaimOGTempleProps) => {
                   col: 'half',
                 }}
               >
-                <strong className={'color-dark'}>
-                  {TICKER_SYMBOL.OG_TEMPLE_TOKEN} AMOUNT
-                </strong>
+                <HeaderRight>
+                  <strong className={'color-dark'}>
+                    AMOUNT
+                  </strong>
+                </HeaderRight>
               </Flex>
             </Flex>
           </Header>
@@ -59,9 +66,9 @@ const ClaimOGTemple = ({ lockedEntries = [], onClaim }: ClaimOGTempleProps) => {
                   }}
                 >
                   <Indent />
-                  <p className={'color-brand'}>
-                    {dateFormat(le.lockedUntilTimestamp)}
-                  </p>
+                  <DateWrapper className={'color-brand'}>
+                    {format(le.lockedUntilTimestamp, 'MMM do p')}
+                  </DateWrapper>
                 </Flex>
                 <Flex
                   layout={{
@@ -71,9 +78,11 @@ const ClaimOGTemple = ({ lockedEntries = [], onClaim }: ClaimOGTempleProps) => {
                     alignItems: 'center',
                   }}
                 >
-                  <strong className={'color-brand'}>
-                    {fromAtto(le.balanceOGTemple)}
-                  </strong>
+                  <AmountWrapper>
+                    <strong className={'color-brand'}>
+                      {formatNumber(formatBigNumber(le.balanceOGTemple))}
+                    </strong>
+                  </AmountWrapper>
                   <ButtonClaim
                     label={'claim'}
                     isSmall
@@ -95,8 +104,26 @@ const ClaimOGTemple = ({ lockedEntries = [], onClaim }: ClaimOGTempleProps) => {
 };
 
 const ButtonClaim = styled(Button)`
-  margin-right: 1rem;
   background-color: ${(props) => props.theme.palette.brand25};
+`;
+
+const FontStyling = styled.span`
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+`;
+
+const AmountWrapper = styled(FontStyling)`
+  margin-right: 20px;
+  font-size: 0.875rem;
+`;
+
+const HeaderRight = styled(FontStyling)`
+  margin: 0 1rem 0 auto;
+`;
+
+const DateWrapper = styled(FontStyling)`
+  font-size: 0.875rem;
 `;
 
 const Header = styled.div`

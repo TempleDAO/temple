@@ -1,11 +1,9 @@
-import React, { FC, useEffect } from 'react';
+import { FC, useEffect } from 'react';
 import ClaimOGTemple from 'components/AMM/helpers/ClaimOGTemple';
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
-import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { useStaking } from 'providers/StakingProvider';
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { ConvoFlowTitle, TitleWrapper, TooltipPadding, ViewContainer } from 'components/AMM/helpers/components';
+import { ViewContainer } from 'components/AMM/helpers/components';
 
 interface UnlockProps {
   onExitClick?: () => void;
@@ -30,22 +28,6 @@ export const Unlock: FC<UnlockProps> = ({ onExitClick, onReturnClick }) => {
 
   return (
     <ViewContainer>
-      <TitleWrapper>
-        <ConvoFlowTitle>CLAIM YOUR {TICKER_SYMBOL.OG_TEMPLE_TOKEN}</ConvoFlowTitle>
-        <TooltipPadding>
-          <Tooltip
-            content={
-              <small>
-                All your $OGTEMPLE in the locking contract are represented here. If your $OGTEMPLE have unlocked, they
-                will be able to be claimed.
-              </small>
-            }
-            position={'top'}
-          >
-            <TooltipIcon />
-          </Tooltip>
-        </TooltipPadding>
-      </TitleWrapper>
       <ClaimOGTemple
         lockedEntries={lockedEntries}
         onClaim={handleClaimOgTemple}
