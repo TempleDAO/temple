@@ -126,7 +126,6 @@ contract GenericZap is ZapBaseV2_3 {
   }
 
   event ZappedIn(address indexed sender, address fromToken, uint256 fromAmount, address toToken, uint256 amountOut);
-
   event UniswapV2RouterSet(address router);
   event ZappedLPUniV2(address indexed recipient, address token0, address token1, uint256 amountA, uint256 amountB);
   event TokenRecovered(address token, address to, uint256 amount);
@@ -258,10 +257,9 @@ contract GenericZap is ZapBaseV2_3 {
     uint256 tokenBoughtIndex;
     uint256 amountBought;
     (address[] memory poolTokens,,) = balancerVault.getPoolTokens(_poolId);
-    //uint256 poolTokensLength = poolTokens.length;
     bool fromTokenIsPoolAsset = false;
     uint i = 0;
-    for (i=0; i<poolTokens.length; i++) {
+    for (; i<poolTokens.length; i++) {
       if (_fromToken == poolTokens[i]) {
         fromTokenIsPoolAsset = true;
         tokenBoughtIndex = i;
@@ -599,35 +597,6 @@ contract GenericZap is ZapBaseV2_3 {
     }
   }
 
-  function _swapCoins(
-    address _pool,
-    uint256 _fromAmount,
-    uint256 _minAmountOut,
-    address[] memory _coins,
-    uint256 _fromTokenIndex
-  ) internal returns (uint256, uint256, uint256) {
-    // add coins in equal parts. assumes two coins
-    uint256 amountToSwap = _fromAmount / 2;
-    unchecked {
-      _fromAmount -= amountToSwap;
-    }
-    // calculate amount out and approve
-    // use any other coin in pool as target
-    uint256 otherIndex;
-    for (uint i=0; i<_coins.length; i++) {
-      if (i != _fromTokenIndex) {
-        otherIndex = i;
-        break;
-      }
-    }
-    ICurvePool pool = ICurvePool(_pool);
-    //uint256 minAmountOut = pool.get_dy(_fromTokenIndex, otherIndex, amountToSwap);
-    _approveToken(_coins[_fromTokenIndex], _pool, amountToSwap);
-    uint256 amountReceived = pool.exchange(_fromTokenIndex, otherIndex, amountToSwap,_minAmountOut);
-
-    return (_fromAmount, amountReceived, otherIndex);
-  }
-
   function _swapTokens(
     address _pair,
     address _fromToken,
@@ -862,34 +831,34 @@ contract GenericZap is ZapBaseV2_3 {
 
   /**
     @notice This function is used to swap ERC20 <> ERC20
-    @param _FromTokenContractAddress The token address to swap from.
-    @param _ToTokenContractAddress The token address to swap to. 
+    @param _fromToken The token address to swap from.
+    @param _toToken The token address to swap to. 
     @param _amountIn The amount of tokens to swap
     @return tokenBought The quantity of tokens bought
     */
   function _swapErc20ToErc20(
-    address _FromTokenContractAddress,
-    address _ToTokenContractAddress,
+    address _fromToken,
+    address _toToken,
     uint256 _amountIn,
     uint256 _amountOutMin
   ) internal returns (uint256 tokenBought) {
-    if (_FromTokenContractAddress == _ToTokenContractAddress) {
+    if (_fromToken == _toToken) {
         return _amountIn;
     }
 
-    _approveToken(_FromTokenContractAddress, address(uniswapV2Router), _amountIn);
+    _approveToken(_fromToken, address(uniswapV2Router), _amountIn);
 
     IUniswapV2Factory uniV2Factory = IUniswapV2Factory(
       uniswapV2Router.factory()
     );
     address pair = uniV2Factory.getPair(
-        _FromTokenContractAddress,
-        _ToTokenContractAddress
+        _fromToken,
+        _toToken
     );
     require(pair != address(0), "No Swap Available");
     address[] memory path = new address[](2);
-    path[0] = _FromTokenContractAddress;
-    path[1] = _ToTokenContractAddress;
+    path[0] = _fromToken;
+    path[1] = _toToken;
 
     tokenBought = uniswapV2Router
       .swapExactTokensForTokens(
@@ -931,17 +900,6 @@ contract GenericZap is ZapBaseV2_3 {
 
   function _getSwapAmount(uint256 amountA, uint256 reserveA) internal pure returns (uint256) {
     return (sqrt(amountA * ((reserveA * 3988000) + (amountA * 3988009))) - (amountA * 1997)) / 1994;
-  }
-
-  // copied from univ2 library to save on external call
-  // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-  function _getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
-      //require(amountIn > 0, 'UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT');
-      //require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
-      uint amountInWithFee = amountIn * 997;
-      uint numerator = amountInWithFee * reserveOut;
-      uint denominator = (reserveIn * 1000) + amountInWithFee;
-      amountOut = numerator / denominator;
   }
 
   // babylonian method (https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method)

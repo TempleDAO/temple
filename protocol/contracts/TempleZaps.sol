@@ -187,5 +187,4 @@ contract TempleZaps is Ownable {
 
     emit ZappedTemplePlusFaithInVault(msg.sender, fromToken, fromAmount, faithAmount, boostedAmount);
   }
-
 }
