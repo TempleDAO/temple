@@ -95,6 +95,13 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
             Trade
           </MenuItem>
           <MenuItem
+            to="/dapp/auction"
+            onMenuItemActive={onMenuItemActive}
+            onClick={onClickMenuItem}
+          >
+            Auction
+          </MenuItem>
+          <MenuItem
             to="/dapp/profile"
             onMenuItemActive={onMenuItemActive}
             onClick={onClickMenuItem}

@@ -23,6 +23,10 @@ import { Summary } from 'components/Pages/Core/VaultPages/Summary';
 import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
 import TradeRoutes from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
+import AuctionLayout from 'components/Layouts/Auction';
+import { CreateAuctionPage } from 'components/Pages/Auction/create';
+import { EditAuctionPage } from 'components/Pages/Auction/edit';
+import { AuctionPage } from 'components/Pages/Auction';
 
 import env from 'constants/env';
 
@@ -95,6 +99,13 @@ ReactDOM.render(
               </Route>
               <Route path="trade/*" element={<TradeRoutes />} />
               <Route path="profile" element={<ProfilePage />} />
+              
+              <Route path="auction/*" element={<AuctionLayout />}>
+                <Route path="" element={<AuctionPage />} />
+                <Route path="admin/edit" element={<EditAuctionPage />} />
+                <Route path="admin/create" element={<CreateAuctionPage />} />
+              </Route>
+
               <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
           </>

@@ -47,6 +47,7 @@ const env: Environment = {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-rinkeby',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
   },
+  templeMultisig: '',
 };
 
 export default env;

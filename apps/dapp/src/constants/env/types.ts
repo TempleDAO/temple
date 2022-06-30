@@ -53,4 +53,5 @@ export interface Environment {
   infuraId: string;
   sentry?: Sentry;
   subgraph: Subgraphs;
+  templeMultisig: string;
 }
