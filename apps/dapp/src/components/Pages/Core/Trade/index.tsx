@@ -1,5 +1,4 @@
-import { FC } from 'react';
-import { Route, Routes, Link as BaseLink, useResolvedPath, useMatch } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import styled from 'styled-components';
 
 import BaseImage from 'components/Image/Image';
@@ -12,6 +11,7 @@ import { Container } from './styles';
 import { tabletAndAbove } from 'styles/breakpoints';
 import { buttonResets } from 'styles/mixins';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { PillMenu } from 'components/PillMenu';
 
 const TradeRoutes = () => {
   const [watchAsset] = useWatchAsset(TEMPLE_ASSET);
@@ -21,13 +21,18 @@ const TradeRoutes = () => {
       <PageWrapper>
         <Container>
           <div>
-            <MenuWrapper>
-              <Menu>
-                <TradeLink to="/dapp/trade">Trade</TradeLink>
-                <TradeLink to="/dapp/trade/stake">Stake</TradeLink>
-                <TradeLink to="/dapp/trade/unstake">Unstake</TradeLink>
-              </Menu>
-            </MenuWrapper>
+            <PillMenu
+              links={[{
+                to: '/dapp/trade',
+                label: 'Trade',
+              }, {
+                to: '/dapp/trade/stake',
+                label: 'Stake',
+              }, {
+                to: '/dapp/trade/unstake',
+                label: 'Unstake',
+              }]}
+            />
             <Wrapper>
               <Routes>
                 <Route path="/" element={<Trade />} />
@@ -54,14 +59,6 @@ const TradeRoutes = () => {
   );
 };
 
-const TradeLink: FC<{ to: string }> = (props) => {
-  const resolved = useResolvedPath(props.to);
-  const match = useMatch({ path: resolved.pathname, end: true });
-  return (
-    <Link {...props} $isActive={!!match} />
-  );
-};
-
 const Wrapper = styled.div`
   ${tabletAndAbove(`
     padding: 1.5rem 2rem 2.5rem;
@@ -69,29 +66,6 @@ const Wrapper = styled.div`
     box-shadow: 0 0 5rem #1D1A1A;
     max-width: 40rem;
   `)}
-`;
-
-const MenuWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  width: 100%;
-  max-width: 40rem;
-  margin: 0 auto 1.5rem;
-  justify-content: space-between;
-`;
-
-const Menu = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-`;
-
-const Link = styled(BaseLink)<{ $isActive: boolean }>`
-  padding: .5rem 1rem;
-  border-radius: .5rem;
-  display: block;
-  background: ${({ $isActive, theme }) => $isActive ? '#1D1A1A' : 'transparent'};
 `;
 
 const AddTokenButton = styled.button`

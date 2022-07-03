@@ -1,7 +1,7 @@
 export const EditAuctionPage = () => {
   return (
     <div>
-      Edit Auction
+      <h3>Edit Auction</h3>
     </div>
-  )
+  );
 };

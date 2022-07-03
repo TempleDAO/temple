@@ -1,7 +1,7 @@
 export const CreateAuctionPage = () => {
   return (
     <div>
-      Create Auction
+      <h3>Create Auction</h3>
     </div>
   )
 };

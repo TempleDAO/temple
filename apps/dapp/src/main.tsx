@@ -23,7 +23,7 @@ import { Summary } from 'components/Pages/Core/VaultPages/Summary';
 import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
 import TradeRoutes from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
-import AuctionLayout from 'components/Layouts/Auction';
+import { AuctionLayout } from 'components/Layouts/Auction';
 import { CreateAuctionPage } from 'components/Pages/Auction/create';
 import { EditAuctionPage } from 'components/Pages/Auction/edit';
 import { AuctionPage } from 'components/Pages/Auction';
@@ -100,13 +100,19 @@ ReactDOM.render(
               <Route path="trade/*" element={<TradeRoutes />} />
               <Route path="profile" element={<ProfilePage />} />
               
-              <Route path="auction/*" element={<AuctionLayout />}>
+              <Route path="auctions" element={<AuctionLayout />} />
+              <Route path="auctions/*" element={<AuctionLayout />}>
                 <Route path="" element={<AuctionPage />} />
-                <Route path="admin/edit" element={<EditAuctionPage />} />
-                <Route path="admin/create" element={<CreateAuctionPage />} />
+                <Route path="edit" element={<EditAuctionPage />} />
+                <Route path="create" element={<CreateAuctionPage />} />
               </Route>
 
               <Route path="analytics" element={<AnalyticsPage />} />
+
+              <Route path="/*" element={() => {
+                console.log('hello')
+                return <Navigate replace to="/dapp" />
+              }} />
             </Route>
           </>
         </Routes>
