@@ -191,6 +191,41 @@ contract GenericZap is ZapBaseV2_3 {
       swapTarget,
       swapData
     );
+
+    // transfer token to recipient
+    SafeERC20.safeTransfer(
+      IERC20(toToken),
+      msg.sender,
+      amountOut
+    );
+  }
+
+  function zapInFor(
+    address fromToken,
+    uint256 fromAmount,
+    address toToken,
+    uint256 amountOutMin,
+    address recipient,
+    address swapTarget,
+    bytes calldata swapData
+  ) external payable whenNotPaused returns (uint256 amountOut) {
+    require(approvedTargets[fromToken][swapTarget] == true, "Unsupported token/target");
+
+    amountOut = _zapIn(
+      fromToken,
+      fromAmount,
+      toToken,
+      amountOutMin,
+      swapTarget,
+      swapData
+    );
+
+    // transfer token to recipient
+    SafeERC20.safeTransfer(
+      IERC20(toToken),
+      recipient,
+      amountOut
+    );
   }
 
   function zapLiquidityBalancerPoolFor(
@@ -259,12 +294,13 @@ contract GenericZap is ZapBaseV2_3 {
     (address[] memory poolTokens,,) = balancerVault.getPoolTokens(_poolId);
     bool fromTokenIsPoolAsset = false;
     uint i = 0;
-    for (; i<poolTokens.length; i++) {
+    for (; i<poolTokens.length;) {
       if (_fromToken == poolTokens[i]) {
         fromTokenIsPoolAsset = true;
         tokenBoughtIndex = i;
         break;
       }
+      unchecked { i++; }
     }
     // fill order and execute swap
     if (!fromTokenIsPoolAsset) {
@@ -280,8 +316,9 @@ contract GenericZap is ZapBaseV2_3 {
 
     // swap token into 2 parts. use data from func call args, if not one-sided liquidity addition
     if (!_zapLiqRequest.isOneSidedLiquidityAddition) {
-      uint256 toSwap = amountBought / 2;
+      uint256 toSwap;
       unchecked {
+        toSwap = amountBought / 2;
         amountBought -= toSwap;
       }
       // use vault as target
@@ -293,12 +330,13 @@ contract GenericZap is ZapBaseV2_3 {
     }
 
     // approve tokens iteratively, ensuring contract has right balance each time
-    for (i=0; i<poolTokens.length; i++) {
+    for (i=0; i<poolTokens.length;) {
       if (_request.maxAmountsIn[i] > 0) {
         require(IERC20(poolTokens[i]).balanceOf(address(this)) >= _request.maxAmountsIn[i], 
           "Insufficient asset tokens");
         _approveToken(poolTokens[i], address(balancerVault), _request.maxAmountsIn[i]);
       }
+      unchecked { i++; }
     }
 
     balancerVault.joinPool(_poolId, msg.sender, _recipient, _request);
@@ -363,17 +401,18 @@ contract GenericZap is ZapBaseV2_3 {
     uint256 nCoins = curveFactory.get_n_coins(_pool);
     address[] memory coins = new address[](nCoins);
     uint256 fromTokenIndex = nCoins; // set wrong index as initial
-    uint256 otherTokenIndex;
+    uint256 otherTokenIndex = nCoins;
     uint256 i;
-    for (i=0; i<nCoins; i++) {
+    for (i=0; i<nCoins;) {
       coins[i] = ICurvePool(_pool).coins(i);
       if (_fromToken == coins[i]) {
         fromTokenIndex = i;
       } else if (coins[i] == _zapLiqRequest.otherToken) {
         otherTokenIndex = i;
       }
+      unchecked { i++; }
     }
-    require(fromTokenIndex != otherTokenIndex, "Invalid token indices");
+    require(fromTokenIndex != otherTokenIndex && otherTokenIndex != nCoins, "Invalid token indices");
     // fromtoken not a pool coin
     if (fromTokenIndex == nCoins) {
       // reuse fromTokenIndex as coin bought index and fromAmount as amount bought
@@ -396,8 +435,9 @@ contract GenericZap is ZapBaseV2_3 {
     } else {
       // swap coins
       // add coins in equal parts. assumes two coins
-      uint256 amountToSwap = _fromAmount / 2;
+      uint256 amountToSwap;
       unchecked {
+        amountToSwap = _fromAmount / 2;
         _fromAmount -= amountToSwap;
       }
       require(approvedTargets[coins[fromTokenIndex]][_pool] == true, "Pool not approved");
@@ -407,7 +447,7 @@ contract GenericZap is ZapBaseV2_3 {
       amountToSwap = abi.decode(result, (uint256));
       require(_zapLiqRequest.poolSwapMinAmountOut <= amountToSwap, 
         "Insufficient swap output for other token");
-        // reinit variable to avoid stack too deep
+      // reinit variable to avoid stack too deep
       uint256 fromAmount = _fromAmount;
       _approveToken(coins[fromTokenIndex], _pool, fromAmount);
       _approveToken(coins[otherTokenIndex], _pool, amountToSwap);
@@ -688,8 +728,9 @@ contract GenericZap is ZapBaseV2_3 {
     uint256 nCoins = _coins.length;
     uint256[] memory balancesBefore = new uint256[](nCoins);
     uint256 i = 0;
-    for (; i<nCoins; i++) {
+    for (; i<nCoins;) {
       balancesBefore[i] = IERC20(_coins[i]).balanceOf(address(this));
+      unchecked { i++; }
     }
 
     _executeSwap(_swapTarget, valueToSend, _swapData);
@@ -697,12 +738,13 @@ contract GenericZap is ZapBaseV2_3 {
     uint256 tokenBoughtIndex = nCoins;
     uint256 bal;
     // reuse vars
-    for (i=0; i<nCoins; i++) {
+    for (i=0; i<nCoins;) {
       bal = IERC20(_coins[i]).balanceOf(address(this));
       if (bal > balancesBefore[i]) {
         tokenBoughtIndex = i;
         break;
       }
+      unchecked { i++; }
     }
     require(tokenBoughtIndex != nCoins, "Invalid swap");
 
@@ -740,35 +782,6 @@ contract GenericZap is ZapBaseV2_3 {
     unchecked {
       amountBought = _getBalance(_toToken) - initialBalance;
     }
-  }
-
-  /**
-    @dev Transfers tokens from msg.sender to this contract
-    @dev If native token, use msg.value
-    @dev For use with Zap Ins
-    @param token The ERC20 token to transfer to this contract (0 address if ETH)
-    @return Quantity of tokens transferred to this contract
-     */
-  function _pullTokens(
-    address token,
-    uint256 amount
-  ) internal returns (uint256) {
-    if (token == address(0)) {
-      require(msg.value > 0, "No ETH sent");
-      return msg.value;
-    }
-
-    require(amount > 0, "Invalid token amount");
-    require(msg.value == 0, "ETH sent with token");
-
-    SafeERC20.safeTransferFrom(
-      IERC20(token),
-      msg.sender,
-      address(this),
-      amount
-    );
-
-    return amount;
   }
 
   // fill quote but without a target token in mind (it's encoded in swapdata)
@@ -817,18 +830,6 @@ contract GenericZap is ZapBaseV2_3 {
     IWETH(WETH).deposit{value: _amount}();
   }
 
-  function _executeSwap(
-    address _swapTarget,
-    uint256 _valueToSend,
-    bytes memory _swapData
-  ) internal returns (bytes memory) {
-    //require(approvedTargets[_fromToken][_swapTarget], "Target not Authorized");
-    (bool success, bytes memory result) = _swapTarget.call{value: _valueToSend}(_swapData);
-    require(success, "Error Swapping Tokens 1");
-
-    return result;
-  }
-
   /**
     @notice This function is used to swap ERC20 <> ERC20
     @param _fromToken The token address to swap from.
@@ -872,12 +873,6 @@ contract GenericZap is ZapBaseV2_3 {
     require(tokenBought >= _amountOutMin, "Error Swapping Tokens 2"); // redundant?
   }
 
-  function _transferToken(IERC20 _token, address _to, uint256 _amount) internal {
-    uint256 balance = _token.balanceOf(address(this));
-    require(_amount <= balance, "not enough tokens");
-    SafeERC20.safeTransfer(_token, _to, _amount);
-  }
-
   /** 
     * given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
     *
@@ -902,6 +897,7 @@ contract GenericZap is ZapBaseV2_3 {
     return (sqrt(amountA * ((reserveA * 3988000) + (amountA * 3988009))) - (amountA * 1997)) / 1994;
   }
 
+  // borrowed from Uniswap V2 Core Math library https://github.com/Uniswap/v2-core/blob/master/contracts/libraries/Math.sol
   // babylonian method (https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method)
   function sqrt(uint y) internal pure returns (uint z) {
     if (y > 3) {

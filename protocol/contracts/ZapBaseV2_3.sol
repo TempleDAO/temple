@@ -73,6 +73,52 @@ abstract contract ZapBaseV2_3 is Ownable {
     }
   }
 
+  function _transferToken(IERC20 _token, address _to, uint256 _amount) internal {
+    uint256 balance = _token.balanceOf(address(this));
+    require(_amount <= balance, "not enough tokens");
+    SafeERC20.safeTransfer(_token, _to, _amount);
+  }
+
+  function _executeSwap(
+    address _swapTarget,
+    uint256 _valueToSend,
+    bytes memory _swapData
+  ) internal returns (bytes memory) {
+    (bool success, bytes memory result) = _swapTarget.call{value: _valueToSend}(_swapData);
+    require(success, "Error Swapping Tokens 1");
+
+    return result;
+  }
+
+  /**
+    @dev Transfers tokens from msg.sender to this contract
+    @dev If native token, use msg.value
+    @dev For use with Zap Ins
+    @param token The ERC20 token to transfer to this contract (0 address if ETH)
+    @return Quantity of tokens transferred to this contract
+     */
+  function _pullTokens(
+    address token,
+    uint256 amount
+  ) internal returns (uint256) {
+    if (token == address(0)) {
+      require(msg.value > 0, "No ETH sent");
+      return msg.value;
+    }
+
+    require(amount > 0, "Invalid token amount");
+    require(msg.value == 0, "ETH sent with token");
+
+    SafeERC20.safeTransferFrom(
+      IERC20(token),
+      msg.sender,
+      address(this),
+      amount
+    );
+
+    return amount;
+  }
+
   // circuit breaker modifiers
   modifier whenNotPaused() {
     require(!paused, "Paused");
