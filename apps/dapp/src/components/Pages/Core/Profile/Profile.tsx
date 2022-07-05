@@ -302,7 +302,7 @@ const ProfileMeta = styled.div`
   gap: 0.75rem;
 
   ${phoneAndAbove(`
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 2fr;
   `)}
 `;
 
