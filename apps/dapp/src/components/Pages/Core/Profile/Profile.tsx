@@ -72,7 +72,6 @@ const ProfilePage = () => {
   }, BigNumber.from(0));
 
   const isLoading = vaultGroupsLoading || vaultGroupBalancesLoading;
-  const totalEarned = totalBalancesAcrossVaults.sub(totalStakedAcrossAllVaults);
   const faithBalance = faith.usableFaith;
 
   let lockedOGTempleBalance = BigNumber.from(0);
