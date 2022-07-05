@@ -302,6 +302,20 @@ contract GenericZap is ZapBaseV2_3 {
       }
       unchecked { i++; }
     }
+    /*assembly {
+      let data := add(poolTokens, 0x20)
+      for { end := add(data, poolTokens.length) }
+        lt(data, end)
+        { data := add(data, 0x20) }
+      {
+        if eq(_fromToken, data) 
+        {
+          fromTokenIsPoolAsset := true
+          tokenBoughtIndex := i
+          break
+        }
+      }
+    }*/
     // fill order and execute swap
     if (!fromTokenIsPoolAsset) {
       (tokenBoughtIndex, amountBought) = _fillQuotePool(
