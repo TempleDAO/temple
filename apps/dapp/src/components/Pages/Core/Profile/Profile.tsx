@@ -153,7 +153,7 @@ const ProfilePage = () => {
                     ticks: { stroke: '#6b6b76' },
                     text: { stroke: 'none', fill: '#6b6b76', fontWeight: 600 },
                   }}
-                  // tickTotal={5}
+                  tickTotal={5}
                   tickFormat={(v) => `${v} $T`}
                 />
                 <LineSeries
