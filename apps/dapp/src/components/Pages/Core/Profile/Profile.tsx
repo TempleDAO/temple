@@ -117,17 +117,6 @@ const ProfilePage = () => {
                   isLoading={isLoading}
                 />
                 <StatsCard
-                  label="$Temple Earned"
-                  stat={formatTemple(totalEarned)}
-                  backgroundColor={theme.palette.brand75}
-                  backgroundImageUrl={texture4}
-                  smallStatFont
-                  isSquare={false}
-                  height={STAT_CARD_HEIGHT}
-                  className="stat"
-                  isLoading={isLoading}
-                />
-                <StatsCard
                   label="$Temple Claimable"
                   stat={formatTemple(claimableBalance)}
                   backgroundColor={theme.palette.brand75}
@@ -145,7 +134,7 @@ const ProfilePage = () => {
                 xDomain={xDomain}
                 yDomain={yDomain}
                 margin={{ left: 70 }}
-                height={250}
+                height={264}
               >
                 <XAxis
                   style={{
@@ -165,7 +154,7 @@ const ProfilePage = () => {
                     ticks: { stroke: '#6b6b76' },
                     text: { stroke: 'none', fill: '#6b6b76', fontWeight: 600 },
                   }}
-                  tickTotal={5}
+                  // tickTotal={5}
                   tickFormat={(v) => `${v} $T`}
                 />
                 <LineSeries
@@ -319,8 +308,8 @@ const ProfileMeta = styled.div`
 
 const StatCards = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
   gap: 0.75rem;
 `;
 
