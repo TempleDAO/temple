@@ -198,6 +198,7 @@ contract TempleZaps is Ownable {
   ) internal {
     require(supportedStables[_stableToken] == true, "Unsupported stable token");
     
+    SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), address(zaps), _fromAmount);
     uint256 amountOut = zaps.zapIn(_fromToken, _fromAmount, _stableToken, _minStableReceived, _swapTarget, _swapData);
 
     _enterTemple(_stableToken, _recipient, amountOut, _minTempleReceived);
@@ -208,30 +209,40 @@ contract TempleZaps is Ownable {
     uint256 _fromAmount,
     uint256 _minTempleReceived,
     address _stableToken,
+    uint256 _minStableReceived,
     address _vault,
     address _swapTarget,
     bytes calldata _swapData
   ) external payable {
+    IERC20(_fromToken).safeTransferFrom(msg.sender, address(this), _fromAmount);
     uint256 receivedTempleAmount;
     if (_fromToken == temple) {
-      IERC20(temple).safeTransferFrom(msg.sender, address(this), _fromAmount);
       receivedTempleAmount = _fromAmount;
+    } else if (supportedStables[_fromToken]) {
+      // if fromToken is supported stable, enter temple directly
+      receivedTempleAmount = _enterTemple(_stableToken, address(this), _fromAmount, _minTempleReceived);
     } else {
-      IERC20(_fromToken).safeTransferFrom(msg.sender, address(this), _fromAmount);
+      require(supportedStables[_stableToken] == true, "Unsupported stable token");
       IERC20(_fromToken).safeIncreaseAllowance(address(zaps), _fromAmount);
-      receivedTempleAmount = zaps.zapIn(
+
+      // after zap in, enter temple from stable token
+      uint256 receivedStableAmount = zaps.zapIn(
         _fromToken,
         _fromAmount,
-        temple,
-        _minTempleReceived,
+        _stableToken,
+        _minStableReceived,
         _swapTarget,
         _swapData
       );
+      receivedTempleAmount = _enterTemple(_stableToken, address(this), receivedStableAmount, _minTempleReceived);
     }
+    
 
     // approve and deposit for user
-    IERC20(temple).safeIncreaseAllowance(_vault, receivedTempleAmount);
-    IVault(_vault).depositFor(msg.sender, receivedTempleAmount);
+    if (receivedTempleAmount > 0) {
+      IERC20(temple).safeIncreaseAllowance(_vault, receivedTempleAmount);
+      IVault(_vault).depositFor(msg.sender, receivedTempleAmount);
+    }
 
     emit ZappedTempleInVault(msg.sender, _fromToken, _fromAmount, receivedTempleAmount);
   }
