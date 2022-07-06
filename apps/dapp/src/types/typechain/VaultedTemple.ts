@@ -22,6 +22,8 @@ export interface VaultedTempleInterface extends utils.Interface {
   functions: {
     "owner()": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
+    "templeExposure()": FunctionFragment;
+    "templeToken()": FunctionFragment;
     "toTemple(uint256,address)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
     "withdraw(address,address,uint256)": FunctionFragment;
@@ -30,6 +32,14 @@ export interface VaultedTempleInterface extends utils.Interface {
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "templeExposure",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "templeToken",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -48,6 +58,14 @@ export interface VaultedTempleInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "templeExposure",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "templeToken",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "toTemple", data: BytesLike): Result;
@@ -106,6 +124,10 @@ export interface VaultedTemple extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    templeExposure(overrides?: CallOverrides): Promise<[string]>;
+
+    templeToken(overrides?: CallOverrides): Promise<[string]>;
+
     toTemple(
       amount: BigNumberish,
       toAccount: string,
@@ -131,6 +153,10 @@ export interface VaultedTemple extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  templeExposure(overrides?: CallOverrides): Promise<string>;
+
+  templeToken(overrides?: CallOverrides): Promise<string>;
+
   toTemple(
     amount: BigNumberish,
     toAccount: string,
@@ -153,6 +179,10 @@ export interface VaultedTemple extends BaseContract {
     owner(overrides?: CallOverrides): Promise<string>;
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
+
+    templeExposure(overrides?: CallOverrides): Promise<string>;
+
+    templeToken(overrides?: CallOverrides): Promise<string>;
 
     toTemple(
       amount: BigNumberish,
@@ -191,6 +221,10 @@ export interface VaultedTemple extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    templeExposure(overrides?: CallOverrides): Promise<BigNumber>;
+
+    templeToken(overrides?: CallOverrides): Promise<BigNumber>;
+
     toTemple(
       amount: BigNumberish,
       toAccount: string,
@@ -216,6 +250,10 @@ export interface VaultedTemple extends BaseContract {
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
+
+    templeExposure(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    templeToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     toTemple(
       amount: BigNumberish,

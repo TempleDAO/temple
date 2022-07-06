@@ -241,6 +241,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.NoopLiquidator__factory>;
     getContractFactory(
+      name: "NoopVaultedTempleLiquidator",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.NoopVaultedTempleLiquidator__factory>;
+    getContractFactory(
       name: "TestTreasuryAllocation",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestTreasuryAllocation__factory>;
@@ -566,6 +570,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.NoopLiquidator>;
+    getContractAt(
+      name: "NoopVaultedTempleLiquidator",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.NoopVaultedTempleLiquidator>;
     getContractAt(
       name: "TestTreasuryAllocation",
       address: string,
