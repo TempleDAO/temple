@@ -70,8 +70,13 @@ async function main() {
     await templeStaking.OG_TEMPLE()
   );
 
+
+  // MOCK TOKENS
   const frax = await new FakeERC20__factory(owner).deploy('FRAX', 'FRAX');
   const fei = await new FakeERC20__factory(owner).deploy('FEI', 'FEI');
+  const dai = await new FakeERC20__factory(owner).deploy('DAI', 'DAI');
+  const bal = await new FakeERC20__factory(owner).deploy('BAL', 'BAL');
+  const usdc = await new FakeERC20__factory(owner).deploy('USDC', 'USDC');
 
   const accounts = await ethers.getSigners();
 
@@ -258,10 +263,8 @@ async function main() {
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
-    FEI_ADDRESS: fei.address,
     INSTANT_EXIT_QUEUE_ADDRESS: instantExitQueue.address,
     OGTEMPLE_ADDRESS: ogTempleToken.address,
-    STABLE_COIN_ADDRESS: frax.address,
     TEMPLE_ADDRESS: templeToken.address,
     TEMPLE_STAKING_ADDRESS: templeStaking.address,
     TEMPLE_FAITH_ADDRESS: faith.address,
@@ -280,6 +283,13 @@ async function main() {
     // TEMPLE_VAULT_1_M_2: vault2,
     // TEMPLE_VAULT_1_M_3: vault3,
     // TEMPLE_VAULT_1_M_4: vault4,
+
+    // MOCK TOKENS
+    STABLE_COIN_ADDRESS: frax.address,
+    FEI_ADDRESS: fei.address,
+    BAL_ADDRESS: bal.address,
+    DAI_ADDRESS: dai.address,
+    USDC_ADDRESS: usdc.address,
 
     // TODO: Shouldn't output directly, but rather duplicate for every contract we need a verifier for.
     //       In production, these will always be different keys

@@ -39,6 +39,22 @@ interface Gas {
   claimOgTemple: number;
 }
 
+interface Token {
+  name: string;
+  address: string;
+}
+
+interface Tokens {
+  frax: Token;
+  temple: Token;
+  ogTemple: Token;
+  fei: Token;
+  eth: Token;
+  usdc: Token;
+  bal: Token;
+  dai: Token;
+}
+
 interface Sentry {
   environment: string;
   dsn: string;
@@ -50,6 +66,7 @@ export interface Environment {
   contracts: Contracts;
   gas?: Gas;
   fraxSellDisabledIvMultiple: number;
+  tokens: Tokens;
   infuraId: string;
   sentry?: Sentry;
   subgraph: Subgraphs;

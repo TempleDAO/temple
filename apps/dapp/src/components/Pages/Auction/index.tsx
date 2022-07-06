@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { formatDistanceStrict, format } from 'date-fns';
+import { useState, useEffect } from 'react';
+import { formatDistanceStrict, formatDuration, format, intervalToDuration } from 'date-fns';
 import { FlexibleXYPlot, XAxis, YAxis, LineSeries, HorizontalGridLines} from 'react-vis';
 import styled from 'styled-components';
 import { curveNatural } from 'd3-shape';
@@ -77,8 +77,8 @@ const ActiveAuction = ({ pool }: { pool: Pool }) => {
             {x: timestamp + MSEC_DAILY * 4, y: 8},
             {x: timestamp + MSEC_DAILY * 5, y: 5},
             {x: timestamp + MSEC_DAILY * 6, y: 7},
-            {x: timestamp + MSEC_DAILY * 7, y: 4},
-            {x: timestamp + MSEC_DAILY * 8, y: 3},
+            {x: timestamp + MSEC_DAILY * 9, y: 7},
+            {x: timestamp + MSEC_DAILY * 15, y: 4},
           ]}
         />
       </FlexibleXYPlot>
@@ -86,11 +86,84 @@ const ActiveAuction = ({ pool }: { pool: Pool }) => {
   );
 };
 
+interface Props {
+  pool: Pool;
+  timeRemaining: string;
+}
+
+const FutureAuction = ({ pool, timeRemaining }: Props) => {
+  return (
+    <>
+      <h2>
+        {pool.name}
+      </h2>
+      <h3>Launching in: {timeRemaining}</h3>
+    </>
+  );
+};
+
+const b = Date.now() + (1000 * 10)
+
+const useTimeRemaining = (pool?: Pool) => {
+  const getRemainingTime = (pool?: Pool) => {
+    const weights = pool?.weightUpdates || [];
+    const lastUpdate = weights[weights.length - 1];
+    const startTime = lastUpdate ? lastUpdate.startTimestamp : null;
+    const now = Date.now();
+
+    if (!startTime) {
+      return '';
+    }
+
+
+    if (now >= startTime.getTime()) {
+      return '';
+    }
+
+    const duration = intervalToDuration({
+      start: now,
+      end: startTime,
+    });
+
+    return formatDuration(duration, {
+      delimiter: ', ',
+      format: ['months', 'weeks', 'days', 'hours', 'seconds'],
+    });
+  };
+
+  const [time, setTime] = useState(getRemainingTime(pool));
+
+  useEffect(() => {
+    if (!pool || !time) {
+      return;
+    }
+
+    const id = setTimeout(() => {
+      setTime(getRemainingTime(pool));
+    }, 1000);
+
+    return () => {
+      clearTimeout(id);
+    };
+  }, [setTime, pool, time]);
+
+  return time;
+};
+
 export const AuctionPage = () => {
   const { pool } = useAuctionContext();
+  const timeRemaining = useTimeRemaining(pool);
 
   if (!pool) {
     return <>Coming Soon...</>;
+  }
+
+  if (timeRemaining) {
+    // starting in the future
+    // show countdown
+    return (
+      <FutureAuction pool={pool} timeRemaining={timeRemaining} />
+    );
   }
 
   return <ActiveAuction pool={pool} />;

@@ -21,18 +21,20 @@ const TradeRoutes = () => {
       <PageWrapper>
         <Container>
           <div>
-            <PillMenu
-              links={[{
-                to: '/dapp/trade',
-                label: 'Trade',
-              }, {
-                to: '/dapp/trade/stake',
-                label: 'Stake',
-              }, {
-                to: '/dapp/trade/unstake',
-                label: 'Unstake',
-              }]}
-            />
+            <MenuWrapper>
+              <PillMenu
+                links={[{
+                  to: '/dapp/trade',
+                  label: 'Trade',
+                }, {
+                  to: '/dapp/trade/stake',
+                  label: 'Stake',
+                }, {
+                  to: '/dapp/trade/unstake',
+                  label: 'Unstake',
+                }]}
+              />
+            </MenuWrapper>
             <Wrapper>
               <Routes>
                 <Route path="/" element={<Trade />} />
@@ -79,6 +81,12 @@ const AddTokenButton = styled.button`
 
 const Image = styled(BaseImage)`
   margin-right: 0.25rem;
+`;
+
+const MenuWrapper = styled.div`
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto 1.5rem;
 `;
 
 export default TradeRoutes;

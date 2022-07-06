@@ -25,6 +25,7 @@ const env: Environment = {
     vaultOps: '0x0647b5CFC9e9B03629Db83E7Aa4d1E25283DD9Cb',
     vaultProxy: '0x8adcc775251362B4E03e0437805BE3154C56b3F5',
   },
+<<<<<<< HEAD
   fraxSellDisabledIvMultiple: 1.02,
   gas: {
     swapFraxForTemple: 300000,
@@ -39,6 +40,42 @@ const env: Environment = {
     claimOgTemple: 100000,
   },
   infuraId: 'a2a39f8ae6564913a583c7b6d01c84d6',
+=======
+  tokens: {
+    frax: {
+      name: 'Frax',
+      address: '0x5eD8BD53B0c3fa3dEaBd345430B1A3a6A4e8BD7C',
+    },
+    temple: {
+      name: 'Temple',
+      address: '0x359655dcB8A32479680Af81Eb38eA3Bb2B42Af54',
+    },
+    ogTemple: {
+      name: 'OGTemple',
+      address: '0xfF8D8342DC367D66BA20403216d55B1fcC1f284e',
+    },
+    fei: {
+      name: 'Fei',
+      address: '0xFc59F66a61A59c677d021DC01d5562A144C3D737',
+    },
+    eth: {
+      name: 'WETH',
+      address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+    },
+    usdc: {
+      name: 'USDC',
+      address: '',// ENV.VITE_PUBLIC_USDC_ADDRESS,
+    },
+    bal: {
+      name: 'Bal',
+      address: '', //ENV.VITE_PUBLIC_BAL_ADDRESS,
+    },
+    dai: {
+      name: 'Dai',
+      address: '', //ENV.VITE_PUBLIC_DAI_ADDRESS,
+    },
+  },
+>>>>>>> 995d203c (wip)
   sentry: {
     environment: 'preview',
     dsn: 'https://ab0c41c30fbb405da50d9803819b1d60@o1268430.ingest.sentry.io/6456054',

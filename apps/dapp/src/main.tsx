@@ -100,19 +100,14 @@ ReactDOM.render(
               <Route path="trade/*" element={<TradeRoutes />} />
               <Route path="profile" element={<ProfilePage />} />
               
-              <Route path="auctions" element={<AuctionLayout />} />
-              <Route path="auctions/*" element={<AuctionLayout />}>
+              <Route path="auction" element={<AuctionLayout />} />
+              <Route path="auction/*" element={<AuctionLayout />}>
                 <Route path="" element={<AuctionPage />} />
                 <Route path="edit" element={<EditAuctionPage />} />
                 <Route path="create" element={<CreateAuctionPage />} />
               </Route>
 
               <Route path="analytics" element={<AnalyticsPage />} />
-
-              <Route path="/*" element={() => {
-                console.log('hello')
-                return <Navigate replace to="/dapp" />
-              }} />
             </Route>
           </>
         </Routes>

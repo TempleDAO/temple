@@ -2,11 +2,13 @@ import { FC } from 'react';
 import { Link as BaseLink, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
+interface LinkProps {
+  to: string;
+  label: string;
+}
+
 interface Props {
-  links: {
-    to: string;
-    label: string;
-  }[];
+  links: LinkProps[];
 }
 
 export const PillMenu = ({ links }: Props) => {
@@ -41,17 +43,12 @@ const Menu = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
-  margin-left: -.5rem;
 `;
 
 const Link = styled(BaseLink)<{ $isActive: boolean }>`
-  padding: .5rem 1rem;
-  border-radius: .5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
   display: block;
   background: ${({ $isActive }) => $isActive ? '#1D1A1A' : 'transparent'};
   transition: all ease-out 200ms;
-
-  &:hover {
-    // background: #1D1A1A;
-  }
 `;

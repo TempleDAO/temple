@@ -121,5 +121,5 @@ export const AuctionLayout = () => {
 export const useAuctionContext = () => useOutletContext<AuctionContext>();
 
 const AdminMenuWrapper = styled.div`
-  margin: 2rem 0 0;
+  margin: 2rem 0 -1rem;
 `;
