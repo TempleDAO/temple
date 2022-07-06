@@ -1,0 +1,5 @@
+/apps/*
+!/apps/dapp
+/protocol
+/shared
+/utils

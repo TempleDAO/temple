@@ -1,11 +1,13 @@
 import styled from 'styled-components';
 import { useAccount, useConnect, useNetwork, useDisconnect, useEnsName } from 'wagmi';
+import { useMediaQuery } from 'react-responsive';
 
 import TruncatedAddress from 'components/TruncatedAddress';
 import Loader from 'components/Loader/Loader';
 import { Button as BaseButton } from 'components/Button/Button';
 import { LOCAL_CHAIN } from 'components/WagmiProvider';
 import { useAppContext } from 'providers/AppProvider';
+import { queryVerySmallDesktop, verySmallDesktop } from 'styles/breakpoints';
 
 import Tooltip from 'components/Tooltip/Tooltip';
 
@@ -15,6 +17,9 @@ export const Account = () => {
   const { activeConnector: connector, isConnecting: connectLoading } = useConnect();
   const { data: accountData, isLoading: accountLoading } = useAccount();
   const { disconnect } = useDisconnect();
+  const isSmallDesktop = useMediaQuery({
+    query: queryVerySmallDesktop,
+  });
 
   const isLocalChain = activeChain?.id === LOCAL_CHAIN.id;
   const { data: ensName } = useEnsName({
@@ -46,18 +51,20 @@ export const Account = () => {
    
     return (
       <>
-        <UserAddress
-          target="_blank"
-          rel="noreferrer noopener"
-          href={explorerUrl}
-          onClick={(e) => {
-            if (explorerUrl === '#') {
-              e.preventDefault();
-            }
-          }}
-        >
-          {ensName || <TruncatedAddress address={accountData.address} />}
-        </UserAddress>
+        {!isSmallDesktop && (
+          <UserAddress
+            target="_blank"
+            rel="noreferrer noopener"
+            href={explorerUrl}
+            onClick={(e) => {
+              if (explorerUrl === '#') {
+                e.preventDefault();
+              }
+            }}
+          >
+            {ensName || <TruncatedAddress address={accountData.address} />}
+          </UserAddress>
+        )}
         {!isMetaMask ? disconnectButton : (
           <Tooltip
             content={
@@ -111,6 +118,10 @@ const ConnectButton = styled(BaseButton)`
   &:disabled {
     border: 1px solid #bd7b4f80;
   }
+
+  ${verySmallDesktop(`
+    padding: 0 0.5rem;
+  `)}
 `;
 
 const UserAddress = styled.a`

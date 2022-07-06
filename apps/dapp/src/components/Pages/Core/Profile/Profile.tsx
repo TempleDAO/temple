@@ -72,7 +72,6 @@ const ProfilePage = () => {
   }, BigNumber.from(0));
 
   const isLoading = vaultGroupsLoading || vaultGroupBalancesLoading;
-  const totalEarned = totalBalancesAcrossVaults.sub(totalStakedAcrossAllVaults);
   const faithBalance = faith.usableFaith;
 
   let lockedOGTempleBalance = BigNumber.from(0);
@@ -117,17 +116,6 @@ const ProfilePage = () => {
                   isLoading={isLoading}
                 />
                 <StatsCard
-                  label="$Temple Earned"
-                  stat={formatTemple(totalEarned)}
-                  backgroundColor={theme.palette.brand75}
-                  backgroundImageUrl={texture4}
-                  smallStatFont
-                  isSquare={false}
-                  height={STAT_CARD_HEIGHT}
-                  className="stat"
-                  isLoading={isLoading}
-                />
-                <StatsCard
                   label="$Temple Claimable"
                   stat={formatTemple(claimableBalance)}
                   backgroundColor={theme.palette.brand75}
@@ -145,7 +133,7 @@ const ProfilePage = () => {
                 xDomain={xDomain}
                 yDomain={yDomain}
                 margin={{ left: 70 }}
-                height={250}
+                height={264}
               >
                 <XAxis
                   style={{
@@ -313,14 +301,14 @@ const ProfileMeta = styled.div`
   gap: 0.75rem;
 
   ${phoneAndAbove(`
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 2fr;
   `)}
 `;
 
 const StatCards = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
   gap: 0.75rem;
 `;
 
