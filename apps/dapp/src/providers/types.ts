@@ -1,5 +1,5 @@
 import { Network } from '@ethersproject/providers';
-import { BigNumber, ContractReceipt, Signer } from 'ethers';
+import { BigNumber, BigNumberish, ContractReceipt, Signer } from 'ethers';
 
 import { Nullable } from 'types/util';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
@@ -33,6 +33,13 @@ export type FaithBalance = {
   totalSupply: number;
   share: number;
 };
+
+export type RelicData = { id: BigNumber, items: BigNumberish[] }
+
+export type ItemInventory = {
+  relics: RelicData[]
+  items: BigNumberish[],
+}
 
 export interface LockedEntry {
   // OG_Temple balance
@@ -152,4 +159,11 @@ export interface WalletState {
     spender: string,
     minAllowance: BigNumber
   ): Promise<void>;
+}
+
+export interface RelicService {
+  inventory: Nullable<ItemInventory>,
+  updateInventory(): Promise<void>,
+  mintRelic(): Promise<Nullable<RelicData>>,
+  renounceRelic(relicId: BigNumber): Promise<Nullable<RelicData>>,
 }
