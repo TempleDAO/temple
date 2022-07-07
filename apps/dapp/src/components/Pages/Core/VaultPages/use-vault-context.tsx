@@ -7,7 +7,7 @@ const useVaultContext = () => {
   const { vault: vaultGroup } = useOutletContext<{ vault: VaultGroup }>();
   
   const activeVault = useMemo(() => {
-    return vaultGroup.vaults.find(({ entries }) => entries.find(({ inZone }) => inZone));
+    return vaultGroup.vaults.find(({ inZone }) => inZone);
   }, [vaultGroup]);
 
   useEffect(() => {

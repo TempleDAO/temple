@@ -8,8 +8,6 @@ import useRequestState from 'hooks/use-request-state';
 
 import { fromAtto } from 'utils/bigNumber';
 
-const ENV = import.meta.env;
-
 export const useVaultBalance = (vaultContractAddress: string) => {
   const { signer, wallet } = useWallet();
   

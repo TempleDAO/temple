@@ -13,7 +13,7 @@ import { SECONDS_IN_MONTH } from 'components/Vault/desktop-parts/utils';
 import { Vault } from 'components/Vault/types';
 
 import { pixelsToRems } from 'styles/mixins';
-import useVaultContext from './useVaultContext';
+import useVaultContext from './use-vault-context';
 import VaultContent from './VaultContent';
 
 const Timing = () => {

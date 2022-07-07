@@ -16,7 +16,7 @@ import useRequestState, { createMockRequest } from 'hooks/use-request-state';
 import EllipsisLoader from 'components/EllipsisLoader';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useDepositToVault } from 'hooks/core/use-deposit-to-vault';
-import useVaultContext from './useVaultContext';
+import useVaultContext from './use-vault-context';
 import { useWallet } from 'providers/WalletProvider';
 import { toAtto } from 'utils/bigNumber';
 import { MetaMaskError } from 'hooks/core/types';
