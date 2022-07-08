@@ -4,16 +4,16 @@ import { BigNumber, Signer } from "ethers";
 import { FakeERC20, FakeERC20__factory, 
   TempleERC20Token, TempleERC20Token__factory, 
   TempleFraxAMMRouter, TempleFraxAMMRouter__factory, 
-  TempleTreasury, TempleTreasury__factory, 
   TempleUniswapV2Pair, TempleUniswapV2Pair__factory,
-  TempleFraxAMMOps, TempleFraxAMMOps__factory
+  TempleFraxAMMOps, TempleFraxAMMOps__factory, 
+  TreasuryIV, TreasuryIV__factory
 } from "../typechain";
 import { toAtto, shouldThrow } from "./helpers";
 
 describe("AMM Ops", async () => {
   let templeToken: TempleERC20Token;
   let fraxToken: FakeERC20;
-  let treasury: TempleTreasury;
+  let treasuryIv: TreasuryIV;
   let owner: Signer;
   let manager: Signer;
   let alan: Signer;
@@ -36,22 +36,18 @@ describe("AMM Ops", async () => {
       templeToken.mint(await owner.getAddress(), toAtto(100)),
     ]);
 
-    treasury = await new TempleTreasury__factory(owner).deploy(
-      templeToken.address,
-      fraxToken.address,
+    treasuryIv = await new TreasuryIV__factory(owner).deploy(
+      toAtto(100),
+      toAtto(50)
     );
-
-    await templeToken.addMinter(treasury.address);
-    await fraxToken.increaseAllowance(treasury.address, toAtto(1000));
-    await treasury.seedMint(toAtto(100), toAtto(50));
 
     pair = await new TempleUniswapV2Pair__factory(owner).deploy(await owner.getAddress(), templeToken.address, fraxToken.address);
     templeRouter = await new TempleFraxAMMRouter__factory(owner).deploy(
       pair.address,
       templeToken.address,
       fraxToken.address,
-      treasury.address,
-      treasury.address, // for testing, on protocol mint is sent to treaury
+      treasuryIv.address,
+      treasuryIv.address, // for testing, on protocol mint is sent to treaury
       {frax: 100000, temple: 9000},
       1, /* threshold decay per block */
       {frax: 1000000, temple: 1000000},
@@ -73,9 +69,9 @@ describe("AMM Ops", async () => {
     ammOps = await new TempleFraxAMMOps__factory(owner).deploy(
       templeToken.address,
       templeRouter.address,
-      treasury.address,
+      treasuryIv.address,
       fraxToken.address,
-      treasury.address,
+      treasuryIv.address,
       pair.address
     );
 
@@ -83,7 +79,7 @@ describe("AMM Ops", async () => {
     await Promise.all([
       fraxToken.mint(ammOps.address, toAtto(100000)),
       templeToken.mint(ammOps.address, toAtto(10)),
-      fraxToken.mint(treasury.address, toAtto(100000)),
+      fraxToken.mint(treasuryIv.address, toAtto(100000)),
     ]);
   });
 

@@ -15,7 +15,7 @@ interface ITempleTWAP {
     function consult(uint amountIn) external view;
 }
 
-interface ITempleTreasury {
+interface ITreasuryIV {
     function intrinsicValueRatio() external view returns (uint256 frax, uint256 temple);
 }
 
@@ -25,7 +25,7 @@ contract TempleStableAMMRouter is Ownable {
     mapping(address => address) public tokenPair; 
 
     TempleERC20Token public immutable templeToken;
-    ITempleTreasury public templeTreasury;
+    ITreasuryIV public templeTreasury;
 
     address public defendStable; // stable to swap for when defend is active
 
@@ -36,7 +36,7 @@ contract TempleStableAMMRouter is Ownable {
 
     constructor(
             TempleERC20Token _templeToken,
-            ITempleTreasury _templeTreasury,
+            ITreasuryIV _templeTreasury,
             address  _defendStable
             ) {
 
@@ -49,8 +49,8 @@ contract TempleStableAMMRouter is Ownable {
         tokenPair[_token] = _pair;
     }
 
-    function setTreasury(address _templeTreasury) external onlyOwner {
-        templeTreasury = ITempleTreasury(_templeTreasury);
+    function setTreasury(ITreasuryIV _templeTreasury) external onlyOwner {
+        templeTreasury = _templeTreasury;
     }
 
     function setDefendStable(address _defendStable) external onlyOwner {
