@@ -6,9 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Vault.sol";
 import "../ABDKMathQuad.sol";
-import "../OGTemple.sol";
 import "../TempleERC20Token.sol";
-import "../TempleStaking.sol";
+import "../deprecated/TempleStaking.sol";
 import "../devotion/Faith.sol";
 
 /**
@@ -17,7 +16,7 @@ import "../devotion/Faith.sol";
 contract VaultProxy is Ownable {
     using ABDKMathQuad for bytes16;
     /** @notice Tokens / Contracted required for the proxy contract  */
-    OGTemple public immutable ogTemple;
+    IERC20 public immutable ogTemple;
     TempleERC20Token public immutable temple;
     TempleStaking public immutable templeStaking;
     Faith public immutable faith;

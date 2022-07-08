@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {IExitQueue} from "../IExitQueue.sol";
 import "../TempleERC20Token.sol";
-import "../TempleStaking.sol";
+import "../deprecated/TempleStaking.sol";
 
 /**
     @notice An exit queue implementation that instead of forcing user to withdraw, will instantly send funds straight back to the caller
