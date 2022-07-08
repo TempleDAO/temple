@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../ABDKMath64x64.sol";
 import "../TempleERC20Token.sol";
 import "./OGTemple.sol";
-import "../IExitQueue.sol";
+import "./IExitQueue.sol";
 
 // import "hardhat/console.sol";
 
