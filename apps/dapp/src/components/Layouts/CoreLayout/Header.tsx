@@ -108,6 +108,13 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
           >
             Analytics
           </MenuItem>
+          <MenuItem
+            to="/dapp/nexus"
+            onMenuItemActive={onMenuItemActive}
+            onClick={onClickMenuItem}
+          >
+            Nexus
+          </MenuItem>
         </Menu>
         <Selector $position={selectorPosition} />
       </MenuWrapper>

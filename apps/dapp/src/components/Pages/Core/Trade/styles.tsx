@@ -31,6 +31,14 @@ export const SwapContainer = styled.div`
   position: relative;
 `;
 
+export const NexusContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  position: relative;
+`;
+
 export const InputsContainer = styled.div`
   display: flex;
   align-items: center;

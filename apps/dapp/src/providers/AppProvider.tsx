@@ -17,6 +17,7 @@ import { WagmiProvider } from 'components/WagmiProvider';
 import { noop } from 'utils/helpers';
 import { ConnectorPopover } from 'components/Layouts/CoreLayout/ConnectorPopover';
 import { WrongNetworkPopover } from 'components/Layouts/CoreLayout/WrongNetworkPopover';
+import { RelicProvider } from './RelicProvider';
 
 interface AppProviderState {
   showConnectPopover: () => void;
@@ -42,16 +43,18 @@ export const AppProvider = (props: PropsWithChildren<{}>) => {
           <SwapProvider>
             <StakingProvider>
               <FaithProvider>
-                <ThemeProvider theme={theme}>
-                  <AppContext.Provider value={{ showConnectPopover }}>
-                    <ConnectorPopover
-                      isOpen={connectPopoverVisible}
-                      onClose={() => setConnectPopoverVisibile(false)}
-                    />
-                    <WrongNetworkPopover />
-                    {props.children}
-                  </AppContext.Provider>
-                </ThemeProvider>
+                <RelicProvider>
+                  <ThemeProvider theme={theme}>
+                    <AppContext.Provider value={{ showConnectPopover }}>
+                      <ConnectorPopover
+                        isOpen={connectPopoverVisible}
+                        onClose={() => setConnectPopoverVisibile(false)}
+                      />
+                      <WrongNetworkPopover />
+                      {props.children}
+                    </AppContext.Provider>
+                  </ThemeProvider>
+                </RelicProvider>
               </FaithProvider>
             </StakingProvider>
           </SwapProvider>
