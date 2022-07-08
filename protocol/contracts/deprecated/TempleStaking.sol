@@ -1,11 +1,12 @@
 pragma solidity ^0.8.4;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../ABDKMath64x64.sol";
-import "../TempleERC20Token.sol";
+import "../util/ABDKMath64x64.sol";
+import "../core/TempleERC20Token.sol";
 import "./OGTemple.sol";
 import "./IExitQueue.sol";
 
@@ -17,7 +18,7 @@ import "./IExitQueue.sol";
 contract TempleStaking is Ownable {
     using ABDKMath64x64 for int128;
     
-    TempleERC20Token immutable public TEMPLE; // The token being staked, for which TEMPLE rewards are generated
+    IERC20 immutable public TEMPLE; // The token being staked, for which TEMPLE rewards are generated
     OGTemple immutable public OG_TEMPLE; // Token used to redeem staked TEMPLE
     IExitQueue public EXIT_QUEUE;    // unstake exit queue
 
@@ -42,7 +43,7 @@ contract TempleStaking is Ownable {
     event UnstakeCompleted(address _staker, uint256 _amount);    
 
     constructor(
-        TempleERC20Token _TEMPLE,
+        IERC20 _TEMPLE,
         IExitQueue _EXIT_QUEUE,
         uint256 _epochSizeSeconds,
         uint256 _startTimestamp) {

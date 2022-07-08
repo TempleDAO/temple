@@ -3,20 +3,19 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import "./TempleERC20Token.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract TempleTeamPayments is Ownable {
     uint256 public immutable roundStartDate;
     uint256 public immutable roundEndDate;
-    TempleERC20Token public immutable TEMPLE;
+    IERC20 public immutable TEMPLE;
 
     mapping(address => uint256) public allocation;
     mapping(address => uint256) public claimed;
 
     event Claimed(address indexed member, uint256 amount);
 
-    constructor(TempleERC20Token _TEMPLE, uint256 paymentPeriodInSeconds, uint256 startTimestamp) {
+    constructor(IERC20 _TEMPLE, uint256 paymentPeriodInSeconds, uint256 startTimestamp) {
         roundStartDate = startTimestamp;
         roundEndDate = startTimestamp + paymentPeriodInSeconds;
         TEMPLE = _TEMPLE;
