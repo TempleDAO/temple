@@ -8,7 +8,7 @@ import "./Vault.sol";
 import "../ABDKMathQuad.sol";
 import "../TempleERC20Token.sol";
 import "../deprecated/TempleStaking.sol";
-import "../devotion/Faith.sol";
+import "../deprecated/Faith.sol";
 
 /**
     @notice A proxy contract for interacting with Temple Vaults. 
