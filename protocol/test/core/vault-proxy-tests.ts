@@ -2,8 +2,6 @@ import { ethers } from "hardhat";
 import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, toAtto } from "../helpers";
 import { Signer } from "ethers";
 import {
-    AcceleratedExitQueue,
-    AcceleratedExitQueue__factory,
     ExitQueue,
     ExitQueue__factory,
     JoiningFee,
@@ -32,7 +30,6 @@ describe("Vault Proxy", async () => {
   let TEMPLE: TempleERC20Token;
   let EXIT_QUEUE: ExitQueue;
   let STAKING: TempleStaking;
-  let ACCEL_EXIT_QUEUE: AcceleratedExitQueue;
   let VAULT_PROXY: VaultProxy;
   let OGTEMPLE: OGTemple;
   let FAITH: Faith;
