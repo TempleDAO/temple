@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ABDKMath64x64.sol";
 import "./TempleERC20Token.sol";
 import "./OGTemple.sol";
-import "./ExitQueue.sol";
+import "./IExitQueue.sol";
 
 // import "hardhat/console.sol";
 
@@ -19,7 +19,7 @@ contract TempleStaking is Ownable {
     
     TempleERC20Token immutable public TEMPLE; // The token being staked, for which TEMPLE rewards are generated
     OGTemple immutable public OG_TEMPLE; // Token used to redeem staked TEMPLE
-    ExitQueue public EXIT_QUEUE;    // unstake exit queue
+    IExitQueue public EXIT_QUEUE;    // unstake exit queue
 
     // epoch percentage yield, as an ABDKMath64x64
     int128 public epy; 
@@ -43,7 +43,7 @@ contract TempleStaking is Ownable {
 
     constructor(
         TempleERC20Token _TEMPLE,
-        ExitQueue _EXIT_QUEUE,
+        IExitQueue _EXIT_QUEUE,
         uint256 _epochSizeSeconds,
         uint256 _startTimestamp) {
 
@@ -63,7 +63,7 @@ contract TempleStaking is Ownable {
     }
 
     /** Sets epoch percentage yield */
-    function setExitQueue(ExitQueue _EXIT_QUEUE) external onlyOwner {
+    function setExitQueue(IExitQueue _EXIT_QUEUE) external onlyOwner {
         EXIT_QUEUE = _EXIT_QUEUE;
     }
 
