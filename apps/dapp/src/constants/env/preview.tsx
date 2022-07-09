@@ -1,6 +1,7 @@
 import { Environment } from './types';
 
 const env: Environment = {
+<<<<<<< HEAD
   alchemyId: 'VvVv_fBIiRSaTQzL9RQNybD5FSNvtK5c',
   backendUrl: 'https://backend-stage.templedao.link',
   contracts: {
@@ -24,6 +25,12 @@ const env: Environment = {
     treasuryIv: '0xA443355cE4F9c1AA6d68e057a962E86E071B0ed3',
     vaultOps: '0x0647b5CFC9e9B03629Db83E7Aa4d1E25283DD9Cb',
     vaultProxy: '0x8adcc775251362B4E03e0437805BE3154C56b3F5',
+=======
+  subgraph: {
+    templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-rinkeby',
+    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
+    balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
+>>>>>>> 1be8f94b (Admin form stuff)
   },
 <<<<<<< HEAD
   fraxSellDisabledIvMultiple: 1.02,

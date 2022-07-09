@@ -1,6 +1,7 @@
 interface Subgraphs {
   templeCore: string;
   protocolMetrics: string;
+  balancerV2: string;
 }
 
 interface Contracts {

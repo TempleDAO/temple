@@ -8,8 +8,7 @@ import { PillMenu } from 'components/PillMenu';
 
 import { AuctionContext, GraphResponse } from './types';
 import { createPool } from './utils';
-
-const BALANCER_SUBGRAPH = 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2';
+import env from 'constants/env';
 
 const QUERY = {
   query: `
@@ -70,13 +69,13 @@ export const AuctionLayout = () => {
   const [
     request,
     { response, error, isLoading },
-  ] = useSubgraphRequest<GraphResponse>(BALANCER_SUBGRAPH, QUERY);
+  ] = useSubgraphRequest<GraphResponse>(env.subgraph.balancerV2, QUERY);
 
   useEffect(() => {
     request();
   }, [request]);
 
-  const isAdmin = true;
+  const isAdmin = false;
 
   const pool = useMemo(() => {
     if (!response?.data?.pools || !response.data.pools.length) {
@@ -93,21 +92,19 @@ export const AuctionLayout = () => {
     return <>{error}</>;
   }
 
-  console.log(response);
-
   return (
     <>
       {isAdmin && (
         <AdminMenuWrapper>
           <PillMenu
             links={[{
-              to: '/dapp/auction',
+              to: '/dapp/ascend',
               label: 'Current',
             }, {
-              to: '/dapp/auction/edit',
+              to: '/dapp/ascend/edit',
               label: 'Edit',
             }, {
-              to: '/dapp/auction/create',
+              to: '/dapp/ascend/create',
               label: 'Create',
             }]}
           />
