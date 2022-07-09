@@ -2,41 +2,28 @@ import { ethers, network } from "hardhat";
 import { BaseContract, BigNumber, ContractFactory, ContractTransaction } from "ethers";
 
 export interface DeployedContracts {
+  // From environment
   FRAX: string,
-  PRESALE_ALLOCATION: string;
+  MULTISIG: string,
+
+  // Temple Core
   TEMPLE: string
-  STAKING: string
-  LEGACY_LOCKED_OG_TEMPLE: string,
-  TREASURY: string,
-  PRESALE: string,
-  SANDALWOOD_TOKEN: string,
-  TREASURY_MANAGEMENT: string,
-  OPENING_CEREMONY: string,
-  OPENING_CEREMONY_VERIFIER: string,
-
-  TEMPLE_TEAM_FIXED_PAYMENTS: string,
-  TEMPLE_TEAM_EPOCH_2: string,
-  TEMPLE_TEAM_EPOCH_4: string,
-  TEMPLE_TEAM_CONTIGENT_PAYMENTS: string,
-  TEMPLE_V2_PAIR: string,
-  TEMPLE_V2_ROUTER: string,
-  TEMPLE_AMM_OPS: string,
-  AMM_WHITELIST: string,
-  TEMPLE_CASHBACK: string,
-
-  FAITH: string,
-  FAITH_AIRDROP: string,
-  LOCKED_OG_TEMPLE: string,
-  DEVOTION: string,
-  TEMPLE_IV_SWAP: string,
-
   OPS_MANAGER: string,
   OPS_MANAGER_LIB: string,
   JOINING_FEE: string,
-  INSTANT_EXIT_QUEUE: string,
   VAULT_PROXY: string,
+  // XXX: Needs to include vaults/exposure/farming contracts created on chain
 
-  MULTISIG: string,
+  // Temple AMM
+  // XXX: Needs to include FEI pair
+  TEMPLE_V2_FRAX_PAIR: string,
+  TEMPLE_V2_ROUTER: string,
+
+  // Temple Admin
+  TEMPLE_TEAM_FIXED_PAYMENTS: string,
+  TEMPLE_TEAM_EPOCH_2: string,
+  TEMPLE_TEAM_EPOCH_3: string,
+  TEMPLE_TEAM_EPOCH_4: string,
 }
 
 export interface PolygonContracts {
@@ -53,129 +40,60 @@ export const POLYGON_CONTRACTS: {[key: string]: PolygonContracts} = {
 
 export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
   rinkeby: {
-    // No longer active/unused
-    PRESALE_ALLOCATION: '0x321518CCaf0f815Eff4A219951269A93BA45A5f8',
-    PRESALE: '0x8E861254C691FA1D4E25b966F064fAE395D9D630',
-    SANDALWOOD_TOKEN: '0xA7377AbD44F62730271DE322F920037E86e9e5C8', // not bridged onto polygon
-    OPENING_CEREMONY: '0x16e3cD38C1ddf24E758B2f3a69a8042d96c220b1',
-    OPENING_CEREMONY_VERIFIER: '0x91828143801899e82D1eD6B0Be92ebe61B1D299E',
-    AMM_WHITELIST: '0x412326Afc6d8E27467e979dc1Ac404887802018a',
-
     // From network/environment
     FRAX: '0x5eD8BD53B0c3fa3dEaBd345430B1A3a6A4e8BD7C',
 
-    // Active contrats
     TEMPLE: '0x359655dcB8A32479680Af81Eb38eA3Bb2B42Af54',
-    STAKING: '0xfF8D8342DC367D66BA20403216d55B1fcC1f284e',
-    LEGACY_LOCKED_OG_TEMPLE: '0x564462C807600684965d8A8f57eA190F2F66169C',
-    TREASURY: '0xA443355cE4F9c1AA6d68e057a962E86E071B0ed3',
 
-    // currently not configured, need to swap treasury owner via
-    // multisig. Test on rinkeby before doing the same on mainnet
-    TREASURY_MANAGEMENT: '0xB9A7F07f5D0ea3AFa454486cffe39ceFec8e136C',
     TEMPLE_TEAM_FIXED_PAYMENTS: '',
     TEMPLE_TEAM_EPOCH_2: '',
+    TEMPLE_TEAM_EPOCH_3: '',
     TEMPLE_TEAM_EPOCH_4: '',
-    TEMPLE_TEAM_CONTIGENT_PAYMENTS: '',
-    TEMPLE_V2_PAIR: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
-    TEMPLE_V2_ROUTER: '0xb50341AF85763d2D997F4ba764EbBdfAeeC0E07d',
-    TEMPLE_AMM_OPS: '0xe04D90A6d408D25c96Aea5Be018853c604bE794a',
-    TEMPLE_CASHBACK: '0x2FDac592c53A8d64183f727ee125c9bB997484D9',
 
-    FAITH: '0x727d442f05cf22f3A60b787913623f406f9E94bA',
-    FAITH_AIRDROP: '0xc101ca108be832a4c44f1F0d9872E33A118317b7',
-    LOCKED_OG_TEMPLE: '0x3C777c4F6fF2bdDD1394De9D4d6ddAB980d47Ed8',
-    DEVOTION: '0x262Eb109183B7f1b4Aa36c136C6A27e9a0c9210F',
-    TEMPLE_IV_SWAP: '',
+    TEMPLE_V2_FRAX_PAIR: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
+    TEMPLE_V2_ROUTER: '', // XXX: Update with current router
 
     OPS_MANAGER_LIB: '0xCA3Af256aBe5B11989c8069e1892a4eed8C85c17',
     OPS_MANAGER: '0x0647b5CFC9e9B03629Db83E7Aa4d1E25283DD9Cb',
     JOINING_FEE: '0x28089129bFc5d0279468D08844969c7cbDc9fe78',
-    INSTANT_EXIT_QUEUE: '0xa46cB1e481E3fd87a5aaA21FF86a1C985Be7541B',
     VAULT_PROXY: '0x8adcc775251362B4E03e0437805BE3154C56b3F5',
 
     MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
   },
   mainnet: {
-    // No longer active/unused
-    PRESALE_ALLOCATION: '0x6cf2A119f98A4B4A7FA4Fd08A1E72D7aF3ba72FE',
-    PRESALE: '0xDC9D4685847f1C8bDd4CE86BE6A83Fa09B6A08b1',
-    SANDALWOOD_TOKEN: '0x4FA80013F5d13DB10f2c5DC2987081cb48c7c069', // bridged 0xe99e95ec6DCae4c85806F13CDf1351aE0FEf55Be
-    OPENING_CEREMONY: '0xA2642dF0139faeBB1D45526a46d5c54B805Be02c',
-    OPENING_CEREMONY_VERIFIER: '0x8ed9a9980E4C7e87eDf8DA13Fc2ba53802BBa117',
-
     // From network/environment
     FRAX: '0x853d955acef822db058eb8505911ed77f175b99e',
     MULTISIG: "0x4D6175d58C5AceEf30F546C0d5A557efFa53A950",
 
-    // Active contrats
     TEMPLE: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
-    STAKING: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
-    LEGACY_LOCKED_OG_TEMPLE: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
-    TREASURY: '0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443',
-
-    // currently not configured, need to swap treasury owner via
-    // multisig. Test on rinkeby and carefully verifiy everything
-    // before making the change.
-    // NOTE: Probably better to just migrate treasury instead
-    TREASURY_MANAGEMENT: '0x20bEB455c3b7b0D84091b84c25f51Bc002d92f05', // currently unused
     TEMPLE_TEAM_FIXED_PAYMENTS: '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
     TEMPLE_TEAM_EPOCH_2: '0xe0Aafcf26576a53Cbec99481607FB53384909C36',
+    TEMPLE_TEAM_EPOCH_3: '', // XXX: FIll in
     TEMPLE_TEAM_EPOCH_4: '0x07888e0a8929eb922Aee5930f7B0894BaB5D8120',
-    TEMPLE_TEAM_CONTIGENT_PAYMENTS: '',
-    TEMPLE_V2_PAIR: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
-    TEMPLE_V2_ROUTER: '0x8A5058100E60e8F7C42305eb505B12785bbA3BcA',
-    TEMPLE_AMM_OPS: '0xc8c3C72d667196bAd40dE3e5eaDC29E74431257B',
-    AMM_WHITELIST: '0x3fAEb34Ab68709DCa02D6B48A03256317b338896',
-    TEMPLE_CASHBACK: '0x72e9fa8eD38ddbdA4b044E95A206EDaA509FdF72',
+    TEMPLE_V2_FRAX_PAIR: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
+    TEMPLE_V2_ROUTER: '', // XXX: Update with current router
 
-    FAITH: '0x78F683247cb2121B4eBfbD04110760da42752a6B',
-    FAITH_AIRDROP: '0x1b44a9a94f2bb14eeF0ded2f0428231e358d31d7',
-    LOCKED_OG_TEMPLE: '',
-    DEVOTION: '',
-    TEMPLE_IV_SWAP: '0xb0D978C8Be39C119922B99f483cD8C4092f0EA56',
     OPS_MANAGER: '0x65fE8BaBF7DA367b2B45cBD748F0490713f84828',
     OPS_MANAGER_LIB: '0x248bA5985053ee399a76B5822AdeB12FA0ab1424',
     JOINING_FEE: '0x8A17403B929ed1B6B50ea880d9C93068a5105D4C',
-    INSTANT_EXIT_QUEUE: '0x1F667edf04D8ABF8409Bf579a3F1bBf8ec263a85',
     VAULT_PROXY: '0x6f5bB7cC4F3D6628d0095545552757AB377FE15C',
   },
   localhost: {
-    // No longer active/unused
-    PRESALE_ALLOCATION: process.env.PRESALE_ALLOCATION || '',
-    PRESALE: process.env.PRESALE || '',
-    SANDALWOOD_TOKEN: process.env.SANDALWOOD_TOKEN || '',
-    OPENING_CEREMONY: process.env.OPENING_CEREMONY || '',
-    OPENING_CEREMONY_VERIFIER: process.env.OPENING_CEREMONY_VERIFIER || '',
-
     // From network/environment (setup when 00-localhost-env.ts script is run)
     FRAX: process.env.FRAX || '',
 
     // Active contrats
     TEMPLE: process.env.TEMPLE || '',
-    STAKING: process.env.STAKING || '',
-    LEGACY_LOCKED_OG_TEMPLE: process.env.LEGACY_LOCKED_OG_TEMPLE || '',
-    TREASURY: process.env.TREASURY || '',
-    TREASURY_MANAGEMENT: process.env.TREASURY_MANAGEMENT || '',
     TEMPLE_TEAM_FIXED_PAYMENTS: process.env.TEMPLE_TEAM_FIXED_PAYMENTS || '',
     TEMPLE_TEAM_EPOCH_2: process.env.TEMPLE_TEAM_EPOCH_2 || '',
+    TEMPLE_TEAM_EPOCH_3: process.env.TEMPLE_TEAM_EPOCH_3 || '',
     TEMPLE_TEAM_EPOCH_4: process.env.TEMPLE_TEAM_EPOCH_4 || '',
-    TEMPLE_TEAM_CONTIGENT_PAYMENTS: process.env.TEMPLE_TEAM_CONTIGENT_PAYMENTS || '',
-    TEMPLE_V2_PAIR: process.env.TEMPLE_V2_PAIR || '',
+    TEMPLE_V2_FRAX_PAIR: process.env.TEMPLE_V2_FRAX_PAIR || '',
     TEMPLE_V2_ROUTER: process.env.TEMPLE_V2_ROUTER || '',
-    TEMPLE_AMM_OPS: process.env.TEMPLE_AMM_OPS || '',
-    AMM_WHITELIST: process.env.AMM_WHITELIST || '',
-    TEMPLE_CASHBACK: process.env.TEMPLE_CASHBACK || '',
 
-    FAITH: process.env.FAITH || '',
-    FAITH_AIRDROP: process.env.FAITH_AIRDROP || '',
-    LOCKED_OG_TEMPLE: process.env.LOCKED_OG_TEMPLE || '',
-    DEVOTION: process.env.DEVOTION || '',
-    TEMPLE_IV_SWAP: process.env.TEMPLE_IV_SWAP || '',
     OPS_MANAGER: process.env.OPS_MANAGER || '',
     OPS_MANAGER_LIB: process.env.OPS_MANAGER_LIB || '',
     JOINING_FEE: process.env.JOINING_FEE || '',
-    INSTANT_EXIT_QUEUE: process.env.INSTANT_EXIT_QUEUE || '',
     VAULT_PROXY: process.env.VAULT_PROXY || '',
 
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
