@@ -20,6 +20,8 @@ export function createVaultUserBalance(vault: Vault, user: User, timestamp: BigI
   vub.user = user.id
   vub.amount = BIG_DECIMAL_0
   vub.value = BIG_DECIMAL_0
+  vub.earned = BIG_DECIMAL_0
+  vub.earnedUSD = BIG_DECIMAL_0
 
   vub.save()
 

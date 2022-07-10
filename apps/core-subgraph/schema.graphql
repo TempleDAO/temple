@@ -128,6 +128,8 @@ type VaultUserBalance @entity {
   amount: BigDecimal!
   staked: BigDecimal!
   value: BigDecimal!
+  earned: BigDecimal!
+  earnedUSD: BigDecimal!
 }
 
 type Deposit @entity {
