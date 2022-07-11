@@ -34,13 +34,13 @@ export type FaithBalance = {
   share: number;
 };
 
-export type RelicItemData = { id: number, count: number }
-export type RelicData = { id: BigNumber, items: RelicItemData[] }
+export type RelicItemData = { id: number; count: number };
+export type RelicData = { id: BigNumber; items: RelicItemData[] };
 
 export type ItemInventory = {
-  relics: RelicData[]
-  items: RelicItemData[],
-}
+  relics: RelicData[];
+  items: RelicItemData[];
+};
 
 export interface LockedEntry {
   // OG_Temple balance
@@ -163,11 +163,11 @@ export interface WalletState {
 }
 
 export interface RelicService {
-  inventory: Nullable<ItemInventory>,
-  updateInventory(): Promise<void>,
-  mintRelic(): Promise<Nullable<RelicData>>,
-  renounceRelic(relicId: BigNumber): Promise<Nullable<RelicData>>,
-  mintRelicItem(itemId: number): Promise<void>,
-  equiptRelicItem(relicId: BigNumber, itemId: number): Promise<void>,
-  unequiptRelicItem(relicId: BigNumber, itemId: number): Promise<void>,
+  inventory: Nullable<ItemInventory>;
+  updateInventory(): Promise<void>;
+  mintRelic(): Promise<Nullable<RelicData>>;
+  renounceRelic(relicId: BigNumber): Promise<Nullable<RelicData>>;
+  mintRelicItem(itemId: number): Promise<void>;
+  equiptRelicItem(relicId: BigNumber, itemId: number): Promise<void>;
+  unequiptRelicItem(relicId: BigNumber, itemId: number): Promise<void>;
 }
