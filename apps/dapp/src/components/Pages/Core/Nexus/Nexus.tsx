@@ -1,10 +1,12 @@
 import { Button } from 'components/Button/Button';
+import { BigNumber, BigNumberish } from 'ethers';
 import { useRelic } from 'providers/RelicProvider';
-import { ItemInventory } from 'providers/types';
+import { ItemInventory, RelicItemData } from 'providers/types';
 import { useWallet } from 'providers/WalletProvider';
 import { FC, useEffect } from 'react';
 import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
+import { asyncNoop } from 'utils/helpers';
 import { NexusContainer } from '../Trade/styles';
 import { PageWrapper } from '../utils';
 
@@ -32,9 +34,13 @@ const NexusBody = () => {
       <span>Loading...</span>
     </Header>
   } else {
+    const allItems: RelicItemData[] = [...Array(50).keys()].map(id => ({ id, count: 0 }));
+    const { relics, items } = inventory;
+
     return <NexusBodyContainer>
       <RelicRoutes inventory={inventory}/>
-      <ItemPanel heading="Items"/>
+      <MyItemPanel relicId={relics[0]?.id} items={items}/>
+      <MintItemPanel items={allItems}/>
     </NexusBodyContainer> 
   }
 }
@@ -71,12 +77,12 @@ const NoRelicPanel = (props: { relics: ItemInventory['relics'] }) => {
       </div>
     </Header>
 
-    <ItemGrid disabled/>
+    <ItemGrid items={[]} onClick={asyncNoop}/>
   </NexusPanel>
 }
 
 const RelicPanel = (props: { relics: ItemInventory['relics'] }) => {
-  const { renounceRelic } = useRelic();
+  const { renounceRelic, unequiptRelicItem } = useRelic();
   const navigate = useNavigate();
   const { id } = useParams();
   const { relics } = props;
@@ -101,38 +107,97 @@ const RelicPanel = (props: { relics: ItemInventory['relics'] }) => {
         />
       </div>
     </Header>
-    <ItemGrid/>
+    <ItemGrid items={relic.items}
+      onClick={async itemId => unequiptRelicItem(relic.id, itemId)}
+    />
   </NexusPanel>
 }
 
-const ItemPanel: FC<{
-  heading: string
+const MyItemPanel: FC<{
+  relicId?: BigNumber
+  items: RelicItemData[]
 }> = (props) => {
+  const { relicId, items } = props
+  const { equiptRelicItem } = useRelic()
+
   return <NexusPanel>
     <Header>
-      <span>{props.heading}</span>
+      <span>My Items</span>
     </Header>
-    <ItemGrid/>
+    <ItemGrid items={items}
+      onClick={async itemId => relicId && equiptRelicItem(relicId, itemId)}
+    />
   </NexusPanel>
 }
 
-const ItemGrid: FC<{
-  disabled?: boolean
+const MintItemPanel: FC<{
+  items: RelicItemData[]
 }> = (props) => {
-  const opacity = props.disabled ? .5 : 1;
-  return <ItemContainer style={{ opacity }}>
-    { [...Array(5).keys()].map((_, idx) => {
-      return <ItemWrapper>
-        <div style={{
-          background: 'darkgray',
-          border: 'solid 1px darkgray',
-          opacity: .25,
-        }}
-        />
+  const { mintRelicItem } = useRelic()
+  return <NexusPanel>
+    <Header>
+      <span>Mint Items (test only)</span>
+    </Header>
+    <ItemGrid items={props.items}
+      onClick={async item => mintRelicItem(item)}
+    />
+  </NexusPanel>
+}
+
+const GRID_COLUMN_COUNT = 5
+
+const ItemGrid: FC<{
+  items: RelicItemData[]
+  onClick: (item: number) => Promise<void>
+}> = (props) => {
+  const { items } = props
+  const rowCount = Math.max(1, Math.ceil(items.length / GRID_COLUMN_COUNT))
+  const itemIndexes = [...Array(rowCount * GRID_COLUMN_COUNT).keys()]
+  return <ItemContainer>
+    { itemIndexes.map((_, idx) => {
+      const item = items[idx]
+      return <ItemWrapper key={idx}>
+        { item == undefined
+            ? <EmptyCell/>
+            : <ItemCell>
+                <Button key={item.id} label ={`${item.id}`}
+                  onClick={() => props.onClick(item.id)}
+                />
+                { item.count > 1 && <ItemCountBadge>{ item.count }</ItemCountBadge> }
+              </ItemCell>
+        }
       </ItemWrapper>
     }) }
   </ItemContainer>
 }
+
+const ItemCell = styled.div`
+  > * {
+    width: 100%;
+    height: 100%;
+    border-radius: 15%;
+    position: relative;
+  }
+`
+
+const ItemCountBadge = styled.div`
+  position: absolute;
+  top: -0.5em;
+  right: -0.5em;
+  width: 2em;
+  height: 2em;
+  color: black;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 2em;
+  background-color: ${(props) => props.theme.palette.brand};
+`
+
+const EmptyCell = styled.div`
+  background: darkgray;
+  border: solid 1px darkgray;
+  opacity: .1;
+`
 
 const NexusBodyContainer = styled.div`
   display: flex;

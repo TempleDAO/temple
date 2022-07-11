@@ -34,11 +34,12 @@ export type FaithBalance = {
   share: number;
 };
 
-export type RelicData = { id: BigNumber, items: BigNumberish[] }
+export type RelicItemData = { id: number, count: number }
+export type RelicData = { id: BigNumber, items: RelicItemData[] }
 
 export type ItemInventory = {
   relics: RelicData[]
-  items: BigNumberish[],
+  items: RelicItemData[],
 }
 
 export interface LockedEntry {
@@ -166,4 +167,7 @@ export interface RelicService {
   updateInventory(): Promise<void>,
   mintRelic(): Promise<Nullable<RelicData>>,
   renounceRelic(relicId: BigNumber): Promise<Nullable<RelicData>>,
+  mintRelicItem(itemId: number): Promise<void>,
+  equiptRelicItem(relicId: BigNumber, itemId: number): Promise<void>,
+  unequiptRelicItem(relicId: BigNumber, itemId: number): Promise<void>,
 }

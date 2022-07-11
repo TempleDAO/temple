@@ -4,12 +4,13 @@ import {
   PropsWithChildren,
   useState,
 } from 'react';
-import { ItemInventory, RelicService } from './types';
+import { ItemInventory, RelicItemData, RelicService } from './types';
 
 import {
   Relic__factory,
   RelicItems__factory,
   Relic,
+  RelicItems,
 } from 'types/typechain';
 import {
   TEMPLE_RELIC_ADDRESS,
@@ -28,6 +29,9 @@ const INITIAL_STATE: RelicService = {
   updateInventory: asyncNoop,
   mintRelic: async () => null,
   renounceRelic: async () => null,
+  mintRelicItem: asyncNoop,
+  equiptRelicItem: asyncNoop,
+  unequiptRelicItem: asyncNoop,
 };
 
 const RelicContext = createContext(INITIAL_STATE);
@@ -50,8 +54,10 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     const relicItemsContract = new RelicItems__factory(signer).attach(TEMPLE_RELIC_ITEMS_ADDRESS);
 
     const itemIds = [...Array(200).keys()];
-    const extractValidItems = (counts: BigNumber[]) => {
-      return itemIds.filter((_, idx) => (counts[idx] && !counts[idx].eq(ZERO)));
+    const extractValidItems = (counts: BigNumber[]): RelicItemData[] => {
+      return counts
+        .map((count, idx) => ({ id: idx, count: count.toNumber() }))
+        .filter(({ count }) => count > 0)
     }
     const fetchRelicIds = async () => {
       const relicIds = [] as BigNumber[]
@@ -74,12 +80,10 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
   }
 
   const updateInventory = async () => {
-    console.log("updateInventory()", { walletAddress, signer })
     if (!walletAddress || !signer) {
       return;
     }
     const inventory = await fetchInventory(walletAddress, signer)
-    console.log("setInventoryState()", { inventory })
     setInventoryState(inventory);
     return inventory
   }
@@ -87,13 +91,30 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
   const callRelicFunction = async (fn: (relicContract: Relic) => Promise<ContractTransaction>) => {
     if (inventoryState && signer) {
       const relicContract = new Relic__factory(signer).attach(TEMPLE_RELIC_ADDRESS);
-      const existingRelics = [...inventoryState.relics]
-      await (await fn(relicContract)).wait()
-      const newInventory = await updateInventory()
-      if (newInventory) {
-        const added = newInventory.relics.filter(relic => existingRelics.findIndex(r => r.id.eq(relic.id)) < 0)
-        const removed = existingRelics.filter(relic => newInventory.relics.findIndex(r => r.id.eq(relic.id)) < 0)
-        return { added, removed }
+      const receipt = await (await fn(relicContract)).wait()
+      const inventory = (await updateInventory())!
+      return { inventory, receipt }
+    }
+  }
+
+  const callRelicItemsFunction = async (fn: (relicItemsContract: RelicItems) => Promise<ContractTransaction>) => {
+    if (inventoryState && signer) {
+      const relicItemsContract = new RelicItems__factory(signer).attach(TEMPLE_RELIC_ITEMS_ADDRESS);
+      const receipt = await (await fn(relicItemsContract)).wait()
+      const inventory = (await updateInventory())!
+      return { inventory, receipt }
+    }
+  }
+
+  const callRelicFunctionAndDiffRelics = async (fn: (relicContract: Relic) => Promise<ContractTransaction>) => {
+    if (inventoryState) {
+      const oldRelics = [...inventoryState.relics]
+      const callResult = await callRelicFunction(fn)
+      if (callResult) {
+        const { inventory: { relics: newRelics }, receipt } = callResult
+        const added = newRelics.filter(relic => oldRelics.findIndex(r => r.id.eq(relic.id)) < 0)
+        const removed = oldRelics.filter(relic => newRelics.findIndex(r => r.id.eq(relic.id)) < 0)
+        return { added, removed, receipt }
       }
     }
   }
@@ -103,11 +124,11 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
   }
 
   const mintRelic = async () => {
-    const result = await callRelicFunction(relic => relic.mintRelic())
+    const result = await callRelicFunctionAndDiffRelics(relic => relic.mintRelic())
     if (result && result.added.length > 0) {
       openNotification({
         title: `Minted ${joinRelicLabels(result.added)}`,
-        hash: TEMPLE_RELIC_ADDRESS,
+        hash: result.receipt.transactionHash,
       })
       return result.added[0]
     }
@@ -115,15 +136,45 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
   }
 
   const renounceRelic = async (relicId: BigNumber) => {
-    const result = await callRelicFunction(relic => relic.renounceRelic(relicId))
+    const result = await callRelicFunctionAndDiffRelics(relic => relic.renounceRelic(relicId))
     if (result && result.removed.length > 0) {
       openNotification({
         title: `Renounced ${joinRelicLabels(result.removed)}`,
-        hash: TEMPLE_RELIC_ADDRESS,
+        hash: result.receipt.transactionHash,
       })
       return result.removed[0]
     }
     return null
+  }
+
+  const mintRelicItem = async (itemId: number) => {
+    const result = await callRelicItemsFunction(relicItems => relicItems.mintFromUser(itemId))
+    if (result) {
+      openNotification({
+        title: `Minted Relic Item #${itemId.toString()}`,
+        hash: result.receipt.transactionHash,
+      })  
+    }
+  }
+
+  const equiptRelicItem = async (relicId: BigNumber, itemId: number) => {
+    const result = await callRelicFunction(relic => relic.batchEquipItems(relicId, [itemId], [1]))
+    if (result) {
+      openNotification({
+        title: `Equipped Item #${itemId.toString()} to Relic #${relicId.toString()}`,
+        hash: result.receipt.transactionHash,
+      })
+    }
+  }
+
+  const unequiptRelicItem = async (relicId: BigNumber, itemId: number) => {
+    const result = await callRelicFunction(relic => relic.batchUnequipItems(relicId, [itemId], [1]))
+    if (result) {
+      openNotification({
+        title: `Unequipped Item #${itemId.toString()} to Relic #${relicId.toString()}`,
+        hash: result.receipt.transactionHash,
+      })
+    }
   }
 
   return (
@@ -133,6 +184,9 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
         updateInventory: async () => { await updateInventory() },
         mintRelic,
         renounceRelic,
+        mintRelicItem,
+        equiptRelicItem,
+        unequiptRelicItem,
       }}
     >
       {props.children}
