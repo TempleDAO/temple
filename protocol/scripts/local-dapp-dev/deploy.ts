@@ -260,7 +260,8 @@ async function main() {
 
   const relic = await new Relic__factory(owner).deploy()
   const relicItems = await new RelicItems__factory(owner).deploy()
-  relicItems.setRelic(relic.address)
+  await relic.setItemContract(relicItems.address)
+  await relicItems.setRelic(relic.address)
   
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
