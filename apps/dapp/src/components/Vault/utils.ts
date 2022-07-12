@@ -204,7 +204,7 @@ export const formatTemple = (templeValue: Nullable<number | BigNumber>) => {
 
   const amount = typeof templeValue === 'number' ? templeValue : fromAtto(templeValue);
 
-  return millify(amount, { precision: 2 });
+  return millify(amount, { precision: 4 });
 };
 
 export const getBigNumberFromString = (number: string) => {
