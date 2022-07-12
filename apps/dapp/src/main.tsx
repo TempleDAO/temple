@@ -30,6 +30,7 @@ import TradeRoutes from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
 
 import env from 'constants/env';
+import NexusPage from 'components/Pages/Core/Nexus/Nexus';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -114,6 +115,7 @@ ReactDOM.render(
               <Route path="trade/*" element={<TradeRoutes />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="nexus/*" element={<NexusPage />} />
             </Route>
           </>
         </Routes>

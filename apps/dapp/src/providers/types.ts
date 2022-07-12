@@ -1,5 +1,5 @@
 import { Network } from '@ethersproject/providers';
-import { BigNumber, ContractReceipt, Signer } from 'ethers';
+import { BigNumber, BigNumberish, ContractReceipt, Signer } from 'ethers';
 
 import { Nullable } from 'types/util';
 import { ClaimType } from 'enums/claim-type';
@@ -33,6 +33,14 @@ export type FaithBalance = {
   usableFaith: BigNumber;
   totalSupply: number;
   share: number;
+};
+
+export type RelicItemData = { id: number; count: number };
+export type RelicData = { id: BigNumber; items: RelicItemData[] };
+
+export type ItemInventory = {
+  relics: RelicData[];
+  items: RelicItemData[];
 };
 
 export interface LockedEntry {
@@ -169,4 +177,14 @@ export interface WalletState {
     spender: string,
     minAllowance: BigNumber
   ): Promise<void>;
+}
+
+export interface RelicService {
+  inventory: Nullable<ItemInventory>;
+  updateInventory(): Promise<void>;
+  mintRelic(): Promise<Nullable<RelicData>>;
+  renounceRelic(relicId: BigNumber): Promise<Nullable<RelicData>>;
+  mintRelicItem(itemId: number): Promise<void>;
+  equiptRelicItem(relicId: BigNumber, itemId: number): Promise<void>;
+  unequiptRelicItem(relicId: BigNumber, itemId: number): Promise<void>;
 }
