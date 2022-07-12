@@ -5,17 +5,12 @@ import styled from 'styled-components';
 import * as Sentry from '@sentry/react';
 import { BrowserTracing } from '@sentry/tracing';
 import { CaptureConsole } from '@sentry/integrations';
-
 import { GlobalStyle } from 'styles/GlobalStyle';
 import { AppProvider } from 'providers/AppProvider';
-
 import NotificationManager from 'components/Notification/NotificationManager';
-
 import PageLayout from 'components/Layouts/Page';
 import Loader from 'components/Loader/Loader';
-
 import Disclaimer from 'components/Pages/Disclaimer';
-
 import CoreLayout from 'components/Layouts/CoreLayout';
 import AnalyticsPage from 'components/Pages/Core/Analytics';
 import VaultPage from 'components/Pages/Core/Vault';

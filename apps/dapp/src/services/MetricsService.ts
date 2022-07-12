@@ -15,7 +15,7 @@ import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { fetchSubgraph } from 'utils/subgraph';
 import { Nullable } from 'types/util';
-import { isDevelopmentEnv } from 'utils/helpers';
+import { useProvider } from 'wagmi';
 import axios from 'axios';
 import env from 'constants/env';
 
@@ -80,8 +80,6 @@ export interface SocialMetrics {
   discord: Nullable<DiscordResponse>;
 }
 
-const ENV_VARS = import.meta.env;
-
 // Temple MintMultiple is fixed tp 6
 const MINT_MULTIPLE = 6.0;
 
@@ -89,74 +87,47 @@ const MINT_MULTIPLE = 6.0;
  * Service to get the Temple Metrics
  */
 export class MetricsService {
-  private readonly signer: Wallet;
+  private provider: ethers.providers.JsonRpcProvider;
   private stableCoinContract: ERC20;
   private templeCoinContract: ERC20;
   private ogTempleCoinContract: OGTemple;
-  //no type since this is a Vyper contract and we have no typechain type def for it atm
   private frax3crv_fCoinContract;
-  //TODO: add this contract to protocol repo and get typechain type def as opposed to ABI
   private frax3crv_fRewardsContract;
   private treasuryContract: TempleTreasury;
   private templeStakingContract: TempleStaking;
   private readonly treasuryAddress: string;
   private readonly treasuryAddresses: string[];
-  private provider;
   private farmingWalletAddress: string;
 
   constructor() {
-    //TODO: remove comments when we can have CVX contract addresses on rinkeby + locally
-    if (
-      ENV_VARS.VITE_SERVER_PRIVATE_KEY === undefined
-      /*||
-      ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS*/
-    ) {
-      console.info(`
-      VITE_SERVER_PRIVATE_KEY=${ENV_VARS.VITE_SERVER_PRIVATE_KEY}
-      VITE_PUBLIC_FRAX3CRV_F_ADDRESS=${ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS}
-      VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS=${ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS}
-      `);
-      //throw new Error(`Missing env vars in Metrics Service`);
-    }
+    this.provider = useProvider();
 
-    const ALCHEMY_PROVIDER_NETWORK = ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK;
-    const SERVER_PRIVATE_KEY = ENV_VARS.VITE_SERVER_PRIVATE_KEY;
-    const FRAX3CRV_F_ADDRESS = ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS;
-    const FRAX3CRV_F_REWARDS_ADDRESS = ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS;
-    const FARMING_WALLET_ADDRESS = ENV_VARS.VITE_PUBLIC_FARMING_WALLET_ADDRESS;
+    this.stableCoinContract = new ERC20__factory().attach(env.contracts.frax);
 
-    this.provider = isDevelopmentEnv()
-      ? new ethers.providers.Web3Provider(window.ethereum)
-      : new ethers.providers.AlchemyProvider(ALCHEMY_PROVIDER_NETWORK, env.alchemyId);
-
-    this.signer = new ethers.Wallet(SERVER_PRIVATE_KEY, this.provider);
-
-    this.stableCoinContract = new ERC20__factory(this.signer).attach(env.contracts.frax);
-
-    this.templeCoinContract = new ERC20__factory(this.signer).attach(env.contracts.temple);
+    this.templeCoinContract = new ERC20__factory().attach(env.contracts.temple);
 
     this.frax3crv_fCoinContract =
-      FRAX3CRV_F_ADDRESS && new ethers.Contract(FRAX3CRV_F_ADDRESS, frax3crv_fABI, this.signer);
+      env.contracts.frax3CrvFarming && new ethers.Contract(env.contracts.frax3CrvFarming, frax3crv_fABI, this.provider);
 
     this.frax3crv_fRewardsContract =
-      FRAX3CRV_F_REWARDS_ADDRESS && new ethers.Contract(FRAX3CRV_F_REWARDS_ADDRESS, frax3crv_fRewardsABI, this.signer);
+      env.contracts.frax3CrvFarmingRewards &&
+      new ethers.Contract(env.contracts.frax3CrvFarmingRewards, frax3crv_fRewardsABI, this.provider);
 
     this.treasuryAddress = env.contracts.treasuryIv;
     this.treasuryAddresses = [
       env.contracts.treasuryIv,
       env.contracts.templeV2Router,
       env.contracts.templeV2FraxPair,
-      FARMING_WALLET_ADDRESS,
+      env.contracts.farmingWallet,
     ];
 
-    this.farmingWalletAddress = FARMING_WALLET_ADDRESS;
+    this.farmingWalletAddress = env.contracts.farmingWallet;
 
-    this.treasuryContract = new TempleTreasury__factory(this.signer).attach(env.contracts.treasuryIv);
+    this.treasuryContract = new TempleTreasury__factory().attach(env.contracts.treasuryIv);
 
-    this.templeStakingContract = new TempleStaking__factory(this.signer).attach(env.contracts.templeStaking);
+    this.templeStakingContract = new TempleStaking__factory().attach(env.contracts.templeStaking);
 
-    this.ogTempleCoinContract = new OGTemple__factory(this.signer).attach(env.contracts.ogTemple);
+    this.ogTempleCoinContract = new OGTemple__factory().attach(env.contracts.ogTemple);
   }
 
   /**
@@ -177,7 +148,7 @@ export class MetricsService {
   }
 
   async getDashboardMetrics(): Promise<DashboardMetrics> {
-    this.ogTempleCoinContract = new OGTemple__factory(this.signer).attach(await this.templeStakingContract.OG_TEMPLE());
+    this.ogTempleCoinContract = new OGTemple__factory().attach(await this.templeStakingContract.OG_TEMPLE());
 
     const treasuryValue = await this.getTreasuryValue();
     const treasuryTempleValue = fromAtto(await this.templeCoinContract.balanceOf(this.treasuryAddress));

@@ -6,8 +6,11 @@ const env: Environment = {
   contracts: {
     exitQueue: '0x75a89f50cb40aec7Ed237F1Bfab562A60023ebE6',
     faith: '0x727d442f05cf22f3A60b787913623f406f9E94bA',
+    farmingWallet: '0x5C8898f8E0F9468D4A677887bC03EE2659321012',
     fei: '0xFc59F66a61A59c677d021DC01d5562A144C3D737',
     frax: '0x5eD8BD53B0c3fa3dEaBd345430B1A3a6A4e8BD7C',
+    frax3CrvFarming: '',
+    frax3CrvFarmingRewards: '',
     ogTemple: '0x564462C807600684965d8A8f57eA190F2F66169C',
     teamPaymentsEpoch1: '0x7a770591f202D18e893DeC115f16DAE9d28686a8',
     teamPaymentsEpoch2: '',

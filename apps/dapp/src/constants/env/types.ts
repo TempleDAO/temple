@@ -6,8 +6,11 @@ interface Subgraphs {
 interface Contracts {
   exitQueue: string;
   faith: string;
+  farmingWallet: string;
   fei: string;
   frax: string;
+  frax3CrvFarming: string;
+  frax3CrvFarmingRewards: string;
   ogTemple: string;
   teamPaymentsEpoch1: string;
   teamPaymentsEpoch2: string;
