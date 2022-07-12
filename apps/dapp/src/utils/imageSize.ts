@@ -1,5 +1,14 @@
+export type BgDimension = {
+  width: number;
+  height: number;
+  scaleH: number;
+  scaleW: number;
+  imageWidth: number;
+  imageHeight: number;
+};
+
 // Calculate dimensions of image used as background-size: cover
-export const getBgImgDimensions = (element: Element | null, src: string) => {
+export const getBgImgDimensions = (element: Element | null, src: string): BgDimension | undefined => {
   if (!element) return;
   const computedDim: { w: any; h: any } = { w: 'auto', h: 'auto' };
 
@@ -13,10 +22,7 @@ export const getBgImgDimensions = (element: Element | null, src: string) => {
   // Get image ratio
   const image = document.createElement('img');
   image.src = src;
-  let ratio =
-    image.width > image.height
-      ? image.width / image.height
-      : image.height / image.width;
+  let ratio = image.width > image.height ? image.width / image.height : image.height / image.width;
 
   // Width is greater than height
   if (dimensions.w > dimensions.h) {
@@ -40,14 +46,9 @@ export const getBgImgDimensions = (element: Element | null, src: string) => {
   } else {
     // Depending on whether width or height is auto, calculate the value in pixels of auto.
     // ratio in here is just getting proportions.
-    ratio =
-      computedDim.w === 'auto'
-        ? image.height / computedDim.h
-        : image.width / computedDim.w;
-    computedDim.w =
-      computedDim.w === 'auto' ? image.width / ratio : computedDim.w;
-    computedDim.h =
-      computedDim.h === 'auto' ? image.height / ratio : computedDim.h;
+    ratio = computedDim.w === 'auto' ? image.height / computedDim.h : image.width / computedDim.w;
+    computedDim.w = computedDim.w === 'auto' ? image.width / ratio : computedDim.w;
+    computedDim.h = computedDim.h === 'auto' ? image.height / ratio : computedDim.h;
   }
   // Finally, return an object with the width and height of the background image.
   return {
