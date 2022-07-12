@@ -9,8 +9,8 @@ import {
   OGTemple,
   OGTemple__factory,
 } from 'types/typechain';
-import frax3crv_fABI from 'data/abis/frax3crv-f';
-import frax3crv_fRewardsABI from 'data/abis/frax3crv-fRewardPool';
+import frax3crv_fABI from 'data/abis/frax3crv-f.json';
+import frax3crv_fRewardsABI from 'data/abis/frax3crv-fRewardPool.json';
 import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { fetchSubgraph } from 'utils/subgraph';
@@ -29,7 +29,7 @@ export interface TreasuryMetrics {
   treasuryValue: number;
   templeApy: number;
   templeValue: number;
-  dynamicVaultApy: number;
+  dynamicVaultApy?: number;
 }
 
 export interface DashboardMetrics {
@@ -41,11 +41,11 @@ export interface DashboardMetrics {
   templeValue: number;
   ogTemplePrice: number;
   ogTempleRatio: number;
+  ogTempleTotalSupply: number;
   iv: number;
   circMCap: number;
   circTempleSupply: number;
   socialMetrics: SocialMetrics;
-  templeRFV: number;
   riskFreeValue: number;
   percentageStaked: number;
 }
@@ -100,6 +100,7 @@ export class MetricsService {
   private treasuryContract: TempleTreasury;
   private templeStakingContract: TempleStaking;
   private readonly treasuryAddress: string;
+  private readonly treasuryAddresses: string[];
   private provider;
   private farmingWalletAddress: string;
 
@@ -144,7 +145,6 @@ export class MetricsService {
     this.treasuryAddress = env.contracts.treasuryIv;
     this.treasuryAddresses = [
       env.contracts.treasuryIv,
-      AMM_OPS_ADDRESS,
       env.contracts.templeV2Router,
       env.contracts.templeV2FraxPair,
       FARMING_WALLET_ADDRESS,
@@ -155,6 +155,8 @@ export class MetricsService {
     this.treasuryContract = new TempleTreasury__factory(this.signer).attach(env.contracts.treasuryIv);
 
     this.templeStakingContract = new TempleStaking__factory(this.signer).attach(env.contracts.templeStaking);
+
+    this.ogTempleCoinContract = new OGTemple__factory(this.signer).attach(env.contracts.ogTemple);
   }
 
   /**
@@ -203,9 +205,9 @@ export class MetricsService {
       templeValue,
       circTempleSupply: circulatingSupply,
       circMCap: circulatingSupply * templeValue,
-      ogTempleTotalSupply,
       percentageStaked: (ogTempleTotalSupply * ogTempleRatio) / circulatingSupply,
       ogTemplePrice: templeValue * ogTempleRatio,
+      ogTempleTotalSupply,
       ogTempleRatio,
       iv,
       riskFreeValue,
@@ -291,7 +293,7 @@ export class MetricsService {
   /**
    * Helper to calculate the APY
    */
-  private getTempleApy = async (epy: any): Promise<number> => {
+  private getTempleApy = async (epy?: any): Promise<number> => {
     if (!epy) epy = (await this.templeStakingContract.getEpy(10000000)).toNumber() / 10000000;
     return Math.trunc((Math.pow(epy + 1, 365.25) - 1) * 100);
   };
