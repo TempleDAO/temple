@@ -6,7 +6,6 @@ import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { useNotification } from 'providers/NotificationProvider';
 import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { ClaimType } from 'enums/claim-type';
 import { TEAM_PAYMENTS_EPOCHS, TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH } from 'enums/team-payment';
 import { toAtto } from 'utils/bigNumber';
 import { asyncNoop, noop } from 'utils/helpers';
@@ -38,7 +37,6 @@ const INITIAL_STATE: WalletState = {
   isConnecting: false,
   signer: null,
   network: null,
-  claim: asyncNoop,
   getBalance: asyncNoop,
   updateBalance: asyncNoop,
   collectTempleTeamPayment: asyncNoop,
@@ -136,9 +134,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  // TODO: remove as part of #239
-  const claim = async (claimType: ClaimType): Promise<TransactionReceipt | void> => {};
-
   const collectTempleTeamPayment = async (epoch: TEAM_PAYMENTS_EPOCHS) => {
     if (walletAddress && signer) {
       const fixedTeamPaymentAddress = TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[epoch];
@@ -168,7 +163,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
         isConnecting: signerLoading || connectLoading || accountLoading,
         wallet: walletAddress || null,
         ensureAllowance,
-        claim,
         signer: signer || null,
         network: !chain
           ? null

@@ -2,7 +2,6 @@ import { Network } from '@ethersproject/providers';
 import { BigNumber, ContractReceipt, Signer } from 'ethers';
 
 import { Nullable } from 'types/util';
-import { ClaimType } from 'enums/claim-type';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -142,7 +141,6 @@ export interface WalletState {
   isConnecting: boolean;
   isConnected: boolean;
 
-  claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
   getBalance(): Promise<Balance | void>;
   updateBalance(): Promise<void>;
   collectTempleTeamPayment(epoch: TEAM_PAYMENTS_EPOCHS): Promise<void | TransactionReceipt>;
