@@ -1,4 +1,4 @@
-import { ethers, Wallet } from 'ethers';
+import { ethers } from 'ethers';
 import {
   ERC20,
   ERC20__factory,
@@ -95,16 +95,16 @@ export class MetricsService {
   private frax3crv_fRewardsContract;
   private treasuryContract: TempleTreasury;
   private templeStakingContract: TempleStaking;
-  private readonly treasuryAddress: string;
-  private readonly treasuryAddresses: string[];
+  private treasuryAddress: string;
+  private treasuryAddresses: string[];
   private farmingWalletAddress: string;
 
   constructor() {
     this.provider = useProvider();
 
-    this.stableCoinContract = new ERC20__factory().attach(env.contracts.frax);
+    this.stableCoinContract = ERC20__factory.connect(env.contracts.frax, this.provider);
 
-    this.templeCoinContract = new ERC20__factory().attach(env.contracts.temple);
+    this.templeCoinContract = ERC20__factory.connect(env.contracts.temple, this.provider);
 
     this.frax3crv_fCoinContract =
       env.contracts.frax3CrvFarming && new ethers.Contract(env.contracts.frax3CrvFarming, frax3crv_fABI, this.provider);
@@ -123,11 +123,11 @@ export class MetricsService {
 
     this.farmingWalletAddress = env.contracts.farmingWallet;
 
-    this.treasuryContract = new TempleTreasury__factory().attach(env.contracts.treasuryIv);
+    this.treasuryContract = TempleTreasury__factory.connect(env.contracts.treasuryIv, this.provider);
 
-    this.templeStakingContract = new TempleStaking__factory().attach(env.contracts.templeStaking);
+    this.templeStakingContract = TempleStaking__factory.connect(env.contracts.templeStaking, this.provider);
 
-    this.ogTempleCoinContract = new OGTemple__factory().attach(env.contracts.ogTemple);
+    this.ogTempleCoinContract = OGTemple__factory.connect(env.contracts.ogTemple, this.provider);
   }
 
   /**
