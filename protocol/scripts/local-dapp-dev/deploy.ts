@@ -258,11 +258,13 @@ async function main() {
 
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
-    STABLE_COIN_ADDRESS: frax.address,
     FEI_ADDRESS: fei.address,
+    INSTANT_EXIT_QUEUE_ADDRESS: instantExitQueue.address,
+    OGTEMPLE_ADDRESS: ogTempleToken.address,
+    STABLE_COIN_ADDRESS: frax.address,
     TEMPLE_ADDRESS: templeToken.address,
     TEMPLE_STAKING_ADDRESS: templeStaking.address,
-    TREASURY_IV: treasuryIv.address,
+    TEMPLE_FAITH_ADDRESS: faith.address,
     TEMPLE_R1_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR1.address,
     TEMPLE_R2_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR2.address,
     TEMPLE_R3_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR3.address,
@@ -270,11 +272,10 @@ async function main() {
     TEMPLE_V2_PAIR_ADDRESS: pair.address,
     TEMPLE_V2_FEI_PAIR_ADDRESS: feiPair.address,
     TEMPLE_V2_ROUTER_ADDRESS: templeRouter.address,
-    INSTANT_EXIT_QUEUE_ADDRESS: instantExitQueue.address,
-    TEMPLE_FAITH_ADDRESS: faith.address,
     TEMPLE_VAULT_OPS_MANAGER: opsManager.address,
     TEMPLE_VAULTED_TEMPLE: vaultedTempleAddr,
     TEMPLE_VAULT_PROXY: vaultProxy.address,
+    TREASURY_IV: treasuryIv.address,
     // TEMPLE_VAULT_1_M_1: vault1,
     // TEMPLE_VAULT_1_M_2: vault2,
     // TEMPLE_VAULT_1_M_3: vault3,
@@ -299,15 +300,6 @@ async function main() {
   }
 
   await writeFile('../shared/stack/deployed-addr.txt', newVarsToWrite);
-
-  console.log();
-  console.log('=========================================');
-  console.log(
-    '*** Copy/pasta into terminal to use with scripts like metrics/test-temple interactions etc\n\n'
-  );
-  for (const envvar in contract_address) {
-    console.log(`EXPORT ${envvar}=${contract_address[envvar]}`);
-  }
 }
 
 // We recommend this pattern to be able to use async/await everywhere

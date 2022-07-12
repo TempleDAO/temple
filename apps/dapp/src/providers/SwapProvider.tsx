@@ -17,17 +17,7 @@ import {
   TempleUniswapV2Pair__factory,
   TempleTreasury__factory,
 } from 'types/typechain';
-import {
-  FRAX_ADDRESS,
-  FEI_ADDRESS,
-  TEMPLE_V2_ROUTER_ADDRESS,
-  TEMPLE_V2_FRAX_PAIR_ADDRESS,
-  TEMPLE_V2_FEI_PAIR_ADDRESS,
-  VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT,
-  VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT,
-  TREASURY_ADDRESS,
-  TEMPLE_ADDRESS,
-} from 'providers/env';
+import env from 'constants/env';
 
 const INITIAL_STATE: SwapService = {
   templePrice: 0,
@@ -56,7 +46,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
-    const pairContract = new TempleUniswapV2Pair__factory(signerState).attach(pairAddress);
+    const pairContract = new TempleUniswapV2Pair__factory(signerState).attach(env.contracts.templeV2FraxPair);
 
     const { _reserve0, _reserve1 } = await pairContract.getReserves();
 
@@ -74,7 +64,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
     setError(null);
 
-    const pair = token === TICKER_SYMBOL.FEI ? TEMPLE_V2_FEI_PAIR_ADDRESS : TEMPLE_V2_FRAX_PAIR_ADDRESS;
+    const pair = token === TICKER_SYMBOL.FEI ? env.contracts.templeV2FeiPair : env.contracts.templeV2FraxPair;
     const price = await getTemplePrice(wallet, signer, pair);
     setTemplePrice(price);
   };
@@ -84,7 +74,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
-    const templeTreasury = new TempleTreasury__factory(signerState).attach(TREASURY_ADDRESS);
+    const templeTreasury = new TempleTreasury__factory(signerState).attach(env.contracts.treasuryIv);
 
     const { stablec, temple } = await templeTreasury.intrinsicValueRatio();
     return fromAtto(stablec) / fromAtto(temple);
@@ -116,8 +106,8 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
     setError(null);
 
-    const tokenAddress = token === TICKER_SYMBOL.FEI ? FEI_ADDRESS : FRAX_ADDRESS;
-    const ammRouter = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
+    const tokenAddress = token === TICKER_SYMBOL.FEI ? env.contracts.fei : env.contracts.frax;
+    const ammRouter = new TempleStableAMMRouter__factory(signer).attach(env.contracts.templeV2Router);
     const tokenContract = new ERC20__factory(signer).attach(tokenAddress);
 
     const balance = await tokenContract.balanceOf(wallet);
@@ -126,7 +116,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     const deadlineInSeconds = deadlineInMinutes * 60;
     const deadline = formatNumberFixedDecimals(Date.now() / 1000 + deadlineInSeconds, 0);
 
-    await ensureAllowance(token, tokenContract, TEMPLE_V2_ROUTER_ADDRESS, amountIn);
+    await ensureAllowance(token, tokenContract, env.contracts.templeV2Router, amountIn);
 
     try {
       const buyTXN = await ammRouter.swapExactStableForTemple(
@@ -136,7 +126,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         wallet,
         deadline,
         {
-          gasLimit: VITE_PUBLIC_AMM_FRAX_FOR_TEMPLE_GAS_LIMIT || 300000,
+          gasLimit: env.gas?.swapFraxForTemple || 300000,
         }
       );
       const txReceipt = await buyTXN.wait();
@@ -183,17 +173,17 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
     setError(null);
 
-    let tokenAddress = token === TICKER_SYMBOL.FEI ? FEI_ADDRESS : FRAX_ADDRESS;
-    const ammRouter = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
-    const templeContract = new TempleERC20Token__factory(signer).attach(TEMPLE_ADDRESS);
+    let tokenAddress = token === TICKER_SYMBOL.FEI ? env.contracts.fei : env.contracts.frax;
+    const ammRouter = new TempleStableAMMRouter__factory(signer).attach(env.contracts.templeV2Router);
+    const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
 
     if (isIvSwap) {
-      tokenAddress = FEI_ADDRESS;
+      tokenAddress = env.contracts.fei;
     }
 
     const deadlineInSeconds = deadlineInMinutes * 60;
 
-    await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, templeContract, TEMPLE_V2_ROUTER_ADDRESS, amountInTemple);
+    await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, templeContract, env.contracts.templeV2Router, amountInTemple);
 
     const balance = await templeContract.balanceOf(wallet);
     const verifiedAmountInTemple = amountInTemple.lt(balance) ? amountInTemple : balance;
@@ -208,7 +198,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         wallet,
         deadline,
         {
-          gasLimit: VITE_PUBLIC_AMM_TEMPLE_FOR_FRAX_GAS_LIMIT || 195000,
+          gasLimit: env.gas?.swapTempleForFrax || 195000,
         }
       );
 
@@ -238,7 +228,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   ): Promise<BigNumber> => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
-      
+
       setError({
         name: 'Missing wallet or signer',
         message: "Couldn't complete buy transaction - unable to get wallet or signer",
@@ -249,9 +239,9 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
     setError(null);
 
-    const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
+    const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(env.contracts.templeV2Router);
 
-    const pair = token === TICKER_SYMBOL.FEI ? TEMPLE_V2_FEI_PAIR_ADDRESS : TEMPLE_V2_FRAX_PAIR_ADDRESS;
+    const pair = token === TICKER_SYMBOL.FEI ? env.contracts.templeV2FeiPair : env.contracts.templeV2FraxPair;
 
     const amountOut = await AMM_ROUTER.swapExactStableForTempleQuote(pair, amountIn);
 
@@ -276,9 +266,9 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
     setError(null);
 
-    const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(TEMPLE_V2_ROUTER_ADDRESS);
+    const AMM_ROUTER = new TempleStableAMMRouter__factory(signer).attach(env.contracts.templeV2Router);
 
-    const pair = token === TICKER_SYMBOL.FEI ? TEMPLE_V2_FEI_PAIR_ADDRESS : TEMPLE_V2_FRAX_PAIR_ADDRESS;
+    const pair = token === TICKER_SYMBOL.FEI ? env.contracts.templeV2FeiPair : env.contracts.templeV2FraxPair;
 
     const { amountOut, priceBelowIV } = await AMM_ROUTER.swapExactTempleForStableQuote(pair, amountToSell);
 

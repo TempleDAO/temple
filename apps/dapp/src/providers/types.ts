@@ -96,21 +96,6 @@ export interface FaithService {
   faith: FaithBalance;
 
   updateFaith(): Promise<void>;
-
-  verifyFaith(lockingPeriod?: number): Promise<void>;
-
-  redeemFaith(faithAmount: BigNumber): Promise<BigNumber | void>;
-
-  getFaithQuote(): Promise<FaithQuote | void>;
-
-  getTempleFaithReward(faithAmount: BigNumber): Promise<BigNumber | void>;
-
-  claimFaithAirdrop(
-    index: number,
-    address: string,
-    amount: BigNumber,
-    proof: string[]
-  ): Promise<TransactionReceipt | void>;
 }
 
 export interface SwapService {

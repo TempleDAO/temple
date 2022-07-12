@@ -19,7 +19,7 @@ import {
   TempleTeamPayments__factory,
   ERC20,
 } from 'types/typechain';
-import { TEMPLE_ADDRESS, FRAX_ADDRESS, TEMPLE_STAKING_ADDRESS, FEI_ADDRESS } from 'providers/env';
+import env from 'constants/env';
 import { ZERO } from 'utils/bigNumber';
 
 // We want to save gas burn $ for the Templars,
@@ -67,15 +67,15 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
-    const fraxContract = new ERC20__factory(signer).attach(FRAX_ADDRESS);
+    const fraxContract = new ERC20__factory(signer).attach(env.contracts.frax);
 
-    const feiContract = new ERC20__factory(signer).attach(FEI_ADDRESS);
+    const feiContract = new ERC20__factory(signer).attach(env.contracts.fei);
 
-    const templeStakingContract = new TempleStaking__factory(signer).attach(TEMPLE_STAKING_ADDRESS);
+    const templeStakingContract = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
 
     const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(await templeStakingContract.OG_TEMPLE());
 
-    const templeContract = new TempleERC20Token__factory(signer).attach(TEMPLE_ADDRESS);
+    const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
 
     const fraxBalance: BigNumber = await fraxContract.balanceOf(walletAddress);
 
