@@ -99,7 +99,7 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
             onMenuItemActive={onMenuItemActive}
             onClick={onClickMenuItem}
           >
-            Auction
+            Ascend
           </MenuItem>
           <MenuItem
             to="/dapp/profile"
