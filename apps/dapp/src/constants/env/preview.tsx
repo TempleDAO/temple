@@ -1,7 +1,6 @@
 import { Environment } from './types';
 
 const env: Environment = {
-<<<<<<< HEAD
   alchemyId: 'VvVv_fBIiRSaTQzL9RQNybD5FSNvtK5c',
   backendUrl: 'https://backend-stage.templedao.link',
   contracts: {
@@ -25,14 +24,12 @@ const env: Environment = {
     treasuryIv: '0xA443355cE4F9c1AA6d68e057a962E86E071B0ed3',
     vaultOps: '0x0647b5CFC9e9B03629Db83E7Aa4d1E25283DD9Cb',
     vaultProxy: '0x8adcc775251362B4E03e0437805BE3154C56b3F5',
-=======
+  },
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-rinkeby',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
     balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
->>>>>>> 1be8f94b (Admin form stuff)
   },
-<<<<<<< HEAD
   fraxSellDisabledIvMultiple: 1.02,
   gas: {
     swapFraxForTemple: 300000,
@@ -47,7 +44,6 @@ const env: Environment = {
     claimOgTemple: 100000,
   },
   infuraId: 'a2a39f8ae6564913a583c7b6d01c84d6',
-=======
   tokens: {
     frax: {
       name: 'Frax',
@@ -82,14 +78,9 @@ const env: Environment = {
       address: '', //ENV.VITE_PUBLIC_DAI_ADDRESS,
     },
   },
->>>>>>> 995d203c (wip)
   sentry: {
     environment: 'preview',
     dsn: 'https://ab0c41c30fbb405da50d9803819b1d60@o1268430.ingest.sentry.io/6456054',
-  },
-  subgraph: {
-    templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-rinkeby',
-    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
   },
   templeMultisig: '',
 };
