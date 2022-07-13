@@ -26,18 +26,6 @@ export interface DeployedContracts {
   TEMPLE_TEAM_EPOCH_4: string,
 }
 
-export interface PolygonContracts {
-  SANDALWOOD_TOKEN: string,
-  OPENING_CEREMONY_QUEST: string,
-}
-
-export const POLYGON_CONTRACTS: {[key: string]: PolygonContracts} = {
-  matic: {
-    SANDALWOOD_TOKEN: '0xe99e95ec6DCae4c85806F13CDf1351aE0FEf55Be', // bridged: 0x4FA80013F5d13DB10f2c5DC2987081cb48c7c069
-    OPENING_CEREMONY_QUEST: '0x17d723436740F2852274192dA27F65116ECd011E'
-  }
-}
-
 export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
   rinkeby: {
     // From network/environment
