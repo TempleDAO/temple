@@ -172,86 +172,42 @@ const Roadmap = () => {
         onClick={() => setActiveModal(-1)}
       >
         {activeModal !== -1 && (
-          <Modal onClick={(e) => e.stopPropagation()}>
-            <ModalImage src={RoadmapItems[activeModal].image} width="448px" />
-            <ContentContainer>
-              <CloseButton onClick={() => setActiveModal(-1)}>&times;</CloseButton>
-              <ModalHeader>Chapter {RoadmapItems[activeModal].icon}</ModalHeader>
-              <ModalTitle>{RoadmapItems[activeModal].title}</ModalTitle>
-              <Linebreak />
-              <ModalDescription>{RoadmapItems[activeModal].description}</ModalDescription>
-            </ContentContainer>
-          </Modal>
+          <>
+            <Modal onClick={(e) => e.stopPropagation()}>
+              <ModalImage src={RoadmapItems[activeModal].image} width="448px" />
+              <ContentContainer>
+                <CloseButton onClick={() => setActiveModal(-1)}>&times;</CloseButton>
+                <ModalHeader>Chapter {RoadmapItems[activeModal].icon}</ModalHeader>
+                <ModalTitle>{RoadmapItems[activeModal].title}</ModalTitle>
+                <Linebreak />
+                <ModalDescription>{RoadmapItems[activeModal].description}</ModalDescription>
+              </ContentContainer>
+            </Modal>
+            <NavContainer>
+              <NavButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (activeModal > 0) setActiveModal(activeModal - 1);
+                }}
+              >
+                &lt;
+              </NavButton>
+              <CurrentNav>{RoadmapItems[activeModal].icon}</CurrentNav>
+              <NavButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (activeModal < RoadmapItems.length - 1) setActiveModal(activeModal + 1);
+                }}
+              >
+                &gt;
+              </NavButton>
+            </NavContainer>
+          </>
         )}
       </ModalContainer>
     </Container>
   );
 };
-
-// Modal styles
-const ModalContainer = styled.div`
-  position: fixed;
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: rgba(13, 11, 12, 0.45);
-  backdrop-filter: blur(2px);
-  z-index: 3;
-`;
-
-const Modal = styled.div`
-  position: relative;
-  display: grid;
-  grid-template-columns: auto auto;
-  padding: 2rem;
-  max-width: 1028px;
-  text-align: center;
-  background: rgba(20, 20, 20, 0.96);
-  border: 1px solid #bd7b4f;
-  border-radius: 8px;
-  box-shadow: 0px 0px 24px #bd7b4f;
-  z-index: 4;
-`;
-
-const ModalImage = styled.img`
-  background: linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2));
-  border-radius: 8px;
-  border-top: 8px solid #bd7b4f;
-  border-bottom: 8px solid #bd7b4f;
-  padding: 8px;
-`;
-
-const ContentContainer = styled.div`
-  position: relative;
-`;
-
-const ModalHeader = styled.h4`
-  color: #ffdec9;
-  font-size: 1rem;
-  text-transform: uppercase;
-  margin: 0;
-`;
-
-const ModalTitle = styled.h4`
-  font-size: 2rem;
-  margin-bottom: 1rem;
-`;
-
-const ModalDescription = styled.p`
-  margin-top: 2.5rem;
-`;
-
-const CloseButton = styled.p`
-  position: absolute;
-  top: 0;
-  right: 0;
-  cursor: pointer;
-  color: #bd7b4f;
-  margin: 0;
-  font-size: 3rem;
-`;
 
 // Container + bg image
 const Container = styled.div`
@@ -319,7 +275,6 @@ const Item = styled.div`
   border: 0.3rem solid black;
   background-color: black;
   opacity: 0.95;
-  transition: opacity 150ms;
   z-index: 2;
   color: #b37e55b2;
   font-weight: bold;
@@ -337,12 +292,114 @@ const Item = styled.div`
   }
 `;
 
+// Modal styles
+const ModalContainer = styled.div`
+  position: fixed;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(13, 11, 12, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 3;
+`;
+
+const Modal = styled.div`
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto;
+  padding: 2rem;
+  max-width: 1028px;
+  text-align: center;
+  background: rgba(20, 20, 20, 0.96);
+  border: 1px solid ${(props) => props.theme.palette.brand};
+  border-radius: 8px;
+  box-shadow: 0px 0px 24px ${(props) => props.theme.palette.brand};
+  z-index: 4;
+`;
+
+const ModalImage = styled.img`
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2));
+  border-radius: 8px;
+  border-top: 8px solid ${(props) => props.theme.palette.brand};
+  border-bottom: 8px solid ${(props) => props.theme.palette.brand};
+  padding: 8px;
+`;
+
+const ContentContainer = styled.div`
+  position: relative;
+  padding: 0px 2rem;
+  overflow-y: auto;
+  max-height: 50vh;
+`;
+
+const ModalHeader = styled.h4`
+  color: #ffdec9;
+  font-size: 1rem;
+  text-transform: uppercase;
+  margin: 0;
+`;
+
+const ModalTitle = styled.h4`
+  font-size: 2rem;
+  margin-bottom: 1rem;
+`;
+
+const ModalDescription = styled.div`
+  font-size: 1.1rem;
+  line-height: 2rem;
+  margin-top: 2.5rem;
+`;
+
+// Modal navigation styles
+const CloseButton = styled.p`
+  position: absolute;
+  top: 0;
+  right: 0;
+  cursor: pointer;
+  color: ${(props) => props.theme.palette.brand};
+  margin: 0;
+  font-size: 3rem;
+`;
+
+const NavContainer = styled.div`
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: #b37e55;
+`;
+
+const NavButton = styled.div`
+  cursor: pointer;
+  font-size: 2rem;
+`;
+
+const CurrentNav = styled.div`
+  height: 3rem;
+  width: 3rem;
+  border-radius: 100%;
+  border: 4px solid #b37e55;
+  background-color: black;
+  opacity: 0.95;
+  color: #b37e55;
+  font-weight: bold;
+  font-size: 1.5rem;
+  font-family: serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2rem 4rem;
+`;
+
 // Tooltip styles
 const TippyStyled = styled(Tippy)`
   background: rgba(20, 20, 20, 0.9);
-  border: 1px solid #bd7b4f;
+  border: 1px solid ${(props) => props.theme.palette.brand};
   border-radius: 8px;
-  box-shadow: 0px 0px 8px #bd7b4f;
+  box-shadow: 0px 0px 8px ${(props) => props.theme.palette.brand};
   padding: 0.75rem;
   text-align: center;
 `;
