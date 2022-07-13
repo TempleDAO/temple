@@ -236,43 +236,49 @@ contract TempleZaps is Ownable {
       );
       receivedTempleAmount = _enterTemple(_stableToken, address(this), receivedStableAmount, _minTempleReceived);
     }
-    
 
     // approve and deposit for user
     if (receivedTempleAmount > 0) {
       IERC20(temple).safeIncreaseAllowance(_vault, receivedTempleAmount);
       IVault(_vault).depositFor(msg.sender, receivedTempleAmount);
-    }
+      emit ZappedTempleInVault(msg.sender, _fromToken, _fromAmount, receivedTempleAmount);
 
-    emit ZappedTempleInVault(msg.sender, _fromToken, _fromAmount, receivedTempleAmount);
+    }
   }
 
   function zapTempleFaithInVault(
-    address vault,
-    address fromToken,
-    uint256 fromAmount,
-    address toToken,
-    uint256 minTempleReceived,
-    address swapTarget,
-    bytes calldata swapData
+    address _vault,
+    address _fromToken,
+    uint256 _fromAmount,
+    uint256 _minTempleReceived,
+    address _stableToken,
+    uint256 _minStableReceived,
+    address _swapTarget,
+    bytes calldata _swapData
   ) external {
     require(vaultProxy.faithClaimEnabled(), "VaultProxy: Faith claim no longer enabled");
 
+    IERC20(_fromToken).safeTransferFrom(msg.sender, address(this), _fromAmount);
     uint256 receivedTempleAmount;
-    if (fromToken == temple) {
-      IERC20(temple).safeTransferFrom(msg.sender, address(this), fromAmount);
-      receivedTempleAmount = fromAmount;
+    if (_fromToken == temple) {
+      receivedTempleAmount = _fromAmount;
+    } else if (supportedStables[_fromToken]) {
+      // if fromToken is supported stable, enter temple directly
+      receivedTempleAmount = _enterTemple(_stableToken, address(this), _fromAmount, _minTempleReceived);
     } else {
-      IERC20(fromToken).safeTransferFrom(msg.sender, address(this), fromAmount);
-      IERC20(fromToken).safeIncreaseAllowance(address(zaps), fromAmount);
-      receivedTempleAmount = zaps.zapIn(
-        fromToken,
-        fromAmount,
-        toToken,
-        minTempleReceived,
-        swapTarget,
-        swapData
+      require(supportedStables[_stableToken] == true, "Unsupported stable token");
+      IERC20(_fromToken).safeIncreaseAllowance(address(zaps), _fromAmount);
+
+      // after zap in, enter temple from stable token
+      uint256 receivedStableAmount = zaps.zapIn(
+        _fromToken,
+        _fromAmount,
+        _stableToken,
+        _minStableReceived,
+        _swapTarget,
+        _swapData
       );
+      receivedTempleAmount = _enterTemple(_stableToken, address(this), receivedStableAmount, _minTempleReceived);
     }
 
     // using user's total available faith
@@ -283,12 +289,12 @@ contract TempleZaps is Ownable {
     // note: requires this contract is prefunded to account for boost amounts, similar to vault proxy
     uint256 boostedAmount = vaultProxy.getFaithMultiplier(faithAmount, receivedTempleAmount);
     require(boostedAmount <= IERC20(temple).balanceOf(address(this)));
-    IERC20(temple).safeIncreaseAllowance(vault, boostedAmount);
+    IERC20(temple).safeIncreaseAllowance(_vault, boostedAmount);
 
     // deposit for user
-    IVault(vault).depositFor(msg.sender, boostedAmount);
+    IVault(_vault).depositFor(msg.sender, boostedAmount);
 
-    emit ZappedTemplePlusFaithInVault(msg.sender, fromToken, fromAmount, faithAmount, boostedAmount);
+    emit ZappedTemplePlusFaithInVault(msg.sender, _fromToken, _fromAmount, faithAmount, boostedAmount);
   }
 
   /**

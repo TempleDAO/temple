@@ -85,7 +85,7 @@ abstract contract ZapBaseV2_3 is Ownable {
     bytes memory _swapData
   ) internal returns (bytes memory) {
     (bool success, bytes memory result) = _swapTarget.call{value: _valueToSend}(_swapData);
-    require(success, "Error Swapping Tokens 1");
+    require(success, "Error Swapping Tokens");
 
     return result;
   }

@@ -2,7 +2,7 @@ pragma solidity ^0.8.4;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import "./ZapBaseV2_3.sol";
-
+import "hardhat/console.sol";
 
 interface IWETH {
   function deposit() external payable;
@@ -715,6 +715,9 @@ contract GenericZap is ZapBaseV2_3 {
       swapTarget,
       swapData
     );
+    console.logString("AmountOut, AmountOutMin");
+    console.logUint(amountOut);
+    console.logUint(amountOutMin);
     require(amountOut >= amountOutMin, "Not enough tokens out");
     
     emit ZappedIn(msg.sender, fromToken, fromAmount, toToken, amountOut);
