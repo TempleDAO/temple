@@ -8,8 +8,7 @@ export type BgDimension = {
 };
 
 // Calculate dimensions of image used as background-size: cover
-export const getBgImgDimensions = (element: Element | null, src: string): BgDimension | undefined => {
-  if (!element) return;
+export const getBgImgDimensions = (element: Element, src: string): BgDimension => {
   const computedDim: { w: any; h: any } = { w: 'auto', h: 'auto' };
 
   // Get container dimensions
@@ -58,5 +57,22 @@ export const getBgImgDimensions = (element: Element | null, src: string): BgDime
     scaleW: (computedDim.w / image.width) * 100,
     imageWidth: image.width,
     imageHeight: image.height,
+  };
+};
+
+export const getPositionStyles = (
+  bgDimensions: BgDimension,
+  scaleFactor: number,
+  bottomPercent: number,
+  leftPercent: number,
+  leftStaticOffset: number
+) => {
+  return {
+    transform: `scale(${scaleFactor * bgDimensions.scaleH}%)`,
+    bottom: `${bottomPercent * bgDimensions.height}px`,
+    left:
+      bgDimensions.height == window.innerHeight
+        ? `${bgDimensions.width * leftPercent - (bgDimensions.width - window.innerWidth) / 2}px`
+        : `${(leftPercent - leftStaticOffset) * bgDimensions.width}px`,
   };
 };
