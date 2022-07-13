@@ -167,17 +167,91 @@ const Roadmap = () => {
           ))}
       </ScrollableContainer>
 
-      <Modal>
+      <ModalContainer
+        style={activeModal == -1 ? { display: 'none' } : { display: 'flex' }}
+        onClick={() => setActiveModal(-1)}
+      >
         {activeModal !== -1 && (
-          <div>
-            <h3>{RoadmapItems[activeModal].title}</h3>
-            <p>{RoadmapItems[activeModal].description}</p>
-          </div>
+          <Modal onClick={(e) => e.stopPropagation()}>
+            <ModalImage src={RoadmapItems[activeModal].image} width="448px" />
+            <ContentContainer>
+              <CloseButton onClick={() => setActiveModal(-1)}>&times;</CloseButton>
+              <ModalHeader>Chapter {RoadmapItems[activeModal].icon}</ModalHeader>
+              <ModalTitle>{RoadmapItems[activeModal].title}</ModalTitle>
+              <Linebreak />
+              <ModalDescription>{RoadmapItems[activeModal].description}</ModalDescription>
+            </ContentContainer>
+          </Modal>
         )}
-      </Modal>
+      </ModalContainer>
     </Container>
   );
 };
+
+// Modal styles
+const ModalContainer = styled.div`
+  position: fixed;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(13, 11, 12, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 3;
+`;
+
+const Modal = styled.div`
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto;
+  padding: 2rem;
+  max-width: 1028px;
+  text-align: center;
+  background: rgba(20, 20, 20, 0.96);
+  border: 1px solid #bd7b4f;
+  border-radius: 8px;
+  box-shadow: 0px 0px 24px #bd7b4f;
+  z-index: 4;
+`;
+
+const ModalImage = styled.img`
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2));
+  border-radius: 8px;
+  border-top: 8px solid #bd7b4f;
+  border-bottom: 8px solid #bd7b4f;
+  padding: 8px;
+`;
+
+const ContentContainer = styled.div`
+  position: relative;
+`;
+
+const ModalHeader = styled.h4`
+  color: #ffdec9;
+  font-size: 1rem;
+  text-transform: uppercase;
+  margin: 0;
+`;
+
+const ModalTitle = styled.h4`
+  font-size: 2rem;
+  margin-bottom: 1rem;
+`;
+
+const ModalDescription = styled.p`
+  margin-top: 2.5rem;
+`;
+
+const CloseButton = styled.p`
+  position: absolute;
+  top: 0;
+  right: 0;
+  cursor: pointer;
+  color: #bd7b4f;
+  margin: 0;
+  font-size: 3rem;
+`;
 
 // Container + bg image
 const Container = styled.div`
@@ -288,15 +362,6 @@ const Linebreak = styled.hr`
 const TooltipDescription = styled.p`
   font-size: 1.1rem;
   margin: 0px;
-`;
-
-// Modal styles
-const Modal = styled.div`
-  position: fixed;
-  height: 100vh;
-  width: 100vw;
-  background: black;
-  z-index: 3;
 `;
 
 export default Roadmap;
