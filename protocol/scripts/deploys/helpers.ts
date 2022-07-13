@@ -1,30 +1,34 @@
-import { ethers, network } from "hardhat";
-import { BaseContract, BigNumber, ContractFactory, ContractTransaction } from "ethers";
+import { ethers, network } from 'hardhat';
+import {
+  BaseContract,
+  BigNumber,
+  ContractFactory,
+  ContractTransaction,
+} from 'ethers';
 
 export interface DeployedContracts {
   // From environment
-  FRAX: string,
-  MULTISIG: string,
+  FRAX: string;
+  MULTISIG: string;
 
   // Temple Core
-  TEMPLE: string
-  OPS_MANAGER: string,
-  OPS_MANAGER_LIB: string,
-  JOINING_FEE: string,
-  VAULT_PROXY: string,
+  TEMPLE: string;
+  OPS_MANAGER: string;
+  OPS_MANAGER_LIB: string;
+  JOINING_FEE: string;
+  VAULT_PROXY: string;
   // XXX: Needs to include vaults/exposure/farming contracts created on chain
 
   // Temple AMM
-  // XXX: Needs to include FEI pair
   TEMPLE_V2_FRAX_PAIR: string,
   TEMPLE_V2_FEI_PAIR: string,
   TEMPLE_V2_ROUTER: string,
 
   // Temple Admin
-  TEMPLE_TEAM_FIXED_PAYMENTS: string,
-  TEMPLE_TEAM_EPOCH_2: string,
-  TEMPLE_TEAM_EPOCH_3: string,
-  TEMPLE_TEAM_EPOCH_4: string,
+  TEMPLE_TEAM_FIXED_PAYMENTS: string;
+  TEMPLE_TEAM_EPOCH_2: string;
+  TEMPLE_TEAM_EPOCH_3: string;
+  TEMPLE_TEAM_EPOCH_4: string;
 }
 
 export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
@@ -53,7 +57,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
   mainnet: {
     // From network/environment
     FRAX: '0x853d955acef822db058eb8505911ed77f175b99e',
-    MULTISIG: "0x4D6175d58C5AceEf30F546C0d5A557efFa53A950",
+    MULTISIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
 
     TEMPLE: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     TEMPLE_TEAM_FIXED_PAYMENTS: '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
@@ -88,15 +92,17 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     VAULT_PROXY: process.env.VAULT_PROXY || '',
 
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
-  }
-}
+  },
+};
 
 /**
  * Current block timestamp
  */
 export const blockTimestamp = async () => {
-  return (await ethers.provider.getBlock(await ethers.provider.getBlockNumber())).timestamp;
-}
+  return (
+    await ethers.provider.getBlock(await ethers.provider.getBlockNumber())
+  ).timestamp;
+};
 
 /** number to attos (what all our contracts expect) */
 export function toAtto(n: number): BigNumber {
@@ -117,27 +123,36 @@ export async function mine(tx: Promise<ContractTransaction>) {
  * Typesafe helper that works on contract factories to create, deploy, wait till deploy completes
  * and output useful commands to setup etherscan with contract code
  */
-export async function deployAndMine<T extends BaseContract, D extends (...args: any[]) => Promise<T>>(
-                name: string,
-                factory: ContractFactory,
-                deploy: D,
-                ...args: Parameters<D>): Promise<T> {
-
+export async function deployAndMine<
+  T extends BaseContract,
+  D extends (...args: any[]) => Promise<T>
+>(
+  name: string,
+  factory: ContractFactory,
+  deploy: D,
+  ...args: Parameters<D>
+): Promise<T> {
   if (factory.deploy !== deploy) {
     throw new Error("Contract factory and deploy method don't match");
   }
 
-  const renderedArgs: string = args.map(a => a.toString()).join(' ');
+  const renderedArgs: string = args.map((a) => a.toString()).join(' ');
 
-  console.log(`*******Deploying ${name} on ${network.name} with args ${renderedArgs}`);
-  const contract = await factory.deploy(...args) as T;
-  console.log(`Deployed... waiting for transaction to mine: ${contract.deployTransaction.hash}`);
+  console.log(
+    `*******Deploying ${name} on ${network.name} with args ${renderedArgs}`
+  );
+  const contract = (await factory.deploy(...args)) as T;
+  console.log(
+    `Deployed... waiting for transaction to mine: ${contract.deployTransaction.hash}`
+  );
   console.log();
   await contract.deployed();
   console.log('Contract deployed');
   console.log(`${name}=${contract.address}`);
   console.log(`export ${name}=${contract.address}`);
-  console.log(`yarn hardhat verify --network ${network.name} ${contract.address} ${renderedArgs}`);
+  console.log(
+    `yarn hardhat verify --network ${network.name} ${contract.address} ${renderedArgs}`
+  );
   console.log('********************\n');
 
   return contract;
@@ -148,20 +163,28 @@ export async function deployAndMine<T extends BaseContract, D extends (...args: 
  */
 export function expectAddressWithPrivateKey() {
   if (network.name == 'mainnet' && !process.env.MAINNET_ADDRESS_PRIVATE_KEY) {
-    throw new Error("Missing environment variable MAINNET_ADDRESS_PRIVATE_KEY. A mainnet address private key with eth is required to deploy/manage contracts");
+    throw new Error(
+      'Missing environment variable MAINNET_ADDRESS_PRIVATE_KEY. A mainnet address private key with eth is required to deploy/manage contracts'
+    );
   }
 
   if (network.name == 'rinkeby' && !process.env.RINKEBY_ADDRESS_PRIVATE_KEY) {
-    throw new Error("Missing environment variable RINKEBY_ADDRESS_PRIVATE_KEY. A mainnet address private key with eth is required to deploy/manage contracts");
+    throw new Error(
+      'Missing environment variable RINKEBY_ADDRESS_PRIVATE_KEY. A mainnet address private key with eth is required to deploy/manage contracts'
+    );
   }
 }
 
-const expectedEnvvars: {[key: string]: string[]} = {
-  mainnet: ['MAINNET_ADDRESS_PRIVATE_KEY', 'MAINNET_RPC_URL', 'MAINNET_GAS_IN_GWEI'],
+const expectedEnvvars: { [key: string]: string[] } = {
+  mainnet: [
+    'MAINNET_ADDRESS_PRIVATE_KEY',
+    'MAINNET_RPC_URL',
+    'MAINNET_GAS_IN_GWEI',
+  ],
   rinkeby: ['RINKEBY_ADDRESS_PRIVATE_KEY', 'RINKEBY_RPC_URL'],
   matic: ['MATIC_ADDRESS_PRIVATE_KEY', 'MATIC_RPC_URL'],
   localhost: [],
-}
+};
 
 /**
  * Check if the required environment variables exist

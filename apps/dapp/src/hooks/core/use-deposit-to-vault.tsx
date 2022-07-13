@@ -1,14 +1,9 @@
 import { ContractTransaction } from 'ethers';
-
-import {
-  TempleERC20Token__factory,
-  VaultProxy__factory,
-} from 'types/typechain';
+import { VaultProxy__factory } from 'types/typechain';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 import { useNotification } from 'providers/NotificationProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-
 import { Callback } from './types';
 import { useVaultContext, Operation } from 'components/Pages/Core/VaultContext';
 import { useVaultJoiningFee } from './use-vault-joining-fee';
@@ -19,16 +14,15 @@ import { ZERO } from 'utils/bigNumber';
 import { createTokenFactoryInstance } from './use-token-vault-proxy-allowance';
 import { formatJoiningFee } from 'components/Vault/utils';
 
-const ENV = import.meta.env;
+import env from 'constants/env';
 
-const TICKERS_WITH_FAITH_BURN = new Set([
-  TICKER_SYMBOL.TEMPLE_TOKEN,
-  TICKER_SYMBOL.OG_TEMPLE_TOKEN,
-]);
+const TICKERS_WITH_FAITH_BURN = new Set([TICKER_SYMBOL.TEMPLE_TOKEN, TICKER_SYMBOL.OG_TEMPLE_TOKEN]);
 
 export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Callback) => {
   const { signer, wallet, ensureAllowance } = useWallet();
-  const { faith: { usableFaith } } = useFaith();
+  const {
+    faith: { usableFaith },
+  } = useFaith();
   const { optimisticallyUpdateVaultStaked, activeVault } = useVaultContext();
   const [getVaultJoiningFee] = useVaultJoiningFee(activeVault);
   const [getZappedAssetValue] = useGetZappedAssetValue();
@@ -47,19 +41,14 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
     if (useFaith && !TICKERS_WITH_FAITH_BURN.has(ticker)) {
       throw new Error(`Programming Error: Attmeped to burn faith with ${ticker}`);
     }
-    
+
     const bigAmount = getBigNumberFromString(amount);
-    const vaultProxy = new VaultProxy__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY);
+    const vaultProxy = new VaultProxy__factory(signer).attach(env.contracts.vaultProxy);
 
     const token = await createTokenFactoryInstance(ticker, signer);
     // Token should already be approved with a max approval at this
     // point but this is here as a safeguard.
-    await ensureAllowance(
-      ticker,
-      token,
-      vaultProxy.address,
-      bigAmount,
-    );
+    await ensureAllowance(ticker, token, vaultProxy.address, bigAmount);
 
     let bigUsableFaith = ZERO;
     // Safeguard against calling toAtto on dust. We only count faith as having at least 1 whole Faith.
@@ -74,7 +63,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
       const response = await getZappedAssetValue(ticker, amount, useFaith)!;
       expectedDepositAmount = response!.total;
     }
-    
+
     // Deposit through vault proxy.
     let tx: ContractTransaction;
     if (useFaith) {
@@ -97,7 +86,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
 
     await tx.wait();
 
-    const fee = await getVaultJoiningFee() || ZERO;
+    const fee = (await getVaultJoiningFee()) || ZERO;
     const totalFee = formatJoiningFee(expectedDepositAmount, fee);
 
     optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Increase, expectedDepositAmount.sub(totalFee));

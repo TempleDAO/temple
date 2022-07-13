@@ -14,7 +14,6 @@ import { theme } from 'styles/theme';
 
 import texture1 from 'assets/images/texture-1.svg';
 import texture2 from 'assets/images/texture-2.svg';
-import texture4 from 'assets/images/texture-4.svg';
 import texture5 from 'assets/images/dashboard-4.png';
 
 import { createDateFromSeconds, formatTemple } from 'components/Vault/utils';

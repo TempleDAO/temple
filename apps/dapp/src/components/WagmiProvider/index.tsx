@@ -1,10 +1,5 @@
 import { FC } from 'react';
-import { 
-  WagmiProvider as Provider,
-  chain,
-  createClient,
-  configureChains,
-} from 'wagmi';
+import { WagmiProvider as Provider, chain, createClient, configureChains } from 'wagmi';
 import { Buffer } from 'buffer';
 
 import { alchemyProvider } from 'wagmi/providers/alchemy';
@@ -29,11 +24,8 @@ export const LOCAL_CHAIN = {
 
 const APP_CHAINS = [chain.mainnet, chain.rinkeby, LOCAL_CHAIN];
 
-const ENV_VARS = import.meta.env;
-const ALCHEMY_API_KEY = ENV_VARS.VITE_ALCHEMY_API_KEY;
-
 const { chains, provider } = configureChains(APP_CHAINS, [
-  alchemyProvider({ alchemyId: ALCHEMY_API_KEY }),
+  alchemyProvider({ alchemyId: env.alchemyId }),
   infuraProvider({ infuraId: env.infuraId }),
   publicProvider(),
 ]);
@@ -65,8 +57,4 @@ const client = createClient({
   provider,
 });
 
-export const WagmiProvider: FC = ({ children }) => (
-  <Provider client={client}>
-    {children}
-  </Provider>
-);
+export const WagmiProvider: FC = ({ children }) => <Provider client={client}>{children}</Provider>;
