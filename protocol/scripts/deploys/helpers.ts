@@ -20,9 +20,9 @@ export interface DeployedContracts {
   // XXX: Needs to include vaults/exposure/farming contracts created on chain
 
   // Temple AMM
-  // XXX: Needs to include FEI pair
-  TEMPLE_V2_FRAX_PAIR: string;
-  TEMPLE_V2_ROUTER: string;
+  TEMPLE_V2_FRAX_PAIR: string,
+  TEMPLE_V2_FEI_PAIR: string,
+  TEMPLE_V2_ROUTER: string,
 
   // Temple Admin
   TEMPLE_TEAM_FIXED_PAYMENTS: string;
@@ -31,19 +31,7 @@ export interface DeployedContracts {
   TEMPLE_TEAM_EPOCH_4: string;
 }
 
-export interface PolygonContracts {
-  SANDALWOOD_TOKEN: string;
-  OPENING_CEREMONY_QUEST: string;
-}
-
-export const POLYGON_CONTRACTS: { [key: string]: PolygonContracts } = {
-  matic: {
-    SANDALWOOD_TOKEN: '0xe99e95ec6DCae4c85806F13CDf1351aE0FEf55Be', // bridged: 0x4FA80013F5d13DB10f2c5DC2987081cb48c7c069
-    OPENING_CEREMONY_QUEST: '0x17d723436740F2852274192dA27F65116ECd011E',
-  },
-};
-
-export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
+export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
   rinkeby: {
     // From network/environment
     FRAX: '0x5eD8BD53B0c3fa3dEaBd345430B1A3a6A4e8BD7C',
@@ -56,7 +44,8 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_4: '',
 
     TEMPLE_V2_FRAX_PAIR: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
-    TEMPLE_V2_ROUTER: '', // XXX: Update with current router
+    TEMPLE_V2_FEI_PAIR: '', // TODO: Update
+    TEMPLE_V2_ROUTER: '', // TOTO: Update with current router
 
     OPS_MANAGER_LIB: '0xCA3Af256aBe5B11989c8069e1892a4eed8C85c17',
     OPS_MANAGER: '0x0647b5CFC9e9B03629Db83E7Aa4d1E25283DD9Cb',
@@ -76,6 +65,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_3: '0xf86c2dbd16f05e86bff72ce89b3c2915812e92d0',
     TEMPLE_TEAM_EPOCH_4: '0x07888e0a8929eb922Aee5930f7B0894BaB5D8120',
     TEMPLE_V2_FRAX_PAIR: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
+    TEMPLE_V2_FEI_PAIR: '0xf994158766e0a4E64c26feCE675186f489EC9107',
     TEMPLE_V2_ROUTER: '0x98257c876ace5009e7b97843f8c71b3ae795c71e',
 
     OPS_MANAGER: '0x65fE8BaBF7DA367b2B45cBD748F0490713f84828',
