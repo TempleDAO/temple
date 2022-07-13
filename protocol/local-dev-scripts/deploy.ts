@@ -1,7 +1,7 @@
 import '@nomiclabs/hardhat-ethers';
 import { BigNumber, ContractTransaction } from 'ethers';
 import { ethers } from 'hardhat';
-import { blockTimestamp, mineNBlocks } from '../../test/helpers';
+import { blockTimestamp, mineNBlocks } from '../test/helpers';
 import {
   ExitQueue__factory,
   Faith__factory,
@@ -22,7 +22,7 @@ import {
   TempleStableAMMRouter__factory,
   VaultProxy__factory,
   InstantExitQueue__factory,
-} from '../../typechain';
+} from '../typechain';
 import { writeFile } from 'fs/promises';
 
 function toAtto(n: number) {
