@@ -1,11 +1,11 @@
 import '@nomiclabs/hardhat-ethers';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { blockTimestamp, mineToTimestamp } from '../../test/helpers';
+import { blockTimestamp, mineToTimestamp } from '../test/helpers';
 import {
   TempleERC20Token__factory,
   Vault__factory,
-} from '../../typechain';
+} from '../typechain';
 
 function toAtto(n: number) {
     return BigNumber.from(10).pow(18).mul(n);

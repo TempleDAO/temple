@@ -17,7 +17,8 @@ import {
   VaultProxy__factory,
   InstantExitQueue__factory,
   LockedOGTemple__factory,
-} from '../../typechain';
+} from '../typechain';
+import { writeFile } from 'fs/promises';
 
 function toAtto(n: number) {
   return BigNumber.from(10).pow(18).mul(n);
