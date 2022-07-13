@@ -5,17 +5,12 @@ import styled from 'styled-components';
 import * as Sentry from '@sentry/react';
 import { BrowserTracing } from '@sentry/tracing';
 import { CaptureConsole } from '@sentry/integrations';
-
 import { GlobalStyle } from 'styles/GlobalStyle';
 import { AppProvider } from 'providers/AppProvider';
-
 import NotificationManager from 'components/Notification/NotificationManager';
-
 import PageLayout from 'components/Layouts/Page';
 import Loader from 'components/Loader/Loader';
-
 import Disclaimer from 'components/Pages/Disclaimer';
-
 import CoreLayout from 'components/Layouts/CoreLayout';
 import AnalyticsPage from 'components/Pages/Core/Analytics';
 import VaultPage from 'components/Pages/Core/Vault';
@@ -33,8 +28,6 @@ import env from 'constants/env';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
-const FaithAirdrop = React.lazy(() => import('components/Pages/FaithAirdrop'));
-const Claim = React.lazy(() => import('components/Pages/Claim'));
 
 const LoaderWrapper = styled.div`
   display: flex;
@@ -84,21 +77,10 @@ ReactDOM.render(
           <>
             <Route path="/" element={<PageLayout />}>
               <Route path="" element={<HomePage />} />
-              {/* Redirect everything else to the home page */}c
+              {/* Redirect everything else to the home page */}
               <Route path="*" element={<Navigate replace to="/" />} />
               <Route path="disclaimer" element={<Disclaimer />} />
-              <Route
-                path="faith-airdrop"
-                element={<LazyPage component={FaithAirdrop} />}
-              />
-              <Route
-                path="temple-claim"
-                element={<LazyPage component={Claim} />}
-              />
-              <Route
-                path="team-payments"
-                element={<LazyPage component={TeamPayments} />}
-              />
+              <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
             </Route>
             <Route path="/dapp/*" element={<CoreLayout />}>
               <Route path="" element={<VaultListPage />} />

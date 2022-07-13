@@ -1,11 +1,7 @@
 import { ethers } from "hardhat";
-import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, toAtto } from "../helpers";
+import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, NULL_ADDR, toAtto } from "../helpers";
 import { Signer } from "ethers";
 import {
-    AcceleratedExitQueue,
-    AcceleratedExitQueue__factory,
-    ExitQueue,
-    ExitQueue__factory,
     JoiningFee,
     JoiningFee__factory,
   OGTemple,
@@ -22,7 +18,7 @@ import {
   Faith,
   InstantExitQueue__factory,
   Exposure__factory,
-  VaultedTemple__factory
+  VaultedTemple__factory,
 } from "../../typechain";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -30,9 +26,7 @@ import { _TypedDataEncoder } from "ethers/lib/utils";
 
 describe("Vault Proxy", async () => {
   let TEMPLE: TempleERC20Token;
-  let EXIT_QUEUE: ExitQueue;
   let STAKING: TempleStaking;
-  let ACCEL_EXIT_QUEUE: AcceleratedExitQueue;
   let VAULT_PROXY: VaultProxy;
   let OGTEMPLE: OGTemple;
   let FAITH: Faith;
@@ -52,19 +46,19 @@ describe("Vault Proxy", async () => {
         toAtto(1000)
       );
 
-      EXIT_QUEUE = await new ExitQueue__factory(owner).deploy(
-        TEMPLE.address,
-        toAtto(1000), /* max per epoch */
-        toAtto(1000), /* max per address per epoch */
-        5, /* epoch size, in blocks */
-      )
-       
       STAKING = await new TempleStaking__factory(owner).deploy(
         TEMPLE.address,
-        EXIT_QUEUE.address,
+        NULL_ADDR,
         20, /* epoch size, in seconds */
         (await blockTimestamp()) - 1,
       );
+
+      const INSTANT_EXIT_QUEUE = await new InstantExitQueue__factory(owner).deploy(
+        STAKING.address,
+        TEMPLE.address
+      );
+
+      await STAKING.setExitQueue(INSTANT_EXIT_QUEUE.address);
        
       await STAKING.setEpy(10,100);
       OGTEMPLE = new OGTemple__factory(owner).attach(await STAKING.OG_TEMPLE());
@@ -80,12 +74,7 @@ describe("Vault Proxy", async () => {
 
       await TEMPLE.mint(STAKING.address, toAtto(100000));
 
-      const INSTANT_EXIT_QUEUE = await new InstantExitQueue__factory(owner).deploy(
-        STAKING.address,
-        TEMPLE.address
-      );
-
-      await STAKING.setExitQueue(INSTANT_EXIT_QUEUE.address);
+      
 
       await FAITH.addManager(await owner.getAddress());
       await FAITH.addManager(VAULT_PROXY.address);

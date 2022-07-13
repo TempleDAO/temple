@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../core/Exposure.sol";
-import "../TempleERC20Token.sol";
+import "../core/TempleERC20Token.sol";
 import "../core/VaultedTemple.sol";
 
 /**
@@ -19,7 +19,7 @@ contract NoopVaultedTempleLiquidator is ILiquidator {
         vaultedTemple = _vaultedTemple;
     }
 
-    function toTemple(uint256 amount, address toAccount) external override {
+    function toTemple(uint256 amount, address /* toAccount */) external override {
         templeToken.mint(address(vaultedTemple), amount);
     }
 }

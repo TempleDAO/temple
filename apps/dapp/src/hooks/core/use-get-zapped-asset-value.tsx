@@ -8,12 +8,13 @@ import { useFaith } from 'providers/FaithProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useOGTempleStakingValue } from 'hooks/core/use-ogtemple-staking-value';
 import { BigNumber } from 'ethers';
-
-const ENV = import.meta.env;
+import env from 'constants/env';
 
 export const useGetZappedAssetValue = () => {
   const { signer } = useWallet();
-  const { faith: { usableFaith } } = useFaith();
+  const {
+    faith: { usableFaith },
+  } = useFaith();
   const [getStakingValue] = useOGTempleStakingValue();
 
   const handler = async (ticker: TICKER_SYMBOL, amount: string, withFaith = false) => {
@@ -41,9 +42,9 @@ export const useGetZappedAssetValue = () => {
         total: bigTempleAmount,
       };
     }
-   
-    const vaultProxy = new VaultProxy__factory(signer).attach(ENV.VITE_PUBLIC_TEMPLE_VAULT_PROXY);
-    
+
+    const vaultProxy = new VaultProxy__factory(signer).attach(env.contracts.vaultProxy);
+
     // If the user is depositing with FAITH, the will get a boosted amount of TEMPLE deposited.
     // we need to calculate the deposit amount plus the amount of TEMPLE the FAITH converts to.
     const templeWithFaithAmount = await vaultProxy.getFaithMultiplier(usableFaith, bigTempleAmount);

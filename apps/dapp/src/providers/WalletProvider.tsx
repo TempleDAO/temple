@@ -6,7 +6,6 @@ import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { useNotification } from 'providers/NotificationProvider';
 import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { ClaimType } from 'enums/claim-type';
 import { TEAM_PAYMENTS_EPOCHS, TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH } from 'enums/team-payment';
 import { toAtto } from 'utils/bigNumber';
 import { asyncNoop, noop } from 'utils/helpers';
@@ -19,7 +18,7 @@ import {
   TempleTeamPayments__factory,
   ERC20,
 } from 'types/typechain';
-import { TEMPLE_ADDRESS, FRAX_ADDRESS, TEMPLE_STAKING_ADDRESS, FEI_ADDRESS } from 'providers/env';
+import env from 'constants/env';
 import { ZERO } from 'utils/bigNumber';
 
 // We want to save gas burn $ for the Templars,
@@ -38,7 +37,6 @@ const INITIAL_STATE: WalletState = {
   isConnecting: false,
   signer: null,
   network: null,
-  claim: asyncNoop,
   getBalance: asyncNoop,
   updateBalance: asyncNoop,
   collectTempleTeamPayment: asyncNoop,
@@ -67,15 +65,15 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
-    const fraxContract = new ERC20__factory(signer).attach(FRAX_ADDRESS);
+    const fraxContract = new ERC20__factory(signer).attach(env.contracts.frax);
 
-    const feiContract = new ERC20__factory(signer).attach(FEI_ADDRESS);
+    const feiContract = new ERC20__factory(signer).attach(env.contracts.fei);
 
-    const templeStakingContract = new TempleStaking__factory(signer).attach(TEMPLE_STAKING_ADDRESS);
+    const templeStakingContract = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
 
     const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(await templeStakingContract.OG_TEMPLE());
 
-    const templeContract = new TempleERC20Token__factory(signer).attach(TEMPLE_ADDRESS);
+    const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
 
     const fraxBalance: BigNumber = await fraxContract.balanceOf(walletAddress);
 
@@ -136,9 +134,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  // TODO: remove as part of #239
-  const claim = async (claimType: ClaimType): Promise<TransactionReceipt | void> => {};
-
   const collectTempleTeamPayment = async (epoch: TEAM_PAYMENTS_EPOCHS) => {
     if (walletAddress && signer) {
       const fixedTeamPaymentAddress = TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[epoch];
@@ -168,7 +163,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
         isConnecting: signerLoading || connectLoading || accountLoading,
         wallet: walletAddress || null,
         ensureAllowance,
-        claim,
         signer: signer || null,
         network: !chain
           ? null
