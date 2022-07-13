@@ -10,6 +10,7 @@ import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { Pool } from 'components/Layouts/Auction/types';
 import env from 'constants/env';
 import { SubGraphQuery, SubGraphResponse, SubgraphError } from 'hooks/core/types';
+import { tabletAndAbove } from 'styles/breakpoints';
 import Loader from 'components/Loader/Loader';
 import TruncatedAddress from 'components/TruncatedAddress';
 
@@ -109,10 +110,10 @@ export const SwapHistory = ({ pool }: Props) => {
             <th>
               Time
             </th>
-            <th>
+            <th className="hidden">
               Type
             </th>
-            <th>
+            <th className="hidden">
               Input
             </th>
             <th>
@@ -121,7 +122,7 @@ export const SwapHistory = ({ pool }: Props) => {
             <th>
               Price
             </th>
-            <th>
+            <th className="hidden">
               Wallet
             </th>
           </tr>
@@ -138,10 +139,10 @@ export const SwapHistory = ({ pool }: Props) => {
                 <td>
                   {format(swap.timestamp * 1000, 'LLL d, yyyy h:mm a')}
                 </td>
-                <td>
+                <td className="hidden">
                   {isSell ? 'sell' : 'buy'}
                 </td>
-                <td>
+                <td className="hidden">
                   {formatNumberFixedDecimals(swap.tokenAmountIn, 4)} {swap.tokenInSym}
                 </td>
                 <td>
@@ -150,7 +151,7 @@ export const SwapHistory = ({ pool }: Props) => {
                 <td>
                   {price}
                 </td>
-                <td>
+                <td className="hidden">
                   <TruncatedAddress address={swap.userAddress.id} />
                 </td>
               </tr>
@@ -186,6 +187,14 @@ const Table = styled.table`
 
   th, td {
     padding: 0.75rem;
+  }
+
+  .hidden {
+    display: none;
+    
+    ${tabletAndAbove(`
+      display: table-cell;
+    `)}
   }
 
   td {

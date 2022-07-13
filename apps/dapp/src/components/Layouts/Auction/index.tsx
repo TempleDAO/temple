@@ -9,6 +9,8 @@ import { PillMenu } from 'components/PillMenu';
 import { AuctionContext, GraphResponse } from './types';
 import { createPool } from './utils';
 import env from 'constants/env';
+import { phoneAndAbove } from 'styles/breakpoints';
+import { NAV_MOBILE_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
 
 const QUERY = {
   query: `
@@ -110,7 +112,9 @@ export const AuctionLayout = () => {
           />
         </AdminMenuWrapper>
       )}
-      <Outlet context={{ pool }} />
+      <Wrapper>
+        <Outlet context={{ pool }} />
+      </Wrapper>
     </>
   );
 };
@@ -119,4 +123,12 @@ export const useAuctionContext = () => useOutletContext<AuctionContext>();
 
 const AdminMenuWrapper = styled.div`
   margin: 2rem 0 -1rem;
+`;
+
+const Wrapper = styled.div`
+  margin: ${NAV_MOBILE_HEIGHT_PIXELS}px 10px 10px 10px;
+
+  ${phoneAndAbove(`
+    margin: 40px 40px 40px 40px;
+  `)}
 `;

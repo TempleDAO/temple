@@ -17,6 +17,7 @@ import { useTimeRemaining } from './utils';
 import { Input } from 'components/Input/Input';
 
 import {
+  PageWrapper,
   ContractAddress,
   InfoBar,
   InfoItem,
@@ -28,7 +29,6 @@ import {
 
 const ActiveAuction = ({ pool }: { pool: Pool }) => {
   const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
-  // const duration = formatDistanceStrict(lastUpdate.startTimestamp, lastUpdate.endTimestamp);
 
   return (
     <div>
@@ -86,20 +86,22 @@ export const AuctionPage = () => {
 
   if (!pool) {
     return (
-      <CenterScreenWrapper>
+      <>
         <h3>Check back soon...</h3>
-      </CenterScreenWrapper>
+      </>
     );
   }
 
   if (timeRemaining) {
     return (
-      <CenterScreenWrapper>
+      <>
         <h2>{pool.name}</h2>
         <h3>Launching in: {timeRemaining}</h3>
-      </CenterScreenWrapper>
+      </>
     );
   }
 
-  return <ActiveAuction pool={pool} />;
+  return (
+    <ActiveAuction pool={pool} />
+  );
 };
