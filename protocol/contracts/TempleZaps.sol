@@ -197,7 +197,7 @@ contract TempleZaps is Ownable {
     bytes calldata _swapData
   ) internal {
     require(supportedStables[_stableToken] == true, "Unsupported stable token");
-    
+    // todo: check if _fromToken is ETH and send msg.value
     SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), address(zaps), _fromAmount);
     uint256 amountOut = zaps.zapIn(_fromToken, _fromAmount, _stableToken, _minStableReceived, _swapTarget, _swapData);
 
@@ -242,7 +242,6 @@ contract TempleZaps is Ownable {
       IERC20(temple).safeIncreaseAllowance(_vault, receivedTempleAmount);
       IVault(_vault).depositFor(msg.sender, receivedTempleAmount);
       emit ZappedTempleInVault(msg.sender, _fromToken, _fromAmount, receivedTempleAmount);
-
     }
   }
 

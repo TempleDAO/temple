@@ -2,16 +2,11 @@ pragma solidity ^0.8.4;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import "./ZapBaseV2_3.sol";
+import "./GenericZapHelper.sol";
 import "hardhat/console.sol";
 
 interface IWETH {
   function deposit() external payable;
-}
-
-interface IUniswapV2Pair {
-  function token0() external view returns (address);
-  function token1() external view returns (address);
-  function getReserves() external view returns (uint112, uint112, uint32);
 }
 
 interface IUniswapV2Router {
@@ -550,7 +545,7 @@ contract GenericZap is ZapBaseV2_3 {
 
     address intermediateToken;
     uint256 intermediateAmount;
-    (address token0, address token1) = _getPairTokens(_pair);
+    (address token0, address token1) = GenericZapHelper.getPairTokens(_pair);
 
     if (_fromToken != token0 && _fromToken != token1) {
       // swap to intermediate
@@ -638,12 +633,12 @@ contract GenericZap is ZapBaseV2_3 {
     if (reserveA == 0 && reserveB == 0) {
       (amountA, amountB) = (amountADesired, amountBDesired);
     } else {
-      uint amountBOptimal = _quote(amountADesired, reserveA, reserveB);
+      uint amountBOptimal = GenericZapHelper.quote(amountADesired, reserveA, reserveB);
       if (amountBOptimal <= amountBDesired) {
           //require(amountBOptimal >= amountBMin, 'TempleStableAMMRouter: INSUFFICIENT_STABLE');
           (amountA, amountB) = (amountADesired, amountBOptimal);
       } else {
-          uint amountAOptimal = _quote(amountBDesired, reserveB, reserveA);
+          uint amountAOptimal = GenericZapHelper.quote(amountBDesired, reserveB, reserveA);
           assert(amountAOptimal <= amountADesired);
           //require(amountAOptimal >= amountAMin, 'TempleStableAMMRouter: INSUFFICIENT_TEMPLE');
           (amountA, amountB) = (amountAOptimal, amountBDesired);
@@ -663,7 +658,7 @@ contract GenericZap is ZapBaseV2_3 {
 
     (uint256 res0, uint256 res1,) = pair.getReserves();
     if (_fromToken == token0) {
-      uint256 amountToSwap = _calculateSwapInAmount(res0, _fromAmount);
+      uint256 amountToSwap = GenericZapHelper.calculateSwapInAmount(res0, _fromAmount);
       //if no reserve or a new pair is created
       if (amountToSwap == 0) amountToSwap = _fromAmount / 2;
 
@@ -675,7 +670,7 @@ contract GenericZap is ZapBaseV2_3 {
       );
       amountA = _fromAmount - amountToSwap;
     } else {
-      uint256 amountToSwap = _calculateSwapInAmount(res1, _fromAmount);
+      uint256 amountToSwap = GenericZapHelper.calculateSwapInAmount(res1, _fromAmount);
       //if no reserve or a new pair is created
       if (amountToSwap == 0) amountToSwap = _fromAmount / 2;
 
@@ -689,14 +684,6 @@ contract GenericZap is ZapBaseV2_3 {
     }
   }
 
-  function _getPairTokens(
-    address _pairAddress
-  ) internal view returns (address token0, address token1) {
-    IUniswapV2Pair pair = IUniswapV2Pair(_pairAddress);
-    token0 = pair.token0();
-    token1 = pair.token1();
-  }
-
   function _zapIn(
     address fromToken,
     uint256 fromAmount,
@@ -707,7 +694,7 @@ contract GenericZap is ZapBaseV2_3 {
   ) internal returns (uint256) {
 
     _pullTokens(fromToken, fromAmount);
-
+    //console.logBytes(swapData);
     uint256 amountOut = _fillQuote(
       fromToken,
       fromAmount,
@@ -716,8 +703,10 @@ contract GenericZap is ZapBaseV2_3 {
       swapData
     );
     console.logString("AmountOut, AmountOutMin");
-    console.logUint(amountOut);
-    console.logUint(amountOutMin);
+    //console.logUint(amountOut);
+    //console.logUint(amountOutMin);
+    //console.logBytes(swapData);
+    //console.logAddress(swapTarget);
     require(amountOut >= amountOutMin, "Not enough tokens out");
     
     emit ZappedIn(msg.sender, fromToken, fromAmount, toToken, amountOut);
@@ -777,7 +766,8 @@ contract GenericZap is ZapBaseV2_3 {
   ) internal returns (uint256 amountBought) {
     if (_swapTarget == WETH) {
       _depositEth(_fromAmount);
-      return _fromAmount;
+      amountBought = _fromAmount;
+      //return _fromAmount;
     }
 
     uint256 valueToSend;
@@ -888,44 +878,5 @@ contract GenericZap is ZapBaseV2_3 {
       )[path.length - 1];
 
     require(tokenBought >= _amountOutMin, "Error Swapping Tokens 2"); // redundant?
-  }
-
-  /** 
-    * given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
-    *
-    * Direct copy of UniswapV2Library.quote(amountA, reserveA, reserveB) - can't use as directly as it's built off a different version of solidity
-    */
-  function _quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
-    require(reserveA > 0 && reserveB > 0, 'Insufficient liquidity');
-    amountB = (amountA * reserveB) / reserveA;
-  }
-
-  function _calculateSwapInAmount(
-    uint256 reserveIn,
-    uint256 userIn
-  ) internal pure returns (uint256) {
-    return
-        (sqrt(
-            reserveIn * ((userIn * 3988000) + (reserveIn * 3988009))
-        ) - (reserveIn * 1997)) / 1994;
-  }
-
-  function _getSwapAmount(uint256 amountA, uint256 reserveA) internal pure returns (uint256) {
-    return (sqrt(amountA * ((reserveA * 3988000) + (amountA * 3988009))) - (amountA * 1997)) / 1994;
-  }
-
-  // borrowed from Uniswap V2 Core Math library https://github.com/Uniswap/v2-core/blob/master/contracts/libraries/Math.sol
-  // babylonian method (https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method)
-  function sqrt(uint y) internal pure returns (uint z) {
-    if (y > 3) {
-      z = y;
-      uint x = y / 2 + 1;
-      while (x < z) {
-          z = x;
-          x = (y / x + x) / 2;
-      }
-    } else if (y != 0) {
-      z = 1;
-    }
   }
 }

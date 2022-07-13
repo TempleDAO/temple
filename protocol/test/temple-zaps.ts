@@ -147,7 +147,7 @@ describe("Temple Stax Core Zaps", async () => {
     });
   });
 
-  describe.only("Temple Zaps", async () => {
+  describe("Temple Zaps", async () => {
 
     beforeEach(async () => {
       //await templeZaps.setPermittableTokens([BNB, ETH, FXS], [true, true, true]);
@@ -240,7 +240,6 @@ describe("Temple Stax Core Zaps", async () => {
     it("should zap ERC20 tokens to TEMPLE", async () => {
       const tokenAddr = FXS;
       const tokenAmount = "5";
-      const minTempleReceived = ethers.utils.parseUnits("1", 18).toString();
 
       // send some BNB
       const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
@@ -261,10 +260,10 @@ describe("Temple Stax Core Zaps", async () => {
       const tokenAddr = FXS;
       const tokenAmount = "5";
 
-      // send some BNB
+      // send some FXS
       const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
-      const bnbToken = IERC20__factory.connect(tokenAddr, bnbWhale);
-      await bnbToken.transfer(await alice.getAddress(), ethers.utils.parseEther(tokenAmount));
+      const fxsToken = IERC20__factory.connect(tokenAddr, bnbWhale);
+      await fxsToken.transfer(await alice.getAddress(), ethers.utils.parseEther(tokenAmount));
 
       await zapTemple(
         alice,
@@ -279,7 +278,6 @@ describe("Temple Stax Core Zaps", async () => {
     it("should zap ERC20 tokens to Temple and deposit in vault", async () => {
       const tokenAddr = FXS;
       const tokenAmount = "5";
-      const minTempleReceived = ethers.utils.parseUnits("1", 18).toString();
 
       // send some BNB
       //const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
@@ -294,6 +292,100 @@ describe("Temple Stax Core Zaps", async () => {
         tokenAmount,
         vault.address
       );
+    });
+
+    it("temple+faith and deposit in vault", async () => {
+      // fund contract with some temple
+      const fundAmount = toAtto(1000);
+      await templeToken.transfer(templeZaps.address, fundAmount);
+      expect(await templeToken.balanceOf(templeZaps.address)).to.eq(fundAmount);
+
+      const fromToken = ethers.utils.getAddress(templeToken.address);
+      //const fromAmount = toAtto(1000);
+      const fromAmount = "1000";
+      const fromAmountParsed = ethers.utils.parseEther(fromAmount);
+      const feePerTempleScaledPerHour = await joiningFee.calc(await vault.firstPeriodStartTimestamp(), await vault.periodDuration(), vault.address);
+      const fee = fromAmountParsed.mul(feePerTempleScaledPerHour).div(toAtto(1));
+      await faith.addManager(templeZaps.address);
+      await zapInTempleFaith(
+        alice,
+        await alice.getAddress(),
+        fundAmount,
+        fromAmount,
+        fromToken,
+        fee
+      );
+    });
+
+    it("should zap token to temple+faith and deposit in vault", async () => {
+      // fund contract with some temple
+      const fundAmount = toAtto(1000);
+      await templeToken.transfer(templeZaps.address, fundAmount);
+      expect(await templeToken.balanceOf(templeZaps.address)).to.eq(fundAmount);
+
+      //const fromToken = ethers.utils.getAddress(templeToken.address);
+      const tokenAddr = ethers.utils.getAddress(FXS);
+      const tokenAmount = "50";
+
+      // send some FXS
+      const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
+      const fxsToken = IERC20__factory.connect(tokenAddr, bnbWhale);
+      await fxsToken.transfer(await alice.getAddress(), ethers.utils.parseEther(tokenAmount));
+
+      const fromAmountParsed = ethers.utils.parseEther(tokenAmount);
+      const feePerTempleScaledPerHour = await joiningFee.calc(await vault.firstPeriodStartTimestamp(), await vault.periodDuration(), vault.address);
+      const fee = fromAmountParsed.mul(feePerTempleScaledPerHour).div(toAtto(1));
+      await faith.addManager(templeZaps.address);
+
+      await zapInTempleFaith(
+        alice,
+        await alice.getAddress(),
+        fundAmount,
+        tokenAmount,
+        tokenAddr,
+        fee
+      );
+    });
+  });
+
+  describe.only("Generic Zaps", async () => {
+    const tokenAddr = ethers.utils.getAddress(FXS);
+    const tokenAmount = "50";
+    beforeEach( async () => {
+      
+
+      // send some FXS
+      const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
+      const fxsToken = IERC20__factory.connect(tokenAddr, bnbWhale);
+      await fxsToken.transfer(await alice.getAddress(), ethers.utils.parseEther(tokenAmount));
+    });
+
+    it("zaps in erc20 tokens to erc20 tokens", async () => {
+      console.log(`Alice, Owner ; ${await alice.getAddress()} ${await owner.getAddress()}`);
+      await zapIn(
+        alice,
+        await alice.getAddress(),
+        genericZaps,
+        tokenAddr,
+        tokenAmount,
+        UNI
+      );
+    });
+
+    it("zaps in erc20 tokens to erc20 tokens for other user", async () => {
+      console.log(`Alice, Owner ; ${await alice.getAddress()} ${await owner.getAddress()}`);
+      await zapIn(
+        alice,
+        await alan.getAddress(),
+        genericZaps,
+        tokenAddr,
+        tokenAmount,
+        UNI
+      );
+    });
+
+    it("zaps in uniswap v2 LP", async () => {
+      
     });
   });
 
@@ -484,48 +576,129 @@ async function approveDefaultTokens(
   await zaps.setApprovedTargets(tokens, approvedTargets, approvals);
 }
 
-// async function zapInTempleFaith(
-//   signer: Signer,
-//   fundAmount: BigNumber,
-//   fromAmount: BigNumber,
-//   fromAmountInTemple: BigNumber,
-//   fromTokenAddress: string,
-//   fee: BigNumber
-// ) {
-//   // get some faith for signer
-//   const signerAddress = await signer.getAddress();
-//   const faithAmount = 10000;
-//   await faith.gain(signerAddress, faithAmount);
-//   const signerFaithBalance = await faith.balances(signerAddress);
-//   expect(signerFaithBalance.usableFaith).to.eq(faithAmount);
+async function zapInTempleFaith(
+  signer: Signer,
+  zapInfor: string,
+  fundAmount: BigNumber,
+  fromAmount: string,
+  fromTokenAddress: string,
+  fee: BigNumber
+) {
+  const tokenContract = IERC20__factory.connect(fromTokenAddress, signer);
+  let symbol;
+  let decimals;
+  let sellToken;
+  if (fromTokenAddress === ETH) {
+    symbol = 'ETH';
+    decimals = 18;
+    sellToken = 'ETH';
+  } else {
+    symbol = await tokenContract.symbol();
+    decimals = await tokenContract.decimals();
+    sellToken = fromTokenAddress;
+  }
+  // get some faith for signer
+  const signerAddress = await signer.getAddress();
+  const faithAmount = 10000;
+  await faith.gain(signerAddress, faithAmount);
+  const signerFaithBalance = await faith.balances(signerAddress);
+  expect(signerFaithBalance.usableFaith).to.eq(faithAmount);
 
-//   // zap temple+faith
-//   const fromToken = ERC20__factory.connect(fromTokenAddress, signer);
-//   const minTempleReceived = ethers.utils.parseUnits("1", 18).toString();
+  // zap temple+faith
+  const fromToken = ERC20__factory.connect(fromTokenAddress, signer);
+  const templeToken = IERC20__factory.connect(TEMPLE, signer);
+  //const minTempleReceived = ethers.utils.parseUnits("1", 18).toString();
 
-//   // boosted temple
-//   const boostedAmount = await vaultProxy.getFaithMultiplier(faithAmount, fromAmountInTemple);
+  // Get TEMPLE balance before zap
+  //const signerAddress = await signer.getAddress();
+  const balanceBefore = signerAddress == zapInfor ? await getBalance(templeToken, signerAddress) : await getBalance(templeToken, zapInfor);
+  console.log(
+    `Starting Temple: ${ethers.utils.formatUnits(balanceBefore, 18)}`
+  );
+  console.log(`Selling ${fromAmount} ${symbol}`);
 
-//   await fromToken.connect(signer).increaseAllowance(templeZaps.address, fromAmountInTemple);
-//   await expect(templeZaps
-//     .connect(signer)
-//     .zapTempleFaithInVault(
-//       vault.address,
-//       fromToken.address,
-//       fromAmount,
-//       minTempleReceived,
-//       FRAX,
-//       ZEROEX_EXCHANGE_PROXY,
-//       "0x"
-//     ))
-//     .to.emit(templeZaps, "ZappedTemplePlusFaithInVault")
-//     .withArgs(signerAddress, fromToken.address, fromAmount, faithAmount, boostedAmount);
+  // Approve token
+  if (fromTokenAddress !== ETH) {
+    await tokenContract.approve(
+      templeZaps.address,
+      ethers.utils.parseUnits('1000111', decimals)
+    );
+    const allowance = await tokenContract.allowance(
+      signerAddress,
+      templeZaps.address
+    );
+    console.log(`Allowance: ${ethers.utils.formatUnits(allowance, decimals)}`);
+  }
+
+  // Get quote from 0x API
+  let swapCallData, price, guaranteedPrice, gas, estimatedGas;
+  const sellAmount = ethers.utils.parseUnits(fromAmount, decimals).toString();
+
+  // todo: if token is temple, no need to swap data
+  let minFraxReceived = 0;
+  let minFraxReceivedWei = BigNumber.from(0);
+  let minExpectedTemple = BigNumber.from(0);
+  const fraxPair = await templeRouter.tokenPair(FRAX);
+  if (fromTokenAddress === FRAX) {
+    guaranteedPrice = '0.99';
+    swapCallData = '0x';
+    minExpectedTemple = await getExpectedTemple(
+      signer,
+      guaranteedPrice,
+      fromAmount,
+      fraxPair
+    );
+  } else if (fromTokenAddress == TEMPLE) {
+    minExpectedTemple = ethers.utils.parseEther(fromAmount);
+    swapCallData = "0x";
+  } else {
+    const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${FRAX}`;
+    const response = await axios.get(url);
+    ({
+      data: { data: swapCallData, price, guaranteedPrice, gas, estimatedGas },
+    } = response);
+
+    console.log(`Price of ${symbol} in FRAX: ${price}`);
+    console.log(`Guaranteed price: ${guaranteedPrice}`);
+
+    minFraxReceived = parseFloat(guaranteedPrice) * parseFloat(fromAmount);
+    minFraxReceivedWei = ethers.utils.parseUnits(
+      minFraxReceived.toString(),
+      18
+    );
+    minExpectedTemple = await getExpectedTemple(
+      signer,
+      guaranteedPrice,
+      fromAmount,
+      fraxPair
+    );
+  }
+
+  // boosted temple
+  // const boostedAmount = await vaultProxy.getFaithMultiplier(faithAmount, fromAmountInTemple);
+  const boostedAmount = await vaultProxy.getFaithMultiplier(faithAmount, minExpectedTemple);
+  console.log(`boosted amount ${boostedAmount} ${faithAmount}`)
+  await fromToken.connect(signer).increaseAllowance(templeZaps.address, sellAmount);
+  await expect(templeZaps
+    .connect(signer)
+    .zapTempleFaithInVault(
+      vault.address,
+      fromToken.address,
+      sellAmount,
+      minExpectedTemple,
+      FRAX,
+      minFraxReceivedWei,
+      ZEROEX_EXCHANGE_PROXY,
+      swapCallData
+    ))
+    .to.emit(templeZaps, "ZappedTemplePlusFaithInVault")
+    //.withArgs(signerAddress, fromToken.address, sellAmount, faithAmount, boostedAmount);
     
-//   expect(await templeToken.balanceOf(templeZaps.address)).to.eq(fundAmount.sub(boostedAmount.sub(fromAmountInTemple)));
-//   expect((await faith.balances(signerAddress)).usableFaith).to.eq(0);
-//   expect(await vault.balanceOf(signerAddress)).to.eq(boostedAmount.sub(fee));
-//   expect(await templeToken.balanceOf(vaultedTemple.address)).to.eq(boostedAmount);
-// }
+  //expect(await templeToken.balanceOf(templeZaps.address)).to.eq(fundAmount.sub(boostedAmount.sub(fromAmountInTemple)));
+  expect((await faith.balances(signerAddress)).usableFaith).to.eq(0);
+  expect(await vault.balanceOf(signerAddress)).to.gte(boostedAmount.sub(fee));
+  expect(await templeToken.balanceOf(vaultedTemple.address)).to.gte(boostedAmount);
+}
 
 async function airdropTemple(
   owner: Signer,
@@ -543,17 +716,6 @@ async function airdropTemple(
 
   return templeTokenOwner;
 }
-
-/*async function zapInUniToken(
-  signer: Signer,
-  zaps: GenericZap,
-  fromToken: string,
-  fromAmount: string,
-  toToken: string
-) {
-  const tokenContract = IERC20__factory.connect(tokenAddr, signer);
-
-}*/
 
 // zap temple using templezaps contract, which uses generic zaps
 async function zapTemple(
@@ -685,14 +847,14 @@ async function zapTemple(
 
 async function zapIn(
   signer: Signer,
+  zapInfor: string,
   zaps: GenericZap,
   tokenAddr: string,
   tokenAmount: string,
-  toTokenAddr: string,
-  minTempleReceived: string
+  toTokenAddr: string
 ) {
   const tokenContract = IERC20__factory.connect(tokenAddr, signer);
-  const templeToken = IERC20__factory.connect(TEMPLE, signer);
+  const toTokenContract = IERC20__factory.connect(toTokenAddr, signer);
   let symbol;
   let decimals;
   let sellToken;
@@ -708,9 +870,11 @@ async function zapIn(
 
   // Get TEMPLE balance before zap
   const signerAddress = await signer.getAddress();
-  const balanceBefore = await getBalance(templeToken, signerAddress);
+  //const balanceBefore = await getBalance(tokenContract, signerAddress);
+  const balanceBefore = signerAddress == zapInfor ? 
+    await getBalance(toTokenContract, signerAddress) : await getBalance(toTokenContract, zapInfor);
   console.log(
-    `Starting Temple: ${ethers.utils.formatUnits(balanceBefore, 18)}`
+    `Starting Token Balance: ${ethers.utils.formatUnits(balanceBefore, 18)}`
   );
   console.log(`Selling ${tokenAmount} ${symbol}`);
 
@@ -730,29 +894,14 @@ async function zapIn(
   // Get quote from 0x API
   let swapCallData, price, guaranteedPrice, gas, estimatedGas;
   const sellAmount = ethers.utils.parseUnits(tokenAmount, decimals).toString();
+  const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${toTokenAddr}`;
+  const response = await axios.get(url);
+  ({
+    data: { data: swapCallData, price, guaranteedPrice, gas, estimatedGas },
+  } = response);
 
-  if (tokenAddr === FRAX) {
-    guaranteedPrice = '0.99';
-    swapCallData = '0x';
-  } else {
-    const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${FRAX}`;
-    const response = await axios.get(url);
-    ({
-      data: { data: swapCallData, price, guaranteedPrice, gas, estimatedGas },
-    } = response);
-
-    console.log(`Price of ${symbol} in FRAX: ${price}`);
-    console.log(`Guaranteed price: ${guaranteedPrice}`);
-  }
-  
-  const fraxPair = await templeRouter.tokenPair(FRAX);
-  // Do zap
-  const minExpectedTemple = await getExpectedTemple(
-    signer,
-    guaranteedPrice,
-    tokenAmount,
-    fraxPair
-  );
+  console.log(`Price of ${symbol} in ${toTokenAddr}: ${price}`);
+  console.log(`Guaranteed price: ${guaranteedPrice}`);
 
   const zapsConnect = zaps.connect(signer);
   const overrides: { value?: BigNumber } = {};
@@ -760,29 +909,146 @@ async function zapIn(
     overrides.value = ethers.utils.parseEther(tokenAmount);
   }
 
-  await expect(zapsConnect.zapIn(
-    tokenAddr,
-    sellAmount,
-    minTempleReceived,
-    FRAX,
-    ZEROEX_EXCHANGE_PROXY,
-    swapCallData,
-    overrides
-  ))
-  .to.emit(zapsConnect, "ZappedIn");
-  console.log(
-    `Minimum expected Temple: ${ethers.utils.formatUnits(
-      minExpectedTemple,
-      18
-    )}`
+  const minTokenReceived = parseFloat(guaranteedPrice) * parseFloat(tokenAmount);
+  const minTokenReceivedWei = ethers.utils.parseUnits(
+    minTokenReceived.toString(),
+    18
   );
-  // Get Temple balance after zap
-  const balanceAfter = await getBalance(templeToken, signerAddress);
-  console.log(`Ending Temple: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
+  console.log(`Min token received wei: ${minTokenReceivedWei}`);
+  
+  if (signerAddress == zapInfor) {
+    await expect(zapsConnect.zapIn(
+      tokenAddr,
+      sellAmount,
+      toTokenAddr,
+      minTokenReceivedWei,
+      ZEROEX_EXCHANGE_PROXY,
+      swapCallData,
+      overrides
+    ))
+    .to.emit(zapsConnect, "ZappedIn");
+  } else {
+    await expect(zapsConnect.zapInFor(
+      tokenAddr,
+      sellAmount,
+      toTokenAddr,
+      minTokenReceivedWei,
+      zapInfor,
+      ZEROEX_EXCHANGE_PROXY,
+      swapCallData,
+      overrides
+    ))
+    .to.emit(zapsConnect, "ZappedIn");
+  }
 
-  expect(balanceAfter.gte(minExpectedTemple)).to.be.true;
-  expect(balanceAfter).to.gte(minExpectedTemple.add(balanceBefore));
+  // Get balance after zap
+  const balanceAfter = await getBalance(toTokenContract, signerAddress);
+  console.log(`Ending toToken balance: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
+
+  expect(balanceAfter.gte(minTokenReceivedWei)).to.be.true;
+  expect(balanceAfter).to.gte(minTokenReceivedWei.add(balanceBefore));
 }
+
+// async function zapIn(
+//   signer: Signer,
+//   zaps: GenericZap,
+//   tokenAddr: string,
+//   tokenAmount: string,
+//   toTokenAddr: string,
+//   minTempleReceived: string
+// ) {
+//   const tokenContract = IERC20__factory.connect(tokenAddr, signer);
+//   const templeToken = IERC20__factory.connect(TEMPLE, signer);
+//   let symbol;
+//   let decimals;
+//   let sellToken;
+//   if (tokenAddr === ETH) {
+//     symbol = 'ETH';
+//     decimals = 18;
+//     sellToken = 'ETH';
+//   } else {
+//     symbol = await tokenContract.symbol();
+//     decimals = await tokenContract.decimals();
+//     sellToken = tokenAddr;
+//   }
+
+//   // Get TEMPLE balance before zap
+//   const signerAddress = await signer.getAddress();
+//   const balanceBefore = await getBalance(templeToken, signerAddress);
+//   console.log(
+//     `Starting Temple: ${ethers.utils.formatUnits(balanceBefore, 18)}`
+//   );
+//   console.log(`Selling ${tokenAmount} ${symbol}`);
+
+//   // Approve token
+//   if (tokenAddr !== ETH) {
+//     await tokenContract.approve(
+//       zaps.address,
+//       ethers.utils.parseUnits('1000111', decimals)
+//     );
+//     const allowance = await tokenContract.allowance(
+//       signerAddress,
+//       zaps.address
+//     );
+//     console.log(`Allowance: ${ethers.utils.formatUnits(allowance, decimals)}`);
+//   }
+
+//   // Get quote from 0x API
+//   let swapCallData, price, guaranteedPrice, gas, estimatedGas;
+//   const sellAmount = ethers.utils.parseUnits(tokenAmount, decimals).toString();
+
+//   if (tokenAddr === FRAX) {
+//     guaranteedPrice = '0.99';
+//     swapCallData = '0x';
+//   } else {
+//     const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${FRAX}`;
+//     const response = await axios.get(url);
+//     ({
+//       data: { data: swapCallData, price, guaranteedPrice, gas, estimatedGas },
+//     } = response);
+
+//     console.log(`Price of ${symbol} in FRAX: ${price}`);
+//     console.log(`Guaranteed price: ${guaranteedPrice}`);
+//   }
+  
+//   const fraxPair = await templeRouter.tokenPair(FRAX);
+//   // Do zap
+//   const minExpectedTemple = await getExpectedTemple(
+//     signer,
+//     guaranteedPrice,
+//     tokenAmount,
+//     fraxPair
+//   );
+
+//   const zapsConnect = zaps.connect(signer);
+//   const overrides: { value?: BigNumber } = {};
+//   if (tokenAddr === ETH) {
+//     overrides.value = ethers.utils.parseEther(tokenAmount);
+//   }
+
+//   await expect(zapsConnect.zapIn(
+//     tokenAddr,
+//     sellAmount,
+//     minTempleReceived,
+//     FRAX,
+//     ZEROEX_EXCHANGE_PROXY,
+//     swapCallData,
+//     overrides
+//   ))
+//   .to.emit(zapsConnect, "ZappedIn");
+//   console.log(
+//     `Minimum expected Temple: ${ethers.utils.formatUnits(
+//       minExpectedTemple,
+//       18
+//     )}`
+//   );
+//   // Get Temple balance after zap
+//   const balanceAfter = await getBalance(templeToken, signerAddress);
+//   console.log(`Ending Temple: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
+
+//   expect(balanceAfter.gte(minExpectedTemple)).to.be.true;
+//   expect(balanceAfter).to.gte(minExpectedTemple.add(balanceBefore));
+// }
 
 async function zapInVault(
   signer: Signer,
