@@ -3,7 +3,6 @@ pragma solidity ^0.8.4;
 
 import "./ZapBaseV2_3.sol";
 import "./GenericZapHelper.sol";
-import "hardhat/console.sol";
 
 interface IWETH {
   function deposit() external payable;
@@ -175,24 +174,8 @@ contract GenericZap is ZapBaseV2_3 {
     uint256 amountOutMin,
     address swapTarget,
     bytes calldata swapData
-  ) external payable whenNotPaused returns (uint256 amountOut) {
-    require(approvedTargets[fromToken][swapTarget] == true, "Unsupported token/target");
-
-    amountOut = _zapIn(
-      fromToken,
-      fromAmount,
-      toToken,
-      amountOutMin,
-      swapTarget,
-      swapData
-    );
-
-    // transfer token to recipient
-    SafeERC20.safeTransfer(
-      IERC20(toToken),
-      msg.sender,
-      amountOut
-    );
+  ) external payable returns (uint256) {
+    return zapInFor(fromToken, fromAmount, toToken, amountOutMin, msg.sender, swapTarget, swapData);
   }
 
   function zapInFor(
@@ -203,17 +186,21 @@ contract GenericZap is ZapBaseV2_3 {
     address recipient,
     address swapTarget,
     bytes calldata swapData
-  ) external payable whenNotPaused returns (uint256 amountOut) {
+  ) public payable whenNotPaused returns (uint256 amountOut) {
     require(approvedTargets[fromToken][swapTarget] == true, "Unsupported token/target");
 
-    amountOut = _zapIn(
+    _pullTokens(fromToken, fromAmount);
+
+    amountOut = _fillQuote(
       fromToken,
       fromAmount,
       toToken,
-      amountOutMin,
       swapTarget,
       swapData
     );
+    require(amountOut >= amountOutMin, "Not enough tokens out");
+    
+    emit ZappedIn(msg.sender, fromToken, fromAmount, toToken, amountOut);
 
     // transfer token to recipient
     SafeERC20.safeTransfer(
@@ -232,58 +219,11 @@ contract GenericZap is ZapBaseV2_3 {
     bytes memory _swapData,
     ZapLiquidityRequest memory _zapLiqRequest,
     IBalancerVault.JoinPoolRequest memory _request
-  ) external payable whenNotPaused {
+  ) public payable whenNotPaused {
     require(approvedTargets[_fromToken][_swapTarget] == true, "Unsupported token/target");
 
     _pullTokens(_fromToken, _fromAmount);
 
-    _zapLiquidityBalancerPool(
-      _fromToken,
-      _fromAmount,
-      _poolId,
-      _recipient,
-      _swapTarget,
-      _swapData,
-      _zapLiqRequest,
-      _request
-    );
-  }
-
-  function zapLiquidityBalancerPool(
-    address _fromToken,
-    uint256 _fromAmount,
-    bytes32 _poolId,
-    address _swapTarget,
-    bytes memory _swapData,
-    ZapLiquidityRequest memory _zapLiqRequest,
-    IBalancerVault.JoinPoolRequest memory _request
-  ) external payable whenNotPaused {
-    require(approvedTargets[_fromToken][_swapTarget] == true, "Unsupported token/target");
-
-    _pullTokens(_fromToken, _fromAmount);
-
-    _zapLiquidityBalancerPool(
-      _fromToken,
-      _fromAmount,
-      _poolId,
-      msg.sender,
-      _swapTarget,
-      _swapData,
-      _zapLiqRequest,
-      _request
-    );
-  }
-
-  function _zapLiquidityBalancerPool(
-    address _fromToken,
-    uint256 _fromAmount,
-    bytes32 _poolId,
-    address _recipient,
-    address _swapTarget,
-    bytes memory _swapData,
-    ZapLiquidityRequest memory _zapLiqRequest,
-    IBalancerVault.JoinPoolRequest memory _request
-  ) internal {
     uint256 tokenBoughtIndex;
     uint256 amountBought;
     (address[] memory poolTokens,,) = balancerVault.getPoolTokens(_poolId);
@@ -353,6 +293,18 @@ contract GenericZap is ZapBaseV2_3 {
     emit ZappedLiquidityBalancerPool(_recipient, _fromToken, _fromAmount, _request.maxAmountsIn);
   }
 
+  function zapLiquidityBalancerPool(
+    address _fromToken,
+    uint256 _fromAmount,
+    bytes32 _poolId,
+    address _swapTarget,
+    bytes memory _swapData,
+    ZapLiquidityRequest memory _zapLiqRequest,
+    IBalancerVault.JoinPoolRequest memory _request
+  ) external payable {
+    zapLiquidityBalancerPoolFor(_fromToken, _fromAmount, _poolId, msg.sender, _swapTarget, _swapData, _zapLiqRequest, _request);
+  }
+
   function zapLiquidityCurvePool(
     address _fromToken,
     uint256 _fromAmount,
@@ -360,16 +312,8 @@ contract GenericZap is ZapBaseV2_3 {
     address _swapTarget,
     bytes memory _swapData,
     ZapLiquidityRequest memory _zapLiqRequest
-  ) external payable whenNotPaused {
-    _zapLiquidityCurvePool(
-      _fromToken,
-      _fromAmount,
-      _pool,
-      msg.sender,
-      _swapTarget,
-      _swapData,
-      _zapLiqRequest
-    );
+  ) external payable {
+    zapLiquidityCurvePoolFor(_fromToken, _fromAmount, _pool, msg.sender, _swapTarget, _swapData, _zapLiqRequest);
   }
 
   function zapLiquidityCurvePoolFor(
@@ -380,28 +324,8 @@ contract GenericZap is ZapBaseV2_3 {
     address _swapTarget,
     bytes memory _swapData,
     ZapLiquidityRequest memory _zapLiqRequest
-  ) external payable whenNotPaused {
+  ) public payable whenNotPaused {
 
-    _zapLiquidityCurvePool(
-      _fromToken,
-      _fromAmount,
-      _pool,
-      _recipient,
-      _swapTarget,
-      _swapData,
-      _zapLiqRequest
-    );
-  }
-
-  function _zapLiquidityCurvePool(
-    address _fromToken,
-    uint256 _fromAmount,
-    address _pool,
-    address _recipient,
-    address _swapTarget,
-    bytes memory _swapData,
-    ZapLiquidityRequest memory _zapLiqRequest
-  ) internal {
     require(approvedTargets[_fromToken][_swapTarget] == true, "Unsupported token/target");
 
     // pull tokens
@@ -559,11 +483,11 @@ contract GenericZap is ZapBaseV2_3 {
         _swapData
       );
     } else {
-        intermediateToken = _fromToken;
-        intermediateAmount = _fromAmount;
+      intermediateToken = _fromToken;
+      intermediateAmount = _fromAmount;
     }
     
-    (uint256 amountA, uint256 amountB) = _swapTokens(_pair, intermediateToken, intermediateAmount, _zapLiqRequest.firstSwapMinAmountOut);
+    (uint256 amountA, uint256 amountB) = _swapTokens(_pair, intermediateToken, intermediateAmount, _zapLiqRequest.poolSwapMinAmountOut);
 
     _approveToken(token1, address(uniswapV2Router), amountB);
     _approveToken(token0, address(uniswapV2Router), amountA);
@@ -682,36 +606,6 @@ contract GenericZap is ZapBaseV2_3 {
       );
       amountB = _fromAmount - amountToSwap;
     }
-  }
-
-  function _zapIn(
-    address fromToken,
-    uint256 fromAmount,
-    address toToken,
-    uint256 amountOutMin,
-    address swapTarget,
-    bytes calldata swapData
-  ) internal returns (uint256) {
-
-    _pullTokens(fromToken, fromAmount);
-    //console.logBytes(swapData);
-    uint256 amountOut = _fillQuote(
-      fromToken,
-      fromAmount,
-      toToken,
-      swapTarget,
-      swapData
-    );
-    console.logString("AmountOut, AmountOutMin");
-    //console.logUint(amountOut);
-    //console.logUint(amountOutMin);
-    //console.logBytes(swapData);
-    //console.logAddress(swapTarget);
-    require(amountOut >= amountOutMin, "Not enough tokens out");
-    
-    emit ZappedIn(msg.sender, fromToken, fromAmount, toToken, amountOut);
-
-    return amountOut;
   }
 
   function _fillQuotePool(
@@ -860,8 +754,8 @@ contract GenericZap is ZapBaseV2_3 {
       uniswapV2Router.factory()
     );
     address pair = uniV2Factory.getPair(
-        _fromToken,
-        _toToken
+      _fromToken,
+      _toToken
     );
     require(pair != address(0), "No Swap Available");
     address[] memory path = new address[](2);
@@ -878,5 +772,9 @@ contract GenericZap is ZapBaseV2_3 {
       )[path.length - 1];
 
     require(tokenBought >= _amountOutMin, "Error Swapping Tokens 2"); // redundant?
+  }
+
+  function getSwapInAmount(uint256 reserveIn, uint256 userIn) external pure returns (uint256) {
+    return GenericZapHelper.calculateSwapInAmount(reserveIn, userIn);
   }
 }
