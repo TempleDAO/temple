@@ -57,3 +57,7 @@ export const TradeWrapper = styled.div`
   border-radius: 1rem;
   background: #1D1A1A;
 `;
+
+export const TradeHeader = styled.h3`
+  margin: 0 0 1rem;
+`;

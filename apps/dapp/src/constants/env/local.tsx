@@ -32,7 +32,7 @@ const env: Environment = {
   subgraph: {
     templeCore: 'http://localhost:8000/subgraphs/name/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
-    balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
+    balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
   tokens: {
     frax: {

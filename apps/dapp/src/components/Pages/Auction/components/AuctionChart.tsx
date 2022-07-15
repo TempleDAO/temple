@@ -7,7 +7,8 @@ import {
   LineSeries,
   HorizontalGridLines,
   VerticalGridLines,
-  Crosshair
+  Crosshair,
+  ChartLabel,
 } from 'react-vis';
 import { curveCatmullRom } from 'd3-shape';
 
@@ -157,57 +158,72 @@ export const AuctionChart = ({ pool }: Props) => {
     <FlexibleXYPlot
       xType="time"
       height={322}
+      dontCheckIfEmpty
       onMouseLeave={onMouseLeave}
     >
-      <HorizontalGridLines
-        style={{
-          stroke: theme.palette.brand,
-        }}
-      />
-      <VerticalGridLines
-        style={{
-          stroke: theme.palette.brand,
-        }}
-        tickTotal={numTicks}
-      />
-      <XAxis
-        style={{
-          stroke: theme.palette.brand,
-        }}
-        tickFormat={(value: number) => {
-          return format(value, 'd LLL');
-        }}
-        tickTotal={numTicks}
-      />
-      <YAxis
-        style={{
-          stroke: theme.palette.brand,
-        }}
-      />
-      <LineSeries
-        color={theme.palette.brand}
-        data={data}
-        curve={curveCatmullRom}
-        onNearestX={onNearestX}
-      />
-      <Crosshair
-        values={crosshairValues}
-        titleFormat={([{ x }]: Point[]) => {
-          return ({
-            title: 'date',
-            value: format(x, 'd LLL'),
-          });
-        }}
-        style={{
-          stroke: theme.palette.brandLight
-        }}
-        itemsFormat={([{ y }]: Point[]) => {
-          const value = formatNumberFixedDecimals(formatBigNumber(getBigNumberFromString(`${y}`)), 4);
-          return [
-            { title: 'price', value },
-          ];
-        }}
-      />
+      {data.length > 0 ? (
+        <>
+          <HorizontalGridLines
+            style={{
+              stroke: theme.palette.brand,
+            }}
+          />
+          <VerticalGridLines
+            style={{
+              stroke: theme.palette.brand,
+            }}
+            tickTotal={numTicks}
+          />
+          <XAxis
+            style={{
+              stroke: theme.palette.brand,
+            }}
+            tickFormat={(value: number) => {
+              return format(value, 'd LLL');
+            }}
+            tickTotal={numTicks}
+          />
+          <YAxis
+            style={{
+              stroke: theme.palette.brand,
+            }}
+          />
+          <LineSeries
+            color={theme.palette.brand}
+            data={data}
+            curve={curveCatmullRom}
+            onNearestX={onNearestX}
+          />
+          <Crosshair
+            values={crosshairValues}
+            titleFormat={([{ x }]: Point[]) => {
+              return ({
+                title: 'date',
+                value: format(x, 'd LLL'),
+              });
+            }}
+            style={{
+              stroke: theme.palette.brandLight
+            }}
+            itemsFormat={([{ y }]: Point[]) => {
+              const value = formatNumberFixedDecimals(formatBigNumber(getBigNumberFromString(`${y}`)), 4);
+              return [
+                { title: 'price', value },
+              ];
+            }}
+          />
+        </>
+      ) : (
+        <ChartLabel
+          text="Not enough data"
+          includeMargin={false}
+          xPercent={0.5}
+          yPercent={0.5}
+          style={{
+            transform: 'translate(-50, 0)',
+          }}
+        />
+      )}
     </FlexibleXYPlot>
   );
 };

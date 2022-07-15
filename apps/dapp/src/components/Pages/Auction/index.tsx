@@ -15,6 +15,7 @@ import { SwapHistory } from './components/SwapHistory';
 import { AuctionChart } from './components/AuctionChart';
 import { useTimeRemaining } from './utils';
 import { Input } from 'components/Input/Input';
+import { Trade } from './components/Trade';
 
 import {
   PageWrapper,
@@ -69,11 +70,7 @@ const ActiveAuction = ({ pool }: { pool: Pool }) => {
           </InfoBar>
           <AuctionChart pool={pool} />
         </div>
-        <TradeWrapper>
-          <h3>Trade TEMPLE</h3>
-          <Input />
-          <Input />
-        </TradeWrapper>
+        <Trade pool={pool} />
       </ChartTradeSection>
       <SwapHistory pool={pool} />
     </div>

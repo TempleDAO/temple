@@ -35,6 +35,7 @@ export interface SubgraphPool {
   totalSwapVolume: string;
   totalWeight: string;
   tx: string;
+  vaultID: string;
   weightUpdates: {
     startTimestamp: string;
     startWeights: string[];
@@ -73,6 +74,7 @@ export type Pool = Omit<SubgraphPool, 'createTime' | 'holdersCount' | 'shares' |
     endWeights: [BigNumber, BigNumber];
     startWeights: [BigNumber, BigNumber];
   }[];
+  vaultID: string;
 }
 
 export interface AuctionContext {

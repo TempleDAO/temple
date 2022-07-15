@@ -12,66 +12,72 @@ import env from 'constants/env';
 import { phoneAndAbove } from 'styles/breakpoints';
 import { NAV_MOBILE_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
 
-const QUERY = {
-  query: `
-    {
-      pools(where: {address: "0xefdEc913b82E55287Fb83DF3c058891B724dba28", poolType: "LiquidityBootstrapping"}) {
-        id
-        address
-        strategyType
-        symbol
-        name
-        swapEnabled
-        swapFee
-        owner
-        totalWeight
-        totalSwapVolume
-        totalSwapFee
-        totalLiquidity
-        createTime
-        swapsCount
-        holdersCount
-        tx
-        tokensList
-        tokens {
+const createLBPQuery = (auctionId: string) => {
+  return {
+    query: `
+      query ($auctionId: String) {
+        pools(where: {address: $auctionId, poolType: "LiquidityBootstrapping"}) {
+          id
+          address
+          strategyType
           symbol
           name
-          address
-          weight
-          priceRate
-          balance
-          __typename
-        }
-        swaps(first: 1, orderBy: timestamp, orderDirection: desc) {
-          timestamp
-          __typename
-        }
-        weightUpdates(orderBy: scheduledTimestamp, orderDirection: asc) {
-          startTimestamp
-          endTimestamp
-          startWeights
-          endWeights
-          __typename
-        }
-        shares {
-          userAddress {
-            id
+          swapEnabled
+          swapFee
+          owner
+          totalWeight
+          totalSwapVolume
+          totalSwapFee
+          totalLiquidity
+          createTime
+          swapsCount
+          holdersCount
+          tx
+          tokensList
+          tokens {
+            symbol
+            name
+            address
+            weight
+            priceRate
+            balance
             __typename
           }
-          balance
+          swaps(first: 1, orderBy: timestamp, orderDirection: desc) {
+            timestamp
+            __typename
+          }
+          weightUpdates(orderBy: scheduledTimestamp, orderDirection: asc) {
+            startTimestamp
+            endTimestamp
+            startWeights
+            endWeights
+            __typename
+          }
+          shares {
+            userAddress {
+              id
+              __typename
+            }
+            balance
+            __typename
+          }
           __typename
         }
-        __typename
       }
-    }
-  `,
-}
+    `,
+    variables: {
+      auctionId,
+    },
+  };
+};
 
 export const AuctionLayout = () => {
+  const auctionId = '0xc1e0837cb74bf43f6d77df6199ffff189a65d7c9'
   const [
     request,
     { response, error, isLoading },
-  ] = useSubgraphRequest<GraphResponse>(env.subgraph.balancerV2, QUERY);
+  ] = useSubgraphRequest<GraphResponse>(env.subgraph.balancerV2, createLBPQuery(auctionId));
 
   useEffect(() => {
     request();
@@ -83,6 +89,7 @@ export const AuctionLayout = () => {
     if (!response?.data?.pools || !response.data.pools.length) {
       return undefined;
     }
+    console.log(response.data.pools[0])
     return createPool(response.data.pools[0]);
   }, [response]);
 

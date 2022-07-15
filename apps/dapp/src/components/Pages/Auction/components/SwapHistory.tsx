@@ -16,6 +16,22 @@ import TruncatedAddress from 'components/TruncatedAddress';
 
 const SWAPS_PER_PAGE = 10;
 
+type SwapResponse = SubGraphResponse<{
+  swaps: {
+    tx: string;
+    tokenIn: string;
+    tokenInSym: string;
+    tokenOut: string;
+    tokenOutSym: string;
+    tokenAmountIn: string;
+    tokenAmountOut: string;
+    timestamp: number;
+    userAddress: {
+      id: string;
+    };
+  }[];
+}>;
+
 const createSwapQuery = (auctionId: string, before: number, first = SWAPS_PER_PAGE, skip = 0) => ({
   query: `
     query ($auctionId: String, $first: Int, $skip: Int, $before: Int) {
@@ -50,30 +66,13 @@ const createSwapQuery = (auctionId: string, before: number, first = SWAPS_PER_PA
   },
 });
 
-type SwapResponse = SubGraphResponse<{
-  swaps: {
-    tx: string;
-    tokenIn: string;
-    tokenInSym: string;
-    tokenOut: string;
-    tokenOutSym: string;
-    tokenAmountIn: string;
-    tokenAmountOut: string;
-    timestamp: number;
-    userAddress: {
-      id: string;
-    };
-  }[];
-}>;
-
 const useSwapHistory = (pool: Pool, page = 1) => {
   const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
   const auctionEndSeconds = Number(lastUpdate.endTimestamp) / 1000;
   const offset = (page - 1) * SWAPS_PER_PAGE;
 
-
-  return useSubgraphRequest<SwapResponse>(
-    env.subgraph.balancerV2, createSwapQuery(pool.id, auctionEndSeconds, SWAPS_PER_PAGE, offset));
+  const query = createSwapQuery(pool.id, auctionEndSeconds, SWAPS_PER_PAGE, offset);
+  return useSubgraphRequest<SwapResponse>(env.subgraph.balancerV2, query);
 };
 
 interface Props {
@@ -88,7 +87,8 @@ export const SwapHistory = ({ pool }: Props) => {
     request();
   }, [request, currentPage]);
 
-  if (isLoading) {
+  // First load
+  if (!response && isLoading) {
     return <Loader />;
   }
 
