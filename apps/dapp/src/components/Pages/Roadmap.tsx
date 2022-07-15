@@ -1,11 +1,21 @@
 import buildings from 'assets/images/roadmap-buildings.png';
 import clouds from 'assets/images/roadmap-clouds.jpeg';
-import { useState } from 'react';
+import roadmap1 from 'assets/images/roadmap-1.png';
+import roadmap2 from 'assets/images/roadmap-2.png';
+import roadmap3 from 'assets/images/roadmap-3.png';
+import roadmap4 from 'assets/images/roadmap-4.png';
+import roadmap5 from 'assets/images/roadmap-5.png';
+import roadmap6 from 'assets/images/roadmap-6.png';
+import roadmap7 from 'assets/images/roadmap-7.png';
+import roadmap8 from 'assets/images/roadmap-8.png';
+import roadmap9 from 'assets/images/roadmap-9.png';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { BgDimension, getBgImgDimensions, getPositionStyles } from 'utils/imageSize';
 import Tippy from '@tippyjs/react';
 import { roundArrow } from 'tippy.js';
 import 'tippy.js/animations/scale-subtle.css';
+import { tabletAndAbove } from 'styles/breakpoints';
 
 const RoadmapItems = [
   {
@@ -16,7 +26,7 @@ const RoadmapItems = [
     icon: 'I',
     bottom: 0.26,
     left: 0.09,
-    image: buildings,
+    image: roadmap1,
   },
   {
     title: 'Enclave Organization',
@@ -26,7 +36,7 @@ const RoadmapItems = [
     icon: 'II',
     bottom: 0.16,
     left: 0.27,
-    image: buildings,
+    image: roadmap2,
   },
   {
     title: 'Opening Ceremony',
@@ -36,7 +46,7 @@ const RoadmapItems = [
     icon: 'III',
     bottom: 0.27,
     left: 0.38,
-    image: buildings,
+    image: roadmap3,
   },
   {
     title: 'AMM Launch',
@@ -46,7 +56,7 @@ const RoadmapItems = [
     icon: 'IV',
     bottom: 0.37,
     left: 0.2,
-    image: buildings,
+    image: roadmap4,
   },
   {
     title: 'DAO Operations',
@@ -59,7 +69,7 @@ const RoadmapItems = [
     icon: 'V',
     bottom: 0.4,
     left: 0.63,
-    image: buildings,
+    image: roadmap5,
   },
   {
     title: 'STAX',
@@ -73,7 +83,7 @@ const RoadmapItems = [
     icon: 'VI',
     bottom: 0.64,
     left: 0.17,
-    image: buildings,
+    image: roadmap6,
   },
   {
     title: 'DAO Game',
@@ -85,7 +95,7 @@ const RoadmapItems = [
     icon: 'VII',
     bottom: 0.54,
     left: 0.84,
-    image: buildings,
+    image: roadmap7,
   },
   {
     title: 'Temple CORE',
@@ -102,7 +112,7 @@ const RoadmapItems = [
     icon: 'VIII',
     bottom: 0.63,
     left: 0.45,
-    image: buildings,
+    image: roadmap8,
   },
   {
     title: 'Metaverse',
@@ -114,7 +124,7 @@ const RoadmapItems = [
     icon: 'IX',
     bottom: 0.92,
     left: 0.72,
-    image: buildings,
+    image: roadmap9,
   },
 ];
 
@@ -128,6 +138,16 @@ const Roadmap = () => {
     const backgroundDimensions = getBgImgDimensions(image, image.src);
     setBgDimensions(backgroundDimensions);
   }
+
+  // Listen for left/right arrow and scroll through modal
+  useEffect(() => {
+    const handleKeydown = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' && activeModal > 0) setActiveModal(activeModal - 1);
+      else if (e.key === 'ArrowRight' && activeModal < RoadmapItems.length - 1) setActiveModal(activeModal + 1);
+    };
+    if (activeModal !== -1) window.addEventListener('keydown', handleKeydown);
+    return () => window.removeEventListener('keydown', handleKeydown);
+  }, [activeModal]);
 
   return (
     <Container>
@@ -174,7 +194,8 @@ const Roadmap = () => {
         {activeModal !== -1 && (
           <>
             <Modal onClick={(e) => e.stopPropagation()}>
-              <ModalImage src={RoadmapItems[activeModal].image} width="448px" />
+              <ModalBgImage source={RoadmapItems[activeModal].image} />
+              <ModalImage src={RoadmapItems[activeModal].image} />
               <ContentContainer>
                 <CloseButton onClick={() => setActiveModal(-1)}>&times;</CloseButton>
                 <ModalHeader>Chapter {RoadmapItems[activeModal].icon}</ModalHeader>
@@ -261,7 +282,7 @@ const Building = styled.img`
   margin: auto;
   height: 100%;
   width: auto;
-  padding: 25px 0;
+  padding: 2rem 0;
   pointer-events: none;
   z-index: 1;
 `;
@@ -308,16 +329,44 @@ const ModalContainer = styled.div`
 
 const Modal = styled.div`
   position: relative;
-  display: grid;
-  grid-template-columns: auto auto;
   padding: 2rem;
-  max-width: 1028px;
   text-align: center;
   background: rgba(20, 20, 20, 0.96);
   border: 1px solid ${(props) => props.theme.palette.brand};
   border-radius: 8px;
   box-shadow: 0px 0px 24px ${(props) => props.theme.palette.brand};
   z-index: 4;
+
+  height: 90vh;
+  max-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  ${tabletAndAbove(`
+    display:grid;
+    grid-template-columns: auto auto;
+    height: auto;
+    max-width: 1028px;
+  `)}
+`;
+
+const ModalBgImage = styled.div<{ source: string }>`
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2));
+  border-radius: 8px;
+  border-top: 8px solid ${(props) => props.theme.palette.brand};
+  border-bottom: 8px solid ${(props) => props.theme.palette.brand};
+  padding: 8px;
+
+  background-image: url(${(props) => props.source});
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 100%;
+  min-height: 300px;
+  margin-top: 1rem;
+  ${tabletAndAbove(`
+    display: none;
+  `)}
 `;
 
 const ModalImage = styled.img`
@@ -326,20 +375,35 @@ const ModalImage = styled.img`
   border-top: 8px solid ${(props) => props.theme.palette.brand};
   border-bottom: 8px solid ${(props) => props.theme.palette.brand};
   padding: 8px;
+  display: none;
+  ${tabletAndAbove(`
+    display: inline-block;
+    width: 448px;
+    height: auto;
+  `)}
 `;
 
 const ContentContainer = styled.div`
-  position: relative;
-  padding: 0px 2rem;
-  overflow-y: auto;
-  max-height: 50vh;
+  padding: 0rem 2rem;
+
+  ${tabletAndAbove(`
+    position: relative;
+  `)}
 `;
 
 const ModalHeader = styled.h4`
   color: #ffdec9;
   font-size: 1rem;
   text-transform: uppercase;
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   margin: 0;
+  ${tabletAndAbove(`
+    position: relative;
+  `)}
 `;
 
 const ModalTitle = styled.h4`
@@ -351,6 +415,10 @@ const ModalDescription = styled.div`
   font-size: 1.1rem;
   line-height: 2rem;
   margin-top: 2.5rem;
+  ${tabletAndAbove(`
+    overflow-y: auto;
+    max-height: 30vh;
+  `)}
 `;
 
 // Modal navigation styles
@@ -360,16 +428,27 @@ const CloseButton = styled.p`
   right: 0;
   cursor: pointer;
   color: ${(props) => props.theme.palette.brand};
-  margin: 0;
   font-size: 3rem;
+  z-index: 4;
+
+  margin: 0.5rem;
+  ${tabletAndAbove(`
+    margin: 0;
+  `)}
 `;
 
 const NavContainer = styled.div`
   display: flex;
   align-items: center;
   font-weight: bold;
-  font-size: 1.5rem;
   color: #b37e55;
+
+  font-size: 1rem;
+  margin: 0.5rem 0;
+  ${tabletAndAbove(`
+    font-size: 1.5rem;
+    margin-top: 6rem;
+  `)}
 `;
 
 const NavButton = styled.div`
@@ -378,20 +457,24 @@ const NavButton = styled.div`
 `;
 
 const CurrentNav = styled.div`
-  height: 3rem;
-  width: 3rem;
   border-radius: 100%;
   border: 4px solid #b37e55;
   background-color: black;
   opacity: 0.95;
   color: #b37e55;
   font-weight: bold;
-  font-size: 1.5rem;
   font-family: serif;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 2rem 4rem;
+  margin: 0rem 4rem;
+
+  height: 3rem;
+  width: 3rem;
+  ${tabletAndAbove(`
+    height: 4rem;
+    width: 4rem;
+  `)}
 `;
 
 // Tooltip styles
@@ -402,11 +485,16 @@ const TippyStyled = styled(Tippy)`
   box-shadow: 0px 0px 8px ${(props) => props.theme.palette.brand};
   padding: 0.75rem;
   text-align: center;
+
+  display: none;
+  ${tabletAndAbove(`
+    display: block;
+  `)}
 `;
 
 const TooltipHeader = styled.h3`
   font-size: 1.3rem;
-  margin: 0px;
+  margin: 0;
 `;
 
 const Linebreak = styled.hr`
@@ -418,7 +506,7 @@ const Linebreak = styled.hr`
 
 const TooltipDescription = styled.p`
   font-size: 1.1rem;
-  margin: 0px;
+  margin: 0.75rem 0rem;
 `;
 
 export default Roadmap;
