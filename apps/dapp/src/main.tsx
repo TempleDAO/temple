@@ -17,6 +17,7 @@ import VaultPage from 'components/Pages/Core/Vault';
 import ProfilePage from 'components/Pages/Core/Profile/Profile';
 import VaultListPage from 'components/Pages/Core/VaultList';
 import HomePage from 'components/Pages/Core/HomePage';
+import PoolListPage from 'components/Pages/Ascend/PoolList';
 import { Claim as VaultClaim } from 'components/Pages/Core/VaultPages/Claim';
 import { Stake } from 'components/Pages/Core/VaultPages/Stake';
 import { Summary } from 'components/Pages/Core/VaultPages/Summary';
@@ -84,7 +85,6 @@ ReactDOM.render(
             </Route>
             <Route path="/dapp/*" element={<CoreLayout />}>
               <Route path="" element={<VaultListPage />} />
-
               <Route path="vaults" element={<VaultListPage />} />
               <Route path="vaults/:vaultId/*" element={<VaultPage />}>
                 <Route path="claim" element={<VaultClaim />} />
@@ -97,6 +97,9 @@ ReactDOM.render(
               <Route path="profile" element={<ProfilePage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
+            <Route path="ascend/admin" element={<PoolListPage />} />
+            <Route path="ascend/admin/new" element={<PoolListPage />} />
+            <Route path="ascend/admin/:poolId/*" element={<PoolListPage />} />
           </>
         </Routes>
       </BrowserRouter>
