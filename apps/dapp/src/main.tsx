@@ -29,6 +29,7 @@ import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
 import PoolCreatePage from 'components/Pages/Ascend/PoolCreate';
 import PoolDetailsPage from 'components/Pages/Ascend/PoolDetails';
+import AscendLayout from 'components/Pages/Ascend/AscendLayout';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -103,9 +104,11 @@ ReactDOM.render(
               <Route path="profile" element={<ProfilePage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
-            <Route path="ascend/admin" element={<PoolListPage />} />
-            <Route path="ascend/admin/new" element={<PoolCreatePage />} />
-            <Route path="ascend/admin/:poolId/*" element={<PoolDetailsPage />} />
+            <Route path="/ascend" element={<AscendLayout />}>
+              <Route path="admin" element={<PoolListPage />} />
+              <Route path="admin/new" element={<PoolCreatePage />} />
+              <Route path="admin/:poolId/*" element={<PoolDetailsPage />} />
+            </Route>
           </>
         </Routes>
       </BrowserRouter>
