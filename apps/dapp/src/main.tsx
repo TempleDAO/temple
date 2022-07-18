@@ -27,6 +27,8 @@ import Timing from 'components/Pages/Core/VaultPages/Timing';
 
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
+import PoolCreatePage from 'components/Pages/Ascend/PoolCreate';
+import PoolDetailsPage from 'components/Pages/Ascend/PoolDetails';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -101,8 +103,8 @@ ReactDOM.render(
               <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
             <Route path="ascend/admin" element={<PoolListPage />} />
-            <Route path="ascend/admin/new" element={<PoolListPage />} />
-            <Route path="ascend/admin/:poolId/*" element={<PoolListPage />} />
+            <Route path="ascend/admin/new" element={<PoolCreatePage />} />
+            <Route path="ascend/admin/:poolId/*" element={<PoolDetailsPage />} />
           </>
         </Routes>
       </BrowserRouter>
