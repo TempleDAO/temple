@@ -660,23 +660,22 @@ contract GenericZap is ZapBaseV2_3 {
     if (_swapTarget == WETH) {
       _depositEth(_fromAmount);
       amountBought = _fromAmount;
-      //return _fromAmount;
+      return _fromAmount;
     }
 
     uint256 valueToSend;
     if (_fromToken == address(0)) {
-        require(
-            _fromAmount > 0 && msg.value == _fromAmount,
-            "Invalid _amount: Input ETH mismatch"
-        );
-        valueToSend = _fromAmount;
+      require(
+        _fromAmount > 0 && msg.value == _fromAmount,
+        "Invalid _amount: Input ETH mismatch"
+      );
+      valueToSend = _fromAmount;
     } else {
-        _approveToken(_fromToken, _swapTarget, _fromAmount);
+      _approveToken(_fromToken, _swapTarget, _fromAmount);
     }
 
     // to calculate amount received
     uint256 initialBalance = _getBalance(_toToken);
-
     _executeSwap(_swapTarget, valueToSend, _swapData);
     
     unchecked {
@@ -697,6 +696,7 @@ contract GenericZap is ZapBaseV2_3 {
     if (_swapTarget == WETH) {
       _depositEth(_fromAmount);
       amountBought = _fromAmount;
+      return amountBought;
     }
 
     uint256 valueToSend;
