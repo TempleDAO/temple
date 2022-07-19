@@ -112,18 +112,14 @@ ReactDOM.render(
                   <Route path="ascend" element={<AuctionLayout />} />
                   <Route path="ascend/*" element={<AuctionLayout />}>
                     <Route path="" element={<AuctionPage />} />
-                    <Route path="edit" element={<EditLBPPage />} />
-                    <Route path="create" element={<CreateLBPPage />} />
+                    <Route path="admin" element={<PoolListPage />} />
+                    <Route path="admin/new" element={<CreateLBPPage />} />
+                    <Route path="admin/:auctionId/*" element={<EditLBPPage />} />
                   </Route>
                 </>
               )}
 
               <Route path="analytics" element={<AnalyticsPage />} />
-            </Route>
-            <Route path="/ascend" element={<AscendLayout />}>
-              <Route path="admin" element={<PoolListPage />} />
-              <Route path="admin/new" element={<PoolCreatePage />} />
-              <Route path="admin/:poolId/*" element={<PoolDetailsPage />} />
             </Route>
           </>
         </Routes>
