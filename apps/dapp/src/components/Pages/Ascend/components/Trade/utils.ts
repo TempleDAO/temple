@@ -1,6 +1,6 @@
 import { BigNumber, Contract } from 'ethers';
 
-import { Pool } from 'components/Layouts/Auction/types';
+import { Pool } from 'components/Layouts/Ascend/types';
 import { Nullable } from 'types/util';
 
 export class BalancerQuoteManager {

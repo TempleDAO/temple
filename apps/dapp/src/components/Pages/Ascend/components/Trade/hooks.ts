@@ -1,30 +1,15 @@
-import { useState, useEffect, useReducer, useRef } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import { BigNumber, Contract } from 'ethers';
-import styled from 'styled-components';
 import { useBalance, useContractReads } from 'wagmi';
 
-import balancerPoolAbi from 'data/abis/balancerPool.json'
-import balancerVaultAbi from 'data/abis/balancerVault.json'
+import balancerPoolAbi from 'data/abis/balancerPool.json';
+import balancerVaultAbi from 'data/abis/balancerVault.json';
 import { formatNumber } from 'utils/formatter';
-import { Pool } from 'components/Layouts/Auction/types';
-import { Input } from 'components/Input/Input';
+import { Pool } from 'components/Layouts/Ascend/types';
 import { useWallet } from 'providers/WalletProvider';
 import { ZERO } from 'utils/bigNumber';
-import { buttonResets, flexCenter } from 'styles/mixins';
 import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
 import { Nullable } from 'types/util';
-import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
-import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
-
-import {
-  TradeWrapper,
-  TradeHeader,
-} from '../../styles';
-import Loader from 'components/Loader/Loader';
-
-interface Props {
-  pool: Pool;
-}
 
 type Action<A extends ActionType, P extends any> = { type: A, payload: P };
 
