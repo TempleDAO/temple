@@ -75,7 +75,6 @@ const createLBPQuery = (auctionId: string) => {
 };
 
 export const AscendLayout = () => {
-  const auctionId = '0xc1e0837cb74bf43f6d77df6199ffff189a65d7c9'
   const [
     request,
     { response, error, isLoading },
