@@ -68,6 +68,9 @@ const env: Environment = {
       address: ENV.VITE_PUBLIC_DAI_ADDRESS,
     },
   },
+  featureFlags: {
+    enableLBP: true,
+  },
   templeMultisig: '',
 };
 

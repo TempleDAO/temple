@@ -1,6 +1,7 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { Outlet, useOutletContext, Link } from 'react-router-dom';
+import { useNetwork } from 'wagmi';
 
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import Loader from 'components/Loader/Loader';
@@ -89,7 +90,6 @@ export const AuctionLayout = () => {
     if (!response?.data?.pools || !response.data.pools.length) {
       return undefined;
     }
-    console.log(response.data.pools[0])
     return createPool(response.data.pools[0]);
   }, [response]);
 

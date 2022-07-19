@@ -20,6 +20,7 @@ import { theme } from 'styles/theme';
 import { phoneAndAbove, verySmallDesktop } from 'styles/breakpoints';
 import { Lottie } from 'components/Lottie';
 
+import env from 'constants/env';
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
 import hamburger from 'assets/icons/core-hamburger.svg';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
@@ -94,13 +95,15 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
           >
             Trade
           </MenuItem>
-          <MenuItem
-            to="/dapp/ascend"
-            onMenuItemActive={onMenuItemActive}
-            onClick={onClickMenuItem}
-          >
-            Ascend
-          </MenuItem>
+          {env.featureFlags.enableLBP && (
+            <MenuItem
+              to="/dapp/ascend"
+              onMenuItemActive={onMenuItemActive}
+              onClick={onClickMenuItem}
+            >
+              Ascend
+            </MenuItem>
+          )}
           <MenuItem
             to="/dapp/profile"
             onMenuItemActive={onMenuItemActive}

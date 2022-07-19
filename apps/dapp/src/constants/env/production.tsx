@@ -82,6 +82,9 @@ const env: Environment = {
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
     balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
   },
+  featureFlags: {
+    enableLBP: false,
+  },
   templeMultisig: '',
 };
 

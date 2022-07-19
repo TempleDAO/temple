@@ -72,4 +72,7 @@ export interface Environment {
   sentry?: Sentry;
   subgraph: Subgraphs;
   templeMultisig: string;
+  featureFlags: {
+    enableLBP: boolean;
+  };
 }

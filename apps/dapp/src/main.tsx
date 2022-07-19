@@ -100,12 +100,16 @@ ReactDOM.render(
               <Route path="trade/*" element={<TradeRoutes />} />
               <Route path="profile" element={<ProfilePage />} />
               
-              <Route path="ascend" element={<AuctionLayout />} />
-              <Route path="ascend/*" element={<AuctionLayout />}>
-                <Route path="" element={<AuctionPage />} />
-                <Route path="edit" element={<EditAuctionPage />} />
-                <Route path="create" element={<CreateAuctionPage />} />
-              </Route>
+              {env.featureFlags.enableLBP && (
+                <>
+                  <Route path="ascend" element={<AuctionLayout />} />
+                  <Route path="ascend/*" element={<AuctionLayout />}>
+                    <Route path="" element={<AuctionPage />} />
+                    <Route path="edit" element={<EditAuctionPage />} />
+                    <Route path="create" element={<CreateAuctionPage />} />
+                  </Route>
+                </>
+              )}
 
               <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
