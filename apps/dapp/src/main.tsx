@@ -24,9 +24,9 @@ import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
 import TradeRoutes from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
 import { AuctionLayout } from 'components/Layouts/Auction';
-import { CreateAuctionPage } from 'components/Pages/Auction/admin/create';
-import { EditAuctionPage } from 'components/Pages/Auction/admin/edit';
-import { AuctionPage } from 'components/Pages/Auction';
+import { CreateAuctionPage } from 'components/Pages/Ascend/admin/create';
+import { EditAuctionPage } from 'components/Pages/Ascend/admin/edit';
+import { AuctionPage } from 'components/Pages/Ascend';
 
 import env from 'constants/env';
 

@@ -1,34 +1,28 @@
-import { useState, useEffect } from 'react';
-import { formatDistanceStrict, formatDuration, format, intervalToDuration } from 'date-fns';
-import { FlexibleXYPlot, XAxis, YAxis, LineSeries, HorizontalGridLines, VerticalGridLines} from 'react-vis';
+import { format } from 'date-fns';
 
 import { useAuctionContext } from 'components/Layouts/Auction';
-import { UnstyledList } from 'styles/common';
 import { formatBigNumber } from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
-import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { Pool } from 'components/Layouts/Auction/types';
-import { theme } from 'styles/theme';
-import env from 'constants/env';
-import { CenterScreenWrapper } from 'components/Pages/Core/styles';
 import { SwapHistory } from './components/SwapHistory';
 import { AuctionChart } from './components/AuctionChart';
-import { useTimeRemaining } from './utils';
-import { Input } from 'components/Input/Input';
+import { useTimeRemaining } from './hooks';
 import { Trade } from './components/Trade';
 
 import {
-  PageWrapper,
   ContractAddress,
   InfoBar,
   InfoItem,
   InfoLabel,
   Description,
   ChartTradeSection,
-  TradeWrapper,
 } from './styles';
 
-const ActiveAuction = ({ pool }: { pool: Pool }) => {
+interface Props {
+  pool: Pool;
+}
+
+const ActiveAuction = ({ pool }: Props) => {
   const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
 
   return (

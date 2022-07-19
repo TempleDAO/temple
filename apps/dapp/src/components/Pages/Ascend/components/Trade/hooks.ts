@@ -19,7 +19,7 @@ import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowan
 import {
   TradeWrapper,
   TradeHeader,
-} from '../styles';
+} from '../../styles';
 import Loader from 'components/Loader/Loader';
 
 interface Props {
@@ -274,7 +274,7 @@ const useLBPVault = (pool: Pool) => {
   };
 }
 
-const useTradeState = (pool: Pool) => {
+export const useTradeState = (pool: Pool) => {
   const { wallet } = useWallet();
   const vaultService = useLBPVault(pool);
 
@@ -397,146 +397,3 @@ const useTradeState = (pool: Pool) => {
     swap,
   };
 }
-
-interface Props {
-  pool: Pool;
-}
-
-const useLBPTokenAllowance = () => {
-
-};
-
-export const Trade = ({ pool }: Props) => {
-  const [transactionSettingsOpen, setTransactionSettingsOpen] = useState(false);
-  const {
-    state,
-    togglePair,
-    setSellValue,
-    swap,
-    vaultAddress: lbpVaultAddress,
-  } = useTradeState(pool);
-  const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] = useTokenContractAllowance(state.sell, lbpVaultAddress);
-
-  const bigSellAmount = getBigNumberFromString(state.sell.value);
-
-  const indexOfSell = pool.tokensList.findIndex((address) => address === state.sell.address);
-  const indexOfBuy = pool.tokensList.findIndex((address) => address === state.buy.address);
-
-  let receiveEstimate = '';
-  if (state.quote.value) {
-    receiveEstimate = Math.abs(Number(state.quote.value[indexOfBuy])).toString();
-  } 
-
-  return (
-    <>
-      <TransactionSettingsModal
-        isOpen={transactionSettingsOpen}
-        onClose={() => setTransactionSettingsOpen(false)}
-        onChange={(v) => {
-          console.log(v)
-        }}
-      />
-      <TradeWrapper>
-        <TradeHeader>Trade TEMPLE</TradeHeader>
-        <Input
-          isNumber
-          crypto={{ kind: 'value', value: state.sell.symbol }}
-          placeholder="0.00"
-          value={state.sell.value}
-          hint={`Balance: ${formatNumber(formatBigNumber(state.sell.balance as BigNumber))}`}
-          onHintClick={() => {
-            setSellValue(formatBigNumber(state.sell.balance as BigNumber));
-          }}
-          handleChange={(value) => {
-            const stringValue = value.toString();
-            if (
-              !stringValue.startsWith('.') && 
-              Number(stringValue) === 0
-            ) {
-              setSellValue('');
-            } else {
-              setSellValue(stringValue);
-            }
-          }}
-        />
-        <ToggleButton
-          type="button"
-          onClick={() => togglePair()}
-          aria-label="Toggle Inputs"
-          disabled={state.quote.loading}
-        />
-        <Input
-          isNumber
-          placeholder="0.00"
-          crypto={{ kind: 'value', value: state.buy.symbol }}
-          value={receiveEstimate}
-          hint={`Balance: ${formatNumber(formatBigNumber(state.buy.balance as BigNumber))}`}
-          disabled
-        />
-        {allowance === 0 && (
-          <SwapButton
-            type="button"
-            disabled={
-              allowanceIsLoading
-            }
-            onClick={() => {
-              increaseAllowance();
-            }}
-          >
-            {allowanceIsLoading ? <Loader /> : <>Increase Allowance</>}
-          </SwapButton>
-        )}
-        {allowance !== 0 && (
-          <SwapButton
-            type="button"
-            disabled={
-              bigSellAmount.eq(ZERO) ||
-              bigSellAmount.gt(state.sell.balance) ||
-              state.quote.loading
-            }
-            onClick={() => {
-              swap();
-            }}
-          >
-            Swap
-          </SwapButton>
-        )}
-        {state.quote.value && (
-          <div>
-            Estimate <br />
-            Receive: {Math.abs(Number(state.quote.value[indexOfBuy]))}
-            For: {state.quote.value[indexOfSell]}
-          </div>
-        )}
-      </TradeWrapper>
-    </>
-  );
-};
-
-const ToggleButton = styled.button`
-  ${buttonResets}
-
-  background-color: ${({ theme }) => theme.palette.brand};
- 
-
-  width: 1.875rem;
-  height: 1.875rem;
-  border-radius: 50%;
-  margin-top: calc(-0.2rem - 0.5625rem);
-  margin-bottom: -0.5625rem;
-  z-index: 50;
-`;
-
-const SwapButton = styled.button`
-  ${buttonResets}
-  ${flexCenter}
-
-  border-radius: 0.625rem;
-  background-color: ${({ theme }) => theme.palette.brand};
-  font-weight: 700;
-  color: #fff;
-  display: flex;
-  padding: 1.25rem 0;
-  width: 100%;
-  text-transform: uppercase;
-`;
