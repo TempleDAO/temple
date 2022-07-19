@@ -24,16 +24,13 @@ import { Summary } from 'components/Pages/Core/VaultPages/Summary';
 import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
 import TradeRoutes from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
-import { AuctionLayout } from 'components/Layouts/Auction';
+import { AscendLayout } from 'components/Layouts/Ascend';
 import { CreateLBPPage } from 'components/Pages/Ascend/admin/create';
 import { EditLBPPage } from 'components/Pages/Ascend/admin/edit';
-import { AuctionPage } from 'components/Pages/Ascend';
+import { AscendPage } from 'components/Pages/Ascend';
 
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
-import PoolCreatePage from 'components/Pages/Ascend/PoolCreate';
-import PoolDetailsPage from 'components/Pages/Ascend/PoolDetails';
-import AscendLayout from 'components/Pages/Ascend/AscendLayout';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -108,9 +105,8 @@ ReactDOM.render(
               
               {env.featureFlags.enableAscend && (
                 <>
-                  <Route path="ascend" element={<AuctionLayout />} />
-                  <Route path="ascend/*" element={<AuctionLayout />}>
-                    <Route path="" element={<AuctionPage />} />
+                  <Route path="ascend/*" element={<AscendLayout />}>
+                    <Route path="" element={<AscendPage />} />
                     <Route path="admin" element={<PoolListPage />} />
                     <Route path="admin/new" element={<CreateLBPPage />} />
                     <Route path="admin/:auctionId/*" element={<EditLBPPage />} />

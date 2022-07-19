@@ -6,7 +6,7 @@ import { useBalance, useContractReads } from 'wagmi';
 import balancerPoolAbi from 'data/abis/balancerPool.json'
 import balancerVaultAbi from 'data/abis/balancerVault.json'
 import { formatNumber } from 'utils/formatter';
-import { Pool } from 'components/Layouts/Auction/types';
+import { Pool } from 'components/Layouts/Ascend/types';
 import { Input } from 'components/Input/Input';
 import { useWallet } from 'providers/WalletProvider';
 import { ZERO } from 'utils/bigNumber';

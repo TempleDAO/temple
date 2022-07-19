@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
 import { formatDuration, intervalToDuration } from 'date-fns';
 
-import { Pool } from 'components/Layouts/Auction/types';
+import { Pool } from 'components/Layouts/Ascend/types';
 
 export const getRemainingTime = (pool?: Pool) => {
   const weights = pool?.weightUpdates || [];

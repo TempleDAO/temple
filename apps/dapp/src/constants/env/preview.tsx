@@ -85,7 +85,7 @@ const env: Environment = {
   featureFlags: {
     enableAscend: true,
   },
-  templeMultisig: '',
+  templeMultisig: '0xad2da3dc8b6e5a69cb9691f4540d8835a45edfea',
 };
 
 export default env;
