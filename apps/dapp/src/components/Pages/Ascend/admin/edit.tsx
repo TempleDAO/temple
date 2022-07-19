@@ -1,7 +1,7 @@
-export const EditAuctionPage = () => {
+import { LBPForm } from '../components/LBPForm';
+
+export const EditLBPPage = () => {
   return (
-    <div>
-      <h3>Edit Auction</h3>
-    </div>
+    <LBPForm />
   );
 };

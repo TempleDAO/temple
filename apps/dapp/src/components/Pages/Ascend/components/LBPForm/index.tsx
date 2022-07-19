@@ -105,7 +105,7 @@ const Note = styled.span`
   font-size: 0.875rem;
 `;
 
-export const AuctionForm = ({ pool }: Props) => {
+export const LBPForm = ({ pool }: Props) => {
   const [formValues, setFormValues] = useState(getInitialValues(pool));
   
   const setFormValue = <T extends any>(field: keyof Values, value: T) => {

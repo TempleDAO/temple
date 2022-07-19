@@ -12,16 +12,13 @@ import {
 } from 'react-vis';
 import { curveCatmullRom } from 'd3-shape';
 
-import { useAuctionContext } from 'components/Layouts/Auction';
-import { UnstyledList } from 'styles/common';
 import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { Pool } from 'components/Layouts/Auction/types';
 import env from 'constants/env';
-import { SubGraphQuery, SubGraphResponse, SubgraphError } from 'hooks/core/types';
+import { SubGraphResponse } from 'hooks/core/types';
 import Loader from 'components/Loader/Loader';
-import TruncatedAddress from 'components/TruncatedAddress';
 import { theme } from 'styles/theme';
 
 const createQueryFragment = (after: number, before: number) => {
@@ -124,7 +121,7 @@ const useCrosshairs = (data: Point[]) => {
   return { crosshairValues, onMouseLeave, onNearestX };
 }
 
-export const AuctionChart = ({ pool }: Props) => {
+export const Chart = ({ pool }: Props) => {
   const [request, { response, isLoading }] = useLatestPriceData(pool);
 
   const data = Object.values(response?.data || {})

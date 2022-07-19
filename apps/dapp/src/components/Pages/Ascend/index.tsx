@@ -5,7 +5,7 @@ import { formatBigNumber } from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
 import { Pool } from 'components/Layouts/Auction/types';
 import { SwapHistory } from './components/SwapHistory';
-import { AuctionChart } from './components/AuctionChart';
+import { Chart } from './components/Chart';
 import { useTimeRemaining } from './hooks';
 import { Trade } from './components/Trade';
 
@@ -62,7 +62,7 @@ const ActiveAuction = ({ pool }: Props) => {
               <span>${formatNumber(formatBigNumber(pool.totalLiquidity))}</span>
             </InfoItem>
           </InfoBar>
-          <AuctionChart pool={pool} />
+          <Chart pool={pool} />
         </div>
         <Trade pool={pool} />
       </ChartTradeSection>
