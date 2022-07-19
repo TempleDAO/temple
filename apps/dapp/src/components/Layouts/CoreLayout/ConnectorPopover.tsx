@@ -45,7 +45,6 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
             <ConnectorButon
               disabled={!connector.ready || loading}
               onClick={() => {
-                console.log(connector)
                 connect({ connector });
               }}
             >

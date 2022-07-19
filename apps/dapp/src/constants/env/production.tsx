@@ -83,7 +83,7 @@ const env: Environment = {
     balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
   },
   featureFlags: {
-    enableLBP: false,
+    enableAscend: false,
   },
   templeMultisig: '',
 };

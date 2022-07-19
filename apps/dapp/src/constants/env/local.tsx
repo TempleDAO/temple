@@ -69,7 +69,7 @@ const env: Environment = {
     },
   },
   featureFlags: {
-    enableLBP: true,
+    enableAscend: true,
   },
   templeMultisig: '',
 };

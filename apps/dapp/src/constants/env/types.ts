@@ -73,6 +73,6 @@ export interface Environment {
   subgraph: Subgraphs;
   templeMultisig: string;
   featureFlags: {
-    enableLBP: boolean;
+    enableAscend: boolean;
   };
 }

@@ -95,7 +95,7 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
           >
             Trade
           </MenuItem>
-          {env.featureFlags.enableLBP && (
+          {env.featureFlags.enableAscend && (
             <MenuItem
               to="/dapp/ascend"
               onMenuItemActive={onMenuItemActive}

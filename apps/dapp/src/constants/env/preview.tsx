@@ -83,7 +83,7 @@ const env: Environment = {
     dsn: 'https://ab0c41c30fbb405da50d9803819b1d60@o1268430.ingest.sentry.io/6456054',
   },
   featureFlags: {
-    enableLBP: true,
+    enableAscend: true,
   },
   templeMultisig: '',
 };

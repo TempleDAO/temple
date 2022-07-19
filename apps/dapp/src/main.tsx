@@ -100,7 +100,7 @@ ReactDOM.render(
               <Route path="trade/*" element={<TradeRoutes />} />
               <Route path="profile" element={<ProfilePage />} />
               
-              {env.featureFlags.enableLBP && (
+              {env.featureFlags.enableAscend && (
                 <>
                   <Route path="ascend" element={<AuctionLayout />} />
                   <Route path="ascend/*" element={<AuctionLayout />}>
