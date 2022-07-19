@@ -1,9 +1,9 @@
 import { format } from 'date-fns';
 
-import { useAuctionContext } from 'components/Layouts/Auction';
+import { useAuctionContext } from 'components/Layouts/Ascend';
 import { formatBigNumber } from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
-import { Pool } from 'components/Layouts/Auction/types';
+import { Pool } from 'components/Layouts/Ascend/types';
 import { SwapHistory } from './components/SwapHistory';
 import { Chart } from './components/Chart';
 import { useTimeRemaining } from './hooks';
@@ -71,7 +71,7 @@ const ActiveAuction = ({ pool }: Props) => {
   );
 };
 
-export const AuctionPage = () => {
+export const AscendPage = () => {
   const { pool } = useAuctionContext();
   const timeRemaining = useTimeRemaining(pool);
 

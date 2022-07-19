@@ -14,7 +14,7 @@ import { curveCatmullRom } from 'd3-shape';
 
 import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
 import { formatNumberFixedDecimals } from 'utils/formatter';
-import { Pool } from 'components/Layouts/Auction/types';
+import { Pool } from 'components/Layouts/Ascend/types';
 import Loader from 'components/Loader/Loader';
 import { theme } from 'styles/theme';
 
