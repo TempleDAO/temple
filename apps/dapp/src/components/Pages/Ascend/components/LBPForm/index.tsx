@@ -1,9 +1,8 @@
-import { ChangeEvent, useState } from 'react';
+import { useState } from 'react';
 import { BigNumber } from 'ethers';
-import { format } from 'date-fns'
 import styled, { css } from 'styled-components';
 
-import { Pool } from 'components/Layouts/Auction/types';
+import { Pool } from 'components/Layouts/Ascend/types';
 import env from 'constants/env';
 
 interface Values {

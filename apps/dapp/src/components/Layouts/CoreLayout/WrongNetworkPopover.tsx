@@ -135,7 +135,7 @@ export const WrongNetworkPopover = () => {
 
 const ENV_CHAIN_MAPPING = new Map([
   ['production', chains.mainnet],
-  ['preview', chains.rinkeby],
+  ['preview', chains.goerli],
   ['local', LOCAL_CHAIN],
 ]);
 
