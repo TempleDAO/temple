@@ -50,7 +50,7 @@
     "tippy.js": "^6.3.7",
     "use-interval": "^1.4.0",
     "util": "^0.12.4",
-    "wagmi": "^0.4.12"
+    "wagmi": "^0.5.9"
   },
   "devDependencies": {
     "@babel/core": "^7.16.0",
