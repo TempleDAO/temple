@@ -24,7 +24,7 @@ const PoolListPage = () => {
 
   return (
     <div>
-      <HeaderText>Existing Pools</HeaderText>
+      <h2>Pools</h2>
       <Table $expand>
         <Head>
           <Row>
@@ -41,7 +41,7 @@ const PoolListPage = () => {
                 <Cell>{pool.id}</Cell>
                 <Cell>{pool.name}</Cell>
                 <Cell>{pool.prop}</Cell>
-                <Cell>Edit | Foo | Bar</Cell>
+                <Cell><Link to={`${pool.id}`}>Edit</Link></Cell>
               </Row>
             );
           })}
