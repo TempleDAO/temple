@@ -1,5 +1,7 @@
 import { Environment } from './types';
 
+const ENV = import.meta.env;
+
 const env: Environment = {
   alchemyId: 'VvVv_fBIiRSaTQzL9RQNybD5FSNvtK5c',
   backendUrl: 'http://localhost:3001',
@@ -30,7 +32,46 @@ const env: Environment = {
   subgraph: {
     templeCore: 'http://localhost:8000/subgraphs/name/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
+    balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
+  tokens: {
+    frax: {
+      name: 'Frax',
+      address: ENV.VITE_PUBLIC_STABLE_COIN_ADDRESS,
+    },
+    temple: {
+      name: 'Temple',
+      address: ENV.VITE_PUBLIC_TEMPLE_ADDRESS,
+    },
+    ogTemple: {
+      name: 'OGTemple',
+      address: ENV.VITE_PUBLIC_OG_TEMPLE_ADDRESS,
+    },
+    fei: {
+      name: 'Fei',
+      address: ENV.VITE_PUBLIC_FEI_ADDRESS,
+    },
+    eth: {
+      name: 'WETH',
+      address: '',
+    },
+    usdc: {
+      name: 'USDC',
+      address: ENV.VITE_PUBLIC_USDC_ADDRESS,
+    },
+    bal: {
+      name: 'Bal',
+      address: ENV.VITE_PUBLIC_BAL_ADDRESS,
+    },
+    dai: {
+      name: 'Dai',
+      address: ENV.VITE_PUBLIC_DAI_ADDRESS,
+    },
+  },
+  featureFlags: {
+    enableAscend: true,
+  },
+  templeMultisig: '',
 };
 
 export default env;

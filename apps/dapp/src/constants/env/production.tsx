@@ -39,6 +39,40 @@ const env: Environment = {
     claimOgTemple: 100000,
   },
   infuraId: 'a2a39f8ae6564913a583c7b6d01c84d6',
+  tokens: {
+    frax: {
+      name: 'Frax',
+      address: '',
+    },
+    temple: {
+      name: 'Temple',
+      address: '',
+    },
+    ogTemple: {
+      name: 'OGTemple',
+      address: '',
+    },
+    fei: {
+      name: 'Fei',
+      address: '',
+    },
+    eth: {
+      name: 'WETH',
+      address: '',
+    },
+    usdc: {
+      name: 'USDC',
+      address: '',
+    },
+    bal: {
+      name: 'Bal',
+      address: '',
+    },
+    dai: {
+      name: 'Dai',
+      address: '',
+    },
+  },
   sentry: {
     environment: 'production',
     dsn: 'https://ab0c41c30fbb405da50d9803819b1d60@o1268430.ingest.sentry.io/6456054',
@@ -46,11 +80,16 @@ const env: Environment = {
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
+    balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
+  },
+  featureFlags: {
+    enableAscend: false,
   },
   posthog: {
     token: 'phc_pa9tsK76qoRqgsvMh9rDLtBKbOaawlwvJTLkcNDtxab',
     api_host: 'https://app.posthog.com',
   },
+  templeMultisig: '',
 };
 
 export default env;
