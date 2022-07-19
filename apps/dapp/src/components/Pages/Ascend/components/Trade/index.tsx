@@ -1,15 +1,13 @@
-import { useState, useEffect, useReducer, useRef } from 'react';
+import { useState } from 'react';
 import { BigNumber } from 'ethers';
 import styled from 'styled-components';
 
 import { formatNumber } from 'utils/formatter';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { Input } from 'components/Input/Input';
-import { useWallet } from 'providers/WalletProvider';
 import { ZERO } from 'utils/bigNumber';
 import { buttonResets, flexCenter } from 'styles/mixins';
 import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
-import { Nullable } from 'types/util';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
 
@@ -152,10 +150,25 @@ const SwapButton = styled.button`
 
   border-radius: 0.625rem;
   background-color: ${({ theme }) => theme.palette.brand};
+  border: 1px solid ${({ theme }) => theme.palette.brand};
   font-weight: 700;
   color: #fff;
   display: flex;
   padding: 1.25rem 0;
   width: 100%;
   text-transform: uppercase;
+
+  transition: all ease-in 200ms;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.palette.brand75};
+    border: 1px solid ${({ theme }) => theme.palette.brand75};
+  }
+
+  &:disabled {
+    background-color: transparent;
+    border: 1px solid ${({ theme }) => theme.palette.brand50};
+    color: ${({ theme }) => theme.palette.brand50};
+    cursor: not-allowed;
+  }
 `;
