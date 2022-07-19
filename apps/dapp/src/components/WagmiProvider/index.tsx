@@ -22,7 +22,7 @@ export const LOCAL_CHAIN = {
   id: 31337,
 };
 
-const APP_CHAINS = [chain.mainnet, chain.rinkeby, LOCAL_CHAIN];
+const APP_CHAINS = [chain.mainnet, chain.rinkeby, chain.goerli, LOCAL_CHAIN];
 
 const { chains, provider } = configureChains(APP_CHAINS, [
   alchemyProvider({ alchemyId: env.alchemyId }),

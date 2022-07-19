@@ -1,14 +1,13 @@
 import { createContext, PropsWithChildren, useContext, useState } from 'react';
 import { BigNumber, Signer } from 'ethers';
 import { useAccount, useSigner, useNetwork, useConnect } from 'wagmi';
-import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
 import { useNotification } from 'providers/NotificationProvider';
 import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { TEAM_PAYMENTS_EPOCHS, TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH } from 'enums/team-payment';
 import { toAtto } from 'utils/bigNumber';
-import { asyncNoop, noop } from 'utils/helpers';
+import { asyncNoop } from 'utils/helpers';
 import { WalletState, Balance } from 'providers/types';
 import {
   ERC20__factory,
@@ -49,15 +48,14 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
 
   const { data: signer, isLoading: signerLoading } = useSigner();
-  const { activeChain } = useNetwork();
-  const { data: accountData, isLoading: accountLoading } = useAccount();
-  const { isConnecting: connectLoading } = useConnect();
+  const { chain } = useNetwork();
+  const { address, isConnecting: accountLoading } = useAccount();
+  const { isLoading: connectLoading } = useConnect();
 
   const { openNotification } = useNotification();
   const [balanceState, setBalanceState] = useState<Balance>(INITIAL_STATE.balance);
 
-  const chain = activeChain;
-  const walletAddress = accountData?.address;
+  const walletAddress = address;
   const isConnected = !!walletAddress && !!signer;
 
   const getBalance = async (walletAddress: string, signer: Signer) => {
