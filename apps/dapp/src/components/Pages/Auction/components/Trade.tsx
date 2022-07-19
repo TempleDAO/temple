@@ -60,7 +60,7 @@ interface TradeState {
   };
   quote: {
     loading: boolean;
-    value: Nullable<[string, string]>;
+    value: Nullable<string[]>;
   };
 }
 
@@ -162,7 +162,6 @@ class BalancerQuote {
       result: null,
     };
     
-
     /*
     * queryBatchSwap simulates a call to `batchSwap`, returning an array of Vault asset deltas. Calls to `swap` cannot be
     * simulated directly, but an equivalent `batchSwap` call can and will yield the exact same result.
@@ -330,10 +329,10 @@ const useTradeState = (pool: Pool) => {
 
     try {
       const resp = await vaultService.getSwapQuote(amount, state.sell.address, state.buy.address);
-      console.log(resp)
+
       dispatch({
         type: ActionType.SetSwapQuote,
-        payload: resp.map((value: BigNumber) => value.toString()),
+        payload: resp.map((value: BigNumber) => formatNumber(formatBigNumber(value))),
       });
 
     } catch (err) {
@@ -420,6 +419,14 @@ export const Trade = ({ pool }: Props) => {
 
   const bigSellAmount = getBigNumberFromString(state.sell.value);
 
+  const indexOfSell = pool.tokensList.findIndex((address) => address === state.sell.address);
+  const indexOfBuy = pool.tokensList.findIndex((address) => address === state.buy.address);
+
+  let receiveEstimate = '';
+  if (state.quote.value) {
+    receiveEstimate = Math.abs(Number(state.quote.value[indexOfBuy])).toString();
+  } 
+
   return (
     <>
       <TransactionSettingsModal
@@ -462,7 +469,7 @@ export const Trade = ({ pool }: Props) => {
           isNumber
           placeholder="0.00"
           crypto={{ kind: 'value', value: state.buy.symbol }}
-          value={state.buy.value}
+          value={receiveEstimate}
           hint={`Balance: ${formatNumber(formatBigNumber(state.buy.balance as BigNumber))}`}
           disabled
         />
@@ -493,6 +500,13 @@ export const Trade = ({ pool }: Props) => {
           >
             Swap
           </SwapButton>
+        )}
+        {state.quote.value && (
+          <div>
+            Estimate <br />
+            Receive: {Math.abs(Number(state.quote.value[indexOfBuy]))}
+            For: {state.quote.value[indexOfSell]}
+          </div>
         )}
       </TradeWrapper>
     </>
