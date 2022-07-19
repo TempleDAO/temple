@@ -2,14 +2,11 @@ import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import styled from 'styled-components';
 
-import { useAuctionContext } from 'components/Layouts/Auction';
-import { UnstyledList } from 'styles/common';
-import { formatBigNumber } from 'components/Vault/utils';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { Pool } from 'components/Layouts/Auction/types';
 import env from 'constants/env';
-import { SubGraphQuery, SubGraphResponse, SubgraphError } from 'hooks/core/types';
+import { SubGraphResponse } from 'hooks/core/types';
 import { tabletAndAbove } from 'styles/breakpoints';
 import Loader from 'components/Loader/Loader';
 import TruncatedAddress from 'components/TruncatedAddress';
