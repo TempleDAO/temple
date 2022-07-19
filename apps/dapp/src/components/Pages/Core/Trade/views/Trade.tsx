@@ -6,7 +6,7 @@ import { TransactionSettingsModal } from 'components/TransactionSettingsModal/Tr
 import { SwapMode } from '../types';
 import { useSwapController } from '../use-swap-controller';
 import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
-import { formatNumberWithCommas, formatNumber } from 'utils/formatter';
+import { formatNumber } from 'utils/formatter';
 
 import {
   SwapContainer,
