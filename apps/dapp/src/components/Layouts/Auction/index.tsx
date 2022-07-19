@@ -98,7 +98,7 @@ export const AuctionLayout = () => {
   }
 
   if (error) {
-    return <>{error}</>;
+    return <>{error.message}</>;
   }
 
   return (
