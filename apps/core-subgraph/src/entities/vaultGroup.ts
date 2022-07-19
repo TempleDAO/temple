@@ -1,10 +1,10 @@
 import { BigInt } from '@graphprotocol/graph-ts'
 
-import { VaultGroup, VaultGroupDayData } from '../../generated/schema'
+import { VaultGroup, VaultGroupDayData, VaultGroupHourData } from '../../generated/schema'
 
 import { getMetric, updateMetric } from './metric'
 import { getOpsManager, updateOpsManager } from './opsManager'
-import { dayFromTimestamp } from '../utils/dates'
+import { dayFromTimestamp, hourFromTimestamp } from '../utils/dates'
 import { BIG_INT_1 } from '../utils/constants'
 
 
@@ -62,6 +62,7 @@ export function updateVaultGroup(vaultGroup: VaultGroup, timestamp: BigInt): voi
   vaultGroup.save()
 
   updateOrCreateDayData(vaultGroup, timestamp)
+  updateOrCreateHourData(vaultGroup, timestamp)
 }
 
 export function updateOrCreateDayData(vaultGroup: VaultGroup, timestamp: BigInt): void {
@@ -80,4 +81,22 @@ export function updateOrCreateDayData(vaultGroup: VaultGroup, timestamp: BigInt)
   dayData.volumeUSD = vaultGroup.volumeUSD
   dayData.opsManager = vaultGroup.opsManager
   dayData.save()
+}
+
+export function updateOrCreateHourData(vaultGroup: VaultGroup, timestamp: BigInt): void {
+  const hourTimestamp = hourFromTimestamp(timestamp);
+
+  let hourData = VaultGroupHourData.load(hourTimestamp)
+  if (hourData === null) {
+    hourData = new VaultGroupHourData(hourTimestamp)
+  }
+
+  hourData.timestamp = timestamp
+  hourData.vaultGroup = vaultGroup.id
+  hourData.tvl = vaultGroup.tvl
+  hourData.tvlUSD = vaultGroup.tvlUSD
+  hourData.volume = vaultGroup.volume
+  hourData.volumeUSD = vaultGroup.volumeUSD
+  hourData.opsManager = vaultGroup.opsManager
+  hourData.save()
 }

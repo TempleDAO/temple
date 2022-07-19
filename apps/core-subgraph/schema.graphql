@@ -80,6 +80,17 @@ type VaultGroupDayData @entity {
   opsManager: OpsManager!
 }
 
+type VaultGroupHourData @entity {
+  id: ID!
+  timestamp: BigInt!
+  vaultGroup: VaultGroup!
+  tvl: BigDecimal!
+  tvlUSD: BigDecimal!
+  volume: BigDecimal!
+  volumeUSD: BigDecimal!
+  opsManager: OpsManager!
+}
+
 type Vault @entity {
   id: ID!
   timestamp: BigInt!
