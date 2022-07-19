@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
-import { Pool } from 'components/Layouts/Auction/types';
+import { Pool } from 'components/Layouts/Ascend/types';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
 import { tabletAndAbove } from 'styles/breakpoints';
