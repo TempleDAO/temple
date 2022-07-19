@@ -15,8 +15,6 @@ const PoolListPage = () => {
     request();
   }, [request]);
 
-  console.log(response)
-
   const pools = [
     {
       id: 1,

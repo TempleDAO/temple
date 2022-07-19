@@ -94,8 +94,6 @@ export const AscendLayout = () => {
     return response.data.pools.map((pool) => createPool(pool));
   }, [response]);
 
-  console.log(pools)
-
   if (isLoading) {
     return <Loader />;
   }
