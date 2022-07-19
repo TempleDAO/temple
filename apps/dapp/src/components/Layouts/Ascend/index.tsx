@@ -12,6 +12,7 @@ import { createPool } from './utils';
 import env from 'constants/env';
 import { phoneAndAbove } from 'styles/breakpoints';
 import { NAV_MOBILE_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
+import { useTemplePools } from 'components/Pages/Ascend/hooks';
 
 const createLBPQuery = (auctionId: string) => {
   return {
@@ -73,25 +74,27 @@ const createLBPQuery = (auctionId: string) => {
   };
 };
 
-export const AuctionLayout = () => {
+export const AscendLayout = () => {
   const auctionId = '0xc1e0837cb74bf43f6d77df6199ffff189a65d7c9'
   const [
     request,
     { response, error, isLoading },
-  ] = useSubgraphRequest<GraphResponse>(env.subgraph.balancerV2, createLBPQuery(auctionId));
-
+  ] = useTemplePools();
+  
   useEffect(() => {
     request();
   }, [request]);
 
   const isAdmin = false;
 
-  const pool = useMemo(() => {
+  const pools = useMemo(() => {
     if (!response?.data?.pools || !response.data.pools.length) {
       return undefined;
     }
-    return createPool(response.data.pools[0]);
+    return response.data.pools.map((pool) => createPool(pool));
   }, [response]);
+
+  console.log(pools)
 
   if (isLoading) {
     return <Loader />;
@@ -120,7 +123,7 @@ export const AuctionLayout = () => {
         </AdminMenuWrapper>
       )}
       <Wrapper>
-        <Outlet context={{ pool }} />
+        <Outlet context={{ pool: (pools || [])[0] }} />
       </Wrapper>
     </>
   );

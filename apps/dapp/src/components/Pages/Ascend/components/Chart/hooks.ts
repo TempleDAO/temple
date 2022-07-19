@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
-import { Pool } from 'components/Layouts/Auction/types';
+import { Pool } from 'components/Layouts/Ascend/types';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
 

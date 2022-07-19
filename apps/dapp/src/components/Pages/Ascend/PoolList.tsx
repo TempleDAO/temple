@@ -1,9 +1,22 @@
+import { Link } from 'react-router-dom';
 import styled from 'styled-components';
+import { useEffect } from 'react';
+
 import { Head, Table, Row, Cell, Body } from 'components/Table/Table';
 import { Button as BaseButton } from 'components/Button/Button';
-import { Link } from 'react-router-dom';
+
+import { useTemplePools } from './hooks';
 
 const PoolListPage = () => {
+
+  const [request, {response}] = useTemplePools();
+  
+  useEffect(() => {
+    request();
+  }, [request]);
+
+  console.log(response)
+
   const pools = [
     {
       id: 1,
