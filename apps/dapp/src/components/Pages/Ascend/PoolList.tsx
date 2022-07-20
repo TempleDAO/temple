@@ -1,37 +1,26 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { useEffect } from 'react';
 
 import { Head, Table, Row, Cell, Body } from 'components/Table/Table';
 import { Button as BaseButton } from 'components/Button/Button';
-
 import { useTemplePools } from './hooks';
+import Loader from 'components/Loader/Loader';
 
 const PoolListPage = () => {
+  const [request, { response, error, isLoading }] = useTemplePools();
 
-  const [request, {response}] = useTemplePools();
-  
   useEffect(() => {
     request();
   }, [request]);
 
-  const pools = [
-    {
-      id: 1,
-      name: 'foo',
-      prop: 'bar',
-    },
-    {
-      id: 2,
-      name: 'foo',
-      prop: 'bar',
-    },
-    {
-      id: 3,
-      name: 'foo',
-      prop: 'bar',
-    },
-  ];
+  if (!isLoading) {
+    return <Loader />;
+  }
+
+  if (error) {
+    return <h3>Error loading pools...</h3>;
+  }
 
   return (
     <div>
@@ -39,26 +28,31 @@ const PoolListPage = () => {
       <Table $expand>
         <Head>
           <Row>
-            <Cell as="th">Pool ID</Cell>
-            <Cell as="th">Pool Name</Cell>
-            <Cell as="th">Pool Prop</Cell>
+            {/* // TODO: What fields to show? */}
+            <Cell as="th">Address</Cell>
+            <Cell as="th">Name</Cell>
+            <Cell as="th">Tokens</Cell>
             <Cell as="th">Actions</Cell>
           </Row>
         </Head>
         <Body>
-          {pools.map((pool) => {
+          {response?.data?.pools.map((pool) => {
             return (
               <Row key={pool.id}>
-                <Cell>{pool.id}</Cell>
+                <Cell>{pool.address}</Cell>
                 <Cell>{pool.name}</Cell>
-                <Cell>{pool.prop}</Cell>
-                <Cell><Link to={`${pool.id}`}>Edit</Link></Cell>
+                <Cell>
+                  {pool.tokens[0].symbol} / {pool.tokens[1].symbol}
+                </Cell>
+                <Cell>
+                  <Link to={`${pool.address}`}>Edit</Link>
+                </Cell>
               </Row>
             );
           })}
         </Body>
       </Table>
-      <Link to="admin/new">
+      <Link to="new">
         <CreateButton isSmall label="Create Pool" />
       </Link>
     </div>
