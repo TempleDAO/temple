@@ -4,6 +4,7 @@ import styled, { css } from 'styled-components';
 
 import { Pool } from 'components/Layouts/Ascend/types';
 import env from 'constants/env';
+import { Button } from 'components/Button/Button';
 
 interface Values {
   id?: string;
@@ -15,6 +16,7 @@ interface Values {
   startDate: Date;
   endDate: Date;
   fees: number;
+  address: string;
 }
 
 const getInitialValues = (pool?: Pool): Values => {
@@ -28,6 +30,7 @@ const getInitialValues = (pool?: Pool): Values => {
       startDate: new Date(0),
       endDate: new Date(0),
       fees: 1,
+      address: '',
     };
   }
 
@@ -43,8 +46,9 @@ const getInitialValues = (pool?: Pool): Values => {
     startDate: new Date(0),
     endDate: new Date(0),
     fees: 1,
+    address: pool.address,
   };
-} 
+};
 
 interface Props {
   pool?: Pool;
@@ -57,7 +61,7 @@ const Form = styled.form`
 
 const InputGroup = styled.div`
   padding: 1rem;
-  border: 1px solid #1D1A1A;
+  border: 1px solid #1d1a1a;
   margin: 0 0 1.5rem;
   max-width: calc(30rem + 2rem);
   width: 100%;
@@ -106,7 +110,7 @@ const Note = styled.span`
 
 export const LBPForm = ({ pool }: Props) => {
   const [formValues, setFormValues] = useState(getInitialValues(pool));
-  
+
   const setFormValue = <T extends any>(field: keyof Values, value: T) => {
     setFormValues((vals) => ({
       ...vals,
@@ -118,57 +122,55 @@ export const LBPForm = ({ pool }: Props) => {
     setFormValue(fieldKey, event.target.value);
   };
 
+  const saveForm = () => {
+    console.log('Saving form, with values');
+    console.log(formValues);
+  };
+
+  const completePoolSetup = () => {
+    console.log('Complete pool setup');
+    console.log('Invoke upgradeWeightsGradually');
+  };
+
+  const pausePool = () => {
+    console.log('Invoke pause pool');
+  };
+
+  const drainPool = () => {
+    console.log('Invoke drain pool');
+  };
+
+  // TODO: Do we need any of the other fields in the form? I suspect we do.
+
   return (
     <Form>
       <h2>{formValues.id ? 'Edit' : 'Create'} LBP</h2>
-      {formValues.id && (
-        <>
-          <Note>{formValues.id}</Note>
-          <br />
-        </>
-      )}
+      <InputGroup hidden={!formValues.id}>
+        <Label htmlFor="address">Address</Label>
+        <Input type="text" id="name" disabled readOnly value={formValues.address} />
+      </InputGroup>
       <InputGroup>
         <Label htmlFor="name">Name</Label>
-        <Input
-          type="text"
-          id="name"
-          required
-          onChange={createChangeHandler('name')}
-        />
+        <Input type="text" id="name" required onChange={createChangeHandler('name')} value={formValues.name} />
       </InputGroup>
       <InputGroup>
         <Label htmlFor="overview">Overview</Label>
-        <TextArea
-          required
-          id="overview"
-          onChange={createChangeHandler('overview')}
-          value={formValues.overview}
-        />
+        <TextArea required id="overview" onChange={createChangeHandler('overview')} value={formValues.overview} />
       </InputGroup>
       <InputGroup>
         <Label htmlFor="released-token">Released</Label>
-        <Select
-          id="released-token"
-          onChange={createChangeHandler('releasedToken')}
-          value={formValues.releasedToken}
-        >
+        <Select id="released-token" onChange={createChangeHandler('releasedToken')} value={formValues.releasedToken}>
           {Object.values(env.tokens).map((token) => (
             <option value={token.address} key={token.address}>
               {token.name}
             </option>
           ))}
         </Select>
-        {formValues.releasedToken && (
-          <Note>Address: {formValues.releasedToken}</Note>
-        )}
+        {formValues.releasedToken && <Note>Address: {formValues.releasedToken}</Note>}
       </InputGroup>
       <InputGroup>
         <Label htmlFor="accrued-token">Accrued</Label>
-        <Select
-          id="accrued-token"
-          onChange={createChangeHandler('accruedToken')}
-          value={formValues.accruedToken}
-        >
+        <Select id="accrued-token" onChange={createChangeHandler('accruedToken')} value={formValues.accruedToken}>
           {Object.values(env.tokens).map((token) => (
             <option value={token.address} key={token.address}>
               {token.name}
@@ -178,19 +180,11 @@ export const LBPForm = ({ pool }: Props) => {
         {formValues.accruedToken && <Note>Address: {formValues.accruedToken}</Note>}
       </InputGroup>
       <InputGroup>
-      <Label htmlFor="start-date">Start Date</Label>
-        <Input
-          id="start-date"
-          type="datetime-local"
-          onChange={createChangeHandler('startDate')}
-        />
+        <Label htmlFor="start-date">Start Date</Label>
+        <Input id="start-date" type="datetime-local" onChange={createChangeHandler('startDate')} />
         <br />
         <Label htmlFor="end-date">End Date</Label>
-        <Input
-          id="end-date"
-          type="datetime-local"
-          onChange={createChangeHandler('endDate')}
-        />
+        <Input id="end-date" type="datetime-local" onChange={createChangeHandler('endDate')} />
       </InputGroup>
       <InputGroup>
         <Label htmlFor="fees">Fee Percent</Label>
@@ -204,6 +198,12 @@ export const LBPForm = ({ pool }: Props) => {
           onChange={createChangeHandler('fees')}
         />
       </InputGroup>
+      {/* // TODO: Add logic to determine, if we're editing, and the setup is not "complete" */}
+      {/* // Then show the "compelte pool setup" button, which will call upgradeWeightsGradually */}
+      {formValues.id && <Button isSmall label="Complete Pool Setup" onClick={completePoolSetup} />}
+      {formValues.id && <Button isSmall label="Pause Pool" onClick={pausePool} />}
+      {formValues.id && <Button isSmall label="Drain Pool" onClick={drainPool} />}
+      <Button isSmall label="Save" onClick={saveForm} />
     </Form>
-  )
+  );
 };
