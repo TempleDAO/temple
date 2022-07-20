@@ -1,16 +1,15 @@
-import { useEffect, useReducer, useRef } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { BigNumber, Contract } from 'ethers';
 import { useBalance, useContractReads } from 'wagmi';
 
 import balancerPoolAbi from 'data/abis/balancerPool.json';
 import balancerVaultAbi from 'data/abis/balancerVault.json';
-import { formatNumber } from 'utils/formatter';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { useWallet } from 'providers/WalletProvider';
 import { ZERO } from 'utils/bigNumber';
-import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
+import { getBigNumberFromString } from 'components/Vault/utils';
 import { Nullable } from 'types/util';
-import { getLimitsForSlippage } from './utils';
+import { getSwapLimit, getSwapDeadline } from './utils';
 
 type Action<A extends ActionType, P extends any> = { type: A, payload: P };
 
@@ -20,14 +19,18 @@ enum ActionType {
   SetSwapQuote,
   SetSwapQuoteLoading,
   SetTransactionSettings,
-}
+  ResetSwapState,
+  UpdateSwapState,
+};
 
 type Actions = 
   Action<ActionType.TogglePair, null> |
   Action<ActionType.SetSellValue, string> |
-  Action<ActionType.SetSwapQuote, [BigNumber, BigNumber]> |
+  Action<ActionType.SetSwapQuote, Nullable<BigNumber>> |
   Action<ActionType.SetSwapQuoteLoading, boolean> |
-  Action<ActionType.SetTransactionSettings, TradeState['transactionSettings']>;
+  Action<ActionType.SetTransactionSettings, TradeState['transactionSettings']> |
+  Action<ActionType.ResetSwapState, null> |
+  Action<ActionType.UpdateSwapState, { isLoading: boolean; error: string }>;
 
 interface TradeState {
   sell: {
@@ -43,12 +46,15 @@ interface TradeState {
     weight: BigNumber;
     address: string;
     symbol: string;
-    // input Value
-    value: string;
   };
   quote: {
     loading: boolean;
-    value: Nullable<BigNumber[]>;
+    estimate: Nullable<BigNumber>;
+    estimateWithSlippage: Nullable<BigNumber>;
+  };
+  swap: {
+    error: Nullable<string>;
+    isLoading: boolean;
   };
   transactionSettings: {
     slippageTolerance: number;
@@ -56,7 +62,7 @@ interface TradeState {
   };
 }
 
-const reducer = (state: TradeState, action: Actions) => {
+const reducer = (state: TradeState, action: Actions): TradeState => {
   switch (action.type) {
     case ActionType.SetSellValue: {
       return {
@@ -64,6 +70,20 @@ const reducer = (state: TradeState, action: Actions) => {
         sell: {
           ...state.sell,
           value: action.payload,
+        },
+      };
+    }
+    case ActionType.ResetSwapState: {
+      return {
+        ...state,
+        sell: {
+          ...state.sell,
+          value: '',
+        },
+        quote: {
+          loading: false,
+          estimate: null,
+          estimateWithSlippage: null,
         },
       };
     }
@@ -76,11 +96,11 @@ const reducer = (state: TradeState, action: Actions) => {
         },
         buy: {
           ...state.sell,
-          value: '',
         },
         quote: {
-          value: null,
           loading: false,
+          estimate: null,
+          estimateWithSlippage: null,
         },
       };
     }
@@ -89,7 +109,8 @@ const reducer = (state: TradeState, action: Actions) => {
         ...state,
         quote: {
           ...state.quote,
-          value: action.payload,
+          estimate: action.payload,
+          estimateWithSlippage: getSwapLimit(action.payload, state.transactionSettings.slippageTolerance),
         },
       };
     }
@@ -105,6 +126,10 @@ const reducer = (state: TradeState, action: Actions) => {
     case ActionType.SetTransactionSettings: {
       return {
         ...state,
+        quote: {
+          ...state.quote,
+          estimateWithSlippage: getSwapLimit(state.quote.estimateWithSlippage, action.payload.slippageTolerance)
+        },
         transactionSettings: {
           ...action.payload,
         },
@@ -116,9 +141,9 @@ const reducer = (state: TradeState, action: Actions) => {
   }
 };
 
-const useLBPVault = (pool: Pool) => {
+const useVaultContract = (pool: Pool) => {
   const { wallet, signer } = useWallet();
-  const vaultContractRef = useRef<Contract>();
+  const [vaultContract, setVaultContract] = useState<Contract>();
 
   const { data } = useContractReads({
     contracts: [{
@@ -129,24 +154,22 @@ const useLBPVault = (pool: Pool) => {
   });
 
   useEffect(() => {
-    if (vaultContractRef.current || !data || !signer) {
+    if (vaultContract || !data || !signer) {
       return;
     }
 
     const vaultAddress = !!data && data.length > 0 ? data[0] : '';
-    vaultContractRef.current = new Contract(vaultAddress as string, balancerVaultAbi, signer);
-  }, [data, vaultContractRef, signer]);
+    setVaultContract(new Contract(vaultAddress as string, balancerVaultAbi, signer));
+  }, [data, vaultContract, signer, setVaultContract]);
 
   return {
-    vaultAddress: vaultContractRef.current?.address || '',
-    isReady: !!vaultContractRef.current && !!wallet,
+    address: vaultContract?.address || '',
+    isReady: !!vaultContract && !!wallet,
     async getSwapQuote(amount: BigNumber, sellAssetAddress: string, buyAssetAddress: string) {
       const assetOutIndex = pool.tokensList.findIndex((address) => address === buyAssetAddress);
       const assetInIndex = pool.tokensList.findIndex((address) => address === sellAssetAddress);
 
-      const contract = vaultContractRef.current;
-
-      return contract!.callStatic.queryBatchSwap(
+      return vaultContract!.callStatic.queryBatchSwap(
         0,
         [{
           poolId: pool.id,
@@ -161,14 +184,14 @@ const useLBPVault = (pool: Pool) => {
           recipient: wallet!.toLowerCase(),
           fromInternalBalance: false,
           toInternalBalance: false,
-        }
+        },
       );
     },
     async swap(
       amount: BigNumber,
       sellAssetAddress: string,
       buyAssetAddress: string,
-      limits: BigNumber[],
+      limits: BigNumber,
       deadline: BigNumber,
     ) {
       const swap = {
@@ -187,17 +210,16 @@ const useLBPVault = (pool: Pool) => {
         toInternalBalance: false,
       };
 
-      const contract = vaultContractRef.current;
-      return contract!.swap(swap, funds, limits, deadline, {
+      return vaultContract!.swap(swap, funds, limits, deadline, {
         gasLimit: 400000,
       });
     },
   };
-}
+};
 
-export const useTradeState = (pool: Pool) => {
+export const useVaultTradeState = (pool: Pool) => {
   const { wallet } = useWallet();
-  const vaultService = useLBPVault(pool);
+  const vaultContract = useVaultContract(pool);
 
   const [main, base] = pool.tokens;
   const [state, dispatch] = useReducer(reducer, {
@@ -213,11 +235,15 @@ export const useTradeState = (pool: Pool) => {
       weight: main.weight,
       address: main.address,
       symbol: main.symbol,
-      value: '',
     },
     quote: {
       loading: false,
-      value: null,
+      estimate: null,
+      estimateWithSlippage: ZERO,
+    },
+    swap: {
+      error: '',
+      isLoading: false,
     },
     transactionSettings: {
       slippageTolerance: 1,
@@ -249,17 +275,27 @@ export const useTradeState = (pool: Pool) => {
     ZERO :
     _buyTokenBalance.data.value;
 
-  const queryBatchSwap = async (amount: BigNumber) => {
+  const updateSwapQuote = async (amount: BigNumber) => {
+    if (amount.eq(ZERO)) {
+      dispatch({
+        type: ActionType.SetSwapQuote,
+        payload: null,
+      });
+
+      return;
+    }
+
     dispatch({ type: ActionType.SetSwapQuoteLoading, payload: true });
 
     try {
-      const resp = await vaultService.getSwapQuote(amount, state.sell.address, state.buy.address);
-
+      const quotes = await vaultContract.getSwapQuote(amount, state.sell.address, state.buy.address);
+      const indexOfBuy = pool.tokensList.findIndex((address) => address === state.buy.address);
+      const quote = quotes[indexOfBuy].abs();
+     
       dispatch({
         type: ActionType.SetSwapQuote,
-        payload: resp.map((value: BigNumber) => formatNumber(formatBigNumber(value))),
+        payload: quote,
       });
-
     } catch (err) {
       console.error('Error fetching swap quote', err)
     } finally {
@@ -275,33 +311,22 @@ export const useTradeState = (pool: Pool) => {
       return;
     }
 
-    dispatch({ type: ActionType.SetSwapQuoteLoading, payload: true });
-    console.log(BigNumber)
-    debugger;
-    // const limits = getLimitsForSlippage(
-    //   [state.sell.address],
-    //   [state.buy.address],
-    //   0,
-    //   state.quote.value!,
-    //   pool.tokensList,
-    //   getBigNumberFromString(`${state.transactionSettings.slippageTolerance / 100}`)
-    // );
+    dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: true, error: '' } });
+
     try {
       const amount = getBigNumberFromString(value);
-      
-      console.log(limits)
-      const resp = await vaultService.swap(
+      const deadline = getSwapDeadline(state.transactionSettings.deadlineMinutes);
+      await vaultContract.swap(
         amount,
         state.sell.address,
         state.buy.address,
-        limits,
-        BigNumber.from(state.transactionSettings.deadlineMinutes),
+        state.quote.estimateWithSlippage!,
+        deadline,
       );
-      console.log(resp)
+      dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error: '' } });
     } catch (err) {
       console.error('Error swapping', err)
-    } finally {
-      dispatch({ type: ActionType.SetSwapQuoteLoading, payload: false });
+      dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error: (err as Error).message } });
     }
   };
 
@@ -317,19 +342,14 @@ export const useTradeState = (pool: Pool) => {
         balance: buyTokenBalance,
       },
     },
-    vaultAddress: vaultService.vaultAddress,
+    vaultAddress: vaultContract.address,
     togglePair: () => dispatch({ type: ActionType.TogglePair, payload: null }),
     setSellValue: async (value: string) => {
       dispatch({ type: ActionType.SetSellValue, payload: value });
       
-      if (!value) {
-        return;
-      }
-
       const amount = getBigNumberFromString(value);
-      await queryBatchSwap(amount);
+      updateSwapQuote(amount);
     },
-    queryBatchSwap,
     swap,
     setTransactionSettings: (settings: TradeState['transactionSettings']) => {
       dispatch({ type: ActionType.SetTransactionSettings, payload: settings });
