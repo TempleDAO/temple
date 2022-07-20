@@ -28,6 +28,7 @@ import env from 'constants/env';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
+const Roadmap = React.lazy(() => import('components/Pages/Roadmap'));
 
 const LoaderWrapper = styled.div`
   display: flex;
@@ -82,6 +83,7 @@ ReactDOM.render(
               <Route path="disclaimer" element={<Disclaimer />} />
               <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
             </Route>
+            <Route path="/roadmap" element={<LazyPage component={Roadmap} />} />
             <Route path="/dapp/*" element={<CoreLayout />}>
               <Route path="" element={<VaultListPage />} />
 
