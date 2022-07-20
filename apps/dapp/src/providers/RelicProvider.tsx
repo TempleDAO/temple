@@ -17,8 +17,8 @@ const INITIAL_STATE: RelicService = {
   mintRelic: async () => null,
   renounceRelic: async () => null,
   mintRelicItem: asyncNoop,
-  equiptRelicItem: asyncNoop,
-  unequiptRelicItem: asyncNoop,
+  equipRelicItems: asyncNoop,
+  unequipRelicItems: asyncNoop,
 };
 
 const RelicContext = createContext(INITIAL_STATE);
@@ -147,21 +147,33 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  const equiptRelicItem = async (relicId: BigNumber, itemId: number) => {
-    const result = await callRelicFunction((relic) => relic.batchEquipItems(relicId, [itemId], [1]));
+  const equipRelicItems = async (relicId: BigNumber, items: RelicItemData[]) => {
+    if (items.length == 0) {
+      return
+    }
+    const itemIds = items.map(item => item.id)
+    const itemCounts = items.map(item => item.count)
+    const result = await callRelicFunction((relic) => relic.batchEquipItems(relicId, itemIds, itemCounts));
     if (result) {
+      const idString = itemIds.map(id => `#${id}`).join(", ")
       openNotification({
-        title: `Equipped Item #${itemId.toString()} to Relic #${relicId.toString()}`,
+        title: `Equipped Item(s) ${idString} to Relic #${relicId.toString()}`,
         hash: result.receipt.transactionHash,
       });
     }
   };
 
-  const unequiptRelicItem = async (relicId: BigNumber, itemId: number) => {
-    const result = await callRelicFunction((relic) => relic.batchUnequipItems(relicId, [itemId], [1]));
+  const unequipRelicItems = async (relicId: BigNumber, items: RelicItemData[]) => {
+    if (items.length == 0) {
+      return
+    }
+    const itemIds = items.map(item => item.id)
+    const itemCounts = items.map(item => item.count)
+    const result = await callRelicFunction((relic) => relic.batchUnequipItems(relicId, itemIds, itemCounts));
     if (result) {
+      const idString = itemIds.map(id => `#${id}`).join(", ")
       openNotification({
-        title: `Unequipped Item #${itemId.toString()} to Relic #${relicId.toString()}`,
+        title: `Unequipped Items ${idString} to Relic #${relicId.toString()}`,
         hash: result.receipt.transactionHash,
       });
     }
@@ -177,8 +189,8 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
         mintRelic,
         renounceRelic,
         mintRelicItem,
-        equiptRelicItem,
-        unequiptRelicItem,
+        equipRelicItems,
+        unequipRelicItems,
       }}
     >
       {props.children}

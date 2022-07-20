@@ -3,7 +3,7 @@ import { BigNumber, BigNumberish } from 'ethers';
 import { useRelic } from 'providers/RelicProvider';
 import { ItemInventory, RelicItemData } from 'providers/types';
 import { useWallet } from 'providers/WalletProvider';
-import { FC, useEffect } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { asyncNoop } from 'utils/helpers';
@@ -31,9 +31,9 @@ const NexusBody = () => {
 
   if (inventory === null) {
     return (
-      <Header>
+      <Row>
         <span>Loading...</span>
-      </Header>
+      </Row>
     );
   } else {
     const allItems: RelicItemData[] = [...Array(50).keys()].map((id) => ({ id, count: 0 }));
@@ -71,12 +71,11 @@ const NoRelicPanel = (props: { relics: ItemInventory['relics'] }) => {
   const navigate = useNavigate();
   return (
     <NexusPanel>
-      <Header>
+      <Row>
         <span>No Relics</span>
         <div>
-          <Button
+          <Button isSmall
             label="Mint Relic"
-            isSmall={true}
             onClick={async () => {
               const added = await mintRelic();
               if (added) {
@@ -85,7 +84,7 @@ const NoRelicPanel = (props: { relics: ItemInventory['relics'] }) => {
             }}
           />
         </div>
-      </Header>
+      </Row>
 
       <ItemGrid items={[]} onClick={asyncNoop} />
     </NexusPanel>
@@ -93,7 +92,7 @@ const NoRelicPanel = (props: { relics: ItemInventory['relics'] }) => {
 };
 
 const RelicPanel = (props: { relics: ItemInventory['relics'] }) => {
-  const { renounceRelic, unequiptRelicItem } = useRelic();
+  const { renounceRelic, unequipRelicItems } = useRelic();
   const navigate = useNavigate();
   const { id } = useParams();
   const { relics } = props;
@@ -104,12 +103,11 @@ const RelicPanel = (props: { relics: ItemInventory['relics'] }) => {
   }
   return (
     <NexusPanel>
-      <Header>
+      <Row>
         <span>Relic #{relic.id.toString()}</span>
         <div>
-          <Button
+          <Button isSmall
             label="Renounce Relic"
-            isSmall={true}
             onClick={async () => {
               const nextRelicIdx = (relicIdx + 1) % relics.length;
               const nextRelicId = relics[nextRelicIdx].id;
@@ -118,8 +116,11 @@ const RelicPanel = (props: { relics: ItemInventory['relics'] }) => {
             }}
           />
         </div>
-      </Header>
-      <ItemGrid items={relic.items} onClick={async (itemId) => unequiptRelicItem(relic.id, itemId)} />
+      </Row>
+      <BufferedItemGrid relicId={relic.id} items={relic.items}
+        actionLabel="Unequip"
+        onAction={async selectedItems => unequipRelicItems(relic.id, selectedItems)}
+      />
     </NexusPanel>
   );
 };
@@ -129,17 +130,127 @@ const MyItemPanel: FC<{
   items: RelicItemData[];
 }> = (props) => {
   const { relicId, items } = props;
-  const { equiptRelicItem } = useRelic();
+  const { equipRelicItems } = useRelic();
 
   return (
     <NexusPanel>
-      <Header>
+      <Row>
         <span>My Items</span>
-      </Header>
-      <ItemGrid items={items} onClick={async (itemId) => relicId && equiptRelicItem(relicId, itemId)} />
+      </Row>
+      <BufferedItemGrid relicId={relicId} items={items}
+        actionLabel="Equip"
+        onAction={async selectedItems => {
+          if (relicId) {
+            await equipRelicItems(relicId, selectedItems)
+          }
+        }}
+      />
     </NexusPanel>
   );
 };
+
+const BufferedItemGrid: FC<{
+  relicId?: BigNumber;
+  items: RelicItemData[];
+  actionLabel: string
+  onAction: (selectedItems: RelicItemData[]) => Promise<void>
+}> = (props) => {
+  const { relicId } = props;
+  const [unselectedItems, setUnselectedItems] = useState<RelicItemData[]>([])
+  const [selectedItems, setSelectedItems] = useState<RelicItemData[]>([])
+  useEffect(() => {
+    const unselected = props.items.map(item => {
+      const selected = selectedItems.find(i => i.id == item.id)
+      const itemCount = item.count - (selected?.count ?? 0)
+      return { id: item.id, count: itemCount }
+    }).filter(item => item.count > 0)
+    setUnselectedItems(unselected)
+  }, [props.items, selectedItems])
+
+  return <>
+    <ItemGrid items={unselectedItems} disabled={!relicId}
+      onClick={async itemId => {
+        if (unselectedItems.find(i => i.id == itemId)) {
+          setSelectedItems(addItemToArray(itemId, selectedItems))
+        }
+      }}
+    />
+    <div/>
+    { (relicId && selectedItems.length > 0) && 
+        <BufferPanel items={selectedItems} 
+          onItemClicked={itemId => {
+            const result = removeItemFromArray(itemId, selectedItems)
+            if (result) {
+              setSelectedItems(result)
+            }
+          }}
+          actionLabel={props.actionLabel}
+          onAction={async () => {
+            await props.onAction(selectedItems)
+            setSelectedItems([])
+          }}
+          onCancel={() => {
+            setSelectedItems([])
+          }}
+        />
+    }
+  </>
+}
+
+function addItemToArray(itemId: number, itemArray: RelicItemData[]) {
+  const existing = itemArray.find(i => i.id == itemId)
+  if (existing) {
+    existing.count += 1
+  } else {
+    itemArray.push({ id: itemId, count: 1 })
+    itemArray.sort((a, b) => a.id - b.id)
+  }
+  return [...itemArray]
+}
+
+function removeItemFromArray(itemId: number, itemArray: RelicItemData[]) {
+  const idx = itemArray.findIndex(i => i.id == itemId)
+  const item = itemArray[idx]
+  if (!item) {
+    return
+  }
+  item.count--
+  if (item.count <= 0) {
+    itemArray.splice(idx)
+  }
+  return [...itemArray]
+}
+
+const BufferPanel: FC<{
+  items: RelicItemData[]
+  onItemClicked: (itemId: number) => void
+  actionLabel: string
+  onAction: () => Promise<void>
+  onCancel: () => void
+}> = (props) => {
+  const { items } = props
+  return (
+    <NexusPanel style={{
+      width: '80%',
+      borderWidth: 1,
+    }}>
+      <ItemGrid columnCount={4}
+        items={items}
+        onClick={async itemId => props.onItemClicked(itemId)}
+      />
+      <Row>
+        <Button isSmall
+          label="Cancel"
+          onClick={props.onCancel}
+        />
+        <Button isSmall
+          label={props.actionLabel}
+          onClick={props.onAction}
+        />
+      </Row>
+    </NexusPanel>
+  )
+}
 
 const MintItemPanel: FC<{
   items: RelicItemData[];
@@ -147,41 +258,47 @@ const MintItemPanel: FC<{
   const { mintRelicItem } = useRelic();
   return (
     <NexusPanel>
-      <Header>
+      <Row>
         <span>Mint Items (test only)</span>
-      </Header>
+      </Row>
       <ItemGrid items={props.items} onClick={async (item) => mintRelicItem(item)} />
     </NexusPanel>
   );
 };
 
-const GRID_COLUMN_COUNT = 5;
+const DEFAULT_COLUMN_COUNT = 5;
 
 const ItemGrid: FC<{
-  items: RelicItemData[];
-  onClick: (item: number) => Promise<void>;
+  columnCount?: number
+  disabled?: boolean
+  items: RelicItemData[]
+  onClick: (item: number) => Promise<void>
 }> = (props) => {
   const { items } = props;
-  const rowCount = Math.max(1, Math.ceil(items.length / GRID_COLUMN_COUNT));
-  const itemIndexes = [...Array(rowCount * GRID_COLUMN_COUNT).keys()];
+  const columnCount = props.columnCount ?? DEFAULT_COLUMN_COUNT
+  const rowCount = Math.max(1, Math.ceil(items.length / columnCount));
+  const itemIndexes = [...Array(rowCount * columnCount).keys()];
   return (
-    <ItemContainer>
+    <ItemsContainer>
       {itemIndexes.map((_, idx) => {
         const item = items[idx];
         return (
-          <ItemWrapper key={idx}>
+          <ItemWrapper key={idx} columnCount={columnCount}>
             {item == undefined ? (
               <EmptyCell />
             ) : (
               <ItemCell>
-                <Button key={item.id} label={`${item.id}`} onClick={() => props.onClick(item.id)} />
-                {item.count > 1 && <ItemCountBadge>{item.count}</ItemCountBadge>}
+                <Button key={item.id} label={`${item.id}`}
+                  disabled={props.disabled}
+                  onClick={() => props.onClick(item.id)}
+                />
+                {item.count > 1 && <ItemCountBadge disabled={props.disabled} >{item.count}</ItemCountBadge>}
               </ItemCell>
             )}
           </ItemWrapper>
         );
       })}
-    </ItemContainer>
+    </ItemsContainer>
   );
 };
 
@@ -194,7 +311,7 @@ const ItemCell = styled.div`
   }
 `;
 
-const ItemCountBadge = styled.div`
+const ItemCountBadge = styled.div<{ disabled?: boolean }>`
   position: absolute;
   top: -0.5em;
   right: -0.5em;
@@ -204,7 +321,7 @@ const ItemCountBadge = styled.div`
   border-radius: 50%;
   text-align: center;
   line-height: 2em;
-  background-color: ${(props) => props.theme.palette.brand};
+  background-color: ${(props) => props.disabled ? props.theme.palette.brand50 : props.theme.palette.brand};
 `;
 
 const EmptyCell = styled.div`
@@ -215,29 +332,35 @@ const EmptyCell = styled.div`
 
 const NexusBodyContainer = styled.div`
   display: flex;
-  flex-flow: column;
+  flex-flow: row;
+  flex-wrap: wrap;
   justify-content: center;
-  align-items: center;
+  align-items: top;
   width: 100%;
   > * {
     width: 46%;
     margin: 2%;
-    padding: 1rem;
     min-width: 25rem;
-
-    border: 2px solid ${(props) => props.theme.palette.brand};
-    border-radius: 16px;
   }
 `;
 
 const NexusPanel = styled.div`
-  > *:not(:first-child) {
-    margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 2px solid ${(props) => props.theme.palette.brand};
+  border-radius: 16px;
+  padding: 1rem;
+
+  > * {
+    margin-bottom: 1rem;
   }
 `;
 
-const Header = styled.h3`
-  margin: 0 0 1rem;
+const Row = styled.h3`
+  width: 100%;
+  margin: 1rem;
+  padding: 0 5px;
   text-align: left;
   display: flex;
   flex-direction: row;
@@ -250,16 +373,16 @@ const Header = styled.h3`
   }
 `;
 
-const ItemContainer = styled.div`
+const ItemsContainer = styled.div`
   display: flex;
   flex-flow: row wrap;
   width: 100%;
 `;
 
-const ItemWrapper = styled.div`
+const ItemWrapper = styled.div<{ columnCount: number }>`
   position: relative;
-  width: 20%;
-  padding-top: 20%;
+  width: calc(100% / ${props => props.columnCount});
+  padding-top: calc(100% / ${props => props.columnCount});
   > * {
     &:first-child {
       position: absolute;

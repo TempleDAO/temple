@@ -168,6 +168,6 @@ export interface RelicService {
   mintRelic(): Promise<Nullable<RelicData>>;
   renounceRelic(relicId: BigNumber): Promise<Nullable<RelicData>>;
   mintRelicItem(itemId: number): Promise<void>;
-  equiptRelicItem(relicId: BigNumber, itemId: number): Promise<void>;
-  unequiptRelicItem(relicId: BigNumber, itemId: number): Promise<void>;
+  equipRelicItems(relicId: BigNumber, items: RelicItemData[]): Promise<void>;
+  unequipRelicItems(relicId: BigNumber, items: RelicItemData[]): Promise<void>;
 }
