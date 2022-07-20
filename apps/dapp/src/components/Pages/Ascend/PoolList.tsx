@@ -1,16 +1,22 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { useEffect } from 'react';
+
 import { Head, Table, Row, Cell, Body } from 'components/Table/Table';
 import { Button as BaseButton } from 'components/Button/Button';
 import { useTemplePools } from './hooks';
+import Loader from 'components/Loader/Loader';
 
 const PoolListPage = () => {
-  const [request, { response, error }] = useTemplePools();
+  const [request, { response, error, isLoading }] = useTemplePools();
 
   useEffect(() => {
     request();
   }, [request]);
+
+  if (!isLoading) {
+    return <Loader />;
+  }
 
   if (error) {
     return <h3>Error loading pools...</h3>;
