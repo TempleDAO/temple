@@ -1,5 +1,6 @@
 import buildings from 'assets/images/roadmap-buildings.png';
 import clouds from 'assets/images/roadmap-clouds.jpeg';
+import smoke from 'assets/images/roadmap-smoke.png';
 import roadmap1 from 'assets/images/roadmap-1.png';
 import roadmap2 from 'assets/images/roadmap-2.png';
 import roadmap3 from 'assets/images/roadmap-3.png';
@@ -81,8 +82,8 @@ const RoadmapItems = [
     Launch v.01`,
     shortDescription: 'Also known as the beginnings of the Temple',
     icon: 'VI',
-    bottom: 0.64,
-    left: 0.17,
+    bottom: 0.6,
+    left: 0.22,
     image: roadmap6,
   },
   {
@@ -149,11 +150,30 @@ const Roadmap = () => {
     return () => window.removeEventListener('keydown', handleKeydown);
   }, [activeModal]);
 
+  // Make smoke image move with mouse movement
+  useEffect(() => {
+    const handleMouseMove = (e: globalThis.MouseEvent) => {
+      const smoke = document.getElementById('smoke');
+      if (!smoke) return;
+      const { left, top } = smoke.getBoundingClientRect();
+      const x = e.clientX - left;
+      const y = e.clientY - top;
+      const xPercent = x / smoke.offsetWidth;
+      const yPercent = y / smoke.offsetHeight;
+      const xOffset = xPercent * -50;
+      const yOffset = yPercent * -50;
+      smoke.style.transform = `translate(${xOffset}px, ${yOffset}px)`;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   return (
     <Container>
       <Clouds src={clouds} />
       <ScrollableContainer>
-        <Building
+        <CenteredImage src={smoke} id="smoke" />
+        <CenteredImage
           src={buildings}
           onLoad={(e) => {
             const el = e.currentTarget;
@@ -210,6 +230,7 @@ const Roadmap = () => {
                   e.stopPropagation();
                   if (activeModal > 0) setActiveModal(activeModal - 1);
                 }}
+                dim={activeModal === 0}
               >
                 &lt;
               </NavButton>
@@ -219,6 +240,7 @@ const Roadmap = () => {
                   e.stopPropagation();
                   if (activeModal < RoadmapItems.length - 1) setActiveModal(activeModal + 1);
                 }}
+                dim={activeModal === RoadmapItems.length - 1}
               >
                 &gt;
               </NavButton>
@@ -274,7 +296,7 @@ const ScrollableContainer = styled.div`
   z-index: 1;
 `;
 
-const Building = styled.img`
+const CenteredImage = styled.img`
   position: absolute;
   top: 0;
   left: 0;
@@ -285,6 +307,7 @@ const Building = styled.img`
   padding: 2rem 0;
   pointer-events: none;
   z-index: 1;
+  transition: transform 2s ease-out;
 `;
 
 const Item = styled.div`
@@ -388,6 +411,7 @@ const ContentContainer = styled.div`
 
   ${tabletAndAbove(`
     position: relative;
+    overflow: hidden;
   `)}
 `;
 
@@ -417,7 +441,7 @@ const ModalDescription = styled.div`
   margin-top: 2.5rem;
   ${tabletAndAbove(`
     overflow-y: auto;
-    max-height: 30vh;
+    max-height: 50%;
   `)}
 `;
 
@@ -451,9 +475,10 @@ const NavContainer = styled.div`
   `)}
 `;
 
-const NavButton = styled.div`
+const NavButton = styled.div<{ dim: boolean }>`
   cursor: pointer;
   font-size: 2rem;
+  ${(props) => props.dim && 'opacity: 0.5;'}
 `;
 
 const CurrentNav = styled.div`
