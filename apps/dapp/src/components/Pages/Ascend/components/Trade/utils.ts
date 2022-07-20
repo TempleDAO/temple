@@ -1,7 +1,8 @@
-import { BigNumber, Contract } from 'ethers';
+import { BigNumber, Contract, constants } from 'ethers';
 
 import { Pool } from 'components/Layouts/Ascend/types';
 import { Nullable } from 'types/util';
+import { ZERO } from 'utils/bigNumber';
 
 export class BalancerQuoteManager {
   private _wallet: string;
@@ -81,3 +82,10 @@ export class BalancerQuoteManager {
     }
   };
 }
+
+export const getLimitsForSlippage = (
+  slippage: BigNumber // BigNumber of percent i.e. 1%=10000000000000000
+)=> {
+  
+  // return limits;
+};

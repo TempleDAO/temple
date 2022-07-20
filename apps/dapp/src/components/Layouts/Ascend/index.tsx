@@ -100,7 +100,7 @@ export const AscendLayout = () => {
   if (error) {
     return <>{error.message}</>;
   }
-
+  console.log((pools || [])[0])
   return (
     <>
       {isAdmin && (
