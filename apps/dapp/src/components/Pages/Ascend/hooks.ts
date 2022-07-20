@@ -108,6 +108,6 @@ const createLBPQuery = (poolAddress: string) => {
   };
 };
 
-export const useTemplePool = (poolAddress: string) => {
+export const useTemplePool = (poolAddress = '') => {
   return useSubgraphRequest<GraphResponse>(env.subgraph.balancerV2, createLBPQuery(poolAddress));
 };

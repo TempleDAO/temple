@@ -106,7 +106,7 @@ ReactDOM.render(
                     <Route path="" element={<AscendPage />} />
                     <Route path="admin" element={<PoolListPage />} />
                     <Route path="admin/new" element={<CreateLBPPage />} />
-                    <Route path="admin/:auctionId/*" element={<EditLBPPage />} />
+                    <Route path="admin/:poolAddress/*" element={<EditLBPPage />} />
                   </Route>
                 </>
               )}
