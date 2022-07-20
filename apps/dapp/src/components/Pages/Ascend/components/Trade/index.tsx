@@ -11,7 +11,7 @@ import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowan
 import { CircularLoader as BaseCircularLoader } from 'components/Loader/CircularLoader';
 import Loader from 'components/Loader/Loader';
 
-import { useVaultTradeState } from './hooks';
+import { useVaultTradeState } from './hooks/use-vault-trade-state';
 
 import {
   TradeWrapper,
