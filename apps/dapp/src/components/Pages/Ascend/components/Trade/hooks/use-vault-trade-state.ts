@@ -7,9 +7,10 @@ import { useWallet } from 'providers/WalletProvider';
 import { ZERO } from 'utils/bigNumber';
 import { getBigNumberFromString } from 'components/Vault/utils';
 import { Nullable } from 'types/util';
-import { getSwapLimit, getSwapDeadline } from '../utils';
+import { useNotification } from 'providers/NotificationProvider';
 
 import { useVaultContract } from './use-vault-contract';
+import { getSwapLimit, getSwapDeadline } from '../utils';
 
 type Action<A extends ActionType, P extends any> = { type: A, payload: P };
 
@@ -144,6 +145,7 @@ const reducer = (state: TradeState, action: Actions): TradeState => {
 export const useVaultTradeState = (pool: Pool) => {
   const { wallet } = useWallet();
   const vaultContract = useVaultContract(pool);
+  const { openNotification } = useNotification();
 
   const [main, base] = pool.tokens;
   const [state, dispatch] = useReducer(reducer, {
@@ -240,16 +242,23 @@ export const useVaultTradeState = (pool: Pool) => {
     try {
       const amount = getBigNumberFromString(value);
       const deadline = getSwapDeadline(state.transactionSettings.deadlineMinutes);
-      await vaultContract.swap(
+      const transaction = await vaultContract.swap(
         amount,
         state.sell.address,
         state.buy.address,
         state.quote.estimateWithSlippage!,
         deadline,
       );
-      
+
       dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error: '' } });
       dispatch({ type: ActionType.ResetQuoteState, payload: null });
+      
+      console.log(transaction)
+      
+      openNotification({
+        title: `Swap success`,
+        hash: transaction.hash,
+      });
 
     } catch (err) {
       console.error('Error swapping', err)
