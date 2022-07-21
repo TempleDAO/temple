@@ -74,6 +74,14 @@ const reducer = (state: TradeState, action: Actions): TradeState => {
         },
       };
     }
+    case ActionType.UpdateSwapState: {
+      return {
+        ...state,
+        swap: {
+          ...action.payload,
+        },
+      };
+    }
     case ActionType.ResetQuoteState: {
       return {
         ...state,
@@ -250,18 +258,17 @@ export const useVaultTradeState = (pool: Pool) => {
         deadline,
       );
 
+      await transaction.wait();
+
       dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error: '' } });
       dispatch({ type: ActionType.ResetQuoteState, payload: null });
       
-      console.log(transaction)
-      
       openNotification({
-        title: `Swap success`,
+        title: 'Swap success',
         hash: transaction.hash,
       });
 
     } catch (err) {
-      console.error('Error swapping', err)
       dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error: (err as Error).message } });
     }
   };
