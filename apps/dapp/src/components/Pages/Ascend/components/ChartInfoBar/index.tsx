@@ -5,7 +5,7 @@ import { formatBigNumber } from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { UnstyledList } from 'styles/common';
-import { usePoolSpotPrice } from '../../hooks';
+import { usePoolSpotPrice } from 'hooks/ascend';
 import { CircularLoader } from 'components/Loader/CircularLoader';
 import { ZERO } from 'utils/bigNumber';
 

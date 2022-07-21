@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 import { Head, Table, Row, Cell, Body } from 'components/Table/Table';
 import { Button as BaseButton } from 'components/Button/Button';
-import { useTemplePools } from './hooks';
+import { useTemplePools } from 'hooks/ascend';
 import Loader from 'components/Loader/Loader';
 
 const PoolListPage = () => {
