@@ -66,7 +66,7 @@ export const AscendLayout = () => {
   );
 };
 
-export const useAuctionContext = () => useOutletContext<AuctionContext>();
+export const useAscendContext = () => useOutletContext<AuctionContext>();
 
 const AdminMenuWrapper = styled.div`
   margin: 2rem 0 -1rem;

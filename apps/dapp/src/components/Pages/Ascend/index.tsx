@@ -1,12 +1,10 @@
-import { format } from 'date-fns';
-
-import { useAuctionContext as useAscendContext } from 'components/Layouts/Ascend';
+import { useAscendContext } from 'components/Layouts/Ascend';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { SwapHistory } from './components/SwapHistory';
 import { Chart } from './components/Chart';
-import { useTimeRemaining, usePoolSpotPrice } from './hooks';
+import { useTimeRemaining } from './hooks';
 import { Trade } from './components/Trade';
-import { AuctionContextProvider, useAuctionContext } from './components/AuctionContext';
+import { AuctionContextProvider } from './components/AuctionContext';
 import { ChartInfoBar } from './components/ChartInfoBar';
 
 import {
@@ -21,7 +19,7 @@ interface Props {
 
 const ActiveAuction = ({ pool }: Props) => {
   return (
-    <div>
+    <>
       <h3>{pool.name}</h3>
       <ContractAddress>
         {pool.address}
@@ -37,7 +35,7 @@ const ActiveAuction = ({ pool }: Props) => {
         <Trade pool={pool} />
       </ChartTradeSection>
       <SwapHistory pool={pool} />
-    </div>
+    </>
   );
 };
 

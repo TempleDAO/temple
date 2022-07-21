@@ -1,9 +1,7 @@
 import { useEffect, useReducer } from 'react';
 import { BigNumber } from 'ethers';
-import { useBalance } from 'wagmi';
 
 import { Pool } from 'components/Layouts/Ascend/types';
-import { useWallet } from 'providers/WalletProvider';
 import { ZERO } from 'utils/bigNumber';
 import { getBigNumberFromString } from 'components/Vault/utils';
 import { Nullable } from 'types/util';

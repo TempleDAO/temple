@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BigNumber, Contract } from 'ethers';
-import { useContractReads } from 'wagmi';
 
-import balancerPoolAbi from 'data/abis/balancerPool.json';
 import balancerVaultAbi from 'data/abis/balancerVault.json';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { useWallet } from 'providers/WalletProvider';
