@@ -9,7 +9,6 @@ import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils'
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
 import { CircularLoader as BaseCircularLoader, CircularLoader } from 'components/Loader/CircularLoader';
-import Loader from 'components/Loader/Loader';
 
 import { useVaultTradeState } from './hooks/use-vault-trade-state';
 
