@@ -14,66 +14,6 @@ import { phoneAndAbove } from 'styles/breakpoints';
 import { NAV_MOBILE_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
 import { useTemplePools } from 'components/Pages/Ascend/hooks';
 
-const createLBPQuery = (auctionId: string) => {
-  return {
-    query: `
-      query ($auctionId: String) {
-        pools(where: {address: $auctionId, poolType: "LiquidityBootstrapping"}) {
-          id
-          address
-          strategyType
-          symbol
-          name
-          swapEnabled
-          swapFee
-          owner
-          totalWeight
-          totalSwapVolume
-          totalSwapFee
-          totalLiquidity
-          createTime
-          swapsCount
-          holdersCount
-          tx
-          tokensList
-          tokens {
-            symbol
-            name
-            address
-            weight
-            priceRate
-            balance
-            __typename
-          }
-          swaps(first: 1, orderBy: timestamp, orderDirection: desc) {
-            timestamp
-            __typename
-          }
-          weightUpdates(orderBy: scheduledTimestamp, orderDirection: asc) {
-            startTimestamp
-            endTimestamp
-            startWeights
-            endWeights
-            __typename
-          }
-          shares {
-            userAddress {
-              id
-              __typename
-            }
-            balance
-            __typename
-          }
-          __typename
-        }
-      }
-    `,
-    variables: {
-      auctionId,
-    },
-  };
-};
-
 export const AscendLayout = () => {
   const [
     request,

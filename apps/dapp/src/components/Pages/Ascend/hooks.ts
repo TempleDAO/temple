@@ -1,4 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useContractReads } from 'wagmi';
+import { BigNumber } from 'ethers';
+
+import balancerPoolAbi from 'data/abis/balancerPool.json';
+import balancerVaultAbi from 'data/abis/balancerVault.json';
 
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { Pool } from 'components/Layouts/Ascend/types';
@@ -6,6 +11,8 @@ import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
 import { getRemainingTime } from './utils';
 import { SubgraphPool, GraphResponse } from 'components/Layouts/Ascend/types';
+import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
+import { useAuctionContext } from './components/AuctionContext';
 
 export const useTimeRemaining = (pool?: Pool) => {
   const [time, setTime] = useState(getRemainingTime(pool));
@@ -110,4 +117,77 @@ const createLBPQuery = (poolAddress: string) => {
 
 export const useTemplePool = (poolAddress = '') => {
   return useSubgraphRequest<GraphResponse>(env.subgraph.balancerV2, createLBPQuery(poolAddress));
+};
+
+const getSpotPrice = (
+  balanceSell: BigNumber,
+  balanceBuy: BigNumber,
+  weightSell: BigNumber,
+  weightBuy: BigNumber,
+  swapFee: BigNumber,
+): BigNumber => {
+  const bs = parseFloat(formatBigNumber(balanceSell));
+  const bb = parseFloat(formatBigNumber(balanceBuy));
+  const ws = parseFloat(formatBigNumber(weightSell));
+  const wb = parseFloat(formatBigNumber(weightBuy));
+
+  const price = (bs / ws) / (bb / wb);
+  const fee = (1 / (1 - parseFloat(formatBigNumber(swapFee))));
+  const spot = getBigNumberFromString(`${price * fee}`);
+
+  return spot;
+};
+
+export const usePoolSpotPrice = (pool: Pool) => {
+  const { sellToken, buyToken, vaultAddress } = useAuctionContext();
+  const [spotPrice, setSpotPrice] = useState<BigNumber>();
+
+  const { data: spotPriceData, isLoading } = useContractReads({
+    contracts: [{
+      addressOrName: vaultAddress || '',
+      contractInterface: balancerVaultAbi,
+      functionName: 'getPoolTokens',
+      args: [pool.id],
+    }, {
+      addressOrName: pool.address,
+      contractInterface: balancerPoolAbi,
+      functionName: 'getNormalizedWeights',
+    }, {
+      addressOrName: pool.address,
+      contractInterface: balancerPoolAbi,
+      functionName: 'getSwapFeePercentage',
+    }],
+    enabled: !!vaultAddress
+  });
+  
+  const indexOfSell = sellToken.tokenIndex;
+  const indexOfBuy = buyToken.tokenIndex;
+  
+  useEffect(() => {
+    if (!spotPriceData) {
+      return;
+    }
+
+    const [tokens, weights, swapFee] = spotPriceData;
+    const balances = tokens.balances;
+
+    setSpotPrice(
+      getSpotPrice(
+        balances[indexOfSell],
+        balances[indexOfBuy],
+        weights[indexOfSell],
+        weights[indexOfBuy],
+        swapFee as any
+      )
+    );
+  }, [
+    spotPriceData,
+    indexOfBuy,
+    indexOfSell,
+  ]);
+
+  return {
+    isLoading,
+    spotPrice,
+  };
 };
