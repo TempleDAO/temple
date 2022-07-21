@@ -3,6 +3,7 @@ import { BigNumber } from 'ethers';
 
 export interface SubgraphPool {
   address: string;
+  symbol: string;
   createTime: number;
   holdersCount: string;
   id: string;
@@ -50,6 +51,7 @@ export type GraphResponse = SubGraphResponse<{ pools: SubgraphPool[] }>;
 export type Pool = Omit<SubgraphPool, 'createTime' | 'holdersCount' | 'shares' | 'swapFee' | 'tokens' | 'totalLiquidity' | 'totalSwapFee' | 'totalSwapVolume' | 'totalWeight' | 'weightUpdates'> & {
   createTime: Date;
   holdersCount: number;
+  symbol: string;
   shares: {
     balance: BigNumber;
     userAddress: {

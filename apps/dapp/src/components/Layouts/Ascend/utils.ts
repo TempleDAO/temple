@@ -1,4 +1,5 @@
 import { getBigNumberFromString } from 'components/Vault/utils';
+import { BigNumber } from 'ethers';
 import { SubgraphPool, Pool } from './types';
 
 export const createPool = (pool: SubgraphPool): Pool => {
@@ -6,6 +7,7 @@ export const createPool = (pool: SubgraphPool): Pool => {
     ...pool,
     createTime: new Date(pool.createTime * 1000),
     holdersCount: Number(pool.holdersCount),
+    symbol: pool.symbol,
     shares: pool.shares.map((share) => ({
       ...share,
       balance: getBigNumberFromString(share.balance),
@@ -24,12 +26,12 @@ export const createPool = (pool: SubgraphPool): Pool => {
       endTimestamp: new Date(Number(weightUpdate.endTimestamp) * 1000),
       startTimestamp: new Date(Number(weightUpdate.startTimestamp) * 1000),
       startWeights: [
-        getBigNumberFromString(weightUpdate.startWeights[0]),
-        getBigNumberFromString(weightUpdate.startWeights[1]),
+        BigNumber.from(weightUpdate.startWeights[0]),
+        BigNumber.from(weightUpdate.startWeights[1]),
       ],
       endWeights: [
-        getBigNumberFromString(weightUpdate.endWeights[0]),
-        getBigNumberFromString(weightUpdate.endWeights[1]),
+        BigNumber.from(weightUpdate.endWeights[0]),
+        BigNumber.from(weightUpdate.endWeights[1]),
       ],
     })),
   };
