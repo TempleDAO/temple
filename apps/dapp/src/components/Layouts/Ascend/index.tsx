@@ -1,45 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { Outlet, useOutletContext, Link } from 'react-router-dom';
-import { useNetwork } from 'wagmi';
+import { Outlet } from 'react-router-dom';
 
-import { useSubgraphRequest } from 'hooks/use-subgraph-request';
-import Loader from 'components/Loader/Loader';
 import { PillMenu } from 'components/PillMenu';
 
-import { AuctionContext, GraphResponse } from './types';
-import { createPool } from './utils';
-import env from 'constants/env';
 import { phoneAndAbove } from 'styles/breakpoints';
 import { NAV_MOBILE_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
-import { useTemplePools } from 'components/Pages/Ascend/hooks';
 
 export const AscendLayout = () => {
-  const [
-    request,
-    { response, error, isLoading },
-  ] = useTemplePools();
-  
-  useEffect(() => {
-    request();
-  }, [request]);
-
   const isAdmin = false;
-
-  const pools = useMemo(() => {
-    if (!response?.data?.pools || !response.data.pools.length) {
-      return undefined;
-    }
-    return response.data.pools.map((pool) => createPool(pool));
-  }, [response]);
-
-  if (isLoading) {
-    return <Loader />;
-  }
-
-  if (error) {
-    return <>{error.message}</>;
-  }
 
   return (
     <>
@@ -60,13 +28,11 @@ export const AscendLayout = () => {
         </AdminMenuWrapper>
       )}
       <Wrapper>
-        <Outlet context={{ pool: (pools || [])[0] }} />
+        <Outlet />
       </Wrapper>
     </>
   );
 };
-
-export const useAscendContext = () => useOutletContext<AuctionContext>();
 
 const AdminMenuWrapper = styled.div`
   margin: 2rem 0 -1rem;
