@@ -5,7 +5,7 @@ import { ItemInventory, RelicItemData } from 'providers/types';
 import { useWallet } from 'providers/WalletProvider';
 import { FC, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { CSSProperties } from 'styled-components';
 import { asyncNoop } from 'utils/helpers';
 import { NexusContainer } from '../Trade/styles';
 import { PageWrapper } from '../utils';
@@ -20,6 +20,8 @@ const NexusPage = () => {
     </PageWrapper>
   );
 };
+
+const VALID_ITEM_ID_COUNT = 15
 
 const NexusBody = () => {
   const { wallet, isConnected } = useWallet();
@@ -36,7 +38,7 @@ const NexusBody = () => {
       </Row>
     );
   } else {
-    const allItems: RelicItemData[] = [...Array(50).keys()].map((id) => ({ id, count: 0 }));
+    const allItems: RelicItemData[] = [...Array(VALID_ITEM_ID_COUNT).keys()].map((id) => ({ id, count: 0 }));
     const { relics, items } = inventory;
 
     return (
@@ -267,6 +269,8 @@ const MintItemPanel: FC<{
 };
 
 const DEFAULT_COLUMN_COUNT = 5;
+const ITEM_IMAGE_BASE_URL = "https://myst.mypinata.cloud/ipfs/QmTmng8Skqv8sqckArgpi6RqQQTHh7LNLzmRyMWyxU24th"
+const MAX_IMAGE_ITEM_ID = 2
 
 const ItemGrid: FC<{
   columnCount?: number
@@ -287,13 +291,11 @@ const ItemGrid: FC<{
             {item == undefined ? (
               <EmptyCell />
             ) : (
-              <ItemCell>
-                <Button key={item.id} label={`${item.id}`}
-                  disabled={props.disabled}
-                  onClick={() => props.onClick(item.id)}
-                />
-                {item.count > 1 && <ItemCountBadge disabled={props.disabled} >{item.count}</ItemCountBadge>}
-              </ItemCell>
+              <ItemButton key={item.id}
+                item={item}
+                disabled={props.disabled}
+                onClick={props.onClick}
+              />
             )}
           </ItemWrapper>
         );
@@ -302,12 +304,47 @@ const ItemGrid: FC<{
   );
 };
 
+const ItemButton: FC<{
+  item: RelicItemData
+  disabled?: boolean
+  onClick: (item: number) => Promise<void>
+}> = (props) => {
+  const { item } = props
+  const [processing, setProcessing] = useState(false)
+  const imgUrl = item.id <= MAX_IMAGE_ITEM_ID ? `${ITEM_IMAGE_BASE_URL}/${item.id}.png` : undefined
+  return <ItemCell>
+    <Button key={item.id}
+      label={imgUrl ? '' : `${item.id}`}
+      style={{ border: 'none' }}
+      disabled={props.disabled}
+      onClick={() => {
+        setProcessing(true)
+        return props.onClick(item.id).finally(() => setProcessing(false))
+      }}
+    >
+    </Button>
+    { imgUrl && <ItemImage src={imgUrl} style={processing ? { opacity: .2 } : {}}/> }
+    
+    {item.count > 1 && <ItemCountBadge disabled={props.disabled} >{item.count}</ItemCountBadge>}
+  </ItemCell>
+}
+
 const ItemCell = styled.div`
+  border: solid 2px ${props => props.theme.palette.brand};
+  border-radius: 15%;
+
   > * {
     width: 100%;
     height: 100%;
-    border-radius: 15%;
     position: relative;
+    border-radius: 15%;
+  }
+  transition: opacity 2s ease;
+  > img {
+    opacity: .5;
+  }
+  &:hover > img {
+    opacity: .7;
   }
 `;
 
@@ -323,6 +360,16 @@ const ItemCountBadge = styled.div<{ disabled?: boolean }>`
   line-height: 2em;
   background-color: ${(props) => props.disabled ? props.theme.palette.brand50 : props.theme.palette.brand};
 `;
+
+const ItemImage = styled.img`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: .7;
+  pointer-events: none;
+`
 
 const EmptyCell = styled.div`
   background: darkgray;
@@ -377,6 +424,7 @@ const ItemsContainer = styled.div`
   display: flex;
   flex-flow: row wrap;
   width: 100%;
+  transition: height 2s ease;
 `;
 
 const ItemWrapper = styled.div<{ columnCount: number }>`
