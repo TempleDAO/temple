@@ -74,7 +74,6 @@ export type Pool = Omit<SubgraphPool, 'createTime' | 'holdersCount' | 'shares' |
     endWeights: [BigNumber, BigNumber];
     startWeights: [BigNumber, BigNumber];
   }[];
-  vaultID: string;
 }
 
 export interface AuctionContext {
