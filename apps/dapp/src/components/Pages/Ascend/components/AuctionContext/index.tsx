@@ -14,7 +14,6 @@ interface AuctionContext {
   buyToken: AuctionToken;
   vaultAddress: string;
   toggleTokenPair: () => void;
-  totalLiquidity: BigNumber;
   isPaused: boolean;
 }
 
@@ -37,7 +36,6 @@ const AuctionContext = createContext<AuctionContext>({
   },
   toggleTokenPair: noop,
   vaultAddress: '',
-  totalLiquidity: ZERO,
   isPaused: false,
 });
 
@@ -85,10 +83,14 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
       addressOrName: pool.address,
       contractInterface: balancerPoolAbi,
       functionName: 'getVault',
+    }, {
+      addressOrName: pool.address,
+      contractInterface: balancerPoolAbi,
+      functionName: 'getPausedState',
     }],
   });
-
-  const vaultAddress = !!data && data.length > 0 ? (data[0] as any) : '';
+  
+  const [vaultAddress = '', pausedState = []] = data || [];
 
   const toggleTokenPair = () => setTokenState(({ sellToken, buyToken }) => ({
     sellToken: buyToken,
@@ -124,9 +126,8 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
           balance: buyTokenBalance,
         },
         toggleTokenPair,
-        vaultAddress,
-        totalLiquidity: ZERO,
-        isPaused: false,
+        vaultAddress: vaultAddress as string,
+        isPaused: pausedState[0] || true,
       }}
     >
       {children}
