@@ -53,6 +53,11 @@ contract Relic is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable,
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIdCounter;
 
+    // enclaves
+    enum Enclave{ Logic, Structure, Order, Mystery, Chaos}
+    mapping (uint256 => Enclave) enclaves;
+    // rarity
+    enum Rarity{ Common, Uncommon, Rare, Epic, Legendary}
     // @dev Relic mint whitelist
     mapping (address => bool) public whitelisted;
     // Contracts authorised to mint
@@ -64,13 +69,15 @@ contract Relic is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable,
     // @dev Relic Experience Points
     mapping(uint256 => uint256) public relicXP;
 
-    string public BASE_URI;
+    mapping (Enclave => mapping (Rarity => string)) public BASE_URIS;
     // @dev RelicItems.sol
     IItems private ITEMS;
     // @dev Contract providing experience points to Relics
     address private experienceProvider;
     // whitelister address
     address private whitelisterAddress;
+    // rarity thresholds
+    uint256[] private thresholds;
 
     struct Recipe {
         uint16 id;
@@ -85,10 +92,11 @@ contract Relic is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable,
     //------- External -------//
 
     // TODO: CHECK WHITELISTING SYSTEM FOR RELICS !!!
-    function mintRelic () external nonReentrant {
+    function mintRelic (Enclave _selectedEnclave) external nonReentrant {
         // DEACTIVATED FOR TESTING
         // require(whitelisted[msg.sender], "You cannot own a Relic yet");
          uint256 tokenId = _tokenIdCounter.current();
+        enclaves[tokenId] = _selectedEnclave;
         _tokenIdCounter.increment();
         _safeMint(msg.sender, tokenId);
 
@@ -158,9 +166,10 @@ contract Relic is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable,
     }
 
     // alows whitelisted contract to mint to
-    function mintFromContract(address _to) external {
+    function mintFromContract(address _to, Enclave _selectedEnclave) external {
         require(whitelistedContracts[msg.sender], "This contract is not authorised to mint");
          uint256 tokenId = _tokenIdCounter.current();
+         enclaves[tokenId] = _selectedEnclave;
         _tokenIdCounter.increment();
         _safeMint(_to,tokenId);
     }
@@ -168,6 +177,11 @@ contract Relic is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable,
     function whitelistTemplar(address _toWhitelist) external {
         require(msg.sender == whitelisterAddress, "Not authorised");
         whitelisted[_toWhitelist] = true;
+    }
+
+    // FOR TEST
+    function givePoints(uint256 _amount, uint256 _relicId)external {
+        relicXP[_relicId]+=_amount;
     }
 
     //------- Public -------//
@@ -206,9 +220,12 @@ contract Relic is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable,
         returns (string memory)
     {
         require(_exists(_relicId));
+
+
+
         return
             string(
-                abi.encodePacked(BASE_URI, _relicId.toString())
+                abi.encodePacked(BASE_URIS[enclaves[_relicId]][_getRarity(_relicId)], _relicId.toString())
             );
     }
 
@@ -226,6 +243,11 @@ contract Relic is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable,
         }
 
         return balancesToReturn;
+    }
+
+    // fetch Rarity and Enclave from a single Relic
+    function getRelicInfos(uint256 _relicId) external view returns (Rarity, Enclave){
+        return (_getRarity(_relicId), enclaves[_relicId]);
     }
    
     //------- Internal -------//
@@ -255,6 +277,14 @@ contract Relic is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable,
         ITEMS.burnFromRelic(_itemId, _amount);
         // remove balance
         balances[_relicId][_itemId]-=_amount;
+    }
+
+    function _getRarity(uint256 _relicId) internal view returns(Rarity currRarity){
+        for(uint i =0; i<5;i++){
+            if(relicXP[_relicId]<thresholds[i]){
+                return Rarity(i-1);
+            }
+        }
     }
 
 
@@ -288,7 +318,9 @@ contract Relic is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable,
         _safeMint(to, tokenId);
     }
     
- 
+    function setThresholds(uint256[] memory _newThresholds) external onlyOwner {
+        thresholds = _newThresholds;
+    }
 
     function removeFromWhitelist(address _toRemove) external onlyOwner{
         whitelisted[_toRemove] = false;
@@ -306,8 +338,14 @@ contract Relic is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable,
         whitelisterAddress = _whiteliser;
     }
 
-    function setBaseURI(string memory _newBaseURI) public onlyOwner {
-        BASE_URI = _newBaseURI;
+    function setBaseURI(string[] memory _newBaseURIs) public onlyOwner {
+        uint256 counter =0;
+        for(uint e=0;e<5;e++){
+            for(uint r=0;r<5;r++){
+                BASE_URIS[Enclave(e)][Rarity(r)]=_newBaseURIs[counter];
+                counter++;
+            }
+        }
     }
 
 }

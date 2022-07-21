@@ -20,7 +20,7 @@ import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 export interface RelicInterface extends utils.Interface {
   contractName: "Relic";
   functions: {
-    "BASE_URI()": FunctionFragment;
+    "BASE_URIS(uint8,uint8)": FunctionFragment;
     "approve(address,uint256)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
     "balances(uint256,uint256)": FunctionFragment;
@@ -31,10 +31,12 @@ export interface RelicInterface extends utils.Interface {
     "getApproved(uint256)": FunctionFragment;
     "getBalance(uint256,uint256)": FunctionFragment;
     "getBalanceBatch(uint256,uint256[])": FunctionFragment;
+    "getRelicInfos(uint256)": FunctionFragment;
     "getRelicXP(uint256)": FunctionFragment;
+    "givePoints(uint256,uint256)": FunctionFragment;
     "isApprovedForAll(address,address)": FunctionFragment;
-    "mintFromContract(address)": FunctionFragment;
-    "mintRelic()": FunctionFragment;
+    "mintFromContract(address,uint8)": FunctionFragment;
+    "mintRelic(uint8)": FunctionFragment;
     "name()": FunctionFragment;
     "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)": FunctionFragment;
     "onERC1155Received(address,address,uint256,uint256,bytes)": FunctionFragment;
@@ -51,9 +53,10 @@ export interface RelicInterface extends utils.Interface {
     "safeMint(address)": FunctionFragment;
     "safeTransferFrom(address,address,uint256)": FunctionFragment;
     "setApprovalForAll(address,bool)": FunctionFragment;
-    "setBaseURI(string)": FunctionFragment;
+    "setBaseURI(string[])": FunctionFragment;
     "setItemContract(address)": FunctionFragment;
     "setTempleWhitelister(address)": FunctionFragment;
+    "setThresholds(uint256[])": FunctionFragment;
     "setXPProvider(address)": FunctionFragment;
     "supportsInterface(bytes4)": FunctionFragment;
     "symbol()": FunctionFragment;
@@ -70,7 +73,10 @@ export interface RelicInterface extends utils.Interface {
     "whitelistedContracts(address)": FunctionFragment;
   };
 
-  encodeFunctionData(functionFragment: "BASE_URI", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "BASE_URIS",
+    values: [BigNumberish, BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "approve",
     values: [string, BigNumberish]
@@ -112,8 +118,16 @@ export interface RelicInterface extends utils.Interface {
     values: [BigNumberish, BigNumberish[]]
   ): string;
   encodeFunctionData(
+    functionFragment: "getRelicInfos",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "getRelicXP",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "givePoints",
+    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "isApprovedForAll",
@@ -121,9 +135,12 @@ export interface RelicInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "mintFromContract",
-    values: [string]
+    values: [string, BigNumberish]
   ): string;
-  encodeFunctionData(functionFragment: "mintRelic", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "mintRelic",
+    values: [BigNumberish]
+  ): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "onERC1155BatchReceived",
@@ -173,7 +190,10 @@ export interface RelicInterface extends utils.Interface {
     functionFragment: "setApprovalForAll",
     values: [string, boolean]
   ): string;
-  encodeFunctionData(functionFragment: "setBaseURI", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "setBaseURI",
+    values: [string[]]
+  ): string;
   encodeFunctionData(
     functionFragment: "setItemContract",
     values: [string]
@@ -181,6 +201,10 @@ export interface RelicInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "setTempleWhitelister",
     values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setThresholds",
+    values: [BigNumberish[]]
   ): string;
   encodeFunctionData(
     functionFragment: "setXPProvider",
@@ -230,7 +254,7 @@ export interface RelicInterface extends utils.Interface {
     values: [string]
   ): string;
 
-  decodeFunctionResult(functionFragment: "BASE_URI", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "BASE_URIS", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balances", data: BytesLike): Result;
@@ -256,7 +280,12 @@ export interface RelicInterface extends utils.Interface {
     functionFragment: "getBalanceBatch",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "getRelicInfos",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "getRelicXP", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "givePoints", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "isApprovedForAll",
     data: BytesLike
@@ -313,6 +342,10 @@ export interface RelicInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "setTempleWhitelister",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setThresholds",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -451,7 +484,11 @@ export interface Relic extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
-    BASE_URI(overrides?: CallOverrides): Promise<[string]>;
+    BASE_URIS(
+      arg0: BigNumberish,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[string]>;
 
     approve(
       to: string,
@@ -512,10 +549,21 @@ export interface Relic extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber[]]>;
 
+    getRelicInfos(
+      _relicId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[number, number]>;
+
     getRelicXP(
       _relicId: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
+
+    givePoints(
+      _amount: BigNumberish,
+      _relicId: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
 
     isApprovedForAll(
       owner: string,
@@ -525,10 +573,12 @@ export interface Relic extends BaseContract {
 
     mintFromContract(
       _to: string,
+      _selectedEnclave: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
     mintRelic(
+      _selectedEnclave: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -624,7 +674,7 @@ export interface Relic extends BaseContract {
     ): Promise<ContractTransaction>;
 
     setBaseURI(
-      _newBaseURI: string,
+      _newBaseURIs: string[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -635,6 +685,11 @@ export interface Relic extends BaseContract {
 
     setTempleWhitelister(
       _whiteliser: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setThresholds(
+      _newThresholds: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -703,7 +758,11 @@ export interface Relic extends BaseContract {
     ): Promise<[boolean]>;
   };
 
-  BASE_URI(overrides?: CallOverrides): Promise<string>;
+  BASE_URIS(
+    arg0: BigNumberish,
+    arg1: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<string>;
 
   approve(
     to: string,
@@ -764,10 +823,21 @@ export interface Relic extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber[]>;
 
+  getRelicInfos(
+    _relicId: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<[number, number]>;
+
   getRelicXP(
     _relicId: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
+
+  givePoints(
+    _amount: BigNumberish,
+    _relicId: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
   isApprovedForAll(
     owner: string,
@@ -777,10 +847,12 @@ export interface Relic extends BaseContract {
 
   mintFromContract(
     _to: string,
+    _selectedEnclave: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   mintRelic(
+    _selectedEnclave: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -867,7 +939,7 @@ export interface Relic extends BaseContract {
   ): Promise<ContractTransaction>;
 
   setBaseURI(
-    _newBaseURI: string,
+    _newBaseURIs: string[],
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -878,6 +950,11 @@ export interface Relic extends BaseContract {
 
   setTempleWhitelister(
     _whiteliser: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setThresholds(
+    _newThresholds: BigNumberish[],
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -943,7 +1020,11 @@ export interface Relic extends BaseContract {
   ): Promise<boolean>;
 
   callStatic: {
-    BASE_URI(overrides?: CallOverrides): Promise<string>;
+    BASE_URIS(
+      arg0: BigNumberish,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<string>;
 
     approve(
       to: string,
@@ -1001,10 +1082,21 @@ export interface Relic extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber[]>;
 
+    getRelicInfos(
+      _relicId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[number, number]>;
+
     getRelicXP(
       _relicId: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    givePoints(
+      _amount: BigNumberish,
+      _relicId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     isApprovedForAll(
       owner: string,
@@ -1012,9 +1104,16 @@ export interface Relic extends BaseContract {
       overrides?: CallOverrides
     ): Promise<boolean>;
 
-    mintFromContract(_to: string, overrides?: CallOverrides): Promise<void>;
+    mintFromContract(
+      _to: string,
+      _selectedEnclave: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
-    mintRelic(overrides?: CallOverrides): Promise<void>;
+    mintRelic(
+      _selectedEnclave: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     name(overrides?: CallOverrides): Promise<string>;
 
@@ -1091,7 +1190,10 @@ export interface Relic extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    setBaseURI(_newBaseURI: string, overrides?: CallOverrides): Promise<void>;
+    setBaseURI(
+      _newBaseURIs: string[],
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     setItemContract(
       _itemContract: string,
@@ -1100,6 +1202,11 @@ export interface Relic extends BaseContract {
 
     setTempleWhitelister(
       _whiteliser: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setThresholds(
+      _newThresholds: BigNumberish[],
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1223,7 +1330,11 @@ export interface Relic extends BaseContract {
   };
 
   estimateGas: {
-    BASE_URI(overrides?: CallOverrides): Promise<BigNumber>;
+    BASE_URIS(
+      arg0: BigNumberish,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     approve(
       to: string,
@@ -1284,9 +1395,20 @@ export interface Relic extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    getRelicInfos(
+      _relicId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     getRelicXP(
       _relicId: BigNumberish,
       overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    givePoints(
+      _amount: BigNumberish,
+      _relicId: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     isApprovedForAll(
@@ -1297,10 +1419,12 @@ export interface Relic extends BaseContract {
 
     mintFromContract(
       _to: string,
+      _selectedEnclave: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     mintRelic(
+      _selectedEnclave: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1390,7 +1514,7 @@ export interface Relic extends BaseContract {
     ): Promise<BigNumber>;
 
     setBaseURI(
-      _newBaseURI: string,
+      _newBaseURIs: string[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1401,6 +1525,11 @@ export interface Relic extends BaseContract {
 
     setTempleWhitelister(
       _whiteliser: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setThresholds(
+      _newThresholds: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1470,7 +1599,11 @@ export interface Relic extends BaseContract {
   };
 
   populateTransaction: {
-    BASE_URI(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+    BASE_URIS(
+      arg0: BigNumberish,
+      arg1: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
     approve(
       to: string,
@@ -1534,9 +1667,20 @@ export interface Relic extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    getRelicInfos(
+      _relicId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     getRelicXP(
       _relicId: BigNumberish,
       overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    givePoints(
+      _amount: BigNumberish,
+      _relicId: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     isApprovedForAll(
@@ -1547,10 +1691,12 @@ export interface Relic extends BaseContract {
 
     mintFromContract(
       _to: string,
+      _selectedEnclave: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     mintRelic(
+      _selectedEnclave: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1646,7 +1792,7 @@ export interface Relic extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     setBaseURI(
-      _newBaseURI: string,
+      _newBaseURIs: string[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1657,6 +1803,11 @@ export interface Relic extends BaseContract {
 
     setTempleWhitelister(
       _whiteliser: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setThresholds(
+      _newThresholds: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

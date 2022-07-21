@@ -112,8 +112,8 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     return relics.map((r) => `Relic #${r.id.toNumber()}`).join(', ');
   };
 
-  const mintRelic = async () => {
-    const result = await callRelicFunctionAndDiffRelics((relic) => relic.mintRelic());
+  const mintRelic = async (enclave: BigNumber) => {
+    const result = await callRelicFunctionAndDiffRelics((relic) => relic.mintRelic(enclave));
     if (result && result.added.length > 0) {
       openNotification({
         title: `Minted ${joinRelicLabels(result.added)}`,

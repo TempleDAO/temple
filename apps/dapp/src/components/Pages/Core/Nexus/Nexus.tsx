@@ -64,6 +64,8 @@ const RelicRoutes: FC<{ inventory: ItemInventory }> = (props) => {
   );
 };
 
+enum Enclave{ Logic, Structure, Order, Mystery, Chaos }
+
 const NoRelicPanel = (props: { relics: ItemInventory['relics'] }) => {
   const { relics } = props;
   if (relics.length > 0) {
@@ -75,20 +77,17 @@ const NoRelicPanel = (props: { relics: ItemInventory['relics'] }) => {
     <NexusPanel>
       <NexusPanelRow>
         <span>No Relics</span>
-        <div>
-          <Button isSmall
-            label="Mint Relic"
-            onClick={async () => {
-              const added = await mintRelic();
-              if (added) {
-                navigate(`relic/${added.id.toString()}`);
-              }
-            }}
-          />
-        </div>
       </NexusPanelRow>
 
-      <ItemGrid items={[]} onClick={asyncNoop} />
+      <Button
+        label="Mint Relic"
+        onClick={async () => {
+          const added = await mintRelic(BigNumber.from(Enclave.Structure));
+          if (added) {
+            navigate(`relic/${added.id.toString()}`);
+          }
+        }}
+      />
     </NexusPanel>
   );
 };

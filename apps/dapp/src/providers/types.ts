@@ -165,7 +165,7 @@ export interface WalletState {
 export interface RelicService {
   inventory: Nullable<ItemInventory>;
   updateInventory(): Promise<void>;
-  mintRelic(): Promise<Nullable<RelicData>>;
+  mintRelic(enclave: BigNumber): Promise<Nullable<RelicData>>;
   renounceRelic(relicId: BigNumber): Promise<Nullable<RelicData>>;
   mintRelicItem(itemId: number): Promise<void>;
   equipRelicItems(relicId: BigNumber, items: RelicItemData[]): Promise<void>;
