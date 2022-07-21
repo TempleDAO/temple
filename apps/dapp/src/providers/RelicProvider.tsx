@@ -1,14 +1,13 @@
-import { useContext, createContext, PropsWithChildren, useState } from 'react';
+import { createContext, PropsWithChildren, useContext, useState } from 'react';
 import { ItemInventory, RelicItemData, RelicService } from './types';
 
-import { Relic__factory, RelicItems__factory, Relic, RelicItems } from 'types/typechain';
-import { TEMPLE_RELIC_ADDRESS, TEMPLE_RELIC_ITEMS_ADDRESS } from 'providers/env';
 import { BigNumber, ContractTransaction, Signer } from 'ethers';
-import { NoWalletAddressError } from './errors';
-import { ZERO } from 'utils/bigNumber';
-import { useAccount, useSigner } from 'wagmi';
-import { asyncNoop } from 'utils/helpers';
+import { TEMPLE_RELIC_ADDRESS, TEMPLE_RELIC_ITEMS_ADDRESS } from 'providers/env';
+import { Relic, RelicItems, RelicItems__factory, Relic__factory } from 'types/typechain';
 import { Nullable } from 'types/util';
+import { asyncNoop } from 'utils/helpers';
+import { useAccount, useSigner } from 'wagmi';
+import { NoWalletAddressError } from './errors';
 import { useNotification } from './NotificationProvider';
 
 const INITIAL_STATE: RelicService = {
