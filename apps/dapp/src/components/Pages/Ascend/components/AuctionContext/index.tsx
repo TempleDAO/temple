@@ -105,15 +105,8 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
     watch: true,
   });
 
-  const sellTokenBalance =
-    (_sellTokenBalance.isLoading || _sellTokenBalance.isError || !_sellTokenBalance.data) ?
-    ZERO :
-    _sellTokenBalance.data.value;
-
-  const buyTokenBalance = 
-    (_buyTokenBalance.isLoading || _buyTokenBalance.isError || !_buyTokenBalance.data) ?
-    ZERO :
-    _buyTokenBalance.data.value;
+  const sellTokenBalance = _sellTokenBalance.data?.value || ZERO;
+  const buyTokenBalance = _buyTokenBalance.data?.value || ZERO;
 
   return (
     <AuctionContext.Provider
