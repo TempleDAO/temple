@@ -59,7 +59,7 @@ export const Trade = ({ pool }: Props) => {
         }}
       />
       <TradeWrapper>
-        <TradeHeader>Trade TEMPLE</TradeHeader>
+        <TradeHeader>Trade {state.sell.name}</TradeHeader>
         <Input
           isNumber
           crypto={{ kind: 'value', value: state.sell.symbol }}
