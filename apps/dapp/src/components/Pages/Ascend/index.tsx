@@ -1,8 +1,11 @@
-import { useAscendContext } from 'components/Layouts/Ascend';
+import { useEffect, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+
+import { useTemplePool } from 'hooks/ascend';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { SwapHistory } from './components/SwapHistory';
 import { Chart } from './components/Chart';
-import { useTimeRemaining } from './hooks';
+import { useTimeRemaining } from 'hooks/ascend';
 import { Trade } from './components/Trade';
 import { AuctionContextProvider } from './components/AuctionContext';
 import { ChartInfoBar } from './components/ChartInfoBar';
@@ -12,6 +15,8 @@ import {
   Description,
   ChartTradeSection,
 } from './styles';
+import Loader from 'components/Loader/Loader';
+import { createPool } from 'components/Layouts/Ascend/utils';
 
 interface Props {
   pool: Pool;
@@ -40,8 +45,34 @@ const ActiveAuction = ({ pool }: Props) => {
 };
 
 export const AscendPage = () => {
-  const { pool } = useAscendContext();
+  const { poolAddress } = useParams();
+  const [request, { response, isLoading, error }] = useTemplePool(poolAddress);
+  
+  const pool = useMemo(() => {
+    const pool = response?.data?.pools[0];
+    if (!pool) {
+      return undefined;
+    }
+    return createPool(pool);
+  }, [response]);
+
   const timeRemaining = useTimeRemaining(pool);
+
+  useEffect(() => {
+    request();
+  }, [request]);
+
+  if (isLoading) {
+    return <Loader />;
+  }
+
+  if (error) {
+    return <h3>Something went wrong...</h3>;
+  }
+
+  if (!response) {
+    return null;
+  }
 
   if (!pool) {
     return (

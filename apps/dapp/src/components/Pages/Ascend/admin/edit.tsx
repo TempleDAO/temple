@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { createPool } from 'components/Layouts/Ascend/utils';
 import Loader from 'components/Loader/Loader';
 import { LBPForm } from '../components/LBPForm';
-import { useTemplePool } from '../hooks';
+import { useTemplePool } from 'hooks/ascend';
 
 export const EditLBPPage = () => {
   const { poolAddress } = useParams();
