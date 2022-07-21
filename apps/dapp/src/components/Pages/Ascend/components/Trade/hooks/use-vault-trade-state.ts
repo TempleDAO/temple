@@ -133,11 +133,12 @@ const reducer = (state: TradeState, action: Actions): TradeState => {
       };
     }
     case ActionType.SetTransactionSettings: {
+      console.log(action.payload)
       return {
         ...state,
         quote: {
           ...state.quote,
-          estimateWithSlippage: getSwapLimit(state.quote.estimateWithSlippage, action.payload.slippageTolerance)
+          estimateWithSlippage: getSwapLimit(state.quote.estimate, action.payload.slippageTolerance)
         },
         transactionSettings: {
           ...action.payload,
