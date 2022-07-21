@@ -9,7 +9,7 @@ import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { Pool } from 'components/Layouts/Ascend/types';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
-import { getRemainingTime, getSpotPrice } from 'components/Pages/Ascend/utils';
+import { getRemainingTime, getSpotPrice, getTotalLiquidity } from 'components/Pages/Ascend/utils';
 import { SubgraphPool, GraphResponse } from 'components/Layouts/Ascend/types';
 import { useAuctionContext } from 'components/Pages/Ascend/components/AuctionContext';
 
@@ -119,9 +119,10 @@ export const useTemplePool = (poolAddress = '') => {
   return useSubgraphRequest<GraphResponse>(env.subgraph.balancerV2, createLBPQuery(poolAddress));
 };
 
-export const usePoolSpotPrice = (pool: Pool) => {
+export const usePoolTokenValues = (pool: Pool) => {
   const { sellToken, buyToken, vaultAddress } = useAuctionContext();
   const [spotPrice, setSpotPrice] = useState<BigNumber>();
+  const [totalLiquidity, setTotalLiquidity] = useState<BigNumber>();
 
   const { data: spotPriceData, isLoading } = useContractReads({
     contracts: [{
@@ -161,6 +162,15 @@ export const usePoolSpotPrice = (pool: Pool) => {
         swapFee as any
       )
     );
+
+    setTotalLiquidity(
+      getTotalLiquidity(
+        balances[indexOfSell],
+        balances[indexOfBuy],
+        weights[indexOfSell],
+        weights[indexOfBuy],
+      )
+    );
   }, [
     spotPriceData,
     indexOfBuy,
@@ -170,5 +180,6 @@ export const usePoolSpotPrice = (pool: Pool) => {
   return {
     isLoading,
     spotPrice,
+    totalLiquidity,
   };
 };

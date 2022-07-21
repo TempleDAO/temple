@@ -24,6 +24,21 @@ export const getRemainingTime = (pool?: Pool) => {
   });
 };
 
+const getPrice = (
+  balanceSell: BigNumber,
+  balanceBuy: BigNumber,
+  weightSell: BigNumber,
+  weightBuy: BigNumber,
+): number => {
+  const bs = parseFloat(formatBigNumber(balanceSell));
+  const bb = parseFloat(formatBigNumber(balanceBuy));
+  const ws = parseFloat(formatBigNumber(weightSell));
+  const wb = parseFloat(formatBigNumber(weightBuy));
+
+  const price = (bs / ws) / (bb / wb);
+  return price;
+};
+
 export const getSpotPrice = (
   balanceSell: BigNumber,
   balanceBuy: BigNumber,
@@ -31,14 +46,23 @@ export const getSpotPrice = (
   weightBuy: BigNumber,
   swapFee: BigNumber,
 ): BigNumber => {
-  const bs = parseFloat(formatBigNumber(balanceSell));
-  const bb = parseFloat(formatBigNumber(balanceBuy));
-  const ws = parseFloat(formatBigNumber(weightSell));
-  const wb = parseFloat(formatBigNumber(weightBuy));
-
-  const price = (bs / ws) / (bb / wb);
+  const price = getPrice(balanceSell, balanceBuy, weightSell, weightBuy);
   const fee = (1 / (1 - parseFloat(formatBigNumber(swapFee))));
   const spot = getBigNumberFromString(`${price * fee}`);
 
   return spot;
+};
+
+export const getTotalLiquidity = (
+  balanceSell: BigNumber,
+  balanceBuy: BigNumber,
+  weightSell: BigNumber,
+  weightBuy: BigNumber,
+): BigNumber => {
+  const priceSell = getPrice(balanceSell, balanceBuy, weightSell, weightBuy);
+  const priceBuy = getPrice(balanceBuy, balanceSell, weightBuy, weightSell);
+
+  const bs = parseFloat(formatBigNumber(balanceSell));
+  const bb = parseFloat(formatBigNumber(balanceBuy));
+  return getBigNumberFromString(`${(bs * priceSell) + (bb * priceBuy)}`);
 };

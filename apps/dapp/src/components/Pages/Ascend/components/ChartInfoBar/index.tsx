@@ -1,11 +1,11 @@
 import { format } from 'date-fns';
 import styled from 'styled-components';
 
-import { formatBigNumber } from 'components/Vault/utils';
+import { formatBigNumber, formatTemple } from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { UnstyledList } from 'styles/common';
-import { usePoolSpotPrice } from 'hooks/ascend';
+import { usePoolTokenValues } from 'hooks/ascend';
 import { CircularLoader } from 'components/Loader/CircularLoader';
 import { ZERO } from 'utils/bigNumber';
 
@@ -15,7 +15,7 @@ interface Props {
 
 export const ChartInfoBar = ({ pool }: Props) => {
   const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
-  const { spotPrice, isLoading } = usePoolSpotPrice(pool);
+  const { spotPrice, totalLiquidity, isLoading } = usePoolTokenValues(pool);
 
   return (
     <InfoBar>
@@ -35,7 +35,7 @@ export const ChartInfoBar = ({ pool }: Props) => {
         <InfoLabel>
           TVL
         </InfoLabel>
-        <span>${formatNumber(formatBigNumber(pool.totalLiquidity))}</span>
+        <span>{isLoading ? <CircularLoader /> : <>${formatTemple(totalLiquidity || ZERO)}</>}</span>
       </InfoItem>
       <InfoItem>
         <InfoLabel>

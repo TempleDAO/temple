@@ -14,6 +14,8 @@ interface AuctionContext {
   buyToken: AuctionToken;
   vaultAddress: string;
   toggleTokenPair: () => void;
+  totalLiquidity: BigNumber;
+  isPaused: boolean;
 }
 
 const AuctionContext = createContext<AuctionContext>({
@@ -35,6 +37,8 @@ const AuctionContext = createContext<AuctionContext>({
   },
   toggleTokenPair: noop,
   vaultAddress: '',
+  totalLiquidity: ZERO,
+  isPaused: false,
 });
 
 interface AuctionToken {
@@ -121,6 +125,8 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
         },
         toggleTokenPair,
         vaultAddress,
+        totalLiquidity: ZERO,
+        isPaused: false,
       }}
     >
       {children}
