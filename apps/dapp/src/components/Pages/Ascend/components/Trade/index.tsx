@@ -11,6 +11,7 @@ import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowan
 import { CircularLoader as BaseCircularLoader, CircularLoader } from 'components/Loader/CircularLoader';
 
 import { useVaultTradeState } from './hooks/use-vault-trade-state';
+import { useAuctionContext } from '../AuctionContext';
 
 import {
   TradeWrapper,
@@ -29,17 +30,16 @@ interface Props {
 }
 
 export const Trade = ({ pool }: Props) => {
+  const { buyToken, sellToken, toggleTokenPair, vaultAddress } = useAuctionContext();
   const [transactionSettingsOpen, setTransactionSettingsOpen] = useState(false);
   const {
     swap,
     state,
-    togglePair,
     setSellValue,
-    vaultAddress,
     setTransactionSettings,
   } = useVaultTradeState(pool);
-  const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] = useTokenContractAllowance(state.sell, vaultAddress);
-  const bigSellAmount = getBigNumberFromString(state.sell.value);
+  const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] = useTokenContractAllowance(sellToken, vaultAddress);
+  const bigSellAmount = getBigNumberFromString(state.inputValue);
 
   let receiveEstimate = '';
   if (state.quote.estimate) {
@@ -59,15 +59,15 @@ export const Trade = ({ pool }: Props) => {
         }}
       />
       <TradeWrapper>
-        <TradeHeader>Trade {state.sell.name}</TradeHeader>
+        <TradeHeader>Trade {sellToken.name}</TradeHeader>
         <Input
           isNumber
-          crypto={{ kind: 'value', value: state.sell.symbol }}
+          crypto={{ kind: 'value', value: sellToken.symbol }}
           placeholder="0.00"
-          value={state.sell.value}
-          hint={`Balance: ${formatNumber(formatBigNumber(state.sell.balance as BigNumber))}`}
+          value={state.inputValue}
+          hint={`Balance: ${formatNumber(formatBigNumber(sellToken.balance as BigNumber))}`}
           onHintClick={() => {
-            setSellValue(formatBigNumber(state.sell.balance as BigNumber));
+            setSellValue(formatBigNumber(sellToken.balance as BigNumber));
           }}
           handleChange={(value) => {
             const stringValue = value.toString();
@@ -83,16 +83,16 @@ export const Trade = ({ pool }: Props) => {
         />
         <ToggleButton
           type="button"
-          onClick={() => togglePair()}
+          onClick={() => toggleTokenPair()}
           aria-label="Toggle Inputs"
           disabled={state.quote.loading}
         />
         <Input
           isNumber
           placeholder="0.00"
-          crypto={{ kind: 'value', value: state.buy.symbol }}
+          crypto={{ kind: 'value', value: buyToken.symbol }}
           value={receiveEstimate}
-          hint={`Balance: ${formatNumber(formatBigNumber(state.buy.balance as BigNumber))}`}
+          hint={`Balance: ${formatNumber(formatBigNumber(buyToken.balance as BigNumber))}`}
           disabled
         />
         <SwapControls>
@@ -136,7 +136,7 @@ export const Trade = ({ pool }: Props) => {
             type="button"
             disabled={
               bigSellAmount.eq(ZERO) ||
-              bigSellAmount.gt(state.sell.balance) ||
+              bigSellAmount.gt(sellToken.balance) ||
               state.quote.loading ||
               !state.quote.estimate ||
               state.swap.isLoading
