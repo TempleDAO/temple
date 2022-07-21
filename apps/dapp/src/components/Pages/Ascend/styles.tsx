@@ -1,6 +1,5 @@
 import styled from 'styled-components';
 
-import { UnstyledList } from 'styles/common';
 import { tabletAndAbove } from 'styles/breakpoints';
 
 export const PageWrapper = styled.div`
@@ -11,27 +10,6 @@ export const ContractAddress = styled.div`
   color: ${({ theme }) => theme.palette.brandLight};
   font-size: .75rem;
   margin: -1rem 0 1rem;
-`;
-
-export const InfoBar = styled(UnstyledList)`
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  margin: 0 0 0.5rem;
-`;
-
-export const InfoItem = styled.li`
-  ${({ theme }) => theme.typography.body}
-  display: flex;
-  flex-direction: column;
-  padding: 1rem;
-`;
-
-export const InfoLabel = styled.span`
-  font-weight: 700;
-  text-transform: uppercase;
-  display: block;
-  margin-bottom: 0.25rem;
-  font-size: 0.875rem;
 `;
 
 export const Description = styled.p`

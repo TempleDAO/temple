@@ -1,19 +1,14 @@
-import { format } from 'date-fns';
-
-import { useAuctionContext } from 'components/Layouts/Ascend';
-import { formatBigNumber } from 'components/Vault/utils';
-import { formatNumber } from 'utils/formatter';
+import { useAscendContext } from 'components/Layouts/Ascend';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { SwapHistory } from './components/SwapHistory';
 import { Chart } from './components/Chart';
 import { useTimeRemaining } from './hooks';
 import { Trade } from './components/Trade';
+import { AuctionContextProvider } from './components/AuctionContext';
+import { ChartInfoBar } from './components/ChartInfoBar';
 
 import {
   ContractAddress,
-  InfoBar,
-  InfoItem,
-  InfoLabel,
   Description,
   ChartTradeSection,
 } from './styles';
@@ -23,10 +18,8 @@ interface Props {
 }
 
 const ActiveAuction = ({ pool }: Props) => {
-  const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
-
   return (
-    <div>
+    <>
       <h3>{pool.name}</h3>
       <ContractAddress>
         {pool.address}
@@ -36,43 +29,18 @@ const ActiveAuction = ({ pool }: Props) => {
       </Description>
       <ChartTradeSection>
         <div>
-          <InfoBar>
-            <InfoItem>
-              <InfoLabel>
-                Start Date
-              </InfoLabel>
-              <span>{format(lastUpdate.startTimestamp, 'LLL do')}</span>
-            </InfoItem>
-            <InfoItem>
-              <InfoLabel>
-                End Date
-              </InfoLabel>
-              <span>{format(lastUpdate.endTimestamp, 'LLL do')}</span>
-            </InfoItem>
-            <InfoItem>
-              <InfoLabel>
-                TVL
-              </InfoLabel>
-              <span>${formatNumber(formatBigNumber(pool.totalLiquidity))}</span>
-            </InfoItem>
-            <InfoItem>
-              <InfoLabel>
-                Current Price
-              </InfoLabel>
-              <span>${formatNumber(formatBigNumber(pool.totalLiquidity))}</span>
-            </InfoItem>
-          </InfoBar>
+          <ChartInfoBar pool={pool} />
           <Chart pool={pool} />
         </div>
         <Trade pool={pool} />
       </ChartTradeSection>
       <SwapHistory pool={pool} />
-    </div>
+    </>
   );
 };
 
 export const AscendPage = () => {
-  const { pool } = useAuctionContext();
+  const { pool } = useAscendContext();
   const timeRemaining = useTimeRemaining(pool);
 
   if (!pool) {
@@ -93,6 +61,8 @@ export const AscendPage = () => {
   }
 
   return (
-    <ActiveAuction pool={pool} />
+    <AuctionContextProvider pool={pool}>
+      <ActiveAuction pool={pool} />
+    </AuctionContextProvider>
   );
 };
