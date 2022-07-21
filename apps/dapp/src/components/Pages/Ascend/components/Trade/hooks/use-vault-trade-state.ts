@@ -114,8 +114,8 @@ const reducer = (state: TradeState, action: Actions): TradeState => {
 };
 
 export const useVaultTradeState = (pool: Pool) => {
-  const vaultContract = useVaultContract(pool);
-  const { sellToken, buyToken } = useAuctionContext();
+  const { sellToken, buyToken, vaultAddress } = useAuctionContext();
+  const vaultContract = useVaultContract(pool, vaultAddress);
   const { openNotification } = useNotification();
 
   const [state, dispatch] = useReducer(reducer, {
@@ -215,4 +215,4 @@ export const useVaultTradeState = (pool: Pool) => {
       dispatch({ type: ActionType.SetTransactionSettings, payload: settings });
     },
   };
-}
+};
