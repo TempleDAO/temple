@@ -1,32 +1,21 @@
 import { useEffect, useState } from 'react';
 import { BigNumber, Contract } from 'ethers';
-import { useContractReads } from 'wagmi';
 
-import balancerPoolAbi from 'data/abis/balancerPool.json';
 import balancerVaultAbi from 'data/abis/balancerVault.json';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { useWallet } from 'providers/WalletProvider';
 
-export const useVaultContract = (pool: Pool) => {
+export const useVaultContract = (pool: Pool, vaultAddress: string) => {
   const { wallet, signer } = useWallet();
   const [vaultContract, setVaultContract] = useState<Contract>();
-
-  const { data } = useContractReads({
-    contracts: [{
-      addressOrName: pool.address,
-      contractInterface: balancerPoolAbi,
-      functionName: 'getVault',
-    }],
-  });
-
+  
   useEffect(() => {
-    if (vaultContract || !data || !signer) {
+    if (vaultContract || !vaultAddress || !signer) {
       return;
     }
 
-    const vaultAddress = !!data && data.length > 0 ? data[0] : '';
     setVaultContract(new Contract(vaultAddress as string, balancerVaultAbi, signer));
-  }, [data, vaultContract, signer, setVaultContract]);
+  }, [vaultAddress, vaultContract, signer, setVaultContract]);
 
   return {
     address: vaultContract?.address || '',
