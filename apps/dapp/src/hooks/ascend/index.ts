@@ -9,9 +9,9 @@ import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { Pool } from 'components/Layouts/Ascend/types';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
-import { getRemainingTime, getSpotPrice } from './utils';
+import { getRemainingTime, getSpotPrice } from 'components/Pages/Ascend/utils';
 import { SubgraphPool, GraphResponse } from 'components/Layouts/Ascend/types';
-import { useAuctionContext } from './components/AuctionContext';
+import { useAuctionContext } from 'components/Pages/Ascend/components/AuctionContext';
 
 export const useTimeRemaining = (pool?: Pool) => {
   const [time, setTime] = useState(getRemainingTime(pool));

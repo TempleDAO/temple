@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import * as Sentry from '@sentry/react';
 import { BrowserTracing } from '@sentry/tracing';
 import { CaptureConsole } from '@sentry/integrations';
+
 import { GlobalStyle } from 'styles/GlobalStyle';
 import { AppProvider } from 'providers/AppProvider';
 import NotificationManager from 'components/Notification/NotificationManager';
@@ -28,6 +29,7 @@ import { AscendLayout } from 'components/Layouts/Ascend';
 import { CreateLBPPage } from 'components/Pages/Ascend/admin/create';
 import { EditLBPPage } from 'components/Pages/Ascend/admin/edit';
 import { AscendPage } from 'components/Pages/Ascend';
+import { AscendListPage } from 'components/Pages/AscendList';
 
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
@@ -106,10 +108,11 @@ ReactDOM.render(
               {env.featureFlags.enableAscend && (
                 <>
                   <Route path="ascend/*" element={<AscendLayout />}>
-                    <Route path="" element={<AscendPage />} />
+                    <Route path="" element={<AscendListPage />} />
                     <Route path="admin" element={<PoolListPage />} />
                     <Route path="admin/new" element={<CreateLBPPage />} />
                     <Route path="admin/:poolAddress/*" element={<EditLBPPage />} />
+                    <Route path=":poolAddress" element={<AscendPage />} />
                   </Route>
                 </>
               )}
