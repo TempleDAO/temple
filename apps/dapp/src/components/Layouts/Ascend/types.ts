@@ -28,6 +28,7 @@ export interface SubgraphPool {
     name: string;
     priceRate: string;
     weight: string;
+    decimals: number;
   }[];
   tokensList: string[];
   totalLiquidity: string;
@@ -63,6 +64,7 @@ export type Pool = Omit<SubgraphPool, 'createTime' | 'holdersCount' | 'shares' |
     name: string;
     priceRate: string;
     weight: BigNumber;
+    decimals: number;
   }[];
   totalLiquidity: BigNumber;
   totalSwapFee: BigNumber;
