@@ -28,6 +28,7 @@ export interface SubgraphPool {
     name: string;
     priceRate: string;
     weight: string;
+    decimals: number;
   }[];
   tokensList: string[];
   totalLiquidity: string;

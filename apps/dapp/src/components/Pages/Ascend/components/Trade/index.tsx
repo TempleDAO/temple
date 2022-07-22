@@ -42,7 +42,12 @@ export const Trade = ({ pool }: Props) => {
   } = useVaultTradeState(pool);
 
   const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] = useTokenContractAllowance(sell, vaultAddress);
-  const bigSellAmount = state.inputValue ? DecimalBigNumber.parseUnits(state.inputValue, sell.decimals) : DBN_ZERO;
+  
+  const bigSellAmount = useMemo(() => {
+    return state.inputValue
+      ? DecimalBigNumber.parseUnits(state.inputValue, sell.decimals)
+      : DBN_ZERO;
+  }, [sell, state.inputValue])
 
   const { receiveEstimate, estimateWithSlippage } = useMemo(() => {
     if (!state.quote.estimate) {
