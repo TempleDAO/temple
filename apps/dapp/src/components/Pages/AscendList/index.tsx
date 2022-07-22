@@ -5,7 +5,7 @@ import { useTemplePools } from 'hooks/ascend';
 import Loader from 'components/Loader/Loader';
 
 export const AscendListPage = () => {
-  const [request, { response, isLoading, error }] = useTemplePools(1);
+  const [request, { response, isLoading, error }] = useTemplePools(2);
 
   useEffect(() => {
     request();
@@ -27,6 +27,6 @@ export const AscendListPage = () => {
     return <h3>Nothing here...</h3>;
   }
 
-  const pool = response.data?.pools[0];
+  const pool = response.data?.pools[1];
   return <Navigate replace to={`/dapp/ascend/${pool!.address}`} />;
 };
