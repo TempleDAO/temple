@@ -63,6 +63,7 @@ export type Pool = Omit<SubgraphPool, 'createTime' | 'holdersCount' | 'shares' |
     name: string;
     priceRate: string;
     weight: BigNumber;
+    decimals: number;
   }[];
   totalLiquidity: BigNumber;
   totalSwapFee: BigNumber;

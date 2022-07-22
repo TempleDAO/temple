@@ -3,6 +3,7 @@ import { formatDuration, intervalToDuration } from 'date-fns';
 
 import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
 import { Pool } from 'components/Layouts/Ascend/types';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export const getRemainingTime = (pool?: Pool) => {
   const weights = pool?.weightUpdates || [];
@@ -24,45 +25,29 @@ export const getRemainingTime = (pool?: Pool) => {
   });
 };
 
-const getPrice = (
-  balanceSell: BigNumber,
-  balanceBuy: BigNumber,
-  weightSell: BigNumber,
-  weightBuy: BigNumber,
-): number => {
-  const bs = parseFloat(formatBigNumber(balanceSell));
-  const bb = parseFloat(formatBigNumber(balanceBuy));
-  const ws = parseFloat(formatBigNumber(weightSell));
-  const wb = parseFloat(formatBigNumber(weightBuy));
-
-  const price = (bs / ws) / (bb / wb);
-  return price;
-};
-
 export const getSpotPrice = (
-  balanceSell: BigNumber,
-  balanceBuy: BigNumber,
-  weightSell: BigNumber,
-  weightBuy: BigNumber,
+  balanceSell: DecimalBigNumber,
+  balanceBuy: DecimalBigNumber,
+  weightSell: DecimalBigNumber,
+  weightBuy: DecimalBigNumber,
   swapFee: BigNumber,
 ): BigNumber => {
-  const price = getPrice(balanceSell, balanceBuy, weightSell, weightBuy);
+  const bs = parseFloat(balanceSell.formatUnits());
+  const bb = parseFloat(balanceBuy.formatUnits());
+  const ws = parseFloat(weightSell.formatUnits());
+  const wb = parseFloat(weightBuy.formatUnits());
+
+  // const numerator = balanceSell.div(weightSell, 18);
+  // const denominator = weightSell.div(weightBuy, 18);
+  // const p = numerator.div(denominator, 18);
+
+  const price = (bs / ws) / (bb / wb);
+  // debugger;
+
+  console.log('price', price)
+  // console.log('decimal ', p.formatUnits())
   const fee = (1 / (1 - parseFloat(formatBigNumber(swapFee))));
   const spot = getBigNumberFromString(`${price * fee}`);
 
   return spot;
-};
-
-export const getTotalLiquidity = (
-  balanceSell: BigNumber,
-  balanceBuy: BigNumber,
-  weightSell: BigNumber,
-  weightBuy: BigNumber,
-): BigNumber => {
-  const priceSell = getPrice(balanceSell, balanceBuy, weightSell, weightBuy);
-  const priceBuy = getPrice(balanceBuy, balanceSell, weightBuy, weightSell);
-
-  const bs = parseFloat(formatBigNumber(balanceSell));
-  const bb = parseFloat(formatBigNumber(balanceBuy));
-  return getBigNumberFromString(`${(bs * priceSell) + (bb * priceBuy)}`);
 };

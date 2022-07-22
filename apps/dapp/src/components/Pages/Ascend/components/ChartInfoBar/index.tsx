@@ -15,7 +15,7 @@ interface Props {
 
 export const ChartInfoBar = ({ pool }: Props) => {
   const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
-  const { spotPrice, totalLiquidity, isLoading } = usePoolTokenValues(pool);
+  const { spotPrice, isLoading } = usePoolTokenValues(pool);
 
   return (
     <InfoBar>
@@ -35,7 +35,7 @@ export const ChartInfoBar = ({ pool }: Props) => {
         <InfoLabel>
           TVL
         </InfoLabel>
-        <span>{isLoading ? <CircularLoader /> : <>${formatTemple(totalLiquidity || ZERO)}</>}</span>
+        <span>{isLoading ? <CircularLoader /> : <>${formatTemple(pool.totalLiquidity)}</>}</span>
       </InfoItem>
       <InfoItem>
         <InfoLabel>

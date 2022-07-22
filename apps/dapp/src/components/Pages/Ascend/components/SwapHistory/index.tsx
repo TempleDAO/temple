@@ -156,22 +156,26 @@ export const SwapHistory = ({ pool }: Props) => {
           })}
         </tbody>
       </Table>
-      <button
-        onClick={() => {
-          setCurrentPage((current) => current - 1);
-        }}
-        disabled={currentPage <= 1}
-      >
-        Prev Page
-      </button>
-      <button
-        onClick={() =>{
-          setCurrentPage((current) => current + 1);
-        }}
-        disabled={currentPage === totalPages}
-      >
-        Next Page
-      </button>
+      {totalPages > 0 && (
+        <>
+          <button
+            onClick={() => {
+              setCurrentPage((current) => current - 1);
+            }}
+            disabled={currentPage <= 1}
+          >
+            Prev Page
+          </button>
+          <button
+            onClick={() =>{
+              setCurrentPage((current) => current + 1);
+            }}
+            disabled={currentPage === totalPages}
+          >
+            Next Page
+          </button>
+        </>
+      )}
     </div>
   );
 };
