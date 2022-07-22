@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import styled from 'styled-components';
 
 import { formatBigNumber, formatTemple } from 'components/Vault/utils';
-import { formatNumber } from 'utils/formatter';
+import { formatNumberFixedDecimals } from 'utils/formatter';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { UnstyledList } from 'styles/common';
 import { usePoolTokenValues } from 'hooks/ascend';
@@ -41,7 +41,7 @@ export const ChartInfoBar = ({ pool }: Props) => {
         <InfoLabel>
           Current Price
         </InfoLabel>
-        <span>{isLoading ? <CircularLoader /> : <>${formatNumber(formatBigNumber(spotPrice || ZERO))}</>}</span>
+        <span>{isLoading ? <CircularLoader /> : <>${formatNumberFixedDecimals(formatBigNumber(spotPrice || ZERO), 4)}</>}</span>
       </InfoItem>
     </InfoBar>
   );
