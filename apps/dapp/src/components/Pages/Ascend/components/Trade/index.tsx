@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BigNumber } from 'ethers';
 
 import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
@@ -9,6 +9,7 @@ import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils'
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
 import { CircularLoader as BaseCircularLoader, CircularLoader } from 'components/Loader/CircularLoader';
+import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 import { useVaultTradeState } from './hooks/use-vault-trade-state';
 import { useAuctionContext } from '../AuctionContext';
@@ -30,21 +31,40 @@ interface Props {
 }
 
 export const Trade = ({ pool }: Props) => {
-  const { buyToken, sellToken, toggleTokenPair, vaultAddress } = useAuctionContext();
+  const { swapState: { buy, sell }, toggleTokenPair, vaultAddress, userBalances } = useAuctionContext();
   const [transactionSettingsOpen, setTransactionSettingsOpen] = useState(false);
+
   const {
     swap,
     state,
     setSellValue,
     setTransactionSettings,
   } = useVaultTradeState(pool);
-  const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] = useTokenContractAllowance(sellToken, vaultAddress);
-  const bigSellAmount = getBigNumberFromString(state.inputValue);
 
-  let receiveEstimate = '';
-  if (state.quote.estimate) {
-    receiveEstimate = formatBigNumber(state.quote.estimate);
-  } 
+  const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] = useTokenContractAllowance(sell, vaultAddress);
+  
+  const bigSellAmount = useMemo(() => {
+    return state.inputValue
+      ? DecimalBigNumber.parseUnits(state.inputValue, sell.decimals)
+      : DBN_ZERO;
+  }, [sell, state.inputValue])
+
+  const { receiveEstimate, estimateWithSlippage } = useMemo(() => {
+    if (!state.quote.estimate) {
+      return { receiveEstimate: '', estimateWithSlippage: '' };
+    }
+
+    const receiveEstimate = DecimalBigNumber.fromBN(state.quote.estimate, buy.decimals);
+    const estimateWithSlippage = DecimalBigNumber.fromBN(state.quote.estimateWithSlippage!, buy.decimals);
+
+    return {
+      receiveEstimate: receiveEstimate.formatUnits(),
+      estimateWithSlippage: estimateWithSlippage.formatUnits(),
+    };
+  }, [state.quote, buy]);
+
+  const sellBalance = userBalances[sell.address] || DBN_ZERO;
+  const buyBalance = userBalances[buy.address] || DBN_ZERO;
 
   return (
     <>
@@ -59,15 +79,15 @@ export const Trade = ({ pool }: Props) => {
         }}
       />
       <TradeWrapper>
-        <TradeHeader>Trade {sellToken.name}</TradeHeader>
+        <TradeHeader>Trade {sell.name}</TradeHeader>
         <Input
           isNumber
-          crypto={{ kind: 'value', value: sellToken.symbol }}
+          crypto={{ kind: 'value', value: sell.symbol }}
           placeholder="0.00"
           value={state.inputValue}
-          hint={`Balance: ${formatNumber(formatBigNumber(sellToken.balance as BigNumber))}`}
+          hint={`Balance: ${formatNumber(sellBalance.formatUnits())}`}
           onHintClick={() => {
-            setSellValue(formatBigNumber(sellToken.balance as BigNumber));
+            setSellValue(sellBalance.formatUnits());
           }}
           handleChange={(value) => {
             const stringValue = value.toString();
@@ -90,9 +110,9 @@ export const Trade = ({ pool }: Props) => {
         <Input
           isNumber
           placeholder="0.00"
-          crypto={{ kind: 'value', value: buyToken.symbol }}
+          crypto={{ kind: 'value', value: buy.symbol }}
           value={receiveEstimate}
-          hint={`Balance: ${formatNumber(formatBigNumber(buyToken.balance as BigNumber))}`}
+          hint={`Balance: ${formatNumber(buyBalance.formatUnits())}`}
           disabled
         />
         <SwapControls>
@@ -105,7 +125,7 @@ export const Trade = ({ pool }: Props) => {
             {(!!receiveEstimate && !state.quote.loading) && (
               <>
                 Expected Output: {formatNumberFixedDecimals(receiveEstimate, 3)}<br />
-                Minimum Amount: {formatNumberFixedDecimals(formatBigNumber(state.quote.estimateWithSlippage!), 3)}
+                Minimum Amount: {formatNumberFixedDecimals(estimateWithSlippage, 3)}
               </>
             )}
             {state.quote.loading && (
@@ -135,8 +155,8 @@ export const Trade = ({ pool }: Props) => {
           <SwapButton
             type="button"
             disabled={
-              bigSellAmount.eq(ZERO) ||
-              bigSellAmount.gt(sellToken.balance) ||
+              bigSellAmount.isZero() ||
+              bigSellAmount.gt(sellBalance) ||
               state.quote.loading ||
               !state.quote.estimate ||
               state.swap.isLoading

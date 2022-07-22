@@ -1,9 +1,10 @@
 import { useEffect, useReducer } from 'react';
-import { BigNumber } from 'ethers';
+import { BigNumber, FixedNumber } from 'ethers';
 
 import { Pool } from 'components/Layouts/Ascend/types';
 import { ZERO } from 'utils/bigNumber';
-import { getBigNumberFromString } from 'components/Vault/utils';
+import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
+import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { Nullable } from 'types/util';
 import { useNotification } from 'providers/NotificationProvider';
 
@@ -112,7 +113,7 @@ const reducer = (state: TradeState, action: Actions): TradeState => {
 };
 
 export const useVaultTradeState = (pool: Pool) => {
-  const { sellToken, buyToken, vaultAddress } = useAuctionContext();
+  const { swapState: { sell, buy }, vaultAddress } = useAuctionContext();
   const vaultContract = useVaultContract(pool, vaultAddress);
   const { openNotification } = useNotification();
 
@@ -133,7 +134,7 @@ export const useVaultTradeState = (pool: Pool) => {
     },
   });
 
-  const sellTokenAddress = sellToken.address
+  const sellTokenAddress = sell.address
   useEffect(() => {
     // Clear Quote/Input value when pair changes
     dispatch({ type: ActionType.ResetQuoteState, payload: null });
@@ -151,8 +152,8 @@ export const useVaultTradeState = (pool: Pool) => {
     dispatch({ type: ActionType.SetSwapQuoteLoading, payload: true });
 
     try {
-      const quotes = await vaultContract.getSwapQuote(amount, sellToken.address, buyToken.address);
-      const quote = quotes[buyToken.tokenIndex].abs();
+      const quotes = await vaultContract.getSwapQuote(amount, sell.address, buy.address);
+      const quote = quotes[buy.tokenIndex].abs();
      
       dispatch({
         type: ActionType.SetSwapQuote,
@@ -176,12 +177,12 @@ export const useVaultTradeState = (pool: Pool) => {
     dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: true, error: '' } });
 
     try {
-      const amount = getBigNumberFromString(inputValue);
+      const amount = DecimalBigNumber.parseUnits(inputValue, sell.decimals);
       const deadline = getSwapDeadline(state.transactionSettings.deadlineMinutes);
       const transaction = await vaultContract.swap(
         amount,
-        sellToken.address,
-        buyToken.address,
+        sell.address,
+        buy.address,
         state.quote.estimateWithSlippage!,
         deadline,
       );
@@ -206,8 +207,9 @@ export const useVaultTradeState = (pool: Pool) => {
     swap,
     setSellValue: async (value: string) => {
       dispatch({ type: ActionType.SetSellValue, payload: value });
-      const amount = getBigNumberFromString(value);
-      updateSwapQuote(amount);
+      // const fixed = getBigNumberFromString(value);
+      const bn = DecimalBigNumber.parseUnits(value || '0', sell.decimals);
+      updateSwapQuote(bn.toBN(bn.getDecimals()));
     },
     setTransactionSettings: (settings: TradeState['transactionSettings']) => {
       dispatch({ type: ActionType.SetTransactionSettings, payload: settings });
