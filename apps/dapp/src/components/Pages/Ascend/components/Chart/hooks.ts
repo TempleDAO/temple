@@ -4,6 +4,7 @@ import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { Pool } from 'components/Layouts/Ascend/types';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
+import { useAuctionContext } from '../AuctionContext';
 
 const createQueryFragment = (after: number, before: number) => {
   return `
@@ -64,15 +65,17 @@ export const useLatestPriceData = (pool: Pool) => {
   const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
   const auctionEndSeconds = Number(lastUpdate.endTimestamp) / 1000;
   const auctionStartSeconds = Number(lastUpdate.startTimestamp) / 1000;
-  const mainAsset = pool.tokens[0].address;
-  const accruedAsset = pool.tokens[1].address;
+  // const mainAsset = pool.tokens[0].address;
+  // const accruedAsset = pool.tokens[1].address;
+  const { swapState} = useAuctionContext();
 
+  
   const query = createTokenPricesQuery(
     pool.id,
     auctionEndSeconds,
     auctionStartSeconds,
-    mainAsset,
-    accruedAsset,
+    swapState.buy.address,
+    swapState.sell.address,
   );
 
   return useSubgraphRequest<LatestPriceResponse>(env.subgraph.balancerV2, query);
