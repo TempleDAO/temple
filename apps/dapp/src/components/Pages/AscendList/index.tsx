@@ -5,7 +5,7 @@ import { useTemplePools } from 'hooks/ascend';
 import Loader from 'components/Loader/Loader';
 
 export const AscendListPage = () => {
-  const [request, { response, isLoading, error }] = useTemplePools(1);
+  const [request, { response, isLoading, error }] = useTemplePools(2);
 
   useEffect(() => {
     request();

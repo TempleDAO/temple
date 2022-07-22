@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BigNumber } from 'ethers';
 
 import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
@@ -42,13 +42,21 @@ export const Trade = ({ pool }: Props) => {
   } = useVaultTradeState(pool);
 
   const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] = useTokenContractAllowance(sell, vaultAddress);
-  
   const bigSellAmount = state.inputValue ? DecimalBigNumber.parseUnits(state.inputValue, sell.decimals) : DBN_ZERO;
 
-  let receiveEstimate = '';
-  if (state.quote.estimate) {
-    receiveEstimate = formatBigNumber(state.quote.estimate);
-  }
+  const { receiveEstimate, estimateWithSlippage } = useMemo(() => {
+    if (!state.quote.estimate) {
+      return { receiveEstimate: '', estimateWithSlippage: '' };
+    }
+
+    const receiveEstimate = DecimalBigNumber.fromBN(state.quote.estimate, buy.decimals);
+    const estimateWithSlippage = DecimalBigNumber.fromBN(state.quote.estimateWithSlippage!, buy.decimals);
+
+    return {
+      receiveEstimate: receiveEstimate.formatUnits(),
+      estimateWithSlippage: estimateWithSlippage.formatUnits(),
+    };
+  }, [state.quote, buy]);
 
   const sellBalance = userBalances[sell.address] || DBN_ZERO;
   const buyBalance = userBalances[buy.address] || DBN_ZERO;
@@ -112,7 +120,7 @@ export const Trade = ({ pool }: Props) => {
             {(!!receiveEstimate && !state.quote.loading) && (
               <>
                 Expected Output: {formatNumberFixedDecimals(receiveEstimate, 3)}<br />
-                Minimum Amount: {formatNumberFixedDecimals(formatBigNumber(state.quote.estimateWithSlippage!), 3)}
+                Minimum Amount: {formatNumberFixedDecimals(estimateWithSlippage, 3)}
               </>
             )}
             {state.quote.loading && (

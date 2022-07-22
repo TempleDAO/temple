@@ -5,6 +5,7 @@ import balancerVaultAbi from 'data/abis/balancerVault.json';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { useWallet } from 'providers/WalletProvider';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { formatBigNumber } from 'components/Vault/utils';
 
 export const useVaultContract = (pool: Pool, vaultAddress: string) => {
   const { wallet, signer } = useWallet();
@@ -21,7 +22,7 @@ export const useVaultContract = (pool: Pool, vaultAddress: string) => {
   return {
     address: vaultContract?.address || '',
     isReady: !!vaultContract && !!wallet,
-    async getSwapQuote(amount: DecimalBigNumber, sellAssetAddress: string, buyAssetAddress: string) {
+    async getSwapQuote(amount: BigNumber, sellAssetAddress: string, buyAssetAddress: string) {
       const assetOutIndex = pool.tokensList.findIndex((address) => address === buyAssetAddress);
       const assetInIndex = pool.tokensList.findIndex((address) => address === sellAssetAddress);
 
@@ -31,7 +32,7 @@ export const useVaultContract = (pool: Pool, vaultAddress: string) => {
           poolId: pool.id,
           assetInIndex,
           assetOutIndex,
-          amount: amount.toBN(amount.getDecimals()),
+          amount: amount, //, amount.toBN(amount.getDecimals()),
           userData: '0x',
         }],
         pool.tokensList,
@@ -53,8 +54,8 @@ export const useVaultContract = (pool: Pool, vaultAddress: string) => {
       deadline: BigNumber,
     ) {
       const swap = {
-        poolId: pool.id,
         kind: 0,
+        poolId: pool.id,
         assetIn: sellAssetAddress,
         assetOut: buyAssetAddress,
         amount: amount.toBN(amount.getDecimals()),

@@ -159,7 +159,8 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
     };
   }, {});
 
-  const balances = (vaultTokens!.balances as BigNumber[]).reduce<AuctionContext['balances']>((acc, balance, i) => {
+  const b: BigNumber[] = [] = (vaultTokens || {}).balances
+  const balances = b.reduce<AuctionContext['balances']>((acc, balance, i) => {
     const token = Object.values(swapState).find(({ tokenIndex }) => tokenIndex === i);
     return {
       ...acc,

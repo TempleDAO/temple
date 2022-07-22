@@ -37,15 +37,8 @@ export const getSpotPrice = (
   const ws = parseFloat(weightSell.formatUnits());
   const wb = parseFloat(weightBuy.formatUnits());
 
-  // const numerator = balanceSell.div(weightSell, 18);
-  // const denominator = weightSell.div(weightBuy, 18);
-  // const p = numerator.div(denominator, 18);
-
   const price = (bs / ws) / (bb / wb);
-  // debugger;
 
-  console.log('price', price)
-  // console.log('decimal ', p.formatUnits())
   const fee = (1 / (1 - parseFloat(formatBigNumber(swapFee))));
   const spot = getBigNumberFromString(`${price * fee}`);
 

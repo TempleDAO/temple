@@ -1,9 +1,9 @@
 import { useEffect, useReducer } from 'react';
-import { BigNumber } from 'ethers';
+import { BigNumber, FixedNumber } from 'ethers';
 
 import { Pool } from 'components/Layouts/Ascend/types';
 import { ZERO } from 'utils/bigNumber';
-import { getBigNumberFromString } from 'components/Vault/utils';
+import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
 import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { Nullable } from 'types/util';
 import { useNotification } from 'providers/NotificationProvider';
@@ -140,8 +140,8 @@ export const useVaultTradeState = (pool: Pool) => {
     dispatch({ type: ActionType.ResetQuoteState, payload: null });
   }, [sellTokenAddress, dispatch]);
 
-  const updateSwapQuote = async (amount: DecimalBigNumber) => {
-    if (amount.isZero()) {
+  const updateSwapQuote = async (amount: BigNumber) => {
+    if (amount.eq(ZERO)) {
       dispatch({
         type: ActionType.SetSwapQuote,
         payload: null,
@@ -207,8 +207,9 @@ export const useVaultTradeState = (pool: Pool) => {
     swap,
     setSellValue: async (value: string) => {
       dispatch({ type: ActionType.SetSellValue, payload: value });
-      const amount = value ? DecimalBigNumber.parseUnits(value, sell.decimals) : DBN_ZERO;
-      updateSwapQuote(amount);
+      // const fixed = getBigNumberFromString(value);
+      const bn = DecimalBigNumber.parseUnits(value || '0', sell.decimals);
+      updateSwapQuote(bn.toBN(bn.getDecimals()));
     },
     setTransactionSettings: (settings: TradeState['transactionSettings']) => {
       dispatch({ type: ActionType.SetTransactionSettings, payload: settings });
