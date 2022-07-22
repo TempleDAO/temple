@@ -3,6 +3,7 @@ import { formatDuration, intervalToDuration } from 'date-fns';
 
 import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
 import { Pool } from 'components/Layouts/Ascend/types';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export const getRemainingTime = (pool?: Pool) => {
   const weights = pool?.weightUpdates || [];
@@ -25,18 +26,19 @@ export const getRemainingTime = (pool?: Pool) => {
 };
 
 export const getSpotPrice = (
-  balanceSell: BigNumber,
-  balanceBuy: BigNumber,
-  weightSell: BigNumber,
-  weightBuy: BigNumber,
+  balanceSell: DecimalBigNumber,
+  balanceBuy: DecimalBigNumber,
+  weightSell: DecimalBigNumber,
+  weightBuy: DecimalBigNumber,
   swapFee: BigNumber,
 ): BigNumber => {
-  const bs = parseFloat(formatBigNumber(balanceSell));
-  const bb = parseFloat(formatBigNumber(balanceBuy));
-  const ws = parseFloat(formatBigNumber(weightSell));
-  const wb = parseFloat(formatBigNumber(weightBuy));
+  const bs = parseFloat(balanceSell.formatUnits());
+  const bb = parseFloat(balanceBuy.formatUnits());
+  const ws = parseFloat(weightSell.formatUnits());
+  const wb = parseFloat(weightBuy.formatUnits());
 
   const price = (bs / ws) / (bb / wb);
+
   const fee = (1 / (1 - parseFloat(formatBigNumber(swapFee))));
   const spot = getBigNumberFromString(`${price * fee}`);
 
