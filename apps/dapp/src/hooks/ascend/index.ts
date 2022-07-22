@@ -12,6 +12,7 @@ import { SubGraphResponse } from 'hooks/core/types';
 import { getRemainingTime, getSpotPrice } from 'components/Pages/Ascend/utils';
 import { SubgraphPool, GraphResponse } from 'components/Layouts/Ascend/types';
 import { useAuctionContext } from 'components/Pages/Ascend/components/AuctionContext';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export const useTimeRemaining = (pool?: Pool) => {
   const [time, setTime] = useState(getRemainingTime(pool));
@@ -62,6 +63,7 @@ const POOL_FRAGMENT = `
     weight
     priceRate
     balance
+    decimals
   }
   swaps(first: 1, orderBy: timestamp, orderDirection: desc) {
     timestamp
@@ -119,21 +121,12 @@ export const useTemplePool = (poolAddress = '') => {
   return useSubgraphRequest<GraphResponse>(env.subgraph.balancerV2, createLBPQuery(poolAddress));
 };
 
-export const usePoolSpotPrice = (pool: Pool) => {
-  const { sellToken, buyToken, vaultAddress } = useAuctionContext();
+export const usePoolTokenValues = (pool: Pool) => {
+  const { swapState: { sell, buy }, balances, weights, vaultAddress } = useAuctionContext();
   const [spotPrice, setSpotPrice] = useState<BigNumber>();
 
-  const { data: spotPriceData, isLoading } = useContractReads({
+  const { data: swapData, isLoading } = useContractReads({
     contracts: [{
-      addressOrName: vaultAddress || '',
-      contractInterface: balancerVaultAbi,
-      functionName: 'getPoolTokens',
-      args: [pool.id],
-    }, {
-      addressOrName: pool.address,
-      contractInterface: balancerPoolAbi,
-      functionName: 'getNormalizedWeights',
-    }, {
       addressOrName: pool.address,
       contractInterface: balancerPoolAbi,
       functionName: 'getSwapFeePercentage',
@@ -141,28 +134,29 @@ export const usePoolSpotPrice = (pool: Pool) => {
     enabled: !!vaultAddress
   });
   
-  const indexOfSell = sellToken.tokenIndex;
-  const indexOfBuy = buyToken.tokenIndex;
+  const indexOfSell = sell.tokenIndex;
+  const indexOfBuy = buy.tokenIndex;
   
   useEffect(() => {
-    if (!spotPriceData) {
+    if (!swapData) {
       return;
     }
 
-    const [tokens, weights, swapFee] = spotPriceData;
-    const balances = tokens.balances;
+    const [swapFee] = swapData;
 
     setSpotPrice(
       getSpotPrice(
-        balances[indexOfSell],
-        balances[indexOfBuy],
-        weights[indexOfSell],
-        weights[indexOfBuy],
+        balances[sell.address],
+        balances[buy.address],
+        weights[sell.address],
+        weights[buy.address],
         swapFee as any
       )
     );
   }, [
-    spotPriceData,
+    balances,
+    weights,
+    swapData,
     indexOfBuy,
     indexOfSell,
   ]);
