@@ -4,6 +4,8 @@ import { BigNumber, Contract } from 'ethers';
 import balancerVaultAbi from 'data/abis/balancerVault.json';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { useWallet } from 'providers/WalletProvider';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { formatBigNumber } from 'components/Vault/utils';
 
 export const useVaultContract = (pool: Pool, vaultAddress: string) => {
   const { wallet, signer } = useWallet();
@@ -30,7 +32,7 @@ export const useVaultContract = (pool: Pool, vaultAddress: string) => {
           poolId: pool.id,
           assetInIndex,
           assetOutIndex,
-          amount,
+          amount: amount, //, amount.toBN(amount.getDecimals()),
           userData: '0x',
         }],
         pool.tokensList,
@@ -39,22 +41,24 @@ export const useVaultContract = (pool: Pool, vaultAddress: string) => {
           recipient: wallet!.toLowerCase(),
           fromInternalBalance: false,
           toInternalBalance: false,
-        },
+        }, {
+          gasLimit: 400000,
+        }
       );
     },
     async swap(
-      amount: BigNumber,
+      amount: DecimalBigNumber,
       sellAssetAddress: string,
       buyAssetAddress: string,
       limits: BigNumber,
       deadline: BigNumber,
     ) {
       const swap = {
-        poolId: pool.id,
         kind: 0,
+        poolId: pool.id,
         assetIn: sellAssetAddress,
         assetOut: buyAssetAddress,
-        amount,
+        amount: amount.toBN(amount.getDecimals()),
         userData: '0x',
       };
       
