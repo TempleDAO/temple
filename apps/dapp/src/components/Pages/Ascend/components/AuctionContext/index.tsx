@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, FC } from 'react';
+import { createContext, useContext, useState, FC, useMemo } from 'react';
 import { BigNumber } from 'ethers';
 import { useContractReads, useBalance } from 'wagmi';
 
@@ -123,7 +123,7 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
     enabled: !!vaultAddress
   });
 
-  const [vaultTokens = []] = vaultData || [];
+  const [vaultTokens] = vaultData || [];
 
   const toggleTokenPair = () => setSwapState(({ sell, buy }) => ({
     sell: buy,
@@ -151,22 +151,37 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
     ? DecimalBigNumber.fromBN(_buyTokenBalance.data.value, _buyTokenBalance.data.decimals)
     : DBN_ZERO;
 
-  const weights = tokenWeights.reduce<AuctionContext['weights']>((acc, weight, i) => {
-    const token = Object.values(swapState).find(({ tokenIndex }) => tokenIndex === i);
-    return {
-      ...acc,
-      [token!.address]: DecimalBigNumber.fromBN(weight, 18),
-    };
-  }, {});
+  const weights = useMemo(() => {
+    const { buy, sell } = swapState;
 
-  const b: BigNumber[] = [] = (vaultTokens || {}).balances
-  const balances = b.reduce<AuctionContext['balances']>((acc, balance, i) => {
-    const token = Object.values(swapState).find(({ tokenIndex }) => tokenIndex === i);
+    if (!tokenWeights || tokenWeights.length !== 2) {
+      return {
+        [buy.address]: DBN_ZERO,
+        [sell.address]: DBN_ZERO,
+      };
+    }
+    
     return {
-      ...acc,
-      [token!.address]: DecimalBigNumber.fromBN(balance, token!.decimals),
+      [buy.address]: DecimalBigNumber.fromBN(tokenWeights[buy.tokenIndex] || ZERO, 18),
+      [sell.address]: DecimalBigNumber.fromBN(tokenWeights[sell.tokenIndex] || ZERO, 18),
     };
-  }, {});
+  }, [tokenWeights, swapState]);
+
+  const poolTokenBalances: BigNumber[] = vaultTokens?.balances || [];
+  const balances = useMemo(() => {
+    const { buy, sell } = swapState;
+    if (!poolTokenBalances || tokenWeights.length !== 2) {
+      return {
+        [buy.address]: DBN_ZERO,
+        [sell.address]: DBN_ZERO,
+      };
+    }
+    
+    return {
+      [buy.address]: DecimalBigNumber.fromBN(poolTokenBalances[buy.tokenIndex] || ZERO, buy.decimals),
+      [sell.address]: DecimalBigNumber.fromBN(poolTokenBalances[sell.tokenIndex] || ZERO, sell.decimals),
+    };
+  }, [swapState, poolTokenBalances]);
 
   return (
     <AuctionContext.Provider
