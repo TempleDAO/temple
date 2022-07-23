@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
+import { chain as chains } from 'wagmi';
 
 import { useTemplePool } from 'hooks/ascend';
 import { Pool } from 'components/Layouts/Ascend/types';
@@ -17,6 +18,10 @@ import {
 } from './styles';
 import Loader from 'components/Loader/Loader';
 import { createPool } from 'components/Layouts/Ascend/utils';
+import { useNetwork } from 'wagmi';
+
+const ENV_VARS = import.meta.env;
+const ENV = ENV_VARS.VITE_ENV;
 
 interface Props {
   pool: Pool;
@@ -43,6 +48,7 @@ const ActiveAuction = ({ pool }: Props) => {
 
 export const AscendPage = () => {
   const { poolAddress } = useParams();
+  const { chain } = useNetwork();
   const [request, { response, isLoading, error }] = useTemplePool(poolAddress);
   
   const pool = useMemo(() => {
@@ -61,6 +67,16 @@ export const AscendPage = () => {
 
   if (isLoading) {
     return <Loader />;
+  }
+
+  if (!chain) {
+    return <h3>Please connect your wallet</h3>;
+  }
+
+  if (ENV === 'production' && chain.id !== chains.mainnet.id) {
+    return <h3>Please connect to Ethereum Mainnet...</h3>;
+  } else if (chain.id !== chains.goerli.id) {
+    return <h3>Please connect to Goerli Testnet...</h3>;
   }
 
   if (error) {
