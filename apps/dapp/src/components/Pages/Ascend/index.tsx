@@ -26,9 +26,6 @@ const ActiveAuction = ({ pool }: Props) => {
   return (
     <>
       <h3>{pool.name}</h3>
-      <ContractAddress>
-        {pool.address}
-      </ContractAddress>
       <Description>
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas euismod purus eget feugiat rutrum. Praesent at ante quis felis molestie mattis. Donec eget congue purus. Aenean pretium ex sed convallis tempus. Nam eros erat, cursus quis posuere eget, convallis blandit mi. Morbi vitae quam eget est elementum pretium.
       </Description>
