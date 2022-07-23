@@ -355,6 +355,15 @@ describe("Temple Core Vault", async () => {
     vault.connect(alan).withdraw(toAtto(100));
   })
 
+  it.only('Does not allow withdraw without owning vault erc20', async () => {
+    await vault.connect(alan).deposit(toAtto(100));
+
+    await mineForwardSeconds(60*10);
+
+    expect(await vault.canExit()).true;
+    expect(vault.connect(ben).withdraw(toAtto(100))).to.be.revertedWith("ERC20: burn amount exceeds balance");
+  })
+
   mkRebasingERC20TestSuite(async () => {
     await vault.connect(alan).deposit(toAtto(300));
     await vault.connect(ben).deposit(toAtto(300));
