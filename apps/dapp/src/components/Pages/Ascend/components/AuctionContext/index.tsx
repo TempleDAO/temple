@@ -25,8 +25,8 @@ interface AuctionContext {
   vaultAddress: string;
   isPaused: boolean;
 
-  weights: TokenMap<DecimalBigNumber>;
-  balances: TokenMap<DecimalBigNumber>;
+  weights?: TokenMap<DecimalBigNumber>;
+  balances?: TokenMap<DecimalBigNumber>;
 
   userBalances: TokenMap<DecimalBigNumber>;
 }
@@ -154,11 +154,8 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
   const weights = useMemo(() => {
     const { buy, sell } = swapState;
 
-    if (!tokenWeights || tokenWeights.length !== 2) {
-      return {
-        [buy.address]: DBN_ZERO,
-        [sell.address]: DBN_ZERO,
-      };
+    if (tokenWeights?.length !== 2) {
+      return undefined;
     }
     
     return {
@@ -170,11 +167,8 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
   const poolTokenBalances: BigNumber[] = vaultTokens?.balances || [];
   const balances = useMemo(() => {
     const { buy, sell } = swapState;
-    if (!poolTokenBalances || tokenWeights.length !== 2) {
-      return {
-        [buy.address]: DBN_ZERO,
-        [sell.address]: DBN_ZERO,
-      };
+    if (poolTokenBalances?.length !== 2) {
+      return undefined;
     }
     
     return {
