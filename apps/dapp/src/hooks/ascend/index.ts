@@ -143,7 +143,10 @@ export const usePoolTokenValues = (pool: Pool) => {
     }
 
     const [swapFee] = swapData;
-
+    if (!swapFee) {
+      return;
+    }
+    
     setSpotPrice(
       getSpotPrice(
         balances[sell.address],

@@ -27,6 +27,6 @@ export const AscendListPage = () => {
     return <h3>Nothing here...</h3>;
   }
 
-  const pool = response.data?.pools[1];
+  const pool = response.data?.pools[0];
   return <Navigate replace to={`/dapp/ascend/${pool!.address}`} />;
 };
