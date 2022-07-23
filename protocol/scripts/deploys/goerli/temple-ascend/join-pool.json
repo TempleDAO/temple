@@ -1,0 +1,17 @@
+{
+    "network": "goerli",
+    "poolId": "0x5437de6b2111173b8c25df60b7b81a0982ab6316000200000000000000000090",
+    "fromInternalBalance": false,
+    "joinKind": "EXACT_TOKENS_IN_FOR_BPT_OUT",
+    "slippageTolerancePercent": "1.0",
+    "tokens": {
+        "0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf": {
+            "amount": "100",
+            "allowance": "-1"
+        },
+        "0x78deca24cba286c0f8d56370f5406b48cfce2f86": {
+            "amount": "100",
+            "allowance": "-1"
+        }
+    }
+}
