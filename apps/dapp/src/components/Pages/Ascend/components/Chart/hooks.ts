@@ -65,8 +65,8 @@ export const useLatestPriceData = (pool: Pool) => {
   const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
   const auctionEndSeconds = Number(lastUpdate.endTimestamp) / 1000;
   const auctionStartSeconds = Number(lastUpdate.startTimestamp) / 1000;
-  // const mainAsset = pool.tokens[0].address;
-  // const accruedAsset = pool.tokens[1].address;
+  const mainAsset = pool.tokens[0].address;
+  const accruedAsset = pool.tokens[1].address;
   const { swapState} = useAuctionContext();
 
   
@@ -74,8 +74,8 @@ export const useLatestPriceData = (pool: Pool) => {
     pool.id,
     auctionEndSeconds,
     auctionStartSeconds,
-    swapState.buy.address,
-    swapState.sell.address,
+    mainAsset,
+    accruedAsset,
   );
 
   return useSubgraphRequest<LatestPriceResponse>(env.subgraph.balancerV2, query);
