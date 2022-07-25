@@ -3,7 +3,6 @@ import { useContractReads } from 'wagmi';
 import { BigNumber } from 'ethers';
 
 import balancerPoolAbi from 'data/abis/balancerPool.json';
-import balancerVaultAbi from 'data/abis/balancerVault.json';
 
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { Pool } from 'components/Layouts/Ascend/types';
@@ -12,7 +11,6 @@ import { SubGraphResponse } from 'hooks/core/types';
 import { getRemainingTime, getSpotPrice } from 'components/Pages/Ascend/utils';
 import { SubgraphPool, GraphResponse } from 'components/Layouts/Ascend/types';
 import { useAuctionContext } from 'components/Pages/Ascend/components/AuctionContext';
-import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export const useTimeRemaining = (pool?: Pool) => {
   const [time, setTime] = useState(getRemainingTime(pool));

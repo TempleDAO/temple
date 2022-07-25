@@ -40,6 +40,11 @@ const createTokenPricesQuery = (
     query: `
       query ($auctionId: String, $first: Int, $skip: Int, $before: Int, $asset: String, $pricingAsset: String) {
         ${fragments.join('\n ')}
+        
+        joinExits: joinExits(where: { pool: $auctionId, timestamp_lt: ${after} }) {
+          id
+          amounts
+        }
       }
     `,
     variables: {
@@ -66,7 +71,7 @@ export const useLatestPriceData = (pool: Pool) => {
   const auctionStartSeconds = Number(lastUpdate.startTimestamp) / 1000;
   const mainAsset = pool.tokens[0].address;
   const accruedAsset = pool.tokens[1].address;
-
+  
   const query = createTokenPricesQuery(
     pool.id,
     auctionEndSeconds,

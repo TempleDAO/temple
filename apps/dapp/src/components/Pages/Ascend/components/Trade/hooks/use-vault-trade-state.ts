@@ -207,7 +207,7 @@ export const useVaultTradeState = (pool: Pool) => {
     swap,
     setSellValue: async (value: string) => {
       dispatch({ type: ActionType.SetSellValue, payload: value });
-      // const fixed = getBigNumberFromString(value);
+      
       const bn = DecimalBigNumber.parseUnits(value || '0', sell.decimals);
       updateSwapQuote(bn.toBN(bn.getDecimals()));
     },
