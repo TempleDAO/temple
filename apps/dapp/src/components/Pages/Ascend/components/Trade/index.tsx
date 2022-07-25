@@ -28,7 +28,14 @@ interface Props {
 }
 
 export const Trade = ({ pool }: Props) => {
-  const { swapState: { buy, sell }, toggleTokenPair, vaultAddress, userBalances, isPaused } = useAuctionContext();
+  const {
+    swapState: { buy, sell },
+    toggleTokenPair,
+    vaultAddress,
+    userBalances,
+    isPaused,
+  } = useAuctionContext();
+
   const [transactionSettingsOpen, setTransactionSettingsOpen] = useState(false);
 
   const {
@@ -64,6 +71,7 @@ export const Trade = ({ pool }: Props) => {
   const buyBalance = userBalances[buy.address] || DBN_ZERO;
 
   if (isPaused) {
+    console.log(isPaused)
     return (
       <Wrapper verticalAlignment="top">
         <h3>Paused!</h3>
