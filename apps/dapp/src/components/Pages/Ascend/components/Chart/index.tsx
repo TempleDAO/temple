@@ -12,7 +12,6 @@ import {
   ChartLabel,
   LineMarkSeries,
 } from 'react-vis';
-import { curveCatmullRom } from 'd3-shape';
 
 import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
 import { formatNumberFixedDecimals } from 'utils/formatter';
@@ -41,21 +40,26 @@ export const Chart = ({ pool }: Props) => {
       .map((value) => ({
         x: Number(value[0].timestamp) * 1000,
         y: Number(value[0].price),
-      }));
+      })).sort((a, b) => {
+        return a.x - b.x;
+      });
+
+    const greatestPricePoint = [...points].sort((a, b) => b.y - a.y)[0];
+    const ceiling = greatestPricePoint?.y ? greatestPricePoint.y : 0;
+    const yDomain = points.length > 0 ? [0, ceiling + (ceiling * 0.1)] : null;
 
     const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
     const lastUpdateEnd = lastUpdate.endTimestamp.getTime();
     const lastUpdateStart = lastUpdate.startTimestamp.getTime();
     const lbpLength = lastUpdateEnd - lastUpdateStart;
-
-    const sortedDesc = points.sort((a, b) => b.y - a.y);
-    const ceiling = sortedDesc.length > 0 ? sortedDesc[0].y : 0;
-    const yDomain = points.length > 0 ? [0, ceiling + (ceiling * 0.1)] : null;
-   
-    const [buy, sell] = pool.tokensList;
+    const xDomain = [lastUpdateStart, lastUpdateEnd + (lbpLength * 0.05)];
+    
     const predicted = [];
     if (balances && points.length > 0) {
       try {
+        const [buy, sell] = pool.tokensList;
+        const lastPoint = points[points.length - 1];
+    
         const spotPriceEstimate = getSpotPrice(
           balances[sell]!,
           balances[buy]!,
@@ -65,10 +69,7 @@ export const Chart = ({ pool }: Props) => {
         );
 
         if (spotPriceEstimate) {
-          predicted.push({
-            y: points[points.length - 1].y,
-            x: points[points.length - 1].x,
-          });
+          predicted.push(lastPoint);
 
           predicted.push({
             y: formatNumberFixedDecimals(formatBigNumber(spotPriceEstimate), 4),
@@ -85,7 +86,7 @@ export const Chart = ({ pool }: Props) => {
       data: points,
       predicted,
       yDomain,
-      xDomain: [lastUpdateStart, lastUpdateEnd + (lbpLength * 0.05)],
+      xDomain,
     };
   }, [pool, response]);
 
@@ -161,7 +162,6 @@ export const Chart = ({ pool }: Props) => {
         <LineSeries
           data={data}
           color={theme.palette.brand }
-          curve={curveCatmullRom}
           // @ts-ignore
           strokeWidth={2}
           onNearestX={onNearestX}
@@ -169,7 +169,6 @@ export const Chart = ({ pool }: Props) => {
         <LineMarkSeries
           data={predicted}
           color={theme.palette.brandLight}
-          curve={curveCatmullRom}
           strokeStyle="dashed"
           // @ts-ignore
           strokeWidth={1}
