@@ -12,6 +12,7 @@ import {
   ChartLabel,
   LineMarkSeries,
 } from 'react-vis';
+import { curveCatmullRom } from 'd3-shape';
 
 import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
 import { formatNumberFixedDecimals } from 'utils/formatter';
@@ -45,7 +46,7 @@ export const Chart = ({ pool }: Props) => {
       });
 
     const greatestPricePoint = [...points].sort((a, b) => b.y - a.y)[0];
-    const ceiling = greatestPricePoint?.y ? greatestPricePoint.y : 0;
+    const ceiling = greatestPricePoint?.y || 0;
     const yDomain = points.length > 0 ? [0, ceiling + (ceiling * 0.1)] : null;
 
     const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
@@ -161,7 +162,8 @@ export const Chart = ({ pool }: Props) => {
         />
         <LineSeries
           data={data}
-          color={theme.palette.brand }
+          color={theme.palette.brand}
+          curve={curveCatmullRom}
           // @ts-ignore
           strokeWidth={2}
           onNearestX={onNearestX}
@@ -170,6 +172,7 @@ export const Chart = ({ pool }: Props) => {
           data={predicted}
           color={theme.palette.brandLight}
           strokeStyle="dashed"
+          curve={curveCatmullRom}
           // @ts-ignore
           strokeWidth={1}
         />
