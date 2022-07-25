@@ -36,10 +36,12 @@ export const Chart = ({ pool }: Props) => {
         x: Number(value[0].timestamp) * 1000,
         y: Number(value[0].price),
       }));
+
     
+    const sortedDesc = points.sort((a, b) => b.y - a.y);
     const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
-    const ceiling = points.length > 0 ? points[points.length - 1].y : 0;
-    const yDomain = points.length > 0 ? [0, ceiling + (ceiling * .5)] : null;
+    const ceiling = sortedDesc.length > 0 ? sortedDesc[0].y : 0;
+    const yDomain = points.length > 0 ? [0, ceiling + (ceiling * 0.1)] : null;
 
     return {
       data: points,
