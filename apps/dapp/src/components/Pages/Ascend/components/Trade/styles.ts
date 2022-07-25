@@ -2,11 +2,11 @@ import styled from 'styled-components';
 
 import { buttonResets, flexCenter } from 'styles/mixins';
 
-export const TradeWrapper = styled.div`
+export const Wrapper = styled.div<{ verticalAlignment?: 'top' | 'center' }>`
   padding: 28px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: ${({ verticalAlignment = 'center' }) => verticalAlignment};
   flex-direction: column;
   border-radius: 1rem;
   background: #1D1A1A;
