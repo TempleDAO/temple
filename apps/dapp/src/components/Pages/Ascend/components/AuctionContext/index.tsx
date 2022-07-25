@@ -104,14 +104,10 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
       addressOrName: pool.address,
       contractInterface: balancerPoolAbi,
       functionName: 'getNormalizedWeights',
-    }, {
-      addressOrName: pool.address,
-      contractInterface: balancerPoolAbi,
-      functionName: 'getSwapFeePercentage',
     }],
   });
 
-  const [vaultAddress = '', pausedState = [], tokenWeights = [], swapFee = ZERO] = poolData || [];
+  const [vaultAddress = '', pausedState = [], tokenWeights = []] = poolData || [];
 
   const { data: vaultData } = useContractReads({
     contracts: [{
@@ -192,7 +188,7 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
 
         toggleTokenPair,
         vaultAddress: vaultAddress as string,
-        isPaused: pausedState[0] || true,
+        isPaused: pausedState ? pausedState.paused : true,
       }}
     >
       {children}
