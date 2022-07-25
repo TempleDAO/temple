@@ -10,6 +10,7 @@ import { SubGraphResponse } from 'hooks/core/types';
 import { tabletAndAbove } from 'styles/breakpoints';
 import Loader from 'components/Loader/Loader';
 import TruncatedAddress from 'components/TruncatedAddress';
+import { buttonResets } from 'styles/mixins';
 
 const SWAPS_PER_PAGE = 10;
 
@@ -93,7 +94,7 @@ export const SwapHistory = ({ pool }: Props) => {
     return <h3>Error loading swap history...</h3>;
   }
 
-  const mainToken = pool.tokens[0].symbol;
+  const mainToken = pool.tokens[0].address;
   const swaps = response?.data?.swaps || [];
   const swapCount = Number(pool.swapsCount || 0);
   const totalPages = Math.ceil(swapCount / SWAPS_PER_PAGE);
@@ -126,7 +127,7 @@ export const SwapHistory = ({ pool }: Props) => {
         </THead>
         <tbody>
           {swaps.map((swap) => {
-            const isSell = swap.tokenInSym === mainToken;
+            const isSell = swap.tokenIn === mainToken;
             const price = isSell ? 
               formatNumberFixedDecimals(Number(swap.tokenAmountOut) / Number(swap.tokenAmountIn), 4) :
               formatNumberFixedDecimals(Number(swap.tokenAmountIn) / Number(swap.tokenAmountOut), 4);
@@ -158,22 +159,22 @@ export const SwapHistory = ({ pool }: Props) => {
       </Table>
       {totalPages > 0 && (
         <>
-          <button
+          <PagingButton
             onClick={() => {
               setCurrentPage((current) => current - 1);
             }}
             disabled={currentPage <= 1}
           >
             Prev Page
-          </button>
-          <button
+          </PagingButton>
+          <PagingButton
             onClick={() =>{
               setCurrentPage((current) => current + 1);
             }}
             disabled={currentPage === totalPages}
           >
             Next Page
-          </button>
+          </PagingButton>
         </>
       )}
     </div>
@@ -209,4 +210,10 @@ const THead = styled.thead`
   th {
     text-align: left;
   }
+`;
+
+const PagingButton = styled.button`
+  ${buttonResets}
+
+  background: transparent;
 `;
