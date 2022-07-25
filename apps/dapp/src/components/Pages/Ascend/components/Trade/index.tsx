@@ -134,7 +134,10 @@ export const Trade = ({ pool }: Props) => {
               </>
             )}
           </ReceivedValues>
-          <SlippageButton type="button" onClick={() => setTransactionSettingsOpen(true)}>
+          <SlippageButton
+            type="button"
+            onClick={() => setTransactionSettingsOpen(true)}
+          >
             {state.transactionSettings.slippageTolerance}%
           </SlippageButton>
         </SwapControls>
@@ -142,7 +145,8 @@ export const Trade = ({ pool }: Props) => {
           <SwapButton
             type="button"
             disabled={
-              allowanceIsLoading
+              allowanceIsLoading ||
+              state.swap.isLoading
             }
             onClick={() => {
               increaseAllowance();
