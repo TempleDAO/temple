@@ -36,11 +36,16 @@ const createTokenPricesQuery = (
     currentBefore += 3600;
   }
   fragments.push(createQueryFragment(currentBefore - 3600, currentBefore));
-
+  console.log(after)
   return {
     query: `
       query ($auctionId: String, $first: Int, $skip: Int, $before: Int, $asset: String, $pricingAsset: String) {
         ${fragments.join('\n ')}
+        
+        joinExits: joinExits(where: { pool: $auctionId, timestamp_lt: ${after} }) {
+          id
+          amounts
+        }
       }
     `,
     variables: {
