@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
+import styled from 'styled-components';
 import {
   FlexibleXYPlot,
   XAxis,
@@ -53,7 +54,7 @@ export const Chart = ({ pool }: Props) => {
    
     const [buy, sell] = pool.tokensList;
     const predicted = [];
-    if (balances) {
+    if (balances && points.length > 0) {
       try {
         const spotPriceEstimate = getSpotPrice(
           balances[sell]!,
@@ -123,70 +124,78 @@ export const Chart = ({ pool }: Props) => {
   }
 
   return (
-    <FlexibleXYPlot
-      xType="time"
-      dontCheckIfEmpty
-      xDomain={xDomain}
-      yDomain={yDomain}
-      onMouseLeave={onMouseLeave}
-      height={400}
-      margin={{ right: 20}}
-    >
-      <VerticalGridLines style={{ stroke: theme.palette.brand25 }} />
-      <HorizontalGridLines style={{ stroke: theme.palette.brand25 }} />
-      <XAxis
-        style={{
-          line: { stroke: theme.palette.brand },
-          ticks: { stroke: theme.palette.brand },
-          stroke: theme.palette.brand,
-          text: {
-            stroke: 'none',
-            fill: theme.palette.brand,
-            fontSize: 10,
-          },
-        }}
-        tickTotal={8}
-      />
-      <YAxis
-        style={{
-          line: { stroke: theme.palette.brand },
-          ticks: { stroke: theme.palette.brand },
-          text: { stroke: 'none', fill: theme.palette.brand, fontWeight: 600 },
-        }}
-        tickTotal={4}
-        tickFormat={(t) => `$${t}`}
-      />
-      <LineSeries
-        data={data}
-        color={theme.palette.brand }
-        curve={curveCatmullRom}
-        // @ts-ignore
-        strokeWidth={2}
-        onNearestX={onNearestX}
-      />
-      <LineMarkSeries
-        data={predicted}
-        color={theme.palette.brandLight}
-        curve={curveCatmullRom}
-        strokeStyle="dashed"
-        // @ts-ignore
-        strokeWidth={1}
-      />
-      <Crosshair
-        values={crosshairValues}
-        titleFormat={([{ x }]: Point[]) => {
-          return ({
-            title: 'date',
-            value: format(x, 'd LLL'),
-          });
-        }}
-        itemsFormat={([{ y }]: Point[]) => {
-          const value = formatNumberFixedDecimals(formatBigNumber(getBigNumberFromString(`${y}`)), 4);
-          return [
-            { title: 'price', value },
-          ];
-        }}
-      />
-    </FlexibleXYPlot>
+    <ChartWrapper>
+      <FlexibleXYPlot
+        xType="time"
+        dontCheckIfEmpty
+        xDomain={xDomain}
+        yDomain={yDomain}
+        onMouseLeave={onMouseLeave}
+        height={400}
+        margin={{ right: 20}}
+      >
+        <VerticalGridLines style={{ stroke: theme.palette.brand25 }} />
+        <HorizontalGridLines style={{ stroke: theme.palette.brand25 }} />
+        <XAxis
+          style={{
+            line: { stroke: theme.palette.brand },
+            ticks: { stroke: theme.palette.brand },
+            stroke: theme.palette.brand,
+            text: {
+              stroke: 'none',
+              fill: theme.palette.brand,
+              fontSize: 10,
+            },
+          }}
+          tickTotal={8}
+        />
+        <YAxis
+          style={{
+            line: { stroke: theme.palette.brand },
+            ticks: { stroke: theme.palette.brand },
+            text: { stroke: 'none', fill: theme.palette.brand, fontWeight: 600 },
+          }}
+          tickTotal={4}
+          tickFormat={(t) => `$${t}`}
+        />
+        <LineSeries
+          data={data}
+          color={theme.palette.brand }
+          curve={curveCatmullRom}
+          // @ts-ignore
+          strokeWidth={2}
+          onNearestX={onNearestX}
+        />
+        <LineMarkSeries
+          data={predicted}
+          color={theme.palette.brandLight}
+          curve={curveCatmullRom}
+          strokeStyle="dashed"
+          // @ts-ignore
+          strokeWidth={1}
+        />
+        <Crosshair
+          values={crosshairValues}
+          titleFormat={([{ x }]: Point[]) => {
+            return ({
+              title: 'date',
+              value: format(x, 'd LLL'),
+            });
+          }}
+          itemsFormat={([{ y }]: Point[]) => {
+            const value = formatNumberFixedDecimals(formatBigNumber(getBigNumberFromString(`${y}`)), 4);
+            return [
+              { title: 'price', value },
+            ];
+          }}
+        />
+      </FlexibleXYPlot>
+    </ChartWrapper>
   );
 };
+
+const ChartWrapper = styled.div`
+  .rv-crosshair__line {
+    background: ${theme.palette.brand50} !important;
+  }
+`;
