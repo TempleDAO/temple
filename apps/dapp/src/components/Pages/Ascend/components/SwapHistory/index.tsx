@@ -127,7 +127,6 @@ export const SwapHistory = ({ pool }: Props) => {
         </THead>
         <tbody>
           {swaps.map((swap) => {
-            console.log(swap)
             const isSell = swap.tokenIn === mainToken;
             const price = isSell ? 
               formatNumberFixedDecimals(Number(swap.tokenAmountOut) / Number(swap.tokenAmountIn), 4) :
