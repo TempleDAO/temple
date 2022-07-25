@@ -28,7 +28,7 @@ export const Chart = ({ pool }: Props) => {
   const [request, { response, isLoading }] = useLatestPriceData(pool);
 
   const { data, yDomain, xDomain } = useMemo(() => {
-    const {joinExists, ...data} = (response?.data || {})
+    const {joinExits, ...data} = (response?.data || {})
 
     const points = Object.values(data)
       .filter((value) => value.length > 0)
@@ -38,10 +38,12 @@ export const Chart = ({ pool }: Props) => {
       }));
     
     const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
+    const ceiling = points.length > 0 ? points[points.length - 1].y : 0;
+    const yDomain = points.length > 0 ? [0, ceiling + (ceiling * .5)] : null;
 
     return {
       data: points,
-      yDomain: [0, 1],
+      yDomain,
       xDomain: [lastUpdate.startTimestamp.getTime(), lastUpdate.endTimestamp.getTime()],
     }
   }, [pool, response]);
