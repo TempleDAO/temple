@@ -16,23 +16,7 @@ export interface CreatePoolParams {
 }
 
 export const useFactoryContract = () => {
-  const { signer } = useWallet();
-
-  const [ownerAddress, setOwnerAddress] = useState<string>();
-
-  useEffect(() => {
-    if (!signer) {
-      return;
-    }
-
-    (async () => {
-      const ownerAddress = await signer.getAddress();
-      // setOwnerAddress(ownerAddress);
-      setOwnerAddress('0xad2da3dc8b6e5a69cb9691f4540d8835a45edfea');
-    })();
-
-    return () => {};
-  }, [signer]);
+  const { signer, wallet } = useWallet();
 
   if (!signer) {
     return {
@@ -49,12 +33,11 @@ export const useFactoryContract = () => {
   const [isCreatePoolLoading, setIsCreatePoolLoading] = useState(false);
   const [createPoolError, setCreatePoolError] = useState<null | string>(null);
 
-  // TODO: Find correct address and ABI
+  // TODO: Move to env var
   const lbpFactoryContractAddress = '0xb48Cc42C45d262534e46d5965a9Ac496F1B7a830';
   const lbpFactoryContract: Contract = new Contract(lbpFactoryContractAddress, liquidityBootstrappingPoolAbi, signer);
 
   const createPoolHandler = async (params: CreatePoolParams) => {
-    // TODO: Cleanup the interface
     const weight1 = parseEther(params.weights[0].toString());
     const weight2 = parseEther(params.weights[1].toString());
 
@@ -66,7 +49,7 @@ export const useFactoryContract = () => {
         params.tokenAddresses,
         [weight1, weight2],
         parseEther((params.feePercentage / 100).toString()),
-        ownerAddress,
+        wallet,
         true,
         {
           gasLimit: 400000, // TODO: Proper gas limit?
