@@ -76,6 +76,7 @@ export const Chart = ({ pool }: Props) => {
         }
       } catch (err) {
         // intentionally empty
+        console.error('Failed to calculate predicted chart data points');
       }
     }
     
