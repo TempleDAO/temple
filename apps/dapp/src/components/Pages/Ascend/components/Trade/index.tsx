@@ -1,11 +1,8 @@
 import { useMemo, useState } from 'react';
-import { BigNumber } from 'ethers';
 
 import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { Input } from 'components/Input/Input';
-import { ZERO } from 'utils/bigNumber';
-import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
 import { CircularLoader as BaseCircularLoader, CircularLoader } from 'components/Loader/CircularLoader';
@@ -15,7 +12,7 @@ import { useVaultTradeState } from './hooks/use-vault-trade-state';
 import { useAuctionContext } from '../AuctionContext';
 
 import {
-  TradeWrapper,
+  Wrapper,
   TradeHeader,
   SwapControls,
   ToggleButton,
@@ -31,7 +28,14 @@ interface Props {
 }
 
 export const Trade = ({ pool }: Props) => {
-  const { swapState: { buy, sell }, toggleTokenPair, vaultAddress, userBalances } = useAuctionContext();
+  const {
+    swapState: { buy, sell },
+    toggleTokenPair,
+    vaultAddress,
+    userBalances,
+    isPaused,
+  } = useAuctionContext();
+
   const [transactionSettingsOpen, setTransactionSettingsOpen] = useState(false);
 
   const {
@@ -66,6 +70,15 @@ export const Trade = ({ pool }: Props) => {
   const sellBalance = userBalances[sell.address] || DBN_ZERO;
   const buyBalance = userBalances[buy.address] || DBN_ZERO;
 
+  if (isPaused) {
+    return (
+      <Wrapper verticalAlignment="top">
+        <h3>Paused!</h3>
+        <p>This event is currently paused.</p>
+      </Wrapper>
+    );
+  }
+
   return (
     <>
       <TransactionSettingsModal
@@ -78,7 +91,7 @@ export const Trade = ({ pool }: Props) => {
           setTransactionSettings({ slippageTolerance, deadlineMinutes });
         }}
       />
-      <TradeWrapper>
+      <Wrapper>
         <TradeHeader>Trade {sell.name}</TradeHeader>
         <Input
           isNumber
@@ -177,7 +190,7 @@ export const Trade = ({ pool }: Props) => {
             {state.swap.error}
           </ErrorMessage>
         )}
-      </TradeWrapper>
+      </Wrapper>
     </>
   );
 };
