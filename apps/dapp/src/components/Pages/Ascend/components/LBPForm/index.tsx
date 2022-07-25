@@ -67,64 +67,11 @@ interface Props {
   pool?: Pool;
 }
 
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-`;
-
-const InputGroup = styled.div`
-  padding: 1rem;
-  border: 1px solid #1d1a1a;
-  margin: 0 0 1.5rem;
-  max-width: calc(30rem + 2rem);
-  width: 100%;
-`;
-
-const inputCss = css`
-  appearance: none;
-  border: 1px solid ${({ theme }) => theme.palette.brand};
-  padding: 1rem;
-  display: block;
-  max-width: 30rem;
-  width: 100%;
-  background: none;
-  color: #fff;
-  ${({ theme }) => theme.typography.body}
-  font-size: 1rem;
-`;
-
-const Input = styled.input`
-  ${inputCss}
-`;
-
-const Label = styled.label`
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-  display: block;
-  text-transform: uppercase;
-  font-weight: 700;
-`;
-
-const TextArea = styled.textarea`
-  ${inputCss}
-`;
-
-const Select = styled.select`
-  ${inputCss}
-  appearance: auto;
-  margin-bottom: 1rem;
-`;
-
-const Note = styled.span`
-  display: block;
-  color: ${({ theme }) => theme.palette.brand};
-  font-size: 0.875rem;
-`;
-
 export const LBPForm = ({ pool }: Props) => {
   const isEditMode = !!pool;
 
-  const { updateWeightsGradually, setSwapEnabled } = usePoolContract(pool);
+  const { setSwapEnabled, updateWeightsGradually } = usePoolContract(pool);
+
   const { createPool } = useFactoryContract();
 
   const [formValues, setFormValues] = useState(getInitialValues(pool));
@@ -140,27 +87,28 @@ export const LBPForm = ({ pool }: Props) => {
     setFormValue(fieldKey, event.target.value);
   };
 
-
   const saveForm = () => {
-    // TODO: Any of the UX around transactions e.g. waiting, failed, complete
-    createPool({
+    return createPool.handler({
       name: formValues.name,
       symbol: formValues.symbol,
       tokenAddresses: [formValues.releasedToken, formValues.accruedToken],
-      feePercentage: BigNumber.from(formValues.fees),
+      feePercentage: formValues.fees,
       swapEnabledOnStart: true,
       weights: [formValues.startWeight1, formValues.startWeight2],
     });
   };
 
   const updateWeights = () => {
-    // TODO: Any of the UX around transactions e.g. waiting, failed, complete
-    updateWeightsGradually(formValues.startDate, formValues.endDate, formValues.endWeight1, formValues.endWeight2);
+    return updateWeightsGradually.handler(
+      formValues.startDate,
+      formValues.endDate,
+      formValues.endWeight1,
+      formValues.endWeight2
+    );
   };
 
-  const updateSwapEnabled = (enabled: boolean) => {
-    // TODO: Any of the UX around transactions e.g. waiting, failed, complete
-    setSwapEnabled(enabled);
+  const updateSwapEnabled = async (enabled: boolean) => {
+    return setSwapEnabled.handler(enabled);
   };
 
   const drainPool = () => {
@@ -298,7 +246,8 @@ export const LBPForm = ({ pool }: Props) => {
             onChange={createChangeHandler('endWeight2')}
           />
           <br />
-          <Button isSmall label="Update Weights" onClick={updateWeights} />
+          <Button isSmall loading={updateWeightsGradually.isLoading} label="Update Weights" onClick={updateWeights} />
+          {updateWeightsGradually.error && <ErrorMessage>{updateWeightsGradually.error}</ErrorMessage>}
         </InputGroup>
       )}
       {isEditMode && (
@@ -306,10 +255,21 @@ export const LBPForm = ({ pool }: Props) => {
           <h5>Pool Status</h5>
           <h5>{pool.swapEnabled ? 'ACTIVE' : 'PAUSED'}</h5>
           {pool.swapEnabled ? (
-            <Button isSmall label="Pause Pool" onClick={() => updateSwapEnabled(false)} />
+            <Button
+              isSmall
+              label="Pause Pool"
+              loading={setSwapEnabled.isLoading}
+              onClick={() => updateSwapEnabled(false)}
+            />
           ) : (
-            <Button isSmall label="Resume Pool" onClick={() => updateSwapEnabled(true)} />
+            <Button
+              isSmall
+              label="Resume Pool"
+              loading={setSwapEnabled.isLoading}
+              onClick={() => updateSwapEnabled(true)}
+            />
           )}
+          {setSwapEnabled.error && <ErrorMessage>{setSwapEnabled.error}</ErrorMessage>}
         </InputGroup>
       )}
       {isEditMode && (
@@ -319,7 +279,62 @@ export const LBPForm = ({ pool }: Props) => {
           <Button isSmall label="Drain Pool" onClick={drainPool} />
         </InputGroup>
       )}
-      {!isEditMode && <Button isSmall label="Save" onClick={saveForm} />}
+      {!isEditMode && <Button isSmall loading={createPool.isLoading} label="Save" onClick={saveForm} />}
+      {createPool.error && <ErrorMessage>{createPool.error}</ErrorMessage>}
     </Form>
   );
 };
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+`;
+
+const InputGroup = styled.div`
+  padding: 1rem;
+  border: 1px solid #1d1a1a;
+  margin: 0 0 1.5rem;
+  max-width: calc(30rem + 2rem);
+  width: 100%;
+`;
+
+const inputCss = css`
+  appearance: none;
+  border: 1px solid ${({ theme }) => theme.palette.brand};
+  padding: 1rem;
+  display: block;
+  max-width: 30rem;
+  width: 100%;
+  background: none;
+  color: #fff;
+  ${({ theme }) => theme.typography.body}
+  font-size: 1rem;
+`;
+
+const Input = styled.input`
+  ${inputCss}
+`;
+
+const Label = styled.label`
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  display: block;
+  text-transform: uppercase;
+  font-weight: 700;
+`;
+
+const Select = styled.select`
+  ${inputCss}
+  appearance: auto;
+  margin-bottom: 1rem;
+`;
+
+const Note = styled.span`
+  display: block;
+  color: ${({ theme }) => theme.palette.brand};
+  font-size: 0.875rem;
+`;
+
+const ErrorMessage = styled.span`
+  color: #ff6c00;
+`;

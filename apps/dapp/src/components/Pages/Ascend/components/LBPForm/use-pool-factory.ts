@@ -36,23 +36,31 @@ export const useFactoryContract = () => {
 
   if (!signer) {
     return {
-      createPool: async () => {
-        throw new Error('Wallet not connected');
+      createPool: {
+        handler: async () => {
+          throw new Error('Wallet not connected');
+        },
+        isLoading: false,
+        error: null,
       },
     };
   }
+
+  const [isCreatePoolLoading, setIsCreatePoolLoading] = useState(false);
+  const [createPoolError, setCreatePoolError] = useState<null | string>(null);
 
   // TODO: Find correct address and ABI
   const lbpFactoryContractAddress = '0xb48Cc42C45d262534e46d5965a9Ac496F1B7a830';
   const lbpFactoryContract: Contract = new Contract(lbpFactoryContractAddress, liquidityBootstrappingPoolAbi, signer);
 
-  return {
-    createPool: async (params: CreatePoolParams) => {
-      // TODO: Cleanup the interface
-      const weight1 = parseEther(params.weights[0].toString());
-      const weight2 = parseEther(params.weights[1].toString());
+  const createPoolHandler = async (params: CreatePoolParams) => {
+    // TODO: Cleanup the interface
+    const weight1 = parseEther(params.weights[0].toString());
+    const weight2 = parseEther(params.weights[1].toString());
 
-      return lbpFactoryContract!.create(
+    try {
+      setIsCreatePoolLoading(true);
+      const result = await lbpFactoryContract!.create(
         params.name,
         params.symbol,
         params.tokenAddresses,
@@ -61,9 +69,23 @@ export const useFactoryContract = () => {
         ownerAddress,
         true,
         {
-          gasLimit: 400000,
+          gasLimit: 400000, // TODO: Proper gas limit?
         }
       );
+      await result.wait();
+    } catch (error: any) {
+      console.error(error);
+      setCreatePoolError('Transaction failed.');
+    } finally {
+      setIsCreatePoolLoading(false);
+    }
+  };
+
+  return {
+    createPool: {
+      handler: createPoolHandler,
+      isLoading: isCreatePoolLoading,
+      error: createPoolError,
     },
   };
 };
