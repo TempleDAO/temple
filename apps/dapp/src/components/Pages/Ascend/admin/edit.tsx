@@ -31,9 +31,7 @@ export const EditLBPPage = () => {
   }
 
   const subgraphPool = response?.data?.pools[0];
-  console.log(subgraphPool);
   const pool = createPool(subgraphPool);
-  console.log(pool);
   
   return <LBPForm pool={pool}/>;
 };
