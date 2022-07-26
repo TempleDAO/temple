@@ -1,16 +1,17 @@
-import { BigNumber, Contract } from 'ethers';
+import { Contract } from 'ethers';
 
 import liquidityBootstrappingPoolAbi from 'data/abis/liquidityBootstrappingPool.json';
 
 import { useWallet } from 'providers/WalletProvider';
-import { useEffect, useState } from 'react';
-import { formatEther, parseEther } from 'ethers/lib/utils';
+import { useState } from 'react';
+import { parseEther } from 'ethers/lib/utils';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export interface CreatePoolParams {
   name: string;
   symbol: string;
   tokenAddresses: string[];
-  weights: BigNumber[];
+  weights: DecimalBigNumber[];
   feePercentage: number;
   swapEnabledOnStart: boolean;
 }
@@ -38,21 +39,19 @@ export const useFactoryContract = () => {
   const lbpFactoryContract: Contract = new Contract(lbpFactoryContractAddress, liquidityBootstrappingPoolAbi, signer);
 
   const createPoolHandler = async (params: CreatePoolParams) => {
-    const weight1 = parseEther(params.weights[0].toString());
-    const weight2 = parseEther(params.weights[1].toString());
-
     try {
       setIsCreatePoolLoading(true);
+      setCreatePoolError(null);
       const result = await lbpFactoryContract!.create(
         params.name,
         params.symbol,
         params.tokenAddresses,
-        [weight1, weight2],
+        [params.weights[0].value, params.weights[1].value],
         parseEther((params.feePercentage / 100).toString()),
         wallet,
         true,
         {
-          gasLimit: 400000, // TODO: Proper gas limit?
+          gasLimit: 5000000,
         }
       );
       await result.wait();

@@ -1,10 +1,10 @@
-import { BigNumber, Contract } from 'ethers';
+import { Contract } from 'ethers';
 
 import balancerPoolAbi from 'data/abis/balancerPool.json';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { useWallet } from 'providers/WalletProvider';
 import { useState } from 'react';
-import useRequestState from 'hooks/use-request-state';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export const usePoolContract = (pool?: Pool) => {
   const { signer } = useWallet();
@@ -38,9 +38,10 @@ export const usePoolContract = (pool?: Pool) => {
 
   const setSwapEnabledHandler = async (enabled: boolean) => {
     setIsSetSwapEnabledLoading(true);
+    setSetSwapEnabledError(null);
     try {
       const result = await poolContract!.setSwapEnabled(enabled, {
-        gasLimit: 400000, // TODO: Proper gas limit?
+        gasLimit: 400000,
       });
       await result.wait();
     } catch (error: any) {
@@ -54,19 +55,19 @@ export const usePoolContract = (pool?: Pool) => {
   const updateWeightsGraduallyHandler = async (
     startTime: Date,
     endTime: Date,
-    endWeight1: BigNumber,
-    endWeight2: BigNumber
+    endWeight1: DecimalBigNumber,
+    endWeight2: DecimalBigNumber
   ) => {
-    console.log(endWeight1.toString());
-    console.log(endWeight2.toString());
+    const endWeights = [endWeight1.value, endWeight2.value];
     try {
       setIsUpdateWeightsGraduallyLoading(true);
+      setUpdateWeightsGraduallyError(null);
       const result = await poolContract!.updateWeightsGradually(
-        startTime.getTime(),
-        endTime.getTime(),
-        [endWeight1, endWeight2],
+        startTime.getTime() / 1000,
+        endTime.getTime() / 1000,
+        endWeights,
         {
-          gasLimit: 400000, // TODO: Proper gas limit?
+          gasLimit: 400000,
         }
       );
       await result.wait();

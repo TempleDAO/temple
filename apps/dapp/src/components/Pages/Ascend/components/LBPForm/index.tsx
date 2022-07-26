@@ -1,28 +1,30 @@
 import { useState } from 'react';
-import { BigNumber, Contract } from 'ethers';
 import styled, { css } from 'styled-components';
 import { Pool } from 'components/Layouts/Ascend/types';
 import env from 'constants/env';
 import { Button } from 'components/Button/Button';
 import { usePoolContract } from './use-pool-contract';
 import { useFactoryContract } from './use-pool-factory';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { formatUnits } from 'ethers/lib/utils';
 import { Link } from 'react-router-dom';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { ZERO } from 'utils/bigNumber';
+
 interface Values {
   id?: string;
   name: string;
   symbol: string;
   releasedToken: string;
   accruedToken: string;
-  startWeight1: BigNumber;
-  startWeight2: BigNumber;
+  startWeight1: DecimalBigNumber;
+  startWeight2: DecimalBigNumber;
   startDate: Date;
   endDate: Date;
   fees: number;
   address: string;
-  endWeight1: BigNumber;
-  endWeight2: BigNumber;
+  endWeight1: DecimalBigNumber;
+  endWeight2: DecimalBigNumber;
 }
 
 const getInitialValues = (pool?: Pool): Values => {
@@ -32,14 +34,14 @@ const getInitialValues = (pool?: Pool): Values => {
       name: '',
       releasedToken: env.tokens.temple.address,
       accruedToken: env.tokens.frax.address,
-      startWeight1: BigNumber.from(0),
-      startWeight2: BigNumber.from(0),
+      startWeight1: DecimalBigNumber.fromBN(ZERO, 18),
+      startWeight2: DecimalBigNumber.fromBN(ZERO, 18),
       startDate: new Date(0),
       endDate: new Date(0),
       fees: 1,
       address: '',
-      endWeight1: BigNumber.from(0),
-      endWeight2: BigNumber.from(0),
+      endWeight1: DecimalBigNumber.fromBN(ZERO, 18),
+      endWeight2: DecimalBigNumber.fromBN(ZERO, 18),
     };
   }
 
@@ -52,14 +54,14 @@ const getInitialValues = (pool?: Pool): Values => {
     symbol: pool.symbol,
     releasedToken: pool.tokens[0].address,
     accruedToken: pool.tokens[1].address,
-    startWeight1: initialWeights.startWeights[0],
-    startWeight2: initialWeights.startWeights[1],
+    startWeight1: DecimalBigNumber.fromBN(initialWeights.startWeights[0], 18),
+    startWeight2: DecimalBigNumber.fromBN(initialWeights.startWeights[1], 18),
     startDate: lastWeightUpdate.startTimestamp,
     endDate: lastWeightUpdate.endTimestamp,
     fees: 1,
     address: pool.address,
-    endWeight1: lastWeightUpdate.endWeights[0],
-    endWeight2: lastWeightUpdate.endWeights[1],
+    endWeight1: DecimalBigNumber.fromBN(lastWeightUpdate.endWeights[0], 18),
+    endWeight2: DecimalBigNumber.fromBN(lastWeightUpdate.endWeights[1], 18),
   };
 };
 
@@ -84,7 +86,22 @@ export const LBPForm = ({ pool }: Props) => {
   };
 
   const createChangeHandler = (fieldKey: keyof Values) => (event: React.ChangeEvent<any>) => {
-    setFormValue(fieldKey, event.target.value);
+    let value = event.target.value;
+
+    if (['startWeight1', 'startWeight2', 'endWeight1', 'endWeight2'].indexOf(fieldKey) >= 0) {
+      value = DecimalBigNumber.parseUnits(value, 16);
+    }
+
+    if (['startDate', 'endDate'].indexOf(fieldKey) >= 0) {
+      try {
+        value = parse(value, "yyyy-LL-dd'T'kk:mm", new Date());
+      } catch (error) {
+        console.error(error);
+        value = new Date();
+      }
+    }
+
+    setFormValue(fieldKey, value);
   };
 
   const saveForm = () => {
@@ -116,12 +133,21 @@ export const LBPForm = ({ pool }: Props) => {
   };
 
   const formatDate = (date: Date) => {
-    return format(date, "yyyy-LL-dd'T'kk:mm");
+    if (!date) return;
+    let result;
+    try {
+      result = format(date, "yyyy-LL-dd'T'kk:mm");
+      return result;
+    } catch (error) {
+      console.error(error);
+      result = format(new Date(), "yyyy-LL-dd'T'kk:mm");
+    }
+    return result;
   };
 
-  const formatWeight = (weight: BigNumber) => {
-    if (!weight) return 0;
-    return Math.trunc(Number(formatUnits(weight, 16)));
+  const formatWeight = (weight: DecimalBigNumber) => {
+    if (!weight) return '0';
+    return Math.trunc(Number(formatUnits(weight.value, 16)));
   };
 
   return (
@@ -135,32 +161,56 @@ export const LBPForm = ({ pool }: Props) => {
       </InputGroup>
       <InputGroup>
         <Label htmlFor="name">Name</Label>
-        <Input type="text" id="name" required onChange={createChangeHandler('name')} value={formValues.name} />
+        <Input
+          type="text"
+          id="name"
+          required
+          disabled={isEditMode}
+          readOnly={isEditMode}
+          onChange={createChangeHandler('name')}
+          value={formValues.name}
+        />
       </InputGroup>
       <InputGroup>
         <Label htmlFor="symbol">Symbol</Label>
-        <Input type="text" id="symbol" required onChange={createChangeHandler('symbol')} value={formValues.symbol} />
+        <Input
+          type="text"
+          id="symbol"
+          required
+          disabled={isEditMode}
+          readOnly={isEditMode}
+          onChange={createChangeHandler('symbol')}
+          value={formValues.symbol}
+        />
       </InputGroup>
       <InputGroup>
         <Label htmlFor="released-token">Released</Label>
-        <Select id="released-token" onChange={createChangeHandler('releasedToken')} value={formValues.releasedToken}>
-          {Object.values(env.tokens).map((token) => (
-            <option value={token.address} key={token.address}>
-              {token.name}
-            </option>
-          ))}
-        </Select>
+        {isEditMode ? (
+          <h3>{pool.tokens[0].symbol}</h3>
+        ) : (
+          <Select id="released-token" onChange={createChangeHandler('releasedToken')} value={formValues.releasedToken}>
+            {Object.values(env.tokens).map((token) => (
+              <option value={token.address} key={token.address}>
+                {token.name}
+              </option>
+            ))}
+          </Select>
+        )}
         {formValues.releasedToken && <Note>Address: {formValues.releasedToken}</Note>}
       </InputGroup>
       <InputGroup>
         <Label htmlFor="accrued-token">Accrued</Label>
-        <Select id="accrued-token" onChange={createChangeHandler('accruedToken')} value={formValues.accruedToken}>
-          {Object.values(env.tokens).map((token) => (
-            <option value={token.address} key={token.address}>
-              {token.name}
-            </option>
-          ))}
-        </Select>
+        {isEditMode ? (
+          <h3>{pool.tokens[1].symbol}</h3>
+        ) : (
+          <Select id="accrued-token" onChange={createChangeHandler('accruedToken')} value={formValues.accruedToken}>
+            {Object.values(env.tokens).map((token) => (
+              <option value={token.address} key={token.address}>
+                {token.name}
+              </option>
+            ))}
+          </Select>
+        )}
         {formValues.accruedToken && <Note>Address: {formValues.accruedToken}</Note>}
       </InputGroup>
       <InputGroup>
@@ -171,6 +221,8 @@ export const LBPForm = ({ pool }: Props) => {
           min="0"
           max="100"
           placeholder="-"
+          disabled={isEditMode}
+          readOnly={isEditMode}
           value={formValues.fees}
           onChange={createChangeHandler('fees')}
         />
