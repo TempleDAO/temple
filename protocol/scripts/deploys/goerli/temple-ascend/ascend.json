@@ -2,24 +2,24 @@
     "network": "goerli",
     "gasSpeed": "average",
     "gasPriceOverride": "",
-    "name": "Temple Ascend Maybe This One Is Correct",
-    "symbol": "ASCEND06",
+    "name": "Temple Ascend Price Go Up",
+    "symbol": "ASCEND08",
     "poolType": "LiquidityBootstrappingPool",
     "swapFeePercent": "0.1",
     "fromInternalBalance": false,
     "swapEnabledOnStart": true,
     "owner": "0xaD2da3dc8B6e5a69cB9691f4540d8835A45EdFeA",
     "tokens": {
-        "0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf": {
-            "weight": "0.8",
-            "initialBalance": "400",
-            "allowance": -1
-        },
         "0x8c9e6c40d3402480ace624730524facc5482798c": {
             "weight": "0.2",
-            "initialBalance": "100",
+            "initialBalance": "2500",
+            "allowance": -1
+        },
+        "0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf": {
+            "weight": "0.8",
+            "initialBalance": "2500",
             "allowance": -1
         }
     },
-    "poolId": "fd9d0abd560d3e5da2caf4fc33fdc60d533de19b000200000000000000000091"
+    "poolId": "ae235605a96abaf76c51146b811de480ade3755f000200000000000000000097"
 }
