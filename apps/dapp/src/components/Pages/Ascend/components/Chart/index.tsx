@@ -64,8 +64,8 @@ export const Chart = ({ pool }: Props) => {
         const spotPriceEstimate = getSpotPrice(
           balances[sell]!,
           balances[buy]!,
-          DecimalBigNumber.fromBN(lastUpdate.endWeights[1], 18),
-          DecimalBigNumber.fromBN(lastUpdate.endWeights[0], 18),
+          lastUpdate.endWeights[1],
+          lastUpdate.endWeights[0],
           pool.swapFee
         );
 
