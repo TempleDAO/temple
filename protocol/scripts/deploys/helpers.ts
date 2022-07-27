@@ -71,7 +71,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
 
     // From network/environment
     FRAX: '0x73651AD693531F9937528009cC204a4d9b696a68',
-    //DAI: 0x2FF3E2b430e369dc7dd302A0F47DD1248412F9b0
+    //DAI: 0x8c9e6c40d3402480ace624730524facc5482798c
     //FEI: 0xa1e7CdD887d6fac4861b5663984A9Ba72cFF9522
 
     // Active contrats
