@@ -14,7 +14,7 @@ const PoolListPage = () => {
     request();
   }, [request]);
 
-  if (!isLoading) {
+  if (isLoading) {
     return <Loader />;
   }
 
@@ -32,6 +32,8 @@ const PoolListPage = () => {
             <Cell as="th">Address</Cell>
             <Cell as="th">Name</Cell>
             <Cell as="th">Tokens</Cell>
+            <Cell as="th">Swap Enabled</Cell>
+            <Cell as="th">Weights Updated</Cell>
             <Cell as="th">Actions</Cell>
           </Row>
         </Head>
@@ -44,6 +46,8 @@ const PoolListPage = () => {
                 <Cell>
                   {pool.tokens[0].symbol} / {pool.tokens[1].symbol}
                 </Cell>
+                <Cell>{pool.swapEnabled ? 'YES' : 'NO'}</Cell>
+                <Cell>{pool.weightUpdates.length === 1 ? 'NO' : 'YES'}</Cell>
                 <Cell>
                   <Link to={`${pool.address}`}>Edit</Link>
                 </Cell>
