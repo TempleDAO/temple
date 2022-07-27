@@ -1,8 +1,10 @@
 import { SubGraphResponse } from 'hooks/core/types';
 import { BigNumber } from 'ethers';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export interface SubgraphPool {
   address: string;
+  symbol: string;
   createTime: number;
   holdersCount: string;
   id: string;
@@ -50,6 +52,7 @@ export type GraphResponse = SubGraphResponse<{ pools: SubgraphPool[] }>;
 export type Pool = Omit<SubgraphPool, 'createTime' | 'holdersCount' | 'shares' | 'swapFee' | 'tokens' | 'totalLiquidity' | 'totalSwapFee' | 'totalSwapVolume' | 'totalWeight' | 'weightUpdates'> & {
   createTime: Date;
   holdersCount: number;
+  symbol: string;
   shares: {
     balance: BigNumber;
     userAddress: {
@@ -73,8 +76,8 @@ export type Pool = Omit<SubgraphPool, 'createTime' | 'holdersCount' | 'shares' |
   weightUpdates: {
     endTimestamp: Date;
     startTimestamp: Date;
-    endWeights: [BigNumber, BigNumber];
-    startWeights: [BigNumber, BigNumber];
+    endWeights: [DecimalBigNumber, DecimalBigNumber];
+    startWeights: [DecimalBigNumber, DecimalBigNumber];
   }[];
 }
 
