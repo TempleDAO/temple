@@ -120,21 +120,28 @@ export const useTemplePool = (poolAddress = '') => {
 };
 
 export const usePoolTokenValues = (pool: Pool) => {
-  const { swapState: { sell, buy }, balances, weights, vaultAddress } = useAuctionContext();
+  const {
+    swapState: { sell, buy },
+    balances,
+    weights,
+    vaultAddress,
+  } = useAuctionContext();
   const [spotPrice, setSpotPrice] = useState<BigNumber>();
 
   const { data: swapData, isLoading } = useContractReads({
-    contracts: [{
-      addressOrName: pool.address,
-      contractInterface: balancerPoolAbi,
-      functionName: 'getSwapFeePercentage',
-    }],
-    enabled: !!vaultAddress
+    contracts: [
+      {
+        addressOrName: pool.address,
+        contractInterface: balancerPoolAbi,
+        functionName: 'getSwapFeePercentage',
+      },
+    ],
+    enabled: !!vaultAddress,
   });
-  
+
   const indexOfSell = sell.tokenIndex;
   const indexOfBuy = buy.tokenIndex;
-  
+
   useEffect(() => {
     if (!swapData) {
       return;
@@ -154,13 +161,7 @@ export const usePoolTokenValues = (pool: Pool) => {
         swapFee as any
       )
     );
-  }, [
-    balances,
-    weights,
-    swapData,
-    indexOfBuy,
-    indexOfSell,
-  ]);
+  }, [balances, weights, swapData, indexOfBuy, indexOfSell]);
 
   return {
     isLoading,
