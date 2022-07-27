@@ -84,10 +84,24 @@ abstract contract ZapBaseV2_3 is Ownable {
     uint256 _valueToSend,
     bytes memory _swapData
   ) internal returns (bytes memory) {
-    (bool success, bytes memory result) = _swapTarget.call{value: _valueToSend}(_swapData);
-    require(success, "Error Swapping Tokens");
+    (bool success, bytes memory returndata) = _swapTarget.call{value: _valueToSend}(_swapData);
+    //require(success, "Error Swapping Tokens");
+    if (success) {
+        //return returndata;
+    } else {
+      // Look for revert reason and bubble it up if present
+      if (returndata.length > 0) {
+        // The easiest way to bubble the revert reason is using memory via assembly
+        assembly {
+          let returndata_size := mload(returndata)
+          revert(add(32, returndata), returndata_size)
+        }
+      } else {
+        revert("Execute failed");
+      }
+    }
 
-    return result;
+    return returndata;
   }
 
   /**

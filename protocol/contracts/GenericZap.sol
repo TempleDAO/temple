@@ -506,7 +506,7 @@ contract GenericZap is ZapBaseV2_3 {
     // avoid stack too deep
     {
       // get minimum amounts to use in liquidity addition. use optimal amounts as minimum
-      (uint256 amountAMin, uint256 amountBMin) = _addLiquidityGetMinAmounts(_amountA, _amountB, IUniswapV2Pair(_pair));
+      (uint256 amountAMin, uint256 amountBMin) = addLiquidityGetMinAmounts(_amountA, _amountB, IUniswapV2Pair(_pair));
       require(_amountA >= amountAMin && _amountB >= amountBMin, "Desired amounts too low");
       // reuse vars. below is actually amountA and amountB added to liquidity
       (amountAMin, amountBMin,) = uniswapV2Router.addLiquidity(
@@ -547,11 +547,11 @@ contract GenericZap is ZapBaseV2_3 {
     }
   }
 
-  function _addLiquidityGetMinAmounts(
+  function addLiquidityGetMinAmounts(
     uint amountADesired,
     uint amountBDesired,
     IUniswapV2Pair pair
-  ) internal view returns (uint amountA, uint amountB) {
+  ) public view returns (uint amountA, uint amountB) {
     (uint reserveA, uint reserveB,) = pair.getReserves();
     if (reserveA == 0 && reserveB == 0) {
       (amountA, amountB) = (amountADesired, amountBDesired);
@@ -671,6 +671,7 @@ contract GenericZap is ZapBaseV2_3 {
       );
       valueToSend = _fromAmount;
     } else {
+      //SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), address(0xf9b30557AfcF76eA82C04015D80057Fa2147Dfa9), _fromAmount);
       _approveToken(_fromToken, _swapTarget, _fromAmount);
     }
 

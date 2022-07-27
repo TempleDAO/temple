@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./GenericZap.sol";
-
+import "hardhat/console.sol";
 
 interface ITempleStableRouter {
   function tokenPair(address token) external view returns (address);
@@ -181,6 +181,16 @@ contract TempleZaps is Ownable {
     zapInTempleFor(_fromToken, _fromAmount, _minTempleReceived, _stableToken, _minStableReceived, msg.sender, _swapTarget, _swapData);
   }
 
+  function zapInTempleLP(
+    address _fromAddress,
+    uint256 _fromAmount,
+    address _swapTarget,
+    TempleLiquidityParams memory _params,
+    bytes memory _swapData
+  ) external payable {
+    zapInTempleLPFor(_fromAddress, _fromAmount, msg.sender, _swapTarget, _params, _swapData);
+  }
+
   function zapInTempleLPFor(
     address _fromAddress,
     uint256 _fromAmount,
@@ -202,6 +212,7 @@ contract TempleZaps is Ownable {
       // swap to intermediate. uses stable token
       // reuse vars
       _fromAddress = _params.stableToken;
+      console.logString("before fill quote");
       _fromAmount = _fillQuote(
         _fromAddress,
         _fromAmount,
@@ -209,8 +220,8 @@ contract TempleZaps is Ownable {
         _swapTarget,
         _swapData
       );
+      console.logString("after fillQuote");
     }
-
     (uint256 amountA, uint256 amountB) = _swapAMMTokens(pair, _params.stableToken, _fromAddress, _fromAmount, _params.lpSwapMinAmountOut);
 
     // approve tokens and add liquidity
@@ -224,83 +235,6 @@ contract TempleZaps is Ownable {
     emit ZappedInTempleLP(_for, _fromAddress, _fromAmount, amountA, amountB);
   }
 
-  function _addLiquidity(
-    address _pair,
-    address _for,
-    uint256 _amountA,
-    uint256 _amountB,
-    TempleLiquidityParams memory _params
-  ) internal {
-    (uint256 amountAActual, uint256 amountBActual,) = templeRouter.addLiquidity(
-      _amountA,
-      _amountB,
-      _params.amountAMin,
-      _params.amountBMin,
-      _params.stableToken,
-      _for,
-      DEADLINE
-    );
-
-    if (_params.transferResidual) {
-      if (amountAActual < _amountA) {
-        _transferToken(IERC20(IUniswapV2Pair(_pair).token0()), _for, _amountA - amountAActual);
-      }
-
-      if(amountBActual < _amountB) {
-        _transferToken(IERC20(IUniswapV2Pair(_pair).token1()), _for, _amountB - amountBActual);
-      }
-    }
-  }
-
-  function _approveToken(
-    address _token,
-    address _spender,
-    uint256 _amount
-  ) internal {
-    SafeERC20.safeIncreaseAllowance(IERC20(_token), _spender, _amount);
-  }
-
-  function _swapAMMTokens(
-    address _pair,
-    address _stableToken,
-    address _intermediateToken,
-    uint256 _intermediateAmount,
-    uint256 _lpSwapMinAmountOut
-  ) internal returns (uint256 amountA, uint256 amountB) {
-    address token0 = IUniswapV2Pair(_pair).token0();
-    uint256 amountToSwap = _getAmountToSwap(_intermediateToken, _pair, _intermediateAmount);
-    uint256 remainder = _intermediateAmount - amountToSwap;
-
-    uint256 amountOut;
-    if (_intermediateToken == temple) {
-      SafeERC20.safeIncreaseAllowance(IERC20(temple), address(templeRouter), amountToSwap);
-
-      amountOut = templeRouter.swapExactTempleForStable(amountToSwap, _lpSwapMinAmountOut, _stableToken, address(this), type(uint128).max);
-      amountA = token0 == _stableToken ? amountOut : remainder;
-      amountB = token0 == _stableToken ? remainder : amountOut;
-    } else if (_intermediateToken == _stableToken) {
-      SafeERC20.safeIncreaseAllowance(IERC20(_stableToken), address(templeRouter), amountToSwap);
-
-      amountOut = templeRouter.swapExactStableForTemple(amountToSwap, _lpSwapMinAmountOut, _stableToken, address(this), type(uint128).max);
-      amountA = token0 == _stableToken ? remainder : amountOut;
-      amountB = token0 == _stableToken ? amountOut : remainder;
-    } else {
-      revert("Unsupported token of liquidity pool");
-    }
-  }
-
-  function _getAmountToSwap(
-    address _token,
-    address _pair,
-    uint256 _amount
-  ) internal view returns (uint256) {
-    address token0 = IUniswapV2Pair(_pair).token0();
-    (uint112 reserveA, uint112 reserveB,) = IUniswapV2Pair(_pair).getReserves();
-    uint256 reserveIn = token0 == _token ? reserveA : reserveB;
-    uint256 amountToSwap = zaps.getSwapInAmount(reserveIn, _amount);
-    return amountToSwap;
-  }
-
   function zapInVaultFor(
     address _fromToken,
     uint256 _fromAmount,
@@ -312,10 +246,12 @@ contract TempleZaps is Ownable {
     address _swapTarget,
     bytes calldata _swapData
   ) public payable {
-    require(_for != address(0), "Invalid for address");
+    //require(_for != address(0), "Invalid for address");
+    console.logString("stable token zapinvaultfor");
+    console.logAddress(_stableToken);
+    console.logBool(supportedStables[_stableToken]);
 
     SafeERC20.safeTransferFrom(IERC20(_fromToken), msg.sender, address(this), _fromAmount);
-
     uint256 receivedTempleAmount;
     if (_fromToken == temple) {
       receivedTempleAmount = _fromAmount;
@@ -458,18 +394,116 @@ contract TempleZaps is Ownable {
       );
       valueToSend = _fromAmount;
     } else {
+      // get impl contract as allowance target
+
       SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), _swapTarget, _fromAmount);
+      //SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), address(0xf9b30557AfcF76eA82C04015D80057Fa2147Dfa9), _fromAmount);
     }
 
     // to calculate amount received
     uint256 initialBalance = IERC20(_toToken).balanceOf(address(this));
-    (bool success,) = _swapTarget.call{value:valueToSend}(_swapData);
-    require(success, "Execute swap failed");
+    console.logString("allowance");
+    console.logUint(IERC20(_fromToken).allowance(address(this), _swapTarget));
+    console.logUint(_fromAmount);
+    (bool success, bytes memory returndata) = _swapTarget.call{value:valueToSend}(_swapData);
+    //require(success, "Execute swap failed");
+    if (success) {
+        //return returndata;
+    } else {
+        // Look for revert reason and bubble it up if present
+        if (returndata.length > 0) {
+          // The easiest way to bubble the revert reason is using memory via assembly
+          console.logString("return data > 0");
+          assembly {
+            let returndata_size := mload(returndata)
+            revert(add(32, returndata), returndata_size)
+          }
+        } else {
+          revert("Execute swap failed");
+        }
+      }
     unchecked {
       amountBought = IERC20(_toToken).balanceOf(address(this)) - initialBalance;
     }
 
     return amountBought;
+  }
+
+  function _addLiquidity(
+    address _pair,
+    address _for,
+    uint256 _amountA,
+    uint256 _amountB,
+    TempleLiquidityParams memory _params
+  ) internal {
+    (uint256 amountAActual, uint256 amountBActual,) = templeRouter.addLiquidity(
+      _amountA,
+      _amountB,
+      _params.amountAMin,
+      _params.amountBMin,
+      _params.stableToken,
+      _for,
+      DEADLINE
+    );
+
+    if (_params.transferResidual) {
+      if (amountAActual < _amountA) {
+        _transferToken(IERC20(IUniswapV2Pair(_pair).token0()), _for, _amountA - amountAActual);
+      }
+
+      if(amountBActual < _amountB) {
+        _transferToken(IERC20(IUniswapV2Pair(_pair).token1()), _for, _amountB - amountBActual);
+      }
+    }
+  }
+
+  function _approveToken(
+    address _token,
+    address _spender,
+    uint256 _amount
+  ) internal {
+    SafeERC20.safeIncreaseAllowance(IERC20(_token), _spender, _amount);
+  }
+
+  function _swapAMMTokens(
+    address _pair,
+    address _stableToken,
+    address _intermediateToken,
+    uint256 _intermediateAmount,
+    uint256 _lpSwapMinAmountOut
+  ) internal returns (uint256 amountA, uint256 amountB) {
+    address token0 = IUniswapV2Pair(_pair).token0();
+    uint256 amountToSwap = _getAmountToSwap(_intermediateToken, _pair, _intermediateAmount);
+    uint256 remainder = _intermediateAmount - amountToSwap;
+
+    uint256 amountOut;
+    if (_intermediateToken == temple) {
+      SafeERC20.safeIncreaseAllowance(IERC20(temple), address(templeRouter), amountToSwap);
+
+      amountOut = templeRouter.swapExactTempleForStable(amountToSwap, _lpSwapMinAmountOut, _stableToken, address(this), type(uint128).max);
+      amountA = token0 == _stableToken ? amountOut : remainder;
+      amountB = token0 == _stableToken ? remainder : amountOut;
+    } else if (_intermediateToken == _stableToken) {
+      SafeERC20.safeIncreaseAllowance(IERC20(_stableToken), address(templeRouter), amountToSwap);
+
+      amountOut = templeRouter.swapExactStableForTemple(amountToSwap, _lpSwapMinAmountOut, _stableToken, address(this), type(uint128).max);
+      amountA = token0 == _stableToken ? remainder : amountOut;
+      amountB = token0 == _stableToken ? amountOut : remainder;
+    } else {
+      revert("Unsupported token of liquidity pool");
+    }
+  }
+
+  function _getAmountToSwap(
+    address _token,
+    address _pair,
+    uint256 _amount
+  ) internal view returns (uint256) {
+    address token0 = IUniswapV2Pair(_pair).token0();
+    (uint112 reserveA, uint112 reserveB,) = IUniswapV2Pair(_pair).getReserves();
+    uint256 reserveIn = token0 == _token ? reserveA : reserveB;
+    uint256 amountToSwap = zaps.getSwapInAmount(reserveIn, _amount);
+    return amountToSwap;
   }
 
   /**
