@@ -5,9 +5,11 @@ import { Pool } from 'components/Layouts/Ascend/types';
 import { useWallet } from 'providers/WalletProvider';
 import { useState } from 'react';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { useNotification } from 'providers/NotificationProvider';
 
 export const usePoolContract = (pool?: Pool) => {
   const { signer } = useWallet();
+  const { openNotification } = useNotification();
 
   if (!pool || !signer) {
     return {
@@ -29,24 +31,28 @@ export const usePoolContract = (pool?: Pool) => {
   }
 
   const [isSetSwapEnabledLoading, setIsSetSwapEnabledLoading] = useState(false);
-  const [setSwapEnabledError, setSetSwapEnabledError] = useState<null | string>(null);
-
   const [isUpdateWeightsGraduallyLoading, setIsUpdateWeightsGraduallyLoading] = useState(false);
-  const [updateWeightsGraduallyError, setUpdateWeightsGraduallyError] = useState<null | string>(null);
 
   const poolContract: Contract = new Contract(pool.address, balancerPoolAbi, signer);
 
   const setSwapEnabledHandler = async (enabled: boolean) => {
     setIsSetSwapEnabledLoading(true);
-    setSetSwapEnabledError(null);
+    let result;
     try {
-      const result = await poolContract!.setSwapEnabled(enabled, {
+      result = await poolContract!.setSwapEnabled(enabled, {
         gasLimit: 400000,
       });
       await result.wait();
+      openNotification({
+        title: `setSwapEnabled success.`,
+        hash: result.hash,
+      });
     } catch (error: any) {
       console.error(error);
-      setSetSwapEnabledError('Transaction failed.');
+      openNotification({
+        title: `setSwapEnabled failed.`,
+        hash: result.hash,
+      });
     } finally {
       setIsSetSwapEnabledLoading(false);
     }
@@ -59,10 +65,10 @@ export const usePoolContract = (pool?: Pool) => {
     endWeight2: DecimalBigNumber
   ) => {
     const endWeights = [endWeight1.value, endWeight2.value];
+    let result;
     try {
       setIsUpdateWeightsGraduallyLoading(true);
-      setUpdateWeightsGraduallyError(null);
-      const result = await poolContract!.updateWeightsGradually(
+      result = await poolContract!.updateWeightsGradually(
         startTime.getTime() / 1000,
         endTime.getTime() / 1000,
         endWeights,
@@ -71,9 +77,16 @@ export const usePoolContract = (pool?: Pool) => {
         }
       );
       await result.wait();
+      openNotification({
+        title: `updateWeights success.`,
+        hash: result.hash,
+      });
     } catch (error: any) {
       console.error(error);
-      setUpdateWeightsGraduallyError('Transaction failed.');
+      openNotification({
+        title: `updateWeights failed.`,
+        hash: result.hash,
+      });
     } finally {
       setIsUpdateWeightsGraduallyLoading(false);
     }
@@ -83,12 +96,10 @@ export const usePoolContract = (pool?: Pool) => {
     setSwapEnabled: {
       handler: setSwapEnabledHandler,
       isLoading: isSetSwapEnabledLoading,
-      error: setSwapEnabledError,
     },
     updateWeightsGradually: {
       handler: updateWeightsGraduallyHandler,
       isLoading: isUpdateWeightsGraduallyLoading,
-      error: updateWeightsGraduallyError,
     },
   };
 };

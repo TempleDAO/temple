@@ -1,5 +1,6 @@
 import { getBigNumberFromString } from 'components/Vault/utils';
 import { BigNumber } from 'ethers';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { SubgraphPool, Pool } from './types';
 
 export const createPool = (pool: SubgraphPool): Pool => {
@@ -17,7 +18,7 @@ export const createPool = (pool: SubgraphPool): Pool => {
       ...token,
       balance: getBigNumberFromString(token.balance),
       weight: getBigNumberFromString(token.weight),
-    })), 
+    })),
     totalLiquidity: getBigNumberFromString(pool.totalLiquidity),
     totalSwapFee: getBigNumberFromString(pool.totalSwapFee),
     totalSwapVolume: getBigNumberFromString(pool.totalSwapVolume),
@@ -26,12 +27,12 @@ export const createPool = (pool: SubgraphPool): Pool => {
       endTimestamp: new Date(Number(weightUpdate.endTimestamp) * 1000),
       startTimestamp: new Date(Number(weightUpdate.startTimestamp) * 1000),
       startWeights: [
-        BigNumber.from(weightUpdate.startWeights[0]),
-        BigNumber.from(weightUpdate.startWeights[1]),
+        DecimalBigNumber.parseUnits(weightUpdate.startWeights[0], 0),
+        DecimalBigNumber.parseUnits(weightUpdate.startWeights[1], 0),
       ],
       endWeights: [
-        BigNumber.from(weightUpdate.endWeights[0]),
-        BigNumber.from(weightUpdate.endWeights[1]),
+        DecimalBigNumber.parseUnits(weightUpdate.endWeights[0], 0),
+        DecimalBigNumber.parseUnits(weightUpdate.endWeights[1], 0),
       ],
     })),
   };

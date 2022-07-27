@@ -6,10 +6,9 @@ import { Button } from 'components/Button/Button';
 import { usePoolContract } from './use-pool-contract';
 import { useFactoryContract } from './use-pool-factory';
 import { format, parse } from 'date-fns';
-import { formatUnits } from 'ethers/lib/utils';
 import { Link } from 'react-router-dom';
-import { DecimalBigNumber } from 'utils/DecimalBigNumber';
-import { ZERO } from 'utils/bigNumber';
+import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { formatUnits } from 'ethers/lib/utils';
 
 interface Values {
   id?: string;
@@ -34,14 +33,14 @@ const getInitialValues = (pool?: Pool): Values => {
       name: '',
       releasedToken: env.tokens.temple.address,
       accruedToken: env.tokens.frax.address,
-      startWeight1: DecimalBigNumber.fromBN(ZERO, 18),
-      startWeight2: DecimalBigNumber.fromBN(ZERO, 18),
+      startWeight1: DBN_ZERO,
+      startWeight2: DBN_ZERO,
       startDate: new Date(0),
       endDate: new Date(0),
       fees: 1,
       address: '',
-      endWeight1: DecimalBigNumber.fromBN(ZERO, 18),
-      endWeight2: DecimalBigNumber.fromBN(ZERO, 18),
+      endWeight1: DBN_ZERO,
+      endWeight2: DBN_ZERO,
     };
   }
 
@@ -54,14 +53,14 @@ const getInitialValues = (pool?: Pool): Values => {
     symbol: pool.symbol,
     releasedToken: pool.tokens[0].address,
     accruedToken: pool.tokens[1].address,
-    startWeight1: DecimalBigNumber.fromBN(initialWeights.startWeights[0], 18),
-    startWeight2: DecimalBigNumber.fromBN(initialWeights.startWeights[1], 18),
+    startWeight1: initialWeights.startWeights[0],
+    startWeight2: initialWeights.startWeights[1],
     startDate: lastWeightUpdate.startTimestamp,
     endDate: lastWeightUpdate.endTimestamp,
     fees: 1,
     address: pool.address,
-    endWeight1: DecimalBigNumber.fromBN(lastWeightUpdate.endWeights[0], 18),
-    endWeight2: DecimalBigNumber.fromBN(lastWeightUpdate.endWeights[1], 18),
+    endWeight1: lastWeightUpdate.endWeights[0],
+    endWeight2: lastWeightUpdate.endWeights[1],
   };
 };
 
@@ -73,9 +72,7 @@ export const LBPForm = ({ pool }: Props) => {
   const isEditMode = !!pool;
 
   const { setSwapEnabled, updateWeightsGradually } = usePoolContract(pool);
-
   const { createPool } = useFactoryContract();
-
   const [formValues, setFormValues] = useState(getInitialValues(pool));
 
   const setFormValue = <T extends any>(field: keyof Values, value: T) => {
@@ -88,11 +85,11 @@ export const LBPForm = ({ pool }: Props) => {
   const createChangeHandler = (fieldKey: keyof Values) => (event: React.ChangeEvent<any>) => {
     let value = event.target.value;
 
-    if (['startWeight1', 'startWeight2', 'endWeight1', 'endWeight2'].indexOf(fieldKey) >= 0) {
+    if (['startWeight1', 'startWeight2', 'endWeight1', 'endWeight2'].includes(fieldKey)) {
       value = DecimalBigNumber.parseUnits(value, 16);
     }
 
-    if (['startDate', 'endDate'].indexOf(fieldKey) >= 0) {
+    if (['startDate', 'endDate'].includes(fieldKey)) {
       try {
         value = parse(value, "yyyy-LL-dd'T'kk:mm", new Date());
       } catch (error) {
@@ -299,7 +296,6 @@ export const LBPForm = ({ pool }: Props) => {
           />
           <br />
           <Button isSmall loading={updateWeightsGradually.isLoading} label="Update Weights" onClick={updateWeights} />
-          {updateWeightsGradually.error && <ErrorMessage>{updateWeightsGradually.error}</ErrorMessage>}
         </InputGroup>
       )}
       {isEditMode && (
@@ -321,7 +317,6 @@ export const LBPForm = ({ pool }: Props) => {
               onClick={() => updateSwapEnabled(true)}
             />
           )}
-          {setSwapEnabled.error && <ErrorMessage>{setSwapEnabled.error}</ErrorMessage>}
         </InputGroup>
       )}
       {isEditMode && (
