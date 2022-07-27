@@ -52,6 +52,7 @@
     "hardhat:testnet": "hardhat --network rinkeby",
     "hardhat:mainnet": "hardhat --network mainnet",
     "hardhat:matic": "hardhat --network matic",
+    "hardhat": "hardhat",
     "local-metrics": "hardhat run --network localhost scripts/metrics.ts",
     "local-fork": "hardhat node --fork https://eth-mainnet.alchemyapi.io/v2/5uWfALq4t1xR49V3EW5bBZEE4xh97l-A --fork-block-number 13205117"
   },
