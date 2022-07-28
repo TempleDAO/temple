@@ -211,8 +211,14 @@ contract TempleZaps is Ownable {
     if (_fromAddress != token0 && _fromAddress != token1) {
       // swap to intermediate. uses stable token
       // reuse vars
-      _fromAddress = _params.stableToken;
+
       console.logString("before fill quote");
+      console.log("_fromAddress:", _fromAddress);
+      console.log("_fromAmount:", _fromAmount);
+      console.log("_params.stableToken:", _params.stableToken);
+      console.log("_swapTarget:", _swapTarget);
+      console.log("balance of from token:", IERC20(_fromAddress).balanceOf(address(this)));
+      console.log("balance of stable:", IERC20(_params.stableToken).balanceOf(address(this)));
       _fromAmount = _fillQuote(
         _fromAddress,
         _fromAmount,
@@ -221,6 +227,12 @@ contract TempleZaps is Ownable {
         _swapData
       );
       console.logString("after fillQuote");
+      console.log("balance of from token:", IERC20(_fromAddress).balanceOf(address(this)));
+      console.log("balance of stable:", IERC20(_params.stableToken).balanceOf(address(this)));
+
+      // Moved this to *after* we've swapped from user provided token (eg FXS) to AMM stable (eg FRAX)
+      // The stable token is now the intermediate token.
+      _fromAddress = _params.stableToken;
     }
     (uint256 amountA, uint256 amountB) = _swapAMMTokens(pair, _params.stableToken, _fromAddress, _fromAmount, _params.lpSwapMinAmountOut);
 
@@ -396,15 +408,22 @@ contract TempleZaps is Ownable {
     } else {
       // get impl contract as allowance target
 
+      // https://protocol.0x.org/en/latest/advanced/uniswap.html
+      //   > This function does not use allowances set on 0x. The msg.sender must have allowances set on Uniswap (or SushiSwap).
+      // 
+      // This has me confused, because the allowance required or you get an error.
+      // Here _swapTarget == 0xdef1c0ded9bec7f1a1670819833240f027b25eff
+      // which is the 0x exchange contract
       SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), _swapTarget, _fromAmount);
       //SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), address(0xf9b30557AfcF76eA82C04015D80057Fa2147Dfa9), _fromAmount);
     }
 
     // to calculate amount received
     uint256 initialBalance = IERC20(_toToken).balanceOf(address(this));
-    console.logString("allowance");
-    console.logUint(IERC20(_fromToken).allowance(address(this), _swapTarget));
-    console.logUint(_fromAmount);
+    console.log("_fromToken:", _fromToken);
+    console.log("allowance to _swapTarget:", IERC20(_fromToken).allowance(address(this), _swapTarget));
+    console.log("balance:", IERC20(_fromToken).balanceOf(address(this)));
+    console.log("amount:", _fromAmount);
     (bool success, bytes memory returndata) = _swapTarget.call{value:valueToSend}(_swapData);
     //require(success, "Execute swap failed");
     if (success) {
@@ -436,6 +455,8 @@ contract TempleZaps is Ownable {
     uint256 _amountB,
     TempleLiquidityParams memory _params
   ) internal {
+    console.log("addLiquidity:", _amountA, _amountB);
+    console.log("addLiquidity min:", _params.amountAMin, _params.amountBMin);
     (uint256 amountAActual, uint256 amountBActual,) = templeRouter.addLiquidity(
       _amountA,
       _amountB,
@@ -475,6 +496,7 @@ contract TempleZaps is Ownable {
     address token0 = IUniswapV2Pair(_pair).token0();
     uint256 amountToSwap = _getAmountToSwap(_intermediateToken, _pair, _intermediateAmount);
     uint256 remainder = _intermediateAmount - amountToSwap;
+    console.log("_swapAMMTokens:", _intermediateAmount, amountToSwap, remainder);
 
     uint256 amountOut;
     if (_intermediateToken == temple) {
@@ -486,7 +508,12 @@ contract TempleZaps is Ownable {
     } else if (_intermediateToken == _stableToken) {
       SafeERC20.safeIncreaseAllowance(IERC20(_stableToken), address(templeRouter), amountToSwap);
 
-      amountOut = templeRouter.swapExactStableForTemple(amountToSwap, _lpSwapMinAmountOut, _stableToken, address(this), type(uint128).max);
+      // There's currently a bug in the AMM Router where amountOut is always zero.
+      // So have to resort to getting the balance before/after.
+      uint256 balBefore = IERC20(temple).balanceOf(address(this));
+      /*amountOut = */ templeRouter.swapExactStableForTemple(amountToSwap, _lpSwapMinAmountOut, _stableToken, address(this), type(uint128).max);
+      amountOut = IERC20(temple).balanceOf(address(this)) - balBefore;
+
       amountA = token0 == _stableToken ? remainder : amountOut;
       amountB = token0 == _stableToken ? amountOut : remainder;
     } else {
