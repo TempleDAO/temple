@@ -362,21 +362,21 @@ describe("Temple Stax Core Zaps", async () => {
       const pairContract = IERC20__factory.connect(TEMPLE_FRAX_PAIR, alice);
       const lpBefore = await pairContract.balanceOf(await alice.getAddress());
 
-      await zapInTempleLP(
-        alice,
-        templeZaps,
-        genericZaps,
-        TEMPLE_FRAX_PAIR,
-        tokenAddr,
-        tokenAmount,
-        await alice.getAddress(),
-        false
-      );
+      // await zapInTempleLP(
+      //   alice,
+      //   templeZaps,
+      //   genericZaps,
+      //   TEMPLE_FRAX_PAIR,
+      //   tokenAddr,
+      //   tokenAmount,
+      //   await alice.getAddress(),
+      //   false
+      // );
 
-      const lpAfter = await pairContract.balanceOf(await alice.getAddress());
-      console.log("Alice LP before:", ethers.utils.formatEther(lpBefore));
-      console.log("Alice LP after:", ethers.utils.formatEther(lpAfter));
-      expect(lpAfter).gt(lpBefore);
+      // const lpAfter = await pairContract.balanceOf(await alice.getAddress());
+      // console.log("Alice LP before:", ethers.utils.formatEther(lpBefore));
+      // console.log("Alice LP after:", ethers.utils.formatEther(lpAfter));
+      // expect(lpAfter).gt(lpBefore);
     });
   });
 
