@@ -359,6 +359,9 @@ describe("Temple Stax Core Zaps", async () => {
       await templeZaps.connect(owner).setSupportedStables([FRAX, FEI], [true, true]);
       console.log("s frax", await templeZaps.supportedStables(FRAX));
       console.log("s fei", await templeZaps.supportedStables(FEI));
+      const pairContract = IERC20__factory.connect(TEMPLE_FRAX_PAIR, alice);
+      const lpBefore = await pairContract.balanceOf(await alice.getAddress());
+
       await zapInTempleLP(
         alice,
         templeZaps,
@@ -369,6 +372,11 @@ describe("Temple Stax Core Zaps", async () => {
         await alice.getAddress(),
         false
       );
+
+      const lpAfter = await pairContract.balanceOf(await alice.getAddress());
+      console.log("Alice LP before:", ethers.utils.formatEther(lpBefore));
+      console.log("Alice LP after:", ethers.utils.formatEther(lpAfter));
+      expect(lpAfter).gt(lpBefore);
     });
   });
 
@@ -561,7 +569,7 @@ async function zapInTempleLP(
   if (fromToken !== ETH) {
     await fromTokenContract.approve(
       zaps.address,
-      ethers.utils.parseUnits('1000111', fromTokenDecimals)
+      fromAmountBN,  //ethers.utils.parseUnits('1000111', fromTokenDecimals)
     );
     const allowance = await fromTokenContract.allowance(
       signerAddress,
