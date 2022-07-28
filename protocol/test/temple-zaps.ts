@@ -1,5 +1,5 @@
 import { ethers, network } from "hardhat";
-import { Signer, BigNumber, BigNumberish } from "ethers";
+import { Signer, BigNumber, BigNumberish, BytesLike } from "ethers";
 import { expect, should } from "chai";
 import axios from 'axios';
 import { blockTimestamp, shouldThrow, toAtto } from "./helpers";
@@ -18,13 +18,16 @@ import { ERC20, ERC20__factory, Exposure, Exposure__factory, Faith, Faith__facto
   GenericZap__factory, GenericZap, 
   UniswapV2Pair, UniswapV2Router02NoEth,
   UniswapV2Router02NoEth__factory, UniswapV2Pair__factory,
-  ICurvePool__factory, ICurvePool, ICurveFactory__factory, ZapBaseV23__factory, IUniswapV2Pair__factory
+  ICurvePool__factory, ICurvePool, ICurveFactory__factory, ZapBaseV23__factory, IUniswapV2Pair__factory, IBalancerVault__factory, IBalancerVault
 } from "../typechain";
 import { string } from "hardhat/internal/core/params/argumentTypes";
+import { IBalancerVaultInterface } from "../typechain/IBalancerVault";
+//import { fp, bn } from '@balancer-labs/v2-helpers/src/numbers';
 
 const { WETH, USDC, UNI, FRAX, ETH, OGT, FEI, BNB, FXS, BAL } = addresses.tokens;
 const { BINANCE_ACCOUNT_8, WETH_WHALE, FRAX_WHALE, FXS_WHALE } = addresses.accounts;
-const { ZEROEX_EXCHANGE_PROXY, TEMPLE_STABLE_ROUTER, UNISWAP_V2_ROUTER, CURVE_FACTORY, TEMPLE_FRAX_PAIR } = addresses.contracts;
+const { ZEROEX_EXCHANGE_PROXY, TEMPLE_STABLE_ROUTER, UNISWAP_V2_ROUTER, CURVE_FACTORY, 
+  TEMPLE_FRAX_PAIR, BALANCER_VAULT } = addresses.contracts;
 const { MULTISIG, TEMPLE, TEMPLE_V2_ROUTER, FAITH, STAKING } = DEPLOYED_CONTRACTS.mainnet;
 
 const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
@@ -56,13 +59,17 @@ let aliceAddress: string;
 
 describe("Temple Stax Core Zaps", async () => {
   before(async () => {
+    // as real-time live data is being queried from 0x API, there's the possibility that prices may differ from forked mainnet tests (due to block number)
+    // and hence tokens out (in tests) may differ from real expected values 
+    // use most recent block number in tests (with enough block confirmations)
+    const blockNumber = await getLatestBlockNumberWithEnoughConfirmations();
     await network.provider.request({
       method: "hardhat_reset",
       params: [
         {
           forking: {
             jsonRpcUrl: process.env.TESTS_MAINNET_RPC_URL,
-            blockNumber: Number(process.env.TESTS_FORK_BLOCK_NUMBER),
+            blockNumber
           },
         },
       ],
@@ -347,7 +354,7 @@ describe("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it.only("zaps token and adds temple LP", async () => {
+    it("zaps token and adds temple LP", async () => {
       const tokenAddr = ethers.utils.getAddress(FXS);
       const tokenAmount = "1";
 
@@ -357,26 +364,24 @@ describe("Temple Stax Core Zaps", async () => {
       await tokenContract.transfer(await alice.getAddress(), ethers.utils.parseEther(tokenAmount));
 
       await templeZaps.connect(owner).setSupportedStables([FRAX, FEI], [true, true]);
-      console.log("s frax", await templeZaps.supportedStables(FRAX));
-      console.log("s fei", await templeZaps.supportedStables(FEI));
       const pairContract = IERC20__factory.connect(TEMPLE_FRAX_PAIR, alice);
       const lpBefore = await pairContract.balanceOf(await alice.getAddress());
 
-      // await zapInTempleLP(
-      //   alice,
-      //   templeZaps,
-      //   genericZaps,
-      //   TEMPLE_FRAX_PAIR,
-      //   tokenAddr,
-      //   tokenAmount,
-      //   await alice.getAddress(),
-      //   false
-      // );
+      await zapInTempleLP(
+        alice,
+        templeZaps,
+        genericZaps,
+        TEMPLE_FRAX_PAIR,
+        tokenAddr,
+        tokenAmount,
+        await alice.getAddress(),
+        false
+      );
 
-      // const lpAfter = await pairContract.balanceOf(await alice.getAddress());
-      // console.log("Alice LP before:", ethers.utils.formatEther(lpBefore));
-      // console.log("Alice LP after:", ethers.utils.formatEther(lpAfter));
-      // expect(lpAfter).gt(lpBefore);
+      const lpAfter = await pairContract.balanceOf(await alice.getAddress());
+      console.log("Alice LP before:", ethers.utils.formatEther(lpBefore));
+      console.log("Alice LP after:", ethers.utils.formatEther(lpAfter));
+      expect(lpAfter).gt(lpBefore);
     });
   });
 
@@ -515,8 +520,25 @@ describe("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it("zaps in balancer LP", async () => {
-      
+    it.only("zaps in balancer LP", async () => {
+      const balancerVault = IBalancerVault__factory.connect(BALANCER_VAULT, alice);
+      const poolId = "0x5c6ee304399dbdb9c8ef030ab642b10820db8f56000200000000000000000014";
+      let token1bal0, bal1;
+      const res = await balancerVault.getPoolTokens(poolId);
+      console.log(res);
+
+      // await zapInBalancerLP(
+      //   alice,
+      //   genericZaps,
+      //   balancerVault,
+      //   tokenAddr,
+      //   tokenAmount,
+      //   res.tokens,
+      //   await alice.getAddress(),
+      //   poolId,
+      //   true,
+      //   1
+      // );
     });
   });
 });
@@ -536,6 +558,262 @@ async function approveDefaultTokens(
     }
   }
   await zaps.setApprovedTargets(tokens, approvedTargets, approvals);
+}
+
+async function zapInBalancerLP(
+  signer: Signer,
+  zaps: GenericZap,
+  balancerVault: IBalancerVault,
+  fromToken: string,
+  fromAmount: string,
+  tokens: Array<string>,
+  zapInFor: string,
+  poolId: string,
+  isOneSidedLiquidityAddition: boolean,
+  limitSlippageTolerance: number
+) {
+  // init vars
+  const signerAddress = await signer.getAddress();
+  const fromTokenContract = IERC20__factory.connect(fromToken, signer);
+  //const pairContract = IUniswapV2Pair__factory.connect(pair, signer);
+  let fromTokenDecimals;
+  let sellToken;
+  let symbol;
+  if (fromToken === ETH) {
+    symbol = 'ETH';
+    fromTokenDecimals = 18;
+    sellToken = 'ETH';
+  } else {
+    symbol = await fromTokenContract.symbol();
+    fromTokenDecimals = await fromTokenContract.decimals();
+    sellToken = fromToken;
+  }
+  const fromAmountBN = ethers.utils.parseUnits(fromAmount, fromTokenDecimals);
+  // approve zaps
+  if (fromToken !== ETH) {
+    await fromTokenContract.approve(
+      zaps.address,
+      fromAmountBN,  //ethers.utils.parseUnits('1000111', fromTokenDecimals)
+    );
+    const allowance = await fromTokenContract.allowance(
+      signerAddress,
+      zaps.address
+    );
+    console.log(`Allowance: ${ethers.utils.formatUnits(allowance, fromTokenDecimals)}`);
+  }
+  const sellAmount = fromAmountBN.toString();
+  let swapCallData, price, guaranteedPrice, gas, estimatedGas;
+  let firstSwapMinAmountOut, poolSwapMinAmountOut, minLiquidityOut;
+  let useAltFunction = false;
+  let otherToken, toToken;
+  let poolSwapData;
+  // check if from token is one of balancer pool tokens
+  let isOneOf;
+  for (let i=0; i<tokens.length; i++) {
+    if (equalAddresses(tokens[i], fromToken)) {
+      isOneOf = true;
+      break;
+    }
+  }
+  // if foreign token, populate swap data via 0x protocol
+  if (!isOneOf) {
+    // populate swap data
+    toToken = tokens[0];
+    const url = `${ZEROEX_QUOTE_ENDPOINT}sellToken=${sellToken}&sellAmount=${sellAmount}&buyToken=${toToken}`;
+    const response = await axios.get(url);
+    ({
+      data: { data: swapCallData, price, guaranteedPrice, gas, estimatedGas },
+    } = response);
+    //console.log(response);
+    console.log(JSON.stringify(response.data.orders));
+    console.log(`Price of ${symbol} in ${toToken}: ${price}`);
+    console.log(`Guaranteed price: ${guaranteedPrice}`);
+
+    const toTokenContract = IERC20__factory.connect(toToken, signer);
+    const toTokenDecimals = await toTokenContract.decimals();
+    const minTokenReceived = parseFloat(guaranteedPrice) * parseFloat(fromAmount);
+    const minTokenReceivedWei = ethers.utils.parseUnits(
+      minTokenReceived.toString(),
+      toTokenDecimals
+    );
+    firstSwapMinAmountOut = minTokenReceivedWei;
+    otherToken = tokens[1];
+  } else {
+    toToken = fromToken;
+    swapCallData = "0x";
+    firstSwapMinAmountOut = fromAmountBN;
+    otherToken = equalAddresses(fromToken, tokens[0]) ? tokens[1]: tokens[0];
+  }
+
+  // populate swap data
+
+//   enum SwapKind { GIVEN_IN, GIVEN_OUT }
+
+// struct SingleSwap {
+//    bytes32 poolId;
+//    SwapKind kind;
+//    IAsset assetIn;
+//    IAsset assetOut;
+//    uint256 amount;
+//    bytes userData;
+// }
+// struct FundManagement {
+//   address sender;
+//   bool fromInternalBalance;
+//   address payable recipient;
+//   bool toInternalBalance;
+// }
+  const kind = 0; // out given in
+  // const singleSwap = {
+  //   poolId,
+  //   kind,
+  //   toToken,
+  //   otherToken,
+  //   swapInAmount,
+  //   "0x"
+  // }
+
+  // populate swap data params
+  let swapInAmount;
+  let remainder;
+  let userData;
+  let assetInIndex, assetOutIndex;
+  if (!isOneSidedLiquidityAddition) {
+    assetInIndex = equalAddresses(toToken, tokens[0]) ? 0 : 1;
+    assetOutIndex = assetInIndex == 0 ? 1 : 0;
+    swapInAmount = firstSwapMinAmountOut.div(2);
+    remainder = firstSwapMinAmountOut.sub(swapInAmount) 
+    const batchSwapSteps = [{
+      poolId,
+      assetInIndex,
+      assetOutIndex,
+      amount: swapInAmount,
+      userData: "0x"
+    }];
+    const funds = {
+      sender: zaps.address, // zaps contract will hold the funds then
+      fromInternalBalance: false,
+      recipient: zaps.address,
+      toInternalBalance: false
+    };
+    
+    const assets = assetInIndex == 0 ? tokens : [tokens[1], tokens[0]];
+    const assetDeltas = await balancerVault.queryBatchSwap(0, batchSwapSteps, assets, funds);
+    //expect(assetDeltas).to.deep.eq(assetDeltas.map(bn))
+    
+    console.log("Asset Deltas");
+    console.log(assetDeltas);
+    console.log(assetDeltas[1].mul(-1));
+    // apply slippage tolerance
+    // let limit: BigNumber;
+    // for(let j=0; j<assetDeltas.length; j++) {
+    //   if (assetDeltas[j].isNegative()) {
+    //     limit = assetDeltas[j].mul(-1).mul(100 - limitSlippageTolerance).div(100);
+    //     break;
+    //   }
+    // }
+    const limit = assetDeltas[1].mul(-1).mul(100 - limitSlippageTolerance).div(100);
+    poolSwapMinAmountOut = limit.toString();
+
+    // populate and encode pool swap data
+    // swap(SingleSwap singleSwap,
+    //   FundManagement funds,
+    //   uint256 limit,
+    //   uint256 deadline) returns (uint256 amountCalculated[In/Out])
+    const singleSwap = {
+      poolId,
+      kind,
+      assetIn: toToken,
+      assetOut: otherToken,
+      amount: swapInAmount,
+      userData: "0x"
+    };
+    poolSwapData = balancerVault.interface.encodeFunctionData("swap", [singleSwap, funds, limit, ethers.utils.parseEther("1000")]);
+  } else {
+    // one sided liquidity
+    // no need to pool swap for equal amounts, just directly use vault to add liquidity
+    poolSwapData = "0x";
+    swapInAmount = firstSwapMinAmountOut;
+    poolSwapMinAmountOut = 0;
+    remainder = 0;
+    assetInIndex = equalAddresses(toToken, tokens[0]) ? 0 : 1;
+  }
+  
+  // now create vault request
+
+  // sort tokens/assets and amounts
+  const assets = tokens[0] < tokens[1] ? tokens : [tokens[1], tokens[0]];
+  console.log("assets after sorting ", assets);
+  const maxAmountsIn = equalAddresses(assets[0], tokens[0]) ? [firstSwapMinAmountOut, remainder] : [remainder, firstSwapMinAmountOut];
+  // pool used in tests is a WeightedPool so encoding data accordingly
+  if (!isOneSidedLiquidityAddition) {
+    // exact tokens join EXACT_TOKENS_IN_FOR_BPT_OUT index 1
+    // using maxAmountsIn for amountsIn
+    userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, maxAmountsIn, 1]);
+  } else {
+    // single token join TOKEN_IN_FOR_EXACT_BPT_OUT index 2
+    // enterTokenIndex set as asset 0
+    userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256", "uint256"], [2, 1, assets[0]]);
+  }
+  minLiquidityOut = 1;
+  const fromInternalBalance = false;
+  const joinPoolRequest = {
+    assets,
+    maxAmountsIn,
+    userData,
+    fromInternalBalance
+  }
+  const zapLiqRequest = {
+    firstSwapMinAmountOut,
+    useAltFunction,
+    poolSwapMinAmountOut,
+    isOneSidedLiquidityAddition,
+    otherToken,
+    minLiquidityOut,
+    poolSwapData
+  };
+
+  const zapsConnect = zaps.connect(signer);
+  if (equalAddresses(zapInFor, signerAddress)) {
+    await zapsConnect.zapLiquidityBalancerPool(
+      fromToken,
+      fromAmount,
+      poolId,
+      ZEROEX_EXCHANGE_PROXY,
+      swapCallData,
+      zapLiqRequest,
+      joinPoolRequest
+    );
+  } else {
+    await zapsConnect.zapLiquidityBalancerPoolFor(
+      fromToken,
+      fromAmount,
+      poolId,
+      zapInFor,
+      ZEROEX_EXCHANGE_PROXY,
+      swapCallData,
+      zapLiqRequest,
+      joinPoolRequest
+    );
+  }
+
+  // JoinPoolRequest(
+  //     address[] assets,
+  //     uint256[] maxAmountsIn,
+  //     bytes userData,
+  //     bool fromInternalBalance
+  // )
+
+  // struct ZapLiquidityRequest {
+  //   uint248 firstSwapMinAmountOut;
+  //   bool useAltFunction;
+  //   uint248 poolSwapMinAmountOut;
+  //   bool isOneSidedLiquidityAddition;
+  //   address otherToken;
+  //   uint256 minLiquidityOut;
+  //   bytes poolSwapData;
+  // }
+
 }
 
 async function zapInTempleLP(
@@ -581,7 +859,7 @@ async function zapInTempleLP(
   const token1 = await pairContract.token1();
   const sellAmount = fromAmountBN.toString();
   let swapCallData, price, guaranteedPrice, gas, estimatedGas;
-  let otherToken;
+  let minAmountOut; // in case of first swap from 0x
   let lpSwapMinAmountOut;
   let remainder;
   let reserveA, reserveB, ts;
@@ -597,23 +875,23 @@ async function zapInTempleLP(
     ({
       data: { data: swapCallData, price, guaranteedPrice, gas, estimatedGas },
     } = response);
-    console.log(response);
+    //console.log(response);
     console.log(JSON.stringify(response.data.orders));
     console.log(`Price of ${symbol} in ${toToken}: ${price}`);
     console.log(`Guaranteed price: ${guaranteedPrice}`);
 
     // use a smaller min buy Amount
-    const ABI = [
-      "function sellToUniswap(address[],uint256,uint256,bool)"
-    ]; // special case for test pool (meta)
-    const iface = new ethers.utils.Interface(ABI);
-    const r = iface.decodeFunctionData("sellToUniswap", swapCallData);
+    // const ABI = [
+    //   "function sellToUniswap(address[],uint256,uint256,bool)"
+    // ]; // special case for test pool (meta)
+    //const iface = new ethers.utils.Interface(ABI);
+    //const r = iface.decodeFunctionData("sellToUniswap", swapCallData);
     //console.log("interface things");
     //console.log(r);
     // make min amount 1 to check if it still fails
-    const newData = iface.encodeFunctionData("sellToUniswap", [r[0], r[1], 1, r[3]]);
-    swapCallData = newData;
-    console.log("new swap calldata ", swapCallData);
+    //const newData = iface.encodeFunctionData("sellToUniswap", [r[0], r[1], 1, r[3]]);
+    //swapCallData = newData;
+    //console.log("new swap calldata ", swapCallData);
     // calculate min amount out for stable
     const toTokenContract = IERC20__factory.connect(toToken, signer);
     const toTokenDecimals = await toTokenContract.decimals();
@@ -622,11 +900,16 @@ async function zapInTempleLP(
       minTokenReceived.toString(),
       toTokenDecimals
     );
+    minAmountOut = minTokenReceivedWei;
     [reserveA, reserveB, ts] = await pairContract.getReserves();
     const reserveIn = equalAddresses(token0, TEMPLE) ? reserveB : reserveA;
     const swapInAmount = await gZaps.getSwapInAmount(reserveIn, minTokenReceivedWei);
     remainder = minTokenReceivedWei.sub(swapInAmount);
     lpSwapMinAmountOut = await templeRouter.swapExactStableForTempleQuote(pair, swapInAmount);
+    console.log("mintokenreceivedwei", minTokenReceivedWei);
+    console.log("lpswapminamountOut", lpSwapMinAmountOut);
+    console.log("remainder", remainder);
+    console.log("swapInAmount", swapInAmount);
   } else {
     [reserveA, reserveB, ts] = await pairContract.getReserves();
     // fromToken could be either stable or temple
@@ -637,20 +920,29 @@ async function zapInTempleLP(
       remainder = fromAmountBN.sub(swapInAmount);
       let priceBelowIv;
       [priceBelowIv, lpSwapMinAmountOut] = await templeRouter.swapExactTempleForStableQuote(pair, swapInAmount);
+      console.log("lpswapminamountOut", lpSwapMinAmountOut);
+      console.log("remainder", remainder);
+      console.log("swapInAmount", swapInAmount);
     } else {
       reserveIn = equalAddresses(token0, TEMPLE) ? reserveB : reserveA;
       const swapInAmount = await gZaps.getSwapInAmount(reserveIn, fromAmountBN);
       remainder = fromAmountBN.sub(swapInAmount);
       lpSwapMinAmountOut = await templeRouter.swapExactStableForTempleQuote(pair, swapInAmount);
+      console.log("lpswapminamountOut", lpSwapMinAmountOut);
+      console.log("remainder", remainder);
+      console.log("swapInAmount", swapInAmount);
     }
     //toToken = fromToken;
     swapCallData = "0x";
+    minAmountOut = 0;
   }
 
   // so now liquidity addition will be for remainder(stable) + lpSwapMinAmountOut(temple)
   const amountADesired = equalAddresses(token0, TEMPLE) ? lpSwapMinAmountOut : remainder;
   const amountBDesired = equalAddresses(token0, TEMPLE) ? remainder : lpSwapMinAmountOut;
   [amountAMin, amountBMin] = await gZaps.addLiquidityGetMinAmounts(amountADesired, amountBDesired, pair);
+  console.log("amountADesired, amountBDesired", amountADesired, amountBDesired);
+  console.log("amountAMin, amountBMin", amountAMin, amountBMin);
   const stableToken = equalAddresses(token0, TEMPLE) ? token1 : token0;
   console.log("token0, temple", token0, TEMPLE, token1);
   console.log("signer", signerAddress);
@@ -668,11 +960,13 @@ async function zapInTempleLP(
   if (fromToken === ETH) {
     overrides.value = ethers.utils.parseEther(fromAmount);
   }
+  
   console.log(`${fromToken} ${fromAmountBN} ${ZEROEX_EXCHANGE_PROXY} ${JSON.stringify(params)} ${swapCallData}`)
   if (signerAddress == zapInFor) {
     await zapsConnect.zapInTempleLP(
       fromToken,
       fromAmountBN,
+      minAmountOut,
       ZEROEX_EXCHANGE_PROXY,
       params,
       swapCallData,
@@ -1560,3 +1854,47 @@ async function getExpectedTemple(
 async function getBalance(token: IERC20, owner: string) {
   return await token.balanceOf(owner);
 };
+
+async function getLatestBlockNumberWithEnoughConfirmations(): Promise<Number> {
+  const provider = new ethers.providers.StaticJsonRpcProvider(process.env.TESTS_MAINNET_RPC_URL);
+  const blockNumber = await provider.getBlockNumber() - 5;
+  return blockNumber;
+}
+
+function bn (x: BigNumberish): BigNumber {
+  if (BigNumber.isBigNumber(x)) return x;
+  const stringified = parseScientific(x.toString());
+  const integer = stringified.split('.')[0];
+  return BigNumber.from(integer);
+};
+
+function parseScientific(num: string): string {
+  // If the number is not in scientific notation return it as it is
+  if (!/\d+\.?\d*e[+-]*\d+/i.test(num)) return num;
+
+  // Remove the sign
+  const numberSign = Math.sign(Number(num));
+  num = Math.abs(Number(num)).toString();
+
+  // Parse into coefficient and exponent
+  const [coefficient, exponent] = num.toLowerCase().split('e');
+  let zeros = Math.abs(Number(exponent));
+  const exponentSign = Math.sign(Number(exponent));
+  const [integer, decimals] = (coefficient.indexOf('.') != -1 ? coefficient : `${coefficient}.`).split('.');
+
+  if (exponentSign === -1) {
+    zeros -= integer.length;
+    num =
+      zeros < 0
+        ? integer.slice(0, zeros) + '.' + integer.slice(zeros) + decimals
+        : '0.' + '0'.repeat(zeros) + integer + decimals;
+  } else {
+    if (decimals) zeros -= decimals.length;
+    num =
+      zeros < 0
+        ? integer + decimals.slice(0, zeros) + '.' + decimals.slice(zeros)
+        : integer + decimals + '0'.repeat(zeros);
+  }
+
+  return numberSign < 0 ? '-' + num : num;
+}

@@ -184,16 +184,18 @@ contract TempleZaps is Ownable {
   function zapInTempleLP(
     address _fromAddress,
     uint256 _fromAmount,
+    uint256 _minAmountOut,
     address _swapTarget,
     TempleLiquidityParams memory _params,
     bytes memory _swapData
   ) external payable {
-    zapInTempleLPFor(_fromAddress, _fromAmount, msg.sender, _swapTarget, _params, _swapData);
+    zapInTempleLPFor(_fromAddress, _fromAmount, _minAmountOut, msg.sender, _swapTarget, _params, _swapData);
   }
 
   function zapInTempleLPFor(
     address _fromAddress,
     uint256 _fromAmount,
+    uint256 _minAmountOut,
     address _for,
     address _swapTarget,
     TempleLiquidityParams memory _params,
@@ -209,9 +211,6 @@ contract TempleZaps is Ownable {
     address token1 = IUniswapV2Pair(pair).token1();
 
     if (_fromAddress != token0 && _fromAddress != token1) {
-      // swap to intermediate. uses stable token
-      // reuse vars
-
       console.logString("before fill quote");
       console.log("_fromAddress:", _fromAddress);
       console.log("_fromAmount:", _fromAmount);
@@ -219,6 +218,7 @@ contract TempleZaps is Ownable {
       console.log("_swapTarget:", _swapTarget);
       console.log("balance of from token:", IERC20(_fromAddress).balanceOf(address(this)));
       console.log("balance of stable:", IERC20(_params.stableToken).balanceOf(address(this)));
+
       _fromAmount = _fillQuote(
         _fromAddress,
         _fromAmount,
@@ -226,12 +226,14 @@ contract TempleZaps is Ownable {
         _swapTarget,
         _swapData
       );
+      require(_fromAmount >= _minAmountOut, "Insufficient tokens out");
       console.logString("after fillQuote");
       console.log("balance of from token:", IERC20(_fromAddress).balanceOf(address(this)));
       console.log("balance of stable:", IERC20(_params.stableToken).balanceOf(address(this)));
 
-      // Moved this to *after* we've swapped from user provided token (eg FXS) to AMM stable (eg FRAX)
+      // Moved this to *after* we've swapped from user provided token to stable token
       // The stable token is now the intermediate token.
+      // reuse variable
       _fromAddress = _params.stableToken;
     }
     (uint256 amountA, uint256 amountB) = _swapAMMTokens(pair, _params.stableToken, _fromAddress, _fromAmount, _params.lpSwapMinAmountOut);
@@ -406,8 +408,6 @@ contract TempleZaps is Ownable {
       );
       valueToSend = _fromAmount;
     } else {
-      // get impl contract as allowance target
-
       // https://protocol.0x.org/en/latest/advanced/uniswap.html
       //   > This function does not use allowances set on 0x. The msg.sender must have allowances set on Uniswap (or SushiSwap).
       // 
@@ -415,7 +415,6 @@ contract TempleZaps is Ownable {
       // Here _swapTarget == 0xdef1c0ded9bec7f1a1670819833240f027b25eff
       // which is the 0x exchange contract
       SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), _swapTarget, _fromAmount);
-      //SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), address(0xf9b30557AfcF76eA82C04015D80057Fa2147Dfa9), _fromAmount);
     }
 
     // to calculate amount received
@@ -429,18 +428,18 @@ contract TempleZaps is Ownable {
     if (success) {
         //return returndata;
     } else {
-        // Look for revert reason and bubble it up if present
-        if (returndata.length > 0) {
-          // The easiest way to bubble the revert reason is using memory via assembly
-          console.logString("return data > 0");
-          assembly {
-            let returndata_size := mload(returndata)
-            revert(add(32, returndata), returndata_size)
-          }
-        } else {
-          revert("Execute swap failed");
+      // Look for revert reason and bubble it up if present
+      if (returndata.length > 0) {
+        // The easiest way to bubble the revert reason is using memory via assembly
+        console.logString("return data > 0");
+        assembly {
+          let returndata_size := mload(returndata)
+          revert(add(32, returndata), returndata_size)
         }
+      } else {
+        revert("Execute swap failed");
       }
+    }
     unchecked {
       amountBought = IERC20(_toToken).balanceOf(address(this)) - initialBalance;
     }

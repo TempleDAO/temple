@@ -71,6 +71,14 @@ interface IBalancerVault {
     bytes userData;
   }
 
+  struct BatchSwapStep {
+    bytes32 poolId;
+    uint256 assetInIndex;
+    uint256 assetOutIndex;
+    uint256 amount;
+    bytes userData;
+  }
+
   struct FundManagement {
     address sender;
     bool fromInternalBalance;
@@ -101,7 +109,14 @@ interface IBalancerVault {
       address[] memory tokens,
       uint256[] memory balances,
       uint256 lastChangeBlock
-    );
+  );
+
+  function queryBatchSwap(
+    SwapKind kind,
+    BatchSwapStep[] memory swaps,
+    IERC20[] memory assets,
+    FundManagement memory funds
+  ) external view returns (int256[] memory);
 }
 
 
