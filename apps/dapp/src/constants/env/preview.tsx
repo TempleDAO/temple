@@ -47,19 +47,19 @@ const env: Environment = {
   tokens: {
     frax: {
       name: 'Frax',
-      address: '0x5eD8BD53B0c3fa3dEaBd345430B1A3a6A4e8BD7C',
+      address: '0x73651AD693531F9937528009cC204a4d9b696a68',
     },
     temple: {
       name: 'Temple',
-      address: '0x359655dcB8A32479680Af81Eb38eA3Bb2B42Af54',
+      address: '0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf',
     },
     ogTemple: {
       name: 'OGTemple',
-      address: '0xfF8D8342DC367D66BA20403216d55B1fcC1f284e',
+      address: '0x564462C807600684965d8A8f57eA190F2F66169C',
     },
     fei: {
       name: 'Fei',
-      address: '0xFc59F66a61A59c677d021DC01d5562A144C3D737',
+      address: '0xa1e7CdD887d6fac4861b5663984A9Ba72cFF9522',
     },
     eth: {
       name: 'WETH',
@@ -67,15 +67,15 @@ const env: Environment = {
     },
     usdc: {
       name: 'USDC',
-      address: '',// ENV.VITE_PUBLIC_USDC_ADDRESS,
+      address: '0xe0C9275E44Ea80eF17579d33c55136b7DA269aEb',
     },
     bal: {
       name: 'Bal',
-      address: '', //ENV.VITE_PUBLIC_BAL_ADDRESS,
+      address: '0xf8a0623ab66f985effc1c69d05f1af4badb01b00',
     },
     dai: {
       name: 'Dai',
-      address: '', //ENV.VITE_PUBLIC_DAI_ADDRESS,
+      address: '0x8c9e6c40d3402480ace624730524facc5482798c',
     },
   },
   sentry: {
