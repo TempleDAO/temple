@@ -67,11 +67,11 @@ const env: Environment = {
     },
     usdc: {
       name: 'USDC',
-      address: '',// ENV.VITE_PUBLIC_USDC_ADDRESS,
+      address: '0xe0C9275E44Ea80eF17579d33c55136b7DA269aEb',
     },
     bal: {
       name: 'Bal',
-      address: '', //ENV.VITE_PUBLIC_BAL_ADDRESS,
+      address: '0xf8a0623ab66f985effc1c69d05f1af4badb01b00',
     },
     dai: {
       name: 'Dai',
