@@ -1,10 +1,11 @@
-import { FC } from 'react';
+import { FC, ReactNode } from 'react';
 import { Link as BaseLink, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
 interface LinkProps {
   to: string;
-  label: string;
+  label: ReactNode;
+  onClick?: () => void;
 }
 
 interface Props {
@@ -15,19 +16,28 @@ export const PillMenu = ({ links }: Props) => {
   return (
     <MenuWrapper>
       <Menu>
-        {links.map(({ to, label }) => (
-          <MenuLink to={to} key={to}>{label}</MenuLink>
+        {links.map(({ to, label, onClick }, i) => (
+          <MenuLink
+            key={i}
+            to={!!onClick ? '#' : to}
+            onClick={onClick}
+          >
+            {label}
+          </MenuLink>
         ))}
       </Menu>
     </MenuWrapper>
   );
 };
 
-const MenuLink: FC<{ to: string }> = (props) => {
+const MenuLink: FC<{ to: string; onClick?: () => void; }> = (props) => {
   const resolved = useResolvedPath(props.to);
   const match = useMatch({ path: resolved.pathname, end: true });
   return (
-    <Link {...props} $isActive={!!match} />
+    <Link
+      {...props}
+      $isActive={!!match}
+    />
   );
 };
 
