@@ -3,43 +3,28 @@ import { Contract } from 'ethers';
 import balancerPoolAbi from 'data/abis/balancerPool.json';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { useWallet } from 'providers/WalletProvider';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { useNotification } from 'providers/NotificationProvider';
+import useRequestState from 'hooks/use-request-state';
 
 export const usePoolContract = (pool?: Pool) => {
-  const { signer } = useWallet();
+  const { signer, wallet } = useWallet();
   const { openNotification } = useNotification();
+  const [constractInstance, setContractInstance] = useState<Contract>();
 
-  if (!pool || !signer) {
-    return {
-      setSwapEnabled: {
-        handler: async () => {
-          throw new Error('Wallet not connected');
-        },
-        isLoading: false,
-        error: null,
-      },
-      updateWeightsGradually: {
-        handler: async () => {
-          throw new Error('Wallet not connected');
-        },
-        isLoading: false,
-        error: null,
-      },
-    };
-  }
+  useEffect(() => {
+    if (!signer || constractInstance || !pool) {
+      return;
+    }
 
-  const [isSetSwapEnabledLoading, setIsSetSwapEnabledLoading] = useState(false);
-  const [isUpdateWeightsGraduallyLoading, setIsUpdateWeightsGraduallyLoading] = useState(false);
-
-  const poolContract: Contract = new Contract(pool.address, balancerPoolAbi, signer);
+    setContractInstance(new Contract(pool.address, balancerPoolAbi, signer));
+  }, [signer, constractInstance, pool, setContractInstance]);
 
   const setSwapEnabledHandler = async (enabled: boolean) => {
-    setIsSetSwapEnabledLoading(true);
     let result;
     try {
-      result = await poolContract!.setSwapEnabled(enabled, {
+      result = await constractInstance!.setSwapEnabled(enabled, {
         gasLimit: 400000,
       });
       await result.wait();
@@ -48,27 +33,24 @@ export const usePoolContract = (pool?: Pool) => {
         hash: result.hash,
       });
     } catch (error: any) {
-      console.error(error);
       openNotification({
         title: `setSwapEnabled failed.`,
         hash: result.hash,
       });
-    } finally {
-      setIsSetSwapEnabledLoading(false);
+      throw error;
     }
   };
 
   const updateWeightsGraduallyHandler = async (
     startTime: Date,
     endTime: Date,
-    endWeight1: DecimalBigNumber,
-    endWeight2: DecimalBigNumber
+    _endWeights: DecimalBigNumber[],
   ) => {
-    const endWeights = [endWeight1.value, endWeight2.value];
+    const endWeights = _endWeights.map(({ value }) => value);
+   
     let result;
     try {
-      setIsUpdateWeightsGraduallyLoading(true);
-      result = await poolContract!.updateWeightsGradually(
+      result = await constractInstance!.updateWeightsGradually(
         startTime.getTime() / 1000,
         endTime.getTime() / 1000,
         endWeights,
@@ -82,24 +64,25 @@ export const usePoolContract = (pool?: Pool) => {
         hash: result.hash,
       });
     } catch (error: any) {
-      console.error(error);
       openNotification({
         title: `updateWeights failed.`,
         hash: result.hash,
       });
-    } finally {
-      setIsUpdateWeightsGraduallyLoading(false);
+      throw error;
     }
   };
 
+  const [swapHandler, swapRequestState] = useRequestState(setSwapEnabledHandler);
+  const [updateWeightHandler, updateWeightsRequestState] = useRequestState(updateWeightsGraduallyHandler);
+
   return {
     setSwapEnabled: {
-      handler: setSwapEnabledHandler,
-      isLoading: isSetSwapEnabledLoading,
+      handler: swapHandler,
+      ...swapRequestState,
     },
     updateWeightsGradually: {
-      handler: updateWeightsGraduallyHandler,
-      isLoading: isUpdateWeightsGraduallyLoading,
+      handler: updateWeightHandler,
+      ...updateWeightsRequestState,
     },
   };
 };

@@ -40,9 +40,11 @@ interface Gas {
   claimOgTemple: number;
 }
 
-interface Token {
+export interface Token {
   name: string;
   address: string;
+  decimals: number;
+  symbol?: string;
 }
 
 interface Tokens {
@@ -52,7 +54,6 @@ interface Tokens {
   fei: Token;
   eth: Token;
   usdc: Token;
-  bal: Token;
   dai: Token;
 }
 

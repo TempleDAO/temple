@@ -35,7 +35,6 @@ export const Trade = ({ pool }: Props) => {
     userBalances,
     isPaused,
   } = useAuctionContext();
-
   const [transactionSettingsOpen, setTransactionSettingsOpen] = useState(false);
 
   const {
@@ -70,7 +69,7 @@ export const Trade = ({ pool }: Props) => {
   const sellBalance = userBalances[sell.address] || DBN_ZERO;
   const buyBalance = userBalances[buy.address] || DBN_ZERO;
 
-  if (isPaused) {
+  if (!pool.swapEnabled || isPaused) {
     return (
       <Wrapper verticalAlignment="top">
         <h3>Paused!</h3>

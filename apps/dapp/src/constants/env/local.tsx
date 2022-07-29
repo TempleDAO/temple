@@ -38,40 +38,51 @@ const env: Environment = {
     frax: {
       name: 'Frax',
       address: ENV.VITE_PUBLIC_STABLE_COIN_ADDRESS,
+      decimals: 18,
+      symbol: 'Frax',
     },
     temple: {
       name: 'Temple',
       address: ENV.VITE_PUBLIC_TEMPLE_ADDRESS,
+      decimals: 18,
+      symbol: 'Temple',
+
     },
     ogTemple: {
       name: 'OGTemple',
       address: ENV.VITE_PUBLIC_OG_TEMPLE_ADDRESS,
+      decimals: 18,
+      symbol: 'OGTemple'
     },
     fei: {
       name: 'Fei',
       address: ENV.VITE_PUBLIC_FEI_ADDRESS,
+      decimals: 18,
+      symbol: 'FEI',
     },
     eth: {
       name: 'WETH',
       address: '',
+      decimals: 18,
+      symbol: 'WETH',
     },
     usdc: {
       name: 'USDC',
       address: ENV.VITE_PUBLIC_USDC_ADDRESS,
-    },
-    bal: {
-      name: 'Bal',
-      address: ENV.VITE_PUBLIC_BAL_ADDRESS,
+      decimals: 6,
+      symbol: 'USDC',
     },
     dai: {
       name: 'Dai',
       address: ENV.VITE_PUBLIC_DAI_ADDRESS,
+      decimals: 18,
+      symbol: 'DAI'
     },
   },
   featureFlags: {
     enableAscend: true,
   },
-  templeMultisig: '0xad2da3dc8b6e5a69cb9691f4540d8835a45edfea',
+  templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
 };
 
 export default env;
