@@ -20,9 +20,6 @@ import { ERC20, ERC20__factory, Exposure, Exposure__factory, Faith, Faith__facto
   UniswapV2Router02NoEth__factory, UniswapV2Pair__factory,
   ICurvePool__factory, ICurvePool, ICurveFactory__factory, ZapBaseV23__factory, IUniswapV2Pair__factory, IBalancerVault__factory, IBalancerVault
 } from "../typechain";
-import { string } from "hardhat/internal/core/params/argumentTypes";
-import { IBalancerVaultInterface } from "../typechain/IBalancerVault";
-//import { fp, bn } from '@balancer-labs/v2-helpers/src/numbers';
 
 const { WETH, USDC, UNI, FRAX, ETH, OGT, FEI, BNB, FXS, BAL } = addresses.tokens;
 const { BINANCE_ACCOUNT_8, WETH_WHALE, FRAX_WHALE, FXS_WHALE } = addresses.accounts;
@@ -60,7 +57,7 @@ let poolId: string;
 let bptPoolToken: string;
 
 
-describe("Temple Stax Core Zaps", async () => {
+describe.only("Temple Stax Core Zaps", async () => {
   before(async () => {
     // as real-time live data is being queried from 0x API, there's the possibility that prices may differ from forked mainnet tests (due to block number)
     // and hence tokens out (in tests) may differ from real expected values 
@@ -214,6 +211,10 @@ describe("Temple Stax Core Zaps", async () => {
       //});
     });
 
+    afterEach(async () => {
+      resetFork(await getLatestBlockNumberWithEnoughConfirmations());
+    });
+
     it("should throw error for unapproved token", async () => {
       
       await shouldThrow(genericZaps.zapIn(
@@ -226,22 +227,21 @@ describe("Temple Stax Core Zaps", async () => {
       ), /Unsupported token\/target/);
     });
 
-    it("should zap ETH to TEMPLE", async () => {
+    it.only("should zap ETH to TEMPLE", async () => {
       const tokenAddr = ETH;
-      console.log(tokenAddr);
       const tokenAmount = "5";
-      const minTempleReceived = ethers.utils.parseUnits("1", 18).toString();
 
-      // await zapIn(
-      //   alice,
-      //   templeZaps,
-      //   tokenAddr,
-      //   tokenAmount,
-      //   minTempleReceived
-      // );
+      await zapTemple(
+        alice,
+        await alice.getAddress(),
+        templeZaps,
+        genericZaps,
+        tokenAddr,
+        tokenAmount
+      );
     });
 
-    it("should zap ERC20 tokens to TEMPLE", async () => {
+    it.only("should zap ERC20 tokens to TEMPLE", async () => {
       const tokenAddr = FXS;
       const tokenAmount = "5";
 
@@ -284,9 +284,8 @@ describe("Temple Stax Core Zaps", async () => {
       const tokenAmount = "5";
 
       // send some BNB
-      //const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
-      const fxsWhale = await impersonateAddress(FXS_WHALE);
-      const bnbToken = IERC20__factory.connect(tokenAddr, fxsWhale);
+      const whale = await impersonateAddress(FXS_WHALE);
+      const bnbToken = IERC20__factory.connect(tokenAddr, whale);
       await bnbToken.transfer(await alice.getAddress(), ethers.utils.parseEther(tokenAmount));
       await templeZaps.setSupportedStables([FRAX, FEI], [true, true]);
       await zapInVault(
@@ -375,8 +374,6 @@ describe("Temple Stax Core Zaps", async () => {
       );
 
       const lpAfter = await pairContract.balanceOf(await alice.getAddress());
-      console.log("Alice LP before:", ethers.utils.formatEther(lpBefore));
-      console.log("Alice LP after:", ethers.utils.formatEther(lpAfter));
       expect(lpAfter).gt(lpBefore);
     });
   });
@@ -385,9 +382,6 @@ describe("Temple Stax Core Zaps", async () => {
     
     const tokenAddr = ethers.utils.getAddress(FXS);
     const tokenAmount = "50";
-    // const balancerVault = IBalancerVault__factory.connect(BALANCER_VAULT, alice);
-    // const poolId = "0x5c6ee304399dbdb9c8ef030ab642b10820db8f56000200000000000000000014";
-    // const bptPoolToken = "0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56";
     beforeEach( async () => {
       // send some FXS
       const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
@@ -411,7 +405,7 @@ describe("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it("zaps in erc20 tokens to erc20 tokens for other user", async () => {
+    it("zaps in erc20 tokens to erc20 tokens for another user", async () => {
       console.log(`Alice, Owner ; ${await alice.getAddress()} ${await owner.getAddress()}`);
       await zapIn(
         alice,
@@ -482,13 +476,6 @@ describe("Temple Stax Core Zaps", async () => {
       const fxsCvxFxsPool = "0xd658A338613198204DCa1143Ac3F01A722b5d94A";
       const cvxFxs = "0xFEEf77d3f69374f66429C91d732A244f074bdf74";
       const pool = ICurvePool__factory.connect(fxsCvxFxsPool, alice);
-
-      // const fraxUsdcPool = "0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2";
-      // const pool = ICurvePool__factory.connect(fraxUsdcPool, alice);
-
-      // const fxsSdFxsPool = "0x8c524635d52bd7b1Bd55E062303177a7d916C046";
-      // const sdFxs = "0x402F878BDd1f5C66FdAF0fabaBcF74741B68ac36";
-      //const pool = ICurvePool__factory.connect(fxsSdFxsPool, alice);
       const poolAddress = pool.address;
 
       await genericZaps.setApprovedTargets([FXS, cvxFxs], [poolAddress, poolAddress], [true, true]);
@@ -523,7 +510,7 @@ describe("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it.only("zaps in balancer LP, one sided liquidity", async () => {
+    it("zaps in balancer LP, one sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
       console.log(res);
 
@@ -542,7 +529,7 @@ describe("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it.only("zaps in balancer LP for another user, one sided liquidity", async () => {
+    it("zaps in balancer LP for another user, one sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
 
       await zapInBalancerLP(
@@ -560,7 +547,7 @@ describe("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it.only("zaps in balancer LP, two sided liquidity", async () => {
+    it("zaps in balancer LP, two sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
       console.log(res);
 
@@ -579,7 +566,7 @@ describe("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it.only("zaps in balancer LP for another user, two sided liquidity", async () => {
+    it("zaps in balancer LP for another user, two sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
       console.log(res);
 
@@ -1594,7 +1581,7 @@ async function zapTemple(
   const checkSumedTokenAddr = ethers.utils.getAddress(tokenAddr);
   const checkSumedFraxAddr = ethers.utils.getAddress(FRAX);
   if (signerAddress == zapInfor) {
-    await expect(templeZapsConnect.zapInTemple(
+    await templeZapsConnect.zapInTemple(
       tokenAddr,
       sellAmount,
       minExpectedTemple,
@@ -1603,11 +1590,11 @@ async function zapTemple(
       ZEROEX_EXCHANGE_PROXY,
       swapCallData,
       overrides
-    ))
-    .to.emit(zaps, "ZappedIn")
+    )
+    //.to.emit(zaps, "ZappedIn")
     //.withArgs(templeZaps.address, checkSumedTokenAddr, sellAmount, checkSumedFraxAddr, minFraxReceivedWei);
   } else {
-    await expect(templeZapsConnect.zapInTempleFor(
+    await templeZapsConnect.zapInTempleFor(
       tokenAddr,
       sellAmount,
       minExpectedTemple,
@@ -1617,8 +1604,8 @@ async function zapTemple(
       ZEROEX_EXCHANGE_PROXY,
       swapCallData,
       overrides
-    ))
-    .to.emit(zaps, "ZappedIn")
+    )
+    //.to.emit(zaps, "ZappedIn")
   }
   
   console.log(
@@ -1733,7 +1720,7 @@ async function zapIn(
   }
 
   // Get balance after zap
-  const balanceAfter = await getBalance(toTokenContract, signerAddress);
+  const balanceAfter = await getBalance(toTokenContract, zapInfor);
   console.log(`Ending toToken balance: ${ethers.utils.formatUnits(balanceAfter, 18)}`);
 
   expect(balanceAfter.gte(minTokenReceivedWei)).to.be.true;
@@ -1899,42 +1886,4 @@ async function resetFork(blockNumber: Number) {
       },
     ],
   });
-}
-
-function bn (x: BigNumberish): BigNumber {
-  if (BigNumber.isBigNumber(x)) return x;
-  const stringified = parseScientific(x.toString());
-  const integer = stringified.split('.')[0];
-  return BigNumber.from(integer);
-};
-
-function parseScientific(num: string): string {
-  // If the number is not in scientific notation return it as it is
-  if (!/\d+\.?\d*e[+-]*\d+/i.test(num)) return num;
-
-  // Remove the sign
-  const numberSign = Math.sign(Number(num));
-  num = Math.abs(Number(num)).toString();
-
-  // Parse into coefficient and exponent
-  const [coefficient, exponent] = num.toLowerCase().split('e');
-  let zeros = Math.abs(Number(exponent));
-  const exponentSign = Math.sign(Number(exponent));
-  const [integer, decimals] = (coefficient.indexOf('.') != -1 ? coefficient : `${coefficient}.`).split('.');
-
-  if (exponentSign === -1) {
-    zeros -= integer.length;
-    num =
-      zeros < 0
-        ? integer.slice(0, zeros) + '.' + integer.slice(zeros) + decimals
-        : '0.' + '0'.repeat(zeros) + integer + decimals;
-  } else {
-    if (decimals) zeros -= decimals.length;
-    num =
-      zeros < 0
-        ? integer + decimals.slice(0, zeros) + '.' + decimals.slice(zeros)
-        : integer + decimals + '0'.repeat(zeros);
-  }
-
-  return numberSign < 0 ? '-' + num : num;
 }

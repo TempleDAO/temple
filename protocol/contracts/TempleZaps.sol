@@ -159,14 +159,41 @@ contract TempleZaps is Ownable {
     bytes calldata _swapData
   ) public payable {
     require(supportedStables[_stableToken] == true, "Unsupported stable token");
-    // todo: handle when fromToken == ETH. i.e. deposit into weth and update
-    SafeERC20.safeTransferFrom(IERC20(_fromToken), msg.sender, address(this), _fromAmount);
-    
-    // todo: check if _fromToken is ETH and send msg.value
-    SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), address(zaps), _fromAmount);
-    uint256 amountOut = zaps.zapIn(_fromToken, _fromAmount, _stableToken, _minStableReceived, _swapTarget, _swapData);
 
-    _enterTemple(_stableToken, _recipient, amountOut, _minTempleReceived);
+    uint256 amountOut;
+    if (_fromToken != address(0)) {
+      SafeERC20.safeTransferFrom(IERC20(_fromToken), msg.sender, address(this), _fromAmount);
+      SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), address(zaps), _fromAmount);
+      amountOut = zaps.zapIn(_fromToken, _fromAmount, _stableToken, _minStableReceived, _swapTarget, _swapData);
+    } else {
+      console.log("msg value", msg.value);
+
+      amountOut = _fillQuote(_fromToken, _fromAmount, _stableToken, _swapTarget, _swapData);
+      require(amountOut >= _minStableReceived, "Not enough stable tokens out");
+      // // encode and call zaps
+      // bytes memory data = abi.encodeWithSignature("zapIn", _fromToken, _fromAmount, _stableToken, _minStableReceived, _swapTarget, _swapData);
+      // (bool success, bytes memory returndata) = address(zaps).call{value:msg.value}(data);
+      // //require(success, "Execute failed");
+      // if (success) {
+      //   //return returndata;
+      //   amountOut = abi.decode(returndata, (uint256));
+      // } else {
+      //   // Look for revert reason and bubble it up if present
+      //   if (returndata.length > 0) {
+      //     // The easiest way to bubble the revert reason is using memory via assembly
+      //     console.logString("return data > 0");
+      //     assembly {
+      //       let returndata_size := mload(returndata)
+      //       revert(add(32, returndata), returndata_size)
+      //     }
+      //   } else {
+      //     revert("Execute swap failed");
+      //   }
+      // }
+      // amountOut = abi.decode(returndata, (uint256));
+    }
+
+     _enterTemple(_stableToken, _recipient, amountOut, _minTempleReceived);
   }
 
   function zapInTemple(
@@ -260,11 +287,6 @@ contract TempleZaps is Ownable {
     address _swapTarget,
     bytes calldata _swapData
   ) public payable {
-    //require(_for != address(0), "Invalid for address");
-    console.logString("stable token zapinvaultfor");
-    console.logAddress(_stableToken);
-    console.logBool(supportedStables[_stableToken]);
-
     SafeERC20.safeTransferFrom(IERC20(_fromToken), msg.sender, address(this), _fromAmount);
     uint256 receivedTempleAmount;
     if (_fromToken == temple) {
@@ -395,7 +417,6 @@ contract TempleZaps is Ownable {
         "Invalid _amount: Input ETH mismatch"
       );
       IWETH(WETH).deposit{value: _fromAmount}();
-      // amountBought = _fromAmount;
       return _fromAmount;
     }
 
@@ -408,21 +429,11 @@ contract TempleZaps is Ownable {
       );
       valueToSend = _fromAmount;
     } else {
-      // https://protocol.0x.org/en/latest/advanced/uniswap.html
-      //   > This function does not use allowances set on 0x. The msg.sender must have allowances set on Uniswap (or SushiSwap).
-      // 
-      // This has me confused, because the allowance required or you get an error.
-      // Here _swapTarget == 0xdef1c0ded9bec7f1a1670819833240f027b25eff
-      // which is the 0x exchange contract
       SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), _swapTarget, _fromAmount);
     }
 
     // to calculate amount received
     uint256 initialBalance = IERC20(_toToken).balanceOf(address(this));
-    console.log("_fromToken:", _fromToken);
-    console.log("allowance to _swapTarget:", IERC20(_fromToken).allowance(address(this), _swapTarget));
-    console.log("balance:", IERC20(_fromToken).balanceOf(address(this)));
-    console.log("amount:", _fromAmount);
     (bool success, bytes memory returndata) = _swapTarget.call{value:valueToSend}(_swapData);
     //require(success, "Execute swap failed");
     if (success) {

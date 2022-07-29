@@ -3,7 +3,7 @@ pragma solidity ^0.8.4;
 
 import "./ZapBaseV2_3.sol";
 import "./GenericZapHelper.sol";
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 interface IWETH {
   function deposit() external payable;
@@ -207,27 +207,27 @@ contract GenericZap is ZapBaseV2_3 {
     address swapTarget,
     bytes calldata swapData
   ) public payable whenNotPaused returns (uint256 amountOut) {
-    // require(approvedTargets[fromToken][swapTarget] == true, "Unsupported token/target");
+    require(approvedTargets[fromToken][swapTarget] == true, "Unsupported token/target");
 
-    // _pullTokens(fromToken, fromAmount);
+    _pullTokens(fromToken, fromAmount);
 
-    // amountOut = _fillQuote(
-    //   fromToken,
-    //   fromAmount,
-    //   toToken,
-    //   swapTarget,
-    //   swapData
-    // );
-    // // require(amountOut >= amountOutMin, "Not enough tokens out");
+    amountOut = _fillQuote(
+      fromToken,
+      fromAmount,
+      toToken,
+      swapTarget,
+      swapData
+    );
+    require(amountOut >= amountOutMin, "Not enough tokens out");
     
-    // // emit ZappedIn(msg.sender, fromToken, fromAmount, toToken, amountOut);
+    emit ZappedIn(msg.sender, fromToken, fromAmount, toToken, amountOut);
 
-    // // transfer token to recipient
-    // SafeERC20.safeTransfer(
-    //   IERC20(toToken),
-    //   recipient,
-    //   amountOut
-    // );
+    // transfer token to recipient
+    SafeERC20.safeTransfer(
+      IERC20(toToken),
+      recipient,
+      amountOut
+    );
   }
 
   function zapLiquidityBalancerPoolFor(
@@ -287,8 +287,8 @@ contract GenericZap is ZapBaseV2_3 {
     // approve tokens iteratively, ensuring contract has right balance each time
     for (i=0; i<poolTokens.length;) {
       if (_request.maxAmountsIn[i] > 0) {
-        console.log("maxAmountsIn", _request.maxAmountsIn[i]);
-        console.log("pool token", poolTokens[i], IERC20(poolTokens[i]).balanceOf(address(this)));
+        // console.log("maxAmountsIn", _request.maxAmountsIn[i]);
+        // console.log("pool token", poolTokens[i], IERC20(poolTokens[i]).balanceOf(address(this)));
         require(IERC20(poolTokens[i]).balanceOf(address(this)) >= _request.maxAmountsIn[i], 
           "Insufficient asset tokens");
         _approveToken(poolTokens[i], address(balancerVault), _request.maxAmountsIn[i]);
@@ -617,8 +617,6 @@ contract GenericZap is ZapBaseV2_3 {
     address _swapTarget,
     bytes memory _swapData
   ) internal returns (uint256, uint256){
-    //console.log("fromTokken", _fromToken);
-    //console.log("fromamount", _fromAmount);
     uint256 valueToSend;
     if (_fromToken == address(0)) {
       require(
@@ -628,8 +626,6 @@ contract GenericZap is ZapBaseV2_3 {
       valueToSend = _fromAmount;
     } else {
       _approveToken(_fromToken, _swapTarget, _fromAmount);
-      //console.log("balance", IERC20(_fromToken).balanceOf(address(this)));
-      //console.log("allowance", IERC20(_fromToken).allowance(address(this), _swapTarget));
     }
     uint256 nCoins = _coins.length;
     uint256[] memory balancesBefore = new uint256[](nCoins);
