@@ -5,6 +5,7 @@ import { createPool } from 'components/Layouts/Ascend/utils';
 import Loader from 'components/Loader/Loader';
 import { LBPForm } from '../components/LBPForm';
 import { useTemplePool } from 'hooks/ascend';
+import { AuctionContextProvider } from 'components/Pages/Ascend/components/AuctionContext';
 
 export const EditLBPPage = () => {
   const { poolAddress } = useParams();
@@ -33,5 +34,9 @@ export const EditLBPPage = () => {
   const subgraphPool = response?.data?.pools[0];
   const pool = createPool(subgraphPool);
   
-  return <LBPForm pool={pool}/>;
+  return (
+    <AuctionContextProvider pool={pool}>
+      <LBPForm pool={pool}/>
+    </AuctionContextProvider>
+  );
 };
