@@ -423,6 +423,15 @@ export const LBPForm = ({ pool }: Props) => {
                 })}
               </UnstyledList>
             )}
+          {isEditMode && (
+            <Button
+              isSmall
+              autoWidth
+              loading={updateWeightsGradually.isLoading}
+              label="Update Weights"
+              onClick={updateWeights}
+            />
+          )}
           </FieldGroup>
           {isEditMode && (
             <FieldGroup>
@@ -465,17 +474,15 @@ export const LBPForm = ({ pool }: Props) => {
                 isSmall
                 loading={vaultContract.joinPool.isLoading}
                 disabled={vaultContract.joinPool.isLoading}
-                label="Join Pool"
+                label="Add To Pool"
                 onClick={joinPool}
+                autoWidth
               />
             </FieldGroup>
           )}
         </div>
       </Layout>
-      {!isEditMode ? 
-        <Button isSmall loading={createPool.isLoading} label="Save" onClick={saveForm} /> :
-        <Button isSmall loading={updateWeightsGradually.isLoading} label="Update Weights" onClick={updateWeights} />
-      }
+      {!isEditMode && <Button isSmall loading={createPool.isLoading} label="Save" onClick={saveForm} />}
       {createPool.error && <ErrorMessage>{createPool.error}</ErrorMessage>}
     </Form>
   );
