@@ -25,8 +25,8 @@ interface AuctionContext {
   vaultAddress: string;
   isPaused: boolean;
 
-  weights?: TokenMap<DecimalBigNumber>;
-  balances?: TokenMap<DecimalBigNumber>;
+  weights: TokenMap<DecimalBigNumber>;
+  balances: TokenMap<DecimalBigNumber>;
 
   userBalances: TokenMap<DecimalBigNumber>;
 }

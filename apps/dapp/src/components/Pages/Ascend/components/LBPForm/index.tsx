@@ -128,15 +128,35 @@ export const LBPForm = ({ pool }: Props) => {
     }
 
     try {
-      await vaultContract.joinPool.request(pool.id, tokens, maxAmountsIn);
+      const tx = await vaultContract.joinPool.request(pool.id, tokens, maxAmountsIn);
+      await tx.wait();
       resetJoinPool();
     } catch (err) {
       console.error(err);
     }
   };
 
-  const drainPool = () => {
-    console.log('Invoke drain pool');
+  const drainPool = async () => {
+    if (!pool) {
+      return;
+    }
+    
+    const tokens = Object.values(formValues.tokens)
+      .sort((a, b) => a.address.localeCompare(b.address))
+      .map(({ address }) => address);
+
+    const minAmountsOut: DecimalBigNumber[] = [];
+    for (const address of tokens) {
+      const amount = balances[address];
+      minAmountsOut.push(amount);
+    }
+  
+    try {
+      const tx = await vaultContract.exitPool.request(pool.id, tokens, minAmountsOut);
+      await tx.wait();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const tokens = Object.values(formValues.tokens).sort((a, b) => a.index - b.index);

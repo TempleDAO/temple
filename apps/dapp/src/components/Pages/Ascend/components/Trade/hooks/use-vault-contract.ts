@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { BigNumber, Contract, utils } from 'ethers';
+import { useBalance } from 'wagmi';
 
 import balancerVaultAbi from 'data/abis/balancerVault.json';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { useWallet } from 'providers/WalletProvider';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import useRequestState from 'hooks/use-request-state';
+import { ZERO } from 'utils/bigNumber';
 
 export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) => {
   const { wallet, signer } = useWallet();
@@ -18,6 +20,14 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
 
     setVaultContract(new Contract(vaultAddress as string, balancerVaultAbi, signer));
   }, [vaultAddress, vaultContract, signer, setVaultContract]);
+
+  const _poolBalance = useBalance({
+    addressOrName: (wallet || ''),
+    token: pool?.address || '',
+    enabled: !!wallet && !!pool?.address,
+  });
+
+  const poolBalance = _poolBalance?.data?.value || ZERO;
 
   const joinPool = async (
     poolId: string,
@@ -94,7 +104,27 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
     );
   };
 
+  const exitPool = async (poolId: string, assets: string[], minAmountsOut: DecimalBigNumber[]) => {
+    const minAmounts = minAmountsOut.map((minAmount) => minAmount.value);
+
+    return vaultContract!.exitPool(
+      poolId,
+      wallet,
+      wallet,
+      {
+        assets,
+        minAmountsOut: minAmounts,
+        userData: utils.defaultAbiCoder.encode(['uint256', 'uint256'], [1, poolBalance]), // EXACT_BPT_IN_FOR_TOKENS_OUT
+        toInternalBalance: false,
+      },
+      {
+        gasLimit: 400000,
+      }
+    );
+  };
+
   const [joinPoolRequest, joinPoolRequestState] = useRequestState(joinPool, { shouldReThrow: true });
+  const [exitPoolRequest, exitPoolRequestState] = useRequestState(exitPool, { shouldReThrow: true });
 
   return {
     address: vaultContract?.address || '',
@@ -103,6 +133,10 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
     joinPool: {
       request: joinPoolRequest,
       ...joinPoolRequestState,
+    },
+    exitPool: {
+      request: exitPoolRequest,
+      ...exitPoolRequestState,
     },
     getSwapQuote,
   };
