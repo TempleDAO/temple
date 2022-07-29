@@ -474,7 +474,7 @@ export const LBPForm = ({ pool }: Props) => {
       </Layout>
       {!isEditMode ? 
         <Button isSmall loading={createPool.isLoading} label="Save" onClick={saveForm} /> :
-        <Button isSmall loading={updateWeightsGradually.isLoading} label="Update" onClick={updateWeights} />
+        <Button isSmall loading={updateWeightsGradually.isLoading} label="Update Weights" onClick={updateWeights} />
       }
       {createPool.error && <ErrorMessage>{createPool.error}</ErrorMessage>}
     </Form>
