@@ -236,7 +236,7 @@ export const LBPForm = ({ pool }: Props) => {
       await vaultContract.joinPool.request(pool.id, tokens, maxAmountsIn);
       resetJoinPool();
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
