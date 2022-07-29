@@ -49,7 +49,10 @@ export interface SubgraphPool {
 
 export type GraphResponse = SubGraphResponse<{ pools: SubgraphPool[] }>;
 
-export type Pool = Omit<SubgraphPool, 'createTime' | 'holdersCount' | 'shares' | 'swapFee' | 'tokens' | 'totalLiquidity' | 'totalSwapFee' | 'totalSwapVolume' | 'totalWeight' | 'weightUpdates'> & {
+type OverWritteFields = 
+  'createTime' | 'holdersCount' | 'shares' | 'swapFee' | 'tokens' | 'totalLiquidity' | 'totalSwapFee' | 'totalSwapVolume' | 'totalWeight' | 'weightUpdates' | 'symbol';
+
+export type Pool = Omit<SubgraphPool, OverWritteFields> & {
   createTime: Date;
   holdersCount: number;
   symbol: string;

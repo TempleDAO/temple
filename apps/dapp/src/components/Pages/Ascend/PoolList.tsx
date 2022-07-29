@@ -34,6 +34,7 @@ const PoolListPage = () => {
             <Cell as="th">Tokens</Cell>
             <Cell as="th">Swap Enabled</Cell>
             <Cell as="th">Weights Updated</Cell>
+            <Cell as="th">Liquidity</Cell>
             <Cell as="th">Actions</Cell>
           </Row>
         </Head>
@@ -48,6 +49,7 @@ const PoolListPage = () => {
                 </Cell>
                 <Cell>{pool.swapEnabled ? 'YES' : 'NO'}</Cell>
                 <Cell>{pool.weightUpdates.length === 1 ? 'NO' : 'YES'}</Cell>
+                <Cell>{Number(pool.totalLiquidity) === 0 ? 'None' : `$${pool.totalLiquidity}`}</Cell>
                 <Cell>
                   <Link to={`${pool.address}`}>Edit</Link>
                 </Cell>
