@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import styled, { css } from 'styled-components';
-import { Pool } from 'components/Layouts/Ascend/types';
 import env from 'constants/env';
 import { Button } from 'components/Button/Button';
 import { usePoolContract } from './use-pool-contract';
@@ -15,128 +14,24 @@ import { UnstyledList } from 'styles/common';
 import { useAuctionContext } from '../AuctionContext';
 import { formatNumber } from 'utils/formatter';
 import { useVaultContract } from '../Trade/hooks/use-vault-contract';
+import { AdminCryptoInput } from './components/CryptoInput';
 
-interface FormToken {
-  name: string;
-  address: string;
-  symbol?: string;
-  decimals: number;
-  startWeight: DecimalBigNumber;
-  endWeight: DecimalBigNumber;
-  balance: DecimalBigNumber;
-  index: number;
-}
+import {
+  getInitialValues,
+  createTokenDefaults,
+  formatValueByType,
+  formatDate,
+  formatWeight,
+} from './utils';
 
-interface Values {
-  id?: string;
-  name: string;
-  symbol: string;
-  fees: number;
-  tokens: {
-    [address: string]: FormToken;
-  };
-  joinPool: {
-    [address: string]: string;
-  };
-  startDate: Date;
-  endDate: Date;
-}
-
-const getInitialValues = (pool?: Pool): Values => {
-  if (!pool) {
-    return {
-      name: '',
-      symbol: '',
-      fees: 1,
-      tokens: {},
-      startDate: new Date(),
-      endDate: new Date(),
-      joinPool: {},
-    };
-  }
-
-  const lastWeightUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
-
-  return {
-    id: pool.id,
-    fees: 1,
-    tokens: pool.tokens.reduce((acc, token, i) => {
-      return {
-        ...acc,
-        [token.address]: {
-          ...token,
-          index: i,
-          balance: DBN_ZERO,
-          startWeight: lastWeightUpdate.startWeights[i],
-          endWeight: lastWeightUpdate.endWeights[i],
-        },
-      };
-    }, {}),
-    joinPool: pool.tokens.reduce((acc, token, i) => {
-      return {
-        ...acc,
-        [token.address]: '',
-      };
-    }, {}),
-    name: pool.name,
-    symbol: pool.symbol,
-    startDate: lastWeightUpdate.startTimestamp,
-    endDate: lastWeightUpdate.endTimestamp,
-  };
-};
-
-interface Props {
-  pool?: Pool;
-}
+import {
+  Props,
+  FormToken,
+  Values,
+  InputType,
+} from './types'
 
 const MAX_TOKENS = 2;
-
-const createTokenDefaults = (token: Token, index: number): FormToken => {
-  return {
-    name: token.name,
-    address: token.address,
-    symbol: token.symbol,
-    decimals: token.decimals,
-    startWeight: DBN_ZERO,
-    endWeight: DBN_ZERO,
-    balance: DBN_ZERO,
-    index,
-  };
-};
-
-type InputType = 'date' | 'number' | 'bn' | 'string';
-
-const formatValueByType = (value: any, type: InputType) => {
-  switch (type) {
-    case 'date': {
-      try {
-        return parse(value, "yyyy-LL-dd'T'kk:mm", new Date());
-      } catch (error) {
-        console.error(error);
-        return new Date();
-      }
-    }
-    case 'bn':
-      return DecimalBigNumber.parseUnits(value || '0', 16);
-    default:
-      return value;
-  }
-}
-
-const formatDate = (date: Date) => {
-  if (!date) return;
-  try {
-    return format(date, "yyyy-LL-dd'T'kk:mm");
-  } catch (error) {
-    console.error(error);
-    return format(new Date(), "yyyy-LL-dd'T'kk:mm");
-  }
-};
-
-const formatWeight = (weight: DecimalBigNumber) => {
-  if (!weight) return '0';
-  return Math.trunc(Number(formatUnits(weight.value, 16)));
-};
 
 export const LBPForm = ({ pool }: Props) => {
   const isEditMode = !!pool;
@@ -436,32 +331,30 @@ export const LBPForm = ({ pool }: Props) => {
           {isEditMode && (
             <FieldGroup>
               <Label>Add Liquidity</Label>
-              {Object.values(formValues.tokens).map(({ address, symbol }) => {
-                const userBalance = userBalances[address];
+              {Object.values(formValues.tokens).map((token) => {
+                const userBalance = userBalances[token.address];
                 return (
-                  <div key={address}>
-                    <CryptoInput
-                      isNumber
-                      crypto={{ kind: 'value', value: symbol || '' }}
-                      hint={`Balance: ${formatNumber(userBalance.formatUnits())}`}
+                  <div key={token.address}>
+                    <AdminCryptoInput
+                      token={token}
+                      vaultAddress={vaultAddress}
+                      userBalance={userBalance}
                       onHintClick={() => {
                         setFormValues((values) => ({
                           ...values,
                           joinPool: {
                             ...values.joinPool,
-                            [address]: userBalance.formatUnits(),
+                            [token.address]: userBalance.formatUnits(),
                           },
                         }));
                       }}
-                      value={formValues.joinPool[address] || ''} 
+                      value={formValues.joinPool[token.address] || ''} 
                       handleChange={(value) => {
-                        const stringValue = value.toString();
-                        const isZero = !stringValue.startsWith('.') && Number(stringValue) === 0;
                         setFormValues((values) => ({
                           ...values,
                           joinPool: {
                             ...values.joinPool,
-                            [address]: isZero ? '' : stringValue,
+                            [token.address]: value,
                           },
                         }));
                       }}
@@ -477,7 +370,7 @@ export const LBPForm = ({ pool }: Props) => {
                 label="Add To Pool"
                 onClick={joinPool}
                 autoWidth
-              />
+              /> 
             </FieldGroup>
           )}
         </div>
