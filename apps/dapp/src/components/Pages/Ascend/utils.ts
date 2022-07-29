@@ -4,6 +4,7 @@ import { formatDuration, intervalToDuration } from 'date-fns';
 import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { ZERO } from 'utils/bigNumber';
 
 export const getRemainingTime = (pool?: Pool) => {
   const weights = pool?.weightUpdates || [];
@@ -36,6 +37,11 @@ export const getSpotPrice = (
   const bb = parseFloat(balanceBuy.formatUnits());
   const ws = parseFloat(weightSell.formatUnits());
   const wb = parseFloat(weightBuy.formatUnits());
+
+  // Pool doesn't have liquidity
+  if (bs === 0 || bb === 0) {
+    return ZERO;
+  }
 
   const price = (bs / ws) / (bb / wb);
 
