@@ -94,7 +94,8 @@ export const Account = () => {
 const getChainExplorerURL = (ensOrAddress: string, chainId?: number) => {
   switch (chainId) {
     case 1: return `https://etherscan.io/address/${ensOrAddress}`;
-    case 4: return `https://rinkeby.etherscan.io/${ensOrAddress}`;
+    case 4: return `https://rinkeby.etherscan.io/address/${ensOrAddress}`;
+    case 5: return `https://goerli.etherscan.io/address/${ensOrAddress}`;
     default: return '#';
   }
 };
