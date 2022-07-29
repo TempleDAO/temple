@@ -14,7 +14,7 @@ import { UnstyledList } from 'styles/common';
 import { useAuctionContext } from '../AuctionContext';
 import { formatNumber } from 'utils/formatter';
 import { useVaultContract } from '../Trade/hooks/use-vault-contract';
-import { AdminCryptoInput } from './components/CryptoInput';
+import { AdminCryptoInput } from './components/AdminCryptoInput';
 
 import {
   getInitialValues,
