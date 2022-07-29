@@ -5,6 +5,7 @@ import balancerVaultAbi from 'data/abis/balancerVault.json';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { useWallet } from 'providers/WalletProvider';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import useRequestState from 'hooks/use-request-state';
 
 export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) => {
   const { wallet, signer } = useWallet();
@@ -93,11 +94,16 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
     );
   };
 
+  const [joinPoolRequest, joinPoolRequestState] = useRequestState(joinPool, { shouldReThrow: true });
+
   return {
     address: vaultContract?.address || '',
     isReady: !!vaultContract && !!wallet,
     swap, 
-    joinPool,
+    joinPool: {
+      request: joinPoolRequest,
+      ...joinPoolRequestState,
+    },
     getSwapQuote,
   };
 };
