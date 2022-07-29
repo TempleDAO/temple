@@ -353,6 +353,7 @@ export const LBPForm = ({ pool }: Props) => {
               <Label>Add Liquidity</Label>
               {Object.values(formValues.tokens).map((token) => {
                 const userBalance = userBalances[token.address];
+
                 return (
                   <div key={token.address}>
                     <AdminCryptoInput

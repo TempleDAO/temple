@@ -8,6 +8,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import useRequestState from 'hooks/use-request-state';
 import { ZERO } from 'utils/bigNumber';
+import { formatBigNumber } from 'components/Vault/utils';
 
 export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) => {
   const { wallet, signer } = useWallet();
@@ -106,7 +107,6 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
 
   const exitPool = async (poolId: string, assets: string[], minAmountsOut: DecimalBigNumber[]) => {
     const minAmounts = minAmountsOut.map((minAmount) => minAmount.value);
-
     return vaultContract!.exitPool(
       poolId,
       wallet,
