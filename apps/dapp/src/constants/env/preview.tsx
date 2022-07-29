@@ -49,26 +49,31 @@ const env: Environment = {
       name: 'Frax',
       address: '0x73651AD693531F9937528009cC204a4d9b696a68',
       decimals: 18,
+      symbol: 'FRAX',
     },
     temple: {
       name: 'Temple',
       address: '0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf',
       decimals: 18,
+      symbol: 'TEMPLE'
     },
     ogTemple: {
       name: 'OGTemple',
       address: '0x564462C807600684965d8A8f57eA190F2F66169C',
       decimals: 18,
+      symbol: 'OGTEMPLE',
     },
     fei: {
       name: 'Fei',
       address: '0xa1e7CdD887d6fac4861b5663984A9Ba72cFF9522',
       decimals: 18,
+      symbol: 'FEI',
     },
     eth: {
       name: 'WETH',
       address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
       decimals: 18,
+      symbol: 'WETH',
     },
     usdc: {
       name: 'USDC',

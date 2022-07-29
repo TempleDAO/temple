@@ -192,13 +192,23 @@ export const LBPForm = ({ pool }: Props) => {
 
   const updateWeights = () => {
     const tokens = Object.values(formValues.tokens).sort((a, b) => a.address.localeCompare(b.address));
-    console.log(tokens)
     const endWeights = tokens.map(({ endWeight }) => endWeight);
     return updateWeightsGradually.handler(
       formValues.startDate,
       formValues.endDate,
       endWeights,
     );
+  };
+
+  const resetJoinPool = () => {
+    // Clear join pool values
+    setFormValues((values) => ({
+      ...values,
+      joinPool: Object.keys(formValues.tokens).reduce((acc, address) => ({
+        ...acc,
+        [address]: '',
+      }), {}),
+    }));
   };
 
   const updateSwapEnabled = async (enabled: boolean) => {
@@ -223,7 +233,8 @@ export const LBPForm = ({ pool }: Props) => {
     }
 
     try {
-      await vaultContract.joinPool(pool.id, tokens, maxAmountsIn);
+      await vaultContract.joinPool.request(pool.id, tokens, maxAmountsIn);
+      resetJoinPool();
     } catch (err) {
       console.log(err);
     }
@@ -350,8 +361,8 @@ export const LBPForm = ({ pool }: Props) => {
                         [addTokenAddress]: createTokenDefaults(addToken, tokens.length + 1),
                       },
                     }));
-                    const currentTokens = new Set(Object.keys(formValues.tokens));
-                    const nextToken = tokens.filter(({ address }) => !currentTokens.has(address));
+                    const currentTokens = new Set(Object.keys(formValues.tokens).concat(addTokenAddress));
+                    const nextToken = envTokens.filter(({ address }) => !currentTokens.has(address));
                     setAddTokenAddress(nextToken[0]?.address || '');
                   }}
                 >
@@ -364,7 +375,6 @@ export const LBPForm = ({ pool }: Props) => {
               <UnstyledList>
                 {tokens.map((token, i) => {
                   const poolBalance = balances![token.address];
-                  const userBalance = userBalances![token.address];
 
                   return (
                     <li key={token.address}>
@@ -417,7 +427,7 @@ export const LBPForm = ({ pool }: Props) => {
           {isEditMode && (
             <FieldGroup>
               <Label>Add Liquidity</Label>
-              {Object.values(formValues.tokens).map(({ address, symbol, balance, decimals }) => {
+              {Object.values(formValues.tokens).map(({ address, symbol }) => {
                 const userBalance = userBalances[address];
                 return (
                   <div key={address}>
@@ -451,7 +461,13 @@ export const LBPForm = ({ pool }: Props) => {
                   </div>
                 );
               })}
-              <Button isSmall loading={createPool.isLoading} label="Join Pool" onClick={joinPool} />
+              <Button
+                isSmall
+                loading={vaultContract.joinPool.isLoading}
+                disabled={vaultContract.joinPool.isLoading}
+                label="Join Pool"
+                onClick={joinPool}
+              />
             </FieldGroup>
           )}
         </div>
@@ -510,12 +526,6 @@ const Label = styled.label`
 const Select = styled.select`
   ${inputCss}
   appearance: auto;
-`;
-
-const Note = styled.span`
-  display: block;
-  color: ${({ theme }) => theme.palette.brand};
-  font-size: 0.875rem;
 `;
 
 const ErrorMessage = styled.span`
