@@ -43,34 +43,37 @@ const env: Environment = {
     frax: {
       name: 'Frax',
       address: '',
+      decimals: 18,
     },
     temple: {
       name: 'Temple',
       address: '',
+      decimals: 18,
     },
     ogTemple: {
       name: 'OGTemple',
       address: '',
+      decimals: 18,
     },
     fei: {
       name: 'Fei',
       address: '',
+      decimals: 18,
     },
     eth: {
       name: 'WETH',
       address: '',
+      decimals: 18,
     },
     usdc: {
       name: 'USDC',
       address: '',
-    },
-    bal: {
-      name: 'Bal',
-      address: '',
+      decimals: 6,
     },
     dai: {
       name: 'Dai',
       address: '',
+      decimals: 18,
     },
   },
   sentry: {

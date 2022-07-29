@@ -3,7 +3,7 @@ import { Contract } from 'ethers';
 import liquidityBootstrappingPoolAbi from 'data/abis/liquidityBootstrappingPool.json';
 
 import { useWallet } from 'providers/WalletProvider';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { parseEther } from 'ethers/lib/utils';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { useNotification } from 'providers/NotificationProvider';
@@ -17,9 +17,23 @@ export interface CreatePoolParams {
   swapEnabledOnStart: boolean;
 }
 
+// TODO: Move to env
+const LBP_FACTORY_CONTRACT_ADDRESS = '0xb48Cc42C45d262534e46d5965a9Ac496F1B7a830';
+
 export const useFactoryContract = () => {
   const { signer, wallet } = useWallet();
+  const [contractInstance, setContractInstance] = useState<Contract>();
   const { openNotification } = useNotification();
+  const [isCreatePoolLoading, setIsCreatePoolLoading] = useState(false);
+  const [createPoolError, setCreatePoolError] = useState<null | string>(null);
+
+  useEffect(() => {
+    if (!signer || contractInstance) {
+      return;
+    }
+    
+    setContractInstance(new Contract(LBP_FACTORY_CONTRACT_ADDRESS, liquidityBootstrappingPoolAbi, signer))
+  }, [signer, contractInstance, setContractInstance]);
 
   if (!signer) {
     return {
@@ -32,20 +46,12 @@ export const useFactoryContract = () => {
       },
     };
   }
-
-  const [isCreatePoolLoading, setIsCreatePoolLoading] = useState(false);
-  const [createPoolError, setCreatePoolError] = useState<null | string>(null);
-
-  // TODO: Move to env var
-  const lbpFactoryContractAddress = '0xb48Cc42C45d262534e46d5965a9Ac496F1B7a830';
-  const lbpFactoryContract: Contract = new Contract(lbpFactoryContractAddress, liquidityBootstrappingPoolAbi, signer);
-
   
   const createPoolHandler = async (params: CreatePoolParams) => {
     let result;
     try {
       setIsCreatePoolLoading(true);
-      result = await lbpFactoryContract!.create(
+      result = await contractInstance!.create(
         params.name,
         params.symbol,
         params.tokenAddresses,
