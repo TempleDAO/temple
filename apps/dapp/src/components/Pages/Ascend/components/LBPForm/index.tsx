@@ -71,9 +71,11 @@ export const LBPForm = ({ pool }: Props) => {
           };
         });
       };
+  
+  const getOrdererFormTokens = () => Object.values(formValues.tokens).sort((a, b) => a.address.localeCompare(b.address));
 
   const saveForm = () => {
-    const tokens = Object.values(formValues.tokens).sort((a, b) => a.address.localeCompare(b.address));
+    const tokens = getOrdererFormTokens();
 
     return createPool.handler({
       name: formValues.name,
@@ -86,7 +88,7 @@ export const LBPForm = ({ pool }: Props) => {
   };
 
   const updateWeights = () => {
-    const tokens = Object.values(formValues.tokens).sort((a, b) => a.address.localeCompare(b.address));
+    const tokens = getOrdererFormTokens();
     const endWeights = tokens.map(({ endWeight }) => endWeight);
     return updateWeightsGradually.handler(
       formValues.startDate,
@@ -115,10 +117,7 @@ export const LBPForm = ({ pool }: Props) => {
       return;
     }
 
-    const tokens = Object.values(formValues.tokens)
-      .sort((a, b) => a.address.localeCompare(b.address))
-      .map(({ address }) => address);
-    
+    const tokens = getOrdererFormTokens().map(({ address }) => address);
     const maxAmountsIn: DecimalBigNumber[] = [];
     for (const address of tokens) {
       const amount = formValues.joinPool[address];
@@ -141,10 +140,7 @@ export const LBPForm = ({ pool }: Props) => {
       return;
     }
     
-    const tokens = Object.values(formValues.tokens)
-      .sort((a, b) => a.address.localeCompare(b.address))
-      .map(({ address }) => address);
-
+    const tokens = getOrdererFormTokens().map(({ address }) => address);
     const minAmountsOut: DecimalBigNumber[] = [];
     for (const address of tokens) {
       const amount = balances[address];

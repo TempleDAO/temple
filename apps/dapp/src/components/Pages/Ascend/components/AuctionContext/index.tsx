@@ -149,8 +149,7 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
 
   const weights = useMemo(() => {
     const { buy, sell } = swapState;
-    const weights = tokenWeights || {};
-    
+    const weights = tokenWeights || [];
     return {
       [buy.address]: DecimalBigNumber.fromBN(weights[buy.tokenIndex] || ZERO, 18),
       [sell.address]: DecimalBigNumber.fromBN(weights[sell.tokenIndex] || ZERO, 18),
@@ -160,9 +159,10 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
   const poolTokenBalances: BigNumber[] = vaultTokens?.balances || [];
   const balances = useMemo(() => {
     const { buy, sell } = swapState;
+    const balances = poolTokenBalances || [];
     return {
-      [buy.address]: DecimalBigNumber.fromBN(poolTokenBalances[buy.tokenIndex] || ZERO, buy.decimals),
-      [sell.address]: DecimalBigNumber.fromBN(poolTokenBalances[sell.tokenIndex] || ZERO, sell.decimals),
+      [buy.address]: DecimalBigNumber.fromBN(balances[buy.tokenIndex] || ZERO, buy.decimals),
+      [sell.address]: DecimalBigNumber.fromBN(balances[sell.tokenIndex] || ZERO, sell.decimals),
     };
   }, [swapState, poolTokenBalances]);
 
