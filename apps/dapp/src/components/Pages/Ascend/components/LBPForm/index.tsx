@@ -72,10 +72,10 @@ export const LBPForm = ({ pool }: Props) => {
         });
       };
   
-  const getOrdererFormTokens = () => Object.values(formValues.tokens).sort((a, b) => a.address.localeCompare(b.address));
+  const getOrderedFormTokens = () => Object.values(formValues.tokens).sort((a, b) => a.address.localeCompare(b.address));
 
   const saveForm = () => {
-    const tokens = getOrdererFormTokens();
+    const tokens = getOrderedFormTokens();
 
     return createPool.handler({
       name: formValues.name,
@@ -88,7 +88,7 @@ export const LBPForm = ({ pool }: Props) => {
   };
 
   const updateWeights = () => {
-    const tokens = getOrdererFormTokens();
+    const tokens = getOrderedFormTokens();
     const endWeights = tokens.map(({ endWeight }) => endWeight);
     return updateWeightsGradually.handler(
       formValues.startDate,
@@ -117,17 +117,17 @@ export const LBPForm = ({ pool }: Props) => {
       return;
     }
 
-    const tokens = getOrdererFormTokens().map(({ address }) => address);
+    const tokens = getOrderedFormTokens();
     const maxAmountsIn: DecimalBigNumber[] = [];
-    for (const address of tokens) {
+    for (const { address, decimals } of tokens) {
       const amount = formValues.joinPool[address];
-      const decimals = formValues.tokens[address].decimals;
       const number = DecimalBigNumber.parseUnits(amount || '0', decimals);
       maxAmountsIn.push(number);
     }
 
     try {
-      const tx = await vaultContract.joinPool.request(pool.id, tokens, maxAmountsIn);
+      const assets = tokens.map(({ address }) => address);
+      const tx = await vaultContract.joinPool.request(pool.id, assets, maxAmountsIn);
       await tx.wait();
       resetJoinPool();
     } catch (err) {
@@ -140,7 +140,7 @@ export const LBPForm = ({ pool }: Props) => {
       return;
     }
     
-    const tokens = getOrdererFormTokens().map(({ address }) => address);
+    const tokens = getOrderedFormTokens().map(({ address }) => address);
     const minAmountsOut: DecimalBigNumber[] = [];
     for (const address of tokens) {
       const amount = balances[address];
