@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ZapBase.sol";
 import "./libs/Executable.sol";
 import "./libs/Swap.sol";
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 interface ITempleStableRouter {
   function tokenPair(address token) external view returns (address);
@@ -73,7 +73,7 @@ interface IGenericZaps {
     address toToken,
     uint256 amountOutMin,
     address swapTarget,
-    bytes calldata swapData
+    bytes memory swapData
   ) external returns (uint256 amountOut);
   function getSwapInAmount(uint256 reserveIn, uint256 userIn) external pure returns (uint256);
 }
@@ -157,7 +157,7 @@ contract TempleZaps is ZapBase {
     uint256 _minStableReceived,
     address _recipient,
     address _swapTarget,
-    bytes calldata _swapData
+    bytes memory _swapData
   ) public payable {
     require(supportedStables[_stableToken] == true, "Unsupported stable token");
 
@@ -181,7 +181,7 @@ contract TempleZaps is ZapBase {
     address _stableToken,
     uint256 _minStableReceived,
     address _swapTarget,
-    bytes calldata _swapData
+    bytes memory _swapData
   ) external payable {
     zapInTempleFor(_fromToken, _fromAmount, _minTempleReceived, _stableToken, _minStableReceived, msg.sender, _swapTarget, _swapData);
   }
@@ -192,7 +192,7 @@ contract TempleZaps is ZapBase {
     uint256 _minAmountOut,
     address _swapTarget,
     TempleLiquidityParams memory _params,
-    bytes calldata _swapData
+    bytes memory _swapData
   ) external payable {
     zapInTempleLPFor(_fromAddress, _fromAmount, _minAmountOut, msg.sender, _swapTarget, _params, _swapData);
   }
@@ -204,7 +204,7 @@ contract TempleZaps is ZapBase {
     address _for,
     address _swapTarget,
     TempleLiquidityParams memory _params,
-    bytes calldata _swapData
+    bytes memory _swapData
   ) public payable {
     require(supportedStables[_params.stableToken] == true, "Unsupported stable token");
     // pull tokens
@@ -253,7 +253,7 @@ contract TempleZaps is ZapBase {
     address _vault,
     address _for,
     address _swapTarget,
-    bytes calldata _swapData
+    bytes memory _swapData
   ) public payable whenNotPaused {
     SafeERC20.safeTransferFrom(IERC20(_fromToken), msg.sender, address(this), _fromAmount);
     
@@ -268,7 +268,6 @@ contract TempleZaps is ZapBase {
       IERC20(_fromToken).safeIncreaseAllowance(address(zaps), _fromAmount);
 
       // after zap in, enter temple from stable token
-      
       uint256 receivedStableAmount = zaps.zapIn(
         _fromToken,
         _fromAmount,
@@ -277,6 +276,7 @@ contract TempleZaps is ZapBase {
         _swapTarget,
         _swapData
       );
+      
       receivedTempleAmount = _enterTemple(_stableToken, address(this), receivedStableAmount, _minTempleReceived);
     }
 
@@ -296,7 +296,7 @@ contract TempleZaps is ZapBase {
     uint256 _minStableReceived,
     address _vault,
     address _swapTarget,
-    bytes calldata _swapData
+    bytes memory _swapData
   ) external payable whenNotPaused {
     zapInVaultFor(_fromToken, _fromAmount, _minTempleReceived, _stableToken, _minStableReceived, _vault, msg.sender, _swapTarget, _swapData);
   }
@@ -309,7 +309,7 @@ contract TempleZaps is ZapBase {
     address _stableToken,
     uint256 _minStableReceived,
     address _swapTarget,
-    bytes calldata _swapData
+    bytes memory _swapData
   ) external whenNotPaused {
     require(vaultProxy.faithClaimEnabled(), "VaultProxy: Faith claim no longer enabled");
 
@@ -380,8 +380,8 @@ contract TempleZaps is ZapBase {
     uint256 _amountB,
     TempleLiquidityParams memory _params
   ) internal {
-    console.log("addLiquidity:", _amountA, _amountB);
-    console.log("addLiquidity min:", _params.amountAMin, _params.amountBMin);
+    // console.log("addLiquidity:", _amountA, _amountB);
+    // console.log("addLiquidity min:", _params.amountAMin, _params.amountBMin);
     (uint256 amountAActual, uint256 amountBActual,) = templeRouter.addLiquidity(
       _amountA,
       _amountB,
@@ -413,7 +413,7 @@ contract TempleZaps is ZapBase {
     address token0 = IUniswapV2Pair(_pair).token0();
     uint256 amountToSwap = getAmountToSwap(_intermediateToken, _pair, _intermediateAmount);
     uint256 remainder = _intermediateAmount - amountToSwap;
-    console.log("_swapAMMTokens:", _intermediateAmount, amountToSwap, remainder);
+    // console.log("_swapAMMTokens:", _intermediateAmount, amountToSwap, remainder);
 
     uint256 amountOut;
     if (_intermediateToken == temple) {

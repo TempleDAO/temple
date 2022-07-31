@@ -15,7 +15,7 @@ library Executable {
     function execute(
         address _to,
         uint256 _value,
-        bytes calldata _data
+        bytes memory _data
     ) internal returns (bytes memory) {
         (bool success, bytes memory returndata) = _to.call{value: _value}(_data);
         

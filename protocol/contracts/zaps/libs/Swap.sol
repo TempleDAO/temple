@@ -20,7 +20,7 @@ library Swap {
     uint256 _fromAmount,
     address _toToken,
     address _swapTarget,
-    bytes calldata _swapData
+    bytes memory _swapData
   ) internal returns (uint256) {
     if (_swapTarget == WETH) {
       require(_fromToken == WETH, "Invalid from token and WETH target");
@@ -101,6 +101,14 @@ library Swap {
   function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
     require(reserveA > 0 && reserveB > 0, 'Insufficient liquidity');
     amountB = (amountA * reserveB) / reserveA;
+  }
+
+  function getPairTokens(
+    address _pairAddress
+  ) internal view returns (address token0, address token1) {
+    IUniswapV2Pair pair = IUniswapV2Pair(_pairAddress);
+    token0 = pair.token0();
+    token1 = pair.token1();
   }
 
 }

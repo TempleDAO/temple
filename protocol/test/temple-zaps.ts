@@ -109,12 +109,12 @@ describe.only("Temple Stax Core Zaps", async () => {
       await templeZaps.setZaps(genericZaps.address);
     });
 
-    it("sets zaps", async () => {
+    it.only("sets zaps", async () => {
       await expect(templeZaps.setZaps(genericZaps.address))
         .to.emit(templeZaps, "SetZaps")
-        .withArgs(templeZaps.address);
+        .withArgs(genericZaps.address);
 
-      expect(await templeZaps.zaps()).to.eq(templeZaps.address);
+      expect(await templeZaps.zaps()).to.eq(genericZaps.address);
     });
 
     it("sets approved targets", async () => {
@@ -157,7 +157,7 @@ describe.only("Temple Stax Core Zaps", async () => {
     });
   });
 
-  describe.only("Temple Zaps", async () => {
+  describe("Temple Zaps", async () => {
 
     beforeEach(async () => {
       await approveDefaultTokens(genericZaps);
@@ -235,7 +235,7 @@ describe.only("Temple Stax Core Zaps", async () => {
       ), /Unsupported token\/target/);
     });
 
-    it.only("should zap ETH to TEMPLE", async () => {
+    it("should zap ETH to TEMPLE", async () => {
       const tokenAddr = ETH;
       const tokenAmount = "5";
       console.log("ETH", ETH);
@@ -518,7 +518,7 @@ describe.only("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it("zaps in balancer LP, one sided liquidity", async () => {
+    it.only("zaps in balancer LP, one sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
       console.log(res);
 
@@ -537,7 +537,7 @@ describe.only("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it("zaps in balancer LP for another user, one sided liquidity", async () => {
+    it.only("zaps in balancer LP for another user, one sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
 
       await zapInBalancerLP(
@@ -555,7 +555,7 @@ describe.only("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it("zaps in balancer LP, two sided liquidity", async () => {
+    it.only("zaps in balancer LP, two sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
       console.log(res);
 
