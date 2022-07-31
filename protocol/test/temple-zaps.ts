@@ -30,7 +30,7 @@ const { MULTISIG, TEMPLE, TEMPLE_V2_ROUTER, FAITH, STAKING } = DEPLOYED_CONTRACT
 const ZEROEX_QUOTE_ENDPOINT = 'https://api.0x.org/swap/v1/quote?';
 const defaultTokens = [
   FRAX, USDC, FEI, USDC, UNI,
-  WETH, FXS, BNB, BAL
+  WETH, FXS, BNB, BAL, ETH
 ];
 
 let genericZaps: GenericZap;
@@ -109,6 +109,14 @@ describe.only("Temple Stax Core Zaps", async () => {
       await templeZaps.setZaps(genericZaps.address);
     });
 
+    it("sets zaps", async () => {
+      await expect(templeZaps.setZaps(genericZaps.address))
+        .to.emit(templeZaps, "SetZaps")
+        .withArgs(templeZaps.address);
+
+      expect(await templeZaps.zaps()).to.eq(templeZaps.address);
+    });
+
     it("sets approved targets", async () => {
       await shouldThrow(genericZaps.setApprovedTargets([FRAX], [ZEROEX_EXCHANGE_PROXY], [true, true]), /Invalid Input length/);
       await genericZaps.setApprovedTargets([FRAX, UNI], [ZEROEX_EXCHANGE_PROXY, TEMPLE_STABLE_ROUTER], [true, false]);
@@ -149,7 +157,7 @@ describe.only("Temple Stax Core Zaps", async () => {
     });
   });
 
-  describe("Temple Zaps", async () => {
+  describe.only("Temple Zaps", async () => {
 
     beforeEach(async () => {
       await approveDefaultTokens(genericZaps);
@@ -230,7 +238,7 @@ describe.only("Temple Stax Core Zaps", async () => {
     it.only("should zap ETH to TEMPLE", async () => {
       const tokenAddr = ETH;
       const tokenAmount = "5";
-
+      console.log("ETH", ETH);
       await zapTemple(
         alice,
         await alice.getAddress(),
@@ -241,7 +249,7 @@ describe.only("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it.only("should zap ERC20 tokens to TEMPLE", async () => {
+    it("should zap ERC20 tokens to TEMPLE", async () => {
       const tokenAddr = FXS;
       const tokenAmount = "5";
 

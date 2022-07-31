@@ -10,8 +10,6 @@ abstract contract ZapBaseV2_3 is Ownable {
 
   bool public paused;
 
-  // swapTarget => approval status
-  //mapping(address => bool) public approvedTargets;
   // fromToken => swapTarget (per curve, univ2 and balancer) approval status
   mapping(address => mapping(address => bool)) public approvedTargets;
 
