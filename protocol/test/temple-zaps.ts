@@ -1,5 +1,5 @@
 import { ethers, network } from "hardhat";
-import { Signer, BigNumber, BigNumberish, BytesLike } from "ethers";
+import { Signer, BigNumber, BigNumberish, BytesLike, Contract } from "ethers";
 import { expect, should } from "chai";
 import axios from 'axios';
 import { blockTimestamp, shouldThrow, toAtto } from "./helpers";
@@ -18,7 +18,7 @@ import { ERC20, ERC20__factory, Exposure, Exposure__factory, Faith, Faith__facto
   GenericZap__factory, GenericZap, 
   UniswapV2Pair, UniswapV2Router02NoEth,
   UniswapV2Router02NoEth__factory, UniswapV2Pair__factory,
-  ICurvePool__factory, ICurvePool, ICurveFactory__factory, ZapBaseV23__factory, IUniswapV2Pair__factory, IBalancerVault__factory, IBalancerVault
+  ICurvePool__factory, ICurvePool, ICurveFactory__factory, IUniswapV2Pair__factory, IBalancerVault__factory, IBalancerVault
 } from "../typechain";
 
 const { WETH, USDC, UNI, FRAX, ETH, OGT, FEI, BNB, FXS, BAL } = addresses.tokens;
@@ -52,6 +52,7 @@ let wethSigner: Signer;
 let fraxSigner: Signer;
 let ownerAddress: string;
 let aliceAddress: string;
+let alanAddress: string;
 let balancerVault: IBalancerVault;
 let poolId: string;
 let bptPoolToken: string;
@@ -73,6 +74,7 @@ describe.only("Temple Stax Core Zaps", async () => {
 
     ownerAddress = await owner.getAddress();
     aliceAddress = await alice.getAddress();
+    alanAddress = await alan.getAddress();
 
     vaultProxy = await new VaultProxy__factory(owner).deploy(OGT, TEMPLE, STAKING, FAITH);
     genericZaps = await new GenericZap__factory(owner).deploy(UNISWAP_V2_ROUTER);
@@ -86,7 +88,6 @@ describe.only("Temple Stax Core Zaps", async () => {
   
     templeRouter = TempleStableAMMRouter__factory.connect(TEMPLE_STABLE_ROUTER, owner);
 
-    //await genericZaps.setApprovedTargets([FRAX, FEI], [ZEROEX_EXCHANGE_PROXY, TEMPLE_V2_ROUTER], [true, true]);
     await approveDefaultTokens(genericZaps);
 
     balancerVault = IBalancerVault__factory.connect(BALANCER_VAULT, alice);
@@ -98,18 +99,16 @@ describe.only("Temple Stax Core Zaps", async () => {
     it("admin tests", async () => {
       await shouldThrow(genericZaps.connect(alice).setApprovedTargets([FRAX, TEMPLE], [ZEROEX_EXCHANGE_PROXY, TEMPLE_STABLE_ROUTER], [true, true]), /Ownable: caller is not the owner/);
       await shouldThrow(genericZaps.connect(alice).toggleContractActive(), /Ownable: caller is not the owner/);
-      await shouldThrow(genericZaps.connect(alice).recoverToken(FRAX, await alice.getAddress(), 100), /Ownable: caller is not the owner/);
-      await shouldThrow(genericZaps.connect(alice).setUniswapV2Router(templeRouter.address), /Ownable: caller is not the owner/);
+      await shouldThrow(genericZaps.connect(alice).recoverToken(FRAX, aliceAddress, 100), /Ownable: caller is not the owner/);
       await shouldThrow(templeZaps.connect(alice).setZaps(templeRouter.address), /Ownable: caller is not the owner/);
 
       // happy paths
       await genericZaps.setApprovedTargets([FRAX, TEMPLE], [ZEROEX_EXCHANGE_PROXY, TEMPLE_STABLE_ROUTER], [true, true]);
       await genericZaps.toggleContractActive();
-      await genericZaps.setUniswapV2Router(TEMPLE_STABLE_ROUTER);
       await templeZaps.setZaps(genericZaps.address);
     });
 
-    it.only("sets zaps", async () => {
+    it("sets zaps", async () => {
       await expect(templeZaps.setZaps(genericZaps.address))
         .to.emit(templeZaps, "SetZaps")
         .withArgs(genericZaps.address);
@@ -149,11 +148,11 @@ describe.only("Temple Stax Core Zaps", async () => {
             
       // recover
       const checkSumedAddr = ethers.utils.getAddress(FRAX);
-      await expect(genericZaps.recoverToken(FRAX, await owner.getAddress(), 1000))
+      await expect(genericZaps.recoverToken(FRAX,  ownerAddress, 1000))
           .to.emit(genericZaps, "TokenRecovered")
-          .withArgs(checkSumedAddr, await owner.getAddress(), 1000);
+          .withArgs(checkSumedAddr, ownerAddress, 1000);
       
-      expect(await frax.balanceOf(await owner.getAddress())).eq(1000);
+      expect(await frax.balanceOf(ownerAddress)).eq(1000);
     });
   });
 
@@ -206,11 +205,11 @@ describe.only("Temple Stax Core Zaps", async () => {
         faith = Faith__factory.connect(FAITH, multiSig);
         
         await templeExposure.setMinterState(vault.address, true);
-        await templeExposure.setMinterState(await owner.getAddress(), true);
+        await templeExposure.setMinterState(ownerAddress, true);
       
         await templeToken.connect(alice).increaseAllowance(vault.address, toAtto(1000000));
   
-        await faith.addManager(await owner.getAddress());
+        await faith.addManager(ownerAddress);
         await faith.addManager(vaultProxy.address);
         await faith.addManager(templeZaps.address);
 
@@ -238,10 +237,9 @@ describe.only("Temple Stax Core Zaps", async () => {
     it("should zap ETH to TEMPLE", async () => {
       const tokenAddr = ETH;
       const tokenAmount = "5";
-      console.log("ETH", ETH);
       await zapTemple(
         alice,
-        await alice.getAddress(),
+        aliceAddress,
         templeZaps,
         genericZaps,
         tokenAddr,
@@ -256,11 +254,11 @@ describe.only("Temple Stax Core Zaps", async () => {
       // send some tokens
       const whale = await impersonateAddress(BINANCE_ACCOUNT_8);
       const tokenContract = IERC20__factory.connect(tokenAddr, whale);
-      await tokenContract.transfer(await alice.getAddress(), ethers.utils.parseEther(tokenAmount));
+      await tokenContract.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
 
       await zapTemple(
         alice,
-        await alice.getAddress(),
+        aliceAddress,
         templeZaps,
         genericZaps,
         tokenAddr,
@@ -275,11 +273,11 @@ describe.only("Temple Stax Core Zaps", async () => {
       // send some FXS
       const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
       const fxsToken = IERC20__factory.connect(tokenAddr, bnbWhale);
-      await fxsToken.transfer(await alice.getAddress(), ethers.utils.parseEther(tokenAmount));
+      await fxsToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
 
       await zapTemple(
         alice,
-        await alan.getAddress(),
+        alanAddress,
         templeZaps,
         genericZaps,
         tokenAddr,
@@ -294,7 +292,7 @@ describe.only("Temple Stax Core Zaps", async () => {
       // send some BNB
       const whale = await impersonateAddress(FXS_WHALE);
       const bnbToken = IERC20__factory.connect(tokenAddr, whale);
-      await bnbToken.transfer(await alice.getAddress(), ethers.utils.parseEther(tokenAmount));
+      await bnbToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
       await templeZaps.setSupportedStables([FRAX, FEI], [true, true]);
       await zapInVault(
         alice,
@@ -320,7 +318,7 @@ describe.only("Temple Stax Core Zaps", async () => {
       await faith.addManager(templeZaps.address);
       await zapInTempleFaith(
         alice,
-        await alice.getAddress(),
+        aliceAddress,
         fundAmount,
         fromAmount,
         fromToken,
@@ -340,7 +338,7 @@ describe.only("Temple Stax Core Zaps", async () => {
       // send some FXS
       const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
       const fxsToken = IERC20__factory.connect(tokenAddr, bnbWhale);
-      await fxsToken.transfer(await alice.getAddress(), ethers.utils.parseEther(tokenAmount));
+      await fxsToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
 
       const fromAmountParsed = ethers.utils.parseEther(tokenAmount);
       const feePerTempleScaledPerHour = await joiningFee.calc(await vault.firstPeriodStartTimestamp(), await vault.periodDuration(), vault.address);
@@ -349,7 +347,7 @@ describe.only("Temple Stax Core Zaps", async () => {
 
       await zapInTempleFaith(
         alice,
-        await alice.getAddress(),
+        aliceAddress,
         fundAmount,
         tokenAmount,
         tokenAddr,
@@ -364,11 +362,11 @@ describe.only("Temple Stax Core Zaps", async () => {
       // send some tokens
       const whale = await impersonateAddress(BINANCE_ACCOUNT_8);
       const tokenContract = IERC20__factory.connect(tokenAddr, whale);
-      await tokenContract.transfer(await alice.getAddress(), ethers.utils.parseEther(tokenAmount));
+      await tokenContract.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
 
       await templeZaps.connect(owner).setSupportedStables([FRAX, FEI], [true, true]);
       const pairContract = IERC20__factory.connect(TEMPLE_FRAX_PAIR, alice);
-      const lpBefore = await pairContract.balanceOf(await alice.getAddress());
+      const lpBefore = await pairContract.balanceOf(aliceAddress);
 
       await zapInTempleLP(
         alice,
@@ -377,11 +375,11 @@ describe.only("Temple Stax Core Zaps", async () => {
         TEMPLE_FRAX_PAIR,
         tokenAddr,
         tokenAmount,
-        await alice.getAddress(),
+        aliceAddress,
         false
       );
 
-      const lpAfter = await pairContract.balanceOf(await alice.getAddress());
+      const lpAfter = await pairContract.balanceOf(aliceAddress);
       expect(lpAfter).gt(lpBefore);
     });
   });
@@ -390,11 +388,13 @@ describe.only("Temple Stax Core Zaps", async () => {
     
     const tokenAddr = ethers.utils.getAddress(FXS);
     const tokenAmount = "50";
+    const fxsCvxFxsPool = "0xd658A338613198204DCa1143Ac3F01A722b5d94A";
+    const cvxFxs = "0xFEEf77d3f69374f66429C91d732A244f074bdf74";
     beforeEach( async () => {
       // send some FXS
       const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
       const fxsToken = IERC20__factory.connect(tokenAddr, bnbWhale);
-      await fxsToken.transfer(await alice.getAddress(), ethers.utils.parseEther(tokenAmount));
+      await fxsToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
     });
 
     afterEach( async () => {
@@ -402,10 +402,9 @@ describe.only("Temple Stax Core Zaps", async () => {
     });
 
     it("zaps in erc20 tokens to erc20 tokens", async () => {
-      console.log(`Alice, Owner ; ${await alice.getAddress()} ${await owner.getAddress()}`);
       await zapIn(
         alice,
-        await alice.getAddress(),
+        aliceAddress,
         genericZaps,
         tokenAddr,
         tokenAmount,
@@ -414,10 +413,9 @@ describe.only("Temple Stax Core Zaps", async () => {
     });
 
     it("zaps in erc20 tokens to erc20 tokens for another user", async () => {
-      console.log(`Alice, Owner ; ${await alice.getAddress()} ${await owner.getAddress()}`);
       await zapIn(
         alice,
-        await alan.getAddress(),
+        alanAddress,
         genericZaps,
         tokenAddr,
         tokenAmount,
@@ -430,7 +428,6 @@ describe.only("Temple Stax Core Zaps", async () => {
       const fxsFraxPairAddress = "0xE1573B9D29e2183B1AF0e743Dc2754979A40D237";
       const pair = UniswapV2Pair__factory.connect(fxsFraxPairAddress, alice);
       
-      console.log("token 0", await pair.token0());
       await zapInLPUniV2(
         alice,
         genericZaps,
@@ -438,7 +435,7 @@ describe.only("Temple Stax Core Zaps", async () => {
         pair,
         tokenAddr,
         tokenAmount,
-        await alice.getAddress(),
+        aliceAddress,
         false,
         false
       );
@@ -456,7 +453,7 @@ describe.only("Temple Stax Core Zaps", async () => {
         pair,
         tokenAddr,
         tokenAmount,
-        await alice.getAddress(),
+        aliceAddress,
         false,
         true
       );
@@ -474,35 +471,30 @@ describe.only("Temple Stax Core Zaps", async () => {
         pair,
         tokenAddr,
         tokenAmount,
-        await alan.getAddress(),
+        alanAddress,
         false,
         true
       );
     });
 
     it("zaps in curve LP", async () => {
-      const fxsCvxFxsPool = "0xd658A338613198204DCa1143Ac3F01A722b5d94A";
-      const cvxFxs = "0xFEEf77d3f69374f66429C91d732A244f074bdf74";
       const pool = ICurvePool__factory.connect(fxsCvxFxsPool, alice);
       const poolAddress = pool.address;
 
       await genericZaps.setApprovedTargets([FXS, cvxFxs], [poolAddress, poolAddress], [true, true]);
-      // await genericZaps.setApprovedTargets([FXS, sdFxs], [poolAddress, poolAddress], [true, true]);
       await zapInLPCurvePool(
         alice,
         genericZaps,
         pool,
         tokenAddr,
         tokenAmount,
-        await alice.getAddress(),
+        aliceAddress,
         true,
         false
       );
     });
 
     it("zaps in curve LP for another user", async () => {
-      const fxsCvxFxsPool = "0xd658A338613198204DCa1143Ac3F01A722b5d94A";
-      const cvxFxs = "0xFEEf77d3f69374f66429C91d732A244f074bdf74";
       const pool = ICurvePool__factory.connect(fxsCvxFxsPool, alice);
       const poolAddress = pool.address;
       await genericZaps.setApprovedTargets([FXS, cvxFxs], [poolAddress, poolAddress], [true, true]);
@@ -512,15 +504,14 @@ describe.only("Temple Stax Core Zaps", async () => {
         pool,
         tokenAddr,
         tokenAmount,
-        await alan.getAddress(),
+        alanAddress,
         true,
         false
       );
     });
 
-    it.only("zaps in balancer LP, one sided liquidity", async () => {
+    it("zaps in balancer LP, one sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
-      console.log(res);
 
       await zapInBalancerLP(
         alice,
@@ -529,7 +520,7 @@ describe.only("Temple Stax Core Zaps", async () => {
         tokenAddr,
         tokenAmount,
         res.tokens,
-        await alice.getAddress(),
+        aliceAddress,
         poolId,
         bptPoolToken,
         true,
@@ -537,7 +528,7 @@ describe.only("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it.only("zaps in balancer LP for another user, one sided liquidity", async () => {
+    it("zaps in balancer LP for another user, one sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
 
       await zapInBalancerLP(
@@ -547,7 +538,7 @@ describe.only("Temple Stax Core Zaps", async () => {
         tokenAddr,
         tokenAmount,
         res.tokens,
-        await alan.getAddress(),
+        await alanAddress,
         poolId,
         bptPoolToken,
         true,
@@ -555,9 +546,8 @@ describe.only("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it.only("zaps in balancer LP, two sided liquidity", async () => {
+    it("zaps in balancer LP, two sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
-      console.log(res);
 
       await zapInBalancerLP(
         alice,
@@ -566,7 +556,7 @@ describe.only("Temple Stax Core Zaps", async () => {
         tokenAddr,
         tokenAmount,
         res.tokens,
-        await alice.getAddress(),
+        aliceAddress,
         poolId,
         bptPoolToken,
         false,
@@ -576,7 +566,6 @@ describe.only("Temple Stax Core Zaps", async () => {
 
     it("zaps in balancer LP for another user, two sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
-      console.log(res);
 
       await zapInBalancerLP(
         alice,
@@ -585,7 +574,7 @@ describe.only("Temple Stax Core Zaps", async () => {
         tokenAddr,
         tokenAmount,
         res.tokens,
-        await alan.getAddress(),
+        await alanAddress,
         poolId,
         bptPoolToken,
         false,
@@ -644,17 +633,8 @@ async function zapInBalancerLP(
   }
   const fromAmountBN = ethers.utils.parseUnits(fromAmount, fromTokenDecimals);
   // approve zaps
-  if (fromToken !== ETH) {
-    await fromTokenContract.approve(
-      zaps.address,
-      fromAmountBN,  //ethers.utils.parseUnits('1000111', fromTokenDecimals)
-    );
-    const allowance = await fromTokenContract.allowance(
-      signerAddress,
-      zaps.address
-    );
-    console.log(`Allowance: ${ethers.utils.formatUnits(allowance, fromTokenDecimals)}`);
-  }
+  await approveContract(fromToken, fromAmountBN, fromTokenDecimals, signer, zaps.address);
+
   const sellAmount = fromAmountBN.toString();
   let swapCallData, price, guaranteedPrice, gas, estimatedGas;
   let firstSwapMinAmountOut, poolSwapMinAmountOut, minLiquidityOut;
@@ -678,8 +658,7 @@ async function zapInBalancerLP(
     ({
       data: { data: swapCallData, price, guaranteedPrice, gas, estimatedGas },
     } = response);
-    //console.log(response);
-    console.log(JSON.stringify(response.data.orders));
+
     console.log(`Price of ${symbol} in ${toToken}: ${price}`);
     console.log(`Guaranteed price: ${guaranteedPrice}`);
 
@@ -726,11 +705,7 @@ async function zapInBalancerLP(
     const assets = assetInIndex == 0 ? tokens : [tokens[1], tokens[0]];
     const assetDeltas = await balancerVault.queryBatchSwap(0, batchSwapSteps, assets, funds);
     
-    console.log("Asset Deltas");
-    console.log(assetDeltas);
-    console.log(assetDeltas[1].mul(-1));
     const limit = assetDeltas[1].mul(-1).mul(100 - limitSlippageTolerance).div(100);
-    console.log("limit", limit);
     poolSwapMinAmountOut = limit.toString();
     // remainder is token y given x (approximated)
     remainder = limit;
@@ -780,13 +755,19 @@ async function zapInBalancerLP(
     userData,
     fromInternalBalance
   }
+  const uniAmountAMin = BigNumber.from(0);
+  const uniAmountBMin = BigNumber.from(0);
+  const shouldTransferResidual = false;
   const zapLiqRequest = {
     firstSwapMinAmountOut,
     useAltFunction,
     poolSwapMinAmountOut,
     isOneSidedLiquidityAddition,
     otherToken,
+    shouldTransferResidual,
     minLiquidityOut,
+    uniAmountAMin,
+    uniAmountBMin,
     poolSwapData
   };
 
@@ -855,17 +836,8 @@ async function zapInTempleLP(
   }
   const fromAmountBN = ethers.utils.parseUnits(fromAmount, fromTokenDecimals);
   // approve zaps
-  if (fromToken !== ETH) {
-    await fromTokenContract.approve(
-      zaps.address,
-      fromAmountBN,  //ethers.utils.parseUnits('1000111', fromTokenDecimals)
-    );
-    const allowance = await fromTokenContract.allowance(
-      signerAddress,
-      zaps.address
-    );
-    console.log(`Allowance: ${ethers.utils.formatUnits(allowance, fromTokenDecimals)}`);
-  }
+  await approveContract(fromToken, fromAmountBN, fromTokenDecimals, signer, zaps.address);
+
   const token0 = await pairContract.token0();
   const token1 = await pairContract.token1();
   const sellAmount = fromAmountBN.toString();
@@ -886,23 +858,10 @@ async function zapInTempleLP(
     ({
       data: { data: swapCallData, price, guaranteedPrice, gas, estimatedGas },
     } = response);
-    //console.log(response);
-    console.log(JSON.stringify(response.data.orders));
+
     console.log(`Price of ${symbol} in ${toToken}: ${price}`);
     console.log(`Guaranteed price: ${guaranteedPrice}`);
 
-    // use a smaller min buy Amount
-    // const ABI = [
-    //   "function sellToUniswap(address[],uint256,uint256,bool)"
-    // ]; // special case for test pool (meta)
-    //const iface = new ethers.utils.Interface(ABI);
-    //const r = iface.decodeFunctionData("sellToUniswap", swapCallData);
-    //console.log("interface things");
-    //console.log(r);
-    // make min amount 1 to check if it still fails
-    //const newData = iface.encodeFunctionData("sellToUniswap", [r[0], r[1], 1, r[3]]);
-    //swapCallData = newData;
-    //console.log("new swap calldata ", swapCallData);
     // calculate min amount out for stable
     const toTokenContract = IERC20__factory.connect(toToken, signer);
     const toTokenDecimals = await toTokenContract.decimals();
@@ -917,10 +876,6 @@ async function zapInTempleLP(
     const swapInAmount = await gZaps.getSwapInAmount(reserveIn, minTokenReceivedWei);
     remainder = minTokenReceivedWei.sub(swapInAmount);
     lpSwapMinAmountOut = await templeRouter.swapExactStableForTempleQuote(pair, swapInAmount);
-    console.log("mintokenreceivedwei", minTokenReceivedWei);
-    console.log("lpswapminamountOut", lpSwapMinAmountOut);
-    console.log("remainder", remainder);
-    console.log("swapInAmount", swapInAmount);
   } else {
     [reserveA, reserveB, ts] = await pairContract.getReserves();
     // fromToken could be either stable or temple
@@ -931,17 +886,11 @@ async function zapInTempleLP(
       remainder = fromAmountBN.sub(swapInAmount);
       let priceBelowIv;
       [priceBelowIv, lpSwapMinAmountOut] = await templeRouter.swapExactTempleForStableQuote(pair, swapInAmount);
-      console.log("lpswapminamountOut", lpSwapMinAmountOut);
-      console.log("remainder", remainder);
-      console.log("swapInAmount", swapInAmount);
     } else {
       reserveIn = equalAddresses(token0, TEMPLE) ? reserveB : reserveA;
       const swapInAmount = await gZaps.getSwapInAmount(reserveIn, fromAmountBN);
       remainder = fromAmountBN.sub(swapInAmount);
       lpSwapMinAmountOut = await templeRouter.swapExactStableForTempleQuote(pair, swapInAmount);
-      console.log("lpswapminamountOut", lpSwapMinAmountOut);
-      console.log("remainder", remainder);
-      console.log("swapInAmount", swapInAmount);
     }
     //toToken = fromToken;
     swapCallData = "0x";
@@ -952,27 +901,22 @@ async function zapInTempleLP(
   const amountADesired = equalAddresses(token0, TEMPLE) ? lpSwapMinAmountOut : remainder;
   const amountBDesired = equalAddresses(token0, TEMPLE) ? remainder : lpSwapMinAmountOut;
   [amountAMin, amountBMin] = await gZaps.addLiquidityGetMinAmounts(amountADesired, amountBDesired, pair);
-  console.log("amountADesired, amountBDesired", amountADesired, amountBDesired);
-  console.log("amountAMin, amountBMin", amountAMin, amountBMin);
   const stableToken = equalAddresses(token0, TEMPLE) ? token1 : token0;
-  console.log("token0, temple", token0, TEMPLE, token1);
-  console.log("signer", signerAddress);
-  console.log("approval", await fromTokenContract.allowance(signerAddress, zaps.address));
+
   const params = {
     amountAMin,
     amountBMin,
     lpSwapMinAmountOut,
     stableToken,
     transferResidual
-  }
-  //console.log("stable token ", stableToken);
+  };
+  
   const zapsConnect = zaps.connect(signer);
   const overrides: { value?: BigNumber } = {};
   if (fromToken === ETH) {
     overrides.value = ethers.utils.parseEther(fromAmount);
   }
   
-  console.log(`${fromToken} ${fromAmountBN} ${ZEROEX_EXCHANGE_PROXY} ${JSON.stringify(params)} ${swapCallData}`)
   if (signerAddress == zapInFor) {
     await expect(zapsConnect.zapInTempleLP(
       fromToken,
@@ -1019,8 +963,6 @@ async function zapInLPCurvePool(
   const signerAddress = await signer.getAddress();
   const token0 = await pool.coins(0);
   const token1 = await pool.coins(1);
-  const poolToken0Contract = IERC20__factory.connect(token0, signer);
-  const poolToken1Contract = IERC20__factory.connect(token1, signer);
   const curveFactory = ICurveFactory__factory.connect(CURVE_FACTORY, signer);
   const fromTokenContract = IERC20__factory.connect(fromToken, signer);
   let fromTokenDecimals;
@@ -1037,17 +979,8 @@ async function zapInLPCurvePool(
   }
   const fromAmountBN = ethers.utils.parseUnits(fromAmount, fromTokenDecimals);
   // approve zaps
-  if (fromToken !== ETH) {
-    await fromTokenContract.approve(
-      zaps.address,
-      ethers.utils.parseUnits('1000111', fromTokenDecimals)
-    );
-    const allowance = await fromTokenContract.allowance(
-      signerAddress,
-      zaps.address
-    );
-    console.log(`Allowance: ${ethers.utils.formatUnits(allowance, fromTokenDecimals)}`);
-  }
+  await approveContract(fromToken, fromAmountBN, fromTokenDecimals, signer, zaps.address);
+
   const sellAmount = fromAmountBN.toString();
   let swapCallData, price, guaranteedPrice, gas, estimatedGas;
   let firstSwapMinAmountOut;
@@ -1057,7 +990,6 @@ async function zapInLPCurvePool(
   let poolSwapData = "0x";
   let dy;
   const nCoins = await curveFactory.get_n_coins(pool.address);
-  let amounts = new Array(nCoins).fill(BigNumber.from(0));
   const tokenCheckSummed = ethers.utils.getAddress(fromToken);
   // if token is neither token0 nor token1, get swap data
   if (tokenCheckSummed != token0 && tokenCheckSummed != token1) {
@@ -1134,14 +1066,19 @@ async function zapInLPCurvePool(
   //poolSwapData = pool.interface.encodeFunctionData("exchange", [])
 
   poolSwapMinAmountOut = dy;
-
+  const uniAmountAMin = BigNumber.from(0);
+  const uniAmountBMin = BigNumber.from(0);
+  const shouldTransferResidual = false;
   const zapLiqRequest = {
     firstSwapMinAmountOut,
     useAltFunction,
     poolSwapMinAmountOut,
     isOneSidedLiquidityAddition,
     otherToken,
+    shouldTransferResidual,
     minLiquidityOut,
+    uniAmountAMin,
+    uniAmountBMin,
     poolSwapData
   }
 
@@ -1212,17 +1149,8 @@ async function zapInLPUniV2(
   }
   const fromAmountBN = ethers.utils.parseUnits(fromAmount, fromTokenDecimals);
   // approve zaps
-  if (fromToken !== ETH) {
-    await fromTokenContract.approve(
-      zaps.address,
-      ethers.utils.parseUnits('1000111', fromTokenDecimals)
-    );
-    const allowance = await fromTokenContract.allowance(
-      signerAddress,
-      zaps.address
-    );
-    console.log(`Allowance: ${ethers.utils.formatUnits(allowance, fromTokenDecimals)}`);
-  }
+  await approveContract(fromToken, fromAmountBN, fromTokenDecimals, signer, zaps.address);
+ 
   const sellAmount = fromAmountBN.toString();
   let swapCallData, price, guaranteedPrice, gas, estimatedGas;
   let firstSwapMinAmountOut;
@@ -1286,13 +1214,18 @@ async function zapInLPUniV2(
     poolSwapMinAmountOut = await router.getAmountOut(amountToSwapIn, reserveIn, reserveOut);
   }
   const minLiquidityOut = 1;
+  const uniAmountAMin = BigNumber.from(0);
+  const uniAmountBMin = BigNumber.from(0);
   const zapLiqRequest = {
     firstSwapMinAmountOut,
     useAltFunction,
     poolSwapMinAmountOut,
     isOneSidedLiquidityAddition,
     otherToken,
+    shouldTransferResidual,
     minLiquidityOut,
+    uniAmountAMin,
+    uniAmountBMin,
     poolSwapData
   }
 
@@ -1315,7 +1248,6 @@ async function zapInLPUniV2(
       fromToken,
       fromAmountBN,
       pair.address,
-      shouldTransferResidual,
       ZEROEX_EXCHANGE_PROXY,
       swapCallData,
       zapLiqRequest,
@@ -1328,7 +1260,6 @@ async function zapInLPUniV2(
       fromAmountBN,
       pair.address,
       zapInFor,
-      shouldTransferResidual,
       ZEROEX_EXCHANGE_PROXY,
       swapCallData,
       zapLiqRequest,
@@ -1346,7 +1277,7 @@ async function zapInLPUniV2(
   if (shouldTransferResidual) {
     expect(signerTokenBalanceBefore.sub(signerTokenBalanceAfter)).to.lte(fromAmountBN);
 
-    const zapsTokenBalanceAfter = await fromTokenContract.balanceOf(zaps.address);
+    const zapsTokenBalanceAfter = await getBalance(fromTokenContract, zaps.address);
     const zapsPairToken0BalanceAfter = await (IERC20__factory.connect(token0, signer)).balanceOf(zaps.address);
     const zapsPairToken1BalanceAfter = await (IERC20__factory.connect(token1, signer)).balanceOf(zaps.address);
     // const pairToken0BalanceAfter = await pairToken0Contract.balanceOf(zapInFor);
@@ -1393,10 +1324,8 @@ async function zapInTempleFaith(
   // zap temple+faith
   const fromToken = ERC20__factory.connect(fromTokenAddress, signer);
   const templeToken = IERC20__factory.connect(TEMPLE, signer);
-  //const minTempleReceived = ethers.utils.parseUnits("1", 18).toString();
 
   // Get TEMPLE balance before zap
-  //const signerAddress = await signer.getAddress();
   const balanceBefore = signerAddress == zapInfor ? await getBalance(templeToken, signerAddress) : await getBalance(templeToken, zapInfor);
   console.log(
     `Starting Temple: ${ethers.utils.formatUnits(balanceBefore, 18)}`
@@ -1461,9 +1390,7 @@ async function zapInTempleFaith(
   }
 
   // boosted temple
-  // const boostedAmount = await vaultProxy.getFaithMultiplier(faithAmount, fromAmountInTemple);
   const boostedAmount = await vaultProxy.getFaithMultiplier(faithAmount, minExpectedTemple);
-  console.log(`boosted amount ${boostedAmount} ${faithAmount}`)
   await fromToken.connect(signer).increaseAllowance(templeZaps.address, sellAmount);
   await expect(templeZaps
     .connect(signer)
@@ -1483,7 +1410,7 @@ async function zapInTempleFaith(
   //expect(await templeToken.balanceOf(templeZaps.address)).to.eq(fundAmount.sub(boostedAmount.sub(fromAmountInTemple)));
   expect((await faith.balances(signerAddress)).usableFaith).to.eq(0);
   expect(await vault.balanceOf(signerAddress)).to.gte(boostedAmount.sub(fee));
-  expect(await templeToken.balanceOf(vaultedTemple.address)).to.gte(boostedAmount);
+  expect(await getBalance(templeToken, vaultedTemple.address)).to.gte(boostedAmount);
 }
 
 async function airdropTemple(
@@ -1495,7 +1422,7 @@ async function airdropTemple(
   const templeToken = TempleERC20Token__factory.connect(TEMPLE, templeMultisig);
   const templeTokenOwner = TempleERC20Token__factory.connect(TEMPLE, owner);
 
-  await templeToken.addMinter(await owner.getAddress());
+  await templeToken.addMinter(ownerAddress);
   for (const u of airdropRecipients) {
     await templeTokenOwner.mint(await u.getAddress(), airdropAmount)
   }
@@ -1821,7 +1748,7 @@ async function zapInVault(
     18
   );
   const vaultExposureTokenBefore = await templeExposure.balanceOf(vault.address);
-  const vaultedTempleAmountBefore = await templeToken.balanceOf(vaultedTemple.address);
+  const vaultedTempleAmountBefore = await getBalance(templeToken, vaultedTemple.address)
   await zaps.setSupportedStables([FRAX, FEI], [true, true]);
   await expect(zapsConnect.zapInVault(
     tokenAddr,
@@ -1870,6 +1797,29 @@ async function getExpectedTemple(
   const quote = await ammContract.swapExactStableForTempleQuote(pair, minFraxReceivedWei);
   console.log(`Quote for Temple to receive ${quote}`);
   return quote;
+}
+
+async function approveContract(
+  fromToken: string,
+  fromAmountBN: BigNumber,
+  fromTokenDecimals: number,
+  signer: Signer,
+  contractAddress: string
+) {
+  const signerAddress = await signer.getAddress();
+  const fromTokenContract = IERC20__factory.connect(fromToken, signer);
+  // approve zaps
+  if (fromToken !== ETH) {
+    await fromTokenContract.approve(
+      contractAddress,
+      fromAmountBN,  //ethers.utils.parseUnits('1000111', fromTokenDecimals)
+    );
+    const allowance = await fromTokenContract.allowance(
+      signerAddress,
+      contractAddress
+    );
+    console.log(`Allowance: ${ethers.utils.formatUnits(allowance, fromTokenDecimals)}`);
+  }
 }
 
 async function getBalance(token: IERC20, owner: string) {

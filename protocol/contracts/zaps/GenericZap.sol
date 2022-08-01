@@ -1,136 +1,23 @@
 pragma solidity ^0.8.4;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// import "./ZapBaseV2_3.sol";
-
 import "./ZapBase.sol";
 import "./libs/Swap.sol";
-import "./libs/Executable.sol";
-//import "hardhat/console.sol";
-
-// interface IWETH {
-//   function deposit() external payable;
-// }
-
-interface IUniswapV2Router {
-  function addLiquidity(
-    address tokenA,
-    address tokenB,
-    uint amountADesired,
-    uint amountBDesired,
-    uint amountAMin,
-    uint amountBMin,
-    address to,
-    uint deadline
-  ) external returns (uint amountA, uint amountB, uint liquidity);
-
-  function swapExactTokensForTokens(
-    uint amountIn,
-    uint amountOutMin,
-    address[] calldata path,
-    address to,
-    uint deadline
-  ) external returns (uint[] memory amounts);
-
-  function factory() external view returns (address);
-}
-
-interface IUniswapV2Factory {
-    function getPair(address tokenA, address tokenB) external view returns (address pair);
-}
-
-interface ICurvePool {
-    function coins(uint256 j) external view returns (address);
-    function calc_token_amount(uint256[] calldata _amounts, bool _is_deposit) external view returns (uint256);
-    function add_liquidity(uint256[] calldata _amounts, uint256 _min_mint_amount, address destination) external returns (uint256);
-    function add_liquidity(uint256[] calldata _amounts, uint256 _min_mint_amount, bool use_ether, address destination) external returns (uint256);
-    function get_dy(uint256 _from, uint256 _to, uint256 _from_amount) external view returns (uint256);
-    function remove_liquidity(uint256 _amount, uint256[2] calldata _min_amounts) external returns (uint256[2] memory);
-    function fee() external view returns (uint256);
-    function balanceOf(address account) external view returns (uint256);
-    function exchange(uint256 i, uint256 j, uint256 dx, uint256 min_dy) external returns (uint256);
-    function remove_liquidity_imbalance(uint256[2] memory amounts, uint256 _max_burn_amount, address _receiver) external returns (uint256);
-}
-
-interface ICurveFactory {
-  function get_n_coins(address pool) external view returns (uint256);
-  function get_meta_n_coins(address pool) external view returns (uint256, uint256);
-}
-
-interface IBalancerVault {
-  struct JoinPoolRequest {
-    IERC20[] assets;
-    uint256[] maxAmountsIn;
-    bytes userData;
-    bool fromInternalBalance;
-  }
-
-  struct SingleSwap {
-    bytes32 poolId;
-    SwapKind kind;
-    IERC20 assetIn;
-    IERC20 assetOut;
-    uint256 amount;
-    bytes userData;
-  }
-
-  struct BatchSwapStep {
-    bytes32 poolId;
-    uint256 assetInIndex;
-    uint256 assetOutIndex;
-    uint256 amount;
-    bytes userData;
-  }
-
-  struct FundManagement {
-    address sender;
-    bool fromInternalBalance;
-    address payable recipient;
-    bool toInternalBalance;
-  }
-
-  enum SwapKind { GIVEN_IN, GIVEN_OUT }
-
-  function swap(
-      SingleSwap memory singleSwap,
-      FundManagement memory funds,
-      uint256 limit,
-      uint256 deadline
-  ) external payable returns (uint256 amountCalculated);
-
-  function joinPool(
-      bytes32 poolId,
-      address sender,
-      address recipient,
-      JoinPoolRequest memory request
-  ) external payable;
-
-  function getPoolTokens(
-    bytes32 poolId
-  ) external view
-    returns (
-      address[] memory tokens,
-      uint256[] memory balances,
-      uint256 lastChangeBlock
-  );
-
-  function queryBatchSwap(
-    SwapKind kind,
-    BatchSwapStep[] memory swaps,
-    IERC20[] memory assets,
-    FundManagement memory funds
-  ) external view returns (int256[] memory);
-}
+//import "./libs/Executable.sol";
+import "./interfaces/IBalancerVault.sol";
+import "./interfaces/IUniswapV2Factory.sol";
+import "./interfaces/IUniswapV2Router.sol";
+import "./interfaces/ICurvePool.sol";
+import "./interfaces/ICurveFactory.sol";
 
 
 contract GenericZap is ZapBase {
 
-  IUniswapV2Router public uniswapV2Router;
+  IUniswapV2Router public immutable uniswapV2Router;
 
   address private constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
   ICurveFactory private immutable curveFactory = ICurveFactory(0xB9fC157394Af804a3578134A6585C0dc9cc990d4);
   IBalancerVault private immutable balancerVault = IBalancerVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
-  //uint256 private constant DEADLINE = 0xf000000000000000000000000000000000000000000000000000000000000000;
 
   struct ZapLiquidityRequest {
     uint248 firstSwapMinAmountOut;
@@ -138,12 +25,14 @@ contract GenericZap is ZapBase {
     uint248 poolSwapMinAmountOut;
     bool isOneSidedLiquidityAddition;
     address otherToken;
+    bool shouldTransferResidual;
     uint256 minLiquidityOut;
+    uint256 uniAmountAMin;
+    uint256 uniAmountBMin;
     bytes poolSwapData;
   }
 
   event ZappedIn(address indexed sender, address fromToken, uint256 fromAmount, address toToken, uint256 amountOut);
-  event UniswapV2RouterSet(address router);
   event ZappedLPUniV2(address indexed recipient, address token0, address token1, uint256 amountA, uint256 amountB);
   event TokenRecovered(address token, address to, uint256 amount);
   event ZappedLPCurve(address indexed recipient, address fromToken, uint256 liquidity, uint256[] amounts);
@@ -175,32 +64,128 @@ contract GenericZap is ZapBase {
     emit TokenRecovered(_token, _to, _amount);
   }
 
-  function setUniswapV2Router(address _router) external onlyOwner {
-    uniswapV2Router = IUniswapV2Router(_router);
-    emit UniswapV2RouterSet(_router);
+  /**
+   * @notice This function zaps ETH or an ERC20 token to another ERC20 token
+   * @param _fromToken The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _toToken Exit token
+   * @param _amountOutMin The minimum acceptable quantity of exit ERC20 token to receive
+   * @param _swapTarget Execution target for the swap
+   * @param _swapData DEX data
+   * @return amountOut Amount of exit tokens received
+   */
+  function zapIn(
+    address _fromToken,
+    uint256 _fromAmount,
+    address _toToken,
+    uint256 _amountOutMin,
+    address _swapTarget,
+    bytes memory _swapData
+  ) external payable returns (uint256) {
+    return zapInFor(_fromToken, _fromAmount, _toToken, _amountOutMin, msg.sender, _swapTarget, _swapData);
   }
 
   /**
-   * @notice This function zaps ETH and ERC20 tokens to Temple token
+   * @notice This function zaps ETH or an ERC20 token into a balancer liquidity pool (one-sided or two-sided)
+   * @param _fromToken The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _poolId Target balancer pool id
+   * @param _swapTarget Execution target for the zap swap
+   * @param _swapData DEX data
+   * @param _zapLiqRequest Params for liquidity pool exchange
+   * @param _request Params for liquidity addition in balancer pool
+   */
+  function zapLiquidityBalancerPool(
+    address _fromToken,
+    uint256 _fromAmount,
+    bytes32 _poolId,
+    address _swapTarget,
+    bytes memory _swapData,
+    ZapLiquidityRequest memory _zapLiqRequest,
+    IBalancerVault.JoinPoolRequest memory _request
+  ) external payable {
+    zapLiquidityBalancerPoolFor(_fromToken, _fromAmount, _poolId, msg.sender, _swapTarget, _swapData, _zapLiqRequest, _request);
+  }
+
+  /**
+   * @notice This function zaps ETH or an ERC20 token into a curve liquidity pool (one-sided or two-sided)
+   * @param _fromToken The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _pool Target curve pool
+   * @param _swapTarget Execution target for the zap swap
+   * @param _swapData DEX data
+   * @param _zapLiqRequest Params for liquidity pool exchange
+   */
+  function zapLiquidityCurvePool(
+    address _fromToken,
+    uint256 _fromAmount,
+    address _pool,
+    address _swapTarget,
+    bytes memory _swapData,
+    ZapLiquidityRequest memory _zapLiqRequest
+  ) external payable {
+    zapLiquidityCurvePoolFor(_fromToken, _fromAmount, _pool, msg.sender, _swapTarget, _swapData, _zapLiqRequest);
+  }
+
+  /**
+   * @notice This function zaps ETH or an ERC20 token into adding liquidity into a uniswap v2 liquidity pool
+   * @param _fromToken The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _pair Target uniswap v2 pair
+   * @param _swapTarget Execution target for the zap swap
+   * @param _swapData DEX data
+   * @param _zapLiqRequest Params for liquidity pool exchange
+   */
+  function zapLiquidityUniV2(
+    address _fromToken,
+    uint256 _fromAmount,
+    address _pair,
+    address _swapTarget,
+    bytes memory _swapData,
+    ZapLiquidityRequest memory _zapLiqRequest
+  ) external payable {
+    zapLiquidityUniV2For(_fromToken, _fromAmount, _pair, msg.sender, _swapTarget, _swapData, _zapLiqRequest);
+  }
+
+  /**
+   * @dev Helper function to calculate swap in amount of a token before adding liquidit to uniswap v2 pair
+   * @param _token Token to swap in
+   * @param _pair Uniswap V2 Pair token
+   * @param _amount Amount of token
+   * @return uint256 Amount to swap
+   */
+  function getAmountToSwap(
+    address _token,
+    address _pair,
+    uint256 _amount
+  ) external view returns (uint256) {
+    return Swap.getAmountToSwap(_token, _pair, _amount);
+  }
+
+  /**
+   * @dev Helper function to calculate swap in amount of a token before adding liquidit to uniswap v2 pair.
+   * Alternative version
+   * @param _reserveIn Pair reserve of incoming token
+   * @param _userIn Amount of token
+   */
+  function getSwapInAmount(
+    uint256 _reserveIn,
+    uint256 _userIn
+  ) external pure returns (uint256) {
+    return Swap.calculateSwapInAmount(_reserveIn, _userIn);
+  }
+
+  /**
+   * @notice This function zaps ETH or an ERC20 token to another ERC20 token
    * @param fromToken The token used for entry (address(0) if ether)
    * @param fromAmount The amount of fromToken to zap
    * @param toToken Exit token
-   * @param amountOutMin The minimum acceptable quantity of TEMPLE to receive
+   * @param amountOutMin The minimum acceptable quantity of exit ERC20 token to receive
+   * @param recipient Recipient of exit tokens
    * @param swapTarget Execution target for the swap
    * @param swapData DEX data
-   * @return amountOut Amount of tokens received
+   * @return amountOut Amount of exit tokens received
    */
-  function zapIn(
-    address fromToken,
-    uint256 fromAmount,
-    address toToken,
-    uint256 amountOutMin,
-    address swapTarget,
-    bytes memory swapData
-  ) external payable returns (uint256) {
-    return zapInFor(fromToken, fromAmount, toToken, amountOutMin, msg.sender, swapTarget, swapData);
-  }
-
   function zapInFor(
     address fromToken,
     uint256 fromAmount,
@@ -233,6 +218,17 @@ contract GenericZap is ZapBase {
     );
   }
 
+  /**
+   * @notice This function zaps ETH or an ERC20 token into a balancer liquidity pool (one-sided or two-sided)
+   * @param _fromToken The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _poolId Target balancer pool id
+   * @param _recipient Recipient of LP tokens
+   * @param _swapTarget Execution target for the zap swap
+   * @param _swapData DEX data
+   * @param _zapLiqRequest Params for liquidity pool exchange
+   * @param _request Params for liquidity addition in balancer pool
+   */
   function zapLiquidityBalancerPoolFor(
     address _fromToken,
     uint256 _fromAmount,
@@ -282,7 +278,6 @@ contract GenericZap is ZapBase {
       // use vault as target
       _approveToken(poolTokens[tokenBoughtIndex], address(balancerVault), toSwap);
       Executable.execute(address(balancerVault), 0, _zapLiqRequest.poolSwapData);
-      //_executeSwap(address(balancerVault), 0, _zapLiqRequest.poolSwapData);
       // ensure min amounts out swapped for other token
       require(_zapLiqRequest.poolSwapMinAmountOut <= IERC20(_zapLiqRequest.otherToken).balanceOf(address(this)),
         "Insufficient swap output for other token");
@@ -291,8 +286,6 @@ contract GenericZap is ZapBase {
     // approve tokens iteratively, ensuring contract has right balance each time
     for (i=0; i<poolTokens.length;) {
       if (_request.maxAmountsIn[i] > 0) {
-        // console.log("maxAmountsIn", _request.maxAmountsIn[i]);
-        // console.log("pool token", poolTokens[i], IERC20(poolTokens[i]).balanceOf(address(this)));
         require(IERC20(poolTokens[i]).balanceOf(address(this)) >= _request.maxAmountsIn[i], 
           "Insufficient asset tokens");
         _approveToken(poolTokens[i], address(balancerVault), _request.maxAmountsIn[i]);
@@ -305,29 +298,16 @@ contract GenericZap is ZapBase {
     emit ZappedLiquidityBalancerPool(_recipient, _fromToken, _fromAmount, _request.maxAmountsIn);
   }
 
-  function zapLiquidityBalancerPool(
-    address _fromToken,
-    uint256 _fromAmount,
-    bytes32 _poolId,
-    address _swapTarget,
-    bytes memory _swapData,
-    ZapLiquidityRequest memory _zapLiqRequest,
-    IBalancerVault.JoinPoolRequest memory _request
-  ) external payable {
-    zapLiquidityBalancerPoolFor(_fromToken, _fromAmount, _poolId, msg.sender, _swapTarget, _swapData, _zapLiqRequest, _request);
-  }
-
-  function zapLiquidityCurvePool(
-    address _fromToken,
-    uint256 _fromAmount,
-    address _pool,
-    address _swapTarget,
-    bytes memory _swapData,
-    ZapLiquidityRequest memory _zapLiqRequest
-  ) external payable {
-    zapLiquidityCurvePoolFor(_fromToken, _fromAmount, _pool, msg.sender, _swapTarget, _swapData, _zapLiqRequest);
-  }
-
+  /**
+   * @notice This function zaps ETH or an ERC20 token into a curve liquidity pool (one-sided or two-sided)
+   * @param _fromToken The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _pool Target curve pool
+   * @param _recipient Recipient of LP tokens
+   * @param _swapTarget Execution target for the zap swap
+   * @param _swapData DEX data
+   * @param _zapLiqRequest Params for liquidity pool exchange
+   */
   function zapLiquidityCurvePoolFor(
     address _fromToken,
     uint256 _fromAmount,
@@ -380,6 +360,7 @@ contract GenericZap is ZapBase {
     // if one-sided liquidity addition
     if (_zapLiqRequest.isOneSidedLiquidityAddition) {
       coinAmounts[fromTokenIndex] = _fromAmount;
+      require(approvedTargets[coins[fromTokenIndex]][_pool] == true, "Pool not approved");
       _approveToken(coins[fromTokenIndex], _pool, _fromAmount);
     } else {
       // swap coins
@@ -421,48 +402,21 @@ contract GenericZap is ZapBase {
     emit ZappedLPCurve(_recipient, _fromToken, liquidity, coinAmounts);
   }
 
-  function _addLiquidityCurvePool(
-    address _pool,
-    address _recipient,
-    uint256 _minLiquidityOut,
-    bool _useAltFunction,
-    uint256[] memory _amounts
-  ) internal returns (uint256 liquidity) {
-    bool success;
-    bytes memory data;
-    if (_useAltFunction) {
-      //liquidity = ICurvePool(_pool).add_liquidity(_amounts, _minLiquidityOut, false, _recipient);
-      data = abi.encodeWithSelector(0x0b4c7e4d, _amounts, _minLiquidityOut, false, _recipient);
-      // reuse data
-      (success, data) = _pool.call{value:0}(data);
-    } else {
-      //liquidity = ICurvePool(_pool).add_liquidity(_amounts, _minLiquidityOut, _recipient);
-      data = abi.encodeWithSelector(0xad6d8c4a, _amounts, _minLiquidityOut, _recipient);
-      // reuse data
-      (success, data) = _pool.call{value:0}(data);
-    }
-    require(success, "Failed adding liquidity");
-    liquidity = abi.decode(data, (uint256));
-  }
-
-  function zapLiquidityUniV2(
-    address _fromToken,
-    uint256 _fromAmount,
-    address _pair,
-    bool _shouldTransferResidual,
-    address _swapTarget,
-    bytes memory _swapData,
-    ZapLiquidityRequest memory _zapLiqRequest
-  ) external payable {
-    zapLiquidityUniV2For(_fromToken, _fromAmount, _pair, msg.sender, _shouldTransferResidual, _swapTarget, _swapData, _zapLiqRequest);
-  }
-
+  /**
+   * @notice This function zaps ETH or an ERC20 token into adding liquidity into a uniswap v2 liquidity pool
+   * @param _fromToken The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _pair Target uniswap v2 pair
+   * @param _for Recipient of LP tokens
+   * @param _swapTarget Execution target for the zap swap
+   * @param _swapData DEX data
+   * @param _zapLiqRequest Params for liquidity pool exchange
+   */
   function zapLiquidityUniV2For(
     address _fromToken,
     uint256 _fromAmount,
     address _pair,
     address _for,
-    bool _shouldTransferResidual,
     address _swapTarget,
     bytes memory _swapData,
     ZapLiquidityRequest memory _zapLiqRequest
@@ -497,62 +451,17 @@ contract GenericZap is ZapBase {
     _approveToken(token1, address(uniswapV2Router), amountB);
     _approveToken(token0, address(uniswapV2Router), amountA);
 
-    _addLiquidityUniV2(_pair, _for, amountA, amountB, _shouldTransferResidual);
+    _addLiquidityUniV2(_pair, _for, amountA, amountB, _zapLiqRequest.uniAmountAMin, _zapLiqRequest.uniAmountBMin, _zapLiqRequest.shouldTransferResidual);
   }
 
-  function _addLiquidityUniV2(
-    address _pair,
-    address _recipient,
-    uint256 _amountA,
-    uint256 _amountB,
-    bool _shouldTransferResidual
-  ) internal {
-    address tokenA = IUniswapV2Pair(_pair).token0();
-    address tokenB = IUniswapV2Pair(_pair).token1();
-    // avoid stack too deep
-    {
-      // get minimum amounts to use in liquidity addition. use optimal amounts as minimum
-      (uint256 amountAMin, uint256 amountBMin) = addLiquidityGetMinAmounts(_amountA, _amountB, IUniswapV2Pair(_pair));
-      require(_amountA >= amountAMin && _amountB >= amountBMin, "Desired amounts too low");
-      // reuse vars. below is actually amountA and amountB added to liquidity
-      (amountAMin, amountBMin,) = uniswapV2Router.addLiquidity(
-        tokenA,
-        tokenB,
-        _amountA,
-        _amountB,
-        amountAMin,
-        amountBMin,
-        _recipient,
-        DEADLINE
-      );
-
-      emit ZappedLPUniV2(_recipient, tokenA, tokenB, amountAMin, amountBMin);
-
-      // transfer residual
-      if (_shouldTransferResidual) {
-        _transferResidual(_recipient, tokenA, tokenB, _amountA, _amountB, amountAMin, amountBMin);
-      }
-    }    
-  }
-
-  function _transferResidual(
-    address _recipient,
-    address _tokenA,
-    address _tokenB,
-    uint256 _amountA,
-    uint256 _amountB,
-    uint256 _amountAActual,
-    uint256 _amountBActual
-  ) internal {
-    if (_amountA > _amountAActual) {
-      _transferToken(IERC20(_tokenA), _recipient, _amountA - _amountAActual);
-    }
-
-    if (_amountB > _amountBActual) {
-      _transferToken(IERC20(_tokenB), _recipient, _amountB - _amountBActual);
-    }
-  }
-
+  /**
+   * @dev Get minimum amounts fo token0 and token1 to tolerate when adding liquidity to uniswap v2 pair
+   * @param amountADesired Input desired amount of token0
+   * @param amountBDesired Input desired amount of token1
+   * @param pair Target uniswap v2 pair
+   * @return amountA Minimum amount of token0 to use when adding liquidity
+   * @return amountB Minimum amount of token1 to use when adding liquidity
+   */
   function addLiquidityGetMinAmounts(
     uint amountADesired,
     uint amountBDesired,
@@ -572,6 +481,82 @@ contract GenericZap is ZapBase {
           //require(amountAOptimal >= amountAMin, 'TempleStableAMMRouter: INSUFFICIENT_TEMPLE');
           (amountA, amountB) = (amountAOptimal, amountBDesired);
       }
+    }
+  }
+
+  function _addLiquidityCurvePool(
+    address _pool,
+    address _recipient,
+    uint256 _minLiquidityOut,
+    bool _useAltFunction,
+    uint256[] memory _amounts
+  ) internal returns (uint256 liquidity) {
+    bool success;
+    bytes memory data;
+    if (_useAltFunction) {
+      //liquidity = ICurvePool(_pool).add_liquidity(_amounts, _minLiquidityOut, false, _recipient);
+      data = abi.encodeWithSelector(0x0b4c7e4d, _amounts, _minLiquidityOut, false, _recipient);
+      // reuse data
+      (success, data) = _pool.call{value:0}(data);
+    } else {
+      //liquidity = ICurvePool(_pool).add_liquidity(_amounts, _minLiquidityOut, _recipient);
+      data = abi.encodeWithSelector(0xad6d8c4a, _amounts, _minLiquidityOut, _recipient);
+      // reuse data
+      (success, data) = _pool.call{value:0}(data);
+    }
+    require(success, "Failed adding liquidity");
+    liquidity = abi.decode(data, (uint256));
+  }
+
+  function _addLiquidityUniV2(
+    address _pair,
+    address _recipient,
+    uint256 _amountA,
+    uint256 _amountB,
+    uint256 _amountAMin,
+    uint256 _amountBMin,
+    bool _shouldTransferResidual
+  ) internal {
+    address tokenA = IUniswapV2Pair(_pair).token0();
+    address tokenB = IUniswapV2Pair(_pair).token1();
+    // avoid stack too deep
+    {
+      // reuse vars. _amountAMin and _amountBMin below are actually amountA and amountB added to liquidity after external call
+      (_amountAMin, _amountBMin,) = uniswapV2Router.addLiquidity(
+        tokenA,
+        tokenB,
+        _amountA,
+        _amountB,
+        _amountAMin,
+        _amountBMin,
+        _recipient,
+        DEADLINE
+      );
+
+      emit ZappedLPUniV2(_recipient, tokenA, tokenB, _amountAMin, _amountBMin);
+
+      // transfer residual
+      if (_shouldTransferResidual) {
+        _transferResidual(_recipient, tokenA, tokenB, _amountA, _amountB, _amountAMin, _amountBMin);
+      }
+    }    
+  }
+
+  function _transferResidual(
+    address _recipient,
+    address _tokenA,
+    address _tokenB,
+    uint256 _amountA,
+    uint256 _amountB,
+    uint256 _amountAActual,
+    uint256 _amountBActual
+  ) internal {
+    if (_amountA > _amountAActual) {
+      _transferToken(IERC20(_tokenA), _recipient, _amountA - _amountAActual);
+    }
+
+    if (_amountB > _amountBActual) {
+      _transferToken(IERC20(_tokenB), _recipient, _amountB - _amountBActual);
     }
   }
 
@@ -671,7 +656,8 @@ contract GenericZap is ZapBase {
     @param _fromToken The token address to swap from.
     @param _toToken The token address to swap to. 
     @param _amountIn The amount of tokens to swap
-    @return tokenBought The quantity of tokens bought
+    @param _amountOutMin Minimum amount of tokens out
+    @return tokenBought The amount of tokens bought
     */
   function _swapErc20ToErc20(
     address _fromToken,
@@ -707,17 +693,5 @@ contract GenericZap is ZapBase {
       )[path.length - 1];
 
     require(tokenBought >= _amountOutMin, "Error Swapping Tokens 2");
-  }
-
-  function getAmountToSwap(
-    address _token,
-    address _pair,
-    uint256 _amount
-  ) public view returns (uint256) {
-    return Swap.getAmountToSwap(_token, _pair, _amount);
-  }
-
-  function getSwapInAmount(uint256 reserveIn, uint256 userIn) external pure returns (uint256) {
-    return Swap.calculateSwapInAmount(reserveIn, userIn);
   }
 }
