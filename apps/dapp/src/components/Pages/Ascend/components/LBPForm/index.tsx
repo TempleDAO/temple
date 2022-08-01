@@ -71,9 +71,11 @@ export const LBPForm = ({ pool }: Props) => {
           };
         });
       };
+  
+  const getOrderedFormTokens = () => Object.values(formValues.tokens).sort((a, b) => a.address.localeCompare(b.address));
 
   const saveForm = () => {
-    const tokens = Object.values(formValues.tokens).sort((a, b) => a.address.localeCompare(b.address));
+    const tokens = getOrderedFormTokens();
 
     return createPool.handler({
       name: formValues.name,
@@ -86,7 +88,7 @@ export const LBPForm = ({ pool }: Props) => {
   };
 
   const updateWeights = () => {
-    const tokens = Object.values(formValues.tokens).sort((a, b) => a.address.localeCompare(b.address));
+    const tokens = getOrderedFormTokens();
     const endWeights = tokens.map(({ endWeight }) => endWeight);
     return updateWeightsGradually.handler(
       formValues.startDate,
@@ -115,28 +117,36 @@ export const LBPForm = ({ pool }: Props) => {
       return;
     }
 
-    const tokens = Object.values(formValues.tokens)
-      .sort((a, b) => a.address.localeCompare(b.address))
-      .map(({ address }) => address);
-    
+    const tokens = getOrderedFormTokens();
     const maxAmountsIn: DecimalBigNumber[] = [];
-    for (const address of tokens) {
+    for (const { address, decimals } of tokens) {
       const amount = formValues.joinPool[address];
-      const decimals = formValues.tokens[address].decimals;
       const number = DecimalBigNumber.parseUnits(amount || '0', decimals);
       maxAmountsIn.push(number);
     }
 
     try {
-      await vaultContract.joinPool.request(pool.id, tokens, maxAmountsIn);
+      const assets = tokens.map(({ address }) => address);
+      const tx = await vaultContract.joinPool.request(pool.id, assets, maxAmountsIn);
+      await tx.wait();
       resetJoinPool();
     } catch (err) {
       console.error(err);
     }
   };
 
-  const drainPool = () => {
-    console.log('Invoke drain pool');
+  const drainPool = async () => {
+    if (!pool) {
+      return;
+    }
+    
+    const tokens = getOrderedFormTokens().map(({ address }) => address);
+    try {
+      const tx = await vaultContract.exitPool.request(pool.id, tokens);
+      await tx.wait();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const tokens = Object.values(formValues.tokens).sort((a, b) => a.index - b.index);
@@ -333,6 +343,7 @@ export const LBPForm = ({ pool }: Props) => {
               <Label>Add Liquidity</Label>
               {Object.values(formValues.tokens).map((token) => {
                 const userBalance = userBalances[token.address];
+
                 return (
                   <div key={token.address}>
                     <AdminCryptoInput
