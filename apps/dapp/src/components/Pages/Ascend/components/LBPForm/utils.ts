@@ -3,7 +3,8 @@ import { Pool } from 'components/Layouts/Ascend/types';
 
 import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { formatUnits } from 'ethers/lib/utils';
-import { Token } from 'constants/env/types'
+import { Token } from 'constants/env/types';
+import env from 'constants/env';
 
 import {
   FormToken,
@@ -20,10 +21,7 @@ export const getInitialValues = (pool?: Pool): Values => {
       tokens: {},
       startDate: new Date(),
       endDate: new Date(),
-      joinPool: {
-        type: 'INIT',
-        amounts: {},
-      },
+      joinPool: {},
     };
   }
 
@@ -44,15 +42,12 @@ export const getInitialValues = (pool?: Pool): Values => {
         },
       };
     }, {}),
-    joinPool: {
-      type: 'INIT',
-      amounts: pool.tokens.reduce((acc, token, i) => {
-        return {
-          ...acc,
-          [token.address]: '',
-        };
-      }, {}),
-    },
+    joinPool: pool.tokens.reduce((acc, token, i) => {
+      return {
+        ...acc,
+        [token.address]: '',
+      };
+    }, {}),
     name: pool.name,
     symbol: pool.symbol,
     startDate: lastWeightUpdate.startTimestamp,
@@ -61,12 +56,13 @@ export const getInitialValues = (pool?: Pool): Values => {
 };
 
 export const createTokenDefaults = (token: Token, index: number): FormToken => {
+  const startWeight = token.address === env.tokens.temple.address ? 4 : 96;
   return {
     name: token.name,
     address: token.address,
     symbol: token.symbol,
     decimals: token.decimals,
-    startWeight: DBN_ZERO,
+    startWeight:DecimalBigNumber.parseUnits(`${startWeight}`, 16),
     endWeight: DBN_ZERO,
     balance: DBN_ZERO,
     index,
