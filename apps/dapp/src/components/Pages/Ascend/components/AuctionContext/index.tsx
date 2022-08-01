@@ -25,8 +25,8 @@ interface AuctionContext {
   vaultAddress: string;
   isPaused: boolean;
 
-  weights?: TokenMap<DecimalBigNumber>;
-  balances?: TokenMap<DecimalBigNumber>;
+  weights: TokenMap<DecimalBigNumber>;
+  balances: TokenMap<DecimalBigNumber>;
 
   userBalances: TokenMap<DecimalBigNumber>;
 }
@@ -149,19 +149,20 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
 
   const weights = useMemo(() => {
     const { buy, sell } = swapState;
-    
+    const weights = tokenWeights || [];
     return {
-      [buy.address]: DecimalBigNumber.fromBN(tokenWeights[buy.tokenIndex] || ZERO, 18),
-      [sell.address]: DecimalBigNumber.fromBN(tokenWeights[sell.tokenIndex] || ZERO, 18),
+      [buy.address]: DecimalBigNumber.fromBN(weights[buy.tokenIndex] || ZERO, 18),
+      [sell.address]: DecimalBigNumber.fromBN(weights[sell.tokenIndex] || ZERO, 18),
     };
   }, [tokenWeights, swapState]);
 
   const poolTokenBalances: BigNumber[] = vaultTokens?.balances || [];
   const balances = useMemo(() => {
     const { buy, sell } = swapState;
+    const balances = poolTokenBalances || [];
     return {
-      [buy.address]: DecimalBigNumber.fromBN(poolTokenBalances[buy.tokenIndex] || ZERO, buy.decimals),
-      [sell.address]: DecimalBigNumber.fromBN(poolTokenBalances[sell.tokenIndex] || ZERO, sell.decimals),
+      [buy.address]: DecimalBigNumber.fromBN(balances[buy.tokenIndex] || ZERO, buy.decimals),
+      [sell.address]: DecimalBigNumber.fromBN(balances[sell.tokenIndex] || ZERO, sell.decimals),
     };
   }, [swapState, poolTokenBalances]);
 

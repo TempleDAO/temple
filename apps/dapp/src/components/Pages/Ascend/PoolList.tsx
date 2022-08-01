@@ -6,6 +6,7 @@ import { Head, Table, Row, Cell, Body } from 'components/Table/Table';
 import { Button as BaseButton } from 'components/Button/Button';
 import { useTemplePools } from 'hooks/ascend';
 import Loader from 'components/Loader/Loader';
+import { formatNumberFixedDecimals } from 'utils/formatter';
 
 const PoolListPage = () => {
   const [request, { response, error, isLoading }] = useTemplePools();
@@ -49,7 +50,7 @@ const PoolListPage = () => {
                 </Cell>
                 <Cell>{pool.swapEnabled ? 'YES' : 'NO'}</Cell>
                 <Cell>{pool.weightUpdates.length === 1 ? 'NO' : 'YES'}</Cell>
-                <Cell>{Number(pool.totalLiquidity) === 0 ? 'None' : `$${pool.totalLiquidity}`}</Cell>
+                <Cell>{Number(pool.totalLiquidity) === 0 ? 'None' : `$${formatNumberFixedDecimals(pool.totalLiquidity, 4)}`}</Cell>
                 <Cell>
                   <Link to={`${pool.address}`}>Edit</Link>
                 </Cell>
