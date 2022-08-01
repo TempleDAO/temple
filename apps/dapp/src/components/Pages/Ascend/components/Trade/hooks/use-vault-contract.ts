@@ -105,8 +105,9 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
     );
   };
 
-  const exitPool = async (poolId: string, assets: string[], minAmountsOut: DecimalBigNumber[]) => {
-    const minAmounts = minAmountsOut.map((minAmount) => minAmount.value);
+  const exitPool = async (poolId: string, assets: string[]) => {
+    const minAmounts = new Array(assets.length).fill(ZERO);
+
     return vaultContract!.exitPool(
       poolId,
       wallet,

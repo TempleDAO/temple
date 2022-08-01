@@ -141,14 +141,8 @@ export const LBPForm = ({ pool }: Props) => {
     }
     
     const tokens = getOrderedFormTokens().map(({ address }) => address);
-    const minAmountsOut: DecimalBigNumber[] = [];
-    for (const address of tokens) {
-      const amount = balances[address];
-      minAmountsOut.push(amount);
-    }
-  
     try {
-      const tx = await vaultContract.exitPool.request(pool.id, tokens, minAmountsOut);
+      const tx = await vaultContract.exitPool.request(pool.id, tokens);
       await tx.wait();
     } catch (err) {
       console.error(err);
