@@ -3,9 +3,6 @@ import { ethers, network } from "hardhat";
 import {
   GenericZap,
   GenericZap__factory,
-  OpsManager,
-  OpsManager__factory,
-  VaultedTemple__factory,
 } from "../../../typechain";
 import {
   deployAndMine,
