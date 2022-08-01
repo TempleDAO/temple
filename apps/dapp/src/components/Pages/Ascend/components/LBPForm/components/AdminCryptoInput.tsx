@@ -1,5 +1,5 @@
 import { Button } from 'components/Button/Button';
-import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { Input as CryptoInput } from 'components/Input/Input';
 import { formatNumber } from 'utils/formatter';
 import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
@@ -7,7 +7,7 @@ import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowan
 import { FormToken } from '../types';
 
 interface Props {
-  userBalance: DecimalBigNumber;
+  userBalance?: DecimalBigNumber;
   onHintClick: () => void;
   value: string;
   handleChange: (value: string) => void;
@@ -15,7 +15,7 @@ interface Props {
   vaultAddress: string;
 }
 
-export const AdminCryptoInput = ({ userBalance, onHintClick, value, handleChange, token, vaultAddress }: Props) => {
+export const AdminCryptoInput = ({ userBalance = DBN_ZERO, onHintClick, value, handleChange, token, vaultAddress }: Props) => {
   const [{ allowance, isLoading }, increaseAllowance] = useTokenContractAllowance(token, vaultAddress);
   return (
     <>
