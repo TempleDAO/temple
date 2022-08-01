@@ -11,6 +11,9 @@ import { SubGraphResponse } from 'hooks/core/types';
 import { getRemainingTime, getSpotPrice } from 'components/Pages/Ascend/utils';
 import { SubgraphPool, GraphResponse } from 'components/Layouts/Ascend/types';
 import { useAuctionContext } from 'components/Pages/Ascend/components/AuctionContext';
+import { formatBigNumber } from 'components/Vault/utils';
+import { formatNumberFixedDecimals } from 'utils/formatter';
+import { ZERO } from 'utils/bigNumber';
 
 export const useTimeRemaining = (pool?: Pool) => {
   const [time, setTime] = useState(getRemainingTime(pool));
@@ -166,5 +169,6 @@ export const usePoolTokenValues = (pool: Pool) => {
   return {
     isLoading,
     spotPrice,
+    formatted: `${formatNumberFixedDecimals(formatBigNumber(spotPrice || ZERO), 4)} $${sell.symbol}`,
   };
 };

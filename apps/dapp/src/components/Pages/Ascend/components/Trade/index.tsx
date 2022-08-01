@@ -7,6 +7,7 @@ import { TransactionSettingsModal } from 'components/TransactionSettingsModal/Tr
 import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
 import { CircularLoader as BaseCircularLoader, CircularLoader } from 'components/Loader/CircularLoader';
 import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { getBalancerErrorMessage } from 'utils/balancer';
 
 import { useVaultTradeState } from './hooks/use-vault-trade-state';
 import { useAuctionContext } from '../AuctionContext';
@@ -47,9 +48,10 @@ export const Trade = ({ pool }: Props) => {
   const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] = useTokenContractAllowance(sell, vaultAddress);
   
   const bigSellAmount = useMemo(() => {
-    return state.inputValue
-      ? DecimalBigNumber.parseUnits(state.inputValue, sell.decimals)
-      : DBN_ZERO;
+    if (!state.inputValue || state.inputValue.trim() === '.') {
+      return DBN_ZERO;
+    }
+    return DecimalBigNumber.parseUnits(state.inputValue, sell.decimals)
   }, [sell, state.inputValue])
 
   const { receiveEstimate, estimateWithSlippage } = useMemo(() => {
@@ -187,6 +189,11 @@ export const Trade = ({ pool }: Props) => {
         {!!state.swap.error && (
           <ErrorMessage>
             {state.swap.error}
+          </ErrorMessage>
+        )}
+        {!!state.quote.error && (
+          <ErrorMessage>
+            {state.quote.error}
           </ErrorMessage>
         )}
       </Wrapper>

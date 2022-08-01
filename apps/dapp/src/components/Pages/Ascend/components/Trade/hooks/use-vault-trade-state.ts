@@ -11,12 +11,14 @@ import { useNotification } from 'providers/NotificationProvider';
 import { useVaultContract } from './use-vault-contract';
 import { getSwapLimit, getSwapDeadline } from '../utils';
 import { useAuctionContext } from '../../AuctionContext';
+import { getBalancerErrorMessage } from 'utils/balancer'
 
 type Action<A extends ActionType, P extends any> = { type: A, payload: P };
 
 enum ActionType {
   SetSellValue,
   SetSwapQuote,
+  SetSwapQuoteError,
   SetSwapQuoteLoading,
   SetTransactionSettings,
   ResetQuoteState,
@@ -26,6 +28,7 @@ enum ActionType {
 type Actions = 
   Action<ActionType.SetSellValue, string> |
   Action<ActionType.SetSwapQuote, Nullable<BigNumber>> |
+  Action<ActionType.SetSwapQuoteError, string> |
   Action<ActionType.SetSwapQuoteLoading, boolean> |
   Action<ActionType.SetTransactionSettings, TradeState['transactionSettings']> |
   Action<ActionType.ResetQuoteState, null> |
@@ -37,6 +40,7 @@ interface TradeState {
     loading: boolean;
     estimate: Nullable<BigNumber>;
     estimateWithSlippage: Nullable<BigNumber>;
+    error: Nullable<string>;
   };
   swap: {
     error: Nullable<string>;
@@ -72,6 +76,7 @@ const reducer = (state: TradeState, action: Actions): TradeState => {
           loading: false,
           estimate: null,
           estimateWithSlippage: null,
+          error: null,
         },
       };
     }
@@ -82,6 +87,18 @@ const reducer = (state: TradeState, action: Actions): TradeState => {
           ...state.quote,
           estimate: action.payload,
           estimateWithSlippage: getSwapLimit(action.payload, state.transactionSettings.slippageTolerance),
+          error: null,
+        },
+      };
+    }
+    case ActionType.SetSwapQuoteError: {
+      return {
+        ...state,
+        quote: {
+          ...state.quote,
+          estimate: null,
+          estimateWithSlippage: null,
+          error: action.payload,
         },
       };
     }
@@ -123,6 +140,7 @@ export const useVaultTradeState = (pool: Pool) => {
       loading: false,
       estimate: null,
       estimateWithSlippage: null,
+      error: null,
     },
     swap: {
       error: '',
@@ -161,6 +179,10 @@ export const useVaultTradeState = (pool: Pool) => {
       });
     } catch (err) {
       console.error('Error fetching swap quote', err)
+      dispatch({
+        type: ActionType.SetSwapQuoteError,
+        payload: getBalancerErrorMessage((err as Error).message || ''),
+      });
     } finally {
       dispatch({ type: ActionType.SetSwapQuoteLoading, payload: false });
     }

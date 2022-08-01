@@ -20,7 +20,10 @@ export const getInitialValues = (pool?: Pool): Values => {
       tokens: {},
       startDate: new Date(),
       endDate: new Date(),
-      joinPool: {},
+      joinPool: {
+        type: 'INIT',
+        amounts: {},
+      },
     };
   }
 
@@ -41,12 +44,15 @@ export const getInitialValues = (pool?: Pool): Values => {
         },
       };
     }, {}),
-    joinPool: pool.tokens.reduce((acc, token, i) => {
-      return {
-        ...acc,
-        [token.address]: '',
-      };
-    }, {}),
+    joinPool: {
+      type: 'INIT',
+      amounts: pool.tokens.reduce((acc, token, i) => {
+        return {
+          ...acc,
+          [token.address]: '',
+        };
+      }, {}),
+    },
     name: pool.name,
     symbol: pool.symbol,
     startDate: lastWeightUpdate.startTimestamp,

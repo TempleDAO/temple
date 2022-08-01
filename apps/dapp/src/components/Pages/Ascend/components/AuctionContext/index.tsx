@@ -72,7 +72,7 @@ interface Props {
 
 export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
   const { wallet } = useWallet();
-  const [buy, sell] = pool.tokens;
+  const [sell, buy] = pool.tokens;
 
   const [swapState, setSwapState] = useState<AuctionContext['swapState']>({
     sell: {
@@ -80,14 +80,14 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
       symbol: sell.symbol,
       address: sell.address,
       decimals: sell.decimals,
-      tokenIndex: 1,
+      tokenIndex: 0,
     },
     buy: {
       name: buy.name,
       symbol: buy.symbol,
       address: buy.address,
       decimals: buy.decimals,
-      tokenIndex: 0,
+      tokenIndex: 1,
     },
   });
 
@@ -105,6 +105,7 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
       contractInterface: balancerPoolAbi,
       functionName: 'getNormalizedWeights',
     }],
+    watch: true
   });
 
   const [vaultAddress = '', pausedState = [], tokenWeights = []] = poolData || [];
