@@ -111,6 +111,16 @@ contract TempleZaps is ZapBase {
     emit TokenRecovered(_token, _to, _amount);
   }
 
+  /**
+   * @notice This function zaps ETH or an ERC20 token to TEMPLE ERC20 token
+   * @param _fromToken The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _minTempleReceived Minimum temple to receive
+   * @param _stableToken Supported temple pair stable token
+   * @param _minStableReceived Minimum temple pair stable token to receive
+   * @param _swapTarget Execution target for the swap
+   * @param _swapData DEX data
+   */
   function zapInTemple(
     address _fromToken,
     uint256 _fromAmount,
@@ -123,6 +133,15 @@ contract TempleZaps is ZapBase {
     zapInTempleFor(_fromToken, _fromAmount, _minTempleReceived, _stableToken, _minStableReceived, msg.sender, _swapTarget, _swapData);
   }
 
+  /**
+   * @notice This function zaps ETH or an ERC20 token to TEMPLE LP token
+   * @param _fromAddress The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _minAmountOut Minimum tokens out after first DEX swap
+   * @param _swapTarget Execution target for the swap
+   * @param _params Parameters for liquidity addition
+   * @param _swapData DEX data
+   */
   function zapInTempleLP(
     address _fromAddress,
     uint256 _fromAmount,
@@ -134,6 +153,41 @@ contract TempleZaps is ZapBase {
     zapInTempleLPFor(_fromAddress, _fromAmount, _minAmountOut, msg.sender, _swapTarget, _params, _swapData);
   }
 
+  /**
+   * @notice This function zaps ETH or an ERC20 token to TEMPLE and stakes in core vault
+   * @param _fromToken The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _minTempleReceived Minimum tokens out after first DEX swap
+   * @param _stableToken Supported temple pair stable token
+   * @param _minStableReceived Minimum stable token to receive
+   * @param _vault Target core vault
+   * @param _swapTarget Execution target for the swap
+   * @param _swapData DEX data
+   */
+  function zapInVault(
+    address _fromToken,
+    uint256 _fromAmount,
+    uint256 _minTempleReceived,
+    address _stableToken,
+    uint256 _minStableReceived,
+    address _vault,
+    address _swapTarget,
+    bytes memory _swapData
+  ) external payable whenNotPaused {
+    zapInVaultFor(_fromToken, _fromAmount, _minTempleReceived, _stableToken, _minStableReceived, _vault, msg.sender, _swapTarget, _swapData);
+  }
+
+  /**
+   * @notice This function zaps ETH or an ERC20 token to TEMPLE in addition to all eligible usable faith (for boost) and stakes in core vault
+   * @param _vault Target core vault
+   * @param _fromToken The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _minTempleReceived Minimum tokens out after first DEX swap
+   * @param _stableToken Supported temple pair stable token
+   * @param _minStableReceived Minimum stable token to receive
+   * @param _swapTarget Execution target for the swap
+   * @param _swapData DEX data
+   */
   function zapTempleFaithInVault(
     address _vault,
     address _fromToken,
@@ -143,10 +197,10 @@ contract TempleZaps is ZapBase {
     uint256 _minStableReceived,
     address _swapTarget,
     bytes memory _swapData
-  ) external whenNotPaused {
+  ) external payable whenNotPaused {
     require(vaultProxy.faithClaimEnabled(), "VaultProxy: Faith claim no longer enabled");
 
-    SafeERC20.safeTransferFrom(IERC20(_fromToken), msg.sender, address(this), _fromAmount);
+    _pullTokens(_fromToken, _fromAmount);
 
     uint256 receivedTempleAmount;
     if (_fromToken == temple) {
@@ -156,10 +210,12 @@ contract TempleZaps is ZapBase {
       receivedTempleAmount = _enterTemple(_stableToken, address(this), _fromAmount, _minTempleReceived);
     } else {
       require(supportedStables[_stableToken] == true, "Unsupported stable token");
-      IERC20(_fromToken).safeIncreaseAllowance(address(zaps), _fromAmount);
+      if (_fromToken != address(0)) {
+        IERC20(_fromToken).safeIncreaseAllowance(address(zaps), _fromAmount);
+      }
 
       // after zap in, enter temple from stable token
-      uint256 receivedStableAmount = zaps.zapIn(
+      uint256 receivedStableAmount = zaps.zapIn{value: msg.value}(
         _fromToken,
         _fromAmount,
         _stableToken,
@@ -185,28 +241,18 @@ contract TempleZaps is ZapBase {
 
     emit ZappedTemplePlusFaithInVault(msg.sender, _fromToken, _fromAmount, faithAmount, boostedAmount);
   }
-
-  function zapInVault(
-    address _fromToken,
-    uint256 _fromAmount,
-    uint256 _minTempleReceived,
-    address _stableToken,
-    uint256 _minStableReceived,
-    address _vault,
-    address _swapTarget,
-    bytes memory _swapData
-  ) external payable whenNotPaused {
-    zapInVaultFor(_fromToken, _fromAmount, _minTempleReceived, _stableToken, _minStableReceived, _vault, msg.sender, _swapTarget, _swapData);
-  }
-
-  function getAmountToSwap(
-    address _token,
-    address _pair,
-    uint256 _amount
-  ) public view returns (uint256) {
-    return Swap.getAmountToSwap(_token, _pair, _amount);
-  }
-
+  
+  /**
+   * @notice This function zaps ETH or an ERC20 token to TEMPLE ERC20 token
+   * @param _fromToken The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _minTempleReceived Minimum temple to receive
+   * @param _stableToken Supported temple pair stable token
+   * @param _minStableReceived Minimum of stable token to receive
+   * @param _recipient Recipient of exit tokens
+   * @param _swapTarget Execution target for the swap
+   * @param _swapData DEX data
+   */
   function zapInTempleFor(
     address _fromToken,
     uint256 _fromAmount,
@@ -232,6 +278,16 @@ contract TempleZaps is ZapBase {
      _enterTemple(_stableToken, _recipient, amountOut, _minTempleReceived);
   }
 
+  /**
+   * @notice This function zaps ETH or an ERC20 token to TEMPLE LP token
+   * @param _fromAddress The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _minAmountOut Minimum tokens out after first DEX swap
+   * @param _for Recipient of exit LP tokens
+   * @param _swapTarget Execution target for the swap
+   * @param _params Parameters for liquidity addition
+   * @param _swapData DEX data
+   */
   function zapInTempleLPFor(
     address _fromAddress,
     uint256 _fromAmount,
@@ -242,8 +298,8 @@ contract TempleZaps is ZapBase {
     bytes memory _swapData
   ) public payable {
     require(supportedStables[_params.stableToken] == true, "Unsupported stable token");
-    // pull tokens
-    SafeERC20.safeTransferFrom(IERC20(_fromAddress), msg.sender, address(this), _fromAmount);
+
+    _pullTokens(_fromAddress, _fromAmount);
 
     // get pair tokens supporting stable coin
     address pair = templeRouter.tokenPair(_params.stableToken);
@@ -261,7 +317,7 @@ contract TempleZaps is ZapBase {
       );
       require(_fromAmount >= _minAmountOut, "Insufficient tokens out");
 
-      // Moved this to *after* we've swapped from user provided token to stable token
+      // After we've swapped from user provided token to stable token
       // The stable token is now the intermediate token.
       // reuse variable
       _fromAddress = _params.stableToken;
@@ -279,6 +335,18 @@ contract TempleZaps is ZapBase {
     emit ZappedInTempleLP(_for, _fromAddress, _fromAmount, amountA, amountB);
   }
 
+  /**
+   * @notice This function zaps ETH or an ERC20 token to TEMPLE and stakes in core vault
+   * @param _fromToken The token used for entry (address(0) if ether)
+   * @param _fromAmount The amount of fromToken to zap
+   * @param _minTempleReceived Minimum tokens out after first DEX swap
+   * @param _stableToken Supported temple pair stable token
+   * @param _minStableReceived Minimum stable token to receive
+   * @param _vault Target core vault
+   * @param _for Staked for
+   * @param _swapTarget Execution target for the swap
+   * @param _swapData DEX data
+   */
   function zapInVaultFor(
     address _fromToken,
     uint256 _fromAmount,
@@ -290,7 +358,9 @@ contract TempleZaps is ZapBase {
     address _swapTarget,
     bytes memory _swapData
   ) public payable whenNotPaused {
-    SafeERC20.safeTransferFrom(IERC20(_fromToken), msg.sender, address(this), _fromAmount);
+    require(supportedStables[_stableToken] == true, "Unsupported stable token");
+
+    _pullTokens(_fromToken, _fromAmount);
     
     uint256 receivedTempleAmount;
     if (_fromToken == temple) {
@@ -299,11 +369,12 @@ contract TempleZaps is ZapBase {
       // if fromToken is supported stable, enter temple directly
       receivedTempleAmount = _enterTemple(_stableToken, address(this), _fromAmount, _minTempleReceived);
     } else {
-      require(supportedStables[_stableToken] == true, "Unsupported stable token");
-      IERC20(_fromToken).safeIncreaseAllowance(address(zaps), _fromAmount);
-
+      if (_fromToken != address(0)) {
+        IERC20(_fromToken).safeIncreaseAllowance(address(zaps), _fromAmount);
+      }
+      
       // after zap in, enter temple from stable token
-      uint256 receivedStableAmount = zaps.zapIn(
+      uint256 receivedStableAmount = zaps.zapIn{value: msg.value}(
         _fromToken,
         _fromAmount,
         _stableToken,
@@ -321,6 +392,21 @@ contract TempleZaps is ZapBase {
       IVault(_vault).depositFor(_for, receivedTempleAmount);
       emit ZappedTempleInVault(_for, _fromToken, _fromAmount, receivedTempleAmount);
     }
+  }
+
+  /**
+   * @dev Helper function to calculate swap in amount of a token before adding liquidit to uniswap v2 pair
+   * @param _token Token to swap in
+   * @param _pair Uniswap V2 Pair token
+   * @param _amount Amount of token
+   * @return uint256 Amount to swap
+   */
+  function getAmountToSwap(
+    address _token,
+    address _pair,
+    uint256 _amount
+  ) public view returns (uint256) {
+    return Swap.getAmountToSwap(_token, _pair, _amount);
   }
 
   function _addLiquidity(
@@ -372,7 +458,7 @@ contract TempleZaps is ZapBase {
     } else if (_intermediateToken == _stableToken) {
       SafeERC20.safeIncreaseAllowance(IERC20(_stableToken), address(templeRouter), amountToSwap);
 
-      // There's currently a bug in the AMM Router where amountOut is always zero.
+      // There's currently a shadowed declaration in the AMM Router causing amountOut to always be zero.
       // So have to resort to getting the balance before/after.
       uint256 balBefore = IERC20(temple).balanceOf(address(this));
       /*amountOut = */ templeRouter.swapExactStableForTemple(amountToSwap, _lpSwapMinAmountOut, _stableToken, address(this), type(uint128).max);

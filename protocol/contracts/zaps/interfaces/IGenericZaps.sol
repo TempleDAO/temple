@@ -9,6 +9,6 @@ interface IGenericZaps {
     uint256 amountOutMin,
     address swapTarget,
     bytes calldata swapData
-  ) external returns (uint256 amountOut);
+  ) external payable returns (uint256 amountOut);
   function getSwapInAmount(uint256 reserveIn, uint256 userIn) external pure returns (uint256);
 }

@@ -60,19 +60,6 @@ abstract contract ZapBase is Ownable {
     IERC20(_token).safeIncreaseAllowance(_spender, _amount);
   }
 
-  // /**
-  //   @notice Gets this contract's balance of a token
-  //   @param _token The ERC20 token to check the balance of (0 address if ETH)
-  //   @return balance This contract's token balance
-  //    */
-  // // function _getBalance(address _token) internal view returns (uint256 balance) {
-  // //   if (_token == address(0)) {
-  // //     balance = address(this).balance;
-  // //   } else {
-  // //     balance = IERC20(_token).balanceOf(address(this));
-  // //   }
-  // }
-
   function _transferToken(IERC20 _token, address _to, uint256 _amount) internal {
     uint256 balance = _token.balanceOf(address(this));
     require(_amount <= balance, "not enough tokens");
