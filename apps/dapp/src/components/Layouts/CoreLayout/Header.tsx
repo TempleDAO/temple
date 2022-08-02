@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
+import { TEMPLE_RELIC_ADDRESS, VITE_PUBLIC_DEV_MODE } from 'providers/env';
 
 import {
   flexCenter,
@@ -80,11 +81,13 @@ function getMenuItems(mode: HeaderMode) {
         { title: 'Nexus', path: '/nexus' },
       ]
     case 'nexus':
-      return [
-        { title: 'Relic', path: '/nexus/relic' },
-        { title: 'Quests', path: '/nexus/quests' },
-        { title: 'Dapp', path: '/dapp' },
-      ]
+      const devMode = VITE_PUBLIC_DEV_MODE == 'true'
+      return (devMode ? [{ title: 'Dev Mint', path: '/nexus/relic/dev-mint' }] : [])
+        .concat([
+          { title: 'Relic', path: '/nexus/relic' },
+          { title: 'Quests', path: '/nexus/quests' },
+          { title: 'Dapp', path: '/dapp' },
+        ])
   }
 }
 

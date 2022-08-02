@@ -1,5 +1,6 @@
 import bgActive from 'assets/images/nexus-room-active.jpg';
 import bgInactive from 'assets/images/nexus-room-inactive.jpg';
+import { VITE_PUBLIC_DEV_MODE } from 'providers/env';
 import { useRelic } from 'providers/RelicProvider';
 import { ItemInventory } from 'providers/types';
 import { useWallet } from 'providers/WalletProvider';
@@ -42,7 +43,7 @@ const NexusRoutes: FC<{ inventory: ItemInventory }> = (props) => {
   return <Routes>
     <Route path="no-relic" element={<NoRelicPanel inventory={props.inventory} />} />
     <Route path=":id" element={<RelicPage inventory={props.inventory} />} />
-    <Route path="dev-mint" element={<DevMintPage />} />
+    { VITE_PUBLIC_DEV_MODE && <Route path="dev-mint" element={<DevMintPage />} /> }
     <Route path="*" element={<Navigate to="no-relic" />} />
   </Routes>
 }
