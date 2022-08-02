@@ -1,15 +1,12 @@
 import { useState } from 'react';
 import styled, { css } from 'styled-components';
+import { Link } from 'react-router-dom';
+
 import env from 'constants/env';
 import { Button } from 'components/Button/Button';
 import { usePoolContract } from './use-pool-contract';
 import { useFactoryContract } from './use-pool-factory';
-import { format, parse } from 'date-fns';
-import { Link } from 'react-router-dom';
-import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
-import { formatUnits } from 'ethers/lib/utils';
-import { Token } from 'constants/env/types'
-import { Input as CryptoInput } from 'components/Input/Input';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { UnstyledList } from 'styles/common';
 import { useAuctionContext } from '../AuctionContext';
 import { formatNumber } from 'utils/formatter';
@@ -300,28 +297,33 @@ export const LBPForm = ({ pool }: Props) => {
                           defaultValue={formatWeight(token.startWeight)}
                           onChange={createTokenChangeHandler(token.address, 'startWeight', 'bn')}
                         />
-                        <br />
-                        <Label htmlFor={`${token.address}-endWeight`}>
-                          End Weight
-                        </Label>
-                        <Input
-                          min="0"
-                          max="100"
-                          id={`${token.address}-endWeight`}
-                          type="number"
-                          placeholder="0"
-                          defaultValue={formatWeight(token.endWeight)}
-                          onChange={createTokenChangeHandler(token.address, 'endWeight', 'bn')}
-                        />
-                        <br />
-                        <Label>Current Liquidity</Label>
-                        <Input
-                          type="text"
-                          placeholder="0"
-                          readOnly
-                          disabled
-                          value={`${poolBalance ? formatNumber(poolBalance.formatUnits()) : 0} $${token.symbol} `}
-                        />
+                        {isEditMode && (
+                          <>
+                            <br />
+                            <Label htmlFor={`${token.address}-endWeight`}>
+                              End Weight
+                            </Label>
+                            <Input
+                              min="0"
+                              max="100"
+                              id={`${token.address}-endWeight`}
+                              type="number"
+                              placeholder="0"
+                              defaultValue={formatWeight(token.endWeight)}
+                              onChange={createTokenChangeHandler(token.address, 'endWeight', 'bn')}
+                            />
+                            <br />
+                            <Label>Current Liquidity</Label>
+                            <Input
+                              type="text"
+                              placeholder="0"
+                              readOnly
+                              disabled
+                              value={`${poolBalance ? formatNumber(poolBalance.formatUnits()) : 0} $${token.symbol} `}
+                            />
+                          </>
+                        )}
+                        
                       </FieldGroup>
                     </li>
                   );
