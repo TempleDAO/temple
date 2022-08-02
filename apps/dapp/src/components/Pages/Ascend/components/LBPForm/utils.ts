@@ -62,7 +62,7 @@ export const createTokenDefaults = (token: Token, index: number): FormToken => {
     address: token.address,
     symbol: token.symbol,
     decimals: token.decimals,
-    startWeight:DecimalBigNumber.parseUnits(`${startWeight}`, 16),
+    startWeight: DecimalBigNumber.parseUnits(startWeight.toString(), 16),
     endWeight: DBN_ZERO,
     balance: DBN_ZERO,
     index,

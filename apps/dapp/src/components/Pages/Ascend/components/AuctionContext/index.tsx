@@ -72,7 +72,9 @@ interface Props {
 
 export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
   const { wallet } = useWallet();
-  const [sell, buy] = pool.tokens;
+
+  const orderedTokens = pool.tokens.sort((a, b) => a.address.localeCompare(b.address));
+  const [sell, buy] = orderedTokens;
 
   const [swapState, setSwapState] = useState<AuctionContext['swapState']>({
     sell: {
