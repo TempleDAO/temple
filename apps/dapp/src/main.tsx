@@ -24,7 +24,7 @@ import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
 import TradeRoutes from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
 
-import NexusRoutes from 'components/Pages/Core/Nexus';
+import NexusRoutes from 'components/Pages/Nexus/Relic';
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
 
@@ -86,7 +86,7 @@ ReactDOM.render(
               <Route path="disclaimer" element={<Disclaimer />} />
               <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
             </Route>
-            <Route path="/dapp/*" element={<CoreLayout />}>
+            <Route path="/dapp/*" element={<CoreLayout mode='dapp' />}>
               <Route path="" element={<VaultListPage />} />
 
               <Route path="vaults" element={<VaultListPage />} />
@@ -101,6 +101,10 @@ ReactDOM.render(
               <Route path="profile" element={<ProfilePage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="nexus/*" element={<NexusRoutes />} />
+            </Route>
+            <Route path="/nexus/*" element={<CoreLayout mode='nexus' />}>
+              <Route path="" element={<Navigate to="relic" />} />
+              <Route path="relic/*" element={<NexusRoutes />} />
             </Route>
           </>
         </Routes>

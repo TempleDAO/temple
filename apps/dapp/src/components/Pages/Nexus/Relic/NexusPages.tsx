@@ -11,7 +11,7 @@ import { NexusPanel, NexusPanelRow } from './styles';
 export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
   const { relics } = props.inventory;
   if (relics.length > 0) {
-    return <Navigate to={`../relic/${relics[0].id.toString()}`} />;
+    return <Navigate to={`../${relics[0].id.toString()}`} />;
   }
   const { mintRelic } = useRelic();
   const navigate = useNavigate();
@@ -66,7 +66,7 @@ const RelicPanel = (props: { relics: ItemInventory['relics'] }) => {
               const nextRelicIdx = (relicIdx + 1) % relics.length;
               const nextRelicId = relics[nextRelicIdx].id;
               await renounceRelic(relic.id);
-              navigate(`../relic/${nextRelicId.toString()}`);
+              navigate(`../${nextRelicId.toString()}`);
             }}
           />
         </div>

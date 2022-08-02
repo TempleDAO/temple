@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { FC, useEffect, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -9,7 +9,7 @@ import { useWallet } from 'providers/WalletProvider';
 
 import Header from './Header';
 
-const CoreLayout = () => {
+const CoreLayout: FC<{ mode: 'dapp' | 'nexus' }> = (props) => {
   const { isConnected } = useWallet();
   const [_, resfreshWalletState] = useRefreshWalletState();
   const didRefreshRefresh = useRef(false);
@@ -27,7 +27,7 @@ const CoreLayout = () => {
 
   return (
     <>
-      <Header />
+      <Header mode={props.mode}/>
       <Main>
         <Outlet />
       </Main>
