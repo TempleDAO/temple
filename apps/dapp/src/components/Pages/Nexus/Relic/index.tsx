@@ -6,7 +6,9 @@ import { useWallet } from 'providers/WalletProvider';
 import { FC, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { PageWrapper } from '../../Core/utils';
-import { DevMintItemPanel, NexusBody, NoRelicPanel } from './RelicPages';
+import { DevMintPage } from './DevMintPage';
+import { NoRelicPanel } from './NoRelicPanel';
+import { RelicPage } from './RelicPages';
 import { NexusBackground, NexusBodyContainer, NexusContainer, NexusPanelRow } from './styles';
 
 const NexusPage = () => {
@@ -39,8 +41,8 @@ const NexusLoading = () => {
 const NexusRoutes: FC<{ inventory: ItemInventory }> = (props) => {
   return <Routes>
     <Route path="no-relic" element={<NoRelicPanel inventory={props.inventory} />} />
-    <Route path=":id" element={<NexusBody inventory={props.inventory} />} />
-    <Route path="dev-mint-item" element={<DevMintItemPanel />} />
+    <Route path=":id" element={<RelicPage inventory={props.inventory} />} />
+    <Route path="dev-mint" element={<DevMintPage />} />
     <Route path="*" element={<Navigate to="no-relic" />} />
   </Routes>
 }
