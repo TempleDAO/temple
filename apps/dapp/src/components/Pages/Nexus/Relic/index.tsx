@@ -6,7 +6,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { FC, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { PageWrapper } from '../../Core/utils';
-import { DevMintItemPanel, NexusBody, NoRelicPanel } from './NexusPages';
+import { DevMintItemPanel, NexusBody, NoRelicPanel } from './RelicPages';
 import { NexusBackground, NexusBodyContainer, NexusContainer, NexusPanelRow } from './styles';
 
 const NexusPage = () => {

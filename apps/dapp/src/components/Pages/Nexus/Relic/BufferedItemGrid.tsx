@@ -92,7 +92,7 @@ const BufferPanel: FC<{
       width: '80%',
       borderWidth: 1,
     }}>
-      <ItemGrid columnCount={4} disabled={disabled}
+      <ItemGrid disabled={disabled}
         items={items}
         onClick={async itemId => props.onItemClicked(itemId)}
       />

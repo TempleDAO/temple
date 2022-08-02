@@ -1,25 +1,32 @@
 import { Button } from 'components/Button/Button';
-import { opacify } from 'polished';
+import { useWindowResize } from 'components/Vault/useWindowResize';
 import { RelicItemData } from 'providers/types';
-import { FC, useState } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 
-const DEFAULT_COLUMN_COUNT = 5;
 const ITEM_IMAGE_BASE_URL = "https://myst.mypinata.cloud/ipfs/QmTmng8Skqv8sqckArgpi6RqQQTHh7LNLzmRyMWyxU24th"
 const MAX_IMAGE_ITEM_ID = 2
 
 const ItemGrid: FC<{
-  columnCount?: number
   disabled?: boolean
   items: RelicItemData[]
   onClick: (item: number) => Promise<void>
 }> = (props) => {
   const { items } = props;
-  const columnCount = props.columnCount ?? DEFAULT_COLUMN_COUNT
+  const containerRef = useRef<HTMLDivElement>(null)
+  const windowWidth = useWindowResize()
+  const [componentWidth, setComponentWidth] = useState(100)
+  useEffect(() => {
+    setComponentWidth(containerRef.current?.offsetWidth ?? 100)
+  }, [windowWidth])
+  // slightly scale with item width
+  const itemWidthTarget = Math.max(0, Math.min(300, componentWidth - 200)) / 10 + 60
+  const columnCount = Math.floor(componentWidth / itemWidthTarget)
   const rowCount = Math.max(1, Math.ceil(items.length / columnCount));
   const itemIndexes = [...Array(rowCount * columnCount).keys()];
+
   return (
-    <ItemsContainer>
+    <ItemsContainer ref={containerRef}>
       {itemIndexes.map((_, idx) => {
         const item = items[idx];
         return (

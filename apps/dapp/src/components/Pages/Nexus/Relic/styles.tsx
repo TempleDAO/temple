@@ -40,15 +40,15 @@ export const NexusPanelRow = styled.h3`
 
 export const NexusBodyContainer = styled.div`
   display: flex;
-  flex-flow: row;
-  flex-wrap: wrap;
+  flex-flow: column;
   justify-content: center;
-  align-items: top;
+  align-items: center;
   width: 100%;
   > * {
-    width: 46%;
     margin: 2%;
+    width: 100%;
     min-width: 25rem;
+    max-width: 800px;
   }
 `;
 
