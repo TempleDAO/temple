@@ -1,73 +1,15 @@
 import { Button } from 'components/Button/Button';
 import { BigNumber } from 'ethers';
 import { useRelic } from 'providers/RelicProvider';
-import { ItemInventory, RelicItemData } from 'providers/types';
-import { useWallet } from 'providers/WalletProvider';
-import { FC, useEffect, useMemo, useState } from 'react';
-import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
-import styled from 'styled-components';
-import { asyncNoop } from 'utils/helpers';
-import { NexusContainer } from '../Trade/styles';
-import { PageWrapper } from '../utils';
+import { Enclave, ItemInventory, RelicItemData } from 'providers/types';
+import { FC, useMemo } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import BufferedItemGrid from './BufferedItemGrid';
 import ItemGrid from './ItemGrid';
 import { NexusPanel, NexusPanelRow } from './styles';
 
-const NexusPage = () => {
-  return (
-    <PageWrapper>
-      <h3>Nexus</h3>
-      <NexusContainer>
-        <NexusBody />
-      </NexusContainer>
-    </PageWrapper>
-  );
-};
-
-const NexusBody = () => {
-  const { wallet, isConnected } = useWallet();
-  const { inventory, updateInventory } = useRelic();
-
-  useEffect(() => {
-    updateInventory();
-  }, [wallet, isConnected]);
-
-  if (inventory === null) {
-    return (
-      <NexusPanelRow>
-        <span>Loading...</span>
-      </NexusPanelRow>
-    );
-  } else {
-    const { relics, items } = inventory;
-
-    return (
-      <NexusBodyContainer>
-        <RelicRoutes inventory={inventory} />
-        <MyItemPanel relicId={relics[0]?.id} items={items} />
-        <MintItemPanel />
-      </NexusBodyContainer>
-    );
-  }
-};
-
-const RelicRoutes: FC<{ inventory: ItemInventory }> = (props) => {
-  const {
-    inventory: { relics },
-  } = props;
-  return (
-    <Routes>
-      <Route path="" element={<NoRelicPanel relics={relics} />} />
-      <Route path="relic/:id" element={<RelicPanel relics={relics} />} />
-      <Route path="*" element={<Navigate to="" />} />
-    </Routes>
-  );
-};
-
-enum Enclave{ Logic, Structure, Order, Mystery, Chaos }
-
-const NoRelicPanel = (props: { relics: ItemInventory['relics'] }) => {
-  const { relics } = props;
+export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
+  const { relics } = props.inventory;
   if (relics.length > 0) {
     return <Navigate to={`../relic/${relics[0].id.toString()}`} />;
   }
@@ -76,13 +18,16 @@ const NoRelicPanel = (props: { relics: ItemInventory['relics'] }) => {
   return (
     <NexusPanel>
       <NexusPanelRow>
-        <span>No Relics</span>
+        <span>You do not yet possess a Relic</span>
       </NexusPanelRow>
+
+      <div/>
+      <div/>
 
       <Button
         label="Mint Relic"
         onClick={async () => {
-          const added = await mintRelic(BigNumber.from(Enclave.Structure));
+          const added = await mintRelic(Enclave.Structure);
           if (added) {
             navigate(`relic/${added.id.toString()}`);
           }
@@ -90,6 +35,14 @@ const NoRelicPanel = (props: { relics: ItemInventory['relics'] }) => {
       />
     </NexusPanel>
   );
+};
+
+export const NexusBody: FC<{ inventory: ItemInventory }> = (props) => {
+  const { relics, items } = props.inventory
+  return <>
+    <RelicPanel relics={relics} />
+    <MyItemPanel relicId={relics[0]?.id} items={items} />
+  </>
 };
 
 const RelicPanel = (props: { relics: ItemInventory['relics'] }) => {
@@ -150,34 +103,19 @@ const MyItemPanel: FC<{
   );
 };
 
+
 const VALID_ITEM_ID_COUNT = 15
 
-const MintItemPanel = () => {
+export const DevMintItemPanel = () => {
   const { mintRelicItem } = useRelic();
   const allItems = useMemo(() => [...Array(VALID_ITEM_ID_COUNT).keys()].map((id) => ({ id, count: 1 })), [])
       
   return (
     <NexusPanel>
       <NexusPanelRow>
-        <span>Mint Items (test only)</span>
+        <span>Mint Item (dev testing only)</span>
       </NexusPanelRow>
       <ItemGrid items={allItems} onClick={async (item) => mintRelicItem(item)} />
     </NexusPanel>
   );
 };
-
-const NexusBodyContainer = styled.div`
-  display: flex;
-  flex-flow: row;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: top;
-  width: 100%;
-  > * {
-    width: 46%;
-    margin: 2%;
-    min-width: 25rem;
-  }
-`;
-
-export default NexusPage;

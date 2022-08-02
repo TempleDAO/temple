@@ -1,14 +1,12 @@
-import { Button } from 'components/Button/Button';
-import { BigNumber } from 'ethers';
-import { useRelic } from 'providers/RelicProvider';
-import { ItemInventory, RelicItemData } from 'providers/types';
-import { useWallet } from 'providers/WalletProvider';
-import { FC, useEffect, useState } from 'react';
-import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
-import { asyncNoop } from 'utils/helpers';
-import { NexusContainer } from '../Trade/styles';
-import { PageWrapper } from '../utils';
+
+export const NexusContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  position: relative;
+`;
 
 export const NexusPanel = styled.div`
   display: flex;
@@ -17,6 +15,7 @@ export const NexusPanel = styled.div`
   border: 2px solid ${(props) => props.theme.palette.brand};
   border-radius: 16px;
   padding: 1rem;
+  background-color: rgba(0, 0, 0, .7);
 
   > * {
     margin-bottom: 1rem;
@@ -38,3 +37,27 @@ export const NexusPanelRow = styled.h3`
     }
   }
 `;
+
+export const NexusBodyContainer = styled.div`
+  display: flex;
+  flex-flow: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: top;
+  width: 100%;
+  > * {
+    width: 46%;
+    margin: 2%;
+    min-width: 25rem;
+  }
+`;
+
+export const NexusBackground = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+`

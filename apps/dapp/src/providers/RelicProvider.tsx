@@ -1,5 +1,5 @@
 import { createContext, PropsWithChildren, useContext, useState } from 'react';
-import { ItemInventory, RelicItemData, RelicService } from './types';
+import { Enclave, ItemInventory, RelicItemData, RelicService } from './types';
 
 import { BigNumber, ContractTransaction, Signer } from 'ethers';
 import { TEMPLE_RELIC_ADDRESS, TEMPLE_RELIC_ITEMS_ADDRESS } from 'providers/env';
@@ -112,7 +112,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     return relics.map((r) => `Relic #${r.id.toNumber()}`).join(', ');
   };
 
-  const mintRelic = async (enclave: BigNumber) => {
+  const mintRelic = async (enclave: Enclave) => {
     const result = await callRelicFunctionAndDiffRelics((relic) => relic.mintRelic(enclave));
     if (result && result.added.length > 0) {
       openNotification({

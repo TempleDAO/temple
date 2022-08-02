@@ -6,6 +6,8 @@ import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
+export enum Enclave{ Logic, Structure, Order, Mystery, Chaos }
+
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
   OGT_UNLOCK = 'OGT_UNLOCK',
@@ -165,7 +167,7 @@ export interface WalletState {
 export interface RelicService {
   inventory: Nullable<ItemInventory>;
   updateInventory(): Promise<void>;
-  mintRelic(enclave: BigNumber): Promise<Nullable<RelicData>>;
+  mintRelic(enclave: Enclave): Promise<Nullable<RelicData>>;
   renounceRelic(relicId: BigNumber): Promise<Nullable<RelicData>>;
   mintRelicItem(itemId: number): Promise<void>;
   equipRelicItems(relicId: BigNumber, items: RelicItemData[]): Promise<void>;

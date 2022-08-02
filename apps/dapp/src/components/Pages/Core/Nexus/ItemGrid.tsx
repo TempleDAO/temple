@@ -1,4 +1,5 @@
 import { Button } from 'components/Button/Button';
+import { opacify } from 'polished';
 import { RelicItemData } from 'providers/types';
 import { FC, useState } from 'react';
 import styled from 'styled-components';
@@ -47,7 +48,11 @@ const ItemButton: FC<{
   const { item } = props
   const [processing, setProcessing] = useState(false)
   const imgUrl = item.id <= MAX_IMAGE_ITEM_ID ? `${ITEM_IMAGE_BASE_URL}/${item.id}.png` : undefined
-  return <ItemCell>
+  return <ItemCell style={{
+    backgroundImage: `url(${imgUrl})`,
+    opacity: processing ? .3 : 1,
+  }}
+  >
     <Button key={item.id}
       label={imgUrl ? '' : `${item.id}`}
       style={{ border: 'none' }}
@@ -58,7 +63,6 @@ const ItemButton: FC<{
       }}
     >
     </Button>
-    { imgUrl && <ItemImage src={imgUrl} style={processing ? { opacity: .2 } : {}}/> }
     
     {item.count > 1 && <ItemCountBadge disabled={props.disabled} >{item.count}</ItemCountBadge>}
   </ItemCell>
@@ -90,6 +94,9 @@ const ItemWrapper = styled.div<{ columnCount: number }>`
 const ItemCell = styled.div`
   border: solid 2px ${props => props.theme.palette.brand};
   border-radius: 15%;
+  background-color: #333;
+  background-size: cover;
+  background-position: center;
 
   > * {
     width: 100%;
@@ -97,7 +104,6 @@ const ItemCell = styled.div`
     position: relative;
     border-radius: 15%;
   }
-  transition: opacity 2s ease;
   > img {
     opacity: .5;
   }
