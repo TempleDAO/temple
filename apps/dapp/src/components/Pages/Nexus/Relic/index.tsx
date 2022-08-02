@@ -26,7 +26,7 @@ const NexusPage = () => {
       <NexusBodyContainer>
         { inventory ? <NexusRoutes inventory={inventory} /> : <NexusLoading /> }
       </NexusBodyContainer>
-      </NexusContainer>
+    </NexusContainer>
   </PageWrapper>
 }
 

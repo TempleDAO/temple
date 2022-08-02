@@ -23,10 +23,10 @@ import { Summary } from 'components/Pages/Core/VaultPages/Summary';
 import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
 import TradeRoutes from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
-
-import NexusRoutes from 'components/Pages/Nexus/Relic';
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
+import NexusPage from 'components/Pages/Nexus/Relic';
+import QuestPage from 'components/Pages/Nexus/Quest';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -100,11 +100,11 @@ ReactDOM.render(
               <Route path="trade/*" element={<TradeRoutes />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
-              <Route path="nexus/*" element={<NexusRoutes />} />
             </Route>
             <Route path="/nexus/*" element={<CoreLayout mode='nexus' />}>
               <Route path="" element={<Navigate to="relic" />} />
-              <Route path="relic/*" element={<NexusRoutes />} />
+              <Route path="relic/*" element={<NexusPage />} />
+              <Route path="quests/*" element={<QuestPage />} />
             </Route>
           </>
         </Routes>

@@ -82,7 +82,7 @@ function getMenuItems(mode: HeaderMode) {
     case 'nexus':
       return [
         { title: 'Relic', path: '/nexus/relic' },
-        { title: 'Quest', path: '/nexus/quest' },
+        { title: 'Quests', path: '/nexus/quests' },
         { title: 'Dapp', path: '/dapp' },
       ]
   }
