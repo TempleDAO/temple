@@ -72,6 +72,50 @@ export const usePoolContract = (pool?: Pool) => {
     }
   };
 
+  // TODO
+  const queryJoin = async (
+    poolId: string,
+    assets: string[],
+    _maxAmountsIn: DecimalBigNumber[],
+  ) => {
+    const maxAmountsIn = _maxAmountsIn.map(({ value }) => value);
+    return constractInstance!.queryJoin(
+      poolId,
+      wallet,
+      wallet,
+      {
+        assets,
+        maxAmountsIn,
+        userData: '0x', // TODO
+        fromInternalBalance: false,
+      }, {
+        gasLimit: 400000,
+      }
+    );
+  };
+
+  // TODO
+  const queryExit = async (
+    poolId: string,
+    assets: string[],
+    _minAmountsOut: DecimalBigNumber[],
+  ) => {
+    const minAmountsOut = _minAmountsOut.map(({ value }) => value);
+    return constractInstance!.queryExit(
+      poolId,
+      wallet,
+      wallet,
+      {
+        assets,
+        minAmountsOut,
+        userData: '0x', // TODO
+        toInternalBalance: false,
+      }, {
+        gasLimit: 400000,
+      }
+    );
+  };
+
   const [swapHandler, swapRequestState] = useRequestState(setSwapEnabledHandler);
   const [updateWeightHandler, updateWeightsRequestState] = useRequestState(updateWeightsGraduallyHandler);
 

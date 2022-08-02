@@ -58,9 +58,9 @@ export const Chart = ({ pool }: Props) => {
     const predicted = [];
     if (balances && points.length > 0) {
       try {
-        const [buy, sell] = pool.tokensList;
+        const [sell, buy] = pool.tokensList;
         const lastPoint = points[points.length - 1];
-    
+
         const spotPriceEstimate = getSpotPrice(
           balances[sell]!,
           balances[buy]!,
