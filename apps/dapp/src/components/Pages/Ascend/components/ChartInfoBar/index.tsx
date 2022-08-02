@@ -8,6 +8,7 @@ import { UnstyledList } from 'styles/common';
 import { usePoolTokenValues } from 'hooks/ascend';
 import { CircularLoader } from 'components/Loader/CircularLoader';
 import { ZERO } from 'utils/bigNumber';
+import { useAuctionContext } from '../AuctionContext';
 
 interface Props {
   pool: Pool;
@@ -15,7 +16,7 @@ interface Props {
 
 export const ChartInfoBar = ({ pool }: Props) => {
   const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
-  const { spotPrice, isLoading } = usePoolTokenValues(pool);
+  const { isLoading, formatted } = usePoolTokenValues(pool);
 
   return (
     <InfoBar>
@@ -41,7 +42,7 @@ export const ChartInfoBar = ({ pool }: Props) => {
         <InfoLabel>
           Current Price
         </InfoLabel>
-        <span>{isLoading ? <CircularLoader /> : <>${formatNumberFixedDecimals(formatBigNumber(spotPrice || ZERO), 4)}</>}</span>
+        <span>{isLoading ? <CircularLoader /> : formatted}</span>
       </InfoItem>
     </InfoBar>
   );
