@@ -2,7 +2,6 @@ import { capitalize } from 'lodash';
 import { RelicData, RelicEnclave, RelicRarity } from 'providers/types';
 import { FC } from 'react';
 import styled, { DefaultTheme } from 'styled-components';
-import { NexusPanel } from './styles';
 
 const RelicStatsPanel: FC<{ relic: RelicData }> = (props) => {
   const { id, rarity, enclave } = props.relic
@@ -25,7 +24,7 @@ const RelicStatsPanel: FC<{ relic: RelicData }> = (props) => {
 const RelicStatsContainer = styled.div`
   width: 20em;
   > * {
-    color: ${(props) => props.theme.palette.light75};
+    color: ${props => props.theme.palette.light75};
   }
 `
 
@@ -70,15 +69,15 @@ export function getRarityPalette(rarity: RelicRarity): RarityPalette {
 
 const EnclaveLabel = styled.span<{ enclave: RelicEnclave }>`
   &:before {
-    content: ${(props) => `'${capitalize(getEnclavePalette(props.enclave))}'`};
+    content: '${props => capitalize(getEnclavePalette(props.enclave))}';
   }
-  color: ${(props) => props.theme.palette.enclave[getEnclavePalette(props.enclave)]};
+  color: ${props => props.theme.palette.enclave[getEnclavePalette(props.enclave)]};
 `;
 const RarityLabel = styled.span<{ rarity: RelicRarity }>`
   &:before {
-    content: ${(props) => `'${capitalize(getRarityPalette(props.rarity))}'`};
+    content: '${props => capitalize(getRarityPalette(props.rarity))}';
   }
-  color: ${(props) => props.theme.palette.relicRarity[getRarityPalette(props.rarity)]};
+  color: ${props => props.theme.palette.relicRarity[getRarityPalette(props.rarity)]};
 `
 
 export default RelicStatsPanel

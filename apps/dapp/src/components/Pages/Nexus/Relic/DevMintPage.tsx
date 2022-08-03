@@ -1,9 +1,7 @@
-import { Button } from 'components/Button/Button';
 import { useRelic } from 'providers/RelicProvider';
-import { RelicEnclave } from 'providers/types';
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import ItemGrid from './ItemGrid';
+import MintRelicPanel from './MintRelicPanel';
 import { NexusPanel, NexusPanelRow } from './styles';
 
 const VALID_ITEM_ID_COUNT = 15
@@ -11,27 +9,9 @@ const VALID_ITEM_ID_COUNT = 15
 export const DevMintPage = () => {
   const { mintRelicItem } = useRelic();
   const allItems = useMemo(() => [...Array(VALID_ITEM_ID_COUNT).keys()].map((id) => ({ id, count: 1 })), [])
-  const { mintRelic } = useRelic();
-  const navigate = useNavigate();
 
   return <>
-    <NexusPanel>
-      <NexusPanelRow>
-        <span>Mint Relic</span>
-      </NexusPanelRow>
-      <div>
-        <Button
-          label="Mint Relic"
-          onClick={async () => {
-            const added = await mintRelic(RelicEnclave.Structure);
-            if (added) {
-              navigate(`../${added.id.toString()}`);
-            }
-          }}
-          
-        />
-      </div>
-    </NexusPanel>
+    <MintRelicPanel />
     <NexusPanel>
       <NexusPanelRow>
         <span>Mint Item (dev testing only)</span>
