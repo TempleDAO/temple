@@ -1,6 +1,6 @@
 import { Button } from 'components/Button/Button';
 import { useRelic } from 'providers/RelicProvider';
-import { Enclave, ItemInventory } from 'providers/types';
+import { RelicEnclave, ItemInventory } from 'providers/types';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { NexusPanel, NexusPanelRow } from './styles';
 
@@ -23,7 +23,7 @@ export const NoRelicPanel = (props: { inventory: ItemInventory }) => {
       <Button
         label="Mint Relic"
         onClick={async () => {
-          const added = await mintRelic(Enclave.Structure);
+          const added = await mintRelic(RelicEnclave.Structure);
           if (added) {
             navigate(`relic/${added.id.toString()}`);
           }

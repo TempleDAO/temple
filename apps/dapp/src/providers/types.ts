@@ -6,7 +6,11 @@ import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
-export enum Enclave{ Logic, Structure, Order, Mystery, Chaos }
+// The ordering of this enum must match the definition in Relic.sol
+export enum RelicEnclave{ Logic, Structure, Order, Mystery, Chaos }
+
+// The ordering of this enum must match the definition in Relic.sol
+export enum RelicRarity{ Common, Uncommon, Rare, Epic, Legendary }
 
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
@@ -37,7 +41,12 @@ export type FaithBalance = {
 };
 
 export type RelicItemData = { id: number; count: number };
-export type RelicData = { id: BigNumber; items: RelicItemData[] };
+export type RelicData = {
+  id: BigNumber
+  enclave: RelicEnclave
+  rarity: RelicRarity
+  items: RelicItemData[]
+};
 
 export type ItemInventory = {
   relics: RelicData[];
@@ -167,7 +176,7 @@ export interface WalletState {
 export interface RelicService {
   inventory: Nullable<ItemInventory>;
   updateInventory(): Promise<void>;
-  mintRelic(enclave: Enclave): Promise<Nullable<RelicData>>;
+  mintRelic(enclave: RelicEnclave): Promise<Nullable<RelicData>>;
   renounceRelic(relicId: BigNumber): Promise<Nullable<RelicData>>;
   mintRelicItem(itemId: number): Promise<void>;
   equipRelicItems(relicId: BigNumber, items: RelicItemData[]): Promise<void>;

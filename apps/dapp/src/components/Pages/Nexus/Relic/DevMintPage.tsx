@@ -1,6 +1,6 @@
 import { Button } from 'components/Button/Button';
 import { useRelic } from 'providers/RelicProvider';
-import { Enclave } from 'providers/types';
+import { RelicEnclave } from 'providers/types';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ItemGrid from './ItemGrid';
@@ -23,7 +23,7 @@ export const DevMintPage = () => {
         <Button
           label="Mint Relic"
           onClick={async () => {
-            const added = await mintRelic(Enclave.Structure);
+            const added = await mintRelic(RelicEnclave.Structure);
             if (added) {
               navigate(`../${added.id.toString()}`);
             }

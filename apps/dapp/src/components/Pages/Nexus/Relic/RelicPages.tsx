@@ -37,9 +37,9 @@ const RelicPanel = (props: {
   return (
     <NexusPanel>
       <img src={relicImg} width={200} />
-      <NexusPanelRow>
+      {/* <NexusPanelRow>
         <span>Equipped Items</span>
-        {/* <div>
+        <div>
           <Button isSmall
             label="Renounce Relic"
             onClick={async () => {
@@ -49,8 +49,8 @@ const RelicPanel = (props: {
               navigate(`../${nextRelicId.toString()}`);
             }}
           />
-        </div> */}
-      </NexusPanelRow>
+        </div>
+      </NexusPanelRow> */}
       <BufferedItemGrid items={thisRelic.items}
         actionLabel="Unequip"
         onAction={async selectedItems => unequipRelicItems(thisRelic.id, selectedItems)}

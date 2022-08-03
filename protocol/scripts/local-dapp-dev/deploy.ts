@@ -261,6 +261,7 @@ async function main() {
   const relic = await new Relic__factory(owner).deploy()
   const relicItems = await new RelicItems__factory(owner).deploy()
   await relic.setItemContract(relicItems.address)
+  await relic.setThresholds([0, 10, 100, 1000, 1000])
   await relicItems.setRelic(relic.address)
   
   // Print config required to run dApp
