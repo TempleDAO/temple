@@ -1,3 +1,4 @@
+import relicImg from 'assets/images/relic.png';
 import { Button } from 'components/Button/Button';
 import { BigNumber } from 'ethers';
 import { useRelic } from 'providers/RelicProvider';
@@ -5,8 +6,8 @@ import { ItemInventory, RelicData, RelicItemData } from 'providers/types';
 import { FC } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import BufferedItemGrid from './BufferedItemGrid';
+import RelicStatsPanel from './RelicStatsPanel';
 import { NexusPanel, NexusPanelRow } from './styles';
-import relicImg from 'assets/images/relic.png';
 
 export const RelicPage: FC<{ inventory: ItemInventory }> = (props) => {
   const { relics, items } = props.inventory
@@ -36,7 +37,8 @@ const RelicPanel = (props: {
   }
   return (
     <NexusPanel>
-      <img src={relicImg} width={200} />
+      <img src={relicImg} width={200} style={{ margin: 0 }} />
+      <RelicStatsPanel relic={thisRelic} />
       {/* <NexusPanelRow>
         <span>Equipped Items</span>
         <div>
