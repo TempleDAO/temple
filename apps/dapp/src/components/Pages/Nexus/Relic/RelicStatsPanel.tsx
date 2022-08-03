@@ -2,6 +2,7 @@ import { capitalize } from 'lodash';
 import { RelicData, RelicEnclave, RelicRarity } from 'providers/types';
 import { FC } from 'react';
 import styled, { DefaultTheme } from 'styled-components';
+import { NexusPanel } from './styles';
 
 const RelicStatsPanel: FC<{ relic: RelicData }> = (props) => {
   const { id, rarity, enclave } = props.relic
@@ -47,7 +48,7 @@ const RelicStatsRow = styled.h4`
 type EnclavePalette = keyof DefaultTheme['palette']['enclave']
 type RarityPalette = keyof DefaultTheme['palette']['relicRarity']
 
-function getEnclavePalette(enclave: RelicEnclave): EnclavePalette {
+export function getEnclavePalette(enclave: RelicEnclave): EnclavePalette {
   switch(enclave) {
     case RelicEnclave.Logic: return 'logic'
     case RelicEnclave.Structure: return 'structure'
@@ -56,7 +57,8 @@ function getEnclavePalette(enclave: RelicEnclave): EnclavePalette {
     case RelicEnclave.Chaos: return 'chaos'
   }
 }
-function getRarityPalette(rarity: RelicRarity): RarityPalette {
+
+export function getRarityPalette(rarity: RelicRarity): RarityPalette {
   switch(rarity) {
     case RelicRarity.Common: return 'common'
     case RelicRarity.Uncommon: return 'uncommon'
