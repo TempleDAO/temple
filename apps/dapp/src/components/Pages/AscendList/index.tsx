@@ -16,7 +16,7 @@ const EMPTY_MESSAGE = (
 );
 
 export const AscendListPage = () => {
-  const [request, { response, isLoading, error }] = useTemplePools(10);
+  const [request, { response, isLoading, error }] = useTemplePools(1);
 
   useEffect(() => {
     request();
