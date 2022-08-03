@@ -16,6 +16,7 @@ export const NexusPanel = styled.div<{ color?: string }>`
   border-radius: 16px;
   padding: 1rem;
   background-color: rgba(0, 0, 0, .7);
+  backdrop-filter: blur(10px);
 
   > * {
     margin-bottom: 1rem;
