@@ -3,17 +3,14 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IUniswapV2Pair.sol";
+import "../interfaces/IWeth.sol";
 import "./Executable.sol";
+import "./EthConstants.sol";
 
-interface IWETH {
-  function deposit() external payable;
-}
 
 /// @notice An inlined library for liquidity pool related helper functions.
 library Swap {
-
-  address private constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-
+  
   // @dev calling function should ensure targets are approved 
   function fillQuote(
     address _fromToken,
@@ -22,13 +19,13 @@ library Swap {
     address _swapTarget,
     bytes memory _swapData
   ) internal returns (uint256) {
-    if (_swapTarget == WETH) {
-      require(_fromToken == WETH, "Invalid from token and WETH target");
+    if (_swapTarget == EthConstants.WETH) {
+      require(_fromToken == EthConstants.WETH, "Invalid from token and WETH target");
       require(
         _fromAmount > 0 && msg.value == _fromAmount,
         "Invalid _amount: Input ETH mismatch"
       );
-      IWETH(WETH).deposit{value: _fromAmount}();
+      IWETH(EthConstants.WETH).deposit{value: _fromAmount}();
       return _fromAmount;
     }
 

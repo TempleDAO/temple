@@ -4,23 +4,26 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/IWeth.sol";
 
 abstract contract ZapBase is Ownable {
   using SafeERC20 for IERC20;
 
   bool public paused;
-
+  address private constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
   uint256 internal constant DEADLINE = 0xf000000000000000000000000000000000000000000000000000000000000000;
 
   // fromToken => swapTarget (per curve, univ2 and balancer) approval status
   mapping(address => mapping(address => bool)) public approvedTargets;
+
+  event SetContractState(bool paused);
 
   receive() external payable {
     require(msg.sender != tx.origin, "Do not send ETH directly");
   }
 
   /**
-    @dev Adds or removes an approved swapTarget
+    @notice Adds or removes an approved swapTarget
     * swapTargets should be Zaps and must not be tokens!
     @param _tokens An array of tokens
     @param _targets An array of addresses of approved swapTargets
@@ -40,24 +43,12 @@ abstract contract ZapBase is Ownable {
   }
 
   /**
-    @dev Toggles the contract's active state
+    @notice Toggles the contract's active state
      */
   function toggleContractActive() external onlyOwner {
     paused = !paused;
-  }
 
-  /**
-    @notice Approve a token for spending with finite allowance
-    @param _token The ERC20 token to approve
-    @param _spender The spender of the token
-    @param _amount The allowance to grant to the spender
-     */
-  function _approveToken(
-    address _token,
-    address _spender,
-    uint256 _amount
-  ) internal {
-    IERC20(_token).safeIncreaseAllowance(_spender, _amount);
+    emit SetContractState(paused);
   }
 
   function _transferToken(IERC20 _token, address _to, uint256 _amount) internal {
@@ -67,11 +58,11 @@ abstract contract ZapBase is Ownable {
   }
 
   /**
-    @dev Transfers tokens from msg.sender to this contract
-    @dev If native token, use msg.value
-    @dev For use with Zap Ins
-    @param token The ERC20 token to transfer to this contract (0 address if ETH)
-    @return Quantity of tokens transferred to this contract
+   * @notice Transfers tokens from msg.sender to this contract
+   * @notice If native token, use msg.value
+   * @notice For use with Zap Ins
+   * @param token The ERC20 token to transfer to this contract (0 address if ETH)
+   * @return Quantity of tokens transferred to this contract
      */
   function _pullTokens(
     address token,
@@ -93,6 +84,16 @@ abstract contract ZapBase is Ownable {
     );
 
     return amount;
+  }
+
+  function _depositEth(
+    uint256 _amount
+  ) internal {
+    require(
+      _amount > 0 && msg.value == _amount,
+      "Invalid _amount: Input ETH mismatch"
+    );
+    IWETH(WETH).deposit{value: _amount}();
   }
 
   // circuit breaker modifiers

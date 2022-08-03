@@ -141,7 +141,7 @@ describe.only("Temple Stax Core Zaps", async () => {
       expect(await templeZaps.supportedStables(FRAX)).to.eq(false);
     });
 
-    it("recovers token", async () => {
+    it.only("recovers token", async () => {
       // transfer frax to zaps contract
       const frax = IERC20__factory.connect(FRAX, fraxSigner);
       await frax.transfer(genericZaps.address, 1000);
@@ -153,6 +153,14 @@ describe.only("Temple Stax Core Zaps", async () => {
           .withArgs(checkSumedAddr, ownerAddress, 1000);
       
       expect(await getBalance(frax, ownerAddress)).eq(1000);
+
+      // recover ETH
+      const ethBalanceBefore = await genericZaps.provider.getBalance(genericZaps.address);
+      await expect(genericZaps.recoverToken(ETH, ownerAddress, ethBalanceBefore))
+        .to.emit(genericZaps, "TokenRecovered")
+        .withArgs(ETH, ownerAddress, ethBalanceBefore);
+      expect(await genericZaps.provider.getBalance(genericZaps.address))
+        .to.eq(0);
     });
   });
 
@@ -640,7 +648,7 @@ describe.only("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it.only("zaps in token to balancer LP, one sided liquidity", async () => {
+    it("zaps in token to balancer LP, one sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
 
       await zapInBalancerLP(
@@ -658,7 +666,7 @@ describe.only("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it.only("zaps in ETH to balancer LP, one sided liquidity", async () => {
+    it("zaps in ETH to balancer LP, one sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
 
       await zapInBalancerLP(
@@ -712,7 +720,7 @@ describe.only("Temple Stax Core Zaps", async () => {
       );
     });
 
-    it.only("zaps in ETH to balancer LP, two sided liquidity", async () => {
+    it("zaps in ETH to balancer LP, two sided liquidity", async () => {
       const res = await balancerVault.getPoolTokens(poolId);
 
       await zapInBalancerLP(

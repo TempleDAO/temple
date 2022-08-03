@@ -5,7 +5,6 @@ pragma solidity ^0.8.4;
 /// @dev As this is a powerful function, care and consideration needs to be taken when 
 ///      adding into contracts, and on who can call.
 library Executable {
-    //error UnknownFailure();
 
     /// @notice Call a function on another contract, where the msg.sender will be this contract
     /// @param _to The address of the contract to call

@@ -3,7 +3,6 @@ pragma solidity ^0.8.4;
 
 import "./ZapBase.sol";
 import "./libs/Swap.sol";
-//import "./libs/Executable.sol";
 import "./interfaces/IBalancerVault.sol";
 import "./interfaces/IUniswapV2Factory.sol";
 import "./interfaces/IUniswapV2Router.sol";
@@ -14,8 +13,6 @@ import "./interfaces/ICurveFactory.sol";
 contract GenericZap is ZapBase {
 
   IUniswapV2Router public immutable uniswapV2Router;
-
-  address private constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
   ICurveFactory private immutable curveFactory = ICurveFactory(0xB9fC157394Af804a3578134A6585C0dc9cc990d4);
   IBalancerVault private immutable balancerVault = IBalancerVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
 
@@ -276,7 +273,7 @@ contract GenericZap is ZapBase {
         amountBought -= toSwap;
       }
       // use vault as target
-      _approveToken(poolTokens[tokenBoughtIndex], address(balancerVault), toSwap);
+      SafeERC20.safeIncreaseAllowance(IERC20(poolTokens[tokenBoughtIndex]), address(balancerVault), toSwap);
       Executable.execute(address(balancerVault), 0, _zapLiqRequest.poolSwapData);
       // ensure min amounts out swapped for other token
       require(_zapLiqRequest.poolSwapMinAmountOut <= IERC20(_zapLiqRequest.otherToken).balanceOf(address(this)),
@@ -288,7 +285,7 @@ contract GenericZap is ZapBase {
       if (_request.maxAmountsIn[i] > 0) {
         require(IERC20(poolTokens[i]).balanceOf(address(this)) >= _request.maxAmountsIn[i], 
           "Insufficient asset tokens");
-        _approveToken(poolTokens[i], address(balancerVault), _request.maxAmountsIn[i]);
+        SafeERC20.safeIncreaseAllowance(IERC20(poolTokens[i]), address(balancerVault), _request.maxAmountsIn[i]);
       }
       unchecked { i++; }
     }
@@ -361,7 +358,7 @@ contract GenericZap is ZapBase {
     if (_zapLiqRequest.isOneSidedLiquidityAddition) {
       coinAmounts[fromTokenIndex] = _fromAmount;
       require(approvedTargets[coins[fromTokenIndex]][_pool] == true, "Pool not approved");
-      _approveToken(coins[fromTokenIndex], _pool, _fromAmount);
+      SafeERC20.safeIncreaseAllowance(IERC20(coins[fromTokenIndex]), _pool, _fromAmount);
     } else {
       // swap coins
       // add coins in equal parts. assumes two coins
@@ -371,7 +368,7 @@ contract GenericZap is ZapBase {
         _fromAmount -= amountToSwap;
       }
       require(approvedTargets[coins[fromTokenIndex]][_pool] == true, "Pool not approved");
-      _approveToken(coins[fromTokenIndex], _pool, amountToSwap);
+      SafeERC20.safeIncreaseAllowance(IERC20(coins[fromTokenIndex]), _pool, amountToSwap);
       uint256 otherTokenBalanceBefore = IERC20(coins[otherTokenIndex]).balanceOf(address(this));
       bytes memory result = Executable.execute(_pool, 0, _zapLiqRequest.poolSwapData);
       // reuse amountToSwap variable for amountReceived
@@ -384,8 +381,8 @@ contract GenericZap is ZapBase {
       // reinit variable to avoid stack too deep
       uint256 fromAmount = _fromAmount;
       address pool = _pool;
-      _approveToken(coins[fromTokenIndex], pool, fromAmount);
-      _approveToken(coins[otherTokenIndex], pool, amountToSwap);
+      SafeERC20.safeIncreaseAllowance(IERC20(coins[fromTokenIndex]), pool, fromAmount);
+      SafeERC20.safeIncreaseAllowance(IERC20(coins[otherTokenIndex]), pool, amountToSwap);
 
       coinAmounts[fromTokenIndex] = fromAmount;
       coinAmounts[otherTokenIndex] = amountToSwap;
@@ -448,8 +445,8 @@ contract GenericZap is ZapBase {
     
     (uint256 amountA, uint256 amountB) = _swapTokens(_pair, intermediateToken, intermediateAmount, _zapLiqRequest.poolSwapMinAmountOut);
 
-    _approveToken(token1, address(uniswapV2Router), amountB);
-    _approveToken(token0, address(uniswapV2Router), amountA);
+    SafeERC20.safeIncreaseAllowance(IERC20(token1), address(uniswapV2Router), amountB);
+    SafeERC20.safeIncreaseAllowance(IERC20(token0), address(uniswapV2Router), amountA);
 
     _addLiquidityUniV2(_pair, _for, amountA, amountB, _zapLiqRequest.uniAmountAMin, _zapLiqRequest.uniAmountBMin, _zapLiqRequest.shouldTransferResidual);
   }
@@ -613,7 +610,7 @@ contract GenericZap is ZapBase {
       );
       valueToSend = _fromAmount;
     } else {
-      _approveToken(_fromToken, _swapTarget, _fromAmount);
+      SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), _swapTarget, _fromAmount);
     }
     uint256 nCoins = _coins.length;
     uint256[] memory balancesBefore = new uint256[](nCoins);
@@ -641,15 +638,15 @@ contract GenericZap is ZapBase {
     return (tokenBoughtIndex, bal - balancesBefore[tokenBoughtIndex]);
   }
 
-  function _depositEth(
-    uint256 _amount
-  ) internal {
-    require(
-      _amount > 0 && msg.value == _amount,
-      "Invalid _amount: Input ETH mismatch"
-    );
-    IWETH(WETH).deposit{value: _amount}();
-  }
+  // function _depositEth(
+  //   uint256 _amount
+  // ) internal {
+  //   require(
+  //     _amount > 0 && msg.value == _amount,
+  //     "Invalid _amount: Input ETH mismatch"
+  //   );
+  //   IWETH(WETH).deposit{value: _amount}();
+  // }
 
   /**
     @notice This function is used to swap ERC20 <> ERC20
@@ -669,7 +666,7 @@ contract GenericZap is ZapBase {
         return _amountIn;
     }
 
-    _approveToken(_fromToken, address(uniswapV2Router), _amountIn);
+    SafeERC20.safeIncreaseAllowance(IERC20(_fromToken), address(uniswapV2Router), _amountIn);
 
     IUniswapV2Factory uniV2Factory = IUniswapV2Factory(
       uniswapV2Router.factory()
