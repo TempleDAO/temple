@@ -25,6 +25,9 @@ import TradeRoutes from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
 
 import env from 'constants/env';
+import posthog from 'posthog-js'
+
+posthog.init('phc_pa9tsK76qoRqgsvMh9rDLtBKbOaawlwvJTLkcNDtxab', { api_host: 'https://app.posthog.com' })
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
