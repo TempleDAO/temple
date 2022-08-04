@@ -37,13 +37,14 @@ export const useFactoryContract = () => {
   const createPool = async (params: CreatePoolParams) => {
     let result;
     try {
-      
+      const swapFeePercentage = parseEther((params.feePercentage / 100).toString());
+
       result = await contractInstance!.create(
         params.name,
         params.symbol,
         params.tokenAddresses,
         [params.weights[0].value, params.weights[1].value],
-        parseEther((params.feePercentage / 100).toString()),
+        swapFeePercentage,
         wallet,
         true,
         {
