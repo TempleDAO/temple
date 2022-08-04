@@ -116,8 +116,8 @@ export const usePoolContract = (pool?: Pool) => {
     );
   };
 
-  const [swapHandler, swapRequestState] = useRequestState(setSwapEnabledHandler);
-  const [updateWeightHandler, updateWeightsRequestState] = useRequestState(updateWeightsGraduallyHandler);
+  const [swapHandler, swapRequestState] = useRequestState(setSwapEnabledHandler, { shouldReThrow: true });
+  const [updateWeightHandler, updateWeightsRequestState] = useRequestState(updateWeightsGraduallyHandler, { shouldReThrow: true });
 
   return {
     setSwapEnabled: {
