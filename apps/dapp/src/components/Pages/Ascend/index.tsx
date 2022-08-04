@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { chain as chains } from 'wagmi';
+import styled from 'styled-components';
 
 import { useTemplePool } from 'hooks/ascend';
 import { Pool } from 'components/Layouts/Ascend/types';
@@ -12,7 +13,6 @@ import { AuctionContextProvider } from './components/AuctionContext';
 import { ChartInfoBar } from './components/ChartInfoBar';
 
 import {
-  ContractAddress,
   Description,
   ChartTradeSection,
 } from './styles';
@@ -29,7 +29,7 @@ interface Props {
 
 const ActiveAuction = ({ pool }: Props) => {
   return (
-    <>
+    <Wrapper>
       <h3>{pool.name}</h3>
       <Description>
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas euismod purus eget feugiat rutrum. Praesent at ante quis felis molestie mattis. Donec eget congue purus. Aenean pretium ex sed convallis tempus. Nam eros erat, cursus quis posuere eget, convallis blandit mi. Morbi vitae quam eget est elementum pretium.
@@ -42,7 +42,7 @@ const ActiveAuction = ({ pool }: Props) => {
         <Trade pool={pool} />
       </ChartTradeSection>
       <SwapHistory pool={pool} />
-    </>
+    </Wrapper>
   );
 };
 
@@ -110,3 +110,7 @@ export const AscendPage = () => {
     </AuctionContextProvider>
   );
 };
+
+const Wrapper = styled.div`
+  width: 100%;
+`;
