@@ -17,16 +17,15 @@ import {
 } from 'styles/mixins';
 import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
-import { phoneAndAbove } from 'styles/breakpoints';
+import { phoneAndAbove, verySmallDesktop } from 'styles/breakpoints';
+import { Lottie } from 'components/Lottie';
 
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
-import templeDaoLogo from 'assets/images/sun-art-new.svg';
 import hamburger from 'assets/icons/core-hamburger.svg';
 import hamburgerX from 'assets/icons/core-x-hamburger.svg';
 import animationData from 'assets/animations/logo-animation.json';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
 import { Account } from './Account';
-import { Lottie } from 'components/Lottie';
 
 const Header = () => {
   const [isNavOpen, setIsNavOpen] = useState(false);
@@ -350,5 +349,9 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
     &:hover {
       text-shadow: ${COLOR_NAV_SHADOW_DESKTOP};
     }
+  `)}
+
+  ${verySmallDesktop(`
+    min-width: 5rem;
   `)}
 `;

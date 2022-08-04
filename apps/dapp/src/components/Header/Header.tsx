@@ -7,7 +7,6 @@ import * as breakpoints from 'styles/breakpoints';
 import { Account } from 'components/Layouts/CoreLayout/Account';
 
 export const Header = () => {
-  const navigate = useNavigate();
   return (
     <HeaderStyled>
       <NavContainer>

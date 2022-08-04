@@ -10,7 +10,7 @@ import { toDecimal } from '../utils/decimals'
 import { getVault, updateVault } from './vault'
 import { getOrCreateVaultUserBalance, updateVaultUserBalance } from './vaultUserBalance'
 import { getVaultGroup, updateVaultGroup } from './vaultGroup'
-import { BIG_DECIMAL_0, BIG_INT_1, TEMPLE_ADDRESS } from '../utils/constants'
+import { BIG_DECIMAL_0, BIG_DECIMAL_MIN_1, BIG_INT_1, TEMPLE_ADDRESS } from '../utils/constants'
 import { getTemplePrice } from '../utils/prices'
 
 
@@ -35,27 +35,37 @@ export function createWithdraw(event: WithdrawEvent): Withdraw {
   updateUser(user, timestamp)
 
   const vub = getOrCreateVaultUserBalance(vault, user, timestamp)
-  vub.staked = vub.staked.minus(amount)
+  const staked = vub.staked.minus(amount)
+  vub.staked = staked
   vub.amount = vub.amount.minus(amount)
   vub.value = vub.value.minus(amount.times(tokenPrice))
   vub.token = token.id
-  updateVaultUserBalance(vub, timestamp)
 
   vault.tvl = vault.tvl.minus(amount)
-  if (vub.staked <= BIG_DECIMAL_0) {
+  vault.tvlUSD = vault.tvlUSD.minus(amount.times(tokenPrice))
+  if (staked <= BIG_DECIMAL_0) {
+    const earned = staked.times(BIG_DECIMAL_MIN_1)
+    vub.earned = vub.earned.plus(earned)
+    vub.earnedUSD = vub.earnedUSD.plus(earned.times(tokenPrice))
+    vub.staked = BIG_DECIMAL_0
+    vub.amount = BIG_DECIMAL_0
+    vub.value = BIG_DECIMAL_0
     vault.userCount = vault.userCount.minus(BIG_INT_1)
   }
+  updateVaultUserBalance(vub, timestamp)
   updateVault(vault, timestamp)
 
   const vaultGroup = getVaultGroup(vault.name)
   vaultGroup.tvl = vaultGroup.tvl.minus(amount)
+  vaultGroup.tvlUSD = vaultGroup.tvlUSD.minus(amount.times(tokenPrice))
   vaultGroup.volume = vaultGroup.volume.plus(amount)
+  vaultGroup.volumeUSD = vaultGroup.volumeUSD.plus(amount.times(tokenPrice))
   updateVaultGroup(vaultGroup, timestamp)
 
   const metric = getMetric()
   metric.tvl = metric.tvl.minus(amount)
-  metric.volume = metric.volume.plus(amount)
   metric.tvlUSD = metric.tvlUSD.minus(amount.times(tokenPrice))
+  metric.volume = metric.volume.plus(amount)
   metric.volumeUSD = metric.volumeUSD.plus(amount.times(tokenPrice))
   updateMetric(metric, timestamp)
 

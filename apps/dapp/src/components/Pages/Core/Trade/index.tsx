@@ -2,14 +2,20 @@ import { FC } from 'react';
 import { Route, Routes, Link as BaseLink, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
+import BaseImage from 'components/Image/Image';
+import { useWatchAsset, TEMPLE_ASSET } from 'hooks/use-watch-asset';
 import { Trade } from './views/Trade';
 import { Unstake } from './views/Unstake';
 import { Stake } from './views/Stake';
 import { PageWrapper } from '../utils';
 import { Container } from './styles';
 import { tabletAndAbove } from 'styles/breakpoints';
+import { buttonResets } from 'styles/mixins';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 const TradeRoutes = () => {
+  const [watchAsset] = useWatchAsset(TEMPLE_ASSET);
+ 
   return (
     <>
       <PageWrapper>
@@ -29,6 +35,18 @@ const TradeRoutes = () => {
                 <Route path="/stake" element={<Stake />} />
               </Routes>
             </Wrapper>
+            {watchAsset && (
+               <AddTokenButton type="button" onClick={watchAsset}>
+                <Image
+                  src={TEMPLE_ASSET.image}
+                  width={24}
+                  height={24}
+                  alt={`Add ${TEMPLE_ASSET.symbol}`}
+                  title={`Register ${TEMPLE_ASSET.symbol}`}
+                />
+                Add {TICKER_SYMBOL.TEMPLE_TOKEN} To Wallet
+              </AddTokenButton>
+            )}
           </div>
         </Container>
       </PageWrapper>
@@ -74,6 +92,19 @@ const Link = styled(BaseLink)<{ $isActive: boolean }>`
   border-radius: .5rem;
   display: block;
   background: ${({ $isActive, theme }) => $isActive ? '#1D1A1A' : 'transparent'};
+`;
+
+const AddTokenButton = styled.button`
+  ${buttonResets}
+  background: transparent;
+  color: ${({ theme }) => theme.palette.brand};
+  display: flex;
+  align-items: center;
+  margin: 1rem auto;
+`;
+
+const Image = styled(BaseImage)`
+  margin-right: 0.25rem;
 `;
 
 export default TradeRoutes;

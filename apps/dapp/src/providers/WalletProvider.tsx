@@ -6,7 +6,6 @@ import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { useNotification } from 'providers/NotificationProvider';
 import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { ClaimType } from 'enums/claim-type';
 import { TEAM_PAYMENTS_EPOCHS, TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH } from 'enums/team-payment';
 import { toAtto } from 'utils/bigNumber';
 import { asyncNoop, noop } from 'utils/helpers';
@@ -19,7 +18,7 @@ import {
   TempleTeamPayments__factory,
   ERC20,
 } from 'types/typechain';
-import { TEMPLE_ADDRESS, FRAX_ADDRESS, TEMPLE_STAKING_ADDRESS, FEI_ADDRESS } from 'providers/env';
+import env from 'constants/env';
 import { ZERO } from 'utils/bigNumber';
 
 // We want to save gas burn $ for the Templars,
@@ -36,11 +35,8 @@ const INITIAL_STATE: WalletState = {
   wallet: null,
   isConnected: false,
   isConnecting: false,
-  connectWallet: noop,
-  changeWalletAddress: noop,
   signer: null,
   network: null,
-  claim: asyncNoop,
   getBalance: asyncNoop,
   updateBalance: asyncNoop,
   collectTempleTeamPayment: asyncNoop,
@@ -52,40 +48,32 @@ const WalletContext = createContext<WalletState>(INITIAL_STATE);
 export const WalletProvider = (props: PropsWithChildren<{}>) => {
   const { children } = props;
 
-  const [{ data: signer, loading: signerLoading }] = useSigner();
-  const [{ data: network }] = useNetwork();
-  const [{ data: accountData, loading: accountLoading }] = useAccount();
-  const [{ loading: connectLoading }] = useConnect();
+  const { data: signer, isLoading: signerLoading } = useSigner();
+  const { activeChain } = useNetwork();
+  const { data: accountData, isLoading: accountLoading } = useAccount();
+  const { isConnecting: connectLoading } = useConnect();
 
   const { openNotification } = useNotification();
   const [balanceState, setBalanceState] = useState<Balance>(INITIAL_STATE.balance);
 
-  const chain = network?.chain;
+  const chain = activeChain;
   const walletAddress = accountData?.address;
   const isConnected = !!walletAddress && !!signer;
-
-  const connectWallet = async () => {
-    throw new Error('Deprecated');
-  };
-
-  const changeWalletAddress = async () => {
-    throw new Error('Deprecated');
-  };
 
   const getBalance = async (walletAddress: string, signer: Signer) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
 
-    const fraxContract = new ERC20__factory(signer).attach(FRAX_ADDRESS);
+    const fraxContract = new ERC20__factory(signer).attach(env.contracts.frax);
 
-    const feiContract = new ERC20__factory(signer).attach(FEI_ADDRESS);
+    const feiContract = new ERC20__factory(signer).attach(env.contracts.fei);
 
-    const templeStakingContract = new TempleStaking__factory(signer).attach(TEMPLE_STAKING_ADDRESS);
+    const templeStakingContract = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
 
     const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(await templeStakingContract.OG_TEMPLE());
 
-    const templeContract = new TempleERC20Token__factory(signer).attach(TEMPLE_ADDRESS);
+    const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
 
     const fraxBalance: BigNumber = await fraxContract.balanceOf(walletAddress);
 
@@ -97,8 +85,8 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     return {
       frax: fraxBalance,
       fei: feiBalance,
-      temple: temple,
-      ogTemple: ogTemple, // >= 1 ? ogTemple : 0,
+      temple,
+      ogTemple,
     };
   };
 
@@ -146,9 +134,6 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  // TODO: remove as part of #239
-  const claim = async (claimType: ClaimType): Promise<TransactionReceipt | void> => {};
-
   const collectTempleTeamPayment = async (epoch: TEAM_PAYMENTS_EPOCHS) => {
     if (walletAddress && signer) {
       const fixedTeamPaymentAddress = TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[epoch];
@@ -177,10 +162,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
         isConnected: isConnected,
         isConnecting: signerLoading || connectLoading || accountLoading,
         wallet: walletAddress || null,
-        connectWallet,
-        changeWalletAddress,
         ensureAllowance,
-        claim,
         signer: signer || null,
         network: !chain
           ? null

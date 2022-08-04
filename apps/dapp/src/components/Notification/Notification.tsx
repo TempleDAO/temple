@@ -1,8 +1,9 @@
-import React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
+
 import Image from 'components/Image/Image';
 import { useNotification } from 'providers/NotificationProvider';
+
 import crossImage from 'assets/images/cross.svg';
 import openInNewTabImage from 'assets/images/open-in-new.svg';
 
@@ -20,14 +21,34 @@ const ETHERSCAN_DOMAIN =
     ? 'https://etherscan.io'
     : 'https://rinkeby.etherscan.io';
 
+const AUTOHIDE_TIMER = 1000 * 10;
+
 const Notification = ({ hash, title }: NotificationProps) => {
   const { closeNotification } = useNotification();
+  const timerRef = useRef(0);
 
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (!!timerRef.current) {
+      return;
+    }
+
+    timerRef.current = window.setTimeout(() => {
+      close();
+    }, AUTOHIDE_TIMER);
+
+    return () => {
+      clearTimeout(timerRef.current);
+    };
+  }, [timerRef, hash]);
+
   const close = () => {
     setIsOpen(false);
+
+    clearTimeout(timerRef.current);
+
     // avoids the notification disappearing before the animation ends
     containerRef?.current?.addEventListener(
       'transitionend',

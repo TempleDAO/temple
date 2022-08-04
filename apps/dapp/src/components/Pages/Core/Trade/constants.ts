@@ -32,3 +32,5 @@ export const INITIAL_STATE: SwapReducerState = {
   isFraxSellDisabled: true,
   error: null,
 };
+
+export const FALLBACK_VAULT_APY = 9;

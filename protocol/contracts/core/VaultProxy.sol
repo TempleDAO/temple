@@ -3,13 +3,12 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./Vault.sol";
-import "../ABDKMathQuad.sol";
-import "../OGTemple.sol";
-import "../TempleERC20Token.sol";
-import "../TempleStaking.sol";
-import "../devotion/Faith.sol";
+import "../util/ABDKMathQuad.sol";
+import "../deprecated/TempleStaking.sol";
+import "../deprecated/Faith.sol";
 
 /**
     @notice A proxy contract for interacting with Temple Vaults. 
@@ -17,15 +16,15 @@ import "../devotion/Faith.sol";
 contract VaultProxy is Ownable {
     using ABDKMathQuad for bytes16;
     /** @notice Tokens / Contracted required for the proxy contract  */
-    OGTemple public immutable ogTemple;
-    TempleERC20Token public immutable temple;
+    IERC20 public immutable ogTemple;
+    IERC20 public immutable temple;
     TempleStaking public immutable templeStaking;
     Faith public immutable faith;
     bool public faithClaimEnabled;
 
     constructor(
         OGTemple _ogTemple,
-        TempleERC20Token _temple,
+        IERC20 _temple,
         TempleStaking _templeStaking,
         Faith _faith
     ) {
