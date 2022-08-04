@@ -5,20 +5,22 @@ export class SubgraphQueryError extends Error {
   }
 }
 
+// Preserved to avoid a larger refactor across the code base for now
 export const fetchSubgraph = async (query: string) => {
-  const result = await fetch(
-    'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
-    {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query,
-      }),
-    }
-  );
+  return fetchGenericSubgraph('https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics', query);
+};
+
+export const fetchGenericSubgraph = async (url: string, query: string) => {
+  const result = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query,
+    }),
+  });
   const response = await result.json();
 
   if (response.errors) {

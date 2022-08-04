@@ -29,11 +29,6 @@ export function createDeposit(event: DepositEvent): Deposit {
   const vault = getVault(event.address as Address)
   deposit.vault = vault.id
 
-  const vaultGroup = getVaultGroup(vault.name)
-  vaultGroup.tvl = vaultGroup.tvl.plus(staked)
-  vaultGroup.volume = vaultGroup.volume.plus(staked)
-  updateVaultGroup(vaultGroup, timestamp)
-
   const user = getOrCreateUser(event.params.account, timestamp)
   deposit.user = user.id
   user.depositsBalance = user.depositsBalance.plus(staked)
@@ -49,15 +44,23 @@ export function createDeposit(event: DepositEvent): Deposit {
   updateVaultUserBalance(vub, timestamp)
 
   vault.tvl = vault.tvl.plus(staked)
+  vault.tvlUSD = vault.tvlUSD.plus(staked.times(tokenPrice))
   if (oldStaked == BIG_DECIMAL_0) {
     vault.userCount = vault.userCount.plus(BIG_INT_1)
   }
   updateVault(vault, timestamp)
 
+  const vaultGroup = getVaultGroup(vault.name)
+  vaultGroup.tvl = vaultGroup.tvl.plus(staked)
+  vaultGroup.tvlUSD = vaultGroup.tvlUSD.plus(staked.times(tokenPrice))
+  vaultGroup.volume = vaultGroup.volume.plus(amount)
+  vaultGroup.volumeUSD = vaultGroup.volumeUSD.plus(amount.times(tokenPrice))
+  updateVaultGroup(vaultGroup, timestamp)
+
   const metric = getMetric()
   metric.tvl = metric.tvl.plus(staked)
-  metric.volume = metric.volume.plus(amount)
   metric.tvlUSD = metric.tvlUSD.plus(staked.times(tokenPrice))
+  metric.volume = metric.volume.plus(amount)
   metric.volumeUSD = metric.volumeUSD.plus(amount.times(tokenPrice))
   updateMetric(metric, timestamp)
 

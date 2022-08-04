@@ -14,7 +14,6 @@ import { theme } from 'styles/theme';
 
 import texture1 from 'assets/images/texture-1.svg';
 import texture2 from 'assets/images/texture-2.svg';
-import texture4 from 'assets/images/texture-4.svg';
 import texture5 from 'assets/images/dashboard-4.png';
 
 import { createDateFromSeconds, formatTemple } from 'components/Vault/utils';
@@ -72,7 +71,6 @@ const ProfilePage = () => {
   }, BigNumber.from(0));
 
   const isLoading = vaultGroupsLoading || vaultGroupBalancesLoading;
-  const totalEarned = totalBalancesAcrossVaults.sub(totalStakedAcrossAllVaults);
   const faithBalance = faith.usableFaith;
 
   let lockedOGTempleBalance = BigNumber.from(0);
@@ -117,17 +115,6 @@ const ProfilePage = () => {
                   isLoading={isLoading}
                 />
                 <StatsCard
-                  label="$Temple Earned"
-                  stat={formatTemple(totalEarned)}
-                  backgroundColor={theme.palette.brand75}
-                  backgroundImageUrl={texture4}
-                  smallStatFont
-                  isSquare={false}
-                  height={STAT_CARD_HEIGHT}
-                  className="stat"
-                  isLoading={isLoading}
-                />
-                <StatsCard
                   label="$Temple Claimable"
                   stat={formatTemple(claimableBalance)}
                   backgroundColor={theme.palette.brand75}
@@ -145,7 +132,7 @@ const ProfilePage = () => {
                 xDomain={xDomain}
                 yDomain={yDomain}
                 margin={{ left: 70 }}
-                height={250}
+                height={264}
               >
                 <XAxis
                   style={{
@@ -189,18 +176,11 @@ const ProfilePage = () => {
             </ProfileMeta>
           </ProfileOverview>
           <SectionWrapper>
-            <ProfileVaults
-              isLoading={isLoading}
-              vaultGroupBalances={balances}
-              vaultGroups={vaultGroups}
-            />
+            <ProfileVaults isLoading={isLoading} vaultGroupBalances={balances} vaultGroups={vaultGroups} />
           </SectionWrapper>
           {hasLegacyTemple && (
             <SectionWrapper>
-              <ProfileLegacyTemple
-                lockedOgTempleBalance={lockedOGTempleBalance}
-                faithBalance={faithBalance}
-              />
+              <ProfileLegacyTemple lockedOgTempleBalance={lockedOGTempleBalance} faithBalance={faithBalance} />
             </SectionWrapper>
           )}
         </>
@@ -284,16 +264,18 @@ const useChartData = (wallet: string, totalBalance: number) => {
       return acc;
     }, []);
 
+    const END_OF_GRAPH_PADDING = 2 * 60 * 1000;
+
     dataPoints.push({
-      d: now,
-      x: now.getTime(),
+      d: new Date(now.getTime() + END_OF_GRAPH_PADDING),
+      x: now.getTime() + END_OF_GRAPH_PADDING,
       y: totalBalance,
     });
 
     const largest = [...dataPoints].sort((a, b) => b.y - a.y)[0]?.y || 0;
     const largestBalance = largest + 500;
     const yDomain = [0, largestBalance];
-    const xDomain = [dataPoints[0]?.x || 0, now.getTime()];
+    const xDomain = [dataPoints[0]?.x || 0, now.getTime() + END_OF_GRAPH_PADDING];
 
     return {
       data: dataPoints,
@@ -318,14 +300,14 @@ const ProfileMeta = styled.div`
   gap: 0.75rem;
 
   ${phoneAndAbove(`
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 2fr;
   `)}
 `;
 
 const StatCards = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
   gap: 0.75rem;
 `;
 

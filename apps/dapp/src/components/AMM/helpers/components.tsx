@@ -65,5 +65,5 @@ export const TooltipPadding = styled.div`
 export const ViewContainer = styled.div`
   display: flex;
   flex-direction: column;
-  min-width: 90%;
+  margin-top: -1rem;
 `;

@@ -22,6 +22,14 @@ export const phoneAndAbove = (styles: string | Css) => {
   `;
 };
 
+export const verySmallDesktop = (styles: string | Css) => {
+  return css`
+    @media screen and ${queryVerySmallDesktop} {
+      ${styles}
+    }
+  `;
+}
+
 /**
  * Use this queries with `useMediaQuery`
  * If we need to add new queries add them here soo they can be reused
@@ -43,4 +51,9 @@ export const queryMaxTablet = toQuery({
 
 export const queryMaxLaptop = toQuery({
   maxWidth: theme.metrics.devices.laptop,
+});
+
+export const queryVerySmallDesktop = toQuery({
+  minWidth: '600px',
+  maxWidth: '956px',
 });

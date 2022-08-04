@@ -1,40 +1,29 @@
-import { useState } from 'react';
 import styled from 'styled-components';
-import { useAccount, useConnect, useNetwork } from 'wagmi';
+import { useAccount, useConnect, useNetwork, useDisconnect, useEnsName } from 'wagmi';
+import { useMediaQuery } from 'react-responsive';
 
-import { ConnectorPopover } from './ConnectorPopover';
 import TruncatedAddress from 'components/TruncatedAddress';
 import Loader from 'components/Loader/Loader';
 import { Button as BaseButton } from 'components/Button/Button';
-import { WrongNetworkPopover } from './WrongNetworkPopover';
+import { LOCAL_CHAIN } from 'components/WagmiProvider';
+import { useAppContext } from 'providers/AppProvider';
+import { queryVerySmallDesktop, verySmallDesktop } from 'styles/breakpoints';
 
 import Tooltip from 'components/Tooltip/Tooltip';
 
 export const Account = () => {
-  const [isConnectorMenuOpen, setIsConnectMenuOpen] = useState(false);
-  return (
-    <>
-      <AccountButton
-        onSetConnectMenuOpen={() => setIsConnectMenuOpen(true)}
-      />
-      <ConnectorPopover
-        isOpen={isConnectorMenuOpen}
-        onClose={() => setIsConnectMenuOpen(false)}
-      />
-      <WrongNetworkPopover />
-    </>
-  )
-};
+  const { showConnectPopover } = useAppContext();
+  const { activeChain, isLoading: networkLoading } = useNetwork();
+  const { activeConnector: connector, isConnecting: connectLoading } = useConnect();
+  const { data: accountData, isLoading: accountLoading } = useAccount();
+  const { disconnect } = useDisconnect();
+  const isSmallDesktop = useMediaQuery({
+    query: queryVerySmallDesktop,
+  });
 
-interface AccountButtonProps {
-  onSetConnectMenuOpen: () => void;
-}
-
-const AccountButton = ({ onSetConnectMenuOpen }: AccountButtonProps) => {
-  const [{ data: networkData, loading: networkLoading }] = useNetwork();
-  const [{ data: connectData, loading: connectLoading }] = useConnect();
-  const [{ data: accountData, loading: accountLoading }, disconnect] = useAccount({
-    fetchEns: true,
+  const isLocalChain = activeChain?.id === LOCAL_CHAIN.id;
+  const { data: ensName } = useEnsName({
+    address: !isLocalChain && accountData?.address || undefined
   });
 
   if (accountLoading || connectLoading || networkLoading) {
@@ -42,7 +31,7 @@ const AccountButton = ({ onSetConnectMenuOpen }: AccountButtonProps) => {
   }
 
   if (accountData?.address) {
-    const isMetaMask = connectData.connector?.name === 'MetaMask';
+    const isMetaMask = connector?.name === 'MetaMask';
     const disconnectButton = (
       <ConnectButton
         isSmall
@@ -57,27 +46,25 @@ const AccountButton = ({ onSetConnectMenuOpen }: AccountButtonProps) => {
       />
     );
     
-    const ensOrAddress = accountData.ens?.name || accountData.address;
-    const explorerUrl = getChainExplorerURL(ensOrAddress, networkData?.chain?.id);
+    const ensOrAddress = ensName || accountData.address;
+    const explorerUrl = getChainExplorerURL(ensOrAddress, activeChain?.id);
    
     return (
       <>
-        <UserAddress
-          target="_blank"
-          rel="noreferrer noopener"
-          href={explorerUrl}
-          onClick={(e) => {
-            if (explorerUrl === '#') {
-              e.preventDefault();
-            }
-          }}
-        >
-          {!!accountData.ens?.name ? (
-            accountData.ens?.name
-          ) : (
-            <TruncatedAddress address={accountData.address} />
-          )}
-        </UserAddress>
+        {!isSmallDesktop && (
+          <UserAddress
+            target="_blank"
+            rel="noreferrer noopener"
+            href={explorerUrl}
+            onClick={(e) => {
+              if (explorerUrl === '#') {
+                e.preventDefault();
+              }
+            }}
+          >
+            {ensName || <TruncatedAddress address={accountData.address} />}
+          </UserAddress>
+        )}
         {!isMetaMask ? disconnectButton : (
           <Tooltip
             content={
@@ -99,9 +86,7 @@ const AccountButton = ({ onSetConnectMenuOpen }: AccountButtonProps) => {
       isUppercase
       label={"Connect Wallet"}
       role="button"
-      onClick={() => {
-        onSetConnectMenuOpen();
-      }}
+      onClick={() => showConnectPopover()}
     />
   );
 }
@@ -133,6 +118,10 @@ const ConnectButton = styled(BaseButton)`
   &:disabled {
     border: 1px solid #bd7b4f80;
   }
+
+  ${verySmallDesktop(`
+    padding: 0 0.5rem;
+  `)}
 `;
 
 const UserAddress = styled.a`

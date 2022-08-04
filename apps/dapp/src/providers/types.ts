@@ -2,7 +2,6 @@ import { Network } from '@ethersproject/providers';
 import { BigNumber, ContractReceipt, Signer } from 'ethers';
 
 import { Nullable } from 'types/util';
-import { ClaimType } from 'enums/claim-type';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -96,21 +95,6 @@ export interface FaithService {
   faith: FaithBalance;
 
   updateFaith(): Promise<void>;
-
-  verifyFaith(lockingPeriod?: number): Promise<void>;
-
-  redeemFaith(faithAmount: BigNumber): Promise<BigNumber | void>;
-
-  getFaithQuote(): Promise<FaithQuote | void>;
-
-  getTempleFaithReward(faithAmount: BigNumber): Promise<BigNumber | void>;
-
-  claimFaithAirdrop(
-    index: number,
-    address: string,
-    amount: BigNumber,
-    proof: string[]
-  ): Promise<TransactionReceipt | void>;
 }
 
 export interface SwapService {
@@ -157,16 +141,8 @@ export interface WalletState {
   isConnecting: boolean;
   isConnected: boolean;
 
-  connectWallet(): void;
-
-  changeWalletAddress(): void;
-
-  claim(claimType: ClaimType): Promise<TransactionReceipt | void>;
-
   getBalance(): Promise<Balance | void>;
-
   updateBalance(): Promise<void>;
-
   collectTempleTeamPayment(epoch: TEAM_PAYMENTS_EPOCHS): Promise<void | TransactionReceipt>;
 
   ensureAllowance(

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useNetwork, chain, AddChainError } from 'wagmi';
+import { useNetwork, chain as chains, AddChainError } from 'wagmi';
 
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
@@ -14,12 +14,12 @@ const ENV = ENV_VARS.VITE_ENV;
 const IS_PROD = ENV === 'production';
 
 export const WrongNetworkPopover = () => {
-  const [{ data, loading, error }, switchNetwork] = useNetwork();
+  const { activeChain: chain, isLoading: loading, error, switchNetwork } = useNetwork();
   const [dismissedChainId, setDismissedChainId] = useState<Nullable<number>>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const currentNetworkId = data?.chain?.id;
-  const defaultChainForEnv = ENV_CHAIN_MAPPING.get(ENV) || chain.mainnet;
+  const currentNetworkId = chain?.id;
+  const defaultChainForEnv = ENV_CHAIN_MAPPING.get(ENV) || chains.mainnet;
 
   useEffect(() => {
     if (loading || !currentNetworkId || dismissedChainId === currentNetworkId) {
@@ -118,8 +118,8 @@ export const WrongNetworkPopover = () => {
               disabled={loading}
               onClick={onDismiss}
             >
-              {!!data?.chain?.name ? (
-               <>Continue with {data.chain.name}</>
+              {!!chain?.name ? (
+               <>Continue with {chain.name}</>
               ) : (
                 <>Continue</>
               )}
@@ -133,8 +133,8 @@ export const WrongNetworkPopover = () => {
 };
 
 const ENV_CHAIN_MAPPING = new Map([
-  ['production', chain.mainnet],
-  ['preview', chain.rinkeby],
+  ['production', chains.mainnet],
+  ['preview', chains.rinkeby],
   ['local', LOCAL_CHAIN],
 ]);
 

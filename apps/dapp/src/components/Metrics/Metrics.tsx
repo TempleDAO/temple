@@ -5,6 +5,7 @@ import { TreasuryMetrics } from 'services/MetricsService';
 import { formatMillions, formatNumber } from 'utils/formatter';
 import { Apy } from 'components/Apy/Apy';
 import * as breakpoints from 'styles/breakpoints';
+import { FALLBACK_VAULT_APY } from 'components/Pages/Core/Trade/constants';
 
 import cashImage from 'assets/images/cash.svg';
 import lockImage from 'assets/images/lock.svg';
@@ -16,8 +17,10 @@ export interface MetricsProps {
   alignCenter?: boolean;
 }
 
-const Metrics = ({ treasuryMetrics, isHome, alignCenter, }: MetricsProps) => {
-  const { treasuryValue, templeApy, templeValue } = treasuryMetrics;
+const Metrics = ({ treasuryMetrics, isHome, alignCenter }: MetricsProps) => {
+  const { treasuryValue, templeValue, dynamicVaultApy } = treasuryMetrics;
+
+  const dynamicApy = dynamicVaultApy || FALLBACK_VAULT_APY;
 
   return (
     <Wrapper>
@@ -29,15 +32,14 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter, }: MetricsProps) => {
             imageUrl: cashImage,
             alt: '',
           }}
-          isWhite
           isHome={isHome}
           alignCenter={alignCenter}
         />
       </ApyWrapper>
       <ApyWrapper>
         <Apy
-          cryptoName={'APY'}
-          value={`${formatNumber(templeApy)}%`}
+          cryptoName={'vAPY'}
+          value={`${formatNumber(dynamicApy)}%`}
           imageData={{
             imageUrl: tagImage,
             alt: '',
