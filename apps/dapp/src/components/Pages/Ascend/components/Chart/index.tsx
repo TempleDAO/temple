@@ -22,6 +22,7 @@ import { theme } from 'styles/theme';
 import { getSpotPrice } from '../../utils';
 import { useAuctionContext } from '../AuctionContext';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import env from 'constants/env';
 
 import { useCrosshairs, useLatestPriceData, Point } from './hooks';
 
@@ -46,8 +47,8 @@ export const Chart = ({ pool }: Props) => {
       });
 
     const greatestPricePoint = [...points].sort((a, b) => b.y - a.y)[0];
-    const ceiling = greatestPricePoint?.y || 0;
-    const yDomain = points.length > 0 ? [0, ceiling + (ceiling * 0.1)] : null;
+    // might be overwritten by the predicted price
+    let ceiling = greatestPricePoint?.y || 0;
 
     const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
     const lastUpdateEnd = lastUpdate.endTimestamp.getTime();
@@ -62,18 +63,24 @@ export const Chart = ({ pool }: Props) => {
         const lastPoint = points[points.length - 1];
 
         const spotPriceEstimate = getSpotPrice(
-          balances[sell]!,
           balances[buy]!,
-          lastUpdate.endWeights[1],
+          balances[sell]!,
           lastUpdate.endWeights[0],
+          lastUpdate.endWeights[1],
           pool.swapFee
         );
 
         if (spotPriceEstimate) {
           predicted.push(lastPoint);
 
+          const predictedY = formatNumberFixedDecimals(formatBigNumber(spotPriceEstimate), 4);
+
+          if (predictedY > ceiling) {
+            ceiling = predictedY;
+          }
+
           predicted.push({
-            y: formatNumberFixedDecimals(formatBigNumber(spotPriceEstimate), 4),
+            y: predictedY,
             x: lastUpdateEnd,
           });
         }
@@ -82,6 +89,8 @@ export const Chart = ({ pool }: Props) => {
         console.error('Failed to calculate predicted chart data points');
       }
     }
+
+    const yDomain = points.length > 0 ? [0, ceiling + (ceiling * 0.1)] : null;
     
     return {
       data: points,
