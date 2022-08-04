@@ -19,7 +19,7 @@ const ENV_VARS = import.meta.env;
 const ETHERSCAN_DOMAIN =
   ENV_VARS.VITE_ENV === 'production'
     ? 'https://etherscan.io'
-    : 'https://rinkeby.etherscan.io';
+    : 'https://goerli.etherscan.io';
 
 const AUTOHIDE_TIMER = 1000 * 10;
 

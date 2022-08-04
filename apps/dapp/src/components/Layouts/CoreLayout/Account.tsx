@@ -13,24 +13,24 @@ import Tooltip from 'components/Tooltip/Tooltip';
 
 export const Account = () => {
   const { showConnectPopover } = useAppContext();
-  const { activeChain, isLoading: networkLoading } = useNetwork();
-  const { activeConnector: connector, isConnecting: connectLoading } = useConnect();
-  const { data: accountData, isLoading: accountLoading } = useAccount();
+  const { chain: activeChain } = useNetwork();
+  const { isLoading: connectLoading } = useConnect();
+  const { address, isConnecting: accountLoading, connector } = useAccount();
   const { disconnect } = useDisconnect();
   const isSmallDesktop = useMediaQuery({
     query: queryVerySmallDesktop,
   });
-
+  const networkLoading = false;
   const isLocalChain = activeChain?.id === LOCAL_CHAIN.id;
   const { data: ensName } = useEnsName({
-    address: !isLocalChain && accountData?.address || undefined
+    address: !isLocalChain && address || undefined
   });
 
   if (accountLoading || connectLoading || networkLoading) {
     return <Loader />;
   }
 
-  if (accountData?.address) {
+  if (address) {
     const isMetaMask = connector?.name === 'MetaMask';
     const disconnectButton = (
       <ConnectButton
@@ -46,7 +46,7 @@ export const Account = () => {
       />
     );
     
-    const ensOrAddress = ensName || accountData.address;
+    const ensOrAddress = ensName || address;
     const explorerUrl = getChainExplorerURL(ensOrAddress, activeChain?.id);
    
     return (
@@ -62,7 +62,7 @@ export const Account = () => {
               }
             }}
           >
-            {ensName || <TruncatedAddress address={accountData.address} />}
+            {ensName || <TruncatedAddress address={address} />}
           </UserAddress>
         )}
         {!isMetaMask ? disconnectButton : (
@@ -94,7 +94,8 @@ export const Account = () => {
 const getChainExplorerURL = (ensOrAddress: string, chainId?: number) => {
   switch (chainId) {
     case 1: return `https://etherscan.io/address/${ensOrAddress}`;
-    case 4: return `https://rinkeby.etherscan.io/${ensOrAddress}`;
+    case 4: return `https://rinkeby.etherscan.io/address/${ensOrAddress}`;
+    case 5: return `https://goerli.etherscan.io/address/${ensOrAddress}`;
     default: return '#';
   }
 };

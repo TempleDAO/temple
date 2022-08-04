@@ -1,5 +1,7 @@
 import { Environment } from './types';
 
+const ENV = import.meta.env;
+
 const env: Environment = {
   alchemyId: 'VvVv_fBIiRSaTQzL9RQNybD5FSNvtK5c',
   backendUrl: 'http://localhost:3001',
@@ -30,7 +32,57 @@ const env: Environment = {
   subgraph: {
     templeCore: 'http://localhost:8000/subgraphs/name/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
+    balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
+  tokens: {
+    frax: {
+      name: 'Frax',
+      address: ENV.VITE_PUBLIC_STABLE_COIN_ADDRESS,
+      decimals: 18,
+      symbol: 'Frax',
+    },
+    temple: {
+      name: 'Temple',
+      address: ENV.VITE_PUBLIC_TEMPLE_ADDRESS,
+      decimals: 18,
+      symbol: 'Temple',
+
+    },
+    ogTemple: {
+      name: 'OGTemple',
+      address: ENV.VITE_PUBLIC_OG_TEMPLE_ADDRESS,
+      decimals: 18,
+      symbol: 'OGTemple'
+    },
+    fei: {
+      name: 'Fei',
+      address: ENV.VITE_PUBLIC_FEI_ADDRESS,
+      decimals: 18,
+      symbol: 'FEI',
+    },
+    eth: {
+      name: 'WETH',
+      address: '',
+      decimals: 18,
+      symbol: 'WETH',
+    },
+    usdc: {
+      name: 'USDC',
+      address: ENV.VITE_PUBLIC_USDC_ADDRESS,
+      decimals: 6,
+      symbol: 'USDC',
+    },
+    dai: {
+      name: 'Dai',
+      address: ENV.VITE_PUBLIC_DAI_ADDRESS,
+      decimals: 18,
+      symbol: 'DAI'
+    },
+  },
+  featureFlags: {
+    enableAscend: true,
+  },
+  templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
 };
 
 export default env;

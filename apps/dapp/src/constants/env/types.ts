@@ -1,6 +1,7 @@
 interface Subgraphs {
   templeCore: string;
   protocolMetrics: string;
+  balancerV2: string;
 }
 
 interface Contracts {
@@ -39,6 +40,23 @@ interface Gas {
   claimOgTemple: number;
 }
 
+export interface Token {
+  name: string;
+  address: string;
+  decimals: number;
+  symbol?: string;
+}
+
+interface Tokens {
+  frax: Token;
+  temple: Token;
+  ogTemple: Token;
+  fei: Token;
+  eth: Token;
+  usdc: Token;
+  dai: Token;
+}
+
 interface Sentry {
   environment: string;
   dsn: string;
@@ -50,7 +68,12 @@ export interface Environment {
   contracts: Contracts;
   gas?: Gas;
   fraxSellDisabledIvMultiple: number;
+  tokens: Tokens;
   infuraId: string;
   sentry?: Sentry;
   subgraph: Subgraphs;
+  templeMultisig: string;
+  featureFlags: {
+    enableAscend: boolean;
+  };
 }

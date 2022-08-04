@@ -3,7 +3,6 @@ import styled from 'styled-components';
 
 import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { LockedEntry } from 'providers/types';
 import { formatNumber } from 'utils/formatter';
 import { formatBigNumber } from 'components/Vault/utils';

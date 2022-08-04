@@ -38,6 +38,7 @@ type UseRequestStateReturnType<T extends any, Args extends any[]> = [
 
 interface Options {
   purgeResponseOnRefetch?: boolean;
+  shouldReThrow?: boolean;
 }
 
 const useRequestState = <Resp extends any, Args extends any[]>(request: Request<Resp, Args>, options?: Options): UseRequestStateReturnType<Resp, Args> => {
@@ -64,6 +65,7 @@ const useRequestState = <Resp extends any, Args extends any[]>(request: Request<
     }
 
     let response: Maybe<Resp>;
+    let throwableError: Maybe<Error>;
     try {
       response = await requestRef.current(...args);
       if (isMounted.current) {
@@ -73,12 +75,18 @@ const useRequestState = <Resp extends any, Args extends any[]>(request: Request<
       if (isMounted.current) {
         setResponse(null);
         setError(error as Error);
+        throwableError = error as Error;
       }
     } finally {
       if (isMounted.current) {
         setIsLoading(false);
       }
     }
+
+    if (throwableError && options?.shouldReThrow) {
+      throw throwableError;
+    }
+
     return response;
   }, [requestRef, setIsLoading, setResponse, setError, isMounted, purgeResponse]);
 

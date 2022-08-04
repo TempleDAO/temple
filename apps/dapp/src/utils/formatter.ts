@@ -28,3 +28,4 @@ export const formatMillions = (n: number | string): string => {
 export const allocationToIncense = (allocation: number): number => {
   return formatNumberFixedDecimals(allocation / 1000, 0);
 };
+

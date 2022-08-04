@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import styled from 'styled-components';
-import { useConnect } from 'wagmi';
+import { useConnect, useAccount } from 'wagmi';
 
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
@@ -17,11 +17,11 @@ interface Props {
 }
 
 export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
+  const { isConnected: connected } = useAccount()
   const {
     error,
-    isConnecting: loading,
+    isLoading: loading,
     connect,
-    isConnected: connected,
     connectors,
   } = useConnect();
 
@@ -45,7 +45,7 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
             <ConnectorButon
               disabled={!connector.ready || loading}
               onClick={() => {
-                connect(connector);
+                connect({ connector });
               }}
             >
               <ButtonContent>

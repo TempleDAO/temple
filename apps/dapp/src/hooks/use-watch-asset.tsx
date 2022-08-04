@@ -1,5 +1,5 @@
 import { useNotification } from 'providers/NotificationProvider';
-import { useConnect } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { Nullable } from 'types/util';
 import useRequestState from './use-request-state';
 import env from 'constants/env';
@@ -21,9 +21,9 @@ export const TEMPLE_ASSET: Asset = {
 type RequestStateType = ReturnType<typeof useRequestState>;
 
 export const useWatchAsset = (asset: Asset): [Nullable<RequestStateType[0]>, RequestStateType[1]] => {
-  const { activeConnector } = useConnect();
+  const { connector } = useAccount();
   const { openNotification } = useNotification();
-  const canWatchAsset = !!activeConnector && !!activeConnector.watchAsset;
+  const canWatchAsset = !!connector && !!connector.watchAsset;
 
   const request = async () => {
     if (!canWatchAsset) {
@@ -31,7 +31,7 @@ export const useWatchAsset = (asset: Asset): [Nullable<RequestStateType[0]>, Req
       return;
     }
 
-    const wasAdded = await activeConnector!.watchAsset!(asset);
+    const wasAdded = await connector!.watchAsset!(asset);
     if (wasAdded) {
       openNotification({
         title: `Token ${asset.symbol} added to your wallet`,
