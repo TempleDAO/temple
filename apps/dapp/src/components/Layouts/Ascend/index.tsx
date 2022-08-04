@@ -3,8 +3,10 @@ import { Outlet } from 'react-router-dom';
 
 import { PillMenu } from 'components/PillMenu';
 
-import { phoneAndAbove } from 'styles/breakpoints';
-import { NAV_MOBILE_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
+import { pixelsToRems } from 'styles/mixins';
+import { tabletAndAbove } from 'styles/breakpoints';
+import { NAV_MOBILE_HEIGHT_PIXELS, NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
+
 
 export const AscendLayout = () => {
   const isAdmin = false;
@@ -39,9 +41,16 @@ const AdminMenuWrapper = styled.div`
 `;
 
 const Wrapper = styled.div`
-  margin: ${NAV_MOBILE_HEIGHT_PIXELS}px 10px 10px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+  min-height: calc(100vh - ${pixelsToRems(NAV_MOBILE_HEIGHT_PIXELS)}rem);
 
-  ${phoneAndAbove(`
-    margin: 40px 40px 40px 40px;
+  ${tabletAndAbove(`
+    min-height: calc(100vh - ${pixelsToRems(NAV_DESKTOP_HEIGHT_PIXELS)}rem);
+    // Offset header
+    padding-bottom: ${pixelsToRems(NAV_DESKTOP_HEIGHT_PIXELS)}rem;
   `)}
 `;
