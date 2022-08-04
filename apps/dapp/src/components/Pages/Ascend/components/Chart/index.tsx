@@ -21,6 +21,7 @@ import Loader from 'components/Loader/Loader';
 import { theme } from 'styles/theme';
 import { getSpotPrice } from '../../utils';
 import { useAuctionContext } from '../AuctionContext';
+import { sortAndGroupLBPTokens } from 'utils/balancer';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import env from 'constants/env';
 
@@ -59,14 +60,14 @@ export const Chart = ({ pool }: Props) => {
     const predicted = [];
     if (balances && points.length > 0) {
       try {
-        const [sell, buy] = pool.tokensList;
+        const { initialBuySell: { sell, buy } } = sortAndGroupLBPTokens(pool.tokens);
         const lastPoint = points[points.length - 1];
 
         const spotPriceEstimate = getSpotPrice(
-          balances[buy]!,
-          balances[sell]!,
-          lastUpdate.endWeights[0],
-          lastUpdate.endWeights[1],
+          balances[buy.address]!,
+          balances[sell.address]!,
+          lastUpdate.endWeights[sell.tokenIndex],
+          lastUpdate.endWeights[buy.tokenIndex],
           pool.swapFee
         );
 
