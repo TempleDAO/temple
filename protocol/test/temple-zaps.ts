@@ -57,7 +57,7 @@ let poolId: string;
 let bptPoolToken: string;
 
 
-describe.only("Temple Stax Core Zaps", async () => {
+describe("Temple Stax Core Zaps", async () => {
   before(async () => {
     // as real-time live data is being queried from 0x API, there's the possibility that prices may differ from forked mainnet tests (due to block number)
     // and hence tokens out (in tests) may differ from real expected values 

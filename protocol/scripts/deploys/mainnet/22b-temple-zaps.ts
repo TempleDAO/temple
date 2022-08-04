@@ -34,9 +34,7 @@ async function main() {
   const templeZaps: TempleZaps = await deployAndMine(
     "Temple Zaps", templeZapsFactory, templeZapsFactory.deploy,
     DEPLOYED.TEMPLE,
-    DEPLOYED.FAITH,
     TEMPLE_STABLE_ROUTER,
-    DEPLOYED.VAULT_PROXY,
     addressZero
   );
 
