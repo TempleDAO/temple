@@ -192,7 +192,7 @@ contract GenericZap is ZapBase {
     address swapTarget,
     bytes memory swapData
   ) public payable whenNotPaused returns (uint256 amountOut) {
-    require(approvedTargets[fromToken][swapTarget] == true, "Unsupported token/target");
+    require(approvedTargets[fromToken][swapTarget] == true, "GenericZaps: Unsupported token/target");
 
     _pullTokens(fromToken, fromAmount);
 
@@ -203,7 +203,7 @@ contract GenericZap is ZapBase {
       swapTarget,
       swapData
     );
-    require(amountOut >= amountOutMin, "Not enough tokens out");
+    require(amountOut >= amountOutMin, "GenericZaps: Not enough tokens out");
     
     emit ZappedIn(msg.sender, fromToken, fromAmount, toToken, amountOut);
 
@@ -236,7 +236,7 @@ contract GenericZap is ZapBase {
     ZapLiquidityRequest memory _zapLiqRequest,
     IBalancerVault.JoinPoolRequest memory _request
   ) public payable whenNotPaused {
-    require(approvedTargets[_fromToken][_swapTarget] == true, "Unsupported token/target");
+    require(approvedTargets[_fromToken][_swapTarget] == true, "GenericZaps: Unsupported token/target");
 
     _pullTokens(_fromToken, _fromAmount);
 
@@ -315,7 +315,7 @@ contract GenericZap is ZapBase {
     ZapLiquidityRequest memory _zapLiqRequest
   ) public payable whenNotPaused {
 
-    require(approvedTargets[_fromToken][_swapTarget] == true, "Unsupported token/target");
+    require(approvedTargets[_fromToken][_swapTarget] == true, "GenericZaps: Unsupported token/target");
 
     // pull tokens
     _pullTokens(_fromToken, _fromAmount);
@@ -418,7 +418,7 @@ contract GenericZap is ZapBase {
     bytes memory _swapData,
     ZapLiquidityRequest memory _zapLiqRequest
   ) public payable whenNotPaused {
-    require(approvedTargets[_fromToken][_swapTarget] == true, "Unsupported token/target");
+    require(approvedTargets[_fromToken][_swapTarget] == true, "GenericZaps: Unsupported token/target");
 
     // pull tokens
     _pullTokens(_fromToken, _fromAmount);
@@ -637,16 +637,6 @@ contract GenericZap is ZapBase {
 
     return (tokenBoughtIndex, bal - balancesBefore[tokenBoughtIndex]);
   }
-
-  // function _depositEth(
-  //   uint256 _amount
-  // ) internal {
-  //   require(
-  //     _amount > 0 && msg.value == _amount,
-  //     "Invalid _amount: Input ETH mismatch"
-  //   );
-  //   IWETH(WETH).deposit{value: _amount}();
-  // }
 
   /**
     @notice This function is used to swap ERC20 <> ERC20

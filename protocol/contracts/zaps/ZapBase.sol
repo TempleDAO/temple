@@ -19,7 +19,7 @@ abstract contract ZapBase is Ownable {
   event SetContractState(bool paused);
 
   receive() external payable {
-    require(msg.sender != tx.origin, "Do not send ETH directly");
+    require(msg.sender != tx.origin, "ZapBase: Do not send ETH directly");
   }
 
   /**
@@ -35,7 +35,7 @@ abstract contract ZapBase is Ownable {
     bool[] calldata _isApproved
   ) external onlyOwner {
     uint256 _length = _isApproved.length;
-    require(_targets.length == _length && _tokens.length == _length, "Invalid Input length");
+    require(_targets.length == _length && _tokens.length == _length, "ZapBase: Invalid Input length");
 
     for (uint256 i = 0; i < _length; i++) {
       approvedTargets[_tokens[i]][_targets[i]] = _isApproved[i];
@@ -53,7 +53,7 @@ abstract contract ZapBase is Ownable {
 
   function _transferToken(IERC20 _token, address _to, uint256 _amount) internal {
     uint256 balance = _token.balanceOf(address(this));
-    require(_amount <= balance, "not enough tokens");
+    require(_amount <= balance, "ZapBase: not enough tokens");
     SafeERC20.safeTransfer(_token, _to, _amount);
   }
 
@@ -69,12 +69,12 @@ abstract contract ZapBase is Ownable {
     uint256 amount
   ) internal returns (uint256) {
     if (token == address(0)) {
-      require(msg.value > 0, "No ETH sent");
+      require(msg.value > 0, "ZapBase: No ETH sent");
       return msg.value;
     }
 
-    require(amount > 0, "Invalid token amount");
-    require(msg.value == 0, "ETH sent with token");
+    require(amount > 0, "ZapBase: Invalid token amount");
+    require(msg.value == 0, "ZapBase: ETH sent with token");
 
     SafeERC20.safeTransferFrom(
       IERC20(token),
@@ -91,14 +91,14 @@ abstract contract ZapBase is Ownable {
   ) internal {
     require(
       _amount > 0 && msg.value == _amount,
-      "Invalid _amount: Input ETH mismatch"
+      "ZapBase: Input ETH mismatch"
     );
     IWETH(WETH).deposit{value: _amount}();
   }
 
   // circuit breaker modifiers
   modifier whenNotPaused() {
-    require(!paused, "Paused");
+    require(!paused, "ZapBase: Paused");
     _;
   }
 }

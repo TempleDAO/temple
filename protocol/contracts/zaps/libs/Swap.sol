@@ -1,5 +1,5 @@
 pragma solidity ^0.8.4;
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IUniswapV2Pair.sol";
@@ -20,10 +20,10 @@ library Swap {
     bytes memory _swapData
   ) internal returns (uint256) {
     if (_swapTarget == EthConstants.WETH) {
-      require(_fromToken == EthConstants.WETH, "Invalid from token and WETH target");
+      require(_fromToken == EthConstants.WETH, "Swap: Invalid from token and WETH target");
       require(
         _fromAmount > 0 && msg.value == _fromAmount,
-        "Invalid _amount: Input ETH mismatch"
+        "Swap: Input ETH mismatch"
       );
       IWETH(EthConstants.WETH).deposit{value: _fromAmount}();
       return _fromAmount;
@@ -34,7 +34,7 @@ library Swap {
     if (_fromToken == address(0)) {
       require(
         _fromAmount > 0 && msg.value == _fromAmount,
-        "Invalid _amount: Input ETH mismatch"
+        "Swap: Input ETH mismatch"
       );
       valueToSend = _fromAmount;
     } else {
@@ -96,7 +96,7 @@ library Swap {
     * Direct copy of UniswapV2Library.quote(amountA, reserveA, reserveB) - can't use as directly as it's built off a different version of solidity
     */
   function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
-    require(reserveA > 0 && reserveB > 0, 'Insufficient liquidity');
+    require(reserveA > 0 && reserveB > 0, "Swap: Insufficient liquidity");
     amountB = (amountA * reserveB) / reserveA;
   }
 

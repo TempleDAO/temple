@@ -6,20 +6,15 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ZapBase.sol";
 import "./libs/Swap.sol";
-import "./interfaces/IFaith.sol";
 import "./interfaces/ITempleStableRouter.sol";
 import "./interfaces/IGenericZaps.sol";
-import "./interfaces/IVaultProxy.sol";
 import "./interfaces/IVault.sol";
 
 
 contract TempleZaps is ZapBase {
   using SafeERC20 for IERC20;
 
-  address private constant FRAX = 0x853d955aCEf822Db058eb8505911ED77F175b99e;
   address public immutable temple;
-  IFaith public immutable faith;
-  IVaultProxy public immutable vaultProxy;
   ITempleStableRouter public templeRouter;
   IGenericZaps public zaps;
 
@@ -42,15 +37,11 @@ contract TempleZaps is ZapBase {
 
   constructor(
     address _temple,
-    address _faith,
     address _templeRouter,
-    address _vaultProxy,
     address _zaps
   ) {
     temple = _temple;
     templeRouter = ITempleStableRouter(_templeRouter);
-    faith = IFaith(_faith);
-    vaultProxy = IVaultProxy(_vaultProxy);
     zaps = IGenericZaps(_zaps);
   }
 
@@ -84,7 +75,7 @@ contract TempleZaps is ZapBase {
     bool[] calldata _supported
   ) external onlyOwner {
     uint _length = _stables.length;
-    require(_supported.length == _length, "Invalid Input length");
+    require(_supported.length == _length, "TempleZaps: Invalid Input length");
     for (uint i=0; i<_length; i++) {
       supportedStables[_stables[i]] = _supported[i];
     }
@@ -97,12 +88,12 @@ contract TempleZaps is ZapBase {
    * @param _amount amount to recover
    */
   function recoverToken(address _token, address _to, uint256 _amount) external onlyOwner {
-    require(_to != address(0), "Invalid receiver");
+    require(_to != address(0), "TempleZaps: Invalid receiver");
     if (_token == address(0)) {
       // this is effectively how OpenZeppelin transfers eth
-      require(address(this).balance >= _amount, "Address: insufficient balance");
+      require(address(this).balance >= _amount, "TempleZaps: insufficient eth balance");
       (bool success,) = _to.call{value: _amount}(""); 
-      require(success, "Address: unable to send value");
+      require(success, "TempleZaps: unable to send value");
     } else {
       _transferToken(IERC20(_token), _to, _amount);
     }
@@ -175,71 +166,6 @@ contract TempleZaps is ZapBase {
   ) external payable whenNotPaused {
     zapInVaultFor(_fromToken, _fromAmount, _minTempleReceived, _stableToken, _minStableReceived, _vault, msg.sender, _swapTarget, _swapData);
   }
-
-  /**
-   * @notice This function zaps ETH or an ERC20 token to TEMPLE in addition to all eligible usable faith (for boost) and stakes in core vault
-   * @param _vault Target core vault
-   * @param _fromToken The token used for entry (address(0) if ether)
-   * @param _fromAmount The amount of fromToken to zap
-   * @param _minTempleReceived Minimum tokens out after first DEX swap
-   * @param _stableToken Supported temple pair stable token
-   * @param _minStableReceived Minimum stable token to receive
-   * @param _swapTarget Execution target for the swap
-   * @param _swapData DEX data
-   */
-  function zapTempleFaithInVault(
-    address _vault,
-    address _fromToken,
-    uint256 _fromAmount,
-    uint256 _minTempleReceived,
-    address _stableToken,
-    uint256 _minStableReceived,
-    address _swapTarget,
-    bytes memory _swapData
-  ) external payable whenNotPaused {
-    require(vaultProxy.faithClaimEnabled(), "VaultProxy: Faith claim no longer enabled");
-
-    _pullTokens(_fromToken, _fromAmount);
-
-    uint256 receivedTempleAmount;
-    if (_fromToken == temple) {
-      receivedTempleAmount = _fromAmount;
-    } else if (supportedStables[_fromToken]) {
-      // if fromToken is supported stable, enter temple directly
-      receivedTempleAmount = _enterTemple(_stableToken, address(this), _fromAmount, _minTempleReceived);
-    } else {
-      require(supportedStables[_stableToken] == true, "Unsupported stable token");
-      if (_fromToken != address(0)) {
-        IERC20(_fromToken).safeIncreaseAllowance(address(zaps), _fromAmount);
-      }
-
-      // after zap in, enter temple from stable token
-      uint256 receivedStableAmount = zaps.zapIn{value: msg.value}(
-        _fromToken,
-        _fromAmount,
-        _stableToken,
-        _minStableReceived,
-        _swapTarget,
-        _swapData
-      );
-      receivedTempleAmount = _enterTemple(_stableToken, address(this), receivedStableAmount, _minTempleReceived);
-    }
-
-    // using user's total available faith
-    uint112 faithAmount = (faith.balances(msg.sender)).usableFaith;
-    faith.redeem(msg.sender, faithAmount);
-
-    // approve boosted amount
-    // note: requires this contract is prefunded to account for boost amounts, similar to vault proxy
-    uint256 boostedAmount = vaultProxy.getFaithMultiplier(faithAmount, receivedTempleAmount);
-    require(boostedAmount <= IERC20(temple).balanceOf(address(this)));
-    SafeERC20.safeIncreaseAllowance(IERC20(temple), _vault, boostedAmount);
-
-    // deposit for user
-    IVault(_vault).depositFor(msg.sender, boostedAmount);
-
-    emit ZappedTemplePlusFaithInVault(msg.sender, _fromToken, _fromAmount, faithAmount, boostedAmount);
-  }
   
   /**
    * @notice This function zaps ETH or an ERC20 token to TEMPLE ERC20 token
@@ -262,7 +188,7 @@ contract TempleZaps is ZapBase {
     address _swapTarget,
     bytes memory _swapData
   ) public payable whenNotPaused {
-    require(supportedStables[_stableToken] == true, "Unsupported stable token");
+    require(supportedStables[_stableToken] == true, "TempleZaps: Unsupported stable token");
 
     uint256 amountOut;
     if (_fromToken != address(0)) {
@@ -271,7 +197,7 @@ contract TempleZaps is ZapBase {
       amountOut = zaps.zapIn(_fromToken, _fromAmount, _stableToken, _minStableReceived, _swapTarget, _swapData);
     } else {
       amountOut = Swap.fillQuote(_fromToken, _fromAmount, _stableToken, _swapTarget, _swapData);
-      require(amountOut >= _minStableReceived, "Not enough stable tokens out");
+      require(amountOut >= _minStableReceived, "TempleZaps: Not enough stable tokens out");
     }
 
      _enterTemple(_stableToken, _recipient, amountOut, _minTempleReceived);
@@ -296,7 +222,7 @@ contract TempleZaps is ZapBase {
     TempleLiquidityParams memory _params,
     bytes memory _swapData
   ) public payable {
-    require(supportedStables[_params.stableToken] == true, "Unsupported stable token");
+    require(supportedStables[_params.stableToken] == true, "TempleZaps: Unsupported stable token");
 
     _pullTokens(_fromAddress, _fromAmount);
 
@@ -314,7 +240,7 @@ contract TempleZaps is ZapBase {
         _swapTarget,
         _swapData
       );
-      require(_fromAmount >= _minAmountOut, "Insufficient tokens out");
+      require(_fromAmount >= _minAmountOut, "TempleZaps: Insufficient tokens out");
 
       // After we've swapped from user provided token to stable token
       // The stable token is now the intermediate token.
@@ -357,7 +283,7 @@ contract TempleZaps is ZapBase {
     address _swapTarget,
     bytes memory _swapData
   ) public payable whenNotPaused {
-    require(supportedStables[_stableToken] == true, "Unsupported stable token");
+    require(supportedStables[_stableToken] == true, "TempleZaps: Unsupported stable token");
 
     _pullTokens(_fromToken, _fromAmount);
     
@@ -498,7 +424,7 @@ contract TempleZaps is ZapBase {
     // using calculation below instead
     if (_templeReceiver == address(this)) {
       templeAmountReceived = IERC20(temple).balanceOf(address(this)) - templeBefore;
-      require(templeAmountReceived >= _minTempleReceived, "Not enough temple tokens received");
+      require(templeAmountReceived >= _minTempleReceived, "TempleZaps: Not enough temple tokens received");
     }
   }
 }

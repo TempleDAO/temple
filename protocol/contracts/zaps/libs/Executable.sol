@@ -1,5 +1,5 @@
 pragma solidity ^0.8.4;
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 /// @notice An inlined library function to add a generic execute() function to contracts.
 /// @dev As this is a powerful function, care and consideration needs to be taken when 
