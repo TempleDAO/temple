@@ -45,6 +45,7 @@ export type RelicData = {
   id: BigNumber
   enclave: RelicEnclave
   rarity: RelicRarity
+  xp: BigNumber
   items: RelicItemData[]
 };
 

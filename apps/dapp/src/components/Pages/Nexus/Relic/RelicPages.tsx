@@ -1,4 +1,3 @@
-import relicImg from 'assets/images/relic.png';
 import { Button } from 'components/Button/Button';
 import { BigNumber } from 'ethers';
 import { useRelic } from 'providers/RelicProvider';
@@ -29,7 +28,7 @@ const RelicPanel = (props: {
   prevRelic?: RelicData,
   nextRelic?: RelicData,
 }) => {
-  const { renounceRelic, unequipRelicItems } = useRelic();
+  const { unequipRelicItems } = useRelic();
   const navigate = useNavigate();
   const { thisRelic, prevRelic, nextRelic } = props;
   if (!thisRelic) {
@@ -38,22 +37,8 @@ const RelicPanel = (props: {
   return (
     <EnclavePanel enclave={thisRelic.enclave}>
       <RarityPanel rarity={thisRelic.rarity}>
-        <img src={relicImg} width={200} style={{ margin: 0 }} />
         <RelicStatsPanel relic={thisRelic} />
-        {/* <NexusPanelRow>
-          <span>Equipped Items</span>
-          <div>
-            <Button isSmall
-              label="Renounce Relic"
-              onClick={async () => {
-                const nextRelicIdx = (relicIdx + 1) % relics.length;
-                const nextRelicId = relics[nextRelicIdx].id;
-                await renounceRelic(relic.id);
-                navigate(`../${nextRelicId.toString()}`);
-              }}
-            />
-          </div>
-        </NexusPanelRow> */}
+        <br />
         <BufferedItemGrid items={thisRelic.items}
           actionLabel="Unequip"
           onAction={async selectedItems => unequipRelicItems(thisRelic.id, selectedItems)}

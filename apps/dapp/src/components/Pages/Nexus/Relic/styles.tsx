@@ -15,8 +15,8 @@ export const NexusPanel = styled.div<{ color?: string }>`
   border: 2px solid ${(props) => props.color ?? props.theme.palette.brand};
   border-radius: 16px;
   padding: 1rem;
-  background-color: rgba(0, 0, 0, .7);
-  backdrop-filter: blur(10px);
+  background-color: rgba(0, 0, 0, .3);
+  backdrop-filter: blur(15px);
 
   > * {
     margin-bottom: 1rem;

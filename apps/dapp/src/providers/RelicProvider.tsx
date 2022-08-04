@@ -1,5 +1,5 @@
 import { createContext, PropsWithChildren, useContext, useState } from 'react';
-import { RelicEnclave, ItemInventory, RelicItemData, RelicService, RelicRarity } from './types';
+import { RelicEnclave, ItemInventory, RelicItemData, RelicService, RelicRarity, RelicData } from './types';
 
 import { BigNumber, ContractTransaction, Signer } from 'ethers';
 import { TEMPLE_RELIC_ADDRESS, TEMPLE_RELIC_ITEMS_ADDRESS } from 'providers/env';
@@ -53,21 +53,19 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
       return relicIds.sort((a, b) => a.toNumber() - b.toNumber());
     };
 
-    const fetchRelicInfos = async(relicIds: BigNumber[]) => {
-      return Promise.all(relicIds.map(async id => {
-        const [rarity, enclave] = await relicContract.getRelicInfos(id) as [RelicRarity, RelicEnclave]
-        return { id, rarity, enclave }
+    const fetchRelicData = async(relicIds: BigNumber[]) => {
+      return Promise.all(relicIds.map(async relicId => {
+        const [itemBalances, [rarity, enclave], xp] = await Promise.all([
+          relicContract.getBalanceBatch(relicId, itemIds),
+          relicContract.getRelicInfos(relicId) as Promise<[RelicRarity, RelicEnclave]>,
+          relicContract.getRelicXP(relicId),
+        ])
+        const items = extractValidItems(itemBalances);
+        return { id: relicId, enclave, rarity, xp, items } as RelicData
       }))
     }
 
-    const relicIds = await fetchRelicIds();
-    const relicInfos = await fetchRelicInfos(relicIds)
-    const relics: ItemInventory['relics'] = await Promise.all(
-      relicInfos.map(async (info) => {
-        const items = extractValidItems(await relicContract.getBalanceBatch(info.id, itemIds));
-        return { ...info, items };
-      })
-    );
+    const relics = await fetchRelicIds().then(fetchRelicData)
     const addresses = itemIds.map((_) => walletAddress);
     const items = extractValidItems(await relicItemsContract.balanceOfBatch(addresses, itemIds));
     return { relics, items };

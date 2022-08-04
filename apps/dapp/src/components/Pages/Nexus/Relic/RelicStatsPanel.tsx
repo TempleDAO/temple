@@ -1,31 +1,99 @@
+import relicImg from 'assets/images/relic.png';
+import { useWindowResize } from 'components/Vault/useWindowResize';
 import { capitalize } from 'lodash';
 import { RelicData, RelicEnclave, RelicRarity } from 'providers/types';
-import { FC } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 import styled, { DefaultTheme } from 'styled-components';
 
 const RelicStatsPanel: FC<{ relic: RelicData }> = (props) => {
-  const { id, rarity, enclave } = props.relic
-  return <RelicStatsContainer>
-    <RelicStatsRow>
+  const { id, rarity, enclave, xp, items } = props.relic
+  const containerRef = useRef<HTMLDivElement>(null)
+  const windowWidth = useWindowResize()
+  const [componentWidth, setComponentWidth] = useState(100)
+  useEffect(() => {
+    setComponentWidth(containerRef.current?.offsetWidth ?? 100)
+  }, [windowWidth])
+  const relicBadge = <RelicBadge>
+    <RelicImage src={relicImg} />
+    <RelicName enclave={enclave}>
       Relic #{id.toString()}
-    </RelicStatsRow>
-    <RelicStatsRow>
-      <span>Enclave:</span>
-      <EnclaveLabel enclave={enclave}/>
-    </RelicStatsRow>
-    <RelicStatsRow>
-      <span>Rarity:</span>
-      <RarityLabel rarity={rarity}/>
-    </RelicStatsRow>
+    </RelicName>
+  </RelicBadge>
+  const enclaveInfo = <RelicStatsItem label="Enclave"
+    element={<EnclaveLabel enclave={enclave}/>}
+  />
+  const rarityInfo = <RelicStatsItem label="Rarity"
+    element={<RarityLabel rarity={rarity}/>}
+  />
+  const poapInfo = <RelicStatsItem label="POAPs"
+    element={<span>{items.reduce((n, i) => n + i.count, 0)}</span>}
+  />
+  const xpInfo = <RelicStatsItem label="XP"
+    element={<span>{xp.toNumber()}</span>}
+  />
+  if (componentWidth > 700) {
+    return <RelicStatsContainer ref={containerRef}>
+      <RelicStatsColumn>
+        { enclaveInfo }
+        { poapInfo }
+      </RelicStatsColumn>
+      { relicBadge }
+      <RelicStatsColumn>
+        { rarityInfo }
+        { xpInfo }
+      </RelicStatsColumn>
+    </RelicStatsContainer>
+  } else {
+    return <RelicStatsContainer ref={containerRef}>
+      { relicBadge }
+      <RelicStatsColumn>
+        { enclaveInfo }
+        { rarityInfo }
+        { poapInfo }
+        { xpInfo }
+      </RelicStatsColumn>
+    </RelicStatsContainer>
+  }
+}
 
-  </RelicStatsContainer>
+const RelicStatsItem: FC<{ label: string, element: JSX.Element }> = props => {
+  return <RelicStatsRow>
+    <span>{props.label}:</span>
+    {props.element}
+  </RelicStatsRow>
 }
 
 const RelicStatsContainer = styled.div`
-  width: 20em;
-  > * {
-    color: ${props => props.theme.palette.light75};
-  }
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 16px;
+`
+
+const RelicStatsColumn = styled.div`
+  flex-grow: 1;
+  flex-basis: 100px;
+  padding: 2em 1em;
+  background-color: ${props => props.theme.palette.dark75};
+  border-radius: 16px;
+`
+
+const RelicImage = styled.img`
+  width: 200px;
+  margin: 0;
+`
+const RelicName = styled.h3<{ enclave: RelicEnclave }>`
+  color: ${props => props.theme.palette.enclave[getEnclavePalette(props.enclave)]};
+  margin: 0;
+  background-color: ${props => props.theme.palette.dark75};
+  padding: 16px;
+  border-radius: 16px;
+`
+const RelicBadge = styled.div`
+flex-grow: 1;
+  flex-basis: 80px;
 `
 
 const RelicStatsRow = styled.h4`
@@ -41,6 +109,9 @@ const RelicStatsRow = styled.h4`
 
   > *:first-child {
     text-align: right;
+  }
+  > *:last-child {
+    text-align: left;
   }
 `
 
