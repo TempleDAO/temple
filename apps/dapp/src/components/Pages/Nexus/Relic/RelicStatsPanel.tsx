@@ -1,8 +1,11 @@
 import relicImg from 'assets/images/relic.png';
+import { Button } from 'components/Button/Button';
 import { useWindowResize } from 'components/Vault/useWindowResize';
 import { capitalize } from 'lodash';
+import { useRelic } from 'providers/RelicProvider';
 import { RelicData, RelicEnclave, RelicRarity } from 'providers/types';
 import { FC, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled, { DefaultTheme } from 'styled-components';
 
 const RelicStatsPanel: FC<{ relic: RelicData }> = (props) => {
@@ -13,6 +16,8 @@ const RelicStatsPanel: FC<{ relic: RelicData }> = (props) => {
   useEffect(() => {
     setComponentWidth(containerRef.current?.offsetWidth ?? 100)
   }, [windowWidth])
+  const { renounceRelic } = useRelic();
+  const navigate = useNavigate();
   const relicBadge = <RelicBadge>
     <RelicImage src={relicImg} />
     <RelicName enclave={enclave}>
@@ -31,6 +36,12 @@ const RelicStatsPanel: FC<{ relic: RelicData }> = (props) => {
   const xpInfo = <RelicStatsItem label="XP"
     element={<span>{xp.toNumber()}</span>}
   />
+  const renounceBtn = <Button isSmall label="Renounce Relic"
+    onClick={async () => {
+      await renounceRelic(id);
+      navigate(`..`);
+}}
+  />
   if (componentWidth > 700) {
     return <RelicStatsContainer ref={containerRef}>
       <RelicStatsColumn>
@@ -41,6 +52,8 @@ const RelicStatsPanel: FC<{ relic: RelicData }> = (props) => {
       <RelicStatsColumn>
         { rarityInfo }
         { xpInfo }
+        <br />
+        { renounceBtn }
       </RelicStatsColumn>
     </RelicStatsContainer>
   } else {
@@ -51,6 +64,8 @@ const RelicStatsPanel: FC<{ relic: RelicData }> = (props) => {
         { rarityInfo }
         { poapInfo }
         { xpInfo }
+        <br />
+        { renounceBtn }
       </RelicStatsColumn>
     </RelicStatsContainer>
   }

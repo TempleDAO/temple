@@ -21,10 +21,10 @@ const MintRelicPanel = () => {
   const enclaves = [RelicEnclave.Logic, RelicEnclave.Structure, RelicEnclave.Order, RelicEnclave.Mystery, RelicEnclave.Chaos]
   return <NexusPanel>
     <NexusPanelRow>
-      Relic Minter
+      Mint Relic
     </NexusPanelRow>
     <EnclaveCardContainer>
-      { enclaves.map(enclave => <EnclaveCard
+      { enclaves.map(enclave => <EnclaveCard key={enclave}
             enclave={enclave}
             selected={enclave==selectedEnclave} 
             onClick={() => setSelectedEnclave(enclave != selectedEnclave ? enclave : undefined)}
@@ -49,7 +49,7 @@ const MintRelicButton: FC<{ selectedEnclave?: RelicEnclave }> = props => {
   return <Button label={label}
     disabled={!enclaveSelected}
     onClick={async () => {
-      if (selectedEnclave) {
+      if (enclaveSelected) {
         const added = await mintRelic(selectedEnclave);
         if (added) {
           navigate(`/nexus/relic/${added.id.toString()}`);
