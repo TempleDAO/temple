@@ -35,8 +35,8 @@ const RelicPanel = (props: {
     return <Navigate to=".." />;
   }
   return (
-    <EnclavePanel enclave={thisRelic.enclave}>
-      <RarityPanel rarity={thisRelic.rarity}>
+    <OuterPanel rarity={thisRelic.rarity}>
+      <EnclavePanel enclave={thisRelic.enclave}>
         <RelicStatsPanel relic={thisRelic} />
         <br />
         <BufferedItemGrid items={thisRelic.items}
@@ -59,18 +59,19 @@ const RelicPanel = (props: {
             </div>
           </NexusPanelRow>
         }
-      </RarityPanel>
-    </EnclavePanel>
+      </EnclavePanel>
+    </OuterPanel>
   );
 };
 
-const EnclavePanel = styled.div<{ enclave: RelicEnclave }>`
+const EnclavePanel = styled(NexusPanel)<{ enclave: RelicEnclave }>`
   border: 4px solid ${(props) => props.theme.palette.enclave[getEnclavePalette(props.enclave)]};
-  border-radius: 20px;
 `
 
-const RarityPanel = styled(NexusPanel)<{ rarity: RelicRarity }>`
-  border: 3px solid ${(props) => props.theme.palette.relicRarity[getRarityPalette(props.rarity)]};
+const OuterPanel = styled.div<{ rarity: RelicRarity }>`
+  border: 3px solid ${(props) => props.theme.palette.brand};
+  border-radius: 20px;
+  padding: 6px;
 `
 
 const MyItemPanel: FC<{
