@@ -22,8 +22,6 @@ import { theme } from 'styles/theme';
 import { getSpotPrice } from '../../utils';
 import { useAuctionContext } from '../AuctionContext';
 import { sortAndGroupLBPTokens } from 'utils/balancer';
-import { DecimalBigNumber } from 'utils/DecimalBigNumber';
-import env from 'constants/env';
 
 import { useCrosshairs, useLatestPriceData, Point } from './hooks';
 
@@ -99,7 +97,7 @@ export const Chart = ({ pool }: Props) => {
       yDomain,
       xDomain,
     };
-  }, [pool, response]);
+  }, [pool, response, balances]);
 
   const { crosshairValues, onMouseLeave, onNearestX } = useCrosshairs(data);
 
