@@ -262,7 +262,11 @@ export const useVaultTradeState = (pool: Pool) => {
     swap,
     setSellValue: async (value: string) => {
       dispatch({ type: ActionType.SetSellValue, payload: value });
-      
+
+      if (value.trim() === '.') {
+        return;
+      }
+
       const bn = DecimalBigNumber.parseUnits(value || '0', sell.decimals);
       getSwapQuote(bn.toBN(bn.getDecimals()));
     },
