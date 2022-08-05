@@ -13,6 +13,7 @@ import { getBigNumberFromString } from 'components/Vault/utils';
 import { ZERO } from 'utils/bigNumber';
 import { createTokenFactoryInstance } from './use-token-vault-proxy-allowance';
 import { formatJoiningFee } from 'components/Vault/utils';
+import { AnalyticsService } from 'services/AnalyticsService';
 
 import env from 'constants/env';
 
@@ -28,8 +29,10 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
   const [getZappedAssetValue] = useGetZappedAssetValue();
 
   const { openNotification } = useNotification();
+  const { captureEvent } = AnalyticsService;
 
   const handler = async (ticker: TICKER_SYMBOL, amount: string, useFaith = false) => {
+    captureEvent('vault-deposit', { amount, vaultContractAddress, ticker });
     if (!signer || !wallet) {
       console.error(`
         Attempted to deposit to vault: ${vaultContractAddress} without a valid signer or wallet address.
