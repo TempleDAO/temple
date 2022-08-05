@@ -215,5 +215,10 @@ const THead = styled.thead`
 const PagingButton = styled.button`
   ${buttonResets}
 
+  color: ${({ theme }) => theme.palette.brand};
   background: transparent;
+
+  &:disabled {
+    color: ${({ theme }) => theme.palette.brand50};
+  }
 `;
