@@ -89,6 +89,8 @@ export const formatValueByType = (value: any, type: InputType) => {
     }
     case 'bn':
       return DecimalBigNumber.parseUnits(value || '0', 16);
+    case 'number':
+      return Number(value);
     default:
       return value;
   }
