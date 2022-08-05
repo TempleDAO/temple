@@ -119,7 +119,7 @@ export const Trade = ({ pool }: Props) => {
           type="button"
           onClick={() => toggleTokenPair()}
           aria-label="Toggle Inputs"
-          disabled={state.quote.loading}
+          disabled={state.quote.isLoading}
         />
         <Input
           isNumber
@@ -130,19 +130,19 @@ export const Trade = ({ pool }: Props) => {
           disabled
         />
         <SwapControls>
-          {state.quote.loading && (
+          {state.quote.isLoading && (
             <LoadWrapper>
               <BaseCircularLoader />
             </LoadWrapper>
           )}
           <ReceivedValues>
-            {(!!receiveEstimate && !state.quote.loading) && (
+            {(!!receiveEstimate && !state.quote.isLoading) && (
               <>
                 Expected Output: {formatNumberFixedDecimals(receiveEstimate, 3)}<br />
                 Minimum Amount: {formatNumberFixedDecimals(estimateWithSlippage, 3)}
               </>
             )}
-            {state.quote.loading && (
+            {state.quote.isLoading && (
               <>
                 Fetching Price...
               </>
@@ -175,7 +175,7 @@ export const Trade = ({ pool }: Props) => {
             disabled={
               bigSellAmount.isZero() ||
               bigSellAmount.gt(sellBalance) ||
-              state.quote.loading ||
+              state.quote.isLoading ||
               !state.quote.estimate ||
               state.swap.isLoading
             }

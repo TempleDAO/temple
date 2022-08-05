@@ -1,3 +1,5 @@
+import env from 'constants/env';
+
 const BALANCER_ERRORS: Record<string, string> = {
   ['BAL#304']: 'Token in unbalanced the pool too much on a swap',
   ['BAL#305']: 'Token out unbalanced the pool too much on a swap',
@@ -28,4 +30,31 @@ export const getBalancerErrorMessage = (errorMessage: string) => {
   }
 
   return predefinedMessage;
+};
+
+export const sortAndGroupLBPTokens = <T extends { address: string }>(tokens: T[]) => {
+  const sortedTokens = tokens.sort((a, b) => a.address.localeCompare(b.address)).map((token, i) => ({
+    ...token,
+    tokenIndex: i,
+  }));
+
+  const tokenMap = sortedTokens.reduce<Record<string, T & { tokenIndex: number }>>((acc, token) => {
+    return {
+      ...acc,
+      [token.address]: token,
+    };
+  }, {});
+
+  const maybeTemple = tokenMap[env.tokens.temple.address];
+  const sell = maybeTemple || sortedTokens[0];
+  const buy = maybeTemple ? sortedTokens.find(({ address }) => address !== env.tokens.temple.address) : sortedTokens[1];
+
+  return {
+    tokenMap,
+    sortedTokens,
+    initialBuySell: {
+      sell: sell!,
+      buy: buy!,
+    },
+  };
 };
