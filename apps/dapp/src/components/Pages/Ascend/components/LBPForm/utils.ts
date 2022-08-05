@@ -1,9 +1,11 @@
 import { format, parse } from 'date-fns';
-import { Pool } from 'components/Layouts/Ascend/types';
-
-import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { formatUnits } from 'ethers/lib/utils';
+
+import { Pool } from 'components/Layouts/Ascend/types';
+import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { Token } from 'constants/env/types';
+import { formatBigNumber } from 'components/Vault/utils';
+import { formatNumber } from 'utils/formatter';
 import env from 'constants/env';
 
 import {
@@ -26,10 +28,12 @@ export const getInitialValues = (pool?: Pool): Values => {
   }
 
   const lastWeightUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
+  const swapFee = formatNumber(formatBigNumber(pool.swapFee));
 
   return {
     id: pool.id,
-    fees: 1,
+    // Fees are a decimal from 0 to 1 and we represent the number as a whole number from 0 to 100 in the UI.
+    fees: swapFee * 100,
     tokens: pool.tokens.reduce((acc, token, i) => {
       return {
         ...acc,
