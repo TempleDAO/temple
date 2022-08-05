@@ -8,7 +8,11 @@ import { useWallet } from 'providers/WalletProvider';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import useRequestState from 'hooks/use-request-state';
 import { ZERO } from 'utils/bigNumber';
-import { formatBigNumber } from 'components/Vault/utils';
+
+export enum JoinType {
+  Init = 0,
+  Add = 1,
+}
 
 export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) => {
   const { wallet, signer } = useWallet();
@@ -32,6 +36,7 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
 
   const joinPool = async (
     poolId: string,
+    joinType: JoinType,
     assets: string[],
     _maxAmountsIn: DecimalBigNumber[],
   ) => {
@@ -43,7 +48,7 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
       {
         assets,
         maxAmountsIn,
-        userData: utils.defaultAbiCoder.encode(['uint256', 'uint256[]'], [0, maxAmountsIn]),
+        userData: utils.defaultAbiCoder.encode(['uint256', 'uint256[]'], [joinType, maxAmountsIn]),
         fromInternalBalance: false,
       },
       {
