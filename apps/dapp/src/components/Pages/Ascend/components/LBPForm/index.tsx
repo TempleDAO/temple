@@ -10,7 +10,7 @@ import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { UnstyledList } from 'styles/common';
 import { useAuctionContext } from '../AuctionContext';
 import { formatNumber } from 'utils/formatter';
-import { useVaultContract } from '../Trade/hooks/use-vault-contract';
+import { useVaultContract, JoinType } from '../Trade/hooks/use-vault-contract';
 import { AdminCryptoInput } from './components/AdminCryptoInput';
 
 import {
@@ -124,7 +124,7 @@ export const LBPForm = ({ pool }: Props) => {
 
     try {
       const assets = tokens.map(({ address }) => address);
-      const tx = await vaultContract.joinPool.request(pool.id, assets, maxAmountsIn);
+      const tx = await vaultContract.joinPool.request(pool.id, formValues.joinType, assets, maxAmountsIn);
       await tx.wait();
       resetJoinPool();
     } catch (err) {
@@ -150,6 +150,7 @@ export const LBPForm = ({ pool }: Props) => {
 
   return (
     <Form>
+      <br />
       <Link to="/dapp/ascend/admin">Back to List</Link>
       <h2>{isEditMode ? 'Edit' : 'Create'} LBP</h2>
       {isEditMode && (
@@ -342,7 +343,15 @@ export const LBPForm = ({ pool }: Props) => {
           </FieldGroup>
           {isEditMode && (
             <FieldGroup>
-              <Label>Add Liquidity</Label>
+              <Label>{formValues.joinType === JoinType.Add ? 'Add' : 'Initialize'} Liquidity</Label>
+              <Select
+                value={formValues.joinType}
+                onChange={createChangeHandler('joinType', 'number')}
+              >
+                <option value={JoinType.Init}>Init</option>
+                <option value={JoinType.Add}>Add</option>
+              </Select>
+              <br />
               {Object.values(formValues.tokens).map((token) => {
                 const userBalance = userBalances[token.address];
 

@@ -6,6 +6,7 @@ import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { Token } from 'constants/env/types';
 import { formatBigNumber } from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
+import { JoinType } from '../Trade/hooks/use-vault-contract';
 import env from 'constants/env';
 
 import {
@@ -13,6 +14,7 @@ import {
   Values,
   InputType,
 } from './types'
+import { ZERO } from 'utils/bigNumber';
 
 export const getInitialValues = (pool?: Pool): Values => {
   if (!pool) {
@@ -24,6 +26,7 @@ export const getInitialValues = (pool?: Pool): Values => {
       startDate: new Date(),
       endDate: new Date(),
       joinPool: {},
+      joinType: JoinType.Init,
     };
   }
 
@@ -46,6 +49,7 @@ export const getInitialValues = (pool?: Pool): Values => {
         },
       };
     }, {}),
+    joinType: pool.totalLiquidity.eq(ZERO) ? JoinType.Init : JoinType.Add,
     joinPool: pool.tokens.reduce((acc, token, i) => {
       return {
         ...acc,
