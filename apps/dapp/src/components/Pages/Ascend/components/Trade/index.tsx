@@ -93,7 +93,7 @@ export const Trade = ({ pool }: Props) => {
         }}
       />
       <Wrapper>
-        <TradeHeader>Trade {sell.name}</TradeHeader>
+        <TradeHeader>Trade {sell.symbol}</TradeHeader>
         <Input
           isNumber
           crypto={{ kind: 'value', value: sell.symbol }}
@@ -166,7 +166,7 @@ export const Trade = ({ pool }: Props) => {
               increaseAllowance();
             }}
           >
-            {allowanceIsLoading ? <CircularLoader /> : <>Increase Allowance</>}
+            {allowanceIsLoading ? <CircularLoader /> : <>Approve</>}
           </SwapButton>
         )}
         {allowance !== 0 && (
