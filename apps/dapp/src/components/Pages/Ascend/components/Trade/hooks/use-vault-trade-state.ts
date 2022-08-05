@@ -17,19 +17,22 @@ type Action<A extends ActionType, P extends any> = { type: A, payload: P };
 
 enum ActionType {
   SetSellValue,
-  SetSwapQuote,
-  SetSwapQuoteError,
-  SetSwapQuoteLoading,
   SetTransactionSettings,
   ResetQuoteState,
   UpdateSwapState,
+
+  SetSwapQuoteStart,
+  SetSwapQuoteError,
+  SetSwapQuoteSuccess,
 };
+
+type TokenValue = { token: string; value: BigNumber };
 
 type Actions = 
   Action<ActionType.SetSellValue, string> |
-  Action<ActionType.SetSwapQuote, Nullable<BigNumber>> |
-  Action<ActionType.SetSwapQuoteError, string> |
-  Action<ActionType.SetSwapQuoteLoading, boolean> |
+  Action<ActionType.SetSwapQuoteStart, TokenValue> |
+  Action<ActionType.SetSwapQuoteSuccess, TokenValue & { quote: BigNumber }> |
+  Action<ActionType.SetSwapQuoteError, TokenValue & { error: string }> |
   Action<ActionType.SetTransactionSettings, TradeState['transactionSettings']> |
   Action<ActionType.ResetQuoteState, null> |
   Action<ActionType.UpdateSwapState, { isLoading: boolean; error: string }>;
@@ -37,7 +40,8 @@ type Actions =
 interface TradeState {
   inputValue: string;
   quote: {
-    loading: boolean;
+    isLoading: boolean;
+    request: Nullable<{ token: string; value: BigNumber }>;
     estimate: Nullable<BigNumber>;
     estimateWithSlippage: Nullable<BigNumber>;
     error: Nullable<string>;
@@ -51,6 +55,21 @@ interface TradeState {
     deadlineMinutes: number;
   };
 }
+
+const shouldUpdateQuoteState = (state: TradeState, actionPayload: TokenValue) => {
+  const { value, token } = actionPayload;
+  // Safe guard against race conditions for wrong query
+  // There is a request pending for another token
+  if (state.quote.request?.token !== token) {
+    return false;
+  }
+  // values should match as well
+  if (state.quote.request.value && !value.eq(state.quote.request.value)) {
+    return false;
+  }
+
+  return true;
+};
 
 const reducer = (state: TradeState, action: Actions): TradeState => {
   switch (action.type) {
@@ -73,41 +92,53 @@ const reducer = (state: TradeState, action: Actions): TradeState => {
         ...state,
         inputValue: '',
         quote: {
-          loading: false,
+          ...INITIAL_QUOTE_STATE,
+        },
+      };
+    }
+    case ActionType.SetSwapQuoteStart: {
+      const { token, value } = action.payload;
+      return {
+        ...state,
+        quote: {
+          ...state.quote,
+          request: { token, value },
+          isLoading: true,
           estimate: null,
           estimateWithSlippage: null,
           error: null,
         },
       };
     }
-    case ActionType.SetSwapQuote: {
+    case ActionType.SetSwapQuoteSuccess: {
+      const shouldUpdate = shouldUpdateQuoteState(state, action.payload);
+      if (!shouldUpdate) {
+        return state;
+      }
       return {
         ...state,
         quote: {
           ...state.quote,
-          estimate: action.payload,
-          estimateWithSlippage: getSwapLimit(action.payload, state.transactionSettings.slippageTolerance),
+          isLoading: false,
+          estimate: action.payload.quote,
+          estimateWithSlippage: getSwapLimit(action.payload.quote, state.transactionSettings.slippageTolerance),
           error: null,
         },
       };
     }
     case ActionType.SetSwapQuoteError: {
+      const shouldUpdate = shouldUpdateQuoteState(state, action.payload);
+      if (!shouldUpdate) {
+        return state;
+      }
       return {
         ...state,
         quote: {
           ...state.quote,
+          isLoading: false,
           estimate: null,
           estimateWithSlippage: null,
-          error: action.payload,
-        },
-      };
-    }
-    case ActionType.SetSwapQuoteLoading: {
-      return {
-        ...state,
-        quote: {
-          ...state.quote,
-          loading: action.payload,
+          error: action.payload.error,
         },
       };
     }
@@ -129,6 +160,14 @@ const reducer = (state: TradeState, action: Actions): TradeState => {
   }
 };
 
+const INITIAL_QUOTE_STATE = {
+  isLoading: false,
+  request: null,
+  estimate: null,
+  estimateWithSlippage: null,
+  error: null,
+};
+
 export const useVaultTradeState = (pool: Pool) => {
   const { swapState: { sell, buy }, vaultAddress } = useAuctionContext();
   const vaultContract = useVaultContract(pool, vaultAddress);
@@ -137,10 +176,7 @@ export const useVaultTradeState = (pool: Pool) => {
   const [state, dispatch] = useReducer(reducer, {
     inputValue: '',
     quote: {
-      loading: false,
-      estimate: null,
-      estimateWithSlippage: null,
-      error: null,
+      ...INITIAL_QUOTE_STATE,
     },
     swap: {
       error: '',
@@ -158,33 +194,30 @@ export const useVaultTradeState = (pool: Pool) => {
     dispatch({ type: ActionType.ResetQuoteState, payload: null });
   }, [sellTokenAddress, dispatch]);
 
-  const updateSwapQuote = async (amount: BigNumber) => {
-    if (amount.eq(ZERO)) {
-      dispatch({
-        type: ActionType.SetSwapQuote,
-        payload: null,
-      });
+  const getSwapQuote = async (value: BigNumber) => {
+    if (value.eq(ZERO)) {
+      dispatch({ type: ActionType.ResetQuoteState, payload: null });
       return;
     }
 
-    dispatch({ type: ActionType.SetSwapQuoteLoading, payload: true });
+    const token = sell.address;
+    dispatch({ type: ActionType.SetSwapQuoteStart, payload: { value, token } });
 
     try {
-      const quotes = await vaultContract.getSwapQuote(amount, sell.address, buy.address);
+      const quotes = await vaultContract.getSwapQuote(value, token, buy.address);
       const quote = quotes[buy.tokenIndex].abs();
      
       dispatch({
-        type: ActionType.SetSwapQuote,
-        payload: quote,
+        type: ActionType.SetSwapQuoteSuccess,
+        payload: { quote, token, value },
       });
     } catch (err) {
-      console.error('Error fetching swap quote', err)
+      console.error('Error fetching swap quote', err);
+      const error = getBalancerErrorMessage((err as Error).message || '');
       dispatch({
         type: ActionType.SetSwapQuoteError,
-        payload: getBalancerErrorMessage((err as Error).message || ''),
+        payload: { error, token, value },
       });
-    } finally {
-      dispatch({ type: ActionType.SetSwapQuoteLoading, payload: false });
     }
   };
 
@@ -231,7 +264,7 @@ export const useVaultTradeState = (pool: Pool) => {
       dispatch({ type: ActionType.SetSellValue, payload: value });
       
       const bn = DecimalBigNumber.parseUnits(value || '0', sell.decimals);
-      updateSwapQuote(bn.toBN(bn.getDecimals()));
+      getSwapQuote(bn.toBN(bn.getDecimals()));
     },
     setTransactionSettings: (settings: TradeState['transactionSettings']) => {
       dispatch({ type: ActionType.SetTransactionSettings, payload: settings });
