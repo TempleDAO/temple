@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, PureComponent} from 'react';
 import { format } from 'date-fns';
 import styled from 'styled-components';
 import {
@@ -11,6 +11,7 @@ import {
   Crosshair,
   ChartLabel,
   LineMarkSeries,
+  DiscreteColorLegend,
 } from 'react-vis';
 import { curveCatmullRom } from 'd3-shape';
 
@@ -33,8 +34,9 @@ export const Chart = ({ pool }: Props) => {
   const { balances } = useAuctionContext();
   const [request, { response, isLoading }] = useLatestPriceData(pool);
 
-  const { data, yDomain, xDomain, predicted } = useMemo(() => {
+  const { data, yDomain, xDomain, predicted, yLabel } = useMemo(() => {
     const {joinExits, ...data} = (response?.data || {})
+    const { initialBuySell: { sell, buy } } = sortAndGroupLBPTokens(pool.tokens);
 
     const points = Object.values(data)
       .filter((value) => value.length > 0)
@@ -58,7 +60,6 @@ export const Chart = ({ pool }: Props) => {
     const predicted = [];
     if (balances && points.length > 0) {
       try {
-        const { initialBuySell: { sell, buy } } = sortAndGroupLBPTokens(pool.tokens);
         const lastPoint = points[points.length - 1];
 
         const spotPriceEstimate = getSpotPrice(
@@ -96,6 +97,7 @@ export const Chart = ({ pool }: Props) => {
       predicted,
       yDomain,
       xDomain,
+      yLabel: `$${sell.symbol} Price`
     };
   }, [pool, response, balances]);
 
@@ -142,7 +144,7 @@ export const Chart = ({ pool }: Props) => {
         yDomain={yDomain}
         onMouseLeave={onMouseLeave}
         height={400}
-        margin={{ right: 20}}
+        margin={{ right: 20 }}
       >
         <VerticalGridLines style={{ stroke: theme.palette.brand25 }} />
         <HorizontalGridLines style={{ stroke: theme.palette.brand25 }} />
@@ -168,6 +170,7 @@ export const Chart = ({ pool }: Props) => {
           tickTotal={4}
           tickFormat={(t) => `$${t}`}
         />
+        <CustomAxisLabel title={yLabel} />
         <LineSeries
           data={data}
           color={theme.palette.brand}
@@ -200,12 +203,66 @@ export const Chart = ({ pool }: Props) => {
           }}
         />
       </FlexibleXYPlot>
+      <DiscreteColorLegend
+        orientation="horizontal"
+        items={[
+          {
+            title: yLabel,
+            color: theme.palette.brand,
+          }, {
+            title: 'Projected Price',
+            color: theme.palette.brandLight,
+            strokeStyle: 'dashed',
+          }
+        ]}
+      />
     </ChartWrapper>
   );
 };
 
+// Taken from https://codesandbox.io/s/04741ljm9w?file=/src/zoomable-chart-example.js
+class CustomAxisLabel extends PureComponent<any, any> {
+  static displayName = 'CustomAxisLabel';
+  static requiresSVG = true;
+
+  render() {
+    const yLabelOffset = {
+      y: this.props.marginTop + this.props.innerHeight / 2 + this.props.title.length * 2,
+      x: 10,
+    };
+
+    const xLabelOffset = {
+      x: this.props.marginLeft + (this.props.innerWidth) / 2 - this.props.title.length * 2,
+      y: 1.2 * this.props.innerHeight
+    };
+
+    const transform = this.props.xAxis
+      ? `translate(${xLabelOffset.x}, ${xLabelOffset.y})`
+      : `translate(${yLabelOffset.x}, ${yLabelOffset.y}) rotate(-90)`;
+
+    return (
+      <g transform={transform}>
+        <text className="unselectable axis-labels">
+          {this.props.title}
+        </text>
+      </g>
+    );
+  }
+}
+
 const ChartWrapper = styled.div`
   .rv-crosshair__line {
     background: ${theme.palette.brand50} !important;
+  }
+
+  .axis-labels {
+    stroke: ${theme.palette.brand75} !important;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+  }
+
+  .rv-discrete-color-legend-item__title {
+    stroke: ${theme.palette.brand75} !important;
+    color: ${theme.palette.brand75} !important;
   }
 `;
