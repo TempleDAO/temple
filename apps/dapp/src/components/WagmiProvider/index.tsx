@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { WagmiProvider as Provider, chain, createClient, configureChains } from 'wagmi';
+import { WagmiConfig, chain, createClient, configureChains } from 'wagmi';
 import { Buffer } from 'buffer';
 
 import { alchemyProvider } from 'wagmi/providers/alchemy';
@@ -25,8 +25,8 @@ export const LOCAL_CHAIN = {
 const APP_CHAINS = [chain.mainnet, chain.rinkeby, chain.goerli, LOCAL_CHAIN];
 
 const { chains, provider } = configureChains(APP_CHAINS, [
-  alchemyProvider({ alchemyId: env.alchemyId }),
-  infuraProvider({ infuraId: env.infuraId }),
+  alchemyProvider({ apiKey: env.alchemyId }),
+  infuraProvider({ apiKey: env.infuraId }),
   publicProvider(),
 ]);
 
@@ -57,4 +57,4 @@ const client = createClient({
   provider,
 });
 
-export const WagmiProvider: FC = ({ children }) => <Provider client={client}>{children}</Provider>;
+export const WagmiProvider: FC = ({ children }) => <WagmiConfig client={client}>{children}</WagmiConfig>;
