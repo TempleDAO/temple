@@ -251,6 +251,10 @@ class CustomAxisLabel extends PureComponent<any, any> {
 }
 
 const ChartWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
   .rv-crosshair__line {
     background: ${theme.palette.brand50} !important;
   }
