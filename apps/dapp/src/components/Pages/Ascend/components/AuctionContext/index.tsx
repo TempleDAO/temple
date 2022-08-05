@@ -11,6 +11,8 @@ import { Pool } from 'components/Layouts/Ascend/types';
 import { ZERO } from 'utils/bigNumber';
 import { noop } from 'utils/helpers';
 import { useWallet } from 'providers/WalletProvider';
+import { sortAndGroupLBPTokens } from 'utils/balancer';
+import env from 'constants/env';
 
 type TokenMap<T> = { [tokenAddress: string]: T };
 
@@ -72,25 +74,11 @@ interface Props {
 
 export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
   const { wallet } = useWallet();
-
-  const orderedTokens = pool.tokens.sort((a, b) => a.address.localeCompare(b.address));
-  const [sell, buy] = orderedTokens;
+  const { initialBuySell } = sortAndGroupLBPTokens(pool.tokens);
 
   const [swapState, setSwapState] = useState<AuctionContext['swapState']>({
-    sell: {
-      name: sell.name,
-      symbol: sell.symbol,
-      address: sell.address,
-      decimals: sell.decimals,
-      tokenIndex: 0,
-    },
-    buy: {
-      name: buy.name,
-      symbol: buy.symbol,
-      address: buy.address,
-      decimals: buy.decimals,
-      tokenIndex: 1,
-    },
+    sell: initialBuySell.sell,
+    buy: initialBuySell.buy,
   });
 
   const { data: poolData } = useContractReads({
