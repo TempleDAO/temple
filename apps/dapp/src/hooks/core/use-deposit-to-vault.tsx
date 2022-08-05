@@ -4,7 +4,7 @@ import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 import { useNotification } from 'providers/NotificationProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { Callback } from './types';
+import { DepositSuccessCallback } from './types';
 import { useVaultContext, Operation } from 'components/Pages/Core/VaultContext';
 import { useVaultJoiningFee } from './use-vault-joining-fee';
 import { useFaith } from 'providers/FaithProvider';
@@ -13,13 +13,12 @@ import { getBigNumberFromString } from 'components/Vault/utils';
 import { ZERO } from 'utils/bigNumber';
 import { createTokenFactoryInstance } from './use-token-vault-proxy-allowance';
 import { formatJoiningFee } from 'components/Vault/utils';
-import { AnalyticsService } from 'services/AnalyticsService';
 
 import env from 'constants/env';
 
 const TICKERS_WITH_FAITH_BURN = new Set([TICKER_SYMBOL.TEMPLE_TOKEN, TICKER_SYMBOL.OG_TEMPLE_TOKEN]);
 
-export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Callback) => {
+export const useDepositToVault = (vaultContractAddress: string, onSuccess?: DepositSuccessCallback) => {
   const { signer, wallet, ensureAllowance } = useWallet();
   const {
     faith: { usableFaith },
@@ -29,10 +28,8 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
   const [getZappedAssetValue] = useGetZappedAssetValue();
 
   const { openNotification } = useNotification();
-  const { captureEvent } = AnalyticsService;
 
   const handler = async (ticker: TICKER_SYMBOL, amount: string, useFaith = false) => {
-    captureEvent('vault-deposit', { amount, vaultContractAddress, ticker });
     if (!signer || !wallet) {
       console.error(`
         Attempted to deposit to vault: ${vaultContractAddress} without a valid signer or wallet address.
@@ -100,7 +97,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
     });
 
     if (onSuccess) {
-      await onSuccess();
+      await onSuccess(ticker, amount);
     }
   };
 

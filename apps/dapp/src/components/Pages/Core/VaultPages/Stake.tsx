@@ -22,6 +22,7 @@ import { useGetZappedAssetValue } from 'hooks/core/use-get-zapped-asset-value';
 import EllipsisLoader from 'components/EllipsisLoader';
 import { ZERO } from 'utils/bigNumber';
 import { getBigNumberFromString, formatBigNumber, formatJoiningFee } from 'components/Vault/utils';
+import { AnalyticsService } from 'services/AnalyticsService';
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
@@ -29,11 +30,8 @@ export const Stake = () => {
 
   const { options, option, setOption, balances, stakingAmount, setStakingAmount } = useStakeOptions();
 
-  const [getZappedAssetValue, {
-    response: zappedAssetValue,
-    isLoading: zappedAssetLoading,
-    args: zapArgs,
-  }] = useGetZappedAssetValue();
+  const [getZappedAssetValue, { response: zappedAssetValue, isLoading: zappedAssetLoading, args: zapArgs }] =
+    useGetZappedAssetValue();
 
   const [getVaultJoiningFee, { response: joiningFeeResponse, isLoading: joiningFeeLoading }] =
     useVaultJoiningFee(vault);
@@ -48,10 +46,14 @@ export const Stake = () => {
 
   const [_, refreshBalance] = useVaultBalance(vault.id);
   const [{ isLoading: refreshIsLoading }, refreshWalletState] = useRefreshWalletState();
-  const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(vault.id, async () => {
-    refreshBalance();
-    refreshWalletState();
-  });
+  const [deposit, { isLoading: depositLoading, error: depositError }] = useDepositToVault(
+    vault.id,
+    async (ticker, amount) => {
+      refreshBalance();
+      refreshWalletState();
+      AnalyticsService.captureEvent('vault-deposit', { name: vault.id, amount, ticker });
+    }
+  );
 
   const getTickerFromSelectOption = () => {
     switch (option) {
@@ -159,7 +161,7 @@ export const Stake = () => {
       }
       // the deposit amount is the total zapped temple + bonuses.
       depositAmount = zappedAssetValue.total;
-    } 
+    }
 
     return (
       <JoiningFee>
@@ -245,7 +247,7 @@ const useStakeOptions = () => {
   } = useWallet();
   const [stakingAmount, setStakingAmount] = useState('');
 
-  const options: { value: TickerValue, label: string}[] = [
+  const options: { value: TickerValue; label: string }[] = [
     { value: TICKER_SYMBOL.TEMPLE_TOKEN, label: `${TICKER_SYMBOL.TEMPLE_TOKEN}` },
   ];
 
