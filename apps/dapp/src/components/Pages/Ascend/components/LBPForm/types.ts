@@ -1,5 +1,6 @@
 import { Pool } from 'components/Layouts/Ascend/types';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { JoinType } from '../Trade/hooks/use-vault-contract';
 
 export interface FormToken {
   name: string;
@@ -23,6 +24,7 @@ export interface Values {
   joinPool: {
     [address: string]: string;
   };
+  joinType: JoinType;
   startDate: Date;
   endDate: Date;
 }

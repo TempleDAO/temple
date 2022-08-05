@@ -50,7 +50,7 @@ export interface SubgraphPool {
 export type GraphResponse = SubGraphResponse<{ pools: SubgraphPool[] }>;
 
 type OverWritteFields = 
-  'createTime' | 'holdersCount' | 'shares' | 'swapFee' | 'tokens' | 'totalLiquidity' | 'totalSwapFee' | 'totalSwapVolume' | 'totalWeight' | 'weightUpdates' | 'symbol';
+  'createTime' | 'symbol' | 'holdersCount' | 'shares' | 'swapFee' | 'tokens' | 'totalLiquidity' | 'totalSwapFee' | 'totalSwapVolume' | 'totalWeight' | 'weightUpdates' | 'symbol';
 
 export type Pool = Omit<SubgraphPool, OverWritteFields> & {
   createTime: Date;
