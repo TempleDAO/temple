@@ -69,7 +69,7 @@ if (env.sentry) {
   });
 }
 
-const { init } = AnalyticsService.getInstance();
+const { init } = AnalyticsService;
 init();
 
 ReactDOM.render(

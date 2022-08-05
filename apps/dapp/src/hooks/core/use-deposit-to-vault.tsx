@@ -29,10 +29,10 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Call
   const [getZappedAssetValue] = useGetZappedAssetValue();
 
   const { openNotification } = useNotification();
-  const { captureEvent } = AnalyticsService.getInstance();
+  const { captureEvent } = AnalyticsService;
 
   const handler = async (ticker: TICKER_SYMBOL, amount: string, useFaith = false) => {
-    captureEvent('[vault-deposit]', { amount });
+    captureEvent('vault-deposit', { amount, vaultContractAddress });
     if (!signer || !wallet) {
       console.error(`
         Attempted to deposit to vault: ${vaultContractAddress} without a valid signer or wallet address.

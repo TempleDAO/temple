@@ -3,23 +3,10 @@ import posthog from 'posthog-js';
 import { isDevelopmentEnv } from 'utils/helpers';
 
 export class AnalyticsService {
-  private static instance: AnalyticsService;
-  private static shouldSendAnalytics: boolean;
+  private constructor() {}
 
-  private constructor() {
-    AnalyticsService.shouldSendAnalytics = !isDevelopmentEnv();
-  }
-
-  public static getInstance(): AnalyticsService {
-    if (!AnalyticsService.instance) {
-        AnalyticsService.instance = new AnalyticsService();
-    }
-
-    return AnalyticsService.instance;
-  }
-
-  init(): void {
-    if (AnalyticsService.shouldSendAnalytics) {
+  public static init(): void {
+    if (!isDevelopmentEnv()) {
       if (!env.posthog) {
         throw new Error('Missing posthog config');
       }
@@ -27,8 +14,8 @@ export class AnalyticsService {
     }
   }
 
-  captureEvent(eventKey: string, eventProperties: Object): void {
-    if (AnalyticsService.shouldSendAnalytics) {
+  public static captureEvent(eventKey: string, eventProperties: Object): void {
+    if (!isDevelopmentEnv()) {
       posthog.capture(eventKey, eventProperties);
     }
   }
