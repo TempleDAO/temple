@@ -1,12 +1,6 @@
 import { useEffect } from 'react';
 import { Signer } from 'ethers';
-import {
-  VaultProxy__factory,
-  TempleERC20Token__factory,
-  OGTemple__factory,
-  TempleStaking__factory,
-  ERC20__factory
-} from 'types/typechain';
+import { ERC20__factory } from 'types/typechain';
 import { useWallet } from 'providers/WalletProvider';
 import useRequestState from 'hooks/use-request-state';
 
@@ -14,7 +8,6 @@ import { fromAtto, toAtto } from 'utils/bigNumber';
 import { useNotification } from 'providers/NotificationProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { Nullable } from 'types/util';
-import env from 'constants/env';
 
 const DEFAULT_ALLOWANCE = toAtto(100000000);
 
