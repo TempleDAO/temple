@@ -44,6 +44,11 @@ interface Sentry {
   dsn: string;
 }
 
+interface Posthog {
+  token: string;
+  api_host: string;
+}
+
 export interface Environment {
   alchemyId: string;
   backendUrl: string;
@@ -52,5 +57,6 @@ export interface Environment {
   fraxSellDisabledIvMultiple: number;
   infuraId: string;
   sentry?: Sentry;
+  posthog?: Posthog;
   subgraph: Subgraphs;
 }

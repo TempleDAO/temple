@@ -47,6 +47,10 @@ const env: Environment = {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
   },
+  posthog: {
+    token: 'phc_pa9tsK76qoRqgsvMh9rDLtBKbOaawlwvJTLkcNDtxab',
+    api_host: 'https://app.posthog.com',
+  },
 };
 
 export default env;
