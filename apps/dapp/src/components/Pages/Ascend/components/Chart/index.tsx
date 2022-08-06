@@ -61,12 +61,12 @@ export const Chart = ({ pool }: Props) => {
     if (balances && points.length > 0) {
       try {
         const lastPoint = points[points.length - 1];
-
+       
         const spotPriceEstimate = getSpotPrice(
           balances[buy.address]!,
           balances[sell.address]!,
-          lastUpdate.endWeights[sell.tokenIndex],
           lastUpdate.endWeights[buy.tokenIndex],
+          lastUpdate.endWeights[sell.tokenIndex],
           pool.swapFee
         );
 
@@ -74,7 +74,6 @@ export const Chart = ({ pool }: Props) => {
           predicted.push(lastPoint);
 
           const predictedY = formatNumberFixedDecimals(formatBigNumber(spotPriceEstimate), 4);
-
           if (predictedY > ceiling) {
             ceiling = predictedY;
           }
@@ -97,7 +96,7 @@ export const Chart = ({ pool }: Props) => {
       predicted,
       yDomain,
       xDomain,
-      yLabel: `$${sell.symbol} Price`
+      yLabel: `$${sell.symbol} Price`,
     };
   }, [pool, response, balances]);
 
