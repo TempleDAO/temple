@@ -33,7 +33,7 @@ export default function useRefreshableTreasuryMetrics() {
 
       const tvl = totalLockedQueryResult?.data?.vaultGroup?.tvlUSD;
       const apr = (dailyEarnings / tvl) * 365 * 100;
-      const apy = ((1 + (apr / 100) / 12) ** 12 - 1) * 100;
+      const apy = ((1 + (apr / 100) / 13) ** 13 - 1) * 100;
 
       return Math.floor(apy);
     } catch (error) {
