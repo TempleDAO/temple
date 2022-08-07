@@ -21,7 +21,14 @@ export class DecimalBigNumber {
    * Create by parsing the floating point string using ethers.utils.parseUnits
    */
   static parseUnits(value: string, decimals: number): DecimalBigNumber {
-    const bnIn = ethers.utils.parseUnits(value, decimals);
+    let [int, safeDecimals] = value.split('.');
+
+    if (safeDecimals && safeDecimals.length > decimals) {
+      safeDecimals = safeDecimals.substring(0, decimals);
+    }
+    
+    const safeValue = decimals ? `${int}.${decimals}` : int;
+    const bnIn = ethers.utils.parseUnits(safeValue, decimals);
     return DecimalBigNumber.fromBN(bnIn, decimals);
   }
 
