@@ -1,8 +1,8 @@
 import env from 'constants/env';
 
 const BALANCER_ERRORS: Record<string, string> = {
-  ['BAL#304']: 'Pool became too unbalanced during swap (BAL#304)',
-  ['BAL#305']: 'Pool became too unbalanced during swap (BAL#305)',
+  ['BAL#304']: 'Pool would became too unbalanced during swap (BAL#304)',
+  ['BAL#305']: 'Pool would become too unbalanced during swap (BAL#305)',
   ['BAL#507']: 'Swap failed user supplied slippage requirements (BAL#507)',
   ['BAL#508']: 'Swap transaction failed to complete within the specified deadline (BAL#508)',
 };

@@ -27,7 +27,7 @@ export class DecimalBigNumber {
       safeDecimals = safeDecimals.substring(0, decimals);
     }
     
-    const safeValue = decimals ? `${int}.${decimals}` : int;
+    const safeValue = safeDecimals ? `${int}.${safeDecimals}` : int;
     const bnIn = ethers.utils.parseUnits(safeValue, decimals);
     return DecimalBigNumber.fromBN(bnIn, decimals);
   }
