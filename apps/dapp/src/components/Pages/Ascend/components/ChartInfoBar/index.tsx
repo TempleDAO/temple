@@ -24,13 +24,13 @@ export const ChartInfoBar = ({ pool }: Props) => {
         <InfoLabel>
           Start Date
         </InfoLabel>
-        <span>{format(lastUpdate.startTimestamp, 'LLL do')}</span>
+        <span>{format(lastUpdate.startTimestamp, 'LLL do K:mm aa')}</span>
       </InfoItem>
       <InfoItem>
         <InfoLabel>
           End Date
         </InfoLabel>
-        <span>{format(lastUpdate.endTimestamp, 'LLL do')}</span>
+        <span>{format(lastUpdate.endTimestamp, 'LLL do K:mm aa')}</span>
       </InfoItem>
       <InfoItem>
         <InfoLabel>

@@ -1,10 +1,10 @@
 import env from 'constants/env';
 
 const BALANCER_ERRORS: Record<string, string> = {
-  ['BAL#304']: 'Token in unbalanced the pool too much on a swap',
-  ['BAL#305']: 'Token out unbalanced the pool too much on a swap',
-  ['BAL#507']: 'Swap violates user-supplied limits (min out or max in)',
-  ['BAL#508']: 'Swap transaction not mined within the specified deadline',
+  ['BAL#304']: 'Pool became too unbalanced during swap (BAL#304)',
+  ['BAL#305']: 'Pool became too unbalanced during swap (BAL#305)',
+  ['BAL#507']: 'Swap failed user supplied slippage requirements (BAL#507)',
+  ['BAL#508']: 'Swap transaction failed to complete within the specified deadline (BAL#508)',
 };
 
 const BAL_ERROR_REGEXP = /BAL#3[0-9]{2}/g;
@@ -28,7 +28,7 @@ export const getBalancerErrorMessage = (errorMessage: string) => {
   const predefinedMessage = BALANCER_ERRORS[maybeBALCode];
   if (!predefinedMessage) {
     console.error('Missing error message for Balancer error ', maybeBALCode);
-    return GENERIC_BALANCER_ERROR;
+    return `${GENERIC_BALANCER_ERROR} (${maybeBALCode})`;
   }
 
   return predefinedMessage;

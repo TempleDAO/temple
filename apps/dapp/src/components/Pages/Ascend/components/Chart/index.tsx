@@ -94,6 +94,7 @@ export const Chart = ({ pool }: Props) => {
 
     const yDomain = points.length > 0 ? [0, ceiling + (ceiling * 0.1)] : null;
     const yLabel = `$${sell.symbol} Price`;
+   
     const legend: DiscreteColorLegendProps['items']  = [{
       title: yLabel,
       color: theme.palette.brand,
