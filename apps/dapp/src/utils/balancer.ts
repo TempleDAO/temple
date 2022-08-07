@@ -3,6 +3,8 @@ import env from 'constants/env';
 const BALANCER_ERRORS: Record<string, string> = {
   ['BAL#304']: 'Token in unbalanced the pool too much on a swap',
   ['BAL#305']: 'Token out unbalanced the pool too much on a swap',
+  ['BAL#507']: 'Swap violates user-supplied limits (min out or max in)',
+  ['BAL#508']: 'Swap transaction not mined within the specified deadline',
 };
 
 const BAL_ERROR_REGEXP = /BAL#3[0-9]{2}/g;
