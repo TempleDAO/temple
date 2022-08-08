@@ -187,7 +187,6 @@ export const Chart = ({ pool }: Props) => {
           tickTotal={4}
           tickFormat={(t) => `$${t}`}
         />
-        <CustomAxisLabel title={yLabel} />
         <LineSeries
           data={data}
           color={theme.palette.brand}

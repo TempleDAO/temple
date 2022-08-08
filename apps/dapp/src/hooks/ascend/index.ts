@@ -179,5 +179,6 @@ export const usePoolTokenValues = (pool: Pool) => {
     isLoading,
     spotPrice,
     formatted: `${formatNumberFixedDecimals(formatBigNumber(spotPrice || ZERO), 4)} $${buy.symbol}`,
+    label: `${sell.symbol} Price`,
   };
 };
