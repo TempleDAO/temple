@@ -1,6 +1,7 @@
-import { BigInt } from '@graphprotocol/graph-ts'
+import { Address, BigInt } from '@graphprotocol/graph-ts'
 
 import { OpsManager } from '../../generated/schema'
+import { OpsManager as OpsManagerContract } from '../../generated/OpsManager/OpsManager'
 
 import { OPS_MANAGER } from '../utils/constants'
 
@@ -13,6 +14,10 @@ export function getOpsManager(): OpsManager {
     opsManager.vaultGroups = []
     opsManager.exposures = []
     opsManager.treasuryFarmingRevenues = []
+
+    const opsManagerContract = OpsManagerContract.bind(Address.fromString(OPS_MANAGER))
+    opsManager.vaultedTemple = opsManagerContract.vaultedTemple().toHexString()
+    opsManager.templeExposure = opsManagerContract.templeExposure().toHexString()
     opsManager.save()
   }
 
