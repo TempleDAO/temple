@@ -22,12 +22,12 @@ export const ChartTradeSection = styled.div`
 
   ${tabletAndAbove(`
     grid-template-columns: 2fr 1fr;
-    grid-column-gap: 0.4375rem;
+    grid-column-gap: 1.25rem;
   `)}
 `;
 
 export const TradeWrapper = styled.div`
-  padding: 28px;
+  padding: 1.75rem;
   display: flex;
   align-items: center;
   justify-content: center;

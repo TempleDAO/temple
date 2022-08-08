@@ -51,7 +51,7 @@ export const Trade = ({ pool }: Props) => {
     if (!state.inputValue || state.inputValue.trim() === '.') {
       return DBN_ZERO;
     }
-    return DecimalBigNumber.parseUnits(state.inputValue, sell.decimals)
+    return DecimalBigNumber.parseUnits(state.inputValue, sell.decimals);
   }, [sell, state.inputValue])
 
   const { receiveEstimate, estimateWithSlippage } = useMemo(() => {

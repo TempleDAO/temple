@@ -11,6 +11,7 @@ import { useTimeRemaining } from 'hooks/ascend';
 import { Trade } from './components/Trade';
 import { AuctionContextProvider } from './components/AuctionContext';
 import { ChartInfoBar } from './components/ChartInfoBar';
+import { PoolComposition } from './components/PoolComposition';
 
 import {
   Description,
@@ -41,6 +42,7 @@ const ActiveAuction = ({ pool }: Props) => {
         </div>
         <Trade pool={pool} />
       </ChartTradeSection>
+      <PoolComposition />
       <SwapHistory pool={pool} />
     </Wrapper>
   );
@@ -113,4 +115,8 @@ export const AscendPage = () => {
 
 const Wrapper = styled.div`
   width: 100%;
+`;
+
+const ChartWrapper = styled.div`
+  margin-bottom: 1rem;
 `;
