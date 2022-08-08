@@ -16,7 +16,7 @@ interface Props {
 
 export const ChartInfoBar = ({ pool }: Props) => {
   const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
-  const { isLoading, formatted } = usePoolTokenValues(pool);
+  const { isLoading, formatted, label } = usePoolTokenValues(pool);
 
   return (
     <InfoBar>
@@ -24,13 +24,13 @@ export const ChartInfoBar = ({ pool }: Props) => {
         <InfoLabel>
           Start Date
         </InfoLabel>
-        <span>{format(lastUpdate.startTimestamp, 'LLL do')}</span>
+        <span>{format(lastUpdate.startTimestamp, 'LLL do K:mm aa')}</span>
       </InfoItem>
       <InfoItem>
         <InfoLabel>
           End Date
         </InfoLabel>
-        <span>{format(lastUpdate.endTimestamp, 'LLL do')}</span>
+        <span>{format(lastUpdate.endTimestamp, 'LLL do K:mm aa')}</span>
       </InfoItem>
       <InfoItem>
         <InfoLabel>
@@ -40,7 +40,7 @@ export const ChartInfoBar = ({ pool }: Props) => {
       </InfoItem>
       <InfoItem>
         <InfoLabel>
-          Current Price
+          {label}
         </InfoLabel>
         <span>{isLoading ? <CircularLoader /> : formatted}</span>
       </InfoItem>
