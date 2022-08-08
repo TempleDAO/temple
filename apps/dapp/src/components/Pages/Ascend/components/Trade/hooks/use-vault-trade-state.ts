@@ -253,7 +253,8 @@ export const useVaultTradeState = (pool: Pool) => {
       });
 
     } catch (err) {
-      dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error: (err as Error).message } });
+      const error = getBalancerErrorMessage((err as Error).message);
+      dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error }});
     }
   };
 

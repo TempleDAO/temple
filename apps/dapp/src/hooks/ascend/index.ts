@@ -14,6 +14,7 @@ import { useAuctionContext } from 'components/Pages/Ascend/components/AuctionCon
 import { formatBigNumber } from 'components/Vault/utils';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { ZERO } from 'utils/bigNumber';
+import { sortAndGroupLBPTokens } from 'utils/balancer';
 
 export const useTimeRemaining = (pool?: Pool) => {
   const [time, setTime] = useState(getRemainingTime(pool));
@@ -124,7 +125,6 @@ export const useTemplePool = (poolAddress = '') => {
 
 export const usePoolTokenValues = (pool: Pool) => {
   const {
-    swapState: { sell, buy },
     balances,
     weights,
     vaultAddress,
@@ -142,33 +142,43 @@ export const usePoolTokenValues = (pool: Pool) => {
     enabled: !!vaultAddress,
   });
 
-  const indexOfSell = sell.tokenIndex;
-  const indexOfBuy = buy.tokenIndex;
+  const { initialBuySell: { sell, buy }} = sortAndGroupLBPTokens(pool.tokens);
 
   useEffect(() => {
     if (!swapData) {
       return;
     }
 
+
     const [swapFee] = swapData;
     if (!swapFee || !balances || !weights) {
       return;
     }
 
+    const balanceSell = balances[sell.address];
+    const weightSell = weights[sell.address];
+    const balanceBuy = balances[buy.address];
+    const weightBuy = weights[buy.address];
+
+    if (!balanceBuy || !balanceSell || !weightSell || !weightBuy) {
+      return;
+    }
+
     setSpotPrice(
       getSpotPrice(
-        balances[sell.address],
-        balances[buy.address],
-        weights[sell.address],
-        weights[buy.address],
+        balanceBuy,
+        balanceSell,
+        weightBuy,
+        weightSell,
         swapFee as any
       )
     );
-  }, [balances, weights, swapData, indexOfBuy, indexOfSell]);
+  }, [balances, weights, swapData, pool]);
 
   return {
     isLoading,
     spotPrice,
-    formatted: `${formatNumberFixedDecimals(formatBigNumber(spotPrice || ZERO), 4)} $${sell.symbol}`,
+    formatted: `${formatNumberFixedDecimals(formatBigNumber(spotPrice || ZERO), 4)} $${buy.symbol}`,
+    label: `${sell.symbol} Price`,
   };
 };
