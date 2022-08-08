@@ -7,9 +7,9 @@ import { getMetric, updateMetric } from './metric'
 import { getOrCreateUser, updateUser } from './user'
 import { getOrCreateToken } from './token'
 import { toDecimal } from '../utils/decimals'
-import { getVault, updateVault } from './vault'
+import { getVault, saveVault } from './vault'
 import { getOrCreateVaultUserBalance, updateVaultUserBalance } from './vaultUserBalance'
-import { getVaultGroup, updateVaultGroup } from './vaultGroup'
+import { getVaultGroup, saveVaultGroup } from './vaultGroup'
 import { BIG_DECIMAL_0, BIG_INT_1, TEMPLE_ADDRESS } from '../utils/constants'
 import { getTemplePrice } from '../utils/prices'
 
@@ -44,22 +44,22 @@ export function createDeposit(event: DepositEvent): Deposit {
   updateVaultUserBalance(vub, timestamp)
 
   vault.tvl = vault.tvl.plus(staked)
-  vault.tvlUSD = vault.tvlUSD.plus(staked.times(tokenPrice))
+  vault.tvlUSD = vault.tvl.times(tokenPrice).plus(staked.times(tokenPrice))
   if (oldStaked == BIG_DECIMAL_0) {
     vault.userCount = vault.userCount.plus(BIG_INT_1)
   }
-  updateVault(vault, timestamp)
+  saveVault(vault, timestamp)
 
   const vaultGroup = getVaultGroup(vault.name)
   vaultGroup.tvl = vaultGroup.tvl.plus(staked)
-  vaultGroup.tvlUSD = vaultGroup.tvlUSD.plus(staked.times(tokenPrice))
+  vaultGroup.tvlUSD = vaultGroup.tvl.times(tokenPrice).plus(staked.times(tokenPrice))
   vaultGroup.volume = vaultGroup.volume.plus(amount)
   vaultGroup.volumeUSD = vaultGroup.volumeUSD.plus(amount.times(tokenPrice))
-  updateVaultGroup(vaultGroup, timestamp)
+  saveVaultGroup(vaultGroup, timestamp)
 
   const metric = getMetric()
-  metric.tvl = metric.tvl.plus(staked)
-  metric.tvlUSD = metric.tvlUSD.plus(staked.times(tokenPrice))
+  metric.tvl = vaultGroup.tvl
+  metric.tvlUSD = vaultGroup.tvlUSD
   metric.volume = metric.volume.plus(amount)
   metric.volumeUSD = metric.volumeUSD.plus(amount.times(tokenPrice))
   updateMetric(metric, timestamp)

@@ -1,11 +1,13 @@
-import { BigInt } from '@graphprotocol/graph-ts'
+import { Address, BigInt } from '@graphprotocol/graph-ts'
 
-import { VaultGroup, VaultGroupDayData } from '../../generated/schema'
+import { VaultGroup, VaultGroupDayData, VaultGroupHourData } from '../../generated/schema'
+import { Exposure as ExposureContract } from '../../generated/OpsManager/Exposure'
 
 import { getMetric, updateMetric } from './metric'
 import { getOpsManager, updateOpsManager } from './opsManager'
-import { dayFromTimestamp } from '../utils/dates'
+import { dayFromTimestamp, hourFromTimestamp } from '../utils/dates'
 import { BIG_INT_1 } from '../utils/constants'
+import { toDecimal } from '../utils/decimals'
 
 
 export function createVaultGroup(groupID: string, timestamp: BigInt): VaultGroup {
@@ -40,6 +42,8 @@ export function getOrCreateVaultGroup(groupID: string, timestamp: BigInt): Vault
 export function getVaultGroup(groupID: string): VaultGroup {
   const vaultGroup = VaultGroup.load(groupID)
 
+  updateVaultGroup(vaultGroup as VaultGroup)
+
   return vaultGroup as VaultGroup
 }
 
@@ -53,23 +57,38 @@ export function getVaultGroups(): string[] {
 export function updateVaultGroups(vaultGroups: string[], timestamp: BigInt): void {
   for (let i = 0; i < vaultGroups.length; i++) {
     const vaultGroup = VaultGroup.load(vaultGroups[i]) as VaultGroup
-    updateVaultGroup(vaultGroup, timestamp)
+    saveVaultGroup(vaultGroup, timestamp)
   }
 }
 
-export function updateVaultGroup(vaultGroup: VaultGroup, timestamp: BigInt): void {
+export function updateVaultGroup(vaultGroup: VaultGroup): void {
+  const templeExposure = Address.fromString(getOpsManager().templeExposure)
+  const exposure = ExposureContract.bind(templeExposure)
+
+  const p = exposure.amountPerShare().value0.toBigDecimal()
+  const q = exposure.amountPerShare().value1.toBigDecimal()
+  const amountPerShare = p.div(q)
+
+  vaultGroup.tvl = toDecimal(exposure.totalShares(), 18).times(amountPerShare)
+
+  vaultGroup.save()
+}
+
+export function saveVaultGroup(vaultGroup: VaultGroup, timestamp: BigInt): void {
   vaultGroup.timestamp = timestamp
   vaultGroup.save()
 
   updateOrCreateDayData(vaultGroup, timestamp)
+  updateOrCreateHourData(vaultGroup, timestamp)
 }
 
 export function updateOrCreateDayData(vaultGroup: VaultGroup, timestamp: BigInt): void {
   const dayTimestamp = dayFromTimestamp(timestamp);
+  const dayDataID = dayTimestamp + vaultGroup.id;
 
-  let dayData = VaultGroupDayData.load(dayTimestamp)
+  let dayData = VaultGroupDayData.load(dayDataID)
   if (dayData === null) {
-    dayData = new VaultGroupDayData(dayTimestamp)
+    dayData = new VaultGroupDayData(dayDataID)
   }
 
   dayData.timestamp = timestamp
@@ -80,4 +99,23 @@ export function updateOrCreateDayData(vaultGroup: VaultGroup, timestamp: BigInt)
   dayData.volumeUSD = vaultGroup.volumeUSD
   dayData.opsManager = vaultGroup.opsManager
   dayData.save()
+}
+
+export function updateOrCreateHourData(vaultGroup: VaultGroup, timestamp: BigInt): void {
+  const hourTimestamp = hourFromTimestamp(timestamp);
+  const hourDataID = hourTimestamp + vaultGroup.id;
+
+  let hourData = VaultGroupHourData.load(hourDataID)
+  if (hourData === null) {
+    hourData = new VaultGroupHourData(hourDataID)
+  }
+
+  hourData.timestamp = timestamp
+  hourData.vaultGroup = vaultGroup.id
+  hourData.tvl = vaultGroup.tvl
+  hourData.tvlUSD = vaultGroup.tvlUSD
+  hourData.volume = vaultGroup.volume
+  hourData.volumeUSD = vaultGroup.volumeUSD
+  hourData.opsManager = vaultGroup.opsManager
+  hourData.save()
 }
