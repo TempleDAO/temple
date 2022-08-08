@@ -1,4 +1,4 @@
-import { useEffect, useMemo, PureComponent} from 'react';
+import { useEffect, useMemo, PureComponent, ComponentProps } from 'react';
 import { format } from 'date-fns';
 import styled from 'styled-components';
 import {
@@ -12,6 +12,7 @@ import {
   ChartLabel,
   LineMarkSeries,
   DiscreteColorLegend,
+  DiscreteColorLegendProps,
 } from 'react-vis';
 import { curveCatmullRom } from 'd3-shape';
 
@@ -34,7 +35,7 @@ export const Chart = ({ pool }: Props) => {
   const { balances } = useAuctionContext();
   const [request, { response, isLoading }] = useLatestPriceData(pool);
 
-  const { data, yDomain, xDomain, predicted, yLabel } = useMemo(() => {
+  const { data, yDomain, xDomain, predicted, yLabel, legend } = useMemo(() => {
     const {joinExits, ...data} = (response?.data || {})
     const { initialBuySell: { sell, buy } } = sortAndGroupLBPTokens(pool.tokens);
 
@@ -61,27 +62,29 @@ export const Chart = ({ pool }: Props) => {
     if (balances && points.length > 0) {
       try {
         const lastPoint = points[points.length - 1];
-       
-        const spotPriceEstimate = getSpotPrice(
-          balances[buy.address]!,
-          balances[sell.address]!,
-          lastUpdate.endWeights[buy.tokenIndex],
-          lastUpdate.endWeights[sell.tokenIndex],
-          pool.swapFee
-        );
-
-        if (spotPriceEstimate) {
-          predicted.push(lastPoint);
-
-          const predictedY = formatNumberFixedDecimals(formatBigNumber(spotPriceEstimate), 4);
-          if (predictedY > ceiling) {
-            ceiling = predictedY;
+        // only add predicated values if the predicted date is in the future.
+        if (lastUpdate.endTimestamp.getTime() > Date.now()) {
+          const spotPriceEstimate = getSpotPrice(
+            balances[buy.address]!,
+            balances[sell.address]!,
+            lastUpdate.endWeights[buy.tokenIndex],
+            lastUpdate.endWeights[sell.tokenIndex],
+            pool.swapFee
+          );
+  
+          if (spotPriceEstimate) {
+            predicted.push(lastPoint);
+  
+            const predictedY = formatNumberFixedDecimals(formatBigNumber(spotPriceEstimate), 4);
+            if (predictedY > ceiling) {
+              ceiling = predictedY;
+            }
+  
+            predicted.push({
+              y: predictedY,
+              x: lastUpdateEnd,
+            });
           }
-
-          predicted.push({
-            y: predictedY,
-            x: lastUpdateEnd,
-          });
         }
       } catch (err) {
         // intentionally empty
@@ -90,13 +93,28 @@ export const Chart = ({ pool }: Props) => {
     }
 
     const yDomain = points.length > 0 ? [0, ceiling + (ceiling * 0.1)] : null;
-    
+    const yLabel = `$${sell.symbol} Price`;
+   
+    const legend: DiscreteColorLegendProps['items']  = [{
+      title: yLabel,
+      color: theme.palette.brand,
+    }];
+
+    if (predicted.length > 0) {
+      legend.push({
+        title: 'Projected Price',
+        color: theme.palette.brandLight,
+        strokeStyle: 'dashed',
+      });
+    }
+
     return {
       data: points,
       predicted,
       yDomain,
       xDomain,
-      yLabel: `$${sell.symbol} Price`,
+      yLabel,
+      legend,
     };
   }, [pool, response, balances]);
 
@@ -169,7 +187,6 @@ export const Chart = ({ pool }: Props) => {
           tickTotal={4}
           tickFormat={(t) => `$${t}`}
         />
-        <CustomAxisLabel title={yLabel} />
         <LineSeries
           data={data}
           color={theme.palette.brand}
@@ -204,16 +221,7 @@ export const Chart = ({ pool }: Props) => {
       </FlexibleXYPlot>
       <DiscreteColorLegend
         orientation="horizontal"
-        items={[
-          {
-            title: yLabel,
-            color: theme.palette.brand,
-          }, {
-            title: 'Projected Price',
-            color: theme.palette.brandLight,
-            strokeStyle: 'dashed',
-          }
-        ]}
+        items={legend}
       />
     </ChartWrapper>
   );
