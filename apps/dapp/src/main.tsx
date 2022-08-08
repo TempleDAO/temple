@@ -69,8 +69,7 @@ if (env.sentry) {
   });
 }
 
-const { init } = AnalyticsService;
-init();
+AnalyticsService.init();
 
 ReactDOM.render(
   <React.StrictMode>
