@@ -20,9 +20,16 @@ export class DecimalBigNumber {
   /**
    * Create by parsing the floating point string using ethers.utils.parseUnits
    */
-  static parseUnits(value: string, decimals: number): DecimalBigNumber {
-    const bnIn = ethers.utils.parseUnits(value, decimals);
-    return DecimalBigNumber.fromBN(bnIn, decimals);
+  static parseUnits(value: string, totalDecimals: number): DecimalBigNumber {
+    let [int, safeDecimals] = value.split('.');
+
+    if (safeDecimals && safeDecimals.length > totalDecimals) {
+      safeDecimals = safeDecimals.substring(0, totalDecimals);
+    }
+    
+    const safeValue = safeDecimals ? `${int}.${safeDecimals}` : int;
+    const bnIn = ethers.utils.parseUnits(safeValue, totalDecimals);
+    return DecimalBigNumber.fromBN(bnIn, totalDecimals);
   }
 
   /**
