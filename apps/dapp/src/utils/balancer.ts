@@ -54,9 +54,7 @@ export const sortAndGroupLBPTokens = <T extends { address: string }>(tokens: T[]
   return {
     tokenMap,
     sortedTokens,
-    initialBuySell: {
-      sell: sell!,
-      buy: buy!,
-    },
+    accrued: sell!,
+    base: buy!,
   };
 };

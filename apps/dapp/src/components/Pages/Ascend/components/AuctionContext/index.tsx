@@ -17,9 +17,15 @@ import env from 'constants/env';
 type TokenMap<T> = { [tokenAddress: string]: T };
 
 interface AuctionContext {
+  // That Temple wants/user is selling
+  accrued: AuctionToken;
+  // The token Temple is distributing.
+  base: AuctionToken;
+
   swapState: {
-    buy: AuctionToken;
+    // User selling (accrued by default)
     sell: AuctionToken;
+    buy: AuctionToken;
   };
 
   toggleTokenPair: () => void;
@@ -33,22 +39,29 @@ interface AuctionContext {
   userBalances: TokenMap<DecimalBigNumber>;
 }
 
+const DEFAULT_SELL = {
+  name: '',
+  symbol: '',
+  address: '',
+  decimals: 0,
+  tokenIndex: 1,
+};
+
+const DEFAULT_BUY = {
+  name: '',
+  symbol: '',
+  address: '',
+  decimals: 0,
+  tokenIndex: 0, 
+};
+
 const AuctionContext = createContext<AuctionContext>({
+  accrued: DEFAULT_SELL,
+  base: DEFAULT_BUY,
+
   swapState: {
-    buy: {
-      name: '',
-      symbol: '',
-      address: '',
-      decimals: 0,
-      tokenIndex: 0,
-    },
-    sell: {
-      name: '',
-      symbol: '',
-      address: '',
-      decimals: 0,
-      tokenIndex: 1,
-    },
+    sell: DEFAULT_SELL,
+    buy: DEFAULT_BUY,
   },
 
   userBalances: {},
@@ -74,11 +87,11 @@ interface Props {
 
 export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
   const { wallet } = useWallet();
-  const { initialBuySell } = sortAndGroupLBPTokens(pool.tokens);
+  const { accrued, base } = sortAndGroupLBPTokens(pool.tokens);
 
   const [swapState, setSwapState] = useState<AuctionContext['swapState']>({
-    sell: initialBuySell.sell,
-    buy: initialBuySell.buy,
+    sell: accrued,
+    buy: base,
   });
 
   const { data: poolData } = useContractReads({
@@ -160,6 +173,9 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
   return (
     <AuctionContext.Provider
       value={{
+        accrued,
+        base,
+
         swapState,
 
         userBalances: {

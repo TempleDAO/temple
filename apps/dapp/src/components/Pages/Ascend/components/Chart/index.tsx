@@ -23,7 +23,6 @@ import Loader from 'components/Loader/Loader';
 import { theme } from 'styles/theme';
 import { getSpotPrice } from '../../utils';
 import { useAuctionContext } from '../AuctionContext';
-import { sortAndGroupLBPTokens } from 'utils/balancer';
 
 import { useCrosshairs, useLatestPriceData, Point } from './hooks';
 
@@ -32,12 +31,11 @@ interface Props {
 }
 
 export const Chart = ({ pool }: Props) => {
-  const { balances } = useAuctionContext();
+  const { balances, accrued, base } = useAuctionContext();
   const [request, { response, isLoading }] = useLatestPriceData(pool);
 
-  const { data, yDomain, xDomain, predicted, yLabel, legend } = useMemo(() => {
+  const { data, yDomain, xDomain, predicted, legend } = useMemo(() => {
     const {joinExits, ...data} = (response?.data || {})
-    const { initialBuySell: { sell, buy } } = sortAndGroupLBPTokens(pool.tokens);
 
     const points = Object.values(data)
       .filter((value) => value.length > 0)
@@ -65,10 +63,10 @@ export const Chart = ({ pool }: Props) => {
         // only add predicated values if the predicted date is in the future.
         if (lastUpdate.endTimestamp.getTime() > Date.now()) {
           const spotPriceEstimate = getSpotPrice(
-            balances[buy.address]!,
-            balances[sell.address]!,
-            lastUpdate.endWeights[buy.tokenIndex],
-            lastUpdate.endWeights[sell.tokenIndex],
+            balances[base.address]!,
+            balances[accrued.address]!,
+            lastUpdate.endWeights[base.tokenIndex],
+            lastUpdate.endWeights[accrued.tokenIndex],
             pool.swapFee
           );
   
@@ -93,7 +91,7 @@ export const Chart = ({ pool }: Props) => {
     }
 
     const yDomain = points.length > 0 ? [0, ceiling + (ceiling * 0.1)] : null;
-    const yLabel = `$${sell.symbol} Price`;
+    const yLabel = `$${accrued.symbol} Price`;
    
     const legend: DiscreteColorLegendProps['items']  = [{
       title: yLabel,
