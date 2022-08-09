@@ -25,14 +25,6 @@ export const formatMillions = (n: number | string): string => {
   return `${Number(n / million).toFixed(2)}M`;
 };
 
-export const truncateDecimals = (n: number | string, maxDecimals = 18): string => {
-  let [int, decimals] = n.toString().split('.');
-  if (decimals && decimals.length > 0) {
-    decimals = decimals.slice(0, maxDecimals);
-  }
-  return decimals ? `${int}.${decimals}` : int;
-};
-
 export const allocationToIncense = (allocation: number): number => {
   return formatNumberFixedDecimals(allocation / 1000, 0);
 };

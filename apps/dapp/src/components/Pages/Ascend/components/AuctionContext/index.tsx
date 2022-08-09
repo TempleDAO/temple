@@ -120,7 +120,7 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
       functionName: 'getPoolTokens',
       args: [pool.id],
     }],
-    enabled: !!vaultAddress
+    enabled: !!vaultAddress,
   });
 
   const [vaultTokens] = vaultData || [];
