@@ -1,10 +1,7 @@
 import { useEffect, useReducer } from 'react';
-import { BigNumber, FixedNumber } from 'ethers';
 
 import { Pool } from 'components/Layouts/Ascend/types';
-import { ZERO } from 'utils/bigNumber';
-import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
-import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { Nullable } from 'types/util';
 import { useNotification } from 'providers/NotificationProvider';
 
@@ -57,14 +54,15 @@ interface TradeState {
 }
 
 const shouldUpdateQuoteState = (state: TradeState, actionPayload: TokenValue) => {
-  const { value, token } = actionPayload;
+  const { value: incomingDbnValue, token: incomingToken } = actionPayload;
+  const { request: currentRequest } = state.quote;
   // Safe guard against race conditions for wrong query
   // There is a request pending for another token
-  if (state.quote.request?.token !== token) {
+  if (currentRequest?.token !== incomingToken) {
     return false;
   }
   // values should match as well
-  if (state.quote.request.value && !value.value.eq(state.quote.request.value.value)) {
+  if (currentRequest.value && !incomingDbnValue.value.eq(currentRequest.value.value)) {
     return false;
   }
 

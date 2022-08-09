@@ -1,7 +1,6 @@
 import { BigNumber } from 'ethers';
 
 import { DecimalBigNumber, DBN_ONE_HUNDRED } from 'utils/DecimalBigNumber';
-import { formatBigNumber } from 'components/Vault/utils';
 import { Nullable } from 'types/util';
 
 export const getSwapLimit = (quote: Nullable<DecimalBigNumber>, slippageTolerance: number): Nullable<DecimalBigNumber> => {
