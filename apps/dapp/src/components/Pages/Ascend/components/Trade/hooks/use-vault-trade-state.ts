@@ -1,10 +1,7 @@
 import { useEffect, useReducer } from 'react';
-import { BigNumber, FixedNumber } from 'ethers';
 
 import { Pool } from 'components/Layouts/Ascend/types';
-import { ZERO } from 'utils/bigNumber';
-import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
-import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { Nullable } from 'types/util';
 import { useNotification } from 'providers/NotificationProvider';
 
@@ -26,12 +23,12 @@ enum ActionType {
   SetSwapQuoteSuccess,
 };
 
-type TokenValue = { token: string; value: BigNumber };
+type TokenValue = { token: string; value: DecimalBigNumber };
 
 type Actions = 
   Action<ActionType.SetSellValue, string> |
   Action<ActionType.SetSwapQuoteStart, TokenValue> |
-  Action<ActionType.SetSwapQuoteSuccess, TokenValue & { quote: BigNumber }> |
+  Action<ActionType.SetSwapQuoteSuccess, TokenValue & { quote: DecimalBigNumber }> |
   Action<ActionType.SetSwapQuoteError, TokenValue & { error: string }> |
   Action<ActionType.SetTransactionSettings, TradeState['transactionSettings']> |
   Action<ActionType.ResetQuoteState, null> |
@@ -41,9 +38,9 @@ interface TradeState {
   inputValue: string;
   quote: {
     isLoading: boolean;
-    request: Nullable<{ token: string; value: BigNumber }>;
-    estimate: Nullable<BigNumber>;
-    estimateWithSlippage: Nullable<BigNumber>;
+    request: Nullable<{ token: string; value: DecimalBigNumber }>;
+    estimate: Nullable<DecimalBigNumber>;
+    estimateWithSlippage: Nullable<DecimalBigNumber>;
     error: Nullable<string>;
   };
   swap: {
@@ -57,14 +54,15 @@ interface TradeState {
 }
 
 const shouldUpdateQuoteState = (state: TradeState, actionPayload: TokenValue) => {
-  const { value, token } = actionPayload;
+  const { value: incomingDbnValue, token: incomingToken } = actionPayload;
+  const { request: currentRequest } = state.quote;
   // Safe guard against race conditions for wrong query
   // There is a request pending for another token
-  if (state.quote.request?.token !== token) {
+  if (currentRequest?.token !== incomingToken) {
     return false;
   }
   // values should match as well
-  if (state.quote.request.value && !value.eq(state.quote.request.value)) {
+  if (currentRequest.value && !incomingDbnValue.value.eq(currentRequest.value.value)) {
     return false;
   }
 
@@ -194,8 +192,8 @@ export const useVaultTradeState = (pool: Pool) => {
     dispatch({ type: ActionType.ResetQuoteState, payload: null });
   }, [sellTokenAddress, dispatch]);
 
-  const getSwapQuote = async (value: BigNumber) => {
-    if (value.eq(ZERO)) {
+  const getSwapQuote = async (value: DecimalBigNumber) => {
+    if (value.isZero()) {
       dispatch({ type: ActionType.ResetQuoteState, payload: null });
       return;
     }
@@ -205,7 +203,7 @@ export const useVaultTradeState = (pool: Pool) => {
 
     try {
       const quotes = await vaultContract.getSwapQuote(value, token, buy.address);
-      const quote = quotes[buy.tokenIndex].abs();
+      const quote = DecimalBigNumber.fromBN(quotes[buy.tokenIndex].abs(), value.getDecimals());
      
       dispatch({
         type: ActionType.SetSwapQuoteSuccess,
@@ -238,7 +236,7 @@ export const useVaultTradeState = (pool: Pool) => {
         amount,
         sell.address,
         buy.address,
-        state.quote.estimateWithSlippage!,
+        state.quote.estimateWithSlippage!.value,
         deadline,
       );
 
@@ -251,7 +249,6 @@ export const useVaultTradeState = (pool: Pool) => {
         title: 'Swap success',
         hash: transaction.hash,
       });
-
     } catch (err) {
       const error = getBalancerErrorMessage((err as Error).message);
       dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error }});
@@ -268,8 +265,8 @@ export const useVaultTradeState = (pool: Pool) => {
         return;
       }
 
-      const bn = DecimalBigNumber.parseUnits(value || '0', sell.decimals);
-      getSwapQuote(bn.toBN(bn.getDecimals()));
+      const dbn = DecimalBigNumber.parseUnits(value || '0', sell.decimals);
+      getSwapQuote(dbn);
     },
     setTransactionSettings: (settings: TradeState['transactionSettings']) => {
       dispatch({ type: ActionType.SetTransactionSettings, payload: settings });

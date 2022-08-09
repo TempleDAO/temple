@@ -184,7 +184,7 @@ export const SwapHistory = ({ pool }: Props) => {
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  border: 1px solid ${({ theme }) => theme.palette.brand};
+  border: 1px solid ${({ theme }) => theme.palette.brand75};
   margin-bottom: 1rem;
 
   th, td {
@@ -200,12 +200,12 @@ const Table = styled.table`
   }
 
   td {
-    border: 1px solid ${({ theme }) => theme.palette.brand};
+    border: 1px solid ${({ theme }) => theme.palette.brand75};
   }
 `;
 
 const THead = styled.thead`
-  background-color: ${({ theme }) => theme.palette.brand};
+  background-color: ${({ theme }) => theme.palette.brand75};
 
   th {
     text-align: left;
