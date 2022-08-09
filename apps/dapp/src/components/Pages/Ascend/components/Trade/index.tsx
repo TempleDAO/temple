@@ -20,7 +20,6 @@ import {
   ReceivedValues,
   SlippageButton,
   SwapButton,
-  Arrow,
   ErrorMessage,
 } from './styles';
 
@@ -117,9 +116,7 @@ export const Trade = ({ pool }: Props) => {
           onClick={() => toggleTokenPair()}
           aria-label="Toggle Inputs"
           disabled={state.quote.isLoading}
-        >
-          <Arrow />
-        </ToggleButton>
+        />
         <Input
           isNumber
           placeholder="0.00"

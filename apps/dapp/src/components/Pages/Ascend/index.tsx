@@ -116,7 +116,3 @@ export const AscendPage = () => {
 const Wrapper = styled.div`
   width: 100%;
 `;
-
-const ChartWrapper = styled.div`
-  margin-bottom: 1rem;
-`;

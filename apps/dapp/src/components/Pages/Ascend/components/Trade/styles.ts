@@ -68,11 +68,6 @@ export const ToggleButton = styled.button`
   z-index: 50;
 `;
 
-export const Arrow = styled.div`
- 
-
-`;
-
 export const SwapButton = styled.button`
   ${buttonResets}
   ${flexCenter}
