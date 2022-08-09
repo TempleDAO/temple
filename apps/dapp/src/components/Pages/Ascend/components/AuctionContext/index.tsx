@@ -108,7 +108,8 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
       contractInterface: balancerPoolAbi,
       functionName: 'getNormalizedWeights',
     }],
-    watch: !!wallet
+    watch: true,
+    enabled: !!wallet,
   });
 
   const [vaultAddress = '', pausedState = [], tokenWeights = []] = poolData || [];
@@ -120,7 +121,7 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
       functionName: 'getPoolTokens',
       args: [pool.id],
     }],
-    enabled: !!vaultAddress,
+    enabled: !!vaultAddress && !!wallet,
   });
 
   const [vaultTokens] = vaultData || [];
@@ -134,14 +135,14 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
     addressOrName: (wallet || ''),
     token: swapState.sell.address,
     enabled: !!wallet,
-    watch: !wallet,
+    watch: true,
   });
 
   const _buyTokenBalance = useBalance({
     addressOrName: (wallet || ''),
     token: swapState.buy.address,
     enabled: !!wallet,
-    watch: !!wallet,
+    watch: true,
   });
 
   const sellTokenBalance = _sellTokenBalance.data
@@ -174,8 +175,8 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
     if (!wallet) {
       // Fallback on pool data if disconnected
       return {
-        [accrued.address]: DecimalBigNumber.fromBN(accrued.balance || ZERO, 18),
-        [base.address]: DecimalBigNumber.fromBN(base.balance || ZERO, 18),
+        [accrued.address]: DecimalBigNumber.fromBN(accrued.balance || ZERO, accrued.decimals),
+        [base.address]: DecimalBigNumber.fromBN(base.balance || ZERO, base.decimals),
       };
     }
 
