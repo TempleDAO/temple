@@ -7,7 +7,6 @@ import { TransactionSettingsModal } from 'components/TransactionSettingsModal/Tr
 import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
 import { CircularLoader as BaseCircularLoader, CircularLoader } from 'components/Loader/CircularLoader';
 import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
-import { getBalancerErrorMessage } from 'utils/balancer';
 
 import { useVaultTradeState } from './hooks/use-vault-trade-state';
 import { useAuctionContext } from '../AuctionContext';
@@ -51,7 +50,7 @@ export const Trade = ({ pool }: Props) => {
     if (!state.inputValue || state.inputValue.trim() === '.') {
       return DBN_ZERO;
     }
-    return DecimalBigNumber.parseUnits(state.inputValue, sell.decimals)
+    return DecimalBigNumber.parseUnits(state.inputValue, sell.decimals);
   }, [sell, state.inputValue])
 
   const { receiveEstimate, estimateWithSlippage } = useMemo(() => {
@@ -59,12 +58,9 @@ export const Trade = ({ pool }: Props) => {
       return { receiveEstimate: '', estimateWithSlippage: '' };
     }
 
-    const receiveEstimate = DecimalBigNumber.fromBN(state.quote.estimate, buy.decimals);
-    const estimateWithSlippage = DecimalBigNumber.fromBN(state.quote.estimateWithSlippage!, buy.decimals);
-
     return {
-      receiveEstimate: receiveEstimate.formatUnits(),
-      estimateWithSlippage: estimateWithSlippage.formatUnits(),
+      receiveEstimate: state.quote.estimate.formatUnits(),
+      estimateWithSlippage: state.quote.estimateWithSlippage!.formatUnits(),
     };
   }, [state.quote, buy]);
 

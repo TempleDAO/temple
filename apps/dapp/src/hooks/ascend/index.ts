@@ -14,7 +14,6 @@ import { useAuctionContext } from 'components/Pages/Ascend/components/AuctionCon
 import { formatBigNumber } from 'components/Vault/utils';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { ZERO } from 'utils/bigNumber';
-import { sortAndGroupLBPTokens } from 'utils/balancer';
 
 export const useTimeRemaining = (pool?: Pool) => {
   const [time, setTime] = useState(getRemainingTime(pool));
@@ -128,6 +127,8 @@ export const usePoolTokenValues = (pool: Pool) => {
     balances,
     weights,
     vaultAddress,
+    accrued,
+    base,
   } = useAuctionContext();
   const [spotPrice, setSpotPrice] = useState<BigNumber>();
 
@@ -142,8 +143,6 @@ export const usePoolTokenValues = (pool: Pool) => {
     enabled: !!vaultAddress,
   });
 
-  const { initialBuySell: { sell, buy }} = sortAndGroupLBPTokens(pool.tokens);
-
   useEffect(() => {
     if (!swapData) {
       return;
@@ -155,10 +154,10 @@ export const usePoolTokenValues = (pool: Pool) => {
       return;
     }
 
-    const balanceSell = balances[sell.address];
-    const weightSell = weights[sell.address];
-    const balanceBuy = balances[buy.address];
-    const weightBuy = weights[buy.address];
+    const balanceSell = balances[accrued.address];
+    const weightSell = weights[accrued.address];
+    const balanceBuy = balances[base.address];
+    const weightBuy = weights[base.address];
 
     if (!balanceBuy || !balanceSell || !weightSell || !weightBuy) {
       return;
@@ -178,7 +177,7 @@ export const usePoolTokenValues = (pool: Pool) => {
   return {
     isLoading,
     spotPrice,
-    formatted: `${formatNumberFixedDecimals(formatBigNumber(spotPrice || ZERO), 4)} $${buy.symbol}`,
-    label: `${sell.symbol} Price`,
+    formatted: `${formatNumberFixedDecimals(formatBigNumber(spotPrice || ZERO), 4)} $${base.symbol}`,
+    label: `${accrued.symbol} Price`,
   };
 };

@@ -34,7 +34,7 @@ export const ChartInfoBar = ({ pool }: Props) => {
       </InfoItem>
       <InfoItem>
         <InfoLabel>
-          TVL
+          Pool Value
         </InfoLabel>
         <span>{isLoading ? <CircularLoader /> : <>${formatTemple(pool.totalLiquidity)}</>}</span>
       </InfoItem>
