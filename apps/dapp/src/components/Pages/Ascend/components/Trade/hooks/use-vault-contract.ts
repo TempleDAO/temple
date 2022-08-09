@@ -85,7 +85,7 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
     });
   };
 
-  const getSwapQuote = async (amount: BigNumber, sellAssetAddress: string, buyAssetAddress: string) => {
+  const getSwapQuote = async (amount: DecimalBigNumber, sellAssetAddress: string, buyAssetAddress: string) => {
     const assetOutIndex = pool!.tokensList.findIndex((address) => address === buyAssetAddress);
     const assetInIndex = pool!.tokensList.findIndex((address) => address === sellAssetAddress);
 
@@ -95,7 +95,7 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
         poolId: pool!.id,
         assetInIndex,
         assetOutIndex,
-        amount: amount,
+        amount: amount.value,
         userData: '0x',
       }],
       pool!.tokensList,

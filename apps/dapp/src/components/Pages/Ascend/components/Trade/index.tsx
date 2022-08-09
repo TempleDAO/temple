@@ -60,12 +60,12 @@ export const Trade = ({ pool }: Props) => {
       return { receiveEstimate: '', estimateWithSlippage: '' };
     }
 
-    const receiveEstimate = DecimalBigNumber.fromBN(state.quote.estimate, buy.decimals);
-    const estimateWithSlippage = DecimalBigNumber.fromBN(state.quote.estimateWithSlippage!, buy.decimals);
+    // const receiveEstimate = DecimalBigNumber.fromBN(state.quote.estimate, buy.decimals);
+    // const estimateWithSlippage = DecimalBigNumber.fromBN(state.quote.estimateWithSlippage!, buy.decimals);
 
     return {
-      receiveEstimate: receiveEstimate.formatUnits(),
-      estimateWithSlippage: estimateWithSlippage.formatUnits(),
+      receiveEstimate: state.quote.estimate.formatUnits(),
+      estimateWithSlippage: state.quote.estimateWithSlippage!.formatUnits(),
     };
   }, [state.quote, buy]);
 
