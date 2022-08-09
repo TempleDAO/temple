@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 
+import { useWallet } from 'providers/WalletProvider';
 import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { Input } from 'components/Input/Input';
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export const Trade = ({ pool }: Props) => {
+  const { wallet } = useWallet();
   const {
     swapState: { buy, sell },
     toggleTokenPair,
@@ -66,6 +68,15 @@ export const Trade = ({ pool }: Props) => {
 
   const sellBalance = userBalances[sell.address] || DBN_ZERO;
   const buyBalance = userBalances[buy.address] || DBN_ZERO;
+
+  if (!wallet) {
+    return (
+      <Wrapper verticalAlignment="top">
+        <h3>Connect Wallet</h3>
+        <p>Please connect your wallet...</p>
+      </Wrapper>
+    );
+  }
 
   if (!pool.swapEnabled || isPaused) {
     return (
