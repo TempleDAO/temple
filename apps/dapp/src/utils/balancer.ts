@@ -7,7 +7,7 @@ const BALANCER_ERRORS: Record<string, string> = {
   ['BAL#508']: 'Swap transaction failed to complete within the specified deadline (BAL#508)',
 };
 
-const BAL_ERROR_REGEXP = /BAL#3[0-9]{2}/g;
+const BAL_ERROR_REGEXP = /BAL#[0-9]{3}/g;
 
 const GENERIC_BALANCER_ERROR = 'Something went wrong';
 
@@ -48,15 +48,13 @@ export const sortAndGroupLBPTokens = <T extends { address: string }>(tokens: T[]
   }, {});
 
   const maybeTemple = tokenMap[env.tokens.temple.address];
-  const sell = maybeTemple || sortedTokens[0];
-  const buy = maybeTemple ? sortedTokens.find(({ address }) => address !== env.tokens.temple.address) : sortedTokens[1];
+  const accrued = maybeTemple || sortedTokens[0];
+  const base = maybeTemple ? sortedTokens.find(({ address }) => address !== env.tokens.temple.address) : sortedTokens[1];
 
   return {
     tokenMap,
     sortedTokens,
-    initialBuySell: {
-      sell: sell!,
-      buy: buy!,
-    },
+    accrued: accrued!,
+    base: base!,
   };
 };
