@@ -1,6 +1,8 @@
 import styled from 'styled-components';
 
-import { buttonResets, flexCenter } from 'styles/mixins';
+import { backgroundImage, buttonResets, flexCenter } from 'styles/mixins';
+import arrowIcon from 'assets/icons/arrow-icon-no-background.svg';
+import { theme } from 'styles/theme'; 
 
 export const Wrapper = styled.div<{ verticalAlignment?: 'top' | 'center' }>`
   padding: 28px;
@@ -48,9 +50,16 @@ export const SwapControls = styled.div`
 export const ToggleButton = styled.button`
   ${buttonResets}
 
-  background-color: ${({ theme }) => theme.palette.brand};
- 
+  ${backgroundImage(arrowIcon, {
+    color: theme.palette.brand,
+    size: '50%',
+  })}
 
+  &:hover {
+    transform: rotate(180deg);
+  }
+
+  transition: all 150ms;
   width: 1.875rem;
   height: 1.875rem;
   border-radius: 50%;
