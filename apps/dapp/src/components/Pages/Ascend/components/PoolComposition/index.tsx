@@ -17,7 +17,6 @@ export const PoolComposition = () => {
             <th>Token</th>
             <th>Weight</th>
             <th>Balance</th>
-            <th>Value</th>
           </tr>
         </THead>
         <tbody>
@@ -25,13 +24,11 @@ export const PoolComposition = () => {
             <td>{accrued.symbol}</td>
             <td>{formatNumberFixedDecimals((weights[accrued.address] || DBN_ZERO).formatUnits()) * 100}%</td>
             <td>{formatNumberFixedDecimals((balances[accrued.address] || DBN_ZERO).formatUnits(), 4)}</td>
-            <td>-</td>
           </tr>
           <tr>
             <td>{base.symbol}</td>
             <td>{formatNumberFixedDecimals((weights[base.address] || DBN_ZERO).formatUnits()) * 100}%</td>
             <td>{formatNumberFixedDecimals((balances[base.address] || DBN_ZERO).formatUnits(), 4)}</td>
-            <td>-</td>
           </tr>
         </tbody>
       </Wrapper>
