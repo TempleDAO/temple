@@ -17,9 +17,9 @@ import env from 'constants/env';
 type TokenMap<T> = { [tokenAddress: string]: T };
 
 interface AuctionContext {
-  // That Temple wants/user is selling
+  // The token the user is selling by default/Temple is accumulating.
   accrued: AuctionToken;
-  // The token Temple is distributing.
+  // The token Temple is distributing/the token the user is buying.
   base: AuctionToken;
 
   swapState: {
