@@ -108,7 +108,8 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
       contractInterface: balancerPoolAbi,
       functionName: 'getNormalizedWeights',
     }],
-    watch: true
+    watch: true,
+    enabled: !!wallet,
   });
 
   const [vaultAddress = '', pausedState = [], tokenWeights = []] = poolData || [];
@@ -120,7 +121,7 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
       functionName: 'getPoolTokens',
       args: [pool.id],
     }],
-    enabled: !!vaultAddress,
+    enabled: !!vaultAddress && !!wallet,
   });
 
   const [vaultTokens] = vaultData || [];
@@ -152,23 +153,38 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
     : DBN_ZERO;
 
   const weights = useMemo(() => {
-    const { buy, sell } = swapState;
     const weights = tokenWeights || [];
+
+    if (!wallet) {
+      return {
+        [accrued.address]: DecimalBigNumber.fromBN(accrued.weight || ZERO, 18),
+        [base.address]: DecimalBigNumber.fromBN(base.weight || ZERO, 18),
+      };
+    }
+
     return {
-      [buy.address]: DecimalBigNumber.fromBN(weights[buy.tokenIndex] || ZERO, 18),
-      [sell.address]: DecimalBigNumber.fromBN(weights[sell.tokenIndex] || ZERO, 18),
+      [accrued.address]: DecimalBigNumber.fromBN(weights[accrued.tokenIndex] || ZERO, 18),
+      [base.address]: DecimalBigNumber.fromBN(weights[base.tokenIndex] || ZERO, 18),
     };
-  }, [tokenWeights, swapState]);
+  }, [tokenWeights, accrued, base, wallet]);
 
   const poolTokenBalances: BigNumber[] = vaultTokens?.balances || [];
   const balances = useMemo(() => {
-    const { buy, sell } = swapState;
     const balances = poolTokenBalances || [];
+
+    if (!wallet) {
+      // Fallback on pool data if disconnected
+      return {
+        [accrued.address]: DecimalBigNumber.fromBN(accrued.balance || ZERO, accrued.decimals),
+        [base.address]: DecimalBigNumber.fromBN(base.balance || ZERO, base.decimals),
+      };
+    }
+
     return {
-      [buy.address]: DecimalBigNumber.fromBN(balances[buy.tokenIndex] || ZERO, buy.decimals),
-      [sell.address]: DecimalBigNumber.fromBN(balances[sell.tokenIndex] || ZERO, sell.decimals),
+      [accrued.address]: DecimalBigNumber.fromBN(balances[accrued.tokenIndex] || ZERO, accrued.decimals),
+      [base.address]: DecimalBigNumber.fromBN(balances[base.tokenIndex] || ZERO, base.decimals),
     };
-  }, [swapState, poolTokenBalances]);
+  }, [poolTokenBalances, accrued, base, wallet]);
 
   return (
     <AuctionContext.Provider
