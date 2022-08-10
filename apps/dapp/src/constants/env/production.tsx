@@ -42,37 +42,37 @@ const env: Environment = {
   tokens: {
     frax: {
       name: 'Frax',
-      address: '',
+      address: '0x853d955acef822db058eb8505911ed77f175b99e',
       decimals: 18,
     },
     temple: {
       name: 'Temple',
-      address: '',
+      address: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
       decimals: 18,
     },
     ogTemple: {
       name: 'OGTemple',
-      address: '',
+      address: '0x654590f810f01b51dc7b86915d4632977e49ea33',
       decimals: 18,
     },
     fei: {
       name: 'Fei',
-      address: '',
+      address: '0x956f47f50a910163d8bf957cf5846d573e7f87ca',
       decimals: 18,
     },
     eth: {
       name: 'WETH',
-      address: '',
+      address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
       decimals: 18,
     },
     usdc: {
       name: 'USDC',
-      address: '',
+      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
       decimals: 6,
     },
     dai: {
       name: 'Dai',
-      address: '',
+      address: '0x6b175474e89094c44da98b954eedeac495271d0f',
       decimals: 18,
     },
   },
