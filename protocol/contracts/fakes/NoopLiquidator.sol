@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../core/Exposure.sol";
-import "../TempleERC20Token.sol";
+import "../core/TempleERC20Token.sol";
 
 /**
  * @title No-op liquidator to use in tests

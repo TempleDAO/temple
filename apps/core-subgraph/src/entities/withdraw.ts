@@ -7,10 +7,10 @@ import { getMetric, updateMetric } from './metric'
 import { getOrCreateUser, updateUser } from './user'
 import { getOrCreateToken } from './token'
 import { toDecimal } from '../utils/decimals'
-import { getVault, updateVault } from './vault'
+import { getVault, saveVault } from './vault'
 import { getOrCreateVaultUserBalance, updateVaultUserBalance } from './vaultUserBalance'
-import { getVaultGroup, updateVaultGroup } from './vaultGroup'
-import { BIG_DECIMAL_0, BIG_INT_1, TEMPLE_ADDRESS } from '../utils/constants'
+import { getVaultGroup, saveVaultGroup } from './vaultGroup'
+import { BIG_DECIMAL_0, BIG_DECIMAL_MIN_1, BIG_INT_1, TEMPLE_ADDRESS } from '../utils/constants'
 import { getTemplePrice } from '../utils/prices'
 
 
@@ -35,29 +35,36 @@ export function createWithdraw(event: WithdrawEvent): Withdraw {
   updateUser(user, timestamp)
 
   const vub = getOrCreateVaultUserBalance(vault, user, timestamp)
-  vub.staked = vub.staked.minus(amount)
+  const staked = vub.staked.minus(amount)
+  vub.staked = staked
   vub.amount = vub.amount.minus(amount)
   vub.value = vub.value.minus(amount.times(tokenPrice))
   vub.token = token.id
-  updateVaultUserBalance(vub, timestamp)
 
   vault.tvl = vault.tvl.minus(amount)
-  vault.tvlUSD = vault.tvlUSD.minus(amount.times(tokenPrice))
-  if (vub.staked <= BIG_DECIMAL_0) {
+  vault.tvlUSD = vault.tvl.times(tokenPrice).minus(amount.times(tokenPrice))
+  if (staked <= BIG_DECIMAL_0) {
+    const earned = staked.times(BIG_DECIMAL_MIN_1)
+    vub.earned = vub.earned.plus(earned)
+    vub.earnedUSD = vub.earnedUSD.plus(earned.times(tokenPrice))
+    vub.staked = BIG_DECIMAL_0
+    vub.amount = BIG_DECIMAL_0
+    vub.value = BIG_DECIMAL_0
     vault.userCount = vault.userCount.minus(BIG_INT_1)
   }
-  updateVault(vault, timestamp)
+  updateVaultUserBalance(vub, timestamp)
+  saveVault(vault, timestamp)
 
   const vaultGroup = getVaultGroup(vault.name)
   vaultGroup.tvl = vaultGroup.tvl.minus(amount)
-  vaultGroup.tvlUSD = vaultGroup.tvlUSD.minus(amount.times(tokenPrice))
+  vaultGroup.tvlUSD = vaultGroup.tvl.times(tokenPrice).minus(amount.times(tokenPrice))
   vaultGroup.volume = vaultGroup.volume.plus(amount)
   vaultGroup.volumeUSD = vaultGroup.volumeUSD.plus(amount.times(tokenPrice))
-  updateVaultGroup(vaultGroup, timestamp)
+  saveVaultGroup(vaultGroup, timestamp)
 
   const metric = getMetric()
-  metric.tvl = metric.tvl.minus(amount)
-  metric.tvlUSD = metric.tvlUSD.minus(amount.times(tokenPrice))
+  metric.tvl = vaultGroup.tvl
+  metric.tvlUSD = vaultGroup.tvlUSD
   metric.volume = metric.volume.plus(amount)
   metric.volumeUSD = metric.volumeUSD.plus(amount.times(tokenPrice))
   updateMetric(metric, timestamp)

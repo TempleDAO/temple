@@ -1,8 +1,8 @@
 import { useNotification } from 'providers/NotificationProvider';
 import { useConnect } from 'wagmi';
-
 import { Nullable } from 'types/util';
 import useRequestState from './use-request-state';
+import env from 'constants/env';
 
 interface Asset {
   address: string;
@@ -11,10 +11,8 @@ interface Asset {
   symbol: string;
 }
 
-const ENV_VARS = import.meta.env;
-
 export const TEMPLE_ASSET: Asset = {
-  address: ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS,
+  address: env.contracts.temple,
   symbol: 'TEMPLE',
   decimals: 18,
   image: 'https://etherscan.io/token/images/temple_32.png?v=3',
@@ -42,11 +40,10 @@ export const useWatchAsset = (asset: Asset): [Nullable<RequestStateType[0]>, Req
     }
   };
 
-
   const [watchAsset, state] = useRequestState(request);
   if (!canWatchAsset) {
     return [null, state];
   }
-  
+
   return [watchAsset, state];
 };

@@ -43,10 +43,11 @@ export function updateUser(user: User, timestamp: BigInt): void {
 
 export function updateOrCreateDayData(user: User, timestamp: BigInt): void {
   const dayTimestamp = dayFromTimestamp(timestamp);
+  const dayDataID = dayTimestamp + user.id;
 
-  let dayData = UserDayData.load(dayTimestamp)
+  let dayData = UserDayData.load(dayDataID)
   if (dayData === null) {
-    dayData = new UserDayData(dayTimestamp)
+    dayData = new UserDayData(dayDataID)
   }
 
   dayData.user = user.id

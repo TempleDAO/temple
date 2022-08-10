@@ -32,6 +32,8 @@ type MetricDayData @entity {
 type OpsManager @entity {
   id: ID!
   timestamp: BigInt!
+  vaultedTemple: String!
+  templeExposure: String!
   vaultGroups: [VaultGroup!]!
   exposures: [Exposure!]!
   treasuryFarmingRevenues: [TreasuryFarmingRevenue!]!
@@ -66,7 +68,19 @@ type VaultGroup @entity {
   volumeUSD: BigDecimal!
   opsManager: OpsManager!
   vaults: [Vault!]! @derivedFrom(field: "vaultGroup")
+  VaultGroupHourDatas: [VaultGroupHourData!]! @derivedFrom(field: "vaultGroup")
   vaultGroupDayDatas: [VaultGroupDayData!]! @derivedFrom(field: "vaultGroup")
+}
+
+type VaultGroupHourData @entity {
+  id: ID!
+  timestamp: BigInt!
+  vaultGroup: VaultGroup!
+  tvl: BigDecimal!
+  tvlUSD: BigDecimal!
+  volume: BigDecimal!
+  volumeUSD: BigDecimal!
+  opsManager: OpsManager!
 }
 
 type VaultGroupDayData @entity {
@@ -88,6 +102,7 @@ type Vault @entity {
   templeToken: String!
   periodDuration: BigInt!
   enterExitWindowDuration: BigInt!
+  amountPerShare: BigDecimal!
   shareBoostFactor: BigDecimal!
   joiningFee: String!
   firstPeriodStartTimestamp: BigInt!
@@ -96,6 +111,16 @@ type Vault @entity {
   tvlUSD: BigDecimal!
   userCount: BigInt!
   vaultGroup: VaultGroup!
+  VaultDayDatas: [VaultDayData!]! @derivedFrom(field: "vault")
+}
+
+type VaultDayData @entity {
+  id: ID!
+  timestamp: BigInt!
+  tvl: BigDecimal!
+  tvlUSD: BigDecimal!
+  userCount: BigInt!
+  vault: Vault!
 }
 
 type User @entity {
@@ -128,6 +153,8 @@ type VaultUserBalance @entity {
   amount: BigDecimal!
   staked: BigDecimal!
   value: BigDecimal!
+  earned: BigDecimal!
+  earnedUSD: BigDecimal!
 }
 
 type Deposit @entity {

@@ -1,6 +1,4 @@
-//@ts-nocheck
-
-import { ethers, Wallet } from 'ethers';
+import { ethers } from 'ethers';
 import {
   ERC20,
   ERC20__factory,
@@ -8,19 +6,18 @@ import {
   TempleTreasury__factory,
   TempleStaking,
   TempleStaking__factory,
-  LockedOGTemple,
-  LockedOGTemple__factory,
   OGTemple,
   OGTemple__factory,
 } from 'types/typechain';
-import frax3crv_fABI from 'data/abis/frax3crv-f';
-import frax3crv_fRewardsABI from 'data/abis/frax3crv-fRewardPool';
+import frax3crv_fABI from 'data/abis/frax3crv-f.json';
+import frax3crv_fRewardsABI from 'data/abis/frax3crv-fRewardPool.json';
 import { fromAtto } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 import { fetchSubgraph } from 'utils/subgraph';
 import { Nullable } from 'types/util';
-import { isDevelopmentEnv } from 'utils/helpers';
+import { useProvider } from 'wagmi';
 import axios from 'axios';
+import env from 'constants/env';
 
 export interface ProtocolMetrics {
   templeValue: number;
@@ -32,7 +29,7 @@ export interface TreasuryMetrics {
   treasuryValue: number;
   templeApy: number;
   templeValue: number;
-  dynamicVaultApy: number;
+  dynamicVaultApy?: number;
 }
 
 export interface DashboardMetrics {
@@ -44,11 +41,11 @@ export interface DashboardMetrics {
   templeValue: number;
   ogTemplePrice: number;
   ogTempleRatio: number;
+  ogTempleTotalSupply: number;
   iv: number;
   circMCap: number;
   circTempleSupply: number;
   socialMetrics: SocialMetrics;
-  templeRFV: number;
   riskFreeValue: number;
   percentageStaked: number;
 }
@@ -83,9 +80,6 @@ export interface SocialMetrics {
   discord: Nullable<DiscordResponse>;
 }
 
-const ENV_VARS = import.meta.env;
-const BACKEND_URL = ENV_VARS.VITE_BACKEND_URL;
-
 // Temple MintMultiple is fixed tp 6
 const MINT_MULTIPLE = 6.0;
 
@@ -93,129 +87,47 @@ const MINT_MULTIPLE = 6.0;
  * Service to get the Temple Metrics
  */
 export class MetricsService {
-  private readonly signer: Wallet;
+  private provider: ethers.providers.JsonRpcProvider;
   private stableCoinContract: ERC20;
   private templeCoinContract: ERC20;
   private ogTempleCoinContract: OGTemple;
-  //no type since this is a Vyper contract and we have no typechain type def for it atm
   private frax3crv_fCoinContract;
-  //TODO: add this contract to protocol repo and get typechain type def as opposed to ABI
   private frax3crv_fRewardsContract;
   private treasuryContract: TempleTreasury;
   private templeStakingContract: TempleStaking;
-  private lockedOGTempleContract: LockedOGTemple;
-  private readonly treasuryAddress: string;
-  private provider;
+  private treasuryAddress: string;
+  private treasuryAddresses: string[];
   private farmingWalletAddress: string;
 
   constructor() {
-    //TODO: remove comments when we can have CVX contract addresses on rinkeby + locally
-    if (
-      ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK === undefined ||
-      ENV_VARS.VITE_ALCHEMY_API_KEY === undefined ||
-      ENV_VARS.VITE_PUBLIC_TREASURY_ADDRESS === undefined ||
-      ENV_VARS.VITE_SERVER_PRIVATE_KEY === undefined ||
-      ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS === undefined ||
-      ENV_VARS.VITE_BACKEND_URL === undefined /*||
-      ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS === undefined ||
-      ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS*/
-    ) {
-      console.info(`
-      VITE_ALCHEMY_PROVIDER_NETWORK=${ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK}
-      VITE_ALCHEMY_API_KEY=${ENV_VARS.VITE_ALCHEMY_API_KEY}
-      VITE_PUBLIC_TREASURY_ADDRESS=${ENV_VARS.VITE_PUBLIC_TREASURY_ADDRESS}
-      VITE_SERVER_PRIVATE_KEY=${ENV_VARS.VITE_SERVER_PRIVATE_KEY}
-      VITE_PUBLIC_STABLE_COIN_ADDRESS=${ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS}
-      VITE_PUBLIC_TEMPLE_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS}
-      VITE_PUBLIC_TEMPLE_STAKING_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS}
-      VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS=${ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS}
-      VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS}
-      VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS}
-      VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS=${ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS}
-      VITE_PUBLIC_FRAX3CRV_F_ADDRESS=${ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS}
-      VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS=${ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS}
-      VITE_BACKEND_URL=${ENV_VARS.VITE_BACKEND_URL}
-      `);
-      //throw new Error(`Missing env vars in Metrics Service`);
-    }
+    this.provider = useProvider();
 
-    const TEMPLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_ADDRESS;
-    const STABLE_COIN_ADDRESS = ENV_VARS.VITE_PUBLIC_STABLE_COIN_ADDRESS;
-    const ALCHEMY_PROVIDER_NETWORK = ENV_VARS.VITE_ALCHEMY_PROVIDER_NETWORK;
-    const ALCHEMY_API_KEY = ENV_VARS.VITE_ALCHEMY_API_KEY;
-    const TREASURY_ADDRESS = ENV_VARS.VITE_PUBLIC_TREASURY_ADDRESS;
-    const SERVER_PRIVATE_KEY = ENV_VARS.VITE_SERVER_PRIVATE_KEY;
-    const TEMPLE_STAKING_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_STAKING_ADDRESS;
-    const PAIR_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_PAIR_ADDRESS;
-    const ROUTER_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_V2_ROUTER_ADDRESS;
-    const AMM_OPS_ADDRESS = ENV_VARS.VITE_PUBLIC_TEMPLE_AMM_OPS_ADDRESS;
-    const LOCKED_OG_TEMPLE_ADDRESS =
-      ENV_VARS.VITE_PUBLIC_LOCKED_OG_TEMPLE_ADDRESS;
-    const FRAX3CRV_F_ADDRESS = ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_ADDRESS;
-    const FRAX3CRV_F_REWARDS_ADDRESS =
-      ENV_VARS.VITE_PUBLIC_FRAX3CRV_F_REWARDS_ADDRESS;
-    const FARMING_WALLET_ADDRESS = ENV_VARS.VITE_PUBLIC_FARMING_WALLET_ADDRESS;
-    const ENV = ENV_VARS.VITE_ENV;
+    this.stableCoinContract = ERC20__factory.connect(env.contracts.frax, this.provider);
 
-    this.provider =
-      isDevelopmentEnv()
-        ? new ethers.providers.Web3Provider(window.ethereum)
-        : new ethers.providers.AlchemyProvider(
-            ALCHEMY_PROVIDER_NETWORK,
-            ALCHEMY_API_KEY
-          );
-
-    this.signer = new ethers.Wallet(SERVER_PRIVATE_KEY, this.provider);
-
-    this.stableCoinContract = new ERC20__factory(this.signer).attach(
-      STABLE_COIN_ADDRESS
-    );
-
-    this.templeCoinContract = new ERC20__factory(this.signer).attach(
-      TEMPLE_COIN_ADDRESS
-    );
+    this.templeCoinContract = ERC20__factory.connect(env.contracts.temple, this.provider);
 
     this.frax3crv_fCoinContract =
-      FRAX3CRV_F_ADDRESS &&
-      new ethers.Contract(FRAX3CRV_F_ADDRESS, frax3crv_fABI, this.signer);
+      env.contracts.frax3CrvFarming && new ethers.Contract(env.contracts.frax3CrvFarming, frax3crv_fABI, this.provider);
 
     this.frax3crv_fRewardsContract =
-      FRAX3CRV_F_REWARDS_ADDRESS &&
-      new ethers.Contract(
-        FRAX3CRV_F_REWARDS_ADDRESS,
-        frax3crv_fRewardsABI,
-        this.signer
-      );
+      env.contracts.frax3CrvFarmingRewards &&
+      new ethers.Contract(env.contracts.frax3CrvFarmingRewards, frax3crv_fRewardsABI, this.provider);
 
-    this.pairAddress = PAIR_ADDRESS;
-    this.treasuryAddress = TREASURY_ADDRESS;
+    this.treasuryAddress = env.contracts.treasuryIv;
     this.treasuryAddresses = [
-      TREASURY_ADDRESS,
-      AMM_OPS_ADDRESS,
-      ROUTER_ADDRESS,
-      PAIR_ADDRESS,
-      FARMING_WALLET_ADDRESS,
+      env.contracts.treasuryIv,
+      env.contracts.templeV2Router,
+      env.contracts.templeV2FraxPair,
+      env.contracts.farmingWallet,
     ];
 
-    this.farmingWalletAddress = FARMING_WALLET_ADDRESS;
+    this.farmingWalletAddress = env.contracts.farmingWallet;
 
-    this.treasuryContract = new TempleTreasury__factory(this.signer).attach(
-      TREASURY_ADDRESS
-    );
+    this.treasuryContract = TempleTreasury__factory.connect(env.contracts.treasuryIv, this.provider);
 
-    this.templeStakingContract = new TempleStaking__factory(this.signer).attach(
-      TEMPLE_STAKING_ADDRESS
-    );
+    this.templeStakingContract = TempleStaking__factory.connect(env.contracts.templeStaking, this.provider);
 
-    this.lockedOGTempleContract = new LockedOGTemple__factory(
-      this.signer
-    ).attach(LOCKED_OG_TEMPLE_ADDRESS);
+    this.ogTempleCoinContract = OGTemple__factory.connect(env.contracts.ogTemple, this.provider);
   }
 
   /**
@@ -236,33 +148,21 @@ export class MetricsService {
   }
 
   async getDashboardMetrics(): Promise<DashboardMetrics> {
-    this.ogTempleCoinContract = new OGTemple__factory(this.signer).attach(
-      await this.templeStakingContract.OG_TEMPLE()
-    );
+    this.ogTempleCoinContract = new OGTemple__factory().attach(await this.templeStakingContract.OG_TEMPLE());
 
     const treasuryValue = await this.getTreasuryValue();
-    const treasuryTempleValue = fromAtto(
-      await this.templeCoinContract.balanceOf(this.treasuryAddress)
-    );
-    const templeTotalSupply = fromAtto(
-      await this.templeCoinContract.totalSupply()
-    );
-    const ogTempleTotalSupply = fromAtto(
-      await this.ogTempleCoinContract.totalSupply()
-    );
+    const treasuryTempleValue = fromAtto(await this.templeCoinContract.balanceOf(this.treasuryAddress));
+    const templeTotalSupply = fromAtto(await this.templeCoinContract.totalSupply());
+    const ogTempleTotalSupply = fromAtto(await this.ogTempleCoinContract.totalSupply());
 
-    const stakingContractApy = await this.templeStakingContract.getEpy(
-      10000000
-    );
+    const stakingContractApy = await this.templeStakingContract.getEpy(10000000);
 
     const epy = Number(stakingContractApy) / 10000000;
 
-    const { templeValue, circulatingSupply, riskFreeValue } =
-      await this.getProtocolMetrics();
+    const { templeValue, circulatingSupply, riskFreeValue } = await this.getProtocolMetrics();
     const iv = await this.getIV();
 
-    const ogTempleRatio =
-      Number(await this.templeStakingContract.balance(1000)) / 1000;
+    const ogTempleRatio = Number(await this.templeStakingContract.balance(1000)) / 1000;
 
     const socialMetrics = await this.getSocialMetrics();
 
@@ -276,10 +176,9 @@ export class MetricsService {
       templeValue,
       circTempleSupply: circulatingSupply,
       circMCap: circulatingSupply * templeValue,
-      ogTempleTotalSupply,
-      percentageStaked:
-        (ogTempleTotalSupply * ogTempleRatio) / circulatingSupply,
+      percentageStaked: (ogTempleTotalSupply * ogTempleRatio) / circulatingSupply,
       ogTemplePrice: templeValue * ogTempleRatio,
+      ogTempleTotalSupply,
       ogTempleRatio,
       iv,
       riskFreeValue,
@@ -290,50 +189,34 @@ export class MetricsService {
     const { templeValue } = await this.getProtocolMetrics();
     const currentTime = Date.now();
 
-    const templeBalance = fromAtto(
-      await this.templeCoinContract.balanceOf(walletAddress)
-    );
+    const templeBalance = fromAtto(await this.templeCoinContract.balanceOf(walletAddress));
 
-    const ogTempleRatio =
-      Number(await this.templeStakingContract.balance(1000)) / 1000;
+    const ogTempleRatio = Number(await this.templeStakingContract.balance(1000)) / 1000;
 
-    const { stakes, unstakes } = await this.getStakedOGTempleTransactions(
-      walletAddress
-    );
+    const { stakes, unstakes } = await this.getStakedOGTempleTransactions(walletAddress);
 
-    const totalSacrificed = stakes.reduce(
-      (prev, current) => prev + parseFloat(current?.stableAmount),
-      0
-    );
+    const totalSacrificed = stakes.reduce((prev: any, current: any) => prev + parseFloat(current?.stableAmount), 0);
 
     const lockedOGTempleBalance = stakes.reduce(
-      (prev, current) =>
-        prev +
-        (current.lockedUntil * 1000 > currentTime
-          ? parseFloat(current?.ogAmount)
-          : 0),
+      (prev: any, current: any) =>
+        prev + (current.lockedUntil * 1000 > currentTime ? parseFloat(current?.ogAmount) : 0),
       0
     );
 
     const OGTempleBalanceStaked = stakes.reduce(
-      (prev, current) =>
-        prev +
-        (current.lockedUntil * 1000 < currentTime
-          ? parseFloat(current?.ogAmount)
-          : 0),
+      (prev: any, current: any) =>
+        prev + (current.lockedUntil * 1000 < currentTime ? parseFloat(current?.ogAmount) : 0),
       0
     );
 
     const OGTempleBalanceUnstaked = unstakes.reduce(
-      (prev, current) => prev + parseFloat(current?.ogAmount),
+      (prev: any, current: any) => prev + parseFloat(current?.ogAmount),
       0
     );
 
-    const unClaimedOGTempleBalance =
-      OGTempleBalanceStaked - OGTempleBalanceUnstaked;
+    const unClaimedOGTempleBalance = OGTempleBalanceStaked - OGTempleBalanceUnstaked;
 
-    const epy =
-      Number(await this.templeStakingContract.getEpy(10000000)) / 10000000;
+    const epy = Number(await this.templeStakingContract.getEpy(10000000)) / 10000000;
 
     return {
       templeBalance,
@@ -353,9 +236,7 @@ export class MetricsService {
   private getTreasuryValue = async (): Promise<number> => {
     let treasuryValue = 0;
     for (const address of this.treasuryAddresses) {
-      treasuryValue += fromAtto(
-        await this.stableCoinContract.balanceOf(address)
-      );
+      treasuryValue += fromAtto(await this.stableCoinContract.balanceOf(address));
     }
 
     if (this.frax3crv_fCoinContract && this.frax3crv_fRewardsContract) {
@@ -383,11 +264,8 @@ export class MetricsService {
   /**
    * Helper to calculate the APY
    */
-  private getTempleApy = async (epy): number => {
-    if (!epy)
-      epy =
-        (await this.templeStakingContract.getEpy(10000000)).toNumber() /
-        10000000;
+  private getTempleApy = async (epy?: any): Promise<number> => {
+    if (!epy) epy = (await this.templeStakingContract.getEpy(10000000)).toNumber() / 10000000;
     return Math.trunc((Math.pow(epy + 1, 365.25) - 1) * 100);
   };
 
@@ -452,15 +330,14 @@ export class MetricsService {
     };
   };
 
-  private getSocialMetrics = async (): SocialMetrics => {
-
+  private getSocialMetrics = async (): Promise<SocialMetrics> => {
     const twitter_response = await axios({
-      url: `${BACKEND_URL}/api/twitter/summary`,
+      url: `${env.backendUrl}/api/twitter/summary`,
     });
     const twitter_followers_count = twitter_response?.data?.followers_count;
 
     const response = await axios({
-      url: `${BACKEND_URL}/api/discord/members/summary`,
+      url: `${env.backendUrl}/api/discord/members/summary`,
     });
     const discord_metrics = response?.data;
 

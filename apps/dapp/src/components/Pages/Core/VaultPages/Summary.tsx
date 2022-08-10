@@ -18,7 +18,7 @@ export const Summary = () => {
   const { response, isLoading } = useVaultMetrics();
   const treasuryMetrics = useRefreshableTreasuryMetrics();
 
-  const dnyamicApy = treasuryMetrics ? treasuryMetrics.dynamicVaultApy : FALLBACK_VAULT_APY;
+  const dynamicApy = treasuryMetrics?.dynamicVaultApy || FALLBACK_VAULT_APY;
 
   const onClickLink = (e: SyntheticEvent) => {
     e.preventDefault();
@@ -44,7 +44,7 @@ export const Summary = () => {
         </>
       </Text3>
       <Text3>
-        Projected vAPY: {formatNumber(dnyamicApy)}%{' '}
+        Projected vAPY: {formatNumber(dynamicApy)}%{' '}
         <Tooltip
           content={`Variable APY is displayed for guidance purposes only. All rewards are subject to change and fluctuate based on vault strategies and market conditions.`}
           inline={true}
