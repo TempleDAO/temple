@@ -8,7 +8,8 @@ import { useNotification } from 'providers/NotificationProvider';
 import { useVaultContract } from './use-vault-contract';
 import { getSwapLimit, getSwapDeadline } from '../utils';
 import { useAuctionContext } from '../../AuctionContext';
-import { getBalancerErrorMessage } from 'utils/balancer'
+import { getBalancerErrorMessage } from 'utils/balancer';
+import { AnalyticsService } from 'services/AnalyticsService';
 
 type Action<A extends ActionType, P extends any> = { type: A, payload: P };
 
@@ -21,7 +22,7 @@ enum ActionType {
   SetSwapQuoteStart,
   SetSwapQuoteError,
   SetSwapQuoteSuccess,
-};
+}
 
 type TokenValue = { token: string; value: DecimalBigNumber };
 
@@ -186,7 +187,7 @@ export const useVaultTradeState = (pool: Pool) => {
     },
   });
 
-  const sellTokenAddress = sell.address
+  const sellTokenAddress = sell.address;
   useEffect(() => {
     // Clear Quote/Input value when pair changes
     dispatch({ type: ActionType.ResetQuoteState, payload: null });
@@ -249,9 +250,16 @@ export const useVaultTradeState = (pool: Pool) => {
         title: 'Swap success',
         hash: transaction.hash,
       });
+
+      AnalyticsService.captureEvent('lbp-swap', {
+        tokenSold: sell.symbol,
+        tokenBought: buy.symbol,
+        amount,
+        poolId: pool.id,
+      });
     } catch (err) {
       const error = getBalancerErrorMessage((err as Error).message);
-      dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error }});
+      dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error } });
     }
   };
 
