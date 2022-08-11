@@ -23,6 +23,7 @@ import EllipsisLoader from 'components/EllipsisLoader';
 import { ZERO } from 'utils/bigNumber';
 import { getBigNumberFromString, formatBigNumber, formatJoiningFee } from 'components/Vault/utils';
 import { AnalyticsService } from 'services/AnalyticsService';
+import { AnalyticsEvent } from 'constants/events';
 
 export const Stake = () => {
   const { activeVault: vault } = useVaultContext();
@@ -51,7 +52,7 @@ export const Stake = () => {
     async (ticker, amount) => {
       refreshBalance();
       refreshWalletState();
-      AnalyticsService.captureEvent('vault-deposit', { name: vault.id, amount, ticker });
+      AnalyticsService.captureEvent(AnalyticsEvent.Vault.Deposit, { name: vault.id, amount, ticker });
     }
   );
 

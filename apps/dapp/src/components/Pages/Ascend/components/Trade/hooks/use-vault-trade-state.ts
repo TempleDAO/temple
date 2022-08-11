@@ -10,6 +10,7 @@ import { getSwapLimit, getSwapDeadline } from '../utils';
 import { useAuctionContext } from '../../AuctionContext';
 import { getBalancerErrorMessage } from 'utils/balancer';
 import { AnalyticsService } from 'services/AnalyticsService';
+import { AnalyticsEvent } from 'constants/events';
 
 type Action<A extends ActionType, P extends any> = { type: A, payload: P };
 
@@ -251,7 +252,7 @@ export const useVaultTradeState = (pool: Pool) => {
         hash: transaction.hash,
       });
 
-      AnalyticsService.captureEvent('lbp-swap', {
+      AnalyticsService.captureEvent(AnalyticsEvent.Ascend.Swap, {
         tokenSold: sell.symbol,
         tokenBought: buy.symbol,
         amount,
