@@ -254,8 +254,7 @@ async function main() {
   const vaultProxy = await new VaultProxy__factory(owner).deploy(
     ogTempleToken.address,
     templeToken.address,
-    templeStaking.address,
-    faith.address
+    templeStaking.address
   );
   await templeToken.mint(vaultProxy.address, toAtto(1000000));
 
