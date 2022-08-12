@@ -22,7 +22,7 @@ if gasPriceGweiOverride == "":
 gasPriceGweiOverride = float(gasPriceGweiOverride);
 
 bal = balpy.balpy.balpy("goerli");
-poolId = "abd2ac41fcf37391d0ce91e09d5ab74caae7449c000200000000000000000094";
+poolId = "4DAD54ED4B0D9F9BDA79ECABD7D3ADCC1D338C9F00020000000000000000009E";
 
 print();
 print("==================================================================")

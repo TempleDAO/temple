@@ -11,15 +11,14 @@
     "owner": "0xaD2da3dc8B6e5a69cB9691f4540d8835A45EdFeA",
     "tokens": {
         "0x8c9e6c40d3402480ace624730524facc5482798c": {
-            "weight": "0.2",
-            "initialBalance": "2500",
+            "weight": "0.96",
+            "initialBalance": "2000",
             "allowance": -1
         },
         "0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf": {
-            "weight": "0.8",
-            "initialBalance": "2500",
+            "weight": "0.04",
+            "initialBalance": "2000",
             "allowance": -1
         }
-    },
-    "poolId": "ae235605a96abaf76c51146b811de480ade3755f000200000000000000000097"
+    }
 }

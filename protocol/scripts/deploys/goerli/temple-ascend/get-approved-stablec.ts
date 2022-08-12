@@ -12,7 +12,7 @@ async function main() {
 
   for (let i = 1; i < wallets.length; i++){
     const test = wallets[i];
-    await mine(owner.sendTransaction({to: test.address, value: ethers.utils.parseEther("0.0005")}))
+    await mine(owner.sendTransaction({to: test.address, value: ethers.utils.parseEther("0.0009")}))
 
     const faucetAbi = '[{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"amount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"}],"name":"drain","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"}],"name":"drip","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"}],"name":"lastDrip","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount_","type":"uint256"}],"name":"setAmount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}]'
     const faucet = new ethers.Contract(
@@ -31,7 +31,7 @@ async function main() {
     console.log("dripping...");
     await mine(faucet.drip("0x8c9e6c40d3402480ACE624730524fACC5482798c", {gasLimit: 85000}));
     console.log("sending to home");
-    await mine(coin.transfer(owner.address, ethers.BigNumber.from('200000000000000000000'), {gasLimit: 35000}));
+    await mine(coin.transfer(owner.address, ethers.BigNumber.from('200000000000000000000'), {gasLimit: 65000}));
   }
 }
 

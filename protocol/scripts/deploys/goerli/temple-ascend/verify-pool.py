@@ -10,8 +10,8 @@ print("==================================================================")
 print();
 
 bal = balpy.balpy.balpy("goerli");
-creationHash = "0x5aebfdee09e7e9e8a981528ed9e718734b0c5d1905f4d2fdf28d47fd4a8cad63";
-poolId = "ae235605a96abaf76c51146b811de480ade3755f000200000000000000000097";
+creationHash = "0xfde1992598489ef80dc69bde6fefdde94eb5c0071c0e0c0dbde0ccbfa8de6215";
+poolId = "4DAD54ED4B0D9F9BDA79ECABD7D3ADCC1D338C9F00020000000000000000009E";
 
 if not creationHash is None:
     command = bal.balGeneratePoolCreationArguments("0x" + poolId, creationHash=creationHash);
