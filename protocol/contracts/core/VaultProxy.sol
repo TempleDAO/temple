@@ -24,6 +24,9 @@ contract VaultProxy is Ownable {
     error CanNotExitVault();
     error FirstVaultCycle();
 
+    // Events
+    event EarlyWithdraw(address account, uint256 amount, address vault);
+
     constructor(
         OGTemple _ogTemple,
         IERC20 _temple,
@@ -102,6 +105,8 @@ contract VaultProxy is Ownable {
         uint256 shareAmount = vaultErc.toSharesAmount(amount);
         uint256 templeBal = vaultErc.toTokenAmount(shareAmount);
         SafeERC20.safeTransfer(temple, msg.sender, templeBal);
+
+        emit EarlyWithdraw(msg.sender, amount, address(vaultErc));
     }
 
     /**
