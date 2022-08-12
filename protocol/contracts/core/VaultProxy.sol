@@ -22,6 +22,7 @@ contract VaultProxy is Ownable {
     error SendToAddressZero();
     error WithdrawSendFailed();
     error CanNotExitVault();
+    error FirstVaultCycle();
 
     constructor(
         OGTemple _ogTemple,
@@ -92,6 +93,11 @@ contract VaultProxy is Ownable {
      * Allows users to withdraw their Temple from a vault before the exit window, forfeits any yield
      */
     function exitVaultEarly(uint256 amount, Vault vaultErc) external {
+        (uint256 cycleNum,) = vaultErc.inEnterExitWindow();
+        if (cycleNum == 0) { 
+            revert FirstVaultCycle();
+        }
+
         SafeERC20.safeTransferFrom(IERC20(vaultErc), msg.sender, address(this), amount);
         uint256 shareAmount = vaultErc.toSharesAmount(amount);
         uint256 templeBal = vaultErc.toTokenAmount(shareAmount);

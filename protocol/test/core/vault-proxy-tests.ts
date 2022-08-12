@@ -148,6 +148,8 @@ describe.only("Vault Proxy", async () => {
     
     await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
 
+    await mineForwardSeconds(60 * 10)
+
     let bal = await vault.connect(alan).balanceOf(await alan.getAddress())
     let beforeTempleBal = await TEMPLE.connect(alan).balanceOf(await alan.getAddress())
     await VAULT_PROXY.connect(alan).exitVaultEarly(bal, vault.address);
@@ -163,10 +165,12 @@ describe.only("Vault Proxy", async () => {
     
     await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
 
+    await mineForwardSeconds(60 * 10)
+
     await VAULT_PROXY.connect(alan).exitVaultEarly(toAtto(100), vault.address);
 
     let beforeVaultTempleBal = await TEMPLE.balanceOf(VAULT_PROXY.address);
-    await mineForwardSeconds(60 * 10)
+    
 
     await VAULT_PROXY.redeemVaultTokenToTemple(vault.address);
     let afterVaultTempleBal = await TEMPLE.balanceOf(VAULT_PROXY.address);
@@ -187,6 +191,8 @@ describe.only("Vault Proxy", async () => {
     
     await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
 
+    await mineForwardSeconds(60 * 10)
+
     await VAULT_PROXY.connect(alan).exitVaultEarly(toAtto(100), vault.address);
 
     expect(VAULT_PROXY.redeemVaultTokenToTemple(vault.address)).to.be.reverted;
@@ -198,6 +204,8 @@ describe.only("Vault Proxy", async () => {
     
     await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
 
+    await mineForwardSeconds(60 * 10)
+
     await VAULT_PROXY.connect(alan).exitVaultEarly(toAtto(100), vault.address);
 
     let beforeVaultTempleBal = await TEMPLE.balanceOf(await ben.getAddress());
@@ -206,5 +214,16 @@ describe.only("Vault Proxy", async () => {
     await VAULT_PROXY.redeemVaultTokenToTempleAndWithdraw(vault.address, await ben.getAddress(), toAtto(100));
     let afterVaultTempleBal = await TEMPLE.balanceOf(await ben.getAddress());
     expect(afterVaultTempleBal).equals(beforeVaultTempleBal.add(toAtto(100)))
+  })
+
+  it("Does not allow early withdraw in first cycle of a vault", async () => {
+    await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000));
+    await vault.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000))
+    
+    await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
+
+    await mineForwardSeconds(60 * 10)
+
+    expect(VAULT_PROXY.connect(alan).exitVaultEarly(toAtto(100), vault.address)).to.be.reverted;
   })
 });
