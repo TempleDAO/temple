@@ -9,10 +9,12 @@ import "./Vault.sol";
 import "../deprecated/TempleStaking.sol";
 
 /**
-    @notice A proxy contract for interacting with Temple Vaults. 
+    @title A proxy contract for interacting with Temple Vaults. 
+    @author TempleDAO
+    @notice Proxies calls 
  */
 contract VaultProxy is Ownable {
-    /** @notice Tokens / Contracted required for the proxy contract  */
+    // Tokens / Contracted required for the proxy contract 
     IERC20 public immutable ogTemple;
     IERC20 public immutable temple;
     TempleStaking public immutable templeStaking;
@@ -47,7 +49,7 @@ contract VaultProxy is Ownable {
     }
     
     /**
-        @notice Private function which will take OGT, unstake it, ensure correct amount came back and then pass back 
+        @dev Private function which will take OGT, unstake it, ensure correct amount came back and then pass back 
         to the calling function.
      */
     function unstakeOGT(uint256 _amountOGT) private returns (uint256) {
@@ -93,7 +95,7 @@ contract VaultProxy is Ownable {
     }
 
     /**
-     * Allows users to withdraw their Temple from a vault before the exit window, forfeits any yield
+     * @notice Allows user to withdraw their Temple from a vault before the exit window, forfeits any yield
      */
     function exitVaultEarly(uint256 amount, Vault vaultErc) external {
         (uint256 cycleNum,) = vaultErc.inEnterExitWindow();
@@ -110,7 +112,7 @@ contract VaultProxy is Ownable {
     }
 
     /**
-     * Allows owner to redeem any vault shares from users that have exited early
+     * @notice Allows owner to redeem any vault shares from users that have exited early
      */
     function redeemVaultTokenToTemple(Vault vaultErc) public onlyOwner {
         if (!vaultErc.canExit()) {
@@ -121,7 +123,7 @@ contract VaultProxy is Ownable {
     }
 
     /**
-     * Allows owner to redeem any vault shares and then withdraw to the provided address
+     * @notice Allows owner to redeem any vault shares and then withdraw to the provided address
      */
     function redeemVaultTokenToTempleAndWithdraw(Vault vaultErc, address to, uint256 amount) external onlyOwner {
         redeemVaultTokenToTemple(vaultErc);
