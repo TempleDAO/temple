@@ -31,6 +31,9 @@ async function go() {
 
   await pressAnyKey();
 
+  console.log(`Deleting existing env variables`);
+  await v.deleteEnvs(environment, TEAM_ID, SHADOW_PROJECT_ID)
+
   for await (const line of fs.readFileSync(file, 'utf8').split('\n')) {
     const [key, value] = line.split('=');
     const data = {
