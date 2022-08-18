@@ -86,13 +86,13 @@ const env: Environment = {
     balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
   },
   featureFlags: {
-    enableAscend: false,
+    enableAscend: true,
   },
   posthog: {
     token: 'phc_pa9tsK76qoRqgsvMh9rDLtBKbOaawlwvJTLkcNDtxab',
     api_host: 'https://app.posthog.com',
   },
-  templeMultisig: '',
+  templeMultisig: '0xe2Bb722DA825eBfFa1E368De244bdF08ed68B5c4',
 };
 
 export default env;
