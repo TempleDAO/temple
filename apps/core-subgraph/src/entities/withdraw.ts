@@ -41,8 +41,7 @@ export function createWithdraw(event: WithdrawEvent): Withdraw {
   vub.value = vub.value.minus(amount.times(tokenPrice))
   vub.token = token.id
 
-  vault.tvl = vault.tvl.minus(amount)
-  vault.tvlUSD = vault.tvl.times(tokenPrice).minus(amount.times(tokenPrice))
+  vault.tvlUSD = vault.tvl.times(tokenPrice)
   if (staked <= BIG_DECIMAL_0) {
     const earned = staked.times(BIG_DECIMAL_MIN_1)
     vub.earned = vub.earned.plus(earned)
@@ -56,8 +55,7 @@ export function createWithdraw(event: WithdrawEvent): Withdraw {
   saveVault(vault, timestamp)
 
   const vaultGroup = getVaultGroup(vault.name)
-  vaultGroup.tvl = vaultGroup.tvl.minus(amount)
-  vaultGroup.tvlUSD = vaultGroup.tvl.times(tokenPrice).minus(amount.times(tokenPrice))
+  vaultGroup.tvlUSD = vaultGroup.tvl.times(tokenPrice)
   vaultGroup.volume = vaultGroup.volume.plus(amount)
   vaultGroup.volumeUSD = vaultGroup.volumeUSD.plus(amount.times(tokenPrice))
   saveVaultGroup(vaultGroup, timestamp)
