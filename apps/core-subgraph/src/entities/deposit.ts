@@ -43,16 +43,14 @@ export function createDeposit(event: DepositEvent): Deposit {
   vub.token = token.id
   updateVaultUserBalance(vub, timestamp)
 
-  vault.tvl = vault.tvl.plus(staked)
-  vault.tvlUSD = vault.tvl.times(tokenPrice).plus(staked.times(tokenPrice))
+  vault.tvlUSD = vault.tvl.times(tokenPrice)
   if (oldStaked == BIG_DECIMAL_0) {
     vault.userCount = vault.userCount.plus(BIG_INT_1)
   }
   saveVault(vault, timestamp)
 
   const vaultGroup = getVaultGroup(vault.name)
-  vaultGroup.tvl = vaultGroup.tvl.plus(staked)
-  vaultGroup.tvlUSD = vaultGroup.tvl.times(tokenPrice).plus(staked.times(tokenPrice))
+  vaultGroup.tvlUSD = vaultGroup.tvl.times(tokenPrice)
   vaultGroup.volume = vaultGroup.volume.plus(amount)
   vaultGroup.volumeUSD = vaultGroup.volumeUSD.plus(amount.times(tokenPrice))
   saveVaultGroup(vaultGroup, timestamp)

@@ -111,10 +111,10 @@ type Vault @entity {
   tvlUSD: BigDecimal!
   userCount: BigInt!
   vaultGroup: VaultGroup!
-  VaultDayDatas: [VaultDayData!]! @derivedFrom(field: "vault")
+  VaultHourDatas: [VaultHourData!]! @derivedFrom(field: "vault")
 }
 
-type VaultDayData @entity {
+type VaultHourData @entity {
   id: ID!
   timestamp: BigInt!
   tvl: BigDecimal!

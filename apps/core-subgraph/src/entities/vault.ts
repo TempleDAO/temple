@@ -1,6 +1,6 @@
 import { Address, BigInt } from '@graphprotocol/graph-ts'
 
-import { Vault, VaultDayData } from '../../generated/schema'
+import { Vault, VaultHourData } from '../../generated/schema'
 import { Vault as VaultTemplate } from '../../generated/templates'
 import { CreateVaultInstance } from '../../generated/OpsManager/OpsManager'
 import { Vault as VaultContract } from '../../generated/OpsManager/Vault'
@@ -9,7 +9,7 @@ import { BIG_INT_1, BIG_DECIMAL_0 } from '../utils/constants'
 import { getMetric, updateMetric } from './metric'
 import { getOrCreateVaultGroup } from './vaultGroup'
 import { toDecimal } from '../utils/decimals'
-import { dayFromTimestamp } from '../utils/dates'
+import { hourFromTimestamp } from '../utils/dates'
 
 
 export function createVault(event: CreateVaultInstance): void {
@@ -88,23 +88,23 @@ export function saveVault(vault: Vault, timestamp: BigInt): void {
   vault.timestamp = timestamp
   vault.save()
 
-  updateOrCreateDayData(vault, timestamp)
+  updateOrCreateHourData(vault, timestamp)
 }
 
-export function updateOrCreateDayData(vault: Vault, timestamp: BigInt): void {
-  const dayTimestamp = dayFromTimestamp(timestamp);
-  const dayDataID = dayTimestamp + vault.id;
+export function updateOrCreateHourData(vault: Vault, timestamp: BigInt): void {
+  const hourTimestamp = hourFromTimestamp(timestamp);
+  const hourDataID = hourTimestamp + vault.id;
 
-  let dayData = VaultDayData.load(dayDataID)
-  if (dayData === null) {
-    dayData = new VaultDayData(dayDataID)
+  let hourData = VaultHourData.load(hourDataID)
+  if (hourData === null) {
+    hourData = new VaultHourData(hourDataID)
   }
 
-  dayData.timestamp = timestamp
-  dayData.tvl = vault.tvl
-  dayData.tvlUSD = vault.tvlUSD
-  dayData.userCount = vault.userCount
-  dayData.vault = vault.id
+  hourData.timestamp = timestamp
+  hourData.tvl = vault.tvl
+  hourData.tvlUSD = vault.tvlUSD
+  hourData.userCount = vault.userCount
+  hourData.vault = vault.id
 
-  dayData.save()
+  hourData.save()
 }
