@@ -29,6 +29,10 @@ export interface DeployedContracts {
   TEMPLE_TEAM_EPOCH_2: string;
   TEMPLE_TEAM_EPOCH_3: string;
   TEMPLE_TEAM_EPOCH_4: string;
+
+  // Temple Zaps
+  GENERIC_ZAPS: string;
+  TEMPLE_ZAPS: string;
 }
 
 export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
@@ -53,6 +57,8 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     VAULT_PROXY: '0x8adcc775251362B4E03e0437805BE3154C56b3F5',
 
     MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
+    GENERIC_ZAPS: '',
+    TEMPLE_ZAPS: '',
   },
   mainnet: {
     // From network/environment
@@ -72,6 +78,8 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     OPS_MANAGER_LIB: '0x248bA5985053ee399a76B5822AdeB12FA0ab1424',
     JOINING_FEE: '0x8A17403B929ed1B6B50ea880d9C93068a5105D4C',
     VAULT_PROXY: '0x6f5bB7cC4F3D6628d0095545552757AB377FE15C',
+    GENERIC_ZAPS: '0x388d3C524724541800FD74041136caB40FD4DAfE',
+    TEMPLE_ZAPS: '0xb7C30F132DBbBbB1C2b81d9D66a010FB7c72Ff9c',
   },
   localhost: {
     // From network/environment (setup when 00-localhost-env.ts script is run)
@@ -91,6 +99,9 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     OPS_MANAGER_LIB: process.env.OPS_MANAGER_LIB || '',
     JOINING_FEE: process.env.JOINING_FEE || '',
     VAULT_PROXY: process.env.VAULT_PROXY || '',
+
+    GENERIC_ZAPS: process.env.GENERIC_ZAPS || '',
+    TEMPLE_ZAPS: process.env.TEMPLE_ZAPS || '',
 
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
   },
