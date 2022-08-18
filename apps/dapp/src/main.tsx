@@ -25,6 +25,7 @@ import TradeRoutes from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
 
 import env from 'constants/env';
+import { AnalyticsService } from 'services/AnalyticsService';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -67,6 +68,8 @@ if (env.sentry) {
     environment: env.sentry.environment,
   });
 }
+
+AnalyticsService.init();
 
 ReactDOM.render(
   <React.StrictMode>
