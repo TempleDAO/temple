@@ -8,6 +8,7 @@ import { parseEther } from 'ethers/lib/utils';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { useNotification } from 'providers/NotificationProvider';
 import useRequestState from 'hooks/use-request-state';
+import env from 'constants/env';
 
 export interface CreatePoolParams {
   name: string;
@@ -18,8 +19,7 @@ export interface CreatePoolParams {
   swapEnabledOnStart: boolean;
 }
 
-// TODO: Move to env
-const LBP_FACTORY_CONTRACT_ADDRESS = '0xb48Cc42C45d262534e46d5965a9Ac496F1B7a830';
+const LBP_FACTORY_CONTRACT_ADDRESS = env.contracts.lbpFactory;
 
 export const useFactoryContract = () => {
   const { signer, wallet } = useWallet();

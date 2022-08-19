@@ -11,6 +11,7 @@ const env: Environment = {
     frax: '0x853d955acef822db058eb8505911ed77f175b99e',
     frax3CrvFarming: '0xd632f22692fac7611d2aa1c0d552930d43caed3b',
     frax3CrvFarmingRewards: '0xB900EF131301B307dB5eFcbed9DBb50A3e209B2e',
+    lbpFactory: '0x751A0bC0e3f75b38e01Cf25bFCE7fF36DE1C87DE',
     ogTemple: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
     teamPaymentsEpoch1: '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
     teamPaymentsEpoch2: '0xe0Aafcf26576a53Cbec99481607FB53384909C36',
