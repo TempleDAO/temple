@@ -12,6 +12,7 @@ interface Contracts {
   frax: string;
   frax3CrvFarming: string;
   frax3CrvFarmingRewards: string;
+  lbpFactory: string;
   ogTemple: string;
   teamPaymentsEpoch1: string;
   teamPaymentsEpoch2: string;
