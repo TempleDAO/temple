@@ -133,7 +133,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       );
       const txReceipt = await buyTXN.wait();
 
-      AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, { token, amount: verifiedAmountIn });
+      AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, { token, amount: verifiedAmountIn.toString() });
 
       // Show feedback to user
       openNotification({
@@ -208,7 +208,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
       const txReceipt = await sellTx.wait();
 
-      AnalyticsService.captureEvent(AnalyticsEvent.Trade.Sell, { token, amount: verifiedAmountInTemple });
+      AnalyticsService.captureEvent(AnalyticsEvent.Trade.Sell, { token, amount: verifiedAmountInTemple.toString() });
 
       // Show feedback to user
       openNotification({
