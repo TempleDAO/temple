@@ -17,8 +17,6 @@ import { isTokenFraxOrFei } from './utils';
 import { swapReducer } from './reducer';
 
 import env from 'constants/env';
-import { AnalyticsService } from 'services/AnalyticsService';
-import { AnalyticsEvent } from 'constants/events';
 
 export function useSwapController() {
   const { wallet } = useWallet();
@@ -184,7 +182,6 @@ export function useSwapController() {
       const txReceipt = await buy(tokenAmount, toAtto(minAmountOut), state.inputToken, state.deadlineMinutes);
 
       if (txReceipt) {
-        AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, { token: state.inputToken, amount: tokenAmount });
         await updateBalance();
         await updateTemplePrice();
         dispatch({
@@ -224,7 +221,6 @@ export function useSwapController() {
       );
 
       if (txReceipt) {
-        AnalyticsService.captureEvent(AnalyticsEvent.Trade.Sell, { token: state.outputToken, amount: templeAmount });
         await updateBalance();
         await updateTemplePrice();
         dispatch({
