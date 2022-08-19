@@ -20,6 +20,7 @@ import {
 import env from 'constants/env';
 import { AnalyticsEvent } from 'constants/events';
 import { AnalyticsService } from 'services/AnalyticsService';
+import { formatBigNumber } from 'components/Vault/utils';
 
 const INITIAL_STATE: SwapService = {
   templePrice: 0,
@@ -133,7 +134,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       );
       const txReceipt = await buyTXN.wait();
 
-      AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, { token, amount: verifiedAmountIn.toString() });
+      AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, { token, amount: formatBigNumber(verifiedAmountIn) });
 
       // Show feedback to user
       openNotification({
@@ -208,7 +209,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
       const txReceipt = await sellTx.wait();
 
-      AnalyticsService.captureEvent(AnalyticsEvent.Trade.Sell, { token, amount: verifiedAmountInTemple.toString() });
+      AnalyticsService.captureEvent(AnalyticsEvent.Trade.Sell, { token, amount: formatBigNumber(verifiedAmountInTemple) });
 
       // Show feedback to user
       openNotification({
