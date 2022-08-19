@@ -11,6 +11,7 @@ const env: Environment = {
     frax: '0x5eD8BD53B0c3fa3dEaBd345430B1A3a6A4e8BD7C',
     frax3CrvFarming: '',
     frax3CrvFarmingRewards: '',
+    lbpFactory: '0xb48Cc42C45d262534e46d5965a9Ac496F1B7a830',
     ogTemple: '0x564462C807600684965d8A8f57eA190F2F66169C',
     teamPaymentsEpoch1: '0x7a770591f202D18e893DeC115f16DAE9d28686a8',
     teamPaymentsEpoch2: '',
