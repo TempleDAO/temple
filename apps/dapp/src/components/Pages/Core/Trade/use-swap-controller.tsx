@@ -16,7 +16,7 @@ import { SwapMode } from './types';
 import { isTokenFraxOrFei } from './utils';
 import { swapReducer } from './reducer';
 
-import env from 'constants/env';
+// import env from 'constants/env';
 
 export function useSwapController() {
   const { wallet } = useWallet();
@@ -31,12 +31,12 @@ export function useSwapController() {
       await updateTemplePrice();
       await updateIv();
 
-      if (templePrice > iv * env.fraxSellDisabledIvMultiple) {
-        dispatch({
-          type: 'enableFraxSell',
-          fraxBalance: balance.frax,
-        });
-      }
+      // if (templePrice > iv * env.fraxSellDisabledIvMultiple) {
+      //   dispatch({
+      //     type: 'enableFraxSell',
+      //     fraxBalance: balance.frax,
+      //   });
+      // }
 
       dispatch({
         type: 'changeInputTokenBalance',
@@ -249,6 +249,12 @@ export function useSwapController() {
     if (state.mode === SwapMode.Buy && isTokenFraxOrFei(state.inputToken)) {
       const buyQuote = await getBuyQuote(value, state.inputToken);
       quote = buyQuote ?? ZERO;
+    }
+
+    if (state.mode === SwapMode.Sell && isTokenFraxOrFei(state.outputToken)) {
+      const sellQuote = await getSellQuote(value, state.outputToken);
+
+      quote = sellQuote ? sellQuote.amountOut : ZERO;
     }
 
     if (!quote) {
