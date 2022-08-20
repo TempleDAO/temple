@@ -6,6 +6,7 @@ import { TransactionSettings } from 'components/TransactionSettingsModal/Transac
 
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
+import { FRAX_SELL_DISABLED_IV_MULTIPLE } from 'providers/env';
 
 import { fromAtto, toAtto, ZERO } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -15,8 +16,6 @@ import { INITIAL_STATE, TOKENS_BY_MODE } from './constants';
 import { SwapMode } from './types';
 import { isTokenFraxOrFei } from './utils';
 import { swapReducer } from './reducer';
-
-import env from 'constants/env';
 
 export function useSwapController() {
   const { wallet } = useWallet();
@@ -30,13 +29,6 @@ export function useSwapController() {
       await updateBalance();
       await updateTemplePrice();
       await updateIv();
-
-      if (templePrice > iv * env.fraxSellDisabledIvMultiple) {
-        dispatch({
-          type: 'enableFraxSell',
-          fraxBalance: balance.frax,
-        });
-      }
 
       dispatch({
         type: 'changeInputTokenBalance',
@@ -249,6 +241,12 @@ export function useSwapController() {
     if (state.mode === SwapMode.Buy && isTokenFraxOrFei(state.inputToken)) {
       const buyQuote = await getBuyQuote(value, state.inputToken);
       quote = buyQuote ?? ZERO;
+    }
+
+    if (state.mode === SwapMode.Sell && isTokenFraxOrFei(state.outputToken)) {
+      const sellQuote = await getSellQuote(value, state.outputToken);
+
+      quote = sellQuote ? sellQuote.amountOut : ZERO;
     }
 
     if (!quote) {
