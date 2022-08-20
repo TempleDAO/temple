@@ -6,7 +6,6 @@ import { TransactionSettings } from 'components/TransactionSettingsModal/Transac
 
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
-import { FRAX_SELL_DISABLED_IV_MULTIPLE } from 'providers/env';
 
 import { fromAtto, toAtto, ZERO } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
