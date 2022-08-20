@@ -4,10 +4,10 @@ import { SwapMode, SwapReducerState } from './types';
 import { buildSelectConfig, buildValueConfig, createButtonLabel } from './utils';
 import { ZERO } from 'utils/bigNumber';
 
-const { FRAX, FEI } = TICKER_SYMBOL;
+const { FRAX } = TICKER_SYMBOL;
 
-const buyTokens = new Set([FRAX, FEI]);
-const sellTokens = new Set([FRAX, FEI]);
+const buyTokens = new Set([FRAX]);
+const sellTokens = new Set([FRAX]);
 
 export const TOKENS_BY_MODE = {
   BUY: [...buyTokens],
