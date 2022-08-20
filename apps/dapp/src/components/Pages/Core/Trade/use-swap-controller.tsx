@@ -29,13 +29,6 @@ export function useSwapController() {
       await updateTemplePrice();
       await updateIv();
 
-      // if (templePrice > iv * env.fraxSellDisabledIvMultiple) {
-      //   dispatch({
-      //     type: 'enableFraxSell',
-      //     fraxBalance: balance.frax,
-      //   });
-      // }
-
       dispatch({
         type: 'changeInputTokenBalance',
         value: getTokenBalance(state.inputToken),
