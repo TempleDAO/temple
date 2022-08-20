@@ -16,8 +16,6 @@ import { SwapMode } from './types';
 import { isTokenFraxOrFei } from './utils';
 import { swapReducer } from './reducer';
 
-// import env from 'constants/env';
-
 export function useSwapController() {
   const { wallet } = useWallet();
   const [state, dispatch] = useReducer(swapReducer, INITIAL_STATE);
