@@ -251,29 +251,28 @@ export function useSwapController() {
       quote = buyQuote ?? ZERO;
     }
 
-    if (state.mode === SwapMode.Sell && isTokenFraxOrFei(state.outputToken)) {
-      const sellQuote = await getSellQuote(value, state.outputToken);
+    // if (state.mode === SwapMode.Sell && isTokenFraxOrFei(state.outputToken)) {
+    //   const sellQuote = await getSellQuote(value, state.outputToken);
 
-      quote = sellQuote ? sellQuote.amountOut : ZERO;
+    //   quote = sellQuote ? sellQuote.amountOut : ZERO;
 
-      const isPriceNearIv = templePrice < iv * env.fraxSellDisabledIvMultiple;
+    //   const isPriceNearIv = templePrice < iv * env.fraxSellDisabledIvMultiple;
 
-      if (sellQuote) {
-        if (!state.isFraxSellDisabled && sellQuote.priceBelowIV) {
-          dispatch({
-            type: 'disableFraxSell',
-            feiBalance: balance.fei,
-          });
-        }
-
-        if (state.isFraxSellDisabled && !sellQuote.priceBelowIV && !isPriceNearIv) {
-          dispatch({
-            type: 'enableFraxSell',
-            fraxBalance: balance.frax,
-          });
-        }
-      }
-    }
+    //   // if (sellQuote) {
+    //   //   if (!state.isFraxSellDisabled && sellQuote.priceBelowIV) {
+    //   //     dispatch({
+    //   //       type: 'disableFraxSell',
+    //   //       feiBalance: balance.fei,
+    //   //     });
+    //   //   }
+    //   //   if (state.isFraxSellDisabled && !sellQuote.priceBelowIV && !isPriceNearIv) {
+    //   //     dispatch({
+    //   //       type: 'enableFraxSell',
+    //   //       fraxBalance: balance.frax,
+    //   //     });
+    //   //   }
+    //   // }
+    // }
 
     if (!quote) {
       console.error("couldn't fetch quote");
