@@ -134,7 +134,7 @@ export const useGetFutureDataPoints = (
     const oneHour = 1000 * 60 * 60;
     const totalPoints = Math.floor((endDate - lastPoint.x) / oneHour);
 
-    // Not sure whats up here
+    // Weights from the subgraph are formatted differently, need to be reparsed with correct decimals
     const accruedEndWeight = DecimalBigNumber.fromBN(endWeights[accrued.address].value, 18);
     const accruedCurrentWeight = currentWeights[accrued.address];
     const accruedRange = accruedEndWeight.sub(accruedCurrentWeight);
