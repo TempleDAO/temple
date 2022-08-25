@@ -1,4 +1,4 @@
-import { useEffect, useMemo, PureComponent, ComponentProps } from 'react';
+import { useEffect, useMemo, PureComponent } from 'react';
 import { format } from 'date-fns';
 import styled from 'styled-components';
 import {
@@ -10,7 +10,6 @@ import {
   VerticalGridLines,
   Crosshair,
   ChartLabel,
-  LineMarkSeries,
   DiscreteColorLegend,
   DiscreteColorLegendProps,
 } from 'react-vis';
@@ -21,18 +20,19 @@ import { formatNumberFixedDecimals } from 'utils/formatter';
 import { Pool } from 'components/Layouts/Ascend/types';
 import Loader from 'components/Loader/Loader';
 import { theme } from 'styles/theme';
-import { getSpotPrice } from '../../utils';
 import { useAuctionContext } from '../AuctionContext';
 
-import { useCrosshairs, useLatestPriceData, Point } from './hooks';
+import { useCrosshairs, useLatestPriceData, Point, useGetFutureDataPoints } from './hooks';
 
 interface Props {
   pool: Pool;
 }
 
+
 export const Chart = ({ pool }: Props) => {
-  const { balances, accrued, base } = useAuctionContext();
+  const { balances, accrued } = useAuctionContext();
   const [request, { response, isLoading }] = useLatestPriceData(pool);
+  const getFutureDataPoints = useGetFutureDataPoints(pool);
 
   const { data, yDomain, xDomain, predicted, legend } = useMemo(() => {
     const {joinExits, ...data} = (response?.data || {})
@@ -56,32 +56,19 @@ export const Chart = ({ pool }: Props) => {
     const lbpLength = lastUpdateEnd - lastUpdateStart;
     const xDomain = [lastUpdateStart, lastUpdateEnd + (lbpLength * 0.05)];
     
-    const predicted = [];
+    let predicted: Point[] = [];
     if (balances && points.length > 0) {
       try {
         const lastPoint = points[points.length - 1];
         // only add predicated values if the predicted date is in the future.
         if (lastUpdate.endTimestamp.getTime() > Date.now()) {
-          const spotPriceEstimate = getSpotPrice(
-            balances[base.address]!,
-            balances[accrued.address]!,
-            lastUpdate.endWeights[base.tokenIndex],
-            lastUpdate.endWeights[accrued.tokenIndex],
-            pool.swapFee
-          );
-  
-          if (spotPriceEstimate) {
-            predicted.push(lastPoint);
-  
-            const predictedY = formatNumberFixedDecimals(formatBigNumber(spotPriceEstimate), 4);
-            if (predictedY > ceiling) {
-              ceiling = predictedY;
+          predicted = getFutureDataPoints(lastPoint);
+
+          if (predicted.length > 0) {
+            const greatestY = [...predicted].sort((a, b) => b.y - a.y)[0].y;
+            if (greatestY > ceiling) {
+              ceiling = greatestY;
             }
-  
-            predicted.push({
-              y: predictedY,
-              x: lastUpdateEnd,
-            });
           }
         }
       } catch (err) {
@@ -193,13 +180,13 @@ export const Chart = ({ pool }: Props) => {
           strokeWidth={2}
           onNearestX={onNearestX}
         />
-        <LineMarkSeries
+        <LineSeries
           data={predicted}
           color={theme.palette.brandLight}
           strokeStyle="dashed"
           curve={curveCatmullRom}
           // @ts-ignore
-          strokeWidth={1}
+          strokeWidth={2}
         />
         <Crosshair
           values={crosshairValues}

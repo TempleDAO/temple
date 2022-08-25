@@ -4,6 +4,11 @@ import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { Pool } from 'components/Layouts/Ascend/types';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { useAuctionContext } from '../AuctionContext';
+import { formatNumberFixedDecimals } from 'utils/formatter';
+import { formatBigNumber, getBigNumberFromString } from 'components/Vault/utils';
+import { getSpotPrice } from '../../utils';
 
 const createQueryFragment = (after: number, before: number) => {
   return `
@@ -104,4 +109,67 @@ export const useCrosshairs = (data: Point[]) => {
   );
 
   return { crosshairValues, onMouseLeave, onNearestX };
-}
+};
+
+export const useGetFutureDataPoints = (
+  pool: Pool
+) => {
+  const { balances, accrued, base, weights } = useAuctionContext();
+  const currentWeights = weights;
+  const currentBalances = balances;
+  
+  return useCallback((lastPoint: Point) => {
+    if (!pool) {
+      return [];
+    }
+
+    const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
+    const endDate = lastUpdate.endTimestamp.getTime();
+    const endWeights = {
+      [base.address]: lastUpdate.endWeights[base.tokenIndex],
+      [accrued.address]: lastUpdate.endWeights[accrued.tokenIndex],
+    };
+
+    const swapFee = pool.swapFee;
+    const oneHour = 1000 * 60 * 60;
+    const totalPoints = Math.floor((endDate - lastPoint.x) / oneHour);
+
+    // Not sure whats up here
+    const accruedEndWeight = DecimalBigNumber.fromBN(endWeights[accrued.address].value, 18);
+    const accruedCurrentWeight = currentWeights[accrued.address];
+    const accruedRange = accruedEndWeight.sub(accruedCurrentWeight);
+    const interval = accruedRange.div(DecimalBigNumber.parseUnits(totalPoints.toString(), 18), accruedRange.getDecimals());
+
+    const predicted = [lastPoint];
+
+    let weightAccrued = accruedCurrentWeight;
+    let weightBase = currentWeights[base.address];
+    let currentX = lastPoint.x;
+    for (let i = 0; i < totalPoints; i++) {
+      const priceEstimate = getSpotPrice(
+        currentBalances[base.address],
+        currentBalances[accrued.address],
+        weightBase,
+        weightAccrued,
+        swapFee,
+      );
+      
+      predicted.push({
+        x: currentX,
+        y: formatNumberFixedDecimals(formatBigNumber(priceEstimate), 4),
+      });
+
+      currentX += oneHour;
+      weightAccrued = weightAccrued.add(interval);
+      weightBase = weightBase.sub(interval);
+    }
+
+    return predicted;
+  }, [
+    pool,
+    base,
+    accrued,
+    currentBalances,
+    currentWeights,
+  ]);
+};
