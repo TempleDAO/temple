@@ -144,7 +144,7 @@ export const useGetFutureDataPoints = (
 
     let weightAccrued = accruedCurrentWeight;
     let weightBase = currentWeights[base.address];
-    let currentX = lastPoint.x;
+    let currentX = lastPoint.x + oneHour;
     for (let i = 0; i < totalPoints; i++) {
       const priceEstimate = getSpotPrice(
         currentBalances[base.address],

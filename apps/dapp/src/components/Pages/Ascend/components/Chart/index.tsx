@@ -186,7 +186,7 @@ export const Chart = ({ pool }: Props) => {
           strokeStyle="dashed"
           curve={curveCatmullRom}
           // @ts-ignore
-          strokeWidth={2}
+          strokeWidth={1}
         />
         <Crosshair
           values={crosshairValues}
