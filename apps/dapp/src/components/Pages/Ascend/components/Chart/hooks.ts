@@ -131,8 +131,8 @@ export const useGetFutureDataPoints = (
     };
 
     const swapFee = pool.swapFee;
-    const oneHour = 1000 * 60 * 60;
-    const totalPoints = Math.floor((endDate - lastPoint.x) / oneHour);
+    const oneHourMillis = 1000 * 60 * 60;
+    const totalPoints = Math.floor((endDate - lastPoint.x) / oneHourMillis);
 
     // Weights from the subgraph are formatted differently, need to be reparsed with correct decimals
     const accruedEndWeight = DecimalBigNumber.fromBN(endWeights[accrued.address].value, 18);
@@ -144,7 +144,7 @@ export const useGetFutureDataPoints = (
 
     let weightAccrued = accruedCurrentWeight;
     let weightBase = currentWeights[base.address];
-    let currentX = lastPoint.x + oneHour;
+    let currentX = lastPoint.x + oneHourMillis;
     for (let i = 0; i < totalPoints; i++) {
       const priceEstimate = getSpotPrice(
         currentBalances[base.address],
@@ -159,7 +159,7 @@ export const useGetFutureDataPoints = (
         y: formatNumberFixedDecimals(formatBigNumber(priceEstimate), 4),
       });
 
-      currentX += oneHour;
+      currentX += oneHourMillis;
       weightAccrued = weightAccrued.add(interval);
       weightBase = weightBase.sub(interval);
     }
