@@ -287,19 +287,11 @@ async function main() {
     LOCALDEV_VERIFER_EXTERNAL_PRIVATE_KEY: verifier.privateKey,
   };
 
-  await writeFile('../shared/stack/deployed-addr.txt', '');
-
-  let newVarsToWrite = '';
-  console.log();
-  console.log('=========================================');
-  console.log('*** Copy/pasta into .env.local for dApp dev\n\n');
+  console.log('\n=========================================');
+  console.log('*** Deployed contract addresses:\n\n');
   for (const envvar in contract_address) {
-    const line = `VITE_PUBLIC_${envvar}=${contract_address[envvar]}`;
-    console.log(line);
-    newVarsToWrite += line + `\n`;
+    console.log(`${envvar} = ${contract_address[envvar]}`);
   }
-
-  await writeFile('../shared/stack/deployed-addr.txt', newVarsToWrite);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
