@@ -93,19 +93,44 @@ export interface Point {
   y: number;
 }
 
-export const useCrosshairs = (data: Point[]) => {
+export const useCrosshairs = (data: Point[][]) => {
   const [crosshairValues, setCrosshairValues] = useState<Point[]>([]);
 
   const onMouseLeave = useCallback(
-    () => setCrosshairValues([]),
+    () => {
+      setCrosshairValues([]);
+    },
     [setCrosshairValues]
   );
 
+  const ranges = data.map((range) => {
+    if (!range.length) {
+      return [];
+    }
+    return [range[0].x, range[range.length - 1].x];
+  });
+
   const onNearestX = useCallback(
-    (_value, { index }) => {
-      setCrosshairValues([data[index]]);
+    (value, { index }, lineSeriesId: 'current' | 'predicted') => {
+      const rangeIndex = ranges.findIndex((range) => {
+        return value.x >= range[0] && value.x <= range[1];
+      });
+
+      if (lineSeriesId === 'predicted' && rangeIndex === 0) {
+        return;
+      }
+
+      if (lineSeriesId === 'current' && rangeIndex === 1) {
+        return;
+      }
+
+      if (rangeIndex === -1) {
+        return;
+      }
+
+      setCrosshairValues([data[rangeIndex][index]]);
     },
-    [setCrosshairValues, data]
+    [setCrosshairValues, data, ranges]
   );
 
   return { crosshairValues, onMouseLeave, onNearestX };

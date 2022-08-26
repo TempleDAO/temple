@@ -103,7 +103,7 @@ export const Chart = ({ pool }: Props) => {
     };
   }, [pool, response, balances]);
 
-  const { crosshairValues, onMouseLeave, onNearestX } = useCrosshairs(data);
+  const { crosshairValues, onMouseLeave, onNearestX } = useCrosshairs([data, predicted]);
 
   useEffect(() => {
     request();
@@ -178,7 +178,7 @@ export const Chart = ({ pool }: Props) => {
           curve={curveCatmullRom}
           // @ts-ignore
           strokeWidth={2}
-          onNearestX={onNearestX}
+          onNearestX={(...args) => onNearestX(...args, 'current')}
         />
         <LineSeries
           data={predicted}
@@ -187,19 +187,20 @@ export const Chart = ({ pool }: Props) => {
           curve={curveCatmullRom}
           // @ts-ignore
           strokeWidth={1}
+          onNearestX={(...args) => onNearestX(...args, 'predicted')}
         />
         <Crosshair
           values={crosshairValues}
           titleFormat={([{ x }]: Point[]) => {
             return ({
-              title: 'date',
+              title: 'Date',
               value: format(x, 'd LLL'),
             });
           }}
           itemsFormat={([{ y }]: Point[]) => {
-            const value = formatNumberFixedDecimals(formatBigNumber(getBigNumberFromString(`${y}`)), 4);
+            const value = formatNumberFixedDecimals(formatBigNumber(getBigNumberFromString(y.toString())), 4);
             return [
-              { title: 'price', value },
+              { title: 'Price', value },
             ];
           }}
         />
@@ -211,36 +212,6 @@ export const Chart = ({ pool }: Props) => {
     </ChartWrapper>
   );
 };
-
-// Taken from https://codesandbox.io/s/04741ljm9w?file=/src/zoomable-chart-example.js
-class CustomAxisLabel extends PureComponent<any, any> {
-  static displayName = 'CustomAxisLabel';
-  static requiresSVG = true;
-
-  render() {
-    const yLabelOffset = {
-      y: this.props.marginTop + this.props.innerHeight / 2 + this.props.title.length * 2,
-      x: 10,
-    };
-
-    const xLabelOffset = {
-      x: this.props.marginLeft + (this.props.innerWidth) / 2 - this.props.title.length * 2,
-      y: 1.2 * this.props.innerHeight
-    };
-
-    const transform = this.props.xAxis
-      ? `translate(${xLabelOffset.x}, ${xLabelOffset.y})`
-      : `translate(${yLabelOffset.x}, ${yLabelOffset.y}) rotate(-90)`;
-
-    return (
-      <g transform={transform}>
-        <text className="unselectable axis-labels">
-          {this.props.title}
-        </text>
-      </g>
-    );
-  }
-}
 
 const ChartWrapper = styled.div`
   display: flex;
