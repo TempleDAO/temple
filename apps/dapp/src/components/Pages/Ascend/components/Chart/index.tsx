@@ -1,4 +1,4 @@
-import { useEffect, useMemo, PureComponent, ComponentProps } from 'react';
+import { useEffect, useMemo, PureComponent } from 'react';
 import { format } from 'date-fns';
 import styled from 'styled-components';
 import {
@@ -10,7 +10,6 @@ import {
   VerticalGridLines,
   Crosshair,
   ChartLabel,
-  LineMarkSeries,
   DiscreteColorLegend,
   DiscreteColorLegendProps,
 } from 'react-vis';
@@ -21,18 +20,19 @@ import { formatNumberFixedDecimals } from 'utils/formatter';
 import { Pool } from 'components/Layouts/Ascend/types';
 import Loader from 'components/Loader/Loader';
 import { theme } from 'styles/theme';
-import { getSpotPrice } from '../../utils';
 import { useAuctionContext } from '../AuctionContext';
 
-import { useCrosshairs, useLatestPriceData, Point } from './hooks';
+import { useCrosshairs, useLatestPriceData, Point, useGetFutureDataPoints } from './hooks';
 
 interface Props {
   pool: Pool;
 }
 
+
 export const Chart = ({ pool }: Props) => {
-  const { balances, accrued, base } = useAuctionContext();
+  const { balances, accrued } = useAuctionContext();
   const [request, { response, isLoading }] = useLatestPriceData(pool);
+  const getFutureDataPoints = useGetFutureDataPoints(pool);
 
   const { data, yDomain, xDomain, predicted, legend } = useMemo(() => {
     const {joinExits, ...data} = (response?.data || {})
@@ -56,32 +56,19 @@ export const Chart = ({ pool }: Props) => {
     const lbpLength = lastUpdateEnd - lastUpdateStart;
     const xDomain = [lastUpdateStart, lastUpdateEnd + (lbpLength * 0.05)];
     
-    const predicted = [];
+    let predicted: Point[] = [];
     if (balances && points.length > 0) {
       try {
         const lastPoint = points[points.length - 1];
         // only add predicated values if the predicted date is in the future.
         if (lastUpdate.endTimestamp.getTime() > Date.now()) {
-          const spotPriceEstimate = getSpotPrice(
-            balances[base.address]!,
-            balances[accrued.address]!,
-            lastUpdate.endWeights[base.tokenIndex],
-            lastUpdate.endWeights[accrued.tokenIndex],
-            pool.swapFee
-          );
-  
-          if (spotPriceEstimate) {
-            predicted.push(lastPoint);
-  
-            const predictedY = formatNumberFixedDecimals(formatBigNumber(spotPriceEstimate), 4);
-            if (predictedY > ceiling) {
-              ceiling = predictedY;
+          predicted = getFutureDataPoints(lastPoint);
+
+          if (predicted.length > 0) {
+            const greatestY = [...predicted].sort((a, b) => b.y - a.y)[0].y;
+            if (greatestY > ceiling) {
+              ceiling = greatestY;
             }
-  
-            predicted.push({
-              y: predictedY,
-              x: lastUpdateEnd,
-            });
           }
         }
       } catch (err) {
@@ -116,7 +103,7 @@ export const Chart = ({ pool }: Props) => {
     };
   }, [pool, response, balances]);
 
-  const { crosshairValues, onMouseLeave, onNearestX } = useCrosshairs(data);
+  const { crosshairValues, onMouseLeave, onNearestX } = useCrosshairs([data, predicted]);
 
   useEffect(() => {
     request();
@@ -191,28 +178,29 @@ export const Chart = ({ pool }: Props) => {
           curve={curveCatmullRom}
           // @ts-ignore
           strokeWidth={2}
-          onNearestX={onNearestX}
+          onNearestX={(...args) => onNearestX(...args, 'current')}
         />
-        <LineMarkSeries
+        <LineSeries
           data={predicted}
           color={theme.palette.brandLight}
           strokeStyle="dashed"
           curve={curveCatmullRom}
           // @ts-ignore
           strokeWidth={1}
+          onNearestX={(...args) => onNearestX(...args, 'predicted')}
         />
         <Crosshair
           values={crosshairValues}
           titleFormat={([{ x }]: Point[]) => {
             return ({
-              title: 'date',
+              title: 'Date',
               value: format(x, 'd LLL'),
             });
           }}
           itemsFormat={([{ y }]: Point[]) => {
-            const value = formatNumberFixedDecimals(formatBigNumber(getBigNumberFromString(`${y}`)), 4);
+            const value = formatNumberFixedDecimals(formatBigNumber(getBigNumberFromString(y.toString())), 4);
             return [
-              { title: 'price', value },
+              { title: 'Price', value },
             ];
           }}
         />
@@ -224,36 +212,6 @@ export const Chart = ({ pool }: Props) => {
     </ChartWrapper>
   );
 };
-
-// Taken from https://codesandbox.io/s/04741ljm9w?file=/src/zoomable-chart-example.js
-class CustomAxisLabel extends PureComponent<any, any> {
-  static displayName = 'CustomAxisLabel';
-  static requiresSVG = true;
-
-  render() {
-    const yLabelOffset = {
-      y: this.props.marginTop + this.props.innerHeight / 2 + this.props.title.length * 2,
-      x: 10,
-    };
-
-    const xLabelOffset = {
-      x: this.props.marginLeft + (this.props.innerWidth) / 2 - this.props.title.length * 2,
-      y: 1.2 * this.props.innerHeight
-    };
-
-    const transform = this.props.xAxis
-      ? `translate(${xLabelOffset.x}, ${xLabelOffset.y})`
-      : `translate(${yLabelOffset.x}, ${yLabelOffset.y}) rotate(-90)`;
-
-    return (
-      <g transform={transform}>
-        <text className="unselectable axis-labels">
-          {this.props.title}
-        </text>
-      </g>
-    );
-  }
-}
 
 const ChartWrapper = styled.div`
   display: flex;
