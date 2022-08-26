@@ -46,9 +46,10 @@ export const Chart = ({ pool }: Props) => {
         return a.x - b.x;
       });
 
-    const greatestPricePoint = [...points].sort((a, b) => b.y - a.y)[0];
+    const sortedY = [...points].sort((a, b) => b.y - a.y);
     // might be overwritten by the predicted price
-    let ceiling = greatestPricePoint?.y || 0;
+    let ceiling = sortedY[0]?.y || 0;
+    let floor = sortedY[sortedY.length - 1]?.y || 0;
 
     const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
     const lastUpdateEnd = lastUpdate.endTimestamp.getTime();
@@ -77,7 +78,8 @@ export const Chart = ({ pool }: Props) => {
       }
     }
 
-    const yDomain = points.length > 0 ? [0, ceiling + (ceiling * 0.1)] : null;
+    const yFloor = floor * 0.45;
+    const yDomain = points.length > 0 ? [yFloor, ceiling + (ceiling * 0.1)] : null;
     const yLabel = `$${accrued.symbol} Price`;
    
     const legend: DiscreteColorLegendProps['items']  = [{
