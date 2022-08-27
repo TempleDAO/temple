@@ -1,0 +1,29 @@
+name: Align Dapp Typechain
+on:
+  pull_request:
+    branches:
+      - 'stage'
+      - 'core'
+    types: 
+      - closed
+    paths:
+      - 'protocol/contracts/**'
+
+jobs:
+  align_typechain_dir:
+    name: Sync Typechain Directories
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'yarn'
+      - run: |
+          apt-get update
+          apt-get install -y rsync
+          yarn install
+          yarn compile
+          ls ../apps/dapp/src/types/
+          rsync -avzh typechain ../apps/dapp/src/types/
+        working-directory: protocol
