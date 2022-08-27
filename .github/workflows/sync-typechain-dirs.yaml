@@ -1,0 +1,38 @@
+name: Sync Typechain Directories
+on:
+  pull_request:
+    branches:
+      - 'stage'
+      - 'core'
+      - 'test-new-gh-action'
+    types: 
+      - closed
+    paths:
+      - 'protocol/contracts/**'
+
+jobs:
+  align_typechain_dir:
+    name: Sync Typechain Directories
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'yarn'
+      - run: |
+          yarn install
+          yarn compile
+          ls ../apps/dapp/src/types/
+          echo '----- Running Rsync -----'
+          rsync -avzh typechain ../apps/dapp/src/types/
+          git config user.name TempleDAO
+          git config user.email TempleDAO@github.com
+          git add ../apps/dapp/src/types/
+          git commit -m "Automated Action: Update Dapp Typechain Types"
+          git status
+          echo '---- Trying to push ----'
+          echo ${{ github.event.pull_request.merged }}
+          git push
+        working-directory: protocol
