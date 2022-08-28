@@ -4,7 +4,6 @@ on:
     branches:
       - 'stage'
       - 'core'
-      - 'test-new-gh-action'
     types: 
       - closed
     paths:
