@@ -21,18 +21,20 @@ jobs:
         with:
           node-version: '16'
           cache: 'yarn'
-      - run: |
+      - name : Yarn Commands
+        run: |
           yarn install
           yarn compile
-          ls ../apps/dapp/src/types/
-          echo '----- Running Rsync -----'
+      - name : Sync Directories
+        run : |
           rsync -avzh typechain ../apps/dapp/src/types/
+      - name: Setting up git 
+        run : |
           git config user.name TempleDAO
           git config user.email TempleDAO@github.com
+      - name: Pushing Automated Commit
+        run: |
           git add ../apps/dapp/src/types/
           git commit -m "Automated Action: Update Dapp Typechain Types"
-          git status
-          echo '---- Trying to push ----'
-          echo ${{ github.event.pull_request.merged }}
           git push
         working-directory: protocol
