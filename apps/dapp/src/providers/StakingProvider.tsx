@@ -293,21 +293,13 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
       const OGTContract = new OGTemple__factory(signer).attach(await TEMPLE_STAKING.OG_TEMPLE());
 
-      const EXIT_QUEUE = new ExitQueue__factory(signer).attach(env.contracts.exitQueue);
-
       try {
         const ogTempleBalance: BigNumber = await OGTContract.balanceOf(wallet);
         // ensure user input is not greater than user balance. if greater use all user balance.
         const offering = amount.lte(ogTempleBalance) ? amount : ogTempleBalance;
-        const baseGas = Number(env.gas?.unstakeBase || 300000);
-        const gasPerEpoch = Number(env.gas?.unstakePerEpoch || 20000);
-        const accFactor = await TEMPLE_STAKING.accumulationFactor();
-        const maxPerEpoch = await EXIT_QUEUE.maxPerEpoch();
-        const epochs = fromAtto(offering.mul(accFactor).div(maxPerEpoch));
-        const recommendedGas = Math.ceil(baseGas + gasPerEpoch * epochs);
 
         const unstakeTXN = await TEMPLE_STAKING.unstake(offering, {
-          gasLimit: recommendedGas < 30000000 ? recommendedGas : 30000000,
+          gasLimit: Number(env.gas?.unstakeBase || 300000)
         });
 
         await unstakeTXN.wait();
