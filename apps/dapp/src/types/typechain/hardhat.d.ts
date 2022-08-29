@@ -181,6 +181,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.InstantExitQueue__factory>;
     getContractFactory(
+      name: "LockedOGTemple",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.LockedOGTemple__factory>;
+    getContractFactory(
       name: "OGTemple",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.OGTemple__factory>;
@@ -471,6 +475,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.InstantExitQueue>;
+    getContractAt(
+      name: "LockedOGTemple",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.LockedOGTemple>;
     getContractAt(
       name: "OGTemple",
       address: string,

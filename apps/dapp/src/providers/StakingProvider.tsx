@@ -16,7 +16,6 @@ import {
   TempleERC20Token__factory,
   TempleStaking__factory,
   LockedOGTemple__factory,
-  LockedOGTempleDeprecated__factory,
 } from 'types/typechain';
 
 const INITIAL_STATE: StakingService = {
@@ -77,7 +76,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
-    const ogLockedTemple = new LockedOGTempleDeprecated__factory(signerState).attach(env.contracts.ogTemple);
+    const ogLockedTemple = new LockedOGTemple__factory(signerState).attach(env.contracts.lockedOgTemple);
 
     const lockedNum = (await ogLockedTemple.numLocks(walletAddress)).toNumber();
     const lockedEntriesPromises = [];
@@ -93,16 +92,6 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         balanceOGTemple: entry.BalanceOGTemple,
         index,
       };
-    });
-
-    // get ogTempleLocked from new Contract
-    const ogLockedTempleNew = new LockedOGTemple__factory(signerState).attach(env.contracts.ogTemple);
-
-    const newEntry = await ogLockedTempleNew.ogTempleLocked(walletAddress);
-    lockedEntriesVals.push({
-      balanceOGTemple: newEntry.amount,
-      lockedUntilTimestamp: newEntry.lockedUntilTimestamp.toNumber() * 1000,
-      index: lockedEntriesVals.length,
     });
 
     return lockedEntriesVals;
@@ -291,7 +280,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     if (wallet && signer) {
       const TEMPLE_STAKING = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
 
-      const OGTContract = new OGTemple__factory(signer).attach(await TEMPLE_STAKING.OG_TEMPLE());
+      const OGTContract = new OGTemple__factory(signer).attach(env.contracts.ogTemple);
 
       try {
         const ogTempleBalance: BigNumber = await OGTContract.balanceOf(wallet);
@@ -299,7 +288,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         const offering = amount.lte(ogTempleBalance) ? amount : ogTempleBalance;
 
         const unstakeTXN = await TEMPLE_STAKING.unstake(offering, {
-          gasLimit: Number(env.gas?.unstakeBase || 300000)
+          gasLimit: Number(env.gas?.unstakeBase || 300000),
         });
 
         await unstakeTXN.wait();
@@ -354,7 +343,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
 
   const claimOgTemple = async (lockedEntryIndex: number) => {
     if (wallet && signer) {
-      const lockedOGTempleContract = new LockedOGTempleDeprecated__factory(signer).attach(env.contracts.ogTemple);
+      const lockedOGTempleContract = new LockedOGTemple__factory(signer).attach(env.contracts.lockedOgTemple);
 
       const withdrawTXN = await lockedOGTempleContract.withdraw(lockedEntryIndex, {
         gasLimit: env.gas?.claimOgTemple || 100000,
