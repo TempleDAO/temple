@@ -4,7 +4,6 @@
 import {
   BaseContract,
   BigNumber,
-  BigNumberish,
   BytesLike,
   CallOverrides,
   ContractTransaction,
@@ -17,69 +16,71 @@ import { FunctionFragment, Result, EventFragment } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
 import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
-export interface VaultedTempleInterface extends utils.Interface {
-  contractName: "VaultedTemple";
+export interface ZapBaseInterface extends utils.Interface {
+  contractName: "ZapBase";
   functions: {
+    "approvedTargets(address,address)": FunctionFragment;
     "owner()": FunctionFragment;
+    "paused()": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
-    "templeExposure()": FunctionFragment;
-    "templeToken()": FunctionFragment;
-    "toTemple(uint256,address)": FunctionFragment;
+    "setApprovedTargets(address[],address[],bool[])": FunctionFragment;
+    "toggleContractActive()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
-    "withdraw(address,address,uint256)": FunctionFragment;
   };
 
+  encodeFunctionData(
+    functionFragment: "approvedTargets",
+    values: [string, string]
+  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(functionFragment: "paused", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "templeExposure",
-    values?: undefined
+    functionFragment: "setApprovedTargets",
+    values: [string[], string[], boolean[]]
   ): string;
   encodeFunctionData(
-    functionFragment: "templeToken",
+    functionFragment: "toggleContractActive",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "toTemple",
-    values: [BigNumberish, string]
   ): string;
   encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [string]
   ): string;
-  encodeFunctionData(
-    functionFragment: "withdraw",
-    values: [string, string, BigNumberish]
-  ): string;
 
+  decodeFunctionResult(
+    functionFragment: "approvedTargets",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "templeExposure",
+    functionFragment: "setApprovedTargets",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "templeToken",
+    functionFragment: "toggleContractActive",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "toTemple", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
   events: {
     "OwnershipTransferred(address,address)": EventFragment;
+    "SetContractState(bool)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "SetContractState"): EventFragment;
 }
 
 export type OwnershipTransferredEvent = TypedEvent<
@@ -90,13 +91,18 @@ export type OwnershipTransferredEvent = TypedEvent<
 export type OwnershipTransferredEventFilter =
   TypedEventFilter<OwnershipTransferredEvent>;
 
-export interface VaultedTemple extends BaseContract {
-  contractName: "VaultedTemple";
+export type SetContractStateEvent = TypedEvent<[boolean], { paused: boolean }>;
+
+export type SetContractStateEventFilter =
+  TypedEventFilter<SetContractStateEvent>;
+
+export interface ZapBase extends BaseContract {
+  contractName: "ZapBase";
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
 
-  interface: VaultedTempleInterface;
+  interface: ZapBaseInterface;
 
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
@@ -118,19 +124,28 @@ export interface VaultedTemple extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
+    approvedTargets(
+      arg0: string,
+      arg1: string,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
+
     owner(overrides?: CallOverrides): Promise<[string]>;
+
+    paused(overrides?: CallOverrides): Promise<[boolean]>;
 
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    templeExposure(overrides?: CallOverrides): Promise<[string]>;
+    setApprovedTargets(
+      _tokens: string[],
+      _targets: string[],
+      _isApproved: boolean[],
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
 
-    templeToken(overrides?: CallOverrides): Promise<[string]>;
-
-    toTemple(
-      amount: BigNumberish,
-      toAccount: string,
+    toggleContractActive(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -138,28 +153,30 @@ export interface VaultedTemple extends BaseContract {
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-
-    withdraw(
-      token: string,
-      to: string,
-      amount: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
   };
 
+  approvedTargets(
+    arg0: string,
+    arg1: string,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
+
   owner(overrides?: CallOverrides): Promise<string>;
+
+  paused(overrides?: CallOverrides): Promise<boolean>;
 
   renounceOwnership(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  templeExposure(overrides?: CallOverrides): Promise<string>;
+  setApprovedTargets(
+    _tokens: string[],
+    _targets: string[],
+    _isApproved: boolean[],
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
-  templeToken(overrides?: CallOverrides): Promise<string>;
-
-  toTemple(
-    amount: BigNumberish,
-    toAccount: string,
+  toggleContractActive(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -168,37 +185,30 @@ export interface VaultedTemple extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  withdraw(
-    token: string,
-    to: string,
-    amount: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
   callStatic: {
+    approvedTargets(
+      arg0: string,
+      arg1: string,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
+
     owner(overrides?: CallOverrides): Promise<string>;
+
+    paused(overrides?: CallOverrides): Promise<boolean>;
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
-    templeExposure(overrides?: CallOverrides): Promise<string>;
-
-    templeToken(overrides?: CallOverrides): Promise<string>;
-
-    toTemple(
-      amount: BigNumberish,
-      toAccount: string,
+    setApprovedTargets(
+      _tokens: string[],
+      _targets: string[],
+      _isApproved: boolean[],
       overrides?: CallOverrides
     ): Promise<void>;
+
+    toggleContractActive(overrides?: CallOverrides): Promise<void>;
 
     transferOwnership(
       newOwner: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    withdraw(
-      token: string,
-      to: string,
-      amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
   };
@@ -212,64 +222,71 @@ export interface VaultedTemple extends BaseContract {
       previousOwner?: string | null,
       newOwner?: string | null
     ): OwnershipTransferredEventFilter;
+
+    "SetContractState(bool)"(paused?: null): SetContractStateEventFilter;
+    SetContractState(paused?: null): SetContractStateEventFilter;
   };
 
   estimateGas: {
+    approvedTargets(
+      arg0: string,
+      arg1: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     owner(overrides?: CallOverrides): Promise<BigNumber>;
+
+    paused(overrides?: CallOverrides): Promise<BigNumber>;
 
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    templeExposure(overrides?: CallOverrides): Promise<BigNumber>;
+    setApprovedTargets(
+      _tokens: string[],
+      _targets: string[],
+      _isApproved: boolean[],
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
 
-    templeToken(overrides?: CallOverrides): Promise<BigNumber>;
-
-    toTemple(
-      amount: BigNumberish,
-      toAccount: string,
+    toggleContractActive(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     transferOwnership(
       newOwner: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    withdraw(
-      token: string,
-      to: string,
-      amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
+    approvedTargets(
+      arg0: string,
+      arg1: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    paused(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    templeExposure(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+    setApprovedTargets(
+      _tokens: string[],
+      _targets: string[],
+      _isApproved: boolean[],
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
 
-    templeToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    toTemple(
-      amount: BigNumberish,
-      toAccount: string,
+    toggleContractActive(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     transferOwnership(
       newOwner: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    withdraw(
-      token: string,
-      to: string,
-      amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

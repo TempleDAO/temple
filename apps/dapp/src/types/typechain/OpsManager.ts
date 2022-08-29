@@ -31,7 +31,6 @@ export interface OpsManagerInterface extends utils.Interface {
     "addRevenue(address[],uint256[])": FunctionFragment;
     "createExposure(string,string,address)": FunctionFragment;
     "createVaultInstance(string,string,uint256,uint256,(uint256,uint256),uint256)": FunctionFragment;
-    "decreaseStartTime(address[],uint256)": FunctionFragment;
     "increaseVaultTemple(address[],uint256[])": FunctionFragment;
     "joiningFee()": FunctionFragment;
     "liquidateExposures(address[],address[])": FunctionFragment;
@@ -41,6 +40,8 @@ export interface OpsManagerInterface extends utils.Interface {
     "renounceOwnership()": FunctionFragment;
     "requiresRebalance(address[],address)": FunctionFragment;
     "revalTokens(uint256)": FunctionFragment;
+    "setExposureLiquidator(address,address)": FunctionFragment;
+    "setExposureMinterState(address,address,bool)": FunctionFragment;
     "templeExposure()": FunctionFragment;
     "templeToken()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
@@ -72,10 +73,6 @@ export interface OpsManagerInterface extends utils.Interface {
     ]
   ): string;
   encodeFunctionData(
-    functionFragment: "decreaseStartTime",
-    values: [string[], BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "increaseVaultTemple",
     values: [string[], BigNumberish[]]
   ): string;
@@ -104,6 +101,14 @@ export interface OpsManagerInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "revalTokens",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setExposureLiquidator",
+    values: [string, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setExposureMinterState",
+    values: [string, string, boolean]
   ): string;
   encodeFunctionData(
     functionFragment: "templeExposure",
@@ -140,10 +145,6 @@ export interface OpsManagerInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "decreaseStartTime",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "increaseVaultTemple",
     data: BytesLike
   ): Result;
@@ -165,6 +166,14 @@ export interface OpsManagerInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "revalTokens",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setExposureLiquidator",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setExposureMinterState",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -267,14 +276,8 @@ export interface OpsManager extends BaseContract {
       symbol: string,
       periodDuration: BigNumberish,
       enterExitWindowDuration: BigNumberish,
-      shareBoostFactory: RationalStruct,
+      shareBoostFactor: RationalStruct,
       firstPeriodStartTimestamp: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    decreaseStartTime(
-      vaults: string[],
-      delta: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -317,6 +320,19 @@ export interface OpsManager extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[string]>;
 
+    setExposureLiquidator(
+      exposureToken: string,
+      _liquidator: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setExposureMinterState(
+      exposureToken: string,
+      account: string,
+      state: boolean,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     templeExposure(overrides?: CallOverrides): Promise<[string]>;
 
     templeToken(overrides?: CallOverrides): Promise<[string]>;
@@ -355,14 +371,8 @@ export interface OpsManager extends BaseContract {
     symbol: string,
     periodDuration: BigNumberish,
     enterExitWindowDuration: BigNumberish,
-    shareBoostFactory: RationalStruct,
+    shareBoostFactor: RationalStruct,
     firstPeriodStartTimestamp: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  decreaseStartTime(
-    vaults: string[],
-    delta: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -402,6 +412,19 @@ export interface OpsManager extends BaseContract {
 
   revalTokens(arg0: BigNumberish, overrides?: CallOverrides): Promise<string>;
 
+  setExposureLiquidator(
+    exposureToken: string,
+    _liquidator: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setExposureMinterState(
+    exposureToken: string,
+    account: string,
+    state: boolean,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   templeExposure(overrides?: CallOverrides): Promise<string>;
 
   templeToken(overrides?: CallOverrides): Promise<string>;
@@ -440,14 +463,8 @@ export interface OpsManager extends BaseContract {
       symbol: string,
       periodDuration: BigNumberish,
       enterExitWindowDuration: BigNumberish,
-      shareBoostFactory: RationalStruct,
+      shareBoostFactor: RationalStruct,
       firstPeriodStartTimestamp: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    decreaseStartTime(
-      vaults: string[],
-      delta: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -484,6 +501,19 @@ export interface OpsManager extends BaseContract {
     ): Promise<boolean[]>;
 
     revalTokens(arg0: BigNumberish, overrides?: CallOverrides): Promise<string>;
+
+    setExposureLiquidator(
+      exposureToken: string,
+      _liquidator: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setExposureMinterState(
+      exposureToken: string,
+      account: string,
+      state: boolean,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     templeExposure(overrides?: CallOverrides): Promise<string>;
 
@@ -549,14 +579,8 @@ export interface OpsManager extends BaseContract {
       symbol: string,
       periodDuration: BigNumberish,
       enterExitWindowDuration: BigNumberish,
-      shareBoostFactory: RationalStruct,
+      shareBoostFactor: RationalStruct,
       firstPeriodStartTimestamp: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    decreaseStartTime(
-      vaults: string[],
-      delta: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -597,6 +621,19 @@ export interface OpsManager extends BaseContract {
     revalTokens(
       arg0: BigNumberish,
       overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    setExposureLiquidator(
+      exposureToken: string,
+      _liquidator: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setExposureMinterState(
+      exposureToken: string,
+      account: string,
+      state: boolean,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
     templeExposure(overrides?: CallOverrides): Promise<BigNumber>;
@@ -641,14 +678,8 @@ export interface OpsManager extends BaseContract {
       symbol: string,
       periodDuration: BigNumberish,
       enterExitWindowDuration: BigNumberish,
-      shareBoostFactory: RationalStruct,
+      shareBoostFactor: RationalStruct,
       firstPeriodStartTimestamp: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    decreaseStartTime(
-      vaults: string[],
-      delta: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -692,6 +723,19 @@ export interface OpsManager extends BaseContract {
     revalTokens(
       arg0: BigNumberish,
       overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    setExposureLiquidator(
+      exposureToken: string,
+      _liquidator: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setExposureMinterState(
+      exposureToken: string,
+      account: string,
+      state: boolean,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     templeExposure(overrides?: CallOverrides): Promise<PopulatedTransaction>;
