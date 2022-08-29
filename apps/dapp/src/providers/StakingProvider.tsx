@@ -2,16 +2,12 @@ import { useState, createContext, useContext, PropsWithChildren } from 'react';
 import { BigNumber, Signer } from 'ethers';
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
-import { getEpochsToDays } from 'providers/util';
 import { NoWalletAddressError } from 'providers/errors';
-import { fromAtto } from 'utils/bigNumber';
 import { asyncNoop } from 'utils/helpers';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import env from 'constants/env';
 import { StakingService, JoinQueueData, ExitQueueData, LockedEntry } from 'providers/types';
 import {
-  AcceleratedExitQueue__factory,
-  ExitQueue__factory,
   OGTemple__factory,
   TempleERC20Token__factory,
   TempleStaking__factory,
@@ -29,10 +25,6 @@ const INITIAL_STATE: StakingService = {
   lockedEntries: [],
   stake: asyncNoop,
   unstake: asyncNoop,
-  claimAvailableTemple: asyncNoop,
-  restakeAvailableTemple: asyncNoop,
-  getJoinQueueData: asyncNoop,
-  getExitQueueData: asyncNoop,
   updateLockedEntries: asyncNoop,
   claimOgTemple: asyncNoop,
   getRewardsForOGT: asyncNoop,
@@ -53,9 +45,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
-
     const TEMPLE_STAKING = new TempleStaking__factory(signerState).attach(env.contracts.templeStaking);
-
     const SCALE_FACTOR = 10000;
     const epy = (await TEMPLE_STAKING.getEpy(SCALE_FACTOR)).toNumber();
     return Math.trunc((Math.pow(epy / SCALE_FACTOR + 1, 365.25) - 1) * 100);
@@ -65,9 +55,7 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
-
     const STAKING = new TempleStaking__factory(signerState).attach(env.contracts.templeStaking);
-
     return await STAKING.balance(ogtAmount);
   };
 
@@ -97,70 +85,10 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     return lockedEntriesVals;
   };
 
-  const getExitQueueData = async (walletAddress: string, signerState: Signer) => {
-    if (!walletAddress) {
-      throw new NoWalletAddressError();
-    }
-
-    const EXIT_QUEUE = new ExitQueue__factory(signerState).attach(env.contracts.exitQueue);
-
-    const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(signerState).attach(env.contracts.exitQueue);
-
-    const userData = await EXIT_QUEUE.userData(walletAddress);
-    const totalTempleOwned = fromAtto(userData.Amount);
-
-    if (totalTempleOwned === 0) {
-      return {
-        lastClaimableEpochAt: 0,
-        claimableTemple: 0,
-        totalTempleOwned: 0,
-        claimableEpochs: [],
-      };
-    }
-
-    const currentEpoch = (await ACCELERATED_EXIT_QUEUE.currentEpoch()).toNumber();
-    const firstEpoch = userData.FirstExitEpoch.toNumber();
-    const lastEpoch = userData.LastExitEpoch.toNumber();
-    const todayInMs = new Date().getTime();
-    const dayInMs = 8.64e7;
-    const daysUntilLastClaimableEpoch = await getEpochsToDays(lastEpoch - currentEpoch + 1, signerState);
-    const lastClaimableEpochAt = todayInMs + daysUntilLastClaimableEpoch * dayInMs;
-
-    const exitEntryPromises = [];
-
-    // stores all epochs address has in the ExitQueue.sol, some might have Allocation 0
-    const maybeClaimableEpochs: Array<number> = [];
-    // stores all epochs with allocations for address
-    const claimableEpochs: Array<number> = [];
-    for (let i = firstEpoch; i < currentEpoch; i++) {
-      maybeClaimableEpochs.push(i);
-      exitEntryPromises.push(EXIT_QUEUE.currentEpochAllocation(walletAddress, i));
-    }
-
-    const exitEntries = await Promise.all(exitEntryPromises);
-    const claimableTemple: number = fromAtto(
-      exitEntries.reduce((prev, curr, index) => {
-        // the contract is not removing the user.Exits[epoch], so we only get the ones with a claimable amount(anything above 0)
-        if (fromAtto(curr) > 0) {
-          claimableEpochs.push(maybeClaimableEpochs[index]);
-        }
-        return prev.add(curr);
-      }, BigNumber.from(0))
-    );
-
-    return {
-      lastClaimableEpochAt,
-      claimableTemple,
-      totalTempleOwned,
-      claimableEpochs,
-    };
-  };
-
   const updateApy = async () => {
     if (!wallet || !signer) {
       return;
     }
-
     const apy = await getApy(wallet, signer);
     setApy(apy);
   };
@@ -169,93 +97,13 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     if (!wallet || !signer) {
       return;
     }
-
     const lockedEntries = await getLockedEntries(wallet, signer);
     setLockedEntries(lockedEntries);
-  };
-
-  const restakeAvailableTemple = async (): Promise<void> => {
-    if (wallet && signer) {
-      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(signer).attach(env.contracts.exitQueue);
-
-      const EXIT_QUEUE = new ExitQueue__factory(signer).attach(env.contracts.exitQueue);
-
-      const userData = await EXIT_QUEUE.userData(wallet);
-
-      const firstEpoch = userData.FirstExitEpoch.toNumber();
-      const lastEpoch = userData.LastExitEpoch.toNumber();
-      const exitEntryPromises = [];
-
-      // stores all epochs address has in the ExitQueue.sol, some might have Allocation 0
-      const maybeClaimableEpochs: Array<number> = [];
-      // stores all epochs with allocations for address
-      const claimableEpochs: Array<number> = [];
-
-      for (let i = firstEpoch; i <= lastEpoch; i++) {
-        maybeClaimableEpochs.push(i);
-        exitEntryPromises.push(EXIT_QUEUE.currentEpochAllocation(wallet, i));
-      }
-
-      const exitEntries = await Promise.all(exitEntryPromises);
-      exitEntries.reduce((prev, curr, index) => {
-        // the contract is not removing the user.Exits[epoch], so we only get the ones with a claimable amount(anything above 0)
-        if (fromAtto(curr) > 0) {
-          claimableEpochs.push(maybeClaimableEpochs[index]);
-        }
-        return prev.add(curr);
-      }, BigNumber.from(0));
-
-      if (claimableEpochs.length) {
-        const baseCase = env.gas?.restakeBase || 175000;
-        const perEpoch = env.gas?.restakePerEpoch || 20000;
-        const recommendedGas = Number(baseCase) + Number(perEpoch) * claimableEpochs.length;
-
-        const restakeTXN = await ACCELERATED_EXIT_QUEUE.restake(claimableEpochs, claimableEpochs.length, {
-          gasLimit: recommendedGas || 500000,
-        });
-
-        await restakeTXN.wait();
-        // Show feedback to user
-        openNotification({
-          title: `${TICKER_SYMBOL.TEMPLE_TOKEN} restaked`,
-          hash: restakeTXN.hash,
-        });
-      }
-      getBalance();
-    }
-  };
-
-  const getJoinQueueData = async (ogtAmount: BigNumber): Promise<JoinQueueData | void> => {
-    if (wallet && signer) {
-      const EXIT_QUEUE = new ExitQueue__factory(signer).attach(env.contracts.exitQueue);
-      const STAKING = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
-      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(signer).attach(env.contracts.exitQueue);
-
-      const maxPerAddress = await EXIT_QUEUE.maxPerAddress();
-      const maxPerEpoch = await EXIT_QUEUE.maxPerEpoch();
-      const maxPerAddressPerEpoch = maxPerAddress.lt(maxPerEpoch) ? maxPerAddress : maxPerEpoch;
-
-      const nextUnallocatedEpoch = await EXIT_QUEUE.nextUnallocatedEpoch();
-      const currentEpoch = await ACCELERATED_EXIT_QUEUE.currentEpoch();
-      const amountTemple = await STAKING.balance(ogtAmount);
-
-      const queueLengthEpochs = nextUnallocatedEpoch.sub(currentEpoch).toNumber();
-
-      // number of blocks to process, always rounding up
-      const processTimeEpochs =
-        amountTemple.div(maxPerAddressPerEpoch).toNumber() + (amountTemple.mod(maxPerAddressPerEpoch).eq(0) ? 0 : 1);
-
-      return {
-        queueLength: await getEpochsToDays(queueLengthEpochs >= 0 ? queueLengthEpochs : 0, signer),
-        processTime: await getEpochsToDays(processTimeEpochs, signer),
-      };
-    }
   };
 
   const stake = async (amountToStake: BigNumber) => {
     if (wallet && signer) {
       const TEMPLE_STAKING = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
-
       const TEMPLE = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
 
       await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, TEMPLE, env.contracts.templeStaking, amountToStake);
@@ -304,39 +152,10 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  const claimAvailableTemple = async (): Promise<void> => {
-    if (wallet && signer) {
-      const ACCELERATED_EXIT_QUEUE = new AcceleratedExitQueue__factory(signer).attach(env.contracts.exitQueue);
-
-      if (exitQueueData.claimableEpochs.length) {
-        const baseCase = env.gas?.widthrawBase || 60000;
-        const perEpoch = env.gas?.widthrawPerEpoch || 15000;
-        const recommendedGas = Number(baseCase) + Number(perEpoch) * exitQueueData.claimableEpochs.length;
-
-        const withdrawTXN = await ACCELERATED_EXIT_QUEUE.withdrawEpochs(
-          exitQueueData.claimableEpochs,
-          exitQueueData.claimableEpochs.length,
-          {
-            gasLimit: recommendedGas || 150000,
-          }
-        );
-
-        await withdrawTXN.wait();
-        // Show feedback to user
-        openNotification({
-          title: `${TICKER_SYMBOL.TEMPLE_TOKEN} claimed`,
-          hash: withdrawTXN.hash,
-        });
-      }
-      getBalance();
-    }
-  };
-
   const getRewardsForOGT = async (ogtAmount: BigNumber) => {
     if (!wallet || !signer) {
       return;
     }
-
     const rewards = await getRewardsForOGTemple(wallet, signer, ogtAmount);
     return rewards;
   };
@@ -358,15 +177,6 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  const updateExitQueueData = async () => {
-    if (!wallet || !signer) {
-      return;
-    }
-
-    // const exitQueueData = await getExitQueueData(wallet, signer);
-    // setExitQueueData(exitQueueData);
-  };
-
   return (
     <StakingContext.Provider
       value={{
@@ -375,10 +185,6 @@ export const StakingProvider = (props: PropsWithChildren<{}>) => {
         lockedEntries,
         stake,
         unstake,
-        claimAvailableTemple,
-        restakeAvailableTemple,
-        getJoinQueueData,
-        getExitQueueData: updateExitQueueData,
         updateLockedEntries,
         claimOgTemple,
         getRewardsForOGT,
