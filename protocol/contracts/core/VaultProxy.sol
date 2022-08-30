@@ -23,8 +23,6 @@ contract VaultProxy is Ownable {
     error NoTempleReceivedWhenUnstaking();
     error SendToAddressZero();
     error WithdrawSendFailed();
-    error CanNotExitVault();
-    error FirstVaultCycle();
 
     // Events
     event EarlyWithdraw(address account, uint256 amount, address vault);
@@ -92,41 +90,5 @@ contract VaultProxy is Ownable {
         } else {
             SafeERC20.safeTransfer(IERC20(token), to, amount);
         }
-    }
-
-    /**
-     * @notice Allows user to withdraw their Temple from a vault before the exit window, forfeits any yield
-     */
-    function exitVaultEarly(uint256 amount, Vault vaultErc) external {
-        (uint256 cycleNum,) = vaultErc.inEnterExitWindow();
-        if (cycleNum == 0) { 
-            revert FirstVaultCycle();
-        }
-
-        SafeERC20.safeTransferFrom(IERC20(vaultErc), msg.sender, address(this), amount);
-        uint256 shareAmount = vaultErc.toSharesAmount(amount);
-        uint256 templeBal = vaultErc.toTokenAmount(shareAmount);
-        SafeERC20.safeTransfer(temple, msg.sender, templeBal);
-
-        emit EarlyWithdraw(msg.sender, amount, address(vaultErc));
-    }
-
-    /**
-     * @notice Allows owner to redeem any vault shares from users that have exited early
-     */
-    function redeemVaultTokenToTemple(Vault vaultErc) public onlyOwner {
-        if (!vaultErc.canExit()) {
-            revert CanNotExitVault();
-        }
-        uint256 balance = vaultErc.balanceOf(address(this));
-        vaultErc.withdraw(balance);
-    }
-
-    /**
-     * @notice Allows owner to redeem any vault shares and then withdraw to the provided address
-     */
-    function redeemVaultTokenToTempleAndWithdraw(Vault vaultErc, address to, uint256 amount) external onlyOwner {
-        redeemVaultTokenToTemple(vaultErc);
-        withdraw(address(temple), to, amount);
     }
 }
