@@ -21,6 +21,8 @@ contract AscendProxy is Ownable {
     // Errors
     error FirstVaultCycle();
     error CanNotExitVault();
+    error SendToAddressZero();
+    error WithdrawSendFailed();
 
     // Events
     event EarlyWithdraw(address account, uint256 amount, address vault);
