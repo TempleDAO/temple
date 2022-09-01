@@ -11,6 +11,8 @@ import { Trade } from './components/Trade';
 import { AuctionContextProvider } from './components/AuctionContext';
 import { ChartInfoBar } from './components/ChartInfoBar';
 import { PoolComposition } from './components/PoolComposition';
+import { NAV_MOBILE_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
+import { phoneAndAbove } from 'styles/breakpoints';
 
 import {
   Description,
@@ -97,6 +99,9 @@ export const AscendPage = () => {
   );
 };
 
-const Wrapper = styled.div`
-  width: 100%;
+export const Wrapper = styled.div`
+  margin: ${NAV_MOBILE_HEIGHT_PIXELS}px 0.625rem 2.5rem 0.625rem;
+  ${phoneAndAbove(`
+    margin: 0.625rem 2.5rem 2.5rem 2.5rem;
+  `)}
 `;
