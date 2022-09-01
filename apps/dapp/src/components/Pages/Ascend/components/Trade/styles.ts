@@ -47,7 +47,7 @@ export const SwapControls = styled.div`
   align-items: center;
 `;
 
-export const ToggleButton = styled.button`
+export const ToggleButton = styled.button<{hoverDisabled? : boolean}>`
   ${buttonResets}
 
   ${backgroundImage(arrowIcon, {
@@ -56,7 +56,7 @@ export const ToggleButton = styled.button`
   })}
 
   &:hover {
-    transform: rotate(180deg);
+    transform: rotate(${props => props.hoverDisabled ? 0 : 180}deg)
   }
 
   transition: all 150ms;

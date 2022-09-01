@@ -30,6 +30,8 @@ interface AuctionContext {
 
   toggleTokenPair: () => void;
 
+  resetTokenPairToDefault: () => void;
+
   vaultAddress: string;
   isPaused: boolean;
 
@@ -71,6 +73,7 @@ const AuctionContext = createContext<AuctionContext>({
   balances: {},
 
   toggleTokenPair: noop,
+  resetTokenPairToDefault: noop,
   vaultAddress: '',
   isPaused: false,
 
@@ -133,6 +136,12 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
   const toggleTokenPair = () => setSwapState(({ sell, buy }) => ({
     sell: buy,
     buy: sell,
+  }));
+
+  const resetTokenPairToDefault = () =>
+  setSwapState(() => ({
+    sell: accrued,
+    buy: base,
   }));
 
   const { data: sellTokenData, refetch: refetchSell } = useBalance({
@@ -229,6 +238,7 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
         weights,
 
         toggleTokenPair,
+        resetTokenPairToDefault,
         vaultAddress: vaultAddress as string,
         isPaused: pausedState ? pausedState.paused : true,
 
