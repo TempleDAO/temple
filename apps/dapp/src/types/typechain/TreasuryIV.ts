@@ -17,63 +17,48 @@ import { FunctionFragment, Result, EventFragment } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
 import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
-export interface VaultedTempleInterface extends utils.Interface {
-  contractName: "VaultedTemple";
+export interface TreasuryIVInterface extends utils.Interface {
+  contractName: "TreasuryIV";
   functions: {
+    "intrinsicValueRatio()": FunctionFragment;
     "owner()": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
-    "templeExposure()": FunctionFragment;
-    "templeToken()": FunctionFragment;
-    "toTemple(uint256,address)": FunctionFragment;
+    "setIV(uint256,uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
-    "withdraw(address,address,uint256)": FunctionFragment;
   };
 
+  encodeFunctionData(
+    functionFragment: "intrinsicValueRatio",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "templeExposure",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "templeToken",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "toTemple",
-    values: [BigNumberish, string]
+    functionFragment: "setIV",
+    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [string]
   ): string;
-  encodeFunctionData(
-    functionFragment: "withdraw",
-    values: [string, string, BigNumberish]
-  ): string;
 
+  decodeFunctionResult(
+    functionFragment: "intrinsicValueRatio",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "templeExposure",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "templeToken",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(functionFragment: "toTemple", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "setIV", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
   events: {
     "OwnershipTransferred(address,address)": EventFragment;
@@ -90,13 +75,13 @@ export type OwnershipTransferredEvent = TypedEvent<
 export type OwnershipTransferredEventFilter =
   TypedEventFilter<OwnershipTransferredEvent>;
 
-export interface VaultedTemple extends BaseContract {
-  contractName: "VaultedTemple";
+export interface TreasuryIV extends BaseContract {
+  contractName: "TreasuryIV";
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
 
-  interface: VaultedTempleInterface;
+  interface: TreasuryIVInterface;
 
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
@@ -118,19 +103,19 @@ export interface VaultedTemple extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
+    intrinsicValueRatio(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
     owner(overrides?: CallOverrides): Promise<[string]>;
 
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    templeExposure(overrides?: CallOverrides): Promise<[string]>;
-
-    templeToken(overrides?: CallOverrides): Promise<[string]>;
-
-    toTemple(
-      amount: BigNumberish,
-      toAccount: string,
+    setIV(
+      frax: BigNumberish,
+      temple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -138,14 +123,11 @@ export interface VaultedTemple extends BaseContract {
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-
-    withdraw(
-      token: string,
-      to: string,
-      amount: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
   };
+
+  intrinsicValueRatio(
+    overrides?: CallOverrides
+  ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
 
   owner(overrides?: CallOverrides): Promise<string>;
 
@@ -153,13 +135,9 @@ export interface VaultedTemple extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  templeExposure(overrides?: CallOverrides): Promise<string>;
-
-  templeToken(overrides?: CallOverrides): Promise<string>;
-
-  toTemple(
-    amount: BigNumberish,
-    toAccount: string,
+  setIV(
+    frax: BigNumberish,
+    temple: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -168,37 +146,23 @@ export interface VaultedTemple extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  withdraw(
-    token: string,
-    to: string,
-    amount: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
   callStatic: {
+    intrinsicValueRatio(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
+
     owner(overrides?: CallOverrides): Promise<string>;
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
-    templeExposure(overrides?: CallOverrides): Promise<string>;
-
-    templeToken(overrides?: CallOverrides): Promise<string>;
-
-    toTemple(
-      amount: BigNumberish,
-      toAccount: string,
+    setIV(
+      frax: BigNumberish,
+      temple: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
     transferOwnership(
       newOwner: string,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    withdraw(
-      token: string,
-      to: string,
-      amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
   };
@@ -215,19 +179,17 @@ export interface VaultedTemple extends BaseContract {
   };
 
   estimateGas: {
+    intrinsicValueRatio(overrides?: CallOverrides): Promise<BigNumber>;
+
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    templeExposure(overrides?: CallOverrides): Promise<BigNumber>;
-
-    templeToken(overrides?: CallOverrides): Promise<BigNumber>;
-
-    toTemple(
-      amount: BigNumberish,
-      toAccount: string,
+    setIV(
+      frax: BigNumberish,
+      temple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -235,41 +197,27 @@ export interface VaultedTemple extends BaseContract {
       newOwner: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
-
-    withdraw(
-      token: string,
-      to: string,
-      amount: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
+    intrinsicValueRatio(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     renounceOwnership(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    templeExposure(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    templeToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    toTemple(
-      amount: BigNumberish,
-      toAccount: string,
+    setIV(
+      frax: BigNumberish,
+      temple: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     transferOwnership(
       newOwner: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    withdraw(
-      token: string,
-      to: string,
-      amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

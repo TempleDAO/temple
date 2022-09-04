@@ -16,8 +16,8 @@ import {
   TempleStableAMMRouter__factory,
   VaultProxy__factory,
   InstantExitQueue__factory,
+  LockedOGTemple__factory,
 } from '../../typechain';
-import { writeFile } from 'fs/promises';
 
 function toAtto(n: number) {
   return BigNumber.from(10).pow(18).mul(n);
@@ -70,6 +70,10 @@ async function main() {
     await templeStaking.OG_TEMPLE()
   );
 
+  const lockedOgTemple = await new LockedOGTemple__factory(owner).deploy(
+    ogTempleToken.address
+  );
+
   const frax = await new FakeERC20__factory(owner).deploy('FRAX', 'FRAX');
   const fei = await new FakeERC20__factory(owner).deploy('FEI', 'FEI');
 
@@ -92,22 +96,25 @@ async function main() {
     await templeToken
       .connect(account)
       .increaseAllowance(templeStaking.address, toAtto(20000));
-    await templeStaking.connect(account).stake(toAtto(20000)); // stake a bunch, leave some free temple
+    await templeStaking.connect(account).stake(toAtto(20000)); // stake a bunch, leave some free temple await ogTempleToken
+    await ogTempleToken
+      .connect(account)
+      .increaseAllowance(lockedOgTemple.address, toAtto(10000));
     await ogTempleToken
       .connect(account)
       .increaseAllowance(templeStaking.address, toAtto(10000));
     const nOgTemple = (await ogTempleToken.balanceOf(address)).div(2); // only lock half
 
     // Lock temple, and unstake some, so it's in the exit queue
+    const lockedUntil = await blockTimestamp();
     for (let i = 0; i < nLocks; i++) {
+      await lockedOgTemple
+        .connect(account)
+        .lock(nOgTemple.div(nLocks).sub(1), lockedUntil + i * 600);
       await templeStaking.connect(account).unstake(nOgTemple.div(nLocks * 2));
     }
-
     nLocks += 1;
   }
-
-  // // Mine a couple of epochs forward, to help testing
-  // await mineNBlocks((await exitQueue.epochSize()).toNumber() * 2);
 
   // Create team payment contracts
   const teamPaymentsFixedR1 = await new TempleTeamPayments__factory(
@@ -260,6 +267,7 @@ async function main() {
   const contract_address: { [key: string]: string } = {
     FEI_ADDRESS: fei.address,
     INSTANT_EXIT_QUEUE_ADDRESS: instantExitQueue.address,
+    LOCKKED_OGTEMPLE: lockedOgTemple.address,
     OGTEMPLE_ADDRESS: ogTempleToken.address,
     STABLE_COIN_ADDRESS: frax.address,
     TEMPLE_ADDRESS: templeToken.address,
@@ -287,19 +295,11 @@ async function main() {
     LOCALDEV_VERIFER_EXTERNAL_PRIVATE_KEY: verifier.privateKey,
   };
 
-  await writeFile('../shared/stack/deployed-addr.txt', '');
-
-  let newVarsToWrite = '';
-  console.log();
-  console.log('=========================================');
-  console.log('*** Copy/pasta into .env.local for dApp dev\n\n');
+  console.log('\n=========================================');
+  console.log('*** Deployed contract addresses:\n\n');
   for (const envvar in contract_address) {
-    const line = `VITE_PUBLIC_${envvar}=${contract_address[envvar]}`;
-    console.log(line);
-    newVarsToWrite += line + `\n`;
+    console.log(`${envvar} = ${contract_address[envvar]}`);
   }
-
-  await writeFile('../shared/stack/deployed-addr.txt', newVarsToWrite);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
