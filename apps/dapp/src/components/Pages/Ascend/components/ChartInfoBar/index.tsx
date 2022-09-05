@@ -16,7 +16,7 @@ interface Props {
 
 export const ChartInfoBar = ({ pool }: Props) => {
   const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
-  const { isLoading, formatted, label } = usePoolTokenValues(pool);
+  const { isLoading } = usePoolTokenValues(pool);
 
   return (
     <InfoBar>
@@ -39,10 +39,10 @@ export const ChartInfoBar = ({ pool }: Props) => {
         <span>{isLoading ? <CircularLoader /> : <>${formatTemple(pool.totalLiquidity)}</>}</span>
       </InfoItem>
       <InfoItem>
-        <InfoLabel>
+        {/* <InfoLabel>
           {label}
         </InfoLabel>
-        <span>{isLoading ? <CircularLoader /> : formatted}</span>
+        <span>{isLoading ? <CircularLoader /> : formatted}</span> */}
       </InfoItem>
     </InfoBar>
   );
