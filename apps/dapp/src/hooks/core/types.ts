@@ -58,6 +58,7 @@ export interface SubGraphResponse<T extends object> {
 
 export interface SubGraphQuery {
   query: string;
+  variables?: { [key: string]: string | number }
 }
 
 export type GetVaultGroupsResponse = SubGraphResponse<{ vaultGroups: GraphVaultGroup[] }>;

@@ -11,6 +11,7 @@ const env: Environment = {
     frax: '0x5eD8BD53B0c3fa3dEaBd345430B1A3a6A4e8BD7C',
     frax3CrvFarming: '',
     frax3CrvFarmingRewards: '',
+    lbpFactory: '0xB0C726778C3AE4B3454D85557A48e8fa502bDD6A',
     lockedOgTemple: '0x564462C807600684965d8A8f57eA190F2F66169C',
     ogTemple: '0x564462C807600684965d8A8f57eA190F2F66169C',
     teamPaymentsEpoch1: '0x7a770591f202D18e893DeC115f16DAE9d28686a8',
@@ -26,6 +27,11 @@ const env: Environment = {
     vaultOps: '0x0647b5CFC9e9B03629Db83E7Aa4d1E25283DD9Cb',
     vaultProxy: '0x8adcc775251362B4E03e0437805BE3154C56b3F5',
   },
+  subgraph: {
+    templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-rinkeby',
+    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
+    balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
+  },
   fraxSellDisabledIvMultiple: 1.02,
   gas: {
     swapFraxForTemple: 300000,
@@ -40,14 +46,58 @@ const env: Environment = {
     claimOgTemple: 100000,
   },
   infuraId: 'a2a39f8ae6564913a583c7b6d01c84d6',
+  tokens: {
+    frax: {
+      name: 'Frax',
+      address: '0x73651AD693531F9937528009cC204a4d9b696a68',
+      decimals: 18,
+      symbol: 'FRAX',
+    },
+    temple: {
+      name: 'Temple',
+      address: '0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf',
+      decimals: 18,
+      symbol: 'TEMPLE'
+    },
+    ogTemple: {
+      name: 'OGTemple',
+      address: '0x564462C807600684965d8A8f57eA190F2F66169C',
+      decimals: 18,
+      symbol: 'OGTEMPLE',
+    },
+    fei: {
+      name: 'Fei',
+      address: '0xa1e7CdD887d6fac4861b5663984A9Ba72cFF9522',
+      decimals: 18,
+      symbol: 'FEI',
+    },
+    eth: {
+      name: 'WETH',
+      address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+      decimals: 18,
+      symbol: 'WETH',
+    },
+    usdc: {
+      name: 'USDC',
+      address: '0xe0C9275E44Ea80eF17579d33c55136b7DA269aEb',
+      decimals: 6,
+      symbol: 'USDC',
+    },
+    dai: {
+      name: 'Dai',
+      address: '0x8c9e6c40d3402480ace624730524facc5482798c',
+      decimals: 18,
+      symbol: 'DAI'
+    },
+  },
   sentry: {
     environment: 'preview',
     dsn: 'https://ab0c41c30fbb405da50d9803819b1d60@o1268430.ingest.sentry.io/6456054',
   },
-  subgraph: {
-    templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-rinkeby',
-    protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
+  featureFlags: {
+    enableAscend: true,
   },
+  templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
 };
 
 export default env;
