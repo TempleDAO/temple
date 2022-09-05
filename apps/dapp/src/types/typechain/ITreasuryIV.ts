@@ -14,29 +14,32 @@ import { FunctionFragment, Result } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
 import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
-export interface IUniswapV2FactoryInterface extends utils.Interface {
-  contractName: "IUniswapV2Factory";
+export interface ITreasuryIVInterface extends utils.Interface {
+  contractName: "ITreasuryIV";
   functions: {
-    "getPair(address,address)": FunctionFragment;
+    "intrinsicValueRatio()": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: "getPair",
-    values: [string, string]
+    functionFragment: "intrinsicValueRatio",
+    values?: undefined
   ): string;
 
-  decodeFunctionResult(functionFragment: "getPair", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "intrinsicValueRatio",
+    data: BytesLike
+  ): Result;
 
   events: {};
 }
 
-export interface IUniswapV2Factory extends BaseContract {
-  contractName: "IUniswapV2Factory";
+export interface ITreasuryIV extends BaseContract {
+  contractName: "ITreasuryIV";
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
 
-  interface: IUniswapV2FactoryInterface;
+  interface: ITreasuryIVInterface;
 
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
@@ -58,41 +61,29 @@ export interface IUniswapV2Factory extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
+    intrinsicValueRatio(
       overrides?: CallOverrides
-    ): Promise<[string] & { pair: string }>;
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
   };
 
-  getPair(
-    tokenA: string,
-    tokenB: string,
+  intrinsicValueRatio(
     overrides?: CallOverrides
-  ): Promise<string>;
+  ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
 
   callStatic: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
+    intrinsicValueRatio(
       overrides?: CallOverrides
-    ): Promise<string>;
+    ): Promise<[BigNumber, BigNumber] & { frax: BigNumber; temple: BigNumber }>;
   };
 
   filters: {};
 
   estimateGas: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    intrinsicValueRatio(overrides?: CallOverrides): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
+    intrinsicValueRatio(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };
