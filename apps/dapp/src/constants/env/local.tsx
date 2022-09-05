@@ -14,6 +14,7 @@ const env: Environment = {
     frax3CrvFarming: '',
     frax3CrvFarmingRewards: '',
     lbpFactory: '',
+    lockedOgTemple: '0x0165878A594ca255338adfa4d48449f69242Eb8F',
     ogTemple: '0x75537828f2ce51be7289709686A69CbFDbB714F1',
     teamPaymentsEpoch1: '0x82e01223d51Eb87e16A03E24687EDF0F294da6f1',
     teamPaymentsEpoch2: '0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650',

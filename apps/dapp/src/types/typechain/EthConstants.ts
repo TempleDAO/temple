@@ -14,29 +14,26 @@ import { FunctionFragment, Result } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
 import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
-export interface IUniswapV2FactoryInterface extends utils.Interface {
-  contractName: "IUniswapV2Factory";
+export interface EthConstantsInterface extends utils.Interface {
+  contractName: "EthConstants";
   functions: {
-    "getPair(address,address)": FunctionFragment;
+    "WETH()": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "getPair",
-    values: [string, string]
-  ): string;
+  encodeFunctionData(functionFragment: "WETH", values?: undefined): string;
 
-  decodeFunctionResult(functionFragment: "getPair", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "WETH", data: BytesLike): Result;
 
   events: {};
 }
 
-export interface IUniswapV2Factory extends BaseContract {
-  contractName: "IUniswapV2Factory";
+export interface EthConstants extends BaseContract {
+  contractName: "EthConstants";
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
 
-  interface: IUniswapV2FactoryInterface;
+  interface: EthConstantsInterface;
 
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
@@ -58,42 +55,22 @@ export interface IUniswapV2Factory extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
-      overrides?: CallOverrides
-    ): Promise<[string] & { pair: string }>;
+    WETH(overrides?: CallOverrides): Promise<[string]>;
   };
 
-  getPair(
-    tokenA: string,
-    tokenB: string,
-    overrides?: CallOverrides
-  ): Promise<string>;
+  WETH(overrides?: CallOverrides): Promise<string>;
 
   callStatic: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
-      overrides?: CallOverrides
-    ): Promise<string>;
+    WETH(overrides?: CallOverrides): Promise<string>;
   };
 
   filters: {};
 
   estimateGas: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    WETH(overrides?: CallOverrides): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
+    WETH(overrides?: CallOverrides): Promise<PopulatedTransaction>;
   };
 }

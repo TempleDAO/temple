@@ -4,8 +4,11 @@
 import {
   BaseContract,
   BigNumber,
+  BigNumberish,
   BytesLike,
   CallOverrides,
+  ContractTransaction,
+  Overrides,
   PopulatedTransaction,
   Signer,
   utils,
@@ -14,29 +17,29 @@ import { FunctionFragment, Result } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
 import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
-export interface IUniswapV2FactoryInterface extends utils.Interface {
-  contractName: "IUniswapV2Factory";
+export interface NoopVaultedTempleLiquidatorInterface extends utils.Interface {
+  contractName: "NoopVaultedTempleLiquidator";
   functions: {
-    "getPair(address,address)": FunctionFragment;
+    "toTemple(uint256,address)": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: "getPair",
-    values: [string, string]
+    functionFragment: "toTemple",
+    values: [BigNumberish, string]
   ): string;
 
-  decodeFunctionResult(functionFragment: "getPair", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "toTemple", data: BytesLike): Result;
 
   events: {};
 }
 
-export interface IUniswapV2Factory extends BaseContract {
-  contractName: "IUniswapV2Factory";
+export interface NoopVaultedTempleLiquidator extends BaseContract {
+  contractName: "NoopVaultedTempleLiquidator";
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
 
-  interface: IUniswapV2FactoryInterface;
+  interface: NoopVaultedTempleLiquidatorInterface;
 
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
@@ -58,42 +61,42 @@ export interface IUniswapV2Factory extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
-      overrides?: CallOverrides
-    ): Promise<[string] & { pair: string }>;
+    toTemple(
+      amount: BigNumberish,
+      arg1: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
   };
 
-  getPair(
-    tokenA: string,
-    tokenB: string,
-    overrides?: CallOverrides
-  ): Promise<string>;
+  toTemple(
+    amount: BigNumberish,
+    arg1: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
   callStatic: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
+    toTemple(
+      amount: BigNumberish,
+      arg1: string,
       overrides?: CallOverrides
-    ): Promise<string>;
+    ): Promise<void>;
   };
 
   filters: {};
 
   estimateGas: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
-      overrides?: CallOverrides
+    toTemple(
+      amount: BigNumberish,
+      arg1: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
-      overrides?: CallOverrides
+    toTemple(
+      amount: BigNumberish,
+      arg1: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };
 }

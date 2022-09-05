@@ -14,29 +14,38 @@ import { FunctionFragment, Result } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
 import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
-export interface IUniswapV2FactoryInterface extends utils.Interface {
-  contractName: "IUniswapV2Factory";
+export interface ICurveFactoryInterface extends utils.Interface {
+  contractName: "ICurveFactory";
   functions: {
-    "getPair(address,address)": FunctionFragment;
+    "get_meta_n_coins(address)": FunctionFragment;
+    "get_n_coins(address)": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: "getPair",
-    values: [string, string]
+    functionFragment: "get_meta_n_coins",
+    values: [string]
   ): string;
+  encodeFunctionData(functionFragment: "get_n_coins", values: [string]): string;
 
-  decodeFunctionResult(functionFragment: "getPair", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "get_meta_n_coins",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "get_n_coins",
+    data: BytesLike
+  ): Result;
 
   events: {};
 }
 
-export interface IUniswapV2Factory extends BaseContract {
-  contractName: "IUniswapV2Factory";
+export interface ICurveFactory extends BaseContract {
+  contractName: "ICurveFactory";
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
 
-  interface: IUniswapV2FactoryInterface;
+  interface: ICurveFactoryInterface;
 
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
@@ -58,41 +67,49 @@ export interface IUniswapV2Factory extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
+    get_meta_n_coins(
+      pool: string,
       overrides?: CallOverrides
-    ): Promise<[string] & { pair: string }>;
+    ): Promise<[BigNumber, BigNumber]>;
+
+    get_n_coins(pool: string, overrides?: CallOverrides): Promise<[BigNumber]>;
   };
 
-  getPair(
-    tokenA: string,
-    tokenB: string,
+  get_meta_n_coins(
+    pool: string,
     overrides?: CallOverrides
-  ): Promise<string>;
+  ): Promise<[BigNumber, BigNumber]>;
+
+  get_n_coins(pool: string, overrides?: CallOverrides): Promise<BigNumber>;
 
   callStatic: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
+    get_meta_n_coins(
+      pool: string,
       overrides?: CallOverrides
-    ): Promise<string>;
+    ): Promise<[BigNumber, BigNumber]>;
+
+    get_n_coins(pool: string, overrides?: CallOverrides): Promise<BigNumber>;
   };
 
   filters: {};
 
   estimateGas: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
+    get_meta_n_coins(
+      pool: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    get_n_coins(pool: string, overrides?: CallOverrides): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    getPair(
-      tokenA: string,
-      tokenB: string,
+    get_meta_n_coins(
+      pool: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    get_n_coins(
+      pool: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };
