@@ -162,7 +162,7 @@ export const usePoolTokenValues = (pool: Pool) => {
     if (!balanceBuy || !balanceSell || !weightSell || !weightBuy) {
       return;
     }
-    debugger;
+
     setSpotPrice(
       getSpotPrice(
         balanceBuy,
