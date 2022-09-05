@@ -20,6 +20,7 @@ enum ActionType {
   ResetQuoteState,
   UpdateSwapState,
 
+  SetSwapQuoteRequest,
   SetSwapQuoteStart,
   SetSwapQuoteError,
   SetSwapQuoteSuccess,
@@ -29,6 +30,7 @@ type TokenValue = { token: string; value: DecimalBigNumber };
 
 type Actions = 
   Action<ActionType.SetSellValue, string> |
+  Action<ActionType.SetSwapQuoteRequest, TokenValue> |
   Action<ActionType.SetSwapQuoteStart, TokenValue> |
   Action<ActionType.SetSwapQuoteSuccess, TokenValue & { quote: DecimalBigNumber }> |
   Action<ActionType.SetSwapQuoteError, TokenValue & { error: string }> |
@@ -96,17 +98,30 @@ const reducer = (state: TradeState, action: Actions): TradeState => {
         },
       };
     }
-    case ActionType.SetSwapQuoteStart: {
+    case ActionType.SetSwapQuoteRequest: {
       const { token, value } = action.payload;
       return {
         ...state,
         quote: {
           ...state.quote,
           request: { token, value },
-          isLoading: true,
+          isLoading: false,
           estimate: null,
           estimateWithSlippage: null,
           error: null,
+        },
+      };
+    }
+    case ActionType.SetSwapQuoteStart: {
+      const shouldUpdate = shouldUpdateQuoteState(state, action.payload);
+      if (!shouldUpdate) {
+        return state;
+      }
+      return {
+        ...state,
+        quote: {
+          ...state.quote,
+          isLoading: true,
         },
       };
     }
@@ -222,7 +237,9 @@ export const useVaultTradeState = (pool: Pool) => {
       return;
     }
 
+
     const token = sell.address;
+    dispatch({ type: ActionType.SetSwapQuoteRequest,  payload: { value, token } });
 
     const fetchQuote = async () => {
       dispatch({ type: ActionType.SetSwapQuoteStart, payload: { value, token } });
