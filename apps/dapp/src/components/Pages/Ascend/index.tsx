@@ -14,10 +14,7 @@ import { PoolComposition } from './components/PoolComposition';
 import { NAV_MOBILE_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
 import { phoneAndAbove } from 'styles/breakpoints';
 
-import {
-  Description,
-  ChartTradeSection,
-} from './styles';
+import { Description, ChartTradeSection } from './styles';
 import Loader from 'components/Loader/Loader';
 import { createPool } from 'components/Layouts/Ascend/utils';
 
@@ -30,7 +27,16 @@ const ActiveAuction = ({ pool }: Props) => {
     <Wrapper>
       <h3>{pool.name}</h3>
       <Description>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas euismod purus eget feugiat rutrum. Praesent at ante quis felis molestie mattis. Donec eget congue purus. Aenean pretium ex sed convallis tempus. Nam eros erat, cursus quis posuere eget, convallis blandit mi. Morbi vitae quam eget est elementum pretium.
+        Temple Ascend is a Liquidity Bootstrapping Pool (LBP) designed to acquire $TEMPLE tokens from the circulating
+        supply. During active Ascendance Rituals, the LBP is configured to where the $TEMPLE price will start low and
+        gradually rise over time. However, price action is also affected by users trading the LBP.{' '}
+        <a
+          href="https://templedao.medium.com/temple-ascend-progressing-temple-mechanics-18d96b1fd783"
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+        >
+          Read more...
+        </a>
       </Description>
       <ChartTradeSection>
         <div>
@@ -48,7 +54,7 @@ const ActiveAuction = ({ pool }: Props) => {
 export const AscendPage = () => {
   const { poolAddress } = useParams();
   const [request, { response, isLoading, error }] = useTemplePool(poolAddress);
-  
+
   const pool = useMemo(() => {
     const pool = response?.data?.pools[0];
     if (!pool) {
