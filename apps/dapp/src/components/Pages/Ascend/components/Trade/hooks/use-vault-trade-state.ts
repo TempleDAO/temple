@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 
 import { Pool } from 'components/Layouts/Ascend/types';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
@@ -168,6 +168,8 @@ const INITIAL_QUOTE_STATE = {
   error: null,
 };
 
+const QUOTE_INTERVAL = 7500; // 7.5  seconds
+
 export const useVaultTradeState = (pool: Pool) => {
   const { swapState: { sell, buy }, vaultAddress } = useAuctionContext();
   const vaultContract = useVaultContract(pool, vaultAddress);
@@ -188,37 +190,64 @@ export const useVaultTradeState = (pool: Pool) => {
     },
   });
 
+  const intervalRef = useRef<number>();
+
+  const maybeClearInterval = useCallback(() => {
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = undefined;
+    }
+  }, [intervalRef]);
+
+  useEffect(() => {
+    // Cleanup interval when user leaves ascend
+    return () => {
+      maybeClearInterval();
+    };
+  }, [maybeClearInterval]);
+
   const sellTokenAddress = sell.address;
   useEffect(() => {
     // Clear Quote/Input value when pair changes
     dispatch({ type: ActionType.ResetQuoteState, payload: null });
-  }, [sellTokenAddress, dispatch]);
+    // Clear any interval
+    maybeClearInterval();
+  }, [sellTokenAddress, dispatch, maybeClearInterval]);
 
   const getSwapQuote = async (value: DecimalBigNumber) => {
+    maybeClearInterval();
+
     if (value.isZero()) {
       dispatch({ type: ActionType.ResetQuoteState, payload: null });
       return;
     }
 
     const token = sell.address;
-    dispatch({ type: ActionType.SetSwapQuoteStart, payload: { value, token } });
 
-    try {
-      const quotes = await vaultContract.getSwapQuote(value, token, buy.address);
-      const quote = DecimalBigNumber.fromBN(quotes[buy.tokenIndex].abs(), value.getDecimals());
-     
-      dispatch({
-        type: ActionType.SetSwapQuoteSuccess,
-        payload: { quote, token, value },
-      });
-    } catch (err) {
-      console.error('Error fetching swap quote', err);
-      const error = getBalancerErrorMessage((err as Error).message || '');
-      dispatch({
-        type: ActionType.SetSwapQuoteError,
-        payload: { error, token, value },
-      });
-    }
+    const fetchQuote = async () => {
+      dispatch({ type: ActionType.SetSwapQuoteStart, payload: { value, token } });
+
+      try {
+        const quotes = await vaultContract.getSwapQuote(value, token, buy.address);
+        const quote = DecimalBigNumber.fromBN(quotes[buy.tokenIndex].abs(), value.getDecimals());
+       
+        dispatch({
+          type: ActionType.SetSwapQuoteSuccess,
+          payload: { quote, token, value },
+        });
+      } catch (err) {
+        console.error('Error fetching swap quote', err);
+        const error = getBalancerErrorMessage((err as Error).message || '');
+        dispatch({
+          type: ActionType.SetSwapQuoteError,
+          payload: { error, token, value },
+        });
+      }
+    };
+
+    // Fetch quote and begin polling
+    fetchQuote();
+    intervalRef.current = window.setInterval(fetchQuote, QUOTE_INTERVAL);
   };
 
   const swap = async () => {
@@ -263,6 +292,7 @@ export const useVaultTradeState = (pool: Pool) => {
       dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error } });
     }
   };
+
 
   return {
     state,
