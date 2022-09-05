@@ -165,10 +165,10 @@ export const usePoolTokenValues = (pool: Pool) => {
 
     setSpotPrice(
       getSpotPrice(
-        balanceBuy,
         balanceSell,
-        weightBuy,
+        balanceBuy,
         weightSell,
+        weightBuy,
         swapFee as any
       )
     );
