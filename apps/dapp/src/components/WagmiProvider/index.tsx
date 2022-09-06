@@ -25,8 +25,8 @@ export const LOCAL_CHAIN = {
 const APP_CHAINS = [chain.mainnet, chain.rinkeby, chain.goerli, LOCAL_CHAIN];
 
 const { chains, provider } = configureChains(APP_CHAINS, [
-  // alchemyProvider({ apiKey: env.alchemyId }),
-  // infuraProvider({ apiKey: env.infuraId }),
+  alchemyProvider({ apiKey: env.alchemyId }),
+  infuraProvider({ apiKey: env.infuraId }),
   publicProvider(),
 ]);
 
