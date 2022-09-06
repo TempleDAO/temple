@@ -9,8 +9,7 @@ import { useVaultContract } from './use-vault-contract';
 import { getSwapLimit, getSwapDeadline } from '../utils';
 import { useAuctionContext } from '../../AuctionContext';
 import { getBalancerErrorMessage } from 'utils/balancer';
-import { AnalyticsService } from 'services/AnalyticsService';
-import { AnalyticsEvent } from 'constants/events';
+import env from 'constants/env';
 
 type Action<A extends ActionType, P extends any> = { type: A, payload: P };
 
@@ -183,10 +182,10 @@ const INITIAL_QUOTE_STATE = {
   error: null,
 };
 
-const QUOTE_INTERVAL = 15000; // 7.5  seconds
+export type VaultTradeSuccessCallback = (tokenSold: string, tokenBought: string, amount: string, poolId: string) => Promise<void>;
 
-export const useVaultTradeState = (pool: Pool) => {
-  const { swapState: { sell, buy }, vaultAddress } = useAuctionContext();
+export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCallback) => {
+  const { swapState: { sell, buy }, vaultAddress, refetchPoolTokenBalances } = useAuctionContext();
   const vaultContract = useVaultContract(pool, vaultAddress);
   const { openNotification } = useNotification();
 
@@ -264,7 +263,7 @@ export const useVaultTradeState = (pool: Pool) => {
 
     // Fetch quote and begin polling
     fetchQuote();
-    intervalRef.current = window.setInterval(fetchQuote, QUOTE_INTERVAL);
+    intervalRef.current = window.setInterval(fetchQuote, env.intervals.ascendQuote);
   };
 
   const swap = async () => {
@@ -298,12 +297,11 @@ export const useVaultTradeState = (pool: Pool) => {
         hash: transaction.hash,
       });
 
-      AnalyticsService.captureEvent(AnalyticsEvent.Ascend.Swap, {
-        tokenSold: sell.symbol,
-        tokenBought: buy.symbol,
-        amount,
-        poolId: pool.id,
-      });
+      refetchPoolTokenBalances();
+
+      if (onSuccess) {
+        await onSuccess(sell.symbol, buy.symbol, inputValue, pool.id);
+      }
     } catch (err) {
       const error = getBalancerErrorMessage((err as Error).message);
       dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error } });

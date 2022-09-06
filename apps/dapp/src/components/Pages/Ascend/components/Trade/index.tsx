@@ -23,6 +23,8 @@ import {
   SwapButton,
   ErrorMessage,
 } from './styles';
+import { AnalyticsService } from 'services/AnalyticsService';
+import { AnalyticsEvent } from 'constants/events';
 
 interface Props {
   pool: Pool;
@@ -39,21 +41,29 @@ export const Trade = ({ pool }: Props) => {
   } = useAuctionContext();
   const [transactionSettingsOpen, setTransactionSettingsOpen] = useState(false);
 
-  const {
-    swap,
-    state,
-    setSellValue,
-    setTransactionSettings,
-  } = useVaultTradeState(pool);
+  const { swap, state, setSellValue, setTransactionSettings } = useVaultTradeState(
+    pool,
+    async (tokenSold, tokenBought, amount, poolId) => {
+      AnalyticsService.captureEvent(AnalyticsEvent.Ascend.Swap, {
+        tokenSold,
+        tokenBought,
+        amount,
+        poolId,
+      });
+    }
+  );
 
-  const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] = useTokenContractAllowance(sell, vaultAddress);
-  
+  const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] = useTokenContractAllowance(
+    sell,
+    vaultAddress
+  );
+
   const bigSellAmount = useMemo(() => {
     if (!state.inputValue || state.inputValue.trim() === '.') {
       return DBN_ZERO;
     }
     return DecimalBigNumber.parseUnits(state.inputValue, sell.decimals);
-  }, [sell, state.inputValue])
+  }, [sell, state.inputValue]);
 
   const { receiveEstimate, estimateWithSlippage } = useMemo(() => {
     if (!state.quote.estimate) {
@@ -112,10 +122,7 @@ export const Trade = ({ pool }: Props) => {
           }}
           handleChange={(value) => {
             const stringValue = value.toString();
-            if (
-              !stringValue.startsWith('.') && 
-              Number(stringValue) === 0
-            ) {
+            if (!stringValue.startsWith('.') && Number(stringValue) === 0) {
               setSellValue('');
             } else {
               setSellValue(stringValue);
@@ -143,32 +150,23 @@ export const Trade = ({ pool }: Props) => {
             </LoadWrapper>
           )}
           <ReceivedValues>
-            {(!!receiveEstimate && !state.quote.isLoading) && (
+            {!!receiveEstimate && !state.quote.isLoading && (
               <>
-                Expected Output: {formatNumberFixedDecimals(receiveEstimate, 3)}<br />
+                Expected Output: {formatNumberFixedDecimals(receiveEstimate, 3)}
+                <br />
                 Minimum Amount: {formatNumberFixedDecimals(estimateWithSlippage, 3)}
               </>
             )}
-            {state.quote.isLoading && (
-              <>
-                Fetching Price...
-              </>
-            )}
+            {state.quote.isLoading && <>Fetching Price...</>}
           </ReceivedValues>
-          <SlippageButton
-            type="button"
-            onClick={() => setTransactionSettingsOpen(true)}
-          >
+          <SlippageButton type="button" onClick={() => setTransactionSettingsOpen(true)}>
             {state.transactionSettings.slippageTolerance}%
           </SlippageButton>
         </SwapControls>
         {allowance === 0 && (
           <SwapButton
             type="button"
-            disabled={
-              allowanceIsLoading ||
-              state.swap.isLoading
-            }
+            disabled={allowanceIsLoading || state.swap.isLoading}
             onClick={() => {
               increaseAllowance();
             }}
@@ -193,16 +191,8 @@ export const Trade = ({ pool }: Props) => {
             {state.swap.isLoading ? <CircularLoader /> : <>Swap</>}
           </SwapButton>
         )}
-        {!!state.swap.error && (
-          <ErrorMessage>
-            {state.swap.error}
-          </ErrorMessage>
-        )}
-        {!!state.quote.error && (
-          <ErrorMessage>
-            {state.quote.error}
-          </ErrorMessage>
-        )}
+        {!!state.swap.error && <ErrorMessage>{state.swap.error}</ErrorMessage>}
+        {!!state.quote.error && <ErrorMessage>{state.quote.error}</ErrorMessage>}
       </Wrapper>
     </>
   );

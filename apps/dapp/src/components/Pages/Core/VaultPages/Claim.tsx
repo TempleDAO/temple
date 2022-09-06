@@ -25,8 +25,8 @@ export const Claim = () => {
   const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault!.id, async () => {
     await refreshWalletState();
     await getBalance();
-    setAmount('');
     AnalyticsService.captureEvent(AnalyticsEvent.Vault.Claim, { name: vault.id, amount });
+    setAmount('');
   });
   const [checkExitStatus, { response: canExit }] = useIsVaultExitable(vault.id);
   

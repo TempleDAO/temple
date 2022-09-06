@@ -81,6 +81,10 @@ export interface Environment {
   posthog?: Posthog;
   subgraph: Subgraphs;
   templeMultisig: string;
+  intervals: {
+    ascendData: number;
+    ascendQuote: number;
+  };
   featureFlags: {
     enableAscend: boolean;
   };
