@@ -6,6 +6,7 @@ import { useNotification } from 'providers/NotificationProvider';
 
 import crossImage from 'assets/images/cross.svg';
 import openInNewTabImage from 'assets/images/open-in-new.svg';
+import env from 'constants/env';
 
 export type NotificationProps = {
   // Transaction Hash
@@ -13,13 +14,6 @@ export type NotificationProps = {
   // The title for the notification
   title: string;
 };
-
-const ENV_VARS = import.meta.env;
-
-const ETHERSCAN_DOMAIN =
-  ENV_VARS.VITE_ENV === 'production'
-    ? 'https://etherscan.io'
-    : 'https://goerli.etherscan.io';
 
 const AUTOHIDE_TIMER = 1000 * 10;
 
@@ -78,7 +72,7 @@ const Notification = ({ hash, title }: NotificationProps) => {
       </CloseIcon>
       <h5 title={title}>{title}</h5>
       <a
-        href={`${ETHERSCAN_DOMAIN}/tx/${hash}`}
+        href={`${env.etherscan}/tx/${hash}`}
         target={'_blank'}
         rel="noreferrer"
       >

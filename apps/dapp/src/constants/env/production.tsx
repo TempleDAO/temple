@@ -82,6 +82,7 @@ const env: Environment = {
       decimals: 18,
     },
   },
+  etherscan: 'https://etherscan.io',
   sentry: {
     environment: 'production',
     dsn: 'https://ab0c41c30fbb405da50d9803819b1d60@o1268430.ingest.sentry.io/6456054',
