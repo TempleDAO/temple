@@ -121,7 +121,7 @@ export const SwapHistory = ({ pool }: Props) => {
               Price
             </th>
             <th className="hidden">
-              Wallet
+              Transaction
             </th>
           </tr>
         </THead>
@@ -150,7 +150,13 @@ export const SwapHistory = ({ pool }: Props) => {
                   {price}
                 </td>
                 <td className="hidden">
-                  <TruncatedAddress address={swap.userAddress.id} />
+                  <Link
+                    href={`${env.etherscan}/tx/${swap.tx}`}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                  >
+                    <TruncatedAddress address={swap.tx} />
+                  </Link>
                 </td>
               </tr>
             );
@@ -221,4 +227,9 @@ const PagingButton = styled.button`
   &:disabled {
     color: ${({ theme }) => theme.palette.brand50};
   }
+`;
+
+const Link = styled.a`
+  font-weight: 400;
+  color: ${({ theme }) => theme.palette.light};
 `;

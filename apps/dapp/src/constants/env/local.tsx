@@ -40,6 +40,7 @@ const env: Environment = {
     ascendData: 30_000,
     ascendQuote: 10_000,
   },
+  etherscan: 'https://goerli.etherscan.io',
   tokens: {
     frax: {
       name: 'Frax',

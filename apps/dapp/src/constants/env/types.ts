@@ -85,6 +85,7 @@ export interface Environment {
     ascendData: number;
     ascendQuote: number;
   };
+  etherscan: string;
   featureFlags: {
     enableAscend: boolean;
   };
