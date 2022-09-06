@@ -41,6 +41,10 @@ const env: Environment = {
     claimOgTemple: 100000,
   },
   infuraId: 'a2a39f8ae6564913a583c7b6d01c84d6',
+  intervals: {
+    ascendData: 30_000,
+    ascendQuote: 10_000,
+  },
   tokens: {
     frax: {
       name: 'Frax',

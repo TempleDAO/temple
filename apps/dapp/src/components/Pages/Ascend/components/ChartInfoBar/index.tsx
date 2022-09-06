@@ -12,7 +12,7 @@ interface Props {
 
 export const ChartInfoBar = ({ pool }: Props) => {
   const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
-  const { isLoading, formatted, label } = usePoolTokenValues(pool);
+  const { formatted, label } = usePoolTokenValues(pool);
 
   return (
     <InfoBar>
