@@ -9,6 +9,7 @@ import { useVaultContract } from './use-vault-contract';
 import { getSwapLimit, getSwapDeadline } from '../utils';
 import { useAuctionContext } from '../../AuctionContext';
 import { getBalancerErrorMessage } from 'utils/balancer';
+import env from 'constants/env';
 
 type Action<A extends ActionType, P extends any> = { type: A, payload: P };
 
@@ -181,8 +182,6 @@ const INITIAL_QUOTE_STATE = {
   error: null,
 };
 
-const QUOTE_INTERVAL = 15000; // 7.5  seconds
-
 export type VaultTradeSuccessCallback = (tokenSold: string, tokenBought: string, amount: string, poolId: string) => Promise<void>;
 
 export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCallback) => {
@@ -264,7 +263,7 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
 
     // Fetch quote and begin polling
     fetchQuote();
-    intervalRef.current = window.setInterval(fetchQuote, QUOTE_INTERVAL);
+    intervalRef.current = window.setInterval(fetchQuote, env.intervals.ascendQuote);
   };
 
   const swap = async () => {

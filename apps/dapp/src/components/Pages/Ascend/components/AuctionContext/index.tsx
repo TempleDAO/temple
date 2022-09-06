@@ -161,7 +161,7 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
 
     intervalRef.current = window.setInterval(() => {
       refetchPoolState();
-    }, 20000);
+    }, env.intervals.ascendData);
   }, [intervalRef, refetchPoolState]);
 
   useEffect(() => {

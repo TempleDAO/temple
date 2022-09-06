@@ -36,6 +36,10 @@ const env: Environment = {
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
     balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
+  intervals: {
+    ascendData: 30_000,
+    ascendQuote: 10_000,
+  },
   tokens: {
     frax: {
       name: 'Frax',

@@ -7,7 +7,6 @@ import { SubGraphResponse } from 'hooks/core/types';
 import { getRemainingTime } from 'components/Pages/Ascend/utils';
 import { SubgraphPool, GraphResponse } from 'components/Layouts/Ascend/types';
 import { useAuctionContext } from 'components/Pages/Ascend/components/AuctionContext';
-import { formatNumberFixedDecimals } from 'utils/formatter';
 import { useVaultContract } from 'components/Pages/Ascend/components/Trade/hooks/use-vault-contract';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { truncateDecimals } from 'utils/formatter';
@@ -147,7 +146,7 @@ export const usePoolTokenValues = (pool: Pool) => {
 
     request();
 
-    intervalRef.current = window.setInterval(request, 30000);
+    intervalRef.current = window.setInterval(request, env.intervals.ascendData);
   }, [accrued, base, intervalRef, getSwapQuoteRequest, setSpotPrice, isReady]);
 
   useEffect(() => {
