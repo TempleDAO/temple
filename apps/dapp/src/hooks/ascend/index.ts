@@ -147,7 +147,7 @@ export const usePoolTokenValues = (pool: Pool) => {
 
     request();
 
-    intervalRef.current = window.setInterval(request, 7000);
+    intervalRef.current = window.setInterval(request, 30000);
   }, [accrued, base, intervalRef, getSwapQuoteRequest, setSpotPrice, isReady]);
 
   useEffect(() => {
