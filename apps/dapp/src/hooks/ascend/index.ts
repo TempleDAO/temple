@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useContractReads } from 'wagmi';
 import { BigNumber } from 'ethers';
 
@@ -14,6 +14,8 @@ import { useAuctionContext } from 'components/Pages/Ascend/components/AuctionCon
 import { formatBigNumber } from 'components/Vault/utils';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { ZERO } from 'utils/bigNumber';
+import { useVaultContract } from 'components/Pages/Ascend/components/Trade/hooks/use-vault-contract';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export const useTimeRemaining = (pool?: Pool) => {
   const [time, setTime] = useState(getRemainingTime(pool));
@@ -124,60 +126,48 @@ export const useTemplePool = (poolAddress = '') => {
 
 export const usePoolTokenValues = (pool: Pool) => {
   const {
-    balances,
-    weights,
     vaultAddress,
     accrued,
     base,
   } = useAuctionContext();
-  const [spotPrice, setSpotPrice] = useState<BigNumber>();
-
-  const { data: swapData, isLoading } = useContractReads({
-    contracts: [
-      {
-        addressOrName: pool.address,
-        contractInterface: balancerPoolAbi,
-        functionName: 'getSwapFeePercentage',
-      },
-    ],
-    enabled: !!vaultAddress,
-  });
+  const intervalRef = useRef<number>();
+  const { isReady, getSwapQuote: { request: getSwapQuoteRequest, isLoading } } = useVaultContract(pool, vaultAddress);
+  const [spotPrice, setSpotPrice] = useState<string>('0');
 
   useEffect(() => {
-    if (!swapData) {
+    if (!isReady || !base.address || !accrued.address || intervalRef.current) {
       return;
     }
+    
+    const request = async () => {
+      try {
+        const oneTemple = DecimalBigNumber.parseUnits('1', accrued.decimals);
+        const quotes = await getSwapQuoteRequest(oneTemple, accrued.address, base.address);
+        const quote = DecimalBigNumber.fromBN(quotes[base.tokenIndex].abs(), accrued.decimals);
+        setSpotPrice(quote.formatUnits());
+      } catch (err) {
+        console.error('err', err);
+      }
+    };
 
+    request();
 
-    const [swapFee] = swapData;
-    if (!swapFee || !balances || !weights) {
-      return;
+    intervalRef.current = window.setInterval(request, 7000);
+  }, [accrued, base, intervalRef, getSwapQuoteRequest, setSpotPrice, isReady]);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = undefined;
+      }
     }
-
-    const balanceSell = balances[accrued.address];
-    const weightSell = weights[accrued.address];
-    const balanceBuy = balances[base.address];
-    const weightBuy = weights[base.address];
-
-    if (!balanceBuy || !balanceSell || !weightSell || !weightBuy) {
-      return;
-    }
-
-    setSpotPrice(
-      getSpotPrice(
-        balanceBuy,
-        balanceSell,
-        weightBuy,
-        weightSell,
-        swapFee as any
-      )
-    );
-  }, [balances, weights, swapData, pool]);
+  }, [intervalRef]);
 
   return {
-    isLoading,
+    isLoading: isLoading,
     spotPrice,
-    formatted: `${formatNumberFixedDecimals(formatBigNumber(spotPrice || ZERO), 4)} $${base.symbol}`,
+    formatted: `${formatNumberFixedDecimals(spotPrice, 4)} $${base.symbol}`,
     label: `${accrued.symbol} Price`,
   };
 };
