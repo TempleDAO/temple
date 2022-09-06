@@ -131,6 +131,7 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
 
   const [joinPoolRequest, joinPoolRequestState] = useRequestState(joinPool, { shouldReThrow: true });
   const [exitPoolRequest, exitPoolRequestState] = useRequestState(exitPool, { shouldReThrow: true });
+  const [getSwapQuoteRequest, getSwapQuoteRequestState] = useRequestState(getSwapQuote, { shouldReThrow: true });
 
   return {
     address: vaultContract?.address || '',
@@ -144,6 +145,9 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
       request: exitPoolRequest,
       ...exitPoolRequestState,
     },
-    getSwapQuote,
+    getSwapQuote: {
+      request: getSwapQuoteRequest,
+      ...getSwapQuoteRequestState,
+    },
   };
 };
