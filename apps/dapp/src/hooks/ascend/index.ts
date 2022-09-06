@@ -1,21 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useContractReads } from 'wagmi';
-import { BigNumber } from 'ethers';
-
-import balancerPoolAbi from 'data/abis/balancerPool.json';
 
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { Pool } from 'components/Layouts/Ascend/types';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
-import { getRemainingTime, getSpotPrice } from 'components/Pages/Ascend/utils';
+import { getRemainingTime } from 'components/Pages/Ascend/utils';
 import { SubgraphPool, GraphResponse } from 'components/Layouts/Ascend/types';
 import { useAuctionContext } from 'components/Pages/Ascend/components/AuctionContext';
-import { formatBigNumber } from 'components/Vault/utils';
 import { formatNumberFixedDecimals } from 'utils/formatter';
-import { ZERO } from 'utils/bigNumber';
 import { useVaultContract } from 'components/Pages/Ascend/components/Trade/hooks/use-vault-contract';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { truncateDecimals } from 'utils/formatter';
 
 export const useTimeRemaining = (pool?: Pool) => {
   const [time, setTime] = useState(getRemainingTime(pool));
@@ -167,7 +162,7 @@ export const usePoolTokenValues = (pool: Pool) => {
   return {
     isLoading: isLoading,
     spotPrice,
-    formatted: `${formatNumberFixedDecimals(spotPrice, 4)} $${base.symbol}`,
+    formatted: `${truncateDecimals(spotPrice, 4)} $${base.symbol}`,
     label: `${accrued.symbol} Price`,
   };
 };
