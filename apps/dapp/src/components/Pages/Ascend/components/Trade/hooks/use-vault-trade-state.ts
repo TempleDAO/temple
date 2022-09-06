@@ -186,7 +186,7 @@ const QUOTE_INTERVAL = 15000; // 7.5  seconds
 export type VaultTradeSuccessCallback = (tokenSold: string, tokenBought: string, amount: string, poolId: string) => Promise<void>;
 
 export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCallback) => {
-  const { swapState: { sell, buy }, vaultAddress } = useAuctionContext();
+  const { swapState: { sell, buy }, vaultAddress, refetchPoolTokenBalances } = useAuctionContext();
   const vaultContract = useVaultContract(pool, vaultAddress);
   const { openNotification } = useNotification();
 
@@ -297,6 +297,8 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
         title: 'Swap success',
         hash: transaction.hash,
       });
+
+      refetchPoolTokenBalances();
 
       if (onSuccess) {
         await onSuccess(sell.symbol, buy.symbol, inputValue, pool.id);

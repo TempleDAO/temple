@@ -9,7 +9,7 @@ const getEnvironmentConfig = (env: string) => {
   switch (env) {
     case 'production': return production;
     case 'preview': return preview;
-    case 'local': return local;
+    case 'local': return production;
   }
   throw new Error(`Programming Error: Invalid vite env: ${env}`);
 }
