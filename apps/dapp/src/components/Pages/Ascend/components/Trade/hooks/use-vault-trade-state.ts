@@ -9,8 +9,6 @@ import { useVaultContract } from './use-vault-contract';
 import { getSwapLimit, getSwapDeadline } from '../utils';
 import { useAuctionContext } from '../../AuctionContext';
 import { getBalancerErrorMessage } from 'utils/balancer';
-import { AnalyticsService } from 'services/AnalyticsService';
-import { AnalyticsEvent } from 'constants/events';
 
 type Action<A extends ActionType, P extends any> = { type: A, payload: P };
 
@@ -185,7 +183,9 @@ const INITIAL_QUOTE_STATE = {
 
 const QUOTE_INTERVAL = 7500; // 7.5  seconds
 
-export const useVaultTradeState = (pool: Pool) => {
+export type VaultTradeSuccessCallback = (tokenSold: string, tokenBought: string, amount: string, poolId: string) => Promise<void>;
+
+export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCallback) => {
   const { swapState: { sell, buy }, vaultAddress } = useAuctionContext();
   const vaultContract = useVaultContract(pool, vaultAddress);
   const { openNotification } = useNotification();
@@ -298,12 +298,9 @@ export const useVaultTradeState = (pool: Pool) => {
         hash: transaction.hash,
       });
 
-      AnalyticsService.captureEvent(AnalyticsEvent.Ascend.Swap, {
-        tokenSold: sell.symbol,
-        tokenBought: buy.symbol,
-        amount,
-        poolId: pool.id,
-      });
+      if (onSuccess) {
+        await onSuccess(sell.symbol, buy.symbol, inputValue, pool.id);
+      }
     } catch (err) {
       const error = getBalancerErrorMessage((err as Error).message);
       dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error } });
