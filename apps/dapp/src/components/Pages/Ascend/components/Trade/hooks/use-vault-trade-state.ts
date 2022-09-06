@@ -245,7 +245,7 @@ export const useVaultTradeState = (pool: Pool) => {
       dispatch({ type: ActionType.SetSwapQuoteStart, payload: { value, token } });
 
       try {
-        const quotes = await vaultContract.getSwapQuote(value, token, buy.address);
+        const quotes = await vaultContract.getSwapQuote.request(value, token, buy.address);
         const quote = DecimalBigNumber.fromBN(quotes[buy.tokenIndex].abs(), value.getDecimals());
        
         dispatch({

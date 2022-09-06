@@ -1,14 +1,10 @@
 import { format } from 'date-fns';
 import styled from 'styled-components';
 
-import { formatBigNumber, formatTemple } from 'components/Vault/utils';
-import { formatNumberFixedDecimals } from 'utils/formatter';
+import { formatTemple } from 'components/Vault/utils';
 import { Pool } from 'components/Layouts/Ascend/types';
 import { UnstyledList } from 'styles/common';
 import { usePoolTokenValues } from 'hooks/ascend';
-import { CircularLoader } from 'components/Loader/CircularLoader';
-import { ZERO } from 'utils/bigNumber';
-import { useAuctionContext } from '../AuctionContext';
 
 interface Props {
   pool: Pool;
@@ -36,13 +32,13 @@ export const ChartInfoBar = ({ pool }: Props) => {
         <InfoLabel>
           Pool Value
         </InfoLabel>
-        <span>{isLoading ? <CircularLoader /> : <>${formatTemple(pool.totalLiquidity)}</>}</span>
+        <span>${formatTemple(pool.totalLiquidity)}</span>
       </InfoItem>
       <InfoItem>
         <InfoLabel>
           {label}
         </InfoLabel>
-        <span>{isLoading ? <CircularLoader /> : formatted}</span>
+        <span>{formatted}</span>
       </InfoItem>
     </InfoBar>
   );
