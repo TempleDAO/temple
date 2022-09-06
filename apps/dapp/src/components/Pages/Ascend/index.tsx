@@ -25,7 +25,7 @@ interface Props {
 const ActiveAuction = ({ pool }: Props) => {
   return (
     <Wrapper>
-      <h3>{pool.name}</h3>
+      <h3>Temple Ascend</h3>
       <Description>
         Temple Ascend is a Liquidity Bootstrapping Pool (LBP) designed to acquire $TEMPLE tokens from the circulating
         supply. During active Ascendance Rituals, the LBP is configured to where the $TEMPLE price will start low and
