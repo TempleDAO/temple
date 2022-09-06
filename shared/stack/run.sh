@@ -34,38 +34,6 @@ yarn $protocolDeployCommand
 # back to root
 cd ..
 
-# Appends new env vars and updates any env vars that differ
-input="shared/stack/deployed-addr.txt"
-output="./apps/dapp/.env.local"
-example="./apps/dapp/.env.local.example"
-
-# Copy over the example as a skeleton if it doesn't exist already
-if [ -f "$output" ]; then
-    echo "$output exists."
-else 
-    echo "$output does not exist."
-    cp "$example" "$output"
-fi
-
-while read -r line
-do
-    IFS='='
-    read -a split <<<"$line"
-
-    if ! grep -R "^[#]*\s*${split[0]}=.*" $output > /dev/null; then
-        echo "APPENDING because '${split[0]}' not found"
-        echo "${split[0]}=${split[1]}" >> $output
-    else
-        echo "SETTING because '${split[0]}' found already"
-        # If only macOS used GNU tools
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' -r "s/^[#]*\s*${split[0]}=.*/${split[0]}=${split[1]}/" ${output}
-        else
-            sed -i -r  "s/^[#]*\s*${split[0]}=.*/${split[0]}=${split[1]}/" ${output}
-        fi
-    fi
-done < "$input"
-
 # Sync compiled & deployed contracts into dapp
 typechainSource="./protocol/typechain"
 typechainTarget="./apps/dapp/src/types/"
