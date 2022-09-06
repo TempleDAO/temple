@@ -183,7 +183,7 @@ const INITIAL_QUOTE_STATE = {
   error: null,
 };
 
-const QUOTE_INTERVAL = 7500; // 7.5  seconds
+const QUOTE_INTERVAL = 15000; // 7.5  seconds
 
 export const useVaultTradeState = (pool: Pool) => {
   const { swapState: { sell, buy }, vaultAddress } = useAuctionContext();
