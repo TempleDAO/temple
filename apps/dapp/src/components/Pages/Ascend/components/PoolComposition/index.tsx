@@ -2,7 +2,7 @@ import styled from 'styled-components';
 
 import { tabletAndAbove } from 'styles/breakpoints';
 import { useAuctionContext } from '../AuctionContext';
-import { formatNumberFixedDecimals } from 'utils/formatter';
+import { formatNumberFixedDecimals, truncateDecimals } from 'utils/formatter';
 import { DBN_ZERO } from 'utils/DecimalBigNumber';
 
 export const PoolComposition = () => {
@@ -22,12 +22,12 @@ export const PoolComposition = () => {
         <tbody>
           <tr>
             <td>{accrued.symbol}</td>
-            <td>{formatNumberFixedDecimals((weights[accrued.address] || DBN_ZERO).formatUnits()) * 100}%</td>
+            <td>{truncateDecimals(formatNumberFixedDecimals((weights[accrued.address] || DBN_ZERO).formatUnits()) * 100, 2)}%</td>
             <td>{formatNumberFixedDecimals((balances[accrued.address] || DBN_ZERO).formatUnits(), 4)}</td>
           </tr>
           <tr>
             <td>{base.symbol}</td>
-            <td>{formatNumberFixedDecimals((weights[base.address] || DBN_ZERO).formatUnits()) * 100}%</td>
+            <td>{truncateDecimals(formatNumberFixedDecimals((weights[base.address] || DBN_ZERO).formatUnits()) * 100, 2)}%</td>
             <td>{formatNumberFixedDecimals((balances[base.address] || DBN_ZERO).formatUnits(), 4)}</td>
           </tr>
         </tbody>
