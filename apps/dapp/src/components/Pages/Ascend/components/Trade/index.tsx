@@ -115,6 +115,7 @@ export const Trade = ({ pool }: Props) => {
           isNumber
           crypto={{ kind: 'value', value: sell.symbol }}
           placeholder="0.00"
+          small={true}
           value={state.inputValue}
           hint={`Balance: ${formatNumber(sellBalance.formatUnits())}`}
           onHintClick={() => {
@@ -139,6 +140,7 @@ export const Trade = ({ pool }: Props) => {
           isNumber
           placeholder="0.00"
           crypto={{ kind: 'value', value: buy.symbol }}
+          small={true}
           value={receiveEstimate}
           hint={`Balance: ${formatNumber(buyBalance.formatUnits())}`}
           disabled
