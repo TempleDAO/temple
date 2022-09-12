@@ -48,19 +48,21 @@ async function main() {
         const symbol = `tst-30min-${suffix[i]}`;
         const ts = time + (i*window);
 
-        const tx = await opsManager.createVaultInstance(
+        await mine(opsManager.createVaultInstance(
             name,
             symbol,
             period,
             window,
             {p:1,q:1},
             ts
-        );
+        ));
 
-        const vaultAddr = await extractDeployedAddress(tx, "CreateVaultInstance");
-        console.log(`Deployed vault ${name} with symbol ${symbol} at ${vaultAddr}`);
+        console.log(`deployed ${symbol}`)
+
+        //const vaultAddr = await extractDeployedAddress(tx, "CreateVaultInstance");
+        //console.log(`Deployed vault ${name} with symbol ${symbol} at ${vaultAddr}`);
         console.log(`period: ${period}, window: ${window}, timestamp: ${ts}`);
-        console.log(`yarn hardhat verify --network rinkeby --constructor-args scripts/deploys/rinkeby/30-min-vault-verify/tst-30min-${suffix[i]}.js ${vaultAddr}`)
+        //console.log(`yarn hardhat verify --network rinkeby --constructor-args scripts/deploys/rinkeby/30-min-vault-verify/tst-30min-${suffix[i]}.js ${vaultAddr}`)
     }
 }
 
