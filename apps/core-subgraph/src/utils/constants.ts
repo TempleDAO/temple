@@ -11,7 +11,7 @@ export const BIG_DECIMAL_1E7 = BigDecimal.fromString('1e7');
 export const BIG_DECIMAL_0 = BigDecimal.fromString('0');
 export const BIG_DECIMAL_MIN_1 = BigDecimal.fromString('-1');
 
-export const OPS_MANAGER = '0x65fe8babf7da367b2b45cbd748f0490713f84828';
+export const OPS_MANAGER = '0x49fd2be640db2910c2fab69bb8531ab6e76127ff';
 export const TEMPLE_FRAX_PAIR = '0x6021444f1706f15465bee85463bcc7d7cc17fc03';
 
 export const TEMPLE_ADDRESS = Address.fromString('0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7');
