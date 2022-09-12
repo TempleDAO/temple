@@ -24,8 +24,8 @@ const env: Environment = {
     templeV2FeiPair: '0x519462fD548D0Ba1e7d380Ed7F3DA10Cab912Fa7',
     templeV2Router: '0x7a19509307648b0bf00dd7349F2dDaE716B9a998',
     treasuryIv: '0xA443355cE4F9c1AA6d68e057a962E86E071B0ed3',
-    vaultOps: '0xCf19c5D73df8124bD12bC987AfaDB71Cc35e6A73',
-    vaultProxy: '0x6087B9b7DA7d2A7C5dB494e4B640E86FD3A9813D',
+    vaultOps: '0x542891Faf336d69E440De80145Df21510dCa6a78',
+    vaultProxy: '0xb0043346da58ce01EaE3246664Cb5984f75adC1b',
   },
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-goerli',
