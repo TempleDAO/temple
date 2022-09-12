@@ -34,7 +34,9 @@ const env: Environment = {
   subgraph: {
     templeCore: 'http://localhost:8000/subgraphs/name/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
-    balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
+    balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    // Original Balancer Subgraph
+    // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
   intervals: {
     ascendData: 30_000,
