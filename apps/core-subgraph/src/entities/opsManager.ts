@@ -6,7 +6,7 @@ import { OpsManager as OpsManagerContract } from '../../generated/OpsManager/Ops
 import { OPS_MANAGER_ID } from '../utils/constants'
 
 export function createOpsManager(opsManagerAddress: string): OpsManager {
-  let opsManager = getOpsManager();
+  let opsManager = OpsManager.load(OPS_MANAGER_ID);
   if (opsManager === null) {
     opsManager = new OpsManager(OPS_MANAGER_ID)
     opsManager.vaultGroups = []
