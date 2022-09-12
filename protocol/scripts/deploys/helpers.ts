@@ -87,6 +87,8 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     VAULT_PROXY: '0xb0043346da58ce01EaE3246664Cb5984f75adC1b',
 
     MULTISIG: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
+    GENERIC_ZAPS: '',
+    TEMPLE_ZAPS: '',
   },
   mainnet: {
     // From network/environment
