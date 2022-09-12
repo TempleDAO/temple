@@ -28,3 +28,14 @@ export const formatMillions = (n: number | string): string => {
 export const allocationToIncense = (allocation: number): number => {
   return formatNumberFixedDecimals(allocation / 1000, 0);
 };
+
+export const truncateDecimals = (number: string | number, targetDecimals = 2): string => {
+  const stringNumber = number.toString();
+  let [int, decimals] = (stringNumber || '0').split('.');
+
+  if (decimals && decimals.length > targetDecimals) {
+    decimals = decimals.substring(0, targetDecimals);
+  }
+ 
+  return decimals ? `${int}.${decimals}` : int;
+};

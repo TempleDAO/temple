@@ -15,9 +15,12 @@ import {
   TempleERC20Token__factory,
   TempleStableAMMRouter__factory,
   TempleUniswapV2Pair__factory,
-  TempleTreasury__factory,
+  TreasuryIV__factory,
 } from 'types/typechain';
 import env from 'constants/env';
+import { AnalyticsEvent } from 'constants/events';
+import { AnalyticsService } from 'services/AnalyticsService';
+import { formatBigNumber } from 'components/Vault/utils';
 
 const INITIAL_STATE: SwapService = {
   templePrice: 0,
@@ -74,10 +77,10 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
-    const templeTreasury = new TempleTreasury__factory(signerState).attach(env.contracts.treasuryIv);
+    const templeTreasury = new TreasuryIV__factory(signerState).attach(env.contracts.treasuryIv);
 
-    const { stablec, temple } = await templeTreasury.intrinsicValueRatio();
-    return fromAtto(stablec) / fromAtto(temple);
+    const { frax, temple } = await templeTreasury.intrinsicValueRatio();
+    return fromAtto(frax) / fromAtto(temple);
   };
 
   const updateIv = async () => {
@@ -130,6 +133,8 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         }
       );
       const txReceipt = await buyTXN.wait();
+
+      AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, { token, amount: formatBigNumber(verifiedAmountIn) });
 
       // Show feedback to user
       openNotification({
@@ -203,6 +208,11 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       );
 
       const txReceipt = await sellTx.wait();
+
+      AnalyticsService.captureEvent(AnalyticsEvent.Trade.Sell, {
+        token,
+        amount: formatBigNumber(verifiedAmountInTemple),
+      });
 
       // Show feedback to user
       openNotification({

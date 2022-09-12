@@ -1,5 +1,7 @@
 export type Callback = () => Promise<void> | (() => void);
 
+export type DepositSuccessCallback = (ticker: string, amount: string) => Promise<void>;
+
 export type MetaMaskError = Error & { data?: { message: string } };
 
 export interface GraphVaultGroup {
@@ -52,10 +54,11 @@ export type Metrics = {
 export interface SubGraphResponse<T extends object> {
   data?: T;
   errors?: { message: string }[];
-};
+}
 
 export interface SubGraphQuery {
   query: string;
+  variables?: { [key: string]: string | number }
 }
 
 export type GetVaultGroupsResponse = SubGraphResponse<{ vaultGroups: GraphVaultGroup[] }>;
@@ -64,7 +67,7 @@ export type GetMetricsResponse = SubGraphResponse<{ metrics: Metrics }>;
 export class SubgraphError extends Error {
   constructor(public message: string, public cause: Error) {
     super(message);
-    this.name = "SubgraphError";
+    this.name = 'SubgraphError';
     this.stack = cause.stack;
   }
 }

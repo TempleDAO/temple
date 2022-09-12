@@ -11,6 +11,8 @@ const env: Environment = {
     frax: '0x853d955acef822db058eb8505911ed77f175b99e',
     frax3CrvFarming: '0xd632f22692fac7611d2aa1c0d552930d43caed3b',
     frax3CrvFarmingRewards: '0xB900EF131301B307dB5eFcbed9DBb50A3e209B2e',
+    lbpFactory: '0x0F3e0c4218b7b0108a3643cFe9D3ec0d4F57c54e',
+    lockedOgTemple: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
     ogTemple: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
     teamPaymentsEpoch1: '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
     teamPaymentsEpoch2: '0xe0Aafcf26576a53Cbec99481607FB53384909C36',
@@ -39,6 +41,48 @@ const env: Environment = {
     claimOgTemple: 100000,
   },
   infuraId: 'a2a39f8ae6564913a583c7b6d01c84d6',
+  intervals: {
+    ascendData: 30_000,
+    ascendQuote: 10_000,
+  },
+  tokens: {
+    frax: {
+      name: 'Frax',
+      address: '0x853d955acef822db058eb8505911ed77f175b99e',
+      decimals: 18,
+    },
+    temple: {
+      name: 'Temple',
+      address: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
+      decimals: 18,
+    },
+    ogTemple: {
+      name: 'OGTemple',
+      address: '0x654590f810f01b51dc7b86915d4632977e49ea33',
+      decimals: 18,
+    },
+    fei: {
+      name: 'Fei',
+      address: '0x956f47f50a910163d8bf957cf5846d573e7f87ca',
+      decimals: 18,
+    },
+    eth: {
+      name: 'WETH',
+      address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+      decimals: 18,
+    },
+    usdc: {
+      name: 'USDC',
+      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+      decimals: 6,
+    },
+    dai: {
+      name: 'Dai',
+      address: '0x6b175474e89094c44da98b954eedeac495271d0f',
+      decimals: 18,
+    },
+  },
+  etherscan: 'https://etherscan.io',
   sentry: {
     environment: 'production',
     dsn: 'https://ab0c41c30fbb405da50d9803819b1d60@o1268430.ingest.sentry.io/6456054',
@@ -46,7 +90,16 @@ const env: Environment = {
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
+    balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
   },
+  featureFlags: {
+    enableAscend: true,
+  },
+  posthog: {
+    token: 'phc_pa9tsK76qoRqgsvMh9rDLtBKbOaawlwvJTLkcNDtxab',
+    api_host: 'https://app.posthog.com',
+  },
+  templeMultisig: '0xe2Bb722DA825eBfFa1E368De244bdF08ed68B5c4',
 };
 
 export default env;

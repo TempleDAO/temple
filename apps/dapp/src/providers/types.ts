@@ -74,14 +74,6 @@ export interface StakingService {
   stake(amountToStake: BigNumber): Promise<void>;
   unstake(amountToStake: BigNumber): Promise<void>;
 
-  claimAvailableTemple(): Promise<void>;
-
-  restakeAvailableTemple(): Promise<void>;
-
-  getJoinQueueData(ogtAmount: BigNumber): Promise<JoinQueueData | void>;
-
-  getExitQueueData(): Promise<void>;
-
   updateLockedEntries(): Promise<void>;
 
   claimOgTemple(lockedEntryIndex: number): Promise<void>;

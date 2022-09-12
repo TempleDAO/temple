@@ -16,8 +16,6 @@ import { SwapMode } from './types';
 import { isTokenFraxOrFei } from './utils';
 import { swapReducer } from './reducer';
 
-import env from 'constants/env';
-
 export function useSwapController() {
   const { wallet } = useWallet();
   const [state, dispatch] = useReducer(swapReducer, INITIAL_STATE);
@@ -30,13 +28,6 @@ export function useSwapController() {
       await updateBalance();
       await updateTemplePrice();
       await updateIv();
-
-      if (templePrice > iv * env.fraxSellDisabledIvMultiple) {
-        dispatch({
-          type: 'enableFraxSell',
-          fraxBalance: balance.frax,
-        });
-      }
 
       dispatch({
         type: 'changeInputTokenBalance',
@@ -255,24 +246,6 @@ export function useSwapController() {
       const sellQuote = await getSellQuote(value, state.outputToken);
 
       quote = sellQuote ? sellQuote.amountOut : ZERO;
-
-      const isPriceNearIv = templePrice < iv * env.fraxSellDisabledIvMultiple;
-
-      if (sellQuote) {
-        if (!state.isFraxSellDisabled && sellQuote.priceBelowIV) {
-          dispatch({
-            type: 'disableFraxSell',
-            feiBalance: balance.fei,
-          });
-        }
-
-        if (state.isFraxSellDisabled && !sellQuote.priceBelowIV && !isPriceNearIv) {
-          dispatch({
-            type: 'enableFraxSell',
-            fraxBalance: balance.frax,
-          });
-        }
-      }
     }
 
     if (!quote) {

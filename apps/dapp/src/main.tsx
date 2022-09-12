@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import * as Sentry from '@sentry/react';
 import { BrowserTracing } from '@sentry/tracing';
 import { CaptureConsole } from '@sentry/integrations';
+
 import { GlobalStyle } from 'styles/GlobalStyle';
 import { AppProvider } from 'providers/AppProvider';
 import NotificationManager from 'components/Notification/NotificationManager';
@@ -17,14 +18,21 @@ import VaultPage from 'components/Pages/Core/Vault';
 import ProfilePage from 'components/Pages/Core/Profile/Profile';
 import VaultListPage from 'components/Pages/Core/VaultList';
 import HomePage from 'components/Pages/Core/HomePage';
+import PoolListPage from 'components/Pages/Ascend/PoolList';
 import { Claim as VaultClaim } from 'components/Pages/Core/VaultPages/Claim';
 import { Stake } from 'components/Pages/Core/VaultPages/Stake';
 import { Summary } from 'components/Pages/Core/VaultPages/Summary';
 import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
 import TradeRoutes from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
+import { AscendLayout } from 'components/Layouts/Ascend';
+import { CreateLBPPage } from 'components/Pages/Ascend/admin/create';
+import { EditLBPPage } from 'components/Pages/Ascend/admin/edit';
+import { AscendPage } from 'components/Pages/Ascend';
+import { AscendListPage } from 'components/Pages/AscendList';
 
 import env from 'constants/env';
+import { AnalyticsService } from 'services/AnalyticsService';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -68,6 +76,8 @@ if (env.sentry) {
   });
 }
 
+AnalyticsService.init();
+
 ReactDOM.render(
   <React.StrictMode>
     <AppProvider>
@@ -84,7 +94,6 @@ ReactDOM.render(
             </Route>
             <Route path="/dapp/*" element={<CoreLayout />}>
               <Route path="" element={<VaultListPage />} />
-
               <Route path="vaults" element={<VaultListPage />} />
               <Route path="vaults/:vaultId/*" element={<VaultPage />}>
                 <Route path="claim" element={<VaultClaim />} />
@@ -95,6 +104,19 @@ ReactDOM.render(
               </Route>
               <Route path="trade/*" element={<TradeRoutes />} />
               <Route path="profile" element={<ProfilePage />} />
+              
+              {env.featureFlags.enableAscend && (
+                <>
+                  <Route path="ascend/*" element={<AscendLayout />}>
+                    <Route path="" element={<AscendListPage />} />
+                    <Route path="admin" element={<PoolListPage />} />
+                    <Route path="admin/new" element={<CreateLBPPage />} />
+                    <Route path="admin/:poolAddress/*" element={<EditLBPPage />} />
+                    <Route path=":poolAddress" element={<AscendPage />} />
+                  </Route>
+                </>
+              )}
+
               <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
           </>

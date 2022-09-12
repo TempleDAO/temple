@@ -13,6 +13,8 @@ import { ZERO } from 'utils/bigNumber';
 import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
 import { useIsVaultExitable } from 'hooks/core/use-is-vault-exitable';
+import { AnalyticsService } from 'services/AnalyticsService';
+import { AnalyticsEvent } from 'constants/events';
 
 export const Claim = () => {
   const { activeVault: vault } = useVaultContext();
@@ -23,6 +25,7 @@ export const Claim = () => {
   const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault!.id, async () => {
     await refreshWalletState();
     await getBalance();
+    AnalyticsService.captureEvent(AnalyticsEvent.Vault.Claim, { name: vault.id, amount });
     setAmount('');
   });
   const [checkExitStatus, { response: canExit }] = useIsVaultExitable(vault.id);

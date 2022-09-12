@@ -2,8 +2,8 @@ import { ethers } from 'ethers';
 import {
   ERC20,
   ERC20__factory,
-  TempleTreasury,
-  TempleTreasury__factory,
+  TreasuryIV,
+  TreasuryIV__factory,
   TempleStaking,
   TempleStaking__factory,
   OGTemple,
@@ -93,7 +93,7 @@ export class MetricsService {
   private ogTempleCoinContract: OGTemple;
   private frax3crv_fCoinContract;
   private frax3crv_fRewardsContract;
-  private treasuryContract: TempleTreasury;
+  private treasuryContract: TreasuryIV;
   private templeStakingContract: TempleStaking;
   private treasuryAddress: string;
   private treasuryAddresses: string[];
@@ -123,7 +123,7 @@ export class MetricsService {
 
     this.farmingWalletAddress = env.contracts.farmingWallet;
 
-    this.treasuryContract = TempleTreasury__factory.connect(env.contracts.treasuryIv, this.provider);
+    this.treasuryContract = TreasuryIV__factory.connect(env.contracts.treasuryIv, this.provider);
 
     this.templeStakingContract = TempleStaking__factory.connect(env.contracts.templeStaking, this.provider);
 
@@ -256,8 +256,8 @@ export class MetricsService {
    */
   private getIV = async (): Promise<number> => {
     const iv = await this.treasuryContract.intrinsicValueRatio();
-    const { temple, stablec } = iv;
-    const rate = fromAtto(stablec) / fromAtto(temple);
+    const { temple, frax } = iv;
+    const rate = fromAtto(frax) / fromAtto(temple);
     return formatNumber(rate);
   };
 

@@ -84,6 +84,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_TEAM_EPOCH_3: process.env.TEMPLE_TEAM_EPOCH_3 || '',
     TEMPLE_TEAM_EPOCH_4: process.env.TEMPLE_TEAM_EPOCH_4 || '',
     TEMPLE_V2_FRAX_PAIR: process.env.TEMPLE_V2_FRAX_PAIR || '',
+    TEMPLE_V2_FEI_PAIR: process.env.TEMPLE_V2_FEI_PAIR || '',
     TEMPLE_V2_ROUTER: process.env.TEMPLE_V2_ROUTER || '',
 
     OPS_MANAGER: process.env.OPS_MANAGER || '',

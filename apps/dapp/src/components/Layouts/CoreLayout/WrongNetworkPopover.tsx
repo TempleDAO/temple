@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useNetwork, chain as chains, AddChainError } from 'wagmi';
+import { useNetwork, chain as chains, AddChainError, useSwitchNetwork } from 'wagmi';
 
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
@@ -14,7 +14,8 @@ const ENV = ENV_VARS.VITE_ENV;
 const IS_PROD = ENV === 'production';
 
 export const WrongNetworkPopover = () => {
-  const { activeChain: chain, isLoading: loading, error, switchNetwork } = useNetwork();
+  const { switchNetwork, error, isLoading: loading } = useSwitchNetwork();
+  const { chain } = useNetwork();
   const [dismissedChainId, setDismissedChainId] = useState<Nullable<number>>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -134,7 +135,7 @@ export const WrongNetworkPopover = () => {
 
 const ENV_CHAIN_MAPPING = new Map([
   ['production', chains.mainnet],
-  ['preview', chains.rinkeby],
+  ['preview', chains.goerli],
   ['local', LOCAL_CHAIN],
 ]);
 

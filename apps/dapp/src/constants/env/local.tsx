@@ -1,5 +1,7 @@
 import { Environment } from './types';
 
+const ENV = import.meta.env;
+
 const env: Environment = {
   alchemyId: 'VvVv_fBIiRSaTQzL9RQNybD5FSNvtK5c',
   backendUrl: 'http://localhost:3001',
@@ -11,6 +13,8 @@ const env: Environment = {
     frax: '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6',
     frax3CrvFarming: '',
     frax3CrvFarmingRewards: '',
+    lbpFactory: '',
+    lockedOgTemple: '0x0165878A594ca255338adfa4d48449f69242Eb8F',
     ogTemple: '0x75537828f2ce51be7289709686A69CbFDbB714F1',
     teamPaymentsEpoch1: '0x82e01223d51Eb87e16A03E24687EDF0F294da6f1',
     teamPaymentsEpoch2: '0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650',
@@ -30,7 +34,62 @@ const env: Environment = {
   subgraph: {
     templeCore: 'http://localhost:8000/subgraphs/name/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
+    balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
+  intervals: {
+    ascendData: 30_000,
+    ascendQuote: 10_000,
+  },
+  etherscan: 'https://goerli.etherscan.io',
+  tokens: {
+    frax: {
+      name: 'Frax',
+      address: ENV.VITE_PUBLIC_STABLE_COIN_ADDRESS,
+      decimals: 18,
+      symbol: 'Frax',
+    },
+    temple: {
+      name: 'Temple',
+      address: ENV.VITE_PUBLIC_TEMPLE_ADDRESS,
+      decimals: 18,
+      symbol: 'Temple',
+
+    },
+    ogTemple: {
+      name: 'OGTemple',
+      address: ENV.VITE_PUBLIC_OG_TEMPLE_ADDRESS,
+      decimals: 18,
+      symbol: 'OGTemple'
+    },
+    fei: {
+      name: 'Fei',
+      address: ENV.VITE_PUBLIC_FEI_ADDRESS,
+      decimals: 18,
+      symbol: 'FEI',
+    },
+    eth: {
+      name: 'WETH',
+      address: '',
+      decimals: 18,
+      symbol: 'WETH',
+    },
+    usdc: {
+      name: 'USDC',
+      address: ENV.VITE_PUBLIC_USDC_ADDRESS,
+      decimals: 6,
+      symbol: 'USDC',
+    },
+    dai: {
+      name: 'Dai',
+      address: ENV.VITE_PUBLIC_DAI_ADDRESS,
+      decimals: 18,
+      symbol: 'DAI'
+    },
+  },
+  featureFlags: {
+    enableAscend: true,
+  },
+  templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
 };
 
 export default env;
