@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
@@ -146,8 +146,10 @@ export const useListCoreVaultGroups = () => {
     requestVaultGroups();
   }, [request, isConnecting]);
 
-  const groups = response?.data?.vaultGroups || [];
-  const vaultGroups = groups.map((vaultGroup) => createVaultGroup(vaultGroup));
+  const groups = response?.data?.vaultGroups;
+  const vaultGroups = useMemo(() => {
+    return (groups || []).map((vaultGroup) => createVaultGroup(vaultGroup));
+  }, [groups]);
 
   return {
     vaultGroups,

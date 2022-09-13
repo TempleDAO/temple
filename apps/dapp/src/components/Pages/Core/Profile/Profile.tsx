@@ -20,12 +20,13 @@ import { createDateFromSeconds, formatTemple } from 'components/Vault/utils';
 import { Nullable } from 'types/util';
 import { fromAtto, ZERO } from 'utils/bigNumber';
 
-import { useListCoreVaultGroups, createUserTransactionsQuery } from 'hooks/core/subgraph';
+import { createUserTransactionsQuery } from 'hooks/core/subgraph';
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
 import { useVaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { useStaking } from 'providers/StakingProvider';
+import { useVaultContext } from '../VaultContext';
 
 import env from 'constants/env';
 
@@ -34,8 +35,7 @@ const STAT_CARD_HEIGHT = '5rem';
 const ProfilePage = () => {
   const { getBalance, wallet } = useWallet();
   const { faith } = useFaith();
-  const { isLoading: vaultGroupsLoading, vaultGroups } = useListCoreVaultGroups();
-  const { balances, isLoading: vaultGroupBalancesLoading } = useVaultGroupBalances(vaultGroups);
+  const { isLoading, balances, vaultGroups } = useVaultContext();
   const { lockedEntries, updateLockedEntries } = useStaking();
 
   useEffect(() => {
@@ -55,7 +55,7 @@ const ProfilePage = () => {
   }, BigNumber.from(0));
 
   const claimableVaults = new Set(
-    vaultGroups.flatMap((vaultGroup) => {
+    (vaultGroups || []).flatMap((vaultGroup) => {
       return vaultGroup.vaults.filter(({ unlockDate }) => unlockDate === 'NOW').map(({ id }) => id);
     })
   );
@@ -70,7 +70,6 @@ const ProfilePage = () => {
     return total.add(vault.balance || ZERO);
   }, BigNumber.from(0));
 
-  const isLoading = vaultGroupsLoading || vaultGroupBalancesLoading;
   const faithBalance = faith.usableFaith;
 
   let lockedOGTempleBalance = BigNumber.from(0);
@@ -176,7 +175,7 @@ const ProfilePage = () => {
             </ProfileMeta>
           </ProfileOverview>
           <SectionWrapper>
-            <ProfileVaults isLoading={isLoading} vaultGroupBalances={balances} vaultGroups={vaultGroups} />
+            <ProfileVaults isLoading={isLoading} vaultGroupBalances={balances} vaultGroups={vaultGroups || []} />
           </SectionWrapper>
           {hasLegacyTemple && (
             <SectionWrapper>
