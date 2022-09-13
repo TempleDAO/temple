@@ -18,11 +18,13 @@ export function createOpsManager(opsManagerAddress: string): OpsManager {
     opsManager.templeExposure = opsManagerContract.templeExposure().toHexString()
     opsManager.save()
   }
+
   return opsManager as OpsManager
 }
 
 export function getOpsManager(): OpsManager {
   let opsManager = OpsManager.load(OPS_MANAGER_ID)
+
   return opsManager as OpsManager
 }
 
