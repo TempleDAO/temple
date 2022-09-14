@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 
 import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
@@ -126,6 +126,7 @@ export const useVaultMetrics = () => {
 
 export const useListCoreVaultGroups = () => {
   const { wallet, isConnecting } = useWallet();
+  const didRequest = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const [request, { response, isLoading: requestPending, error }] = useSubgraphRequest<GetVaultGroupsResponse>(
@@ -138,13 +139,18 @@ export const useListCoreVaultGroups = () => {
       return;
     }
 
+    if (didRequest.current) {
+      return;
+    }
+
     const requestVaultGroups = async () => {
       await request();
       setIsLoading(false);
     };
 
     requestVaultGroups();
-  }, [request, isConnecting]);
+    didRequest.current = true;
+  }, [request, isConnecting, didRequest]);
 
   const groups = response?.data?.vaultGroups;
   const vaultGroups = useMemo(() => {
