@@ -32,7 +32,7 @@ const Timing = () => {
             </Row>
           </Head>
           <StyledBody>
-            {vaultGroup.vaults.map((vault) => {
+            {vaultGroup?.vaults.map((vault) => {
               const vaultBalance = balances[vault.id] || {};
               const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
               return (
@@ -47,7 +47,7 @@ const Timing = () => {
           </StyledBody>
         </Table>
       </TableWrapper>
-      <Duration>{vaultGroup.months} periods in this vault</Duration>
+      <Duration>{vaultGroup?.months} periods in this vault</Duration>
     </VaultContent>
   );
 };

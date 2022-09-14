@@ -1,5 +1,6 @@
 import { createContext, FC, useEffect, useContext, useMemo } from 'react';
 import { BigNumber } from 'ethers';
+import { useParams } from 'react-router-dom';
 
 import { VaultGroup, Vault } from 'components/Vault/types';
 import { useListCoreVaultGroups } from 'hooks/core/subgraph';
@@ -8,9 +9,7 @@ import { asyncNoop, noop } from 'utils/helpers';
 import { Nullable } from 'types/util';
 
 interface VaultContextType {
-  vaultGroup: Nullable<VaultGroup>;
-  vaultGroups: Nullable<VaultGroup[]>;
-  activeVault: Nullable<Vault>;
+  vaultGroups: VaultGroup[];
   balances: VaultGroupBalances;
   refreshVaultBalance: (address: string) => Promise<void>,
   optimisticallyUpdateVaultStaked: (address: string, operation: Operation, amount: BigNumber) => void;
@@ -24,9 +23,7 @@ export const VaultContext = createContext<VaultContextType>({
   balances: {},
   refreshVaultBalance: asyncNoop,
   optimisticallyUpdateVaultStaked: noop,
-  vaultGroup: null,
-  vaultGroups: null,
-  activeVault: null,
+  vaultGroups: [],
   isLoading: false,
   error: null,
 });
@@ -41,18 +38,6 @@ export const VaultContextProvider: FC = ({ children }) => {
     optimisticallyUpdateVaultStaked: updateStakedAmount,
     isLoading: balancesLoading,
   } = useVaultGroupBalances(vaultGroups);
-
-  const activeVault = vaultGroup?.vaults.find(({ isActive }) => isActive)!;
-
-  useEffect(() => {
-    if (!vaultGroup) {
-      return;
-    }
-
-    if (!activeVault) {
-      console.error(`VaultGroupError: There is no currently active vault for VaultGroup: ${vaultGroup.id}.`);
-    }
-  }, [activeVault, vaultGroup]);
 
   const optimisticallyUpdateVaultStaked =
     (vaultAddress: string, operation: Operation, amount: BigNumber) => updateStakedAmount(
@@ -77,9 +62,7 @@ export const VaultContextProvider: FC = ({ children }) => {
       value={{
         balances: getBalances(balances, vaultGroup),
         refreshVaultBalance: fetchVaultBalance,
-        vaultGroup,
         vaultGroups,
-        activeVault,
         optimisticallyUpdateVaultStaked,
         isLoading: vaultsLoading || balancesLoading,
         error,
@@ -90,12 +73,25 @@ export const VaultContextProvider: FC = ({ children }) => {
   );
 };
 
-export const useVaultContext = (vaultGroupId?: string) => {
-  const context = useContext(VaultContext);
+type UseVaultContextHookValues = VaultContextType & {
+  activeVault?: Vault;
+  vaultGroup?: VaultGroup;
+};
+
+export const useVaultContext = (): UseVaultContextHookValues => {
+  const { vaultId } = useParams();
+  const { vaultGroups, ...rest } = useContext(VaultContext);
+
+  const vaultGroup = vaultGroups.find((vaultGroup) => {
+    return vaultGroup.id === vaultId;
+  });
+
+  const activeVault = vaultGroup?.vaults.find(({ isActive }) => !!isActive);
 
   return {
-    ...context,
-    vaultGroup: context.vaultGroup!,
-    activeVault: context.activeVault!,
+    ...rest,
+    vaultGroups,
+    vaultGroup,
+    activeVault,
   };
 };

@@ -26,7 +26,8 @@ import { AnalyticsService } from 'services/AnalyticsService';
 import { AnalyticsEvent } from 'constants/events';
 
 export const Stake = () => {
-  const { activeVault: vault } = useVaultContext();
+  const { activeVault } = useVaultContext();
+  const vault = activeVault!;
   const { isConnected } = useWallet();
 
   const { options, option, setOption, balances, stakingAmount, setStakingAmount } = useStakeOptions();

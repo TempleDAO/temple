@@ -7,7 +7,7 @@ import { useVaultContext, VaultContextProvider } from './VaultContext';
 
 const VaultPage = () => {
   const { vaultId } = useParams();
-  const { isLoading, vaultGroup, error } = useVaultContext();
+  const { isLoading, vaultGroup, error, activeVault } = useVaultContext();
 
   if (isLoading) {
     return (
@@ -26,7 +26,7 @@ const VaultPage = () => {
     );
   }
 
-  if (!vaultGroup) {
+  if (!vaultGroup || !activeVault) {
     return (
       <CenterScreenWrapper>
         <h2>Invalid Vault.</h2>

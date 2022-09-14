@@ -9,7 +9,7 @@ import { DefaultText, strategies } from './strategies/Strategies';
 export const Strategy = () => {
   const { vaultGroup } = useVaultContext();
   
-  const id = vaultGroup.id;
+  const id = vaultGroup!.id;
   const strategyContent = strategies[id] || DefaultText;
   
   useEffect(() => {

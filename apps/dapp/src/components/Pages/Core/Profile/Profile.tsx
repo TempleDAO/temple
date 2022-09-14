@@ -23,7 +23,6 @@ import { fromAtto, ZERO } from 'utils/bigNumber';
 import { createUserTransactionsQuery } from 'hooks/core/subgraph';
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
-import { useVaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { useStaking } from 'providers/StakingProvider';
 import { useVaultContext } from '../VaultContext';
