@@ -9,34 +9,46 @@ import { asyncNoop, noop } from 'utils/helpers';
 import { Nullable } from 'types/util';
 
 interface VaultContextType {
-  vaultGroups: VaultGroup[];
-  balances: VaultGroupBalances;
+  vaultGroups: {
+    isLoading: boolean;
+    error: Nullable<Error>;
+    vaultGroups: VaultGroup[];
+  };
+  balances: {
+    isLoading: boolean;
+    error: Nullable<Error>;
+    balances: VaultGroupBalances;
+  };
   refreshVaultBalance: (address: string) => Promise<void>,
   optimisticallyUpdateVaultStaked: (address: string, operation: Operation, amount: BigNumber) => void;
-  isLoading: boolean;
-  error: Nullable<Error>;
 }
 
 export { Operation };
 
 export const VaultContext = createContext<VaultContextType>({
-  balances: {},
+  vaultGroups: {
+    isLoading: false,
+    vaultGroups: [],
+    error: null,
+  },
+  balances: {
+    isLoading: false,
+    balances: {},
+    error: null,
+  },
   refreshVaultBalance: asyncNoop,
   optimisticallyUpdateVaultStaked: noop,
-  vaultGroups: [],
-  isLoading: false,
-  error: null,
 });
 
 export const VaultContextProvider: FC = ({ children }) => {
-  const { vaultGroups, isLoading: vaultsLoading, error } = useListCoreVaultGroups();
-  const vaultGroup = vaultGroups[0];
+  const { vaultGroups, isLoading: vaultsLoading, error: vaultLoadingError } = useListCoreVaultGroups();
 
   const {
     balances,
     fetchVaultBalance,
     optimisticallyUpdateVaultStaked: updateStakedAmount,
     isLoading: balancesLoading,
+    error: vaultBalanceError,
   } = useVaultGroupBalances(vaultGroups);
 
   const optimisticallyUpdateVaultStaked =
@@ -46,26 +58,33 @@ export const VaultContextProvider: FC = ({ children }) => {
       amount,
     );
 
-  const getBalances = (balances: VaultGroupBalances, vaultGroup: VaultGroup) => {
-    if (!vaultGroup) {
-      return {};
-    }
-
-    return vaultGroup.vaults.reduce((acc, { id }) => ({
-      ...acc,
-      [id]: balances[id] || {},
-    }), {});
+  const getBalances = (balances: VaultGroupBalances) => {
+    return vaultGroups.reduce((groupedBalances, group) => {
+      return {
+        ...groupedBalances,
+        [group.id]: group.vaults.reduce((acc, { id }) => ({
+          ...acc,
+          [id]: balances[id] || {},
+        }), {}),
+      };
+    }, {});
   };
 
   return (
     <VaultContext.Provider
       value={{
-        balances: getBalances(balances, vaultGroup),
-        refreshVaultBalance: fetchVaultBalance,
-        vaultGroups,
+        vaultGroups: {
+          vaultGroups,
+          isLoading: vaultsLoading,
+          error: vaultLoadingError,
+        },
+        balances: {
+          balances: getBalances(balances),
+          isLoading: balancesLoading,
+          error: vaultBalanceError,
+        },
         optimisticallyUpdateVaultStaked,
-        isLoading: vaultsLoading || balancesLoading,
-        error,
+        refreshVaultBalance: fetchVaultBalance,
       }}
     >
       {children}
@@ -82,16 +101,16 @@ export const useVaultContext = (): UseVaultContextHookValues => {
   const { vaultId } = useParams();
   const { vaultGroups, ...rest } = useContext(VaultContext);
 
-  const vaultGroup = vaultGroups.find((vaultGroup) => {
+  const activeVaultGroup = vaultGroups.vaultGroups.find((vaultGroup) => {
     return vaultGroup.id === vaultId;
   });
 
-  const activeVault = vaultGroup?.vaults.find(({ isActive }) => !!isActive);
+  const activeVault = activeVaultGroup?.vaults.find(({ isActive }) => !!isActive);
 
   return {
     ...rest,
     vaultGroups,
-    vaultGroup,
+    vaultGroup: activeVaultGroup,
     activeVault,
   };
 };

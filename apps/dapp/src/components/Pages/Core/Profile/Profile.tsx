@@ -34,8 +34,13 @@ const STAT_CARD_HEIGHT = '5rem';
 const ProfilePage = () => {
   const { getBalance, wallet } = useWallet();
   const { faith } = useFaith();
-  const { isLoading, balances, vaultGroups } = useVaultContext();
+  const {
+    balances: { balances, isLoading: balancesLoading },
+    vaultGroups: { vaultGroups, isLoading: vaultGroupsLoading },
+  } = useVaultContext();
   const { lockedEntries, updateLockedEntries } = useStaking();
+
+  const isLoading = vaultGroupsLoading || balancesLoading;
 
   useEffect(() => {
     if (!wallet) {
@@ -174,7 +179,7 @@ const ProfilePage = () => {
             </ProfileMeta>
           </ProfileOverview>
           <SectionWrapper>
-            <ProfileVaults isLoading={isLoading} vaultGroupBalances={balances} vaultGroups={vaultGroups || []} />
+            <ProfileVaults isLoading={isLoading} vaultGroupBalances={balances} vaultGroups={vaultGroups} />
           </SectionWrapper>
           {hasLegacyTemple && (
             <SectionWrapper>
