@@ -1,13 +1,12 @@
-import { useParams, Outlet, Link } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 
 import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Spinner } from 'components/LoaderVault/Spinner';
 import { CenterScreenWrapper } from 'components/Pages/Core/styles';
-import { useVaultContext, VaultContextProvider } from './VaultContext';
+import { useVaultContext } from './VaultContext';
 
 const VaultPage = () => {
-  const { vaultId } = useParams();
-  const { isLoading, vaultGroup, error, activeVault } = useVaultContext();
+  const { vaultGroups: { isLoading, error }, activeVault, vaultGroup } = useVaultContext();
 
   if (isLoading) {
     return (

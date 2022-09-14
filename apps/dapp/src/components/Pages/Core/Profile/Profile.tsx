@@ -50,23 +50,26 @@ const ProfilePage = () => {
     getBalance();
   }, [wallet]);
 
-  const totalStakedAcrossAllVaults = Object.values(balances).reduce((total, vault) => {
+  const vaultGroupBalances = new Map(Object.values(balances).flatMap((vaultGroup) => Object.entries(vaultGroup)));
+  const vaultValues = Array.from(vaultGroupBalances.values());
+
+  const totalStakedAcrossAllVaults = vaultValues.reduce((total, vault) => {
     return total.add(vault?.staked || ZERO);
   }, BigNumber.from(0));
 
-  const totalBalancesAcrossVaults = Object.values(balances).reduce((balance, vault) => {
+  const totalBalancesAcrossVaults = vaultValues.reduce((balance, vault) => {
     return balance.add(vault.balance || ZERO);
   }, BigNumber.from(0));
 
   const claimableVaults = new Set(
-    (vaultGroups || []).flatMap((vaultGroup) => {
+    vaultGroups.flatMap((vaultGroup) => {
       return vaultGroup.vaults.filter(({ unlockDate }) => unlockDate === 'NOW').map(({ id }) => id);
     })
   );
 
   const { data, yDomain, xDomain } = useChartData(wallet || '', fromAtto(totalBalancesAcrossVaults));
 
-  const claimableBalance = Object.entries(balances).reduce((total, [address, vault]) => {
+  const claimableBalance = Array.from(vaultGroupBalances.entries()).reduce((total, [address, vault]) => {
     if (!claimableVaults.has(address)) {
       return total;
     }

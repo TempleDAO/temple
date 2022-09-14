@@ -14,7 +14,7 @@ import { formatTemple } from 'components/Vault/utils';
 interface IProps {
   isLoading?: boolean;
   vaultGroups: VaultGroup[];
-  vaultGroupBalances: VaultGroupBalances;
+  vaultGroupBalances: { [groupId: string]: VaultGroupBalances };
 }
 
 export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultGroupBalances }) => {
@@ -52,8 +52,9 @@ export const ProfileVaults: React.FC<IProps> = ({ isLoading, vaultGroups, vaultG
               </Head>
               <Body>
                 {vaultGroup.vaults.map((vault) => {
+                  const vaultGroupBalance = vaultGroupBalances[vaultGroup.id];
                   const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
-                  const vaultBalance = vaultGroupBalances[vault.id] || {};
+                  const vaultBalance = vaultGroupBalance[vault.id] || {};
                   return (
                     <Row key={vault.id}>
                       <Cell>{vault.label}</Cell>

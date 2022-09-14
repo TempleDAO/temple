@@ -17,7 +17,9 @@ interface VaultContextType {
   balances: {
     isLoading: boolean;
     error: Nullable<Error>;
-    balances: VaultGroupBalances;
+    balances: {
+      [vaultGroupId: string]: VaultGroupBalances;
+    };
   };
   refreshVaultBalance: (address: string) => Promise<void>,
   optimisticallyUpdateVaultStaked: (address: string, operation: Operation, amount: BigNumber) => void;
