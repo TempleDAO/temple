@@ -70,7 +70,7 @@ export const Trade = ({ pool }: Props) => {
   const [{ allowance: ascendZapAllowance, isLoading: ascendZapAllowanceIsLoading }, increaseAscendZapAllowance] =
     useTokenContractAllowance(
       sell,
-      vaultAddress // TODO: Update this address
+      '0x1234' // TODO: Update this address to the zap contract
     );
 
   const { vaultGroup, balances: userVaultBalances } = useVaultContext();
@@ -109,6 +109,7 @@ export const Trade = ({ pool }: Props) => {
 
   if (false) {
     // TODO: Remove, temporary to show the trade screen all the time
+    // (once vault and ascend are working locally we can revert this)
     //!pool.swapEnabled || isPaused) {
     return (
       <Wrapper verticalAlignment="top">
@@ -118,6 +119,7 @@ export const Trade = ({ pool }: Props) => {
     );
   }
 
+  // TODO: Use vaultGroup instead (once vault and ascend are working locally)
   const DUMMY_VAULT_GROUP = {
     id: '1m-core',
     vaults: [
@@ -160,6 +162,8 @@ export const Trade = ({ pool }: Props) => {
     ],
   };
 
+  // TODO: Should use use-vault-group-token-balance instead (once vault and ascend are working locally)
+  // See handleVaultSelect below
   const DUMMY_USER_VAULT_BALANCES = {
     [DUMMY_VAULT_GROUP.vaults[0].id]: 10,
     [DUMMY_VAULT_GROUP.vaults[1].id]: 105,
@@ -174,6 +178,7 @@ export const Trade = ({ pool }: Props) => {
   };
 
   const handleVaultSelect = (selected: Option) => {
+    // TODO: Use the use-vault-group-token-balance hook here, to get token balance
     const userVaultBalance = BigNumber.from(DUMMY_USER_VAULT_BALANCES[selected.value]);
     setSelectedSellBalance(DecimalBigNumber.fromBN(userVaultBalance, 0));
   };
