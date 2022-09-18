@@ -29,6 +29,6 @@
     "typescript": "^4.5.4"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.7.0"
+    "@openzeppelin/contracts": "^4.7.3"
   }
 }
