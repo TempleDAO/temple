@@ -15,7 +15,6 @@
   },
   "scripts": {
     "build:dapp": "yarn workspace @temple/dapp build",
-    "build:api": "yarn workspace @temple/analytics-api build",
     "run:stack": "./shared/stack/run.sh",
     "run:stack:e2e": "./shared/stack/run.sh e2e"
   },
