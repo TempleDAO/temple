@@ -20,7 +20,7 @@ const env: Environment = {
     teamPaymentsEpoch4: '',
     temple: '0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf',
     templeStaking: '0x20Ab503De9859eecB22EaB0ddEc9Bcd8bAFB876C',
-    templeV2FraxPair: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
+    templeV2FraxPair: '0x85dA8c4312742522519911052Fa2B4aC302E4d6c',
     templeV2FeiPair: '0x519462fD548D0Ba1e7d380Ed7F3DA10Cab912Fa7',
     templeV2Router: '0x7a19509307648b0bf00dd7349F2dDaE716B9a998',
     treasuryIv: '0xA443355cE4F9c1AA6d68e057a962E86E071B0ed3',
