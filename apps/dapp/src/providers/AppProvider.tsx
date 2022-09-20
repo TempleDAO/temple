@@ -13,6 +13,7 @@ import { SwapProvider } from 'providers/SwapProvider';
 import { StakingProvider } from 'providers/StakingProvider';
 import { FaithProvider } from 'providers/FaithProvider';
 import { WagmiProvider } from 'components/WagmiProvider';
+import { VaultContextProvider } from 'components/Pages/Core/VaultContext';
 
 import { noop } from 'utils/helpers';
 import { ConnectorPopover } from 'components/Layouts/CoreLayout/ConnectorPopover';
@@ -42,16 +43,18 @@ export const AppProvider = (props: PropsWithChildren<{}>) => {
           <SwapProvider>
             <StakingProvider>
               <FaithProvider>
-                <ThemeProvider theme={theme}>
-                  <AppContext.Provider value={{ showConnectPopover }}>
-                    <ConnectorPopover
-                      isOpen={connectPopoverVisible}
-                      onClose={() => setConnectPopoverVisibile(false)}
-                    />
-                    <WrongNetworkPopover />
-                    {props.children}
-                  </AppContext.Provider>
-                </ThemeProvider>
+                <VaultContextProvider>
+                  <ThemeProvider theme={theme}>
+                    <AppContext.Provider value={{ showConnectPopover }}>
+                      <ConnectorPopover
+                        isOpen={connectPopoverVisible}
+                        onClose={() => setConnectPopoverVisibile(false)}
+                      />
+                      <WrongNetworkPopover />
+                      {props.children}
+                    </AppContext.Provider>
+                  </ThemeProvider>
+                </VaultContextProvider>
               </FaithProvider>
             </StakingProvider>
           </SwapProvider>

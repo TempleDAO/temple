@@ -1,14 +1,12 @@
-import { useParams, Outlet, Link } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 
 import { VaultSVG } from 'components/Vault/VaultSVG';
 import { Spinner } from 'components/LoaderVault/Spinner';
-import { useGetVaultGroup } from 'hooks/core/subgraph';
 import { CenterScreenWrapper } from 'components/Pages/Core/styles';
-import { VaultContextProvider } from './VaultContext';
+import { useVaultContext } from './VaultContext';
 
 const VaultPage = () => {
-  const { vaultId } = useParams();
-  const { isLoading, vaultGroup, error } = useGetVaultGroup(vaultId || '');
+  const { vaultGroups: { isLoading, error }, activeVault, vaultGroup } = useVaultContext();
 
   if (isLoading) {
     return (
@@ -27,7 +25,7 @@ const VaultPage = () => {
     );
   }
 
-  if (!vaultGroup) {
+  if (!vaultGroup || !activeVault) {
     return (
       <CenterScreenWrapper>
         <h2>Invalid Vault.</h2>
@@ -39,13 +37,11 @@ const VaultPage = () => {
   }
 
   return (
-    <VaultContextProvider vaultGroup={vaultGroup}>
-      <CenterScreenWrapper>
-        <VaultSVG>
-          <Outlet />
-        </VaultSVG>
-      </CenterScreenWrapper>
-    </VaultContextProvider>
+    <CenterScreenWrapper>
+      <VaultSVG>
+        <Outlet />
+      </VaultSVG>
+    </CenterScreenWrapper>
   );
 };
 
