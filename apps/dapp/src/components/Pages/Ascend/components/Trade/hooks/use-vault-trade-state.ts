@@ -274,8 +274,6 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
     intervalRef.current = window.setInterval(fetchQuote, env.intervals.ascendQuote);
   };
 
-  // TODO: Use different swap implementation based on depositFromVault
-
   const swap = async () => {
     const { inputValue } = state;
 
@@ -289,13 +287,27 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
     try {
       const amount = DecimalBigNumber.parseUnits(inputValue, sell.decimals);
       const deadline = getSwapDeadline(state.transactionSettings.deadlineMinutes);
-      const transaction = await vaultContract.swap(
-        amount,
-        sell.address,
-        buy.address,
-        state.quote.estimateWithSlippage!.value,
-        deadline,
-      );
+
+      let transaction;
+
+      if (depositFromVault) {
+        // TODO: Update based on actual Zap contract params
+        transaction = await zapContract.swap(
+          amount,
+          sell.address,
+          buy.address,
+          state.quote.estimateWithSlippage!.value,
+          deadline,
+        );
+      } else {
+        transaction = await vaultContract.swap(
+          amount,
+          sell.address,
+          buy.address,
+          state.quote.estimateWithSlippage!.value,
+          deadline,
+        );
+      }
 
       await transaction.wait();
 
