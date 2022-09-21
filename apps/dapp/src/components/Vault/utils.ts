@@ -10,6 +10,7 @@ import { Vault, VaultGroup, MarkerType, Marker } from './types';
 import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
 import { Nullable } from 'types/util';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export const createDateFromSeconds = (dateInSeconds: string | number) => {
   const dateMs = Number(dateInSeconds) * 1000;
@@ -197,9 +198,14 @@ const getCurrentCycle = (startDate: Date, months: number, now: Date, windowDurat
 // put it at.
 export const lerp = (v0: number, v1: number, t: number) => v0 * (1 - t) + v1 * t;
 
-export const formatTemple = (templeValue: Nullable<number | BigNumber>) => {
+export const formatTemple = (templeValue: Nullable<number | BigNumber | DecimalBigNumber>) => {
   if (!templeValue) {
     return '0';
+  }
+
+  if (templeValue instanceof DecimalBigNumber) {
+    const stringValue = templeValue.formatUnits(templeValue.getDecimals());
+    return millify(Number(stringValue), { precision: 4 });
   }
 
   const amount = typeof templeValue === 'number' ? templeValue : fromAtto(templeValue);

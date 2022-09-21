@@ -9,6 +9,8 @@ import { useVaultContract } from './use-vault-contract';
 import { getSwapLimit, getSwapDeadline } from '../utils';
 import { useAuctionContext } from '../../AuctionContext';
 import { getBalancerErrorMessage } from 'utils/balancer';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
+import { ZERO } from 'utils/bigNumber';
 import env from 'constants/env';
 import { useAscendZapContract } from './use-ascend-zap-contract';
 
@@ -183,6 +185,39 @@ const INITIAL_QUOTE_STATE = {
   error: null,
 };
 
+
+interface ZapFromVaultHookResponse {
+  options: { label: string; value: string; }[];
+  balances: { [vaultId: string]: DecimalBigNumber };
+}
+
+const useZapFromVaults = (): ZapFromVaultHookResponse => {
+  const { vaultGroups, balances } = useVaultContext();
+
+  // TODO: Support more than 1 Vaultgroup in the future.
+  const vaultGroup = vaultGroups.vaultGroups[0];
+  const vaultGroupBalances = balances.balances[vaultGroup?.id || ''] || {};
+
+  // Only display zap from vault options if there is a balance greater than 0
+  // TODO: This code assumes that there is only 1 VaultGroup and should support other vaults in
+  // the future.
+  const options = vaultGroups.vaultGroups[0]?.vaults.filter((subVault) => {
+    const vaultBalance = vaultGroupBalances[subVault.id]?.balance;
+    return !!vaultBalance?.gt(ZERO);
+  }).map((subVault) => ({
+    label: `Subvault ${subVault.label}`,
+    value: subVault.id,
+  })) || [];
+
+  return {
+    options,
+    balances: Object.entries(vaultGroupBalances).reduce((acc, [valueId, { balance }]) => ({
+      ...acc,
+      [valueId]: DecimalBigNumber.fromBN(balance || ZERO, env.tokens.temple.decimals),
+    }), {}),
+  };
+};
+
 export type VaultTradeSuccessCallback = (tokenSold: string, tokenBought: string, amount: string, poolId: string) => Promise<void>;
 
 export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCallback) => {
@@ -196,6 +231,7 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
   const [depositFromVault, setDepositFromVault] = useState(false);
 
   const { openNotification } = useNotification();
+  const zap = useZapFromVaults();
 
   const [state, dispatch] = useReducer(reducer, {
     inputValue: '',
@@ -330,7 +366,6 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
     }
   };
 
-
   return {
     state,
     swap,
@@ -349,5 +384,6 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
     setTransactionSettings: (settings: TradeState['transactionSettings']) => {
       dispatch({ type: ActionType.SetTransactionSettings, payload: settings });
     },
+    zap,
   };
 };
