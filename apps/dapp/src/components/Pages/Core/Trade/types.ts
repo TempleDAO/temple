@@ -49,7 +49,6 @@ export interface SwapReducerState {
   outputConfig: SwapInputConfig;
   buttonLabel: string;
   isTransactionPending: boolean;
-  isSlippageTooHigh: boolean;
   isFraxSellDisabled: boolean;
   error: Error | null;
 }

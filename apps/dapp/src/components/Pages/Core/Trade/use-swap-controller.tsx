@@ -15,6 +15,7 @@ import { INITIAL_STATE, TOKENS_BY_MODE } from './constants';
 import { SwapMode } from './types';
 import { isTokenFraxOrFei } from './utils';
 import { swapReducer } from './reducer';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export function useSwapController() {
   const { wallet } = useWallet();
@@ -24,7 +25,6 @@ export function useSwapController() {
 
   useEffect(() => {
     const onMount = async () => {
-      console.log('wallet connected');
       await updateBalance();
       await updateTemplePrice();
       await updateIv();
@@ -161,16 +161,12 @@ export function useSwapController() {
         return;
       }
 
-      const minAmountOut = (fromAtto(tokenAmount) / templePrice) * (1 - state.slippageTolerance / 100);
+      // minAmountOut = quoted amount * (1 - slippage tolerance percent / 100)
+      const slippageDbn = DecimalBigNumber.parseUnits(`${1 - state.slippageTolerance / 100}`, 18);
+      const minAmountOutDbn = DecimalBigNumber.fromBN(buyQuote, 18).mul(slippageDbn);
+      const minAmountOut = minAmountOutDbn.toBN(18);
 
-      if (minAmountOut > fromAtto(buyQuote)) {
-        dispatch({
-          type: 'slippageTooHigh',
-        });
-        return;
-      }
-
-      const txReceipt = await buy(tokenAmount, toAtto(minAmountOut), state.inputToken, state.deadlineMinutes);
+      const txReceipt = await buy(tokenAmount, minAmountOut, state.inputToken, state.deadlineMinutes);
 
       if (txReceipt) {
         await updateBalance();
@@ -193,19 +189,15 @@ export function useSwapController() {
         console.error("Couldn't get sell quote");
         return;
       }
-
-      const minAmountOut = fromAtto(templeAmount) * templePrice * (1 - state.slippageTolerance / 100);
-
-      if (minAmountOut > fromAtto(sellQuote.amountOut)) {
-        dispatch({
-          type: 'slippageTooHigh',
-        });
-        return;
-      }
+      
+      // minAmountOut = quoted amount * (1 - slippage tolerance percent / 100)
+      const slippageDbn = DecimalBigNumber.parseUnits(`${1 - state.slippageTolerance / 100}`, 18);
+      const minAmountOutDbn = DecimalBigNumber.fromBN(sellQuote.amountOut, 18).mul(slippageDbn);
+      const minAmountOut = minAmountOutDbn.toBN(18);
 
       const txReceipt = await sell(
         templeAmount,
-        toAtto(minAmountOut),
+        minAmountOut,
         state.outputToken,
         sellQuote.priceBelowIV,
         state.deadlineMinutes
