@@ -18,6 +18,7 @@ const env: Environment = {
     teamPaymentsEpoch2: '',
     teamPaymentsEpoch3: '',
     teamPaymentsEpoch4: '',
+    teamPaymentsEpoch5: '',
     temple: '0x359655dcB8A32479680Af81Eb38eA3Bb2B42Af54',
     templeStaking: '0xfF8D8342DC367D66BA20403216d55B1fcC1f284e',
     templeV2FraxPair: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
@@ -30,7 +31,9 @@ const env: Environment = {
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-rinkeby',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
-    balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
+    balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    // Original Balancer Subgraph
+    // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
   fraxSellDisabledIvMultiple: 1.02,
   gas: {
@@ -61,7 +64,7 @@ const env: Environment = {
       name: 'Temple',
       address: '0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf',
       decimals: 18,
-      symbol: 'TEMPLE'
+      symbol: 'TEMPLE',
     },
     ogTemple: {
       name: 'OGTemple',
@@ -91,7 +94,7 @@ const env: Environment = {
       name: 'Dai',
       address: '0x8c9e6c40d3402480ace624730524facc5482798c',
       decimals: 18,
-      symbol: 'DAI'
+      symbol: 'DAI',
     },
   },
   etherscan: 'https://goerli.etherscan.io',

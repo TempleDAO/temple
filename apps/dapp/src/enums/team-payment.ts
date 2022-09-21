@@ -5,6 +5,7 @@ export enum TEAM_PAYMENTS_EPOCHS {
   R2 = 1,
   R3 = 2,
   R4 = 3,
+  R5 = 4,
 }
 
 export const TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH = {
@@ -12,4 +13,5 @@ export const TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH = {
   [TEAM_PAYMENTS_EPOCHS.R2]: env.contracts.teamPaymentsEpoch2,
   [TEAM_PAYMENTS_EPOCHS.R3]: env.contracts.teamPaymentsEpoch3,
   [TEAM_PAYMENTS_EPOCHS.R4]: env.contracts.teamPaymentsEpoch4,
+  [TEAM_PAYMENTS_EPOCHS.R5]: env.contracts.teamPaymentsEpoch5,
 };

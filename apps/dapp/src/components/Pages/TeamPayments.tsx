@@ -60,6 +60,7 @@ const TeamPayments = () => {
     { value: TEAM_PAYMENTS_EPOCHS.R2, label: 'EPOCH 2' },
     { value: TEAM_PAYMENTS_EPOCHS.R3, label: 'EPOCH 3' },
     { value: TEAM_PAYMENTS_EPOCHS.R4, label: 'EPOCH 4' },
+    { value: TEAM_PAYMENTS_EPOCHS.R5, label: 'EPOCH 5' },
   ];
 
   return (

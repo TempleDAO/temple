@@ -1,15 +1,26 @@
-import { createContext, FC, useEffect, useContext } from 'react';
+import { createContext, FC, useEffect, useContext, useMemo } from 'react';
 import { BigNumber } from 'ethers';
+import { useParams } from 'react-router-dom';
 
 import { VaultGroup, Vault } from 'components/Vault/types';
+import { useListCoreVaultGroups } from 'hooks/core/subgraph';
 import { useVaultGroupBalances, Operation, VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 import { asyncNoop, noop } from 'utils/helpers';
 import { Nullable } from 'types/util';
 
 interface VaultContextType {
-  vaultGroup: Nullable<VaultGroup>;
-  activeVault: Nullable<Vault>;
-  balances: VaultGroupBalances;
+  vaultGroups: {
+    isLoading: boolean;
+    error: Nullable<Error>;
+    vaultGroups: VaultGroup[];
+  };
+  balances: {
+    isLoading: boolean;
+    error: Nullable<Error>;
+    balances: {
+      [vaultGroupId: string]: VaultGroupBalances;
+    };
+  };
   refreshVaultBalance: (address: string) => Promise<void>,
   optimisticallyUpdateVaultStaked: (address: string, operation: Operation, amount: BigNumber) => void;
 }
@@ -17,31 +28,30 @@ interface VaultContextType {
 export { Operation };
 
 export const VaultContext = createContext<VaultContextType>({
-  balances: {},
+  vaultGroups: {
+    isLoading: false,
+    vaultGroups: [],
+    error: null,
+  },
+  balances: {
+    isLoading: false,
+    balances: {},
+    error: null,
+  },
   refreshVaultBalance: asyncNoop,
   optimisticallyUpdateVaultStaked: noop,
-  vaultGroup: null,
-  activeVault: null,
 });
 
-interface Props {
-  vaultGroup: VaultGroup;
-}
+export const VaultContextProvider: FC = ({ children }) => {
+  const { vaultGroups, isLoading: vaultsLoading, error: vaultLoadingError } = useListCoreVaultGroups();
 
-export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
   const {
     balances,
     fetchVaultBalance,
     optimisticallyUpdateVaultStaked: updateStakedAmount,
-  } = useVaultGroupBalances([vaultGroup]);
-
-  const activeVault = vaultGroup.vaults.find(({ isActive }) => isActive)!;
-
-  useEffect(() => {
-    if (!activeVault) {
-      console.error(`VaultGroupError: There is no currently active vault for VaultGroup: ${vaultGroup.id}.`);
-    }
-  }, [activeVault]);
+    isLoading: balancesLoading,
+    error: vaultBalanceError,
+  } = useVaultGroupBalances(vaultGroups);
 
   const optimisticallyUpdateVaultStaked =
     (vaultAddress: string, operation: Operation, amount: BigNumber) => updateStakedAmount(
@@ -50,21 +60,33 @@ export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
       amount,
     );
 
-  const getBalances = (balances: VaultGroupBalances, vaultGroup: VaultGroup) => {
-    return vaultGroup.vaults.reduce((acc, { id }) => ({
-      ...acc,
-      [id]: balances[id] || {},
-    }), {});
+  const getBalances = (balances: VaultGroupBalances) => {
+    return vaultGroups.reduce((groupedBalances, group) => {
+      return {
+        ...groupedBalances,
+        [group.id]: group.vaults.reduce((acc, { id }) => ({
+          ...acc,
+          [id]: balances[id] || {},
+        }), {}),
+      };
+    }, {});
   };
 
   return (
     <VaultContext.Provider
       value={{
-        balances: getBalances(balances, vaultGroup),
-        refreshVaultBalance: fetchVaultBalance,
-        vaultGroup,
-        activeVault,
+        vaultGroups: {
+          vaultGroups,
+          isLoading: vaultsLoading,
+          error: vaultLoadingError,
+        },
+        balances: {
+          balances: getBalances(balances),
+          isLoading: balancesLoading,
+          error: vaultBalanceError,
+        },
         optimisticallyUpdateVaultStaked,
+        refreshVaultBalance: fetchVaultBalance,
       }}
     >
       {children}
@@ -72,12 +94,25 @@ export const VaultContextProvider: FC<Props> = ({ children, vaultGroup }) => {
   );
 };
 
-export const useVaultContext = () => {
-  const context = useContext(VaultContext);
+type UseVaultContextHookValues = VaultContextType & {
+  activeVault?: Vault;
+  vaultGroup?: VaultGroup;
+};
+
+export const useVaultContext = (): UseVaultContextHookValues => {
+  const { vaultId } = useParams();
+  const { vaultGroups, ...rest } = useContext(VaultContext);
+
+  const activeVaultGroup = vaultGroups.vaultGroups.find((vaultGroup) => {
+    return vaultGroup.id === vaultId;
+  });
+
+  const activeVault = activeVaultGroup?.vaults.find(({ isActive }) => !!isActive);
 
   return {
-    ...context,
-    vaultGroup: context.vaultGroup!,
-    activeVault: context.activeVault!,
+    ...rest,
+    vaultGroups,
+    vaultGroup: activeVaultGroup,
+    activeVault,
   };
 };

@@ -9,9 +9,9 @@ import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { getMarkers } from 'components/Vault/utils';
 
 export const Timeline = () => {
-  const { vaultGroup, balances } = useVaultContext();
+  const { vaultGroup, balances: { balances } } = useVaultContext();
   
-  const markers = getMarkers(vaultGroup, balances)
+  const markers = getMarkers(vaultGroup!, balances[vaultGroup!.id])
     .filter((marker) => marker.type !== MarkerType.HIDDEN)
     .map((marker) => {
       return (
@@ -26,7 +26,7 @@ export const Timeline = () => {
       <TimelineBackground />
       <TimelineChannel />
       <TimelineStartEndMarkers />
-      <TimelineTicks vaultGroup={vaultGroup} />
+      <TimelineTicks vaultGroup={vaultGroup!} />
       {markers}
     </g>
   );
