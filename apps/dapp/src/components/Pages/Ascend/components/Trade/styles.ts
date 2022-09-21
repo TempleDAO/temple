@@ -65,7 +65,7 @@ export const ToggleButton = styled.button<{hoverDisabled? : boolean}>`
   border-radius: 50%;
   margin-top: calc(-0.2rem - 0.5625rem);
   margin-bottom: -0.5625rem;
-  z-index: 50;
+  z-index: 0;
 `;
 
 export const SwapButton = styled.button`

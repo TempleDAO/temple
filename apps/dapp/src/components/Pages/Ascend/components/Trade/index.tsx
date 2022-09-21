@@ -48,7 +48,7 @@ export const Trade = ({ pool }: Props) => {
   } = useAuctionContext();
   const [transactionSettingsOpen, setTransactionSettingsOpen] = useState(false);
 
-  const { swap, state, setSellValue, setTransactionSettings } = useVaultTradeState(
+  const { swap, state, setSellValue, setTransactionSettings, depositFromVault, setDepositFromVault } = useVaultTradeState(
     pool,
     async (tokenSold, tokenBought, amount, poolId) => {
       AnalyticsService.captureEvent(AnalyticsEvent.Ascend.Swap, {
@@ -59,8 +59,6 @@ export const Trade = ({ pool }: Props) => {
       });
     }
   );
-
-  const [depositFromVault, setDepositFromVault] = useState(false);
 
   const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] = useTokenContractAllowance(
     sell,
@@ -73,7 +71,8 @@ export const Trade = ({ pool }: Props) => {
       '0x1234' // TODO: Update this address to the zap contract
     );
 
-  const { vaultGroup, balances: userVaultBalances } = useVaultContext();
+    // TODO: Mr Fuji's context work here
+  // const { vaultGroup, balances: userVaultBalances } = useVaultContext();
 
   const bigSellAmount = useMemo(() => {
     if (!state.inputValue || state.inputValue.trim() === '.') {
@@ -107,10 +106,7 @@ export const Trade = ({ pool }: Props) => {
     );
   }
 
-  if (false) {
-    // TODO: Remove, temporary to show the trade screen all the time
-    // (once vault and ascend are working locally we can revert this)
-    //!pool.swapEnabled || isPaused) {
+  if (!pool.swapEnabled || isPaused) {
     return (
       <Wrapper verticalAlignment="top">
         <h3>Paused!</h3>

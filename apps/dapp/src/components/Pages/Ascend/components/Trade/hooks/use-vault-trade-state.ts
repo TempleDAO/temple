@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import { Pool } from 'components/Layouts/Ascend/types';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
@@ -10,6 +10,7 @@ import { getSwapLimit, getSwapDeadline } from '../utils';
 import { useAuctionContext } from '../../AuctionContext';
 import { getBalancerErrorMessage } from 'utils/balancer';
 import env from 'constants/env';
+import { useAscendZapContract } from './use-ascend-zap-contract';
 
 type Action<A extends ActionType, P extends any> = { type: A, payload: P };
 
@@ -187,6 +188,13 @@ export type VaultTradeSuccessCallback = (tokenSold: string, tokenBought: string,
 export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCallback) => {
   const { swapState: { sell, buy }, vaultAddress, refetchPoolTokenBalances } = useAuctionContext();
   const vaultContract = useVaultContract(pool, vaultAddress);
+  
+  const zapContract = useAscendZapContract(async () => {
+    console.log("foo");
+  });
+
+  const [depositFromVault, setDepositFromVault] = useState(false);
+
   const { openNotification } = useNotification();
 
   const [state, dispatch] = useReducer(reducer, {
@@ -266,6 +274,8 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
     intervalRef.current = window.setInterval(fetchQuote, env.intervals.ascendQuote);
   };
 
+  // TODO: Use different swap implementation based on depositFromVault
+
   const swap = async () => {
     const { inputValue } = state;
 
@@ -312,6 +322,8 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
   return {
     state,
     swap,
+    depositFromVault,
+    setDepositFromVault,
     setSellValue: async (value: string) => {
       dispatch({ type: ActionType.SetSellValue, payload: value });
 
