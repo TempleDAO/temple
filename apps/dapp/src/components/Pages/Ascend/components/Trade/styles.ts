@@ -15,7 +15,7 @@ export const Wrapper = styled.div<{ verticalAlignment?: 'top' | 'center' }>`
 `;
 
 export const TradeHeader = styled.h3`
-  margin: 0 0 1rem;
+  margin: 0 0 1.5rem;
 `;
 
 export const LoadWrapper = styled.div`
@@ -103,4 +103,8 @@ export const ErrorMessage = styled.div`
   line-height: 1rem;
   border: 1px solid ${({ theme }) => theme.palette.brand};
   margin-top: 1rem;
+`;
+
+export const ZapFromVaultWrapper = styled.div`
+  padding: 0 0 1.5rem;
 `;

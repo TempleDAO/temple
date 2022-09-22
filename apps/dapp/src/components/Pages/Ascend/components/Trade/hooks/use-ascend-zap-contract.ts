@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BigNumber, Contract, utils } from 'ethers';
 import { useWallet } from 'providers/WalletProvider';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import useRequestState from 'hooks/use-request-state';
 // TODO: Replace with correct ABI
 import placehodlerAbi from 'data/abis/balancerVault.json';
 
@@ -48,5 +49,14 @@ export const useAscendZapContract = (onSuccess?: ZapSuccessCallback) => {
     });
   };
 
-  return { address: zapContract?.address || '', isReady: !!zapContract && !!wallet, swap };
+  const [request, state] = useRequestState(swap, { shouldReThrow: true });
+
+  return {
+    address: zapContract?.address || '',
+    isReady: !!zapContract && !!wallet,
+    swap: {
+      request,
+      ...state,
+    },
+  };
 };

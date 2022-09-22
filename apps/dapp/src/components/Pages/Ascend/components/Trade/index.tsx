@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { BigNumber } from 'ethers';
 
 import { useWallet } from 'providers/WalletProvider';
 import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
@@ -22,15 +23,14 @@ import {
   SlippageButton,
   SwapButton,
   ErrorMessage,
+  ZapFromVaultWrapper,
 } from './styles';
 
 import { AnalyticsService } from 'services/AnalyticsService';
 import { AnalyticsEvent } from 'constants/events';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { CryptoSelect, Option } from 'components/Input/CryptoSelect';
-import { BigNumber } from 'ethers';
 
 interface Props {
   pool: Pool;
@@ -48,7 +48,15 @@ export const Trade = ({ pool }: Props) => {
   } = useAuctionContext();
   const [transactionSettingsOpen, setTransactionSettingsOpen] = useState(false);
 
-  const { swap, state, setSellValue, setTransactionSettings, depositFromVault, setDepositFromVault } = useVaultTradeState(
+  const {
+    swap,
+    state,
+    setSellValue,
+    setTransactionSettings,
+    zap: { options: zapOptions, balances: zapBalances },
+    depositFromVault,
+    setDepositFromVault,
+  } = useVaultTradeState(
     pool,
     async (tokenSold, tokenBought, amount, poolId) => {
       AnalyticsService.captureEvent(AnalyticsEvent.Ascend.Swap, {
@@ -71,8 +79,6 @@ export const Trade = ({ pool }: Props) => {
       '0x1234' // TODO: Update this address to the zap contract
     );
 
-    // TODO: Mr Fuji's context work here
-  // const { vaultGroup, balances: userVaultBalances } = useVaultContext();
 
   const bigSellAmount = useMemo(() => {
     if (!state.inputValue || state.inputValue.trim() === '.') {
@@ -115,70 +121,17 @@ export const Trade = ({ pool }: Props) => {
     );
   }
 
-  // TODO: Use vaultGroup instead (once vault and ascend are working locally)
-  const DUMMY_VAULT_GROUP = {
-    id: '1m-core',
-    vaults: [
-      {
-        tvl: '60169272.44934053312620580799999999',
-        id: '0x402832ec42305cf7123bc9903f693e944484b9c1',
-        templeToken: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
-        symbol: '1m-core-a',
-        shareBoostFactor: '1',
-        name: '1m-core',
-        joiningFee: '0x8a17403b929ed1b6b50ea880d9c93068a5105d4c',
-      },
-      {
-        tvl: '12703698.57780659453956695800000001',
-        id: '0xa99980c64fc6c302377c39f21431217fcbaf39af',
-        templeToken: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
-        symbol: '1m-core-b',
-        shareBoostFactor: '1',
-        name: '1m-core',
-        joiningFee: '0x8a17403b929ed1b6b50ea880d9c93068a5105d4c',
-      },
-      {
-        tvl: '8846973.966842409041739599000000002',
-        id: '0xb6226ad4fef850dc8b85a83bdc0d4aff9c61cd39',
-        templeToken: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
-        symbol: '1m-core-c',
-        shareBoostFactor: '1',
-        name: '1m-core',
-        joiningFee: '0x8a17403b929ed1b6b50ea880d9c93068a5105d4c',
-      },
-      {
-        tvl: '4559871.647470618986171320999999998',
-        id: '0xd43cc1814bd87b67b318e4807cde50c090d01c1a',
-        templeToken: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
-        symbol: '1m-core-d',
-        shareBoostFactor: '1',
-        name: '1m-core',
-        joiningFee: '0x8a17403b929ed1b6b50ea880d9c93068a5105d4c',
-      },
-    ],
-  };
-
-  // TODO: Should use use-vault-group-token-balance instead (once vault and ascend are working locally)
-  // See handleVaultSelect below
-  const DUMMY_USER_VAULT_BALANCES = {
-    [DUMMY_VAULT_GROUP.vaults[0].id]: 10,
-    [DUMMY_VAULT_GROUP.vaults[1].id]: 105,
-    [DUMMY_VAULT_GROUP.vaults[2].id]: 102,
-    [DUMMY_VAULT_GROUP.vaults[3].id]: 304,
-  };
-
   const handleWalletVaultToggle = (usingVault: boolean) => {
     resetTokenPairToDefault();
     setDepositFromVault(usingVault);
     setSelectedSellBalance(usingVault ? DBN_ZERO : sellBalance);
   };
 
-  const handleVaultSelect = (selected: Option) => {
-    // TODO: Use the use-vault-group-token-balance hook here, to get token balance
-    const userVaultBalance = BigNumber.from(DUMMY_USER_VAULT_BALANCES[selected.value]);
-    setSelectedSellBalance(DecimalBigNumber.fromBN(userVaultBalance, 0));
+  const onVaultSelectChange = (selected: Option) => {
+    const vaultBalance = zapBalances[selected.value];
+    setSelectedSellBalance(vaultBalance);
   };
-
+  
   return (
     <>
       <TransactionSettingsModal
@@ -192,29 +145,36 @@ export const Trade = ({ pool }: Props) => {
         }}
       />
       <Wrapper>
-        <Menu>
-          <WalletVaultLink $isActive={!depositFromVault} to="#" onClick={() => handleWalletVaultToggle(false)}>
-            From Wallet
-          </WalletVaultLink>
-          <WalletVaultLink $isActive={depositFromVault} to="#" onClick={() => handleWalletVaultToggle(true)}>
-            From Vault
-          </WalletVaultLink>
-        </Menu>
+        {zapOptions.length > 0 && (
+          <Menu>
+            <WalletVaultLink
+              $isActive={!depositFromVault}
+              to="#"
+              onClick={() => handleWalletVaultToggle(false)}
+            >
+              From Wallet
+            </WalletVaultLink>
+            <WalletVaultLink
+              $isActive={depositFromVault}
+              to="#"
+              onClick={() => handleWalletVaultToggle(true)}
+            >
+              From Vault
+            </WalletVaultLink>
+          </Menu>
+        )}
         <TradeHeader>
           Trade {sell.symbol}
-          {depositFromVault ? (
-            <>
-              {' from '}
-              <CryptoSelect
-                name="vault-select"
-                onChange={handleVaultSelect}
-                options={DUMMY_VAULT_GROUP.vaults.map((subVault) => ({ value: subVault.id, label: subVault.symbol }))}
-              ></CryptoSelect>
-            </>
-          ) : (
-            ''
-          )}
         </TradeHeader>
+        {!!depositFromVault && (
+          <ZapFromVaultWrapper>
+            <CryptoSelect
+              name="vault-select"
+              onChange={onVaultSelectChange}
+              options={zapOptions}
+            />
+          </ZapFromVaultWrapper>
+        )}
         <Input
           isNumber
           crypto={{ kind: 'value', value: sell.symbol }}
