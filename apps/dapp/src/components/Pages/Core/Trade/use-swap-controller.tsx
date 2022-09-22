@@ -7,15 +7,14 @@ import { TransactionSettings } from 'components/TransactionSettingsModal/Transac
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
 
-import { fromAtto, toAtto, ZERO } from 'utils/bigNumber';
+import { ZERO } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
 
 import { INITIAL_STATE, TOKENS_BY_MODE } from './constants';
 import { SwapMode } from './types';
-import { isTokenFraxOrFei } from './utils';
+import { calculateMinAmountOut, isTokenFraxOrFei } from './utils';
 import { swapReducer } from './reducer';
-import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export function useSwapController() {
   const { wallet } = useWallet();
@@ -161,10 +160,7 @@ export function useSwapController() {
         return;
       }
 
-      // minAmountOut = quoted amount * (1 - slippage tolerance percent / 100)
-      const slippageDbn = DecimalBigNumber.parseUnits(`${1 - state.slippageTolerance / 100}`, 18);
-      const minAmountOutDbn = DecimalBigNumber.fromBN(buyQuote, 18).mul(slippageDbn);
-      const minAmountOut = minAmountOutDbn.toBN(18);
+      const minAmountOut = calculateMinAmountOut(buyQuote, state.slippageTolerance);
 
       const txReceipt = await buy(tokenAmount, minAmountOut, state.inputToken, state.deadlineMinutes);
 
@@ -189,11 +185,8 @@ export function useSwapController() {
         console.error("Couldn't get sell quote");
         return;
       }
-      
-      // minAmountOut = quoted amount * (1 - slippage tolerance percent / 100)
-      const slippageDbn = DecimalBigNumber.parseUnits(`${1 - state.slippageTolerance / 100}`, 18);
-      const minAmountOutDbn = DecimalBigNumber.fromBN(sellQuote.amountOut, 18).mul(slippageDbn);
-      const minAmountOut = minAmountOutDbn.toBN(18);
+
+      const minAmountOut = calculateMinAmountOut(sellQuote.amountOut, state.slippageTolerance);
 
       const txReceipt = await sell(
         templeAmount,

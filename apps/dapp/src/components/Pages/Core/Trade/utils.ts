@@ -3,7 +3,7 @@ import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { SwapMode } from './types';
 import { TOKENS_BY_MODE } from './constants';
 import { BigNumber } from 'ethers';
-import { fromAtto } from 'utils/bigNumber';
+import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 // See apps/dapp/src/components/Input/Input.tsx
 export function buildValueConfig(token: TICKER_SYMBOL): CryptoValue {
@@ -57,4 +57,12 @@ export function createButtonLabel(inputToken: TICKER_SYMBOL, outputToken: TICKER
 
 export function isTokenFraxOrFei(token: TICKER_SYMBOL): token is TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI {
   return token === TICKER_SYMBOL.FRAX || token === TICKER_SYMBOL.FEI;
+}
+
+export function calculateMinAmountOut(amount: BigNumber, slippageTolerance: number, decimals: number = 18) {
+  const slippage = `${1 - slippageTolerance / 100}`;
+  const slippageDbn = DecimalBigNumber.parseUnits(slippage, decimals);
+  const minAmountOutDbn = DecimalBigNumber.fromBN(amount, decimals).mul(slippageDbn);
+
+  return minAmountOutDbn.toBN(decimals);
 }
