@@ -197,14 +197,14 @@ const getCurrentCycle = (startDate: Date, months: number, now: Date, windowDurat
 // put it at.
 export const lerp = (v0: number, v1: number, t: number) => v0 * (1 - t) + v1 * t;
 
-export const formatTemple = (templeValue: Nullable<number | BigNumber>) => {
+export const formatTemple = (templeValue: Nullable<number | BigNumber>, precision: number = 4) => {
   if (!templeValue) {
     return '0';
   }
 
   const amount = typeof templeValue === 'number' ? templeValue : fromAtto(templeValue);
 
-  return millify(amount, { precision: 4 });
+  return millify(amount, { precision });
 };
 
 export const getBigNumberFromString = (number: string) => {

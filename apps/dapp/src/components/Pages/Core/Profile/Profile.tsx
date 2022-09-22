@@ -94,7 +94,7 @@ const ProfilePage = () => {
               <StatCards>
                 <StatsCard
                   label="$Temple Deposited"
-                  stat={formatTemple(totalStakedAcrossAllVaults)}
+                  stat={formatTemple(totalStakedAcrossAllVaults, 18)}
                   backgroundColor={theme.palette.brand75}
                   backgroundImageUrl={texture1}
                   smallStatFont
@@ -105,7 +105,7 @@ const ProfilePage = () => {
                 />
                 <StatsCard
                   label="$Temple Locked"
-                  stat={formatTemple(totalBalancesAcrossVaults)}
+                  stat={formatTemple(totalBalancesAcrossVaults, 18)}
                   backgroundColor={theme.palette.brand75}
                   backgroundImageUrl={texture2}
                   smallStatFont
@@ -116,7 +116,7 @@ const ProfilePage = () => {
                 />
                 <StatsCard
                   label="$Temple Claimable"
-                  stat={formatTemple(claimableBalance)}
+                  stat={formatTemple(claimableBalance, 18)}
                   backgroundColor={theme.palette.brand75}
                   backgroundImageUrl={texture5}
                   smallStatFont
