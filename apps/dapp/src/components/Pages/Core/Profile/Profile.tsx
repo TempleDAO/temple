@@ -20,12 +20,12 @@ import { createDateFromSeconds, formatTemple } from 'components/Vault/utils';
 import { Nullable } from 'types/util';
 import { fromAtto, ZERO } from 'utils/bigNumber';
 
-import { useListCoreVaultGroups, createUserTransactionsQuery } from 'hooks/core/subgraph';
+import { createUserTransactionsQuery } from 'hooks/core/subgraph';
 import { useWallet } from 'providers/WalletProvider';
 import { useFaith } from 'providers/FaithProvider';
-import { useVaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { useStaking } from 'providers/StakingProvider';
+import { useVaultContext } from '../VaultContext';
 
 import env from 'constants/env';
 
@@ -34,9 +34,13 @@ const STAT_CARD_HEIGHT = '5rem';
 const ProfilePage = () => {
   const { getBalance, wallet } = useWallet();
   const { faith } = useFaith();
-  const { isLoading: vaultGroupsLoading, vaultGroups } = useListCoreVaultGroups();
-  const { balances, isLoading: vaultGroupBalancesLoading } = useVaultGroupBalances(vaultGroups);
+  const {
+    balances: { balances, isLoading: balancesLoading },
+    vaultGroups: { vaultGroups, isLoading: vaultGroupsLoading },
+  } = useVaultContext();
   const { lockedEntries, updateLockedEntries } = useStaking();
+
+  const isLoading = vaultGroupsLoading || balancesLoading;
 
   useEffect(() => {
     if (!wallet) {
@@ -46,11 +50,14 @@ const ProfilePage = () => {
     getBalance();
   }, [wallet]);
 
-  const totalStakedAcrossAllVaults = Object.values(balances).reduce((total, vault) => {
+  const vaultGroupBalances = new Map(Object.values(balances).flatMap((vaultGroup) => Object.entries(vaultGroup)));
+  const vaultValues = Array.from(vaultGroupBalances.values());
+
+  const totalStakedAcrossAllVaults = vaultValues.reduce((total, vault) => {
     return total.add(vault?.staked || ZERO);
   }, BigNumber.from(0));
 
-  const totalBalancesAcrossVaults = Object.values(balances).reduce((balance, vault) => {
+  const totalBalancesAcrossVaults = vaultValues.reduce((balance, vault) => {
     return balance.add(vault.balance || ZERO);
   }, BigNumber.from(0));
 
@@ -62,7 +69,7 @@ const ProfilePage = () => {
 
   const { data, yDomain, xDomain } = useChartData(wallet || '', fromAtto(totalBalancesAcrossVaults));
 
-  const claimableBalance = Object.entries(balances).reduce((total, [address, vault]) => {
+  const claimableBalance = Array.from(vaultGroupBalances.entries()).reduce((total, [address, vault]) => {
     if (!claimableVaults.has(address)) {
       return total;
     }
@@ -70,7 +77,6 @@ const ProfilePage = () => {
     return total.add(vault.balance || ZERO);
   }, BigNumber.from(0));
 
-  const isLoading = vaultGroupsLoading || vaultGroupBalancesLoading;
   const faithBalance = faith.usableFaith;
 
   let lockedOGTempleBalance = BigNumber.from(0);

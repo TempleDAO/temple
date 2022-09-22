@@ -22,7 +22,7 @@ export const Summary = () => {
 
   const onClickLink = (e: SyntheticEvent) => {
     e.preventDefault();
-    navigate(`/dapp/vaults/${vaultGroup.id}/strategy`);
+    navigate(`/dapp/vaults/${vaultGroup!.id}/strategy`);
   };
 
   const tvl = response?.data?.metrics[0]?.tvlUSD;
@@ -30,7 +30,7 @@ export const Summary = () => {
   return (
     <VaultContent>
       <Title>1 MONTH</Title>
-      <Text2 light as="a" href={`/dapp/vaults/${vaultGroup.id}/strategy`} onClick={onClickLink}>
+      <Text2 light as="a" href={`/dapp/vaults/${vaultGroup!.id}/strategy`} onClick={onClickLink}>
         1 Month Vault
       </Text2>
       <Text3>

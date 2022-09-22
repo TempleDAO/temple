@@ -94,24 +94,6 @@ yarn build
 yarn serve
 ```
 
-### Analytics
-For most development tasks, you likely won't need the analytics app running. The Analytics app is split across two folders `apps/api` and `apps/api-local-db`. In order to run the app, first you'll want to provision the database. For convenience, the `apps/api-local-db` folder contains a Docker image, along with bootstrapping scripts for the container. 
-
-First, you'll want to create and run the docker container by running `./startdb.sh`. Once you've confirmed the container is running successfully (you can use `docker ps` for this), you can then bootstrap the DB with `./setupdb.sh`. Upon success, we're ready to start the analytics app. 
-
-Take the `apps/api/.env-dev` file and rename it to `.env` or `.env.local`. You will likely want to ensure you've set the `VITE_BACKEND_URL` to the correct address (for example, if you're running the analytics app on port 3001, you'll want to set `VITE_BACKEND_URL` to `localhost:3001`).
-
-```
-# Enter the correct dir
-cd apps/api
-
-# If running the analytics app on its own
-yarn dev
-
-# However, the dapp and analytics app may clash so you can change the port to 3001 by running
-yarn next dev -p 3001
-```
-
 ## Local Dependencies
 
 ### Naming Convention
