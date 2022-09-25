@@ -16,10 +16,11 @@ const env: Environment = {
     lbpFactory: '',
     lockedOgTemple: '0x0165878A594ca255338adfa4d48449f69242Eb8F',
     ogTemple: '0x75537828f2ce51be7289709686A69CbFDbB714F1',
-    teamPaymentsEpoch1: '0x82e01223d51Eb87e16A03E24687EDF0F294da6f1',
-    teamPaymentsEpoch2: '0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650',
-    teamPaymentsEpoch3: '0xcbEAF3BDe82155F56486Fb5a1072cb8baAf547cc',
-    teamPaymentsEpoch4: '0x162A433068F51e18b7d13932F27e66a3f99E6890',
+    teamPaymentsEpoch1: '0x7969c5eD335650692Bc04293B07F5BF2e7A673C0',
+    teamPaymentsEpoch2: '0xFD471836031dc5108809D173A067e8486B9047A3',
+    teamPaymentsEpoch3: '0xB0D4afd8879eD9F52b28595d31B441D079B2Ca07',
+    teamPaymentsEpoch4: '0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f',
+    teamPaymentsEpoch5: '0x04C89607413713Ec9775E14b954286519d836FEf',
     temple: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
     templeStaking: '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9',
     templeV2FraxPair: '0x1fA02b2d6A771842690194Cf62D91bdd92BfE28d',
@@ -34,7 +35,9 @@ const env: Environment = {
   subgraph: {
     templeCore: 'http://localhost:8000/subgraphs/name/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
-    balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
+    balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    // Original Balancer Subgraph
+    // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
   intervals: {
     ascendData: 30_000,
@@ -53,13 +56,12 @@ const env: Environment = {
       address: ENV.VITE_PUBLIC_TEMPLE_ADDRESS,
       decimals: 18,
       symbol: 'Temple',
-
     },
     ogTemple: {
       name: 'OGTemple',
       address: ENV.VITE_PUBLIC_OG_TEMPLE_ADDRESS,
       decimals: 18,
-      symbol: 'OGTemple'
+      symbol: 'OGTemple',
     },
     fei: {
       name: 'Fei',
@@ -83,7 +85,7 @@ const env: Environment = {
       name: 'Dai',
       address: ENV.VITE_PUBLIC_DAI_ADDRESS,
       decimals: 18,
-      symbol: 'DAI'
+      symbol: 'DAI',
     },
   },
   featureFlags: {

@@ -18,6 +18,7 @@ const env: Environment = {
     teamPaymentsEpoch2: '0xe0Aafcf26576a53Cbec99481607FB53384909C36',
     teamPaymentsEpoch3: '0xf86C2dbD16F05E86bFf72cE89B3C2915812E92D0',
     teamPaymentsEpoch4: '0x07888e0a8929eb922Aee5930f7B0894BaB5D8120',
+    teamPaymentsEpoch5: '0x32fbd318e0c029bfa6c6088196f184ca2e3fbdd1',
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
     templeV2FraxPair: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
@@ -90,7 +91,9 @@ const env: Environment = {
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
-    balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
+    balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    // Original Balancer Subgraph
+    // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
   featureFlags: {
     enableAscend: true,

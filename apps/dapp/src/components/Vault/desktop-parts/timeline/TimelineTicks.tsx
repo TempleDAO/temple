@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { VaultGroup } from 'components/Vault/types';
 import { lerp } from '../../utils';
 

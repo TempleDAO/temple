@@ -17,7 +17,8 @@ import { AnalyticsService } from 'services/AnalyticsService';
 import { AnalyticsEvent } from 'constants/events';
 
 export const Claim = () => {
-  const { activeVault: vault } = useVaultContext();
+  const { activeVault } = useVaultContext();
+  const vault = activeVault!;
 
   const [amount, setAmount] = useState<string>('');
   const [{ balance, isLoading: getBalanceLoading }, getBalance] = useVaultBalance(vault.id);

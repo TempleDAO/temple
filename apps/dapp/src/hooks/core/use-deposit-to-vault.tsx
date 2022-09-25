@@ -24,7 +24,7 @@ export const useDepositToVault = (vaultContractAddress: string, onSuccess?: Depo
     faith: { usableFaith },
   } = useFaith();
   const { optimisticallyUpdateVaultStaked, activeVault } = useVaultContext();
-  const [getVaultJoiningFee] = useVaultJoiningFee(activeVault);
+  const [getVaultJoiningFee] = useVaultJoiningFee(activeVault!);
   const [getZappedAssetValue] = useGetZappedAssetValue();
 
   const { openNotification } = useNotification();
