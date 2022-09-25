@@ -20,22 +20,23 @@ export interface DeployedContracts {
   // XXX: Needs to include vaults/exposure/farming contracts created on chain
 
   // Temple AMM
-  TEMPLE_V2_FRAX_PAIR: string,
-  TEMPLE_V2_FEI_PAIR: string,
-  TEMPLE_V2_ROUTER: string,
+  TEMPLE_V2_FRAX_PAIR: string;
+  TEMPLE_V2_FEI_PAIR: string;
+  TEMPLE_V2_ROUTER: string;
 
   // Temple Admin
   TEMPLE_TEAM_FIXED_PAYMENTS: string;
   TEMPLE_TEAM_EPOCH_2: string;
   TEMPLE_TEAM_EPOCH_3: string;
   TEMPLE_TEAM_EPOCH_4: string;
+  TEMPLE_TEAM_EPOCH_5: string;
 
   // Temple Zaps
   GENERIC_ZAPS: string;
   TEMPLE_ZAPS: string;
 }
 
-export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
+export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
   rinkeby: {
     // From network/environment
     FRAX: '0x5eD8BD53B0c3fa3dEaBd345430B1A3a6A4e8BD7C',
@@ -46,6 +47,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_TEAM_EPOCH_2: '',
     TEMPLE_TEAM_EPOCH_3: '',
     TEMPLE_TEAM_EPOCH_4: '',
+    TEMPLE_TEAM_EPOCH_5: '',
 
     TEMPLE_V2_FRAX_PAIR: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
     TEMPLE_V2_FEI_PAIR: '', // TODO: Update
@@ -70,6 +72,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_TEAM_EPOCH_2: '0xe0Aafcf26576a53Cbec99481607FB53384909C36',
     TEMPLE_TEAM_EPOCH_3: '0xf86c2dbd16f05e86bff72ce89b3c2915812e92d0',
     TEMPLE_TEAM_EPOCH_4: '0x07888e0a8929eb922Aee5930f7B0894BaB5D8120',
+    TEMPLE_TEAM_EPOCH_5: '0x32fbd318e0c029bfa6c6088196f184ca2e3fbdd1',
     TEMPLE_V2_FRAX_PAIR: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
     TEMPLE_V2_FEI_PAIR: '0xf994158766e0a4E64c26feCE675186f489EC9107',
     TEMPLE_V2_ROUTER: '0x98257c876ace5009e7b97843f8c71b3ae795c71e',
@@ -91,6 +94,7 @@ export const DEPLOYED_CONTRACTS: {[key: string]: DeployedContracts} = {
     TEMPLE_TEAM_EPOCH_2: process.env.TEMPLE_TEAM_EPOCH_2 || '',
     TEMPLE_TEAM_EPOCH_3: process.env.TEMPLE_TEAM_EPOCH_3 || '',
     TEMPLE_TEAM_EPOCH_4: process.env.TEMPLE_TEAM_EPOCH_4 || '',
+    TEMPLE_TEAM_EPOCH_5: process.env.TEMPLE_TEAM_EPOCH_5 || '',
     TEMPLE_V2_FRAX_PAIR: process.env.TEMPLE_V2_FRAX_PAIR || '',
     TEMPLE_V2_FEI_PAIR: process.env.TEMPLE_V2_FEI_PAIR || '',
     TEMPLE_V2_ROUTER: process.env.TEMPLE_V2_ROUTER || '',
