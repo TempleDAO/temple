@@ -8,7 +8,7 @@ import VaultContent from './VaultContent';
 import { formatTemple } from 'components/Vault/utils';
 
 const Timing = () => {
-  const { vaultGroup, balances } = useVaultContext();
+  const { vaultGroup, balances: { balances } } = useVaultContext();
 
   return (
     <VaultContent>
@@ -32,8 +32,9 @@ const Timing = () => {
             </Row>
           </Head>
           <StyledBody>
-            {vaultGroup.vaults.map((vault) => {
-              const vaultBalance = balances[vault.id] || {};
+            {vaultGroup?.vaults.map((vault) => {
+              const vaultGroupBalances = balances[vaultGroup.id];
+              const vaultBalance = vaultGroupBalances[vault.id] || {};
               const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
               return (
                 <Row key={vault.id}>
@@ -47,7 +48,7 @@ const Timing = () => {
           </StyledBody>
         </Table>
       </TableWrapper>
-      <Duration>{vaultGroup.months} periods in this vault</Duration>
+      <Duration>{vaultGroup?.months} periods in this vault</Duration>
     </VaultContent>
   );
 };

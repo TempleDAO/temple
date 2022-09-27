@@ -18,6 +18,7 @@ const env: Environment = {
     teamPaymentsEpoch2: '',
     teamPaymentsEpoch3: '',
     teamPaymentsEpoch4: '',
+    teamPaymentsEpoch5: '',
     temple: '0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf',
     templeStaking: '0x20Ab503De9859eecB22EaB0ddEc9Bcd8bAFB876C',
     templeV2FraxPair: '0x85dA8c4312742522519911052Fa2B4aC302E4d6c',
@@ -63,7 +64,7 @@ const env: Environment = {
       name: 'Temple',
       address: '0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf',
       decimals: 18,
-      symbol: 'TEMPLE'
+      symbol: 'TEMPLE',
     },
     ogTemple: {
       name: 'OGTemple',
@@ -93,7 +94,7 @@ const env: Environment = {
       name: 'Dai',
       address: '0x8c9e6c40d3402480ace624730524facc5482798c',
       decimals: 18,
-      symbol: 'DAI'
+      symbol: 'DAI',
     },
   },
   etherscan: 'https://goerli.etherscan.io',

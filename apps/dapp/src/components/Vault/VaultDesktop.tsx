@@ -43,7 +43,7 @@ export const VaultDesktop = forwardRef<VaultRef, VaultProps>(
           <RingButtons
             selected={selectedNav}
             onClickButton={(page) => {
-              navigate(`/dapp/vaults/${vaultGroup.id}/${page}`);
+              navigate(`/dapp/vaults/${vaultGroup!.id}/${page}`);
             }}
           />
           <Timeline />

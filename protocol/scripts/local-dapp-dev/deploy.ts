@@ -148,6 +148,13 @@ async function main() {
 
   await teamPaymentsFixedR4.setAllocation(owner.address, toAtto(1000));
 
+  const teamPaymentsFixedR5 = await new TempleTeamPayments__factory(
+    owner
+  ).deploy(templeToken.address, 1, 1);
+  await templeToken.mint(teamPaymentsFixedR5.address, toAtto(1000000));
+
+  await teamPaymentsFixedR5.setAllocation(owner.address, toAtto(1000));
+
   // Setup custom AMM with liquidity
   const pair = await new TempleUniswapV2Pair__factory(owner).deploy(
     await owner.getAddress(),
@@ -279,6 +286,7 @@ async function main() {
     TEMPLE_R2_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR2.address,
     TEMPLE_R3_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR3.address,
     TEMPLE_R4_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR4.address,
+    TEMPLE_R5_TEAM_FIXED_PAYMENTS_ADDRESS: teamPaymentsFixedR5.address,
     TEMPLE_V2_PAIR_ADDRESS: pair.address,
     TEMPLE_V2_FEI_PAIR_ADDRESS: feiPair.address,
     TEMPLE_V2_ROUTER_ADDRESS: templeRouter.address,
