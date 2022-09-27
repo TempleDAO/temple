@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+import {task} from 'hardhat/config';
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ganache'; // for testing
@@ -33,6 +35,28 @@ subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS).setAction(
     });
   }
 );
+
+/*task('verify-contract', `Verify a task's deployment on a block explorer`)
+  .addParam('id', 'Deployment task ID')
+  .addParam('name', 'Contract name')
+  .addParam('address', 'Contract address')
+  .addParam('args', 'ABI-encoded constructor arguments')
+  .addOptionalParam('key', 'Etherscan API key to verify contracts')
+  .setAction(
+    async (
+      args: { id: string; name: string; address: string; key: string; args: string; verbose?: boolean },
+      hre: HardhatRuntimeEnvironment
+    ) => {
+      Logger.setDefaults(false, args.verbose || false);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const apiKey = args.key ?? (hre.config.networks[hre.network.name] as any).verificationAPIKey;
+      const verifier = apiKey ? new Verifier(hre.network, apiKey) : undefined;
+
+      // Contracts can only be verified in Live mode
+      await new Task(args.id, TaskMode.LIVE, hre.network.name, verifier).verify(args.name, args.address, args.args);
+    }
+  );*/
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -92,6 +116,13 @@ module.exports = {
       url: process.env.RINKEBY_RPC_URL || '',
       accounts: process.env.RINKEBY_ADDRESS_PRIVATE_KEY
         ? [process.env.RINKEBY_ADDRESS_PRIVATE_KEY]
+        : [],
+      gasPrice: 8000000000,
+    },
+    goerli: {
+      url: process.env.GOERLI_RPC_URL || '',
+      accounts: process.env.GOERLI_ADDRESS_PRIVATE_KEY 
+        ? [process.env.GOERLI_ADDRESS_PRIVATE_KEY]
         : [],
       gasPrice: 8000000000,
     },
