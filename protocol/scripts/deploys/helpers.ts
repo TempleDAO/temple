@@ -62,6 +62,37 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     GENERIC_ZAPS: '',
     TEMPLE_ZAPS: '',
   },
+  goerli: {
+    // No longer active/unused
+
+    // From network/environment
+    FRAX: '0x73651AD693531F9937528009cC204a4d9b696a68',
+    //DAI: 0x8c9e6c40d3402480ace624730524facc5482798c
+    //FEI: 0xa1e7CdD887d6fac4861b5663984A9Ba72cFF9522
+
+    // Active contrats
+    TEMPLE: '0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf',
+    // currently not configured, need to swap treasury owner via
+    // multisig. Test on rinkeby before doing the same on mainnet
+    TEMPLE_TEAM_FIXED_PAYMENTS: '',
+    TEMPLE_TEAM_EPOCH_2: '',
+    TEMPLE_TEAM_EPOCH_3: '',
+    TEMPLE_TEAM_EPOCH_4: '',
+    TEMPLE_TEAM_EPOCH_5: '',
+
+    TEMPLE_V2_FRAX_PAIR: '0x85dA8c4312742522519911052Fa2B4aC302E4d6c', // Frax Pair
+    TEMPLE_V2_FEI_PAIR: '0xD83834165E2b130341d58dd5A43460B7f4C491BD', // TODO: Update
+    TEMPLE_V2_ROUTER: '0x7a19509307648b0bf00dd7349F2dDaE716B9a998',
+
+    OPS_MANAGER_LIB: '0x5274078067Df0E474071f49A649DCbcd6E0787e3',
+    OPS_MANAGER: '0x542891Faf336d69E440De80145Df21510dCa6a78',
+    JOINING_FEE: '0x848355A31D7cc2aA73C3E4Df152a17ECa0A5CEaF',
+    VAULT_PROXY: '0xb0043346da58ce01EaE3246664Cb5984f75adC1b',
+
+    MULTISIG: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
+    GENERIC_ZAPS: '',
+    TEMPLE_ZAPS: '',
+  },
   mainnet: {
     // From network/environment
     FRAX: '0x853d955acef822db058eb8505911ed77f175b99e',
@@ -198,6 +229,7 @@ const expectedEnvvars: { [key: string]: string[] } = {
     'MAINNET_GAS_IN_GWEI',
   ],
   rinkeby: ['RINKEBY_ADDRESS_PRIVATE_KEY', 'RINKEBY_RPC_URL'],
+  goerli: ['GOERLI_ADDRESS_PRIVATE_KEY', 'GOERLI_RPC_URL'],
   matic: ['MATIC_ADDRESS_PRIVATE_KEY', 'MATIC_RPC_URL'],
   localhost: [],
 };
