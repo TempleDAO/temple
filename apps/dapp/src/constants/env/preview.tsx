@@ -11,8 +11,8 @@ const env: Environment = {
     frax: '0x73651AD693531F9937528009cC204a4d9b696a68',
     frax3CrvFarming: '',
     frax3CrvFarmingRewards: '',
-    lbpFactory: '0xB0C726778C3AE4B3454D85557A48e8fa502bDD6A',
     lockedOgTemple: '0x564462C807600684965d8A8f57eA190F2F66169C',
+    lbpFactory: '0xB0C726778C3AE4B3454D85557A48e8fa502bDD6A',
     ogTemple: '0x07d6c81fce4263ddeb0610c217c673b315e766f1',
     teamPaymentsEpoch1: '0x7a770591f202D18e893DeC115f16DAE9d28686a8',
     teamPaymentsEpoch2: '',
@@ -29,7 +29,7 @@ const env: Environment = {
     vaultProxy: '0xb0043346da58ce01EaE3246664Cb5984f75adC1b',
   },
   subgraph: {
-    templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-rinkeby',
+    templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-goerli',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
     balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // Original Balancer Subgraph
