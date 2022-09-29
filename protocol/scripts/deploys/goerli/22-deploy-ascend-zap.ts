@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers, network } from 'hardhat';
-import { AscendZaps__factory} from '../../../typechain';
+import { AscendZaps__factory, OpsManager__factory} from '../../../typechain';
 import {
   deployAndMine,
   DeployedContracts,
@@ -22,12 +22,15 @@ async function main() {
     DEPLOYED = DEPLOYED_CONTRACTS[network.name];
   }
 
+  const opsManagerFactory = new OpsManager__factory({ "contracts/core/OpsManagerLib.sol:OpsManagerLib" : DEPLOYED.OPS_MANAGER_LIB }, owner).attach(DEPLOYED.OPS_MANAGER);
+  const vaultedTempleAddress = await opsManagerFactory.vaultedTemple();
+
   const ascendZapsFactory = new AscendZaps__factory(owner);
   const ascendZaps = await deployAndMine(
     'Ascend Zaps', 
     ascendZapsFactory,
     ascendZapsFactory.deploy,
-    DEPLOYED.TEMPLE,
+    vaultedTempleAddress,
     DEPLOYED.TEMPLE
   )
 
