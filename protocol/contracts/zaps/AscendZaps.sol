@@ -13,7 +13,7 @@ contract AscendZaps is Ownable {
     IBalancerVault private immutable balancerVault = IBalancerVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
     IERC20 public immutable temple;
 
-    // Used to check how much Vault ERC20 has been 'zapped' in
+    // Used to track how much Temple has been zapped
     mapping(IERC20 => uint256) internal withdrawn;
 
     // Errors
@@ -57,7 +57,7 @@ contract AscendZaps is Ownable {
             revert SwapDataDoesNotMatch();
         }
 
-        withdrawn[IERC20(vaultErc)] += amount;
+        withdrawn[IERC20(vaultErc)] += templeBal;
 
         SafeERC20.safeIncreaseAllowance(temple, address(balancerVault), templeBal);
 
@@ -79,15 +79,16 @@ contract AscendZaps is Ownable {
         }
         uint256 balance = vaultErc.balanceOf(address(this));
 
-        uint256 amountOriginallyReceived = withdrawn[IERC20(vaultErc)];
-        uint256 delta = balance - amountOriginallyReceived;
-        uint256 interestEarnedShares = vaultErc.toSharesAmount(delta);
-        uint256 interestEarnedTemple = vaultErc.toTokenAmount(interestEarnedShares);
+        uint256 amountTempleWithdrawn = withdrawn[IERC20(vaultErc)];
+        uint256 currentShareAmount = vaultErc.toSharesAmount(balance);
+        uint256 currentTempleAmount = vaultErc.toTokenAmount(currentShareAmount);
+
+        uint256 delta = currentTempleAmount - amountOriginallyReceived;
 
         vaultErc.withdraw(balance);
 
         // redistribute interest 
-        SafeERC20.safeTransferFrom(temple, address(this), vaultedTemple, interestEarnedTemple);
+        SafeERC20.safeTransferFrom(temple, address(this), vaultedTemple, delta);
 
         withdrawn[IERC20(vaultErc)] = 0;
     }
@@ -97,14 +98,12 @@ contract AscendZaps is Ownable {
      */
     function checkInterestAccrued(Vault vaultErc) public view returns (uint256 interestAccrued) {
         // Get amount of Temple current 'owned' by the zapped in asset
-        uint256 contractShareAmount = vaultErc.shareBalanceOf(address(this));
-        uint256 contractTempleBal = vaultErc.toTokenAmount(contractShareAmount);
+        uint256 currentShareAmount = vaultErc.shareBalanceOf(address(this));
+        uint256 currentTempleAmount = vaultErc.toTokenAmount(currentShareAmount);
 
         uint256 withdrawnAmount = withdrawn[IERC20(vaultErc)];
-        uint256 withdrawnShareAmount = vaultErc.toSharesAmount(withdrawnAmount);
-        uint256 withdrawnTempleBal = vaultErc.toTokenAmount(withdrawnShareAmount);
 
-        uint256 interestAccrued = contractTempleBal - withdrawnTempleBal;
+        uint256 interestAccrued = contractTempleBal - withdrawnAmount;
     }
 
     /**
