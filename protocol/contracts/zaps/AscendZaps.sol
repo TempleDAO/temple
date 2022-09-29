@@ -83,7 +83,7 @@ contract AscendZaps is Ownable {
         uint256 currentShareAmount = vaultErc.toSharesAmount(balance);
         uint256 currentTempleAmount = vaultErc.toTokenAmount(currentShareAmount);
 
-        uint256 delta = currentTempleAmount - amountOriginallyReceived;
+        uint256 delta = currentTempleAmount - currentTempleAmount;
 
         vaultErc.withdraw(balance);
 
@@ -103,7 +103,7 @@ contract AscendZaps is Ownable {
 
         uint256 withdrawnAmount = withdrawn[IERC20(vaultErc)];
 
-        uint256 interestAccrued = contractTempleBal - withdrawnAmount;
+        uint256 interestAccrued = currentTempleAmount - withdrawnAmount;
     }
 
     /**
