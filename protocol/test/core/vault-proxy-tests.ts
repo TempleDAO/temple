@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, NULL_ADDR, toAtto } from "../helpers";
+import { blockTimestamp, deployAndAirdropTemple, mineForwardSeconds, NULL_ADDR, toAtto } from "../helpers";
 import { Signer } from "ethers";
 import {
     JoiningFee,
@@ -14,8 +14,6 @@ import {
   TempleStaking__factory,
   Vault, 
   Vault__factory,
-  Faith__factory,
-  Faith,
   InstantExitQueue__factory,
   Exposure__factory,
   VaultedTemple__factory,
@@ -24,12 +22,11 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { _TypedDataEncoder } from "ethers/lib/utils";
 
-describe("Vault Proxy", async () => {
+describe.only("Vault Proxy", async () => {
   let TEMPLE: TempleERC20Token;
   let STAKING: TempleStaking;
   let VAULT_PROXY: VaultProxy;
   let OGTEMPLE: OGTemple;
-  let FAITH: Faith;
   let vault: Vault;
   let joiningFee: JoiningFee;
 
@@ -63,21 +60,13 @@ describe("Vault Proxy", async () => {
       await STAKING.setEpy(10,100);
       OGTEMPLE = new OGTemple__factory(owner).attach(await STAKING.OG_TEMPLE());
 
-      FAITH = await new Faith__factory(owner).deploy();
-
       VAULT_PROXY = await new VaultProxy__factory(owner).deploy(
         OGTEMPLE.address,
         TEMPLE.address,
-        STAKING.address,
-        FAITH.address
+        STAKING.address
       );
 
       await TEMPLE.mint(STAKING.address, toAtto(100000));
-
-      
-
-      await FAITH.addManager(await owner.getAddress());
-      await FAITH.addManager(VAULT_PROXY.address);
 
       joiningFee = await new JoiningFee__factory(owner).deploy(
           toAtto(0.0001),
@@ -126,57 +115,6 @@ describe("Vault Proxy", async () => {
                 .to.be.revertedWith("Ownable: caller is not the owner");
   })
 
-  it("Only owner can toggle if faith claims are enabled/disabled", async () => {
-    await expect(VAULT_PROXY.connect(alan).toggleFaithClaimEnabled())
-      .to.be.revertedWith("Ownable: caller is not the owner")
-
-    expect(await VAULT_PROXY.faithClaimEnabled()).is.true;
-    await VAULT_PROXY.toggleFaithClaimEnabled()
-    expect(await VAULT_PROXY.faithClaimEnabled()).is.false;
-  })
-
-  it("Can deposit using Temple + Faith", async () => {
-    const alanAddr = await alan.getAddress();
-    await FAITH.gain(alanAddr, toAtto(200));
-
-    const faith = await FAITH.balances(alanAddr);
-    const alanTempleDeposit = toAtto(565);
-    
-    const expectedAmount = await VAULT_PROXY.getFaithMultiplier(faith.usableFaith, alanTempleDeposit);
-
-    await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(10000))
-    await VAULT_PROXY.connect(alan).depositTempleWithFaith(alanTempleDeposit, faith.usableFaith,vault.address);
-    expect(await vault.balanceOf(alanAddr)).equals(expectedAmount);
-    // ensure we've burnt it all
-    expect((await FAITH.balances(alanAddr)).usableFaith).equals(0);
-  })
-
-  it("Can no longer deposit using Temple + Faith when faith claim is disabled", async () => {
-    await VAULT_PROXY.toggleFaithClaimEnabled()
-
-    await expect(VAULT_PROXY.connect(alan).depositTempleWithFaith(toAtto(100), 100, vault.address))
-      .to.revertedWith("VaultProxy: Faith claim no longer enabled");
-  })
-
-  const faithData = [
-    {temple: 7000, faith: 5000, expected: 9000},
-    {temple: 2345, faith: 10000, expected: 3048.5},
-    {temple: 2345, faith: 100, expected: 2385},
-    {temple: 100, faith: 2345, expected: 130}
-  ];
-
-  faithData.forEach(data => {
-    it(`Deposits ${data.temple} Temple with ${data.faith} faith correctly`, async () => {
-      await TEMPLE.mint(await alan.getAddress(), toAtto(data.temple));
-      await FAITH.gain(await alan.getAddress(), toAtto(data.faith));
-
-      await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(10000))
-      await VAULT_PROXY.connect(alan).depositTempleWithFaith(toAtto(data.temple), toAtto(data.faith), vault.address);
-
-      expect(fromAtto(await vault.balanceOf(await alan.getAddress()))).approximately(data.expected, 1e-6);
-    })
-  })
-
   it("Can unstake and deposit into vault", async () => {
     let alanStake = new TempleStaking__factory(alan).attach(STAKING.address);
     let alanTemple = new TempleERC20Token__factory(alan).attach(TEMPLE.address);
@@ -197,44 +135,95 @@ describe("Vault Proxy", async () => {
     expect(await TEMPLE.balanceOf(await alan.getAddress())).equals(toAtto(800));
   });
 
-  it("Can no longer unstake Temple and deposit with Faith bonus when faith claim is disabled", async () => {
-    await VAULT_PROXY.toggleFaithClaimEnabled()
-
-    await expect(VAULT_PROXY.connect(alan).unstakeAndDepositTempleWithFaith(toAtto(100), 100, vault.address))
-      .to.revertedWith("VaultProxy: Faith claim no longer enabled");
-  })
-
-  it("Can zap OGT into Vault with Faith boost", async () => {
-    const alanAddr = await alan.getAddress();
-    await FAITH.gain(alanAddr, toAtto(200));
-
-    const faith = await FAITH.balances(alanAddr);
-
-    let alanStake = await new TempleStaking__factory(alan).attach(STAKING.address);
-    let alanTemple = await new TempleERC20Token__factory(alan).attach(TEMPLE.address);
-    let alanOgTemple = await new OGTemple__factory(alan).attach(OGTEMPLE.address);
-    let alanOGTSwap = await new VaultProxy__factory(alan).attach(VAULT_PROXY.address);
-
-    await alanTemple.increaseAllowance(STAKING.address, toAtto(100000));
-    await alanStake.stake(toAtto(200));
-    await alanOgTemple.increaseAllowance(VAULT_PROXY.address, toAtto(10000))
-    
-    const ogtBal = await OGTEMPLE.balanceOf(await alan.getAddress())
-    const amount = await STAKING.balance(ogtBal);
-
-    const expectedAmount = await VAULT_PROXY.getFaithMultiplier(faith.usableFaith, amount);
-    expect(expectedAmount.sub(amount) > amount).true;
-
-    await alanOGTSwap.unstakeAndDepositTempleWithFaith(ogtBal, faith.usableFaith, vault.address);
-
-    expect(await vault.balanceOf(await alan.getAddress())).equals(expectedAmount);
-    expect(await TEMPLE.balanceOf(await alan.getAddress())).equals(toAtto(800));
-  })
-
   it("Can proxy deposit for any Vault", async() => {
     await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000));
     await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
 
     expect(await vault.balanceOf(await alan.getAddress())).equals(toAtto(100));
+  })
+
+  it("Can allow a user to exit vault early", async () => {
+    await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000));
+    await vault.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000))
+    
+    await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
+
+    await mineForwardSeconds(60 * 10)
+
+    let bal = await vault.connect(alan).balanceOf(await alan.getAddress())
+    let beforeTempleBal = await TEMPLE.connect(alan).balanceOf(await alan.getAddress())
+    await VAULT_PROXY.connect(alan).exitVaultEarly(bal, vault.address);
+    let afterTempleBal = await TEMPLE.connect(alan).balanceOf(await alan.getAddress())
+
+    expect(afterTempleBal).equals(beforeTempleBal.add(toAtto(100)));
+    
+  })
+
+  it("Can allow owner to redeem vault tokens", async () => {
+    await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000));
+    await vault.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000))
+    
+    await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
+
+    await mineForwardSeconds(60 * 10)
+
+    await VAULT_PROXY.connect(alan).exitVaultEarly(toAtto(100), vault.address);
+
+    let beforeVaultTempleBal = await TEMPLE.balanceOf(VAULT_PROXY.address);
+    
+
+    await VAULT_PROXY.redeemVaultTokenToTemple(vault.address);
+    let afterVaultTempleBal = await TEMPLE.balanceOf(VAULT_PROXY.address);
+    expect(afterVaultTempleBal).equals(beforeVaultTempleBal.add(toAtto(100)))
+  })
+
+  it("Only owner can redeem vault tokens", async () => {
+    expect(VAULT_PROXY.connect(alan).redeemVaultTokenToTemple(vault.address))
+                .to.be.revertedWith("Ownable: caller is not the owner");
+
+    expect(VAULT_PROXY.connect(alan).redeemVaultTokenToTempleAndWithdraw(vault.address, await ben.getAddress(), toAtto(100)))
+                .to.be.revertedWith("Ownable: caller is not the owner");
+  })
+
+  it("Only allows owner to redeem when vault can exit", async () => {
+    await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000));
+    await vault.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000))
+    
+    await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
+
+    await mineForwardSeconds(60 * 10)
+
+    await VAULT_PROXY.connect(alan).exitVaultEarly(toAtto(100), vault.address);
+
+    expect(VAULT_PROXY.redeemVaultTokenToTemple(vault.address)).to.be.reverted;
+  })
+
+  it("Can allow owner to redeem and withdraw vault tokens", async () => {
+    await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000));
+    await vault.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000))
+    
+    await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
+
+    await mineForwardSeconds(60 * 10)
+
+    await VAULT_PROXY.connect(alan).exitVaultEarly(toAtto(100), vault.address);
+
+    let beforeVaultTempleBal = await TEMPLE.balanceOf(await ben.getAddress());
+    await mineForwardSeconds(60 * 10)
+
+    await VAULT_PROXY.redeemVaultTokenToTempleAndWithdraw(vault.address, await ben.getAddress(), toAtto(100));
+    let afterVaultTempleBal = await TEMPLE.balanceOf(await ben.getAddress());
+    expect(afterVaultTempleBal).equals(beforeVaultTempleBal.add(toAtto(100)))
+  })
+
+  it("Does not allow early withdraw in first cycle of a vault", async () => {
+    await TEMPLE.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000));
+    await vault.connect(alan).increaseAllowance(VAULT_PROXY.address, toAtto(1000))
+    
+    await VAULT_PROXY.connect(alan).depositTempleFor(toAtto(100), vault.address);
+
+    await mineForwardSeconds(60 * 10)
+
+    expect(VAULT_PROXY.connect(alan).exitVaultEarly(toAtto(100), vault.address)).to.be.reverted;
   })
 });
