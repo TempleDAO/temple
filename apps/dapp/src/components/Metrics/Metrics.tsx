@@ -29,7 +29,7 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter }: MetricsProps) => {
           cryptoName={'$TEMPLE'}
           value={`$${formatNumber(templeValue)}`}
           imageData={{
-            imageUrl: cashImage,
+            imageUrl: '',
             alt: '',
           }}
           isHome={isHome}
@@ -41,7 +41,7 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter }: MetricsProps) => {
           cryptoName={'vAPY'}
           value={`${formatNumber(dynamicApy)}%`}
           imageData={{
-            imageUrl: tagImage,
+            imageUrl: '',
             alt: '',
           }}
           isHome={isHome}
@@ -53,7 +53,7 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter }: MetricsProps) => {
           cryptoName={'Treasury'}
           value={`$${formatMillions(treasuryValue)}`}
           imageData={{
-            imageUrl: lockImage,
+            imageUrl: '',
             alt: '',
           }}
           isHome={isHome}

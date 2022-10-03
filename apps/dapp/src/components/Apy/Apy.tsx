@@ -15,14 +15,7 @@ interface ApyProps extends ApyStyledProps {
 /**
  * Primary UI component for user interaction
  */
-export const Apy = ({
-  cryptoName,
-  value,
-  imageData,
-  isWhite,
-  isHome = false,
-  alignCenter = false,
-}: ApyProps) => {
+export const Apy = ({ cryptoName, value, imageData, isWhite, isHome = false, alignCenter = false }: ApyProps) => {
   const { imageUrl, alt } = imageData;
 
   const getImageSize = () => {
@@ -30,16 +23,8 @@ export const Apy = ({
   };
 
   return (
-    <ApyStyled
-      alignCenter={alignCenter}
-      isHome={isHome}
-    >
-      <Image
-        src={imageUrl}
-        alt={alt}
-        width={getImageSize()}
-        height={getImageSize()}
-      />
+    <ApyStyled alignCenter={alignCenter} isHome={isHome}>
+      {imageUrl !== '' && <Image src={imageUrl} alt={alt} width={getImageSize()} height={getImageSize()} />}
       <ApyValue>{value}</ApyValue>
       <ApyLabel isWhite={isWhite}>{cryptoName}</ApyLabel>
     </ApyStyled>
@@ -63,7 +48,7 @@ const ApyStyled = styled.div<ApyStyledProps>`
   padding-left: 32px;
   margin: 1.25rem 0 3rem 0;
 
-  ${({ alignCenter }) => alignCenter ? `align-items: center;` : ''}
+  ${({ alignCenter }) => (alignCenter ? `align-items: center;` : '')}
 
   ${(props) =>
     props.isHome &&
@@ -87,7 +72,7 @@ const ApyStyled = styled.div<ApyStyledProps>`
 `;
 
 const ApyValue = styled.strong`
-  color: ${(props) => props.theme.palette.brand};
+  color: ${(props) => props.theme.palette.light};
 `;
 
 const ApyLabel = styled.strong<ApyStyledProps>`

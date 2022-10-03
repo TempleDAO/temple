@@ -48,20 +48,6 @@ const HomePage = () => {
             <SustainableYieldFarmingText>
               Sustainable yield farming for the passive investor
             </SustainableYieldFarmingText>
-            <ButtonGroup>
-              {isAboveMobile && (
-                <ButtonContainer>
-                  <Link to={'/dapp/trade'}>
-                    <StyledButton label={`Buy Now $`} isUppercase isSmall />
-                  </Link>
-                </ButtonContainer>
-              )}
-              <ButtonContainer>
-                <Link to={'/dapp/vaults'}>
-                  <StyledButton label={`Start Earning`} isUppercase isSmall showArrow />
-                </Link>
-              </ButtonContainer>
-            </ButtonGroup>
             <MetricsWrapper>
               {treasuryMetrics ? (
                 <MetricsWrapper>
@@ -69,6 +55,13 @@ const HomePage = () => {
                 </MetricsWrapper>
               ) : null}
             </MetricsWrapper>
+            <ButtonGroup>
+              <ButtonContainer>
+                <a href="https://templedao.medium.com/" target="_blank">
+                  <StyledButton label={`Learn More`} isUppercase isSmall showArrow />
+                </a>
+              </ButtonContainer>
+            </ButtonGroup>
           </EarnBetterYieldsWrapper>
         </RowCell>
         <RowCell>
