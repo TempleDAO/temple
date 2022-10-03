@@ -7,13 +7,13 @@ import { TransactionSettings } from 'components/TransactionSettingsModal/Transac
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
 
-import { fromAtto, toAtto, ZERO } from 'utils/bigNumber';
+import { ZERO } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
 
 import { INITIAL_STATE, TOKENS_BY_MODE } from './constants';
 import { SwapMode } from './types';
-import { isTokenFraxOrFei } from './utils';
+import { calculateMinAmountOut, isTokenFraxOrFei } from './utils';
 import { swapReducer } from './reducer';
 
 export function useSwapController() {
@@ -24,7 +24,6 @@ export function useSwapController() {
 
   useEffect(() => {
     const onMount = async () => {
-      console.log('wallet connected');
       await updateBalance();
       await updateTemplePrice();
       await updateIv();
@@ -161,16 +160,9 @@ export function useSwapController() {
         return;
       }
 
-      const minAmountOut = (fromAtto(tokenAmount) / templePrice) * (1 - state.slippageTolerance / 100);
+      const minAmountOut = calculateMinAmountOut(buyQuote, state.slippageTolerance);
 
-      if (minAmountOut > fromAtto(buyQuote)) {
-        dispatch({
-          type: 'slippageTooHigh',
-        });
-        return;
-      }
-
-      const txReceipt = await buy(tokenAmount, toAtto(minAmountOut), state.inputToken, state.deadlineMinutes);
+      const txReceipt = await buy(tokenAmount, minAmountOut, state.inputToken, state.deadlineMinutes);
 
       if (txReceipt) {
         await updateBalance();
@@ -194,18 +186,11 @@ export function useSwapController() {
         return;
       }
 
-      const minAmountOut = fromAtto(templeAmount) * templePrice * (1 - state.slippageTolerance / 100);
-
-      if (minAmountOut > fromAtto(sellQuote.amountOut)) {
-        dispatch({
-          type: 'slippageTooHigh',
-        });
-        return;
-      }
+      const minAmountOut = calculateMinAmountOut(sellQuote.amountOut, state.slippageTolerance);
 
       const txReceipt = await sell(
         templeAmount,
-        toAtto(minAmountOut),
+        minAmountOut,
         state.outputToken,
         sellQuote.priceBelowIV,
         state.deadlineMinutes
