@@ -1,4 +1,4 @@
-pragma solidity ^0.8.4;
+pragma solidity 0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -9,14 +9,20 @@ import "./Vault.sol";
 import "../deprecated/TempleStaking.sol";
 
 /**
-    @title A proxy contract for interacting with Temple Vaults. 
-    @author TempleDAO
-    @notice Proxies calls to Temple Vaults without the need to approve Temple for each individual vault
+ * @title A proxy contract for interacting with Temple Vaults.
+ * @author TempleDAO
+ * @notice Proxies calls to Temple Vaults without the need to approve Temple for each individual vault
  */
 contract VaultProxy is Ownable {
-    // Tokens / Contracted required for the proxy contract 
+    using SafeERC20 for IERC20;
+
+    /// @notice OGTemple token address
     IERC20 public immutable ogTemple;
+
+    /// @notice Temple token address
     IERC20 public immutable temple;
+
+    /// @notice temple staking address
     TempleStaking public immutable templeStaking;
 
     // Errors
@@ -38,57 +44,72 @@ contract VaultProxy is Ownable {
     }
 
     /**
-        @notice Takes provided OGT, unstakes into Temple and immediately deposits into a vault
+     * @notice Takes provided OGT, unstakes into Temple and immediately deposits into a vault
+     * @param amountOGT OG Temple token amount
+     * @param vault vault address
      */
-    function unstakeAndDepositIntoVault(uint256 _amountOGT, Vault vault) external {
-        uint256 unstakedTemple = unstakeOGT(_amountOGT);
-        SafeERC20.safeIncreaseAllowance(temple, address(vault), unstakedTemple);
+    function unstakeAndDepositIntoVault(uint256 amountOGT, Vault vault)
+        external
+    {
+        uint256 unstakedTemple = unstakeOGT(amountOGT);
+        temple.safeIncreaseAllowance(address(vault), unstakedTemple);
         vault.depositFor(msg.sender, unstakedTemple);
     }
-    
+
     /**
-        @dev Private function which will take OGT, unstake it, ensure correct amount came back and then pass back 
-        to the calling function.
+     * @dev Private function which will take OGT, unstake it, ensure correct amount came back and then pass back 
+            to the calling function.
+     * @param amountOGT OG Temple token amount
+     * @return unstaked unstaked temple amount
      */
-    function unstakeOGT(uint256 _amountOGT) private returns (uint256) {
-        SafeERC20.safeIncreaseAllowance(ogTemple, address(templeStaking), _amountOGT);
-        SafeERC20.safeTransferFrom(ogTemple, msg.sender, address(this), _amountOGT);
-        
+    function unstakeOGT(uint256 amountOGT) private returns (uint256 unstaked) {
+        ogTemple.safeIncreaseAllowance(address(templeStaking), amountOGT);
+        ogTemple.safeTransferFrom(msg.sender, address(this), amountOGT);
+
         uint256 templeBeforeBalance = temple.balanceOf(address(this));
-        templeStaking.unstake(_amountOGT);
+        templeStaking.unstake(amountOGT);
         uint256 templeAfterBalance = temple.balanceOf(address(this));
         if (templeAfterBalance < templeBeforeBalance) {
             revert NoTempleReceivedWhenUnstaking();
         }
 
-        return templeAfterBalance - templeBeforeBalance;
+        unstaked = templeAfterBalance - templeBeforeBalance;
     }
 
     /**
-        @notice A proxy function for depositing into a vault; useful if we wish to limit number of approvals to one, rather than for each underlying 
-                vault instance. 
+     * @notice A proxy function for depositing into a vault; useful if we wish to limit number of approvals to one,
+                rather than for each underlying vault instance.
+     * @param amount deposit amount
+     * @param vault vault address
      */
-    function depositTempleFor(uint256 _amount, Vault vault) public {
-        SafeERC20.safeIncreaseAllowance(temple, address(vault), _amount);
-        SafeERC20.safeTransferFrom(temple, msg.sender, address(this), _amount);
-        vault.depositFor(msg.sender, _amount);
+    function depositTempleFor(uint256 amount, Vault vault) public {
+        temple.safeIncreaseAllowance(address(vault), amount);
+        temple.safeTransferFrom(msg.sender, address(this), amount);
+        vault.depositFor(msg.sender, amount);
     }
 
     /**
-    * @notice Transfer out amount of token to provided address
-    */
-    function withdraw(address token, address to, uint256 amount) public onlyOwner {
+     * @notice Transfer out amount of token to provided address
+     * @param token token address to withdraw
+     * @param to recipient address
+     * @param amount withdraw amount
+     */
+    function withdraw(
+        address token,
+        address to,
+        uint256 amount
+    ) public onlyOwner {
         if (to == address(0)) {
             revert SendToAddressZero();
         }
 
         if (token == address(0)) {
-            (bool sent,) = payable(to).call{value: amount}("");
+            (bool sent, ) = payable(to).call{value: amount}("");
             if (!sent) {
                 revert WithdrawSendFailed();
             }
         } else {
-            SafeERC20.safeTransfer(IERC20(token), to, amount);
+            IERC20(token).safeTransfer(to, amount);
         }
     }
 }
