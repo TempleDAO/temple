@@ -31,6 +31,7 @@ contract AscendZaps is Ownable {
     error SwapDataDoesNotMatch();
     error SendToAddressZero();
     error WithdrawSendFailed();
+    error WithdrawZeroAmount();
 
     // Events
     event EarlyWithdraw(
@@ -168,6 +169,9 @@ contract AscendZaps is Ownable {
     ) public onlyOwner {
         if (to == address(0)) {
             revert SendToAddressZero();
+        }
+        if (amount == 0) {
+            revert WithdrawZeroAmount();
         }
 
         if (token == address(0)) {

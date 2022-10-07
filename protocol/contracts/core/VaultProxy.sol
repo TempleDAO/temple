@@ -29,6 +29,7 @@ contract VaultProxy is Ownable {
     error NoTempleReceivedWhenUnstaking();
     error SendToAddressZero();
     error WithdrawSendFailed();
+    error WithdrawZeroAmount();
 
     // Events
     event EarlyWithdraw(address account, uint256 amount, address vault);
@@ -101,6 +102,9 @@ contract VaultProxy is Ownable {
     ) public onlyOwner {
         if (to == address(0)) {
             revert SendToAddressZero();
+        }
+        if (amount == 0) {
+            revert WithdrawZeroAmount();
         }
 
         if (token == address(0)) {
