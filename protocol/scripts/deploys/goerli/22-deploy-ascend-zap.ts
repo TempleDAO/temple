@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers, network } from 'hardhat';
-import { AscendZaps__factory, OpsManager__factory} from '../../../typechain';
+import { AscendZaps__factory, AscendZaps, OpsManager__factory} from '../../../typechain';
 import {
   deployAndMine,
   DeployedContracts,
@@ -27,14 +27,14 @@ async function main() {
 
   const ascendZapsFactory = new AscendZaps__factory(owner);
   const ascendZaps = await deployAndMine(
-    'Ascend Zaps', 
+    'AscendZaps', 
     ascendZapsFactory,
     ascendZapsFactory.deploy,
     vaultedTempleAddress,
     DEPLOYED.TEMPLE
   )
 
-  await mine(ascendZaps.transferOwnership(DEPLOYED.MULTISIG));
+  await mine((ascendZaps as AscendZaps).transferOwnership(DEPLOYED.MULTISIG));
 }
 
 // We recommend this pattern to be able to use async/await everywhere
