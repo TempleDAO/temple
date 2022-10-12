@@ -1,16 +1,12 @@
 import { config } from 'dotenv';
 import { ethers, network } from 'hardhat';
-import {
-  blockTimestamp,
-  deployAndAirdropTemple,
-  mineForwardSeconds,
-  NULL_ADDR,
-  toAtto,
-} from '../helpers';
-import { Signer } from 'ethers';
+import { blockTimestamp, toAtto } from '../helpers';
+import { Signer, BigNumber } from 'ethers';
 import {
   TempleERC20Token,
   TempleERC20Token__factory,
+  ERC20,
+  ERC20__factory,
   Vault,
   Vault__factory,
   Exposure__factory,
@@ -21,30 +17,33 @@ import {
   AscendZaps,
   AscendZaps__factory,
   IBalancerVault,
-  IBalancerVault__factory,
   Exposure,
 } from '../../typechain';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { advanceTimeAndBlock } from '../utils/time';
-import { impersonateAccount } from './../utils/account';
+import { impersonateAccount } from '../utils/account';
+import { takeSnapshot, revertToSnapshot } from '../utils/snapshot';
 import constants from '../constants';
 
 config();
 
 describe.only('Ascend Zaps', async () => {
   let TEMPLE: TempleERC20Token;
+  let DAI: ERC20;
   let vault: Vault;
   let joiningFee: JoiningFee;
   let vaultedTemple: VaultedTemple;
   let ascendZaps: AscendZaps;
-  let balancerVault: IBalancerVault;
   let templeExposure: Exposure;
 
   let owner: Signer;
   let alan: SignerWithAddress;
   let ben: Signer;
   const periodDuration = 60 * 10;
+  const balanceVaultAddress = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
+
+  let snapshotId: string;
 
   before(async function () {
     this.timeout(0);
@@ -59,15 +58,9 @@ describe.only('Ascend Zaps', async () => {
         },
       ],
     });
-  });
 
-  beforeEach(async () => {
     [owner, alan, ben] = await ethers.getSigners();
 
-    balancerVault = await IBalancerVault__factory.connect(
-      '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-      owner
-    );
     TEMPLE = await TempleERC20Token__factory.connect(
       '0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7',
       owner
@@ -75,6 +68,8 @@ describe.only('Ascend Zaps', async () => {
     await impersonateAccount(constants.accounts.MULTISIG);
     const multisig = await ethers.getSigner(constants.accounts.MULTISIG);
     await TEMPLE.connect(multisig).addMinter(await owner.getAddress());
+
+    DAI = await ERC20__factory.connect(constants.tokens.DAI, owner);
 
     joiningFee = await new JoiningFee__factory(owner).deploy(toAtto(0.0001));
 
@@ -119,80 +114,166 @@ describe.only('Ascend Zaps', async () => {
     await vault.connect(alan).deposit(toAtto(1000));
   });
 
-  it('Exit vault early', async () => {
-    const balance = await vault.balanceOf(alan.address);
-    const swapAmount = balance.div(2);
-    const singleSwap: IBalancerVault.SingleSwapStruct = {
-      poolId:
-        '0x1b65fe4881800b91d4277ba738b567cbb200a60d0002000000000000000002cc',
-      kind: 0,
-      assetIn: TEMPLE.address,
-      assetOut: constants.tokens.DAI,
-      amount: swapAmount.sub(1),
-      userData: '0x',
-    };
-    const fundMng: IBalancerVault.FundManagementStruct = {
-      sender: ascendZaps.address,
-      fromInternalBalance: false,
-      recipient: alan.address,
-      toInternalBalance: false,
-    };
-    const deadline = Math.floor(new Date().getTime() / 1000) + 10 * 60;
+  beforeEach(async () => {
+    snapshotId = await takeSnapshot();
+  });
 
-    await vault.connect(alan).approve(ascendZaps.address, swapAmount);
-    await expect(ascendZaps
-      .connect(alan)
-      .exitVaultEarly(
-        swapAmount,
-        vault.address,
-        singleSwap,
-        fundMng,
-        0,
-        deadline
-      )).to.be.revertedWith("FirstVaultCycle");
+  afterEach(async function () {
+    await revertToSnapshot(snapshotId);
+  });
 
-    await advanceTimeAndBlock(periodDuration);
-    const res = await vault.inEnterExitWindow();
-    const cycleNum = res.cycleNumber;
-    expect(cycleNum).to.be.eq(1);
+  it('Constructor', async () => {
+    expect(await ascendZaps.vaultedTemple()).to.be.eq(vaultedTemple.address);
+    expect(await ascendZaps.temple()).to.be.eq(TEMPLE.address);
+  });
 
-    await expect(ascendZaps
-      .connect(alan)
-      .exitVaultEarly(
-        swapAmount,
-        vault.address,
-        singleSwap,
-        fundMng,
-        0,
-        deadline
-      )).to.be.revertedWith("SwapDataDoesNotMatch");
+  describe('Exit vault early', async () => {
+    let balance: BigNumber;
+    let swapAmount: BigNumber;
+    let singleSwap: IBalancerVault.SingleSwapStruct;
+    let fundMng: IBalancerVault.FundManagementStruct;
+    let deadline: number;
 
-    singleSwap.amount = swapAmount;
-    singleSwap.assetIn = constants.tokens.ETH;
+    beforeEach(async () => {
+      balance = await vault.balanceOf(alan.address);
+      swapAmount = balance.div(2);
+      singleSwap = {
+        poolId:
+          '0x1b65fe4881800b91d4277ba738b567cbb200a60d0002000000000000000002cc',
+        kind: 0,
+        assetIn: TEMPLE.address,
+        assetOut: constants.tokens.DAI,
+        amount: swapAmount,
+        userData: '0x',
+      };
+      fundMng = {
+        sender: ascendZaps.address,
+        fromInternalBalance: false,
+        recipient: alan.address,
+        toInternalBalance: false,
+      };
+      deadline = Math.floor(new Date().getTime() / 1000) + 10 * 60;
+    });
 
-    await expect(ascendZaps
-      .connect(alan)
-      .exitVaultEarly(
-        swapAmount,
-        vault.address,
-        singleSwap,
-        fundMng,
-        0,
-        deadline
-      )).to.be.revertedWith("SwapDataDoesNotMatch");
+    it('first vault cycle error', async () => {
+      await vault.connect(alan).approve(ascendZaps.address, swapAmount);
+      await expect(
+        ascendZaps
+          .connect(alan)
+          .exitVaultEarly(
+            swapAmount,
+            vault.address,
+            singleSwap,
+            fundMng,
+            0,
+            deadline
+          )
+      ).to.be.revertedWith('FirstVaultCycle');
 
-    singleSwap.assetIn = TEMPLE.address;
+      await advanceTimeAndBlock(periodDuration);
+      const res = await vault.inEnterExitWindow();
+      const cycleNum = res.cycleNumber;
+      expect(cycleNum).to.be.eq(1);
 
-    await ascendZaps
-      .connect(alan)
-      .exitVaultEarly(
-        swapAmount,
-        vault.address,
-        singleSwap,
-        fundMng,
-        0,
-        deadline
+      await ascendZaps
+        .connect(alan)
+        .exitVaultEarly(
+          swapAmount,
+          vault.address,
+          singleSwap,
+          fundMng,
+          0,
+          deadline
+        );
+    });
+
+    it('invalid swap data', async () => {
+      singleSwap.assetIn = constants.tokens.USDC;
+      singleSwap.amount = swapAmount.sub(1);
+
+      await vault.connect(alan).approve(ascendZaps.address, swapAmount);
+      await advanceTimeAndBlock(periodDuration);
+      await expect(
+        ascendZaps
+          .connect(alan)
+          .exitVaultEarly(
+            swapAmount,
+            vault.address,
+            singleSwap,
+            fundMng,
+            0,
+            deadline
+          )
+      ).to.be.revertedWith('SwapDataDoesNotMatch');
+
+      singleSwap.amount = swapAmount;
+
+      await expect(
+        ascendZaps
+          .connect(alan)
+          .exitVaultEarly(
+            swapAmount,
+            vault.address,
+            singleSwap,
+            fundMng,
+            0,
+            deadline
+          )
+      ).to.be.revertedWith('SwapDataDoesNotMatch');
+
+      singleSwap.assetIn = TEMPLE.address;
+
+      await ascendZaps
+        .connect(alan)
+        .exitVaultEarly(
+          swapAmount,
+          vault.address,
+          singleSwap,
+          fundMng,
+          0,
+          deadline
+        );
+    });
+
+    it('exit vault early swaps TEMPLE to DAI on balancer vault', async () => {
+      await vault.connect(alan).approve(ascendZaps.address, swapAmount);
+      await expect(
+        ascendZaps
+          .connect(alan)
+          .exitVaultEarly(
+            swapAmount,
+            vault.address,
+            singleSwap,
+            fundMng,
+            0,
+            deadline
+          )
+      ).to.be.revertedWith('FirstVaultCycle');
+
+      await advanceTimeAndBlock(periodDuration);
+      const res = await vault.inEnterExitWindow();
+      const cycleNum = res.cycleNumber;
+      expect(cycleNum).to.be.eq(1);
+
+      const beforeBalance = await TEMPLE.balanceOf(balanceVaultAddress);
+      const beforeDAIBalance = await DAI.balanceOf(alan.address);
+
+      await ascendZaps
+        .connect(alan)
+        .exitVaultEarly(
+          swapAmount,
+          vault.address,
+          singleSwap,
+          fundMng,
+          0,
+          deadline
+        );
+
+      expect(await TEMPLE.balanceOf(balanceVaultAddress)).to.be.eq(
+        beforeBalance.add(singleSwap.amount)
       );
+      expect(await DAI.balanceOf(alan.address)).to.be.gt(beforeDAIBalance);
+    });
   });
 
   it('Redeem vault token to temple & Check interest accrued', async () => {

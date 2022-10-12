@@ -20,9 +20,8 @@ import {
 } from "../../typechain";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { _TypedDataEncoder } from "ethers/lib/utils";
 
-describe.only("Vault Proxy", async () => {
+describe("Vault Proxy", async () => {
   let TEMPLE: TempleERC20Token;
   let STAKING: TempleStaking;
   let VAULT_PROXY: VaultProxy;
@@ -116,10 +115,10 @@ describe.only("Vault Proxy", async () => {
   })
 
   it("Can unstake and deposit into vault", async () => {
-    let alanStake = new TempleStaking__factory(alan).attach(STAKING.address);
-    let alanTemple = new TempleERC20Token__factory(alan).attach(TEMPLE.address);
-    let alanOgTemple = new OGTemple__factory(alan).attach(OGTEMPLE.address);
-    let alanOGTSwap = new VaultProxy__factory(alan).attach(VAULT_PROXY.address);
+    const alanStake = new TempleStaking__factory(alan).attach(STAKING.address);
+    const alanTemple = new TempleERC20Token__factory(alan).attach(TEMPLE.address);
+    const alanOgTemple = new OGTemple__factory(alan).attach(OGTEMPLE.address);
+    const alanOGTSwap = new VaultProxy__factory(alan).attach(VAULT_PROXY.address);
 
     await alanTemple.increaseAllowance(STAKING.address, toAtto(100000));
     await alanStake.stake(toAtto(200));
