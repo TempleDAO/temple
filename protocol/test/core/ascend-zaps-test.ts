@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { ethers, network } from 'hardhat';
+import { ethers, waffle, network } from 'hardhat';
 import { blockTimestamp, toAtto } from '../helpers';
 import { Signer, BigNumber } from 'ethers';
 import {
@@ -53,7 +53,7 @@ describe.only('Ascend Zaps', async () => {
         {
           forking: {
             jsonRpcUrl: process.env.MAINNET_RPC_URL || '',
-            blockNumber: 15721699,
+            blockNumber: 15674900,
           },
         },
       ],
@@ -139,7 +139,7 @@ describe.only('Ascend Zaps', async () => {
       swapAmount = balance.div(2);
       singleSwap = {
         poolId:
-          '0x1b65fe4881800b91d4277ba738b567cbb200a60d0002000000000000000002cc',
+          '0x177f00928ebc2b222af50a7595af7e7ef0d86a7b000200000000000000000380',
         kind: 0,
         assetIn: TEMPLE.address,
         assetOut: constants.tokens.DAI,
@@ -235,6 +235,38 @@ describe.only('Ascend Zaps', async () => {
         );
     });
 
+    it('balancer swap fail', async () => {
+      singleSwap.assetOut = constants.tokens.USDC;
+      await vault.connect(alan).approve(ascendZaps.address, swapAmount);
+      await advanceTimeAndBlock(periodDuration);
+
+      await expect(
+        ascendZaps
+          .connect(alan)
+          .exitVaultEarly(
+            swapAmount,
+            vault.address,
+            singleSwap,
+            fundMng,
+            0,
+            deadline
+          )
+      ).to.be.revertedWith('BalancerVaultSwapError');
+
+      singleSwap.assetOut = constants.tokens.DAI;
+
+      await ascendZaps
+        .connect(alan)
+        .exitVaultEarly(
+          swapAmount,
+          vault.address,
+          singleSwap,
+          fundMng,
+          0,
+          deadline
+        );
+    });
+
     it('exit vault early swaps TEMPLE to DAI on balancer vault', async () => {
       await vault.connect(alan).approve(ascendZaps.address, swapAmount);
       await expect(
@@ -276,75 +308,190 @@ describe.only('Ascend Zaps', async () => {
     });
   });
 
-  it('Redeem vault token to temple & Check interest accrued', async () => {
-    await advanceTimeAndBlock(periodDuration);
-    const res = await vault.inEnterExitWindow();
-    const cycleNum = res.cycleNumber;
-    expect(cycleNum).to.be.eq(1);
+  describe('Redeem vault token to temple & Check interest accrued', async () => {
+    let balance: BigNumber;
+    let swapAmount: BigNumber;
+    let singleSwap: IBalancerVault.SingleSwapStruct;
+    let fundMng: IBalancerVault.FundManagementStruct;
+    let deadline: number;
 
-    let interestAccrued = await ascendZaps.checkInterestAccrued(vault.address);
-    expect(interestAccrued).to.be.eq(0);
+    beforeEach(async () => {
+      balance = await vault.balanceOf(alan.address);
+      swapAmount = balance.div(2);
+      singleSwap = {
+        poolId:
+          '0x177f00928ebc2b222af50a7595af7e7ef0d86a7b000200000000000000000380',
+        kind: 0,
+        assetIn: TEMPLE.address,
+        assetOut: constants.tokens.DAI,
+        amount: swapAmount,
+        userData: '0x',
+      };
+      fundMng = {
+        sender: ascendZaps.address,
+        fromInternalBalance: false,
+        recipient: alan.address,
+        toInternalBalance: false,
+      };
+      deadline = Math.floor(new Date().getTime() / 1000) + 10 * 60;
+    });
 
-    const balance = await vault.balanceOf(alan.address);
-    const swapAmount = balance.div(2);
-    const singleSwap: IBalancerVault.SingleSwapStruct = {
-      poolId:
-        '0x1b65fe4881800b91d4277ba738b567cbb200a60d0002000000000000000002cc',
-      kind: 0,
-      assetIn: TEMPLE.address,
-      assetOut: constants.tokens.DAI,
-      amount: swapAmount,
-      userData: '0x',
-    };
-    const fundMng: IBalancerVault.FundManagementStruct = {
-      sender: ascendZaps.address,
-      fromInternalBalance: false,
-      recipient: alan.address,
-      toInternalBalance: false,
-    };
-    const deadline = Math.floor(new Date().getTime() / 1000) + 10 * 60;
+    it('only redeem when vault can exit', async () => {
+      const canExit = await vault.canExit();
+      expect(canExit).to.be.eq(false);
 
-    await vault.connect(alan).approve(ascendZaps.address, swapAmount);
-    await ascendZaps
-      .connect(alan)
-      .exitVaultEarly(
-        swapAmount,
-        vault.address,
-        singleSwap,
-        fundMng,
-        0,
-        deadline
+      await expect(
+        ascendZaps.redeemVaultTokenToTemple(vault.address)
+      ).to.be.revertedWith('CanNotExitVault');
+
+      await advanceTimeAndBlock(periodDuration);
+
+      await ascendZaps.redeemVaultTokenToTemple(vault.address);
+    });
+
+    it('only owner can redeem', async () => {
+      await advanceTimeAndBlock(periodDuration);
+
+      await expect(
+        ascendZaps.connect(alan).redeemVaultTokenToTemple(vault.address)
+      ).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+
+    it('Redeem vault token to temple & Check interest accrued', async () => {
+      await advanceTimeAndBlock(periodDuration);
+      const res = await vault.inEnterExitWindow();
+      const cycleNum = res.cycleNumber;
+      expect(cycleNum).to.be.eq(1);
+
+      let interestAccrued = await ascendZaps.checkInterestAccrued(
+        vault.address
       );
+      expect(interestAccrued).to.be.eq(0);
 
-    interestAccrued = await ascendZaps.checkInterestAccrued(vault.address);
-    expect(interestAccrued).to.be.eq(0);
+      await vault.connect(alan).approve(ascendZaps.address, swapAmount);
+      await ascendZaps
+        .connect(alan)
+        .exitVaultEarly(
+          swapAmount,
+          vault.address,
+          singleSwap,
+          fundMng,
+          0,
+          deadline
+        );
 
-    await ascendZaps.redeemVaultTokenToTemple(vault.address);
-    interestAccrued = await ascendZaps.checkInterestAccrued(vault.address);
-    expect(interestAccrued).to.be.eq(0);
+      interestAccrued = await ascendZaps.checkInterestAccrued(vault.address);
+      expect(interestAccrued).to.be.eq(0);
 
-    const vaultedTempleBalance = await TEMPLE.balanceOf(vaultedTemple.address);
-    expect(vaultedTempleBalance).to.be.eq(balance.sub(swapAmount));
+      await ascendZaps.redeemVaultTokenToTemple(vault.address);
+      interestAccrued = await ascendZaps.checkInterestAccrued(vault.address);
+      expect(interestAccrued).to.be.eq(0);
+
+      const vaultedTempleBalance = await TEMPLE.balanceOf(
+        vaultedTemple.address
+      );
+      expect(vaultedTempleBalance).to.be.eq(balance.sub(swapAmount));
+    });
   });
 
-  it('Only owner can withdraw from contract', async () => {
-    const beforeBal = await TEMPLE.balanceOf(await owner.getAddress());
-    const expectedBal = beforeBal.add(toAtto(100));
+  describe('Withdraw', async () => {
+    describe('Temple token', async () => {
+      it('user can not withdraw', async () => {
+        expect(
+          ascendZaps
+            .connect(alan)
+            .withdraw(TEMPLE.address, await alan.getAddress(), toAtto(100))
+        ).to.be.revertedWith('Ownable: caller is not the owner');
+      });
 
-    await ascendZaps.withdraw(
-      TEMPLE.address,
-      await owner.getAddress(),
-      toAtto(100)
-    );
+      it('withdraw zero amount', async () => {
+        expect(
+          ascendZaps
+            .connect(owner)
+            .withdraw(TEMPLE.address, await alan.getAddress(), toAtto(0))
+        ).to.be.revertedWith('WithdrawZeroAmount');
+      });
 
-    expect(await TEMPLE.balanceOf(await owner.getAddress())).equals(
-      expectedBal
-    );
+      it('withdraw no more than balance', async () => {
+        const balance = await TEMPLE.balanceOf(ascendZaps.address);
+        await expect(
+          ascendZaps
+            .connect(owner)
+            .withdraw(TEMPLE.address, await alan.getAddress(), balance.add(1))
+        ).to.be.revertedWith('ERC20: transfer amount exceeds balance');
+      });
 
-    expect(
-      ascendZaps
-        .connect(alan)
-        .withdraw(TEMPLE.address, await alan.getAddress(), toAtto(100))
-    ).to.be.revertedWith('Ownable: caller is not the owner');
+      it('withdraw up to balance', async () => {
+        const balance = await TEMPLE.balanceOf(ascendZaps.address);
+        const beforeBalance = await TEMPLE.balanceOf(alan.address);
+        await ascendZaps
+          .connect(owner)
+          .withdraw(TEMPLE.address, await alan.getAddress(), balance);
+
+        const afterBalance = await TEMPLE.balanceOf(alan.address);
+        expect(await TEMPLE.balanceOf(ascendZaps.address)).to.be.eq(0);
+        expect(afterBalance).to.be.eq(beforeBalance.add(balance));
+      });
+    });
+
+    describe('ETH', async () => {
+      const amount = toAtto(10);
+
+      beforeEach(async () => {
+        await network.provider.send('hardhat_setBalance', [
+          ascendZaps.address,
+          amount.toHexString(),
+        ]);
+      });
+
+      it('user can not withdraw', async () => {
+        expect(
+          ascendZaps
+            .connect(alan)
+            .withdraw(
+              ethers.constants.AddressZero,
+              await alan.getAddress(),
+              amount
+            )
+        ).to.be.revertedWith('Ownable: caller is not the owner');
+      });
+
+      it('withdraw zero amount', async () => {
+        expect(
+          ascendZaps
+            .connect(owner)
+            .withdraw(
+              ethers.constants.AddressZero,
+              await alan.getAddress(),
+              toAtto(0)
+            )
+        ).to.be.revertedWith('WithdrawZeroAmount');
+      });
+
+      it('withdraw no more than balance', async () => {
+        await expect(
+          ascendZaps
+            .connect(owner)
+            .withdraw(
+              ethers.constants.AddressZero,
+              await alan.getAddress(),
+              amount.add(1)
+            )
+        ).to.be.revertedWith('WithdrawSendFailed');
+      });
+
+      it('withdraw up to balance', async () => {
+        const beforeBalance = await waffle.provider.getBalance(alan.address);
+        await ascendZaps
+          .connect(owner)
+          .withdraw(ethers.constants.AddressZero, alan.address, amount);
+
+        const afterBalance = await waffle.provider.getBalance(alan.address);
+        expect(await waffle.provider.getBalance(ascendZaps.address)).to.be.eq(
+          0
+        );
+        expect(afterBalance).to.be.eq(beforeBalance.add(amount));
+      });
+    });
   });
 });
