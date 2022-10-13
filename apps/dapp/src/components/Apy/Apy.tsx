@@ -4,10 +4,6 @@ import BaseImage from 'components/Image/Image';
 
 interface ApyProps extends ApyStyledProps {
   cryptoName: string;
-  imageData: {
-    imageUrl: string;
-    alt: string;
-  };
   value: string;
   alignCenter?: boolean;
 }
@@ -15,16 +11,9 @@ interface ApyProps extends ApyStyledProps {
 /**
  * Primary UI component for user interaction
  */
-export const Apy = ({ cryptoName, value, imageData, isWhite, isHome = false, alignCenter = false }: ApyProps) => {
-  const { imageUrl, alt } = imageData;
-
-  const getImageSize = () => {
-    return isHome ? 36 : 22;
-  };
-
+export const Apy = ({ cryptoName, value, isWhite, isHome = false, alignCenter = false }: ApyProps) => {
   return (
     <ApyStyled alignCenter={alignCenter} isHome={isHome}>
-      {imageUrl !== '' && <Image src={imageUrl} alt={alt} width={getImageSize()} height={getImageSize()} />}
       <ApyValue>{value}</ApyValue>
       <ApyLabel isWhite={isWhite}>{cryptoName}</ApyLabel>
     </ApyStyled>
