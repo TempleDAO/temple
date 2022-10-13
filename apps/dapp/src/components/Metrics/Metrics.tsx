@@ -28,10 +28,6 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter }: MetricsProps) => {
         <Apy
           cryptoName={'$TEMPLE'}
           value={`$${formatNumber(templeValue)}`}
-          imageData={{
-            imageUrl: cashImage,
-            alt: '',
-          }}
           isHome={isHome}
           alignCenter={alignCenter}
         />
@@ -40,10 +36,6 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter }: MetricsProps) => {
         <Apy
           cryptoName={'vAPY'}
           value={`${formatNumber(dynamicApy)}%`}
-          imageData={{
-            imageUrl: tagImage,
-            alt: '',
-          }}
           isHome={isHome}
           alignCenter={alignCenter}
         />
@@ -52,10 +44,6 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter }: MetricsProps) => {
         <Apy
           cryptoName={'Treasury'}
           value={`$${formatMillions(treasuryValue)}`}
-          imageData={{
-            imageUrl: lockImage,
-            alt: '',
-          }}
           isHome={isHome}
           alignCenter={alignCenter}
         />

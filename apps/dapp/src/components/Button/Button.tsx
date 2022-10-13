@@ -1,4 +1,5 @@
 import { HTMLProps, useState } from 'react';
+import Image from 'components/Image/Image';
 import styled, { css } from 'styled-components';
 
 import Loader from '../Loader/Loader';
@@ -20,6 +21,7 @@ export interface ButtonProps
 export const Button = ({
   type = 'button',
   label,
+  leadingIcon,
   onClick,
   isSmall = false,
   isUppercase = false,
@@ -71,6 +73,7 @@ export const Button = ({
     // @ts-ignore expected multiple children
     <ButtonStyled
       type={type}
+      leadingIcon={leadingIcon}
       onClick={onClickHandler}
       isSmall={isSmall}
       isUppercase={isUppercase}
@@ -81,6 +84,7 @@ export const Button = ({
         <Loader iconSize={32} />
       ) : (
         <>
+          {leadingIcon && <ButtonLeadingIcon src={leadingIcon} alt={''} width={24} height={24} />}
           <ButtonLabel isUppercase={isUppercase} isSmall={isSmall}>
             {buttonContent}
           </ButtonLabel>
@@ -95,10 +99,15 @@ interface ButtonStyledProps {
   isSmall?: boolean;
   isUppercase?: boolean;
   showArrow?: boolean;
+  leadingIcon?: string;
   isActive?: boolean;
   // default takes fullwidth of parent
   autoWidth?: boolean;
 }
+
+const ButtonLeadingIcon = styled(Image)`
+  margin: 0 0.3rem 0;
+`
 
 export const ButtonStyled = styled.button<ButtonStyledProps>`
   // common
@@ -129,6 +138,11 @@ export const ButtonStyled = styled.button<ButtonStyledProps>`
     props.showArrow &&
     css`
       justify-content: space-between;
+    `}
+  ${(props) =>
+    props.leadingIcon &&
+    css`
+      justify-content: space-evenly;
     `}
   &:disabled {
     color: ${(props) => props.theme.palette.brand50};
