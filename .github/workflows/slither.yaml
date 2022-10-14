@@ -1,0 +1,32 @@
+# We manually setup and run slither here, as the prebaked github action
+# (at https://github.com/crytic/slither-action)
+# fails with permission errors inside the docker container for this project
+
+name: Slither Analysis
+on: [push]
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+          cache: 'pip'
+          cache-dependency-path: protocol/slither.requirements.txt
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: 'yarn'
+          cache-dependency-path: protocol/yarn.lock
+    
+      - name: install slither
+        run: cd protocol && pip install -r slither.requirements.txt      
+
+      - name: install node packages
+        run: cd protocol && yarn
+      
+      - name: run slither
+        run: cd protocol && slither .
