@@ -21,7 +21,8 @@ export const Claim = () => {
   const vault = activeVault!;
 
   const [amount, setAmount] = useState<string>('');
-  const [{ balance, isLoading: getBalanceLoading }, getBalance] = useVaultBalance(vault.id);
+  const [{ balance, isLoading: getBalanceLoading, nextClaimDate }, getBalance] = useVaultBalance(vault.id);
+  const showNextClaimDate = nextClaimDate !== null;
   const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
   const [withdraw, { isLoading: withdrawIsLoading, error }] = useWithdrawFromVault(vault!.id, async () => {
     await refreshWalletState();
@@ -58,7 +59,7 @@ export const Claim = () => {
     </ClaimableLabel>
   ) : (
     <ClaimableLabel>
-      Nothing to claim
+      {showNextClaimDate ? `You can next claim on ${nextClaimDate}` : 'Nothing to claim.'}
       <TempleAmountLink>&nbsp; {/* Note: this node is here for formatting/spacing */}</TempleAmountLink>
     </ClaimableLabel>
   );

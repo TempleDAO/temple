@@ -129,14 +129,7 @@ export const InputWrapper = styled.div<InputWrapperProps>`
   ${tabletAndAbove(`
     padding: 1rem 1.5rem /* 12/16 */;  
   `)}
-}
-
-${(props) =>
-  props.isDisabled &&
-  css`
-    background-color: ${(props) => props.theme.palette.brand25};
-  `}
-`;
+}`;
 
 const InputTokenWrapper = styled.div`
   position: relative;

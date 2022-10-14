@@ -11,6 +11,8 @@ import { useVaultMetrics } from 'hooks/core/subgraph';
 import EllipsisLoader from 'components/EllipsisLoader';
 import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
 import { FALLBACK_VAULT_APY } from '../Trade/constants';
+import socialDocsIcon from 'assets/images/social-docs.png';
+import Image from 'components/Image/Image';
 
 export const Summary = () => {
   const navigate = useNavigate();
@@ -25,19 +27,28 @@ export const Summary = () => {
     navigate(`/dapp/vaults/${vaultGroup!.id}/strategy`);
   };
 
-  const tvl = response?.data?.metrics[0]?.tvlUSD;
+  const userTvl=vaultGroup?.tvl;
+
+  const totalTvl = response?.data?.metrics[0]?.tvlUSD;
 
   return (
     <VaultContent>
-      <Title>1 MONTH</Title>
-      <Text2 light as="a" href={`/dapp/vaults/${vaultGroup!.id}/strategy`} onClick={onClickLink}>
-        1 Month Vault
-      </Text2>
+      <Title as="a" href={`/dapp/vaults/${vaultGroup!.id}/strategy`} onClick={onClickLink}>1 MONTH</Title>
       <Text3>
         <>
-          TVL: <>{isLoading || !tvl ? <EllipsisLoader /> : `$${formatNumberWithCommas(tvl)}`}</>{' '}
-          {!!tvl && (
+          TVL: <>{isLoading || !totalTvl ? <EllipsisLoader /> : `$${formatNumberWithCommas(totalTvl)}`}</>{' '}
+          {!!totalTvl && (
             <Tooltip content="Total Value Locked for this vault" inline={true}>
+              ⓘ
+            </Tooltip>
+          )}
+        </>
+      </Text3>
+      <Text3>
+        <>
+          User Locked: <>{isLoading || !userTvl ? <EllipsisLoader /> : `${formatNumberWithCommas(userTvl)}`} $TEMPLE</>{' '}
+          {!!userTvl && (
+            <Tooltip content="User's Value Locked for this vault" inline={true}>
               ⓘ
             </Tooltip>
           )}
@@ -51,6 +62,11 @@ export const Summary = () => {
         >
           ⓘ
         </Tooltip>
+      </Text3>
+      <Text3>
+        <a href="https://templedao.medium.com/" target="_blank">
+          <Image src={socialDocsIcon} alt={''} width={24} height={24} /> Learn More
+        </a>
       </Text3>
     </VaultContent>
   );
@@ -95,3 +111,4 @@ const Text3 = styled.div<{ light?: boolean }>`
   text-shadow: ${COLOR_PERCENTAGE_TEXT_SHADOW};
   color: ${({ theme, light }) => (light ? theme.palette.brandLight : theme.palette.brand)};
 `;
+

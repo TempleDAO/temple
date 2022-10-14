@@ -81,6 +81,7 @@ export const Stake = () => {
 
   const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultProxyAllowance(ticker);
 
+  const showDropdown = options.length > 1;
   const handleUpdateStakingAmount = (value: string) => {
     const amount = Number(value || '0');
 
@@ -190,15 +191,19 @@ export const Stake = () => {
       <DepositContainer>
         Deposit{' '}
         <SelectContainer>
-          <CryptoSelect
-            isSearchable={false}
-            options={options}
-            defaultValue={options[0]}
-            onChange={(val: Option) => {
-              setOption(val.value as TICKER_SYMBOL);
-              handleUpdateStakingAmount('');
-            }}
-          />
+          {showDropdown ? (
+            <CryptoSelect
+              isSearchable={false}
+              options={options}
+              defaultValue={options[0]}
+              onChange={(val: Option) => {
+                setOption(val.value as TICKER_SYMBOL);
+                handleUpdateStakingAmount('');
+              }}
+            />
+          ) : (
+            <TempleText>$TEMPLE</TempleText>
+          )}
         </SelectContainer>
       </DepositContainer>
       <VaultInput
@@ -281,7 +286,6 @@ const useStakeOptions = () => {
 
 const SelectContainer = styled.div`
   margin: 0 auto;
-  width: 50%;
   padding: 1rem;
   display: inline-block;
   z-index: 4;
@@ -311,4 +315,8 @@ const JoiningFee = styled.span`
   display: block;
   padding: 1rem 0 0;
   font-size: 1.4rem;
+`;
+
+const TempleText = styled.div`
+  min-height: 47px;
 `;

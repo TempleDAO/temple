@@ -21,9 +21,6 @@ const Timing = () => {
                 Sub-Vault
               </Cell>
               <Cell $align="center" as="th">
-                Staked
-              </Cell>
-              <Cell $align="center" as="th">
                 Balance
               </Cell>
               <Cell $align="center" as="th">
@@ -39,7 +36,6 @@ const Timing = () => {
               return (
                 <Row key={vault.id}>
                   <Cell $align="center">{vault.isActive ? `> ${vault.label} <` : vault.label}</Cell>
-                  <Cell $align="center">{formatTemple(vaultBalance.staked)} $T</Cell>
                   <Cell $align="center">{formatTemple(vaultBalance.balance)} $T</Cell>
                   <Cell $align="center">{unlockValue}</Cell>
                 </Row>
