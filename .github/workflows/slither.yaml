@@ -1,0 +1,15 @@
+name: Slither Analysis
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'protocol/**'
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: crytic/slither-action@v0.2.0
+        with:
+          node-version: 16
+          target: 'protocol'
