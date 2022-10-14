@@ -42,7 +42,7 @@ tl;dr;
 ## Slither Static Code Analysis
 
 1. Install `slither-analyzer`: <https://github.com/crytic/slither#using-pip>
-2. `slither . --triage-mode`
+2. `yarn slither`
 3. For each category + finding, analyse and either:
    1. Fix the issue or
    2. If it's a false positive then ignore the finding by typing the list index number in the triage.
