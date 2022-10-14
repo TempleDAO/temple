@@ -12,7 +12,7 @@ contract AscendZaps is Ownable {
   using SafeERC20 for IERC20;
 
   /// @notice vaultedTemple address
-  address public vaultedTemple;
+  address public immutable vaultedTemple;
 
   /// @notice temple token address
   IERC20 public immutable temple;
@@ -27,11 +27,13 @@ contract AscendZaps is Ownable {
   // Errors
   error FirstVaultCycle();
   error CanNotExitVault();
+  error InsufficientTempleBalance();
   error BalancerVaultSwapError(string reason);
   error SwapDataDoesNotMatch();
   error SendToAddressZero();
   error WithdrawSendFailed();
   error WithdrawZeroAmount();
+  error InvalidAddress();
 
   // Events
   event EarlyWithdraw(
@@ -43,6 +45,13 @@ contract AscendZaps is Ownable {
   );
 
   constructor(address _vaultedTemple, IERC20 _temple) {
+    if (_vaultedTemple == address(0)) {
+      revert InvalidAddress();
+    }
+    if (address(_temple) == address(0)) {
+      revert InvalidAddress();
+    }
+
     vaultedTemple = _vaultedTemple;
     temple = _temple;
   }
@@ -83,6 +92,10 @@ contract AscendZaps is Ownable {
     }
 
     withdrawn[address(vaultErc)] += templeBal;
+
+    if (temple.balanceOf(address(this)) < templeBal) {
+      revert InsufficientTempleBalance();
+    }
 
     temple.safeIncreaseAllowance(address(balancerVault), templeBal);
 

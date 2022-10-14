@@ -101,6 +101,19 @@ describe.only('Ascend Zaps', async () => {
 
     await templeExposure.setMinterState(vault.address, true);
 
+    await expect(
+      new AscendZaps__factory(owner).deploy(
+        ethers.constants.AddressZero,
+        TEMPLE.address
+      )
+    ).to.be.revertedWith('InvalidAddress');
+    await expect(
+      new AscendZaps__factory(owner).deploy(
+        vaultedTemple.address,
+        ethers.constants.AddressZero
+      )
+    ).to.be.revertedWith('InvalidAddress');
+
     ascendZaps = await new AscendZaps__factory(owner).deploy(
       vaultedTemple.address,
       TEMPLE.address
@@ -267,6 +280,33 @@ describe.only('Ascend Zaps', async () => {
         );
     });
 
+    it('insufficient temple balance', async () => {
+      const amount = toAtto(1000000).add(1);
+      await TEMPLE.mint(alan.address, amount);
+
+      await TEMPLE.connect(alan).approve(vault.address, amount);
+      await vault.connect(alan).deposit(amount);
+
+      swapAmount = amount;
+      singleSwap.amount = amount;
+
+      await vault.connect(alan).approve(ascendZaps.address, swapAmount);
+      await advanceTimeAndBlock(periodDuration);
+
+      await expect(
+        ascendZaps
+          .connect(alan)
+          .exitVaultEarly(
+            swapAmount,
+            vault.address,
+            singleSwap,
+            fundMng,
+            0,
+            deadline
+          )
+      ).to.be.revertedWith('InsufficientTempleBalance');
+    });
+
     it('exit vault early swaps TEMPLE to DAI on balancer vault', async () => {
       await vault.connect(alan).approve(ascendZaps.address, swapAmount);
       await expect(
@@ -290,7 +330,18 @@ describe.only('Ascend Zaps', async () => {
       const beforeBalance = await TEMPLE.balanceOf(balanceVaultAddress);
       const beforeDAIBalance = await DAI.balanceOf(alan.address);
 
-      await ascendZaps
+      const amountCalculated = await ascendZaps
+        .connect(alan)
+        .callStatic.exitVaultEarly(
+          swapAmount,
+          vault.address,
+          singleSwap,
+          fundMng,
+          0,
+          deadline
+        );
+
+      const tx = await ascendZaps
         .connect(alan)
         .exitVaultEarly(
           swapAmount,
@@ -299,6 +350,15 @@ describe.only('Ascend Zaps', async () => {
           fundMng,
           0,
           deadline
+        );
+      await expect(tx)
+        .to.emit(ascendZaps, 'EarlyWithdraw')
+        .withArgs(
+          await alan.getAddress(),
+          swapAmount,
+          vault.address,
+          singleSwap.assetOut,
+          amountCalculated
         );
 
       expect(await TEMPLE.balanceOf(balanceVaultAddress)).to.be.eq(
