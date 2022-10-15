@@ -35,7 +35,7 @@ const ActiveAuction = ({ pool }: Props) => {
           target="_blank"
           rel="noopener noreferrer nofollow"
         >
-          Read more...
+          Read more....
         </a>
       </Description>
       <ChartTradeSection>
