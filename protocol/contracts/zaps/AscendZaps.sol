@@ -34,6 +34,7 @@ contract AscendZaps is Ownable {
   error WithdrawSendFailed();
   error WithdrawZeroAmount();
   error InvalidAddress();
+  error InvalidFundRecipient();
 
   // Events
   event EarlyWithdraw(
@@ -89,6 +90,9 @@ contract AscendZaps is Ownable {
       singleSwap.amount != templeBal
     ) {
       revert SwapDataDoesNotMatch();
+    }
+    if (funds.recipient != msg.sender) {
+      revert InvalidFundRecipient();
     }
 
     withdrawn[address(vaultErc)] += templeBal;

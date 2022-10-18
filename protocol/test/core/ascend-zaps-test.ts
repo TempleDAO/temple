@@ -280,6 +280,38 @@ describe.only('Ascend Zaps', async () => {
         );
     });
 
+    it('balancer swap fail', async () => {
+      fundMng.recipient = await ben.getAddress();
+      await vault.connect(alan).approve(ascendZaps.address, swapAmount);
+      await advanceTimeAndBlock(periodDuration);
+
+      await expect(
+        ascendZaps
+          .connect(alan)
+          .exitVaultEarly(
+            swapAmount,
+            vault.address,
+            singleSwap,
+            fundMng,
+            0,
+            deadline
+          )
+      ).to.be.revertedWith('InvalidFundRecipient');
+
+      fundMng.recipient = alan.address;
+
+      await ascendZaps
+        .connect(alan)
+        .exitVaultEarly(
+          swapAmount,
+          vault.address,
+          singleSwap,
+          fundMng,
+          0,
+          deadline
+        );
+    });
+
     it('insufficient temple balance', async () => {
       const amount = toAtto(1000000).add(1);
       await TEMPLE.mint(alan.address, amount);
