@@ -21,8 +21,7 @@ import {
 } from '../../typechain';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { mineForwardSeconds } from '../helpers';
-import { impersonateAccount } from '../utils/account';
+import { mineForwardSeconds, impersonateAccount } from '../helpers';
 import { takeSnapshot, revertToSnapshot } from '../utils/snapshot';
 import constants from '../constants';
 

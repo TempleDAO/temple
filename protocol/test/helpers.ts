@@ -149,3 +149,10 @@ export async function deployAndAirdropTemple(
 
   return templeToken;
 }
+
+export const impersonateAccount = async (account: string) => {
+  await network.provider.request({
+    method: 'hardhat_impersonateAccount',
+    params: [account],
+  });
+};
