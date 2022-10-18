@@ -2,6 +2,7 @@ require('dotenv').config();
 
 import {task} from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import '@nomicfoundation/hardhat-chai-matchers';
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ganache'; // for testing

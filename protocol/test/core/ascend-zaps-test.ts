@@ -178,7 +178,7 @@ describe('Ascend Zaps', async () => {
             0,
             deadline
           )
-      ).to.be.revertedWith('FirstVaultCycle');
+      ).to.be.revertedWithCustomError(ascendZaps, 'FirstVaultCycle');
 
       await mineForwardSeconds(periodDuration);
       const res = await vault.inEnterExitWindow();
@@ -214,7 +214,7 @@ describe('Ascend Zaps', async () => {
             0,
             deadline
           )
-      ).to.be.revertedWith('SwapDataDoesNotMatch');
+      ).to.be.revertedWithCustomError(ascendZaps, 'SwapDataDoesNotMatch');
 
       singleSwap.amount = swapAmount;
 
@@ -229,7 +229,7 @@ describe('Ascend Zaps', async () => {
             0,
             deadline
           )
-      ).to.be.revertedWith('SwapDataDoesNotMatch');
+      ).to.be.revertedWithCustomError(ascendZaps, 'SwapDataDoesNotMatch');
 
       singleSwap.assetIn = TEMPLE.address;
 
@@ -261,7 +261,7 @@ describe('Ascend Zaps', async () => {
             0,
             deadline
           )
-      ).to.be.revertedWith('BalancerVaultSwapError');
+      ).to.be.revertedWithCustomError(ascendZaps, 'BalancerVaultSwapError');
 
       singleSwap.assetOut = constants.tokens.DAI;
 
@@ -293,7 +293,7 @@ describe('Ascend Zaps', async () => {
             0,
             deadline
           )
-      ).to.be.revertedWith('SwapDataDoesNotMatch');
+      ).to.be.revertedWithCustomError(ascendZaps, 'SwapDataDoesNotMatch');
 
       fundMng.recipient = alan.address;
 
@@ -333,7 +333,7 @@ describe('Ascend Zaps', async () => {
             0,
             deadline
           )
-      ).to.be.revertedWith('InsufficientTempleBalance');
+      ).to.be.revertedWithCustomError(ascendZaps, 'InsufficientTempleBalance');
     });
 
     it('exit vault early swaps TEMPLE to DAI on balancer vault', async () => {
@@ -349,7 +349,7 @@ describe('Ascend Zaps', async () => {
             0,
             deadline
           )
-      ).to.be.revertedWith('FirstVaultCycle');
+      ).to.be.revertedWithCustomError(ascendZaps, 'FirstVaultCycle');
 
       await mineForwardSeconds(periodDuration);
       const res = await vault.inEnterExitWindow();
@@ -432,7 +432,7 @@ describe('Ascend Zaps', async () => {
 
       await expect(
         ascendZaps.redeemVaultTokenToTemple(vault.address)
-      ).to.be.revertedWith('CanNotExitVault');
+      ).to.be.revertedWithCustomError(ascendZaps, 'CanNotExitVault');
 
       await mineForwardSeconds(periodDuration);
 
@@ -503,7 +503,7 @@ describe('Ascend Zaps', async () => {
           ascendZaps
             .connect(owner)
             .withdraw(TEMPLE.address, await alan.getAddress(), toAtto(0))
-        ).to.be.revertedWith('WithdrawZeroAmount');
+        ).to.be.revertedWithCustomError(ascendZaps, 'WithdrawZeroAmount');
       });
 
       it('withdraw no more than balance', async () => {
@@ -559,7 +559,7 @@ describe('Ascend Zaps', async () => {
               await alan.getAddress(),
               toAtto(0)
             )
-        ).to.be.revertedWith('WithdrawZeroAmount');
+        ).to.be.revertedWithCustomError(ascendZaps, 'WithdrawZeroAmount');
       });
 
       it('withdraw no more than balance', async () => {
@@ -571,7 +571,7 @@ describe('Ascend Zaps', async () => {
               await alan.getAddress(),
               amount.add(1)
             )
-        ).to.be.revertedWith('WithdrawSendFailed');
+        ).to.be.revertedWithCustomError(ascendZaps, 'WithdrawSendFailed');
       });
 
       it('withdraw up to balance', async () => {
@@ -581,9 +581,7 @@ describe('Ascend Zaps', async () => {
           .withdraw(ethers.constants.AddressZero, alan.address, amount);
 
         const afterBalance = await waffle.provider.getBalance(alan.address);
-        expect(await waffle.provider.getBalance(ascendZaps.address)).to.be.eq(
-          0
-        );
+        expect(await waffle.provider.getBalance(ascendZaps.address)).to.be.eq(0);
         expect(afterBalance).to.be.eq(beforeBalance.add(amount));
       });
     });
