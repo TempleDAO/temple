@@ -280,7 +280,7 @@ describe.only('Ascend Zaps', async () => {
         );
     });
 
-    it('balancer swap fail', async () => {
+    it('invalid fund recipient', async () => {
       fundMng.recipient = await ben.getAddress();
       await vault.connect(alan).approve(ascendZaps.address, swapAmount);
       await advanceTimeAndBlock(periodDuration);
@@ -296,7 +296,7 @@ describe.only('Ascend Zaps', async () => {
             0,
             deadline
           )
-      ).to.be.revertedWith('InvalidFundRecipient');
+      ).to.be.revertedWith('SwapDataDoesNotMatch');
 
       fundMng.recipient = alan.address;
 
