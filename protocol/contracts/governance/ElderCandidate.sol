@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 /**
- * @title an NFT for each master candidate, with associated endorsements
+ * @title an NFT for each elder candidate, with associated endorsements
  * 
  * @notice Captures key aspects of temple governance on chain. Namely
  * 
@@ -20,10 +20,10 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
  *   - Any user can endorse candidates
  *   - EIP712 structured data signing to allow 'gasless voting' via a relay
  * 
- * Which masters are currently voted in/active in the multisig etc is handled
+ * Which elders are currently voted in and responsible for approving proposals is handled
  * at the social layer.
  */
-contract MasterCandidate is ERC721, Ownable, EIP712 {
+contract ElderCandidate is ERC721, Ownable, EIP712 {
     using Strings for uint256;
     using Counters for Counters.Counter;
 
@@ -42,24 +42,10 @@ contract MasterCandidate is ERC721, Ownable, EIP712 {
     /// @notice Nomination fee amount (in feeToken)
     uint256 public nominationFee;
 
-    /// @notice metadata per nomination
-    mapping(uint256 => Candidate) public candidates;
-
-    struct Candidate {
-        /// @notice candidate discord id
-        uint256 discordId;
-
-        /// @notice Discord handle (static, so if changed in discord needs to be manually updated)
-        string discordHandle;
-
-        /// @notice twitter handle (static, so if changed, needs to be manually updated)
-        string twitterHandle;
-    }
-
     constructor(
         IERC20 _nominationFeeToken,
         uint256 _nominationFee
-    ) ERC721("Temple Master Candidate", "MASTER CANDIDATE") EIP712(name(), "1") {
+    ) ERC721("Temple Elder Candidate", "ELDER CANDIDATE") EIP712(name(), "1") {
         nominationFeeToken = _nominationFeeToken;
         nominationFee = _nominationFee;
     }
@@ -76,21 +62,28 @@ contract MasterCandidate is ERC721, Ownable, EIP712 {
 
     /**
      * @dev periodically update the merkle tree root to match discord membership.
-     * NOTE: If a user has already minted their 'master candidate' NFT, this doesn't
+     * NOTE: If a user has already minted their 'elder candidate' NFT, this doesn't
      * remove it for them.
-     * 
-     * The voting UI only shows candidates in the intersection of the set
-     * MasterCandidate NFT and Discord Users.
      */
+    //TODO(butlerji): Should we make this 'manager' - as I can imagine an endstate where this is
+    // auto-updated from the dao games backend server.
     function updateMerkleRoot(bytes32 _merkleRoot) external onlyOwner {
         merkleRoot = _merkleRoot;
     }
 
+    // TODO(butlerji): Confirm if merkleProof is 0x0, no candidate can be added
+    // TODO(butlerji): Confirm a fee of 0 works
+    // TODO(butlerji>nicho): The voting UI should only shows candidates in the intersection of the set
+    //                       ElderCandidate NFT and active Discord Users (post MVP/to be discussed)
+    /**
+     * Enable the given discord ID as a candidate.
+     */
+    // NOTE(butlerji): For MVP, we'll create a small merkle tree with *just* the people who requested nomination on discord
+    //                 We can generalise later with an merkle root for everyone in discord + a nominal fee to stop spamming
+    //                 nominations for the lolz
     function nominate(
         address account,
         uint256 discordId,
-        string memory discordHandle,
-        string memory twitterHandle,
         bytes32[] calldata merkleProof
     ) external {
         require(account != address(0), "MasterCandidate: Address cannot be 0x0");
@@ -98,27 +91,6 @@ contract MasterCandidate is ERC721, Ownable, EIP712 {
 
         SafeERC20.safeTransferFrom(nominationFeeToken, account, address(this), nominationFee);
         _safeMint(account, discordId);
-
-        Candidate storage candidate = candidates[discordId];
-        candidate.discordId = discordId;
-        candidate.discordHandle = discordHandle;
-        candidate.twitterHandle = twitterHandle;
-
-        emit UpdateMetadata(msg.sender, discordId, discordHandle, twitterHandle);
-    }
-
-    function updateMetadata(
-        uint256 discordId,
-        string memory discordHandle,
-        string memory twitterHandle
-    ) external {
-        require(ownerOf(discordId) == msg.sender, "Only the candidate can update metadata");
-        
-        Candidate storage candidate = candidates[discordId];
-        candidate.discordHandle = discordHandle;
-        candidate.twitterHandle = twitterHandle;
-
-        emit UpdateMetadata(msg.sender, discordId, discordHandle, twitterHandle);
     }
 
     function toggleEndorsement(uint256 discordId) external {
@@ -135,6 +107,8 @@ contract MasterCandidate is ERC721, Ownable, EIP712 {
      *
      * @dev amount is explicit, to allow use case of partial vault withdrawals
      */
+    // TODO(butlerji): Need to test this works. The idea is I'd sign a message on mainnet, which gets sent to our backend, then sent to 
+    //                 the mempool on whatever L2 we are running this on.
     function toggleEndorsementsFor(address account, uint256[] memory discordIds, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
         require(block.timestamp <= deadline, "MasterCandidate: expired deadline");
 
@@ -150,10 +124,9 @@ contract MasterCandidate is ERC721, Ownable, EIP712 {
     function tokenURI(uint256 discordId) public view override returns (string memory) {
         require(_exists(discordId), "ERC721Metadata: URI query for nonexistent token");
 
-        Candidate storage candidate = candidates[discordId];
-
-        // TODO(butlerji): Actually URI encode this somehow?
-        return string(abi.encodePacked(candidate.discordHandle, candidate.twitterHandle, discordId.toString()));
+        // TODO(butlerji): What should this be? Ideally something that resolves for all time?
+        //                 IMHO I'd be fine with an encoded json of the shape {discordId: number}
+        return string(abi.encodePacked(discordId.toString()));
     }
 
     /**
@@ -187,5 +160,4 @@ contract MasterCandidate is ERC721, Ownable, EIP712 {
     }
 
     event ToggleEndorsement(address account, uint256 discordId, bool isEndorsed);
-    event UpdateMetadata(address account, uint256 discordId, string discordHandle, string twitterHandle);
 }
