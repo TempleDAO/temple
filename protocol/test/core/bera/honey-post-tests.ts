@@ -63,7 +63,7 @@ describe("HoneyPot Mint Pass", async () => {
 
 
         // User can't mint again
-        await shouldThrow(honeyPot.connect(verifiedMinter).mint(signature.v, signature.r, signature.s), /Already Minted/);
+        await shouldThrow(honeyPot.connect(verifiedMinter).mint(signature.v, signature.r, signature.s), /AlreadyMinted/);
     })
 
     it("non-verified user can't mint", async () => {
@@ -71,7 +71,7 @@ describe("HoneyPot Mint Pass", async () => {
         const digest = await honeyPot.digestFor(await verifiedMinter.getAddress());
         const signature = verifier._signingKey().signDigest(digest)
 
-        await shouldThrow(honeyPot.connect(nonVerifiedMinter).mint(signature.v, signature.r, signature.s), /invalid signature/);
+        await shouldThrow(honeyPot.connect(nonVerifiedMinter).mint(signature.v, signature.r, signature.s), /InvalidSignature/);
     })
 
 
@@ -80,7 +80,7 @@ describe("HoneyPot Mint Pass", async () => {
         const digest = await honeyPot.digestFor(await verifiedMinter.getAddress());
         const signature = verifier._signingKey().signDigest(digest)
         await honeyPot.connect(verifiedMinter).mint(signature.v, signature.r, signature.s)
-        await shouldThrow(honeyPot.connect(verifiedMinter).transferFrom(await verifiedMinter.getAddress(), await nonVerifiedMinter.getAddress(), 0), /HoneyPot can't be transferred/);
+        await shouldThrow(honeyPot.connect(verifiedMinter).transferFrom(await verifiedMinter.getAddress(), await nonVerifiedMinter.getAddress(), 0), /NonTransferrable/);
     })
 
 })

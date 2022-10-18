@@ -8,6 +8,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
+error AlreadyMinted();
+error InvalidSignature();
+error NonTransferrable();
 
 /**
  * @title HoneyPost Mint Shard Pass
@@ -72,13 +75,17 @@ contract HoneyPot is ERC721, EIP712, Ownable, Pausable {
      */
     function mint(uint8 v, bytes32 r, bytes32 s) public virtual whenNotPaused {
 
-      require(!minted[msg.sender], "Already Minted");
+      if (minted[msg.sender]) {
+          revert AlreadyMinted();
+      }
 
       bytes32 structHash = keccak256(abi.encode(VERIFY_TYPEHASH, msg.sender));
       bytes32 digest = _hashTypedDataV4(structHash);
       address signer = ECDSA.recover(digest, v, r, s);
 
-      require(signer == verifier, "invalid signature");
+      if (signer != verifier) {
+          revert InvalidSignature();
+      }
       _mint(msg.sender, _tokenIdTracker.current());
       _tokenIdTracker.increment();
 
@@ -116,7 +123,9 @@ contract HoneyPot is ERC721, EIP712, Ownable, Pausable {
         uint256 tokenId
     ) internal virtual override {
         super._beforeTokenTransfer(from, to, tokenId);
-        require(from == address(0) || to == address(0), "HoneyPot can't be transferred");
+        if (from != address(0) && to != address(0)) {
+            revert NonTransferrable();
+        }
     }
 
     event SetVerifier(address verifier);
