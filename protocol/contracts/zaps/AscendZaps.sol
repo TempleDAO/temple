@@ -137,6 +137,9 @@ contract AscendZaps is Ownable {
     vaultErc.withdraw(balance);
 
     // redistribute interest
+    if (temple.balanceOf(address(this)) < delta) {
+      revert InsufficientTempleBalance();
+    }
     temple.safeTransfer(vaultedTemple, delta);
 
     emit VaultRedeemed(address(vaultErc), delta);
