@@ -28,7 +28,7 @@ import constants from '../constants';
 
 config();
 
-describe.only('Ascend Zaps', async () => {
+describe('Ascend Zaps', async () => {
   let TEMPLE: TempleERC20Token;
   let DAI: ERC20;
   let vault: Vault;
