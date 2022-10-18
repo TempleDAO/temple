@@ -44,6 +44,7 @@ contract AscendZaps is Ownable {
     address toToken,
     uint256 toTokenAmount
   );
+  event VaultRedeemed(address vault, uint256 amount);
 
   constructor(address _vaultedTemple, IERC20 _temple) {
     if (_vaultedTemple == address(0)) {
@@ -140,6 +141,8 @@ contract AscendZaps is Ownable {
 
     // redistribute interest
     temple.safeTransfer(vaultedTemple, delta);
+
+    emit VaultRedeemed(address(vaultErc), delta);
   }
 
   /**

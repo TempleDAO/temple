@@ -475,9 +475,13 @@ describe.only('Ascend Zaps', async () => {
       interestAccrued = await ascendZaps.checkInterestAccrued(vault.address);
       expect(interestAccrued).to.be.eq(0);
 
-      await ascendZaps.redeemVaultTokenToTemple(vault.address);
+      const tx = await ascendZaps.redeemVaultTokenToTemple(vault.address);
       interestAccrued = await ascendZaps.checkInterestAccrued(vault.address);
       expect(interestAccrued).to.be.eq(0);
+
+      await expect(tx)
+        .to.emit(ascendZaps, 'VaultRedeemed')
+        .withArgs(vault.address, 0);
 
       const vaultedTempleBalance = await TEMPLE.balanceOf(
         vaultedTemple.address
