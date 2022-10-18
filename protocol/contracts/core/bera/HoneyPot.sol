@@ -86,10 +86,10 @@ contract HoneyPot is ERC721, EIP712, Ownable, Pausable {
       if (signer != verifier) {
           revert InvalidSignature();
       }
+      minted[msg.sender] = true;
       _mint(msg.sender, _tokenIdTracker.current());
       _tokenIdTracker.increment();
 
-      minted[msg.sender] = true;
     }
 
 
