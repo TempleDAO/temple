@@ -41,7 +41,6 @@ describe.only('Ascend Zaps', async () => {
   let alan: SignerWithAddress;
   let ben: Signer;
   const periodDuration = 60 * 10;
-  const balanceVaultAddress = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
 
   let snapshotId: string;
 
@@ -62,7 +61,7 @@ describe.only('Ascend Zaps', async () => {
     [owner, alan, ben] = await ethers.getSigners();
 
     TEMPLE = await TempleERC20Token__factory.connect(
-      '0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7',
+      constants.tokens.TEMPLE,
       owner
     );
     await impersonateAccount(constants.accounts.MULTISIG);
@@ -151,8 +150,7 @@ describe.only('Ascend Zaps', async () => {
       balance = await vault.balanceOf(alan.address);
       swapAmount = balance.div(2);
       singleSwap = {
-        poolId:
-          '0x177f00928ebc2b222af50a7595af7e7ef0d86a7b000200000000000000000380',
+        poolId: constants.contracts.BALANCER_POOL_ID,
         kind: 0,
         assetIn: TEMPLE.address,
         assetOut: constants.tokens.DAI,
@@ -359,7 +357,9 @@ describe.only('Ascend Zaps', async () => {
       const cycleNum = res.cycleNumber;
       expect(cycleNum).to.be.eq(1);
 
-      const beforeBalance = await TEMPLE.balanceOf(balanceVaultAddress);
+      const beforeBalance = await TEMPLE.balanceOf(
+        constants.contracts.BALANCER_VAULT
+      );
       const beforeDAIBalance = await DAI.balanceOf(alan.address);
 
       const amountCalculated = await ascendZaps
@@ -393,9 +393,9 @@ describe.only('Ascend Zaps', async () => {
           amountCalculated
         );
 
-      expect(await TEMPLE.balanceOf(balanceVaultAddress)).to.be.eq(
-        beforeBalance.add(singleSwap.amount)
-      );
+      expect(
+        await TEMPLE.balanceOf(constants.contracts.BALANCER_VAULT)
+      ).to.be.eq(beforeBalance.add(singleSwap.amount));
       expect(await DAI.balanceOf(alan.address)).to.be.gt(beforeDAIBalance);
     });
   });
@@ -411,8 +411,7 @@ describe.only('Ascend Zaps', async () => {
       balance = await vault.balanceOf(alan.address);
       swapAmount = balance.div(2);
       singleSwap = {
-        poolId:
-          '0x177f00928ebc2b222af50a7595af7e7ef0d86a7b000200000000000000000380',
+        poolId: constants.contracts.BALANCER_POOL_ID,
         kind: 0,
         assetIn: TEMPLE.address,
         assetOut: constants.tokens.DAI,
