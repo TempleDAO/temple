@@ -17,6 +17,7 @@ export interface DeployedContracts {
   OPS_MANAGER_LIB: string;
   JOINING_FEE: string;
   VAULT_PROXY: string;
+  VAULT_EARLY_WITHDRAW: string;
   // XXX: Needs to include vaults/exposure/farming contracts created on chain
 
   // Temple AMM
@@ -57,6 +58,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     OPS_MANAGER: '0x0647b5CFC9e9B03629Db83E7Aa4d1E25283DD9Cb',
     JOINING_FEE: '0x28089129bFc5d0279468D08844969c7cbDc9fe78',
     VAULT_PROXY: '0x8adcc775251362B4E03e0437805BE3154C56b3F5',
+    VAULT_EARLY_WITHDRAW: '',
 
     MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
     GENERIC_ZAPS: '',
@@ -88,6 +90,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     OPS_MANAGER: '0x542891Faf336d69E440De80145Df21510dCa6a78',
     JOINING_FEE: '0x848355A31D7cc2aA73C3E4Df152a17ECa0A5CEaF',
     VAULT_PROXY: '0xb0043346da58ce01EaE3246664Cb5984f75adC1b',
+    VAULT_EARLY_WITHDRAW: '0x7Edb6ea1A90318E9D2B3Ae03e5617A5AAFd7b249',
 
     MULTISIG: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
     GENERIC_ZAPS: '',
@@ -112,6 +115,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     OPS_MANAGER_LIB: '0x248bA5985053ee399a76B5822AdeB12FA0ab1424',
     JOINING_FEE: '0x8A17403B929ed1B6B50ea880d9C93068a5105D4C',
     VAULT_PROXY: '0x6f5bB7cC4F3D6628d0095545552757AB377FE15C',
+    VAULT_EARLY_WITHDRAW: '',
     GENERIC_ZAPS: '0x388d3C524724541800FD74041136caB40FD4DAfE',
     TEMPLE_ZAPS: '0xb7C30F132DBbBbB1C2b81d9D66a010FB7c72Ff9c',
   },
@@ -134,6 +138,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     OPS_MANAGER_LIB: process.env.OPS_MANAGER_LIB || '',
     JOINING_FEE: process.env.JOINING_FEE || '',
     VAULT_PROXY: process.env.VAULT_PROXY || '',
+    VAULT_EARLY_WITHDRAW: process.env.VAULT_EARLY_WITHDRAW || '',
 
     GENERIC_ZAPS: process.env.GENERIC_ZAPS || '',
     TEMPLE_ZAPS: process.env.TEMPLE_ZAPS || '',
