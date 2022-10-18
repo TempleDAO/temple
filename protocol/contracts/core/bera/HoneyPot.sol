@@ -38,6 +38,7 @@ contract HoneyPot is ERC721, EIP712, Ownable, Pausable {
 
     function setVerifier(address _verifier) external onlyOwner {
         verifier = _verifier;
+        emit SetVerifier(verifier);
     }
 
     /**
@@ -117,5 +118,7 @@ contract HoneyPot is ERC721, EIP712, Ownable, Pausable {
         super._beforeTokenTransfer(from, to, tokenId);
         require(from == address(0) || to == address(0), "HoneyPot can't be transferred");
     }
+
+    event SetVerifier(address verifier);
     
 }
