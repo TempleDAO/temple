@@ -44,7 +44,6 @@ describe('Ascend Zaps', async () => {
   let snapshotId: string;
 
   before(async function () {
-    this.timeout(0);
     await network.provider.request({
       method: 'hardhat_reset',
       params: [
