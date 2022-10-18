@@ -21,7 +21,7 @@ import {
 } from '../../typechain';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { advanceTimeAndBlock } from '../utils/time';
+import { mineForwardSeconds } from '../helpers';
 import { impersonateAccount } from '../utils/account';
 import { takeSnapshot, revertToSnapshot } from '../utils/snapshot';
 import constants from '../constants';
@@ -181,7 +181,7 @@ describe('Ascend Zaps', async () => {
           )
       ).to.be.revertedWith('FirstVaultCycle');
 
-      await advanceTimeAndBlock(periodDuration);
+      await mineForwardSeconds(periodDuration);
       const res = await vault.inEnterExitWindow();
       const cycleNum = res.cycleNumber;
       expect(cycleNum).to.be.eq(1);
@@ -203,7 +203,7 @@ describe('Ascend Zaps', async () => {
       singleSwap.amount = swapAmount.sub(1);
 
       await vault.connect(alan).approve(ascendZaps.address, swapAmount);
-      await advanceTimeAndBlock(periodDuration);
+      await mineForwardSeconds(periodDuration);
       await expect(
         ascendZaps
           .connect(alan)
@@ -249,7 +249,7 @@ describe('Ascend Zaps', async () => {
     it('balancer swap fail', async () => {
       singleSwap.assetOut = constants.tokens.USDC;
       await vault.connect(alan).approve(ascendZaps.address, swapAmount);
-      await advanceTimeAndBlock(periodDuration);
+      await mineForwardSeconds(periodDuration);
 
       await expect(
         ascendZaps
@@ -281,7 +281,7 @@ describe('Ascend Zaps', async () => {
     it('invalid fund recipient', async () => {
       fundMng.recipient = await ben.getAddress();
       await vault.connect(alan).approve(ascendZaps.address, swapAmount);
-      await advanceTimeAndBlock(periodDuration);
+      await mineForwardSeconds(periodDuration);
 
       await expect(
         ascendZaps
@@ -321,7 +321,7 @@ describe('Ascend Zaps', async () => {
       singleSwap.amount = amount;
 
       await vault.connect(alan).approve(ascendZaps.address, swapAmount);
-      await advanceTimeAndBlock(periodDuration);
+      await mineForwardSeconds(periodDuration);
 
       await expect(
         ascendZaps
@@ -352,7 +352,7 @@ describe('Ascend Zaps', async () => {
           )
       ).to.be.revertedWith('FirstVaultCycle');
 
-      await advanceTimeAndBlock(periodDuration);
+      await mineForwardSeconds(periodDuration);
       const res = await vault.inEnterExitWindow();
       const cycleNum = res.cycleNumber;
       expect(cycleNum).to.be.eq(1);
@@ -435,13 +435,13 @@ describe('Ascend Zaps', async () => {
         ascendZaps.redeemVaultTokenToTemple(vault.address)
       ).to.be.revertedWith('CanNotExitVault');
 
-      await advanceTimeAndBlock(periodDuration);
+      await mineForwardSeconds(periodDuration);
 
       await ascendZaps.redeemVaultTokenToTemple(vault.address);
     });
 
     it('only owner can redeem', async () => {
-      await advanceTimeAndBlock(periodDuration);
+      await mineForwardSeconds(periodDuration);
 
       await expect(
         ascendZaps.connect(alan).redeemVaultTokenToTemple(vault.address)
@@ -449,7 +449,7 @@ describe('Ascend Zaps', async () => {
     });
 
     it('Redeem vault token to temple & Check interest accrued', async () => {
-      await advanceTimeAndBlock(periodDuration);
+      await mineForwardSeconds(periodDuration);
       const res = await vault.inEnterExitWindow();
       const cycleNum = res.cycleNumber;
       expect(cycleNum).to.be.eq(1);
