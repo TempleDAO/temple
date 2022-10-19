@@ -18,6 +18,7 @@ export interface DeployedContracts {
   JOINING_FEE: string;
   VAULT_PROXY: string;
   VAULT_EARLY_WITHDRAW: string;
+  TREASURY_IV: string;
   // XXX: Needs to include vaults/exposure/farming contracts created on chain
 
   // Temple AMM
@@ -59,6 +60,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     JOINING_FEE: '0x28089129bFc5d0279468D08844969c7cbDc9fe78',
     VAULT_PROXY: '0x8adcc775251362B4E03e0437805BE3154C56b3F5',
     VAULT_EARLY_WITHDRAW: '',
+    TREASURY_IV: '',
 
     MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
     GENERIC_ZAPS: '',
@@ -91,6 +93,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     JOINING_FEE: '0x848355A31D7cc2aA73C3E4Df152a17ECa0A5CEaF',
     VAULT_PROXY: '0xb0043346da58ce01EaE3246664Cb5984f75adC1b',
     VAULT_EARLY_WITHDRAW: '0x7Edb6ea1A90318E9D2B3Ae03e5617A5AAFd7b249',
+    TREASURY_IV: '0x5B0eeE1336cD3f5136D3DaF6970236365b9E9cd7',
 
     MULTISIG: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
     GENERIC_ZAPS: '',
@@ -116,6 +119,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     JOINING_FEE: '0x8A17403B929ed1B6B50ea880d9C93068a5105D4C',
     VAULT_PROXY: '0x6f5bB7cC4F3D6628d0095545552757AB377FE15C',
     VAULT_EARLY_WITHDRAW: '',
+    TREASURY_IV: '',
     GENERIC_ZAPS: '0x388d3C524724541800FD74041136caB40FD4DAfE',
     TEMPLE_ZAPS: '0xb7C30F132DBbBbB1C2b81d9D66a010FB7c72Ff9c',
   },
@@ -139,6 +143,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     JOINING_FEE: process.env.JOINING_FEE || '',
     VAULT_PROXY: process.env.VAULT_PROXY || '',
     VAULT_EARLY_WITHDRAW: process.env.VAULT_EARLY_WITHDRAW || '',
+    TREASURY_IV: process.env.TREASURY_IV || '',
 
     GENERIC_ZAPS: process.env.GENERIC_ZAPS || '',
     TEMPLE_ZAPS: process.env.TEMPLE_ZAPS || '',
