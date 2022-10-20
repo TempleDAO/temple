@@ -18,7 +18,8 @@ import { AnalyticsEvent } from 'constants/events';
 import { useLocation } from 'react-router-dom';
 import { BigNumber } from 'ethers';
 import { Nullable } from 'types/util';
-import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
+import env from 'constants/env';
 
 interface LocationState {
   earlyClaimSubvaultAddress: string;
@@ -56,6 +57,14 @@ export const Claim = () => {
   const [earlyWithdraw, { isLoading: earlyWithdrawIsLoading, error: earlyWithdrawError }] = earlyWithdrawRequest;
 
   const [checkExitStatus, { response: canExit }] = useIsVaultExitable(vault.id);
+
+  const [
+    { allowance: earlyWithdrawAllowance, isLoading: earlyWithdrawAllowanceIsLoading },
+    increaseEarlyWithdrawAllowance,
+  ] = useTokenContractAllowance(
+    { address: earlyClaimSubvaultAddress, name: 'vault ERC20' },
+    env.contracts.vaultEarlyExit
+  );
 
   useEffect(() => {
     if (!isClaimingEarly) {
@@ -128,19 +137,33 @@ export const Claim = () => {
       />
       {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
       {!!earlyWithdrawError && <ErrorLabel>{earlyWithdrawError.message || 'Something went wrong'}</ErrorLabel>}
-      <VaultButton
-        label={isClaimingEarly ? 'Claim Early' : 'Claim'}
-        autoWidth
-        marginTop={error ? '0.5rem' : '3.5rem'}
-        disabled={buttonIsDisabled}
-        onClick={async () => {
-          if (isClaimingEarly) {
-            await earlyWithdraw(earlyClaimSubvaultAddress, earlyClaimAmount || ZERO);
-          } else {
-            await withdraw(amount);
-          }
-        }}
-      />
+
+      {earlyWithdrawAllowance !== 0 && (
+        <VaultButton
+          label={isClaimingEarly ? 'Claim Early' : 'Claim'}
+          autoWidth
+          marginTop={error ? '0.5rem' : '3.5rem'}
+          disabled={buttonIsDisabled}
+          onClick={async () => {
+            if (isClaimingEarly) {
+              await earlyWithdraw(earlyClaimSubvaultAddress, earlyClaimAmount || ZERO);
+            } else {
+              await withdraw(amount);
+            }
+          }}
+        />
+      )}
+      {earlyWithdrawAllowance === 0 && (
+        <VaultButton
+          label={'Approve'}
+          autoWidth
+          marginTop={error ? '0.5rem' : '3.5rem'}
+          disabled={!earlyWithdrawAllowanceIsLoading}
+          onClick={async () => {
+            await increaseEarlyWithdrawAllowance();
+          }}
+        />
+      )}
     </VaultContent>
   );
 };

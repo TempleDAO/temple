@@ -27,6 +27,7 @@ const env: Environment = {
     treasuryIv: '0xA443355cE4F9c1AA6d68e057a962E86E071B0ed3',
     vaultOps: '0x542891Faf336d69E440De80145Df21510dCa6a78',
     vaultProxy: '0xb0043346da58ce01EaE3246664Cb5984f75adC1b',
+    vaultEarlyExit: '0x7Edb6ea1A90318E9D2B3Ae03e5617A5AAFd7b249',
   },
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-goerli',
