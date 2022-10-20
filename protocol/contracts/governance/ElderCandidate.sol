@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
@@ -24,8 +23,8 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
  * at the social layer.
  */
 contract ElderCandidate is ERC721, Ownable, EIP712 {
-    using Strings for uint256;
     using Counters for Counters.Counter;
+    using SafeERC20 for IERC20;
 
     bytes32 public immutable TOGGLE_ENDORSEMENTS_FOR_TYPEHASH = keccak256("toggleEndorsementsFor(address account, uint256[] discordIds, uint256 deadline, uint256 nonce)");
     mapping(address => Counters.Counter) public _nonces;
@@ -86,15 +85,16 @@ contract ElderCandidate is ERC721, Ownable, EIP712 {
         uint256 discordId,
         bytes32[] calldata merkleProof
     ) external {
-        require(account != address(0), "MasterCandidate: Address cannot be 0x0");
-        require(MerkleProof.verify(merkleProof, merkleRoot, keccak256(abi.encode(account, discordId.toString()))), "MasterCandidate: candidate not in temple discord");
+        if (account == address(0)) revert InvalidAddress(account);
+        if (!MerkleProof.verify(merkleProof, merkleRoot, keccak256(abi.encode(account, discordId)))) {
+            revert NotFoundInDiscord(account, discordId);
+        }
 
-        SafeERC20.safeTransferFrom(nominationFeeToken, account, address(this), nominationFee);
+        if (nominationFee > 0) {
+            nominationFeeToken.safeTransferFrom(account, address(this), nominationFee);
+        }
+        
         _safeMint(account, discordId);
-    }
-
-    function toggleEndorsement(uint256 discordId) external {
-        _toggleEndorsement(msg.sender, discordId);
     }
 
     function toggleEndorsements(uint256[] memory discordIds) external {
@@ -110,23 +110,23 @@ contract ElderCandidate is ERC721, Ownable, EIP712 {
     // TODO(butlerji): Need to test this works. The idea is I'd sign a message on mainnet, which gets sent to our backend, then sent to 
     //                 the mempool on whatever L2 we are running this on.
     function toggleEndorsementsFor(address account, uint256[] memory discordIds, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public {
-        require(block.timestamp <= deadline, "MasterCandidate: expired deadline");
+        if (block.timestamp > deadline) revert DeadlineExpired(deadline);
 
         bytes32 structHash = keccak256(abi.encode(TOGGLE_ENDORSEMENTS_FOR_TYPEHASH, account, discordIds, deadline, _useNonce(account)));
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, v, r, s);
 
-        require(signer == account, "MasterCandidate: invalid signature");
+        if (signer != account) revert InvalidSignature(account, signer);
 
         _toggleEndorsements(account, discordIds);
     }
 
     function tokenURI(uint256 discordId) public view override returns (string memory) {
-        require(_exists(discordId), "ERC721Metadata: URI query for nonexistent token");
+        if (!_exists(discordId)) revert InvalidDiscordId(discordId);
 
         // TODO(butlerji): What should this be? Ideally something that resolves for all time?
         //                 IMHO I'd be fine with an encoded json of the shape {discordId: number}
-        return string(abi.encodePacked(discordId.toString()));
+        return string(abi.encodePacked(discordId));
     }
 
     /**
@@ -144,7 +144,7 @@ contract ElderCandidate is ERC721, Ownable, EIP712 {
     }
 
     function _toggleEndorsement(address account, uint256 discordId) internal {
-        require(_exists(discordId), "ElderCandidate: Cannot endorse nonexistent candidate");
+        if (!_exists(discordId)) revert InvalidDiscordId(discordId);
         endorsementsBy[account][discordId] = !endorsementsBy[account][discordId];
 
         emit ToggleEndorsement(account, discordId, endorsementsBy[account][discordId]);
@@ -153,11 +153,17 @@ contract ElderCandidate is ERC721, Ownable, EIP712 {
     /**
      * "Consume a nonce": return the current value and increment.
      */
-    function _useNonce(address owner) internal returns (uint256 current) {
-        Counters.Counter storage nonce = _nonces[owner];
+    function _useNonce(address _owner) internal returns (uint256 current) {
+        Counters.Counter storage nonce = _nonces[_owner];
         current = nonce.current();
         nonce.increment();
     }
 
     event ToggleEndorsement(address account, uint256 discordId, bool isEndorsed);
+
+    error InvalidAddress(address addr);
+    error NotFoundInDiscord(address account, uint256 discordId);
+    error DeadlineExpired(uint256 deadline);
+    error InvalidSignature(address account, address signer);
+    error InvalidDiscordId(uint256 discordId);
 }
