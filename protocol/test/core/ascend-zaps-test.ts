@@ -97,6 +97,7 @@ describe('Ascend Zaps', async () => {
     );
 
     await templeExposure.setMinterState(vault.address, true);
+    await templeExposure.setMinterState(await owner.getAddress(), true);
 
     await expect(
       new AscendZaps__factory(owner).deploy(
@@ -537,8 +538,10 @@ describe('Ascend Zaps', async () => {
           deadline
         );
 
+      await templeExposure.mint(vault.address, toAtto(100));
+
       interestAccrued = await ascendZaps.checkInterestAccrued(vault.address);
-      expect(interestAccrued).to.be.eq(0);
+      expect(interestAccrued).to.be.eq(toAtto(50));
 
       const tx = await ascendZaps.redeemVaultTokenToTemple(vault.address);
       interestAccrued = await ascendZaps.checkInterestAccrued(vault.address);
@@ -546,7 +549,7 @@ describe('Ascend Zaps', async () => {
 
       await expect(tx)
         .to.emit(ascendZaps, 'VaultRedeemed')
-        .withArgs(vault.address, 0);
+        .withArgs(vault.address, toAtto(50));
 
       const vaultedTempleBalance = await TEMPLE.balanceOf(
         vaultedTemple.address
