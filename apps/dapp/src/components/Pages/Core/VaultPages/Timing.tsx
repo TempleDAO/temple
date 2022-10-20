@@ -6,9 +6,14 @@ import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Tabl
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import VaultContent from './VaultContent';
 import { formatTemple } from 'components/Vault/utils';
+import { ZERO } from 'utils/bigNumber';
+import { Link } from 'react-router-dom';
 
 const Timing = () => {
-  const { vaultGroup, balances: { balances } } = useVaultContext();
+  const {
+    vaultGroup,
+    balances: { balances },
+  } = useVaultContext();
 
   return (
     <VaultContent>
@@ -21,13 +26,13 @@ const Timing = () => {
                 Sub-Vault
               </Cell>
               <Cell $align="center" as="th">
-                Staked
-              </Cell>
-              <Cell $align="center" as="th">
                 Balance
               </Cell>
               <Cell $align="center" as="th">
                 Claimable
+              </Cell>
+              <Cell $align="center" as="th">
+                Claim
               </Cell>
             </Row>
           </Head>
@@ -39,9 +44,20 @@ const Timing = () => {
               return (
                 <Row key={vault.id}>
                   <Cell $align="center">{vault.isActive ? `> ${vault.label} <` : vault.label}</Cell>
-                  <Cell $align="center">{formatTemple(vaultBalance.staked)} $T</Cell>
                   <Cell $align="center">{formatTemple(vaultBalance.balance)} $T</Cell>
                   <Cell $align="center">{unlockValue}</Cell>
+                  <Cell $align="center">
+                    <Link
+                      to={`/dapp/vaults/${vaultGroup!.id}/claim`}
+                      state={{
+                        earlyClaimSubvaultAddress: vault.id,
+                        isClaimingEarly: unlockValue !== 'now',
+                        earlyClaimAmount: vaultBalance.balance,
+                      }}
+                    >
+                      {vaultBalance.balance?.gt(ZERO) ? `Claim ${unlockValue !== 'now' ? 'Early' : ''}` : ' - '}
+                    </Link>
+                  </Cell>
                 </Row>
               );
             })}
