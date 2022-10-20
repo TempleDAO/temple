@@ -27,18 +27,29 @@ interface LocationState {
   earlyClaimAmount: Nullable<BigNumber>;
 }
 
+const EMPTY_EARLY_CLAIM_STATE = {
+  earlyClaimSubvaultAddress: '',
+  isClaimingEarly: false,
+  earlyClaimAmount: ZERO,
+};
+
 export const Claim = () => {
-  const { activeVault, vaultGroups } = useVaultContext();
+  const { activeVault } = useVaultContext();
   const vault = activeVault!;
 
   const location = useLocation();
+
   const state = location.state as LocationState;
 
-  const { earlyClaimSubvaultAddress, isClaimingEarly, earlyClaimAmount } = state || {
-    earlyClaimSubvaultAddress: '',
-    isClaimingEarly: false,
-    earlyClaimAmount: ZERO,
-  };
+  const [earlyClaimState, setEarlyClaimState] = useState(EMPTY_EARLY_CLAIM_STATE);
+
+  useEffect(() => {
+    setEarlyClaimState({
+      earlyClaimSubvaultAddress: state.earlyClaimSubvaultAddress,
+      isClaimingEarly: state.isClaimingEarly,
+      earlyClaimAmount: state.earlyClaimAmount || ZERO,
+    });
+  }, []);
 
   const [amount, setAmount] = useState<string>('');
   const [{ balance, isLoading: getBalanceLoading }, getBalance] = useVaultBalance(vault.id);
@@ -62,15 +73,19 @@ export const Claim = () => {
     { allowance: earlyWithdrawAllowance, isLoading: earlyWithdrawAllowanceIsLoading },
     increaseEarlyWithdrawAllowance,
   ] = useTokenContractAllowance(
-    { address: earlyClaimSubvaultAddress, name: 'vault ERC20' },
+    { address: earlyClaimState.earlyClaimSubvaultAddress, name: 'vault ERC20' },
     env.contracts.vaultEarlyExit
   );
 
   useEffect(() => {
-    if (!isClaimingEarly) {
+    if (!earlyClaimState.isClaimingEarly) {
       checkExitStatus();
     }
-  }, [isClaimingEarly, checkExitStatus]);
+  }, [earlyClaimState.isClaimingEarly, checkExitStatus]);
+
+  const clearEarlyExitState = () => {
+    setEarlyClaimState(EMPTY_EARLY_CLAIM_STATE);
+  };
 
   const handleUpdateAmount = (amount: string) => {
     setAmount(Number(amount) === 0 ? '' : amount);
@@ -80,8 +95,8 @@ export const Claim = () => {
   const formattedBalance = formatBigNumber(balance);
 
   const buttonIsDisabled =
-    (isClaimingEarly && (earlyWithdrawIsLoading || !earlyClaimAmount)) ||
-    (!isClaimingEarly &&
+    (earlyClaimState.isClaimingEarly && (earlyWithdrawIsLoading || !earlyClaimState.earlyClaimAmount)) ||
+    (!earlyClaimState.isClaimingEarly &&
       (getBalanceLoading || refreshLoading || withdrawIsLoading || !amount || bigInputValue.gt(balance)));
 
   let claimLabel =
@@ -103,10 +118,10 @@ export const Claim = () => {
       </ClaimableLabel>
     );
 
-  if (isClaimingEarly) {
+  if (earlyClaimState.isClaimingEarly) {
     claimLabel = (
       <ClaimableLabel>
-        Claiming {formatTemple(earlyClaimAmount)} Early
+        Claiming {formatTemple(earlyClaimState.earlyClaimAmount)} Early
         <TempleAmountLink>&nbsp; {/* Note: this node is here for formatting/spacing */}</TempleAmountLink>
       </ClaimableLabel>
     );
@@ -121,7 +136,9 @@ export const Claim = () => {
     }
   }, [error, earlyWithdrawError]);
 
-  const inputAmount = isClaimingEarly ? formatBigNumber(earlyClaimAmount || ZERO) : amount;
+  const inputAmount = earlyClaimState.isClaimingEarly
+    ? formatBigNumber(earlyClaimState.earlyClaimAmount || ZERO)
+    : amount;
 
   return (
     <VaultContent>
@@ -133,20 +150,21 @@ export const Claim = () => {
         isNumber
         placeholder="0.00"
         value={inputAmount}
-        disabled={balance.lte(ZERO) || !canExit || isClaimingEarly}
+        disabled={balance.lte(ZERO) || !canExit || earlyClaimState.isClaimingEarly}
       />
       {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
       {!!earlyWithdrawError && <ErrorLabel>{earlyWithdrawError.message || 'Something went wrong'}</ErrorLabel>}
 
       {earlyWithdrawAllowance !== 0 && (
         <VaultButton
-          label={isClaimingEarly ? 'Claim Early' : 'Claim'}
+          label={earlyClaimState.isClaimingEarly ? 'Claim Early' : 'Claim'}
           autoWidth
           marginTop={error ? '0.5rem' : '3.5rem'}
           disabled={buttonIsDisabled}
           onClick={async () => {
-            if (isClaimingEarly) {
-              await earlyWithdraw(earlyClaimSubvaultAddress, earlyClaimAmount || ZERO);
+            if (earlyClaimState.isClaimingEarly) {
+              await earlyWithdraw(earlyClaimState.earlyClaimSubvaultAddress, earlyClaimState.earlyClaimAmount || ZERO);
+              clearEarlyExitState();
             } else {
               await withdraw(amount);
             }
