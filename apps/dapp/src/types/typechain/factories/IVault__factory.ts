@@ -10,19 +10,20 @@ const _abi = [
   {
     inputs: [
       {
-        internalType: "address",
-        name: "_account",
-        type: "address",
-      },
-      {
         internalType: "uint256",
-        name: "_amount",
+        name: "sharesAmount",
         type: "uint256",
       },
     ],
-    name: "depositFor",
-    outputs: [],
-    stateMutability: "nonpayable",
+    name: "toTokenAmount",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "tokenAmount",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
 ];
