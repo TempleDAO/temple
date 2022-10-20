@@ -28,6 +28,7 @@ interface Contracts {
   treasuryIv: string;
   vaultOps: string;
   vaultProxy: string;
+  vaultEarlyExit: string;
 }
 
 interface Gas {
