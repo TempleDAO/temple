@@ -41,15 +41,11 @@ export const Claim = () => {
 
   const state = location.state as LocationState;
 
-  const [earlyClaimState, setEarlyClaimState] = useState(EMPTY_EARLY_CLAIM_STATE);
-
-  useEffect(() => {
-    setEarlyClaimState({
-      earlyClaimSubvaultAddress: state?.earlyClaimSubvaultAddress,
-      isClaimingEarly: state?.isClaimingEarly,
-      earlyClaimAmount: state?.earlyClaimAmount || ZERO,
-    });
-  }, []);
+  const [earlyClaimState, setEarlyClaimState] = useState({
+    earlyClaimSubvaultAddress: state?.earlyClaimSubvaultAddress,
+    isClaimingEarly: state?.isClaimingEarly,
+    earlyClaimAmount: state?.earlyClaimAmount || ZERO,
+  });
 
   const [amount, setAmount] = useState<string>('');
   const [{ balance, isLoading: getBalanceLoading }, getBalance] = useVaultBalance(vault.id);
@@ -176,7 +172,7 @@ export const Claim = () => {
           label={'Approve'}
           autoWidth
           marginTop={error ? '0.5rem' : '3.5rem'}
-          disabled={!earlyWithdrawAllowanceIsLoading}
+          disabled={earlyWithdrawAllowanceIsLoading}
           onClick={async () => {
             await increaseEarlyWithdrawAllowance();
           }}
