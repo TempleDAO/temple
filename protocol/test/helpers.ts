@@ -28,7 +28,7 @@ export interface ERC20Light {
 
 export async function expectBalancesChangeBy(
   tx: () => Promise<any>, 
-  ...changes: [ERC20Light, Signer|BaseContract, BigNumberish][]
+  ...changes: [ERC20Light, Signer|BaseContract|string, BigNumberish][]
 ): Promise<void> {
   const oldBalances: BigNumber[] = await getBalances(changes);
   await tx();
@@ -45,7 +45,7 @@ export async function expectBalancesChangeBy(
   }
 }
 
-async function getBalances(changes: [ERC20Light, Signer|BaseContract, BigNumberish][]) {
+async function getBalances(changes: [ERC20Light, Signer|BaseContract|string, BigNumberish][]) {
   const balances: BigNumber[] = [];
 
   for (const [token, account, _] of changes) {
@@ -55,11 +55,13 @@ async function getBalances(changes: [ERC20Light, Signer|BaseContract, BigNumberi
   return balances;
 }
 
-async function getAddressOf(account: Signer|BaseContract) {
+async function getAddressOf(account: Signer|BaseContract|string) {
   if (account instanceof Signer) {
     return await account.getAddress();
-  } else {
+  } else if (account instanceof BaseContract) {
     return account.address;
+  } else {
+    return account;
   }
 }
 

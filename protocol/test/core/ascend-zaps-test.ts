@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
 import { ethers, waffle, network } from 'hardhat';
-import { blockTimestamp, toAtto } from '../helpers';
+import { blockTimestamp, toAtto, expectBalancesChangeBy } from '../helpers';
 import { Signer, BigNumber } from 'ethers';
 import {
   TempleERC20Token,
@@ -185,8 +185,6 @@ describe('Ascend Zaps', async () => {
       const cycleNum = res.cycleNumber;
       expect(cycleNum).to.be.eq(1);
 
-      const beforeBalance = await DAI.balanceOf(alan.address);
-
       const amountCalculated = await ascendZaps
         .connect(alan)
         .callStatic.exitVaultEarly(
@@ -198,20 +196,18 @@ describe('Ascend Zaps', async () => {
           deadline
         );
 
-      await ascendZaps
-        .connect(alan)
-        .exitVaultEarly(
-          swapAmount,
-          vault.address,
-          singleSwap,
-          fundMng,
-          0,
-          deadline
-        );
-
-      expect(await DAI.balanceOf(alan.address)).to.be.eq(
-        beforeBalance.add(amountCalculated)
-      );
+      await expectBalancesChangeBy(async () => {
+        await ascendZaps
+          .connect(alan)
+          .exitVaultEarly(
+            swapAmount,
+            vault.address,
+            singleSwap,
+            fundMng,
+            0,
+            deadline
+          );
+      }, [DAI, alan, amountCalculated]);
     });
 
     it('invalid swap data', async () => {
@@ -250,8 +246,6 @@ describe('Ascend Zaps', async () => {
 
       singleSwap.assetIn = TEMPLE.address;
 
-      const beforeBalance = await DAI.balanceOf(alan.address);
-
       const amountCalculated = await ascendZaps
         .connect(alan)
         .callStatic.exitVaultEarly(
@@ -263,20 +257,18 @@ describe('Ascend Zaps', async () => {
           deadline
         );
 
-      await ascendZaps
-        .connect(alan)
-        .exitVaultEarly(
-          swapAmount,
-          vault.address,
-          singleSwap,
-          fundMng,
-          0,
-          deadline
-        );
-
-      expect(await DAI.balanceOf(alan.address)).to.be.eq(
-        beforeBalance.add(amountCalculated)
-      );
+      await expectBalancesChangeBy(async () => {
+        await ascendZaps
+          .connect(alan)
+          .exitVaultEarly(
+            swapAmount,
+            vault.address,
+            singleSwap,
+            fundMng,
+            0,
+            deadline
+          );
+      }, [DAI, alan, amountCalculated]);
     });
 
     it('balancer swap fail', async () => {
@@ -299,8 +291,6 @@ describe('Ascend Zaps', async () => {
 
       singleSwap.assetOut = constants.tokens.DAI;
 
-      const beforeBalance = await DAI.balanceOf(alan.address);
-
       const amountCalculated = await ascendZaps
         .connect(alan)
         .callStatic.exitVaultEarly(
@@ -312,20 +302,18 @@ describe('Ascend Zaps', async () => {
           deadline
         );
 
-      await ascendZaps
-        .connect(alan)
-        .exitVaultEarly(
-          swapAmount,
-          vault.address,
-          singleSwap,
-          fundMng,
-          0,
-          deadline
-        );
-
-      expect(await DAI.balanceOf(alan.address)).to.be.eq(
-        beforeBalance.add(amountCalculated)
-      );
+      await expectBalancesChangeBy(async () => {
+        await ascendZaps
+          .connect(alan)
+          .exitVaultEarly(
+            swapAmount,
+            vault.address,
+            singleSwap,
+            fundMng,
+            0,
+            deadline
+          );
+      }, [DAI, alan, amountCalculated]);
     });
 
     it('invalid fund recipient', async () => {
@@ -348,8 +336,6 @@ describe('Ascend Zaps', async () => {
 
       fundMng.recipient = alan.address;
 
-      const beforeBalance = await DAI.balanceOf(alan.address);
-
       const amountCalculated = await ascendZaps
         .connect(alan)
         .callStatic.exitVaultEarly(
@@ -361,20 +347,18 @@ describe('Ascend Zaps', async () => {
           deadline
         );
 
-      await ascendZaps
-        .connect(alan)
-        .exitVaultEarly(
-          swapAmount,
-          vault.address,
-          singleSwap,
-          fundMng,
-          0,
-          deadline
-        );
-
-      expect(await DAI.balanceOf(alan.address)).to.be.eq(
-        beforeBalance.add(amountCalculated)
-      );
+      await expectBalancesChangeBy(async () => {
+        await ascendZaps
+          .connect(alan)
+          .exitVaultEarly(
+            swapAmount,
+            vault.address,
+            singleSwap,
+            fundMng,
+            0,
+            deadline
+          );
+      }, [DAI, alan, amountCalculated]);
     });
 
     it('insufficient temple balance', async () => {
@@ -424,11 +408,6 @@ describe('Ascend Zaps', async () => {
       const cycleNum = res.cycleNumber;
       expect(cycleNum).to.be.eq(1);
 
-      const beforeBalance = await TEMPLE.balanceOf(
-        constants.contracts.BALANCER_VAULT
-      );
-      const beforeDAIBalance = await DAI.balanceOf(alan.address);
-
       const amountCalculated = await ascendZaps
         .connect(alan)
         .callStatic.exitVaultEarly(
@@ -440,30 +419,31 @@ describe('Ascend Zaps', async () => {
           deadline
         );
 
-      const tx = await ascendZaps
-        .connect(alan)
-        .exitVaultEarly(
-          swapAmount,
-          vault.address,
-          singleSwap,
-          fundMng,
-          0,
-          deadline
-        );
-      await expect(tx)
-        .to.emit(ascendZaps, 'EarlyWithdraw')
-        .withArgs(
-          await alan.getAddress(),
-          swapAmount,
-          vault.address,
-          singleSwap.assetOut,
-          amountCalculated
-        );
-
-      expect(
-        await TEMPLE.balanceOf(constants.contracts.BALANCER_VAULT)
-      ).to.be.eq(beforeBalance.add(singleSwap.amount));
-      expect(await DAI.balanceOf(alan.address)).to.be.gt(beforeDAIBalance);
+      await expectBalancesChangeBy(
+        async () => {
+          const tx = await ascendZaps
+            .connect(alan)
+            .exitVaultEarly(
+              swapAmount,
+              vault.address,
+              singleSwap,
+              fundMng,
+              0,
+              deadline
+            );
+          await expect(tx)
+            .to.emit(ascendZaps, 'EarlyWithdraw')
+            .withArgs(
+              await alan.getAddress(),
+              swapAmount,
+              vault.address,
+              singleSwap.assetOut,
+              amountCalculated
+            );
+        },
+        [TEMPLE, constants.contracts.BALANCER_VAULT, singleSwap.amount],
+        [DAI, alan, amountCalculated]
+      );
     });
   });
 
@@ -587,14 +567,13 @@ describe('Ascend Zaps', async () => {
 
       it('withdraw up to balance', async () => {
         const balance = await TEMPLE.balanceOf(ascendZaps.address);
-        const beforeBalance = await TEMPLE.balanceOf(alan.address);
-        await ascendZaps
-          .connect(owner)
-          .withdraw(TEMPLE.address, await alan.getAddress(), balance);
+        await expectBalancesChangeBy(async () => {
+          await ascendZaps
+            .connect(owner)
+            .withdraw(TEMPLE.address, await alan.getAddress(), balance);
+        }, [TEMPLE, alan, balance]);
 
-        const afterBalance = await TEMPLE.balanceOf(alan.address);
         expect(await TEMPLE.balanceOf(ascendZaps.address)).to.be.eq(0);
-        expect(afterBalance).to.be.eq(beforeBalance.add(balance));
       });
     });
 
