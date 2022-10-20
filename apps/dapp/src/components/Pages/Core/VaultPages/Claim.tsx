@@ -45,9 +45,9 @@ export const Claim = () => {
 
   useEffect(() => {
     setEarlyClaimState({
-      earlyClaimSubvaultAddress: state.earlyClaimSubvaultAddress,
-      isClaimingEarly: state.isClaimingEarly,
-      earlyClaimAmount: state.earlyClaimAmount || ZERO,
+      earlyClaimSubvaultAddress: state?.earlyClaimSubvaultAddress,
+      isClaimingEarly: state?.isClaimingEarly,
+      earlyClaimAmount: state?.earlyClaimAmount || ZERO,
     });
   }, []);
 
