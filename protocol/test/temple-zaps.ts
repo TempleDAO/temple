@@ -72,7 +72,7 @@ interface ZeroExQuote {
   guaranteedPrice: string;
 }
 
-describe.only("Temple Stax Core Zaps", async () => {
+describe("Temple Stax Core Zaps", async () => {
   before(async () => {
     [owner, alice, alan] = await ethers.getSigners();
     ownerAddress = await owner.getAddress();
