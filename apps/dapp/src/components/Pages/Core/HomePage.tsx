@@ -18,6 +18,9 @@ import { ResponsiveImage } from 'styles/common';
 import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
 import animationData from 'assets/animations/logo-animation.json';
 
+import socialDiscordIcon from 'assets/images/social-discord.png';
+import socialDocsIcon from 'assets/images/social-docs.png';
+
 const REWARDS_IMAGE_HEIGHT = 322;
 const EARN_IMAGE_HEIGHT = 450;
 
@@ -48,20 +51,6 @@ const HomePage = () => {
             <SustainableYieldFarmingText>
               Sustainable yield farming for the passive investor
             </SustainableYieldFarmingText>
-            <ButtonGroup>
-              {isAboveMobile && (
-                <ButtonContainer>
-                  <Link to={'/dapp/trade'}>
-                    <StyledButton label={`Buy Now $`} isUppercase isSmall />
-                  </Link>
-                </ButtonContainer>
-              )}
-              <ButtonContainer>
-                <Link to={'/dapp/vaults'}>
-                  <StyledButton label={`Start Earning`} isUppercase isSmall showArrow />
-                </Link>
-              </ButtonContainer>
-            </ButtonGroup>
             <MetricsWrapper>
               {treasuryMetrics ? (
                 <MetricsWrapper>
@@ -69,6 +58,19 @@ const HomePage = () => {
                 </MetricsWrapper>
               ) : null}
             </MetricsWrapper>
+            <DiscoverText>Discover the Temple's inner workings:</DiscoverText>
+            <ButtonGroup>
+              <ResourcesButtonContainer>
+                <a href="https://templedao.medium.com/" target="_blank">
+                  <StyledButton leadingIcon={socialDocsIcon} label={`Resources and Tutorial`} isSmall />
+                </a>
+              </ResourcesButtonContainer>
+              <DiscordButtonContainer>
+                <a href="https://discord.gg/templedao" target="_blank">
+                  <StyledButton leadingIcon={socialDiscordIcon} label={`Discord`} isSmall />
+                </a>
+              </DiscordButtonContainer>
+            </ButtonGroup>
           </EarnBetterYieldsWrapper>
         </RowCell>
         <RowCell>
@@ -246,7 +248,7 @@ const SustainableYieldFarmingText = styled.h4`
   margin: 0 0 2em;
 
   ${breakpoints.tabletAndAbove(`
-    margin: 0 0 2.75em;
+    margin: 0 0 1em;
   `)}
 `;
 
@@ -282,7 +284,7 @@ const ButtonGroup = styled.div`
   align-items: center;
   justify-content: center;
   gap: 20px;
-  max-width: 24rem;
+  max-width: 25rem;
   width: 100%;
   margin: 0 auto 3rem;
 
@@ -320,9 +322,13 @@ const CircleBgWrapper = styled.div<CircleBgWrapperProps>`
     `}
 `;
 
-const ButtonContainer = styled.div`
-  width: 9.6875rem;
+const ResourcesButtonContainer = styled.div`
+  width: 18rem;
 `;
+
+const DiscordButtonContainer = styled.div`
+  width: 10rem;
+`
 
 const StyledButton = styled(Button)<ButtonProps>`
   width: 100%;
@@ -375,6 +381,11 @@ const MenuContainer = styled.div`
 
 const DAppButton = styled(Button)`
   width: 10rem;
+`;
+
+const DiscoverText = styled.span`
+  color: ${(props) => props.theme.palette.brand};
+  margin: 0 0 1rem;
 `;
 
 export default HomePage;

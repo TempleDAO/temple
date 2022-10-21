@@ -19,6 +19,7 @@ import {
   ErrorLabel,
 } from '../styles';
 import { ZERO } from 'utils/bigNumber';
+import { INITIAL_STATE } from '../constants';
 
 export const Trade = () => {
   const {
@@ -40,17 +41,13 @@ export const Trade = () => {
 
   const bigInputValue = getBigNumberFromString(state.inputValue || '0');
   
-  const isButtonDisabled =
-    !state.isSlippageTooHigh &&
-    (state.isTransactionPending ||
-      state.inputTokenBalance.eq(ZERO) ||
-      bigInputValue.gt(state.inputTokenBalance) ||
-      state.inputValue === '');
+  const isButtonDisabled = state.isTransactionPending || state.inputTokenBalance.eq(ZERO) ||bigInputValue.gt(state.inputTokenBalance) ||state.inputValue === '';
 
   return (
     <>
       <TransactionSettingsModal
         isOpen={isSlippageModalOpen}
+        defaultSlippage={INITIAL_STATE.slippageTolerance}
         onClose={() => setIsSlippageModalOpen(false)}
         onChange={(settings) => handleTxSettingsUpdate(settings)}
       />
@@ -82,7 +79,7 @@ export const Trade = () => {
         <Spacer />
         <CtaButton
           label={state.buttonLabel}
-          onClick={state.isSlippageTooHigh ? () => setIsSlippageModalOpen(true) : handleTransaction}
+          onClick={handleTransaction}
           disabled={isButtonDisabled}
         />
       </SwapContainer>

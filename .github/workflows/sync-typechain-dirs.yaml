@@ -1,0 +1,39 @@
+name: Sync Typechain Directories
+on:
+  pull_request:
+    branches:
+      - 'stage'
+      - 'core'
+    types: 
+      - closed
+    paths:
+      - 'protocol/contracts/**'
+
+jobs:
+  align_typechain_dir:
+    name: Sync Typechain Directories
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'yarn'
+      - name : Yarn Commands
+        run: |
+          yarn install
+          yarn compile
+        working-directory: protocol
+      - name : Sync Directories
+        run : |
+          rsync -avzh ./protocol/typechain ./apps/dapp/src/types/
+      - name: Setting up git 
+        run : |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+      - name: Pushing Automated Commit
+        run: |
+          git add ./apps/dapp/src/types/
+          git commit -m "Automated Action: Update Dapp Typechain Types"
+          git push

@@ -20,17 +20,7 @@ export const Footer = () => {
         <div>
           <h3 className={'margin-remove'}>TempleDAO</h3>
           <br />
-          <p>
-            In a world of volatility and stress, the Temple of long term
-            wealth creation is where disciples come to stake, sleep easy,
-            and chill.
-          </p>
-          <br />
-          <br />
-          <strong>
-            &copy; {new Date().getFullYear()} TempleDAO. All rights
-            reserved.
-          </strong>
+          <CopyrightStyled>&copy; {new Date().getFullYear()} TempleDAO. All rights reserved.</CopyrightStyled>
         </div>
         <FooterGrid>
           <Column>
@@ -38,62 +28,26 @@ export const Footer = () => {
             <ul>
               <li>
                 {/* TODO: add no refere for SEO  */}
-                <a
-                  href={'https://discord.gg/templedao'}
-                  target={'_blank'}
-                  rel="noreferrer"
-                >
-                  <Image
-                    src={socialDiscordIcon}
-                    alt={''}
-                    width={24}
-                    height={24}
-                  />
+                <a href={'https://discord.gg/templedao'} target={'_blank'} rel="noreferrer">
+                  <Image src={socialDiscordIcon} alt={''} width={24} height={24} />
                   <strong>Discord</strong>
                 </a>
               </li>
               <li>
-                <a
-                  href={'https://twitter.com/templedao'}
-                  target={'_blank'}
-                  rel="noreferrer"
-                >
-                  <Image
-                    src={socialTwitterIcon}
-                    alt={''}
-                    width={24}
-                    height={24}
-                  />
+                <a href={'https://twitter.com/templedao'} target={'_blank'} rel="noreferrer">
+                  <Image src={socialTwitterIcon} alt={''} width={24} height={24} />
                   <strong>Twitter</strong>
                 </a>
               </li>
               <li>
-                <a
-                  href={'https://t.me/TempleDAOcommunity'}
-                  target={'_blank'}
-                  rel="noreferrer"
-                >
-                  <Image
-                    src={socialTelegramIcon}
-                    alt={''}
-                    width={24}
-                    height={24}
-                  />
+                <a href={'https://t.me/TempleDAOcommunity'} target={'_blank'} rel="noreferrer">
+                  <Image src={socialTelegramIcon} alt={''} width={24} height={24} />
                   <strong>Telegram</strong>
                 </a>
               </li>
               <li>
-                <a
-                  href={'https://templecodex.link'}
-                  target={'_blank'}
-                  rel="noreferrer"
-                >
-                  <Image
-                    src={socialCodexIcon}
-                    alt={''}
-                    width={24}
-                    height={24}
-                  />
+                <a href={'https://templecodex.link'} target={'_blank'} rel="noreferrer">
+                  <Image src={socialCodexIcon} alt={''} width={24} height={24} />
                   <strong>Codex</strong>
                 </a>
               </li>
@@ -103,43 +57,20 @@ export const Footer = () => {
             <h4>Resources</h4>
             <ul>
               <li>
-                <a
-                  href={'https://docs.templedao.link/'}
-                  target={'_blank'}
-                  rel="noreferrer"
-                >
-                  <Image
-                    src={socialDocsIcon}
-                    alt={''}
-                    width={24}
-                    height={24}
-                  />
+                <a href={'https://docs.templedao.link/'} target={'_blank'} rel="noreferrer">
+                  <Image src={socialDocsIcon} alt={''} width={24} height={24} />
                   <strong>Docs</strong>
                 </a>
               </li>
               <li>
-                <a
-                  href={'https://templedao.medium.com/'}
-                  target={'_blank'}
-                  rel="noreferrer"
-                >
-                  <Image
-                    src={socialMediumIcon}
-                    alt={''}
-                    width={24}
-                    height={24}
-                  />
+                <a href={'https://templedao.medium.com/'} target={'_blank'} rel="noreferrer">
+                  <Image src={socialMediumIcon} alt={''} width={24} height={24} />
                   <strong>Medium</strong>
                 </a>
               </li>
               <li>
                 <a href={'mailto:templedao@protonmail.com'}>
-                  <Image
-                    src={socialMessageIcon}
-                    alt={''}
-                    width={24}
-                    height={24}
-                  />
+                  <Image src={socialMessageIcon} alt={''} width={24} height={24} />
                   <strong>Contact Us</strong>
                 </a>
               </li>
@@ -156,6 +87,10 @@ export const Footer = () => {
     </FooterStyled>
   );
 };
+
+const CopyrightStyled = styled.strong`
+  color: ${(props) => props.theme.palette.brand};
+`;
 
 const FooterStyled = styled.footer`
   padding: 1.75rem /* 28/16 */;
@@ -174,13 +109,13 @@ const Column = styled.div`
   display: flex;
   flex-direction: column;
   padding-right: 1rem;
-  
+
   &:last-of-type {
     padding-right: 0;
   }
 
   width: 50%;
-  
+
   ${phoneAndAbove(`
     width: calc(100% / 3);
   `)}

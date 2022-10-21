@@ -69,7 +69,6 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
     case 'changeTxSettings':
       return {
         ...state,
-        isSlippageTooHigh: false,
         slippageTolerance: action.value.slippageTolerance,
         deadlineMinutes: action.value.deadlineMinutes,
         buttonLabel: createButtonLabel(state.inputToken, state.outputToken, state.mode),
@@ -88,15 +87,8 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
     case 'txSuccess':
       return {
         ...state,
-        inputValue: state.isSlippageTooHigh ? state.inputValue : INITIAL_STATE.inputValue,
-        quoteValue: state.isSlippageTooHigh ? state.quoteValue : INITIAL_STATE.quoteValue,
-      };
-
-    case 'slippageTooHigh':
-      return {
-        ...state,
-        isSlippageTooHigh: true,
-        buttonLabel: 'INCREASE SLIPPAGE TOLERANCE',
+        inputValue: INITIAL_STATE.inputValue,
+        quoteValue: INITIAL_STATE.quoteValue,
       };
 
     case 'disableFraxSell':
