@@ -142,6 +142,7 @@ contract Vault is EIP712, Ownable, RebasingERC20 {
             return (0,false);
         }
 
+        // NOTE: dividing cycleNumber by periodDuration before multiplying again is the correct setup here, as it should be a discrete cycle.
         cycleNumber = (block.timestamp - firstPeriodStartTimestamp) / periodDuration;
         inWindow = cycleNumber * periodDuration + firstPeriodStartTimestamp + enterExitWindowDuration + ENTER_EXIT_WINDOW_BUFFER > block.timestamp;
     }
