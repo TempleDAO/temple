@@ -47,16 +47,20 @@ const Timing = () => {
                   <Cell $align="center">{formatTemple(vaultBalance.balance)} $T</Cell>
                   <Cell $align="center">{unlockValue}</Cell>
                   <Cell $align="center">
-                    <Link
-                      to={`/dapp/vaults/${vaultGroup!.id}/claim`}
-                      state={{
-                        earlyClaimSubvaultAddress: vault.id,
-                        isClaimingEarly: unlockValue !== 'now',
-                        earlyClaimAmount: vaultBalance.balance,
-                      }}
-                    >
-                      {vaultBalance.balance?.gt(ZERO) ? `Claim ${unlockValue !== 'now' ? 'Early' : ''}` : ' - '}
-                    </Link>
+                    {vaultBalance.balance?.gt(ZERO) ? (
+                      <Link
+                        to={`/dapp/vaults/${vaultGroup!.id}/claim`}
+                        state={{
+                          earlyClaimSubvaultAddress: vault.id,
+                          isClaimingEarly: unlockValue !== 'now',
+                          earlyClaimAmount: vaultBalance.balance,
+                        }}
+                      >
+                        {vaultBalance.balance?.gt(ZERO) ? `Claim ${unlockValue !== 'now' ? 'Early' : ''}` : ' - '}
+                      </Link>
+                    ) : (
+                      ' - '
+                    )}
                   </Cell>
                 </Row>
               );
