@@ -25,10 +25,11 @@ contract ElderElection is Ownable, EIP712 {
     using Counters for Counters.Counter;
     using SafeERC20 for IERC20;
 
-    /// @notice The NFT ids of the Templars that are candidates for the ElderElection
+    /// @notice The NFT ids (ie discord ids) of the Templars that are candidates for
+    /// the ElderElection
     mapping(uint256 => bool) public candidates;
 
-    /// @notice The number of actives candidates
+    /// @notice The number of active candidates
     uint256 public numCandidates;
 
     /// @notice endorsements by a given voter
@@ -75,7 +76,7 @@ contract ElderElection is Ownable, EIP712 {
     /**
      * @notice Update the hash root for temple roles.
      */
-    function setTemplarRolesMerklRoot(bytes32 _templarRolesHash) external onlyOwner {
+    function setTemplarRolesHash(bytes32 _templarRolesHash) external onlyOwner {
         templarRolesHash = _templarRolesHash;
         emit UpdateTemplarRolesHash(_templarRolesHash);
     }
@@ -103,7 +104,7 @@ contract ElderElection is Ownable, EIP712 {
           }
           candidates[discordId] = true;
           numCandidates += 1;
-          emit UpdateNomination(discordId, candidates[discordId]);
+          emit UpdateNomination(discordId, true);
         }
     }
 
@@ -128,7 +129,7 @@ contract ElderElection is Ownable, EIP712 {
         if (candidates[discordId]) {
           candidates[discordId] = false;
           numCandidates -= 1;
-          emit UpdateNomination(discordId, candidates[discordId]);
+          emit UpdateNomination(discordId, false);
         }
     }
 
