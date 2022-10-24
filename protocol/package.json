@@ -44,6 +44,7 @@
     "clean": "hardhat clean",
     "size": "hardhat size-contracts",
     "test": "NODE_ENV=test hardhat test",
+    "slither": "slither $PWD --triage-mode",
     "local-node": "hardhat node",
     "local-deploy": "hardhat run --network localhost scripts/local-dapp-dev/deploy.ts",
     "local-deploy-e2e-test": "env-cmd -f ../apps/dapp/.env.local hardhat run --network localhost scripts/local-dapp-dev/deploy.ts",
