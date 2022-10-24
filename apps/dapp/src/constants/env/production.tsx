@@ -97,7 +97,7 @@ const env: Environment = {
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
   featureFlags: {
-    enableAscend: true,
+    enableAscend: false,
   },
   posthog: {
     token: 'phc_pa9tsK76qoRqgsvMh9rDLtBKbOaawlwvJTLkcNDtxab',
