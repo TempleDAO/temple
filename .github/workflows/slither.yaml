@@ -3,7 +3,11 @@
 # fails with permission errors inside the docker container for this project
 
 name: Slither Analysis
-on: [push]
+on:
+  push:
+    paths:
+      - "protocol/**"
+      - ".github/workflows/slither.yaml"
 jobs:
   analyze:
     runs-on: ubuntu-latest
