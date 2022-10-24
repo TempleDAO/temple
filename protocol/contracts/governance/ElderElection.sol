@@ -14,10 +14,10 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
  *
  * @notice
  * The election runs "continuously" - timing for when the results are actually
- * actioned is handled at the social layer.
+ * actioned is handled at the social/policy layer.
  * 
- * Any address can vote by endorsing candidates. However endorsements from voters
- * who hold staked temple or who are temple team members carry have vote value.
+ * Any address can vote by endorsing candidates. However only endorsements from voters
+ * who hold staked temple or who are temple team members have vote value.
  *
  * EIP712 structured data signing supports 'gasless voting' via a relay
  */
@@ -25,8 +25,11 @@ contract ElderElection is Ownable, EIP712 {
     using Counters for Counters.Counter;
     using SafeERC20 for IERC20;
 
-    /// @notice The NFT ids of the Templars thar are candidates for the ElderElection
+    /// @notice The NFT ids of the Templars that are candidates for the ElderElection
     mapping(uint256 => bool) public candidates;
+
+    /// @notice The number of actives candidates
+    uint256 public numCandidates;
 
     /// @notice endorsements by a given voter
     mapping(address => uint256[]) public endorsementsBy;
@@ -40,9 +43,9 @@ contract ElderElection is Ownable, EIP712 {
     /// @notice Nomination fee amount (in feeToken)
     uint256 public nominationFee;
 
-    /// @notice root hash of off-chain merkle tree recording
-    /// temple roles ie :(discordId, maxTempleRole)
-    bytes32 public templarRolesMerkleRoot;
+    /// @notice root hash of off-chain data recording
+    /// temple roles ie :[(discordId, maxTempleRole)]
+    bytes32 public templarRolesHash;
 
     /// @notice Nonces used in relayed voting requests
     mapping(address => Counters.Counter) public _nonces;
@@ -66,23 +69,29 @@ contract ElderElection is Ownable, EIP712 {
      */
     function setNominationFee(uint256 _nominationFee) external onlyOwner {
         nominationFee = _nominationFee;
+        emit UpdateNominationFee(_nominationFee);
     }
 
     /**
-     * @notice Update the merkle tree root for temple roles.
+     * @notice Update the hash root for temple roles.
      */
-    function setTemplarRolesMerklRoot(bytes32 _templarRolesMerkleRoot) external onlyOwner {
-        templarRolesMerkleRoot = _templarRolesMerkleRoot;
+    function setTemplarRolesMerklRoot(bytes32 _templarRolesHash) external onlyOwner {
+        templarRolesHash = _templarRolesHash;
+        emit UpdateTemplarRolesHash(_templarRolesHash);
     }
 
     /**
      * @notice Nominate the given discord ID a candidate.
-     * @dev The given address must hold the NFT for the specified discord id
+     * @dev The sender must hold the NFT for the specified discord id
      */
-    function nominate(
+    function nominate(uint256 discordId) external {
+      nominate_(msg.sender, discordId);
+    }
+
+    function nominate_(
         address account,
         uint256 discordId
-    ) external {
+    ) internal {
         if (templars.ownerOf(discordId) != account) {
             revert NotFromTemplar(account, discordId);
         }
@@ -93,24 +102,32 @@ contract ElderElection is Ownable, EIP712 {
               nominationFeeToken.safeTransferFrom(account, address(this), nominationFee);
           }
           candidates[discordId] = true;
+          numCandidates += 1;
           emit UpdateNomination(discordId, candidates[discordId]);
         }
     }
 
     /**
      * @notice Remove the given discord ID as a candidate
-     * @dev The given address must hold the NFT for the specified discord id
+     * @dev The sender must hold the NFT for the specified discord id
      */
     function resign(
-        address account,
         uint256 discordId
     ) external {
+      resign_(msg.sender, discordId);
+    }
+
+    function resign_(
+        address account,
+        uint256 discordId
+    ) internal {
         if (templars.ownerOf(discordId) != account) {
             revert NotFromTemplar(account, discordId);
         }
 
         if (candidates[discordId]) {
           candidates[discordId] = false;
+          numCandidates -= 1;
           emit UpdateNomination(discordId, candidates[discordId]);
         }
     }
@@ -120,6 +137,10 @@ contract ElderElection is Ownable, EIP712 {
     }
 
     function _setEndorsements(address account, uint256[] memory discordIds) internal {
+        if (discordIds.length > numCandidates) {
+          revert TooManyEndorsements();
+        }
+
         endorsementsBy[account] = discordIds;
         emit UpdateEndorsements(account, discordIds);
     }
@@ -132,7 +153,7 @@ contract ElderElection is Ownable, EIP712 {
      */
     // TODO(butlerji): Need to test this works. The idea is I'd sign a message on mainnet, which gets sent to our backend, then sent to 
     //                 the mempool on whatever L2 we are running this on.
-    function relayedSetEndorsementsFor(address account, uint256[] memory discordIds, uint256 deadline, bytes calldata signature) public {
+    function relayedSetEndorsementsFor(address account, uint256[] memory discordIds, uint256 deadline, bytes calldata signature) external {
         if (block.timestamp > deadline) revert DeadlineExpired(deadline);
 
         bytes32 structHash = keccak256(abi.encode(TOGGLE_ENDORSEMENTS_FOR_TYPEHASH, account, discordIds, deadline, _useNonce(account)));
@@ -165,10 +186,12 @@ contract ElderElection is Ownable, EIP712 {
 
     event UpdateNomination(uint256 discordId, bool isNominated);
     event UpdateEndorsements(address account, uint256[] discordId);
+    event UpdateNominationFee(uint256 nominationFee);
+    event UpdateTemplarRolesHash(bytes32 templarRolesHash);
 
     error NotFromTemplar(address account, uint256 discordId);
     error NotCandidate(uint256 discordId);
-
+    error TooManyEndorsements();
 
     error DeadlineExpired(uint256 deadline);
     error InvalidSignature(address account);

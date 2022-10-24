@@ -4,6 +4,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
  * @title an NFT representing membership in the temple community.
@@ -70,7 +71,7 @@ contract Templar is ERC721, Ownable {
     }
 
     function tokenURI(uint256 discordId) public pure override returns (string memory) {
-        return string.concat("https://discordapp.com/users/", Strings.toString(discordId));
+        return string(abi.encodePacked("https://discordapp.com/users/", Strings.toString(discordId)));
     }
 
     error InvalidAddress(address addr);
