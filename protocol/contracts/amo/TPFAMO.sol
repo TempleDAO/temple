@@ -1,6 +1,7 @@
 pragma solidity ^0.8.4;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
@@ -420,43 +421,31 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
     
     // deposit BPT and stake using Aura Booster
     function depositAndStake(uint256 amount) external onlyOwner {
-        if (bptToken.balanceOf(address(this)) < amount) {
-            revert AMOErrors.InsufficientBPTAmount(amount);
-        }
-
-        bptToken.safeIncreaseAllowance(address(booster), amount);
-        // deposit and stake. poolId = 38
-        booster.deposit(auraPoolInfo.pId, amount, true);
+        _depositAndStake(amount);
     }
 
     function depositAllAndStake() external onlyOwner {
-        uint256 bptBalance = bptToken.balanceOf(address(this));
-        if (bptBalance == 0) {
-            revert AMOErrors.InsufficientBPTAmount(0);
-        }
-
-        bptToken.safeIncreaseAllowance(address(booster), bptBalance);
-        booster.depositAll(auraPoolInfo.pId, true);
+        _depositAllAndStake();
     }
 
     function withdrawAll(bool claim) external onlyOwner {
-        IBaseRewardPool(auraPoolInfo.rewards).withdrawAll(claim);
+       _withdrawAll(claim);
     }
 
     function withdraw(uint256 amount, bool claim) external onlyOwner {
-        IBaseRewardPool(auraPoolInfo.rewards).withdraw(amount, claim);
+        _withdraw(amount, claim);
     }
 
     function withdrawAndUnwrap(uint256 amount, bool claim) external onlyOwner {
-        IBaseRewardPool(auraPoolInfo.rewards).withdrawAndUnwrap(amount, claim);
+        _withdrawAndUnwrap(amount, claim);
     }
 
     function withdrawAllAndUnwrap(bool claim) external onlyOwner {
-        IBaseRewardPool(auraPoolInfo.rewards).withdrawAllAndUnwrap(claim);
+        _withdrawAllAndUnwrap(claim);
     }
 
     function getReward(bool claimExtras) external {
-        IBaseRewardPool(auraPoolInfo.rewards).getReward(address(this), claimExtras);
+        _getReward(claimExtras);
     }
 
 

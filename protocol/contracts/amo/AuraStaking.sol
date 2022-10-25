@@ -6,11 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IBaseRewardPool.sol";
 import "./interfaces/IAuraBooster.sol";
-import "./AMOErrors.sol";
+import "./helpers/AMOErrors.sol";
 
 abstract contract AuraStaking {
     using SafeERC20 for IERC20;
-    
+
     IERC20 public bptToken;
     AuraPoolInfo public auraPoolInfo;
     IAuraBooster public booster;
