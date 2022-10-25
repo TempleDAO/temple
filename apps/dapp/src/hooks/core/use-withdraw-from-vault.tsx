@@ -14,7 +14,7 @@ export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: C
   const { openNotification } = useNotification();
   const { optimisticallyUpdateVaultStaked } = useVaultContext();
 
-  const withdrawEarly = async (subvaultAddress: string, amount: BigNumber) => {
+  const withdrawEarly = async (subvaultAddress: string, amount: string) => {
     if (!signer || !wallet) {
       console.error(`
         Attempted to withdraw early from vault: ${env.contracts.vaultEarlyExit} without a valid signer.
@@ -22,13 +22,13 @@ export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: C
       return;
     }
 
+    const bigAmount = getBigNumberFromString(amount);
     const vaultEarlyWithdrawal = new VaultEarlyWithdraw__factory(signer).attach(env.contracts.vaultEarlyExit);
 
-    const receipt = await vaultEarlyWithdrawal.withdraw(subvaultAddress, amount, { gasLimit: 400000 });
-
+    const receipt = await vaultEarlyWithdrawal.withdraw(subvaultAddress, bigAmount, { gasLimit: 400000 });
     await receipt.wait();
 
-    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Decrease, amount);
+    optimisticallyUpdateVaultStaked(vaultContractAddress, Operation.Decrease, bigAmount);
 
     openNotification({
       title: 'Early withdraw success',

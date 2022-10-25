@@ -79,6 +79,12 @@ export const Claim = () => {
     }
   }, [earlyClaimState.isClaimingEarly, checkExitStatus]);
 
+  useEffect(() => {
+    if (earlyClaimState.isClaimingEarly) {
+      setAmount(formatBigNumber(earlyClaimState.earlyClaimAmount || ZERO));
+    }
+  }, []);
+
   const clearEarlyExitState = () => {
     setEarlyClaimState(EMPTY_EARLY_CLAIM_STATE);
   };
@@ -132,9 +138,8 @@ export const Claim = () => {
     }
   }, [error, earlyWithdrawError]);
 
-  const inputAmount = earlyClaimState.isClaimingEarly
-    ? formatBigNumber(earlyClaimState.earlyClaimAmount || ZERO)
-    : amount;
+  const isRegularClaimPossible = balance.lte(ZERO) || !canExit;
+  const isInputDisabled = isRegularClaimPossible && !earlyClaimState.isClaimingEarly;
 
   return (
     <VaultContent>
@@ -145,8 +150,8 @@ export const Claim = () => {
         handleChange={(value) => handleUpdateAmount(value.toString())}
         isNumber
         placeholder="0.00"
-        value={inputAmount}
-        disabled={balance.lte(ZERO) || !canExit || earlyClaimState.isClaimingEarly}
+        value={amount}
+        disabled={isInputDisabled}
       />
       {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
       {!!earlyWithdrawError && <ErrorLabel>{earlyWithdrawError.message || 'Something went wrong'}</ErrorLabel>}
@@ -159,7 +164,7 @@ export const Claim = () => {
           disabled={buttonIsDisabled}
           onClick={async () => {
             if (earlyClaimState.isClaimingEarly) {
-              await earlyWithdraw(earlyClaimState.earlyClaimSubvaultAddress, earlyClaimState.earlyClaimAmount || ZERO);
+              await earlyWithdraw(earlyClaimState.earlyClaimSubvaultAddress, amount);
               clearEarlyExitState();
             } else {
               await withdraw(amount);
