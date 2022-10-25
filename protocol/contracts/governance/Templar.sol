@@ -85,5 +85,5 @@ contract Templar is ERC721, Ownable, AccessControl {
     error InvalidAddress(address addr);
     error InvalidTemplar(uint256 discordId);
 
-    event UpdateTempleRole(uint256 discordId, string templeRole);
+    event UpdateTempleRole(uint256 indexed discordId, string templeRole);
 }

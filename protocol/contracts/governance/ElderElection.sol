@@ -81,11 +81,11 @@ contract ElderElection is EIP712, Ownable, AccessControl {
         }
     }
 
-    function setEndorsements(uint256[] memory discordIds) external {
+    function setEndorsements(uint256[] calldata discordIds) external {
         _setEndorsements(msg.sender, discordIds);
     }
 
-    function _setEndorsements(address account, uint256[] memory discordIds) internal {
+    function _setEndorsements(address account, uint256[] calldata discordIds) internal {
         if (discordIds.length > numCandidates) {
           revert TooManyEndorsements();
         }
@@ -95,17 +95,12 @@ contract ElderElection is EIP712, Ownable, AccessControl {
     }
 
     /**
-     * @notice Toggle the 
-     * (assuming the owner has given authority for the caller to act on their behalf)
-     *
-     * @dev amount is explicit, to allow use case of partial vault withdrawals
+     * @notice Set the endorsements for an account via relayed, signed request. 
      */
-    // TODO(butlerji): Need to test this works. The idea is I'd sign a message on mainnet, which gets sent to our backend, then sent to 
-    //                 the mempool on whatever L2 we are running this on.
-    function relayedSetEndorsementsFor(address account, uint256[] memory discordIds, uint256 deadline, bytes calldata signature) external {
+    function relayedSetEndorsementsFor(address account, uint256[] calldata discordIds, uint256 deadline, bytes calldata signature) external {
         if (block.timestamp > deadline) revert DeadlineExpired(deadline);
 
-        bytes32 structHash = keccak256(abi.encode(TOGGLE_ENDORSEMENTS_FOR_TYPEHASH, account, discordIds, deadline, _useNonce(account)));
+        bytes32 structHash = keccak256(abi.encode(SET_ENDORSEMENTS_FOR_TYPEHASH, account, discordIds, deadline, _useNonce(account)));
         bytes32 digest = _hashTypedDataV4(structHash);
         (address signer, ECDSA.RecoverError err) = ECDSA.tryRecover(digest, signature);
         if (err != ECDSA.RecoverError.NoError) {
@@ -133,10 +128,9 @@ contract ElderElection is EIP712, Ownable, AccessControl {
         nonce.increment();
     }
 
-    event UpdateNomination(uint256 discordId, bool isNominated);
-    event UpdateEndorsements(address account, uint256[] discordId);
+    event UpdateNomination(uint256 indexed discordId, bool isNominated);
+    event UpdateEndorsements(address indexed account, uint256[] discordId);
     event UpdateNominationFee(uint256 nominationFee);
-    event UpdateTemplarRolesHash(bytes32 templarRolesHash);
 
     error NotFromTemplar(address account, uint256 discordId);
     error NotCandidate(uint256 discordId);
@@ -145,5 +139,5 @@ contract ElderElection is EIP712, Ownable, AccessControl {
     error DeadlineExpired(uint256 deadline);
     error InvalidSignature(address account);
 
-    bytes32 public immutable TOGGLE_ENDORSEMENTS_FOR_TYPEHASH = keccak256("toggleEndorsementsFor(address account, uint256[] discordIds, uint256 deadline, uint256 nonce)");
+    bytes32 public immutable SET_ENDORSEMENTS_FOR_TYPEHASH = keccak256("setEndorsementsFor(address account, uint256[] discordIds, uint256 deadline, uint256 nonce)");
 }
