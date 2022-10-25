@@ -35,6 +35,7 @@ contract Templar is ERC721, Ownable, AccessControl {
      */
     function setBaseUri(string calldata _baseUri) external onlyOwner {
         baseUri = _baseUri;
+        emit BaseUriUpdated(baseUri);
     }
 
     /**
@@ -74,10 +75,6 @@ contract Templar is ERC721, Ownable, AccessControl {
         }
     }
 
-    function getTempleRole(uint256 discordId) public view returns (string memory) {
-        return templeRole[discordId];
-    }
-
     function _baseURI() internal view override returns (string memory) {
         return baseUri;
     }
@@ -85,5 +82,6 @@ contract Templar is ERC721, Ownable, AccessControl {
     error InvalidAddress(address addr);
     error InvalidTemplar(uint256 discordId);
 
+    event BaseUriUpdated(string baseUri);
     event UpdateTempleRole(uint256 indexed discordId, string templeRole);
 }
