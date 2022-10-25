@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./Templar.sol";
 
 /**
  * @title A contract recording voting in the election of temple elders.
@@ -17,11 +19,15 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
  * actioned is handled at the social/policy layer.
  * 
  * Any address can vote by endorsing candidates. However only endorsements from voters
- * who hold staked temple or who are temple team members have vote value.
+ * who hold temple (aka "token stakeholders") or who are temple team members (aka "impact
+ * stakeholders") have vote value.
  *
  * EIP712 structured data signing supports 'gasless voting' via a relay
  */
-contract ElderElection is Ownable, EIP712 {
+contract ElderElection is EIP712, Ownable, AccessControl {
+
+    bytes32 public constant CAN_NOMINATE = keccak256("CAN_NOMINATE");
+
     using Counters for Counters.Counter;
     using SafeERC20 for IERC20;
 
@@ -36,72 +42,26 @@ contract ElderElection is Ownable, EIP712 {
     mapping(address => uint256[]) public endorsementsBy;
 
     /// @notice the NFT contract for templars
-    ERC721 public templars;
-
-    /// @notice Token which nomination fee is charged in
-    IERC20 public immutable nominationFeeToken;
-
-    /// @notice Nomination fee amount (in feeToken)
-    uint256 public nominationFee;
-
-    /// @notice root hash of off-chain data recording
-    /// temple roles ie :[(discordId, maxTempleRole)]
-    bytes32 public templarRolesHash;
+    Templar public templars;
 
     /// @notice Nonces used in relayed voting requests
     mapping(address => Counters.Counter) public _nonces;
 
 
     constructor(
-        ERC721 _templars,
-        IERC20 _nominationFeeToken,
-        uint256 _nominationFee
+        Templar _templars
     ) EIP712("ElderElection", "1") {
         templars = _templars;
-        nominationFeeToken = _nominationFeeToken;
-        nominationFee = _nominationFee;
     }
 
-    /**
-     * @notice Change the nomination fee
-     * 
-     * Designed to be low, but a defense in depth to stop peeps putting up a nomination
-     * for the lolz.
-     */
-    function setNominationFee(uint256 _nominationFee) external onlyOwner {
-        nominationFee = _nominationFee;
-        emit UpdateNominationFee(_nominationFee);
-    }
-
-    /**
-     * @notice Update the hash root for temple roles.
-     */
-    function setTemplarRolesHash(bytes32 _templarRolesHash) external onlyOwner {
-        templarRolesHash = _templarRolesHash;
-        emit UpdateTemplarRolesHash(_templarRolesHash);
-    }
 
     /**
      * @notice Nominate the given discord ID a candidate.
-     * @dev The sender must hold the NFT for the specified discord id
      */
-    function nominate(uint256 discordId) external {
-      nominate_(msg.sender, discordId);
-    }
-
-    function nominate_(
-        address account,
-        uint256 discordId
-    ) internal {
-        if (templars.ownerOf(discordId) != account) {
-            revert NotFromTemplar(account, discordId);
-        }
+    function nominate(uint256 discordId) external onlyRole(CAN_NOMINATE) {
+        templars.checkExists(discordId);
 
         if (!candidates[discordId]) {
-
-          if (nominationFee > 0) {
-              nominationFeeToken.safeTransferFrom(account, address(this), nominationFee);
-          }
           candidates[discordId] = true;
           numCandidates += 1;
           emit UpdateNomination(discordId, true);
@@ -110,21 +70,9 @@ contract ElderElection is Ownable, EIP712 {
 
     /**
      * @notice Remove the given discord ID as a candidate
-     * @dev The sender must hold the NFT for the specified discord id
      */
-    function resign(
-        uint256 discordId
-    ) external {
-      resign_(msg.sender, discordId);
-    }
-
-    function resign_(
-        address account,
-        uint256 discordId
-    ) internal {
-        if (templars.ownerOf(discordId) != account) {
-            revert NotFromTemplar(account, discordId);
-        }
+    function resign(uint256 discordId) external onlyRole(CAN_NOMINATE) {
+        templars.checkExists(discordId);
 
         if (candidates[discordId]) {
           candidates[discordId] = false;
