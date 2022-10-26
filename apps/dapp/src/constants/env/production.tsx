@@ -19,6 +19,7 @@ const env: Environment = {
     teamPaymentsEpoch3: '0xf86C2dbD16F05E86bFf72cE89B3C2915812E92D0',
     teamPaymentsEpoch4: '0x07888e0a8929eb922Aee5930f7B0894BaB5D8120',
     teamPaymentsEpoch5: '0xc52101f2e278a316c70cc233486bce1863606920',
+    teamPaymentsEpoch6: '0xb6af7ba3404ff8f260646b2c66ab4e2db444ee61',
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
     templeV2FraxPair: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
@@ -27,6 +28,7 @@ const env: Environment = {
     treasuryIv: '0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443',
     vaultOps: '0x65fE8BaBF7DA367b2B45cBD748F0490713f84828',
     vaultProxy: '0x6f5bB7cC4F3D6628d0095545552757AB377FE15C',
+    vaultEarlyExit: '0x7C6f1b4891ff8CAcCeC97DbbD9Df3b773d88A03E',
   },
   fraxSellDisabledIvMultiple: 1.02,
   gas: {
@@ -96,7 +98,7 @@ const env: Environment = {
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
   featureFlags: {
-    enableAscend: true,
+    enableAscend: false,
   },
   posthog: {
     token: 'phc_pa9tsK76qoRqgsvMh9rDLtBKbOaawlwvJTLkcNDtxab',

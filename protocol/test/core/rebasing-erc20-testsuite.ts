@@ -148,7 +148,7 @@ export const mkRebasingERC20TestSuite = (setup: () => Promise<RebasingERC20TestS
       const [[alan, _1], [ben, _2]] = accounts;
 
       await expect(token.transferFrom(await alan.getAddress(), await ben.getAddress(), 111))
-        .to.be.revertedWith("ERC20: transfer amount exceeds allowance");
+        .to.be.revertedWith("ERC20: insufficient allowance");
 
       await token.connect(alan).approve(await ben.getAddress(), 111);
 

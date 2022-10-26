@@ -7,8 +7,6 @@ import {
   BigNumberish,
   BytesLike,
   CallOverrides,
-  ContractTransaction,
-  Overrides,
   PopulatedTransaction,
   Signer,
   utils,
@@ -20,15 +18,18 @@ import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 export interface IVaultInterface extends utils.Interface {
   contractName: "IVault";
   functions: {
-    "depositFor(address,uint256)": FunctionFragment;
+    "toTokenAmount(uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: "depositFor",
-    values: [string, BigNumberish]
+    functionFragment: "toTokenAmount",
+    values: [BigNumberish]
   ): string;
 
-  decodeFunctionResult(functionFragment: "depositFor", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "toTokenAmount",
+    data: BytesLike
+  ): Result;
 
   events: {};
 }
@@ -61,42 +62,37 @@ export interface IVault extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
-    depositFor(
-      _account: string,
-      _amount: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
+    toTokenAmount(
+      sharesAmount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber] & { tokenAmount: BigNumber }>;
   };
 
-  depositFor(
-    _account: string,
-    _amount: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
+  toTokenAmount(
+    sharesAmount: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
   callStatic: {
-    depositFor(
-      _account: string,
-      _amount: BigNumberish,
+    toTokenAmount(
+      sharesAmount: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<void>;
+    ): Promise<BigNumber>;
   };
 
   filters: {};
 
   estimateGas: {
-    depositFor(
-      _account: string,
-      _amount: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
+    toTokenAmount(
+      sharesAmount: BigNumberish,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    depositFor(
-      _account: string,
-      _amount: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
+    toTokenAmount(
+      sharesAmount: BigNumberish,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };
 }

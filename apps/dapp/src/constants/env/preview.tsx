@@ -19,6 +19,7 @@ const env: Environment = {
     teamPaymentsEpoch3: '',
     teamPaymentsEpoch4: '',
     teamPaymentsEpoch5: '',
+    teamPaymentsEpoch6: '',
     temple: '0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf',
     templeStaking: '0x20Ab503De9859eecB22EaB0ddEc9Bcd8bAFB876C',
     templeV2FraxPair: '0x85dA8c4312742522519911052Fa2B4aC302E4d6c',
@@ -27,6 +28,7 @@ const env: Environment = {
     treasuryIv: '0xA443355cE4F9c1AA6d68e057a962E86E071B0ed3',
     vaultOps: '0x542891Faf336d69E440De80145Df21510dCa6a78',
     vaultProxy: '0xb0043346da58ce01EaE3246664Cb5984f75adC1b',
+    vaultEarlyExit: '0x7Edb6ea1A90318E9D2B3Ae03e5617A5AAFd7b249',
   },
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-goerli',

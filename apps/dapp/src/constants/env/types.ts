@@ -20,6 +20,7 @@ interface Contracts {
   teamPaymentsEpoch3: string;
   teamPaymentsEpoch4: string;
   teamPaymentsEpoch5: string;
+  teamPaymentsEpoch6: string;
   temple: string;
   templeStaking: string;
   templeV2FraxPair: string;
@@ -28,6 +29,7 @@ interface Contracts {
   treasuryIv: string;
   vaultOps: string;
   vaultProxy: string;
+  vaultEarlyExit: string;
 }
 
 interface Gas {

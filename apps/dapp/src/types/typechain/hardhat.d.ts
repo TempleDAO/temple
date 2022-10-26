@@ -161,6 +161,14 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Vault__factory>;
     getContractFactory(
+      name: "IVault",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IVault__factory>;
+    getContractFactory(
+      name: "VaultEarlyWithdraw",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.VaultEarlyWithdraw__factory>;
+    getContractFactory(
       name: "VaultedTemple",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.VaultedTemple__factory>;
@@ -450,6 +458,16 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Vault>;
+    getContractAt(
+      name: "IVault",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IVault>;
+    getContractAt(
+      name: "VaultEarlyWithdraw",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.VaultEarlyWithdraw>;
     getContractAt(
       name: "VaultedTemple",
       address: string,
