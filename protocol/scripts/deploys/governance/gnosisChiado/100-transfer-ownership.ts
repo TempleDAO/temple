@@ -8,8 +8,8 @@ import {
     getDeployedContracts,
 } from '../contract-addresses';
 import {
-  ensureExpectedEnvvars,
-  mine,
+    ensureExpectedEnvvars,
+    mine,
 } from '../../helpers';
 
 async function main() {
@@ -24,7 +24,7 @@ async function main() {
     // Then revoke from the existing owner.
     {
       const ownerRole = await templarNft.OWNER();
-      const adminRole = await templarNft.getRoleAdmin(ownerRole);
+      const adminRole = await templarNft.DEFAULT_ADMIN_ROLE();
       await mine(templarNft.grantRole(ownerRole, DEPLOYED.MULTISIG));
       await mine(templarNft.grantRole(adminRole, DEPLOYED.MULTISIG));
       await mine(templarNft.revokeRole(ownerRole, await owner.getAddress()));
@@ -32,8 +32,7 @@ async function main() {
     }
     
     {
-      const nominateRole = await elderElection.CAN_NOMINATE();
-      const adminRole = await elderElection.getRoleAdmin(nominateRole);
+      const adminRole = await elderElection.DEFAULT_ADMIN_ROLE();
       await mine(elderElection.grantRole(adminRole, DEPLOYED.MULTISIG));
       await mine(elderElection.revokeRole(adminRole, await owner.getAddress()));
     }
