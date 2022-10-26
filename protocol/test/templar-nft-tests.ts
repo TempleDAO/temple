@@ -1,9 +1,8 @@
-import { ethers, network } from "hardhat";
-import { ContractFactory, Signer } from "ethers";
+import { ethers } from "hardhat";
+import { Signer } from "ethers";
 import { expect } from "chai";
 
 import { Templar } from "../typechain/Templar";
-import { shouldThrow } from "./helpers";
 import { Templar__factory } from "../typechain/factories/Templar__factory";
 
 const DISCORD_ID = 1000;
@@ -24,6 +23,11 @@ describe("Templar NFT", async () => {
     const canAssignRole: string  = await TEMPLAR.CAN_ASSIGN();
     await TEMPLAR.grantRole(canAssignRole, assignerAddress);
   })
+
+  it("Only owner can grant roles", async () => {    
+    await expect(TEMPLAR.connect(amanda).grantRole(await TEMPLAR.CAN_ASSIGN(), await amanda.getAddress()))
+      .to.be.revertedWith("AccessControl:");
+  });
 
   it("Only owner can setBaseUri", async () => {
 
