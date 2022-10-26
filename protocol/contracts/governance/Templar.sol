@@ -3,7 +3,6 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
  * @title an NFT representing membership in the temple community.
@@ -45,10 +44,6 @@ contract Templar is ERC721, AccessControl {
      * address. 
      * 
      * This will either mint the NFT (if it doesn't exist), or transfer it.
-     *
-     * This method will be called by the discord bot when it is DM'd with a
-     * request of the form:
-                         /!claim_gov_nft <ADDR>
      */
     function assign( 
         address account,
