@@ -2,7 +2,6 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -11,8 +10,9 @@ import "@openzeppelin/contracts/utils/Strings.sol";
  *
  * It exists as on chain proof that an account owns a discord id.
  */
-contract Templar is ERC721, Ownable, AccessControl {
+contract Templar is ERC721, AccessControl {
 
+    bytes32 public constant OWNER = keccak256("OWNER");
     bytes32 public constant CAN_ASSIGN = keccak256("CAN_ASSIGN");
 
     string public baseUri = "https://discordapp.com/users/";
@@ -21,6 +21,8 @@ contract Templar is ERC721, Ownable, AccessControl {
     mapping(uint256 => string) public templeRole;
 
     constructor() ERC721("Templar", "TEMPLAR") {
+        _grantRole(OWNER, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, AccessControl) returns (bool) {
@@ -33,7 +35,7 @@ contract Templar is ERC721, Ownable, AccessControl {
     /**
      *  Update the base URI for tokens.
      */
-    function setBaseUri(string calldata _baseUri) external onlyOwner {
+    function setBaseUri(string calldata _baseUri) external onlyRole(OWNER) {
         baseUri = _baseUri;
         emit BaseUriUpdated(baseUri);
     }
