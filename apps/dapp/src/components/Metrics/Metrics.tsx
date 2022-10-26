@@ -25,21 +25,16 @@ const Metrics = ({ treasuryMetrics, isHome, alignCenter }: MetricsProps) => {
   return (
     <Wrapper>
       <ApyWrapper>
-        <Apy
-          cryptoName={'$TEMPLE'}
-          value={`$${formatNumber(templeValue)}`}
-          isHome={isHome}
-          alignCenter={alignCenter}
-        />
+        <Apy cryptoName={'$TEMPLE'} value={`$${formatNumber(templeValue)}`} isHome={isHome} alignCenter={alignCenter} />
       </ApyWrapper>
-      <ApyWrapper>
+      {/* <ApyWrapper>
         <Apy
           cryptoName={'vAPY'}
           value={`${formatNumber(dynamicApy)}%`}
           isHome={isHome}
           alignCenter={alignCenter}
         />
-      </ApyWrapper>
+      </ApyWrapper> */}
       <ApyWrapper>
         <Apy
           cryptoName={'Treasury'}
