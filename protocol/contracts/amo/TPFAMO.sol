@@ -32,12 +32,12 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
     IERC20 public immutable temple;
     IERC20 public immutable stable;
 
+    // TODO: get params (view function) grouped
     uint64 internal lastRebalanceTimeSecs;
     uint64 internal cooldownSecs;
 
     // @notice Capped size rebalancing. To safely increase/reduce capped amounts when rebalancing
-    uint256 internal cappedRebalancingAmount;
-    CappedRebalancingAmounts internal cappedRebalanceAmounts;
+    CappedRebalancingAmounts public cappedRebalanceAmounts;
     
     // @notice Used to track and control by how much successive rebalancing amounts increase/decrease
     uint256 internal lastRebalanceUpTempleAmount;
@@ -71,10 +71,14 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
     }
 
     event RecoveredToken(address, address, uint256);
-    event OperatorSet(address);
+    event SetOperator(address);
     event SetPostRebalanceSlippage(uint64, uint64);
     event SetCooldown(uint64);
-
+    event SetBalancerPoolId(bytes32);
+    event SetAuraPoolInfo(uint32, address, address);
+    event SetAuraBooster(address);
+    event SetTemplePriceFloorRatio(uint128, uint128);
+    event SetRebalanceRateChange(uint256);
 
     constructor(
         address _balancerVault,
@@ -99,6 +103,8 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
 
     function setBalancerPoolId(bytes32 _poolId) external onlyOwner {
         balancerPoolId = _poolId;
+
+        emit SetBalancerPoolId(_poolId);
     }
 
     // (re)set last rebalance amounts for rebalanceUp and rebalanceDown
@@ -109,8 +115,8 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
     }
 
     function setPostRebalanceSlippage(uint64 upSlippage, uint64 downSlippage) external onlyOwner {
-        // max 10%
-        if (upSlippage >= 1_000 || downSlippage >= 1_000) {
+        // max 5%
+        if (upSlippage >= 500 || downSlippage >= 500) {
             revert AMOErrors.InvalidBPSValue(upSlippage);
         }
         if (postRebalanceTPFSlippageUp != upSlippage) {
@@ -123,14 +129,10 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
         emit SetPostRebalanceSlippage(upSlippage, downSlippage);
     }
 
-    /**
+     /**
      * @notice Set capped amount when rebalancing
-     * @param _amount New capped amount
+     * @param _capped New capped amounts
      */
-    function setCappedRebalancingAmount(uint256 _amount) external onlyOwner {
-        cappedRebalancingAmount = _amount;
-    }
-
     function setCappedRebalanceAmounts(CappedRebalancingAmounts calldata _capped) external onlyOwner {
         cappedRebalanceAmounts.temple = _capped.temple;
         cappedRebalanceAmounts.bpt = _capped.bpt;
@@ -142,11 +144,15 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
             revert AMOErrors.InvalidBPSValue(_numerator);
         }
         rebalanceRateChangeNumerator = _numerator;
+
+        emit SetRebalanceRateChange(_numerator);
     }
 
     function setTemplePriceFloorRatio(uint128 _numerator) external onlyOwner {
         templePriceFloorRatio.numerator = _numerator;
         templePriceFloorRatio.denominator = uint128(TPF_PRECISION);
+
+        emit SetTemplePriceFloorRatio(_numerator, uint128(TPF_PRECISION));
     }
 
     /**
@@ -156,7 +162,7 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
     function setOperator(address _operator) external onlyOwner {
         operator = _operator;
 
-        emit OperatorSet(_operator);
+        emit SetOperator(_operator);
     }
 
     function setCoolDown(uint64 _seconds) external onlyOwner {
@@ -168,12 +174,16 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
     /// has a shutdown system. so if that happens
     function setAuraBooster(IAuraBooster _booster) external onlyOwner {
         booster = _booster;
+
+        emit SetAuraBooster(address(_booster));
     }
 
     function setAuraPoolInfo(uint32 _pId, address _token, address _rewards) external onlyOwner {
         auraPoolInfo.pId = _pId;
         auraPoolInfo.token = _token;
         auraPoolInfo.rewards = _rewards;
+
+        emit SetAuraPoolInfo(_pId, _token, _rewards);
     }
 
     // @notice pause AMO
@@ -261,13 +271,14 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
         ITempleERC20Token(address(temple)).burn(burnAmount);
 
         // update lastRebalanceAmountUp
-        lastRebalanceUpTempleAmount = getMax(lastRebalanceUpTempleAmount, bptAmountIn);
+        lastRebalanceUpTempleAmount = _getMax(lastRebalanceUpTempleAmount, bptAmountIn);
 
         // revert if rebalance took price significantly above TPF
         (, balances, ) = balancerVault.getPoolTokens(balancerPoolId);
         if (isSpotPriceAboveTPF(balances, postRebalanceTPFSlippageUp)) {
             revert AMOErrors.HighSlippage();
         }
+        lastRebalanceTimeSecs = uint64(block.timestamp);
     }
 
      /**
@@ -330,7 +341,7 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
 
         // update rebalanceDown amount
         // use max of current amount and last updated
-        lastRebalanceDownAmount = getMax(lastRebalanceDownAmount, templeAmountIn);
+        lastRebalanceDownAmount = _getMax(lastRebalanceDownAmount, templeAmountIn);
 
         // revert if rebalance took price significantly above TPF
         (, balances, ) = balancerVault.getPoolTokens(balancerPoolId);
@@ -338,10 +349,12 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
             revert AMOErrors.HighSlippage();
         }
 
-        // deposit BPT on Aura
+        // todo: deposit BPT on Aura
         if (depositBpt) {
 
         }
+
+        lastRebalanceTimeSecs = uint64(block.timestamp);
     }
 
     // Single-side deposit stable
@@ -380,7 +393,8 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
 
         // update last rebalanceUp amount
         // using max of current amount and last updated
-        lastRebalanceUpstableAmount = getMax(lastRebalanceUpstableAmount, amountIn);
+        lastRebalanceUpstableAmount = _getMax(lastRebalanceUpstableAmount, amountIn);
+        lastRebalanceTimeSecs = uint64(block.timestamp);
     }
 
     // Single-side withdraw stable
@@ -416,7 +430,8 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
             revert AMOErrors.InsufficientAmountOutPostcall(stableBalanceBefore + minAmountOut, stableBalanceAfter);
         }
 
-        lastRebalanceDownAmount = getMax(lastRebalanceDownAmount, bptAmountIn);
+        lastRebalanceDownAmount = _getMax(lastRebalanceDownAmount, bptAmountIn);
+        lastRebalanceTimeSecs = uint64(block.timestamp);
     }
     
     // deposit BPT and stake using Aura Booster
@@ -595,8 +610,7 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
 
     function removeLiquidity(
         IBalancerVault.ExitPoolRequest memory request,
-        uint256 bptIn,
-        uint256[] memory amountsOut // ? these are in request
+        uint256 bptIn
     ) external onlyOwner {
         // validate request
         if (request.assets.length != request.minAmountsOut.length || 
@@ -645,24 +659,8 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
         }
     }
 
-    function getCappedRebalancingAmount() external view returns (uint256) {
-        return cappedRebalancingAmount;
-    }
-
-    function showPositions() external view returns (AMOPositions memory) {
-
-    }
-
-    function getMax(uint256 a, uint256 b) internal pure returns (uint256 maxValue) {
-        if (a < b) {
-            maxValue = b;
-        } else {
-            maxValue = a;
-        }
-    }
-
     modifier enoughCooldown {
-        if (lastRebalanceTimeSecs + cooldownSecs <= block.timestamp) {
+        if (lastRebalanceTimeSecs != 0 && lastRebalanceTimeSecs + cooldownSecs <= block.timestamp) {
             revert AMOErrors.NotEnoughCooldown();
         }
         _;

@@ -77,6 +77,18 @@ abstract contract PoolHelper {
         return false;
     }
 
+    function _getMax(uint256 a, uint256 b) internal pure returns (uint256 maxValue) {
+        // if (a < b) {
+        //     maxValue = b;
+        // } else {
+        //     maxValue = a;
+        // }
+        assembly {
+            if lt(a, b) { maxValue := b }
+            if iszero(maxValue) { maxValue := a }
+        }
+    }
+
     function _enoughBalance(address token, address balanceOwner, uint256 amount) private view returns (bool isEnough) {
         // assembly {
         //     mstore(calldatasize(), 0x00000033)

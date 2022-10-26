@@ -12,30 +12,6 @@ interface IBalancerVault {
     bool fromInternalBalance;
   }
 
-  struct SingleSwap {
-    bytes32 poolId;
-    SwapKind kind;
-    IERC20 assetIn;
-    IERC20 assetOut;
-    uint256 amount;
-    bytes userData;
-  }
-
-  struct BatchSwapStep {
-    bytes32 poolId;
-    uint256 assetInIndex;
-    uint256 assetOutIndex;
-    uint256 amount;
-    bytes userData;
-  }
-
-  struct FundManagement {
-    address sender;
-    bool fromInternalBalance;
-    address payable recipient;
-    bool toInternalBalance;
-  }
-
   struct ExitPoolRequest {
     address[] assets;
     uint256[] minAmountsOut;
@@ -43,20 +19,12 @@ interface IBalancerVault {
     bool toInternalBalance;
   }
 
-  enum SwapKind { GIVEN_IN, GIVEN_OUT }
   enum JoinKind { 
     INIT, 
     EXACT_TOKENS_IN_FOR_BPT_OUT, 
     TOKEN_IN_FOR_EXACT_BPT_OUT, 
     ALL_TOKENS_IN_FOR_EXACT_BPT_OUT 
   }
-
-  function swap(
-      SingleSwap memory singleSwap,
-      FundManagement memory funds,
-      uint256 limit,
-      uint256 deadline
-  ) external payable returns (uint256 amountCalculated);
 
   function joinPool(
       bytes32 poolId,
@@ -80,11 +48,4 @@ interface IBalancerVault {
       uint256[] memory balances,
       uint256 lastChangeBlock
   );
-
-  function queryBatchSwap(
-    SwapKind kind,
-    BatchSwapStep[] memory swaps,
-    IERC20[] memory assets,
-    FundManagement memory funds
-  ) external view returns (int256[] memory);
 }
