@@ -84,4 +84,21 @@ describe("Templar NFT", async () => {
     expect(await TEMPLAR.templeRole(DISCORD_ID)).to.eq("initiate");
     expect(await TEMPLAR.tokenURI(DISCORD_ID)).to.eq("https://discordapp.com/users/1000");
   });
+
+
+  it("Updating the baseUri works as expected", async () => {
+
+    const amandaAddress: string = await amanda.getAddress();
+
+    const DISCORD_ID = 1000;
+    const TEMPLE_ROLE = "acolyte";
+    const templar = TEMPLAR.connect(assigner);
+    await (await templar.assign(amandaAddress, DISCORD_ID, TEMPLE_ROLE)).wait();
+    expect(await TEMPLAR.tokenURI(DISCORD_ID)).to.eq("https://discordapp.com/users/1000");
+
+    (await TEMPLAR.setBaseUri("https://temple.dao/users/")).wait();
+
+    expect(await TEMPLAR.tokenURI(DISCORD_ID)).to.eq("https://temple.dao/users/1000");
+  });
+
 });
