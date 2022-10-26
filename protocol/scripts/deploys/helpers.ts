@@ -4,6 +4,7 @@ import {
   BigNumber,
   ContractFactory,
   ContractTransaction,
+  Signer,
 } from 'ethers';
 
 export interface DeployedContracts {
@@ -246,6 +247,8 @@ const expectedEnvvars: { [key: string]: string[] } = {
   rinkeby: ['RINKEBY_ADDRESS_PRIVATE_KEY', 'RINKEBY_RPC_URL'],
   goerli: ['GOERLI_ADDRESS_PRIVATE_KEY', 'GOERLI_RPC_URL'],
   matic: ['MATIC_ADDRESS_PRIVATE_KEY', 'MATIC_RPC_URL'],
+  gnosis: ['GNOSIS_ADDRESS_PRIVATE_KEY', 'GNOSIS_RPC_URL'],
+  gnosisChiado: ['GNOSIS_CHIADO_ADDRESS_PRIVATE_KEY', 'GNOSIS_CHIADO_RPC_URL'],
   localhost: [],
 };
 
@@ -264,4 +267,13 @@ export function ensureExpectedEnvvars() {
   if (!hasAllExpectedEnvVars) {
     throw new Error(`Expected envvars missing`);
   }
+}
+
+// Impersonate an address and run fn(signer), then stop impersonating.
+export async function impersonateSigner(address: string): Promise<Signer> {
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [address],
+  });
+  return await ethers.getSigner(address);
 }
