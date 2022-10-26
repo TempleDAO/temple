@@ -97,6 +97,8 @@ describe("Elder Election", async () => {
     await expect(ELDER_ELECTION.connect(ben).setEndorsements([DISCORD_ID_1,DISCORD_ID_2,DISCORD_ID_3]))
     .to.be.revertedWith("TooManyEndorsements");
   });
-
+  
+  // TODO
+  // tests for relayedSetEndorsementsFor()
 
 });
