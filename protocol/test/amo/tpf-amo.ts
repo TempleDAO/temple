@@ -1,5 +1,5 @@
 import { ethers, network } from "hardhat";
-import { expect } from "chai";
+import { expect, should } from "chai";
 import { toAtto, shouldThrow, mineForwardSeconds } from "../helpers";
 import { BigNumber, Signer } from "ethers";
 import addresses from "../constants";
@@ -13,7 +13,9 @@ import {
   IBalancerVault,
   IBalancerVault__factory,
   IBalancerHelpers,
-  IBalancerHelpers__factory
+  IBalancerHelpers__factory,
+  AuraStaking__factory,
+  AuraStaking
 } from "../../typechain";
 import { DEPLOYED_CONTRACTS } from '../../scripts/deploys/helpers';
 
@@ -34,6 +36,7 @@ const TEMPLE_WHALE = "0xf6C75d85Ef66d57339f859247C38f8F47133BD39";
 
 describe.only("Temple Price Floor AMO", async () => {
     let amo: TPFAMO;
+    let amoStaking: AuraStaking;
     let owner: Signer;
     let alan: Signer;
     let operator: Signer;
@@ -72,36 +75,45 @@ describe.only("Temple Price Floor AMO", async () => {
 
         balancerVault = IBalancerVault__factory.connect(BALANCER_VAULT, owner);
         balancerHelpers = IBalancerHelpers__factory.connect(BALANCER_HELPERS, owner);
+
+        amoStaking = await new AuraStaking__factory(owner).deploy(
+            ownerAddress,
+            TEMPLE_DAI_LP_TOKEN,
+            AURA_BOOSTER,
+            AURA_DEPOSIT_TOKEN
+        );
     
         amo = await new TPFAMO__factory(owner).deploy(
             BALANCER_VAULT,
             TEMPLE,
             DAI,
-            MULTISIG,
             TEMPLE_DAI_LP_TOKEN,
+            amoStaking.address,
             AURA_BOOSTER,
             200
         );
 
         // set params
         await amo.setBalancerPoolId(BALANCER_POOL_ID);
-        //await amo.setAuraBooster(AURA_BOOSTER);
-        await amo.setAuraPoolInfo(PID, AURA_DEPOSIT_TOKEN, REWARDS);
-        await amo.setOperator(alanAddress);
+        await amo.setAuraBooster(AURA_BOOSTER);
+        await amoStaking.setAuraPoolInfo(PID, AURA_DEPOSIT_TOKEN, REWARDS);
+        await amo.setOperator(ownerAddress);
         await amo.setCoolDown(1800); // 30 mins
         await amo.setTemplePriceFloorRatio(9700);
         await amo.setRebalanceRateChangeNumerator(300); // 3%
         const cappedAmounts = {
-            temple: BigNumber.from(100),
-            bpt: BigNumber.from(100),
-            stable: BigNumber.from(100)
+            temple: BigNumber.from(ONE_ETH).mul(10),
+            bpt: BigNumber.from(ONE_ETH).mul(10),
+            stable: BigNumber.from(ONE_ETH).mul(10)
         }
         await amo.setCappedRebalanceAmounts(cappedAmounts);
         await amo.setPostRebalanceSlippage(100, 100); // 1%
         await amo.setLastRebalanceAmounts(ONE_ETH, ONE_ETH, ONE_ETH); // start with 1 eth
-
+        await amo.setTempleIndexInBalancerPool();
         await templeToken.transfer(MULTISIG, ethers.utils.parseEther("100"));
 
+        // add amo as TEMPLE minter
+        await templeToken.connect(templeMultisig).addMinter(amo.address);
     });
 
     describe("Admin", async () => {
@@ -121,36 +133,43 @@ describe.only("Temple Price Floor AMO", async () => {
             // fails
             const connectAMO = amo.connect(alan);
             await shouldThrow(connectAMO.setBalancerPoolId(BALANCER_POOL_ID), /Ownable: caller is not the owner/);
-            await shouldThrow(connectAMO.setAuraPoolInfo(PID, AURA_DEPOSIT_TOKEN, REWARDS), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.setOperator(alanAddress), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.setCoolDown(1800), /Ownable: caller is not the owner/); // 30 mins
             await shouldThrow(connectAMO.setTemplePriceFloorRatio(9700), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.setRebalanceRateChangeNumerator(300), /Ownable: caller is not the owner/); // 3%
             const cappedAmounts = {
-                temple: BigNumber.from(100),
-                bpt: BigNumber.from(100),
-                stable: BigNumber.from(100)
+                temple: BigNumber.from(ONE_ETH).mul(10),
+                bpt: BigNumber.from(ONE_ETH).mul(10),
+                stable: BigNumber.from(ONE_ETH).mul(10)
             }
             await shouldThrow(connectAMO.setCappedRebalanceAmounts(cappedAmounts), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.setPostRebalanceSlippage(100, 100), /Ownable: caller is not the owner/); // 1%
             await shouldThrow(connectAMO.setLastRebalanceAmounts(ONE_ETH, ONE_ETH, ONE_ETH), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.togglePause(), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.recoverToken(TEMPLE , alanAddress, 100), /Ownable: caller is not the owner/);
-            await shouldThrow(connectAMO.rebalanceDown(100, 1, true), /NotOperatorOrOwner/);
-            await shouldThrow(connectAMO.rebalanceUp(100, 1),/NotOperatorOrOwner/);
+            await shouldThrow(connectAMO.rebalanceDown(ONE_ETH, 1, true), /NotOperatorOrOwner/);
+            await shouldThrow(connectAMO.rebalanceUp(ONE_ETH, 1),/NotOperatorOrOwner/);
             await shouldThrow(connectAMO.depositStable(100, 1), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.withdrawstable(100, 1), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.depositAndStake(100), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.depositAllAndStake(), /Ownable: caller is not the owner/);
-            await shouldThrow(connectAMO.withdraw(100, true), /Ownable: caller is not the owner/);
-            await shouldThrow(connectAMO.withdrawAll(true), /Ownable: caller is not the owner/);
-            await shouldThrow(connectAMO.withdrawAllAndUnwrap(true), /Ownable: caller is not the owner/);
-            await shouldThrow(connectAMO.withdrawAndUnwrap(100, true), /Ownable: caller is not the owner/);
+            await shouldThrow(connectAMO.withdraw(100, true, true), /Ownable: caller is not the owner/);
+            await shouldThrow(connectAMO.withdrawAll(true, true), /Ownable: caller is not the owner/);
+            await shouldThrow(connectAMO.withdrawAllAndUnwrap(true, true), /Ownable: caller is not the owner/);
+            await shouldThrow(connectAMO.withdrawAndUnwrap(100, true, true), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.addLiquidity(joinPoolRequest, 1, true), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.removeLiquidity(exitPoolRequest, 100), /Ownable: caller is not the owner/);
 
             // passes
-
+            await amo.setCappedRebalanceAmounts(cappedAmounts);
+            await amo.setPostRebalanceSlippage(100, 100);
+            await amo.togglePause();
+            await amo.setLastRebalanceAmounts(ONE_ETH, ONE_ETH, ONE_ETH);
+            await amo.setBalancerPoolId(BALANCER_POOL_ID);
+            await amo.setOperator(ownerAddress);
+            await amo.setCoolDown(1800);
+            await amo.setTemplePriceFloorRatio(9700);
+            await amo.setRebalanceRateChangeNumerator(300);
         });
 
         it("sets balancer pool Id", async () => {
@@ -166,9 +185,9 @@ describe.only("Temple Price Floor AMO", async () => {
         });
 
         it("sets aura pool info", async () => {
-            await expect(amo.setAuraPoolInfo(PID, AURA_DEPOSIT_TOKEN, REWARDS))
-                .to.emit(amo, "SetAuraPoolInfo").withArgs(PID, AURA_DEPOSIT_TOKEN, REWARDS);
-            const auraPoolInfo = await amo.auraPoolInfo();
+            await expect(amoStaking.setAuraPoolInfo(PID, AURA_DEPOSIT_TOKEN, REWARDS))
+                .to.emit(amoStaking, "SetAuraPoolInfo").withArgs(PID, AURA_DEPOSIT_TOKEN, REWARDS);
+            const auraPoolInfo = await amoStaking.auraPoolInfo();
             expect(auraPoolInfo.rewards).to.eq(REWARDS);
             expect(auraPoolInfo.pId).to.eq(PID);
             expect(auraPoolInfo.token).to.eq(AURA_DEPOSIT_TOKEN);
@@ -212,13 +231,17 @@ describe.only("Temple Price Floor AMO", async () => {
             // can call
             await amo.setOperator(operatorAddress);
             // pause
+            const paused = await amo.paused();
+            if (paused) {
+                await amo.togglePause();
+            }
             await expect(amo.togglePause()).to.emit(amo, "SetPauseState").withArgs(true);
             mineForwardSeconds(10_000);
-            await expect(amo.rebalanceDown(100, 1, true)).to.be.revertedWith("Pausable: paused");
+            await shouldThrow(amo.rebalanceDown(100, 1, true), /Paused/);
 
             // unpause
             await expect(amo.togglePause()).to.emit(amo, "SetPauseState").withArgs(false);
-            amo.rebalanceDown(100, 1, true);
+            amo.rebalanceDown(ONE_ETH, 1, true);
         });
 
         it("sets capped rebalance amount", async () => {
@@ -258,7 +281,7 @@ describe.only("Temple Price Floor AMO", async () => {
         });
     });
 
-    describe.only("Liquidity", async () => {
+    describe.only("Liquidity Add/Remove", async () => {
         it("sets temple index of balancer pool", async () => {
             const data = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
             let index = 0;
@@ -273,7 +296,7 @@ describe.only("Temple Price Floor AMO", async () => {
             expect(contractReturnedIndex).to.eq(index);
         });
 
-        it("adds liquidity", async () => {
+        it("adds liquidity using contract TEMPLE", async () => {
             // create join request
             let tokens: string[];
             let balances: BigNumber[];
@@ -286,14 +309,12 @@ describe.only("Temple Price Floor AMO", async () => {
                 userData,
                 fromInternalBalance: false
             }
-            // temporal
             let bptOut: BigNumber;
             let amountsIn: BigNumber[];
             let tx; let txx; let hash;
             [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, amo.address, amo.address, joinPoolRequest);
             console.log(bptOut, amountsIn);
-           
-            bptOut = BigNumber.from(1);
+
             // fail validation on unequal length
             let failJoinPoolRequest = {
                 assets: tokens,
@@ -322,7 +343,130 @@ describe.only("Temple Price Floor AMO", async () => {
             await amo.addLiquidity(joinPoolRequest, bptOut, true);
             const bptAmountAfter = await bptToken.balanceOf(amo.address);
             const depositTokenAmountAfter = await depositToken.balanceOf(amo.address);
+            expect(bptAmountAfter).to.gte(bptAmountBefore.add(bptOut));
+            expect(depositTokenAmountBefore).to.eq(0);
+            // not staked yet
+            expect(depositTokenAmountAfter).to.eq(0);
+            const templeIndex = await amo.templeBalancerPoolIndex();
+            let expectedTemple: BigNumber;
+            let expectedStable: BigNumber;
+            if (templeIndex.toNumber() == 0) {
+                expectedTemple = maxAmountsIn[0];
+                expectedStable = maxAmountsIn[1];
+            } else {
+                expectedTemple = maxAmountsIn[1];
+                expectedStable = maxAmountsIn[0];
+            }
+            expect(await templeToken.balanceOf(amo.address)).to.gte(amount.sub(expectedTemple));
+            expect(await daiToken.balanceOf(amo.address)).to.gte(amount.sub(expectedStable));
+        });
+
+        it("adds liquidity minting TEMPLE", async () => {
+            let tokens: string[];
+            let balances: BigNumber[];
+            [tokens, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+            const maxAmountsIn = [toAtto(1000), toAtto(990)];
+            const userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, maxAmountsIn, 1]);
+            const joinPoolRequest = {
+                assets: tokens,
+                maxAmountsIn,
+                userData,
+                fromInternalBalance: false
+            }
+            let bptOut: BigNumber;
+            let amountsIn: BigNumber[];
+            let tx; let txx; let hash;
+            [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, amo.address, amo.address, joinPoolRequest);
+            console.log(bptOut, amountsIn);
+
+            // add liquidity
+            // fund and execute
+            const amount = ethers.utils.parseEther("2000")
+            await templeToken.transfer(amo.address, amount);
+            await fund(daiToken, amo.address, amount);
+
+            const bptAmountBefore = await bptToken.balanceOf(amo.address);
+            const depositTokenAmountBefore = await depositToken.balanceOf(amo.address);
+            await amo.addLiquidity(joinPoolRequest, bptOut, false);
+            const bptAmountAfter = await bptToken.balanceOf(amo.address);
+            const depositTokenAmountAfter = await depositToken.balanceOf(amo.address);
+            expect(bptAmountAfter).to.gte(bptAmountBefore.add(bptOut));
+            expect(depositTokenAmountBefore).to.eq(0);
+            // not staked yet
+            expect(depositTokenAmountAfter).to.eq(0);
+            const templeIndex = await amo.templeBalancerPoolIndex();
+            let expectedTemple: BigNumber;
+            let expectedStable: BigNumber;
+            if (templeIndex.toNumber() == 0) {
+                expectedTemple = maxAmountsIn[0];
+                expectedStable = maxAmountsIn[1];
+            } else {
+                expectedTemple = maxAmountsIn[1];
+                expectedStable = maxAmountsIn[0];
+            }
+            expect(await templeToken.balanceOf(amo.address)).to.gte(amount.sub(expectedTemple));
+            expect(await daiToken.balanceOf(amo.address)).to.gte(amount.sub(expectedStable));
+        });
+
+        it("removes liquidity EXACT BPT IN for tokens out", async () => {
+            // create exit request
+            let tokens: string[];
+            let balances: BigNumber[];
+            let minAmountsOut = [toAtto(100), toAtto(100)];
+            const bptAmountIn = await bptToken.balanceOf(amo.address);
+            [tokens, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+            // using proportional exit: [EXACT_BPT_IN_FOR_TOKENS_OUT, bptAmountIn]
+            const intermediaryUserdata = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256"], [1, bptAmountIn]);
+            let exitRequest = {
+                assets: tokens,
+                minAmountsOut,
+                userData: intermediaryUserdata,
+                toInternalBalance: false
+            }
+            let bptIn: BigNumber;
+            let amountsOut: BigNumber[];
+            [bptIn, amountsOut] = await balancerHelpers.callStatic.queryExit(BALANCER_POOL_ID, amo.address, amo.address, exitRequest);
+            console.log("BPTIN", bptIn, amountsOut);
+
+            // fail invalid request
+            exitRequest.toInternalBalance = true;
+            await shouldThrow(amo.removeLiquidity(exitRequest, bptAmountIn), /InvalidBalancerVaultRequest/);
             
+            // fail insufficient bpt
+            exitRequest.toInternalBalance = false;
+            await shouldThrow(amo.removeLiquidity(exitRequest, bptAmountIn.add(1)), /InsufficientBPTAmount/);
+
+            exitRequest.minAmountsOut = amountsOut;
+            exitRequest.userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256"], [1, bptAmountIn]);
+            const templeBefore = await templeToken.balanceOf(amo.address);
+            const stableBefore = await daiToken.balanceOf(amo.address);
+            await amo.removeLiquidity(exitRequest, bptIn);
+            
+            expect(await bptToken.balanceOf(amo.address)).to.eq(bptAmountIn.sub(bptIn));
+
+            
+            let expectedTemple: BigNumber;
+            let expectedStable: BigNumber;
+            const templeIndex = await amo.templeBalancerPoolIndex();
+            if (templeIndex.toNumber() == 0) {
+                expectedTemple = amountsOut[0];
+                expectedStable = amountsOut[1];
+            } else {
+                expectedTemple = amountsOut[1];
+                expectedStable = amountsOut[0];
+            }
+            const templeAfter= await templeToken.balanceOf(amo.address);
+            const stableAfter = await daiToken.balanceOf(amo.address);
+            expect(stableAfter).to.gte(stableBefore.add(expectedStable));
+            expect(templeAfter).to.gte(templeBefore.add(expectedTemple));
+        });
+
+        it("deposits stable", async () => {
+            
+        });
+
+        it("withdraws stable", async () => {
+
         });
     });
 });

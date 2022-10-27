@@ -11,7 +11,7 @@ import "./interfaces/IAuraBooster.sol";
 import "./interfaces/ITempleERC20Token.sol";
 import "./helpers/AMOErrors.sol";
 import "./interfaces/IAMOAuraStaking.sol";
-
+import "hardhat/console.sol";
 
 /**
  * @title AMO built on top of balancer pool
@@ -33,7 +33,6 @@ contract TPFAMO is PoolHelper, Ownable {
     IAMOAuraStaking public amoStaking;
 
     address public operator;
-    address public immutable treasury;
     IERC20 public immutable temple;
     IERC20 public immutable stable;
 
@@ -79,7 +78,6 @@ contract TPFAMO is PoolHelper, Ownable {
         address _balancerVault,
         address _temple,
         address _stable,
-        address _treasury,
         address _bptToken,
         address _amoStaking,
         address _booster,
@@ -88,7 +86,6 @@ contract TPFAMO is PoolHelper, Ownable {
         balancerVault = IBalancerVault(_balancerVault);
         temple = IERC20(_temple);
         stable = IERC20(_stable);
-        treasury = _treasury;
         bptToken = IERC20(_bptToken);
         amoStaking = IAMOAuraStaking(_amoStaking);
         if (_rebalanceRateChangeNumerator >= TPF_PRECISION || _rebalanceRateChangeNumerator == 0) {
@@ -213,6 +210,7 @@ contract TPFAMO is PoolHelper, Ownable {
         uint256 bptAmountIn,
         uint256 _minAmountOut
     ) external onlyOperatorOrOwner enoughCooldown whenNotPaused {
+        console.log("rebalanceUp", cappedRebalanceAmounts.bpt);
         _validateParams(_minAmountOut, bptAmountIn, cappedRebalanceAmounts.bpt);
         
         uint256 bptTokenAmount = bptToken.balanceOf(address(this));
@@ -281,13 +279,14 @@ contract TPFAMO is PoolHelper, Ownable {
      * @notice Rebalance when $TEMPLE price above TPF
      * //Single-side withdraw $stable tokens from balancer liquidity pool to reduce price
      * Single-side mints and deposits $TEMPLE
-     * and add to the Treasury.
+     * 
      */
     function rebalanceDown(
         uint256 templeAmountIn,
         uint256 minBptOut,
         bool useContractTemple
     ) external onlyOperatorOrOwner enoughCooldown whenNotPaused {
+        console.log("rebalanceDOWN", cappedRebalanceAmounts.temple);
         _validateParams(minBptOut, templeAmountIn, cappedRebalanceAmounts.temple);
         
         if (!useContractTemple) {
@@ -606,6 +605,8 @@ contract TPFAMO is PoolHelper, Ownable {
         }
     }
 
+    // this function is executed by contract owner and should be checked if spot price is within acceptable
+    // skews off TPF before executing
     function removeLiquidity(
         IBalancerVault.ExitPoolRequest memory request,
         uint256 bptIn
@@ -618,12 +619,12 @@ contract TPFAMO is PoolHelper, Ownable {
         }
         // expect price to be close to TPF
         // revert if price is above or below TPF by given slippage
-        (, uint256[] memory balances, ) = balancerVault.getPoolTokens(balancerPoolId);
-        if (isSpotPriceAboveTPF(balances, postRebalanceTPFSlippageUp) ||
-            isSpotPriceBelowTPF(balances, postRebalanceTPFSlippageDown)
-        ) {
-            revert AMOErrors.HighSlippage();
-        }
+        // (, uint256[] memory balances, ) = balancerVault.getPoolTokens(balancerPoolId);
+        // if (isSpotPriceAboveTPF(balances, postRebalanceTPFSlippageUp) ||
+        //     isSpotPriceBelowTPF(balances, postRebalanceTPFSlippageDown)
+        // ) {
+        //     revert AMOErrors.HighSlippage();
+        // }
 
         uint256 templeAmountBefore = temple.balanceOf(address(this));
         uint256 stableAmountBefore = stable.balanceOf(address(this));
