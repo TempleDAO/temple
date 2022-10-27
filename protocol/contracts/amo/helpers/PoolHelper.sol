@@ -4,6 +4,10 @@ pragma solidity ^0.8.4;
 
 import "../interfaces/IBalancerVault.sol";
 
+interface IWeightPool2Tokens {
+    function getNormalizedWeights() external view returns (uint256[] memory);
+}
+
 abstract contract PoolHelper {
 
     // @notice balancer 50/50 pool ID.

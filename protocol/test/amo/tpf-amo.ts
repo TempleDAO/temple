@@ -15,7 +15,10 @@ import {
   IBalancerHelpers,
   IBalancerHelpers__factory,
   AuraStaking__factory,
-  AuraStaking
+  AuraStaking,
+  ITempleERC20Token,
+  IWeightPool2Tokens,
+  IWeightPool2Tokens__factory
 } from "../../typechain";
 import { DEPLOYED_CONTRACTS } from '../../scripts/deploys/helpers';
 
@@ -33,30 +36,34 @@ const BALANCER_POOL_ID = "0x1b65fe4881800b91d4277ba738b567cbb200a60d000200000000
 const BALANCER_HELPERS = "0x5aDDCCa35b7A0D07C74063c48700C8590E87864E";
 const ONE_ETH = ethers.utils.parseEther("1");
 const TEMPLE_WHALE = "0xf6C75d85Ef66d57339f859247C38f8F47133BD39";
+const BLOCKNUMBER = 15834933;
+
+let amo: TPFAMO;
+let amoStaking: AuraStaking;
+let owner: Signer;
+let alan: Signer;
+let operator: Signer;
+let templeMultisig: Signer;
+let fraxWhale: Signer;
+let templeWhale: Signer;
+let daiWhale: Signer;
+let ownerAddress: string;
+let alanAddress: string;
+let operatorAddress: string;
+let templeToken: TempleERC20Token;
+let fraxToken: IERC20;
+let daiToken: IERC20;
+let bptToken: IERC20;
+let depositToken: IERC20;
+let balancerVault: IBalancerVault;
+let balancerHelpers: IBalancerHelpers;
+let weightedPool2Tokens: IWeightPool2Tokens;
 
 describe.only("Temple Price Floor AMO", async () => {
-    let amo: TPFAMO;
-    let amoStaking: AuraStaking;
-    let owner: Signer;
-    let alan: Signer;
-    let operator: Signer;
-    let templeMultisig: Signer;
-    let fraxWhale: Signer;
-    let templeWhale: Signer;
-    let daiWhale: Signer;
-    let ownerAddress: string;
-    let alanAddress: string;
-    let operatorAddress: string;
-    let templeToken: TempleERC20Token;
-    let fraxToken: IERC20;
-    let daiToken: IERC20;
-    let bptToken: IERC20;
-    let depositToken: IERC20;
-    let balancerVault: IBalancerVault;
-    let balancerHelpers: IBalancerHelpers;
+    
 
     before( async () => {
-        await resetFork(15834933);
+        await resetFork(BLOCKNUMBER);
         [owner, alan, operator] = await ethers.getSigners();
         templeMultisig = await impersonateAddress(MULTISIG);
         templeWhale = await impersonateAddress(TEMPLE_WHALE);
@@ -75,6 +82,7 @@ describe.only("Temple Price Floor AMO", async () => {
 
         balancerVault = IBalancerVault__factory.connect(BALANCER_VAULT, owner);
         balancerHelpers = IBalancerHelpers__factory.connect(BALANCER_HELPERS, owner);
+        weightedPool2Tokens = IWeightPool2Tokens__factory.connect(TEMPLE_DAI_LP_TOKEN, owner);
 
         amoStaking = await new AuraStaking__factory(owner).deploy(
             ownerAddress,
@@ -462,7 +470,33 @@ describe.only("Temple Price Floor AMO", async () => {
         });
 
         it("deposits stable", async () => {
+            // fail checks
+            const cappedAmounts = await amo.cappedRebalanceAmounts();
+            await shouldThrow(amo.depositStable(100, 0), /ZeroSwapLimit/);
+            await shouldThrow(amo.depositStable(cappedAmounts.stable.add(1), 1), /AboveCappedAmount/);
+            // skew price to above TPF to trigger no rebalance
+            // single-side deposit stable token
+            await singleSideDepositStable(daiToken, toAtto(150_000));
+            await shouldThrow(amo.depositStable(ONE_ETH, 1), /NoRebalanceUp/);
+
+            // single-side withdraw stable to skew price below TPF
+            await singleSideDepositTemple(templeToken, toAtto(400_000));
+
+            // rebalance
+            // increase capped amount
+            const amountIn = toAtto(10_000);
+            const setCappedAmounts = {
+                temple: amountIn,
+                bpt: amountIn,
+                stable: amountIn
+            }
+            // TODO: create and use 50/50 pool.
+            // await amo.setCappedRebalanceAmounts(setCappedAmounts);
+            // const currentSpotPriceScaled = await getSpotPriceScaled();
+            // expect(currentSpotPriceScaled).gt(9_700);
             
+            // fund(daiToken, amo.address, amountIn)
+            // await expect(amo.depositStable(amountIn, 1)).to.emit(amo, "StableDeposited");
         });
 
         it("withdraws stable", async () => {
@@ -470,6 +504,79 @@ describe.only("Temple Price Floor AMO", async () => {
         });
     });
 });
+
+async function getSpotPriceScaled() {
+    let balances: BigNumber[];
+    const precision = BigNumber.from(10_000);
+    [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const normWeights = await weightedPool2Tokens.getNormalizedWeights();
+    // multiply by precision to avoid rounding down
+    const currentSpotPrice = precision.mul(balances[0]).div(normWeights[0]).div(balances[1].div(normWeights[1]));
+    console.log("SPOT price scaled", currentSpotPrice);
+    return currentSpotPrice;
+}
+
+async function singleSideDepositStable(
+    stableToken: IERC20,
+    amount: BigNumber
+) {
+    const whaleAddress = await daiWhale.getAddress();
+    const assets = [TEMPLE, DAI];
+    console.log("AMOUNT ", amount, await stableToken.balanceOf(whaleAddress));
+    await stableToken.connect(daiWhale).approve(balancerVault.address, amount);
+    // using exact tokens join with temple set to 0. [EXACT_TOKENS_IN_FOR_BPT_OUT, amountsIn, minimumBPT]
+    let bptOut: BigNumber;
+    let amountsIn: BigNumber[] = [BigNumber.from(0), amount];
+    let userdata = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, 1]);
+    let req = {
+        assets: assets,
+        maxAmountsIn: amountsIn,
+        userData: userdata,
+        fromInternalBalance: false
+    };
+
+    [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, whaleAddress, whaleAddress, req);
+    userdata = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, bptOut]);
+    console.log("AMOUNTS IN SIGNLE SIDE", amountsIn, bptOut);
+    const request = {
+        assets: assets,
+        maxAmountsIn: amountsIn, //[0, amount],
+        userData: userdata,
+        fromInternalBalance: false
+    }
+    await balancerVault.connect(daiWhale).joinPool(BALANCER_POOL_ID, whaleAddress, whaleAddress, request);
+}
+
+async function singleSideDepositTemple(
+    templeToken: TempleERC20Token,
+    amount: BigNumber
+) {
+    const whaleAddress = await templeWhale.getAddress();
+    const assets = [TEMPLE, DAI];
+    console.log("AMOUNT ", amount, await templeToken.balanceOf(whaleAddress));
+    await templeToken.connect(templeWhale).approve(balancerVault.address, amount);
+    // using exact tokens join with temple set to 0. [EXACT_TOKENS_IN_FOR_BPT_OUT, amountsIn, minimumBPT]
+    let bptOut: BigNumber;
+    let amountsIn: BigNumber[] = [amount, BigNumber.from(0)];
+    let userdata = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, 1]);
+    let req = {
+        assets: assets,
+        maxAmountsIn: amountsIn,
+        userData: userdata,
+        fromInternalBalance: false
+    };
+
+    [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, whaleAddress, whaleAddress, req);
+    userdata = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, bptOut]);
+    console.log("AMOUNTS IN SIGNLE SIDE", amountsIn, bptOut);
+    const request = {
+        assets: assets,
+        maxAmountsIn: amountsIn,
+        userData: userdata,
+        fromInternalBalance: false
+    }
+    await balancerVault.connect(templeWhale).joinPool(BALANCER_POOL_ID, whaleAddress, whaleAddress, request);
+}
 
 async function fund(tokenWithSigner: IERC20, to: string, amount: BigNumber) {
     await tokenWithSigner.transfer(to, amount);
@@ -495,4 +602,4 @@ async function resetFork(blockNumber: Number) {
         },
       ],
     });
-  }
+}

@@ -11,7 +11,7 @@ import "./interfaces/IAuraBooster.sol";
 import "./interfaces/ITempleERC20Token.sol";
 import "./helpers/AMOErrors.sol";
 import "./interfaces/IAMOAuraStaking.sol";
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 /**
  * @title AMO built on top of balancer pool
@@ -73,6 +73,7 @@ contract TPFAMO is PoolHelper, Ownable {
     event SetTemplePriceFloorRatio(uint128, uint128);
     event SetRebalanceRateChange(uint256);
     event SetPauseState(bool);
+    event StableDeposited(uint256, uint256);
 
     constructor(
         address _balancerVault,
@@ -210,7 +211,7 @@ contract TPFAMO is PoolHelper, Ownable {
         uint256 bptAmountIn,
         uint256 _minAmountOut
     ) external onlyOperatorOrOwner enoughCooldown whenNotPaused {
-        console.log("rebalanceUp", cappedRebalanceAmounts.bpt);
+        //console.log("rebalanceUp", cappedRebalanceAmounts.bpt);
         _validateParams(_minAmountOut, bptAmountIn, cappedRebalanceAmounts.bpt);
         
         uint256 bptTokenAmount = bptToken.balanceOf(address(this));
@@ -225,17 +226,7 @@ contract TPFAMO is PoolHelper, Ownable {
         }
 
         // check tolerance
-        if (lastRebalanceUpTempleAmount != 0 && bptAmountIn > lastRebalanceUpTempleAmount) {
-            uint256 maxRebalanceChange = lastRebalanceUpTempleAmount * rebalanceRateChangeNumerator / TPF_PRECISION;
-            
-            uint256 diff;
-            unchecked {
-                diff = bptAmountIn - lastRebalanceUpTempleAmount;
-            }
-            if (diff > maxRebalanceChange) {
-                revert AMOErrors.RebalanceAmountTolerance(bptAmountIn, diff);
-            }
-        }
+        _checkTolerance(lastRebalanceUpTempleAmount, bptAmountIn);
 
         // TODO: (|TPF - OP|/TPF) * A = B
 
@@ -286,7 +277,7 @@ contract TPFAMO is PoolHelper, Ownable {
         uint256 minBptOut,
         bool useContractTemple
     ) external onlyOperatorOrOwner enoughCooldown whenNotPaused {
-        console.log("rebalanceDOWN", cappedRebalanceAmounts.temple);
+        //console.log("rebalanceDOWN", cappedRebalanceAmounts.temple);
         _validateParams(minBptOut, templeAmountIn, cappedRebalanceAmounts.temple);
         
         if (!useContractTemple) {
@@ -300,17 +291,7 @@ contract TPFAMO is PoolHelper, Ownable {
         }
         
         // check tolerance
-        if (lastRebalanceDownAmount != 0 && templeAmountIn > lastRebalanceDownAmount) {
-            uint256 maxRebalanceChange = lastRebalanceDownAmount * rebalanceRateChangeNumerator / TPF_PRECISION;
-            
-            uint256 diff;
-            unchecked {
-                diff = templeAmountIn - lastRebalanceDownAmount;
-            }
-            if (diff > maxRebalanceChange) {
-                revert AMOErrors.RebalanceAmountTolerance(templeAmountIn, diff);
-            }
-        }
+        _checkTolerance(lastRebalanceDownAmount, templeAmountIn);
 
         // TODO: (|TPF - OP|/TPF) * A = B
 
@@ -384,6 +365,8 @@ contract TPFAMO is PoolHelper, Ownable {
         // using max of current amount and last updated
         lastRebalanceUpstableAmount = _getMax(lastRebalanceUpstableAmount, amountIn);
         lastRebalanceTimeSecs = uint64(block.timestamp);
+
+        emit StableDeposited(amountIn, stableAmountAfter - stableAmountBefore);
     }
 
     // Single-side withdraw stable
