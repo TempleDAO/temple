@@ -4,12 +4,13 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./helpers/PoolHelper.sol";
 import "./interfaces/IBaseRewardPool.sol";
 import "./interfaces/IAuraBooster.sol";
 import "./interfaces/ITempleERC20Token.sol";
 import "./helpers/AMOErrors.sol";
-import "./AuraStaking.sol";
+import "./interfaces/IAMOAuraStaking.sol";
 
 
 /**
@@ -20,11 +21,16 @@ import "./AuraStaking.sol";
  * BPTs into TEMPLE and burn them and if the price is above the TPF it will 
  * single side deposit TEMPLE and increase its BPT position that way. Alternatively
  */
-contract TPFAMO is AuraStaking, PoolHelper, Ownable {
+contract TPFAMO is PoolHelper, Ownable {
     using SafeERC20 for IERC20;
 
     // @notice balancer pool used for rebalancing
     IBalancerVault public immutable balancerVault;
+    IERC20 public immutable bptToken;
+    IAuraBooster public booster;
+
+    // @notice AMO contract for staking into aura 
+    IAMOAuraStaking public amoStaking;
 
     address public operator;
     address public immutable treasury;
@@ -64,7 +70,6 @@ contract TPFAMO is AuraStaking, PoolHelper, Ownable {
     event SetPostRebalanceSlippage(uint64, uint64);
     event SetCooldown(uint64);
     event SetBalancerPoolId(bytes32);
-    event SetAuraPoolInfo(uint32, address, address);
     event SetAuraBooster(address);
     event SetTemplePriceFloorRatio(uint128, uint128);
     event SetRebalanceRateChange(uint256);
@@ -76,6 +81,7 @@ contract TPFAMO is AuraStaking, PoolHelper, Ownable {
         address _stable,
         address _treasury,
         address _bptToken,
+        address _amoStaking,
         address _booster,
         uint256 _rebalanceRateChangeNumerator
     ) {
@@ -84,6 +90,7 @@ contract TPFAMO is AuraStaking, PoolHelper, Ownable {
         stable = IERC20(_stable);
         treasury = _treasury;
         bptToken = IERC20(_bptToken);
+        amoStaking = IAMOAuraStaking(_amoStaking);
         if (_rebalanceRateChangeNumerator >= TPF_PRECISION || _rebalanceRateChangeNumerator == 0) {
             revert AMOErrors.InvalidBPSValue(_rebalanceRateChangeNumerator);
         }
@@ -176,14 +183,6 @@ contract TPFAMO is AuraStaking, PoolHelper, Ownable {
         booster = _booster;
 
         emit SetAuraBooster(address(_booster));
-    }
-
-    function setAuraPoolInfo(uint32 _pId, address _token, address _rewards) external onlyOwner {
-        auraPoolInfo.pId = _pId;
-        auraPoolInfo.token = _token;
-        auraPoolInfo.rewards = _rewards;
-
-        emit SetAuraPoolInfo(_pId, _token, _rewards);
     }
 
     // @notice pause AMO
@@ -427,31 +426,36 @@ contract TPFAMO is AuraStaking, PoolHelper, Ownable {
     
     // deposit BPT and stake using Aura Booster
     function depositAndStake(uint256 amount) external onlyOwner {
-        _depositAndStake(amount);
+        bptToken.safeIncreaseAllowance(address(amoStaking), amount);
+        amoStaking.depositAndStake(amount);
     }
 
     function depositAllAndStake() external onlyOwner {
-        _depositAllAndStake();
+        uint256 bptBalance = bptToken.balanceOf(address(this));
+        if (bptBalance > 0) {
+            bptToken.safeIncreaseAllowance(address(amoStaking), bptBalance);
+            amoStaking.depositAndStake(bptBalance);
+        }
     }
 
-    function withdrawAll(bool claim) external onlyOwner {
-       _withdrawAll(claim);
+    function withdrawAll(bool claim, bool receiveToken) external onlyOwner {
+       amoStaking.withdrawAll(claim, receiveToken);
     }
 
-    function withdraw(uint256 amount, bool claim) external onlyOwner {
-        _withdraw(amount, claim);
+    function withdraw(uint256 amount, bool claim, bool receiveToken) external onlyOwner {
+        amoStaking.withdraw(amount, claim, receiveToken);
     }
 
-    function withdrawAndUnwrap(uint256 amount, bool claim) external onlyOwner {
-        _withdrawAndUnwrap(amount, claim);
+    function withdrawAndUnwrap(uint256 amount, bool claim, bool receiveToken) external onlyOwner {
+        amoStaking.withdrawAndUnwrap(amount, claim, receiveToken);
     }
 
-    function withdrawAllAndUnwrap(bool claim) external onlyOwner {
-        _withdrawAllAndUnwrap(claim);
+    function withdrawAllAndUnwrap(bool claim, bool receiveToken) external onlyOwner {
+        amoStaking.withdrawAllAndUnwrap(claim, receiveToken);
     }
 
     function getReward(bool claimExtras) external {
-        _getReward(claimExtras);
+        amoStaking.getReward(claimExtras);
     }
 
 
