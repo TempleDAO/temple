@@ -97,8 +97,93 @@ describe("Elder Election", async () => {
     await expect(ELDER_ELECTION.connect(ben).setEndorsements([DISCORD_ID_1,DISCORD_ID_2,DISCORD_ID_3]))
     .to.be.revertedWith("TooManyEndorsements");
   });
-  
-  // TODO
-  // tests for relayedSetEndorsementsFor()
+
+// TODO: complete implementation of relay tests
+//
+//   it("relayed endorsements work", async () => {
+
+//     const provider = ethers.getDefaultProvider();
+
+//     {
+//       const election = ELDER_ELECTION.connect(nominator);
+//       await election.nominate(DISCORD_ID_1);
+//       await election.nominate(DISCORD_ID_2);
+//     }
+
+//     async function signedSetEndorsementReq(voter: Signer, discordIds: number[]): Promise<SetEndorsementReq> {
+
+//       const block = await provider.getBlock(await provider.getBlockNumber());
+//       const now = block.timestamp;
+
+//       const account = await voter.getAddress();
+//       const deadline = now + 60;
+//       const nonce = await ELDER_ELECTION._nonces(account);
+
+//       const abiCoder = new AbiCoder();
+//       const header = await ELDER_ELECTION.SET_ENDORSEMENTS_FOR_TYPEHASH();
+//       const message = abiCoder.encode(
+//         [
+//           "bytes32",
+//           "address",
+//           "uint256[]",
+//           "uint256",
+//           "uint256",
+//         ],
+//         [
+//           header,
+//           account,
+//           discordIds,
+//           deadline,
+//           nonce,
+//         ]
+//       );
+//       const messageBytes = ethers.utils.arrayify(message);
+//       const signature = await voter.signMessage(messageBytes)
+
+//       return {
+//         account,
+//         deadline,
+//         discordIds,
+//         signature,
+//       }
+//     } 
+
+//     {
+//       const req = await signedSetEndorsementReq(ben, [DISCORD_ID_1]);
+//       await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
+//         req.account,
+//         req.discordIds,
+//         req.deadline - 600,
+//         req.signature,
+//       )).to.be.revertedWith("DeadlineExpired");
+//     }
+
+//     {
+//       const req = await signedSetEndorsementReq(ben, [DISCORD_ID_1]);
+//       await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
+//         req.account,
+//         req.discordIds,
+//         req.deadline,
+//         await ben.signMessage("XXXX"),
+//       )).to.emit(ELDER_ELECTION, "InvalidSignature");
+//     }
+
+//     {
+//       const req = await signedSetEndorsementReq(ben, [DISCORD_ID_1]);
+//       await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
+//         req.account,
+//         req.discordIds,
+//         req.deadline,
+//         req.signature,
+//       )).to.emit(ELDER_ELECTION, "UpdateEndorsements");
+//       }
+//   });
 
 });
+
+// interface SetEndorsementReq {
+//   account: string;
+//   discordIds: number[];
+//   deadline: number,
+//   signature: Uint8Array;
+// }
