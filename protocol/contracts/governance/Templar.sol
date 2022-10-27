@@ -16,8 +16,6 @@ contract Templar is ERC721, AccessControl {
 
     string public baseUri = "https://discordapp.com/users/";
 
-     // Mapping from discordId ID to max temple role
-    mapping(uint256 => string) public templeRole;
 
     constructor() ERC721("Templar", "TEMPLAR") {
         _grantRole(OWNER, msg.sender);
@@ -47,8 +45,7 @@ contract Templar is ERC721, AccessControl {
      */
     function assign( 
         address account,
-        uint256 discordId,
-        string calldata _templeRole
+        uint256 discordId
     ) external onlyRole(CAN_ASSIGN) {
         if (account == address(0)) revert InvalidAddress(account);
 
@@ -58,11 +55,6 @@ contract Templar is ERC721, AccessControl {
             }
         } else {
             _safeMint(account, discordId);
-        }
-
-        if (keccak256(abi.encodePacked(templeRole[discordId])) != keccak256(abi.encodePacked(_templeRole))) {
-            templeRole[discordId] = _templeRole;
-            emit UpdateTempleRole(discordId, _templeRole);
         }
     }
 
@@ -80,5 +72,4 @@ contract Templar is ERC721, AccessControl {
     error InvalidTemplar(uint256 discordId);
 
     event BaseUriUpdated(string baseUri);
-    event UpdateTempleRole(uint256 indexed discordId, string templeRole);
 }

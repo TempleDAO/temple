@@ -5,6 +5,9 @@ import { expect } from "chai";
 import { Templar } from "../typechain/Templar";
 import { Templar__factory } from "../typechain/factories/Templar__factory";
 
+import { TemplarMetadata } from "../typechain/TemplarMetadata";
+import { TemplarMetadata__factory } from "../typechain/factories/TemplarMetadata__factory";
+
 import { ElderElection } from "../typechain/ElderElection";
 import { ElderElection__factory } from "../typechain/factories/ElderElection__factory";
 
@@ -17,6 +20,7 @@ const TEMPLE_ROLE_INITIATE = "initiate";
 
 describe("Elder Election", async () => {
   let TEMPLAR: Templar;
+  let TEMPLAR_METADATA: TemplarMetadata;
   let ELDER_ELECTION: ElderElection;
 
   let owner: Signer;
@@ -29,16 +33,23 @@ describe("Elder Election", async () => {
   beforeEach(async () => {
     [owner, assigner, nominator, amanda, ben, sarah] = await ethers.getSigners();
     TEMPLAR = await new Templar__factory(owner).deploy();
+    TEMPLAR_METADATA = await new TemplarMetadata__factory(owner).deploy(TEMPLAR.address);
     ELDER_ELECTION = await new ElderElection__factory(owner).deploy(TEMPLAR.address);
 
     await TEMPLAR.grantRole(await TEMPLAR.CAN_ASSIGN(), await assigner.getAddress());
+    await TEMPLAR_METADATA.grantRole(await TEMPLAR_METADATA.CAN_UPDATE(), await assigner.getAddress());
     await ELDER_ELECTION.grantRole(await ELDER_ELECTION.CAN_NOMINATE(), await nominator.getAddress());
 
     // Setup some templars.
     const templar = TEMPLAR.connect(assigner);
-    await templar.assign(await amanda.getAddress(), DISCORD_ID_1, TEMPLE_ROLE_ACOLYTE);
-    await templar.assign(await ben.getAddress(), DISCORD_ID_2, TEMPLE_ROLE_ACOLYTE);
-    await templar.assign(await sarah.getAddress(), DISCORD_ID_3, TEMPLE_ROLE_INITIATE);
+    const templarMetadata = TEMPLAR_METADATA.connect(assigner);
+
+    await templar.assign(await amanda.getAddress(), DISCORD_ID_1);
+    await templarMetadata.setRole(DISCORD_ID_1, TEMPLE_ROLE_ACOLYTE);
+    await templar.assign(await ben.getAddress(), DISCORD_ID_2);
+    await templarMetadata.setRole(DISCORD_ID_2, TEMPLE_ROLE_ACOLYTE);
+    await templar.assign(await sarah.getAddress(), DISCORD_ID_3);
+    await templarMetadata.setRole(DISCORD_ID_3, TEMPLE_ROLE_INITIATE);
 
   })
 

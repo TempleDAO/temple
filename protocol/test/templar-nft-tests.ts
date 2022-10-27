@@ -6,7 +6,6 @@ import { Templar } from "../typechain/Templar";
 import { Templar__factory } from "../typechain/factories/Templar__factory";
 
 const DISCORD_ID = 1000;
-const TEMPLE_ROLE = "acolyte";
 
 describe("Templar NFT", async () => {
   let TEMPLAR: Templar;
@@ -50,20 +49,20 @@ describe("Templar NFT", async () => {
     // The assigner can assign NFTs
     {
         const templar = TEMPLAR.connect(assigner);
-        await templar.assign(amandaAddress, 1000, "acolyte");
+        await templar.assign(amandaAddress, 1000);
     }
 
     // Ben cannot
     {
       const templar = TEMPLAR.connect(ben);
-      await expect(templar.assign(amandaAddress, 1000, "acolyte"))
+      await expect(templar.assign(amandaAddress, 1000))
         .to.be.revertedWith("AccessControl:");
     }
   });
 
   it("Can't assign to address 0", async () => {
     const templar = TEMPLAR.connect(assigner);
-    await expect (templar.assign(ethers.constants.AddressZero, 1000, "acolyte"))
+    await expect (templar.assign(ethers.constants.AddressZero, 1000))
       .to.be.revertedWith("InvalidAddress")
   });
 
@@ -71,28 +70,31 @@ describe("Templar NFT", async () => {
     const amandaAddress: string = await amanda.getAddress();
 
     const templar = TEMPLAR.connect(assigner);
-    await templar.assign(amandaAddress, DISCORD_ID, TEMPLE_ROLE);
+    await templar.assign(amandaAddress, DISCORD_ID);
 
     expect(await TEMPLAR.ownerOf(DISCORD_ID)).to.eq(amandaAddress);
-    expect(await TEMPLAR.templeRole(DISCORD_ID)).to.eq(TEMPLE_ROLE);
     expect(await TEMPLAR.tokenURI(DISCORD_ID)).to.eq("https://discordapp.com/users/1000");
   });
 
-  it("Ressignment transfers an NFT, updating role if necessary", async () => {
+  it("Ressignment transfers an NFT", async () => {
 
     const amandaAddress: string = await amanda.getAddress();
     const benAddress: string = await ben.getAddress();
 
     const templar = TEMPLAR.connect(assigner);
 
-    await expect(templar.assign(amandaAddress, DISCORD_ID, TEMPLE_ROLE))
-    .to.emit(TEMPLAR, "UpdateTempleRole");
-
-    await expect(templar.assign(benAddress, DISCORD_ID, "initiate"))
-    .to.emit(TEMPLAR, "UpdateTempleRole");
+    {
+      const receipt = await (await templar.assign(amandaAddress, DISCORD_ID)).wait();
+      const events = receipt.events?.filter((ev) => ev.event == "Transfer")
+      expect(events).to.have.length(1);
+    }
+    {
+      const receipt = await (await templar.assign(benAddress, DISCORD_ID)).wait();
+      const events = receipt.events?.filter((ev) => ev.event == "Transfer")
+      expect(events).to.have.length(1);
+    }
 
     expect(await TEMPLAR.ownerOf(DISCORD_ID)).to.eq(benAddress);
-    expect(await TEMPLAR.templeRole(DISCORD_ID)).to.eq("initiate");
     expect(await TEMPLAR.tokenURI(DISCORD_ID)).to.eq("https://discordapp.com/users/1000");
   });
 
@@ -102,7 +104,7 @@ describe("Templar NFT", async () => {
     const amandaAddress: string = await amanda.getAddress();
 
     const templar = TEMPLAR.connect(assigner);
-    await templar.assign(amandaAddress, DISCORD_ID, TEMPLE_ROLE);
+    await templar.assign(amandaAddress, DISCORD_ID);
     expect(await TEMPLAR.tokenURI(DISCORD_ID)).to.eq("https://discordapp.com/users/1000");
 
     await TEMPLAR.setBaseUri("https://temple.dao/users/");
@@ -114,7 +116,7 @@ describe("Templar NFT", async () => {
     const amandaAddress: string = await amanda.getAddress();
 
     const templar = TEMPLAR.connect(assigner);
-    await templar.assign(amandaAddress, DISCORD_ID, TEMPLE_ROLE);
+    await templar.assign(amandaAddress, DISCORD_ID);
 
     await TEMPLAR.checkExists(DISCORD_ID);
     await expect (TEMPLAR.checkExists(0))
