@@ -17,4 +17,5 @@ library AMOErrors {
     error NoRebalanceUp();
     error NoRebalanceDown();
     error HighSlippage();
+    error Paused();
 }

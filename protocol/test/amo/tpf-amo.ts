@@ -1,6 +1,6 @@
 import { ethers, network } from "hardhat";
-import { expect, should } from "chai";
-import { fromAtto, NULL_ADDR, toAtto, shouldThrow, mineNBlocks, mineForwardSeconds } from "../helpers";
+import { expect } from "chai";
+import { toAtto, shouldThrow, mineForwardSeconds } from "../helpers";
 import { BigNumber, Signer } from "ethers";
 import addresses from "../constants";
 import { 
@@ -9,14 +9,17 @@ import {
   IERC20__factory,
   TempleERC20Token,
   TempleERC20Token__factory,
-  IERC20
+  IERC20,
+  IBalancerVault,
+  IBalancerVault__factory,
+  IBalancerHelpers,
+  IBalancerHelpers__factory
 } from "../../typechain";
-//import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { DEPLOYED_CONTRACTS } from '../../scripts/deploys/helpers';
 
 const { MULTISIG, TEMPLE, TEMPLE_V2_ROUTER } = DEPLOYED_CONTRACTS.mainnet;
 const { BALANCER_VAULT } = addresses.contracts;
-const { FRAX_WHALE } = addresses.accounts;
+const { FRAX_WHALE, BINANCE_ACCOUNT_8 } = addresses.accounts;
 const { FRAX } = addresses.tokens;
 const { DAI } = addresses.tokens;
 const AURA_DEPOSIT_TOKEN = "0x1aF1cdC500A56230DF8A7Cf8099511A16D6e349e"; 
@@ -25,6 +28,7 @@ const PID = 38;
 const REWARDS = "0xB665b3020bBE8a9020951e9a74194c1BFda5C5c4";
 const AURA_BOOSTER = "0x7818A1DA7BD1E64c199029E86Ba244a9798eEE10";
 const BALANCER_POOL_ID = "0x1b65fe4881800b91d4277ba738b567cbb200a60d0002000000000000000002cc";
+const BALANCER_HELPERS = "0x5aDDCCa35b7A0D07C74063c48700C8590E87864E";
 const ONE_ETH = ethers.utils.parseEther("1");
 const TEMPLE_WHALE = "0xf6C75d85Ef66d57339f859247C38f8F47133BD39";
 
@@ -36,11 +40,17 @@ describe.only("Temple Price Floor AMO", async () => {
     let templeMultisig: Signer;
     let fraxWhale: Signer;
     let templeWhale: Signer;
+    let daiWhale: Signer;
     let ownerAddress: string;
     let alanAddress: string;
     let operatorAddress: string;
     let templeToken: TempleERC20Token;
     let fraxToken: IERC20;
+    let daiToken: IERC20;
+    let bptToken: IERC20;
+    let depositToken: IERC20;
+    let balancerVault: IBalancerVault;
+    let balancerHelpers: IBalancerHelpers;
 
     before( async () => {
         await resetFork(15834933);
@@ -48,6 +58,7 @@ describe.only("Temple Price Floor AMO", async () => {
         templeMultisig = await impersonateAddress(MULTISIG);
         templeWhale = await impersonateAddress(TEMPLE_WHALE);
         fraxWhale = await impersonateAddress(FRAX_WHALE);
+        daiWhale = await impersonateAddress(BINANCE_ACCOUNT_8)
     
         ownerAddress = await owner.getAddress();
         alanAddress = await alan.getAddress();
@@ -55,6 +66,12 @@ describe.only("Temple Price Floor AMO", async () => {
 
         templeToken = TempleERC20Token__factory.connect(TEMPLE, templeWhale);
         fraxToken = IERC20__factory.connect(FRAX, fraxWhale);
+        daiToken = IERC20__factory.connect(DAI, daiWhale);
+        bptToken = IERC20__factory.connect(TEMPLE_DAI_LP_TOKEN, owner);
+        depositToken = IERC20__factory.connect(AURA_DEPOSIT_TOKEN, owner);
+
+        balancerVault = IBalancerVault__factory.connect(BALANCER_VAULT, owner);
+        balancerHelpers = IBalancerHelpers__factory.connect(BALANCER_HELPERS, owner);
     
         amo = await new TPFAMO__factory(owner).deploy(
             BALANCER_VAULT,
@@ -117,11 +134,10 @@ describe.only("Temple Price Floor AMO", async () => {
             await shouldThrow(connectAMO.setCappedRebalanceAmounts(cappedAmounts), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.setPostRebalanceSlippage(100, 100), /Ownable: caller is not the owner/); // 1%
             await shouldThrow(connectAMO.setLastRebalanceAmounts(ONE_ETH, ONE_ETH, ONE_ETH), /Ownable: caller is not the owner/);
-            await shouldThrow(connectAMO.pause(), /Ownable: caller is not the owner/);
-            await shouldThrow(connectAMO.unpause(), /Ownable: caller is not the owner/);
+            await shouldThrow(connectAMO.togglePause(), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.recoverToken(TEMPLE , alanAddress, 100), /Ownable: caller is not the owner/);
-            //await expect(connectAMO.rebalanceDown(100, 1, true, true)).to.be.revertedWithCustomError(connectAMO, "NotOperatorOrOwner");
-            //await expect(connectAMO.rebalanceUp(100, 1)).to.be.revertedWithCustomError(connectAMO, "NotOperatorOrOwner");
+            await shouldThrow(connectAMO.rebalanceDown(100, 1, true), /NotOperatorOrOwner/);
+            await shouldThrow(connectAMO.rebalanceUp(100, 1),/NotOperatorOrOwner/);
             await shouldThrow(connectAMO.depositStable(100, 1), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.withdrawstable(100, 1), /Ownable: caller is not the owner/);
             await shouldThrow(connectAMO.depositAndStake(100), /Ownable: caller is not the owner/);
@@ -196,13 +212,13 @@ describe.only("Temple Price Floor AMO", async () => {
             // can call
             await amo.setOperator(operatorAddress);
             // pause
-            await amo.pause();
+            await expect(amo.togglePause()).to.emit(amo, "SetPauseState").withArgs(true);
             mineForwardSeconds(10_000);
-            await expect(amo.rebalanceDown(100, 1, true, true)).to.be.revertedWith("Pausable: paused");
+            await expect(amo.rebalanceDown(100, 1, true)).to.be.revertedWith("Pausable: paused");
 
             // unpause
-            await amo.unpause();
-            amo.rebalanceDown(100, 1, true, true);
+            await expect(amo.togglePause()).to.emit(amo, "SetPauseState").withArgs(false);
+            amo.rebalanceDown(100, 1, true);
         });
 
         it("sets capped rebalance amount", async () => {
@@ -242,13 +258,78 @@ describe.only("Temple Price Floor AMO", async () => {
         });
     });
 
-    describe("Liquidity", async () => {
-        it("adds liquidity", async () => {
+    describe.only("Liquidity", async () => {
+        it("sets temple index of balancer pool", async () => {
+            const data = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+            let index = 0;
+            for (let i=0; i<data.tokens.length; i++) {
+                if (ethers.utils.getAddress(data.tokens[i]) == ethers.utils.getAddress(TEMPLE)) {
+                    index = i;
+                    break;
+                }
+            }
+            await amo.setTempleIndexInBalancerPool();
+            const contractReturnedIndex = await amo.templeBalancerPoolIndex();
+            expect(contractReturnedIndex).to.eq(index);
+        });
 
+        it("adds liquidity", async () => {
+            // create join request
+            let tokens: string[];
+            let balances: BigNumber[];
+            [tokens, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+            const maxAmountsIn = [toAtto(1000), toAtto(990)];
+            const userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, maxAmountsIn, 1]);
+            const joinPoolRequest = {
+                assets: tokens,
+                maxAmountsIn,
+                userData,
+                fromInternalBalance: false
+            }
+            // temporal
+            let bptOut: BigNumber;
+            let amountsIn: BigNumber[];
+            let tx; let txx; let hash;
+            [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, amo.address, amo.address, joinPoolRequest);
+            console.log(bptOut, amountsIn);
+           
+            bptOut = BigNumber.from(1);
+            // fail validation on unequal length
+            let failJoinPoolRequest = {
+                assets: tokens,
+                maxAmountsIn: [1],
+                userData,
+                fromInternalBalance: false
+            }
+            await shouldThrow(amo.addLiquidity(failJoinPoolRequest, bptOut, true), /InvalidBalancerVaultRequest/);
+            // fail on wrong fromInternalBalance value
+            let failJoinPoolRequest2 = {
+                assets: tokens,
+                maxAmountsIn,
+                userData,
+                fromInternalBalance: true
+            }
+            await shouldThrow(amo.addLiquidity(failJoinPoolRequest2, bptOut, true), /InvalidBalancerVaultRequest/);
+
+            // add liquidity
+            // fund and execute
+            const amount = ethers.utils.parseEther("2000")
+            await templeToken.transfer(amo.address, amount);
+            await fund(daiToken, amo.address, amount);
+
+            const bptAmountBefore = await bptToken.balanceOf(amo.address);
+            const depositTokenAmountBefore = await depositToken.balanceOf(amo.address);
+            await amo.addLiquidity(joinPoolRequest, bptOut, true);
+            const bptAmountAfter = await bptToken.balanceOf(amo.address);
+            const depositTokenAmountAfter = await depositToken.balanceOf(amo.address);
+            
         });
     });
 });
 
+async function fund(tokenWithSigner: IERC20, to: string, amount: BigNumber) {
+    await tokenWithSigner.transfer(to, amount);
+}
 
 async function impersonateAddress(address: string) {
     await network.provider.request({

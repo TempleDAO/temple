@@ -4,7 +4,6 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "./helpers/PoolHelper.sol";
 import "./interfaces/IBaseRewardPool.sol";
 import "./interfaces/IAuraBooster.sol";
@@ -21,7 +20,7 @@ import "./AuraStaking.sol";
  * BPTs into TEMPLE and burn them and if the price is above the TPF it will 
  * single side deposit TEMPLE and increase its BPT position that way. Alternatively
  */
-contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
+contract TPFAMO is AuraStaking, PoolHelper, Ownable {
     using SafeERC20 for IERC20;
 
     // @notice balancer pool used for rebalancing
@@ -51,23 +50,13 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
     uint64 internal postRebalanceTPFSlippageUp;
     uint64 internal postRebalanceTPFSlippageDown;
 
+    // @notice contract paused state
+    bool public paused;
+
     struct CappedRebalancingAmounts {
         uint128 temple;
         uint128 bpt;
         uint128 stable;
-    }
-
-    struct AMOPositions {
-        uint256 bptAmount;
-        uint256 aura;
-        uint256 treasuryAmount;
-    }
-
-    enum RebalanceType {
-        DEPOSIT_TEMPLE,
-        WITHDRAW_TEMPLE,
-        DEPOSIT_STABLEe,
-        WITHDRAW_STABLE
     }
 
     event RecoveredToken(address, address, uint256);
@@ -79,6 +68,7 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
     event SetAuraBooster(address);
     event SetTemplePriceFloorRatio(uint128, uint128);
     event SetRebalanceRateChange(uint256);
+    event SetPauseState(bool);
 
     constructor(
         address _balancerVault,
@@ -105,6 +95,16 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
         balancerPoolId = _poolId;
 
         emit SetBalancerPoolId(_poolId);
+    }
+
+    function setTempleIndexInBalancerPool() external {
+        (address[] memory tokens,,) = balancerVault.getPoolTokens(balancerPoolId);
+        for (uint i=0; i<tokens.length; i++) {
+            if (tokens[i] == address(temple)) {
+                templeBalancerPoolIndex = uint64(i);
+                break;
+            }
+        }
     }
 
     // (re)set last rebalance amounts for rebalanceUp and rebalanceDown
@@ -187,13 +187,10 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
     }
 
     // @notice pause AMO
-    function pause() external onlyOwner {
-        _pause();
-    }
+    function togglePause() external onlyOwner {
+        paused = !paused;
 
-    // @notice unpause AMO
-    function unpause() external onlyOwner {
-        _unpause();
+        emit SetPauseState(paused);
     }
 
     /**
@@ -290,8 +287,7 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
     function rebalanceDown(
         uint256 templeAmountIn,
         uint256 minBptOut,
-        bool useContractTemple,
-        bool depositBpt
+        bool useContractTemple
     ) external onlyOperatorOrOwner enoughCooldown whenNotPaused {
         _validateParams(minBptOut, templeAmountIn, cappedRebalanceAmounts.temple);
         
@@ -347,11 +343,6 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
         (, balances, ) = balancerVault.getPoolTokens(balancerPoolId);
         if (isSpotPriceAboveTPF(balances, postRebalanceTPFSlippageUp)) {
             revert AMOErrors.HighSlippage();
-        }
-
-        // todo: deposit BPT on Aura
-        if (depositBpt) {
-
         }
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
@@ -557,6 +548,8 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
     }
 
     // assumes userData is encoded with joinKind EXACT_TOKENS_IN_FOR_BPT_OUT (1)
+    // this function is executed by contract owner and should be checked if spot price is within acceptable
+    // skews off TPF before executing
     function addLiquidity(
         IBalancerVault.JoinPoolRequest memory request,
         uint256 minBptOut,
@@ -570,12 +563,13 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
         }
         // expect price to be close to TPF
         // revert if price is above or below TPF by given slippage
-        (, uint256[] memory balances, ) = balancerVault.getPoolTokens(balancerPoolId);
-        if (isSpotPriceAboveTPF(balances, postRebalanceTPFSlippageUp) ||
-            isSpotPriceBelowTPF(balances, postRebalanceTPFSlippageDown)
-        ) {
-            revert AMOErrors.HighSlippage();
-        }
+        
+        // (, uint256[] memory balances, ) = balancerVault.getPoolTokens(balancerPoolId);
+        // if (isSpotPriceAboveTPF(balances, postRebalanceTPFSlippageUp) ||
+        //     isSpotPriceBelowTPF(balances, postRebalanceTPFSlippageDown)
+        // ) {
+        //     revert AMOErrors.HighSlippage();
+        // }
 
         uint256 templeAmount;
         uint256 stableAmount;
@@ -659,23 +653,40 @@ contract TPFAMO is AuraStaking, PoolHelper, Pausable, Ownable {
         }
     }
 
-    modifier enoughCooldown {
+    // function isSpotPriceAboveTPF() external view returns (bool) {
+    //     (, uint256[] memory balances, ) = balancerVault.getPoolTokens(balancerPoolId);
+    //     return isSpotPriceAboveTPF(balances);
+    // }
+
+    // function isSpotPriceBelowTPF() external view returns (bool) {
+    //     (, uint256[] memory balances, ) = balancerVault.getPoolTokens(balancerPoolId);
+    //     return isSpotPriceBelowTPF(balances);
+    // }
+
+    modifier enoughCooldown() {
         if (lastRebalanceTimeSecs != 0 && lastRebalanceTimeSecs + cooldownSecs <= block.timestamp) {
             revert AMOErrors.NotEnoughCooldown();
         }
         _;
     }
 
-    modifier onlyOperator {
+    modifier onlyOperator() {
         if (msg.sender != operator) {
             revert AMOErrors.NotOperator();
         }
         _;
     }
 
-    modifier onlyOperatorOrOwner {
+    modifier onlyOperatorOrOwner() {
         if (msg.sender != operator && msg.sender != owner()) {
             revert AMOErrors.NotOperatorOrOwner();
+        }
+        _;
+    }
+
+    modifier whenNotPaused() {
+        if(paused) {
+            revert AMOErrors.Paused();
         }
         _;
     }

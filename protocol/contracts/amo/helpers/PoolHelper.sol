@@ -10,7 +10,7 @@ abstract contract PoolHelper {
     bytes32 public balancerPoolId;
 
     // @notice temple index in balancer pool. to avoid recalculation or external calls
-    uint64 internal templeBalancerPoolIndex;
+    uint64 public templeBalancerPoolIndex;
 
     // @notice Temple price floor denominator
     uint256 public constant TPF_PRECISION = 10_000;
