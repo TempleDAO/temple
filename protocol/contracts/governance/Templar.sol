@@ -58,11 +58,17 @@ contract Templar is ERC721, AccessControl {
         }
     }
 
+    function exists(uint256 discordId) public view returns (bool) {
+        return _exists(discordId);
+    }
+
     function checkExists(uint256 discordId) public view {
         if (!_exists(discordId)) {
             revert InvalidTemplar(discordId);
         }
     }
+
+
 
     function _baseURI() internal view override returns (string memory) {
         return baseUri;
