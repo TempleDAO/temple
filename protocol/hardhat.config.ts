@@ -124,7 +124,7 @@ module.exports = {
       accounts: process.env.GOERLI_ADDRESS_PRIVATE_KEY 
         ? [process.env.GOERLI_ADDRESS_PRIVATE_KEY]
         : [],
-      gasPrice: 8000000000,
+      gasPrice: parseInt(process.env.GOERLI_GAS_IN_GWEI || '8') * 1000000000,
     },
     gnosisChiado: {
       url: process.env.GNOSIS_CHIADO_RPC_URL || '',

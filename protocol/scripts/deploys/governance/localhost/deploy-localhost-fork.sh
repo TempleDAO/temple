@@ -6,6 +6,8 @@
 
 set -x
 set -e
-npx hardhat run --network localhost scripts/deploys/governance/gnosis/01-templar-nft.ts
-npx hardhat run --network localhost scripts/deploys/governance/gnosis/02-elder-election.ts
-npx hardhat run --network localhost scripts/deploys/governance/gnosis/100-transfer-ownership.ts
+NETWORK=localhost
+npx hardhat run --network $NETWORK scripts/deploys/governance/$NETWORK/01-templar-nft.ts
+npx hardhat run --network $NETWORK scripts/deploys/governance/$NETWORK/02-elder-election.ts
+npx hardhat run --network $NETWORK scripts/deploys/governance/$NETWORK/03-templar-metadata.ts
+npx hardhat run --network $NETWORK scripts/deploys/governance/$NETWORK/100-transfer-ownership.ts

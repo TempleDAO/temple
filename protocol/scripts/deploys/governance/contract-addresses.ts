@@ -10,21 +10,28 @@ export interface DeployedContracts {
 export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     gnosisChiado: {
         MULTISIG: '0x1A88587a9b48f92000a68250b190Afb786BadFE5',  // This is a new random wallet - ask frontier if you need the private key.
-
         TEMPLAR_NFT: '',
-        // yarn hardhat verify --network gnosisChiado 0xD54e5bF777561B819de14DbEB2C2A4c371DFC8EE
-
         ELDER_ELECTION: '',
-        // yarn hardhat verify --network gnosisChiado 0xFe85ac1a8c04B81544BCD241C4c1c15b4024F030 0xD54e5bF777561B819de14DbEB2C2A4c371DFC8EE
-
         TEMPLAR_METADATA: '',
-        // yarn hardhat verify --network gnosisChiado XXXFIXMEXXX
     },
     gnosis: {
         MULTISIG: '',
         TEMPLAR_NFT: '',
         ELDER_ELECTION: '',
         TEMPLAR_METADATA: '',
+    },
+    goerli: {
+        MULTISIG: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
+
+        TEMPLAR_NFT: '0xE037235c5EF0dDbDDb558195C26b250c2F6EE947',
+        // yarn hardhat verify --network goerli 0xE037235c5EF0dDbDDb558195C26b250c2F6EE947
+
+        ELDER_ELECTION: '0xc7fa5E11c15418b3C22A271722e0d23d0653B710',
+        // yarn hardhat verify --network goerli 0xc7fa5E11c15418b3C22A271722e0d23d0653B710 0xE037235c5EF0dDbDDb558195C26b250c2F6EE947
+
+        TEMPLAR_METADATA: '0xa5e99790BB1417A07B7fdBFe3F353A72D2EC2cFf',
+        // yarn hardhat verify --network goerli 0xa5e99790BB1417A07B7fdBFe3F353A72D2EC2cFf 0xE037235c5EF0dDbDDb558195C26b250c2F6EE947
+
     },
     localhost: { 
         MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
