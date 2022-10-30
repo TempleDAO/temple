@@ -74,6 +74,7 @@ contract TPFAMO is PoolHelper, Ownable {
     event SetRebalanceRateChange(uint256);
     event SetPauseState(bool);
     event StableDeposited(uint256, uint256);
+    event RebalanceUp(uint256, uint256);
 
     constructor(
         address _balancerVault,
@@ -211,7 +212,6 @@ contract TPFAMO is PoolHelper, Ownable {
         uint256 bptAmountIn,
         uint256 _minAmountOut
     ) external onlyOperatorOrOwner enoughCooldown whenNotPaused {
-        //console.log("rebalanceUp", cappedRebalanceAmounts.bpt);
         _validateParams(_minAmountOut, bptAmountIn, cappedRebalanceAmounts.bpt);
         
         uint256 bptTokenAmount = bptToken.balanceOf(address(this));
@@ -237,7 +237,8 @@ contract TPFAMO is PoolHelper, Ownable {
         } else {
             exitPoolRequest = _createPoolExitRequest(bptAmountIn, 1, _minAmountOut);
         }
-
+        // withdraw bpt tokens
+        amoStaking.withdrawAndUnwrap(bptAmountIn, false, true);
         // safeincrease allowance
         bptToken.safeIncreaseAllowance(address(balancerVault), bptAmountIn);
 
@@ -274,16 +275,10 @@ contract TPFAMO is PoolHelper, Ownable {
      */
     function rebalanceDown(
         uint256 templeAmountIn,
-        uint256 minBptOut,
-        bool useContractTemple
+        uint256 minBptOut
     ) external onlyOperatorOrOwner enoughCooldown whenNotPaused {
-        //console.log("rebalanceDOWN", cappedRebalanceAmounts.temple);
         _validateParams(minBptOut, templeAmountIn, cappedRebalanceAmounts.temple);
         
-        if (!useContractTemple) {
-            ITempleERC20Token(address(temple)).mint(address(this), templeAmountIn);
-        }
-
         // check spot price is above TPF
         (, uint256[] memory balances,) = balancerVault.getPoolTokens(balancerPoolId);
         if (!isSpotPriceAboveTPF(balances)) {
@@ -292,6 +287,8 @@ contract TPFAMO is PoolHelper, Ownable {
         
         // check tolerance
         _checkTolerance(lastRebalanceDownAmount, templeAmountIn);
+
+        ITempleERC20Token(address(temple)).mint(address(this), templeAmountIn);
 
         // TODO: (|TPF - OP|/TPF) * A = B
 
@@ -310,11 +307,15 @@ contract TPFAMO is PoolHelper, Ownable {
         uint256 bptAmountBefore = bptToken.balanceOf(address(this));
         balancerVault.joinPool(balancerPoolId, address(this), address(this), joinPoolRequest);
         uint256 bptAmountAfter = bptToken.balanceOf(address(this));
-        if (bptAmountAfter < bptAmountBefore + minBptOut) {
+        uint256 bptIn;
+        unchecked {
+            bptIn = bptAmountAfter - bptAmountBefore;
+        }
+        if (bptIn < minBptOut) {
             revert AMOErrors.InsufficientAmountOutPostcall(bptAmountBefore + minBptOut, bptAmountAfter);
         }
 
-        // update rebalanceDown amount
+        // update rebalanceDown
         // use max of current amount and last updated
         lastRebalanceDownAmount = _getMax(lastRebalanceDownAmount, templeAmountIn);
 
@@ -325,6 +326,12 @@ contract TPFAMO is PoolHelper, Ownable {
         }
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
+
+        // deposit and stake BPT
+        bptToken.safeIncreaseAllowance(address(amoStaking), bptIn);
+        amoStaking.depositAndStake(bptIn);
+
+        emit RebalanceUp(templeAmountIn, bptIn);
     }
 
     // Single-side deposit stable
@@ -354,11 +361,15 @@ contract TPFAMO is PoolHelper, Ownable {
         stable.safeIncreaseAllowance(address(balancerVault), amountIn);
 
         // execute and sanity check
-        uint256 stableAmountBefore = stable.balanceOf(address(this));
+        uint256 bptAmountBefore = bptToken.balanceOf(address(this));
         balancerVault.joinPool(balancerPoolId, address(this), address(this), joinPoolRequest);
-        uint256 stableAmountAfter = stable.balanceOf(address(this));
-        if (stableAmountAfter < stableAmountBefore + minBptOut) {
-            revert AMOErrors.InsufficientAmountOutPostcall(stableAmountBefore + minBptOut, stableAmountAfter);
+        uint256 bptAmountAfter = bptToken.balanceOf(address(this));
+        uint256 bptOut;
+        unchecked {
+            bptOut = bptAmountAfter - bptAmountBefore;
+        }
+        if (bptOut < minBptOut) {
+            revert AMOErrors.InsufficientAmountOutPostcall(bptAmountBefore + minBptOut, bptAmountAfter);
         }
 
         // update last rebalanceUp amount
@@ -366,7 +377,10 @@ contract TPFAMO is PoolHelper, Ownable {
         lastRebalanceUpstableAmount = _getMax(lastRebalanceUpstableAmount, amountIn);
         lastRebalanceTimeSecs = uint64(block.timestamp);
 
-        emit StableDeposited(amountIn, stableAmountAfter - stableAmountBefore);
+        emit StableDeposited(amountIn, bptOut);
+
+        bptToken.safeIncreaseAllowance(address(amoStaking), bptOut);
+        amoStaking.depositAndStake(bptOut);
     }
 
     // Single-side withdraw stable
@@ -390,6 +404,9 @@ contract TPFAMO is PoolHelper, Ownable {
         } else {
             exitPoolRequest = _createPoolExitRequest(bptAmountIn, 0, minAmountOut);
         }
+
+        // withdraw and unwrap deposit token to BPT token
+        amoStaking.withdrawAndUnwrap(bptAmountIn, false, true);
 
         // safeincrease allowance
         bptToken.safeIncreaseAllowance(address(balancerVault), bptAmountIn);
@@ -616,6 +633,8 @@ contract TPFAMO is PoolHelper, Ownable {
         if (bptAmount < bptIn) {
             revert AMOErrors.InsufficientBPTAmount(bptIn);
         }
+
+        amoStaking.withdrawAndUnwrap(bptIn, false, true);
 
         bptToken.safeIncreaseAllowance(address(balancerVault), bptIn);
         balancerVault.exitPool(balancerPoolId, address(this), address(this), request);
