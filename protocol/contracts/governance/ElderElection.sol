@@ -128,7 +128,7 @@ contract ElderElection is EIP712, AccessControl {
     }
 
     event UpdateNomination(uint256 indexed discordId, bool isNominated);
-    event UpdateEndorsements(address indexed account, uint256[] discordId);
+    event UpdateEndorsements(address indexed account, uint256[] discordIds);
 
     error NotFromTemplar(address account, uint256 discordId);
     error NotCandidate(uint256 discordId);
