@@ -109,6 +109,26 @@ contract ElderElection is EIP712, AccessControl {
 
         _setEndorsements(account, discordIds);
     }
+    
+     /**
+       * @notice Returns a valid typehash for a relayed endorsement
+       */
+      function getHash(
+        address account,
+        uint256[] calldata discordIds,
+        uint256 deadline
+      ) external view returns (bytes32) {
+        bytes32 structHash = keccak256(
+          abi.encode(
+            SET_ENDORSEMENTS_FOR_TYPEHASH,
+            account,
+            discordIds,
+            deadline,
+            nonces[account]
+          )
+        );
+        return _hashTypedDataV4(structHash);
+      }
 
     /**
     * See {IERC20Permit-DOMAIN_SEPARATOR}.
