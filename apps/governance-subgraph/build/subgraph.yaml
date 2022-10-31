@@ -1,0 +1,86 @@
+specVersion: 0.0.5
+description: TempleDAO Governance Subgraph
+features:
+  - grafting
+repository: https://github.com/TempleDAO/temple/tree/stage/apps/governance-subgraph
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: Templar
+    network: goerli
+    source:
+      address: "0xE037235c5EF0dDbDDb558195C26b250c2F6EE947"
+      abi: Templar
+      startBlock: 7851328
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: Templar\Templar.wasm
+      entities:
+        - Templar
+      abis:
+        - name: Templar
+          file: Templar\abis\Templar.json
+        - name: TemplarMetadata
+          file: Templar\abis\TemplarMetadata.json
+        - name: ElderElection
+          file: Templar\abis\ElderElection.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: onTransfer
+        - event: BaseUriUpdated(string)
+          handler: onBaseUriUpdated
+  - kind: ethereum/contract
+    name: TemplarMetadata
+    network: goerli
+    source:
+      address: "0xc7fa5E11c15418b3C22A271722e0d23d0653B710"
+      abi: TemplarMetadata
+      startBlock: 7851385
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: TemplarMetadata\TemplarMetadata.wasm
+      entities:
+        - Templar
+      abis:
+        - name: Templar
+          file: TemplarMetadata\abis\Templar.json
+        - name: TemplarMetadata
+          file: TemplarMetadata\abis\TemplarMetadata.json
+        - name: ElderElection
+          file: TemplarMetadata\abis\ElderElection.json
+      eventHandlers:
+        - event: UpdateTempleRole(indexed uint256,string)
+          handler: onUpdateTempleRole
+  - kind: ethereum/contract
+    name: ElderElection
+    network: goerli
+    source:
+      address: "0xa5e99790BB1417A07B7fdBFe3F353A72D2EC2cFf"
+      abi: ElderElection
+      startBlock: 7851396
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ElderElection\ElderElection.wasm
+      entities:
+        - Endorser
+        - Endorsment
+        - Nomination
+      abis:
+        - name: Templar
+          file: ElderElection\abis\Templar.json
+        - name: TemplarMetadata
+          file: ElderElection\abis\TemplarMetadata.json
+        - name: ElderElection
+          file: ElderElection\abis\ElderElection.json
+      eventHandlers:
+        - event: UpdateEndorsements(indexed address,uint256[])
+          handler: onUpdateEndorsements
+        - event: UpdateNomination(indexed uint256,bool)
+          handler: onUpdateNomination
