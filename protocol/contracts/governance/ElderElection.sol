@@ -129,9 +129,7 @@ contract ElderElection is AccessControl {
 
         if (_useNonce(req.account) != req.nonce) revert InvalidNonce(req.account);
 
-         uint256[] memory discordIds = new uint256[](1);
-         discordIds[0] = req.discordId;
-        _setEndorsements(req.account, discordIds);
+        _setEndorsements(req.account, req.discordIds);
     }
 
     function recover(bytes32 hash, bytes memory sig) internal view returns (address) {
@@ -215,21 +213,32 @@ contract ElderElection is AccessControl {
 
     struct EndorsementReq {
         address account;
-        uint256 discordId;
+        uint256[] discordIds;
         uint256 deadline;
         uint256 nonce;
     }
 
-    bytes32 constant ENDORSEMENTREQ_TYPEHASH = keccak256("EndorsementReq(address account,uint256 discordId,uint256 deadline,uint256 nonce)");
+    bytes32 constant ENDORSEMENTREQ_TYPEHASH = keccak256("EndorsementReq(address account,uint256[] discordIds,uint256 deadline,uint256 nonce)");
 
     function hash(EndorsementReq memory _input) public view returns (bytes32) {
         return keccak256(abi.encode(
             ENDORSEMENTREQ_TYPEHASH,
             _input.account,
-            _input.discordId,
+            hash(_input.discordIds),
             _input.deadline,
             _input.nonce
         ));
+    }
+
+    function hash(uint256[] memory _input) public pure returns (bytes32) {
+        bytes memory encoded;
+        for (uint i = 0; i < _input.length; i++) {
+            encoded = bytes.concat(
+                encoded,
+                abi.encodePacked(_input[i])
+            );
+        }
+        return keccak256(encoded);
     }
 
 }

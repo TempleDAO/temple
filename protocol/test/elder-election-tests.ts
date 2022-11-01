@@ -136,7 +136,7 @@ describe("Elder Election", async () => {
 
       const req: ElderElection.EndorsementReqStruct = {
         account,
-        discordId: discordIds[0],
+        discordIds,
         deadline: deadline,
         nonce: nonce,
       };
@@ -150,7 +150,7 @@ describe("Elder Election", async () => {
       const types: Record<string, TypedDataField[]> = {
         EndorsementReq: [
           { name: 'account', type: 'address' },
-          { name: 'discordId', type: 'uint256' },
+          { name: 'discordIds', type: 'uint256[]' },
           { name: 'deadline', type: 'uint256' },
           { name: 'nonce', type: 'uint256' },
 
@@ -159,7 +159,7 @@ describe("Elder Election", async () => {
 
       const value: Record<string, unknown> = {
         account: req.account,
-        discordId: req.discordId,
+        discordIds: req.discordIds,
         deadline: deadline,
         nonce: nonce,
       };
@@ -201,6 +201,15 @@ describe("Elder Election", async () => {
         req,
         signature,
       )).to.be.revertedWith("InvalidNonce");
+    }
+
+    {
+      // Check multiple endorsements
+      const  {req, signature} = await signedReq(amanda, [DISCORD_ID_2, DISCORD_ID_3]);
+      await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
+        req,
+        signature,
+      )).to.emit(ELDER_ELECTION, "UpdateEndorsements");
     }
 
     {      
