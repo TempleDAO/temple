@@ -25,7 +25,7 @@ contract TPFAMO is PoolHelper, Ownable {
     using SafeERC20 for IERC20;
 
     // @notice balancer pool used for rebalancing
-    IBalancerVault public immutable balancerVault;
+    AMO__IBalancerVault public immutable balancerVault;
     IERC20 public immutable bptToken;
     IAuraBooster public booster;
 
@@ -85,7 +85,7 @@ contract TPFAMO is PoolHelper, Ownable {
         address _booster,
         uint256 _rebalanceRateChangeNumerator
     ) {
-        balancerVault = IBalancerVault(_balancerVault);
+        balancerVault = AMO__IBalancerVault(_balancerVault);
         temple = IERC20(_temple);
         stable = IERC20(_stable);
         bptToken = IERC20(_bptToken);
@@ -231,7 +231,7 @@ contract TPFAMO is PoolHelper, Ownable {
         // TODO: (|TPF - OP|/TPF) * A = B
 
         // construct request
-        IBalancerVault.ExitPoolRequest memory exitPoolRequest;
+        AMO__IBalancerVault.ExitPoolRequest memory exitPoolRequest;
         if (templeBalancerPoolIndex == 0) {
             exitPoolRequest = _createPoolExitRequest(bptAmountIn, 0, _minAmountOut);
         } else {
@@ -293,7 +293,7 @@ contract TPFAMO is PoolHelper, Ownable {
         // TODO: (|TPF - OP|/TPF) * A = B
 
         // construct request
-        IBalancerVault.JoinPoolRequest memory joinPoolRequest;
+        AMO__IBalancerVault.JoinPoolRequest memory joinPoolRequest;
         if (templeBalancerPoolIndex == 0) {
             joinPoolRequest = _createPoolJoinRequest(templeAmountIn, 0, minBptOut);
         } else {
@@ -350,7 +350,7 @@ contract TPFAMO is PoolHelper, Ownable {
         _checkTolerance(lastRebalanceUpstableAmount, amountIn);
 
         // construct request
-        IBalancerVault.JoinPoolRequest memory joinPoolRequest;
+        AMO__IBalancerVault.JoinPoolRequest memory joinPoolRequest;
         if (templeBalancerPoolIndex == 0) {
             joinPoolRequest = _createPoolJoinRequest(amountIn, 1, minBptOut);
         } else {
@@ -398,7 +398,7 @@ contract TPFAMO is PoolHelper, Ownable {
 
         _checkTolerance(lastRebalanceDownAmount, bptAmountIn);
 
-        IBalancerVault.ExitPoolRequest memory exitPoolRequest;
+        AMO__IBalancerVault.ExitPoolRequest memory exitPoolRequest;
         if (templeBalancerPoolIndex == 0) {
             exitPoolRequest = _createPoolExitRequest(bptAmountIn, 1, minAmountOut);
         } else {
@@ -457,15 +457,11 @@ contract TPFAMO is PoolHelper, Ownable {
         amoStaking.getReward(claimExtras);
     }
 
-
-    // todo: deposit TEMPLE or stable token using depositSingle from RewardPoolDepositWrapper 0xB188b1CB84Fb0bA13cb9ee1292769F903A9feC59
-
-
     function _createPoolJoinRequest(
         uint256 amountIn,
         uint256 tokenIndex,
         uint256 minTokenOut
-    ) internal view returns (IBalancerVault.JoinPoolRequest memory request) {
+    ) internal view returns (AMO__IBalancerVault.JoinPoolRequest memory request) {
         IERC20[] memory assets = new IERC20[](2);
         uint256[] memory maxAmountsIn = new uint256[](2);
         if (templeBalancerPoolIndex == 0) {
@@ -491,7 +487,7 @@ contract TPFAMO is PoolHelper, Ownable {
         uint256 bptAmountIn,
         uint256 tokenIndex,
         uint256 minAmountOut
-    ) internal view returns (IBalancerVault.ExitPoolRequest memory request) {
+    ) internal view returns (AMO__IBalancerVault.ExitPoolRequest memory request) {
         address[] memory assets = new address[](2);
         uint256[] memory minAmountsOut = new uint256[](2);
         if (templeBalancerPoolIndex == 0) {
@@ -554,7 +550,7 @@ contract TPFAMO is PoolHelper, Ownable {
     // this function is executed by contract owner and should be checked if spot price is within acceptable
     // skews off TPF before executing
     function addLiquidity(
-        IBalancerVault.JoinPoolRequest memory request,
+        AMO__IBalancerVault.JoinPoolRequest memory request,
         uint256 minBptOut
     ) external onlyOwner {
         // validate request
@@ -575,7 +571,6 @@ contract TPFAMO is PoolHelper, Ownable {
         }
 
         ITempleERC20Token(address(temple)).mint(address(this), templeAmount);
-        //console.log("AMO: Temple after mint", temple.balanceOf(address(this)));
         // safe allowance stable and TEMPLE
         temple.safeIncreaseAllowance(address(balancerVault), templeAmount);
         stable.safeIncreaseAllowance(address(balancerVault), stableAmount);
@@ -600,7 +595,7 @@ contract TPFAMO is PoolHelper, Ownable {
     // this function is executed by contract owner and should be checked if spot price is within acceptable
     // skews off TPF before executing
     function removeLiquidity(
-        IBalancerVault.ExitPoolRequest memory request,
+        AMO__IBalancerVault.ExitPoolRequest memory request,
         uint256 bptIn
     ) external onlyOwner {
         // validate request
