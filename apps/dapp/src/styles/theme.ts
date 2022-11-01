@@ -63,6 +63,13 @@ const theme: DefaultTheme = {
       mystery: '#8E76B0',
       logic: '#226697',
     },
+    relicRarity: {
+      common: darken(0.25, '#FFFFFF'),
+      uncommon: '#01806C',
+      rare: '#472DAD',
+      epic: '#8E76B0',
+      legendary: brandColor,
+    },
     gradients: {
       dark: 'linear-gradient(180deg, #353535 45.25%, #101010 87.55%)',
       grey: 'linear-gradient(90deg, rgba(196, 196, 196, 0) 0.49%, rgba(89, 89, 89, 0.48) 50.04%, rgba(196, 196, 196, 0) 100%)',

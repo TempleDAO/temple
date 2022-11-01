@@ -19,6 +19,10 @@ import { BorrowPage } from 'components/Pages/Core/DappPages/Borrow';
 import { LegacyPage } from 'components/Pages/Core/DappPages/LegacyPage';
 import V2Layout from 'components/Layouts/V2Layout';
 import { OhmagePage } from 'components/Pages/Core/DappPages/OhmagePage';
+import { Unstake } from 'components/Pages/Core/Trade/views/Unstake';
+import NexusPage from 'components/Pages/Nexus/Relic';
+import QuestPage from 'components/Pages/Nexus/Quest';
+import CoreLayout from 'components/Layouts/CoreLayout';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -73,6 +77,11 @@ ReactDOM.render(
               <Route path="borrow" element={<BorrowPage />} />
               <Route path="ohmage" element={<OhmagePage />} />
               <Route path="legacy" element={<LegacyPage />} />
+            </Route>
+            <Route path="/nexus/*" element={<CoreLayout mode='nexus' />}>
+              <Route path="" element={<Navigate to="relic" />} />
+              <Route path="relic/*" element={<NexusPage />} />
+              <Route path="quests/*" element={<QuestPage />} />
             </Route>
           </>
         </Routes>
