@@ -5,6 +5,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IBalancerVault {
+
   struct JoinPoolRequest {
     IERC20[] assets;
     uint256[] maxAmountsIn;
@@ -19,6 +20,21 @@ interface IBalancerVault {
     bool toInternalBalance;
   }
 
+  struct BatchSwapStep {
+    bytes32 poolId;
+    uint256 assetInIndex;
+    uint256 assetOutIndex;
+    uint256 amount;
+    bytes userData;
+  }
+
+  struct FundManagement {
+    address sender;
+    bool fromInternalBalance;
+    address payable recipient;
+    bool toInternalBalance;
+  }
+
   enum JoinKind { 
     INIT, 
     EXACT_TOKENS_IN_FOR_BPT_OUT, 
@@ -26,11 +42,25 @@ interface IBalancerVault {
     ALL_TOKENS_IN_FOR_EXACT_BPT_OUT 
   }
 
+  enum SwapKind {
+    GIVEN_IN,
+    GIVEN_OUT
+  }
+
+  function batchSwap(
+    SwapKind kind,
+    BatchSwapStep[] memory swaps,
+    address[] memory assets,
+    FundManagement memory funds,
+    int256[] memory limits,
+    uint256 deadline
+  ) external returns (int256[] memory assetDeltas);
+
   function joinPool(
-      bytes32 poolId,
-      address sender,
-      address recipient,
-      JoinPoolRequest memory request
+    bytes32 poolId,
+    address sender,
+    address recipient,
+    JoinPoolRequest memory request
   ) external payable;
 
   function exitPool( 

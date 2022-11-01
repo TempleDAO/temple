@@ -27,21 +27,21 @@ abstract contract PoolHelper {
         uint128 denominator;
     }
 
-    function spotPriceUsingLPRatio(uint256[] memory balances) internal view returns (uint256 templeBalance, uint256 daiBalance) {
+    function spotPriceUsingLPRatio(uint256[] memory balances) internal view returns (uint256 templeBalance, uint256 stableBalance) {
         if (templeBalancerPoolIndex == 0) {
             //price = balances[0] / balances[1];
             templeBalance = balances[0];
-            daiBalance = balances[1];
+            stableBalance = balances[1];
         } else {
             //price = balances[1] / balances[0];
             templeBalance = balances[1];
-            daiBalance = balances[0];
+            stableBalance = balances[0];
         }
     }
 
     function getSpotPriceScaled(uint256[] memory balances) internal view returns (uint256 spotPriceScaled) {
-        (uint256 templeBalance, uint256 daiBalance) = spotPriceUsingLPRatio(balances);
-        spotPriceScaled = (TPF_PRECISION * templeBalance) / daiBalance;
+        (uint256 templeBalance, uint256 stableBalance) = spotPriceUsingLPRatio(balances);
+        spotPriceScaled = (TPF_PRECISION * stableBalance) / templeBalance;
     }
 
     function isSpotPriceBelowTPF(uint256[] memory balances) internal view returns (bool) {
@@ -91,24 +91,5 @@ abstract contract PoolHelper {
             if lt(a, b) { maxValue := b }
             if iszero(maxValue) { maxValue := a }
         }
-    }
-
-    function _enoughBalance(address token, address balanceOwner, uint256 amount) private view returns (bool isEnough) {
-        // assembly {
-        //     mstore(calldatasize(), 0x00000033)
-        //     mstore(add(calldatasize(), 0x20), balanceOwner)
-
-        //     if iszero(
-        //         call(
-        //             gas(),
-        //             token,
-        //             0,
-        //             add(calldatasize(), 0x1c),
-        //             0x24,
-        //             calldatasize(),
-        //             0x20
-        //         )
-        //     ) { isEnough := false }
-        // }
     }
 }
