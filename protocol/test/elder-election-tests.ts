@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { BigNumber, BigNumberish, Signer } from "ethers";
+import { BigNumber } from "ethers";
 import { TypedDataDomain, TypedDataField, TypedDataSigner } from "@ethersproject/abstract-signer";
 import { expect } from "chai";
 
@@ -12,8 +12,6 @@ import { TemplarMetadata__factory } from "../typechain/factories/TemplarMetadata
 import { ElderElection } from "../typechain/ElderElection";
 import { ElderElection__factory } from "../typechain/factories/ElderElection__factory";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { TypedDataEncoder } from "./tdata";
-import { splitSignature } from "ethers/lib/utils";
 
 const DISCORD_ID_1 = 1000;
 const DISCORD_ID_2 = 1001;
@@ -164,14 +162,7 @@ describe("Elder Election", async () => {
         nonce: nonce,
       };
 
-      // console.log("_TypedDataEncoder.hashDomain", TypedDataEncoder.hashDomain(domain));
-      // console.log("_TypedDataEncoder.hashStruct", TypedDataEncoder.hashStruct("EndorsementReq", types, value));
-      // console.log("_TypedDataEncoder.hash", TypedDataEncoder.hash(domain, types, value));
-
       const signature = await voter._signTypedData(domain, types, value);
-      // console.log("signature", signature);
-      // console.log("split signature", splitSignature(signature));
-      // console.log("signature array", ethers.utils.arrayify(signature));
 
       return {
         req,

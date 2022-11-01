@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./Templar.sol";
-import "hardhat/console.sol";
 /**
  * @title A contract recording voting in the election of temple elders.
  *
@@ -58,8 +57,6 @@ contract ElderElection is AccessControl {
             version: '1',
             chainId: 1
         }));
-   //     console.log("DOMAIN_SEPARATOR");
-   //     console.logBytes32(DOMAIN_SEPARATOR);
     }
 
 
@@ -113,17 +110,10 @@ contract ElderElection is AccessControl {
             hash(req)
         ));
 
-       // console.log("digest");
-       // console.logBytes32(digest);
-
         address signer = recover(digest, signature);
         if (signer == address(0)) {
-            console.log("no recovered signer");
             revert InvalidSignature(req.account);
         }
-        //console.log("recovered signer ", signer);
-        //console.log("req.account", req.account);
-
         if (block.timestamp > req.deadline) revert DeadlineExpired(block.timestamp - req.deadline);
         if (signer != req.account) revert InvalidSignature(req.account);
 
@@ -132,20 +122,15 @@ contract ElderElection is AccessControl {
         _setEndorsements(req.account, req.discordIds);
     }
 
-    function recover(bytes32 hash, bytes memory sig) internal view returns (address) {
+    function recover(bytes32 hash, bytes memory sig) internal pure returns (address) {
         bytes32 r;
         bytes32 s;
         uint8 v;
-
-        // console.log("sig");
-        // console.logBytes(sig);
-
 
         //Check the signature length
         if (sig.length != 65) {
             return (address(0));
         }
-
 
         // Divide the signature in r, s and v variables
         assembly {
@@ -153,13 +138,6 @@ contract ElderElection is AccessControl {
             s := mload(add(sig, 64))
             v := byte(0, mload(add(sig, 96)))
         }
-
-        // console.log("signature.r");
-        // console.logBytes32(r);
-        // console.log("signature.s");
-        // console.logBytes32(s);
-        // console.log("signature.v");
-        // console.logBytes1(bytes1(v));
 
         // Version of signature should be 27 or 28, but 0 and 1 are also possible versions
         if (v < 27) {
@@ -220,7 +198,7 @@ contract ElderElection is AccessControl {
 
     bytes32 constant ENDORSEMENTREQ_TYPEHASH = keccak256("EndorsementReq(address account,uint256[] discordIds,uint256 deadline,uint256 nonce)");
 
-    function hash(EndorsementReq memory _input) public view returns (bytes32) {
+    function hash(EndorsementReq memory _input) public pure returns (bytes32) {
         return keccak256(abi.encode(
             ENDORSEMENTREQ_TYPEHASH,
             _input.account,
