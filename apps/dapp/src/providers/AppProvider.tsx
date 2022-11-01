@@ -1,10 +1,4 @@
-import {
-  PropsWithChildren,
-  useState,
-  useCallback,
-  useContext,
-  createContext,
-} from 'react';
+import { PropsWithChildren, useState, useCallback, useContext, createContext } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { theme } from 'styles/theme';
 import { NotificationProvider } from 'providers/NotificationProvider';
@@ -18,6 +12,7 @@ import { VaultContextProvider } from 'components/Pages/Core/VaultContext';
 import { noop } from 'utils/helpers';
 import { ConnectorPopover } from 'components/Layouts/CoreLayout/ConnectorPopover';
 import { WrongNetworkPopover } from 'components/Layouts/CoreLayout/WrongNetworkPopover';
+import { RelicProvider } from './RelicProvider';
 
 interface AppProviderState {
   showConnectPopover: () => void;
@@ -44,16 +39,18 @@ export const AppProvider = (props: PropsWithChildren<{}>) => {
             <StakingProvider>
               <FaithProvider>
                 <VaultContextProvider>
-                  <ThemeProvider theme={theme}>
-                    <AppContext.Provider value={{ showConnectPopover }}>
-                      <ConnectorPopover
-                        isOpen={connectPopoverVisible}
-                        onClose={() => setConnectPopoverVisibile(false)}
-                      />
-                      <WrongNetworkPopover />
-                      {props.children}
-                    </AppContext.Provider>
-                  </ThemeProvider>
+                  <RelicProvider>
+                    <ThemeProvider theme={theme}>
+                      <AppContext.Provider value={{ showConnectPopover }}>
+                        <ConnectorPopover
+                          isOpen={connectPopoverVisible}
+                          onClose={() => setConnectPopoverVisibile(false)}
+                        />
+                        <WrongNetworkPopover />
+                        {props.children}
+                      </AppContext.Provider>
+                    </ThemeProvider>
+                  </RelicProvider>
                 </VaultContextProvider>
               </FaithProvider>
             </StakingProvider>

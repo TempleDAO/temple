@@ -33,6 +33,8 @@ import { AscendListPage } from 'components/Pages/AscendList';
 
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
+import NexusPage from 'components/Pages/Nexus/Relic';
+import QuestPage from 'components/Pages/Nexus/Quest';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -92,7 +94,7 @@ ReactDOM.render(
               <Route path="disclaimer" element={<Disclaimer />} />
               <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
             </Route>
-            <Route path="/dapp/*" element={<CoreLayout />}>
+            <Route path="/dapp/*" element={<CoreLayout mode='dapp' />}>
               <Route path="" element={<VaultListPage />} />
               <Route path="vaults" element={<VaultListPage />} />
               <Route path="vaults/:vaultId/*" element={<VaultPage />}>
@@ -118,6 +120,11 @@ ReactDOM.render(
               )}
 
               <Route path="analytics" element={<AnalyticsPage />} />
+            </Route>
+            <Route path="/nexus/*" element={<CoreLayout mode='nexus' />}>
+              <Route path="" element={<Navigate to="relic" />} />
+              <Route path="relic/*" element={<NexusPage />} />
+              <Route path="quests/*" element={<QuestPage />} />
             </Route>
           </>
         </Routes>
