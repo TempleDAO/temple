@@ -137,7 +137,8 @@ describe("Elder Election", async () => {
       const req: ElderElection.EndorsementReqStruct = {
         account,
         discordId: discordIds[0],
-        deadline: deadline
+        deadline: deadline,
+        nonce: nonce,
       };
 
       const domain: TypedDataDomain = {
@@ -150,14 +151,17 @@ describe("Elder Election", async () => {
         EndorsementReq: [
           { name: 'account', type: 'address' },
           { name: 'discordId', type: 'uint256' },
-          { name: 'deadline', type: 'uint256' }
+          { name: 'deadline', type: 'uint256' },
+          { name: 'nonce', type: 'uint256' },
+
         ]
       };
 
       const value: Record<string, unknown> = {
         account: req.account,
         discordId: req.discordId,
-        deadline: deadline
+        deadline: deadline,
+        nonce: nonce,
       };
 
       // console.log("_TypedDataEncoder.hashDomain", TypedDataEncoder.hashDomain(domain));
@@ -181,15 +185,22 @@ describe("Elder Election", async () => {
       await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
         req,
         signature,
-      )).to.be.revertedWith("InvalidSignature");;
+      )).to.be.revertedWith("InvalidSignature");
     }
 
     {
+      // A correctly signed request will succeed
       const  {req, signature} = await signedReq(ben, [DISCORD_ID_1]);
       await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
         req,
         signature,
       )).to.emit(ELDER_ELECTION, "UpdateEndorsements");
+
+      // Replaying a correctly signed request should fail
+      await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
+        req,
+        signature,
+      )).to.be.revertedWith("InvalidNonce");
     }
 
     {      

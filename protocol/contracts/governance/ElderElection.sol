@@ -127,6 +127,8 @@ contract ElderElection is AccessControl {
         if (block.timestamp > req.deadline) revert DeadlineExpired(block.timestamp - req.deadline);
         if (signer != req.account) revert InvalidSignature(req.account);
 
+        if (_useNonce(req.account) != req.nonce) revert InvalidNonce(req.account);
+
          uint256[] memory discordIds = new uint256[](1);
          discordIds[0] = req.discordId;
         _setEndorsements(req.account, discordIds);
@@ -191,6 +193,7 @@ contract ElderElection is AccessControl {
     error TooManyEndorsements();
 
     error DeadlineExpired(uint256 lateBy);
+    error InvalidNonce(address account);
     error InvalidSignature(address account);
     
     struct EIP712Domain {
@@ -214,16 +217,18 @@ contract ElderElection is AccessControl {
         address account;
         uint256 discordId;
         uint256 deadline;
+        uint256 nonce;
     }
 
-    bytes32 constant ENDORSEMENTREQ_TYPEHASH = keccak256("EndorsementReq(address account,uint256 discordId,uint256 deadline)");
+    bytes32 constant ENDORSEMENTREQ_TYPEHASH = keccak256("EndorsementReq(address account,uint256 discordId,uint256 deadline,uint256 nonce)");
 
     function hash(EndorsementReq memory _input) public view returns (bytes32) {
         return keccak256(abi.encode(
             ENDORSEMENTREQ_TYPEHASH,
             _input.account,
             _input.discordId,
-            _input.deadline
+            _input.deadline,
+            _input.nonce
         ));
     }
 
