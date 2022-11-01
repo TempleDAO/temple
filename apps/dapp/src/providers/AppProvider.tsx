@@ -10,6 +10,7 @@ import { VaultContextProvider } from 'components/Pages/Core/VaultContext';
 
 import { Web3OnboardInitProvider } from 'components/Web3OnboardInitProvider';
 import { WrongNetworkPopover } from 'components/Layouts/CoreLayout/WrongNetworkPopover';
+import { RelicProvider } from './RelicProvider';
 
 interface AppProviderState {}
 
@@ -26,12 +27,14 @@ export const AppProvider = (props: PropsWithChildren<{}>) => {
             <StakingProvider>
               <FaithProvider>
                 <VaultContextProvider>
-                  <ThemeProvider theme={theme}>
-                    <AppContext.Provider value={{}}>
-                      <WrongNetworkPopover />
-                      {props.children}
-                    </AppContext.Provider>
-                  </ThemeProvider>
+                  <RelicProvider>
+                    <ThemeProvider theme={theme}>
+                      <AppContext.Provider value={{}}>
+                        <WrongNetworkPopover />
+                        {props.children}
+                      </AppContext.Provider>
+                    </ThemeProvider>
+                  </RelicProvider>
                 </VaultContextProvider>
               </FaithProvider>
             </StakingProvider>
