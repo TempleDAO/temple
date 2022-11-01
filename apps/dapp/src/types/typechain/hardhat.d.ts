@@ -266,13 +266,6 @@ declare module "hardhat/types/runtime" {
     ): Promise<Contracts.NoopLiquidator__factory>;
     getContractFactory(
       name: "NoopVaultedTempleLiquidator",
-<<<<<<< HEAD
-=======
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.NoopVaultedTempleLiquidator__factory>;
-    getContractFactory(
-      name: "TestTreasuryAllocation",
->>>>>>> 4db351e9 (All of xavs work from earlier branch)
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.NoopVaultedTempleLiquidator__factory>;
     getContractFactory(
@@ -280,21 +273,18 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.UniswapV2Router02NoEth__factory>;
     getContractFactory(
-      name: "GenericZap",
+      name: "ElderElection",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.GenericZap__factory>;
+    ): Promise<Contracts.ElderElection__factory>;
     getContractFactory(
-      name: "IBalancerVault",
+      name: "Templar",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IBalancerVault__factory>;
+    ): Promise<Contracts.Templar__factory>;
     getContractFactory(
-      name: "ICurveFactory",
+      name: "TemplarMetadata",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ICurveFactory__factory>;
+    ): Promise<Contracts.TemplarMetadata__factory>;
     getContractFactory(
-<<<<<<< HEAD
-      name: "ICurvePool",
-=======
       name: "IItems",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IItems__factory>;
@@ -311,8 +301,19 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.RelicItems__factory>;
     getContractFactory(
-      name: "OGTemple",
->>>>>>> 4db351e9 (All of xavs work from earlier branch)
+      name: "GenericZap",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.GenericZap__factory>;
+    getContractFactory(
+      name: "IBalancerVault",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IBalancerVault__factory>;
+    getContractFactory(
+      name: "ICurveFactory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ICurveFactory__factory>;
+    getContractFactory(
+      name: "ICurvePool",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ICurvePool__factory>;
     getContractFactory(
@@ -673,14 +674,6 @@ declare module "hardhat/types/runtime" {
     ): Promise<Contracts.NoopLiquidator>;
     getContractAt(
       name: "NoopVaultedTempleLiquidator",
-<<<<<<< HEAD
-=======
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.NoopVaultedTempleLiquidator>;
-    getContractAt(
-      name: "TestTreasuryAllocation",
->>>>>>> 4db351e9 (All of xavs work from earlier branch)
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.NoopVaultedTempleLiquidator>;
@@ -690,24 +683,21 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.UniswapV2Router02NoEth>;
     getContractAt(
-      name: "GenericZap",
+      name: "ElderElection",
       address: string,
       signer?: ethers.Signer
-    ): Promise<Contracts.GenericZap>;
+    ): Promise<Contracts.ElderElection>;
     getContractAt(
-      name: "IBalancerVault",
+      name: "Templar",
       address: string,
       signer?: ethers.Signer
-    ): Promise<Contracts.IBalancerVault>;
+    ): Promise<Contracts.Templar>;
     getContractAt(
-      name: "ICurveFactory",
+      name: "TemplarMetadata",
       address: string,
       signer?: ethers.Signer
-    ): Promise<Contracts.ICurveFactory>;
+    ): Promise<Contracts.TemplarMetadata>;
     getContractAt(
-<<<<<<< HEAD
-      name: "ICurvePool",
-=======
       name: "IItems",
       address: string,
       signer?: ethers.Signer
@@ -728,8 +718,22 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.RelicItems>;
     getContractAt(
-      name: "OGTemple",
->>>>>>> 4db351e9 (All of xavs work from earlier branch)
+      name: "GenericZap",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.GenericZap>;
+    getContractAt(
+      name: "IBalancerVault",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IBalancerVault>;
+    getContractAt(
+      name: "ICurveFactory",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ICurveFactory>;
+    getContractAt(
+      name: "ICurvePool",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ICurvePool>;
