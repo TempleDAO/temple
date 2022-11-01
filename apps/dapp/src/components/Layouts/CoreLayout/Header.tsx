@@ -1,6 +1,7 @@
 import { FC, useRef, useState, useCallback, useLayoutEffect, SyntheticEvent } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
+import { TEMPLE_RELIC_ADDRESS, VITE_PUBLIC_DEV_MODE } from 'providers/env';
 
 import { flexCenter, buttonResets, backgroundImage, pixelsToRems } from 'styles/mixins';
 import { UnstyledList } from 'styles/common';
@@ -16,7 +17,9 @@ import animationData from 'assets/animations/logo-animation.json';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
 import { Account } from './Account';
 
-const Header = () => {
+export type HeaderMode = 'dapp' | 'nexus'
+
+const Header: FC<{ mode: HeaderMode }> = (props) => {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const onClickMenuItem = useCallback(() => {
     setIsNavOpen(false);
@@ -35,7 +38,11 @@ const Header = () => {
             <Lottie animationData={animationData} height={36} width={36} />
           </Logo>
         </MobileNavLeft>
-        <Navigation isNavOpenMobile={isNavOpen} onClickMenuItem={onClickMenuItem} />
+        <Navigation
+          isNavOpenMobile={isNavOpen}
+          onClickMenuItem={onClickMenuItem}
+          mode={props.mode}
+        />
         <AccountWrapper>
           <Account />
         </AccountWrapper>
@@ -49,9 +56,31 @@ export default Header;
 interface NavigationProps {
   isNavOpenMobile: boolean;
   onClickMenuItem?: (event: SyntheticEvent) => void;
+  mode: HeaderMode
 }
 
-const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
+function getMenuItems(mode: HeaderMode) {
+  switch(mode) {
+    case 'dapp':
+      return [
+        { title: 'Vaults', path: '/dapp/vaults' },
+        { title: 'Trade', path: '/dapp/trade' },
+        { title: 'Profile', path: '/dapp/profile' },
+        { title: 'Analytics', path: '/dapp/analytics' },
+        { title: 'Nexus', path: '/nexus' },
+      ]
+    case 'nexus':
+      const devMode = VITE_PUBLIC_DEV_MODE == 'true'
+      return (devMode ? [{ title: 'Dev Mint', path: '/nexus/relic/dev-mint' }] : [])
+        .concat([
+          { title: 'Relic', path: '/nexus/relic' },
+          { title: 'Quests', path: '/nexus/quests' },
+          { title: 'Dapp', path: '/dapp' },
+        ])
+  }
+}
+
+const Navigation = ({ isNavOpenMobile, onClickMenuItem, mode }: NavigationProps) => {
   const [selectorPosition, setSelectorPosition] = useState(0);
 
   const onMenuItemActive = useCallback(
@@ -66,14 +95,16 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
     <NavWrapper $isOpen={isNavOpenMobile}>
       <MenuWrapper>
         <Menu id="menu">
-          <MenuItem to="/dapp/vaults" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
-            Vaults
-          </MenuItem>
-          {env.featureFlags.enableAscend && (
-            <MenuItem to="/dapp/ascend" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
-              Ascend
-            </MenuItem>
-          )}
+          { getMenuItems(mode).map(item => (<MenuItem
+                key={item.path}
+                to={item.path}
+                onMenuItemActive={onMenuItemActive}
+                onClick={onClickMenuItem}
+              >
+                {item.title}
+              </MenuItem>
+            ))
+          }
         </Menu>
         <Selector $position={selectorPosition} />
       </MenuWrapper>

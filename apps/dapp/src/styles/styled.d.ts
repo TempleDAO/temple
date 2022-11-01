@@ -27,6 +27,13 @@ declare module 'styled-components' {
         mystery: string;
         logic: string;
       };
+      relicRarity: {
+        common: string;
+        uncommon: string;
+        rare: string;
+        epic: string;
+        legendary: string;
+      }
       gradients: {
         dark: string;
       };
