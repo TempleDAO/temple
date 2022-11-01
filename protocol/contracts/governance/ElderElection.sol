@@ -56,7 +56,7 @@ contract ElderElection is AccessControl {
         DOMAIN_SEPARATOR = hash(EIP712Domain({
             name: "ElderElection",
             version: '1',
-            chainId: 1
+            chainId: block.chainid
         }));
     }
 

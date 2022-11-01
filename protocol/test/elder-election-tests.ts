@@ -115,6 +115,7 @@ describe("Elder Election", async () => {
   it("relayed endorsements work", async () => {
 
     const provider = ethers.getDefaultProvider();
+    const chainId = 31337;
 
     {
       const election = ELDER_ELECTION.connect(nominator);
@@ -142,7 +143,7 @@ describe("Elder Election", async () => {
       const domain: TypedDataDomain = {
         name: 'ElderElection',
         version: '1',
-        chainId: 1,
+        chainId,
       };
 
       const types: Record<string, TypedDataField[]> = {
