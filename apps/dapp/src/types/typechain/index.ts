@@ -63,8 +63,14 @@ export type { TempleStaking } from "./TempleStaking";
 export type { FakeERC20 } from "./FakeERC20";
 export type { NoopLiquidator } from "./NoopLiquidator";
 export type { NoopVaultedTempleLiquidator } from "./NoopVaultedTempleLiquidator";
-<<<<<<< HEAD
 export type { UniswapV2Router02NoEth } from "./UniswapV2Router02NoEth";
+export type { ElderElection } from "./ElderElection";
+export type { Templar } from "./Templar";
+export type { TemplarMetadata } from "./TemplarMetadata";
+export type { IItems } from "./IItems";
+export type { Relic } from "./Relic";
+export type { IRelic } from "./IRelic";
+export type { RelicItems } from "./RelicItems";
 export type { GenericZap } from "./GenericZap";
 export type { IBalancerVault } from "./IBalancerVault";
 export type { ICurveFactory } from "./ICurveFactory";
@@ -75,22 +81,6 @@ export type { IUniswapV2Router } from "./IUniswapV2Router";
 export type { EthConstants } from "./EthConstants";
 export type { TempleZaps } from "./TempleZaps";
 export type { ZapBase } from "./ZapBase";
-=======
-export type { TestTreasuryAllocation } from "./TestTreasuryAllocation";
-export type { UniswapV2Router02NoEth } from "./UniswapV2Router02NoEth";
-export type { ITreasuryAllocation } from "./ITreasuryAllocation";
-export type { LockedOGTemple } from "./LockedOGTemple";
-export type { MintAllowance } from "./MintAllowance";
-export type { IItems } from "./IItems";
-export type { Relic } from "./Relic";
-export type { IRelic } from "./IRelic";
-export type { RelicItems } from "./RelicItems";
-export type { OGTemple } from "./OGTemple";
-export type { TempleERC20Token } from "./TempleERC20Token";
-export type { TempleStaking } from "./TempleStaking";
-export type { TempleTeamPayments } from "./TempleTeamPayments";
-export type { TempleTreasury } from "./TempleTreasury";
->>>>>>> 4db351e9 (All of xavs work from earlier branch)
 
 export { AccessControl__factory } from "./factories/AccessControl__factory";
 export { IAccessControl__factory } from "./factories/IAccessControl__factory";
@@ -154,8 +144,14 @@ export { TempleStaking__factory } from "./factories/TempleStaking__factory";
 export { FakeERC20__factory } from "./factories/FakeERC20__factory";
 export { NoopLiquidator__factory } from "./factories/NoopLiquidator__factory";
 export { NoopVaultedTempleLiquidator__factory } from "./factories/NoopVaultedTempleLiquidator__factory";
-<<<<<<< HEAD
 export { UniswapV2Router02NoEth__factory } from "./factories/UniswapV2Router02NoEth__factory";
+export { ElderElection__factory } from "./factories/ElderElection__factory";
+export { Templar__factory } from "./factories/Templar__factory";
+export { TemplarMetadata__factory } from "./factories/TemplarMetadata__factory";
+export { IItems__factory } from "./factories/IItems__factory";
+export { Relic__factory } from "./factories/Relic__factory";
+export { IRelic__factory } from "./factories/IRelic__factory";
+export { RelicItems__factory } from "./factories/RelicItems__factory";
 export { GenericZap__factory } from "./factories/GenericZap__factory";
 export { IBalancerVault__factory } from "./factories/IBalancerVault__factory";
 export { ICurveFactory__factory } from "./factories/ICurveFactory__factory";
@@ -166,19 +162,3 @@ export { IUniswapV2Router__factory } from "./factories/IUniswapV2Router__factory
 export { EthConstants__factory } from "./factories/EthConstants__factory";
 export { TempleZaps__factory } from "./factories/TempleZaps__factory";
 export { ZapBase__factory } from "./factories/ZapBase__factory";
-=======
-export { TestTreasuryAllocation__factory } from "./factories/TestTreasuryAllocation__factory";
-export { UniswapV2Router02NoEth__factory } from "./factories/UniswapV2Router02NoEth__factory";
-export { ITreasuryAllocation__factory } from "./factories/ITreasuryAllocation__factory";
-export { LockedOGTemple__factory } from "./factories/LockedOGTemple__factory";
-export { MintAllowance__factory } from "./factories/MintAllowance__factory";
-export { IItems__factory } from "./factories/IItems__factory";
-export { Relic__factory } from "./factories/Relic__factory";
-export { IRelic__factory } from "./factories/IRelic__factory";
-export { RelicItems__factory } from "./factories/RelicItems__factory";
-export { OGTemple__factory } from "./factories/OGTemple__factory";
-export { TempleERC20Token__factory } from "./factories/TempleERC20Token__factory";
-export { TempleStaking__factory } from "./factories/TempleStaking__factory";
-export { TempleTeamPayments__factory } from "./factories/TempleTeamPayments__factory";
-export { TempleTreasury__factory } from "./factories/TempleTreasury__factory";
->>>>>>> 4db351e9 (All of xavs work from earlier branch)
