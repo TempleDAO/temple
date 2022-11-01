@@ -63,21 +63,33 @@ export interface NoopVaultedTempleLiquidator extends BaseContract {
   functions: {
     toTemple(
       amount: BigNumberish,
+<<<<<<< HEAD
       arg1: string,
+=======
+      toAccount: string,
+>>>>>>> 4db351e9 (All of xavs work from earlier branch)
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
 
   toTemple(
     amount: BigNumberish,
+<<<<<<< HEAD
     arg1: string,
+=======
+    toAccount: string,
+>>>>>>> 4db351e9 (All of xavs work from earlier branch)
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
     toTemple(
       amount: BigNumberish,
+<<<<<<< HEAD
       arg1: string,
+=======
+      toAccount: string,
+>>>>>>> 4db351e9 (All of xavs work from earlier branch)
       overrides?: CallOverrides
     ): Promise<void>;
   };
@@ -87,7 +99,11 @@ export interface NoopVaultedTempleLiquidator extends BaseContract {
   estimateGas: {
     toTemple(
       amount: BigNumberish,
+<<<<<<< HEAD
       arg1: string,
+=======
+      toAccount: string,
+>>>>>>> 4db351e9 (All of xavs work from earlier branch)
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
@@ -95,7 +111,11 @@ export interface NoopVaultedTempleLiquidator extends BaseContract {
   populateTransaction: {
     toTemple(
       amount: BigNumberish,
+<<<<<<< HEAD
       arg1: string,
+=======
+      toAccount: string,
+>>>>>>> 4db351e9 (All of xavs work from earlier branch)
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

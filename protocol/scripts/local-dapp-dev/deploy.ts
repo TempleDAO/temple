@@ -17,6 +17,8 @@ import {
   VaultProxy__factory,
   InstantExitQueue__factory,
   LockedOGTemple__factory,
+  Relic__factory,
+  RelicItems__factory,
 } from '../../typechain';
 
 function toAtto(n: number) {
@@ -274,6 +276,12 @@ async function main() {
 
   await faith.addManager(vaultProxy.address);
 
+  const relic = await new Relic__factory(owner).deploy()
+  const relicItems = await new RelicItems__factory(owner).deploy()
+  await relic.setItemContract(relicItems.address)
+  await relic.setThresholds([0, 10, 100, 1000, 1000])
+  await relicItems.setRelic(relic.address)
+  
   // Print config required to run dApp
   const contract_address: { [key: string]: string } = {
     INSTANT_EXIT_QUEUE_ADDRESS: instantExitQueue.address,
@@ -310,6 +318,9 @@ async function main() {
     //       In production, these will always be different keys
     LOCALDEV_VERIFER_EXTERNAL_ADDRESS: verifier.address,
     LOCALDEV_VERIFER_EXTERNAL_PRIVATE_KEY: verifier.privateKey,
+
+    TEMPLE_RELIC_ADDRESS: relic.address,
+    TEMPLE_RELIC_ITEMS_ADDRESS: relicItems.address,
   };
 
   console.log('\n=========================================');
