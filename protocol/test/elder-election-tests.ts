@@ -1,5 +1,6 @@
 import { ethers } from "hardhat";
-import { Signer } from "ethers";
+import { BigNumber, BigNumberish, Signer } from "ethers";
+import { TypedDataDomain, TypedDataField, TypedDataSigner } from "@ethersproject/abstract-signer";
 import { expect } from "chai";
 
 import { Templar } from "../typechain/Templar";
@@ -10,6 +11,9 @@ import { TemplarMetadata__factory } from "../typechain/factories/TemplarMetadata
 
 import { ElderElection } from "../typechain/ElderElection";
 import { ElderElection__factory } from "../typechain/factories/ElderElection__factory";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { TypedDataEncoder } from "./tdata";
+import { splitSignature } from "ethers/lib/utils";
 
 const DISCORD_ID_1 = 1000;
 const DISCORD_ID_2 = 1001;
@@ -18,20 +22,22 @@ const DISCORD_ID_3 = 1001;
 const TEMPLE_ROLE_ACOLYTE = "acolyte";
 const TEMPLE_ROLE_INITIATE = "initiate";
 
+type MySigner = SignerWithAddress & TypedDataSigner;
+
 describe("Elder Election", async () => {
   let TEMPLAR: Templar;
   let TEMPLAR_METADATA: TemplarMetadata;
   let ELDER_ELECTION: ElderElection;
 
-  let owner: Signer;
-  let assigner: Signer;
-  let nominator: Signer;
-  let amanda: Signer;
-  let ben: Signer;
-  let sarah: Signer;
+  let owner: MySigner;
+  let assigner: MySigner;
+  let nominator: MySigner;
+  let amanda: MySigner;
+  let ben: MySigner;
+  let sarah: MySigner;
  
   beforeEach(async () => {
-    [owner, assigner, nominator, amanda, ben, sarah] = await ethers.getSigners();
+    [owner, assigner, nominator, amanda, ben, sarah] = (await ethers.getSigners() as MySigner[]);
     TEMPLAR = await new Templar__factory(owner).deploy();
     TEMPLAR_METADATA = await new TemplarMetadata__factory(owner).deploy(TEMPLAR.address);
     ELDER_ELECTION = await new ElderElection__factory(owner).deploy(TEMPLAR.address);
@@ -50,7 +56,6 @@ describe("Elder Election", async () => {
     await templarMetadata.setRole(DISCORD_ID_2, TEMPLE_ROLE_ACOLYTE);
     await templar.assign(await sarah.getAddress(), DISCORD_ID_3);
     await templarMetadata.setRole(DISCORD_ID_3, TEMPLE_ROLE_INITIATE);
-
   })
 
   it("nominations work", async () => {
@@ -109,92 +114,100 @@ describe("Elder Election", async () => {
     .to.be.revertedWith("TooManyEndorsements");
   });
 
-// TODO: complete implementation of relay tests
-//
-//   it("relayed endorsements work", async () => {
+  it("relayed endorsements work", async () => {
 
-//     const provider = ethers.getDefaultProvider();
+    const provider = ethers.getDefaultProvider();
 
-//     {
-//       const election = ELDER_ELECTION.connect(nominator);
-//       await election.nominate(DISCORD_ID_1);
-//       await election.nominate(DISCORD_ID_2);
-//     }
+    {
+      const election = ELDER_ELECTION.connect(nominator);
+      await election.nominate(DISCORD_ID_1);
+      await election.nominate(DISCORD_ID_2);
+    }
 
-//     async function signedSetEndorsementReq(voter: Signer, discordIds: number[]): Promise<SetEndorsementReq> {
+    async function signedReq(voter: MySigner, discordIds: number[]):
+       Promise<{req: ElderElection.EndorsementReqStruct, signature: Uint8Array}> {
 
-//       const block = await provider.getBlock(await provider.getBlockNumber());
-//       const now = block.timestamp;
+      const block = await provider.getBlock(await provider.getBlockNumber());
+      const now = block.timestamp;
 
-//       const account = await voter.getAddress();
-//       const deadline = now + 60;
-//       const nonce = await ELDER_ELECTION._nonces(account);
+      const account = await voter.getAddress();
+      const deadline = now + 120;
+      const nonce = await ELDER_ELECTION.nonces(account);
 
-//       const abiCoder = new AbiCoder();
-//       const header = await ELDER_ELECTION.SET_ENDORSEMENTS_FOR_TYPEHASH();
-//       const message = abiCoder.encode(
-//         [
-//           "bytes32",
-//           "address",
-//           "uint256[]",
-//           "uint256",
-//           "uint256",
-//         ],
-//         [
-//           header,
-//           account,
-//           discordIds,
-//           deadline,
-//           nonce,
-//         ]
-//       );
-//       const messageBytes = ethers.utils.arrayify(message);
-//       const signature = await voter.signMessage(messageBytes)
+      const req: ElderElection.EndorsementReqStruct = {
+        account,
+        discordId: discordIds[0],
+        deadline: deadline
+      };
 
-//       return {
-//         account,
-//         deadline,
-//         discordIds,
-//         signature,
-//       }
-//     } 
+      const domain: TypedDataDomain = {
+        name: 'ElderElection',
+        version: '1',
+        chainId: 1,
+      };
 
-//     {
-//       const req = await signedSetEndorsementReq(ben, [DISCORD_ID_1]);
-//       await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
-//         req.account,
-//         req.discordIds,
-//         req.deadline - 600,
-//         req.signature,
-//       )).to.be.revertedWith("DeadlineExpired");
-//     }
+      const types: Record<string, TypedDataField[]> = {
+        EndorsementReq: [
+          { name: 'account', type: 'address' },
+          { name: 'discordId', type: 'uint256' },
+          { name: 'deadline', type: 'uint256' }
+        ]
+      };
 
-//     {
-//       const req = await signedSetEndorsementReq(ben, [DISCORD_ID_1]);
-//       await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
-//         req.account,
-//         req.discordIds,
-//         req.deadline,
-//         await ben.signMessage("XXXX"),
-//       )).to.emit(ELDER_ELECTION, "InvalidSignature");
-//     }
+      const value: Record<string, unknown> = {
+        account: req.account,
+        discordId: req.discordId,
+        deadline: deadline
+      };
 
-//     {
-//       const req = await signedSetEndorsementReq(ben, [DISCORD_ID_1]);
-//       await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
-//         req.account,
-//         req.discordIds,
-//         req.deadline,
-//         req.signature,
-//       )).to.emit(ELDER_ELECTION, "UpdateEndorsements");
-//       }
-//   });
+      // console.log("_TypedDataEncoder.hashDomain", TypedDataEncoder.hashDomain(domain));
+      // console.log("_TypedDataEncoder.hashStruct", TypedDataEncoder.hashStruct("EndorsementReq", types, value));
+      // console.log("_TypedDataEncoder.hash", TypedDataEncoder.hash(domain, types, value));
+
+      const signature = await voter._signTypedData(domain, types, value);
+      // console.log("signature", signature);
+      // console.log("split signature", splitSignature(signature));
+      // console.log("signature array", ethers.utils.arrayify(signature));
+
+      return {
+        req,
+        signature: ethers.utils.arrayify(signature),
+      }
+    } 
+
+    {
+      const  {req} = await signedReq(ben, [DISCORD_ID_1]);
+      const  {signature} = await signedReq(amanda, [DISCORD_ID_1]);
+      await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
+        req,
+        signature,
+      )).to.be.revertedWith("InvalidSignature");;
+    }
+
+    {
+      const  {req, signature} = await signedReq(ben, [DISCORD_ID_1]);
+      await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
+        req,
+        signature,
+      )).to.emit(ELDER_ELECTION, "UpdateEndorsements");
+    }
+
+    {      
+      const {req, signature} = await signedReq(ben, [DISCORD_ID_1]);
+      await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
+        { ...req,
+          deadline: BigNumber.from(req.deadline).sub(600),
+        },
+        signature,
+      )).to.be.revertedWith("DeadlineExpired");
+    }
+  });
 
 });
 
-// interface SetEndorsementReq {
-//   account: string;
-//   discordIds: number[];
-//   deadline: number,
-//   signature: Uint8Array;
-// }
+interface SetEndorsementReq {
+  account: string;
+  discordIds: number[];
+  deadline: number,
+  signature: Uint8Array;
+}

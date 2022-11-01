@@ -5,10 +5,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./Templar.sol";
-
+import "hardhat/console.sol";
 /**
  * @title A contract recording voting in the election of temple elders.
  *
@@ -22,7 +21,7 @@ import "./Templar.sol";
  *
  * EIP712 structured data signing supports 'gasless voting' via a relay
  */
-contract ElderElection is EIP712, AccessControl {
+contract ElderElection is AccessControl {
 
     bytes32 public constant CAN_NOMINATE = keccak256("CAN_NOMINATE");
 
@@ -45,12 +44,22 @@ contract ElderElection is EIP712, AccessControl {
     /// @notice Nonces used in relayed voting requests
     mapping(address => Counters.Counter) public nonces;
 
+    /// @notice used for relayed signed requests
+    bytes32 DOMAIN_SEPARATOR;
+
 
     constructor(
         Templar _templars
-    ) EIP712("ElderElection", "1") {
+    ) {
         templars = _templars;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        DOMAIN_SEPARATOR = hash(EIP712Domain({
+            name: "ElderElection",
+            version: '1',
+            chainId: 1
+        }));
+   //     console.log("DOMAIN_SEPARATOR");
+   //     console.logBytes32(DOMAIN_SEPARATOR);
     }
 
 
@@ -84,7 +93,7 @@ contract ElderElection is EIP712, AccessControl {
         _setEndorsements(msg.sender, discordIds);
     }
 
-    function _setEndorsements(address account, uint256[] calldata discordIds) internal {
+    function _setEndorsements(address account, uint256[] memory discordIds) internal {
         if (discordIds.length > numCandidates) {
           revert TooManyEndorsements();
         }
@@ -96,26 +105,73 @@ contract ElderElection is EIP712, AccessControl {
     /**
      * @notice Set the endorsements for an account via relayed, signed request. 
      */
-    function relayedSetEndorsementsFor(address account, uint256[] calldata discordIds, uint256 deadline, bytes calldata signature) external {
-        if (block.timestamp > deadline) revert DeadlineExpired(deadline);
+    function relayedSetEndorsementsFor(EndorsementReq calldata req, bytes calldata signature) external {
 
-        bytes32 structHash = keccak256(abi.encode(SET_ENDORSEMENTS_FOR_TYPEHASH, account, discordIds, deadline, _useNonce(account)));
-        bytes32 digest = _hashTypedDataV4(structHash);
-        (address signer, ECDSA.RecoverError err) = ECDSA.tryRecover(digest, signature);
-        if (err != ECDSA.RecoverError.NoError) {
-            revert InvalidSignature(account);
+        bytes32 digest = keccak256(abi.encodePacked(
+            "\x19\x01",
+            DOMAIN_SEPARATOR,
+            hash(req)
+        ));
+
+       // console.log("digest");
+       // console.logBytes32(digest);
+
+        address signer = recover(digest, signature);
+        if (signer == address(0)) {
+            console.log("no recovered signer");
+            revert InvalidSignature(req.account);
         }
-        if (signer != account) revert InvalidSignature(account);
+        //console.log("recovered signer ", signer);
+        //console.log("req.account", req.account);
 
-        _setEndorsements(account, discordIds);
+        if (block.timestamp > req.deadline) revert DeadlineExpired(block.timestamp - req.deadline);
+        if (signer != req.account) revert InvalidSignature(req.account);
+
+         uint256[] memory discordIds = new uint256[](1);
+         discordIds[0] = req.discordId;
+        _setEndorsements(req.account, discordIds);
     }
 
-    /**
-    * See {IERC20Permit-DOMAIN_SEPARATOR}.
-    */
-    // solhint-disable-next-line func-name-mixedcase
-    function DOMAIN_SEPARATOR() external view returns (bytes32) {
-        return _domainSeparatorV4();
+    function recover(bytes32 hash, bytes memory sig) internal view returns (address) {
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+
+        // console.log("sig");
+        // console.logBytes(sig);
+
+
+        //Check the signature length
+        if (sig.length != 65) {
+            return (address(0));
+        }
+
+
+        // Divide the signature in r, s and v variables
+        assembly {
+            r := mload(add(sig, 32))
+            s := mload(add(sig, 64))
+            v := byte(0, mload(add(sig, 96)))
+        }
+
+        // console.log("signature.r");
+        // console.logBytes32(r);
+        // console.log("signature.s");
+        // console.logBytes32(s);
+        // console.log("signature.v");
+        // console.logBytes1(bytes1(v));
+
+        // Version of signature should be 27 or 28, but 0 and 1 are also possible versions
+        if (v < 27) {
+            v += 27;
+        }
+
+        // If the version is correct return the signer address
+        if (v != 27 && v != 28) {
+            return (address(0));
+        } else {
+            return ecrecover(hash, v, r, s);
+        }
     }
 
     /**
@@ -134,8 +190,41 @@ contract ElderElection is EIP712, AccessControl {
     error NotCandidate(uint256 discordId);
     error TooManyEndorsements();
 
-    error DeadlineExpired(uint256 deadline);
+    error DeadlineExpired(uint256 lateBy);
     error InvalidSignature(address account);
+    
+    struct EIP712Domain {
+        string name;
+        string version;
+        uint256 chainId;
+    }
 
-    bytes32 public immutable SET_ENDORSEMENTS_FOR_TYPEHASH = keccak256("setEndorsementsFor(address account, uint256[] discordIds, uint256 deadline, uint256 nonce)");
+    bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version,uint256 chainId)");
+
+    function hash(EIP712Domain memory _input) public pure returns (bytes32) {    
+        return keccak256(abi.encode(
+            EIP712DOMAIN_TYPEHASH,
+            keccak256(bytes(_input.name)),
+            keccak256(bytes(_input.version)),
+            _input.chainId
+        ));
+    }
+
+    struct EndorsementReq {
+        address account;
+        uint256 discordId;
+        uint256 deadline;
+    }
+
+    bytes32 constant ENDORSEMENTREQ_TYPEHASH = keccak256("EndorsementReq(address account,uint256 discordId,uint256 deadline)");
+
+    function hash(EndorsementReq memory _input) public view returns (bytes32) {
+        return keccak256(abi.encode(
+            ENDORSEMENTREQ_TYPEHASH,
+            _input.account,
+            _input.discordId,
+            _input.deadline
+        ));
+    }
+
 }
