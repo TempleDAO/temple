@@ -3,6 +3,7 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./Templar.sol";
@@ -110,46 +111,15 @@ contract ElderElection is AccessControl {
             hash(req)
         ));
 
-        address signer = recover(digest, signature);
-        if (signer == address(0)) {
+        (address signer, ECDSA.RecoverError err) = ECDSA.tryRecover(digest, signature);
+        if (err != ECDSA.RecoverError.NoError) {
             revert InvalidSignature(req.account);
         }
         if (block.timestamp > req.deadline) revert DeadlineExpired(block.timestamp - req.deadline);
         if (signer != req.account) revert InvalidSignature(req.account);
-
         if (_useNonce(req.account) != req.nonce) revert InvalidNonce(req.account);
 
         _setEndorsements(req.account, req.discordIds);
-    }
-
-    function recover(bytes32 hash, bytes memory sig) internal pure returns (address) {
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-
-        //Check the signature length
-        if (sig.length != 65) {
-            return (address(0));
-        }
-
-        // Divide the signature in r, s and v variables
-        assembly {
-            r := mload(add(sig, 32))
-            s := mload(add(sig, 64))
-            v := byte(0, mload(add(sig, 96)))
-        }
-
-        // Version of signature should be 27 or 28, but 0 and 1 are also possible versions
-        if (v < 27) {
-            v += 27;
-        }
-
-        // If the version is correct return the signer address
-        if (v != 27 && v != 28) {
-            return (address(0));
-        } else {
-            return ecrecover(hash, v, r, s);
-        }
     }
 
     /**
