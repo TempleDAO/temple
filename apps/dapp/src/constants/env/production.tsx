@@ -43,7 +43,7 @@ const env: Environment = {
     stake: 150000,
     claimOgTemple: 100000,
   },
-  infuraId: 'a2a39f8ae6564913a583c7b6d01c84d6',
+  infuraId: '4cd22916292d4fb6be156454978c326b',
   intervals: {
     ascendData: 30_000,
     ascendQuote: 10_000,
