@@ -130,7 +130,7 @@ describe("Elder Election", async () => {
       const now = block.timestamp;
 
       const account = await voter.getAddress();
-      const deadline = now + 120;
+      const deadline = now + 3600;
       const nonce = await ELDER_ELECTION.nonces(account);
 
       const req: ElderElection.EndorsementReqStruct = {
@@ -208,7 +208,7 @@ describe("Elder Election", async () => {
       const {req, signature} = await signedReq(ben, [DISCORD_ID_1]);
       await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
         { ...req,
-          deadline: BigNumber.from(req.deadline).sub(600),
+          deadline: BigNumber.from(req.deadline).sub(7200),
         },
         signature,
       )).to.be.revertedWith("DeadlineExpired");

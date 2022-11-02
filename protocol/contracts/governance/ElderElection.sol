@@ -45,7 +45,7 @@ contract ElderElection is AccessControl {
     mapping(address => Counters.Counter) public nonces;
 
     /// @notice used for relayed signed requests
-    bytes32 DOMAIN_SEPARATOR;
+    bytes32 immutable DOMAIN_SEPARATOR;
 
 
     constructor(
