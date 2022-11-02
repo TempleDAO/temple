@@ -1,6 +1,6 @@
 import { ethers, network } from "hardhat";
 import { expect, should } from "chai";
-import { toAtto, shouldThrow, mineForwardSeconds } from "../helpers";
+import { toAtto, shouldThrow, mineForwardSeconds, blockTimestamp } from "../helpers";
 import { BigNumber, Signer } from "ethers";
 import addresses from "../constants";
 import { 
@@ -17,10 +17,25 @@ import {
   AuraStaking__factory,
   AuraStaking,
   ITempleERC20Token,
+  AMOILiquidityGaugeFactory,
+  AMOILiquidityGaugeFactory__factory,
   IWeightPool2Tokens,
-  IWeightPool2Tokens__factory
+  IWeightPool2Tokens__factory,
+  AMOIPoolManagerProxy,
+  AMOIPoolManagerProxy__factory,
+  AMOIPoolManagerV3,
+  AMOIPoolManagerV3__factory,
+  AMOIAuraGaugeController__factory,
+  AMOIAuraGaugeController,
+  AMOIBalancerAuthorizerAdapter__factory,
+  AMOIBalancerAuthorizerAdapter,
+  AMOIGaugeAdder,
+  AMOIGaugeAdder__factory,
+  AMOIBalancerVotingEscrow__factory,
+  AMOIBalancerVotingEscrow
 } from "../../typechain";
 import { DEPLOYED_CONTRACTS } from '../../scripts/deploys/helpers';
+import { timeStamp } from "console";
 
 const { MULTISIG, TEMPLE } = DEPLOYED_CONTRACTS.mainnet;
 const { BALANCER_VAULT } = addresses.contracts;
@@ -34,14 +49,28 @@ const BBA_USD_POOL_ID = "0xa13a9247ea42d743238089903570127dda72fe440000000000000
 const STA_BAL3_POOL_ID = "0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000063";
 const STA_BAL3 = "0x06Df3b2bbB68adc8B0e302443692037ED9f91b42";
 const TEMPLE_BBAUSD_LP_TOKEN = "0x173063a30e095313eee39411f07e95a8a806014e";
+const BALANCER_AUTHORIZER = "0xA331D84eC860Bf466b4CdCcFb4aC09a1B43F3aE6";
+const BALANCER_AUTHORIZER_ADAPTER = "0x8F42aDBbA1B16EaAE3BB5754915E0D06059aDd75";
 const PID = 38;
 const REWARDS = "0xB665b3020bBE8a9020951e9a74194c1BFda5C5c4";
 const AURA_BOOSTER = "0x7818A1DA7BD1E64c199029E86Ba244a9798eEE10";
 const BALANCER_POOL_ID = "0x173063a30e095313eee39411f07e95a8a806014e0002000000000000000003ab";
 const BALANCER_HELPERS = "0x5aDDCCa35b7A0D07C74063c48700C8590E87864E";
-const ONE_ETH = ethers.utils.parseEther("1");
+const ONE_ETH = toAtto(1);
 const TEMPLE_WHALE = "0xf6C75d85Ef66d57339f859247C38f8F47133BD39";
 const BBA_USD_WHALE = "0x1CeD4e3900c73A54eD775ef2740a4e38aC5b54e2";
+const AURA_LIQUIDITY_GAUGE_FACTORY = "0xf1665E19bc105BE4EDD3739F88315cC699cc5b65";
+const AURA_GAUGE_OWNER = "0x512fce9B07Ce64590849115EE6B32fd40eC0f5F3"; // balancerMaxi.eth
+const AURA_POOL_MANAGER_PROXY = "0x16A04E58a77aB1CE561A37371dFb479a8594947A";
+const AURA_POOL_MANAGER_SEC_PROXY = "0xdc274F4854831FED60f9Eca12CaCbD449134cF67";
+const AURA_POOL_MANAGER_V3 = "0xf843F61508Fc17543412DE55B10ED87f4C28DE50"; // poolManagerV3. operates SEC PROXY
+const AURA_POOL_MANAGER_OPERATOR = "0x5feA4413E3Cc5Cf3A29a49dB41ac0c24850417a0"; // aura multisig
+const BAL_MULTISIG = "0xc38c5f97B34E175FFd35407fc91a937300E33860";
+const AURA_GAUGE_CONTROLLER = "0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD";
+const GAUGE_ADDER = "0x2ffb7b215ae7f088ec2530c7aa8e1b24e398f26a";
+const BAL_VOTING_ESCROW = "0xC128a9954e6c874eA3d62ce62B468bA073093F25"; // veBAL
+const BAL_WETH_8020_WHALE = "0x24FAf482304Ed21F82c86ED5fEb0EA313231a808";
+const BAL_WETH_8020_TOKEN = "0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56";
 const BLOCKNUMBER = 15862300;
 
 let amo: TPFAMO;
@@ -53,10 +82,13 @@ let templeMultisig: Signer;
 let fraxWhale: Signer;
 let templeWhale: Signer;
 let daiWhale: Signer;
+let auraMultisig: Signer;
+let balGaugeMultisig: Signer;
 let bbaUsdWhale: Signer;
 let ownerAddress: string;
 let alanAddress: string;
 let operatorAddress: string;
+let auraGaugeOwner: Signer;
 let templeToken: TempleERC20Token;
 let fraxToken: IERC20;
 let daiToken: IERC20;
@@ -66,6 +98,16 @@ let depositToken: IERC20;
 let balancerVault: AMOIBalancerVault;
 let balancerHelpers: IBalancerHelpers;
 let weightedPool2Tokens: IWeightPool2Tokens;
+let liquidityGaugeFactory: AMOILiquidityGaugeFactory;
+let auraPoolId: Number;
+let auraPoolManagerProxy: AMOIPoolManagerProxy;
+let auraPoolManagerV3: AMOIPoolManagerV3;
+let balGaugeController: AMOIAuraGaugeController;
+let authorizerAdapter: AMOIBalancerAuthorizerAdapter;
+let gaugeAdder: AMOIGaugeAdder;
+let balWeth8020Whale: Signer;
+let balWeth8020Token: IERC20;
+let balancerVotingEscrow: AMOIBalancerVotingEscrow;
 
 describe.only("Temple Price Floor AMO", async () => {
     
@@ -77,6 +119,10 @@ describe.only("Temple Price Floor AMO", async () => {
         fraxWhale = await impersonateAddress(FRAX_WHALE);
         daiWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
         bbaUsdWhale = await impersonateAddress(BBA_USD_WHALE);
+        auraGaugeOwner = await impersonateAddress(AURA_GAUGE_OWNER);
+        auraMultisig = await impersonateAddress(AURA_POOL_MANAGER_OPERATOR);
+        balGaugeMultisig = await impersonateAddress(BAL_MULTISIG); 
+        balWeth8020Whale = await impersonateAddress(BAL_WETH_8020_WHALE);
     
         ownerAddress = await owner.getAddress();
         alanAddress = await alan.getAddress();
@@ -88,10 +134,18 @@ describe.only("Temple Price Floor AMO", async () => {
         bptToken = IERC20__factory.connect(TEMPLE_BBAUSD_LP_TOKEN, owner);
         depositToken = IERC20__factory.connect(AURA_DEPOSIT_TOKEN, owner);
         bbaUsdToken = IERC20__factory.connect(BBA_USD_TOKEN, bbaUsdWhale);
+        balWeth8020Token = IERC20__factory.connect(BAL_WETH_8020_TOKEN, balWeth8020Whale);
 
         balancerVault = AMOIBalancerVault__factory.connect(BALANCER_VAULT, owner);
         balancerHelpers = IBalancerHelpers__factory.connect(BALANCER_HELPERS, owner);
         weightedPool2Tokens = IWeightPool2Tokens__factory.connect(TEMPLE_BBAUSD_LP_TOKEN, owner);
+        liquidityGaugeFactory = AMOILiquidityGaugeFactory__factory.connect(AURA_LIQUIDITY_GAUGE_FACTORY, auraGaugeOwner);
+        auraPoolManagerProxy = AMOIPoolManagerProxy__factory.connect(AURA_POOL_MANAGER_V3, auraMultisig);
+        auraPoolManagerV3 = AMOIPoolManagerV3__factory.connect(AURA_POOL_MANAGER_V3, auraMultisig);
+        balGaugeController = AMOIAuraGaugeController__factory.connect(AURA_GAUGE_CONTROLLER, balGaugeMultisig);
+        authorizerAdapter = AMOIBalancerAuthorizerAdapter__factory.connect(BALANCER_AUTHORIZER_ADAPTER, balGaugeMultisig);
+        gaugeAdder = AMOIGaugeAdder__factory.connect(GAUGE_ADDER, balGaugeMultisig);
+        balancerVotingEscrow = AMOIBalancerVotingEscrow__factory.connect(BAL_VOTING_ESCROW, balWeth8020Whale);
         
         amoStaking = await new AuraStaking__factory(owner).deploy(
             ownerAddress,
@@ -141,6 +195,12 @@ describe.only("Temple Price Floor AMO", async () => {
         await bbaUsdToken.connect(owner).transfer(amo.address, toAtto(500_000));
         await seedTempleBbaUsdPool(owner, toAtto(1_000_000), ownerAddress);
         console.log("BALANCES ON AMO", await templeToken.balanceOf(amo.address), await bbaUsdToken.balanceOf(amo.address));
+        
+        await owner.sendTransaction({value: ONE_ETH, to: BAL_MULTISIG });
+        await owner.sendTransaction({value: ONE_ETH, to: await auraMultisig.getAddress()});
+
+        // create gauge and add pool on Aura
+        await createAuraPoolAndStakingContracts(auraGaugeOwner, BigNumber.from("20000000000000000"));
     });
 
     describe("Admin", async () => {
@@ -459,7 +519,51 @@ describe.only("Temple Price Floor AMO", async () => {
     });
 });
 
+async function createAuraPoolAndStakingContracts(
+    signer: Signer,
+    relativeWeightCap: BigNumber
+) {
+    // create gauge with liquidity gauge factory (0xf1665E19bc105BE4EDD3739F88315cC699cc5b65) as balancermaxi.eth 
+    let tx = await liquidityGaugeFactory.create(TEMPLE_BBAUSD_LP_TOKEN, relativeWeightCap);
+    let receipt = await tx.wait();
+    //console.log("CREATED GAUGE", receipt.logs);
+    const gaugeCreatedEventTopic = "0xaa98436d09d130af48de49867af8b723bbbebb0d737638b5fe8f1bf31bbb71c0";
+    let deployedGauge: string = "";
+    const decoder = new ethers.utils.AbiCoder();
+    for(const log of receipt.logs) {
+        if (log.topics[0] == gaugeCreatedEventTopic) {
+            const res = decoder.decode(["address"], log.topics[1]);
+            deployedGauge = res[0];
+            console.log("DEPLOYED ADDRESS", deployedGauge);
+            break;
+        }
+    }
 
+   
+
+    tx = await gaugeAdder.connect(balGaugeMultisig).addEthereumGauge(deployedGauge);
+    receipt = await tx.wait();
+    console.log("Gauge Added to Balancer");
+
+    // now vote gauge weight, also so that we can finally addPool on aura
+    // lock for veBAL position and vote gauge weight
+    const unlockTime = await blockTimestamp() + 31557600; // 1 year
+    const amountToLock = toAtto(10_000);
+    await balWeth8020Token.approve(balancerVotingEscrow.address, amountToLock);
+    await balancerVotingEscrow.create_lock(amountToLock, unlockTime);
+    await balGaugeController.connect(balWeth8020Whale).vote_for_gauge_weights(deployedGauge, 10_000);
+
+    // add pool
+    tx = await auraPoolManagerV3.addPool(deployedGauge, 3);
+    receipt = await tx.wait();
+    console.log(receipt.logs);
+    // check logs for created addresses
+    //  emit PoolAdded(_lptoken, _gauge, token, newRewardPool, stash, pid);
+
+}
+
+// todo: deposit TEMPLE or stable token using depositSingle from RewardPoolDepositWrapper 0xB188b1CB84Fb0bA13cb9ee1292769F903A9feC59
+// in contract
 
 async function seedTempleBbaUsdPool(
     signer: Signer,
