@@ -3,9 +3,8 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./Templar.sol";
 
@@ -22,7 +21,7 @@ import "./Templar.sol";
  *
  * EIP712 structured data signing supports 'gasless voting' via a relay
  */
-contract ElderElection is EIP712, AccessControl {
+contract ElderElection is AccessControl {
 
     bytes32 public constant CAN_NOMINATE = keccak256("CAN_NOMINATE");
 
@@ -45,12 +44,30 @@ contract ElderElection is EIP712, AccessControl {
     /// @notice Nonces used in relayed voting requests
     mapping(address => Counters.Counter) public nonces;
 
+    /// @notice used for relayed signed requests
+    bytes32 immutable DOMAIN_SEPARATOR;
+
+    event UpdateNomination(uint256 indexed discordId, bool isNominated);
+    event UpdateEndorsements(address indexed account, uint256[] discordIds);
+
+    error NotFromTemplar(address account, uint256 discordId);
+    error NotCandidate(uint256 discordId);
+    error TooManyEndorsements();
+
+    error DeadlineExpired(uint256 lateBy);
+    error InvalidNonce(address account);
+    error InvalidSignature(address account);
 
     constructor(
         Templar _templars
-    ) EIP712("ElderElection", "1") {
+    ) {
         templars = _templars;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        DOMAIN_SEPARATOR = hash(EIP712Domain({
+            name: "ElderElection",
+            version: '1',
+            chainId: block.chainid
+        }));
     }
 
 
@@ -96,26 +113,23 @@ contract ElderElection is EIP712, AccessControl {
     /**
      * @notice Set the endorsements for an account via relayed, signed request. 
      */
-    function relayedSetEndorsementsFor(address account, uint256[] calldata discordIds, uint256 deadline, bytes calldata signature) external {
-        if (block.timestamp > deadline) revert DeadlineExpired(deadline);
+    function relayedSetEndorsementsFor(EndorsementReq calldata req, bytes calldata signature) external {
 
-        bytes32 structHash = keccak256(abi.encode(SET_ENDORSEMENTS_FOR_TYPEHASH, account, discordIds, deadline, _useNonce(account)));
-        bytes32 digest = _hashTypedDataV4(structHash);
+        bytes32 digest = keccak256(abi.encodePacked(
+            "\x19\x01",
+            DOMAIN_SEPARATOR,
+            hash(req)
+        ));
+
         (address signer, ECDSA.RecoverError err) = ECDSA.tryRecover(digest, signature);
         if (err != ECDSA.RecoverError.NoError) {
-            revert InvalidSignature(account);
+            revert InvalidSignature(req.account);
         }
-        if (signer != account) revert InvalidSignature(account);
+        if (block.timestamp > req.deadline) revert DeadlineExpired(block.timestamp - req.deadline);
+        if (signer != req.account) revert InvalidSignature(req.account);
+        if (_useNonce(req.account) != req.nonce) revert InvalidNonce(req.account);
 
-        _setEndorsements(account, discordIds);
-    }
-
-    /**
-    * See {IERC20Permit-DOMAIN_SEPARATOR}.
-    */
-    // solhint-disable-next-line func-name-mixedcase
-    function DOMAIN_SEPARATOR() external view returns (bytes32) {
-        return _domainSeparatorV4();
+        _setEndorsements(req.account, req.discordIds);
     }
 
     /**
@@ -127,15 +141,44 @@ contract ElderElection is EIP712, AccessControl {
         nonce.increment();
     }
 
-    event UpdateNomination(uint256 indexed discordId, bool isNominated);
-    event UpdateEndorsements(address indexed account, uint256[] discordIds);
+    struct EIP712Domain {
+        string name;
+        string version;
+        uint256 chainId;
+    }
 
-    error NotFromTemplar(address account, uint256 discordId);
-    error NotCandidate(uint256 discordId);
-    error TooManyEndorsements();
+    bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version,uint256 chainId)");
 
-    error DeadlineExpired(uint256 deadline);
-    error InvalidSignature(address account);
+    function hash(EIP712Domain memory _input) internal pure returns (bytes32) {    
+        return keccak256(abi.encode(
+            EIP712DOMAIN_TYPEHASH,
+            keccak256(bytes(_input.name)),
+            keccak256(bytes(_input.version)),
+            _input.chainId
+        ));
+    }
 
-    bytes32 public immutable SET_ENDORSEMENTS_FOR_TYPEHASH = keccak256("setEndorsementsFor(address account, uint256[] discordIds, uint256 deadline, uint256 nonce)");
+    struct EndorsementReq {
+        address account;
+        uint256[] discordIds;
+        uint256 deadline;
+        uint256 nonce;
+    }
+
+    bytes32 constant ENDORSEMENTREQ_TYPEHASH = keccak256("EndorsementReq(address account,uint256[] discordIds,uint256 deadline,uint256 nonce)");
+
+    function hash(EndorsementReq memory _input) internal pure returns (bytes32) {
+        return keccak256(abi.encode(
+            ENDORSEMENTREQ_TYPEHASH,
+            _input.account,
+            hash(_input.discordIds),
+            _input.deadline,
+            _input.nonce
+        ));
+    }
+
+    function hash(uint256[] memory _input) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(_input));
+    }
+
 }
