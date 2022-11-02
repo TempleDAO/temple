@@ -21,7 +21,7 @@ export function updateEndorsements(event: UpdateEndorsements): void {
     endorser = createEndorser(address, timestamp)
   }
 
-  const discordIds = event.params.discordId
+  const discordIds = event.params.discordIds
   let validEndorsments = 0
   for (let i = 0; i <= discordIds.length; i++) {
       const templar = getTemplar(discordIds[i])
