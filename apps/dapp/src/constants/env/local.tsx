@@ -3,7 +3,7 @@ import { Environment } from './types';
 const ENV = import.meta.env;
 
 const env: Environment = {
-  alchemyId: 'VvVv_fBIiRSaTQzL9RQNybD5FSNvtK5c',
+  alchemyId: '-nNWThz_YpX1cGffGiz-lbSMu7dmp4GK',
   backendUrl: 'http://localhost:3001',
   contracts: {
     exitQueue: '0x0165878A594ca255338adfa4d48449f69242Eb8F',
@@ -33,7 +33,7 @@ const env: Environment = {
     vaultEarlyExit: '',
   },
   fraxSellDisabledIvMultiple: 1.02,
-  infuraId: 'a2a39f8ae6564913a583c7b6d01c84d6',
+  infuraId: '4cd22916292d4fb6be156454978c326b',
   subgraph: {
     templeCore: 'http://localhost:8000/subgraphs/name/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
