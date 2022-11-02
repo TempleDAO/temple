@@ -1,7 +1,7 @@
 import { Environment } from './types';
 
 const env: Environment = {
-  alchemyId: 'VvVv_fBIiRSaTQzL9RQNybD5FSNvtK5c',
+  alchemyId: '-nNWThz_YpX1cGffGiz-lbSMu7dmp4GK',
   backendUrl: 'https://backend-stage.templedao.link',
   contracts: {
     exitQueue: '0x75a89f50cb40aec7Ed237F1Bfab562A60023ebE6',
@@ -50,7 +50,7 @@ const env: Environment = {
     stake: 150000,
     claimOgTemple: 100000,
   },
-  infuraId: 'a2a39f8ae6564913a583c7b6d01c84d6',
+  infuraId: '4cd22916292d4fb6be156454978c326b',
   intervals: {
     ascendData: 30_000,
     ascendQuote: 10_000,

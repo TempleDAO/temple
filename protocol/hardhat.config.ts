@@ -124,7 +124,21 @@ module.exports = {
       accounts: process.env.GOERLI_ADDRESS_PRIVATE_KEY 
         ? [process.env.GOERLI_ADDRESS_PRIVATE_KEY]
         : [],
-      gasPrice: 8000000000,
+      gasPrice: parseInt(process.env.GOERLI_GAS_IN_GWEI || '8') * 1000000000,
+    },
+    gnosisChiado: {
+      url: process.env.GNOSIS_CHIADO_RPC_URL || '',
+      accounts: process.env.GNOSIS_CHIADO_ADDRESS_PRIVATE_KEY 
+        ? [process.env.GNOSIS_CHIADO_ADDRESS_PRIVATE_KEY]
+        : [],
+      gasPrice: 1000000000,  // 1 gwei xDAI
+    },
+    gnosis: {
+      url: process.env.GNOSIS_RPC_URL || '',
+      accounts: process.env.GNOSIS_ADDRESS_PRIVATE_KEY 
+        ? [process.env.GNOSIS_ADDRESS_PRIVATE_KEY]
+        : [],
+      gasPrice: parseInt(process.env.MAINNET_GAS_IN_GWEI || '0') * 1000000000,
     },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
