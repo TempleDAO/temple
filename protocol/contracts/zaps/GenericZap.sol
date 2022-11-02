@@ -192,7 +192,7 @@ contract GenericZap is ZapBase {
     address swapTarget,
     bytes memory swapData
   ) public payable whenNotPaused returns (uint256 amountOut) {
-    require(approvedTargets[fromToken][swapTarget] == true, "GenericZaps: Unsupported token/target");
+    require(approvedTargets[fromToken][swapTarget], "GenericZaps: Unsupported token/target");
 
     _pullTokens(fromToken, fromAmount);
 
@@ -236,7 +236,7 @@ contract GenericZap is ZapBase {
     ZapLiquidityRequest memory _zapLiqRequest,
     IBalancerVault.JoinPoolRequest memory _request
   ) public payable whenNotPaused {
-    require(approvedTargets[_fromToken][_swapTarget] == true, "GenericZaps: Unsupported token/target");
+    require(approvedTargets[_fromToken][_swapTarget], "GenericZaps: Unsupported token/target");
 
     _pullTokens(_fromToken, _fromAmount);
 
@@ -315,7 +315,7 @@ contract GenericZap is ZapBase {
     ZapLiquidityRequest memory _zapLiqRequest
   ) public payable whenNotPaused {
 
-    require(approvedTargets[_fromToken][_swapTarget] == true, "GenericZaps: Unsupported token/target");
+    require(approvedTargets[_fromToken][_swapTarget], "GenericZaps: Unsupported token/target");
 
     // pull tokens
     _pullTokens(_fromToken, _fromAmount);
@@ -357,7 +357,7 @@ contract GenericZap is ZapBase {
     // if one-sided liquidity addition
     if (_zapLiqRequest.isOneSidedLiquidityAddition) {
       coinAmounts[fromTokenIndex] = _fromAmount;
-      require(approvedTargets[coins[fromTokenIndex]][_pool] == true, "Pool not approved");
+      require(approvedTargets[coins[fromTokenIndex]][_pool], "Pool not approved");
       SafeERC20.safeIncreaseAllowance(IERC20(coins[fromTokenIndex]), _pool, _fromAmount);
     } else {
       // swap coins
@@ -367,7 +367,7 @@ contract GenericZap is ZapBase {
         amountToSwap = _fromAmount / 2;
         _fromAmount -= amountToSwap;
       }
-      require(approvedTargets[coins[fromTokenIndex]][_pool] == true, "Pool not approved");
+      require(approvedTargets[coins[fromTokenIndex]][_pool], "Pool not approved");
       SafeERC20.safeIncreaseAllowance(IERC20(coins[fromTokenIndex]), _pool, amountToSwap);
       uint256 otherTokenBalanceBefore = IERC20(coins[otherTokenIndex]).balanceOf(address(this));
       bytes memory result = Executable.execute(_pool, 0, _zapLiqRequest.poolSwapData);
@@ -418,7 +418,7 @@ contract GenericZap is ZapBase {
     bytes memory _swapData,
     ZapLiquidityRequest memory _zapLiqRequest
   ) public payable whenNotPaused {
-    require(approvedTargets[_fromToken][_swapTarget] == true, "GenericZaps: Unsupported token/target");
+    require(approvedTargets[_fromToken][_swapTarget], "GenericZaps: Unsupported token/target");
 
     // pull tokens
     _pullTokens(_fromToken, _fromAmount);

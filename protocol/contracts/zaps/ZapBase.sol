@@ -10,7 +10,6 @@ abstract contract ZapBase is Ownable {
   using SafeERC20 for IERC20;
 
   bool public paused;
-  address private constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
   uint256 internal constant DEADLINE = 0xf000000000000000000000000000000000000000000000000000000000000000;
 
   // fromToken => swapTarget (per curve, univ2 and balancer) approval status
@@ -84,16 +83,6 @@ abstract contract ZapBase is Ownable {
     );
 
     return amount;
-  }
-
-  function _depositEth(
-    uint256 _amount
-  ) internal {
-    require(
-      _amount > 0 && msg.value == _amount,
-      "ZapBase: Input ETH mismatch"
-    );
-    IWETH(WETH).deposit{value: _amount}();
   }
 
   // circuit breaker modifiers

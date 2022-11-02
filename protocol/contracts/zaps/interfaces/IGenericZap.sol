@@ -1,7 +1,7 @@
 pragma solidity ^0.8.4;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-interface IGenericZaps {
+interface IGenericZap {
   function zapIn(
     address fromToken,
     uint256 fromAmount,
@@ -11,4 +11,5 @@ interface IGenericZaps {
     bytes calldata swapData
   ) external payable returns (uint256 amountOut);
   function getSwapInAmount(uint256 reserveIn, uint256 userIn) external pure returns (uint256);
+  function approvedTargets(address fromToken, address swapTarget) external returns (bool);
 }

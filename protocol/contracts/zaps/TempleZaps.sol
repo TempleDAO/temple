@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ZapBase.sol";
 import "./libs/Swap.sol";
 import "./interfaces/ITempleStableRouter.sol";
-import "./interfaces/IGenericZaps.sol";
+import "./interfaces/IGenericZap.sol";
 import "./interfaces/IVault.sol";
 
 
@@ -16,7 +16,7 @@ contract TempleZaps is ZapBase {
 
   address public immutable temple;
   ITempleStableRouter public templeRouter;
-  IGenericZaps public zaps;
+  IGenericZap public zaps;
 
   mapping(address => bool) public supportedStables;
 
@@ -42,7 +42,7 @@ contract TempleZaps is ZapBase {
   ) {
     temple = _temple;
     templeRouter = ITempleStableRouter(_templeRouter);
-    zaps = IGenericZaps(_zaps);
+    zaps = IGenericZap(_zaps);
   }
 
   /**
@@ -50,7 +50,7 @@ contract TempleZaps is ZapBase {
    * @param _zaps zaps contract
    */
   function setZaps(address _zaps) external onlyOwner {
-    zaps = IGenericZaps(_zaps);
+    zaps = IGenericZap(_zaps);
 
     emit SetZaps(_zaps);
   }
@@ -188,7 +188,7 @@ contract TempleZaps is ZapBase {
     address _swapTarget,
     bytes memory _swapData
   ) public payable whenNotPaused {
-    require(supportedStables[_stableToken] == true, "TempleZaps: Unsupported stable token");
+    require(supportedStables[_stableToken], "TempleZaps: Unsupported stable token");
 
     uint256 amountOut;
     if (_fromToken != address(0)) {
@@ -222,7 +222,7 @@ contract TempleZaps is ZapBase {
     TempleLiquidityParams memory _params,
     bytes memory _swapData
   ) public payable {
-    require(supportedStables[_params.stableToken] == true, "TempleZaps: Unsupported stable token");
+    require(supportedStables[_params.stableToken], "TempleZaps: Unsupported stable token");
 
     _pullTokens(_fromAddress, _fromAmount);
 
@@ -232,7 +232,8 @@ contract TempleZaps is ZapBase {
     address token1 = IUniswapV2Pair(pair).token1();
 
     if (_fromAddress != token0 && _fromAddress != token1) {
-
+      require(approvedTargets[_fromAddress][_swapTarget], "TempleZaps: Unsupported token/target");
+      
       _fromAmount = Swap.fillQuote(
         _fromAddress,
         _fromAmount,
@@ -283,7 +284,7 @@ contract TempleZaps is ZapBase {
     address _swapTarget,
     bytes memory _swapData
   ) public payable whenNotPaused {
-    require(supportedStables[_stableToken] == true, "TempleZaps: Unsupported stable token");
+    require(supportedStables[_stableToken], "TempleZaps: Unsupported stable token");
 
     _pullTokens(_fromToken, _fromAmount);
     
