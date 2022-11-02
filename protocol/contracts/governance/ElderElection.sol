@@ -47,6 +47,16 @@ contract ElderElection is AccessControl {
     /// @notice used for relayed signed requests
     bytes32 immutable DOMAIN_SEPARATOR;
 
+    event UpdateNomination(uint256 indexed discordId, bool isNominated);
+    event UpdateEndorsements(address indexed account, uint256[] discordIds);
+
+    error NotFromTemplar(address account, uint256 discordId);
+    error NotCandidate(uint256 discordId);
+    error TooManyEndorsements();
+
+    error DeadlineExpired(uint256 lateBy);
+    error InvalidNonce(address account);
+    error InvalidSignature(address account);
 
     constructor(
         Templar _templars
@@ -91,7 +101,7 @@ contract ElderElection is AccessControl {
         _setEndorsements(msg.sender, discordIds);
     }
 
-    function _setEndorsements(address account, uint256[] memory discordIds) internal {
+    function _setEndorsements(address account, uint256[] calldata discordIds) internal {
         if (discordIds.length > numCandidates) {
           revert TooManyEndorsements();
         }
@@ -131,17 +141,6 @@ contract ElderElection is AccessControl {
         nonce.increment();
     }
 
-    event UpdateNomination(uint256 indexed discordId, bool isNominated);
-    event UpdateEndorsements(address indexed account, uint256[] discordIds);
-
-    error NotFromTemplar(address account, uint256 discordId);
-    error NotCandidate(uint256 discordId);
-    error TooManyEndorsements();
-
-    error DeadlineExpired(uint256 lateBy);
-    error InvalidNonce(address account);
-    error InvalidSignature(address account);
-    
     struct EIP712Domain {
         string name;
         string version;
@@ -150,7 +149,7 @@ contract ElderElection is AccessControl {
 
     bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version,uint256 chainId)");
 
-    function hash(EIP712Domain memory _input) public pure returns (bytes32) {    
+    function hash(EIP712Domain memory _input) internal pure returns (bytes32) {    
         return keccak256(abi.encode(
             EIP712DOMAIN_TYPEHASH,
             keccak256(bytes(_input.name)),
@@ -168,7 +167,7 @@ contract ElderElection is AccessControl {
 
     bytes32 constant ENDORSEMENTREQ_TYPEHASH = keccak256("EndorsementReq(address account,uint256[] discordIds,uint256 deadline,uint256 nonce)");
 
-    function hash(EndorsementReq memory _input) public pure returns (bytes32) {
+    function hash(EndorsementReq memory _input) internal pure returns (bytes32) {
         return keccak256(abi.encode(
             ENDORSEMENTREQ_TYPEHASH,
             _input.account,
@@ -178,15 +177,8 @@ contract ElderElection is AccessControl {
         ));
     }
 
-    function hash(uint256[] memory _input) public pure returns (bytes32) {
-        bytes memory encoded;
-        for (uint i = 0; i < _input.length; i++) {
-            encoded = bytes.concat(
-                encoded,
-                abi.encodePacked(_input[i])
-            );
-        }
-        return keccak256(encoded);
+    function hash(uint256[] memory _input) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(_input));
     }
 
 }
