@@ -14,6 +14,7 @@ export function createTemplar(event: Transfer): Templar {
 
   const discordId = event.params.tokenId.toString()
   const templar = new Templar(discordId)
+  templar.timestamp = timestamp
   templar.address = event.params.to.toHexString()
   templar.uri = metric.templarBaseUri + discordId
   templar.isNominated = false

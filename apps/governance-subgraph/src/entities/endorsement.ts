@@ -28,6 +28,7 @@ export function updateEndorsements(event: UpdateEndorsements): void {
       if (templar && templar.isNominated) {
         const endorsmentId = address + '-' + validEndorsments.toString()
         const endorsment = new Endorsement(endorsmentId)
+        endorsment.timestamp = timestamp
         endorsment.address = address
         endorsment.templar = templar.id
         endorsment.save()

@@ -10,10 +10,12 @@ export function getMetric(timestamp: BigInt): Metric {
 
   if (metric === null) {
     metric = new Metric(OWNER)
+    metric.timestamp = timestamp
     metric.templars = 0
     metric.candidates = 0
     metric.endorsments = 0
     metric.templarBaseUri = 'https://discordapp.com/users/'
+    metric.save()
 
     updateOrCreateData(metric, timestamp)
   }
