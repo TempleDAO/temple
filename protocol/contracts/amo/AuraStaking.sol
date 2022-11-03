@@ -71,16 +71,12 @@ contract AuraStaking is Ownable {
 
     function depositAndStake(uint256 amount) external onlyOperator {
         bptToken.safeTransferFrom(msg.sender, address(this), amount);
-        // if (bptToken.balanceOf(address(this)) < amount) {
-        //     revert AMOErrors.InsufficientBPTAmount(amount);
-        // }
 
         bptToken.safeIncreaseAllowance(address(booster), amount);
-        // deposit and stake. poolId = 38
         booster.deposit(auraPoolInfo.pId, amount, true);
     }
 
-    function withdrawAll(bool claim, bool sendToOperator) external onlyOperator {
+    function withdrawAll(bool claim, bool sendToOperator) external onlyOwner {
         uint256 depositTokenBalance = IBaseRewardPool(auraPoolInfo.rewards).balanceOf(address(this));
         IBaseRewardPool(auraPoolInfo.rewards).withdrawAll(claim);
         if (sendToOperator) {
@@ -88,7 +84,7 @@ contract AuraStaking is Ownable {
         }
      }
 
-    function withdraw(uint256 amount, bool claim, bool sendToOperator) external onlyOperator {
+    function withdraw(uint256 amount, bool claim, bool sendToOperator) external onlyOwner {
         IBaseRewardPool(auraPoolInfo.rewards).withdraw(amount, claim);
         if (sendToOperator) {
             // send deposit token to operator
@@ -105,7 +101,7 @@ contract AuraStaking is Ownable {
         }
     }
 
-    function withdrawAllAndUnwrap(bool claim, bool sendToOperator) external onlyOperator {
+    function withdrawAllAndUnwrap(bool claim, bool sendToOperator) external onlyOwner {
         uint256 depositTokenBalance = IBaseRewardPool(auraPoolInfo.rewards).balanceOf(address(this));
         IBaseRewardPool(auraPoolInfo.rewards).withdrawAllAndUnwrap(claim);
         if (sendToOperator) {
