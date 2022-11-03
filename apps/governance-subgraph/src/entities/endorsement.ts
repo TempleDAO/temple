@@ -23,7 +23,7 @@ export function updateEndorsements(event: UpdateEndorsements): void {
 
   const discordIds = event.params.discordIds
   let validEndorsments = 0
-  for (let i = 0; i <= discordIds.length; i++) {
+  for (let i = 0; i < discordIds.length; i++) {
       const templar = getTemplar(discordIds[i])
       if (templar && templar.isNominated) {
         const endorsmentId = address + '-' + validEndorsments.toString()
@@ -34,7 +34,9 @@ export function updateEndorsements(event: UpdateEndorsements): void {
         endorsment.save()
 
         validEndorsments += 1
-        endorser.endorsedCandidates.push(templar.id)
+        const endorsed = endorser.endorsedCandidates
+        endorsed.push(templar.id)
+        endorser.endorsedCandidates = endorsed
     }
   }
 
@@ -46,7 +48,7 @@ export function updateEndorsements(event: UpdateEndorsements): void {
 }
 
 export function removeEndorsments(endorser: Endorser, timestamp: BigInt): void {
-  for (let i = 0; i <= endorser.validEndorsments; i++) {
+  for (let i = 0; i < endorser.validEndorsments; i++) {
     store.remove('Endorsment', endorser.id + '-' + i.toString())
   }
 
