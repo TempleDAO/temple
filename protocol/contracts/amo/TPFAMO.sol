@@ -245,9 +245,9 @@ contract TPFAMO is Ownable {
         // construct request
         AMO__IBalancerVault.ExitPoolRequest memory exitPoolRequest;
         if (templeBalancerPoolIndex == 0) {
-            exitPoolRequest = _createPoolExitRequest(bptAmountIn, 0, _minAmountOut);
+            exitPoolRequest = _createPoolExitRequest(bptAmountIn, 0, _minAmountOut, templeBalancerPoolIndex);
         } else {
-            exitPoolRequest = _createPoolExitRequest(bptAmountIn, 1, _minAmountOut);
+            exitPoolRequest = _createPoolExitRequest(bptAmountIn, 1, _minAmountOut, templeBalancerPoolIndex);
         }
         // withdraw bpt tokens
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, true);
@@ -349,7 +349,7 @@ contract TPFAMO is Ownable {
         _validateParams(minBptOut, amountIn, cappedRebalanceAmounts.stable);
 
         // check spot price < TPF
-        if (poolHelper.isSpotPriceBelowTPF()) {
+        if (!poolHelper.isSpotPriceBelowTPF()) {
             revert AMOErrors.NoRebalanceUp();
         }
 
@@ -406,9 +406,9 @@ contract TPFAMO is Ownable {
 
         AMO__IBalancerVault.ExitPoolRequest memory exitPoolRequest;
         if (templeBalancerPoolIndex == 0) {
-            exitPoolRequest = _createPoolExitRequest(bptAmountIn, 1, minAmountOut);
+            exitPoolRequest = _createPoolExitRequest(bptAmountIn, 1, minAmountOut, templeBalancerPoolIndex == 0 ? 1 : 0);
         } else {
-            exitPoolRequest = _createPoolExitRequest(bptAmountIn, 0, minAmountOut);
+            exitPoolRequest = _createPoolExitRequest(bptAmountIn, 0, minAmountOut, templeBalancerPoolIndex == 0 ? 1 : 0);
         }
 
         // withdraw and unwrap deposit token to BPT token
@@ -419,9 +419,9 @@ contract TPFAMO is Ownable {
         bptToken.approve(address(balancerVault), bptAmountIn);
 
         // execute call and check for sanity
-        uint256 stableBalanceBefore = temple.balanceOf(address(this));
+        uint256 stableBalanceBefore = stable.balanceOf(address(this));
         balancerVault.exitPool(balancerPoolId, address(this), address(this), exitPoolRequest);
-        uint256 stableBalanceAfter = temple.balanceOf(address(this));
+        uint256 stableBalanceAfter = stable.balanceOf(address(this));
         if (stableBalanceAfter < stableBalanceBefore + minAmountOut) {
             revert AMOErrors.InsufficientAmountOutPostcall(stableBalanceBefore + minAmountOut, stableBalanceAfter);
         }
@@ -465,7 +465,8 @@ contract TPFAMO is Ownable {
     function _createPoolExitRequest(
         uint256 bptAmountIn,
         uint256 tokenIndex,
-        uint256 minAmountOut
+        uint256 minAmountOut,
+        uint256 exitTokenIndex
     ) internal view returns (AMO__IBalancerVault.ExitPoolRequest memory request) {
         address[] memory assets = new address[](2);
         uint256[] memory minAmountsOut = new uint256[](2);
@@ -481,7 +482,7 @@ contract TPFAMO is Ownable {
             minAmountsOut[1] = tokenIndex == 1 ? minAmountOut: 0;
         }
         // EXACT_BPT_IN_FOR_ONE_TOKEN_OUT index is 0 for exitKind
-        uint256 exitTokenIndex = uint256(templeBalancerPoolIndex);
+        //uint256 exitTokenIndex = uint256(templeBalancerPoolIndex);
         bytes memory encodedUserdata = abi.encode(uint256(0), bptAmountIn, exitTokenIndex);
         request.assets = assets;
         request.minAmountsOut = minAmountsOut;

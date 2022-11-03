@@ -113,7 +113,7 @@ contract PoolHelper is Ownable {
         return false;
     }
 
-    function _getMax(uint256 a, uint256 b) external pure returns (uint256 maxValue) {
+    function getMax(uint256 a, uint256 b) external pure returns (uint256 maxValue) {
         // if (a < b) {
         //     maxValue = b;
         // } else {

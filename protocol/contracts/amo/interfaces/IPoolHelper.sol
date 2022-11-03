@@ -19,4 +19,10 @@ interface IPoolHelper {
     function isSpotPriceAboveTPF() external view returns (bool);
 
     function getMax(uint256 a, uint256 b) external pure returns (uint256 maxValue);
+
+    // function createPoolExitRequest(
+    //     uint256 bptAmountIn,
+    //     uint256 tokenIndex,
+    //     uint256 minAmountOut
+    // ) external view returns (AMO__IBalancerVault.ExitPoolRequest memory request)
 }

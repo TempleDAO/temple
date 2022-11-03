@@ -437,14 +437,16 @@ describe.only("Temple Price Floor AMO", async () => {
                 receipt,
                 ethers.utils.id("Transfer(address,address,uint256)"),
                 ["address", "address", "uint256"],
-                [ZERO_ADDRESS, amo.address, amountsIn[0]]
+                [ZERO_ADDRESS, amo.address, amountsIn[0]],
+                false
             );
             // booster deposit event
             expectedEventsWithValues(
                 receipt,
                 ethers.utils.id("Deposited(address,uint256,uint256)"),
                 ["address","uint256", "uint256"],
-                [amoStaking.address, bbaUsdTempleAuraPID, bptOut]
+                [amoStaking.address, bbaUsdTempleAuraPID, bptOut],
+                false
             );
             const bptAmountAfter = await bptToken.balanceOf(amoStaking.address);
             const stakedBalanceAfter = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
@@ -504,14 +506,16 @@ describe.only("Temple Price Floor AMO", async () => {
                 receipt,
                 ethers.utils.id("Transfer(address,address,uint256)"),
                 ["address","address","uint256"],
-                [amo.address, ZERO_ADDRESS, amountsOut[0]]
+                [amo.address, ZERO_ADDRESS, amountsOut[0]],
+                false
             );
             // booster withdrawn event
             expectedEventsWithValues(
                 receipt,
                 ethers.utils.id("Withdrawn(address,uint256,uint256)"),
                 ["address","uint256","uint256"],
-                [amoStaking.address, bbaUsdTempleAuraPID, bptIn]
+                [amoStaking.address, bbaUsdTempleAuraPID, bptIn],
+                false
             );
             
             expect(await bptToken.balanceOf(amo.address)).to.eq(bptAmountIn.sub(bptIn));
@@ -533,7 +537,7 @@ describe.only("Temple Price Floor AMO", async () => {
             expect(templeAfter).to.eq(0);
         });
 
-        it("deposits stable", async () => {
+        it.only("deposits stable", async () => {
             // fail checks
             const cappedAmounts = await amo.cappedRebalanceAmounts();
             await shouldThrow(amo.depositStable(100, 0), /ZeroSwapLimit/);
@@ -573,17 +577,27 @@ describe.only("Temple Price Floor AMO", async () => {
                 receipt,
                 ethers.utils.id("StableDeposited(uint256,uint256)"),
                 ["uint256","uint256"],
-                [amountIn, bptOut]
+                [amountIn, bptOut],
+                false
             );
-            // expectedEventsWithValues(
-            //     receipt,
-            //     ethers.utils.id("Deposited(address,uint256,uint256)"),
-            //     ["address", "uint256", "uint256"],
-            //     [amoStaking.address, bbaUsdTempleAuraPID, bptOut]
-            // );
+            const expectedValues = [amoStaking.address, bbaUsdTempleAuraPID, bptOut];
+            const logWithEvent = expectedEventsWithValues(
+                receipt,
+                ethers.utils.id("Deposited(address,uint256,uint256)"),
+                ["address", "uint256", "uint256"],
+                expectedValues,
+                true
+            )!;
+            const expectedAddress = ethers.utils.getAddress(expectedValues[0].toString());
+            const userAddress = ethers.utils.getAddress(ethers.utils.hexDataSlice(logWithEvent.topics[1], 12, 32));
+            const eventPid = ethers.utils.defaultAbiCoder.decode(["uint256"], logWithEvent.topics[2])[0];
+            const eventAmount = ethers.utils.defaultAbiCoder.decode(["uint256"], logWithEvent.data)[0];
+            expect(expectedAddress).to.eq(userAddress);
+            expect(expectedValues[1]).to.eq(eventPid);
+            expect(expectedValues[2]).to.eq(eventAmount);
         });
 
-        it.only("withdraws stable", async () => {
+        it("withdraws stable", async () => {
             // fail checks
             const cappedAmounts = await amo.cappedRebalanceAmounts();
             await shouldThrow(amo.depositStable(100, 0), /ZeroSwapLimit/);
@@ -602,10 +616,10 @@ describe.only("Temple Price Floor AMO", async () => {
             const amountOut = toAtto(1_000);
             let minAmountsOut = [BigNumber.from(0), amountOut];
             const bptAmountIn = toAtto(100);
-            const reqData = await getExitPoolRequest(bptAmountIn, minAmountsOut);
-            const amountsOut = reqData.amountsOut
+            const reqData = await getExitPoolRequest(bptAmountIn, minAmountsOut, 0, BigNumber.from(1));
+            let amountsOut = reqData.amountsOut;
+            const exitTokenAmountOut = BigNumber.from(amountsOut[1]).mul(99).div(100); // minus fees
             const bptIn = reqData.bptIn
-            
             const setCappedAmounts = {
                 temple: amountOut,
                 bpt: amountOut,
@@ -617,8 +631,27 @@ describe.only("Temple Price Floor AMO", async () => {
 
             // add liquidity to get some staked position
             await ownerAddLiquidity(bptAmountIn);
-            console.log("AMOUNTS OUT", amountsOut);
-            //await amo.withdrawStable(bptIn, amountsOut[1]);
+            const stableBalanceBefore = await bbaUsdToken.balanceOf(amo.address);
+            console.log("AMOUNTS OUT", amountsOut, minAmountsOut);
+            const tx = await amo.withdrawStable(bptIn, exitTokenAmountOut);
+            const receipt = await tx.wait();
+            const stableBalanceAfter = await bbaUsdToken.balanceOf(amo.address);
+            expect(stableBalanceAfter).to.gte(stableBalanceBefore.add(exitTokenAmountOut));
+            const expectedValues =  [amoStaking.address, bbaUsdTempleAuraPID, bptIn];
+            const logWithEvent = expectedEventsWithValues(
+                receipt,
+                ethers.utils.id("Withdrawn(address,uint256,uint256)"),
+                ["address","uint256", "uint256"],
+                expectedValues,
+                true
+            )!;
+            const expectedAddress = ethers.utils.getAddress(expectedValues[0].toString());
+            const userAddress = ethers.utils.getAddress(ethers.utils.hexDataSlice(logWithEvent.topics[1], 12, 32));
+            const eventPid = ethers.utils.defaultAbiCoder.decode(["uint256"], logWithEvent.topics[2])[0];
+            const eventAmount = ethers.utils.defaultAbiCoder.decode(["uint256"], logWithEvent.data)[0];
+            expect(expectedAddress).to.eq(userAddress);
+            expect(expectedValues[1]).to.eq(eventPid);
+            expect(expectedValues[2]).to.eq(eventAmount);
         });
     });
 
@@ -664,16 +697,27 @@ async function getJoinPoolRequest(
 
 async function getExitPoolRequest(
     bptAmountIn: BigNumber,
-    minAmountsOut: BigNumber[]
+    minAmountsOut: BigNumber[],
+    kind: number,
+    exitTokenIndex: BigNumber
 ) {
     // create exit request
     let tokens: string[];
     let balances: BigNumber[];
-    //let minAmountsOut = [toAtto(10_000), toAtto(10_000)];
-
     [tokens, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
-    // using proportional exit: [EXACT_BPT_IN_FOR_TOKENS_OUT, bptAmountIn]
-    const intermediaryUserdata = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256"], [1, bptAmountIn]);
+    let intermediaryUserdata: string = "";
+    // kinds accepted are EXACT_BPT_IN_FOR_TOKENS_OUT and EXACT_BPT_IN_FOR_ONE_TOKEN_OUT
+    if (kind == 0) {
+        // EXACT_BPT_IN_FOR_ONE_TOKEN_OUT
+        intermediaryUserdata = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256", "uint256"], [0, bptAmountIn, exitTokenIndex]);
+        
+    } else if (kind == 1) {
+        // using proportional exit: [EXACT_BPT_IN_FOR_TOKENS_OUT, bptAmountIn]
+        intermediaryUserdata = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256"], [1, bptAmountIn]);
+    } else {
+        throw("Unsupported kind");
+    }
+
     let exitRequest = {
         assets: tokens,
         minAmountsOut,
@@ -693,15 +737,24 @@ function expectedEventsWithValues(
     receipt: ContractReceipt,
     eventTopic: string,
     decodeParams: string[],
-    expectedValues: any[]
+    expectedValues: any[],
+    returnlog: boolean
 ) {
     let eventFired: boolean = false;
-    console.log("values", expectedValues);
+    console.log("values", expectedValues, eventTopic);
     for (const log of receipt.logs) {
-        console.log("eventtopic, logtopic", eventTopic, log.topics);
+        //console.log("eventtopic, logtopic", eventTopic, log.topics);
+        console.log(log.data);
+        console.log(log.topics[0]);
         if (log.topics.length > 0 && eventTopic == log.topics[0]) {
             eventFired = true;
+            console.log(log);
+            if (returnlog) {
+                return log;
+            }
             const decodedValues = ethers.utils.defaultAbiCoder.decode(decodeParams, log.data);
+            
+            console.log("logadata", log.data, decodedValues);
             console.log("decoded values", decodedValues);
             for (let i=0; i<expectedValues.length; i++) {
                 if (expectedValues[i] !== undefined && decodedValues[i] !== undefined) {
