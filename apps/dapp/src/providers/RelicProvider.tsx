@@ -1,17 +1,19 @@
-import { createContext, PropsWithChildren, useContext, useState } from 'react';
+import { createContext, PropsWithChildren, useContext, useEffect, useState } from 'react';
 import { RelicEnclave, ItemInventory, RelicItemData, RelicService, RelicRarity, RelicData } from './types';
 
 import { BigNumber, ContractTransaction, Signer } from 'ethers';
-import { TEMPLE_RELIC_ADDRESS, TEMPLE_RELIC_ITEMS_ADDRESS } from 'providers/env';
+import env from '../constants/env';
 import { Relic, RelicItems, RelicItems__factory, Relic__factory } from 'types/typechain';
 import { Nullable } from 'types/util';
 import { asyncNoop } from 'utils/helpers';
 import { useAccount, useSigner } from 'wagmi';
 import { NoWalletAddressError } from './errors';
 import { useNotification } from './NotificationProvider';
+import { useWallet } from './WalletProvider';
 
 const INITIAL_STATE: RelicService = {
   inventory: null,
+  inventoryLoading: false,
   updateInventory: asyncNoop,
   mintRelic: async () => null,
   renounceRelic: async () => null,
@@ -24,24 +26,27 @@ const RelicContext = createContext(INITIAL_STATE);
 
 export const RelicProvider = (props: PropsWithChildren<{}>) => {
   const { data: signer } = useSigner();
-  const { data: accountData } = useAccount();
+  const { wallet } = useWallet();
   const { openNotification } = useNotification();
 
   const [inventoryState, setInventoryState] = useState<Nullable<ItemInventory>>(INITIAL_STATE.inventory);
-  const walletAddress = accountData?.address;
+  // TODO: Also handle error
+  const [inventoryLoading, setInventoryLoading] = useState(false);
 
   const fetchInventory = async (walletAddress: string, signer: Signer): Promise<ItemInventory> => {
     if (!walletAddress) {
       throw new NoWalletAddressError();
     }
 
-    const relicContract = new Relic__factory(signer).attach(TEMPLE_RELIC_ADDRESS);
-    const relicItemsContract = new RelicItems__factory(signer).attach(TEMPLE_RELIC_ITEMS_ADDRESS);
+    const relicContract = new Relic__factory(signer).attach(env.nexus.templeRelicAddress);
+    const relicItemsContract = new RelicItems__factory(signer).attach(env.nexus.templeRelicItemsAddress);
 
     const itemIds = [...Array(200).keys()];
+
     const extractValidItems = (counts: BigNumber[]): RelicItemData[] => {
       return counts.map((count, idx) => ({ id: idx, count: count.toNumber() })).filter(({ count }) => count > 0);
     };
+
     const fetchRelicIds = async () => {
       const relicIds = [] as BigNumber[];
       try {
@@ -67,22 +72,33 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
 
     const relics = await fetchRelicIds().then(fetchRelicData)
     const addresses = itemIds.map((_) => walletAddress);
+    console.log('about to call');
+    console.log(addresses);
+    console.log(itemIds);
     const items = extractValidItems(await relicItemsContract.balanceOfBatch(addresses, itemIds));
     return { relics, items };
   };
 
   const updateInventory = async () => {
-    if (!walletAddress || !signer) {
+    if (!wallet) {
+      throw new NoWalletAddressError();
+    }
+
+    if (!signer) {
       return;
     }
-    const inventory = await fetchInventory(walletAddress, signer);
+    setInventoryLoading(true);
+    const inventory = await fetchInventory(wallet, signer);
+    console.log('-Updated inv');
+    console.log(inventory);
     setInventoryState(inventory);
+    setInventoryLoading(false);
     return inventory;
   };
 
   const callRelicFunction = async (fn: (relicContract: Relic) => Promise<ContractTransaction>) => {
     if (inventoryState && signer) {
-      const relicContract = new Relic__factory(signer).attach(TEMPLE_RELIC_ADDRESS);
+      const relicContract = new Relic__factory(signer).attach(env.nexus.templeRelicAddress);
       const receipt = await (await fn(relicContract)).wait();
       const inventory = (await updateInventory())!;
       return { inventory, receipt };
@@ -90,8 +106,11 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
   };
 
   const callRelicItemsFunction = async (fn: (relicItemsContract: RelicItems) => Promise<ContractTransaction>) => {
+    console.log(inventoryState)
+    console.log(signer);
+
     if (inventoryState && signer) {
-      const relicItemsContract = new RelicItems__factory(signer).attach(TEMPLE_RELIC_ITEMS_ADDRESS);
+      const relicItemsContract = new RelicItems__factory(signer).attach(env.nexus.templeRelicItemsAddress);
       const receipt = await (await fn(relicItemsContract)).wait();
       const inventory = (await updateInventory())!;
       return { inventory, receipt };
@@ -143,7 +162,9 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
   };
 
   const mintRelicItem = async (itemId: number) => {
+    console.log('---- inside mintRelicItem');
     const result = await callRelicItemsFunction((relicItems) => relicItems.mintFromUser(itemId));
+    console.log(result);
     if (result) {
       openNotification({
         title: `Minted Relic Item #${itemId.toString()}`,
@@ -188,6 +209,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     <RelicContext.Provider
       value={{
         inventory: inventoryState,
+        inventoryLoading,
         updateInventory: async () => {
           await updateInventory();
         },

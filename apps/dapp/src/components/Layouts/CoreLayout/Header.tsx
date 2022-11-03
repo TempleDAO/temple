@@ -8,7 +8,6 @@ import {
 } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
-import { TEMPLE_RELIC_ADDRESS, VITE_PUBLIC_DEV_MODE } from 'providers/env';
 
 import {
   flexCenter,
@@ -28,6 +27,7 @@ import hamburgerX from 'assets/icons/core-x-hamburger.svg';
 import animationData from 'assets/animations/logo-animation.json';
 import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
 import { Account } from './Account';
+import { isDevelopmentEnv } from 'utils/helpers';
 
 export type HeaderMode = 'dapp' | 'nexus'
 
@@ -82,7 +82,7 @@ function getMenuItems(mode: HeaderMode) {
         { title: 'Nexus', path: '/nexus' },
       ]
     case 'nexus':
-      const devMode = VITE_PUBLIC_DEV_MODE == 'true'
+      const devMode = isDevelopmentEnv();
       return (devMode ? [{ title: 'Dev Mint', path: '/nexus/relic/dev-mint' }] : [])
         .concat([
           { title: 'Relic', path: '/nexus/relic' },
