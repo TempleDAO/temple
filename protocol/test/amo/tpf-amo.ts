@@ -4,6 +4,14 @@ import { toAtto, shouldThrow, mineForwardSeconds, blockTimestamp } from "../help
 import { BigNumber, Contract, ContractReceipt, Signer } from "ethers";
 import addresses from "../constants";
 import { 
+    resetFork,
+    impersonateAddress,
+    expectedEventsWithValues,
+    swapDaiForBbaUsd,
+    seedTempleBbaUsdPool
+} from "./common";
+import amoAddresses from "./amo-constants";
+import { 
   TPFAMO,
   TPFAMO__factory,
   IERC20__factory,
@@ -41,42 +49,23 @@ import {
   PoolHelper
 } from "../../typechain";
 import { DEPLOYED_CONTRACTS } from '../../scripts/deploys/helpers';
-import { timeStamp } from "console";
 
 const { MULTISIG, TEMPLE } = DEPLOYED_CONTRACTS.mainnet;
 const { BALANCER_VAULT } = addresses.contracts;
 const { FRAX_WHALE, BINANCE_ACCOUNT_8 } = addresses.accounts;
 const { FRAX } = addresses.tokens;
 const { DAI } = addresses.tokens;
-const TEMPLE_DAI_LP_TOKEN = "0x1b65fe4881800b91d4277ba738b567cbb200a60d";
-const BBA_USD_TOKEN = "0xA13a9247ea42D743238089903570127DdA72fE44";
-const BBA_USD_POOL_ID = "0xa13a9247ea42d743238089903570127dda72fe4400000000000000000000035d";
-const STA_BAL3_POOL_ID = "0x06df3b2bbb68adc8b0e302443692037ed9f91b42000000000000000000000063";
-const STA_BAL3 = "0x06Df3b2bbB68adc8B0e302443692037ED9f91b42";
-const TEMPLE_BBAUSD_LP_TOKEN = "0x173063a30e095313eee39411f07e95a8a806014e";
-const BALANCER_AUTHORIZER = "0xA331D84eC860Bf466b4CdCcFb4aC09a1B43F3aE6";
-const BALANCER_AUTHORIZER_ADAPTER = "0x8F42aDBbA1B16EaAE3BB5754915E0D06059aDd75";
+const { BBA_USD_TOKEN, TEMPLE_BBAUSD_LP_TOKEN, AURA_TOKEN, 
+    BALANCER_TOKEN, BAL_WETH_8020_TOKEN } = amoAddresses.tokens;
+const { BALANCER_POOL_ID } = amoAddresses.others;
+const { BALANCER_AUTHORIZER_ADAPTER, BALANCER_HELPERS, AURA_BOOSTER , 
+    AURA_LIQUIDITY_GAUGE_FACTORY, AURA_POOL_MANAGER_V3, AURA_GAUGE_CONTROLLER,
+    GAUGE_ADDER, BAL_VOTING_ESCROW } = amoAddresses.contracts;
+const { TEMPLE_WHALE, BBA_USD_WHALE, AURA_GAUGE_OWNER , AURA_POOL_MANAGER_OPERATOR, 
+    BAL_MULTISIG, BAL_WETH_8020_WHALE, ZERO_ADDRESS } = amoAddresses.accounts;
+
 const TPF_SCALED = 9_700;
-const REWARDS = "0xB665b3020bBE8a9020951e9a74194c1BFda5C5c4";
-const AURA_BOOSTER = "0x7818A1DA7BD1E64c199029E86Ba244a9798eEE10";
-const BALANCER_POOL_ID = "0x173063a30e095313eee39411f07e95a8a806014e0002000000000000000003ab";
-const BALANCER_HELPERS = "0x5aDDCCa35b7A0D07C74063c48700C8590E87864E";
 const ONE_ETH = toAtto(1);
-const TEMPLE_WHALE = "0xf6C75d85Ef66d57339f859247C38f8F47133BD39";
-const BBA_USD_WHALE = "0x1CeD4e3900c73A54eD775ef2740a4e38aC5b54e2";
-const AURA_LIQUIDITY_GAUGE_FACTORY = "0xf1665E19bc105BE4EDD3739F88315cC699cc5b65";
-const AURA_GAUGE_OWNER = "0x512fce9B07Ce64590849115EE6B32fd40eC0f5F3"; // balancerMaxi.eth
-const AURA_POOL_MANAGER_PROXY = "0x16A04E58a77aB1CE561A37371dFb479a8594947A";
-const AURA_POOL_MANAGER_SEC_PROXY = "0xdc274F4854831FED60f9Eca12CaCbD449134cF67";
-const AURA_POOL_MANAGER_V3 = "0xf843F61508Fc17543412DE55B10ED87f4C28DE50"; // poolManagerV3. operates SEC PROXY
-const AURA_POOL_MANAGER_OPERATOR = "0x5feA4413E3Cc5Cf3A29a49dB41ac0c24850417a0"; // aura multisig
-const BAL_MULTISIG = "0xc38c5f97B34E175FFd35407fc91a937300E33860";
-const AURA_GAUGE_CONTROLLER = "0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD";
-const GAUGE_ADDER = "0x2ffb7b215ae7f088ec2530c7aa8e1b24e398f26a";
-const BAL_VOTING_ESCROW = "0xC128a9954e6c874eA3d62ce62B468bA073093F25"; // veBAL
-const BAL_WETH_8020_WHALE = "0x24FAf482304Ed21F82c86ED5fEb0EA313231a808";
-const BAL_WETH_8020_TOKEN = "0x5c6Ee304399DBdB9C8Ef030aB642B10820DB8F56";
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const BLOCKNUMBER = 15862300;
 
 let amo: TPFAMO;
@@ -118,9 +107,11 @@ let bbaUsdTempleAuraDepositToken: IERC20;
 let bbaUsdTempleAuraStash: string;
 let bbaUsdTempleAuraGauge: string;
 let auraBooster: IAuraBooster;
+let auraToken: IERC20;
+let balToken: IERC20;
 let poolHelper: PoolHelper;
 
-describe.only("Temple Price Floor AMO", async () => {
+describe("Temple Price Floor AMO", async () => {
     
     beforeEach( async () => {
         await resetFork(BLOCKNUMBER);
@@ -145,6 +136,8 @@ describe.only("Temple Price Floor AMO", async () => {
         bptToken = IERC20__factory.connect(TEMPLE_BBAUSD_LP_TOKEN, owner);
         bbaUsdToken = IERC20__factory.connect(BBA_USD_TOKEN, bbaUsdWhale);
         balWeth8020Token = IERC20__factory.connect(BAL_WETH_8020_TOKEN, balWeth8020Whale);
+        auraToken = IERC20__factory.connect(AURA_TOKEN, owner);
+        balToken = IERC20__factory.connect(BALANCER_TOKEN, owner);
 
         balancerVault = AMOIBalancerVault__factory.connect(BALANCER_VAULT, owner);
         balancerHelpers = IBalancerHelpers__factory.connect(BALANCER_HELPERS, owner);
@@ -158,14 +151,14 @@ describe.only("Temple Price Floor AMO", async () => {
         balancerVotingEscrow = AMOIBalancerVotingEscrow__factory.connect(BAL_VOTING_ESCROW, balWeth8020Whale);
         auraBooster = IAuraBooster__factory.connect(AURA_BOOSTER, owner);
 
-        // add amo as TEMPLE minter
+        // transfer temple for pool seeding
         const templeMultisigConnect = templeToken.connect(templeMultisig);
         await templeMultisigConnect.transfer(await templeWhale.getAddress(), toAtto(2_000_000));
         await templeMultisigConnect.transfer(ownerAddress, toAtto(2_000_000));
 
         // seed balancer pool
-        await swapDaiForBbaUsd(toAtto(2_000_000), ownerAddress);
-        await seedTempleBbaUsdPool(owner, toAtto(1_000_000), ownerAddress);
+        await swapDaiForBbaUsd(balancerVault, daiToken, daiWhale, toAtto(2_000_000), ownerAddress);
+        await seedTempleBbaUsdPool(bbaUsdToken, templeToken, bptToken, balancerVault, balancerHelpers, owner, toAtto(1_000_000), ownerAddress);
         
         await owner.sendTransaction({value: ONE_ETH, to: BAL_MULTISIG });
         await owner.sendTransaction({value: ONE_ETH, to: await auraMultisig.getAddress()});
@@ -292,7 +285,7 @@ describe.only("Temple Price Floor AMO", async () => {
             await expect(amoStaking.setAuraPoolInfo(bbaUsdTempleAuraPID, bbaUsdTempleAuraDepositToken.address, bbaUsdTempleAuraRewardPool.address))
                 .to.emit(amoStaking, "SetAuraPoolInfo").withArgs(bbaUsdTempleAuraPID, bbaUsdTempleAuraDepositToken.address, bbaUsdTempleAuraRewardPool.address);
             const auraPoolInfo = await amoStaking.auraPoolInfo();
-            expect(auraPoolInfo.rewards).to.eq(REWARDS);
+            expect(auraPoolInfo.rewards).to.eq(bbaUsdTempleAuraRewardPool.address);
             expect(auraPoolInfo.pId).to.eq(bbaUsdTempleAuraPID);
             expect(auraPoolInfo.token).to.eq(bbaUsdTempleAuraDepositToken.address);
         });
@@ -314,8 +307,8 @@ describe.only("Temple Price Floor AMO", async () => {
             const numerator = 9_700;
             const denominator = 10_000;
             await expect(poolHelper.setTemplePriceFloorRatio(numerator))
-                .to.emit(amo, "SetTemplePriceFloorRatio").withArgs(numerator, denominator);
-            const tpf = await amo.templePriceFloorRatio();
+                .to.emit(poolHelper, "SetTemplePriceFloorRatio").withArgs(numerator, denominator);
+            const tpf = await poolHelper.templePriceFloorRatio();
             expect(tpf.numerator).to.eq(numerator);
             expect(tpf.denominator).to.eq(denominator);
         });
@@ -370,18 +363,16 @@ describe.only("Temple Price Floor AMO", async () => {
         });
 
         it("recovers tokens", async () => {
-            // transfer frax to zaps contract
-            await fraxToken.transfer(amo.address, 1000);
-
-            console.log(await fraxToken.balanceOf(amo.address));
-                    
+            const amount = 1000;
+            await bbaUsdToken.transfer(amo.address, amount);
+            const balBefore = await bbaUsdToken.balanceOf(ownerAddress);
             // recover token
-            const checksummedFrax = ethers.utils.getAddress(FRAX);
-            await expect(amo.recoverToken(FRAX, ownerAddress, 1000))
+            const checksummedAddress = ethers.utils.getAddress(bbaUsdToken.address);
+            await expect(amo.recoverToken(bbaUsdToken.address, ownerAddress, amount))
                 .to.emit(amo, "RecoveredToken")
-                .withArgs(checksummedFrax, ownerAddress, 1000);
+                .withArgs(checksummedAddress, ownerAddress, amount);
             
-            expect(await fraxToken.balanceOf(ownerAddress)).eq(1000);
+            expect(await bbaUsdToken.balanceOf(ownerAddress)).eq(balBefore.add(amount));
         });
     });
 
@@ -433,21 +424,42 @@ describe.only("Temple Price Floor AMO", async () => {
             const tx = await amo.addLiquidity(joinPoolRequest, bptOut);
             const receipt = await tx.wait();
             // temple transfer after mint
-            expectedEventsWithValues(
+            let expectedValues = [ZERO_ADDRESS, amo.address, amountsIn[0]];
+            let logWithEvent = expectedEventsWithValues(
                 receipt,
                 ethers.utils.id("Transfer(address,address,uint256)"),
                 ["address", "address", "uint256"],
-                [ZERO_ADDRESS, amo.address, amountsIn[0]],
-                false
-            );
+                expectedValues,
+                true
+            )!;
+            const fromAddress = ethers.utils.getAddress(expectedValues[0].toString());
+            const toAddress = ethers.utils.getAddress(amo.address);
+            const eventFromAddress =  ethers.utils.getAddress(ethers.utils.hexDataSlice(logWithEvent.topics[1], 12, 32));
+            const eventToAddress =  ethers.utils.getAddress(ethers.utils.hexDataSlice(logWithEvent.topics[2], 12, 32));
+            const eventAmountTransfer = ethers.utils.defaultAbiCoder.decode(["uint256"], logWithEvent.data)[0];
+            expect(eventFromAddress).to.eq(fromAddress);
+            expect(eventToAddress).to.eq(toAddress);
+            expect(eventAmountTransfer).to.eq(amountsIn[0]);
+
             // booster deposit event
-            expectedEventsWithValues(
+            const expectedValuesDeposited = [amoStaking.address, bbaUsdTempleAuraPID, bptOut]
+            logWithEvent = expectedEventsWithValues(
                 receipt,
                 ethers.utils.id("Deposited(address,uint256,uint256)"),
                 ["address","uint256", "uint256"],
-                [amoStaking.address, bbaUsdTempleAuraPID, bptOut],
-                false
-            );
+                expectedValues,
+                true
+            )!;
+            console.log(logWithEvent);
+            console.log(amoStaking.address);
+            const expectedAddress = ethers.utils.getAddress(expectedValuesDeposited[0].toString());
+            const userAddress = ethers.utils.getAddress(ethers.utils.hexDataSlice(logWithEvent.topics[1], 12, 32));
+            const eventPid = ethers.utils.defaultAbiCoder.decode(["uint256"], logWithEvent.topics[2])[0];
+            const eventAmount = ethers.utils.defaultAbiCoder.decode(["uint256"], logWithEvent.data)[0];
+            expect(expectedAddress).to.eq(userAddress);
+            expect(expectedValuesDeposited[1]).to.eq(eventPid);
+            expect(expectedValuesDeposited[2]).to.eq(eventAmount);
+
             const bptAmountAfter = await bptToken.balanceOf(amoStaking.address);
             const stakedBalanceAfter = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
             expect(bptAmountAfter).to.eq(0); // because bpt tokens have been staked
@@ -502,21 +514,41 @@ describe.only("Temple Price Floor AMO", async () => {
             const tx = await amo.removeLiquidity(exitRequest, bptIn);
             const receipt = await tx.wait();
             // check events and values
-            expectedEventsWithValues(
-                receipt,
-                ethers.utils.id("Transfer(address,address,uint256)"),
-                ["address","address","uint256"],
-                [amo.address, ZERO_ADDRESS, amountsOut[0]],
-                false
-            );
+            // const expectedValuesTransfer = [amoStaking.address, ZERO_ADDRESS, amountsOut[0]];
+            // let logWithEvent = expectedEventsWithValues(
+            //     receipt,
+            //     ethers.utils.id("Transfer(address,address,uint256)"),
+            //     ["address","address","uint256"],
+            //     expectedValuesTransfer,
+            //     true
+            // )!;
+            // const fromAddress = ethers.utils.getAddress(expectedValuesTransfer[0].toString());
+            // const toAddress = ethers.utils.getAddress(ZERO_ADDRESS);
+            // const eventFromAddress =  ethers.utils.getAddress(ethers.utils.hexDataSlice(logWithEvent.topics[1], 12, 32));
+            // const eventToAddress =  ethers.utils.getAddress(ethers.utils.hexDataSlice(logWithEvent.topics[2], 12, 32));
+            // const eventAmountTransfer = ethers.utils.defaultAbiCoder.decode(["uint256"], logWithEvent.data)[0];
+            // console.log(bbaUsdTempleAuraDepositToken.address, );
+            // expect(eventFromAddress).to.eq(fromAddress);
+            // expect(eventToAddress).to.eq(toAddress);
+            // expect(eventAmountTransfer).to.eq(amountsOut[0]);
+
             // booster withdrawn event
-            expectedEventsWithValues(
+
+            const expectedValues = [amoStaking.address, bbaUsdTempleAuraPID, bptIn];
+            let logWithEvent = expectedEventsWithValues(
                 receipt,
                 ethers.utils.id("Withdrawn(address,uint256,uint256)"),
                 ["address","uint256","uint256"],
-                [amoStaking.address, bbaUsdTempleAuraPID, bptIn],
-                false
-            );
+                expectedValues,
+                true
+            )!;
+            const expectedAddress = ethers.utils.getAddress(expectedValues[0].toString());
+            const userAddress = ethers.utils.getAddress(ethers.utils.hexDataSlice(logWithEvent.topics[1], 12, 32));
+            const eventPid = ethers.utils.defaultAbiCoder.decode(["uint256"], logWithEvent.topics[2])[0];
+            const eventAmount = ethers.utils.defaultAbiCoder.decode(["uint256"], logWithEvent.data)[0];
+            expect(expectedAddress).to.eq(userAddress);
+            expect(expectedValues[1]).to.eq(eventPid);
+            expect(expectedValues[2]).to.eq(eventAmount);
             
             expect(await bptToken.balanceOf(amo.address)).to.eq(bptAmountIn.sub(bptIn));
 
@@ -537,7 +569,7 @@ describe.only("Temple Price Floor AMO", async () => {
             expect(templeAfter).to.eq(0);
         });
 
-        it.only("deposits stable", async () => {
+        it("deposits stable", async () => {
             // fail checks
             const cappedAmounts = await amo.cappedRebalanceAmounts();
             await shouldThrow(amo.depositStable(100, 0), /ZeroSwapLimit/);
@@ -578,7 +610,7 @@ describe.only("Temple Price Floor AMO", async () => {
                 ethers.utils.id("StableDeposited(uint256,uint256)"),
                 ["uint256","uint256"],
                 [amountIn, bptOut],
-                false
+                true
             );
             const expectedValues = [amoStaking.address, bbaUsdTempleAuraPID, bptOut];
             const logWithEvent = expectedEventsWithValues(
@@ -653,12 +685,123 @@ describe.only("Temple Price Floor AMO", async () => {
             expect(expectedValues[1]).to.eq(eventPid);
             expect(expectedValues[2]).to.eq(eventAmount);
         });
+
+        it("rebalances up", async () => {
+            
+        });
     });
 
     describe("Aura Staking", async () => {
 
         it("admin tests", async () => {
+            // fails
+            const stakingConnect = amoStaking.connect(alan);
+            await shouldThrow(stakingConnect.setOperator(alanAddress), /Ownable: caller is not the owner/);
+            await shouldThrow(stakingConnect.setAuraPoolInfo(100, bptToken.address, bptToken.address), /Ownable: caller is not the owner/);
+            await shouldThrow(stakingConnect.recoverToken(bptToken.address, alanAddress, 100), /Ownable: caller is not the owner/);
+            //await shouldThrow(stakingConnect.withdraw(100, true, true), /Ownable: caller is not the owner/);
+            //await shouldThrow(stakingConnect.withdrawAll(true, true), /Ownable: caller is not the owner/);
+            await shouldThrow(stakingConnect.withdrawAllAndUnwrap(true, true), /Ownable: caller is not the owner/);
 
+            // passes
+            await amoStaking.setOperator(alanAddress);
+            await amoStaking.setAuraPoolInfo(100, bptToken.address, bptToken.address);
+        });
+
+        it("recovers token", async () => {
+            const amount = 1000;
+            await bbaUsdToken.transfer(amoStaking.address, amount);
+            const ownerBalanceBefore = await bbaUsdToken.balanceOf(ownerAddress);
+
+            // recover token
+            const checksummedAddress = ethers.utils.getAddress(bbaUsdToken.address);
+            await expect(amoStaking.recoverToken(bbaUsdToken.address, ownerAddress, amount))
+                .to.emit(amoStaking, "RecoveredToken")
+                .withArgs(checksummedAddress, ownerAddress, amount);
+            const ownerBalanceAfter = await bbaUsdToken.balanceOf(ownerAddress);
+            expect(await bbaUsdToken.balanceOf(amoStaking.address)).eq(0);
+            expect(ownerBalanceAfter).to.eq(ownerBalanceBefore.add(amount));
+        });
+
+        it("sets operator", async () => {
+            await expect(amoStaking.setOperator(operatorAddress))
+                .to.emit(amoStaking, "SetOperator").withArgs(operatorAddress);
+            expect(await amoStaking.operator()).to.eq(operatorAddress);
+        });
+
+        it("sets aura pool info", async () => {
+            await expect(amoStaking.setAuraPoolInfo(bbaUsdTempleAuraPID, bbaUsdTempleAuraDepositToken.address, bbaUsdTempleAuraRewardPool.address))
+                .to.emit(amoStaking, "SetAuraPoolInfo").withArgs(bbaUsdTempleAuraPID, bbaUsdTempleAuraDepositToken.address, bbaUsdTempleAuraRewardPool.address);
+            const auraPoolInfo = await amoStaking.auraPoolInfo();
+            expect(auraPoolInfo.pId).to.eq(bbaUsdTempleAuraPID);
+            expect(auraPoolInfo.token).to.eq(bbaUsdTempleAuraDepositToken.address);
+            expect(auraPoolInfo.rewards).to.eq(bbaUsdTempleAuraRewardPool.address);
+        });
+
+        it("withdraws", async () => {
+            const amount = toAtto(100);
+            await ownerAddLiquidity(amount);
+            let balance = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
+            // admin withdraws
+            expect(await bptToken.balanceOf(amoStaking.address)).to.eq(0);
+            await amoStaking.withdrawAndUnwrap(balance, true, false);
+            expect(await bptToken.balanceOf(amoStaking.address)).to.eq(balance);
+
+            let amoBalanceBefore = await bptToken.balanceOf(amo.address);
+            await ownerAddLiquidity(amount);
+            const toWithdraw = balance.div(2);
+            await amoStaking.withdrawAndUnwrap(toWithdraw, true, true);
+            let amoBalanceAfter = await bptToken.balanceOf(amo.address);
+            expect(amoBalanceAfter).to.eq(amoBalanceBefore.add(toWithdraw));
+            console.log(await bptToken.balanceOf(amo.address));
+            console.log(await bptToken.balanceOf(amoStaking.address));
+            console.log(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address));
+            amoBalanceBefore = await bptToken.balanceOf(amo.address);
+
+            await ownerAddLiquidity(amount);
+            console.log(await bptToken.balanceOf(amo.address));
+            balance = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
+            await amoStaking.withdrawAllAndUnwrap(true, true);
+            amoBalanceAfter = await bptToken.balanceOf(amo.address);
+            expect(amoBalanceAfter).to.eq(amoBalanceBefore.add(balance));
+        });
+
+        it("helper functions", async () => {
+            const amount = toAtto(10_000);
+            await ownerAddLiquidity(amount);
+            const stakedBalance = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
+            
+            // fast forward 7 days and check earned
+            await mineForwardSeconds(14 * 24 * 3600);
+            await balGaugeController.connect(balWeth8020Whale).vote_for_gauge_weights(bbaUsdTempleAuraGauge, 10_000);
+            //0xd9e863B7317a66fe0a4d2834910f604Fd6F89C6c aura staking proxy
+            //change_gauge_weight(addr: address, weight: uint256): 0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD
+            // checkpoint_gauge(addr: address)
+            // aura voter proxy: 0xaF52695E1bB01A16D33D7194C28C42b10e0Dbec2
+            // ExtraRewardStashV3 0x41F1Ad38eA36E39E1Ea39067F2fe424F83E2e40f
+            await mineForwardSeconds(7 * 24 * 3600);
+            
+            // harvest rewards
+            await auraBooster.earmarkRewards(bbaUsdTempleAuraPID);
+            await mineForwardSeconds(7 * 24 * 3600);
+            await auraBooster.earmarkRewards(bbaUsdTempleAuraPID);
+            const earned = await bbaUsdTempleAuraRewardPool.earned(amoStaking.address);
+            const auraBalanceBefore = await auraToken.balanceOf(amoStaking.address);
+            const positions = await amoStaking.showPositions();
+            expect(positions.staked).to.eq(stakedBalance);
+            expect(positions.earned).to.gt(0);
+            expect(earned).to.gt(0);
+            expect(await amoStaking.earned()).to.eq(earned);
+            await amoStaking.getReward(true);
+            const auraBalanceAfter = await auraToken.balanceOf(amoStaking.address);
+            const balBalancer = await balToken.balanceOf(amoStaking.address);
+            
+            expect(earned).to.be.closeTo(balBalancer, ethers.utils.parseEther("0.001"));
+            expect(auraBalanceAfter).to.gt(auraBalanceBefore);
+        });
+
+        it("deposits and stakes", async () => {
+            // tested in amo tests
         });
     });
 });
@@ -733,40 +876,6 @@ async function getExitPoolRequest(
     }
 }
 
-function expectedEventsWithValues(
-    receipt: ContractReceipt,
-    eventTopic: string,
-    decodeParams: string[],
-    expectedValues: any[],
-    returnlog: boolean
-) {
-    let eventFired: boolean = false;
-    console.log("values", expectedValues, eventTopic);
-    for (const log of receipt.logs) {
-        //console.log("eventtopic, logtopic", eventTopic, log.topics);
-        console.log(log.data);
-        console.log(log.topics[0]);
-        if (log.topics.length > 0 && eventTopic == log.topics[0]) {
-            eventFired = true;
-            console.log(log);
-            if (returnlog) {
-                return log;
-            }
-            const decodedValues = ethers.utils.defaultAbiCoder.decode(decodeParams, log.data);
-            
-            console.log("logadata", log.data, decodedValues);
-            console.log("decoded values", decodedValues);
-            for (let i=0; i<expectedValues.length; i++) {
-                if (expectedValues[i] !== undefined && decodedValues[i] !== undefined) {
-                    console.log("topic found", expectedValues[i], decodedValues[i]);
-                    expect(expectedValues[i]).to.eq(decodedValues[i]);
-                }   
-            }
-        }
-    }
-    expect(eventFired).to.eq(true);
-}
-
 async function createAuraPoolAndStakingContracts(
     signer: Signer,
     relativeWeightCap: BigNumber
@@ -817,40 +926,6 @@ async function createAuraPoolAndStakingContracts(
 
 }
 
-// todo: deposit TEMPLE or stable token using depositSingle from RewardPoolDepositWrapper 0xB188b1CB84Fb0bA13cb9ee1292769F903A9feC59
-// in contract
-
-async function seedTempleBbaUsdPool(
-    signer: Signer,
-    amount: BigNumber,
-    to: string
-) {
-    const signerAddress = await signer.getAddress();
-    // approvals
-    await bbaUsdToken.connect(signer).approve(balancerVault.address, amount);
-    await templeToken.connect(signer).approve(balancerVault.address, amount);
-    console.log("BALANCESS", await templeToken.balanceOf(signerAddress), await bbaUsdToken.balanceOf(signerAddress));
-    const tokens = [TEMPLE, BBA_USD_TOKEN];
-    const maxAmountsIn = [amount, amount];
-    const userdata = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, maxAmountsIn, 1]);
-    let req  = {
-        assets: tokens,
-        maxAmountsIn: maxAmountsIn,
-        userData: userdata,
-        fromInternalBalance: false
-    }
-    let bptOut: BigNumber;
-    let amountsIn: BigNumber[];
-    [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, signerAddress, to, req);
-    console.log("QUERIED JOIN ", bptOut, amountsIn);
-
-    req.maxAmountsIn = amountsIn;
-    req.userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, amountsIn, bptOut]);
-    await balancerVault.connect(signer).joinPool(BALANCER_POOL_ID, signerAddress, to, req);
-
-    console.log("BALANCE BPT TO", await bptToken.balanceOf(to));
-}
-
 async function getSpotPriceScaled() {
     let balances: BigNumber[];
     const precision = BigNumber.from(10_000);
@@ -894,87 +969,6 @@ async function singleSideDepositStable(
     await balancerVault.connect(bbaUsdWhale).joinPool(BALANCER_POOL_ID, whaleAddress, whaleAddress, request);
 }
 
-async function swapDaiForBbaUsd(
-    amount: BigNumber,
-    to: string
-) {
-    const whaleAddress = await daiWhale.getAddress();
-    const daiConnect = daiToken.connect(daiWhale);
-    // do batch swap
-    const kind = 0;
-    const swaps = [
-        {
-            poolId: "0xae37d54ae477268b9997d4161b96b8200755935c000000000000000000000337",
-            assetInIndex: 0,
-            assetOutIndex: 1,
-            amount: amount,
-            userData: "0x"
-        },
-        {
-            poolId: "0x804cdb9116a10bb78768d3252355a1b18067bf8f0000000000000000000000fb",
-            assetInIndex: 1,
-            assetOutIndex: 2,
-            amount: 0,
-            userData: "0x"
-        },
-        {
-            poolId: "0x7b50775383d3d6f0215a8f290f2c9e2eebbeceb20000000000000000000000fe",
-            assetInIndex: 2,
-            assetOutIndex: 3,
-            amount: 0,
-            userData: "0x"
-        },
-        {
-            poolId: "0x9210f1204b5a24742eba12f710636d76240df3d00000000000000000000000fc",
-            assetInIndex: 3,
-            assetOutIndex: 4,
-            amount: 0,
-            userData: "0x"
-        }, 
-        {
-            poolId: "0x82698aecc9e28e9bb27608bd52cf57f704bd1b83000000000000000000000336",
-            assetInIndex: 4,
-            assetOutIndex: 5,
-            amount: 0,
-            userData: "0x"
-        },
-        {
-            poolId: "0xa13a9247ea42d743238089903570127dda72fe4400000000000000000000035d",
-            assetInIndex: 5,
-            assetOutIndex: 6,
-            amount: 0,
-            userData: "0x"
-        }
-    ];
-    const assets = [
-        "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-        "0x02d60b84491589974263d922D9cC7a3152618Ef6",
-        "0x804CdB9116a10bB78768D3252355a1b18067bF8f",
-        "0x9210F1204b5a24742Eba12f710636D76240dF3d0",
-        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-        "0x82698aeCc9E28e9Bb27608Bd52cF57f704BD1B83",
-        "0xA13a9247ea42D743238089903570127DdA72fE44",
-    ];
-    const zero = BigNumber.from(0);
-    const limits = [
-        amount,
-        zero,
-        zero,
-        zero,
-        zero,
-        zero,
-        BigNumber.from(-1).mul(amount).mul(9).div(10) // -1 * amount * 90%
-    ];
-    const deadline = toAtto(100);
-    const funds = {
-        sender: whaleAddress,
-        fromInternalBalance: false,
-        recipient: to,
-        toInternalBalance: false
-    }
-    await daiConnect.approve(balancerVault.address, amount);
-    await balancerVault.connect(daiWhale).batchSwap(kind, swaps, assets, funds, limits, deadline);
-}
 
 async function singleSideDepositTemple(
     templeToken: TempleERC20Token,
@@ -1007,28 +1001,3 @@ async function singleSideDepositTemple(
     await balancerVault.connect(templeWhale).joinPool(BALANCER_POOL_ID, whaleAddress, whaleAddress, request);
 }
 
-async function fund(tokenWithSigner: IERC20, to: string, amount: BigNumber) {
-    await tokenWithSigner.transfer(to, amount);
-}
-
-async function impersonateAddress(address: string) {
-    await network.provider.request({
-        method: 'hardhat_impersonateAccount',
-        params: [address],
-    });
-    return ethers.provider.getSigner(address);
-}
-
-async function resetFork(blockNumber: Number) {
-    await network.provider.request({
-      method: "hardhat_reset",
-      params: [
-        {
-          forking: {
-            jsonRpcUrl: process.env.TESTS_MAINNET_RPC_URL,
-            blockNumber
-          },
-        },
-      ],
-    });
-}

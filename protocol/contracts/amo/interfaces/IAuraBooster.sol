@@ -4,4 +4,7 @@ pragma solidity ^0.8.4;
 interface IAuraBooster {
     function deposit(uint256 _pid, uint256 _amount, bool _stake) external returns (bool);
     function depositAll(uint256 _pid, bool _stake) external returns(bool);
+    function earmarkRewards(uint256 _pid) external returns(bool);
+    function claimRewards(uint256 _pid, address _gauge) external returns(bool);
+    function earmarkFees(address _feeToken) external returns(bool);
 }

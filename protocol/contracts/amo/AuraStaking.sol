@@ -31,6 +31,7 @@ contract AuraStaking is Ownable {
     }
 
     error NotOperator();
+    error NotOperatorOrOwner();
 
     event SetAuraPoolInfo(uint32, address, address);
     event SetOperator(address);
@@ -76,28 +77,12 @@ contract AuraStaking is Ownable {
         booster.deposit(auraPoolInfo.pId, amount, true);
     }
 
-    function withdrawAll(bool claim, bool sendToOperator) external onlyOwner {
-        uint256 depositTokenBalance = IBaseRewardPool(auraPoolInfo.rewards).balanceOf(address(this));
-        IBaseRewardPool(auraPoolInfo.rewards).withdrawAll(claim);
-        if (sendToOperator) {
-            depositToken.safeTransfer(msg.sender, depositTokenBalance);
-        }
-     }
-
-    function withdraw(uint256 amount, bool claim, bool sendToOperator) external onlyOwner {
-        IBaseRewardPool(auraPoolInfo.rewards).withdraw(amount, claim);
-        if (sendToOperator) {
-            // send deposit token to operator
-            depositToken.safeTransfer(msg.sender, amount);
-        }
-    }
-
     // withdraw deposit token and unwrap to bpt tokens
-    function withdrawAndUnwrap(uint256 amount, bool claim, bool sendToOperator) external onlyOperator {
+    function withdrawAndUnwrap(uint256 amount, bool claim, bool sendToOperator) external onlyOperatorOrOwner {
         IBaseRewardPool(auraPoolInfo.rewards).withdrawAndUnwrap(amount, claim);
         if (sendToOperator) {
             // unwrapped amount is 1 to 1
-            bptToken.safeTransfer(msg.sender, amount);
+            bptToken.safeTransfer(operator, amount);
         }
     }
 
@@ -106,7 +91,7 @@ contract AuraStaking is Ownable {
         IBaseRewardPool(auraPoolInfo.rewards).withdrawAllAndUnwrap(claim);
         if (sendToOperator) {
             // unwrapped amount is 1 to 1
-            bptToken.safeTransfer(msg.sender, depositTokenBalance);
+            bptToken.safeTransfer(operator, depositTokenBalance);
         }
     }
 
@@ -130,6 +115,13 @@ contract AuraStaking is Ownable {
     modifier onlyOperator() {
         if (msg.sender != operator) {
             revert NotOperator();
+        }
+        _;
+    }
+
+    modifier onlyOperatorOrOwner() {
+        if (msg.sender != operator && msg.sender != owner()) {
+            revert NotOperatorOrOwner();
         }
         _;
     }

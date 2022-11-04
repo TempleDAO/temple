@@ -573,6 +573,10 @@ contract TPFAMO is Ownable {
         amoStaking.depositAndStake(bptIn);
     }
 
+    // TODO: add function to transfer bpt from msg.sender and stake directly
+    // TODO: add function to remove bpt and track minted temple to burn? something subgraphs can solve: recover temple amount 
+    // and burn
+
     // this function is executed by contract owner and should be checked if spot price is within acceptable
     // skews off TPF before executing
     function removeLiquidity(
@@ -593,7 +597,7 @@ contract TPFAMO is Ownable {
 
         bptToken.approve(address(balancerVault), 0);
         bptToken.approve(address(balancerVault), bptIn);
-        //bptToken.safeIncreaseAllowance(address(balancerVault), bptIn);
+
         balancerVault.exitPool(balancerPoolId, address(this), address(this), request);
 
         // validate amounts received
