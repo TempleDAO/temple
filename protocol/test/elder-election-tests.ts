@@ -3,15 +3,13 @@ import { BigNumber } from "ethers";
 import { TypedDataDomain, TypedDataField, TypedDataSigner } from "@ethersproject/abstract-signer";
 import { expect } from "chai";
 
-import { Templar } from "../typechain/Templar";
-import { Templar__factory } from "../typechain/factories/Templar__factory";
-
-import { TemplarMetadata } from "../typechain/TemplarMetadata";
-import { TemplarMetadata__factory } from "../typechain/factories/TemplarMetadata__factory";
-
-import { ElderElection } from "../typechain/ElderElection";
-import { ElderElection__factory } from "../typechain/factories/ElderElection__factory";
+import { 
+  Templar, Templar__factory, 
+  TemplarMetadata, TemplarMetadata__factory,
+  ElderElection, ElderElection__factory,
+} from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { shouldThrow } from "./helpers";
 
 const DISCORD_ID_1 = 1000;
 const DISCORD_ID_2 = 1001;
@@ -59,8 +57,7 @@ describe("Elder Election", async () => {
   it("nominations work", async () => {
     {
       const election = ELDER_ELECTION.connect(amanda);
-      await expect(election.nominate(DISCORD_ID_1))
-        .to.be.revertedWith("AccessControl");
+      await shouldThrow(election.nominate(DISCORD_ID_1), /AccessControl:/);
     }
 
     {
@@ -71,15 +68,15 @@ describe("Elder Election", async () => {
       expect(await election.numCandidates()).to.eq(1);
 
       await expect(election.nominate(0))
-        .to.be.revertedWith("InvalidTemplar");
+        .to.be.revertedWithCustomError(TEMPLAR, "InvalidTemplar")
+        .withArgs(0);
     }
   });
 
   it("resignations work", async () => {
     {
       const election = ELDER_ELECTION.connect(amanda);
-      await expect(election.resign(DISCORD_ID_1))
-        .to.be.revertedWith("AccessControl");
+      await shouldThrow(election.resign(DISCORD_ID_1), /AccessControl:/);
     }
 
     {
@@ -92,7 +89,8 @@ describe("Elder Election", async () => {
       expect(await election.numCandidates()).to.eq(0);
 
       await expect(election.resign(0))
-        .to.be.revertedWith("InvalidTemplar");
+        .to.be.revertedWithCustomError(TEMPLAR, "InvalidTemplar")
+        .withArgs(0);
     }
   });
 
@@ -104,12 +102,12 @@ describe("Elder Election", async () => {
     }
 
     await expect(ELDER_ELECTION.connect(ben).setEndorsements([DISCORD_ID_1]))
-    .to.emit(ELDER_ELECTION, "UpdateEndorsements");
+      .to.emit(ELDER_ELECTION, "UpdateEndorsements");
     await ELDER_ELECTION.connect(sarah).setEndorsements([DISCORD_ID_1,DISCORD_ID_2]);
     await ELDER_ELECTION.connect(sarah).setEndorsements([]);
 
     await expect(ELDER_ELECTION.connect(ben).setEndorsements([DISCORD_ID_1,DISCORD_ID_2,DISCORD_ID_3]))
-    .to.be.revertedWith("TooManyEndorsements");
+      .to.be.revertedWithCustomError(ELDER_ELECTION, "TooManyEndorsements");
   });
 
   it("relayed endorsements work", async () => {
@@ -177,7 +175,8 @@ describe("Elder Election", async () => {
       await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
         req,
         signature,
-      )).to.be.revertedWith("InvalidSignature");
+      )).to.be.revertedWithCustomError(ELDER_ELECTION, "InvalidSignature")
+        .withArgs(req.account);
     }
 
     {
@@ -192,7 +191,8 @@ describe("Elder Election", async () => {
       await expect(ELDER_ELECTION.relayedSetEndorsementsFor(
         req,
         signature,
-      )).to.be.revertedWith("InvalidNonce");
+      )).to.be.revertedWithCustomError(ELDER_ELECTION, "InvalidNonce")
+        .withArgs(req.account);
     }
 
     {
@@ -211,15 +211,8 @@ describe("Elder Election", async () => {
           deadline: BigNumber.from(req.deadline).sub(7200),
         },
         signature,
-      )).to.be.revertedWith("DeadlineExpired");
+      )).to.be.revertedWithCustomError(ELDER_ELECTION, "DeadlineExpired");
     }
   });
 
 });
-
-interface SetEndorsementReq {
-  account: string;
-  discordIds: number[];
-  deadline: number,
-  signature: Uint8Array;
-}
