@@ -37,13 +37,15 @@
     "ethers": "^5.0.0",
     "hardhat": "2.9.4",
     "hardhat-contract-sizer": "^2.5.1",
-    "mocha": "^9.2.2"
+    "mocha": "^9.2.2",
+    "solidity-coverage": "^0.7.21"
   },
   "scripts": {
     "compile": "hardhat compile",
     "clean": "hardhat clean",
     "size": "hardhat size-contracts",
     "test": "NODE_ENV=test hardhat test",
+    "coverage": "hardhat coverage",
     "slither": "slither $PWD --triage-mode",
     "local-node": "hardhat node",
     "local-deploy": "hardhat run --network localhost scripts/local-dapp-dev/deploy.ts",
