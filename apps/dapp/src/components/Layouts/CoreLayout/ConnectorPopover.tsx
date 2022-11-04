@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import styled from 'styled-components';
-import { useConnect, useAccount } from 'wagmi';
-
+import { useConnect, useAccount, useDisconnect, useSignMessage } from 'wagmi';
+import { utils } from 'ethers';
 import { UnstyledList } from 'styles/common';
 import { Button } from 'components/Button/Button';
 import { backgroundImage } from 'styles/mixins';
@@ -17,19 +17,34 @@ interface Props {
 }
 
 export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
-  const { isConnected: connected } = useAccount()
-  const {
-    error,
-    isLoading: loading,
-    connect,
-    connectors,
-  } = useConnect();
+  const { address, isConnected: connected } = useAccount();
+  const { error, isLoading: loading, connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
+  const { signMessage } = useSignMessage({
+    onSuccess(data, variables) {
+      const address = utils.verifyMessage(variables.message, data);
+      window.localStorage[`templedao.tos.${address}`] = data;
+    },
+    onError: () => {
+      disconnect();
+    },
+  });
 
   useEffect(() => {
     if (connected && isOpen) {
       onClose();
     }
   }, [connected, isOpen]);
+
+  useEffect(() => {
+    if (window?.localStorage !== undefined && address) {
+      const isTosSigned = window.localStorage[`templedao.tos.${address}`];
+      if (!isTosSigned) {
+        const message = `I agree to the TempleDAO Terms & Conditions at:\n\nhttps://templedao.link/disclaimer`;
+        signMessage({ message });
+      }
+    }
+  }, [address]);
 
   return (
     <Popover
