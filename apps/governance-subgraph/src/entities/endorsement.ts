@@ -15,44 +15,44 @@ export function updateEndorsements(event: UpdateEndorsements): void {
   const address = event.params.account.toHexString()
   let endorser = getEndorser(address)
   if (endorser) {
-    metric.endorsments -= endorser.validEndorsments
-    removeEndorsments(endorser, timestamp)
+    metric.endorsements -= endorser.validEndorsements
+    removeEndorsements(endorser, timestamp)
   } else {
     endorser = createEndorser(address, timestamp)
   }
 
   const discordIds = event.params.discordIds
-  let validEndorsments = 0
+  let validEndorsements = 0
   for (let i = 0; i < discordIds.length; i++) {
       const templar = getTemplar(discordIds[i])
       if (templar && templar.isNominated) {
-        const endorsmentId = address + '-' + validEndorsments.toString()
-        const endorsment = new Endorsement(endorsmentId)
-        endorsment.timestamp = timestamp
-        endorsment.address = address
-        endorsment.templar = templar.id
-        endorsment.save()
+        const endorsementId = address + '-' + validEndorsements.toString()
+        const endorsement = new Endorsement(endorsementId)
+        endorsement.timestamp = timestamp
+        endorsement.address = address
+        endorsement.templar = templar.id
+        endorsement.save()
 
-        validEndorsments += 1
+        validEndorsements += 1
         const endorsed = endorser.endorsedCandidates
         endorsed.push(templar.id)
         endorser.endorsedCandidates = endorsed
     }
   }
 
-  metric.endorsments += validEndorsments
+  metric.endorsements += validEndorsements
   updateMetric(metric, timestamp)
 
-  endorser.validEndorsments = validEndorsments
+  endorser.validEndorsements = validEndorsements
   updateEndorser(endorser, timestamp)
 }
 
-export function removeEndorsments(endorser: Endorser, timestamp: BigInt): void {
-  for (let i = 0; i < endorser.validEndorsments; i++) {
-    store.remove('Endorsment', endorser.id + '-' + i.toString())
+export function removeEndorsements(endorser: Endorser, timestamp: BigInt): void {
+  for (let i = 0; i < endorser.validEndorsements; i++) {
+    store.remove('Endorsement', endorser.id + '-' + i.toString())
   }
 
-  endorser.validEndorsments = 0
+  endorser.validEndorsements = 0
   endorser.endorsedCandidates = []
   updateEndorser(endorser, timestamp)
 }

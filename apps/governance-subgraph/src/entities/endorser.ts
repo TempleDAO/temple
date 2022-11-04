@@ -6,7 +6,7 @@ import { Endorser, EndorserData } from '../../generated/schema'
 export function createEndorser(address: string, timestamp: BigInt): Endorser {
   const endorser = new Endorser(address)
   endorser.timestamp = timestamp
-  endorser.validEndorsments = 0
+  endorser.validEndorsements = 0
   endorser.endorsedCandidates = []
   endorser.save()
 
@@ -38,7 +38,7 @@ export function updateOrCreateData(endorser: Endorser, timestamp: BigInt): void 
 
   endorserData.endorser = endorser.id
   endorserData.timestamp = timestamp
-  endorserData.validEndorsments = endorser.validEndorsments
+  endorserData.validEndorsements = endorser.validEndorsements
   endorserData.endorsedCandidates = endorser.endorsedCandidates
   endorserData.save()
 }

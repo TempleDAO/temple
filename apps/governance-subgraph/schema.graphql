@@ -3,7 +3,7 @@ type Metric @entity {
   timestamp: BigInt!
   templars: Int!
   candidates: Int!
-  endorsments: Int!
+  endorsements: Int!
   templarBaseUri: String!
 }
 
@@ -13,7 +13,7 @@ type MetricData @entity {
   metric: Metric!
   templars: Int!
   candidates: Int!
-  endorsments: Int!
+  endorsements: Int!
   templarBaseUri: String!
 }
 
@@ -24,7 +24,7 @@ type Templar @entity {
   uri: String!
   role: String
   isNominated: Boolean!
-  endorsments: [Endorsement!]! @derivedFrom(field: "templar")
+  endorsements: [Endorsement!]! @derivedFrom(field: "templar")
 }
 
 type TemplarData @entity {
@@ -40,7 +40,7 @@ type TemplarData @entity {
 type Endorser @entity {
   id: ID!
   timestamp: BigInt!
-  validEndorsments: Int!
+  validEndorsements: Int!
   endorsedCandidates: [String!]!
 }
 
@@ -48,7 +48,7 @@ type EndorserData @entity {
   id: ID!
   endorser: Endorser!
   timestamp: BigInt!
-  validEndorsments: Int!
+  validEndorsements: Int!
   endorsedCandidates: [String!]!
 }
 

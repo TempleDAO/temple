@@ -13,7 +13,7 @@ export function getMetric(timestamp: BigInt): Metric {
     metric.timestamp = timestamp
     metric.templars = 0
     metric.candidates = 0
-    metric.endorsments = 0
+    metric.endorsements = 0
     metric.templarBaseUri = 'https://discordapp.com/users/'
     metric.save()
 
@@ -42,7 +42,7 @@ export function updateOrCreateData(metric: Metric, timestamp: BigInt): void {
   metricData.timestamp = timestamp
   metricData.templars = metric.templars
   metricData.candidates = metric.candidates
-  metricData.endorsments = metric.endorsments
+  metricData.endorsements = metric.endorsements
   metricData.templarBaseUri = metric.templarBaseUri
   metricData.save()
 }
