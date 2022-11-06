@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IBaseRewardPool.sol";
 import "./interfaces/IAuraBooster.sol";
-import "./helpers/AMOErrors.sol";
+import "./helpers/AMOCommon.sol";
 
 contract AuraStaking is Ownable {
     using SafeERC20 for IERC20;
@@ -64,7 +64,7 @@ contract AuraStaking is Ownable {
     }
 
     function recoverToken(address token, address to, uint256 amount) external onlyOwner {
-        if (to == address(0)) revert AMOErrors.InvalidAddress();
+        if (to == address(0)) revert AMOCommon.InvalidAddress();
         IERC20(token).safeTransfer(to, amount);
 
         emit RecoveredToken(token, to, amount);

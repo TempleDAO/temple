@@ -1,6 +1,7 @@
 pragma solidity ^0.8.4;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+
 interface IAMOAuraStaking {
     function setAuraPoolInfo(uint32 _pId, address _token, address _rewards) external;
 

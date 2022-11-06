@@ -51,7 +51,7 @@ let daiWhale: Signer;
 let templeMultisig: Signer;
 let bbaUsdWhale: Signer;
 
-describe.only("Pool Helper", async () => {
+describe("Pool Helper", async () => {
 
     beforeEach(async () => {
         await resetFork(BLOCKNUMBER);
@@ -107,10 +107,17 @@ describe.only("Pool Helper", async () => {
         const alanConnect = poolHelper.connect(alan);
         // fails
         await shouldThrow(alanConnect.setTemplePriceFloorRatio(1_000), /Ownable: caller is not the owner/);
+        await shouldThrow(alanConnect.setRebalancePercentageBounds(100,100), /Ownable: caller is not the owner/);
 
         // success
         await poolHelper.setTemplePriceFloorRatio(TPF_SCALED);
-    })
+    });
+
+    it("sets rebalance lower and upper bounds", async () => {
+        await poolHelper.setRebalancePercentageBounds(100, 400);
+        expect(await poolHelper.rebalancePercentageBoundLow()).to.eq(100);
+        expect(await poolHelper.rebalancePercentageBoundUp()).to.eq(400);
+    });
 
     it ("sets tpf ratio", async () => {
         await expect(poolHelper.setTemplePriceFloorRatio(TPF_SCALED))
