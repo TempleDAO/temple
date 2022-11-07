@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { blockTimestamp, deployAndAirdropTemple, ERC20Light, expectBalancesChangeBy, mineForwardSeconds, shouldThrow, toAtto } from "../helpers";
+import { blockTimestamp, deployAndAirdropTemple, ERC20Light, expectBalancesChangeBy, mineForwardSeconds, toAtto } from "../helpers";
 import { BaseContract, BigNumberish, Signer, constants } from "ethers";
 import { 
   Exposure,
@@ -133,11 +133,14 @@ describe("Temple Core Vault - Early Withdraw", async () => {
   });
   
   it("cannot withdraw from an invalid vault", async () => {
-    await shouldThrow(vaultEarlyWithdraw.connect(alan).withdraw(await ben.getAddress(), toAtto(200)), /InvalidVault\(\".*\"\)/);
+    await expect(vaultEarlyWithdraw.connect(alan).withdraw(ben.getAddress(), toAtto(200)))
+      .to.be.revertedWithCustomError(vaultEarlyWithdraw, "InvalidVault")
+      .withArgs(await ben.getAddress());
   });
 
   it("cannot withdraw zero amounts", async () => {
-    await shouldThrow(vaultEarlyWithdraw.connect(alan).withdraw(vault.address, 0), /ExpectedNonZero()/);
+    await expect(vaultEarlyWithdraw.connect(alan).withdraw(vault.address, 0))
+      .to.be.revertedWithCustomError(vaultEarlyWithdraw, "ExpectedNonZero");
   });
 
   it("cannot withdraw if not enough temple balance", async () => {

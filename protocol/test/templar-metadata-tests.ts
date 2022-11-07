@@ -1,20 +1,15 @@
 import { ethers } from "hardhat";
 import { Signer } from "ethers";
 import { expect } from "chai";
-
-import { Templar } from "../typechain/Templar";
-import { Templar__factory } from "../typechain/factories/Templar__factory";
-
-import { TemplarMetadata } from "../typechain/TemplarMetadata";
-import { TemplarMetadata__factory } from "../typechain/factories/TemplarMetadata__factory";
-
+import { 
+  Templar, Templar__factory, 
+  TemplarMetadata, TemplarMetadata__factory,
+} from "../typechain";
+import { shouldThrow } from "./helpers";
 
 const DISCORD_ID_1 = 1000;
 const DISCORD_ID_2 = 1001;
 const DISCORD_ID_3 = 1001;
-
-const TEMPLE_ROLE_ACOLYTE = "acolyte";
-const TEMPLE_ROLE_INITIATE = "initiate";
 
 describe("Templar Metadata", async () => {
   let TEMPLAR: Templar;
@@ -22,13 +17,12 @@ describe("Templar Metadata", async () => {
 
   let owner: Signer;
   let assigner: Signer;
-  let nominator: Signer;
   let amanda: Signer;
   let ben: Signer;
   let sarah: Signer;
  
   beforeEach(async () => {
-    [owner, assigner, nominator, amanda, ben, sarah] = await ethers.getSigners();
+    [owner, assigner, amanda, ben, sarah] = await ethers.getSigners();
     TEMPLAR = await new Templar__factory(owner).deploy();
     TEMPLAR_METADATA = await new TemplarMetadata__factory(owner).deploy(TEMPLAR.address);
 
@@ -52,8 +46,7 @@ describe("Templar Metadata", async () => {
     // Ben cannot
     {
       const templarMetadata = TEMPLAR_METADATA.connect(ben);
-      await expect(templarMetadata.setRole(DISCORD_ID_1, "acolyte"))
-        .to.be.revertedWith("AccessControl:");
+      await shouldThrow(templarMetadata.setRole(DISCORD_ID_1, "acolyte"), /AccessControl:/);
     }
   });
 
@@ -62,7 +55,7 @@ describe("Templar Metadata", async () => {
     // Roles can't be set when there isn't yet an NFT minted.
     const templarMetadata = TEMPLAR_METADATA.connect(assigner);
     await expect(templarMetadata.setRole(4500, "acolyte"))
-      .to.be.revertedWith("InvalidTemplar");
+      .to.be.revertedWithCustomError(TEMPLAR, "InvalidTemplar");
 
     // updates work
     await expect(templarMetadata.setRole(DISCORD_ID_1, "initiate"))

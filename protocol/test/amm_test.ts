@@ -21,14 +21,10 @@ import {
 } from "../typechain";
 
 import { BigNumber, Signer } from "ethers";
-import { mineNBlocks, toAtto, shouldThrow, blockTimestamp, fromAtto } from "./helpers";
+import { toAtto, shouldThrow, blockTimestamp, fromAtto } from "./helpers";
 
 const fmtPricePair = (pair: [BigNumber, BigNumber, number?]): [number, number] => {
   return [fromAtto(pair[0]), fromAtto(pair[1])]
-}
-
-const fmtTemplePrice = (pair: [BigNumber, BigNumber, number?]): number => {
-  return fromAtto(pair[1])/fromAtto(pair[0]);
 }
 
 describe("AMM", async () => {
@@ -38,8 +34,7 @@ describe("AMM", async () => {
     let treasuryIV: TreasuryIV;
     let owner: Signer;
     let alan: Signer;
-    let ben: Signer
-    let carol: Signer
+    let ben: Signer;
     let pair: TempleUniswapV2Pair;
     let templeRouter: TempleStableAMMRouter;
     let uniswapFactory: UniswapV2Factory;
@@ -49,7 +44,7 @@ describe("AMM", async () => {
     const expiryDate = (): number =>  Math.floor(Date.now() / 1000) + 9000;
    
     beforeEach(async () => {
-      [owner, alan, ben, carol] = await ethers.getSigners();
+      [owner, alan, ben] = await ethers.getSigners();
 
       templeToken = await new TempleERC20Token__factory(owner).deploy();
       fraxToken = await new FakeERC20__factory(owner).deploy("STABLEC", "STABLEC");
@@ -276,7 +271,7 @@ describe("AMM", async () => {
       });
 
       it("sets correctly", async () => {
-          let fakeToken = await new FakeERC20__factory(owner).deploy("STABLEC", "STABLEC");
+          const fakeToken = await new FakeERC20__factory(owner).deploy("STABLEC", "STABLEC");
           await templeRouter.addPair(fakeToken.address, templeRouter.address);
           expect(await templeRouter.tokenPair(fakeToken.address)).to.eq(templeRouter.address);
       });

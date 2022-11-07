@@ -1,14 +1,13 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { fromAtto, NULL_ADDR, toAtto } from "../helpers";
-import { BigNumber, Signer } from "ethers";
+import {  expectBalancesChangeBy, NULL_ADDR, toAtto } from "../helpers";
+import {  Signer } from "ethers";
 import { 
   Exposure,
   Exposure__factory,
   TreasuryFarmingRevenue,
   TreasuryFarmingRevenue__factory,
 } from "../../typechain";
-import { mkRebasingERC20TestSuite } from "./rebasing-erc20-testsuite";
 
 describe("Temple Core Farming Revenue Allocation", async () => {
   let exposure: Exposure;
@@ -64,11 +63,14 @@ describe("Temple Core Farming Revenue Allocation", async () => {
       await farmingRevenue.increaseShares(await alan.getAddress(), toAtto(150));
       await farmingRevenue.increaseShares(await ben.getAddress(), toAtto(50));
       await farmingRevenue.addRevenue(toAtto(100));
-
-      await expect(async () => {
-        await farmingRevenue.claimFor(await alan.getAddress())
-        await farmingRevenue.claimFor(await ben.getAddress())
-      }).to.changeTokenBalances(exposure, [alan, ben], [toAtto(75), toAtto(25)]);
+      
+      await expectBalancesChangeBy(async () => { 
+        await farmingRevenue.claimFor(await alan.getAddress());
+        await farmingRevenue.claimFor(await ben.getAddress());
+      },
+        [exposure, alan, toAtto(75)],
+        [exposure, ben, toAtto(25)]
+      );
     })
 
     it("A change in shareholding should trigger a call to claim", async () => {
@@ -76,10 +78,13 @@ describe("Temple Core Farming Revenue Allocation", async () => {
       await farmingRevenue.increaseShares(await ben.getAddress(), toAtto(50));
       await farmingRevenue.addRevenue(toAtto(100));
 
-      await expect(async () => {
+      await expectBalancesChangeBy(async () => { 
         await farmingRevenue.increaseShares(await ben.getAddress(), toAtto(150));
         await farmingRevenue.decreaseShares(await alan.getAddress(), toAtto(50));
-      }).to.changeTokenBalances(exposure, [alan, ben], [toAtto(50), toAtto(50)]);
+      },
+        [exposure, alan, toAtto(50)],
+        [exposure, ben, toAtto(50)]
+      );
     })
 
     it("Revenue is immediately allocated to active shareholders", async () => {
@@ -87,10 +92,13 @@ describe("Temple Core Farming Revenue Allocation", async () => {
       await farmingRevenue.increaseShares(await ben.getAddress(), toAtto(50));
       await farmingRevenue.addRevenue(toAtto(100));
 
-      await expect(async () => {
+      await expectBalancesChangeBy(async () => { 
         await farmingRevenue.increaseShares(await ben.getAddress(), toAtto(150));
-        await farmingRevenue.claimFor(await alan.getAddress())
-      }).to.changeTokenBalances(exposure, [alan, ben], [toAtto(75), toAtto(25)]);
+        await farmingRevenue.claimFor(await alan.getAddress());
+      },
+        [exposure, alan, toAtto(75)],
+        [exposure, ben, toAtto(25)]
+      );
     })
 
     it("Decreasing shares after revenue allocation shouldn't change claim", async () => {
@@ -98,10 +106,13 @@ describe("Temple Core Farming Revenue Allocation", async () => {
       await farmingRevenue.increaseShares(await ben.getAddress(), toAtto(50));
       await farmingRevenue.addRevenue(toAtto(100));
 
-      await expect(async () => {
+      await expectBalancesChangeBy(async () => { 
         await farmingRevenue.decreaseShares(await alan.getAddress(), toAtto(100));
-        await farmingRevenue.claimFor(await ben.getAddress())
-      }).to.changeTokenBalances(exposure, [alan, ben], [toAtto(75), toAtto(25)]);
+        await farmingRevenue.claimFor(await ben.getAddress());
+      },
+        [exposure, alan, toAtto(75)],
+        [exposure, ben, toAtto(25)]
+      );
     })
 
     it("Any change in shares post revenue claim/before next revenue increase should be 0", async () => {
@@ -109,33 +120,44 @@ describe("Temple Core Farming Revenue Allocation", async () => {
       await farmingRevenue.increaseShares(await ben.getAddress(), toAtto(100));
       await farmingRevenue.addRevenue(toAtto(100));
 
-      await expect(async () => {
+      await expectBalancesChangeBy(async () => { 
         await farmingRevenue.decreaseShares(await alan.getAddress(), toAtto(50));
-        await farmingRevenue.increaseShares(await ben.getAddress(), toAtto(50))
-      }).to.changeTokenBalances(exposure, [alan, ben], [toAtto(50), toAtto(50)]);
+        await farmingRevenue.increaseShares(await ben.getAddress(), toAtto(50));
+      },
+        [exposure, alan, toAtto(50)],
+        [exposure, ben, toAtto(50)]
+      );
 
-      await expect(async () => {
-        await farmingRevenue.claimFor(await alan.getAddress())
-        await farmingRevenue.claimFor(await ben.getAddress())
-      }).to.changeTokenBalances(exposure, [alan, ben], [0, 0]);
+      await expectBalancesChangeBy(async () => { 
+        await farmingRevenue.claimFor(await alan.getAddress());
+        await farmingRevenue.claimFor(await ben.getAddress());
+      },
+        [exposure, alan, 0],
+        [exposure, ben, 0]
+      );
     })
 
     it("Repeated share changes and claims are accounted for", async () => {
       await farmingRevenue.increaseShares(await alan.getAddress(), toAtto(150));
       await farmingRevenue.increaseShares(await ben.getAddress(), toAtto(50));
 
-      await expect(async () => {
+      await expectBalancesChangeBy(async () => { 
         await farmingRevenue.addRevenue(toAtto(100));
         await farmingRevenue.decreaseShares(await alan.getAddress(), toAtto(50));
         await farmingRevenue.increaseShares(await ben.getAddress(), toAtto(50));
-      }).to.changeTokenBalances(exposure, [alan, ben], [toAtto(75), toAtto(25)]);
+      },
+        [exposure, alan, toAtto(75)],
+        [exposure, ben, toAtto(25)]
+      );
 
-
-      await expect(async () => {
-        await farmingRevenue.addRevenue(toAtto(100))
+      await expectBalancesChangeBy(async () => { 
+        await farmingRevenue.addRevenue(toAtto(100));
         await farmingRevenue.claimFor(await alan.getAddress());
         await farmingRevenue.claimFor(await ben.getAddress());
-      }).to.changeTokenBalances(exposure, [alan, ben], [toAtto(50), toAtto(50)]);
+      },
+        [exposure, alan, toAtto(50)],
+        [exposure, ben, toAtto(50)]
+      );
     })
   })
 })

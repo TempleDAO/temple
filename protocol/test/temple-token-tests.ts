@@ -1,20 +1,18 @@
-import { ethers, network } from "hardhat";
-import { ContractFactory, Signer } from "ethers";
+import { ethers } from "hardhat";
+import { Signer } from "ethers";
 import { expect } from "chai";
 
-import { TempleERC20Token } from "../typechain/TempleERC20Token";
+import { TempleERC20Token, TempleERC20Token__factory } from "../typechain";
 import { shouldThrow } from "./helpers";
-import { TempleERC20Token__factory } from "../typechain/factories/TempleERC20Token__factory";
 
 describe("Temple ERC20 Token", async () => {
   let TEMPLE: TempleERC20Token;
-  let owner: Signer
-  let minter: Signer
-  let amanda: Signer
-  let ben: Signer;
+  let owner: Signer;
+  let minter: Signer;
+  let amanda: Signer;
  
   beforeEach(async () => {
-    [owner, minter, amanda, ben] = await ethers.getSigners();
+    [owner, minter, amanda] = await ethers.getSigners();
     TEMPLE = await new TempleERC20Token__factory(owner).deploy()
   })
 
