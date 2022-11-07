@@ -69,7 +69,7 @@ dataSources:
       language: wasm/assemblyscript
       file: ./src/mappings/elderElection.ts
       entities:
-        - Endorser
+        - Voter
         - Endorsment
         - Nomination
       abis:

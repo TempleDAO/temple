@@ -37,16 +37,16 @@ type TemplarData @entity {
   isNominated: Boolean!
 }
 
-type Endorser @entity {
+type Voter @entity {
   id: ID!
   timestamp: BigInt!
   validEndorsements: Int!
   endorsedCandidates: [String!]!
 }
 
-type EndorserData @entity {
+type VoterData @entity {
   id: ID!
-  endorser: Endorser!
+  voter: Voter!
   timestamp: BigInt!
   validEndorsements: Int!
   endorsedCandidates: [String!]!

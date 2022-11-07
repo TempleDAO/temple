@@ -1,8 +1,8 @@
 import { BigInt, store } from '@graphprotocol/graph-ts'
 
 import { UpdateEndorsements } from '../../generated/ElderElection/ElderElection'
-import { Endorsement, Endorser } from '../../generated/schema'
-import { createEndorser, getEndorser, updateEndorser } from './endorser'
+import { Endorsement, Voter } from '../../generated/schema'
+import { createVoter, getVoter, updateVoter } from './voter'
 
 import { getMetric, updateMetric } from './metric'
 import { getTemplar } from './templar'
@@ -13,12 +13,12 @@ export function updateEndorsements(event: UpdateEndorsements): void {
   const metric = getMetric(timestamp)
 
   const address = event.params.account.toHexString()
-  let endorser = getEndorser(address)
-  if (endorser) {
-    metric.endorsements -= endorser.validEndorsements
-    removeEndorsements(endorser, timestamp)
+  let voter = getVoter(address)
+  if (voter) {
+    metric.endorsements -= voter.validEndorsements
+    removeEndorsements(voter, timestamp)
   } else {
-    endorser = createEndorser(address, timestamp)
+    voter = createVoter(address, timestamp)
   }
 
   const discordIds = event.params.discordIds
@@ -34,25 +34,25 @@ export function updateEndorsements(event: UpdateEndorsements): void {
         endorsement.save()
 
         validEndorsements += 1
-        const endorsed = endorser.endorsedCandidates
+        const endorsed = voter.endorsedCandidates
         endorsed.push(templar.id)
-        endorser.endorsedCandidates = endorsed
+        voter.endorsedCandidates = endorsed
     }
   }
 
   metric.endorsements += validEndorsements
   updateMetric(metric, timestamp)
 
-  endorser.validEndorsements = validEndorsements
-  updateEndorser(endorser, timestamp)
+  voter.validEndorsements = validEndorsements
+  updateVoter(voter, timestamp)
 }
 
-export function removeEndorsements(endorser: Endorser, timestamp: BigInt): void {
-  for (let i = 0; i < endorser.validEndorsements; i++) {
-    store.remove('Endorsement', endorser.id + '-' + i.toString())
+export function removeEndorsements(voter: Voter, timestamp: BigInt): void {
+  for (let i = 0; i < voter.validEndorsements; i++) {
+    store.remove('Endorsement', voter.id + '-' + i.toString())
   }
 
-  endorser.validEndorsements = 0
-  endorser.endorsedCandidates = []
-  updateEndorser(endorser, timestamp)
+  voter.validEndorsements = 0
+  voter.endorsedCandidates = []
+  updateVoter(voter, timestamp)
 }
