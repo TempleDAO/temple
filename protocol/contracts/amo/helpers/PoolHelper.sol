@@ -145,8 +145,7 @@ contract PoolHelper is Ownable {
         uint256 stableIndexInPool = templeBalancerPoolIndex == 0 ? 1 : 0;
         // a ratio of stable balances with quote price and fees
         uint256 newTempleBalance = balances[templeBalancerPoolIndex] - tokensOut;
-        uint256 quote = (balances[stableIndexInPool] * 1000 ) / (newTempleBalance * 995);
-
+        uint256 quote = (balances[stableIndexInPool] * TPF_PRECISION ) / newTempleBalance;
         return quote > maxNewTpf;
     }
 
@@ -178,17 +177,17 @@ contract PoolHelper is Ownable {
         return (slippageDifference * TPF_PRECISION) / spotPriceBeforeScaled;
     }
 
-    function getMax(uint256 a, uint256 b) external pure returns (uint256 maxValue) {
-        // if (a < b) {
-        //     maxValue = b;
-        // } else {
-        //     maxValue = a;
-        // }
-        assembly {
-            if lt(a, b) { maxValue := b }
-            if iszero(maxValue) { maxValue := a }
-        }
-    }
+    // function getMax(uint256 a, uint256 b) external pure returns (uint256 maxValue) {
+    //     // if (a < b) {
+    //     //     maxValue = b;
+    //     // } else {
+    //     //     maxValue = a;
+    //     // }
+    //     assembly {
+    //         if lt(a, b) { maxValue := b }
+    //         if iszero(maxValue) { maxValue := a }
+    //     }
+    // }
 
     function createPoolExitRequest(
         address temple,
