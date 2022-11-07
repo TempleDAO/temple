@@ -106,6 +106,7 @@ const env: Environment = {
   },
   featureFlags: {
     enableAscend: true,
+    nexusOnlyMode: false,
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
 };

@@ -96,6 +96,7 @@ export interface Environment {
   etherscan: string;
   featureFlags: {
     enableAscend: boolean;
+    nexusOnlyMode: boolean;
   };
   nexus: Nexus;
 }

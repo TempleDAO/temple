@@ -99,6 +99,7 @@ const env: Environment = {
   },
   featureFlags: {
     enableAscend: false,
+    nexusOnlyMode: false,
   },
   posthog: {
     token: 'phc_pa9tsK76qoRqgsvMh9rDLtBKbOaawlwvJTLkcNDtxab',

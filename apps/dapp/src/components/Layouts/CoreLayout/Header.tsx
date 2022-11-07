@@ -1,20 +1,8 @@
-import {
-  FC,
-  useRef,
-  useState,
-  useCallback,
-  useLayoutEffect,
-  SyntheticEvent,
-} from 'react';
+import { FC, useRef, useState, useCallback, useLayoutEffect, SyntheticEvent } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
-import {
-  flexCenter,
-  buttonResets,
-  backgroundImage,
-  pixelsToRems,
-} from 'styles/mixins';
+import { flexCenter, buttonResets, backgroundImage, pixelsToRems } from 'styles/mixins';
 import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
 import { phoneAndAbove, verySmallDesktop } from 'styles/breakpoints';
@@ -29,7 +17,7 @@ import mobileBackgoundImage from 'assets/images/mobile-background-geometry.svg';
 import { Account } from './Account';
 import { isDevelopmentEnv } from 'utils/helpers';
 
-export type HeaderMode = 'dapp' | 'nexus'
+export type HeaderMode = 'dapp' | 'nexus';
 
 const Header: FC<{ mode: HeaderMode }> = (props) => {
   const [isNavOpen, setIsNavOpen] = useState(false);
@@ -46,15 +34,13 @@ const Header: FC<{ mode: HeaderMode }> = (props) => {
             $isOpen={isNavOpen}
             onClick={() => setIsNavOpen((isOpen) => !isOpen)}
           />
-          <Logo to="/core">
-            <Lottie animationData={animationData} height={36} width={36} />
-          </Logo>
+          {!env.featureFlags.nexusOnlyMode && (
+            <Logo to="/core">
+              <Lottie animationData={animationData} height={36} width={36} />
+            </Logo>
+          )}
         </MobileNavLeft>
-        <Navigation
-          isNavOpenMobile={isNavOpen}
-          onClickMenuItem={onClickMenuItem}
-          mode={props.mode}
-        />
+        <Navigation isNavOpenMobile={isNavOpen} onClickMenuItem={onClickMenuItem} mode={props.mode} />
         <AccountWrapper>
           <Account />
         </AccountWrapper>
@@ -68,27 +54,24 @@ export default Header;
 interface NavigationProps {
   isNavOpenMobile: boolean;
   onClickMenuItem?: (event: SyntheticEvent) => void;
-  mode: HeaderMode
+  mode: HeaderMode;
 }
 
 function getMenuItems(mode: HeaderMode) {
-  switch(mode) {
+  switch (mode) {
     case 'dapp':
       return [
         { title: 'Vaults', path: '/dapp/vaults' },
         { title: 'Trade', path: '/dapp/trade' },
         { title: 'Profile', path: '/dapp/profile' },
         { title: 'Analytics', path: '/dapp/analytics' },
-        { title: 'Nexus', path: '/nexus' },
-      ]
+      ];
     case 'nexus':
       const devMode = isDevelopmentEnv();
-      return (devMode ? [{ title: 'Dev Mint', path: '/nexus/relic/dev-mint' }] : [])
-        .concat([
-          { title: 'Relic', path: '/nexus/relic' },
-          { title: 'Quests', path: '/nexus/quests' },
-          { title: 'Dapp', path: '/dapp' },
-        ])
+      return (devMode ? [{ title: 'Dev Mint', path: '/nexus/relic/dev-mint' }] : []).concat([
+        { title: 'Relic', path: '/nexus/relic' },
+        { title: 'Quests', path: '/nexus/quests' },
+      ]);
   }
 }
 
@@ -107,16 +90,11 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem, mode }: NavigationProps)
     <NavWrapper $isOpen={isNavOpenMobile}>
       <MenuWrapper>
         <Menu id="menu">
-          { getMenuItems(mode).map(item => (<MenuItem
-                key={item.path}
-                to={item.path}
-                onMenuItemActive={onMenuItemActive}
-                onClick={onClickMenuItem}
-              >
-                {item.title}
-              </MenuItem>
-            ))
-          }
+          {getMenuItems(mode).map((item) => (
+            <MenuItem key={item.path} to={item.path} onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
+              {item.title}
+            </MenuItem>
+          ))}
         </Menu>
         <Selector $position={selectorPosition} />
       </MenuWrapper>
@@ -131,13 +109,7 @@ interface MenuItemProps {
   onClick?: (event: SyntheticEvent) => void;
 }
 
-const MenuItem: FC<MenuItemProps> = ({
-  to,
-  children,
-  onMenuItemActive,
-  strictMatch = false,
-  onClick,
-}) => {
+const MenuItem: FC<MenuItemProps> = ({ to, children, onMenuItemActive, strictMatch = false, onClick }) => {
   const resolved = useResolvedPath(to);
   const match = useMatch({ path: resolved.pathname, end: strictMatch });
   const menuItemRef = useRef<HTMLAnchorElement>(null);
@@ -228,7 +200,6 @@ const Logo = styled(Link)`
   width: 2.125rem;
   height: 2.125rem;
   overflow: hidden;
-  
 
   ${phoneAndAbove(`
     width: 2.125rem;
@@ -332,14 +303,12 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   font-weight: normal;
   transition: all 150ms ease-in;
 
-  color: ${({ theme, $active }) =>
-    $active ? theme.palette.brandLight : theme.palette.brand};
+  color: ${({ theme, $active }) => ($active ? theme.palette.brandLight : theme.palette.brand)};
   text-shadow: ${({ $active }) => ($active ? COLOR_NAV_SHADOW_MOBILE : 'none')};
 
   &:hover {
     color: ${theme.palette.brandLight};
-    text-shadow: ${({ $active }) =>
-      $active ? COLOR_NAV_SHADOW_MOBILE : 'none'};
+    text-shadow: ${({ $active }) => ($active ? COLOR_NAV_SHADOW_MOBILE : 'none')};
   }
 
   ${({ $active }) =>
