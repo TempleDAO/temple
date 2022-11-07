@@ -136,8 +136,6 @@ describe.only("Pool Helper", async () => {
     });
 
     it("gets spot price using lp ratio", async () => {
-        console.log(await poolHelper.balancerPoolId());
-       
         let balances;
         [,balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
         const spotScaledBalancer = await getSpotPriceScaled(balancerVault, weightedPool2Tokens);
@@ -185,10 +183,9 @@ describe.only("Pool Helper", async () => {
         expect(isBelowTPF).to.eq(spotScaledAbove);
     });
 
-    it("Is Spot Price Below TPF Lower Bound", async () =>{
+    it.only("Is Spot Price Below TPF Lower Bound", async () =>{
         const spotPriceNow = await poolHelper.getSpotPriceScaled();
         const templeIndexInPool = (await poolHelper.templeBalancerPoolIndex()).toNumber();
-        console.log(spotPriceNow);
         // skew spot price below TPF
         const targetPriceScaled = 9500;
         await singleSideDepositTempleToPriceTarget(
@@ -203,30 +200,12 @@ describe.only("Pool Helper", async () => {
         );
         expect(await poolHelper.isSpotPriceBelowTPFLowerBound()).to.be.true;
         // expect spot price close to target price scaled
-        const newSpotPrice = await poolHelper.getSpotPriceScaled();
-        expect(newSpotPrice).to.be.closeTo(targetPriceScaled, 100); // 0.1% approximation
-
-        // fails
-        const tpfScaled = (await poolHelper.templePriceFloorRatio()).numerator;
-        const lowerBoundScaled = (await poolHelper.rebalancePercentageBoundLow()).mul(tpfScaled).div(10_000);
-        const newPriceTarget = tpfScaled.sub(lowerBoundScaled).add(20);
-        console.log("new lower bound target", newPriceTarget);
-        await singleSideDepositStableToPriceTarget(
-            balancerVault,
-            balancerHelpers,
-            bbaUsdWhale,
-            bbaUsdToken,
-            templeIndexInPool,
-            newPriceTarget.toNumber()
-        );
-        expect(await poolHelper.isSpotPriceBelowTPFLowerBound()).to.be.false;
-        //expect(await poolHelper.getSpotPriceScaled()).to.lt(tpfScaled.sub(lowerBoundScaled));
+        let newSpotPrice = await poolHelper.getSpotPriceScaled();
+        expect(newSpotPrice).to.be.closeTo(targetPriceScaled, 100); // 0.1% approximation       
     });
 
     it("is spot price above TPF upper bound", async () => {
-        const spotPriceNow = await poolHelper.getSpotPriceScaled();
         const templeIndexInPool = (await poolHelper.templeBalancerPoolIndex()).toNumber();
-        console.log(spotPriceNow);
         // skew spot price above TPF
         const targetPriceScaled = 10_500;
         await singleSideDepositStableToPriceTarget(
@@ -237,7 +216,6 @@ describe.only("Pool Helper", async () => {
             templeIndexInPool,
             targetPriceScaled
         );
-        console.log(await poolHelper.getSpotPriceScaled());
         expect(await poolHelper.isSpotPriceAboveTPFUpperBound()).to.be.true;
         const newSpotPrice = await poolHelper.getSpotPriceScaled();
         expect(newSpotPrice).to.be.closeTo(targetPriceScaled, 100); // 0.1% approximation
@@ -281,12 +259,10 @@ describe.only("Pool Helper", async () => {
         let balances: BigNumber[];
         [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
         const newSpotPriceScaled = balances[stableIndexInPool].mul(10_000).div(balances[templeIndexInPool].sub(exitAmount));
-        console.log("new spot price scaled", newSpotPriceScaled);
         const tpfScaled = (await poolHelper.templePriceFloorRatio()).numerator;
         const upperBoundScaled = (await poolHelper.rebalancePercentageBoundUp()).mul(tpfScaled).div(10_000);
         const newTarget = tpfScaled.add(upperBoundScaled);
         const willTakePriceAbove = newSpotPriceScaled > newTarget;
-        console.log(willTakePriceAbove, await poolHelper.getSpotPriceScaled());
         expect(await poolHelper.willExitTakePriceAboveTPFUpperBound(exitAmount)).to.eq(willTakePriceAbove);
     });
 
@@ -297,5 +273,9 @@ describe.only("Pool Helper", async () => {
         for (let i=0; i<balances.length; i++) {
             expect(poolHelperBalances[i]).to.eq(balances[i]);
         }
+    });
+
+    it("gets max", async () => {
+        expect(await poolHelper.getMax(1, 2)).to.eq(2);
     });
 });

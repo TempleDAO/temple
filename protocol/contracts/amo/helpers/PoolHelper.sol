@@ -177,17 +177,17 @@ contract PoolHelper is Ownable {
         return (slippageDifference * TPF_PRECISION) / spotPriceBeforeScaled;
     }
 
-    // function getMax(uint256 a, uint256 b) external pure returns (uint256 maxValue) {
-    //     // if (a < b) {
-    //     //     maxValue = b;
-    //     // } else {
-    //     //     maxValue = a;
-    //     // }
-    //     assembly {
-    //         if lt(a, b) { maxValue := b }
-    //         if iszero(maxValue) { maxValue := a }
-    //     }
-    // }
+    function getMax(uint256 a, uint256 b) external pure returns (uint256 maxValue) {
+        // if (a < b) {
+        //     maxValue = b;
+        // } else {
+        //     maxValue = a;
+        // }
+        assembly {
+            if lt(a, b) { maxValue := b }
+            if iszero(maxValue) { maxValue := a }
+        }
+    }
 
     function createPoolExitRequest(
         address temple,

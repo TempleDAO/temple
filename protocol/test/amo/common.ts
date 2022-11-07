@@ -42,21 +42,12 @@ export function expectedEventsWithValues(
     returnlog: boolean
 ) {
     let eventFired: boolean = false;
-    console.log("values", expectedValues, eventTopic);
     for (const log of receipt.logs) {
-        //console.log("eventtopic, logtopic", eventTopic, log.topics);
-        console.log(log.data);
-        console.log(log.topics[0]);
         if (log.topics.length > 0 && eventTopic == log.topics[0]) {
             eventFired = true;
-            console.log(log);
             if (returnlog) {
                 return log;
             }
-            // const decodedValues = ethers.utils.defaultAbiCoder.decode(decodeParams, log.data);
-            
-            // console.log("logadata", log.data, decodedValues);
-            // console.log("decoded values", decodedValues);
             for (let i=0; i<expectedValues.length; i++) {
                 if (expectedValues[i] !== undefined) {
                     if (i < log.topics.length-1) {
@@ -85,7 +76,6 @@ export async function seedTempleBbaUsdPool(
     // approvals
     await bbaUsdToken.connect(signer).approve(balancerVault.address, amount);
     await templeToken.connect(signer).approve(balancerVault.address, amount);
-    console.log("BALANCESS", await templeToken.balanceOf(signerAddress), await bbaUsdToken.balanceOf(signerAddress));
     const tokens = [TEMPLE, BBA_USD_TOKEN];
     const maxAmountsIn = [amount, amount];
     const userdata = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, maxAmountsIn, 1]);
@@ -98,13 +88,12 @@ export async function seedTempleBbaUsdPool(
     let bptOut: BigNumber;
     let amountsIn: BigNumber[];
     [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, signerAddress, to, req);
-    console.log("QUERIED JOIN ", bptOut, amountsIn);
 
     req.maxAmountsIn = amountsIn;
     req.userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, amountsIn, bptOut]);
     await balancerVault.connect(signer).joinPool(BALANCER_POOL_ID, signerAddress, to, req);
 
-    console.log("BALANCE BPT TO", await bptToken.balanceOf(to));
+  
 }
 
 export async function swapDaiForBbaUsd(
@@ -249,7 +238,6 @@ export async function getSpotPriceScaled(
     const normWeights = await weightedPool2Tokens.getNormalizedWeights();
     // multiply by precision to avoid rounding down
     const currentSpotPrice = precision.mul(balances[1]).div(normWeights[1]).div(balances[0].div(normWeights[0]));
-    console.log("SPOT price scaled", currentSpotPrice);
     return currentSpotPrice;
 }
 
@@ -269,7 +257,6 @@ export async function singleSideDepositStableToPriceTarget(
 
     const bdDivQuoteWithFee = balances[templeIndexInPool].mul(1_000).mul(10_000).div(BigNumber.from(priceTarget).mul(995));
     let stableLotSize = balances[stableIndexInPool].sub(bdDivQuoteWithFee);
-    console.log("stableLotSize", stableLotSize, priceTarget);
     if (stableLotSize.lt(0)) {
         stableLotSize = stableLotSize.mul(-1);
     }
@@ -314,7 +301,6 @@ export async function singleSideDepositTempleToPriceTarget(
     // a ratio for stable balances against price quote with fees
     const bdDivQuoteWithFee = balances[stableIndexInPool].mul(1_000).mul(10_000).div(BigNumber.from(priceTarget).mul(995));
     let templeLotSize = balances[templeIndexInPool].sub(bdDivQuoteWithFee);
-    console.log("templelotsize", templeLotSize, priceTarget);
     if (templeLotSize.lt(0)) {
         templeLotSize = templeLotSize.mul(-1);
     }
@@ -338,7 +324,6 @@ export async function singleSideDepositTempleToPriceTarget(
         userData: userdata,
         fromInternalBalance: false
     }
-    console.log(request);
     await templeToken.connect(templeWhale).approve(balancerVault.address, amountsIn[0]);
     await balancerVault.connect(templeWhale).joinPool(BALANCER_POOL_ID, whaleAddress, whaleAddress, request);
 }
