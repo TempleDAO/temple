@@ -320,6 +320,7 @@ describe.only("Temple Price Floor AMO", async () => {
         });
 
         it("sets post rebalance slippage", async () => {
+            await expect(amo.setPostRebalanceSlippage(0)).to.be.revertedWithCustomError(amo, "InvalidBPSValue");
             await expect(amo.setPostRebalanceSlippage(10_000)).to.be.revertedWithCustomError(amo, "InvalidBPSValue");
             await expect(amo.setPostRebalanceSlippage(100)).to.emit(amo, "SetPostRebalanceSlippage").withArgs(100);
         });
@@ -329,6 +330,8 @@ describe.only("Temple Price Floor AMO", async () => {
             await bbaUsdToken.transfer(amo.address, amount);
             const balBefore = await bbaUsdToken.balanceOf(ownerAddress);
             // recover token
+            await expect(amo.recoverToken(bbaUsdToken.address, ZERO_ADDRESS, amount))
+                .to.be.revertedWithCustomError(amo, "InvalidAddress");
             const checksummedAddress = ethers.utils.getAddress(bbaUsdToken.address);
             await expect(amo.recoverToken(bbaUsdToken.address, ownerAddress, amount))
                 .to.emit(amo, "RecoveredToken")
@@ -542,6 +545,7 @@ describe.only("Temple Price Floor AMO", async () => {
             await amo.togglePause();
             await expect(amo.rebalanceUp(1, 1)).to.be.revertedWithCustomError(amo, "Paused");
             await amo.togglePause();
+           
             // add liquidity on-sided to skew price above TPF
             await singleSideDepositStable(bbaUsdToken, toAtto(40_000));
             let spotPriceScaled = await poolHelper.getSpotPriceScaled();
@@ -622,6 +626,9 @@ describe.only("Temple Price Floor AMO", async () => {
             const reqData = await calculateBptTokensToBringTemplePriceDown(400);
 
             await amo.rebalanceDown(reqData.templeAmountIn, reqData.bptOut);
+
+            await amo.setMaxRebalanceAmount(toAtto(1_000_000));
+            await expect(amo.rebalanceDown(toAtto(1_000_000), 1)).to.be.revertedWithCustomError(amo, "HighSlippage");
         });
     });
 

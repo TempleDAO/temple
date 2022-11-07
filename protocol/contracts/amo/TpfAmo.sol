@@ -202,9 +202,7 @@ contract TpfAmo is Ownable {
         uint256 spotPriceScaledBefore = poolHelper.getSpotPriceScaled();
         balancerVault.exitPool(balancerPoolId, address(this), address(this), exitPoolRequest);
         uint256 templeBalanceAfter = temple.balanceOf(address(this));
-        if (templeBalanceAfter < templeBalanceBefore + minAmountOut) {
-            revert AMOCommon.InsufficientAmountOutPostcall(templeBalanceBefore + minAmountOut, templeBalanceAfter);
-        }
+        
         // burn
         uint256 burnAmount;
         unchecked {

@@ -183,7 +183,7 @@ describe.only("Pool Helper", async () => {
         expect(isBelowTPF).to.eq(spotScaledAbove);
     });
 
-    it.only("Is Spot Price Below TPF Lower Bound", async () =>{
+    it("Is Spot Price Below TPF Lower Bound", async () =>{
         const spotPriceNow = await poolHelper.getSpotPriceScaled();
         const templeIndexInPool = (await poolHelper.templeBalancerPoolIndex()).toNumber();
         // skew spot price below TPF
