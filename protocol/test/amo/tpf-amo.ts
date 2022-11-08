@@ -41,8 +41,8 @@ import {
   AMO__IGaugeAdder__factory,
   AMO__IBalancerVotingEscrow__factory,
   AMO__IBalancerVotingEscrow,
-  IBaseRewardPool,
-  IBaseRewardPool__factory,
+  AMO__IBaseRewardPool,
+  AMO__IBaseRewardPool__factory,
   AMO__IAuraBooster__factory,
   AMO__IAuraBooster,
   PoolHelper__factory,
@@ -101,7 +101,7 @@ let gaugeAdder: AMO__IGaugeAdder;
 let balWeth8020Whale: Signer;
 let balWeth8020Token: ERC20;
 let balancerVotingEscrow: AMO__IBalancerVotingEscrow;
-let bbaUsdTempleAuraRewardPool: IBaseRewardPool;
+let bbaUsdTempleAuraRewardPool: AMO__IBaseRewardPool;
 let bbaUsdTempleAuraPID: number;
 let bbaUsdTempleAuraDepositToken: ERC20;
 let bbaUsdTempleAuraStash: string;
@@ -167,7 +167,7 @@ describe.only("Temple Price Floor AMO", async () => {
         let token, rewards: string;
         [bbaUsdTempleAuraGauge, token, rewards, bbaUsdTempleAuraStash, bbaUsdTempleAuraPID] = await createAuraPoolAndStakingContracts(auraGaugeOwner, BigNumber.from("20000000000000000"));
         bbaUsdTempleAuraDepositToken = ERC20__factory.connect(token, owner);
-        bbaUsdTempleAuraRewardPool = IBaseRewardPool__factory.connect(rewards, owner);
+        bbaUsdTempleAuraRewardPool = AMO__IBaseRewardPool__factory.connect(rewards, owner);
 
         poolHelper = await new PoolHelper__factory(owner).deploy(
             BALANCER_VAULT,
@@ -179,7 +179,8 @@ describe.only("Temple Price Floor AMO", async () => {
             ownerAddress,
             TEMPLE_BBAUSD_LP_TOKEN,
             AURA_BOOSTER,
-            bbaUsdTempleAuraDepositToken.address
+            bbaUsdTempleAuraDepositToken.address,
+            [BALANCER_TOKEN, AURA_TOKEN]
         );
     
         amo = await new TpfAmo__factory(owner).deploy(
@@ -202,7 +203,7 @@ describe.only("Temple Price Floor AMO", async () => {
         await amoStaking.setAuraPoolInfo(bbaUsdTempleAuraPID, bbaUsdTempleAuraDepositToken.address, bbaUsdTempleAuraRewardPool.address);
         await amo.setOperator(ownerAddress);
         await amo.setCoolDown(1800); // 30 mins
-        await poolHelper.setTemplePriceFloorRatio(9700);
+        await poolHelper.setTemplePriceFloorNumerator(9700);
         await poolHelper.setRebalancePercentageBounds(200, 500);
         await amo.setMaxRebalanceAmount(BigNumber.from(ONE_ETH).mul(10));
         await amo.setPostRebalanceSlippage(200); // 2% max price movement
@@ -228,7 +229,7 @@ describe.only("Temple Price Floor AMO", async () => {
             const connectPoolHelper = poolHelper.connect(alan);
             await expect(connectAMO.setOperator(alanAddress)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.setCoolDown(1800)).to.be.revertedWith("Ownable: caller is not the owner");
-            await expect(connectPoolHelper.setTemplePriceFloorRatio(9700)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(connectPoolHelper.setTemplePriceFloorNumerator(9700)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.setPoolHelper(alanAddress)).to.be.revertedWith("Ownable: caller is not the owner");
             const cappedAmounts = {
                 temple: BigNumber.from(ONE_ETH).mul(10),
@@ -254,10 +255,10 @@ describe.only("Temple Price Floor AMO", async () => {
             await amo.togglePause();
             await amo.setOperator(ownerAddress);
             await amo.setCoolDown(1800);
-            await poolHelper.setTemplePriceFloorRatio(9700);
+            await poolHelper.setTemplePriceFloorNumerator(9700);
         });
 
-        it("sets operator", async () => {
+        it.only("sets operator", async () => {
             await expect(amo.setOperator(operatorAddress))
                 .to.emit(amo, "SetOperator").withArgs(operatorAddress);
             expect(await amo.operator()).to.eq(operatorAddress);
@@ -286,14 +287,13 @@ describe.only("Temple Price Floor AMO", async () => {
             // attempt below cooldown
         });
 
-        it("sets TPF ratio", async () => {
+        it("sets TPF ratio numerator", async () => {
             const numerator = 9_700;
             const denominator = 10_000;
-            await expect(poolHelper.setTemplePriceFloorRatio(numerator))
-                .to.emit(poolHelper, "SetTemplePriceFloorRatio").withArgs(numerator, denominator);
-            const tpf = await poolHelper.templePriceFloorRatio();
-            expect(tpf.numerator).to.eq(numerator);
-            expect(tpf.denominator).to.eq(denominator);
+            await expect(poolHelper.setTemplePriceFloorNumerator(numerator))
+                .to.emit(poolHelper, "SetTemplePriceFloorRatio").withArgs(numerator);
+            const tpf = await poolHelper.templePriceFloorNumerator();
+            expect(tpf).to.eq(numerator);
         });
 
         it("pause/unpause", async () => {
@@ -482,7 +482,7 @@ describe.only("Temple Price Floor AMO", async () => {
            
             // skew price below TPF
             await singleSideDepositTemple(templeToken, toAtto(50_000));
-            await poolHelper.setTemplePriceFloorRatio(9_700);
+            await poolHelper.setTemplePriceFloorNumerator(9_700);
             await expect(amo.withdrawStable(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "NoRebalanceDown");
 
             // skew price above TPF
@@ -747,9 +747,9 @@ async function calculateBptTokensToBringTemplePriceDown(
     const templeBalance = balances[templeIndexInPool.toNumber()];
     const stableBalance = balances[stableIndexInPool];
 
-    const tpf = await poolHelper.templePriceFloorRatio();
-    const basisPointsAboveTPF = BigNumber.from(percentageAboveTPF).mul(tpf.numerator).div(10_000);
-    const expectedSpotPriceQuote = tpf.numerator.add(basisPointsAboveTPF);
+    const tpf = await poolHelper.templePriceFloorNumerator();
+    const basisPointsAboveTPF = BigNumber.from(percentageAboveTPF).mul(tpf).div(10_000);
+    const expectedSpotPriceQuote = tpf.add(basisPointsAboveTPF);
 
     // get temple amount to send to pool
     let templeAmountIn = expectedSpotPriceQuote.mul(stableBalance).div(templeBalance).mul(ONE_ETH);
@@ -796,9 +796,9 @@ async function calculateBptTokensToBringTemplePriceUp(
     // weights are 50/50 so ignoring the weights from math
     // lot size is amount out to get to spot price to TPF (with slippage and fees)
     // ls = Bt - (Bd / tpf(1-fee))
-    const tpf = await poolHelper.templePriceFloorRatio();
-    const basisPointsBelowTPF = BigNumber.from(percentageBelowTPF).mul(tpf.numerator).div(10_000);
-    const expectedSpotPriceQuote = tpf.numerator.sub(basisPointsBelowTPF);
+    const tpf = await poolHelper.templePriceFloorNumerator();
+    const basisPointsBelowTPF = BigNumber.from(percentageBelowTPF).mul(tpf).div(10_000);
+    const expectedSpotPriceQuote = tpf.sub(basisPointsBelowTPF);
     const BdDivTpfFee = stableBalance.mul(1_000).div(expectedSpotPriceQuote.mul(995));
     const lotSize = templeBalance.sub(BdDivTpfFee); // max expected TEMPLE to withdraw
     // we don't want to fill to exactly value percentage below TPF, so we randomize between 0.5 and 1

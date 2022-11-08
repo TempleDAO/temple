@@ -46,21 +46,20 @@ contract AuraStaking is Ownable {
         address _operator,
         IERC20 _bptToken,
         AMO__IAuraBooster _booster,
-        IERC20 _depositToken
+        IERC20 _depositToken,
+        address[] memory _rewardTokens
     ) {
         operator = _operator;
         bptToken = _bptToken;
         booster = _booster;
         depositToken = _depositToken;
+        rewardTokens = _rewardTokens;
     }
 
     function setAuraPoolInfo(uint32 _pId, address _token, address _rewards) external onlyOwner {
         auraPoolInfo.pId = _pId;
         auraPoolInfo.token = _token;
         auraPoolInfo.rewards = _rewards;
-
-        rewardTokens[0] = AMO__IBaseRewardPool(auraPoolInfo.rewards).rewardToken();
-        rewardTokens[1] = booster.minter();
 
         emit SetAuraPoolInfo(_pId, _token, _rewards);
     }

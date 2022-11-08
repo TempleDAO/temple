@@ -53,7 +53,7 @@ contract PoolHelper is Ownable {
       (, balances,) = balancerVault.getPoolTokens(balancerPoolId);
     }
 
-    function setTemplePriceFloorRatio(uint128 _numerator) external onlyOwner {
+    function setTemplePriceFloorNumerator(uint128 _numerator) external onlyOwner {
         templePriceFloorNumerator = _numerator;
 
         emit SetTemplePriceFloorNumerator(_numerator);

@@ -12,7 +12,7 @@ import {
   AMO__IBalancerVotingEscrow, AMO__IGaugeAdder,
   AMO__ILiquidityGaugeFactory, AMO__IPoolManagerProxy,
   AMO__IPoolManagerV3, AuraStaking, ERC20, ERC20__factory,
-  IBalancerHelpers, IBalancerHelpers__factory, IBaseRewardPool, IERC20,
+  IBalancerHelpers, IBalancerHelpers__factory, AMO__IBaseRewardPool, IERC20,
   IERC20__factory, IWeightPool2Tokens,
   IWeightPool2Tokens__factory,
   PoolHelper, PoolHelper__factory, TempleERC20Token,
@@ -79,7 +79,7 @@ describe.only("Pool Helper", async () => {
             BALANCER_POOL_ID
         );
 
-        await poolHelper.setTemplePriceFloorRatio(TPF_SCALED);
+        await poolHelper.setTemplePriceFloorNumerator(TPF_SCALED);
         await poolHelper.setRebalancePercentageBounds(100, 400);
 
         const templeMultisigConnect = templeToken.connect(templeMultisig);
@@ -107,11 +107,11 @@ describe.only("Pool Helper", async () => {
     it("admin tests", async () => {
         const alanConnect = poolHelper.connect(alan);
         // fails
-        await shouldThrow(alanConnect.setTemplePriceFloorRatio(1_000), /Ownable: caller is not the owner/);
+        await shouldThrow(alanConnect.setTemplePriceFloorNumerator(1_000), /Ownable: caller is not the owner/);
         await shouldThrow(alanConnect.setRebalancePercentageBounds(100,100), /Ownable: caller is not the owner/);
 
         // success
-        await poolHelper.setTemplePriceFloorRatio(TPF_SCALED);
+        await poolHelper.setTemplePriceFloorNumerator(TPF_SCALED);
         await poolHelper.setRebalancePercentageBounds(100, 200);
     });
 
@@ -122,11 +122,11 @@ describe.only("Pool Helper", async () => {
     });
 
     it ("sets tpf ratio", async () => {
-        await expect(poolHelper.setTemplePriceFloorRatio(TPF_SCALED))
+        await expect(poolHelper.setTemplePriceFloorNumerator(TPF_SCALED))
             .to.emit(poolHelper, "SetTemplePriceFloorRatio")
             .withArgs(TPF_SCALED, 10_000);
-        const tpf =  await poolHelper.templePriceFloorRatio();
-        expect(tpf.numerator).to.eq(TPF_SCALED);
+        const tpf =  await poolHelper.templePriceFloorNumerator();
+        expect(tpf).to.eq(TPF_SCALED);
     });
 
     it("gets LP balances", async () => {
@@ -221,7 +221,7 @@ describe.only("Pool Helper", async () => {
         expect(newSpotPrice).to.be.closeTo(targetPriceScaled, 100); // 0.1% approximation
 
         // skew spot price to above TPF but below TPF+bound
-        const tpfScaled = (await poolHelper.templePriceFloorRatio()).numerator;
+        const tpfScaled = await poolHelper.templePriceFloorNumerator();
         const upperBoundScaled = (await poolHelper.rebalancePercentageBoundUp()).mul(tpfScaled).div(10_000);
         const newTarget = tpfScaled.add(upperBoundScaled).sub(10); // subtract to go below TPF+bound
         await singleSideDepositTempleToPriceTarget(
@@ -245,7 +245,7 @@ describe.only("Pool Helper", async () => {
         let balances: BigNumber[];
         [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
         const newSpotPriceScaled = balances[stableIndexInPool].mul(10_000).div(balances[templeIndexInPool].add(joinAmount));
-        const tpfScaled = (await poolHelper.templePriceFloorRatio()).numerator;
+        const tpfScaled = await poolHelper.templePriceFloorNumerator();
         const lowerBoundScaled = (await poolHelper.rebalancePercentageBoundLow()).mul(tpfScaled).div(10_000);
         const newTarget = tpfScaled.sub(lowerBoundScaled);
         const willTakePriceBelow = newSpotPriceScaled < newTarget;
@@ -259,7 +259,7 @@ describe.only("Pool Helper", async () => {
         let balances: BigNumber[];
         [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
         const newSpotPriceScaled = balances[stableIndexInPool].mul(10_000).div(balances[templeIndexInPool].sub(exitAmount));
-        const tpfScaled = (await poolHelper.templePriceFloorRatio()).numerator;
+        const tpfScaled = await poolHelper.templePriceFloorNumerator();
         const upperBoundScaled = (await poolHelper.rebalancePercentageBoundUp()).mul(tpfScaled).div(10_000);
         const newTarget = tpfScaled.add(upperBoundScaled);
         const willTakePriceAbove = newSpotPriceScaled > newTarget;
