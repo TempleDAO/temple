@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -33,6 +33,18 @@ contract TempleTeamPaymentsFactory is Ownable {
         lastPaidEpoch = _lastPaidEpoch;
     }
 
+    function incrementEpoch(
+        address _paymentContract,
+        uint256 _totalFunding
+    ) internal {
+        lastPaidEpoch++;
+        epochsFunded[lastPaidEpoch] = FundingData({
+            paymentContract: address(_paymentContract),
+            totalFunding: _totalFunding,
+            epoch: lastPaidEpoch
+        });
+    }
+
     /**
      * @dev Deploys a new TempleTeamPayments contract, setAllocations to _dests and _allocations, funded with _totalFunding as _temple tokens, available to claim at _startTimestamp
      * @param _temple the token to distribute
@@ -59,18 +71,14 @@ contract TempleTeamPaymentsFactory is Ownable {
         );
         paymentContract.setAllocations(_dests, _allocations);
         paymentContract.transferOwnership(msg.sender);
-        _temple.transferFrom(
+        SafeERC20.safeTransferFrom(
+            _temple,
             msg.sender,
             address(paymentContract),
             _totalFunding
         );
 
-        lastPaidEpoch++;
-        epochsFunded[lastPaidEpoch] = FundingData({
-            paymentContract: address(paymentContract),
-            totalFunding: _totalFunding,
-            epoch: lastPaidEpoch
-        });
+        incrementEpoch(address(paymentContract), _totalFunding);
 
         emit FundingDeployed(
             address(_temple),
@@ -101,17 +109,21 @@ contract TempleTeamPaymentsFactory is Ownable {
 
         uint256 totalFunding;
         for (uint256 i; i < _dests.length; i++) {
+            address dest = _dests[i];
             uint256 value = _allocations[i];
-            _temple.transferFrom(msg.sender, _dests[i], value);
+            require(
+                dest != address(0),
+                "TempleTeamPaymentsFactory: no transfer to zero address"
+            );
+            require(
+                value > 0,
+                "TempleTeamPaymentsFactory: Amount must be greater than 0"
+            );
+            SafeERC20.safeTransferFrom(_temple, msg.sender, _dests[i], value);
             totalFunding += value;
         }
 
-        lastPaidEpoch++;
-        epochsFunded[lastPaidEpoch] = FundingData({
-            paymentContract: address(this),
-            totalFunding: totalFunding,
-            epoch: lastPaidEpoch
-        });
+        incrementEpoch(address(this), totalFunding);
 
         emit FundingPaid(address(_temple), lastPaidEpoch, _dests, _allocations);
     }
