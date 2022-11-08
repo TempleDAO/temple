@@ -7,11 +7,10 @@ library AMOCommon {
     error NotOperator();
     error NotOperatorOrOwner();
     error ZeroSwapLimit();
-    error AboveCappedAmount(uint256);
-    error InsufficientBPTAmount(uint256);
-    error InvalidBPSValue(uint256);
-    error RebalanceAmountTolerance(uint256, uint256);
-    error InsufficientAmountOutPostcall(uint256, uint256); //expected,actual
+    error AboveCappedAmount(uint256 amountIn);
+    error InsufficientBPTAmount(uint256 amount);
+    error InvalidBPSValue(uint256 value);
+    error InsufficientAmountOutPostcall(uint256 expectedAmount, uint256 actualAmount);
     error InvalidBalancerVaultRequest();
     error NotEnoughCooldown();
     error NoRebalanceUp();

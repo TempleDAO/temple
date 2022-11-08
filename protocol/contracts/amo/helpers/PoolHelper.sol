@@ -27,14 +27,9 @@ contract PoolHelper is Ownable {
     bytes32 public immutable balancerPoolId;
 
     // @notice Temple price floor ratio
-    TreasuryPriceFloor public templePriceFloorRatio;
+    uint256 public templePriceFloorNumerator;
 
-    struct TreasuryPriceFloor {
-        uint128 numerator;
-        uint128 denominator;
-    }
-
-    event SetTemplePriceFloorRatio(uint128, uint128);
+    event SetTemplePriceFloorNumerator(uint128);
 
     constructor(
       address _balancerVault,
@@ -59,10 +54,9 @@ contract PoolHelper is Ownable {
     }
 
     function setTemplePriceFloorRatio(uint128 _numerator) external onlyOwner {
-        templePriceFloorRatio.numerator = _numerator;
-        templePriceFloorRatio.denominator = uint128(TPF_PRECISION);
+        templePriceFloorNumerator = _numerator;
 
-        emit SetTemplePriceFloorRatio(_numerator, uint128(TPF_PRECISION));
+        emit SetTemplePriceFloorNumerator(_numerator);
     }
 
     // @notice percentage bounds (in bps) beyond which to rebalance up or down
@@ -74,38 +68,26 @@ contract PoolHelper is Ownable {
         rebalancePercentageBoundUp = aboveTPF;
     }
 
-    function spotPriceUsingLPRatio() public view returns (uint256 templeBalance, uint256 stableBalance) {
+    function getTempleStableBalances() public view returns (uint256 templeBalance, uint256 stableBalance) {
       uint256[] memory balances = getBalances();
-      if (templeBalancerPoolIndex == 0) {
-          templeBalance = balances[0];
-          stableBalance = balances[1];
-      } else {
-          templeBalance = balances[1];
-          stableBalance = balances[0];
-      }
+      (templeBalance, stableBalance) = (templeBalancerPoolIndex == 0) 
+        ? (balances[0], balances[1]) 
+        : (balances[1], balances[0]);
     }
 
     function getSpotPriceScaled() public view returns (uint256 spotPriceScaled) {
-      (uint256 templeBalance, uint256 stableBalance) = spotPriceUsingLPRatio();
-      spotPriceScaled = (TPF_PRECISION * stableBalance) / templeBalance;
+        (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
+        spotPriceScaled = (TPF_PRECISION * stableBalance) / templeBalance;
     }
 
     function isSpotPriceBelowTPF() external view returns (bool) {
-      uint256 spotPriceScaled = getSpotPriceScaled();
-      if (spotPriceScaled < templePriceFloorRatio.numerator) {
-          return true;
-      }
-      return false;
+        return getSpotPriceScaled() < templePriceFloorNumerator;
     }
 
     // below TPF by a given slippage percentage
     function isSpotPriceBelowTPF(uint256 slippage) public view returns (bool) {
-      uint256 spotPriceScaled = getSpotPriceScaled();
-      uint256 slippageTPF = (slippage * templePriceFloorRatio.numerator) / templePriceFloorRatio.denominator;
-      if (spotPriceScaled < templePriceFloorRatio.numerator - slippageTPF) {
-          return true;
-      }
-      return false;
+        uint256 slippageTPF = (slippage * templePriceFloorNumerator) / TPF_PRECISION;
+        return getSpotPriceScaled() < (templePriceFloorNumerator - slippageTPF);
     }
 
     function isSpotPriceBelowTPFLowerBound() external view returns (bool) {
@@ -119,28 +101,20 @@ contract PoolHelper is Ownable {
     // slippage in bps
     // above TPF by a given slippage percentage
     function isSpotPriceAboveTPF(uint256 slippage) public view returns (bool) {
-      uint256 spotPriceScaled = getSpotPriceScaled();
-      uint256 slippageTPF = (slippage * templePriceFloorRatio.numerator) / templePriceFloorRatio.denominator;
-      if (spotPriceScaled > templePriceFloorRatio.numerator + slippageTPF) {
-          return true;
-      }
-      return false;
+      uint256 slippageTPF = (slippage * templePriceFloorNumerator) / TPF_PRECISION;
+      return getSpotPriceScaled() > (templePriceFloorNumerator + slippageTPF);
     }
 
      function isSpotPriceAboveTPF() external view returns (bool) {
-        uint256 spotPriceScaled = getSpotPriceScaled();
-        if (spotPriceScaled > templePriceFloorRatio.numerator) {
-            return true;
-        }
-        return false;
+        return getSpotPriceScaled() > templePriceFloorNumerator;
     }
 
     // @notice will exit take price above tpf by a percentage
     // percentage in bps
     // tokensOut: expected min amounts out. for rebalance this is expected Temple tokens out
     function willExitTakePriceAboveTPFUpperBound(uint256 tokensOut) external view returns (bool) {
-        uint256 percentageIncrease = (templePriceFloorRatio.numerator * rebalancePercentageBoundUp) / templePriceFloorRatio.denominator;
-        uint256 maxNewTpf = percentageIncrease + templePriceFloorRatio.numerator;
+        uint256 percentageIncrease = (templePriceFloorNumerator * rebalancePercentageBoundUp) / TPF_PRECISION;
+        uint256 maxNewTpf = percentageIncrease + templePriceFloorNumerator;
         (, uint256[] memory balances,) = balancerVault.getPoolTokens(balancerPoolId);
         uint256 stableIndexInPool = templeBalancerPoolIndex == 0 ? 1 : 0;
         // a ratio of stable balances with quote price and fees
@@ -150,8 +124,8 @@ contract PoolHelper is Ownable {
     }
 
     function willJoinTakePriceBelowTPFLowerBound(uint256 tokensIn) external view returns (bool) {
-        uint256 percentageDecrease = (templePriceFloorRatio.numerator * rebalancePercentageBoundLow) / templePriceFloorRatio.denominator;
-        uint256 minNewTpf = templePriceFloorRatio.numerator - percentageDecrease;
+        uint256 percentageDecrease = (templePriceFloorNumerator * rebalancePercentageBoundLow) / TPF_PRECISION;
+        uint256 minNewTpf = templePriceFloorNumerator - percentageDecrease;
         (, uint256[] memory balances,) = balancerVault.getPoolTokens(balancerPoolId);
         uint256 stableIndexInPool = templeBalancerPoolIndex == 0 ? 1 : 0;
         // a ratio of temple balances with quote price and fees
@@ -165,27 +139,24 @@ contract PoolHelper is Ownable {
         uint256 spotPriceNowScaled = getSpotPriceScaled();
         // taking into account both rebalance up or down
         uint256 slippageDifference;
-        if (spotPriceNowScaled > spotPriceBeforeScaled) {
-            unchecked {
-                slippageDifference = spotPriceNowScaled - spotPriceBeforeScaled;
-            }
-        } else {
-            unchecked {
-                slippageDifference = spotPriceBeforeScaled - spotPriceNowScaled;
-            }
+        unchecked {
+            slippageDifference = (spotPriceNowScaled > spotPriceBeforeScaled)
+                ? spotPriceNowScaled - spotPriceBeforeScaled
+                : spotPriceBeforeScaled - spotPriceNowScaled;
         }
         return (slippageDifference * TPF_PRECISION) / spotPriceBeforeScaled;
     }
 
-    function getMax(uint256 a, uint256 b) external pure returns (uint256 maxValue) {
+    function getMax(uint256 a, uint256 b) external pure returns (uint256) {
         // if (a < b) {
         //     maxValue = b;
         // } else {
         //     maxValue = a;
         // }
         assembly {
-            if lt(a, b) { maxValue := b }
-            if iszero(maxValue) { maxValue := a }
+            mstore(0, a)
+            if lt(a, b) { mstore(0, b) }
+            return (0, 0x20)
         }
     }
 

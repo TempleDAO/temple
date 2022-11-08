@@ -14,11 +14,14 @@ contract AuraStaking is Ownable {
 
     address public operator;
     // @notice BPT tokens for balancer pool
-    IERC20 public bptToken;
+    IERC20 public immutable bptToken;
     AuraPoolInfo public auraPoolInfo;
     // @notice Aura booster
     AMO__IAuraBooster public immutable booster;
     IERC20 public immutable depositToken;
+
+    address public rewardsRecipient;
+    address[] public rewardTokens;
 
     struct AuraPoolInfo {
         address token;
@@ -34,9 +37,10 @@ contract AuraStaking is Ownable {
     error NotOperator();
     error NotOperatorOrOwner();
 
-    event SetAuraPoolInfo(uint32, address, address);
-    event SetOperator(address);
-    event RecoveredToken(address, address, uint256);
+    event SetAuraPoolInfo(uint32 indexed pId, address token, address rewards);
+    event SetOperator(address operator);
+    event RecoveredToken(address token, address to, uint256 amount);
+    event SetRewardsRecipient(address recipient);
 
     constructor(
         address _operator,
@@ -55,6 +59,9 @@ contract AuraStaking is Ownable {
         auraPoolInfo.token = _token;
         auraPoolInfo.rewards = _rewards;
 
+        rewardTokens[0] = AMO__IBaseRewardPool(auraPoolInfo.rewards).rewardToken();
+        rewardTokens[1] = booster.minter();
+
         emit SetAuraPoolInfo(_pId, _token, _rewards);
     }
 
@@ -66,6 +73,12 @@ contract AuraStaking is Ownable {
         operator = _operator;
 
         emit SetOperator(_operator);
+    }
+
+    function setRewardsRecipient(address _recipeint) external onlyOwner {
+        rewardsRecipient = _recipeint;
+
+        emit SetRewardsRecipient(_recipeint);
     }
 
     /**
@@ -80,9 +93,9 @@ contract AuraStaking is Ownable {
 
         emit RecoveredToken(token, to, amount);
     }
-
+    
     function depositAndStake(uint256 amount) external onlyOperator {
-        bptToken.safeTransferFrom(msg.sender, address(this), amount);
+        // bptToken.safeTransferFrom(msg.sender, address(this), amount);
 
         bptToken.safeIncreaseAllowance(address(booster), amount);
         booster.deposit(auraPoolInfo.pId, amount, true);
@@ -90,7 +103,7 @@ contract AuraStaking is Ownable {
 
     // withdraw deposit token and unwrap to bpt tokens
     function withdrawAndUnwrap(uint256 amount, bool claim, bool sendToOperator) external onlyOperatorOrOwner {
-        IBaseRewardPool(auraPoolInfo.rewards).withdrawAndUnwrap(amount, claim);
+        AMO__IBaseRewardPool(auraPoolInfo.rewards).withdrawAndUnwrap(amount, claim);
         if (sendToOperator) {
             // unwrapped amount is 1 to 1
             bptToken.safeTransfer(operator, amount);
@@ -98,8 +111,8 @@ contract AuraStaking is Ownable {
     }
 
     function withdrawAllAndUnwrap(bool claim, bool sendToOperator) external onlyOwner {
-        uint256 depositTokenBalance = IBaseRewardPool(auraPoolInfo.rewards).balanceOf(address(this));
-        IBaseRewardPool(auraPoolInfo.rewards).withdrawAllAndUnwrap(claim);
+        uint256 depositTokenBalance = AMO__IBaseRewardPool(auraPoolInfo.rewards).balanceOf(address(this));
+        AMO__IBaseRewardPool(auraPoolInfo.rewards).withdrawAllAndUnwrap(claim);
         if (sendToOperator) {
             // unwrapped amount is 1 to 1
             bptToken.safeTransfer(operator, depositTokenBalance);
@@ -107,15 +120,21 @@ contract AuraStaking is Ownable {
     }
 
     function getReward(bool claimExtras) external {
-        IBaseRewardPool(auraPoolInfo.rewards).getReward(address(this), claimExtras);
+        AMO__IBaseRewardPool(auraPoolInfo.rewards).getReward(address(this), claimExtras);
+        if (rewardsRecipient != address(0)) {
+            for (uint i=0; i<rewardTokens.length; i++) {
+                uint256 balance = IERC20(rewardTokens[i]).balanceOf(address(this));
+                IERC20(rewardTokens[i]).safeTransfer(rewardsRecipient, balance);
+            }
+        }
     }
 
     function stakedBalance() public view returns (uint256 balance) {
-        balance = IBaseRewardPool(auraPoolInfo.rewards).balanceOf(address(this));
+        balance = AMO__IBaseRewardPool(auraPoolInfo.rewards).balanceOf(address(this));
     }
 
     function earned() public view returns (uint256 earnedRewards) {
-        earnedRewards = IBaseRewardPool(auraPoolInfo.rewards).earned(address(this));
+        earnedRewards = AMO__IBaseRewardPool(auraPoolInfo.rewards).earned(address(this));
     }
 
     /**

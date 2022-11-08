@@ -16,7 +16,7 @@ import "./interfaces/AMO__IAuraStaking.sol";
  * @dev It has a  convergent price to which it trends called the TPF (Treasury Price Floor).
  * In order to accomplish this when the price is below the TPF it will single side withdraw 
  * BPTs into TEMPLE and burn them and if the price is above the TPF it will 
- * single side deposit TEMPLE and increase its BPT position that way. Alternatively
+ * single side deposit TEMPLE into the pool to drop the spot price.
  */
 contract TpfAmo is Ownable {
     using SafeERC20 for IERC20;
@@ -30,22 +30,22 @@ contract TpfAmo is Ownable {
     AMO__IPoolHelper public poolHelper;
     
     // @notice AMO contract for staking into aura 
-    AMO__IAuraStaking public amoStaking;
+    AMO__IAuraStaking public immutable amoStaking;
 
     address public operator;
     IERC20 public immutable temple;
     IERC20 public immutable stable;
 
-    // @notice lastRebalanceTimeSecs and cooldown used to control callrate 
+    // @notice lastRebalanceTimeSecs and cooldown used to control call rate 
     // for operator
-    uint64 internal lastRebalanceTimeSecs;
+    uint64 public lastRebalanceTimeSecs;
     uint64 public cooldownSecs;
 
     // @notice balancer 50/50 pool ID.
     bytes32 public immutable balancerPoolId;
 
     // @notice Temple price floor denominator
-    uint256 public constant TPF_PRECISION = 10_000;
+    uint256 public constant BPS_PRECISION = 10_000;
 
     // @notice Maximum amount of tokens that can be rebalanced
     uint256 public maxRebalanceAmount;
@@ -59,18 +59,17 @@ contract TpfAmo is Ownable {
     // @notice temple index in balancer pool. to avoid recalculation or external calls
     uint64 public templeBalancerPoolIndex;
 
-    event RecoveredToken(address, address, uint256);
-    event SetOperator(address);
-    event SetPostRebalanceSlippage(uint64);
-    event SetCooldown(uint64);
-    event SetRebalanceRateChange(uint256);
-    event SetPauseState(bool);
-    event StableDeposited(uint256, uint256);
-    event RebalanceUp(uint256, uint256);
-    event RebalanceDown(uint256, uint256);
-    event SetPoolHelper(address);
-    event SetMaxRebalanceAmount(uint256);
-    event WithdrawStable(uint256, uint256);
+    event RecoveredToken(address token, address to, uint256 amount);
+    event SetOperator(address operator);
+    event SetPostRebalanceSlippage(uint64 slippageBps);
+    event SetCooldown(uint64 cooldownSecs);
+    event SetPauseState(bool paused);
+    event StableDeposited(uint256 amountIn, uint256 bptOut);
+    event RebalanceUp(uint256 bptAmountIn, uint256 templeAmountOut);
+    event RebalanceDown(uint256 templeAmountIn, uint256 bptIn);
+    event SetPoolHelper(address poolHelper);
+    event SetMaxRebalanceAmount(uint256 maxRebalanceAmount);
+    event WithdrawStable(uint256 bptAmountIn, uint256 minAmountOut);
 
     constructor(
         address _balancerVault,
@@ -99,7 +98,7 @@ contract TpfAmo is Ownable {
     }
 
     function setPostRebalanceSlippage(uint64 slippage) external onlyOwner {
-        if (slippage >= TPF_PRECISION || slippage == 0) {
+        if (slippage >= BPS_PRECISION || slippage == 0) {
             revert AMOCommon.InvalidBPSValue(slippage);
         }
         postRebalanceSlippage = slippage;
@@ -151,7 +150,6 @@ contract TpfAmo is Ownable {
      * @param amount Amount to recover
      */
     function recoverToken(address token, address to, uint256 amount) external onlyOwner {
-        if (to == address(0)) revert AMOCommon.InvalidAddress();
         IERC20(token).safeTransfer(to, amount);
 
         emit RecoveredToken(token, to, amount);
@@ -276,7 +274,8 @@ contract TpfAmo is Ownable {
         emit RebalanceDown(templeAmountIn, bptIn);
 
         // deposit and stake BPT
-        bptToken.safeIncreaseAllowance(address(amoStaking), bptIn);
+        // bptToken.safeIncreaseAllowance(address(amoStaking), bptIn);
+        bptToken.safeTransfer(address(amoStaking), bptIn);
         amoStaking.depositAndStake(bptIn);
     }
 
@@ -330,7 +329,8 @@ contract TpfAmo is Ownable {
 
         emit StableDeposited(amountIn, bptOut);
 
-        bptToken.safeIncreaseAllowance(address(amoStaking), bptOut);
+        // bptToken.safeIncreaseAllowance(address(amoStaking), bptOut);
+        bptToken.safeTransfer(address(amoStaking), bptOut);
         amoStaking.depositAndStake(bptOut);
     }
 
@@ -433,7 +433,8 @@ contract TpfAmo is Ownable {
         }
 
         // stake BPT
-        bptToken.safeIncreaseAllowance(address(amoStaking), bptIn);
+        // bptToken.safeIncreaseAllowance(address(amoStaking), bptIn);
+        bptToken.safeTransfer(address(amoStaking), bptIn);
         amoStaking.depositAndStake(bptIn);
     }
 
@@ -501,7 +502,8 @@ contract TpfAmo is Ownable {
         if (!useContractBalance) {
             bptToken.safeTransferFrom(msg.sender, address(this), amount);
         }
-        bptToken.safeIncreaseAllowance(address(amoStaking), amount);
+        // bptToken.safeIncreaseAllowance(address(amoStaking), amount);
+        bptToken.safeTransfer(address(amoStaking), amount);
         amoStaking.depositAndStake(amount);
     }
 
