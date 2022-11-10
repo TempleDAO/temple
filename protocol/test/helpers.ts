@@ -1,10 +1,34 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { BaseContract, BigNumber, BigNumberish, Signer } from "ethers";
 import { assert, expect } from "chai";
 import { TempleERC20Token, TempleERC20Token__factory } from "../typechain";
-import { mine } from "@nomicfoundation/hardhat-network-helpers";
+import { impersonateAccount, time as timeHelpers } from "@nomicfoundation/hardhat-network-helpers";
 
 export const NULL_ADDR = "0x0000000000000000000000000000000000000000"
+
+export async function resetFork(
+  blockNumber: number, 
+  rpcUrl: string | undefined = process.env.TESTS_MAINNET_RPC_URL
+) {
+  console.log("Forking Mainnet:", blockNumber);
+  await network.provider.request({
+    method: "hardhat_reset",
+    params: [
+        {
+        forking: {
+            jsonRpcUrl: rpcUrl,
+            blockNumber,
+        },
+    },
+    ],
+  });
+}
+
+// Impersonate an address and run fn(signer), then stop impersonating.
+export async function impersonateSigner(address: string): Promise<Signer> {
+  await impersonateAccount(address);
+  return await ethers.getSigner(address);
+}
 
 /// deprecated, use pattern
 /// await expect(/* transaction promise */)
@@ -67,7 +91,7 @@ async function getAddressOf(account: Signer|BaseContract) {
  * Current block timestamp
  */
 export const blockTimestamp = async (): Promise<number> => {
-  return (await ethers.provider.getBlock(await ethers.provider.getBlockNumber())).timestamp;
+  return await timeHelpers.latest();
 }
 
 /**
@@ -85,7 +109,7 @@ export const mineToTimestamp = async (timestamp: number) => {
  * Mine forward the given number of seconds
  */
 export const mineForwardSeconds = async (seconds: number) => {
-  await mine(seconds, {interval: 1});
+  await timeHelpers.increase(seconds);
 }
 
 /**

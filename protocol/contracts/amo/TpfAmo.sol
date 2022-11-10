@@ -36,6 +36,11 @@ contract TpfAmo is Ownable {
     IERC20 public immutable temple;
     IERC20 public immutable stable;
 
+    // If the stable token is a BalancerPoolToken, then erc20 allowances don't need to be set
+    // when spent in the Balancer Vault
+    // https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/pool-utils/contracts/BalancerPoolToken.sol#L60
+    bool public immutable isStableABalancerPoolToken;
+
     // @notice lastRebalanceTimeSecs and cooldown used to control call rate 
     // for operator
     uint64 public lastRebalanceTimeSecs;
@@ -75,6 +80,7 @@ contract TpfAmo is Ownable {
         address _balancerVault,
         address _temple,
         address _stable,
+        bool _isStableABalancerPoolToken,
         address _bptToken,
         address _amoStaking,
         address _booster,
@@ -84,6 +90,7 @@ contract TpfAmo is Ownable {
         balancerVault = AMO__IBalancerVault(_balancerVault);
         temple = IERC20(_temple);
         stable = IERC20(_stable);
+        isStableABalancerPoolToken = _isStableABalancerPoolToken;
         bptToken = IERC20(_bptToken);
         amoStaking = AMO__IAuraStaking(_amoStaking);
         booster = AMO__IAuraBooster(_booster);
@@ -190,10 +197,8 @@ contract TpfAmo is Ownable {
                 1, minAmountOut, templeBalancerPoolIndex);
         }
         // withdraw bpt tokens
+        // NB: No need to approve a balancer pool token when used in the balancer vault.
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, true);
-
-        bptToken.approve(address(balancerVault), 0);
-        bptToken.approve(address(balancerVault), bptAmountIn);
 
         // execute call and check for sanity
         uint256 templeBalanceBefore = temple.balanceOf(address(this));
@@ -274,7 +279,6 @@ contract TpfAmo is Ownable {
         emit RebalanceDown(templeAmountIn, bptIn);
 
         // deposit and stake BPT
-        // bptToken.safeIncreaseAllowance(address(amoStaking), bptIn);
         bptToken.safeTransfer(address(amoStaking), bptIn);
         amoStaking.depositAndStake(bptIn);
     }
@@ -304,10 +308,11 @@ contract TpfAmo is Ownable {
             joinPoolRequest = poolHelper.createPoolJoinRequest(temple, stable, amountIn, 0, minBptOut);
         }
 
-        // approve
-        stable.approve(address(balancerVault), 0);
-        stable.approve(address(balancerVault), amountIn);
-
+        // approve stable if not a balancer pool token
+        if (!isStableABalancerPoolToken) {
+            stable.safeIncreaseAllowance(address(balancerVault), amountIn);
+        }
+        
         // execute and sanity check
         uint256 bptAmountBefore = bptToken.balanceOf(address(this));
         uint256 spotPriceScaledBefore = poolHelper.getSpotPriceScaled();
@@ -329,7 +334,6 @@ contract TpfAmo is Ownable {
 
         emit StableDeposited(amountIn, bptOut);
 
-        // bptToken.safeIncreaseAllowance(address(amoStaking), bptOut);
         bptToken.safeTransfer(address(amoStaking), bptOut);
         amoStaking.depositAndStake(bptOut);
     }
@@ -362,11 +366,8 @@ contract TpfAmo is Ownable {
         }
 
         // withdraw and unwrap deposit token to BPT token
+        // NB: No need to approve a balancer pool token when used in the balancer vault.
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, true);
-
-        // safeincrease allowance
-        bptToken.approve(address(balancerVault), 0);
-        bptToken.approve(address(balancerVault), bptAmountIn);
 
         // execute call and check for sanity
         uint256 stableBalanceBefore = stable.balanceOf(address(this));
@@ -415,10 +416,14 @@ contract TpfAmo is Ownable {
         }
 
         AMO__ITempleERC20Token(address(temple)).mint(address(this), templeAmount);
-        // safe allowance stable and TEMPLE
+
+        // safe allowance TEMPLE
         temple.safeIncreaseAllowance(address(balancerVault), templeAmount);
-        stable.approve(address(balancerVault), 0);
-        stable.approve(address(balancerVault), stableAmount);
+
+        // approve stable if not a balancer pool token
+        if (!isStableABalancerPoolToken) {
+            stable.safeIncreaseAllowance(address(balancerVault), stableAmount);
+        }
 
         // join pool
         uint256 bptAmountBefore = bptToken.balanceOf(address(this));
@@ -433,7 +438,6 @@ contract TpfAmo is Ownable {
         }
 
         // stake BPT
-        // bptToken.safeIncreaseAllowance(address(amoStaking), bptIn);
         bptToken.safeTransfer(address(amoStaking), bptIn);
         amoStaking.depositAndStake(bptIn);
     }
@@ -461,9 +465,7 @@ contract TpfAmo is Ownable {
 
         amoStaking.withdrawAndUnwrap(bptIn, false, true);
 
-        bptToken.approve(address(balancerVault), 0);
-        bptToken.approve(address(balancerVault), bptIn);
-
+        // NB: No need to approve a balancer pool token when used in the balancer vault.
         balancerVault.exitPool(balancerPoolId, address(this), address(this), request);
 
         // validate amounts received
@@ -502,7 +504,6 @@ contract TpfAmo is Ownable {
         if (!useContractBalance) {
             bptToken.safeTransferFrom(msg.sender, address(this), amount);
         }
-        // bptToken.safeIncreaseAllowance(address(amoStaking), amount);
         bptToken.safeTransfer(address(amoStaking), amount);
         amoStaking.depositAndStake(amount);
     }
