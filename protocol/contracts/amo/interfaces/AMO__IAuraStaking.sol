@@ -17,7 +17,7 @@ interface AMO__IAuraStaking {
 
     function withdraw(uint256 amount, bool claim, bool sendToOperator) external;
 
-    function withdrawAndUnwrap(uint256 amount, bool claim, bool sendToOperator) external;
+    function withdrawAndUnwrap(uint256 amount, bool claim, address to) external;
 
     function withdrawAllAndUnwrap(bool claim, bool sendToOperator) external;
 

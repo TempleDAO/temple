@@ -94,18 +94,16 @@ contract AuraStaking is Ownable {
     }
     
     function depositAndStake(uint256 amount) external onlyOperator {
-        // bptToken.safeTransferFrom(msg.sender, address(this), amount);
-
         bptToken.safeIncreaseAllowance(address(booster), amount);
         booster.deposit(auraPoolInfo.pId, amount, true);
     }
 
     // withdraw deposit token and unwrap to bpt tokens
-    function withdrawAndUnwrap(uint256 amount, bool claim, bool sendToOperator) external onlyOperatorOrOwner {
+    function withdrawAndUnwrap(uint256 amount, bool claim, address to) external onlyOperatorOrOwner {
         AMO__IBaseRewardPool(auraPoolInfo.rewards).withdrawAndUnwrap(amount, claim);
-        if (sendToOperator) {
+        if (to != address(0)) {
             // unwrapped amount is 1 to 1
-            bptToken.safeTransfer(operator, amount);
+            bptToken.safeTransfer(to, amount);
         }
     }
 

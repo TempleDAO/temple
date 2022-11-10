@@ -36,6 +36,28 @@ interface AMO__IPoolHelper {
     function balancerVault() external view returns (address);
     function balancerPoolId() external view returns (bytes32);
 
+    function exitPool(
+        uint256 bptAmountIn,
+        uint256 minAmountOut,
+        uint256 rebalancePercentageBoundLow,
+        uint256 rebalancePercentageBoundUp,
+        uint256 postRebalanceSlippage,
+        uint256 exitTokenIndex,
+        uint256 templePriceFloorNumerator,
+        IERC20 exitPoolToken
+    ) external;
+
+    function joinPool(
+        uint256 amountIn,
+        uint256 minBptOut,
+        uint256 rebalancePercentageBoundUp,
+        uint256 rebalancePercentageBoundLow,
+        uint256 templePriceFloorNumerator,
+        uint256 postRebalanceSlippage,
+        uint256 joinTokenIndex,
+        IERC20 joinPoolToken
+    ) external returns (uint256);
+
     function createPoolJoinRequest(
         IERC20 temple,
         IERC20 stable,

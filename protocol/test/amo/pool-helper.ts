@@ -1,27 +1,21 @@
-import { ethers, network } from "hardhat";
-import { expect, should } from "chai";
-import { toAtto, shouldThrow, mineForwardSeconds, blockTimestamp } from "../helpers";
-import { BigNumber, Contract, ContractReceipt, Signer } from "ethers";
-import addresses from "../constants";
+import { ethers } from "hardhat";
+import { expect } from "chai";
+import { toAtto } from "../helpers";
+import { BigNumber, Signer } from "ethers";
 import amoAddresses from "./amo-constants";
-import { 
-  AMO__IAuraGaugeController,
-  AMO__IBalancerAuthorizerAdapter,
+import {
   AMO__IBalancerVault,
-  AMO__IBalancerVault__factory,
-  AMO__IBalancerVotingEscrow, AMO__IGaugeAdder,
-  AMO__ILiquidityGaugeFactory, AMO__IPoolManagerProxy,
-  AMO__IPoolManagerV3, AuraStaking, ERC20, ERC20__factory,
-  IBalancerHelpers, IBalancerHelpers__factory, AMO__IBaseRewardPool, IERC20,
-  IERC20__factory, IWeightPool2Tokens,
+  AMO__IBalancerVault__factory, ERC20, ERC20__factory,
+  IBalancerHelpers, IBalancerHelpers__factory,
+  IWeightPool2Tokens,
   IWeightPool2Tokens__factory,
   PoolHelper, PoolHelper__factory, TempleERC20Token,
-  TempleERC20Token__factory, TpfAmo,
-  TpfAmo__factory
+  TempleERC20Token__factory,
 } from "../../typechain";
 import { getSpotPriceScaled, ownerAddLiquidity, singleSideDepositStableToPriceTarget, singleSideDepositTempleToPriceTarget } from "./common";
 import { DEPLOYED_CONTRACTS } from '../../scripts/deploys/helpers';
 import { impersonateAddress, resetFork, seedTempleBbaUsdPool, swapDaiForBbaUsd } from "./common";
+import { zeroAddress } from "ethereumjs-util";
 
 const { MULTISIG, TEMPLE } = DEPLOYED_CONTRACTS.mainnet;
 
@@ -31,7 +25,6 @@ const { TEMPLE_WHALE, BINANCE_ACCOUNT_8, BBA_USD_WHALE } = amoAddresses.accounts
 const { DAI, TEMPLE_BBAUSD_LP_TOKEN, BBA_USD_TOKEN, BALANCER_TOKEN } = amoAddresses.tokens;
 
 const TPF_SCALED = 9_700;
-const ONE_ETH = toAtto(1);
 const BLOCKNUMBER = 15862300;
 
 let poolHelper: PoolHelper;
@@ -50,8 +43,10 @@ let templeWhale: Signer;
 let daiWhale: Signer;
 let templeMultisig: Signer;
 let bbaUsdWhale: Signer;
+let upperBound: BigNumber;
+let lowerBound: BigNumber;
 
-describe.only("Pool Helper", async () => {
+describe("Pool Helper", async () => {
 
     beforeEach(async () => {
         await resetFork(BLOCKNUMBER);
@@ -73,14 +68,15 @@ describe.only("Pool Helper", async () => {
         balancerVault = AMO__IBalancerVault__factory.connect(BALANCER_VAULT, owner);
         balancerHelpers = IBalancerHelpers__factory.connect(BALANCER_HELPERS, owner);
 
+
         poolHelper = await new PoolHelper__factory(owner).deploy(
             BALANCER_VAULT,
             TEMPLE,
+            BBA_USD_TOKEN,
+            bptToken.address,
+            zeroAddress(),
             BALANCER_POOL_ID
         );
-
-        await poolHelper.setTemplePriceFloorNumerator(TPF_SCALED);
-        await poolHelper.setRebalancePercentageBounds(100, 400);
 
         const templeMultisigConnect = templeToken.connect(templeMultisig);
         await templeMultisigConnect.transfer(await templeWhale.getAddress(), toAtto(2_000_000));
@@ -102,37 +98,25 @@ describe.only("Pool Helper", async () => {
             ownerAddress,
             toAtto(100_000)
         );
-    });
 
-    it("admin tests", async () => {
-        const alanConnect = poolHelper.connect(alan);
-        // fails
-        await shouldThrow(alanConnect.setTemplePriceFloorNumerator(1_000), /Ownable: caller is not the owner/);
-        await shouldThrow(alanConnect.setRebalancePercentageBounds(100,100), /Ownable: caller is not the owner/);
-
-        // success
-        await poolHelper.setTemplePriceFloorNumerator(TPF_SCALED);
-        await poolHelper.setRebalancePercentageBounds(100, 200);
-    });
-
-    it("sets rebalance lower and upper bounds", async () => {
-        await poolHelper.setRebalancePercentageBounds(100, 400);
-        expect(await poolHelper.rebalancePercentageBoundLow()).to.eq(100);
-        expect(await poolHelper.rebalancePercentageBoundUp()).to.eq(400);
-    });
-
-    it ("sets tpf ratio", async () => {
-        await expect(poolHelper.setTemplePriceFloorNumerator(TPF_SCALED))
-            .to.emit(poolHelper, "SetTemplePriceFloorRatio")
-            .withArgs(TPF_SCALED, 10_000);
-        const tpf =  await poolHelper.templePriceFloorNumerator();
-        expect(tpf).to.eq(TPF_SCALED);
+        upperBound = BigNumber.from(400);
+        lowerBound = BigNumber.from(100);
     });
 
     it("gets LP balances", async () => {
         const balances = await poolHelper.getBalances();
         expect(balances[0]).gt(0);
         expect(balances[1]).gt(0);
+    });
+
+    it("gets right temple stable balances", async () => {
+        let balances: BigNumber[];
+        [,balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+        const templeStableBalances = await poolHelper.getTempleStableBalances();
+        const templeIndex = (await poolHelper.templeIndexInBalancerPool()).toNumber();
+        const stableIndex = templeIndex == 0 ? 1 : 0;
+        expect(templeStableBalances.templeBalance).to.eq(balances[templeIndex]);
+        expect(templeStableBalances.stableBalance).to.eq(balances[stableIndex]);
     });
 
     it("gets spot price using lp ratio", async () => {
@@ -146,7 +130,7 @@ describe.only("Pool Helper", async () => {
     });
 
     it("spot price above tpf with and without deviation", async () => {
-        let isAboveTPF = (await poolHelper.functions["isSpotPriceAboveTPF()"]())[0];
+        let isAboveTPF = (await poolHelper.functions["isSpotPriceAboveTPF(uint256)"](9_700))[0];
         const spotScaledBalancer = await getSpotPriceScaled(balancerVault, weightedPool2Tokens);
         let spotScaledAbove = false;
         if (spotScaledBalancer.gt(TPF_SCALED)) {
@@ -155,7 +139,7 @@ describe.only("Pool Helper", async () => {
         expect(isAboveTPF).to.eq(spotScaledAbove);
 
         const deviation = BigNumber.from(300); // 3%
-        isAboveTPF =  (await poolHelper.functions["isSpotPriceAboveTPF(uint256)"](deviation))[0];
+        isAboveTPF =  (await poolHelper.functions["isSpotPriceAboveTPF(uint256,uint256)"](deviation, TPF_SCALED))[0];
         const diffScaled = deviation.mul(spotScaledBalancer).div(10_000);
         spotScaledAbove = false;
         if (spotScaledBalancer.gt(BigNumber.from(TPF_SCALED).sub(diffScaled))) {
@@ -165,7 +149,7 @@ describe.only("Pool Helper", async () => {
     });
 
     it("spot price below tpf with and without deviation", async () => {
-        let isBelowTPF = (await poolHelper.functions["isSpotPriceBelowTPF()"]())[0];
+        let isBelowTPF = (await poolHelper.functions["isSpotPriceBelowTPF(uint256)"](TPF_SCALED))[0];
         const spotScaledBalancer = await getSpotPriceScaled(balancerVault, weightedPool2Tokens);
         let spotScaledAbove = false;
         if (spotScaledBalancer.lt(TPF_SCALED)) {
@@ -174,7 +158,7 @@ describe.only("Pool Helper", async () => {
         expect(isBelowTPF).to.eq(spotScaledAbove);
 
         const deviation = BigNumber.from(300); // 3%
-        isBelowTPF =  (await poolHelper.functions["isSpotPriceBelowTPF(uint256)"](deviation))[0];
+        isBelowTPF =  (await poolHelper.functions["isSpotPriceBelowTPF(uint256,uint256)"](deviation, TPF_SCALED))[0];
         const diffScaled = deviation.mul(spotScaledBalancer).div(10_000);
         spotScaledAbove = false;
         if (spotScaledBalancer.lt(BigNumber.from(TPF_SCALED).sub(diffScaled))) {
@@ -185,7 +169,7 @@ describe.only("Pool Helper", async () => {
 
     it("Is Spot Price Below TPF Lower Bound", async () =>{
         const spotPriceNow = await poolHelper.getSpotPriceScaled();
-        const templeIndexInPool = (await poolHelper.templeBalancerPoolIndex()).toNumber();
+        const templeIndexInPool = (await poolHelper.templeIndexInBalancerPool()).toNumber();
         // skew spot price below TPF
         const targetPriceScaled = 9500;
         await singleSideDepositTempleToPriceTarget(
@@ -198,14 +182,14 @@ describe.only("Pool Helper", async () => {
             bbaUsdToken,
             targetPriceScaled
         );
-        expect(await poolHelper.isSpotPriceBelowTPFLowerBound()).to.be.true;
+        expect(await poolHelper.isSpotPriceBelowTPFLowerBound(lowerBound, TPF_SCALED)).to.be.true;
         // expect spot price close to target price scaled
         let newSpotPrice = await poolHelper.getSpotPriceScaled();
         expect(newSpotPrice).to.be.closeTo(targetPriceScaled, 100); // 0.1% approximation       
     });
 
     it("is spot price above TPF upper bound", async () => {
-        const templeIndexInPool = (await poolHelper.templeBalancerPoolIndex()).toNumber();
+        const templeIndexInPool = (await poolHelper.templeIndexInBalancerPool()).toNumber();
         // skew spot price above TPF
         const targetPriceScaled = 10_500;
         await singleSideDepositStableToPriceTarget(
@@ -216,14 +200,13 @@ describe.only("Pool Helper", async () => {
             templeIndexInPool,
             targetPriceScaled
         );
-        expect(await poolHelper.isSpotPriceAboveTPFUpperBound()).to.be.true;
+        expect(await poolHelper.isSpotPriceAboveTPFUpperBound(upperBound, TPF_SCALED)).to.be.true;
         const newSpotPrice = await poolHelper.getSpotPriceScaled();
         expect(newSpotPrice).to.be.closeTo(targetPriceScaled, 100); // 0.1% approximation
 
         // skew spot price to above TPF but below TPF+bound
-        const tpfScaled = await poolHelper.templePriceFloorNumerator();
-        const upperBoundScaled = (await poolHelper.rebalancePercentageBoundUp()).mul(tpfScaled).div(10_000);
-        const newTarget = tpfScaled.add(upperBoundScaled).sub(10); // subtract to go below TPF+bound
+        const upperBoundScaled = (BigNumber.from(upperBound)).mul(TPF_SCALED).div(10_000);
+        const newTarget = BigNumber.from(TPF_SCALED).add(upperBoundScaled).sub(10); // subtract to go below TPF+bound
         await singleSideDepositTempleToPriceTarget(
             balancerVault,
             balancerHelpers,
@@ -234,36 +217,62 @@ describe.only("Pool Helper", async () => {
             bbaUsdToken,
             newTarget.toNumber()
         );
-        expect(await poolHelper.isSpotPriceAboveTPFUpperBound()).to.be.false;
-        expect(await poolHelper.getSpotPriceScaled()).to.lt(tpfScaled.add(upperBoundScaled));
+        expect(await poolHelper.isSpotPriceAboveTPFUpperBound(upperBound, TPF_SCALED)).to.be.false;
+        expect(await poolHelper.getSpotPriceScaled()).to.lt(BigNumber.from(TPF_SCALED).add(upperBoundScaled));
     });
 
     it("will join take price below TPF lower bound", async () => {
+        const lowerBound = BigNumber.from(100);
         const joinAmount = toAtto(50_000);
-        const templeIndexInPool = (await poolHelper.templeBalancerPoolIndex()).toNumber();
+        const templeIndexInPool = (await poolHelper.templeIndexInBalancerPool()).toNumber();
         const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
         let balances: BigNumber[];
         [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
         const newSpotPriceScaled = balances[stableIndexInPool].mul(10_000).div(balances[templeIndexInPool].add(joinAmount));
-        const tpfScaled = await poolHelper.templePriceFloorNumerator();
-        const lowerBoundScaled = (await poolHelper.rebalancePercentageBoundLow()).mul(tpfScaled).div(10_000);
-        const newTarget = tpfScaled.sub(lowerBoundScaled);
+        
+        const lowerBoundScaled = (lowerBound).mul(TPF_SCALED).div(10_000);
+        const newTarget = BigNumber.from(TPF_SCALED).sub(lowerBoundScaled);
         const willTakePriceBelow = newSpotPriceScaled < newTarget;
-        expect(await poolHelper.willJoinTakePriceBelowTPFLowerBound(joinAmount)).to.eq(willTakePriceBelow);
+        expect(await poolHelper.willJoinTakePriceBelowTPFLowerBound(joinAmount, lowerBound, TPF_SCALED)).to.eq(willTakePriceBelow);
     });
 
-    it.only("will exit take price above TPF upper bound", async () => {
+    it("will exit take price above TPF upper bound", async () => {
         const exitAmount = toAtto(50_000);
-        const templeIndexInPool = (await poolHelper.templeBalancerPoolIndex()).toNumber();
+        const templeIndexInPool = (await poolHelper.templeIndexInBalancerPool()).toNumber();
         const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
         let balances: BigNumber[];
         [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
         const newSpotPriceScaled = balances[stableIndexInPool].mul(10_000).div(balances[templeIndexInPool].sub(exitAmount));
-        const tpfScaled = await poolHelper.templePriceFloorNumerator();
-        const upperBoundScaled = (await poolHelper.rebalancePercentageBoundUp()).mul(tpfScaled).div(10_000);
-        const newTarget = tpfScaled.add(upperBoundScaled);
+        const upperBoundScaled = upperBound.mul(TPF_SCALED).div(10_000);
+        const newTarget = BigNumber.from(TPF_SCALED).add(upperBoundScaled);
         const willTakePriceAbove = newSpotPriceScaled > newTarget;
-        expect(await poolHelper.willExitTakePriceAboveTPFUpperBound(exitAmount)).to.eq(willTakePriceAbove);
+        expect(await poolHelper.willExitTakePriceAboveTPFUpperBound(exitAmount, upperBound, TPF_SCALED)).to.eq(willTakePriceAbove);
+    });
+
+    it("will stable join take price above TPF upper bound", async () => {
+        const joinAmount = toAtto(20_000);
+        const templeIndexInPool = (await poolHelper.templeIndexInBalancerPool()).toNumber();
+        const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
+        let balances: BigNumber[];
+        [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+        const newSpotPriceScaled = balances[stableIndexInPool].add(joinAmount).mul(10_000).div(balances[templeIndexInPool]);
+        const upperBoundScaled = upperBound.mul(TPF_SCALED).div(10_000);
+        const newTarget = BigNumber.from(TPF_SCALED).add(upperBoundScaled);
+        const willTakePriceAbove = newSpotPriceScaled > newTarget;
+        expect(await poolHelper.willStableJoinTakePriceAboveTPFUpperBound(joinAmount, upperBound, TPF_SCALED)).to.eq(willTakePriceAbove);
+    });
+
+    it("will stable exit take price below TPF lower bound", async () => {
+        const exitAmount = toAtto(20_000);
+        const templeIndexInPool = (await poolHelper.templeIndexInBalancerPool()).toNumber();
+        const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
+        let balances: BigNumber[];
+        [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+        const newSpotPriceScaled = balances[stableIndexInPool].sub(exitAmount).mul(10_000).div(balances[templeIndexInPool]);
+        const lowerBoundScaled = (lowerBound).mul(TPF_SCALED).div(10_000);
+        const newTarget = BigNumber.from(TPF_SCALED).sub(lowerBoundScaled);
+        const willTakePriceBelow = newSpotPriceScaled < newTarget;
+        expect(await poolHelper.willStableExitTakePriceBelowTPFLowerBound(exitAmount, lowerBound, TPF_SCALED)).to.eq(willTakePriceBelow);
     });
 
     it("gets right balances", async () => {
@@ -275,7 +284,10 @@ describe.only("Pool Helper", async () => {
         }
     });
 
-    it("gets max", async () => {
-        expect(await poolHelper.getMax(1, 2)).to.eq(2);
+    it("joins pool", async () => {
+        // tests in test/amo/tpf-amo.ts
+    });
+    it("exits pool", async () => {
+        // tests in test/amo/tpf-amo.ts
     });
 });
