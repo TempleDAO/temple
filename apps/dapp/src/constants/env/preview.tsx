@@ -109,6 +109,10 @@ const env: Environment = {
     nexusOnlyMode: false,
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
+  nexus: {
+    templeRelicAddress: '0x9CaFd1421aAa1015b64F755Ff49499455f46cA70',
+    templeRelicItemsAddress: '0x4EA1C78102d2C201cFc98fd53b634Cc01294771c',
+  }
 };
 
 export default env;

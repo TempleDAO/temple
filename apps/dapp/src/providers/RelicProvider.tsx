@@ -106,9 +106,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
   };
 
   const callRelicItemsFunction = async (fn: (relicItemsContract: RelicItems) => Promise<ContractTransaction>) => {
-    console.log(inventoryState)
-    console.log(signer);
-
+    // TODO: Error handling?
     if (inventoryState && signer) {
       const relicItemsContract = new RelicItems__factory(signer).attach(env.nexus.templeRelicItemsAddress);
       const receipt = await (await fn(relicItemsContract)).wait();
@@ -138,6 +136,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
   };
 
   const mintRelic = async (enclave: RelicEnclave) => {
+    // TODO: Add error handling
     const result = await callRelicFunctionAndDiffRelics((relic) => relic.mintRelic(enclave));
     if (result && result.added.length > 0) {
       openNotification({

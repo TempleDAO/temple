@@ -106,6 +106,10 @@ const env: Environment = {
     api_host: 'https://app.posthog.com',
   },
   templeMultisig: '0xe2Bb722DA825eBfFa1E368De244bdF08ed68B5c4',
+  nexus: {
+    templeRelicAddress: '0x9CaFd1421aAa1015b64F755Ff49499455f46cA70',
+    templeRelicItemsAddress: '0x4EA1C78102d2C201cFc98fd53b634Cc01294771c',
+  }
 };
 
 export default env;

@@ -71,6 +71,7 @@ function getMenuItems(mode: HeaderMode) {
       return (devMode ? [{ title: 'Dev Mint', path: '/nexus/relic/dev-mint' }] : []).concat([
         { title: 'Relic', path: '/nexus/relic' },
         { title: 'Quests', path: '/nexus/quests' },
+        { title: 'Forge', path: '/nexus/forge' },
       ]);
   }
 }

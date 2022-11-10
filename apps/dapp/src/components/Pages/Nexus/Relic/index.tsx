@@ -12,23 +12,19 @@ import { NoRelicPanel } from './NoRelicPanel';
 import { RelicPage } from './RelicPages';
 import { NexusBackground, NexusBodyContainer, NexusContainer, NexusPanelRow } from './styles';
 
+export const EMPTY_INVENTORY: ItemInventory = {
+  relics: [],
+  items: [],
+};
+
 const NexusPage = () => {
   const { wallet, isConnected } = useWallet();
   const { inventory, updateInventory, inventoryLoading } = useRelic();
-
-  const EMPTY_INVENTORY: ItemInventory = {
-    relics: [],
-    items: [],
-  };
 
   useEffect(() => {
     updateInventory();
   }, [wallet, isConnected]);
   const bgImage = inventory?.relics.length ? bgActive : bgInactive;
-
-  console.log('inventory');
-  console.log(inventory);
-  console.log(inventoryLoading);
 
   return (
     <PageWrapper>

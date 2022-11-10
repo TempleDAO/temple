@@ -35,6 +35,7 @@ import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
 import NexusPage from 'components/Pages/Nexus/Relic';
 import QuestPage from 'components/Pages/Nexus/Quest';
+import ForgePage from 'components/Pages/Nexus/Forge';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -134,6 +135,7 @@ ReactDOM.render(
                 <Route path="" element={<Navigate to="relic" />} />
                 <Route path="relic/*" element={<NexusPage />} />
                 <Route path="quests/*" element={<QuestPage />} />
+                <Route path="forge/*" element={<ForgePage />} />
               </Route>
             </>
           )}
