@@ -8,13 +8,11 @@ import {
   TempleERC20Token__factory,
   TempleTeamPayments__factory,
 } from '../typechain';
-import { shouldThrow, blockTimestamp } from './helpers';
+import { blockTimestamp } from './helpers';
+import { PANIC_CODES } from "@nomicfoundation/hardhat-chai-matchers/panic";
 
 const SECONDS_IN_1_MONTH = 2630000;
-const ARITHMETIC_ERROR = /Arithmetic operation underflowed or overflowed outside of an unchecked block/;
-const ADDRESS_ZERO_TRANSFER_ERROR = /ERC20: transfer to the zero address/;
-const ONLY_OWNER_ERROR = /Ownable: caller is not the owner/;
-const ADDRESS_ZERO_SET_ERROR = /TempleTeamPayments: Address cannot be 0x0/;
+const ONLY_OWNER_ERROR = "Ownable: caller is not the owner";
 
 describe('TempleTeamPayments', function () {
   const SECONDS_IN_10_MONTHS = 26300000;
@@ -29,7 +27,7 @@ describe('TempleTeamPayments', function () {
   let member1Address: string;
   let nonMemberAddress: string;
   let TEMPLE: TempleERC20Token;
-  let allocation100K = 100000;
+  const allocation100K = 100000;
 
   beforeEach(async function () {
     [owner, member0, member1, nonMember] = await ethers.getSigners();
@@ -76,10 +74,14 @@ describe('TempleTeamPayments', function () {
       const member0Connect = PAYMENTS.connect(member0);
       const ownerConnect = PAYMENTS.connect(owner);
 
-      await shouldThrow(member0Connect.setAllocations([member1Address], [1000]), ONLY_OWNER_ERROR);
-      await shouldThrow(member0Connect.pauseMember(member1Address), ONLY_OWNER_ERROR);
-      await shouldThrow(member0Connect.adhocPayment(member1Address, 100), ONLY_OWNER_ERROR);
-      await shouldThrow(member0Connect.withdrawTempleBalance(member1Address, 100), ONLY_OWNER_ERROR);
+      await expect(member0Connect.setAllocations([member1Address], [1000]))
+        .to.be.revertedWith(ONLY_OWNER_ERROR);
+      await expect(member0Connect.pauseMember(member1Address))
+        .to.be.revertedWith(ONLY_OWNER_ERROR);
+      await expect(member0Connect.adhocPayment(member1Address, 100))
+        .to.be.revertedWith(ONLY_OWNER_ERROR);
+      await expect(member0Connect.withdrawTempleBalance(member1Address, 100))
+        .to.be.revertedWith(ONLY_OWNER_ERROR);
 
       await ownerConnect.setAllocations([member1Address], [1000]);
       await ownerConnect.pauseMember(member1Address);
@@ -97,8 +99,8 @@ describe('TempleTeamPayments', function () {
     it('should not allow owner to withdraw to AddressZero', async function () {
       const ownerConnect = PAYMENTS.connect(owner);
       const amount = 1000000;
-      const withdrawal = ownerConnect.withdrawTempleBalance(ethers.constants.AddressZero, amount);
-      await shouldThrow(withdrawal, ADDRESS_ZERO_TRANSFER_ERROR);
+      await expect(ownerConnect.withdrawTempleBalance(ethers.constants.AddressZero, amount))
+        .to.be.revertedWith("ERC20: transfer to the zero address");
     });
 
     it('should allow owner to make ad hoc payments', async function () {
@@ -118,10 +120,8 @@ describe('TempleTeamPayments', function () {
     // should not allow setAllocations to be called on AddressZero
     it('should not allow owner to set allocations on AddressZero', async function () {
       const ownerConnect = PAYMENTS.connect(owner);
-      await shouldThrow(
-        ownerConnect.setAllocations([member0Address, ethers.constants.AddressZero], [allocation100K, allocation100K]),
-        ADDRESS_ZERO_SET_ERROR
-      );
+      await expect(ownerConnect.setAllocations([member0Address, ethers.constants.AddressZero], [allocation100K, allocation100K]))
+        .to.be.revertedWith("TempleTeamPayments: Address cannot be 0x0");
     });
 
     it('should set allocation to total claimed when a member is paused (no previous claims)', async function () {
@@ -132,7 +132,8 @@ describe('TempleTeamPayments', function () {
 
       expect(await PAYMENTS.claimed(member0Address)).to.equal(0);
       expect(await PAYMENTS.allocation(member0Address)).to.equal(0);
-      await shouldThrow(PAYMENTS.calculateClaimable(member0Address), /Member not found/);
+      await expect(PAYMENTS.calculateClaimable(member0Address))
+        .to.be.revertedWith("TempleTeamPayments: Member not found");
     });
 
     it('should set allocation to total claimed when a member is paused (previous claims)', async function () {
@@ -148,7 +149,8 @@ describe('TempleTeamPayments', function () {
       expect(member0Claimed).to.equal(allocation100K * (1 / 10));
 
       expect(await PAYMENTS.allocation(member0Address)).to.equal(member0Claimed);
-      await shouldThrow(PAYMENTS.calculateClaimable(member0Address), ARITHMETIC_ERROR);
+      await expect(PAYMENTS.calculateClaimable(member0Address))
+        .to.be.revertedWithPanic(PANIC_CODES.ARITHMETIC_UNDER_OR_OVERFLOW);
     });
   });
 
@@ -189,7 +191,7 @@ describe('TempleTeamPayments', function () {
 
       await member0Connect.claim();
       await expectClaimableEqualTo(PAYMENTS, member0, 0);
-      let member0Claimed = await PAYMENTS.claimed(member0Address);
+      const member0Claimed = await PAYMENTS.claimed(member0Address);
       expect(member0Claimed).to.equal(allocation100K);
     });
 
@@ -232,7 +234,8 @@ describe('TempleTeamPayments', function () {
         // User should not be able to claim until after month 2 because they've already claimed 2 months of pay.
         await PAYMENTS.connect(owner).setAllocations([member1Address], [50000]);
 
-        await shouldThrow(PAYMENTS.calculateClaimable(member1Address), ARITHMETIC_ERROR); // underflow expected
+        await expect(PAYMENTS.calculateClaimable(member1Address))
+          .to.be.revertedWithPanic(PANIC_CODES.ARITHMETIC_UNDER_OR_OVERFLOW);
 
         await advanceMonths(1);
         await expectClaimableEqualTo(PAYMENTS, member1, 0);
@@ -248,9 +251,11 @@ describe('TempleTeamPayments', function () {
         // Decreasing their allocation to 9,900 should prevent them from making further claims
         await PAYMENTS.connect(owner).setAllocations([member1Address], [9900]);
 
-        await shouldThrow(PAYMENTS.calculateClaimable(member1Address), ARITHMETIC_ERROR); // underflow expected
+        await expect(PAYMENTS.calculateClaimable(member1Address))
+          .to.be.revertedWithPanic(PANIC_CODES.ARITHMETIC_UNDER_OR_OVERFLOW);
         await advanceMonths(12);
-        await shouldThrow(PAYMENTS.calculateClaimable(member1Address), ARITHMETIC_ERROR); // underflow expected
+        await expect(PAYMENTS.calculateClaimable(member1Address))
+          .to.be.revertedWithPanic(PANIC_CODES.ARITHMETIC_UNDER_OR_OVERFLOW);
       });
     });
 

@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, NULL_ADDR, toAtto } from "../helpers";
+import { blockTimestamp, deployAndAirdropTemple, fromAtto, mineForwardSeconds, toAtto } from "../helpers";
 import { BigNumber, ContractTransaction, Event, Signer } from "ethers";
 import {
   Exposure__factory,
@@ -40,7 +40,7 @@ describe("Temple Core Ops Manager", async () => {
       expectedLength: number,
       evtToExtract: number
   ) : Promise<Event> {
-    let events = await (await tx.wait()).events?.filter(evt => evt.event === eventName);
+    const events = (await tx.wait()).events?.filter(evt => evt.event === eventName);
     if (events) {
       expect(events.length).equals(expectedLength);
       return events[evtToExtract]

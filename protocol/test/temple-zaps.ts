@@ -5,7 +5,9 @@ import axios from 'axios';
 import { blockTimestamp, shouldThrow, toAtto } from "./helpers";
 import { DEPLOYED_CONTRACTS } from '../scripts/deploys/helpers';
 import addresses from "./constants";
-import { Exposure, Exposure__factory, IERC20, IERC20__factory,
+import { 
+  Exposure, Exposure__factory, 
+  ERC20, ERC20__factory,
   JoiningFee,
   JoiningFee__factory,
   TempleZaps, TempleZaps__factory,
@@ -152,7 +154,7 @@ describe("Temple Stax Core Zaps", async () => {
       await shouldThrow(templeZaps.recoverToken(ETH, ETH, 100), /TempleZaps: Invalid receiver/);
       await shouldThrow(templeZaps.recoverToken(ETH, aliceAddress, ethers.utils.parseEther("1100")), /TempleZaps: insufficient eth balance/);
       // transfer frax to zaps contract
-      const frax = IERC20__factory.connect(FRAX, fraxSigner);
+      const frax = ERC20__factory.connect(FRAX, fraxSigner);
       await frax.transfer(genericZaps.address, 1000);
             
       // recover
@@ -317,7 +319,7 @@ describe("Temple Stax Core Zaps", async () => {
 
       // send some tokens
       const whale = await impersonateAddress(BINANCE_ACCOUNT_8);
-      const tokenContract = IERC20__factory.connect(tokenAddr, whale);
+      const tokenContract = ERC20__factory.connect(tokenAddr, whale);
       await tokenContract.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
 
       // Dump quote if refreshing:
@@ -344,7 +346,7 @@ describe("Temple Stax Core Zaps", async () => {
 
       // send some FXS
       const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
-      const fxsToken = IERC20__factory.connect(tokenAddr, bnbWhale);
+      const fxsToken = ERC20__factory.connect(tokenAddr, bnbWhale);
       await fxsToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
 
       // Dump quote if refreshing:
@@ -371,7 +373,7 @@ describe("Temple Stax Core Zaps", async () => {
 
       // send some BNB
       const whale = await impersonateAddress(FXS_WHALE);
-      const bnbToken = IERC20__factory.connect(tokenAddr, whale);
+      const bnbToken = ERC20__factory.connect(tokenAddr, whale);
       await bnbToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
       await templeZaps.setSupportedStables([FRAX, FEI], [true, true]);
 
@@ -400,7 +402,7 @@ describe("Temple Stax Core Zaps", async () => {
 
       // send some BNB
       const whale = await impersonateAddress(FXS_WHALE);
-      const bnbToken = IERC20__factory.connect(tokenAddr, whale);
+      const bnbToken = ERC20__factory.connect(tokenAddr, whale);
       await bnbToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
       await templeZaps.setSupportedStables([FRAX, FEI], [true, true]);
 
@@ -429,7 +431,7 @@ describe("Temple Stax Core Zaps", async () => {
 
       // send some BNB
       const whale = await impersonateAddress(FXS_WHALE);
-      const bnbToken = IERC20__factory.connect(tokenAddr, whale);
+      const bnbToken = ERC20__factory.connect(tokenAddr, whale);
       await bnbToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
       await templeZaps.setSupportedStables([FRAX, FEI], [true, true]);
 
@@ -458,7 +460,7 @@ describe("Temple Stax Core Zaps", async () => {
 
       // send some tokens
       const whale = await impersonateAddress(BINANCE_ACCOUNT_8);
-      const tokenContract = IERC20__factory.connect(tokenAddr, whale);
+      const tokenContract = ERC20__factory.connect(tokenAddr, whale);
       await tokenContract.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
 
       await templeZaps.connect(owner).setSupportedStables([FRAX, FEI], [true, true]);
@@ -542,7 +544,7 @@ describe("Temple Stax Core Zaps", async () => {
     beforeEach( async () => {
       // send some FXS
       const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
-      const fxsToken = IERC20__factory.connect(tokenAddr, bnbWhale);
+      const fxsToken = ERC20__factory.connect(tokenAddr, bnbWhale);
       await fxsToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
     });
 
@@ -944,7 +946,7 @@ async function approveDefaultTokens(
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function logZeroExQuote(fromToken: string, fromAmount: string, toToken: string) {
-  const fromTokenContract = IERC20__factory.connect(fromToken, owner);
+  const fromTokenContract = ERC20__factory.connect(fromToken, owner);
 
   let fromTokenDecimals, sellToken;
   if (fromToken === ETH) {
@@ -988,9 +990,9 @@ async function zapInBalancerLP(
 ) {
   // init vars
   const signerAddress = await signer.getAddress();
-  const fromTokenContract = IERC20__factory.connect(fromToken, signer);
-  // not necessarily an IERC20 but does the balanceOf query
-  const bptPoolToken = IERC20__factory.connect(poolToken, signer);
+  const fromTokenContract = ERC20__factory.connect(fromToken, signer);
+  // not necessarily an ERC20 but does the balanceOf query
+  const bptPoolToken = ERC20__factory.connect(poolToken, signer);
   let fromTokenDecimals;
   let symbol;
   if (fromToken === ETH) {
@@ -1027,7 +1029,7 @@ async function zapInBalancerLP(
     toToken = tokens[0];
     console.log(`Price of ${symbol} in ${toToken}: ${price}`);
 
-    const toTokenContract = IERC20__factory.connect(toToken, signer);
+    const toTokenContract = ERC20__factory.connect(toToken, signer);
     const toTokenDecimals = await toTokenContract.decimals();
     const minTokenReceived = parseFloat(guaranteedPrice) * parseFloat(fromAmount);
     const minTokenReceivedWei = ethers.utils.parseUnits(
@@ -1196,7 +1198,7 @@ async function zapInTempleLP(
 ) {
   // init vars
   const signerAddress = await signer.getAddress();
-  const fromTokenContract = IERC20__factory.connect(fromToken, signer);
+  const fromTokenContract = ERC20__factory.connect(fromToken, signer);
   const pairContract = IUniswapV2Pair__factory.connect(pair, signer);
   let fromTokenDecimals;
   let symbol;
@@ -1233,7 +1235,7 @@ async function zapInTempleLP(
     console.log(`Price of ${symbol} in ${toToken}: ${price}`);
 
     // calculate min amount out for stable
-    const toTokenContract = IERC20__factory.connect(toToken, signer);
+    const toTokenContract = ERC20__factory.connect(toToken, signer);
     const toTokenDecimals = await toTokenContract.decimals();
     const minTokenReceived = parseFloat(guaranteedPrice) * parseFloat(fromAmount);
     const minTokenReceivedWei = ethers.utils.parseUnits(
@@ -1332,7 +1334,7 @@ async function zapInLPCurvePool(
   const signerAddress = await signer.getAddress();
   const token0 = await pool.coins(0);
   const token1 = await pool.coins(1);
-  const fromTokenContract = IERC20__factory.connect(fromToken, signer);
+  const fromTokenContract = ERC20__factory.connect(fromToken, signer);
   let fromTokenDecimals;
   let symbol;
   if (fromToken === ETH) {
@@ -1366,7 +1368,7 @@ async function zapInLPCurvePool(
     console.log(`Price of ${symbol} in ${toToken}: ${price}`);
 
     // calculate min amount out
-    const toTokenContract = IERC20__factory.connect(toToken, signer);
+    const toTokenContract = ERC20__factory.connect(toToken, signer);
     const toTokenDecimals = await toTokenContract.decimals();
     const minTokenReceived = parseFloat(guaranteedPrice) * parseFloat(fromAmount);
     const minTokenReceivedWei = ethers.utils.parseUnits(
@@ -1491,9 +1493,9 @@ async function zapInLPUniV2(
   const signerAddress = await signer.getAddress();
   const token0 = await pair.token0();
   const token1 = await pair.token1();
-  const pairToken0Contract = IERC20__factory.connect(token0, signer);
-  const pairToken1Contract = IERC20__factory.connect(token1, signer);
-  const fromTokenContract = IERC20__factory.connect(fromToken, signer);
+  const pairToken0Contract = ERC20__factory.connect(token0, signer);
+  const pairToken1Contract = ERC20__factory.connect(token1, signer);
+  const fromTokenContract = ERC20__factory.connect(fromToken, signer);
   let fromTokenDecimals;
   let symbol;
   if (fromToken === ETH) {
@@ -1528,7 +1530,7 @@ async function zapInLPUniV2(
     console.log(`Price of ${symbol} in ${toToken}: ${price}`);
 
     // calculate min amount out
-    const toTokenContract = IERC20__factory.connect(toToken, signer);
+    const toTokenContract = ERC20__factory.connect(toToken, signer);
     const toTokenDecimals = await toTokenContract.decimals();
     const minTokenReceived = parseFloat(guaranteedPrice) * parseFloat(fromAmount);
     const minTokenReceivedWei = ethers.utils.parseUnits(
@@ -1679,8 +1681,8 @@ async function zapTemple(
   tokenAmount: string,
   quoteData?: ZeroExQuote
 ) {
-  const tokenContract = IERC20__factory.connect(tokenAddr, signer);
-  const templeToken = IERC20__factory.connect(TEMPLE, signer);
+  const tokenContract = ERC20__factory.connect(tokenAddr, signer);
+  const templeToken = ERC20__factory.connect(TEMPLE, signer);
   let symbol;
   let decimals;
   if (tokenAddr === ETH) {
@@ -1790,8 +1792,8 @@ async function zapIn(
   toTokenAddr: string,
   quoteData: ZeroExQuote
 ) {
-  const tokenContract = IERC20__factory.connect(tokenAddr, signer);
-  const toTokenContract = IERC20__factory.connect(toTokenAddr, signer);
+  const tokenContract = ERC20__factory.connect(tokenAddr, signer);
+  const toTokenContract = ERC20__factory.connect(toTokenAddr, signer);
   let symbol;
   let decimals;
   if (tokenAddr === ETH) {
@@ -1874,8 +1876,8 @@ async function zapInVault(
   zapInFor: string,
   quoteData: ZeroExQuote
 ) {
-  const tokenContract = IERC20__factory.connect(tokenAddr, signer);
-  const templeToken = IERC20__factory.connect(TEMPLE, signer);
+  const tokenContract = ERC20__factory.connect(tokenAddr, signer);
+  const templeToken = ERC20__factory.connect(TEMPLE, signer);
 
   let symbol;
   let decimals;
@@ -2013,7 +2015,7 @@ async function approveContract(
   signer: Signer,
   contractAddress: string
 ) {
-  const fromTokenContract = IERC20__factory.connect(fromToken, signer);
+  const fromTokenContract = ERC20__factory.connect(fromToken, signer);
   // approve zaps
   if (fromToken !== ETH) {
     await fromTokenContract.approve(
@@ -2023,7 +2025,7 @@ async function approveContract(
   }
 }
 
-async function getBalance(token: IERC20, owner: string) {
+async function getBalance(token: ERC20, owner: string) {
   if (equalAddresses(token.address, ETH)) {
     return await token.provider.getBalance(owner);
   }

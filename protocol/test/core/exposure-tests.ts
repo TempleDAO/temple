@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { fromAtto, NULL_ADDR, toAtto } from "../helpers";
-import { BigNumber, Signer } from "ethers";
+import { NULL_ADDR, toAtto } from "../helpers";
+import { Signer } from "ethers";
 import { 
   Exposure,
   Exposure__factory,
@@ -77,7 +77,7 @@ describe("Temple Core Exposures", async () => {
     await exposure.mint(await alan.getAddress(), toAtto(300))
 
     expect(exposure.connect(alan).redeem())
-      .to.changeTokenBalance(templeToken.address, await alan.getAddress(), toAtto(300))
+      .to.changeTokenBalance(templeToken, await alan.getAddress(), toAtto(300));
   })
 })
 

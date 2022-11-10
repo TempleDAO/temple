@@ -1,8 +1,8 @@
-import { network, ethers } from "hardhat";
-import { BaseContract, BigNumber, BigNumberish, ContractFactory, Signer } from "ethers";
-import { use as chaiUse, assert, Assertion, expect } from "chai";
+import { ethers } from "hardhat";
+import { BaseContract, BigNumber, BigNumberish, Signer } from "ethers";
+import { assert, expect } from "chai";
 import { TempleERC20Token, TempleERC20Token__factory } from "../typechain";
-import { getAddress } from "ethers/lib/utils";
+import { mine } from "@nomicfoundation/hardhat-network-helpers";
 
 export const NULL_ADDR = "0x0000000000000000000000000000000000000000"
 
@@ -48,7 +48,7 @@ export async function expectBalancesChangeBy(
 async function getBalances(changes: [ERC20Light, Signer|BaseContract, BigNumberish][]) {
   const balances: BigNumber[] = [];
 
-  for (const [token, account, _] of changes) {
+  for (const [token, account, ] of changes) {
     balances.push(await token.balanceOf(await getAddressOf(account)))
   }
 
@@ -63,21 +63,11 @@ async function getAddressOf(account: Signer|BaseContract) {
   }
 }
 
-export async function mineNBlocks(numBlocks: number) {
-  const blocks: Promise<any>[] = [];
-
-  for (let i = 0; i < numBlocks; i++) {
-    blocks.push(network.provider.send("evm_mine"));
-  }
-
-  return Promise.all(blocks);
-}
-
 /**
  * Current block timestamp
  */
 export const blockTimestamp = async (): Promise<number> => {
-  return (await ethers.provider.getBlock(await ethers.provider.getBlockNumber())).timestamp
+  return (await ethers.provider.getBlock(await ethers.provider.getBlockNumber())).timestamp;
 }
 
 /**
@@ -88,16 +78,14 @@ export const mineToTimestamp = async (timestamp: number) => {
   if (timestamp < currentTimestamp) {
     throw new Error("Cannot mine a timestamp in the past");
   }
-
-  await network.provider.send("evm_increaseTime", [(timestamp - currentTimestamp)])
-  await network.provider.send("evm_mine");
+  await mineForwardSeconds(timestamp - currentTimestamp);
 }
 
 /**
  * Mine forward the given number of seconds
  */
 export const mineForwardSeconds = async (seconds: number) => {
-  await mineToTimestamp(await blockTimestamp() + seconds);
+  await mine(seconds, {interval: 1});
 }
 
 /**
@@ -125,12 +113,12 @@ export function fromAtto(n: BigNumber): number {
 export function fromFixedPoint112x112(n: BigNumber): number {
 
   // Get last 112 bit of number (n & ((1 << 112) - 1))
-  let numToBin = Number.parseInt(n.and(BigNumber.from(1).shl(112).sub(1)).toString(), 10)
-  let bin = numToBin.toString(2).padStart(112, "0")
-  let fractionalPart = 0
+  const numToBin = Number.parseInt(n.and(BigNumber.from(1).shl(112).sub(1)).toString(), 10);
+  const bin = numToBin.toString(2).padStart(112, "0");
+  let fractionalPart = 0;
   for (let i = 0; i < bin.length; i++) {
-     let bit =  parseInt(bin[i])
-     fractionalPart += (bit) * (2 ** (-1 * (i + 1)))
+     const bit =  parseInt(bin[i]);
+     fractionalPart += (bit) * (2 ** (-1 * (i + 1)));
   }
   return Number.parseFloat(n.shr(112).toString()) + fractionalPart;
 }

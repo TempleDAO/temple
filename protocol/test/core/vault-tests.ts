@@ -14,10 +14,8 @@ import {
   VaultedTemple__factory, 
   Vault__factory
 } from "../../typechain";
-import { fail } from "assert";
 import { mkRebasingERC20TestSuite } from "./rebasing-erc20-testsuite";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { _TypedDataEncoder } from "ethers/lib/utils";
 
 describe("Temple Core Vault", async () => {
   let vault: Vault;
@@ -261,8 +259,6 @@ describe("Temple Core Vault", async () => {
   })
 
   it("Correctly handles withdrawFor", async () => {
-    const typehash = "withdrawFor(address owner,address sender,uint256 amount,uint256 deadline,uint256 nonce)";
-
     const amount = toAtto(100);
     const deadline = await blockTimestamp() + (60*20);
 
@@ -323,36 +319,34 @@ describe("Temple Core Vault", async () => {
   });
 
   it("only temple exposure can call toTemple on vaulted temple contract", async () => {
-    await expect(vaultedTemple.toTemple(100, await alan.getAddress()))
+    await expect(vaultedTemple.toTemple(100, alan.getAddress()))
       .to.revertedWith("VaultedTemple: Only TempeExposure can redeem temple on behalf of a vault")
-
     await templeToken.mint(vaultedTemple.address, 100);
-
-    templeExposure.mint(await alan.getAddress(), 100)
-    await expect(async () => templeExposure.connect(alan).redeem())
-      .to.changeTokenBalance(templeToken, alan, 100)
+    await templeExposure.mint(alan.getAddress(), 100);
+    await expect(async () => templeExposure.connect(alan).redeem({gasLimit:5000000}))
+      .to.changeTokenBalance(templeToken, alan, 100);
   });
 
   it("Provides enough information for FE to determine whether deposit is claimable or not", async () => {
     await vault.connect(alan).deposit(toAtto(100));
 
-    let [cycleNum, inWindow] = await vault.inEnterExitWindow();
+    let [, inWindow] = await vault.inEnterExitWindow();
     let canExit = await vault.canExit();
 
     // We have a deposit, we're in the window and canExit is false
     expect(inWindow).true;
     expect(canExit).false;
     expect(await vault.balanceOf(await alan.getAddress())).equals(toAtto(100));
-    expect(vault.connect(alan).withdraw(toAtto(100))).to.be.revertedWith("Vault: Cannot exit vault when outside of enter/exit window");
+    await expect(vault.connect(alan).withdraw(toAtto(100))).to.be.revertedWith("Vault: Cannot exit vault when outside of enter/exit window");
 
     await mineForwardSeconds(60 * 10);
 
-    [cycleNum, inWindow] = await vault.inEnterExitWindow();
+    [, inWindow] = await vault.inEnterExitWindow();
     canExit = await vault.canExit();
     expect(inWindow).true;
     expect(canExit).true;
     expect(await vault.balanceOf(await alan.getAddress())).equals(toAtto(100));
-    vault.connect(alan).withdraw(toAtto(100));
+    await vault.connect(alan).withdraw(toAtto(100));
   })
 
   mkRebasingERC20TestSuite(async () => {
@@ -363,6 +357,7 @@ describe("Temple Core Vault", async () => {
       accounts: [[alan, toAtto(300)], [ben, toAtto(300)]],
       token: vault as unknown as IERC20,
       rebaseUp: async () => await templeToken.transfer(vault.address, toAtto(600)),
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
       rebaseDown: async () => {} // temple vaults can never loose principal
     }
   })

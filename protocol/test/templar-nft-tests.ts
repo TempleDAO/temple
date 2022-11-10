@@ -2,9 +2,10 @@ import { ethers } from "hardhat";
 import { Signer } from "ethers";
 import { expect } from "chai";
 
-import { Templar } from "../typechain/Templar";
-import { Templar__factory } from "../typechain/factories/Templar__factory";
-
+import { 
+  Templar, Templar__factory, 
+} from "../typechain";
+import { shouldThrow } from "./helpers";
 const DISCORD_ID = 1000;
 
 describe("Templar NFT", async () => {
@@ -24,8 +25,10 @@ describe("Templar NFT", async () => {
   })
 
   it("Only owner can grant roles", async () => {    
-    await expect(TEMPLAR.connect(amanda).grantRole(await TEMPLAR.CAN_ASSIGN(), await amanda.getAddress()))
-      .to.be.revertedWith("AccessControl:");
+    await shouldThrow(
+      TEMPLAR.connect(amanda).grantRole(TEMPLAR.CAN_ASSIGN(), amanda.getAddress()),
+      /AccessControl:/
+    );
   });
 
   it("Only owner can setBaseUri", async () => {
@@ -38,8 +41,10 @@ describe("Templar NFT", async () => {
 
     // Amanda cannot
     const templar = TEMPLAR.connect(amanda);
-    await expect(templar.setBaseUri("https://new-base-uri2/"))
-      .to.be.revertedWith("AccessControl:");
+    await shouldThrow(
+      templar.setBaseUri("https://new-base-uri2/"),
+      /AccessControl:/
+    );
   });
 
   it("Only configured role can assign", async () => {
@@ -55,15 +60,18 @@ describe("Templar NFT", async () => {
     // Ben cannot
     {
       const templar = TEMPLAR.connect(ben);
-      await expect(templar.assign(amandaAddress, 1000))
-        .to.be.revertedWith("AccessControl:");
+      await shouldThrow(
+        templar.assign(amandaAddress, 1000),
+        /AccessControl:/
+      );
     }
   });
 
   it("Can't assign to address 0", async () => {
     const templar = TEMPLAR.connect(assigner);
     await expect (templar.assign(ethers.constants.AddressZero, 1000))
-      .to.be.revertedWith("InvalidAddress")
+      .to.be.revertedWithCustomError(templar, "InvalidAddress")
+      .withArgs(ethers.constants.AddressZero);
   });
 
   it("Assignment mints an NFT", async () => {
@@ -120,7 +128,8 @@ describe("Templar NFT", async () => {
 
     await TEMPLAR.checkExists(DISCORD_ID);
     await expect (TEMPLAR.checkExists(0))
-    .to.be.revertedWith("InvalidTemplar")
+      .to.be.revertedWithCustomError(TEMPLAR, "InvalidTemplar")
+      .withArgs(0);
   });
 
 });
