@@ -7,7 +7,10 @@ import addresses from "../constants";
 import {
     swapDaiForBbaUsd,
     seedTempleBbaUsdPool,
-    singleSideDepositTempleToPriceTarget
+    getJoinPoolRequest,
+    singleSideDeposit,
+    templeLotSizeForPriceTarget,
+    getSpotPriceScaled
 } from "./common";
 import amoAddresses from "./amo-constants";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
@@ -164,7 +167,7 @@ describe("Temple Price Floor AMO", async () => {
  
         // seed balancer pool
         await swapDaiForBbaUsd(balancerVault, daiToken, daiWhale, toAtto(2_000_000), ownerAddress);
-        await seedTempleBbaUsdPool(bbaUsdToken, templeToken, balancerVault, balancerHelpers, owner, toAtto(1_000_000), ownerAddress);
+        await seedTempleBbaUsdPool(templeToken, balancerVault, balancerHelpers, owner, toAtto(1_000_000), ownerAddress);
         
         await owner.sendTransaction({value: ONE_ETH, to: BAL_MULTISIG });
         await owner.sendTransaction({value: ONE_ETH, to: await auraMultisig.getAddress()});
@@ -330,18 +333,12 @@ describe("Temple Price Floor AMO", async () => {
             }
             // fails
             const connectAMO = amo.connect(alan);
-            const connectPoolHelper = poolHelper.connect(alan);
             await expect(connectAMO.setOperator(alanAddress)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.setCoolDown(1800)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.setTemplePriceFloorNumerator(9700)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.setPoolHelper(alanAddress)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.setTemplePriceFloorNumerator(1_000)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.setRebalancePercentageBounds(100,100)).to.be.revertedWith("Ownable: caller is not the owner");
-            const cappedAmounts = {
-                temple: BigNumber.from(ONE_ETH).mul(10),
-                bpt: BigNumber.from(ONE_ETH).mul(10),
-                stable: BigNumber.from(ONE_ETH).mul(10)
-            }
             await expect(connectAMO.setMaxRebalanceAmounts(100, 100, 100)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.setPostRebalanceSlippage(100)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.pause()).to.be.revertedWith("Ownable: caller is not the owner");
@@ -452,34 +449,26 @@ describe("Temple Price Floor AMO", async () => {
     describe("Liquidity Add/Remove", async () => {
 
         it("adds liquidity minting TEMPLE", async () => {
-            const [tokens, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+            const [tokens, ,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
             const maxAmountsIn = [toAtto(1000), toAtto(990)];
-            const userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, maxAmountsIn, 1]);
-            const joinPoolRequest = {
-                assets: tokens,
-                maxAmountsIn,
-                userData,
-                fromInternalBalance: false
-            }
-          
-            const [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, amo.address, amo.address, joinPoolRequest);
+            const { joinPoolRequest, bptOut } = await getJoinPoolRequest(tokens, balancerHelpers, amo.address, amo.address, maxAmountsIn);
 
             const bptAmountBefore = await bptToken.balanceOf(amoStaking.address);
             expect(bptAmountBefore).to.eq(0);
             const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
 
             // fails
-            let failRequest = {
+            const failRequest = {
                 assets: tokens,
                 maxAmountsIn,
-                userData,
+                userData: joinPoolRequest.userData,
                 fromInternalBalance: true
             }
             await expect(amo.addLiquidity(failRequest, bptOut)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
             failRequest.fromInternalBalance = false;
             await expect(amo.addLiquidity(failRequest, bptOut.add(1))).to.be.revertedWithCustomError(amo, "InsufficientAmountOutPostcall");
             await expect(amo.addLiquidity(joinPoolRequest, bptOut))
-                .to.emit(templeToken, "Transfer").withArgs(ZERO_ADDRESS, amo.address, amountsIn[0])
+                .to.emit(templeToken, "Transfer").withArgs(ZERO_ADDRESS, amo.address, joinPoolRequest.maxAmountsIn[0])
                 .to.emit(auraBooster, "Deposited").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptOut);
 
             const bptAmountAfter = await bptToken.balanceOf(amoStaking.address);
@@ -496,19 +485,19 @@ describe("Temple Price Floor AMO", async () => {
             await ownerAddLiquidity(bptAmountIn);
 
             // create exit request
-            let minAmountsOut = [toAtto(10_000), toAtto(10_000)];
+            const minAmountsOut = [toAtto(10_000), toAtto(10_000)];
+            const [tokens,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
 
-            const [tokens, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
             // using proportional exit: [EXACT_BPT_IN_FOR_TOKENS_OUT, bptAmountIn]
             const intermediaryUserdata = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256"], [1, bptAmountIn]);
-            let exitRequest = {
+            const exitRequest = {
                 assets: tokens,
                 minAmountsOut,
                 userData: intermediaryUserdata,
                 toInternalBalance: false
             }
            
-            const [bptIn, amountsOut] = await balancerHelpers.callStatic.queryExit(BALANCER_POOL_ID, amo.address, amo.address, exitRequest);
+            const [bptIn, amountsOut] = await balancerHelpers.queryExit(BALANCER_POOL_ID, amo.address, amo.address, exitRequest);
 
             // fail invalid request
             exitRequest.toInternalBalance = true;
@@ -525,16 +514,8 @@ describe("Temple Price Floor AMO", async () => {
             
             expect(await bptToken.balanceOf(amo.address)).to.eq(bptAmountIn.sub(bptIn));
 
-            let expectedTemple: BigNumber;
-            let expectedStable: BigNumber;
             const templeIndex = await amo.templeBalancerPoolIndex();
-            if (templeIndex.toNumber() == 0) {
-                expectedTemple = amountsOut[0];
-                expectedStable = amountsOut[1];
-            } else {
-                expectedTemple = amountsOut[1];
-                expectedStable = amountsOut[0];
-            }
+            const expectedStable = (templeIndex.toNumber() == 0) ? amountsOut[1] : amountsOut[0];
 
             const templeAfter= await templeToken.balanceOf(amo.address);
             const stableAfter = await bbaUsdToken.balanceOf(amo.address);
@@ -549,21 +530,21 @@ describe("Temple Price Floor AMO", async () => {
             await expect(amo.depositStable(maxAmounts.stable.add(1), 1)).to.be.revertedWithCustomError(amo, "AboveCappedAmount");
             // skew price to above TPF to trigger no rebalance
             // single-side deposit stable token
-            await singleSideDepositStable(bbaUsdToken, toAtto(10_000));
+            await singleSideDepositStable(toAtto(10_000));
             await expect(amo.depositStable(ONE_ETH, 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceUp");
 
             // single-side withdraw stable to skew price below TPF
-            await singleSideDepositTemple(templeToken, toAtto(400_000));
+            await singleSideDepositTemple(toAtto(400_000));
 
             // increase capped amount
             const amountIn = toAtto(10_000);
 
             await amo.setMaxRebalanceAmounts(amountIn, amountIn, amountIn);
 
-            const currentSpotPriceScaled = await getSpotPriceScaled();
+            const currentSpotPriceScaled = await getSpotPriceScaled(balancerVault, weightedPool2Tokens);
             expect(currentSpotPriceScaled).lt(TPF_SCALED);
 
-            const reqData = await getJoinPoolRequest(amo.address, [BigNumber.from(0), amountIn]);
+            const reqData = await getAmoJoinPoolRequest(amo.address, [BigNumber.from(0), amountIn]);
             const bptOut = reqData.bptOut;
             const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
             const stableBalanceBefore = await bbaUsdToken.balanceOf(amo.address); 
@@ -585,16 +566,16 @@ describe("Temple Price Floor AMO", async () => {
             await ownerDepositAndStakeBpt(toAtto(20_000));
             
             // skew price below TPF
-            await singleSideDepositTemple(templeToken, toAtto(50_000));
+            await singleSideDepositTemple(toAtto(50_000));
             await amo.setTemplePriceFloorNumerator(9_700);
             await expect(amo.withdrawStable(ONE_ETH, 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceDown");
 
             // skew price above TPF
-            await singleSideDepositStable(bbaUsdToken, toAtto(100_000));
+            await singleSideDepositStable(toAtto(100_000));
             // // add liquidity to get some staked position
             await ownerAddLiquidity(toAtto(10_000));
             const amountOut = toAtto(1_000);
-            let minAmountsOut = [BigNumber.from(0), amountOut];
+            const minAmountsOut = [BigNumber.from(0), amountOut];
             const bptAmountIn = toAtto(100);
             const reqData = await getExitPoolRequest(bptAmountIn, minAmountsOut, 0, BigNumber.from(1));
             const amountsOut = reqData.amountsOut;
@@ -614,9 +595,10 @@ describe("Temple Price Floor AMO", async () => {
 
         it("directly stakes bpt tokens", async () => {
             const joinAmount = toAtto(20_000);
-            const reqData = await getJoinPoolRequest(amo.address, [joinAmount, joinAmount]);
+            const reqData = await getAmoJoinPoolRequest(amo.address, [joinAmount, joinAmount]);
+
+            // No approval required for bbaUsd into the balancer vault.
             await templeToken.connect(owner).approve(balancerVault.address, joinAmount);
-            await bbaUsdToken.connect(owner).approve(balancerVault.address, joinAmount);
 
             await balancerVault.connect(owner).joinPool(BALANCER_POOL_ID, ownerAddress, ownerAddress, reqData.joinPoolRequest);
             const amount = reqData.bptOut;
@@ -629,9 +611,10 @@ describe("Temple Price Floor AMO", async () => {
             expect(balAfter).to.eq(balBefore.add(amount));
 
             // deposit and stake using contract balance
+            // No approval required for bbaUsd into the balancer vault.
             const amoBptBalance = await bptToken.balanceOf(amo.address);
             await templeToken.connect(owner).approve(balancerVault.address, joinAmount);
-            await bbaUsdToken.connect(owner).approve(balancerVault.address, joinAmount);
+
             // get bpt tokens and send to amo
             await balancerVault.connect(owner).joinPool(BALANCER_POOL_ID, ownerAddress, amo.address, reqData.joinPoolRequest);
             const amoBptBalanceAfter = await bptToken.balanceOf(amo.address)
@@ -649,8 +632,8 @@ describe("Temple Price Floor AMO", async () => {
             await amo.unpause();
            
             // add liquidity on-sided to skew price above TPF
-            await singleSideDepositStable(bbaUsdToken, toAtto(40_000));
-            let spotPriceScaled = await poolHelper.getSpotPriceScaled();
+            await singleSideDepositStable(toAtto(40_000));
+            const spotPriceScaled = await poolHelper.getSpotPriceScaled();
             expect(spotPriceScaled).to.gt(TPF_SCALED);
             // directly stake bpt tokens
             const bptOut = await ownerDepositAndStakeBpt(toAtto(10_000));
@@ -664,10 +647,10 @@ describe("Temple Price Floor AMO", async () => {
             await amo.setPostRebalanceSlippage(400); // 4%
             
             // now single side deposit TEMPLE to bring spot price down if up
-            const spotPriceNow = await getSpotPriceScaled();
+            const spotPriceNow = await getSpotPriceScaled(balancerVault, weightedPool2Tokens);
             const discountBelowTPF = 200; // 2% below TPF
             if (spotPriceNow.gt(TPF_SCALED - discountBelowTPF)) {
-                await singleSideDepositTemple(templeToken, toAtto(100_000));
+                await singleSideDepositTemple(toAtto(100_000));
             }
 
             // stake some more to have enough bpt to unwrap
@@ -701,23 +684,21 @@ describe("Temple Price Floor AMO", async () => {
             await amo.pause();
             await expect(amo.rebalanceDown(1, 1)).to.be.revertedWith("Pausable: paused");
             await amo.unpause();
-            await getSpotPriceScaled();
+            await getSpotPriceScaled(balancerVault, weightedPool2Tokens);
+
             // add single-side liquidity to skew price below tpf
-            await singleSideDepositTempleToPriceTarget(
-                balancerVault,
-                balancerHelpers,
-                templeWhale,
-                (await poolHelper.templeIndexInBalancerPool()).toNumber(),
-                templeToken,
-                bbaUsdToken,
-                9_500
-            );
+            const templeIndexInPool = (await poolHelper.templeIndexInBalancerPool()).toNumber();
+            const targetPriceScaled = 9_500;
+            const templeLotSize = await templeLotSizeForPriceTarget(balancerVault, templeIndexInPool, targetPriceScaled);
+            const amountsIn = [templeLotSize, BigNumber.from(0)];
+            await singleSideDeposit(balancerVault, balancerHelpers, templeWhale, amountsIn);
+
             const maxAmount = toAtto(200_000);
             await amo.setMaxRebalanceAmounts(maxAmount, maxAmount, maxAmount);
             await expect(amo.rebalanceDown(toAtto(200_000), 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceDown");
             // add single-side stable to skew price above tpf
-            await singleSideDepositStable(bbaUsdToken, toAtto(150_000));
-            await getSpotPriceScaled();
+            await singleSideDepositStable(toAtto(150_000));
+            await getSpotPriceScaled(balancerVault, weightedPool2Tokens);
 
             // stake some bpt to have enough bpt to unwrap
             const bptOut = await ownerDepositAndStakeBpt(toAtto(30_000));
@@ -864,9 +845,9 @@ async function calculateBptTokensToBringTemplePriceDown(
     if (templeAmountIn.gt(maxAmounts.temple)) {
         templeAmountIn = maxAmounts.temple;
     }
-    let amountsIn: BigNumber[] = [BigNumber.from(0), BigNumber.from(0)];
+    const amountsIn: BigNumber[] = [BigNumber.from(0), BigNumber.from(0)];
     amountsIn[templeIndexInPool.toNumber()] = templeAmountIn;
-    const reqData = await getJoinPoolRequest(sender, amountsIn);
+    const reqData = await getAmoJoinPoolRequest(sender, amountsIn);
     const bptOut = reqData.bptOut;
     return {
         bptOut,
@@ -884,15 +865,10 @@ async function calculateBptTokensToBringTemplePriceUp(
     // 4-That amount of BPTs is single asset withdrawn and the TEMPLE is burnt
     const [tokens, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
     const templeIndexInPool = await poolHelper.templeIndexInBalancerPool();
-    let templeBalance: BigNumber;
-    let stableBalance: BigNumber;
-    if (templeIndexInPool.toNumber() == 0) {
-        templeBalance = balances[0];
-        stableBalance = balances[1];
-    } else {
-        templeBalance = balances[1];
-        stableBalance = balances[0];
-    }
+    const [templeBalance, stableBalance] = templeIndexInPool.toNumber() == 0
+        ? [balances[0], balances[1]]
+        : [balances[1], balances[0]];
+        
     // weights are 50/50 so ignoring the weights from math
     // lot size is amount out to get to spot price to TPF (with slippage and fees)
     // ls = Bt - (Bd / tpf(1-fee))
@@ -918,14 +894,14 @@ async function calculateBptTokensToBringTemplePriceUp(
     
     const maxBPTAmountIn = toAtto(100_000);
     const tempUserdata = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256[]', 'uint256'], [2, amountsOut, maxBPTAmountIn]);
-    let exitRequest = {
+    const exitRequest = {
         assets: tokens,
         minAmountsOut: amountsOut,
         userData: tempUserdata,
         toInternalBalance: false
     }
     let bptIn: BigNumber = BigNumber.from(0);
-    [bptIn, amountsOut] = await balancerHelpers.callStatic.queryExit(BALANCER_POOL_ID, amo.address, amo.address, exitRequest);
+    [bptIn, amountsOut] = await balancerHelpers.queryExit(BALANCER_POOL_ID, amo.address, amo.address, exitRequest);
     const userData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256[]', 'uint256'], [2, amountsOut, bptIn]);
     exitRequest.userData = userData;
     exitRequest.minAmountsOut = amountsOut;
@@ -943,9 +919,10 @@ async function calculateBptTokensToBringTemplePriceUp(
 async function ownerDepositAndStakeBpt(
     joinAmount: BigNumber
 ) {
-    const reqData = await getJoinPoolRequest(amo.address, [joinAmount, joinAmount]);
+    const reqData = await getAmoJoinPoolRequest(amo.address, [joinAmount, joinAmount]);
+
+    // No approval required for bbaUsd into the balancer vault.
     await templeToken.connect(owner).approve(balancerVault.address, joinAmount);
-    await bbaUsdToken.connect(owner).approve(balancerVault.address, joinAmount);
 
     await balancerVault.connect(owner).joinPool(BALANCER_POOL_ID, ownerAddress, amo.address, reqData.joinPoolRequest);
     await amo.depositAndStakeBptTokens(reqData.bptOut, true);
@@ -955,31 +932,18 @@ async function ownerDepositAndStakeBpt(
 async function ownerAddLiquidity(
     bptAmountIn: BigNumber
 ) {
-    const reqData = await getJoinPoolRequest(amo.address, [bptAmountIn, bptAmountIn]);
+    const reqData = await getAmoJoinPoolRequest(amo.address, [bptAmountIn, bptAmountIn]);
     const bptOut = reqData.bptOut;
     const req = reqData.joinPoolRequest;
     await amo.addLiquidity(req, bptOut);
 }
 
-async function getJoinPoolRequest(
+async function getAmoJoinPoolRequest(
     sender: string,
     maxAmountsIn: BigNumber[]
 ) {
-    const [tokens,,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
-    const userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, maxAmountsIn, 1]);
-    let joinPoolRequest = {
-        assets: tokens,
-        maxAmountsIn,
-        userData,
-        fromInternalBalance: false
-    }
-
-    const [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, sender, amo.address, joinPoolRequest);
-    joinPoolRequest.maxAmountsIn = amountsIn;
-    return {
-        joinPoolRequest,
-        bptOut
-    };
+    const [tokens, ,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    return getJoinPoolRequest(tokens, balancerHelpers, sender, amo.address, maxAmountsIn);
 }
 
 async function getExitPoolRequest(
@@ -989,8 +953,8 @@ async function getExitPoolRequest(
     exitTokenIndex: BigNumber
 ) {
     // create exit request
-    const [tokens,,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
-    let intermediaryUserdata: string = "";
+    const [tokens,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    let intermediaryUserdata = "";
     // kinds accepted are EXACT_BPT_IN_FOR_TOKENS_OUT and EXACT_BPT_IN_FOR_ONE_TOKEN_OUT (and 2 others not supported in this function)
     if (kind == 0) {
         // EXACT_BPT_IN_FOR_ONE_TOKEN_OUT
@@ -1003,7 +967,7 @@ async function getExitPoolRequest(
         throw("Unsupported kind");
     }
 
-    let exitRequest = {
+    const exitRequest = {
         assets: tokens,
         minAmountsOut,
         userData: intermediaryUserdata,
@@ -1012,7 +976,7 @@ async function getExitPoolRequest(
 
     // bpt tokens will be in pool helper so from poolHelper to amo (as receiver of exit tokens)
 
-    const [bptIn, amountsOut] = await balancerHelpers.callStatic.queryExit(BALANCER_POOL_ID, poolHelper.address, amo.address, exitRequest);
+    const [bptIn, amountsOut] = await balancerHelpers.queryExit(BALANCER_POOL_ID, poolHelper.address, amo.address, exitRequest);
     return {
         bptIn,
         amountsOut
@@ -1028,7 +992,7 @@ async function createAuraPoolAndStakingContracts(
     let receipt = await tx.wait();
     // get deployed gauge from event
     const gaugeCreatedEventTopic = "0xaa98436d09d130af48de49867af8b723bbbebb0d737638b5fe8f1bf31bbb71c0";
-    let deployedGauge: string = "";
+    let deployedGauge = "";
     const decoder = new ethers.utils.AbiCoder();
     for(const log of receipt.logs) {
         if (log.topics[0] == gaugeCreatedEventTopic) {
@@ -1064,71 +1028,18 @@ async function createAuraPoolAndStakingContracts(
 
 }
 
-async function getSpotPriceScaled() {
-    const precision = BigNumber.from(10_000);
-    const [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
-    const normWeights = await weightedPool2Tokens.getNormalizedWeights();
-    // multiply by precision to avoid rounding down
-    const currentSpotPrice = precision.mul(balances[1]).div(normWeights[1]).div(balances[0].div(normWeights[0]));
-    return currentSpotPrice;
-}
-
 async function singleSideDepositStable(
-    stableToken: ERC20,
     amount: BigNumber
 ) {
-    const whaleAddress = await bbaUsdWhale.getAddress();
-    let assets: string[];
-    [assets,,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
-    await stableToken.connect(bbaUsdWhale).approve(balancerVault.address, amount);
-    // using exact tokens join with temple set to 0. [EXACT_TOKENS_IN_FOR_BPT_OUT, amountsIn, minimumBPT]
-    let bptOut: BigNumber = BigNumber.from(0);
-    let amountsIn: BigNumber[] = [BigNumber.from(0), amount];
-    let userdata = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, 1]);
-    let req = {
-        assets: assets,
-        maxAmountsIn: amountsIn,
-        userData: userdata,
-        fromInternalBalance: false
-    };
-
-    [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, whaleAddress, whaleAddress, req);
-    userdata = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, bptOut]);
-    const request = {
-        assets: assets,
-        maxAmountsIn: amountsIn, //[0, amount],
-        userData: userdata,
-        fromInternalBalance: false
-    }
-    await balancerVault.connect(bbaUsdWhale).joinPool(BALANCER_POOL_ID, whaleAddress, whaleAddress, request);
+    const amountsIn: BigNumber[] = [BigNumber.from(0), amount];
+    await singleSideDeposit(balancerVault, balancerHelpers, bbaUsdWhale, amountsIn);
 }
 
 async function singleSideDepositTemple(
-    templeToken: TempleERC20Token,
     amount: BigNumber
 ) {
-    const whaleAddress = await templeWhale.getAddress();
-    const assets = [TEMPLE, BBA_USD_TOKEN];
+    const amountsIn: BigNumber[] = [amount, BigNumber.from(0)];
     await templeToken.connect(templeWhale).approve(balancerVault.address, amount);
-    // using exact tokens join with temple set to 0. [EXACT_TOKENS_IN_FOR_BPT_OUT, amountsIn, minimumBPT]
-    let bptOut: BigNumber = BigNumber.from(0);
-    let amountsIn: BigNumber[] = [amount, BigNumber.from(0)];
-    let userdata = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, 1]);
-    let req = {
-        assets: assets,
-        maxAmountsIn: amountsIn,
-        userData: userdata,
-        fromInternalBalance: false
-    };
-
-    [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, whaleAddress, whaleAddress, req);
-    userdata = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, bptOut]);
-    const request = {
-        assets: assets,
-        maxAmountsIn: amountsIn,
-        userData: userdata,
-        fromInternalBalance: false
-    }
-    await balancerVault.connect(templeWhale).joinPool(BALANCER_POOL_ID, whaleAddress, whaleAddress, request);
+    await singleSideDeposit(balancerVault, balancerHelpers, templeWhale, amountsIn);
 }
 

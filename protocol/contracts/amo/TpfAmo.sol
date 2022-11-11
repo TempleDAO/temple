@@ -211,21 +211,13 @@ contract TpfAmo is Ownable, Pausable {
         _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
 
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
-        uint256 templeBalanceBefore = temple.balanceOf(address(this));
         uint256 exitTokenIndex = templeBalancerPoolIndex == 0 ? 0 : 1;
-        poolHelper.exitPool(
+        uint256 burnAmount = poolHelper.exitPool(
             bptAmountIn, minAmountOut, rebalancePercentageBoundLow,
             rebalancePercentageBoundUp, postRebalanceSlippage,
             exitTokenIndex, templePriceFloorNumerator, temple
         );
-        uint256 templeBalanceAfter = temple.balanceOf(address(this));
-        if (templeBalanceAfter < templeBalanceBefore + minAmountOut) {
-            revert AMOCommon.InsufficientAmountOutPostcall(templeBalanceBefore + minAmountOut, templeBalanceAfter);
-        }
-        uint256 burnAmount;
-        unchecked {
-            burnAmount = templeBalanceAfter - templeBalanceBefore;
-        }
+
         AMO__ITempleERC20Token(address(temple)).burn(burnAmount);
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
