@@ -79,7 +79,7 @@ contract TpfAmo is Ownable, Pausable {
     event RebalanceDown(uint256 templeAmountIn, uint256 bptIn);
     event SetPoolHelper(address poolHelper);
     event SetMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 stableMaxAmount, uint256 templeMaxAmount);
-    event WithdrawStable(uint256 bptAmountIn, uint256 minAmountOut);
+    event WithdrawStable(uint256 bptAmountIn, uint256 amountOut);
     event SetRebalancePercentageBounds(uint64 belowTpf, uint64 aboveTpf);
     event SetTemplePriceFloorNumerator(uint128 numerator);
 
@@ -299,19 +299,14 @@ contract TpfAmo is Ownable, Pausable {
 
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
 
-        uint256 stableBalanceBefore = stable.balanceOf(address(this));
         uint256 exitTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
-        poolHelper.exitPool(
+        uint256 amountOut = poolHelper.exitPool(
             bptAmountIn, minAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
             postRebalanceSlippage, exitTokenIndex, templePriceFloorNumerator, stable
         );
-        uint256 stableBalanceAfter = stable.balanceOf(address(this));
-        if (stableBalanceAfter < stableBalanceBefore + minAmountOut) {
-            revert AMOCommon.InsufficientAmountOutPostcall(stableBalanceBefore + minAmountOut, stableBalanceAfter);
-        }
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
-        emit WithdrawStable(bptAmountIn, minAmountOut);
+        emit WithdrawStable(bptAmountIn, amountOut);
     }
 
     /**
@@ -383,7 +378,7 @@ contract TpfAmo is Ownable, Pausable {
 
         // validate amounts received
         uint256 receivedAmount;
-        for (uint i=0; i<request.assets.length; i++) {
+        for (uint i=0; i<request.assets.length; ++i) {
             if (request.assets[i] == address(temple)) {
                 unchecked {
                     receivedAmount = temple.balanceOf(address(this)) - templeAmountBefore;
@@ -391,8 +386,7 @@ contract TpfAmo is Ownable, Pausable {
                 if (receivedAmount > 0) {
                     AMO__ITempleERC20Token(address(temple)).burn(receivedAmount);
                 }
-            }
-            if (request.assets[i] == address(stable)) {
+            } else if (request.assets[i] == address(stable)) {
                 unchecked {
                     receivedAmount = stable.balanceOf(address(this)) - stableAmountBefore;
                 }
