@@ -5,6 +5,7 @@ import {
   DeployedContracts,
   DEPLOYED_CONTRACTS,
   expectAddressWithPrivateKey,
+  mine,
 } from '../helpers';
 
 async function main() {
@@ -37,13 +38,11 @@ async function main() {
     `yarn hardhat verify --network ${network.name} ${templeTeamPaymentsFactory.address} ${lastPaidEpoch}`
   );
   console.log(`Transferring ownership to ${DEPLOYED.MULTISIG}`);
-  const tx2 = await templeTeamPaymentsFactory.transferOwnership(
-    DEPLOYED.MULTISIG,
-    {
+  await mine(
+    templeTeamPaymentsFactory.transferOwnership(DEPLOYED.MULTISIG, {
       gasPrice,
-    }
+    })
   );
-  await tx2.wait();
   console.log('Mined');
 }
 
