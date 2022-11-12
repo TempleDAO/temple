@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import "./TempleTeamPaymentsV2.sol";
 
 contract TempleTeamPaymentsFactory is Ownable {
@@ -12,6 +14,7 @@ contract TempleTeamPaymentsFactory is Ownable {
         uint256 epoch;
     }
 
+    address public templeTeamPaymentsImplementation;
     uint256 public lastPaidEpoch;
     mapping(uint256 => FundingData) public epochsFunded;
 
@@ -30,6 +33,7 @@ contract TempleTeamPaymentsFactory is Ownable {
     );
 
     constructor(uint256 _lastPaidEpoch) {
+        templeTeamPaymentsImplementation = address(new TempleTeamPaymentsV2());
         lastPaidEpoch = _lastPaidEpoch;
     }
 
@@ -60,12 +64,17 @@ contract TempleTeamPaymentsFactory is Ownable {
         uint256 _totalFunding,
         uint256 _startTimestamp
     ) external onlyOwner returns (TempleTeamPaymentsV2) {
-        TempleTeamPaymentsV2 paymentContract = new TempleTeamPaymentsV2(
-            _temple,
-            _startTimestamp
+        bytes32 salt = keccak256(abi.encodePacked(_temple, lastPaidEpoch + 1));
+        TempleTeamPaymentsV2 paymentContract = TempleTeamPaymentsV2(
+            Clones.cloneDeterministic(templeTeamPaymentsImplementation, salt)
         );
+        paymentContract.initialize();
+        paymentContract.setPaymentToken(_temple);
+        paymentContract.setClaimOpenTimestamp(_startTimestamp);
         paymentContract.setAllocations(_dests, _allocations);
+
         paymentContract.transferOwnership(msg.sender);
+
         SafeERC20.safeTransferFrom(
             _temple,
             msg.sender,
