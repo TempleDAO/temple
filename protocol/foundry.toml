@@ -4,7 +4,6 @@ out = 'artifacts'
 libs = ["node_modules", "lib"]
 remappings = [
     'ds-test/=lib/ds-test/src/',
-    '@openzeppelin=lib/openzeppelin-contracts/',
     '@uniswap/v2-core/contracts/=lib/v2-core/contracts/',
     '@uniswap/v2-periphery/contracts/=lib/v2-periphery/contracts/',
     '@uniswap/v3-core/contracts/=lib/v3-core/contracts/',
