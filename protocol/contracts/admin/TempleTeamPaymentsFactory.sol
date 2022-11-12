@@ -15,6 +15,7 @@ contract TempleTeamPaymentsFactory is Ownable {
     }
 
     address public templeTeamPaymentsImplementation;
+    uint256 public initialEpoch;
     uint256 public lastPaidEpoch;
     mapping(uint256 => FundingData) public epochsFunded;
 
@@ -35,6 +36,7 @@ contract TempleTeamPaymentsFactory is Ownable {
     constructor(uint256 _lastPaidEpoch) {
         templeTeamPaymentsImplementation = address(new TempleTeamPaymentsV2());
         lastPaidEpoch = _lastPaidEpoch;
+        initialEpoch = _lastPaidEpoch + 1;
     }
 
     function incrementEpoch(
@@ -75,12 +77,13 @@ contract TempleTeamPaymentsFactory is Ownable {
 
         paymentContract.transferOwnership(msg.sender);
 
-        SafeERC20.safeTransferFrom(
-            _temple,
-            msg.sender,
-            address(paymentContract),
-            _totalFunding
-        );
+        if (_totalFunding > 0)
+            SafeERC20.safeTransferFrom(
+                _temple,
+                msg.sender,
+                address(paymentContract),
+                _totalFunding
+            );
 
         incrementEpoch(address(paymentContract), _totalFunding);
 
