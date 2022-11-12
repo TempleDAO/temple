@@ -1,47 +1,12 @@
 import { ethers } from "hardhat";
-import { BigNumber, ContractReceipt, Signer } from "ethers";
-import { AMO__IBalancerVault, ERC20, IBalancerHelpers, IERC20, IWeightPool2Tokens, TempleERC20Token } from "../../typechain";
-import { expect } from "chai";
+import { BigNumber, Signer } from "ethers";
+import { AMO__IBalancerVault, IBalancerHelpers, IERC20, IWeightPool2Tokens, TempleERC20Token } from "../../typechain";
 import amoAddresses from "./amo-constants";
 import { toAtto } from "../helpers";
 
 const { BALANCER_POOL_ID } = amoAddresses.others;
-const { BBA_USD_TOKEN, TEMPLE } = amoAddresses.tokens;
-
-
-export async function fund(tokenWithSigner: IERC20, to: string, amount: BigNumber) {
-    await tokenWithSigner.transfer(to, amount);
-}
-
-export function expectedEventsWithValues(
-    receipt: ContractReceipt,
-    eventTopic: string,
-    expectedValues: any[],
-    returnlog: boolean
-) {
-    let eventFired = false;
-    for (const log of receipt.logs) {
-        if (log.topics.length > 0 && eventTopic == log.topics[0]) {
-            eventFired = true;
-            if (returnlog) {
-                return log;
-            }
-            for (let i=0; i<expectedValues.length; i++) {
-                if (expectedValues[i] !== undefined) {
-                    if (i < log.topics.length-1) {
-                        expect(expectedValues[i]).to.eq(log.topics[i+1]);
-                    } else {
-                        expect(expectedValues[i]).to.eq(ethers.utils.defaultAbiCoder.decode(["uint256"], log.data)[0]);
-                    }
-                }   
-            }
-        }
-    }
-    expect(eventFired).to.eq(true);
-}
 
 export async function seedTempleBbaUsdPool(
-    bbaUsdToken: ERC20,
     templeToken: TempleERC20Token,
     balancerVault: AMO__IBalancerVault,
     balancerHelpers: IBalancerHelpers,
@@ -50,24 +15,13 @@ export async function seedTempleBbaUsdPool(
     to: string
 ) {
     const signerAddress = await signer.getAddress();
-    // approvals
-    await bbaUsdToken.connect(signer).approve(balancerVault.address, amount);
-    await templeToken.connect(signer).approve(balancerVault.address, amount);
-    const tokens = [TEMPLE, BBA_USD_TOKEN];
     const maxAmountsIn = [amount, amount];
-    const userdata = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, maxAmountsIn, 1]);
-    const req  = {
-        assets: tokens,
-        maxAmountsIn: maxAmountsIn,
-        userData: userdata,
-        fromInternalBalance: false
-    }
-  
-    const [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, signerAddress, to, req);
+    const [assets, ,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const { joinPoolRequest } = await getJoinPoolRequest(assets, balancerHelpers, signerAddress, to, maxAmountsIn);
 
-    req.maxAmountsIn = amountsIn;
-    req.userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, amountsIn, bptOut]);
-    await balancerVault.connect(signer).joinPool(BALANCER_POOL_ID, signerAddress, to, req);
+    // No approval required for bbaUsd into the balancer vault.
+    await templeToken.connect(signer).approve(balancerVault.address, amount);
+    await balancerVault.connect(signer).joinPool(BALANCER_POOL_ID, signerAddress, to, joinPoolRequest); 
 }
 
 export async function swapDaiForBbaUsd(
@@ -158,41 +112,45 @@ export async function swapDaiForBbaUsd(
 export async function ownerAddLiquidity(
     balancerVault: AMO__IBalancerVault,
     balancerHelpers: IBalancerHelpers,
-    bbaUsdToken: IERC20,
     templeToken: TempleERC20Token,
     signer: Signer,
     from: string,
     to: string,
     amountIn: BigNumber
 ) {
-    const reqData = await getJoinPoolRequest(balancerVault, balancerHelpers, from, to, [amountIn, amountIn]);
-    const req = reqData.joinPoolRequest;
+    const [tokens, ,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const { joinPoolRequest } = await getJoinPoolRequest(tokens, balancerHelpers, from, to, [amountIn, amountIn]);
 
-    await bbaUsdToken.connect(signer).approve(balancerVault.address, amountIn);
+    // No approval required for bbaUsd into the balancer vault.
     await templeToken.connect(signer).approve(balancerVault.address, amountIn);
-    await balancerVault.connect(signer).joinPool(BALANCER_POOL_ID, await signer.getAddress(), to, req);
+    await balancerVault.connect(signer).joinPool(BALANCER_POOL_ID, await signer.getAddress(), to, joinPoolRequest);
 }
 
 export async function getJoinPoolRequest(
-    balancerVault: AMO__IBalancerVault,
+    assets: string[],
     balancerHelpers: IBalancerHelpers,
     from: string,
     to: string,
     maxAmountsIn: BigNumber[]
 ) {
-    let tokens: string[];
-    let balances: BigNumber[];
-    [tokens, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
-    const userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, maxAmountsIn, 1]);
-    const joinPoolRequest = {
-        assets: tokens,
+    let userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, maxAmountsIn, 1]);
+    let joinPoolRequest = {
+        assets,
         maxAmountsIn,
         userData,
         fromInternalBalance: false
-    }
+    };
+    const [bptOut, amountsIn] = await balancerHelpers.queryJoin(BALANCER_POOL_ID, from, to, joinPoolRequest);
+
+    // Use the quoted bptOut and amountsIn for the final request
+    userData = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, bptOut]);
+    joinPoolRequest = {
+        assets,
+        maxAmountsIn: amountsIn,
+        userData: userData,
+        fromInternalBalance: false
+    };
     
-    const [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, from, to, joinPoolRequest);
-    joinPoolRequest.maxAmountsIn = amountsIn;
     return {
         joinPoolRequest,
         bptOut
@@ -211,85 +169,37 @@ export async function getSpotPriceScaled(
     return currentSpotPrice;
 }
 
-export async function singleSideDepositStableToPriceTarget(
-    balancerVault: AMO__IBalancerVault,
-    balancerHelpers: IBalancerHelpers,
-    bbaUsdWhale: Signer,
-    stableToken: ERC20,
+export function stableLotSizeForPriceTarget(
+    balances: BigNumber[],
     templeIndexInPool: number,
     priceTarget: number // scaled
-) {
-    const whaleAddress = await bbaUsdWhale.getAddress();
-    const stableIndexInPool = templeIndexInPool== 0 ? 1 : 0;
-    const [assets, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
-
+): BigNumber {
+    const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
     const bdDivQuoteWithFee = balances[templeIndexInPool].mul(1_000).mul(10_000).div(BigNumber.from(priceTarget).mul(995));
-    let stableLotSize = balances[stableIndexInPool].sub(bdDivQuoteWithFee);
-    if (stableLotSize.lt(0)) {
-        stableLotSize = stableLotSize.mul(-1);
-    }
-
-    // query join pool
-    let bptOut: BigNumber = BigNumber.from(0);
-    let amountsIn: BigNumber[] = [BigNumber.from(0), stableLotSize];
-    let userdata = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, 1]);
-    const req = {
-        assets: assets,
-        maxAmountsIn: amountsIn,
-        userData: userdata,
-        fromInternalBalance: false
-    };
-
-    [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, whaleAddress, whaleAddress, req);
-    userdata = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, bptOut]);
-    const request = {
-        assets: assets,
-        maxAmountsIn: amountsIn,
-        userData: userdata,
-        fromInternalBalance: false
-    }
-    await stableToken.connect(bbaUsdWhale).approve(balancerVault.address, stableLotSize);
-    await balancerVault.connect(bbaUsdWhale).joinPool(BALANCER_POOL_ID, whaleAddress, whaleAddress, request);
+    return balances[stableIndexInPool].sub(bdDivQuoteWithFee).abs();
 }
 
-export async function singleSideDepositTempleToPriceTarget(
+export async function templeLotSizeForPriceTarget(
+    balancerVault: AMO__IBalancerVault,
+    templeIndexInPool: number,
+    priceTarget: number
+): Promise<BigNumber> {
+    const [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
+    const bdDivQuoteWithFee = balances[stableIndexInPool].mul(1_000).mul(10_000).div(BigNumber.from(priceTarget).mul(995));
+    return balances[templeIndexInPool].sub(bdDivQuoteWithFee).abs();
+}
+
+export async function singleSideDeposit(
     balancerVault: AMO__IBalancerVault,
     balancerHelpers: IBalancerHelpers,
-    templeWhale: Signer,
-    templeIndexInPool: number,
-    templeToken: TempleERC20Token,
-    bbaUsdToken: ERC20,
-    priceTarget: number // scaled
+    whale: Signer,
+    amountsIn: BigNumber[],
 ) {
-    // calculate lot size for stable tokens
-    const [,balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
-    const stableIndexInPool = templeIndexInPool== 0 ? 1 : 0;
-    // a ratio for stable balances against price quote with fees
-    const bdDivQuoteWithFee = balances[stableIndexInPool].mul(1_000).mul(10_000).div(BigNumber.from(priceTarget).mul(995));
-    let templeLotSize = balances[templeIndexInPool].sub(bdDivQuoteWithFee);
-    if (templeLotSize.lt(0)) {
-        templeLotSize = templeLotSize.mul(-1);
-    }
-    // query join pool with expected temple amounts
-    const whaleAddress = await templeWhale.getAddress();
-    let bptOut: BigNumber = BigNumber.from(0);
-    let amountsIn: BigNumber[] = [templeLotSize, BigNumber.from(0)];
-    const assets = [TEMPLE, bbaUsdToken.address]
-    let userdata = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, 1]);
-    const req = {
-        assets: assets,
-        maxAmountsIn: amountsIn,
-        userData: userdata,
-        fromInternalBalance: false
-    };
-    [bptOut, amountsIn] = await balancerHelpers.callStatic.queryJoin(BALANCER_POOL_ID, whaleAddress, whaleAddress, req);
-    userdata = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, bptOut]);
-    const request = {
-        assets: assets,
-        maxAmountsIn: amountsIn,
-        userData: userdata,
-        fromInternalBalance: false
-    }
-    await templeToken.connect(templeWhale).approve(balancerVault.address, amountsIn[0]);
-    await balancerVault.connect(templeWhale).joinPool(BALANCER_POOL_ID, whaleAddress, whaleAddress, request);
+    const whaleAddress = await whale.getAddress();
+    const [assets, ,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const { joinPoolRequest } = await getJoinPoolRequest(assets, balancerHelpers, whaleAddress, whaleAddress, amountsIn);
+
+    // No approval required for bbaUsd into the balancer vault.
+    await balancerVault.connect(whale).joinPool(BALANCER_POOL_ID, whaleAddress, whaleAddress, joinPoolRequest);
 }
