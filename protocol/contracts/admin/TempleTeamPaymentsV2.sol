@@ -1,9 +1,16 @@
 //SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.4;
 
+
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+error AllocationsLengthMismatch();
+error AllocationAddressZero();
+error ClaimMemberPaused();
+error ClaimZeroValue();
+error ClaimTooEarly();
 
 contract TempleTeamPaymentsV2 is Ownable {
     IERC20 public immutable temple;
@@ -24,16 +31,11 @@ contract TempleTeamPaymentsV2 is Ownable {
         address[] memory _addresses,
         uint256[] memory _amounts
     ) external onlyOwner {
-        require(
-            _addresses.length == _amounts.length,
-            "TempleTeamPayments: addresses and amounts must be the same length"
-        );
-        address addressZero = address(0);
+        if (_addresses.length != _amounts.length)
+            revert AllocationsLengthMismatch();
+
         for (uint256 i = 0; i < _addresses.length; i++) {
-            require(
-                _addresses[i] != addressZero,
-                "TempleTeamPayments: Address cannot be 0x0"
-            );
+            if (_addresses[i] == address(0)) revert AllocationAddressZero();
             allocation[_addresses[i]] = _amounts[i];
         }
     }
@@ -42,10 +44,7 @@ contract TempleTeamPaymentsV2 is Ownable {
         address _address,
         uint256 _amount
     ) external onlyOwner {
-        require(
-            _address != address(0),
-            "TempleTeamPayments: Address cannot be 0x0"
-        );
+        if (_address == address(0)) revert AllocationAddressZero();
         allocation[_address] = _amount;
     }
 
@@ -54,10 +53,7 @@ contract TempleTeamPaymentsV2 is Ownable {
     }
 
     function withdrawToken(IERC20 _token, uint256 _amount) external onlyOwner {
-        require(
-            _amount > 0,
-            "TempleTeamPayments: Amount must be greater than 0"
-        );
+        if (_amount == 0) revert ClaimZeroValue();
         SafeERC20.safeTransfer(_token, msg.sender, _amount);
     }
 
@@ -67,15 +63,9 @@ contract TempleTeamPaymentsV2 is Ownable {
 
     function claim() external {
         uint256 claimable = calculateClaimable(msg.sender);
-        require(
-            roundStartDate < block.timestamp,
-            "TempleTeamPayments: before round start"
-        );
-        require(!paused[msg.sender], "TempleTeamPayments: Member paused");
-        require(
-            claimable > 0,
-            "TempleTeamPayments: Member has no TEMPLE to claim"
-        );
+        if (roundStartDate > block.timestamp) revert ClaimTooEarly();
+        if (paused[msg.sender]) revert ClaimMemberPaused();
+        if (claimable < 0) revert ClaimZeroValue();
 
         claimed[msg.sender] += claimable;
         SafeERC20.safeTransfer(temple, msg.sender, claimable);

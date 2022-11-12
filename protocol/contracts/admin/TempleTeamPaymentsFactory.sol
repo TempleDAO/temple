@@ -60,11 +60,6 @@ contract TempleTeamPaymentsFactory is Ownable {
         uint256 _totalFunding,
         uint256 _startTimestamp
     ) external onlyOwner returns (TempleTeamPaymentsV2) {
-        require(
-            _dests.length == _allocations.length,
-            "TempleTeamPaymentsFactory: mismatch length dests + allos"
-        );
-
         TempleTeamPaymentsV2 paymentContract = new TempleTeamPaymentsV2(
             _temple,
             _startTimestamp
@@ -102,23 +97,15 @@ contract TempleTeamPaymentsFactory is Ownable {
         address[] calldata _dests,
         uint256[] calldata _allocations
     ) external onlyOwner {
-        require(
-            _dests.length == _allocations.length,
-            "TempleTeamPaymentsFactory: mismatch length dest + allos"
-        );
+        if (_dests.length != _allocations.length)
+            revert AllocationsLengthMismatch();
 
         uint256 totalFunding;
         for (uint256 i; i < _dests.length; i++) {
             address dest = _dests[i];
+            if (dest == address(0)) revert AllocationAddressZero();
             uint256 value = _allocations[i];
-            require(
-                dest != address(0),
-                "TempleTeamPaymentsFactory: no transfer to zero address"
-            );
-            require(
-                value > 0,
-                "TempleTeamPaymentsFactory: Amount must be greater than 0"
-            );
+            if (value < 0) revert ClaimZeroValue();
             SafeERC20.safeTransferFrom(_temple, msg.sender, _dests[i], value);
             totalFunding += value;
         }
@@ -129,10 +116,7 @@ contract TempleTeamPaymentsFactory is Ownable {
     }
 
     function withdrawToken(IERC20 _token, uint256 _amount) external onlyOwner {
-        require(
-            _amount > 0,
-            "TempleTeamPaymentsFactory: Amount must be greater than 0"
-        );
+        if (_amount == 0) revert ClaimZeroValue();
         SafeERC20.safeTransfer(_token, msg.sender, _amount);
     }
 }
