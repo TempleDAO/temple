@@ -25,6 +25,7 @@ type Templar @entity {
   role: String
   isNominated: Boolean!
   endorsements: [Endorsement!]! @derivedFrom(field: "templar")
+  templarDatas: [TemplarData!]! @derivedFrom(field: "templar")
 }
 
 type TemplarData @entity {
@@ -42,6 +43,7 @@ type Voter @entity {
   timestamp: BigInt!
   validEndorsements: Int!
   endorsedCandidates: [String!]!
+  voterDatas: [VoterData!]! @derivedFrom(field: "voter")
 }
 
 type VoterData @entity {
