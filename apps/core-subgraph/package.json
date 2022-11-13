@@ -1,5 +1,5 @@
 {
-  "name": "@temple/core-subgraph",
+  "name": "@templedao/core-subgraph",
   "version": "0.1.0",
   "scripts": {
     "codegen": "graph codegen",
