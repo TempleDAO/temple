@@ -174,7 +174,6 @@ contract PoolHelper {
 
     function createPoolExitRequest(
         uint256 bptAmountIn,
-        // uint256 tokenIndex,
         uint256 minAmountOut,
         uint256 exitTokenIndex
     ) internal view returns (AMO__IBalancerVault.ExitPoolRequest memory request) {
@@ -218,7 +217,7 @@ contract PoolHelper {
         uint256 exitTokenIndex,
         uint256 templePriceFloorNumerator,
         IERC20 exitPoolToken
-    ) external onlyAmo {
+    ) external onlyAmo returns (uint256 amountOut) {
         exitPoolToken == temple ? 
             validateTempleExit(minAmountOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow, templePriceFloorNumerator) :
             validateStableExit(minAmountOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow, templePriceFloorNumerator);
@@ -232,8 +231,12 @@ contract PoolHelper {
         uint256 spotPriceScaledBefore = getSpotPriceScaled();
         balancerVault.exitPool(balancerPoolId, address(this), msg.sender, exitPoolRequest);
         uint256 exitTokenBalanceAfter = exitPoolToken.balanceOf(msg.sender);
-        if (exitTokenBalanceAfter < exitTokenBalanceBefore + minAmountOut) {
-            revert AMOCommon.InsufficientAmountOutPostcall(minAmountOut, exitTokenBalanceAfter - exitTokenBalanceBefore);
+
+        unchecked {
+            amountOut = exitTokenBalanceAfter - exitTokenBalanceBefore;
+        }
+        if (amountOut < minAmountOut) {
+            revert AMOCommon.InsufficientAmountOutPostcall(minAmountOut, amountOut);
         }
 
         if (uint64(getSlippage(spotPriceScaledBefore)) > postRebalanceSlippage) {
@@ -273,7 +276,7 @@ contract PoolHelper {
             bptIn = bptAmountAfter - bptAmountBefore;
         }
         if (bptIn < minBptOut) {
-            revert AMOCommon.InsufficientAmountOutPostcall(bptAmountBefore + minBptOut, bptAmountAfter);
+            revert AMOCommon.InsufficientAmountOutPostcall(minBptOut, bptIn);
         }
 
         // revert if high slippage after pool join

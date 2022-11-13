@@ -45,7 +45,7 @@ interface AMO__IPoolHelper {
         uint256 exitTokenIndex,
         uint256 templePriceFloorNumerator,
         IERC20 exitPoolToken
-    ) external;
+    ) external returns (uint256 amountOut);
 
     function joinPool(
         uint256 amountIn,
@@ -56,7 +56,7 @@ interface AMO__IPoolHelper {
         uint256 postRebalanceSlippage,
         uint256 joinTokenIndex,
         IERC20 joinPoolToken
-    ) external returns (uint256);
+    ) external returns (uint256 bptIn);
 
     function createPoolJoinRequest(
         IERC20 temple,
