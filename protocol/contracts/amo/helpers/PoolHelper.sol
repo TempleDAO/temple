@@ -34,23 +34,16 @@ contract PoolHelper {
       address _stable,
       address _bptToken,
       address _amo,
+      uint64 _templeIndexInPool,
       bytes32 _balancerPoolId
     ) {
-      (address[] memory tokens,,) = AMO__IBalancerVault(_balancerVault).getPoolTokens(_balancerPoolId);
-      uint256 index;
-      for (uint i=0; i<tokens.length; i++) {
-          if (tokens[i] == address(_temple)) {
-              index = i;
-              break;
-          }
-      }
-      templeIndexInBalancerPool = uint64(index);
       balancerPoolId = _balancerPoolId;
       balancerVault = AMO__IBalancerVault(_balancerVault);
       temple = IERC20(_temple);
       stable = IERC20(_stable);
       bptToken = IERC20(_bptToken);
       amo = _amo;
+      templeIndexInBalancerPool = _templeIndexInPool;
     }
 
     function getBalances() public view returns (uint256[] memory balances) {

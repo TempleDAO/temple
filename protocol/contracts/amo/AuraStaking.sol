@@ -87,7 +87,6 @@ contract AuraStaking is Ownable {
      * @param amount Amount to recover
      */
     function recoverToken(address token, address to, uint256 amount) external onlyOwner {
-        if (to == address(0)) revert AMOCommon.InvalidAddress();
         IERC20(token).safeTransfer(to, amount);
 
         emit RecoveredToken(token, to, amount);

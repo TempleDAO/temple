@@ -12,7 +12,7 @@ import {
   PoolHelper, PoolHelper__factory, TempleERC20Token,
   TempleERC20Token__factory,
 } from "../../typechain";
-import { getSpotPriceScaled, ownerAddLiquidity, singleSideDeposit, templeLotSizeForPriceTarget } from "./common";
+import { getSpotPriceScaled, getTempleIndexInBalancerPool, ownerAddLiquidity, singleSideDeposit, templeLotSizeForPriceTarget } from "./common";
 import { DEPLOYED_CONTRACTS } from '../../scripts/deploys/helpers';
 import { seedTempleBbaUsdPool, swapDaiForBbaUsd } from "./common";
 import { zeroAddress } from "ethereumjs-util";
@@ -30,7 +30,9 @@ const BLOCKNUMBER = 15862300;
 
 let poolHelper: PoolHelper;
 let owner: Signer;
+let alan: Signer;
 let ownerAddress: string;
+let alanAddress: string;
 let bptToken: ERC20;
 let balancerHelpers: IBalancerHelpers;
 let balancerVault: AMO__IBalancerVault;
@@ -47,8 +49,9 @@ let lowerBound: BigNumber;
 
 describe("Pool Helper", async () => {
     before(async () => {
-        [owner] = await ethers.getSigners();
+        [owner, alan] = await ethers.getSigners();
         ownerAddress = await owner.getAddress();
+        alanAddress = await alan.getAddress();
 
         upperBound = BigNumber.from(400);
         lowerBound = BigNumber.from(100);
@@ -69,7 +72,8 @@ describe("Pool Helper", async () => {
 
         balancerVault = AMO__IBalancerVault__factory.connect(BALANCER_VAULT, owner);
         balancerHelpers = IBalancerHelpers__factory.connect(BALANCER_HELPERS, owner);
-
+        
+        const templeIndexInBalancerPool = await getTempleIndexInBalancerPool(balancerVault, templeToken.address);
 
         poolHelper = await new PoolHelper__factory(owner).deploy(
             BALANCER_VAULT,
@@ -77,6 +81,7 @@ describe("Pool Helper", async () => {
             BBA_USD_TOKEN,
             bptToken.address,
             zeroAddress(),
+            templeIndexInBalancerPool,
             BALANCER_POOL_ID
         );
 
@@ -137,6 +142,14 @@ describe("Pool Helper", async () => {
 
             poolHelper,
         } = await loadFixture(setup));
+    });
+
+    it("admin tests", async () => {
+        const connectPoolHelper = poolHelper.connect(alan);
+        await expect(connectPoolHelper.exitPool(100, 1, 100, 100, 100, 1, 9_700, templeToken.address))
+            .to.be.revertedWithCustomError(poolHelper, "OnlyAMO");
+        await expect(connectPoolHelper.joinPool(100, 1, 100, 100, 9_600, 100, 1, templeToken.address))
+            .to.be.revertedWithCustomError(poolHelper, "OnlyAMO");
     });
 
     it("gets LP balances", async () => {
@@ -303,6 +316,9 @@ describe("Pool Helper", async () => {
         // tests in test/amo/tpf-amo.ts
     });
     it("exits pool", async () => {
+        // tests in test/amo/tpf-amo.ts
+    });
+    it("internal validate functions", async () => {
         // tests in test/amo/tpf-amo.ts
     });
 });

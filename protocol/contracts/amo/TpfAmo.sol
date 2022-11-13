@@ -211,11 +211,12 @@ contract TpfAmo is Ownable, Pausable {
         _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
 
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
-        uint256 exitTokenIndex = templeBalancerPoolIndex == 0 ? 0 : 1;
+    
+        // exitTokenIndex = templeBalancerPoolIndex;
         uint256 burnAmount = poolHelper.exitPool(
             bptAmountIn, minAmountOut, rebalancePercentageBoundLow,
             rebalancePercentageBoundUp, postRebalanceSlippage,
-            exitTokenIndex, templePriceFloorNumerator, temple
+            templeBalancerPoolIndex, templePriceFloorNumerator, temple
         );
 
         AMO__ITempleERC20Token(address(temple)).burn(burnAmount);
@@ -241,11 +242,11 @@ contract TpfAmo is Ownable, Pausable {
         AMO__ITempleERC20Token(address(temple)).mint(address(this), templeAmountIn);
         temple.safeTransfer(address(poolHelper), templeAmountIn);
 
-        uint256 joinTokenIndex = templeBalancerPoolIndex == 0 ? 0 : 1;
+        // joinTokenIndex = templeBalancerPoolIndex;
         uint256 bptIn = poolHelper.joinPool(
             templeAmountIn, minBptOut, rebalancePercentageBoundUp,
             rebalancePercentageBoundLow, templePriceFloorNumerator, 
-            postRebalanceSlippage, joinTokenIndex, temple
+            postRebalanceSlippage, templeBalancerPoolIndex, temple
         );
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
@@ -299,10 +300,10 @@ contract TpfAmo is Ownable, Pausable {
 
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
 
-        uint256 exitTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
+        uint256 stableTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
         uint256 amountOut = poolHelper.exitPool(
             bptAmountIn, minAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
-            postRebalanceSlippage, exitTokenIndex, templePriceFloorNumerator, stable
+            postRebalanceSlippage, stableTokenIndex, templePriceFloorNumerator, stable
         );
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
@@ -328,8 +329,7 @@ contract TpfAmo is Ownable, Pausable {
                 revert AMOCommon.InvalidBalancerVaultRequest();
         }
 
-        uint256 templeAmount = templeBalancerPoolIndex == 0 ? request.maxAmountsIn[0] : request.maxAmountsIn[1];
-
+        uint256 templeAmount = request.maxAmountsIn[templeBalancerPoolIndex];
         AMO__ITempleERC20Token(address(temple)).mint(address(this), templeAmount);
         // safe allowance stable and TEMPLE
         temple.safeIncreaseAllowance(address(balancerVault), templeAmount);
@@ -431,13 +431,6 @@ contract TpfAmo is Ownable, Pausable {
     modifier enoughCooldown() {
         if (lastRebalanceTimeSecs != 0 && lastRebalanceTimeSecs + cooldownSecs <= block.timestamp) {
             revert AMOCommon.NotEnoughCooldown();
-        }
-        _;
-    }
-
-    modifier onlyOperator() {
-        if (msg.sender != operator) {
-            revert AMOCommon.NotOperator();
         }
         _;
     }

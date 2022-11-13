@@ -126,6 +126,21 @@ export async function ownerAddLiquidity(
     await balancerVault.connect(signer).joinPool(BALANCER_POOL_ID, await signer.getAddress(), to, joinPoolRequest);
 }
 
+export async function getTempleIndexInBalancerPool(
+    balancerVault: AMO__IBalancerVault,
+    templeAddress: string
+) {
+    const [tokens, ,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    let index = 0;
+    for(let i=0; i<tokens.length; i++) {
+        if (ethers.utils.getAddress(tokens[i]) == ethers.utils.getAddress(templeAddress)) {
+            index = i;
+            break;
+        }
+    }
+    return index;
+}
+
 export async function getJoinPoolRequest(
     assets: string[],
     balancerHelpers: IBalancerHelpers,

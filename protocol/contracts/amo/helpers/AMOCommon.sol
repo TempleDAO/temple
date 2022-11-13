@@ -3,7 +3,6 @@ pragma solidity ^0.8.4;
 
 
 library AMOCommon {
-    error InvalidAddress();
     error NotOperator();
     error NotOperatorOrOwner();
     error ZeroSwapLimit();
