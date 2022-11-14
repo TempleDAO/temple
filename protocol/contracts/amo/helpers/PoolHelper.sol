@@ -228,9 +228,6 @@ contract PoolHelper {
         unchecked {
             amountOut = exitTokenBalanceAfter - exitTokenBalanceBefore;
         }
-        if (amountOut < minAmountOut) {
-            revert AMOCommon.InsufficientAmountOutPostcall(minAmountOut, amountOut);
-        }
 
         if (uint64(getSlippage(spotPriceScaledBefore)) > postRebalanceSlippage) {
             revert AMOCommon.HighSlippage();
@@ -246,7 +243,7 @@ contract PoolHelper {
         uint256 postRebalanceSlippage,
         uint256 joinTokenIndex,
         IERC20 joinPoolToken
-    ) external onlyAmo returns (uint256 bptIn) {
+    ) external onlyAmo returns (uint256 bptOut) {
         joinPoolToken == temple ? 
             validateTempleJoin(amountIn, rebalancePercentageBoundUp, rebalancePercentageBoundLow, templePriceFloorNumerator) :
             validateStableJoin(amountIn, rebalancePercentageBoundUp, rebalancePercentageBoundLow, templePriceFloorNumerator);
@@ -266,10 +263,7 @@ contract PoolHelper {
         uint256 bptAmountAfter = bptToken.balanceOf(msg.sender);
 
         unchecked {
-            bptIn = bptAmountAfter - bptAmountBefore;
-        }
-        if (bptIn < minBptOut) {
-            revert AMOCommon.InsufficientAmountOutPostcall(minBptOut, bptIn);
+            bptOut = bptAmountAfter - bptAmountBefore;
         }
 
         // revert if high slippage after pool join
