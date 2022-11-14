@@ -4,21 +4,16 @@ import { useNavigate } from 'react-router-dom';
 
 import Tooltip from 'components/Tooltip/Tooltip';
 
-import { formatNumber, formatNumberWithCommas } from 'utils/formatter';
+import { formatNumberWithCommas } from 'utils/formatter';
 import VaultContent from './VaultContent';
 import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useVaultMetrics } from 'hooks/core/subgraph';
 import EllipsisLoader from 'components/EllipsisLoader';
-import useRefreshableTreasuryMetrics from 'hooks/use-refreshable-treasury-metrics';
-import { FALLBACK_VAULT_APY } from '../Trade/constants';
 
 export const Summary = () => {
   const navigate = useNavigate();
   const { vaultGroup } = useVaultContext();
   const { response, isLoading } = useVaultMetrics();
-  const treasuryMetrics = useRefreshableTreasuryMetrics();
-
-  const dynamicApy = treasuryMetrics?.dynamicVaultApy || FALLBACK_VAULT_APY;
 
   const onClickLink = (e: SyntheticEvent) => {
     e.preventDefault();
@@ -42,15 +37,6 @@ export const Summary = () => {
             </Tooltip>
           )}
         </>
-      </Text3>
-      <Text3>
-        Projected vAPY: {formatNumber(dynamicApy)}%{' '}
-        <Tooltip
-          content={`Variable APY is displayed for guidance purposes only. All rewards are subject to change and fluctuate based on vault strategies and market conditions.`}
-          inline={true}
-        >
-          ⓘ
-        </Tooltip>
       </Text3>
     </VaultContent>
   );
