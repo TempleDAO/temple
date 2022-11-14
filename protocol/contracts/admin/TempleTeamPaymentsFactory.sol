@@ -121,7 +121,7 @@ contract TempleTeamPaymentsFactory is Ownable {
             address dest = _dests[i];
             if (dest == address(0)) revert AllocationAddressZero();
             uint256 value = _allocations[i];
-            if (value < 0) revert ClaimZeroValue();
+            if (value <= 0) revert ClaimZeroValue();
             SafeERC20.safeTransferFrom(_temple, msg.sender, _dests[i], value);
             totalFunding += value;
             unchecked {
