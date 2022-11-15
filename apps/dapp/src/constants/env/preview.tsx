@@ -118,9 +118,14 @@ const env: Environment = {
     dsn: 'https://ab0c41c30fbb405da50d9803819b1d60@o1268430.ingest.sentry.io/6456054',
   },
   featureFlags: {
-    enableAscend: true,
+    enableAscend: false,
+    nexusOnlyMode: true,
   },
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
+  nexus: {
+    templeRelicAddress: '0xbb8bB20DA64D4C595eb4Ac8A7cC2cBDcFBfB4306',
+    templeRelicItemsAddress: '0x4EA1C78102d2C201cFc98fd53b634Cc01294771c',
+  }
 };
 
 export default env;

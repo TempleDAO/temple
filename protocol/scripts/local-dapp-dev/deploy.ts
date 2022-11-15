@@ -18,7 +18,7 @@ import {
   InstantExitQueue__factory,
   LockedOGTemple__factory,
   Relic__factory,
-  RelicItems__factory,
+  Shards__factory,
 } from '../../typechain';
 
 function toAtto(n: number) {
@@ -277,8 +277,9 @@ async function main() {
   await faith.addManager(vaultProxy.address);
 
   const relic = await new Relic__factory(owner).deploy()
-  const relicItems = await new RelicItems__factory(owner).deploy()
-  await relic.setItemContract(relicItems.address)
+  const relicItems = await new Shards__factory(owner).deploy()
+  // TODO: What to do here
+  // await relic.setItemContract(relicItems.address)
   await relic.setThresholds([0, 10, 100, 1000, 1000])
   await relicItems.setRelic(relic.address)
   

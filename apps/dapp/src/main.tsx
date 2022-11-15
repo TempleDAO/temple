@@ -35,6 +35,7 @@ import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
 import NexusPage from 'components/Pages/Nexus/Relic';
 import QuestPage from 'components/Pages/Nexus/Quest';
+import ForgePage from 'components/Pages/Nexus/Forge';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -80,53 +81,64 @@ if (env.sentry) {
 
 AnalyticsService.init();
 
+const nexusOnly = !!env.featureFlags.nexusOnlyMode;
+
 ReactDOM.render(
   <React.StrictMode>
     <AppProvider>
       <GlobalStyle />
       <BrowserRouter>
         <Routes>
-          <>
-            <Route path="/" element={<PageLayout />}>
-              <Route path="" element={<HomePage />} />
-              {/* Redirect everything else to the home page */}
-              <Route path="*" element={<Navigate replace to="/" />} />
-              <Route path="disclaimer" element={<Disclaimer />} />
-              <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
-            </Route>
-            <Route path="/dapp/*" element={<CoreLayout mode='dapp' />}>
-              <Route path="" element={<VaultListPage />} />
-              <Route path="vaults" element={<VaultListPage />} />
-              <Route path="vaults/:vaultId/*" element={<VaultPage />}>
-                <Route path="claim" element={<VaultClaim />} />
-                <Route path="stake" element={<Stake />} />
-                <Route path="summary" element={<Summary />} />
-                <Route path="strategy" element={<Strategy />} />
-                <Route path="timing" element={<Timing />} />
+          {!nexusOnly && (
+            <>
+              <Route path="/" element={<PageLayout />}>
+                <Route path="" element={<HomePage />} />
+                <Route path="*" element={<Navigate replace to="/" />} />
+                <Route path="disclaimer" element={<Disclaimer />} />
+                <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
               </Route>
-              <Route path="trade/*" element={<TradeRoutes />} />
-              <Route path="profile" element={<ProfilePage />} />
-              
-              {env.featureFlags.enableAscend && (
-                <>
-                  <Route path="ascend/*" element={<AscendLayout />}>
-                    <Route path="" element={<AscendListPage />} />
-                    <Route path="admin" element={<PoolListPage />} />
-                    <Route path="admin/new" element={<CreateLBPPage />} />
-                    <Route path="admin/:poolAddress/*" element={<EditLBPPage />} />
-                    <Route path=":poolAddress" element={<AscendPage />} />
-                  </Route>
-                </>
-              )}
+              <Route path="/dapp/*" element={<CoreLayout mode="dapp" />}>
+                <Route path="" element={<VaultListPage />} />
+                <Route path="vaults" element={<VaultListPage />} />
+                <Route path="vaults/:vaultId/*" element={<VaultPage />}>
+                  <Route path="claim" element={<VaultClaim />} />
+                  <Route path="stake" element={<Stake />} />
+                  <Route path="summary" element={<Summary />} />
+                  <Route path="strategy" element={<Strategy />} />
+                  <Route path="timing" element={<Timing />} />
+                </Route>
+                <Route path="trade/*" element={<TradeRoutes />} />
+                <Route path="profile" element={<ProfilePage />} />
 
-              <Route path="analytics" element={<AnalyticsPage />} />
-            </Route>
-            <Route path="/nexus/*" element={<CoreLayout mode='nexus' />}>
-              <Route path="" element={<Navigate to="relic" />} />
-              <Route path="relic/*" element={<NexusPage />} />
-              <Route path="quests/*" element={<QuestPage />} />
-            </Route>
-          </>
+                {env.featureFlags.enableAscend && (
+                  <>
+                    <Route path="ascend/*" element={<AscendLayout />}>
+                      <Route path="" element={<AscendListPage />} />
+                      <Route path="admin" element={<PoolListPage />} />
+                      <Route path="admin/new" element={<CreateLBPPage />} />
+                      <Route path="admin/:poolAddress/*" element={<EditLBPPage />} />
+                      <Route path=":poolAddress" element={<AscendPage />} />
+                    </Route>
+                  </>
+                )}
+                <Route path="analytics" element={<AnalyticsPage />} />
+              </Route>
+            </>
+          )}
+          {nexusOnly && (
+            <>
+              <Route path="/" element={<PageLayout />}>
+                <Route path="" element={<Navigate replace to="/nexus/" />} />
+                <Route path="*" element={<Navigate replace to="/nexus/" />} />
+              </Route>
+              <Route path="/nexus/*" element={<CoreLayout mode="nexus" />}>
+                <Route path="" element={<Navigate to="relic" />} />
+                <Route path="relic/*" element={<NexusPage />} />
+                <Route path="quests/*" element={<QuestPage />} />
+                <Route path="forge/*" element={<ForgePage />} />
+              </Route>
+            </>
+          )}
         </Routes>
       </BrowserRouter>
       <NotificationManager />

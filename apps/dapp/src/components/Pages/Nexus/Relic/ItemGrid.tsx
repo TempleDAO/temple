@@ -47,12 +47,13 @@ const ItemGrid: FC<{
   );
 };
 
-const ItemButton: FC<{
+export const ItemButton: FC<{
   item: RelicItemData
   disabled?: boolean
   onClick: (item: number) => Promise<void>
 }> = (props) => {
   const { item } = props
+
   const [processing, setProcessing] = useState(false)
   const imgUrl = item.id <= MAX_IMAGE_ITEM_ID ? `${ITEM_IMAGE_BASE_URL}/${item.id}.png` : undefined
   return <ItemCell style={{
@@ -75,14 +76,14 @@ const ItemButton: FC<{
   </ItemCell>
 }
 
-const ItemsContainer = styled.div`
+export const ItemsContainer = styled.div`
   display: flex;
   flex-flow: row wrap;
   width: 100%;
   transition: height 2s ease;
 `;
 
-const ItemWrapper = styled.div<{ columnCount: number }>`
+export const ItemWrapper = styled.div<{ columnCount: number }>`
   position: relative;
   width: calc(100% / ${props => props.columnCount});
   padding-top: calc(100% / ${props => props.columnCount});
@@ -142,7 +143,7 @@ const ItemImage = styled.img`
   pointer-events: none;
 `
 
-const EmptyCell = styled.div`
+export const EmptyCell = styled.div`
   background: darkgray;
   border: solid 1px darkgray;
   opacity: 0.1;

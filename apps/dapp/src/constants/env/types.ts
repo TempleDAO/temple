@@ -81,6 +81,11 @@ interface Posthog {
   api_host: string;
 }
 
+interface Nexus {
+  templeRelicAddress: string;
+  templeRelicItemsAddress: string;
+}
+
 export interface Environment {
   alchemyId: string;
   backendUrl: string;
@@ -100,5 +105,7 @@ export interface Environment {
   etherscan: string;
   featureFlags: {
     enableAscend: boolean;
+    nexusOnlyMode: boolean;
   };
+  nexus: Nexus;
 }
