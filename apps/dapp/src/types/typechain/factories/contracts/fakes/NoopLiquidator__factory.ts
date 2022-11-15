@@ -2,11 +2,12 @@
 /* tslint:disable */
 /* eslint-disable */
 import { Signer, utils, Contract, ContractFactory, Overrides } from "ethers";
-import { Provider, TransactionRequest } from "@ethersproject/providers";
+import type { Provider, TransactionRequest } from "@ethersproject/providers";
+import type { PromiseOrValue } from "../../../common";
 import type {
   NoopLiquidator,
   NoopLiquidatorInterface,
-} from "../NoopLiquidator";
+} from "../../../contracts/fakes/NoopLiquidator";
 
 const _abi = [
   {
@@ -58,32 +59,30 @@ export class NoopLiquidator__factory extends ContractFactory {
     } else {
       super(_abi, _bytecode, args[0]);
     }
-    this.contractName = "NoopLiquidator";
   }
 
-  deploy(
-    _templeToken: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
+  override deploy(
+    _templeToken: PromiseOrValue<string>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<NoopLiquidator> {
     return super.deploy(
       _templeToken,
       overrides || {}
     ) as Promise<NoopLiquidator>;
   }
-  getDeployTransaction(
-    _templeToken: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
+  override getDeployTransaction(
+    _templeToken: PromiseOrValue<string>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): TransactionRequest {
     return super.getDeployTransaction(_templeToken, overrides || {});
   }
-  attach(address: string): NoopLiquidator {
+  override attach(address: string): NoopLiquidator {
     return super.attach(address) as NoopLiquidator;
   }
-  connect(signer: Signer): NoopLiquidator__factory {
+  override connect(signer: Signer): NoopLiquidator__factory {
     return super.connect(signer) as NoopLiquidator__factory;
   }
-  static readonly contractName: "NoopLiquidator";
-  public readonly contractName: "NoopLiquidator";
+
   static readonly bytecode = _bytecode;
   static readonly abi = _abi;
   static createInterface(): NoopLiquidatorInterface {

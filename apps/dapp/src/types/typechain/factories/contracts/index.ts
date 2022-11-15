@@ -7,4 +7,5 @@ export * as core from "./core";
 export * as deprecated from "./deprecated";
 export * as fakes from "./fakes";
 export * as governance from "./governance";
+export * as nexus from "./nexus";
 export * as zaps from "./zaps";

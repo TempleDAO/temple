@@ -13,5 +13,7 @@ import type * as fakes from "./fakes";
 export type { fakes };
 import type * as governance from "./governance";
 export type { governance };
+import type * as nexus from "./nexus";
+export type { nexus };
 import type * as zaps from "./zaps";
 export type { zaps };
