@@ -57,6 +57,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC20__factory>;
     getContractFactory(
+      name: "IERC20Permit",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20Permit__factory>;
+    getContractFactory(
       name: "ERC20Burnable",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC20Burnable__factory>;
@@ -285,9 +289,9 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TemplarMetadata__factory>;
     getContractFactory(
-      name: "IItems",
+      name: "IShards",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IItems__factory>;
+    ): Promise<Contracts.IShards__factory>;
     getContractFactory(
       name: "Relic",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -297,9 +301,9 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IRelic__factory>;
     getContractFactory(
-      name: "RelicItems",
+      name: "Shards",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.RelicItems__factory>;
+    ): Promise<Contracts.Shards__factory>;
     getContractFactory(
       name: "GenericZap",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -412,6 +416,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ERC20>;
+    getContractAt(
+      name: "IERC20Permit",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC20Permit>;
     getContractAt(
       name: "ERC20Burnable",
       address: string,
@@ -698,10 +707,10 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.TemplarMetadata>;
     getContractAt(
-      name: "IItems",
+      name: "IShards",
       address: string,
       signer?: ethers.Signer
-    ): Promise<Contracts.IItems>;
+    ): Promise<Contracts.IShards>;
     getContractAt(
       name: "Relic",
       address: string,
@@ -713,10 +722,10 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IRelic>;
     getContractAt(
-      name: "RelicItems",
+      name: "Shards",
       address: string,
       signer?: ethers.Signer
-    ): Promise<Contracts.RelicItems>;
+    ): Promise<Contracts.Shards>;
     getContractAt(
       name: "GenericZap",
       address: string,

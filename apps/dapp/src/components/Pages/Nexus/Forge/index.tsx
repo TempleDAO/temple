@@ -6,35 +6,61 @@ import { useWallet } from 'providers/WalletProvider';
 import { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { PageWrapper } from '../../Core/utils';
-import ItemGrid, { EmptyCell, ItemButton, ItemsContainer, ItemWrapper } from '../Relic/ItemGrid';
-import { NexusBackground, NexusBodyContainer, NexusContainer, NexusPanel } from '../Relic/styles';
+import { EMPTY_INVENTORY } from '../Relic';
+import { EmptyCell, ItemButton } from '../Relic/ItemGrid';
+import { NexusBackground } from '../Relic/styles';
 import InventoryPanel from './InventoryPanel';
 import UsedShardsPanel from './UsedShardsPanel';
+import { getValidRecipe, Recipe } from './recipes';
+import { Relic } from 'types/typechain';
 
-const VALID_ITEM_ID_COUNT = 15;
+// const VALID_ITEM_ID_COUNT = 15;
 
 const ForgePage = () => {
   const { wallet, isConnected } = useWallet();
-  const { inventory, updateInventory } = useRelic();
+  const { inventory, updateInventory, transmute } = useRelic();
 
   useEffect(() => {
     updateInventory();
   }, [wallet, isConnected]);
+
   const bgImage = bgInactive;
 
-  const allItems = useMemo(() => [...Array(VALID_ITEM_ID_COUNT).keys()].map((id) => ({ id, count: 1 })), []);
-
-  const clickHandler = (item: number) => {
-    console.log(`clicked: ${item}`);
-  };
-
+  // TODO: We should move all this into its own hook or context
   const [shardsPendingForge, setShardsPendingForge] = useState<RelicItemData[]>([]);
+  const [forgeResult, setForgeResult] = useState<RelicItemData | null>(null);
+  const [recipeId, setRecipeId] = useState<number | null>(null);
 
-  const clickHandler2 = async (item: number): Promise<void> => {
-    console.log(`clickedin here: ${item}`);
+  useEffect(() => {
+    const validRecipe = getValidRecipe(shardsPendingForge);
+    if (validRecipe) {
+      setRecipeId(validRecipe.id);
+      setForgeResult({ id: validRecipe.reward_ids[0], count: validRecipe.reward_amounts[0] });
+    }
+    return () => {
+      setForgeResult(null);
+      setRecipeId(null);
+    };
+  }, [shardsPendingForge]);
+
+  const forgeHandler = async (_item: number): Promise<void> => {
+    if (recipeId !== null) {
+      await transmute(recipeId);
+    }
   };
 
-  const testItem = undefined;
+  // TODO: Update counts (inventory and shards pending) as you add/remove shards
+  const usedShardsClickHandler = (item: number) => {
+    setShardsPendingForge((previous) => previous.filter((selectedShard) => selectedShard.id !== item));
+  };
+
+  // TODO: Update counts (inventory and shards pending) as you add/remove shards
+  const addShardClickHandler = async (item: number): Promise<void> => {
+    if (shardsPendingForge.filter((shard) => shard.id === item).length === 0) {
+      setShardsPendingForge((previous) => [...previous, { id: item, count: 1 }]);
+    }
+    getValidRecipe(shardsPendingForge);
+  };
 
   return (
     <PageWrapper>
@@ -48,14 +74,17 @@ const ForgePage = () => {
         <NexusPanelRow2>Combine Shards to Forge</NexusPanelRow2>
         {/* // TODO: Split into own component */}
         <ForgeResultWrapper>
-          {testItem == undefined ? (
+          {forgeResult == undefined ? (
             <EmptyCell />
           ) : (
-            <ItemButton key={testItem.id} item={testItem} disabled={false} onClick={clickHandler2} />
+            <ItemButton key={forgeResult.id} item={forgeResult} disabled={false} onClick={forgeHandler} />
           )}
         </ForgeResultWrapper>
-        <UsedShardsPanel items={shardsPendingForge} />
-        <InventoryPanel />
+        <UsedShardsPanel items={shardsPendingForge} usedShardsClickHandler={usedShardsClickHandler} />
+        <InventoryPanel
+          inventory={inventory?.items || EMPTY_INVENTORY.items}
+          addShardClickHandler={addShardClickHandler}
+        />
       </ForgePanel>
     </PageWrapper>
   );

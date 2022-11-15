@@ -175,4 +175,5 @@ export interface RelicService {
   mintRelicItem(itemId: number): Promise<void>;
   equipRelicItems(relicId: BigNumber, items: RelicItemData[]): Promise<void>;
   unequipRelicItems(relicId: BigNumber, items: RelicItemData[]): Promise<void>;
+  transmute(recipeId: number): Promise<void>;
 }

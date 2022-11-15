@@ -18,11 +18,13 @@ import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 export interface IRelicInterface extends utils.Interface {
   contractName: "IRelic";
   functions: {
+    "balanceOf(address)": FunctionFragment;
     "getRelicId(address)": FunctionFragment;
     "hasRelic(address)": FunctionFragment;
     "ownerOf(uint256)": FunctionFragment;
   };
 
+  encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
   encodeFunctionData(functionFragment: "getRelicId", values: [string]): string;
   encodeFunctionData(functionFragment: "hasRelic", values: [string]): string;
   encodeFunctionData(
@@ -30,6 +32,7 @@ export interface IRelicInterface extends utils.Interface {
     values: [BigNumberish]
   ): string;
 
+  decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getRelicId", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "hasRelic", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "ownerOf", data: BytesLike): Result;
@@ -65,6 +68,8 @@ export interface IRelic extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
+    balanceOf(_owner: string, overrides?: CallOverrides): Promise<[BigNumber]>;
+
     getRelicId(_owner: string, overrides?: CallOverrides): Promise<[BigNumber]>;
 
     hasRelic(_owner: string, overrides?: CallOverrides): Promise<[boolean]>;
@@ -75,6 +80,8 @@ export interface IRelic extends BaseContract {
     ): Promise<[string]>;
   };
 
+  balanceOf(_owner: string, overrides?: CallOverrides): Promise<BigNumber>;
+
   getRelicId(_owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
   hasRelic(_owner: string, overrides?: CallOverrides): Promise<boolean>;
@@ -82,6 +89,8 @@ export interface IRelic extends BaseContract {
   ownerOf(tokenId: BigNumberish, overrides?: CallOverrides): Promise<string>;
 
   callStatic: {
+    balanceOf(_owner: string, overrides?: CallOverrides): Promise<BigNumber>;
+
     getRelicId(_owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     hasRelic(_owner: string, overrides?: CallOverrides): Promise<boolean>;
@@ -92,6 +101,8 @@ export interface IRelic extends BaseContract {
   filters: {};
 
   estimateGas: {
+    balanceOf(_owner: string, overrides?: CallOverrides): Promise<BigNumber>;
+
     getRelicId(_owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     hasRelic(_owner: string, overrides?: CallOverrides): Promise<BigNumber>;
@@ -103,6 +114,11 @@ export interface IRelic extends BaseContract {
   };
 
   populateTransaction: {
+    balanceOf(
+      _owner: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     getRelicId(
       _owner: string,
       overrides?: CallOverrides

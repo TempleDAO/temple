@@ -20,14 +20,11 @@ import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 export interface RelicInterface extends utils.Interface {
   contractName: "Relic";
   functions: {
-    "BASE_URIS(uint8,uint8)": FunctionFragment;
     "approve(address,uint256)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
-    "balances(uint256,uint256)": FunctionFragment;
-    "batchEquipItems(uint256,uint256[],uint256[])": FunctionFragment;
-    "batchUnequipItems(uint256,uint256[],uint256[])": FunctionFragment;
+    "batchEquipShard(uint256,uint256[],uint256[])": FunctionFragment;
+    "batchUnequipShard(uint256,uint256[],uint256[])": FunctionFragment;
     "burn(uint256)": FunctionFragment;
-    "createRecipe(uint256,uint256[],uint256[],uint256[],uint256[])": FunctionFragment;
     "getApproved(uint256)": FunctionFragment;
     "getBalance(uint256,uint256)": FunctionFragment;
     "getBalanceBatch(uint256,uint256[])": FunctionFragment;
@@ -45,8 +42,6 @@ export interface RelicInterface extends utils.Interface {
     "ownerOf(uint256)": FunctionFragment;
     "pause()": FunctionFragment;
     "paused()": FunctionFragment;
-    "recipes(uint256)": FunctionFragment;
-    "relicXP(uint256)": FunctionFragment;
     "removeFromWhitelist(address)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "renounceRelic(uint256)": FunctionFragment;
@@ -54,7 +49,7 @@ export interface RelicInterface extends utils.Interface {
     "safeTransferFrom(address,address,uint256)": FunctionFragment;
     "setApprovalForAll(address,bool)": FunctionFragment;
     "setBaseURI(string[])": FunctionFragment;
-    "setItemContract(address)": FunctionFragment;
+    "setShardContract(address)": FunctionFragment;
     "setTempleWhitelister(address)": FunctionFragment;
     "setThresholds(uint256[])": FunctionFragment;
     "setXPProvider(address)": FunctionFragment;
@@ -66,45 +61,24 @@ export interface RelicInterface extends utils.Interface {
     "totalSupply()": FunctionFragment;
     "transferFrom(address,address,uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
-    "transmute(uint256,uint256)": FunctionFragment;
     "unpause()": FunctionFragment;
     "whitelistTemplar(address)": FunctionFragment;
-    "whitelisted(address)": FunctionFragment;
-    "whitelistedContracts(address)": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "BASE_URIS",
-    values: [BigNumberish, BigNumberish]
-  ): string;
   encodeFunctionData(
     functionFragment: "approve",
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
   encodeFunctionData(
-    functionFragment: "balances",
-    values: [BigNumberish, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "batchEquipItems",
+    functionFragment: "batchEquipShard",
     values: [BigNumberish, BigNumberish[], BigNumberish[]]
   ): string;
   encodeFunctionData(
-    functionFragment: "batchUnequipItems",
+    functionFragment: "batchUnequipShard",
     values: [BigNumberish, BigNumberish[], BigNumberish[]]
   ): string;
   encodeFunctionData(functionFragment: "burn", values: [BigNumberish]): string;
-  encodeFunctionData(
-    functionFragment: "createRecipe",
-    values: [
-      BigNumberish,
-      BigNumberish[],
-      BigNumberish[],
-      BigNumberish[],
-      BigNumberish[]
-    ]
-  ): string;
   encodeFunctionData(
     functionFragment: "getApproved",
     values: [BigNumberish]
@@ -162,14 +136,6 @@ export interface RelicInterface extends utils.Interface {
   encodeFunctionData(functionFragment: "pause", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "recipes",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "relicXP",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "removeFromWhitelist",
     values: [string]
   ): string;
@@ -195,7 +161,7 @@ export interface RelicInterface extends utils.Interface {
     values: [string[]]
   ): string;
   encodeFunctionData(
-    functionFragment: "setItemContract",
+    functionFragment: "setShardContract",
     values: [string]
   ): string;
   encodeFunctionData(
@@ -239,38 +205,23 @@ export interface RelicInterface extends utils.Interface {
     functionFragment: "transferOwnership",
     values: [string]
   ): string;
-  encodeFunctionData(
-    functionFragment: "transmute",
-    values: [BigNumberish, BigNumberish]
-  ): string;
   encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "whitelistTemplar",
     values: [string]
   ): string;
-  encodeFunctionData(functionFragment: "whitelisted", values: [string]): string;
-  encodeFunctionData(
-    functionFragment: "whitelistedContracts",
-    values: [string]
-  ): string;
 
-  decodeFunctionResult(functionFragment: "BASE_URIS", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "balances", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "batchEquipItems",
+    functionFragment: "batchEquipShard",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "batchUnequipItems",
+    functionFragment: "batchUnequipShard",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "burn", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "createRecipe",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "getApproved",
     data: BytesLike
@@ -312,8 +263,6 @@ export interface RelicInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "ownerOf", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "recipes", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "relicXP", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "removeFromWhitelist",
     data: BytesLike
@@ -337,7 +286,7 @@ export interface RelicInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "setBaseURI", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "setItemContract",
+    functionFragment: "setShardContract",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -378,18 +327,9 @@ export interface RelicInterface extends utils.Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "transmute", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "whitelistTemplar",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "whitelisted",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "whitelistedContracts",
     data: BytesLike
   ): Result;
 
@@ -399,7 +339,6 @@ export interface RelicInterface extends utils.Interface {
     "OwnershipTransferred(address,address)": EventFragment;
     "Paused(address)": EventFragment;
     "Transfer(address,address,uint256)": EventFragment;
-    "Transmutation(address,uint256)": EventFragment;
     "Unpaused(address)": EventFragment;
   };
 
@@ -408,7 +347,6 @@ export interface RelicInterface extends utils.Interface {
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Paused"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Transfer"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "Transmutation"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Unpaused"): EventFragment;
 }
 
@@ -445,13 +383,6 @@ export type TransferEvent = TypedEvent<
 
 export type TransferEventFilter = TypedEventFilter<TransferEvent>;
 
-export type TransmutationEvent = TypedEvent<
-  [string, BigNumber],
-  { Templar: string; recipeId: BigNumber }
->;
-
-export type TransmutationEventFilter = TypedEventFilter<TransmutationEvent>;
-
 export type UnpausedEvent = TypedEvent<[string], { account: string }>;
 
 export type UnpausedEventFilter = TypedEventFilter<UnpausedEvent>;
@@ -484,12 +415,6 @@ export interface Relic extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
-    BASE_URIS(
-      arg0: BigNumberish,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[string]>;
-
     approve(
       to: string,
       tokenId: BigNumberish,
@@ -498,20 +423,14 @@ export interface Relic extends BaseContract {
 
     balanceOf(owner: string, overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    balances(
-      arg0: BigNumberish,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
-
-    batchEquipItems(
+    batchEquipShard(
       _targetRelic: BigNumberish,
       _itemIds: BigNumberish[],
       _amounts: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    batchUnequipItems(
+    batchUnequipShard(
       _targetRelic: BigNumberish,
       _itemIds: BigNumberish[],
       _amounts: BigNumberish[],
@@ -520,15 +439,6 @@ export interface Relic extends BaseContract {
 
     burn(
       tokenId: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    createRecipe(
-      _recipeId: BigNumberish,
-      _requiredIds: BigNumberish[],
-      _requiredAmounts: BigNumberish[],
-      _rewardIds: BigNumberish[],
-      _rewardAmounts: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -623,16 +533,6 @@ export interface Relic extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<[boolean]>;
 
-    recipes(
-      arg0: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[number] & { id: number }>;
-
-    relicXP(
-      arg0: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
-
     removeFromWhitelist(
       _toRemove: string,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -663,7 +563,7 @@ export interface Relic extends BaseContract {
       from: string,
       to: string,
       tokenId: BigNumberish,
-      _data: BytesLike,
+      data: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -678,8 +578,8 @@ export interface Relic extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    setItemContract(
-      _itemContract: string,
+    setShardContract(
+      _shardsContract: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -735,12 +635,6 @@ export interface Relic extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    transmute(
-      _relicId: BigNumberish,
-      _recipeId: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
     unpause(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -749,20 +643,7 @@ export interface Relic extends BaseContract {
       _toWhitelist: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-
-    whitelisted(arg0: string, overrides?: CallOverrides): Promise<[boolean]>;
-
-    whitelistedContracts(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<[boolean]>;
   };
-
-  BASE_URIS(
-    arg0: BigNumberish,
-    arg1: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<string>;
 
   approve(
     to: string,
@@ -772,20 +653,14 @@ export interface Relic extends BaseContract {
 
   balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-  balances(
-    arg0: BigNumberish,
-    arg1: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
-  batchEquipItems(
+  batchEquipShard(
     _targetRelic: BigNumberish,
     _itemIds: BigNumberish[],
     _amounts: BigNumberish[],
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  batchUnequipItems(
+  batchUnequipShard(
     _targetRelic: BigNumberish,
     _itemIds: BigNumberish[],
     _amounts: BigNumberish[],
@@ -794,15 +669,6 @@ export interface Relic extends BaseContract {
 
   burn(
     tokenId: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  createRecipe(
-    _recipeId: BigNumberish,
-    _requiredIds: BigNumberish[],
-    _requiredAmounts: BigNumberish[],
-    _rewardIds: BigNumberish[],
-    _rewardAmounts: BigNumberish[],
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -894,10 +760,6 @@ export interface Relic extends BaseContract {
 
   paused(overrides?: CallOverrides): Promise<boolean>;
 
-  recipes(arg0: BigNumberish, overrides?: CallOverrides): Promise<number>;
-
-  relicXP(arg0: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
-
   removeFromWhitelist(
     _toRemove: string,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -928,7 +790,7 @@ export interface Relic extends BaseContract {
     from: string,
     to: string,
     tokenId: BigNumberish,
-    _data: BytesLike,
+    data: BytesLike,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -943,8 +805,8 @@ export interface Relic extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  setItemContract(
-    _itemContract: string,
+  setShardContract(
+    _shardsContract: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -997,12 +859,6 @@ export interface Relic extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  transmute(
-    _relicId: BigNumberish,
-    _recipeId: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
   unpause(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -1012,20 +868,7 @@ export interface Relic extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  whitelisted(arg0: string, overrides?: CallOverrides): Promise<boolean>;
-
-  whitelistedContracts(
-    arg0: string,
-    overrides?: CallOverrides
-  ): Promise<boolean>;
-
   callStatic: {
-    BASE_URIS(
-      arg0: BigNumberish,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<string>;
-
     approve(
       to: string,
       tokenId: BigNumberish,
@@ -1034,20 +877,14 @@ export interface Relic extends BaseContract {
 
     balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    balances(
-      arg0: BigNumberish,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    batchEquipItems(
+    batchEquipShard(
       _targetRelic: BigNumberish,
       _itemIds: BigNumberish[],
       _amounts: BigNumberish[],
       overrides?: CallOverrides
     ): Promise<void>;
 
-    batchUnequipItems(
+    batchUnequipShard(
       _targetRelic: BigNumberish,
       _itemIds: BigNumberish[],
       _amounts: BigNumberish[],
@@ -1055,15 +892,6 @@ export interface Relic extends BaseContract {
     ): Promise<void>;
 
     burn(tokenId: BigNumberish, overrides?: CallOverrides): Promise<void>;
-
-    createRecipe(
-      _recipeId: BigNumberish,
-      _requiredIds: BigNumberish[],
-      _requiredAmounts: BigNumberish[],
-      _rewardIds: BigNumberish[],
-      _rewardAmounts: BigNumberish[],
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     getApproved(
       tokenId: BigNumberish,
@@ -1151,10 +979,6 @@ export interface Relic extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<boolean>;
 
-    recipes(arg0: BigNumberish, overrides?: CallOverrides): Promise<number>;
-
-    relicXP(arg0: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
-
     removeFromWhitelist(
       _toRemove: string,
       overrides?: CallOverrides
@@ -1180,7 +1004,7 @@ export interface Relic extends BaseContract {
       from: string,
       to: string,
       tokenId: BigNumberish,
-      _data: BytesLike,
+      data: BytesLike,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1195,8 +1019,8 @@ export interface Relic extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    setItemContract(
-      _itemContract: string,
+    setShardContract(
+      _shardsContract: string,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1252,25 +1076,12 @@ export interface Relic extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    transmute(
-      _relicId: BigNumberish,
-      _recipeId: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     unpause(overrides?: CallOverrides): Promise<void>;
 
     whitelistTemplar(
       _toWhitelist: string,
       overrides?: CallOverrides
     ): Promise<void>;
-
-    whitelisted(arg0: string, overrides?: CallOverrides): Promise<boolean>;
-
-    whitelistedContracts(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
   };
 
   filters: {
@@ -1319,23 +1130,11 @@ export interface Relic extends BaseContract {
       tokenId?: BigNumberish | null
     ): TransferEventFilter;
 
-    "Transmutation(address,uint256)"(
-      Templar?: null,
-      recipeId?: null
-    ): TransmutationEventFilter;
-    Transmutation(Templar?: null, recipeId?: null): TransmutationEventFilter;
-
     "Unpaused(address)"(account?: null): UnpausedEventFilter;
     Unpaused(account?: null): UnpausedEventFilter;
   };
 
   estimateGas: {
-    BASE_URIS(
-      arg0: BigNumberish,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     approve(
       to: string,
       tokenId: BigNumberish,
@@ -1344,20 +1143,14 @@ export interface Relic extends BaseContract {
 
     balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    balances(
-      arg0: BigNumberish,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    batchEquipItems(
+    batchEquipShard(
       _targetRelic: BigNumberish,
       _itemIds: BigNumberish[],
       _amounts: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    batchUnequipItems(
+    batchUnequipShard(
       _targetRelic: BigNumberish,
       _itemIds: BigNumberish[],
       _amounts: BigNumberish[],
@@ -1366,15 +1159,6 @@ export interface Relic extends BaseContract {
 
     burn(
       tokenId: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    createRecipe(
-      _recipeId: BigNumberish,
-      _requiredIds: BigNumberish[],
-      _requiredAmounts: BigNumberish[],
-      _rewardIds: BigNumberish[],
-      _rewardAmounts: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1469,10 +1253,6 @@ export interface Relic extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<BigNumber>;
 
-    recipes(arg0: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
-
-    relicXP(arg0: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
-
     removeFromWhitelist(
       _toRemove: string,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -1503,7 +1283,7 @@ export interface Relic extends BaseContract {
       from: string,
       to: string,
       tokenId: BigNumberish,
-      _data: BytesLike,
+      data: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1518,8 +1298,8 @@ export interface Relic extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    setItemContract(
-      _itemContract: string,
+    setShardContract(
+      _shardsContract: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1575,12 +1355,6 @@ export interface Relic extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    transmute(
-      _relicId: BigNumberish,
-      _recipeId: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
     unpause(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -1589,22 +1363,9 @@ export interface Relic extends BaseContract {
       _toWhitelist: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
-
-    whitelisted(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-    whitelistedContracts(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    BASE_URIS(
-      arg0: BigNumberish,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     approve(
       to: string,
       tokenId: BigNumberish,
@@ -1616,20 +1377,14 @@ export interface Relic extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    balances(
-      arg0: BigNumberish,
-      arg1: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    batchEquipItems(
+    batchEquipShard(
       _targetRelic: BigNumberish,
       _itemIds: BigNumberish[],
       _amounts: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    batchUnequipItems(
+    batchUnequipShard(
       _targetRelic: BigNumberish,
       _itemIds: BigNumberish[],
       _amounts: BigNumberish[],
@@ -1638,15 +1393,6 @@ export interface Relic extends BaseContract {
 
     burn(
       tokenId: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    createRecipe(
-      _recipeId: BigNumberish,
-      _requiredIds: BigNumberish[],
-      _requiredAmounts: BigNumberish[],
-      _rewardIds: BigNumberish[],
-      _rewardAmounts: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1741,16 +1487,6 @@ export interface Relic extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    recipes(
-      arg0: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    relicXP(
-      arg0: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     removeFromWhitelist(
       _toRemove: string,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -1781,7 +1517,7 @@ export interface Relic extends BaseContract {
       from: string,
       to: string,
       tokenId: BigNumberish,
-      _data: BytesLike,
+      data: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1796,8 +1532,8 @@ export interface Relic extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    setItemContract(
-      _itemContract: string,
+    setShardContract(
+      _shardsContract: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1853,12 +1589,6 @@ export interface Relic extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    transmute(
-      _relicId: BigNumberish,
-      _recipeId: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
     unpause(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
@@ -1866,16 +1596,6 @@ export interface Relic extends BaseContract {
     whitelistTemplar(
       _toWhitelist: string,
       overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    whitelisted(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    whitelistedContracts(
-      arg0: string,
-      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };
 }

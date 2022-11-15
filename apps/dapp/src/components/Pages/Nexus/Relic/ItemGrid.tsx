@@ -54,9 +54,6 @@ export const ItemButton: FC<{
 }> = (props) => {
   const { item } = props
 
-  console.log('--- Render Itembutton');
-  console.log(item);
-
   const [processing, setProcessing] = useState(false)
   const imgUrl = item.id <= MAX_IMAGE_ITEM_ID ? `${ITEM_IMAGE_BASE_URL}/${item.id}.png` : undefined
   return <ItemCell style={{

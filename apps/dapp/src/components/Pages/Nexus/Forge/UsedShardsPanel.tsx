@@ -9,17 +9,13 @@ import { PageWrapper } from '../../Core/utils';
 import ItemGrid from '../Relic/ItemGrid';
 import { NexusBackground, NexusBodyContainer, NexusContainer, NexusPanel } from '../Relic/styles';
 
-const UsedShardsPanel = (props: { items: RelicItemData[] }) => {
-  const clickHandler = (item: number) => {
-    console.log(`clicked: ${item}`);
-  };
-
+const UsedShardsPanel = (props: { items: RelicItemData[]; usedShardsClickHandler: (item: number) => void }) => {
   return (
     <NexusContainer>
       <NexusBodyContainer>
         <NexusPanel>
           <PanelText>Used Shards</PanelText>
-          <ItemGrid items={props.items} onClick={async (item) => clickHandler(item)} />
+          <ItemGrid items={props.items} onClick={async (item) => props.usedShardsClickHandler(item)} />
         </NexusPanel>
       </NexusBodyContainer>
     </NexusContainer>
