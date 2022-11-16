@@ -1,7 +1,7 @@
 import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
 import {
-  RAMOSGoerli__factory
+  RAMOS, RAMOS__factory
 } from "../../../../typechain";
 import {
   DEPLOYED_CONTRACTS, 
@@ -24,11 +24,15 @@ async function main() {
         DEPLOYED = DEPLOYED_CONTRACTS[network.name];
     }
 
-    const ramos = RAMOSGoerli__factory.connect(DEPLOYED.RAMOS, owner);
+    const ramos = RAMOS__factory.connect(DEPLOYED.RAMOS, owner);
+   
+    await ramosPostDeploy(ramos, DEPLOYED);
+}
 
-    // ramos
-    await mine(ramos.setPoolHelper(DEPLOYED.RAMOS_POOL_HELPER));
-    await mine(ramos.transferOwnership(DEPLOYED.MULTISIG));
+async function ramosPostDeploy(ramos: RAMOS, DEPLOYED: DeployedContracts) {
+   // ramos
+   await mine(ramos.setPoolHelper(DEPLOYED.RAMOS_POOL_HELPER));
+   await mine(ramos.transferOwnership(DEPLOYED.MULTISIG));
 }
 
 // We recommend this pattern to be able to use async/await everywhere
