@@ -20,7 +20,7 @@ import "./interfaces/AMO__IAuraStaking.sol";
  * BPTs into TEMPLE and burn them and if the price is above the TPF it will 
  * single side deposit TEMPLE into the pool to drop the spot price.
  */
-contract TpfAmo is Ownable, Pausable {
+contract RAMOS is Ownable, Pausable {
     using SafeERC20 for IERC20;
 
     AMO__IBalancerVault public immutable balancerVault;

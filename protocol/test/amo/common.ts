@@ -4,7 +4,7 @@ import { AMO__IBalancerVault, IBalancerHelpers, IERC20, IWeightPool2Tokens, Temp
 import amoAddresses from "./amo-constants";
 import { toAtto } from "../helpers";
 
-const { BALANCER_POOL_ID } = amoAddresses.others;
+const { TEMPLE_BB_A_USD_BALANCER_POOL_ID } = amoAddresses.mainnet.others;
 
 export async function seedTempleBbaUsdPool(
     templeToken: TempleERC20Token,
@@ -16,12 +16,12 @@ export async function seedTempleBbaUsdPool(
 ) {
     const signerAddress = await signer.getAddress();
     const maxAmountsIn = [amount, amount];
-    const [assets, ,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const [assets, ,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     const { joinPoolRequest } = await getJoinPoolRequest(assets, balancerHelpers, signerAddress, to, maxAmountsIn);
 
     // No approval required for bbaUsd into the balancer vault.
     await templeToken.connect(signer).approve(balancerVault.address, amount);
-    await balancerVault.connect(signer).joinPool(BALANCER_POOL_ID, signerAddress, to, joinPoolRequest); 
+    await balancerVault.connect(signer).joinPool(TEMPLE_BB_A_USD_BALANCER_POOL_ID, signerAddress, to, joinPoolRequest); 
 }
 
 export async function swapDaiForBbaUsd(
@@ -118,19 +118,19 @@ export async function ownerAddLiquidity(
     to: string,
     amountIn: BigNumber
 ) {
-    const [tokens, ,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const [tokens, ,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     const { joinPoolRequest } = await getJoinPoolRequest(tokens, balancerHelpers, from, to, [amountIn, amountIn]);
 
     // No approval required for bbaUsd into the balancer vault.
     await templeToken.connect(signer).approve(balancerVault.address, amountIn);
-    await balancerVault.connect(signer).joinPool(BALANCER_POOL_ID, await signer.getAddress(), to, joinPoolRequest);
+    await balancerVault.connect(signer).joinPool(TEMPLE_BB_A_USD_BALANCER_POOL_ID, await signer.getAddress(), to, joinPoolRequest);
 }
 
 export async function getTempleIndexInBalancerPool(
     balancerVault: AMO__IBalancerVault,
     templeAddress: string
 ) {
-    const [tokens, ,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const [tokens, ,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     let index = 0;
     for(let i=0; i<tokens.length; i++) {
         if (ethers.utils.getAddress(tokens[i]) == ethers.utils.getAddress(templeAddress)) {
@@ -155,7 +155,7 @@ export async function getJoinPoolRequest(
         userData,
         fromInternalBalance: false
     };
-    const [bptOut, amountsIn] = await balancerHelpers.queryJoin(BALANCER_POOL_ID, from, to, joinPoolRequest);
+    const [bptOut, amountsIn] = await balancerHelpers.queryJoin(TEMPLE_BB_A_USD_BALANCER_POOL_ID, from, to, joinPoolRequest);
 
     // Use the quoted bptOut and amountsIn for the final request
     userData = ethers.utils.defaultAbiCoder.encode(["uint256","uint256[]","uint256"], [1, amountsIn, bptOut]);
@@ -177,7 +177,7 @@ export async function getSpotPriceScaled(
     weightedPool2Tokens: IWeightPool2Tokens
 ) {
     const precision = BigNumber.from(10_000);
-    const [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const [, balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     const normWeights = await weightedPool2Tokens.getNormalizedWeights();
     // multiply by precision to avoid rounding down
     const currentSpotPrice = precision.mul(balances[1]).div(normWeights[1]).div(balances[0].div(normWeights[0]));
@@ -199,7 +199,7 @@ export async function templeLotSizeForPriceTarget(
     templeIndexInPool: number,
     priceTarget: number
 ): Promise<BigNumber> {
-    const [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const [, balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
     const bdDivQuoteWithFee = balances[stableIndexInPool].mul(1_000).mul(10_000).div(BigNumber.from(priceTarget).mul(995));
     return balances[templeIndexInPool].sub(bdDivQuoteWithFee).abs();
@@ -212,9 +212,9 @@ export async function singleSideDeposit(
     amountsIn: BigNumber[],
 ) {
     const whaleAddress = await whale.getAddress();
-    const [assets, ,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const [assets, ,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     const { joinPoolRequest } = await getJoinPoolRequest(assets, balancerHelpers, whaleAddress, whaleAddress, amountsIn);
 
     // No approval required for bbaUsd into the balancer vault.
-    await balancerVault.connect(whale).joinPool(BALANCER_POOL_ID, whaleAddress, whaleAddress, joinPoolRequest);
+    await balancerVault.connect(whale).joinPool(TEMPLE_BB_A_USD_BALANCER_POOL_ID, whaleAddress, whaleAddress, joinPoolRequest);
 }
