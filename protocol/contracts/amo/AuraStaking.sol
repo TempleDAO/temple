@@ -18,7 +18,6 @@ contract AuraStaking is Ownable {
     AuraPoolInfo public auraPoolInfo;
     // @notice Aura booster
     AMO__IAuraBooster public immutable booster;
-    IERC20 public immutable depositToken;
 
     address public rewardsRecipient;
     address[] public rewardTokens;
@@ -46,13 +45,11 @@ contract AuraStaking is Ownable {
         address _operator,
         IERC20 _bptToken,
         AMO__IAuraBooster _booster,
-        IERC20 _depositToken,
         address[] memory _rewardTokens
     ) {
         operator = _operator;
         bptToken = _bptToken;
         booster = _booster;
-        depositToken = _depositToken;
         rewardTokens = _rewardTokens;
     }
 

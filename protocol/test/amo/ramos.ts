@@ -16,8 +16,6 @@ import {
 import amoAddresses from "./amo-constants";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { 
-  TpfAmo,
-  TpfAmo__factory,
   TempleERC20Token,
   TempleERC20Token__factory,
   ERC20,
@@ -49,29 +47,30 @@ import {
   AMO__IAuraBooster__factory,
   AMO__IAuraBooster,
   PoolHelper__factory,
-  PoolHelper
+  PoolHelper,
+  RAMOS__factory,
+  RAMOS
 } from "../../typechain";
 import { DEPLOYED_CONTRACTS } from '../../scripts/deploys/helpers';
 
 const { MULTISIG, TEMPLE } = DEPLOYED_CONTRACTS.mainnet;
 const { BALANCER_VAULT } = addresses.contracts;
 const { FRAX_WHALE, BINANCE_ACCOUNT_8 } = addresses.accounts;
-const { FRAX } = addresses.tokens;
-const { DAI } = addresses.tokens;
+const { FRAX, DAI, } = addresses.tokens;
 const { BBA_USD_TOKEN, TEMPLE_BBAUSD_LP_TOKEN, AURA_TOKEN, 
-    BALANCER_TOKEN, BAL_WETH_8020_TOKEN } = amoAddresses.tokens;
-const { BALANCER_POOL_ID } = amoAddresses.others;
+    BALANCER_TOKEN, BAL_WETH_8020_TOKEN } = amoAddresses.mainnet.tokens;
+const { TEMPLE_BB_A_USD_BALANCER_POOL_ID } = amoAddresses.mainnet.others;
 const { BALANCER_AUTHORIZER_ADAPTER, BALANCER_HELPERS, AURA_BOOSTER , 
     AURA_LIQUIDITY_GAUGE_FACTORY, AURA_POOL_MANAGER_V3, AURA_GAUGE_CONTROLLER,
-    GAUGE_ADDER, BAL_VOTING_ESCROW } = amoAddresses.contracts;
+    GAUGE_ADDER, BAL_VOTING_ESCROW } = amoAddresses.mainnet.contracts;
 const { TEMPLE_WHALE, BBA_USD_WHALE, AURA_GAUGE_OWNER , AURA_POOL_MANAGER_OPERATOR, 
-    BAL_MULTISIG, BAL_WETH_8020_WHALE, ZERO_ADDRESS } = amoAddresses.accounts;
+    BAL_MULTISIG, BAL_WETH_8020_WHALE, ZERO_ADDRESS } = amoAddresses.mainnet.accounts;
 
 const TPF_SCALED = 9_700;
 const ONE_ETH = toAtto(1);
 const BLOCKNUMBER = 15862300;
 
-let amo: TpfAmo;
+let amo: RAMOS;
 let amoStaking: AuraStaking;
 let owner: Signer;
 let alan: Signer;
@@ -183,11 +182,10 @@ describe("Temple Price Floor AMO", async () => {
              ownerAddress,
              TEMPLE_BBAUSD_LP_TOKEN,
              AURA_BOOSTER,
-             bbaUsdTempleAuraDepositToken.address,
              [BALANCER_TOKEN, AURA_TOKEN]
          );
 
-        amo = await new TpfAmo__factory(owner).deploy(
+        amo = await new RAMOS__factory(owner).deploy(
             BALANCER_VAULT,
             TEMPLE,
             BBA_USD_TOKEN,
@@ -195,7 +193,7 @@ describe("Temple Price Floor AMO", async () => {
             amoStaking.address,
             AURA_BOOSTER,
             0,
-            BALANCER_POOL_ID
+            TEMPLE_BB_A_USD_BALANCER_POOL_ID
         );
 
         poolHelper = await new PoolHelper__factory(owner).deploy(
@@ -205,7 +203,7 @@ describe("Temple Price Floor AMO", async () => {
             bptToken.address,
             amo.address,
             templeIndexInBalancerPool,
-            BALANCER_POOL_ID
+            TEMPLE_BB_A_USD_BALANCER_POOL_ID
         );
         
         await amo.setPoolHelper(poolHelper.address);
@@ -459,7 +457,7 @@ describe("Temple Price Floor AMO", async () => {
     describe("Liquidity Add/Remove", async () => {
 
         it("adds liquidity minting TEMPLE", async () => {
-            const [tokens, ,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+            const [tokens, ,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
             const maxAmountsIn = [toAtto(1000), toAtto(990)];
             const { joinPoolRequest, bptOut } = await getJoinPoolRequest(tokens, balancerHelpers, amo.address, amo.address, maxAmountsIn);
 
@@ -502,7 +500,7 @@ describe("Temple Price Floor AMO", async () => {
 
             // create exit request
             const minAmountsOut = [toAtto(10_000), toAtto(10_000)];
-            const [tokens,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+            const [tokens,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
 
             // using proportional exit: [EXACT_BPT_IN_FOR_TOKENS_OUT, bptAmountIn]
             const intermediaryUserdata = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256"], [1, bptAmountIn]);
@@ -513,7 +511,7 @@ describe("Temple Price Floor AMO", async () => {
                 toInternalBalance: false
             }
            
-            const [bptIn, amountsOut] = await balancerHelpers.queryExit(BALANCER_POOL_ID, amo.address, amo.address, exitRequest);
+            const [bptIn, amountsOut] = await balancerHelpers.queryExit(TEMPLE_BB_A_USD_BALANCER_POOL_ID, amo.address, amo.address, exitRequest);
 
             // fail invalid request
             exitRequest.toInternalBalance = true;
@@ -558,7 +556,12 @@ describe("Temple Price Floor AMO", async () => {
             await expect(amo.depositStable(ONE_ETH, 1)).to.be.revertedWith("Pausable: paused");
             await amo.unpause();
             // single-side withdraw stable to skew price below TPF
-            await singleSideDepositTemple(toAtto(400_000));
+            await singleSideDepositTemple(toAtto(100_000));
+
+            // willStableJoinTakePriceAboveTPFUpperBound
+            await amo.setMaxRebalanceAmounts(toAtto(100_000), toAtto(200_000), toAtto(100_000));
+            await expect(amo.depositStable(toAtto(200_000), 1))
+                .to.be.revertedWithCustomError(poolHelper, "HighSlippage");
 
             // increase capped amount
             const amountIn = toAtto(10_000);
@@ -572,6 +575,7 @@ describe("Temple Price Floor AMO", async () => {
             const bptOut = reqData.bptOut;
             const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
             const stableBalanceBefore = await bbaUsdToken.balanceOf(amo.address); 
+
             await expect(amo.depositStable(amountIn, bptOut))
                 .to.emit(amo, "StableDeposited").withArgs(amountIn, bptOut)
                 .to.emit(auraBooster, "Deposited").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptOut);
@@ -594,12 +598,15 @@ describe("Temple Price Floor AMO", async () => {
             await amo.setTemplePriceFloorNumerator(9_700);
             await expect(amo.withdrawStable(ONE_ETH, 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceDown");
             await amo.pause();
-            expect(amo.withdrawStable(1, 1)).to.be.revertedWith("Pausable: paused");
+            await expect(amo.withdrawStable(1, 1)).to.be.revertedWith("Pausable: paused");
             await amo.unpause();
             // skew price above TPF
-            await singleSideDepositStable(toAtto(100_000));
+            await singleSideDepositStable(toAtto(200_000));
+
             // // add liquidity to get some staked position
-            await ownerAddLiquidity(toAtto(10_000));
+            const stakeAmount = toAtto(100_000);
+            await ownerAddLiquidity(stakeAmount);
+            await ownerDepositAndStakeBpt(stakeAmount);
             const amountOut = toAtto(1_000);
             const minAmountsOut = [BigNumber.from(0), amountOut];
             const bptAmountIn = toAtto(100);
@@ -610,7 +617,11 @@ describe("Temple Price Floor AMO", async () => {
             await amo.setMaxRebalanceAmounts(bptIn, bptIn, bptIn);
 
             const stableBalanceBefore = await bbaUsdToken.balanceOf(amo.address);
-            const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address)
+            const stakedBalanceBefore = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
+            // willStableExitTakePriceBelowTPFLowerBound
+            await amo.setMaxRebalanceAmounts(stakeAmount, stakeAmount, stakeAmount);
+            await expect(amo.withdrawStable(bptIn, exitTokenAmountOut.add(toAtto(300_000))))
+                .to.be.revertedWithCustomError(poolHelper, "HighSlippage");
             await expect(amo.withdrawStable(bptIn, exitTokenAmountOut))
                 .to.emit(amo, "WithdrawStable").withArgs(bptIn, exitTokenAmountOut)
                 .to.emit(auraBooster, "Withdrawn").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptIn);
@@ -626,7 +637,7 @@ describe("Temple Price Floor AMO", async () => {
             // No approval required for bbaUsd into the balancer vault.
             await templeToken.connect(owner).approve(balancerVault.address, joinAmount);
 
-            await balancerVault.connect(owner).joinPool(BALANCER_POOL_ID, ownerAddress, ownerAddress, reqData.joinPoolRequest);
+            await balancerVault.connect(owner).joinPool(TEMPLE_BB_A_USD_BALANCER_POOL_ID, ownerAddress, ownerAddress, reqData.joinPoolRequest);
             const amount = reqData.bptOut;
 
             await bptToken.connect(owner).approve(amo.address, amount);
@@ -642,14 +653,14 @@ describe("Temple Price Floor AMO", async () => {
             await templeToken.connect(owner).approve(balancerVault.address, joinAmount);
 
             // get bpt tokens and send to amo
-            await balancerVault.connect(owner).joinPool(BALANCER_POOL_ID, ownerAddress, amo.address, reqData.joinPoolRequest);
+            await balancerVault.connect(owner).joinPool(TEMPLE_BB_A_USD_BALANCER_POOL_ID, ownerAddress, amo.address, reqData.joinPoolRequest);
             const amoBptBalanceAfter = await bptToken.balanceOf(amo.address)
             expect(amoBptBalanceAfter).to.gt(amoBptBalance);
             await amo.depositAndStakeBptTokens(amoBptBalanceAfter, true);
         });
 
         it("rebalances up", async () => {
-            await amo.setCoolDown(3_600);
+            await amo.setCoolDown(0);
             // fails
             await expect(amo.rebalanceUp(0, 0)).to.be.revertedWithCustomError(amo, "ZeroSwapLimit");
             await expect(amo.rebalanceUp(toAtto(1_000), 1)).to.be.revertedWithCustomError(amo, "AboveCappedAmount");
@@ -665,8 +676,6 @@ describe("Temple Price Floor AMO", async () => {
             const bptOut = await ownerDepositAndStakeBpt(toAtto(10_000));
         
             await amo.setMaxRebalanceAmounts(bptOut, bptOut, bptOut);
-            // amount in is greater than last rebalanceAmount so expect revert
-            await expect(amo.rebalanceUp(bptOut, 1)).to.be.reverted;
 
             await expect(amo.rebalanceUp(bptOut, 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceUp");
 
@@ -691,22 +700,45 @@ describe("Temple Price Floor AMO", async () => {
                 await amo.setMaxRebalanceAmounts(bptIn, bptIn, bptIn);
             }
             const templeAmountOut = data.amountOut;
+            const totalBptStaked = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
+            // test with total bpt staked to trigger high price impact after balancer pool exit
+            await amo.setMaxRebalanceAmounts(totalBptStaked, bptIn, bptIn);
+            await expect(amo.rebalanceUp(totalBptStaked, templeAmountOut))
+                .to.be.revertedWithCustomError(poolHelper, "HighSlippage");
             await expect(amo.rebalanceUp(bptIn, templeAmountOut))
-                .to.emit(amo, "RebalanceUp")
-                //.withArgs(bptIn, templeAmountOut);
+                .to.emit(amo, "RebalanceUp");
+
+            const newMaxAmount = toAtto(200_000);
+            await amo.setMaxRebalanceAmounts(newMaxAmount, newMaxAmount, newMaxAmount);
+            // stake some more to have enough bpt to unwrap and trigger price drop
+            await ownerDepositAndStakeBpt(toAtto(150_000));
+            await singleSideDepositTemple(toAtto(50_000));
+
+            // test cooldown
+            await amo.setCoolDown(1_800);
+            await time.increase((await amo.cooldownSecs()).sub(10));
+            await expect(amo.rebalanceUp(toAtto(10_000), 1)).to.be.revertedWithCustomError(amo, "NotEnoughCooldown");
+            await amo.setCoolDown(0);
+
+            // exit will take price above TPF upper bound
+            console.log(await getSpotPriceScaled(balancerVault, weightedPool2Tokens));
+            await expect(amo.rebalanceUp(toAtto(130_000), toAtto(250_000)))
+                .to.be.revertedWithCustomError(poolHelper, "HighSlippage");
 
             // no rebalance up
             const rebalanceBoundUp = await amo.rebalancePercentageBoundUp();
             const tpfNumerator = await amo.templePriceFloorNumerator();
+            // send price up
+            await singleSideDepositStable(toAtto(50_000));
             await expect(amo.rebalanceUp(1, 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceUp");
             expect(await poolHelper["isSpotPriceAboveTPF(uint256)"](tpfNumerator)).to.be.false;
             expect(await poolHelper.isSpotPriceAboveTPFUpperBound(rebalanceBoundUp, tpfNumerator)).to.be.false;
-
-            await time.increase((await amo.cooldownSecs()).sub(1));
-            await expect(amo.rebalanceUp(toAtto(10_000), 1)).to.be.revertedWithCustomError(amo, "NotEnoughCooldown");
+            console.log(await poolHelper.getSpotPriceScaled());
+            
         });
 
         it("rebalances down", async () => {
+            await amo.setCoolDown(0);
             // fails
             await expect(amo.rebalanceDown(0, 0)).to.be.revertedWithCustomError(amo, "ZeroSwapLimit");
             await expect(amo.rebalanceDown(toAtto(1_000), 1)).to.be.revertedWithCustomError(amo, "AboveCappedAmount");
@@ -736,15 +768,19 @@ describe("Temple Price Floor AMO", async () => {
 
             // rebalance down
             const reqData = await calculateBptTokensToBringTemplePriceDown(poolHelper.address, 400);
-
-            await amo.rebalanceDown(reqData.templeAmountIn, 1);
+            // trigger high price impact from slippage after balancer pool join
+            await expect(amo.rebalanceDown(reqData.templeAmountIn.add(toAtto(50_000)), reqData.bptOut))
+                .to.be.revertedWithCustomError(poolHelper, "HighSlippage");
+            await amo.rebalanceDown(reqData.templeAmountIn, reqData.bptOut);
 
             const newMaxAmount = toAtto(1_000_000);
             await amo.setMaxRebalanceAmounts(newMaxAmount, newMaxAmount, newMaxAmount);
-            await expect(amo.rebalanceDown(toAtto(1_000_000), 1)).to.be.revertedWithCustomError(poolHelper, "HighSlippage");
+            // join will take price below TPF lower bound
+            await expect(amo.rebalanceDown(toAtto(800_000), reqData.bptOut)).to.be.revertedWithCustomError(poolHelper, "HighSlippage");
             // test cool down
-            await time.increase((await amo.cooldownSecs()).sub(1));
-            await expect(amo.rebalanceDown(toAtto(10_000), 1)).to.be.revertedWithCustomError(amo, "NotEnoughCooldown");
+            await amo.setCoolDown(1_800);
+            await time.increase((await amo.cooldownSecs()).sub(10));
+            await expect(amo.rebalanceDown(toAtto(10_000), reqData.bptOut)).to.be.revertedWithCustomError(amo, "NotEnoughCooldown");
         });
     });
 
@@ -861,6 +897,19 @@ describe("Temple Price Floor AMO", async () => {
             
             expect(earned).to.be.approximately(balBalancerAfter.sub(balBalancerBefore), ethers.utils.parseEther("0.001"));
             expect(auraBalanceAfter).to.gt(auraBalanceBefore);
+
+            // when rewards receiver not set
+            await amoStaking.setRewardsRecipient(ZERO_ADDRESS);
+            await auraBooster.earmarkRewards(bbaUsdTempleAuraPID);
+            await mineForwardSeconds(7 * 24 * 3600);
+            await auraBooster.earmarkRewards(bbaUsdTempleAuraPID);
+            const contractAuraBalanceBefore = await auraToken.balanceOf(amoStaking.address);
+            const contractBalBalanceBefore = await balToken.balanceOf(amoStaking.address);
+            await amoStaking.getReward(true);
+            const contractAuraBalanceAfter = await auraToken.balanceOf(amoStaking.address);
+            const contractBalBalanceAfter = await balToken.balanceOf(amoStaking.address);
+            expect(contractBalBalanceAfter).gt(contractBalBalanceBefore);
+            expect(contractAuraBalanceAfter).gt(contractAuraBalanceBefore);
         });
 
         it("deposits and stakes", async () => {
@@ -873,7 +922,7 @@ async function calculateBptTokensToBringTemplePriceDown(
     sender: string,
     percentageAboveTPF: number // to percentage above TPF
 ) {
-    const [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const [, balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     const templeIndexInPool = await poolHelper.templeIndexInBalancerPool();
     const stableIndexInPool = templeIndexInPool.toNumber() == 0 ? 1 : 0;
     const templeBalance = balances[templeIndexInPool.toNumber()];
@@ -909,7 +958,7 @@ async function calculateBptTokensToBringTemplePriceUp(
     // 2-RNG decides a number between 0.5 and 1
     // 3-The number from step 1 is multiplied by the RNG result
     // 4-That amount of BPTs is single asset withdrawn and the TEMPLE is burnt
-    const [tokens, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const [tokens, balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     const templeIndexInPool = await poolHelper.templeIndexInBalancerPool();
     const [templeBalance, stableBalance] = templeIndexInPool.toNumber() == 0
         ? [balances[0], balances[1]]
@@ -947,7 +996,7 @@ async function calculateBptTokensToBringTemplePriceUp(
         toInternalBalance: false
     }
     let bptIn: BigNumber = BigNumber.from(0);
-    [bptIn, amountsOut] = await balancerHelpers.queryExit(BALANCER_POOL_ID, amo.address, amo.address, exitRequest);
+    [bptIn, amountsOut] = await balancerHelpers.queryExit(TEMPLE_BB_A_USD_BALANCER_POOL_ID, amo.address, amo.address, exitRequest);
     const userData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256[]', 'uint256'], [2, amountsOut, bptIn]);
     exitRequest.userData = userData;
     exitRequest.minAmountsOut = amountsOut;
@@ -970,7 +1019,7 @@ async function ownerDepositAndStakeBpt(
     // No approval required for bbaUsd into the balancer vault.
     await templeToken.connect(owner).approve(balancerVault.address, joinAmount);
 
-    await balancerVault.connect(owner).joinPool(BALANCER_POOL_ID, ownerAddress, amo.address, reqData.joinPoolRequest);
+    await balancerVault.connect(owner).joinPool(TEMPLE_BB_A_USD_BALANCER_POOL_ID, ownerAddress, amo.address, reqData.joinPoolRequest);
     await amo.depositAndStakeBptTokens(reqData.bptOut, true);
     return reqData.bptOut;
 }
@@ -988,7 +1037,7 @@ async function getAmoJoinPoolRequest(
     sender: string,
     maxAmountsIn: BigNumber[]
 ) {
-    const [tokens, ,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const [tokens, ,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     return getJoinPoolRequest(tokens, balancerHelpers, sender, amo.address, maxAmountsIn);
 }
 
@@ -999,7 +1048,7 @@ async function getExitPoolRequest(
     exitTokenIndex: BigNumber
 ) {
     // create exit request
-    const [tokens,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+    const [tokens,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     let intermediaryUserdata = "";
     // kinds accepted are EXACT_BPT_IN_FOR_TOKENS_OUT and EXACT_BPT_IN_FOR_ONE_TOKEN_OUT (and 2 others not supported in this function)
     if (kind == 0) {
@@ -1022,7 +1071,7 @@ async function getExitPoolRequest(
 
     // bpt tokens will be in pool helper so from poolHelper to amo (as receiver of exit tokens)
 
-    const [bptIn, amountsOut] = await balancerHelpers.queryExit(BALANCER_POOL_ID, poolHelper.address, amo.address, exitRequest);
+    const [bptIn, amountsOut] = await balancerHelpers.queryExit(TEMPLE_BB_A_USD_BALANCER_POOL_ID, poolHelper.address, amo.address, exitRequest);
     return {
         bptIn,
         amountsOut

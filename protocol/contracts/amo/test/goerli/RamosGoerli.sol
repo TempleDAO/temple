@@ -5,11 +5,10 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "./interfaces/AMO__IPoolHelper.sol";
-import "./interfaces/AMO__IAuraBooster.sol";
-import "./interfaces/AMO__ITempleERC20Token.sol";
-import "./helpers/AMOCommon.sol";
-import "./interfaces/AMO__IAuraStaking.sol";
+import "../../interfaces/AMO__IPoolHelper.sol";
+import "../../interfaces/AMO__ITempleERC20Token.sol";
+import "../../helpers/AMOCommon.sol";
+import "../../interfaces/AMO__IAuraStaking.sol";
 
 
 /**
@@ -20,19 +19,14 @@ import "./interfaces/AMO__IAuraStaking.sol";
  * BPTs into TEMPLE and burn them and if the price is above the TPF it will 
  * single side deposit TEMPLE into the pool to drop the spot price.
  */
-contract TpfAmo is Ownable, Pausable {
+contract RAMOSGoerli is Ownable, Pausable {
     using SafeERC20 for IERC20;
 
     AMO__IBalancerVault public immutable balancerVault;
     // @notice BPT token address
     IERC20 public immutable bptToken;
-    // @notice Aura booster
-    AMO__IAuraBooster public immutable booster;
     // @notice pool helper contract
     AMO__IPoolHelper public poolHelper;
-    
-    // @notice AMO contract for staking into aura 
-    AMO__IAuraStaking public immutable amoStaking;
 
     address public operator;
     IERC20 public immutable temple;
@@ -82,14 +76,13 @@ contract TpfAmo is Ownable, Pausable {
     event WithdrawStable(uint256 bptAmountIn, uint256 amountOut);
     event SetRebalancePercentageBounds(uint64 belowTpf, uint64 aboveTpf);
     event SetTemplePriceFloorNumerator(uint128 numerator);
+    event AddedLiquidity(uint256 amountTemple, uint256 amountStable, uint256 bptOut);
 
     constructor(
         address _balancerVault,
         address _temple,
         address _stable,
         address _bptToken,
-        address _amoStaking,
-        address _booster,
         uint64 _templeIndexInPool,
         bytes32 _balancerPoolId
     ) {
@@ -97,8 +90,6 @@ contract TpfAmo is Ownable, Pausable {
         temple = IERC20(_temple);
         stable = IERC20(_stable);
         bptToken = IERC20(_bptToken);
-        amoStaking = AMO__IAuraStaking(_amoStaking);
-        booster = AMO__IAuraBooster(_booster);
         templeBalancerPoolIndex = _templeIndexInPool;
         balancerPoolId = _balancerPoolId;
     }
@@ -210,8 +201,9 @@ contract TpfAmo is Ownable, Pausable {
     ) external onlyOperatorOrOwner whenNotPaused enoughCooldown {
         _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
 
-        amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
-    
+        // use contract bpt. requires contract has enough bpt
+        bptToken.safeTransfer(address(poolHelper), bptAmountIn);
+        
         // exitTokenIndex = templeBalancerPoolIndex;
         uint256 burnAmount = poolHelper.exitPool(
             bptAmountIn, minAmountOut, rebalancePercentageBoundLow,
@@ -251,10 +243,6 @@ contract TpfAmo is Ownable, Pausable {
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
         emit RebalanceDown(templeAmountIn, bptIn);
-
-        // deposit and stake BPT
-        bptToken.safeTransfer(address(amoStaking), bptIn);
-        amoStaking.depositAndStake(bptIn);
     }
 
     /**
@@ -280,9 +268,6 @@ contract TpfAmo is Ownable, Pausable {
         lastRebalanceTimeSecs = uint64(block.timestamp);
 
         emit StableDeposited(amountIn, bptOut);
-
-        bptToken.safeTransfer(address(amoStaking), bptOut);
-        amoStaking.depositAndStake(bptOut);
     }
 
      /**
@@ -298,7 +283,8 @@ contract TpfAmo is Ownable, Pausable {
     ) external onlyOwner whenNotPaused {
         _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
 
-        amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
+        // use contract bpt
+        bptToken.safeTransfer(address(poolHelper), bptAmountIn);
 
         uint256 stableTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
         uint256 amountOut = poolHelper.exitPool(
@@ -346,9 +332,7 @@ contract TpfAmo is Ownable, Pausable {
             revert AMOCommon.InsufficientAmountOutPostcall(minBptOut, bptIn);
         }
 
-        // stake BPT
-        bptToken.safeTransfer(address(amoStaking), bptIn);
-        amoStaking.depositAndStake(bptIn);
+        emit AddedLiquidity(request.maxAmountsIn[0], request.maxAmountsIn[1], bptIn);
     }
 
     /**
@@ -356,11 +340,9 @@ contract TpfAmo is Ownable, Pausable {
      * Treasury Price Floor is expected to be within bounds of multisig set range.
      * Withdraw and unwrap BPT tokens from Aura staking and send to balancer pool to receive both tokens.
      * @param request Request for use in balancer pool exit
-     * @param bptIn Amount of BPT tokens to send into balancer pool
      */
     function removeLiquidity(
-        AMO__IBalancerVault.ExitPoolRequest memory request,
-        uint256 bptIn
+        AMO__IBalancerVault.ExitPoolRequest memory request
     ) external onlyOwner {
         // validate request
         if (request.assets.length != request.minAmountsOut.length || 
@@ -372,7 +354,7 @@ contract TpfAmo is Ownable, Pausable {
         uint256 templeAmountBefore = temple.balanceOf(address(this));
         uint256 stableAmountBefore = stable.balanceOf(address(this));
 
-        amoStaking.withdrawAndUnwrap(bptIn, false, address(this));
+        // use contract bpt. requires contract has enough bpt tokens
 
         balancerVault.exitPool(balancerPoolId, address(this), address(this), request);
 
@@ -391,28 +373,7 @@ contract TpfAmo is Ownable, Pausable {
                     receivedAmount = stable.balanceOf(address(this)) - stableAmountBefore;
                 }
             }
-
-            // revert if insufficient amount received
-            if (receivedAmount < request.minAmountsOut[i]) {
-                revert AMOCommon.InsufficientAmountOutPostcall(request.minAmountsOut[i], receivedAmount);
-            }
         }
-    }
-
-    /**
-     * @notice Allow owner to deposit and stake bpt tokens directly
-     * @param amount Amount of Bpt tokens to depositt
-     * @param useContractBalance If to use bpt tokens in contract
-     */
-    function depositAndStakeBptTokens(
-        uint256 amount,
-        bool useContractBalance
-    ) external onlyOwner {
-        if (!useContractBalance) {
-            bptToken.safeTransferFrom(msg.sender, address(this), amount);
-        }
-        bptToken.safeTransfer(address(amoStaking), amount);
-        amoStaking.depositAndStake(amount);
     }
 
     function _validateParams(
@@ -429,7 +390,7 @@ contract TpfAmo is Ownable, Pausable {
     }
 
     modifier enoughCooldown() {
-        if (lastRebalanceTimeSecs != 0 && lastRebalanceTimeSecs + cooldownSecs <= block.timestamp) {
+        if (lastRebalanceTimeSecs != 0 && lastRebalanceTimeSecs + cooldownSecs > block.timestamp) {
             revert AMOCommon.NotEnoughCooldown();
         }
         _;
