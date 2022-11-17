@@ -179,7 +179,6 @@ export async function getSpotPriceScaled(
     const precision = BigNumber.from(10_000);
     const [, balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     const normWeights = await weightedPool2Tokens.getNormalizedWeights();
-    console.log(normWeights[0], normWeights[1]);
     // multiply by precision to avoid rounding down
     const currentSpotPrice = precision.mul(balances[1]).div(normWeights[1]).div(balances[0].div(normWeights[0]));
     return currentSpotPrice;
