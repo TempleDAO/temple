@@ -18,7 +18,6 @@ const RECIPES: Recipe[] = [
 export const getValidRecipe = (items: RelicItemData[]): Recipe | null => {
   if (!items) return null;
   const inputItemIds = items.map((item) => item.id);
-  const inputItemCounts = items.map((item) => item.count);
 
   const matchingRecipesByIds = RECIPES.filter((recipe) => {
     const sameIds = intersection(recipe.required_ids, inputItemIds);

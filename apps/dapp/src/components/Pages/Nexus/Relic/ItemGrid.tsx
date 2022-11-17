@@ -36,7 +36,7 @@ const ItemGrid: FC<{
             ) : (
               <ItemButton key={item.id}
                 item={item}
-                disabled={props.disabled}
+                disabled={props.disabled || item.count === 0}
                 onClick={props.onClick}
               />
             )}
@@ -56,9 +56,16 @@ export const ItemButton: FC<{
 
   const [processing, setProcessing] = useState(false)
   const imgUrl = item.id <= MAX_IMAGE_ITEM_ID ? `${ITEM_IMAGE_BASE_URL}/${item.id}.png` : undefined
+
+  let cellOpacity = processing ? .3 : 1;
+
+  if (item.count === 0) {
+    cellOpacity = .3;
+  }
+
   return <ItemCell style={{
     backgroundImage: `url(${imgUrl})`,
-    opacity: processing ? .3 : 1,
+    opacity: cellOpacity,
   }}
   >
     <Button key={item.id}

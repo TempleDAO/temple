@@ -6,7 +6,7 @@ import env from '../constants/env';
 import { Relic, Shards, Shards__factory, Relic__factory } from 'types/typechain';
 import { Nullable } from 'types/util';
 import { asyncNoop } from 'utils/helpers';
-import { useAccount, useSigner } from 'wagmi';
+import { useSigner } from 'wagmi';
 import { NoWalletAddressError } from './errors';
 import { useNotification } from './NotificationProvider';
 import { useWallet } from './WalletProvider';
@@ -76,9 +76,6 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
 
     const relics = await fetchRelicIds().then(fetchRelicData);
     const addresses = itemIds.map((_) => walletAddress);
-    console.log('about to call');
-    console.log(addresses);
-    console.log(itemIds);
     const items = extractValidItems(await relicItemsContract.balanceOfBatch(addresses, itemIds));
     return { relics, items };
   };
@@ -94,8 +91,6 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     }
     setInventoryLoading(true);
     const inventory = await fetchInventory(wallet, signer);
-    console.log('-Updated inv');
-    console.log(inventory);
     setInventoryState(inventory);
     setInventoryLoading(false);
     return inventory;

@@ -3,7 +3,7 @@ import bgInactive from 'assets/images/nexus-room-inactive.jpg';
 import { useRelic } from 'providers/RelicProvider';
 import { RelicItemData } from 'providers/types';
 import { useWallet } from 'providers/WalletProvider';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import styled from 'styled-components';
 import { PageWrapper } from '../../Core/utils';
 import { EMPTY_INVENTORY } from '../Relic';
@@ -12,9 +12,99 @@ import { NexusBackground } from '../Relic/styles';
 import InventoryPanel from './InventoryPanel';
 import UsedShardsPanel from './UsedShardsPanel';
 import { getValidRecipe, Recipe } from './recipes';
-import { Relic } from 'types/typechain';
 
-// const VALID_ITEM_ID_COUNT = 15;
+type TransmuteState = {
+  shardsPendingForge: RelicItemData[];
+  inventoryItems: RelicItemData[];
+};
+
+const reducer = (state: TransmuteState, action: { type: string; payload: any }): TransmuteState => {
+  console.log('Insider reducer');
+  console.log(action);
+
+  if (action.type === 'ADD_TO_PENDING') {
+    // map each shard, if it is the one we update, do the logic
+    let didUpdate = false;
+    let tmpShards: RelicItemData[] = [];
+    let tmpInventory: RelicItemData[] = [];
+
+    tmpShards = state.shardsPendingForge.map((shard) => {
+      if (shard.id === action.payload) {
+        didUpdate = true;
+        // loop over inventory and update accordingly
+        tmpInventory = state.inventoryItems.map((inventoryItem) => {
+          if (inventoryItem.id === action.payload) {
+            // this is the item we are pulling from
+            if (inventoryItem.count > 0) {
+              shard.count++;
+              inventoryItem.count--;
+            }
+            console.log('Updated');
+            console.log(inventoryItem);
+            return inventoryItem;
+          }
+          // return unmodified
+          return inventoryItem;
+        });
+      }
+      return shard;
+    });
+
+    if (!didUpdate) {
+      tmpInventory = state.inventoryItems.map((inventoryItem) => {
+        if (inventoryItem.id === action.payload) {
+          // this is the item we are pulling from
+          if (inventoryItem.count > 0) {
+            inventoryItem.count--;
+          }
+          return inventoryItem;
+        }
+        // return unmodified
+        return inventoryItem;
+      });
+      tmpShards.push({ id: action.payload, count: 1 });
+    }
+
+    return { inventoryItems: tmpInventory, shardsPendingForge: tmpShards };
+  }
+
+  if (action.type === 'REMOVE_FROM_PENDING') {
+    // map each shard, if it is the one we update, do the logic
+    let didUpdate = false;
+    let tmpShards: RelicItemData[] = [];
+    let tmpInventory: RelicItemData[] = [];
+
+    tmpShards = state.shardsPendingForge.map((shard) => {
+      if (shard.id === action.payload) {
+        // loop over inventory and update accordingly
+        tmpInventory = state.inventoryItems.map((inventoryItem) => {
+          if (inventoryItem.id === action.payload) {
+            shard.count--;
+            inventoryItem.count++;
+            return inventoryItem;
+          }
+          // return unmodified
+          return inventoryItem;
+        });
+      }
+      return shard;
+    });
+
+    // remove empty items completely
+    tmpShards = tmpShards.filter((shard) => shard.count > 0);
+
+    return { ...state, shardsPendingForge: tmpShards };
+  }
+
+  if (action.type === 'INIT') {
+    return {
+      shardsPendingForge: [],
+      inventoryItems: action.payload,
+    };
+  }
+
+  return state;
+};
 
 const ForgePage = () => {
   const { wallet, isConnected } = useWallet();
@@ -24,15 +114,23 @@ const ForgePage = () => {
     updateInventory();
   }, [wallet, isConnected]);
 
+  useEffect(() => {
+    dispatch({ type: 'INIT', payload: inventory?.items });
+  }, [inventory]);
+
   const bgImage = bgInactive;
 
-  // TODO: We should move all this into its own hook or context
-  const [shardsPendingForge, setShardsPendingForge] = useState<RelicItemData[]>([]);
+  // TODO: Should we move all this into its own hook?
   const [forgeResult, setForgeResult] = useState<RelicItemData | null>(null);
   const [recipeId, setRecipeId] = useState<number | null>(null);
 
+  const [transmuteState, dispatch] = useReducer(reducer, {
+    shardsPendingForge: [],
+    inventoryItems: EMPTY_INVENTORY.items,
+  });
+
   useEffect(() => {
-    const validRecipe = getValidRecipe(shardsPendingForge);
+    const validRecipe = getValidRecipe(transmuteState.shardsPendingForge);
     if (validRecipe) {
       setRecipeId(validRecipe.id);
       setForgeResult({ id: validRecipe.reward_ids[0], count: validRecipe.reward_amounts[0] });
@@ -41,7 +139,7 @@ const ForgePage = () => {
       setForgeResult(null);
       setRecipeId(null);
     };
-  }, [shardsPendingForge]);
+  }, [transmuteState]);
 
   const forgeHandler = async (_item: number): Promise<void> => {
     if (recipeId !== null) {
@@ -49,17 +147,12 @@ const ForgePage = () => {
     }
   };
 
-  // TODO: Update counts (inventory and shards pending) as you add/remove shards
   const usedShardsClickHandler = (item: number) => {
-    setShardsPendingForge((previous) => previous.filter((selectedShard) => selectedShard.id !== item));
+    dispatch({ type: 'REMOVE_FROM_PENDING', payload: item });
   };
 
-  // TODO: Update counts (inventory and shards pending) as you add/remove shards
   const addShardClickHandler = async (item: number): Promise<void> => {
-    if (shardsPendingForge.filter((shard) => shard.id === item).length === 0) {
-      setShardsPendingForge((previous) => [...previous, { id: item, count: 1 }]);
-    }
-    getValidRecipe(shardsPendingForge);
+    dispatch({ type: 'ADD_TO_PENDING', payload: item });
   };
 
   return (
@@ -80,9 +173,12 @@ const ForgePage = () => {
             <ItemButton key={forgeResult.id} item={forgeResult} disabled={false} onClick={forgeHandler} />
           )}
         </ForgeResultWrapper>
-        <UsedShardsPanel items={shardsPendingForge} usedShardsClickHandler={usedShardsClickHandler} />
+        <UsedShardsPanel
+          items={transmuteState.shardsPendingForge || EMPTY_INVENTORY.items}
+          usedShardsClickHandler={usedShardsClickHandler}
+        />
         <InventoryPanel
-          inventory={inventory?.items || EMPTY_INVENTORY.items}
+          inventory={transmuteState.inventoryItems || EMPTY_INVENTORY.items}
           addShardClickHandler={addShardClickHandler}
         />
       </ForgePanel>
