@@ -11,7 +11,6 @@ import "./interfaces/AMO__ITempleERC20Token.sol";
 import "./helpers/AMOCommon.sol";
 import "./interfaces/AMO__IAuraStaking.sol";
 
-
 /**
  * @title AMO built for 50TEMPLE-50BB-A-USD balancer pool
  *
@@ -375,7 +374,6 @@ contract RAMOS is Ownable, Pausable {
         amoStaking.withdrawAndUnwrap(bptIn, false, address(this));
 
         balancerVault.exitPool(balancerPoolId, address(this), address(this), request);
-
         // validate amounts received
         uint256 receivedAmount;
         for (uint i=0; i<request.assets.length; ++i) {
@@ -390,11 +388,6 @@ contract RAMOS is Ownable, Pausable {
                 unchecked {
                     receivedAmount = stable.balanceOf(address(this)) - stableAmountBefore;
                 }
-            }
-
-            // revert if insufficient amount received
-            if (receivedAmount < request.minAmountsOut[i]) {
-                revert AMOCommon.InsufficientAmountOutPostcall(request.minAmountsOut[i], receivedAmount);
             }
         }
     }

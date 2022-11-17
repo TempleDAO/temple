@@ -20,10 +20,10 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 
 const { MULTISIG, TEMPLE } = DEPLOYED_CONTRACTS.mainnet;
 
-const { BALANCER_VAULT, BALANCER_HELPERS } = amoAddresses.contracts;
-const { BALANCER_POOL_ID } = amoAddresses.others;
-const { TEMPLE_WHALE, BINANCE_ACCOUNT_8, BBA_USD_WHALE } = amoAddresses.accounts;
-const { DAI, TEMPLE_BBAUSD_LP_TOKEN, BBA_USD_TOKEN } = amoAddresses.tokens;
+const { BALANCER_VAULT, BALANCER_HELPERS } = amoAddresses.mainnet.contracts;
+const { TEMPLE_BB_A_USD_BALANCER_POOL_ID } = amoAddresses.mainnet.others;
+const { TEMPLE_WHALE, BINANCE_ACCOUNT_8, BBA_USD_WHALE } = amoAddresses.mainnet.accounts;
+const { DAI, TEMPLE_BBAUSD_LP_TOKEN, BBA_USD_TOKEN } = amoAddresses.mainnet.tokens;
 
 const TPF_SCALED = 9_700;
 const BLOCKNUMBER = 15862300;
@@ -82,7 +82,7 @@ describe("Pool Helper", async () => {
             bptToken.address,
             zeroAddress(),
             templeIndexInBalancerPool,
-            BALANCER_POOL_ID
+            TEMPLE_BB_A_USD_BALANCER_POOL_ID
         );
 
         const templeMultisigConnect = templeToken.connect(templeMultisig);
@@ -159,7 +159,7 @@ describe("Pool Helper", async () => {
     });
 
     it("gets right temple stable balances", async () => {
-        const [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+        const [, balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
         const templeStableBalances = await poolHelper.getTempleStableBalances();
         const templeIndex = (await poolHelper.templeIndexInBalancerPool()).toNumber();
         const stableIndex = templeIndex == 0 ? 1 : 0;
@@ -256,7 +256,7 @@ describe("Pool Helper", async () => {
         const templeIndexInPool = (await poolHelper.templeIndexInBalancerPool()).toNumber();
         const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
     
-        const [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+        const [, balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
         const newSpotPriceScaled = balances[stableIndexInPool].mul(10_000).div(balances[templeIndexInPool].add(joinAmount));
         
         const lowerBoundScaled = (lowerBound).mul(TPF_SCALED).div(10_000);
@@ -270,7 +270,7 @@ describe("Pool Helper", async () => {
         const templeIndexInPool = (await poolHelper.templeIndexInBalancerPool()).toNumber();
         const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
         
-        const [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+        const [, balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
         const newSpotPriceScaled = balances[stableIndexInPool].mul(10_000).div(balances[templeIndexInPool].sub(exitAmount));
         const upperBoundScaled = upperBound.mul(TPF_SCALED).div(10_000);
         const newTarget = BigNumber.from(TPF_SCALED).add(upperBoundScaled);
@@ -283,7 +283,7 @@ describe("Pool Helper", async () => {
         const templeIndexInPool = (await poolHelper.templeIndexInBalancerPool()).toNumber();
         const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
     
-        const [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+        const [, balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
         const newSpotPriceScaled = balances[stableIndexInPool].add(joinAmount).mul(10_000).div(balances[templeIndexInPool]);
         const upperBoundScaled = upperBound.mul(TPF_SCALED).div(10_000);
         const newTarget = BigNumber.from(TPF_SCALED).add(upperBoundScaled);
@@ -296,7 +296,7 @@ describe("Pool Helper", async () => {
         const templeIndexInPool = (await poolHelper.templeIndexInBalancerPool()).toNumber();
         const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
 
-        const [, balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+        const [, balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
         const newSpotPriceScaled = balances[stableIndexInPool].sub(exitAmount).mul(10_000).div(balances[templeIndexInPool]);
         const lowerBoundScaled = (lowerBound).mul(TPF_SCALED).div(10_000);
         const newTarget = BigNumber.from(TPF_SCALED).sub(lowerBoundScaled);
@@ -305,7 +305,7 @@ describe("Pool Helper", async () => {
     });
 
     it("gets right balances", async () => {
-        const [,balances,] = await balancerVault.getPoolTokens(BALANCER_POOL_ID);
+        const [,balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
         const poolHelperBalances = await poolHelper.getBalances();
         for (let i=0; i<balances.length; i++) {
             expect(poolHelperBalances[i]).to.eq(balances[i]);
