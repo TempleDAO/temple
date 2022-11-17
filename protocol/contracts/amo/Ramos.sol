@@ -422,7 +422,7 @@ contract RAMOS is Ownable, Pausable {
     }
 
     modifier enoughCooldown() {
-        if (lastRebalanceTimeSecs != 0 && lastRebalanceTimeSecs + cooldownSecs <= block.timestamp) {
+        if (lastRebalanceTimeSecs != 0 && lastRebalanceTimeSecs + cooldownSecs > block.timestamp) {
             revert AMOCommon.NotEnoughCooldown();
         }
         _;
