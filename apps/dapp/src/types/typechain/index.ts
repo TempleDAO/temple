@@ -60,6 +60,7 @@ export type { IUniswapV2Router } from "./IUniswapV2Router";
 export type { EthConstants } from "./EthConstants";
 export type { TempleZaps } from "./TempleZaps";
 export type { ZapBase } from "./ZapBase";
+export type { RAMOSGoerli } from "./RAMOSGoerli";
 
 export { AccessControl__factory } from "./factories/AccessControl__factory";
 export { IAccessControl__factory } from "./factories/IAccessControl__factory";
@@ -120,3 +121,4 @@ export { IUniswapV2Router__factory } from "./factories/IUniswapV2Router__factory
 export { EthConstants__factory } from "./factories/EthConstants__factory";
 export { TempleZaps__factory } from "./factories/TempleZaps__factory";
 export { ZapBase__factory } from "./factories/ZapBase__factory";
+export { RAMOSGoerli__factory } from "./factories/RAMOSGoerli__factory";
