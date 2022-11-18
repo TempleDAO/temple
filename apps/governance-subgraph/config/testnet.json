@@ -1,0 +1,15 @@
+{
+    "network": "goerli",
+    "templarNft": {
+        "address": "0xE037235c5EF0dDbDDb558195C26b250c2F6EE947",
+        "startBlock": "7851328"
+    },
+    "templarMetadata": {
+        "address": "0xa5e99790BB1417A07B7fdBFe3F353A72D2EC2cFf",
+        "startBlock": "7851396"
+    },
+    "elderElection": {
+        "address": "0xee16C73a3e2D9699f9D58220EAF8AeAea3940788",
+        "startBlock": "7875195"
+    }
+}
