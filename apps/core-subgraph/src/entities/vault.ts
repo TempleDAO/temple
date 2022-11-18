@@ -14,10 +14,15 @@ import { hourFromTimestamp } from '../utils/dates'
 
 export function createVault(event: CreateVaultInstance): void {
   const metric = getMetric()
+  const vaultAddress = event.params.vault.toHexString()
+
   metric.vaultCount = metric.vaultCount.plus(BIG_INT_1)
+  const vaults = metric.vaults
+  vaults.push(vaultAddress)
+  metric.vaults = vaults
   updateMetric(metric, event.block.timestamp)
 
-  const vault = new Vault(event.params.vault.toHexString())
+  const vault = new Vault(vaultAddress)
   vault.timestamp = event.block.timestamp
 
   const vaultContract = VaultContract.bind(event.params.vault)

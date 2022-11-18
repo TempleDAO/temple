@@ -1,0 +1,69 @@
+type Metric @entity {
+  id: ID!
+  timestamp: BigInt!
+  templars: Int!
+  candidates: Int!
+  endorsements: Int!
+  templarBaseUri: String!
+}
+
+type MetricData @entity {
+  id: ID!
+  timestamp: BigInt!
+  metric: Metric!
+  templars: Int!
+  candidates: Int!
+  endorsements: Int!
+  templarBaseUri: String!
+}
+
+type Templar @entity {
+  id: ID!
+  timestamp: BigInt!
+  address: String!
+  uri: String!
+  role: String
+  isNominated: Boolean!
+  endorsements: [Endorsement!]! @derivedFrom(field: "templar")
+  templarDatas: [TemplarData!]! @derivedFrom(field: "templar")
+}
+
+type TemplarData @entity {
+  id: ID!
+  timestamp: BigInt!
+  templar: Templar!
+  address: String!
+  uri: String!
+  role: String
+  isNominated: Boolean!
+}
+
+type Voter @entity {
+  id: ID!
+  timestamp: BigInt!
+  validEndorsements: Int!
+  endorsedCandidates: [String!]!
+  voterDatas: [VoterData!]! @derivedFrom(field: "voter")
+}
+
+type VoterData @entity {
+  id: ID!
+  voter: Voter!
+  timestamp: BigInt!
+  validEndorsements: Int!
+  endorsedCandidates: [String!]!
+}
+
+type Endorsement @entity {
+  id: ID!
+  timestamp: BigInt!
+  address: String!
+  templar: Templar!
+}
+
+type Nomination @entity {
+  id: ID!
+  timestamp: BigInt!
+  templar: Templar!
+  isNominated: Boolean!
+}

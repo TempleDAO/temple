@@ -41,7 +41,7 @@ dataSources:
           handler: onCreateExposure
         - event: CreateVaultInstance(address)
           handler: onCreateVaultInstance
-{{#hasScheduler}}
+{{#hasEarlyWithdraw}}
   # Early Withdraw
   - kind: ethereum/contract
     name: VaultEarlyWithdraw
@@ -77,6 +77,8 @@ dataSources:
       callHandlers:
         - function: withdraw(address,uint256)
           handler: onEarlyWithdraw
+{{/hasEarlyWithdraw}}
+{{#hasScheduler}}
   # Access Controlled Offchain Aggregator
   - kind: ethereum/contract
     name: HourlyScheduler
