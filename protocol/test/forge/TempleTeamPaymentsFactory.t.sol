@@ -11,6 +11,25 @@ contract TempleTeamPaymentsFactoryTest is Test {
     address multisig = 0xe2Bb722DA825eBfFa1E368De244bdF08ed68B5c4;
     address testUser = vm.addr(1);
 
+    // factory events
+    event FundingPaid(
+        address paymentToken,
+        uint256 indexed fundingRound,
+        address[] indexed dests,
+        uint256[] indexed amounts
+    );
+    event FundingDeployed(
+        address paymentToken,
+        uint256 indexed fundingRound,
+        address[] indexed dests,
+        uint256[] indexed amounts,
+        address deployedTo
+    );
+
+    // payments events
+    event Claimed(address indexed member, uint256 amount);
+
+
     function setUp() public {
         vm.createSelectFork("https://rpc.ankr.com/eth");
 
@@ -32,6 +51,14 @@ contract TempleTeamPaymentsFactoryTest is Test {
 
         vm.startPrank(multisig);
         temple.approve(address(factory), type(uint256).max);
+
+        vm.expectEmit(true, true, true, true);
+        emit FundingPaid(
+            address(temple),
+            factory.lastPaidEpoch() + 1,
+            recip,
+            values
+        );
         factory.directPayouts(temple, recip, values);
         vm.stopPrank();
 
@@ -69,6 +96,23 @@ contract TempleTeamPaymentsFactoryTest is Test {
 
         vm.startPrank(multisig);
         temple.approve(address(factory), type(uint256).max);
+
+        bytes32 salt = keccak256(
+            abi.encodePacked(temple, factory.lastPaidEpoch() + 1)
+        );
+        address nextEpochClone = Clones.predictDeterministicAddress(
+            factory.templeTeamPaymentsImplementation(),
+            salt,
+            address(factory)
+        );
+        vm.expectEmit(true, true, true, true);
+        emit FundingDeployed(
+            address(temple),
+            factory.lastPaidEpoch() + 1,
+            recip,
+            values,
+            nextEpochClone
+        );
         TempleTeamPaymentsV2 testContract = factory.deployPayouts(
             temple,
             recip,
@@ -115,6 +159,9 @@ contract TempleTeamPaymentsFactoryTest is Test {
         vm.warp(canClaimAfter);
 
         uint256 prev = testContract.temple().balanceOf(testUser);
+        uint256 alloc = testContract.allocation(testUser);
+        vm.expectEmit(true,true,true,true);
+        emit Claimed(address(testUser), alloc);
         vm.prank(testUser);
         testContract.claim();
 
