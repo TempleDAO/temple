@@ -62,21 +62,18 @@ contract TempleTeamPaymentsFactory is Ownable {
      * @param _dests the recipient of the tokens
      * @param _allocations the recipients respective amounts
      * @param _totalFunding the total funding to supply the contract with initially
-     * @param _startTimestamp the time when recipients can make a claim
      */
     function deployPayouts(
         IERC20 _temple,
         address[] calldata _dests,
         uint256[] calldata _allocations,
-        uint256 _totalFunding,
-        uint40 _startTimestamp
+        uint256 _totalFunding
     ) external onlyOwner returns (TempleTeamPaymentsV2) {
         bytes32 salt = keccak256(abi.encodePacked(_temple, lastPaidEpoch + 1));
         TempleTeamPaymentsV2 paymentContract = TempleTeamPaymentsV2(
             Clones.cloneDeterministic(templeTeamPaymentsImplementation, salt)
         );
         paymentContract.initialize(_temple);
-        paymentContract.setClaimOpenTimestamp(_startTimestamp);
         paymentContract.setAllocations(_dests, _allocations);
 
         paymentContract.transferOwnership(msg.sender);

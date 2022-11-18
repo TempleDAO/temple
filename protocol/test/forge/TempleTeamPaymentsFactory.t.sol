@@ -29,7 +29,6 @@ contract TempleTeamPaymentsFactoryTest is Test {
     // payments events
     event Claimed(address indexed member, uint256 amount);
 
-
     function setUp() public {
         vm.createSelectFork("https://rpc.ankr.com/eth");
 
@@ -80,7 +79,6 @@ contract TempleTeamPaymentsFactoryTest is Test {
     }
 
     function testDeployPayoutsAssertions(
-        uint40 _claimStartTimestamp,
         uint256 _userTestLength
     ) internal returns (TempleTeamPaymentsV2) {
         address[] memory recip = new address[](_userTestLength);
@@ -117,8 +115,7 @@ contract TempleTeamPaymentsFactoryTest is Test {
             temple,
             recip,
             values,
-            totalPaid,
-            _claimStartTimestamp
+            totalPaid
         );
         vm.stopPrank();
 
@@ -132,12 +129,11 @@ contract TempleTeamPaymentsFactoryTest is Test {
     }
 
     function testDeployPayoutsSingle() public returns (TempleTeamPaymentsV2) {
-        return testDeployPayoutsAssertions(uint40(block.timestamp + 1 days), 1);
+        return testDeployPayoutsAssertions(1);
     }
 
     function testDeployPayoutsMany() public returns (TempleTeamPaymentsV2) {
-        return
-            testDeployPayoutsAssertions(uint40(block.timestamp + 1 days), 50);
+        return testDeployPayoutsAssertions(50);
     }
 
     function testRoundIncrementsDirectPayout() public {
@@ -155,12 +151,9 @@ contract TempleTeamPaymentsFactoryTest is Test {
     function testCanClaimAllocation() public {
         TempleTeamPaymentsV2 testContract = testDeployPayoutsSingle();
 
-        uint256 canClaimAfter = testContract.claimOpenTimestamp();
-        vm.warp(canClaimAfter);
-
         uint256 prev = testContract.temple().balanceOf(testUser);
         uint256 alloc = testContract.allocation(testUser);
-        vm.expectEmit(true,true,true,true);
+        vm.expectEmit(true, true, true, true);
         emit Claimed(address(testUser), alloc);
         vm.prank(testUser);
         testContract.claim();
@@ -171,22 +164,9 @@ contract TempleTeamPaymentsFactoryTest is Test {
         );
     }
 
-    function testCannotClaimEarly() public {
-        TempleTeamPaymentsV2 testContract = testDeployPayoutsSingle();
-        uint256 canClaimAfter = testContract.claimOpenTimestamp();
-
-        vm.warp(canClaimAfter - 1);
-
-        vm.prank(testUser);
-        vm.expectRevert();
-        testContract.claim();
-    }
-
     function testCannotClaimTwice() public {
         TempleTeamPaymentsV2 testContract = testDeployPayoutsSingle();
-        uint256 canClaimAfter = testContract.claimOpenTimestamp();
 
-        vm.warp(canClaimAfter);
         vm.startPrank(testUser);
 
         testContract.claim();

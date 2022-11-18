@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.4;
 
-
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -11,11 +10,9 @@ error AllocationsLengthMismatch();
 error AllocationAddressZero();
 error ClaimMemberPaused();
 error ClaimZeroValue();
-error ClaimTooEarly();
 
 contract TempleTeamPaymentsV2 is Initializable, OwnableUpgradeable {
     IERC20 public temple;
-    uint40 public claimOpenTimestamp;
 
     mapping(address => uint256) public allocation;
     mapping(address => uint256) public claimed;
@@ -48,7 +45,7 @@ contract TempleTeamPaymentsV2 is Initializable, OwnableUpgradeable {
         if (_addresses.length != _amounts.length)
             revert AllocationsLengthMismatch();
 
-        for (uint256 i = 0; i < _addresses.length; ) {
+        for (uint256 i; i < _addresses.length; ) {
             _setAllocation(_addresses[i], _amounts[i]);
 
             unchecked {
@@ -62,12 +59,6 @@ contract TempleTeamPaymentsV2 is Initializable, OwnableUpgradeable {
         SafeERC20.safeTransfer(_token, msg.sender, _amount);
     }
 
-    function setClaimOpenTimestamp(
-        uint40 _claimOpenTimestamp
-    ) external onlyOwner {
-        claimOpenTimestamp = _claimOpenTimestamp;
-    }
-
     function toggleMember(address _address) external onlyOwner {
         paused[_address] = !paused[_address];
     }
@@ -77,7 +68,6 @@ contract TempleTeamPaymentsV2 is Initializable, OwnableUpgradeable {
     }
 
     function claim() external {
-        if (claimOpenTimestamp > block.timestamp) revert ClaimTooEarly();
         if (paused[msg.sender]) revert ClaimMemberPaused();
 
         uint256 claimable = calculateClaimable(msg.sender);
