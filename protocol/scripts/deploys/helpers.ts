@@ -35,6 +35,7 @@ export interface DeployedContracts {
   TEMPLE_TEAM_EPOCH_5: string;
   TEMPLE_TEAM_EPOCH_6: string;
   TEMPLE_TEAM_EPOCH_7: string;
+  TEMPLE_TEAM_EPOCH_8: string;
 
   // Temple Zaps
   GENERIC_ZAPS: string;
@@ -55,6 +56,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_5: '',
     TEMPLE_TEAM_EPOCH_6: '',
     TEMPLE_TEAM_EPOCH_7: '',
+    TEMPLE_TEAM_EPOCH_8: '',
 
     TEMPLE_V2_FRAX_PAIR: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
     TEMPLE_V2_FEI_PAIR: '', // TODO: Update
@@ -90,6 +92,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_5: '',
     TEMPLE_TEAM_EPOCH_6: '',
     TEMPLE_TEAM_EPOCH_7: '',
+    TEMPLE_TEAM_EPOCH_8: '',
 
     TEMPLE_V2_FRAX_PAIR: '0x85dA8c4312742522519911052Fa2B4aC302E4d6c', // Frax Pair
     TEMPLE_V2_FEI_PAIR: '0xD83834165E2b130341d58dd5A43460B7f4C491BD', // TODO: Update
@@ -119,6 +122,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_5: '0x32fbd318e0c029bfa6c6088196f184ca2e3fbdd1',
     TEMPLE_TEAM_EPOCH_6: '0x91ad65e053ae98b4fbab84fc38b7bddd17c32cda',
     TEMPLE_TEAM_EPOCH_7: '0x8cded928006feb238617fa5f7b04abeefcde36bf',
+    TEMPLE_TEAM_EPOCH_8: '0x008eCB3E53024628a5A8BbE0b142329791ad6f51',
     TEMPLE_V2_FRAX_PAIR: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
     TEMPLE_V2_FEI_PAIR: '0xf994158766e0a4E64c26feCE675186f489EC9107',
     TEMPLE_V2_ROUTER: '0x98257c876ace5009e7b97843f8c71b3ae795c71e',
@@ -145,6 +149,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_5: process.env.TEMPLE_TEAM_EPOCH_5 || '',
     TEMPLE_TEAM_EPOCH_6: process.env.TEMPLE_TEAM_EPOCH_6 || '',
     TEMPLE_TEAM_EPOCH_7: process.env.TEMPLE_TEAM_EPOCH_7 || '',
+    TEMPLE_TEAM_EPOCH_8: process.env.TEMPLE_TEAM_EPOCH_8 || '',
     TEMPLE_V2_FRAX_PAIR: process.env.TEMPLE_V2_FRAX_PAIR || '',
     TEMPLE_V2_FEI_PAIR: process.env.TEMPLE_V2_FEI_PAIR || '',
     TEMPLE_V2_ROUTER: process.env.TEMPLE_V2_ROUTER || '',
