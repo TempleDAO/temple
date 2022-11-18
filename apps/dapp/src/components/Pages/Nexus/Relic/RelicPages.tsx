@@ -65,11 +65,11 @@ const RelicPanel = (props: {
 };
 
 const EnclavePanel = styled(NexusPanel)<{ enclave: RelicEnclave }>`
-  border: 4px solid ${(props) => props.theme.palette.enclave[getEnclavePalette(props.enclave)]};
+  border: 0.0625rem solid ${(props) => props.theme.palette.enclave[getEnclavePalette(props.enclave)]};
 `
 
 const OuterPanel = styled.div<{ rarity: RelicRarity }>`
-  border: 3px solid ${(props) => props.theme.palette.brand};
+  border: 0.0625rem solid ${(props) => props.theme.palette.brand};
   border-radius: 20px;
   padding: 6px;
 `

@@ -1,5 +1,5 @@
-import bgActive from 'assets/images/nexus-room-active.jpg';
-import bgInactive from 'assets/images/nexus-room-inactive.jpg';
+import bgActive from 'assets/images/nexus/background_on.png';
+import bgInactive from 'assets/images/nexus/background_off.png';
 import { useRelic } from 'providers/RelicProvider';
 import { useWallet } from 'providers/WalletProvider';
 import { useEffect } from 'react';

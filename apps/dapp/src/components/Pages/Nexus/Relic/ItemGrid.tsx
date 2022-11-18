@@ -108,7 +108,7 @@ export const ItemWrapper = styled.div<{ columnCount: number }>`
 `;
 
 const ItemCell = styled.div`
-  border: solid 2px ${props => props.theme.palette.brand};
+  border: solid 0.0625rem ${props => props.theme.palette.brand};
   border-radius: 15%;
   background-color: #333;
   background-size: cover;

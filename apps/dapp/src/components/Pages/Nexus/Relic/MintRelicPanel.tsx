@@ -93,7 +93,7 @@ const EnclaveCard = styled.div<{ enclave: RelicEnclave; selected?: boolean }>`
   background-blend-mode: multiply;
   background-size: cover;
   background-position: center;
-  border: 2px solid;
+  border: 0.0625rem solid;
   border-color: ${(props) =>
     lighten(props.selected ? 0.2 : 0, props.theme.palette.enclave[getEnclavePalette(props.enclave)])};
   border-radius: 8px;

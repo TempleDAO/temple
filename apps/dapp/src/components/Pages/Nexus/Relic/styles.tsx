@@ -12,7 +12,7 @@ export const NexusPanel = styled.div<{ color?: string }>`
   display: flex;
   flex-direction: column;
   align-items: center;
-  border: 2px solid ${(props) => props.color ?? props.theme.palette.brand};
+  border: 0.0625rem solid ${(props) => props.color ?? props.theme.palette.brand};
   border-radius: 16px;
   padding: 1rem;
   background-color: rgba(0, 0, 0, .3);
