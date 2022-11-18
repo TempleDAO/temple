@@ -1,5 +1,4 @@
-import bgActive from 'assets/images/nexus-room-active.jpg';
-import bgInactive from 'assets/images/nexus-room-inactive.jpg';
+import forgeBackground from 'assets/images/nexus/forge_bg.png';
 import { useRelic } from 'providers/RelicProvider';
 import { RelicItemData } from 'providers/types';
 import { useWallet } from 'providers/WalletProvider';
@@ -7,11 +6,11 @@ import { useEffect, useReducer, useState } from 'react';
 import styled from 'styled-components';
 import { PageWrapper } from '../../Core/utils';
 import { EMPTY_INVENTORY } from '../Relic';
-import { EmptyCell, ItemButton } from '../Relic/ItemGrid';
 import { NexusBackground } from '../Relic/styles';
 import InventoryPanel from './InventoryPanel';
 import UsedShardsPanel from './UsedShardsPanel';
 import { getValidRecipe, Recipe } from './recipes';
+import ForgeResult from './ForgeResult';
 
 type TransmuteState = {
   shardsPendingForge: RelicItemData[];
@@ -39,8 +38,6 @@ const reducer = (state: TransmuteState, action: { type: string; payload: any }):
               shard.count++;
               inventoryItem.count--;
             }
-            console.log('Updated');
-            console.log(inventoryItem);
             return inventoryItem;
           }
           // return unmodified
@@ -118,8 +115,6 @@ const ForgePage = () => {
     dispatch({ type: 'INIT', payload: inventory?.items });
   }, [inventory]);
 
-  const bgImage = bgInactive;
-
   // TODO: Should we move all this into its own hook?
   const [forgeResult, setForgeResult] = useState<RelicItemData | null>(null);
   const [recipeId, setRecipeId] = useState<number | null>(null);
@@ -159,20 +154,14 @@ const ForgePage = () => {
     <PageWrapper>
       <NexusBackground
         style={{
-          backgroundImage: `url(${bgImage})`,
+          backgroundImage: `url(${forgeBackground})`,
         }}
       />
       <ForgePanel>
         <NexusPanelRow>Forge</NexusPanelRow>
         <NexusPanelRow2>Combine Shards to Forge</NexusPanelRow2>
         {/* // TODO: Split into own component */}
-        <ForgeResultWrapper>
-          {forgeResult == undefined ? (
-            <EmptyCell />
-          ) : (
-            <ItemButton key={forgeResult.id} item={forgeResult} disabled={false} onClick={forgeHandler} />
-          )}
-        </ForgeResultWrapper>
+        <ForgeResult forgeResult={forgeResult} onClickHandler={forgeHandler} />
         <UsedShardsPanel
           items={transmuteState.shardsPendingForge || EMPTY_INVENTORY.items}
           usedShardsClickHandler={usedShardsClickHandler}
@@ -185,23 +174,6 @@ const ForgePage = () => {
     </PageWrapper>
   );
 };
-
-export const ForgeResultWrapper = styled.div`
-  position: relative;
-  margin: auto;
-  width: 15%;
-  padding-top: 15%;
-  > * {
-    &:first-child {
-      position: absolute;
-      top: 5px;
-      left: 5px;
-      right: 5px;
-      bottom: 5px;
-      border-radius: 15%;
-    }
-  }
-`;
 
 export const ForgePanel = styled.div<{ color?: string }>`
   flex-direction: column;

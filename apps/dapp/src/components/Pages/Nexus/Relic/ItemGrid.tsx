@@ -4,7 +4,8 @@ import { RelicItemData } from 'providers/types';
 import { FC, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 
-const ITEM_IMAGE_BASE_URL = "https://myst.mypinata.cloud/ipfs/QmTmng8Skqv8sqckArgpi6RqQQTHh7LNLzmRyMWyxU24th"
+// TODO: Move to env
+const ITEM_IMAGE_BASE_URL = "https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE"
 const MAX_IMAGE_ITEM_ID = 2
 
 const ItemGrid: FC<{
