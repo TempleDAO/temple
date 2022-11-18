@@ -12,4 +12,4 @@ export const BIG_DECIMAL_0 = BigDecimal.fromString('0')
 export const BIG_DECIMAL_MIN_1 = BigDecimal.fromString('-1')
 
 export const ADDRESS_ZERO = Address.fromString('0x0000000000000000000000000000000000000000')
-export const OWNER = '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2'
+export const OWNER = '0x84AF944A0C0b1a7A24D055c07dbbcE1659a73709'
