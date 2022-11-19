@@ -8,6 +8,7 @@ import { Button } from 'components/Button/Button';
 import { Popover } from 'components/Popover';
 import { Nullable } from 'types/util';
 import { LOCAL_CHAIN } from 'components/WagmiProvider';
+import env from '../../../constants/env';
 
 const ENV_VARS = import.meta.env;
 const ENV = ENV_VARS.VITE_ENV;
@@ -28,22 +29,12 @@ export const WrongNetworkPopover = () => {
     }
 
     const isSupported = isSupportedChain(currentNetworkId);
-    if (
-      (!isSupported && !isOpen) ||
-      (!IS_PROD && defaultChainForEnv.id !== currentNetworkId)
-    ) {
+    if ((!isSupported && !isOpen) || (!IS_PROD && defaultChainForEnv.id !== currentNetworkId)) {
       setIsOpen(true);
     } else if (isSupported && isOpen) {
       setIsOpen(false);
     }
-  }, [
-    currentNetworkId,
-    setIsOpen,
-    isOpen,
-    loading,
-    dismissedChainId,
-    defaultChainForEnv,
-  ]);
+  }, [currentNetworkId, setIsOpen, isOpen, loading, dismissedChainId, defaultChainForEnv]);
 
   const onDismiss = () => {
     // Only allow dismissing popover in staging and dev environments.
@@ -53,15 +44,11 @@ export const WrongNetworkPopover = () => {
 
   // Not all wallets allow switching network programatically.
   let switchNetworkButton = (
-    <SwitchNetworkButton
-      role="button"
-      isSmall
-      onClick={onDismiss}
-    >
+    <SwitchNetworkButton role="button" isSmall onClick={onDismiss}>
       Dismiss
     </SwitchNetworkButton>
   );
-  
+
   if (switchNetwork) {
     switchNetworkButton = (
       <SwitchNetworkButton
@@ -80,50 +67,32 @@ export const WrongNetworkPopover = () => {
   }
 
   let errorMessage = error && <ErrorMessage>{error.message}</ErrorMessage>;
-  if (
-    !IS_PROD &&
-    defaultChainForEnv.id === LOCAL_CHAIN.id &&
-    error instanceof AddChainError
-  ) {
+  if (!IS_PROD && defaultChainForEnv.id === LOCAL_CHAIN.id && error instanceof AddChainError) {
     errorMessage = (
       <ErrorMessage>
-        Error connecting to {LOCAL_CHAIN.name}. Please make sure you have {LOCAL_CHAIN.name} added to
-        {' '}your MetaMask Networks with RPC Url: {LOCAL_CHAIN.rpcUrls[0]} and ChainId: {LOCAL_CHAIN.id}.
+        Error connecting to {LOCAL_CHAIN.name}. Please make sure you have {LOCAL_CHAIN.name} added to your MetaMask
+        Networks with RPC Url: {LOCAL_CHAIN.rpcUrls[0]} and ChainId: {LOCAL_CHAIN.id}.
       </ErrorMessage>
     );
   }
 
   return (
-    <Popover
-      isOpen={isOpen}
-      onClose={onDismiss}
-      showCloseButton={!switchNetwork || !IS_PROD}
-      header="Wrong Network"
-    >
+    <Popover isOpen={isOpen} onClose={onDismiss} showCloseButton={!switchNetwork || !IS_PROD} header="Wrong Network">
       <Message>
-        {(IS_PROD || !defaultChainForEnv) ? (
+        {IS_PROD || !defaultChainForEnv ? (
           <>This app only works on Ethereum Mainnet.</>
         ) : (
-          <>The default chain for {ENV} is {defaultChainForEnv.name}.</>
+          <>
+            The default chain for {ENV} is {defaultChainForEnv.name}.
+          </>
         )}
       </Message>
       <Menu>
-        <li>
-          {switchNetworkButton}
-        </li>
+        <li>{switchNetworkButton}</li>
         {!IS_PROD && (
           <li>
-            <SwitchNetworkButton
-              role="button"
-              isSmall
-              disabled={loading}
-              onClick={onDismiss}
-            >
-              {!!chain?.name ? (
-               <>Continue with {chain.name}</>
-              ) : (
-                <>Continue</>
-              )}
+            <SwitchNetworkButton role="button" isSmall disabled={loading} onClick={onDismiss}>
+              {!!chain?.name ? <>Continue with {chain.name}</> : <>Continue</>}
             </SwitchNetworkButton>
           </li>
         )}
@@ -133,11 +102,17 @@ export const WrongNetworkPopover = () => {
   );
 };
 
-const ENV_CHAIN_MAPPING = new Map([
-  ['production', chains.mainnet],
-  ['preview', chains.goerli],
-  ['local', LOCAL_CHAIN],
-]);
+const ENV_CHAIN_MAPPING = env.featureFlags.nexusOnlyMode
+  ? new Map([
+      ['production', chains.arbitrum],
+      ['preview', chains.arbitrumGoerli],
+      ['local', LOCAL_CHAIN],
+    ])
+  : new Map([
+      ['production', chains.mainnet],
+      ['preview', chains.goerli],
+      ['local', LOCAL_CHAIN],
+    ]);
 
 const isSupportedChain = (chainId: number) => {
   return Array.from(ENV_CHAIN_MAPPING).some(([_, chain]) => chain.id === chainId);
@@ -164,7 +139,7 @@ const ErrorMessage = styled.span`
 
 const Menu = styled(UnstyledList)`
   > li {
-    ${SwitchNetworkButton} { 
+    ${SwitchNetworkButton} {
       border-bottom: none;
     }
 

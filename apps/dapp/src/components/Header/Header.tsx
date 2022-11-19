@@ -1,8 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
-import { Button as BaseButton } from 'components/Button/Button';
 import * as breakpoints from 'styles/breakpoints';
 import { Account } from 'components/Layouts/CoreLayout/Account';
 

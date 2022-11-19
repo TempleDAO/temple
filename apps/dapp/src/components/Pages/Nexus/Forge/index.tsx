@@ -1,4 +1,4 @@
-import forgeBackground from 'assets/images/nexus/forge_bg.png';
+import forgeBackground from 'assets/images/nexus/forge_bg.jpg';
 import { useRelic } from 'providers/RelicProvider';
 import { RelicItemData } from 'providers/types';
 import { useWallet } from 'providers/WalletProvider';
@@ -11,6 +11,7 @@ import InventoryPanel from './InventoryPanel';
 import UsedShardsPanel from './UsedShardsPanel';
 import { getValidRecipe, Recipe } from './recipes';
 import ForgeResult from './ForgeResult';
+import { useNavigate } from 'react-router-dom';
 
 type TransmuteState = {
   shardsPendingForge: RelicItemData[];
@@ -103,15 +104,27 @@ const reducer = (state: TransmuteState, action: { type: string; payload: any }):
   return state;
 };
 
+const NexusLoading = () => {
+  return (
+    <NexusPanelRow>
+      <span>Loading...</span>
+    </NexusPanelRow>
+  );
+};
+
 const ForgePage = () => {
   const { wallet, isConnected } = useWallet();
-  const { inventory, updateInventory, transmute } = useRelic();
+  const { inventory, inventoryLoading, updateInventory, transmute } = useRelic();
+  const navigate = useNavigate();
 
   useEffect(() => {
     updateInventory();
   }, [wallet, isConnected]);
 
   useEffect(() => {
+    if (inventory?.relics.length === 0) {
+      navigate('/nexus/relic');
+    }
     dispatch({ type: 'INIT', payload: inventory?.items });
   }, [inventory]);
 
@@ -158,18 +171,22 @@ const ForgePage = () => {
         }}
       />
       <ForgePanel>
-        <NexusPanelRow>Forge</NexusPanelRow>
-        <NexusPanelRow2>Combine Shards to Forge</NexusPanelRow2>
-        {/* // TODO: Split into own component */}
-        <ForgeResult forgeResult={forgeResult} onClickHandler={forgeHandler} />
-        <UsedShardsPanel
-          items={transmuteState.shardsPendingForge || EMPTY_INVENTORY.items}
-          usedShardsClickHandler={usedShardsClickHandler}
-        />
-        <InventoryPanel
-          inventory={transmuteState.inventoryItems || EMPTY_INVENTORY.items}
-          addShardClickHandler={addShardClickHandler}
-        />
+        {inventoryLoading && <NexusLoading />}
+        {!inventoryLoading && (
+          <>
+            <NexusPanelRow>Forge</NexusPanelRow>
+            <NexusPanelRow2>Combine Shards to Forge</NexusPanelRow2>
+            <ForgeResult forgeResult={forgeResult} onClickHandler={forgeHandler} />
+            <UsedShardsPanel
+              items={transmuteState.shardsPendingForge || EMPTY_INVENTORY.items}
+              usedShardsClickHandler={usedShardsClickHandler}
+            />
+            <InventoryPanel
+              inventory={transmuteState.inventoryItems || EMPTY_INVENTORY.items}
+              addShardClickHandler={addShardClickHandler}
+            />
+          </>
+        )}
       </ForgePanel>
     </PageWrapper>
   );

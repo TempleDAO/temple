@@ -1,5 +1,5 @@
-import bgActive from 'assets/images/nexus/background_on.png';
-import bgInactive from 'assets/images/nexus/background_off.png';
+import bgActive from 'assets/images/nexus/background_on.jpg';
+import bgInactive from 'assets/images/nexus/background_off.jpg';
 import { useRelic } from 'providers/RelicProvider';
 import { ItemInventory } from 'providers/types';
 import { useWallet } from 'providers/WalletProvider';

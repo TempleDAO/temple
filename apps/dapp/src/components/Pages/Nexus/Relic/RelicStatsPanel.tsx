@@ -50,7 +50,7 @@ const RelicStatsPanel: FC<{ relic: RelicData }> = (props) => {
   );
   const enclaveInfo = <RelicStatsItem label="Enclave" element={<EnclaveLabel enclave={enclave} />} />;
   const rarityInfo = <RelicStatsItem label="Rarity" element={<RarityLabel rarity={rarity} />} />;
-  const poapInfo = <RelicStatsItem label="POAPs" element={<span>{items.reduce((n, i) => n + i.count, 0)}</span>} />;
+  const poapInfo = <RelicStatsItem label="Shards" element={<span>{items.reduce((n, i) => n + i.count, 0)}</span>} />;
   const xpInfo = <RelicStatsItem label="XP" element={<span>{xp.toNumber()}</span>} />;
   const renounceBtn = (
     <Button
