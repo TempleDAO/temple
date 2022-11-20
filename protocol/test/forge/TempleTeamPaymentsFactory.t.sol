@@ -13,24 +13,26 @@ contract TempleTeamPaymentsFactoryTest is Test {
 
     // factory events
     event FundingPaid(
-        address paymentToken,
         uint256 indexed fundingRound,
         address[] indexed dests,
         uint256[] indexed amounts
     );
     event FundingDeployed(
-        address paymentToken,
         uint256 indexed fundingRound,
         address[] indexed dests,
         uint256[] indexed amounts,
         address deployedTo
     );
+    event ImplementationChanged(address indexed newImplementation);
 
     // payments events
     event Claimed(address indexed member, uint256 amount);
 
+    // admin recovery events
+    event TokenRecovered(address indexed token, uint256 amount);
+
     function setUp() public {
-        vm.createSelectFork("https://rpc.ankr.com/eth");
+        vm.createSelectFork(vm.rpcUrl("mainnet"));
 
         factory = new TempleTeamPaymentsFactory(0);
         factory.transferOwnership(multisig);
@@ -52,13 +54,8 @@ contract TempleTeamPaymentsFactoryTest is Test {
         temple.approve(address(factory), type(uint256).max);
 
         vm.expectEmit(true, true, true, true);
-        emit FundingPaid(
-            address(temple),
-            factory.lastPaidEpoch() + 1,
-            recip,
-            values
-        );
-        factory.directPayouts(temple, recip, values);
+        emit FundingPaid(factory.lastPaidEpoch() + 1, recip, values);
+        factory.directPayouts(recip, values);
         vm.stopPrank();
 
         for (uint256 i; i < recip.length; i++) {
@@ -105,14 +102,12 @@ contract TempleTeamPaymentsFactoryTest is Test {
         );
         vm.expectEmit(true, true, true, true);
         emit FundingDeployed(
-            address(temple),
             factory.lastPaidEpoch() + 1,
             recip,
             values,
             nextEpochClone
         );
         TempleTeamPaymentsV2 testContract = factory.deployPayouts(
-            temple,
             recip,
             values,
             totalPaid
@@ -151,7 +146,7 @@ contract TempleTeamPaymentsFactoryTest is Test {
     function testCanClaimAllocation() public {
         TempleTeamPaymentsV2 testContract = testDeployPayoutsSingle();
 
-        uint256 prev = testContract.temple().balanceOf(testUser);
+        uint256 prev = temple.balanceOf(testUser);
         uint256 alloc = testContract.allocation(testUser);
         vm.expectEmit(true, true, true, true);
         emit Claimed(address(testUser), alloc);
@@ -159,7 +154,7 @@ contract TempleTeamPaymentsFactoryTest is Test {
         testContract.claim();
 
         assertEq(
-            testContract.temple().balanceOf(testUser),
+            temple.balanceOf(testUser),
             prev + testContract.allocation(testUser)
         );
     }
@@ -171,7 +166,9 @@ contract TempleTeamPaymentsFactoryTest is Test {
 
         testContract.claim();
 
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(TempleTeamPaymentsV2.ClaimZeroValue.selector)
+        );
         testContract.claim();
     }
 
@@ -181,7 +178,11 @@ contract TempleTeamPaymentsFactoryTest is Test {
         vm.prank(multisig);
         testContract.toggleMember(testUser);
 
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TempleTeamPaymentsV2.ClaimMemberPaused.selector
+            )
+        );
         vm.prank(testUser);
         testContract.claim();
     }
@@ -189,7 +190,9 @@ contract TempleTeamPaymentsFactoryTest is Test {
     function testCannotInitializeTwice() public {
         TempleTeamPaymentsV2 testContract = testDeployPayoutsSingle();
 
-        vm.expectRevert();
+        vm.expectRevert(
+            bytes("Initializable: contract is already initialized")
+        );
         testContract.initialize(temple);
     }
 
@@ -202,7 +205,30 @@ contract TempleTeamPaymentsFactoryTest is Test {
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 1 ether;
 
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TempleTeamPaymentsV2.AllocationAddressZero.selector
+            )
+        );
+        vm.prank(multisig);
+        testContract.setAllocations(addrs, amounts);
+    }
+
+    function testCannotSetAllocationsLengthMismatch() public {
+        TempleTeamPaymentsV2 testContract = testDeployPayoutsSingle();
+
+        address[] memory addrs = new address[](1);
+        addrs[0] = address(0);
+
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 1 ether;
+        amounts[1] = 1 ether;
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TempleTeamPaymentsV2.AllocationsLengthMismatch.selector
+            )
+        );
         vm.prank(multisig);
         testContract.setAllocations(addrs, amounts);
     }

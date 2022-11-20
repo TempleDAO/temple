@@ -6,12 +6,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-error AllocationsLengthMismatch();
-error AllocationAddressZero();
-error ClaimMemberPaused();
-error ClaimZeroValue();
-
 contract TempleTeamPaymentsV2 is Initializable, OwnableUpgradeable {
+    error AllocationsLengthMismatch();
+    error AllocationAddressZero();
+    error ClaimMemberPaused();
+    error ClaimZeroValue();
+
     IERC20 public temple;
     mapping(address => uint256) public allocation;
     mapping(address => uint256) public claimed;

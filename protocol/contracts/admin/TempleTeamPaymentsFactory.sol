@@ -6,8 +6,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./TempleTeamPaymentsV2.sol";
-
 contract TempleTeamPaymentsFactory is Ownable {
+    error AllocationsLengthMismatch();
+    error AllocationAddressZero();
+    error ClaimZeroValue();
+    error ImplementationAddressZero();
+
     struct FundingData {
         address paymentContract;
         uint16 epoch;
@@ -61,6 +65,8 @@ contract TempleTeamPaymentsFactory is Ownable {
     function setTempleTeamPaymentsImplementation(
         address _templeTeamPaymentsImplementation
     ) external onlyOwner {
+        if (_templeTeamPaymentsImplementation == address(0))
+            revert ImplementationAddressZero();
         templeTeamPaymentsImplementation = _templeTeamPaymentsImplementation;
         emit ImplementationChanged(_templeTeamPaymentsImplementation);
     }

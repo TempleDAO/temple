@@ -10,4 +10,7 @@ remappings = [
     '@uniswap/v3-periphery/contracts/=lib/v3-periphery/contracts/', 
 ]
 gas_reports = ["*"]
+
+[rpc_endpoints]
+mainnet = "https://rpc.ankr.com/eth"
 # See more config options https://github.com/gakonst/foundry/tree/master/config
