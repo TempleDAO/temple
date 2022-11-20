@@ -13,16 +13,15 @@ error ClaimZeroValue();
 
 contract TempleTeamPaymentsV2 is Initializable, OwnableUpgradeable {
     IERC20 public temple;
-
     mapping(address => uint256) public allocation;
     mapping(address => uint256) public claimed;
     mapping(address => bool) public paused;
 
     event Claimed(address indexed member, uint256 amount);
+    event TokenRecovered(address indexed token, uint256 amount);
 
     function initialize(IERC20 _temple) public initializer {
         __Ownable_init_unchained();
-
         temple = _temple;
     }
 
@@ -57,6 +56,7 @@ contract TempleTeamPaymentsV2 is Initializable, OwnableUpgradeable {
     function withdrawToken(IERC20 _token, uint256 _amount) external onlyOwner {
         if (_amount == 0) revert ClaimZeroValue();
         SafeERC20.safeTransfer(_token, msg.sender, _amount);
+        emit TokenRecovered(address(_token), _amount);
     }
 
     function toggleMember(address _address) external onlyOwner {
@@ -71,7 +71,7 @@ contract TempleTeamPaymentsV2 is Initializable, OwnableUpgradeable {
         if (paused[msg.sender]) revert ClaimMemberPaused();
 
         uint256 claimable = calculateClaimable(msg.sender);
-        if (claimable <= 0) revert ClaimZeroValue();
+        if (claimable == 0) revert ClaimZeroValue();
 
         claimed[msg.sender] += claimable;
         SafeERC20.safeTransfer(temple, msg.sender, claimable);
