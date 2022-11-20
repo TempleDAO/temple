@@ -11,7 +11,7 @@ import { AMO__IBalancerVault__factory } from 'types/typechain/factories/AMO__IBa
 import type { IBalancerHelpers } from 'types/typechain/IBalancerHelpers';
 import type { AMO__IBalancerVault } from 'types/typechain/AMO__IBalancerVault';
 
-import { formatJoinRequestTuple, getTokenSymbolByAddress } from './helpers';
+import { formatExitRequestTuple, formatJoinRequestTuple, getTokenSymbolByAddress } from './helpers';
 
 export function useRamosAdmin() {
   const { ramos: RAMOS_ADDRESS, balancerHelpers: BALANCER_HELPERS_ADDRESS } = environmentConfig.contracts;
@@ -27,6 +27,7 @@ export function useRamosAdmin() {
 
   // outputs
   const [joinPoolInfo, setJoinPoolInfo] = useState<{ joinPoolRequest: string; minBptOut: string }>();
+  const [exitPoolRequest, setExitPoolRequest] = useState<string>();
 
   useEffect(() => {
     async function setContracts() {
@@ -56,7 +57,7 @@ export function useRamosAdmin() {
     if (isConnected) {
       const queryUserData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256[]', 'uint256'], [1, amounts, 0]);
       const queryJoinRequest: AMO__IBalancerVault.JoinPoolRequestStruct = {
-        assets: tokens.map(token => token.address),
+        assets: tokens.map((token) => token.address),
         maxAmountsIn: amounts,
         userData: queryUserData,
         fromInternalBalance: false,
@@ -71,7 +72,7 @@ export function useRamosAdmin() {
 
       const userData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256[]', 'uint256'], [1, amountsIn, bptOut]);
       const finalRequest: AMO__IBalancerVault.JoinPoolRequestStruct = {
-        assets: tokens.map(token => token.address),
+        assets: tokens.map((token) => token.address),
         maxAmountsIn: amountsIn,
         userData: userData,
         fromInternalBalance: false,
@@ -84,9 +85,36 @@ export function useRamosAdmin() {
     }
   };
 
+  const createExitPoolRequest = async (exitAmountBpt: BigNumber) => {
+    if (isConnected) {
+      const queryUserData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [1, exitAmountBpt]);
+
+      const queryExitReq: AMO__IBalancerVault.ExitPoolRequestStruct = {
+        assets: tokens.map((token) => token.address),
+        minAmountsOut: [0, 0],
+        userData: queryUserData,
+        toInternalBalance: false,
+      };
+      const { bptIn, amountsOut } = await balancerHelpers.queryExit(poolId, walletAddress, walletAddress, queryExitReq);
+
+      const userData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [1, bptIn]);
+
+      const finalRequest: AMO__IBalancerVault.ExitPoolRequestStruct = {
+        assets: tokens.map((token) => token.address),
+        minAmountsOut: amountsOut,
+        userData: userData,
+        toInternalBalance: false,
+      };
+
+      setExitPoolRequest(formatExitRequestTuple(finalRequest));
+    }
+  };
+
   return {
     createJoinPoolRequest,
     joinPoolInfo,
+    createExitPoolRequest,
+    exitPoolRequest,
     tokens,
   };
 }
