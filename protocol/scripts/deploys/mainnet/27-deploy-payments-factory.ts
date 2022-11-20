@@ -1,7 +1,11 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers, network } from 'hardhat';
-import { TempleTeamPaymentsFactory__factory } from '../../../typechain';
 import {
+  TempleTeamPaymentsFactory,
+  TempleTeamPaymentsFactory__factory,
+} from '../../../typechain';
+import {
+  deployAndMine,
   DeployedContracts,
   DEPLOYED_CONTRACTS,
   expectAddressWithPrivateKey,
@@ -21,29 +25,23 @@ async function main() {
     DEPLOYED = DEPLOYED_CONTRACTS[network.name];
   }
 
-  // Set gasPrice manually instead of using deployAndMine/mine()
-  const gasPrice = ethers.utils.parseUnits('34', 'gwei');
+  // update with previously funded epoch before the factory came into use
+  const lastPaidEpoch = 8;
+  const templeTeamPaymentsFactoryFactory =
+    new TempleTeamPaymentsFactory__factory(owner);
+  const templeTeamPaymentsFactory: TempleTeamPaymentsFactory =
+    await deployAndMine(
+      'Temple Team Payments Factory',
+      templeTeamPaymentsFactoryFactory,
+      templeTeamPaymentsFactoryFactory.deploy,
+      lastPaidEpoch
+    );
 
-  const lastPaidEpoch = 6;
-  const templeTeamPaymentsFactory =
-    await new TempleTeamPaymentsFactory__factory(owner).deploy(lastPaidEpoch, {
-      gasPrice,
-    });
-  console.log(
-    `Deployed TempleTeamPaymentsFactory... waiting for transaction to mine: ${templeTeamPaymentsFactory.deployTransaction.hash}`
-  );
-  await templeTeamPaymentsFactory.deployed();
-  console.log('Contract deployed');
   console.log(
     `yarn hardhat verify --network ${network.name} ${templeTeamPaymentsFactory.address} ${lastPaidEpoch}`
   );
-  console.log(`Transferring ownership to ${DEPLOYED.MULTISIG}`);
-  await mine(
-    templeTeamPaymentsFactory.transferOwnership(DEPLOYED.MULTISIG, {
-      gasPrice,
-    })
-  );
-  console.log('Mined');
+  console.log('Transfering ownership');
+  await mine(templeTeamPaymentsFactory.transferOwnership(DEPLOYED.MULTISIG));
 }
 
 // We recommend this pattern to be able to use async/await everywhere
