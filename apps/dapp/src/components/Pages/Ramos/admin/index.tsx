@@ -1,18 +1,18 @@
+import { useState, useEffect } from 'react';
 import styled, { css } from 'styled-components';
+import { BigNumber, ethers } from 'ethers';
+
 import { Button } from 'components/Button/Button';
 import { Input } from 'components/Input/Input';
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { tabletAndAbove } from 'styles/breakpoints';
-import { useState } from 'react';
-import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
-import { ERC20__factory, RAMOSGoerli__factory } from 'types/typechain';
 import { useWallet } from 'providers/WalletProvider';
 import environmentConfig from 'constants/env';
+import { RAMOSGoerli__factory } from 'types/typechain';
 import { AMO__IBalancerVault__factory } from 'types/typechain/factories/AMO__IBalancerVault__factory';
 import { AMO__IBalancerVault } from 'types/typechain/AMO__IBalancerVault';
 import { IBalancerHelpers__factory } from 'types/typechain/factories/IBalancerHelpers__factory';
-import { fromAtto, toAtto, ZERO } from 'utils/bigNumber';
-import { BigNumber, ethers } from 'ethers';
+import { toAtto, ZERO } from 'utils/bigNumber';
+
 import { useRamosAdmin } from './useRamosAdmin';
 
 const Container = styled.div`
@@ -35,13 +35,11 @@ const RequestArea = styled.code`
 `;
 
 const RamosAdmin = () => {
-  const { joinPoolInfo, createJoinPoolRequest } = useRamosAdmin();
-  const [joinAmountTemple, setJoinAmountTemple] = useState(ZERO);
-  const [joinAmountFrax, setJoinAmountFrax] = useState(ZERO);
+  const { tokens, joinPoolInfo, createJoinPoolRequest } = useRamosAdmin();
   const [exitAmountBpt, setExitAmountBpt] = useState(ZERO);
+  const [amounts, setAmounts] = useState<BigNumber[]>([]);
   const [exitPoolRequest, setExitPoolRequest] = useState<AMO__IBalancerVault.ExitPoolRequestStruct>();
   const { signer } = useWallet();
-
 
   const createExitPoolRequest = async () => {
     if (signer) {
@@ -78,30 +76,36 @@ const RamosAdmin = () => {
     }
   };
 
+  useEffect(() => {
+    const initAmounts: BigNumber[] = [];
+    tokens?.forEach(_ => {
+      initAmounts.push(ZERO);
+    });
+    setAmounts(initAmounts);
+  }, [tokens]);
+
   return (
     <>
       <Container>
         <InputArea>
           <h3>Join pool</h3>
-          <Input
-            crypto={{ kind: 'value', value: 'TEMPLE' }}
-            value={ethers.utils.formatUnits(joinAmountTemple)}
-            isNumber
-            small
-            handleChange={(e) => setJoinAmountTemple(ethers.utils.parseUnits(`${e}`))}
-          />
-          <Input
-            crypto={{ kind: 'value', value: 'FRAX' }}
-            value={ethers.utils.formatUnits(joinAmountFrax)}
-            isNumber
-            small
-            handleChange={(e) => setJoinAmountFrax(ethers.utils.parseUnits(`${e}`))}
-          />
-          <Button
-            isSmall
-            label="CREATE REQUEST PARAMS"
-            onClick={() => createJoinPoolRequest([joinAmountTemple, joinAmountFrax])}
-          />
+          {tokens &&
+            amounts.length === tokens.length &&
+            tokens?.map((token, index) => (
+              <Input
+                key={token.address}
+                crypto={{ kind: 'value', value: token.symbol }}
+                value={ethers.utils.formatUnits(amounts[index])}
+                isNumber
+                small
+                handleChange={(e: string) => {
+                  const updatedAmounts = [...amounts];
+                  updatedAmounts[index] = ethers.utils.parseUnits(e);
+                  setAmounts(updatedAmounts);
+                }}
+              />
+            ))}
+          <Button isSmall label="CREATE REQUEST PARAMS" onClick={() => createJoinPoolRequest(amounts)} />
           {joinPoolInfo && (
             <>
               <RequestArea>{joinPoolInfo.joinPoolRequest}</RequestArea>

@@ -11,7 +11,7 @@ import { AMO__IBalancerVault__factory } from 'types/typechain/factories/AMO__IBa
 import type { IBalancerHelpers } from 'types/typechain/IBalancerHelpers';
 import type { AMO__IBalancerVault } from 'types/typechain/AMO__IBalancerVault';
 
-import { formatJoinRequestTuple } from './helpers';
+import { formatJoinRequestTuple, getTokenSymbolByAddress } from './helpers';
 
 export function useRamosAdmin() {
   const { ramos: RAMOS_ADDRESS, balancerHelpers: BALANCER_HELPERS_ADDRESS } = environmentConfig.contracts;
@@ -19,7 +19,7 @@ export function useRamosAdmin() {
   //internal state
   const { signer } = useWallet();
   const [walletAddress, setWalletAddress] = useState<string>();
-  const [tokens, setTokens] = useState<string[]>();
+  const [tokens, setTokens] = useState<{ address: string; symbol: string }[]>();
   const [balancerHelpers, setBalancerHelpers] = useState<IBalancerHelpers>();
   const [poolId, setPoolId] = useState<string>();
 
@@ -42,7 +42,11 @@ export function useRamosAdmin() {
         setWalletAddress(WALLET_ADDRESS);
         setPoolId(POOL_ID);
         setBalancerHelpers(BALANCER_HELPERS_CONTRACT);
-        setTokens(tokens);
+        setTokens(
+          tokens.map((tokenAddr) => {
+            return { address: tokenAddr, symbol: getTokenSymbolByAddress(tokenAddr) };
+          })
+        );
       }
     }
     setContracts();
@@ -52,7 +56,7 @@ export function useRamosAdmin() {
     if (isConnected) {
       const queryUserData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256[]', 'uint256'], [1, amounts, 0]);
       const queryJoinRequest: AMO__IBalancerVault.JoinPoolRequestStruct = {
-        assets: tokens,
+        assets: tokens.map(token => token.address),
         maxAmountsIn: amounts,
         userData: queryUserData,
         fromInternalBalance: false,
@@ -67,7 +71,7 @@ export function useRamosAdmin() {
 
       const userData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256[]', 'uint256'], [1, amountsIn, bptOut]);
       const finalRequest: AMO__IBalancerVault.JoinPoolRequestStruct = {
-        assets: tokens,
+        assets: tokens.map(token => token.address),
         maxAmountsIn: amountsIn,
         userData: userData,
         fromInternalBalance: false,
@@ -83,5 +87,6 @@ export function useRamosAdmin() {
   return {
     createJoinPoolRequest,
     joinPoolInfo,
+    tokens,
   };
 }
