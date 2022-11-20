@@ -13,6 +13,7 @@ import { AMO__IBalancerVault } from 'types/typechain/AMO__IBalancerVault';
 import { IBalancerHelpers__factory } from 'types/typechain/factories/IBalancerHelpers__factory';
 import { fromAtto, toAtto, ZERO } from 'utils/bigNumber';
 import { BigNumber, ethers } from 'ethers';
+import { useRamosAdmin } from './useRamosAdmin';
 
 const Container = styled.div`
   display: grid;
@@ -34,62 +35,13 @@ const RequestArea = styled.code`
 `;
 
 const RamosAdmin = () => {
+  const { joinPoolInfo, createJoinPoolRequest } = useRamosAdmin();
   const [joinAmountTemple, setJoinAmountTemple] = useState(ZERO);
   const [joinAmountFrax, setJoinAmountFrax] = useState(ZERO);
-  const [joinPoolRequest, setJoinPoolRequest] = useState<AMO__IBalancerVault.JoinPoolRequestStruct>();
-  const [minBptOut, setMinBptOut] = useState(ZERO);
   const [exitAmountBpt, setExitAmountBpt] = useState(ZERO);
   const [exitPoolRequest, setExitPoolRequest] = useState<AMO__IBalancerVault.ExitPoolRequestStruct>();
   const { signer } = useWallet();
 
-  const createJoinPoolRequest = async () => {
-    if (signer) {
-      const address = await signer.getAddress();
-      const { ramos, balancerHelpers } = environmentConfig.contracts;
-      const RAMOS_CONTRACT = new RAMOSGoerli__factory(signer).attach(ramos);
-      const POOL_ID = await RAMOS_CONTRACT.balancerPoolId();
-      const BALANCER_VAULT_ADDRESS = await RAMOS_CONTRACT.balancerVault();
-      const BALANCER_VAULT_CONTRACT = AMO__IBalancerVault__factory.connect(BALANCER_VAULT_ADDRESS, signer);
-      const BALANCER_HELPERS_CONTRACT = IBalancerHelpers__factory.connect(balancerHelpers, signer);
-
-      const [tokens, ,] = await BALANCER_VAULT_CONTRACT.getPoolTokens(POOL_ID);
-
-      const amounts = [joinAmountTemple, joinAmountFrax];
-
-      const queryUserData = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'uint256[]', 'uint256'],
-        [1, amounts, 0]
-      );
-      const queryJoinRequest: AMO__IBalancerVault.JoinPoolRequestStruct = {
-        assets: tokens,
-        maxAmountsIn: amounts,
-        userData: queryUserData,
-        fromInternalBalance: false,
-      };
-      console.log(BALANCER_VAULT_ADDRESS)
-      console.log(POOL_ID)
-      const { amountsIn, bptOut } = await BALANCER_HELPERS_CONTRACT.queryJoin(
-        POOL_ID,
-        address,
-        address,
-        queryJoinRequest
-      );
-
-      setMinBptOut(bptOut);
-      const userData = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'uint256[]', 'uint256'],
-        [1, amountsIn, bptOut]
-      );
-      const finalRequest: AMO__IBalancerVault.JoinPoolRequestStruct = {
-        assets: tokens,
-        maxAmountsIn: amountsIn,
-        userData: userData,
-        fromInternalBalance: false,
-      };
-
-      setJoinPoolRequest(finalRequest);
-    }
-  };
 
   const createExitPoolRequest = async () => {
     if (signer) {
@@ -119,10 +71,10 @@ const RamosAdmin = () => {
         assets: tokens,
         minAmountsOut: amountsOut,
         userData: userData,
-        toInternalBalance: false
-      }
+        toInternalBalance: false,
+      };
 
-      setExitPoolRequest(finalRequest)
+      setExitPoolRequest(finalRequest);
     }
   };
 
@@ -145,14 +97,18 @@ const RamosAdmin = () => {
             small
             handleChange={(e) => setJoinAmountFrax(ethers.utils.parseUnits(`${e}`))}
           />
-          <Button isSmall label="CREATE REQUEST PARAMS" onClick={createJoinPoolRequest} />
-          <RequestArea>{`[[${joinPoolRequest?.assets
-            .map((asset) => `"${asset}"`)
-            .join(',')}],[${joinPoolRequest?.maxAmountsIn.map((amount) => `"${amount}"`).join(',')}],"${
-            joinPoolRequest?.userData
-          }",false]`}</RequestArea>
+          <Button
+            isSmall
+            label="CREATE REQUEST PARAMS"
+            onClick={() => createJoinPoolRequest([joinAmountTemple, joinAmountFrax])}
+          />
+          {joinPoolInfo && (
+            <>
+              <RequestArea>{joinPoolInfo.joinPoolRequest}</RequestArea>
 
-          <RequestArea>{`${minBptOut}`}</RequestArea>
+              <RequestArea>{`${joinPoolInfo.minBptOut}`}</RequestArea>
+            </>
+          )}
         </InputArea>
 
         <InputArea>
@@ -168,7 +124,7 @@ const RamosAdmin = () => {
           <RequestArea>{`[[${exitPoolRequest?.assets
             .map((asset) => `"${asset}"`)
             .join(',')}],[${exitPoolRequest?.minAmountsOut.map((amount) => `"${amount}"`).join(',')}],"${
-              exitPoolRequest?.userData
+            exitPoolRequest?.userData
           }",false]`}</RequestArea>
         </InputArea>
       </Container>
