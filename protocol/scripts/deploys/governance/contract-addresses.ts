@@ -15,11 +15,24 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
         TEMPLAR_METADATA: '',
     },
     gnosis: {
-        MULTISIG: '',
-        TEMPLAR_NFT: '',
-        ELDER_ELECTION: '',
-        TEMPLAR_METADATA: '',
+        MULTISIG: '0x84AF944A0C0b1a7A24D055c07dbbcE1659a73709',
+
+        // yarn hardhat run --network gnosis scripts/deploys/governance/gnosis/01-templar-nft.ts
+        // yarn hardhat verify --network gnosis 0x848fDdD6dD050355413ce1969262bACAEBD45873
+        TEMPLAR_NFT: '0x848fDdD6dD050355413ce1969262bACAEBD45873',
+        
+        // yarn hardhat run --network gnosis scripts/deploys/governance/gnosis/01-templar-nft.ts
+        // TODO: yarn hardhat verify --network gnosis 0xC76f8247E46E7549022b019bE4522e7Baf124349 0x848fDdD6dD050355413ce1969262bACAEBD45873
+        ELDER_ELECTION: '0xC76f8247E46E7549022b019bE4522e7Baf124349',
+
+        // yarn hardhat run --network gnosis scripts/deploys/governance/gnosis/03-templar-metadata.ts
+        // TODO: yarn hardhat verify --network gnosis 0xD7B4bA8a52148c49AC7FD73B4ab02B3b865e4De9 0x848fDdD6dD050355413ce1969262bACAEBD45873
+        TEMPLAR_METADATA: '0xD7B4bA8a52148c49AC7FD73B4ab02B3b865e4De9',
+
+        // yarn hardhat run --network gnosis scripts/deploys/governance/gnosis/100-transfer-ownership.ts 
     },
+
+
     goerli: {
         MULTISIG: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
 
