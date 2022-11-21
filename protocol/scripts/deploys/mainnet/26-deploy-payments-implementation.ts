@@ -1,8 +1,8 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers, network } from 'hardhat';
 import {
-  TempleTeamPaymentsFactory,
-  TempleTeamPaymentsFactory__factory,
+  TempleTeamPaymentsV2,
+  TempleTeamPaymentsV2__factory,
 } from '../../../typechain';
 import {
   deployAndMine,
@@ -25,25 +25,16 @@ async function main() {
     DEPLOYED = DEPLOYED_CONTRACTS[network.name];
   }
 
-  // update with previously funded epoch before the factory came into use
-  const implementationAddress = '';
-  const lastPaidEpoch = 8;
-  const templeTeamPaymentsFactoryFactory =
-    new TempleTeamPaymentsFactory__factory(owner);
-  const templeTeamPaymentsFactory: TempleTeamPaymentsFactory =
-    await deployAndMine(
-      'Temple Team Payments Factory',
-      templeTeamPaymentsFactoryFactory,
-      templeTeamPaymentsFactoryFactory.deploy,
-      implementationAddress,
-      lastPaidEpoch
-    );
+  const templeTeamPaymentsImplFactory = new TempleTeamPaymentsV2__factory();
+  const templeTeamPaymentsImpl: TempleTeamPaymentsV2 = await deployAndMine(
+    'Temple Team Payments Implementation',
+    templeTeamPaymentsImplFactory,
+    templeTeamPaymentsImplFactory.deploy
+  );
 
   console.log(
-    `yarn hardhat verify --network ${network.name} ${templeTeamPaymentsFactory.address} ${implementationAddress} ${lastPaidEpoch}`
+    `yarn hardhat verify --network ${network.name} ${templeTeamPaymentsImpl.address}`
   );
-  console.log('Transfering ownership');
-  await mine(templeTeamPaymentsFactory.transferOwnership(DEPLOYED.MULTISIG));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -33,8 +33,8 @@ contract TempleTeamPaymentsFactoryTest is Test {
 
     function setUp() public {
         vm.createSelectFork(vm.rpcUrl("mainnet"));
-
-        factory = new TempleTeamPaymentsFactory(0);
+        address impl = address(new TempleTeamPaymentsV2());
+        factory = new TempleTeamPaymentsFactory(impl, 0);
         factory.transferOwnership(multisig);
     }
 
