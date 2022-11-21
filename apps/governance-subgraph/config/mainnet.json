@@ -1,15 +1,15 @@
 {
     "network": "gnosis",
     "templarNft": {
-        "address": "0xD54e5bF777561B819de14DbEB2C2A4c371DFC8EE",
-        "startBlock": "518895"
+        "address": "0x848fDdD6dD050355413ce1969262bACAEBD45873",
+        "startBlock": "25030495"
     },
     "templarMetadata": {
-        "address": "0xFe85ac1a8c04B81544BCD241C4c1c15b4024F030",
-        "startBlock": "518937"
+        "address": "0xD7B4bA8a52148c49AC7FD73B4ab02B3b865e4De9",
+        "startBlock": "25030568"
     },
     "elderElection": {
-        "address": "0xFe85ac1a8c04B81544BCD241C4c1c15b4024F030",
-        "startBlock": "518937"
+        "address": "0xC76f8247E46E7549022b019bE4522e7Baf124349",
+        "startBlock": "25030558"
     }
 }
