@@ -40,6 +40,11 @@ export interface DeployedContracts {
   // Temple Zaps
   GENERIC_ZAPS: string;
   TEMPLE_ZAPS: string;
+
+  // RAMOS
+  RAMOS: string;
+  RAMOS_POOL_HELPER: string;
+  RAMOS_AURA_STAKING: string;
 }
 
 export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
@@ -72,6 +77,10 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
     GENERIC_ZAPS: '',
     TEMPLE_ZAPS: '',
+
+    RAMOS: '',
+    RAMOS_POOL_HELPER: '',
+    RAMOS_AURA_STAKING: ''
   },
   goerli: {
     // No longer active/unused
@@ -108,6 +117,10 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     MULTISIG: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
     GENERIC_ZAPS: '',
     TEMPLE_ZAPS: '',
+
+    RAMOS: '0x7319fB14aA4f99735d36298025EBf5b4A69E84f3',
+    RAMOS_POOL_HELPER: '0x91EfB7Bf58522061A0Ab2c5c9b428243d90580d0',
+    RAMOS_AURA_STAKING: ''
   },
   mainnet: {
     // From network/environment
@@ -135,6 +148,10 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TREASURY_IV: '0xae8a796bd9437Bd266664e8e9B8428B25A7D2477',
     GENERIC_ZAPS: '0x388d3C524724541800FD74041136caB40FD4DAfE',
     TEMPLE_ZAPS: '0xb7C30F132DBbBbB1C2b81d9D66a010FB7c72Ff9c',
+
+    RAMOS: '',
+    RAMOS_POOL_HELPER: '',
+    RAMOS_AURA_STAKING: ''
   },
   localhost: {
     // From network/environment (setup when 00-localhost-env.ts script is run)
@@ -163,6 +180,10 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
 
     GENERIC_ZAPS: process.env.GENERIC_ZAPS || '',
     TEMPLE_ZAPS: process.env.TEMPLE_ZAPS || '',
+
+    RAMOS: '',
+    RAMOS_POOL_HELPER: '',
+    RAMOS_AURA_STAKING: '',
 
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
   },
