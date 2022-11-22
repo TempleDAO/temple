@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
@@ -18,7 +18,8 @@ contract TempleTeamPaymentsFactory is Ownable {
         uint256 totalFunding;
     }
 
-    IERC20 public temple = IERC20(0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7);
+    IERC20 public immutable temple =
+        IERC20(0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7);
     address public templeTeamPaymentsImplementation;
     uint16 public initialEpoch;
     uint16 public lastPaidEpoch;
@@ -129,7 +130,7 @@ contract TempleTeamPaymentsFactory is Ownable {
             if (dest == address(0)) revert AllocationAddressZero();
             uint256 value = _allocations[i];
             if (value == 0) revert ClaimZeroValue();
-            SafeERC20.safeTransferFrom(temple, msg.sender, _dests[i], value);
+            SafeERC20.safeTransferFrom(temple, msg.sender, dest, value);
             totalFunding += value;
             unchecked {
                 i++;
