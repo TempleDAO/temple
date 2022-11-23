@@ -11,22 +11,17 @@ const NotificationManager = () => {
   const { closeNotification } = useNotification();
 
   // Array indicating which notifications are open.
-  // I know what you're thinking - "couldn't this just
-  // be a boolean because we are always setting the whole
-  // array to either true of false?" Well I tested that,
-  // and it messes up the animation when opening multiple
-  // notifications at once, so let's keep it like this.
   const [areOpen, setAreOpen] = useState<boolean[]>([]);
 
   useEffect(() => {
     // Setting all notifications to be open by default
-    var listTrue = new Array(notifications.length).fill(true);
+    const listTrue = new Array(notifications.length).fill(true);
     setAreOpen(listTrue);
 
     // This is responsible for running the closing animation before
     // the notification is removed from the manager
     const timerForAnimation = setTimeout(function () {
-      var listFalse = new Array(notifications.length).fill(false);
+      const listFalse = new Array(notifications.length).fill(false);
       setAreOpen(listFalse);
     }, AUTOHIDE_TIMER - 400);
 
