@@ -4,12 +4,14 @@ import { BigNumber, ethers } from 'ethers';
 import environmentConfig from 'constants/env';
 import { useWallet } from 'providers/WalletProvider';
 
-import { RAMOSGoerli, RAMOSGoerli__factory } from 'types/typechain';
-import { IBalancerHelpers__factory } from 'types/typechain/factories/IBalancerHelpers__factory';
-import { AMO__IBalancerVault__factory } from 'types/typechain/factories/AMO__IBalancerVault__factory';
-
-import type { IBalancerHelpers } from 'types/typechain/IBalancerHelpers';
-import type { AMO__IBalancerVault } from 'types/typechain/AMO__IBalancerVault';
+import {
+  RAMOSGoerli,
+  RAMOSGoerli__factory,
+  IBalancerHelpers,
+  IBalancerHelpers__factory,
+  AMO__IBalancerVault,
+  AMO__IBalancerVault__factory,
+} from 'types/typechain';
 
 import {
   calculateTargetPriceDown,
