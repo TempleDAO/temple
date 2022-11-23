@@ -10,6 +10,9 @@ interface Contracts {
   farmingWallet: string;
   fei: string;
   frax: string;
+  usdc: string;
+  usdt: string;
+  dai: string;
   frax3CrvFarming: string;
   frax3CrvFarmingRewards: string;
   lbpFactory: string;
@@ -62,6 +65,7 @@ interface Tokens {
   fei: Token;
   eth: Token;
   usdc: Token;
+  usdt: Token;
   dai: Token;
 }
 

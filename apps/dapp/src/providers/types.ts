@@ -23,6 +23,9 @@ export enum ETH_ACTIONS {
 export type Balance = {
   frax: BigNumber;
   fei: BigNumber;
+  usdc: BigNumber;
+  usdt: BigNumber;
+  dai: BigNumber;
   temple: BigNumber;
   ogTemple: BigNumber;
 };

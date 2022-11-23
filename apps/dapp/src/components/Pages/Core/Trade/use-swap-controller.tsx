@@ -212,6 +212,12 @@ export function useSwapController() {
         return balance.frax;
       case TICKER_SYMBOL.FEI:
         return balance.fei;
+      case TICKER_SYMBOL.USDC:
+        return balance.usdc;
+      case TICKER_SYMBOL.USDT:
+        return balance.usdt;
+      case TICKER_SYMBOL.DAI:
+        return balance.dai;
       case TICKER_SYMBOL.TEMPLE_TOKEN:
         return balance.temple;
       default:

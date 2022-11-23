@@ -40,8 +40,12 @@ export const Trade = () => {
     state.mode === SwapMode.Sell ? { ...state.outputConfig, onCryptoChange: handleSelectChange } : state.outputConfig;
 
   const bigInputValue = getBigNumberFromString(state.inputValue || '0');
-  
-  const isButtonDisabled = state.isTransactionPending || state.inputTokenBalance.eq(ZERO) ||bigInputValue.gt(state.inputTokenBalance) ||state.inputValue === '';
+
+  const isButtonDisabled =
+    state.isTransactionPending ||
+    state.inputTokenBalance.eq(ZERO) ||
+    bigInputValue.gt(state.inputTokenBalance) ||
+    state.inputValue === '';
 
   return (
     <>
@@ -77,11 +81,7 @@ export const Trade = () => {
           <InvertButton onClick={handleChangeMode} />
         </InputsContainer>
         <Spacer />
-        <CtaButton
-          label={state.buttonLabel}
-          onClick={handleTransaction}
-          disabled={isButtonDisabled}
-        />
+        <CtaButton label={state.buttonLabel} onClick={handleTransaction} disabled={isButtonDisabled} />
       </SwapContainer>
       {state.error && <ErrorLabel>{state.error.message}</ErrorLabel>}
     </>

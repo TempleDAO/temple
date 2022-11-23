@@ -9,6 +9,9 @@ const env: Environment = {
     farmingWallet: '0x5C8898f8E0F9468D4A677887bC03EE2659321012',
     fei: '0x956F47F50A910163D8BF957Cf5846D573E7f87CA',
     frax: '0x853d955acef822db058eb8505911ed77f175b99e',
+    usdc: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    usdt: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    dai: '0x6b175474e89094c44da98b954eedeac495271d0f',
     frax3CrvFarming: '0xd632f22692fac7611d2aa1c0d552930d43caed3b',
     frax3CrvFarmingRewards: '0xB900EF131301B307dB5eFcbed9DBb50A3e209B2e',
     lbpFactory: '0x0F3e0c4218b7b0108a3643cFe9D3ec0d4F57c54e',
@@ -80,6 +83,11 @@ const env: Environment = {
     usdc: {
       name: 'USDC',
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+      decimals: 6,
+    },
+    usdt: {
+      name: 'USDT',
+      address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
       decimals: 6,
     },
     dai: {

@@ -11,6 +11,9 @@ const env: Environment = {
     farmingWallet: '',
     fei: '0x8A791620dd6260079BF849Dc5567aDC3F2FdC318',
     frax: '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6',
+    usdc: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    usdt: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    dai: '0x6b175474e89094c44da98b954eedeac495271d0f',
     frax3CrvFarming: '',
     frax3CrvFarmingRewards: '',
     lbpFactory: '',
@@ -85,6 +88,12 @@ const env: Environment = {
       address: ENV.VITE_PUBLIC_USDC_ADDRESS,
       decimals: 6,
       symbol: 'USDC',
+    },
+    usdt: {
+      name: 'USDT',
+      address: ENV.VITE_PUBLIC_USDT_ADDRESS,
+      decimals: 6,
+      symbol: 'USDT',
     },
     dai: {
       name: 'Dai',
