@@ -1,13 +1,20 @@
-import { useState, useEffect } from 'react';
 import styled, { css } from 'styled-components';
-import { BigNumber, ethers } from 'ethers';
-
-import { Button } from 'components/Button/Button';
-import { Input } from 'components/Input/Input';
 import { tabletAndAbove } from 'styles/breakpoints';
-import { ZERO } from 'utils/bigNumber';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 import { useRamosAdmin } from './useRamosAdmin';
+import {
+  DepositStable,
+  ExitPoolRequest,
+  JoinPoolRequest,
+  RebalanceDown,
+  RebalanceUp,
+  WithdrawStable,
+} from './components';
+import { Tabs } from 'components/Tabs/Tabs';
+import EllipsisLoader from 'components/EllipsisLoader';
+import { Input } from 'components/Input/Input';
+import { Button } from 'components/Button/Button';
 
 const Container = styled.div`
   display: grid;
@@ -18,90 +25,95 @@ const Container = styled.div`
   `)}
 `;
 
-const CalculatorArea = styled.div`
-  grid-column: 1/-1;
-`;
-
-const InputArea = styled.div`
-  h3 {
-    margin-top: 0.5rem;
-  }
-  display: flex;
-  border: ${({ theme }) => `1px solid ${theme.palette.brand}`};
-  border-radius: 2rem;
-  padding: 1rem;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-const RequestArea = styled.code`
-  overflow-wrap: anywhere;
-`;
-
 const RamosAdmin = () => {
-  const { createJoinPoolRequest, joinPoolInfo, createExitPoolRequest, exitPoolRequest, tokens } = useRamosAdmin();
-  const [exitAmountBpt, setExitAmountBpt] = useState(ZERO);
-  const [amounts, setAmounts] = useState<BigNumber[]>([]);
+  const {
+    tpf,
+    templePrice,
+    calculateRebalanceUp,
+    rebalanceUpToTpf,
+    calculateRebalanceDown,
+    rebalanceDownToTpf,
+    calculateDepositStable,
+    depositStableUpToTpf,
+    createJoinPoolRequest,
+    createExitPoolRequest,
+    calculateWithdrawStable,
+    withdrawStableToTpf,
+    randomPercent,
+    setRandomPercent,
+    calculateRecommendedAmounts
+  } = useRamosAdmin();
 
-  useEffect(() => {
-    const initAmounts: BigNumber[] = [];
-    tokens?.forEach((_) => {
-      initAmounts.push(ZERO);
-    });
-    setAmounts(initAmounts);
-  }, [tokens]);
+  const tabs = [
+    {
+      label: 'Rebalance',
+      content: (
+        <Container>
+          <RebalanceUp calculateFunc={calculateRebalanceUp} toTpf={rebalanceUpToTpf} />
+          <RebalanceDown calculateFunc={calculateRebalanceDown} toTpf={rebalanceDownToTpf} />
+        </Container>
+      ),
+    },
+    {
+      label: 'Stable',
+      content: (
+        <Container>
+          <DepositStable calculateFunc={calculateDepositStable} toTpf={depositStableUpToTpf} />
+          <WithdrawStable calculateFunc={calculateWithdrawStable} toTpf={withdrawStableToTpf} />
+        </Container>
+      ),
+    },
+    {
+      label: 'Liquidity',
+      content: (
+        <Container>
+          <JoinPoolRequest calculateFunc={createJoinPoolRequest} />
+          <ExitPoolRequest calculateFunc={createExitPoolRequest} />
+        </Container>
+      ),
+    },
+  ];
+
+  const limitInput = (input: string): number => {
+    if (input === '0') return 0;
+
+    return Number(input);
+  };
+
+  const handleBlur = (value: number | '', minValue: number, maxValue: number) => {
+    if (value === '') return minValue;
+    if (value <= minValue) return minValue;
+    if (value >= maxValue) return maxValue;
+    return value;
+  };
 
   return (
-    <Container>
-      <CalculatorArea>
-        <h3>Calculator</h3>
+    <div>
+      <Container>
         <p>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias quibusdam minus, hic molestias neque est ex
-          sint provident, possimus, quo reiciendis quidem voluptatem totam aliquid ab. Doloremque provident sed
-          laudantium!
+          Temple Price: <strong>{templePrice?.formatUnits() ?? <EllipsisLoader />}</strong>
         </p>
-      </CalculatorArea>
-      <InputArea>
-        <h3>Join pool</h3>
-        {tokens &&
-          amounts.length === tokens.length &&
-          tokens?.map((token, index) => (
-            <Input
-              key={token.address}
-              crypto={{ kind: 'value', value: token.symbol }}
-              value={ethers.utils.formatUnits(amounts[index])}
-              isNumber
-              small
-              handleChange={(e: string) => {
-                const updatedAmounts = [...amounts];
-                updatedAmounts[index] = ethers.utils.parseUnits(e);
-                setAmounts(updatedAmounts);
-              }}
-            />
-          ))}
-        <Button isSmall label="CREATE REQUEST PARAMS" onClick={() => createJoinPoolRequest(amounts)} />
-        {joinPoolInfo && (
-          <>
-            <RequestArea>{joinPoolInfo.joinPoolRequest}</RequestArea>
-
-            <RequestArea>{`${joinPoolInfo.minBptOut}`}</RequestArea>
-          </>
-        )}
-      </InputArea>
-
-      <InputArea>
-        <h3>Exit pool</h3>
+        <p>
+          TPF: <strong>{tpf?.formatUnits() ?? <EllipsisLoader />}</strong>
+        </p>
+      </Container>
+      <Container>
         <Input
-          crypto={{ kind: 'value', value: 'BPT' }}
-          value={ethers.utils.formatUnits(exitAmountBpt)}
-          isNumber
+          value={randomPercent}
           small
-          handleChange={(e) => setExitAmountBpt(ethers.utils.parseUnits(`${e}`))}
+          max={100}
+          crypto={{ kind: 'value', value: 'RANDOM' }}
+          suffix="%"
+          handleChange={(e: string) => {
+            setRandomPercent(limitInput(e));
+          }}
+          onBlur={() => setRandomPercent(handleBlur(randomPercent ?? 0, 0, 100))}
         />
-        <Button isSmall label="CREATE REQUEST PARAMS" onClick={() => createExitPoolRequest(exitAmountBpt)} />
-        {exitPoolRequest && <RequestArea>{exitPoolRequest}</RequestArea>}
-      </InputArea>
-    </Container>
+        <Button onClick={calculateRecommendedAmounts} label="RECALCULATE"/>
+      </Container>
+      <br />
+      <Tabs tabs={tabs} />
+    </div>
   );
 };
 
