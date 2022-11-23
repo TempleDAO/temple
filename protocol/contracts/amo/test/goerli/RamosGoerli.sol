@@ -373,11 +373,6 @@ contract RAMOSGoerli is Ownable, Pausable {
                     receivedAmount = stable.balanceOf(address(this)) - stableAmountBefore;
                 }
             }
-
-            // revert if insufficient amount received
-            if (receivedAmount < request.minAmountsOut[i]) {
-                revert AMOCommon.InsufficientAmountOutPostcall(request.minAmountsOut[i], receivedAmount);
-            }
         }
     }
 
@@ -395,7 +390,7 @@ contract RAMOSGoerli is Ownable, Pausable {
     }
 
     modifier enoughCooldown() {
-        if (lastRebalanceTimeSecs != 0 && lastRebalanceTimeSecs + cooldownSecs <= block.timestamp) {
+        if (lastRebalanceTimeSecs != 0 && lastRebalanceTimeSecs + cooldownSecs > block.timestamp) {
             revert AMOCommon.NotEnoughCooldown();
         }
         _;

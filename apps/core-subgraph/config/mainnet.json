@@ -1,6 +1,7 @@
 {
     "network": "mainnet",
     "hasScheduler": true,
+    "hasEarlyWithdraw": true,
     "opsManager": {
         "address": "0x65fE8BaBF7DA367b2B45cBD748F0490713f84828",
         "startBlock": "14948085"

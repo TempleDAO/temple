@@ -660,7 +660,7 @@ describe("Temple Price Floor AMO", async () => {
         });
 
         it("rebalances up", async () => {
-            await amo.setCoolDown(3_600);
+            await amo.setCoolDown(0);
             // fails
             await expect(amo.rebalanceUp(0, 0)).to.be.revertedWithCustomError(amo, "ZeroSwapLimit");
             await expect(amo.rebalanceUp(toAtto(1_000), 1)).to.be.revertedWithCustomError(amo, "AboveCappedAmount");
@@ -713,6 +713,13 @@ describe("Temple Price Floor AMO", async () => {
             // stake some more to have enough bpt to unwrap and trigger price drop
             await ownerDepositAndStakeBpt(toAtto(150_000));
             await singleSideDepositTemple(toAtto(50_000));
+
+            // test cooldown
+            await amo.setCoolDown(1_800);
+            await time.increase((await amo.cooldownSecs()).sub(10));
+            await expect(amo.rebalanceUp(toAtto(10_000), 1)).to.be.revertedWithCustomError(amo, "NotEnoughCooldown");
+            await amo.setCoolDown(0);
+
             // exit will take price above TPF upper bound
             console.log(await getSpotPriceScaled(balancerVault, weightedPool2Tokens));
             await expect(amo.rebalanceUp(toAtto(130_000), toAtto(250_000)))
@@ -726,12 +733,12 @@ describe("Temple Price Floor AMO", async () => {
             await expect(amo.rebalanceUp(1, 1)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceUp");
             expect(await poolHelper["isSpotPriceAboveTPF(uint256)"](tpfNumerator)).to.be.false;
             expect(await poolHelper.isSpotPriceAboveTPFUpperBound(rebalanceBoundUp, tpfNumerator)).to.be.false;
-
-            await time.increase((await amo.cooldownSecs()).sub(1));
-            await expect(amo.rebalanceUp(toAtto(10_000), 1)).to.be.revertedWithCustomError(amo, "NotEnoughCooldown");
+            console.log(await poolHelper.getSpotPriceScaled());
+            
         });
 
         it("rebalances down", async () => {
+            await amo.setCoolDown(0);
             // fails
             await expect(amo.rebalanceDown(0, 0)).to.be.revertedWithCustomError(amo, "ZeroSwapLimit");
             await expect(amo.rebalanceDown(toAtto(1_000), 1)).to.be.revertedWithCustomError(amo, "AboveCappedAmount");
@@ -771,7 +778,8 @@ describe("Temple Price Floor AMO", async () => {
             // join will take price below TPF lower bound
             await expect(amo.rebalanceDown(toAtto(800_000), reqData.bptOut)).to.be.revertedWithCustomError(poolHelper, "HighSlippage");
             // test cool down
-            await time.increase((await amo.cooldownSecs()).sub(1));
+            await amo.setCoolDown(1_800);
+            await time.increase((await amo.cooldownSecs()).sub(10));
             await expect(amo.rebalanceDown(toAtto(10_000), reqData.bptOut)).to.be.revertedWithCustomError(amo, "NotEnoughCooldown");
         });
     });

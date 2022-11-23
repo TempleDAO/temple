@@ -1,8 +1,13 @@
 {
     "network": "goerli",
-    "hasScheduler": false,
+    "hasScheduler": true,
+    "hasEarlyWithdraw": false,
     "opsManager": {
         "address": "0x542891Faf336d69E440De80145Df21510dCa6a78",
-        "startBlock": "7190973"
+        "startBlock": "7578944"
+    },
+    "hourlyScheduler": {
+        "address": "0xE65E6C462119C311D57Fd31bDeBA502CcCC504B4",
+        "startBlock": "7578944"
     }
 }

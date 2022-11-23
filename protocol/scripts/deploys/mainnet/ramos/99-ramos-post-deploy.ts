@@ -53,6 +53,7 @@ async function ramosPostDeploy(ramos: RAMOS, DEPLOYED: DeployedContracts) {
     await mine(auraStaking.setOperator(DEPLOYED.RAMOS));
     await mine(auraStaking.setAuraPoolInfo(TEMPLE_BB_A_USD_AURA_POOL_ID, 
         TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN, TEMPLE_BB_A_USD_REWARDS));
+    await mine(auraStaking.transferOwnership(DEPLOYED.MULTISIG));
     // await mine(auraStaking.setRewardsRecipient()); // leave for multisig to decide
  }
  
