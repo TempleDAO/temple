@@ -2,7 +2,7 @@ import { ethers, network } from "hardhat";
 import { Signer, BigNumber, BigNumberish } from "ethers";
 import { expect } from "chai";
 import axios from 'axios';
-import { blockTimestamp, shouldThrow, toAtto } from "./helpers";
+import { blockTimestamp, shouldThrow, toAtto, impersonateSigner, resetFork } from "./helpers";
 import { DEPLOYED_CONTRACTS } from '../scripts/deploys/helpers';
 import addresses from "./constants";
 import { 
@@ -99,7 +99,7 @@ describe("Temple Stax Core Zaps", async () => {
   });
 
   beforeEach(async () => {
-    fraxSigner = await impersonateAddress(FRAX_WHALE);
+    fraxSigner = await impersonateSigner(FRAX_WHALE);
 
     genericZaps = await new GenericZap__factory(owner).deploy(UNISWAP_V2_ROUTER);
     templeZaps = await new TempleZaps__factory(owner).deploy(
@@ -318,7 +318,7 @@ describe("Temple Stax Core Zaps", async () => {
       const tokenAmount = "5";
 
       // send some tokens
-      const whale = await impersonateAddress(BINANCE_ACCOUNT_8);
+      const whale = await impersonateSigner(BINANCE_ACCOUNT_8);
       const tokenContract = ERC20__factory.connect(tokenAddr, whale);
       await tokenContract.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
 
@@ -345,7 +345,7 @@ describe("Temple Stax Core Zaps", async () => {
       const tokenAmount = "5";
 
       // send some FXS
-      const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
+      const bnbWhale = await impersonateSigner(BINANCE_ACCOUNT_8);
       const fxsToken = ERC20__factory.connect(tokenAddr, bnbWhale);
       await fxsToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
 
@@ -372,7 +372,7 @@ describe("Temple Stax Core Zaps", async () => {
       const tokenAmount = "5";
 
       // send some BNB
-      const whale = await impersonateAddress(FXS_WHALE);
+      const whale = await impersonateSigner(FXS_WHALE);
       const bnbToken = ERC20__factory.connect(tokenAddr, whale);
       await bnbToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
       await templeZaps.setSupportedStables([FRAX, FEI], [true, true]);
@@ -401,7 +401,7 @@ describe("Temple Stax Core Zaps", async () => {
       const tokenAmount = "5";
 
       // send some BNB
-      const whale = await impersonateAddress(FXS_WHALE);
+      const whale = await impersonateSigner(FXS_WHALE);
       const bnbToken = ERC20__factory.connect(tokenAddr, whale);
       await bnbToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
       await templeZaps.setSupportedStables([FRAX, FEI], [true, true]);
@@ -430,7 +430,7 @@ describe("Temple Stax Core Zaps", async () => {
       const tokenAmount = "5";
 
       // send some BNB
-      const whale = await impersonateAddress(FXS_WHALE);
+      const whale = await impersonateSigner(FXS_WHALE);
       const bnbToken = ERC20__factory.connect(tokenAddr, whale);
       await bnbToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
       await templeZaps.setSupportedStables([FRAX, FEI], [true, true]);
@@ -459,7 +459,7 @@ describe("Temple Stax Core Zaps", async () => {
       const tokenAmount = "1";
 
       // send some tokens
-      const whale = await impersonateAddress(BINANCE_ACCOUNT_8);
+      const whale = await impersonateSigner(BINANCE_ACCOUNT_8);
       const tokenContract = ERC20__factory.connect(tokenAddr, whale);
       await tokenContract.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
 
@@ -543,7 +543,7 @@ describe("Temple Stax Core Zaps", async () => {
 
     beforeEach( async () => {
       // send some FXS
-      const bnbWhale = await impersonateAddress(BINANCE_ACCOUNT_8);
+      const bnbWhale = await impersonateSigner(BINANCE_ACCOUNT_8);
       const fxsToken = ERC20__factory.connect(tokenAddr, bnbWhale);
       await fxsToken.transfer(aliceAddress, ethers.utils.parseEther(tokenAmount));
     });
@@ -1660,7 +1660,7 @@ async function airdropTemple(
   airdropRecipients: Signer[],
   airdropAmount: BigNumberish
 ): Promise<TempleERC20Token> {
-  const templeMultisig = await impersonateAddress(MULTISIG)
+  const templeMultisig = await impersonateSigner(MULTISIG)
   const templeToken = TempleERC20Token__factory.connect(TEMPLE, templeMultisig);
   const templeTokenOwner = TempleERC20Token__factory.connect(TEMPLE, owner);
 
@@ -1984,14 +1984,6 @@ async function zapInVault(
   expect(balanceAfter).to.gte(balanceBefore);
 }
 
-async function impersonateAddress(address: string) {
-  await network.provider.request({
-    method: 'hardhat_impersonateAccount',
-    params: [address],
-  });
-  return ethers.provider.getSigner(address);
-}
-
 async function getExpectedTemple(
   signer: Signer,
   guaranteedPrice: string,
@@ -2037,19 +2029,4 @@ async function getLatestBlockNumberWithEnoughConfirmations(): Promise<number> {
   const provider = new ethers.providers.StaticJsonRpcProvider(process.env.TESTS_MAINNET_RPC_URL);
   const blockNumber = await provider.getBlockNumber() - 5;
   return blockNumber;
-}
-
-async function resetFork(blockNumber: number) {
-  console.log("Reset fork blockNumber:", blockNumber);
-  await network.provider.request({
-    method: "hardhat_reset",
-    params: [
-      {
-        forking: {
-          jsonRpcUrl: process.env.TESTS_MAINNET_RPC_URL,
-          blockNumber
-        },
-      },
-    ],
-  });
 }

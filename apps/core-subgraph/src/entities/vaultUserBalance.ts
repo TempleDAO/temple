@@ -1,8 +1,9 @@
-import { BigInt } from '@graphprotocol/graph-ts'
+import { BigDecimal, BigInt } from '@graphprotocol/graph-ts'
 
 import { User, Vault, VaultUserBalance } from '../../generated/schema'
 
 import { BIG_DECIMAL_0 } from '../utils/constants'
+import { getMetric } from './metric'
 import { saveVault } from './vault'
 
 
@@ -39,7 +40,28 @@ export function getOrCreateVaultUserBalance(vault: Vault, user: User, timestamp:
   return vub as VaultUserBalance
 }
 
+function getVaultUserBalance(vaultId: string, userId: string): VaultUserBalance | null {
+  const vubID = vaultId + userId
+  const vub = VaultUserBalance.load(vubID)
+
+  return vub
+}
+
 export function updateVaultUserBalance(vub: VaultUserBalance, timestamp: BigInt): void {
   vub.timestamp = timestamp
   vub.save()
+}
+
+export function getTotalVaultsBalance(userId: string): BigDecimal {
+  const vaults = getMetric().vaults
+
+  let totalBalances = BIG_DECIMAL_0
+  for (let i = 0; i < vaults.length; i++) {
+    const vub = getVaultUserBalance(vaults[i], userId)
+    if (vub && vub.staked > BIG_DECIMAL_0) {
+      totalBalances = totalBalances.plus(vub.staked)
+    }
+  }
+
+  return totalBalances
 }

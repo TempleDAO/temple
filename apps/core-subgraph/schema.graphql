@@ -11,6 +11,7 @@ type Metric @entity {
   tokenCount: BigInt!
   userCount: BigInt!
   vaultGroupCount: BigInt!
+  vaults: [String!]!
 }
 
 type MetricDayData @entity {
@@ -27,6 +28,7 @@ type MetricDayData @entity {
   tokenCount: BigInt!
   userCount: BigInt!
   vaultGroupCount: BigInt!
+  vaults: [String!]!
 }
 
 type OpsManager @entity {
