@@ -5,6 +5,8 @@ import type * as admin from "./admin";
 export type { admin };
 import type * as amm from "./amm";
 export type { amm };
+import type * as amo from "./amo";
+export type { amo };
 import type * as core from "./core";
 export type { core };
 import type * as deprecated from "./deprecated";

@@ -145,6 +145,110 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TreasuryIV__factory>;
     getContractFactory(
+      name: "AuraStaking",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AuraStaking__factory>;
+    getContractFactory(
+      name: "AMOCommon",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMOCommon__factory>;
+    getContractFactory(
+      name: "IWeightPool2Tokens",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IWeightPool2Tokens__factory>;
+    getContractFactory(
+      name: "PoolHelper",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.PoolHelper__factory>;
+    getContractFactory(
+      name: "AMO__IAuraBooster",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__IAuraBooster__factory>;
+    getContractFactory(
+      name: "AMO__IAuraStaking",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__IAuraStaking__factory>;
+    getContractFactory(
+      name: "AMO__IBalancerVault",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__IBalancerVault__factory>;
+    getContractFactory(
+      name: "AMO__IBaseRewardPool",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__IBaseRewardPool__factory>;
+    getContractFactory(
+      name: "AMO__IPoolHelper",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__IPoolHelper__factory>;
+    getContractFactory(
+      name: "AMO__ITempleERC20Token",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__ITempleERC20Token__factory>;
+    getContractFactory(
+      name: "RAMOS",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.RAMOS__factory>;
+    getContractFactory(
+      name: "AMO__Goerli_ILiquidityGaugeFactory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__Goerli_ILiquidityGaugeFactory__factory>;
+    getContractFactory(
+      name: "AMO_IAuraStakingProxy",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO_IAuraStakingProxy__factory>;
+    getContractFactory(
+      name: "AMO_IAuraToken",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO_IAuraToken__factory>;
+    getContractFactory(
+      name: "AMO__IBalancerAuthorizer",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__IBalancerAuthorizer__factory>;
+    getContractFactory(
+      name: "AMO__IBalancerAuthorizerAdapter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__IBalancerAuthorizerAdapter__factory>;
+    getContractFactory(
+      name: "IBalancerHelpers",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IBalancerHelpers__factory>;
+    getContractFactory(
+      name: "AMO__IBalancerVotingEscrow",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__IBalancerVotingEscrow__factory>;
+    getContractFactory(
+      name: "AMO__IGaugeAdder",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__IGaugeAdder__factory>;
+    getContractFactory(
+      name: "AMO__IAuraGaugeController",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__IAuraGaugeController__factory>;
+    getContractFactory(
+      name: "AMO__ILiquidityGaugeFactory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__ILiquidityGaugeFactory__factory>;
+    getContractFactory(
+      name: "AMO__IPoolManagerProxy",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__IPoolManagerProxy__factory>;
+    getContractFactory(
+      name: "AMO__IPoolManagerV3",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__IPoolManagerV3__factory>;
+    getContractFactory(
+      name: "AMO__IAuraStashRewards",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.AMO__IAuraStashRewards__factory>;
+    getContractFactory(
+      name: "IWeightPool2Tokens",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IWeightPool2Tokens__factory>;
+    getContractFactory(
+      name: "RAMOSGoerli",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.RAMOSGoerli__factory>;
+    getContractFactory(
       name: "Exposure",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Exposure__factory>;
@@ -470,6 +574,136 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TreasuryIV>;
+    getContractAt(
+      name: "AuraStaking",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AuraStaking>;
+    getContractAt(
+      name: "AMOCommon",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMOCommon>;
+    getContractAt(
+      name: "IWeightPool2Tokens",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IWeightPool2Tokens>;
+    getContractAt(
+      name: "PoolHelper",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.PoolHelper>;
+    getContractAt(
+      name: "AMO__IAuraBooster",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__IAuraBooster>;
+    getContractAt(
+      name: "AMO__IAuraStaking",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__IAuraStaking>;
+    getContractAt(
+      name: "AMO__IBalancerVault",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__IBalancerVault>;
+    getContractAt(
+      name: "AMO__IBaseRewardPool",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__IBaseRewardPool>;
+    getContractAt(
+      name: "AMO__IPoolHelper",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__IPoolHelper>;
+    getContractAt(
+      name: "AMO__ITempleERC20Token",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__ITempleERC20Token>;
+    getContractAt(
+      name: "RAMOS",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.RAMOS>;
+    getContractAt(
+      name: "AMO__Goerli_ILiquidityGaugeFactory",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__Goerli_ILiquidityGaugeFactory>;
+    getContractAt(
+      name: "AMO_IAuraStakingProxy",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO_IAuraStakingProxy>;
+    getContractAt(
+      name: "AMO_IAuraToken",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO_IAuraToken>;
+    getContractAt(
+      name: "AMO__IBalancerAuthorizer",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__IBalancerAuthorizer>;
+    getContractAt(
+      name: "AMO__IBalancerAuthorizerAdapter",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__IBalancerAuthorizerAdapter>;
+    getContractAt(
+      name: "IBalancerHelpers",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IBalancerHelpers>;
+    getContractAt(
+      name: "AMO__IBalancerVotingEscrow",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__IBalancerVotingEscrow>;
+    getContractAt(
+      name: "AMO__IGaugeAdder",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__IGaugeAdder>;
+    getContractAt(
+      name: "AMO__IAuraGaugeController",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__IAuraGaugeController>;
+    getContractAt(
+      name: "AMO__ILiquidityGaugeFactory",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__ILiquidityGaugeFactory>;
+    getContractAt(
+      name: "AMO__IPoolManagerProxy",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__IPoolManagerProxy>;
+    getContractAt(
+      name: "AMO__IPoolManagerV3",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__IPoolManagerV3>;
+    getContractAt(
+      name: "AMO__IAuraStashRewards",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.AMO__IAuraStashRewards>;
+    getContractAt(
+      name: "IWeightPool2Tokens",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IWeightPool2Tokens>;
+    getContractAt(
+      name: "RAMOSGoerli",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.RAMOSGoerli>;
     getContractAt(
       name: "Exposure",
       address: string,

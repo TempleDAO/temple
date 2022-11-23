@@ -3,6 +3,7 @@
 /* eslint-disable */
 export * as admin from "./admin";
 export * as amm from "./amm";
+export * as amo from "./amo";
 export * as core from "./core";
 export * as deprecated from "./deprecated";
 export * as fakes from "./fakes";
