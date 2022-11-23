@@ -151,7 +151,30 @@ contract TempleTeamPaymentsFactoryTest is Test {
         vm.expectEmit(true, true, true, true);
         emit Claimed(address(testUser), alloc);
         vm.prank(testUser);
-        testContract.claim();
+        testContract.claim(type(uint256).max);
+
+        assertEq(
+            temple.balanceOf(testUser),
+            prev + testContract.allocation(testUser)
+        );
+    }
+
+    function testCanClaimAllocationPartial() public {
+        TempleTeamPaymentsV2 testContract = testDeployPayoutsSingle();
+
+        uint256 prev = temple.balanceOf(testUser);
+        uint256 alloc = testContract.allocation(testUser);
+        uint256 halfAlloc = alloc / 2;
+        vm.expectEmit(true, true, true, true);
+        emit Claimed(address(testUser), halfAlloc);
+        vm.prank(testUser);
+        testContract.claim(halfAlloc);
+
+        vm.expectEmit(true, true, true, true);
+        emit Claimed(address(testUser), halfAlloc);
+        vm.prank(testUser);
+        testContract.claim(halfAlloc);
+
 
         assertEq(
             temple.balanceOf(testUser),
@@ -164,12 +187,12 @@ contract TempleTeamPaymentsFactoryTest is Test {
 
         vm.startPrank(testUser);
 
-        testContract.claim();
+        testContract.claim(type(uint256).max);
 
         vm.expectRevert(
             abi.encodeWithSelector(TempleTeamPaymentsV2.ClaimZeroValue.selector)
         );
-        testContract.claim();
+        testContract.claim(type(uint256).max);
     }
 
     function testCannotClaimPause() public {
@@ -184,7 +207,7 @@ contract TempleTeamPaymentsFactoryTest is Test {
             )
         );
         vm.prank(testUser);
-        testContract.claim();
+        testContract.claim(type(uint256).max);
     }
 
     function testCannotInitializeTwice() public {

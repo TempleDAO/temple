@@ -67,14 +67,16 @@ contract TempleTeamPaymentsV2 is Initializable, OwnableUpgradeable {
         return allocation[_member] - claimed[_member];
     }
 
-    function claim() external {
+    function claim(uint256 _claimAmount) external {
         if (paused[msg.sender]) revert ClaimMemberPaused();
 
         uint256 claimable = calculateClaimable(msg.sender);
         if (claimable == 0) revert ClaimZeroValue();
 
-        claimed[msg.sender] += claimable;
-        SafeERC20.safeTransfer(temple, msg.sender, claimable);
-        emit Claimed(msg.sender, claimable);
+        if (_claimAmount > claimable) _claimAmount = claimable;
+
+        claimed[msg.sender] += _claimAmount;
+        SafeERC20.safeTransfer(temple, msg.sender, _claimAmount);
+        emit Claimed(msg.sender, _claimAmount);
     }
 }
