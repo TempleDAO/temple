@@ -138,7 +138,7 @@ module.exports = {
       accounts: process.env.GNOSIS_ADDRESS_PRIVATE_KEY 
         ? [process.env.GNOSIS_ADDRESS_PRIVATE_KEY]
         : [],
-      gasPrice: parseInt(process.env.MAINNET_GAS_IN_GWEI || '0') * 1000000000,
+      gasPrice: parseInt(process.env.GNOSIS_GAS_IN_GWEI || '0') * 1000000000,
     },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
@@ -156,9 +156,11 @@ module.exports = {
     },
   },
   etherscan: {
-    // Your API key for Etherscan
-    // Obtain one at https://etherscan.io/
-    apiKey: process.env.ETHERSCAN_API_KEY,
+
+    apiKey: {
+      mainnet: process.env.ETHERSCAN_API_KEY,
+      gnosis: process.env.GNOSISSCAN_API_KEY,
+    }
   },
   mocha: {
     timeout: 120000,
