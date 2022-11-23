@@ -687,7 +687,6 @@ describe("Temple Price Floor AMO", async () => {
             if (spotPriceNow.gt(TPF_SCALED - discountBelowTPF)) {
                 await singleSideDepositTemple(toAtto(100_000));
             }
-            const spot = await getSpotPriceScaled(balancerVault, weightedPool2Tokens);
             // stake some more to have enough bpt to unwrap
             await ownerDepositAndStakeBpt(toAtto(20_000));
 
