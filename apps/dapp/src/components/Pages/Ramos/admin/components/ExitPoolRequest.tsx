@@ -19,7 +19,9 @@ export const ExitPoolRequest: React.FC<IProps> = ({ calculateFunc }) => {
         crypto={{ kind: 'value', value: 'BPT' }}
         isNumber
         small
-        handleChange={(e) => setExitAmountBpt(ethers.utils.parseUnits(`${e}`))}
+        handleChange={(e) => {
+          if (Number(e)) setExitAmountBpt(ethers.utils.parseUnits(`${e}`));
+        }}
       />
       <Button
         isSmall

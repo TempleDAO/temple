@@ -1,6 +1,5 @@
 import styled, { css } from 'styled-components';
 import { tabletAndAbove } from 'styles/breakpoints';
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 import { useRamosAdmin } from './useRamosAdmin';
 import {
@@ -15,6 +14,7 @@ import { Tabs } from 'components/Tabs/Tabs';
 import EllipsisLoader from 'components/EllipsisLoader';
 import { Input } from 'components/Input/Input';
 import { Button } from 'components/Button/Button';
+import { handleBlur, limitInput } from 'utils/input';
 
 const Container = styled.div`
   display: grid;
@@ -73,19 +73,6 @@ const RamosAdmin = () => {
       ),
     },
   ];
-
-  const limitInput = (input: string): number => {
-    if (input === '0') return 0;
-
-    return Number(input);
-  };
-
-  const handleBlur = (value: number | '', minValue: number, maxValue: number) => {
-    if (value === '') return minValue;
-    if (value <= minValue) return minValue;
-    if (value >= maxValue) return maxValue;
-    return value;
-  };
 
   return (
     <div>

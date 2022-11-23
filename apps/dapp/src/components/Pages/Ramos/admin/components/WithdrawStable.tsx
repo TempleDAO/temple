@@ -31,7 +31,7 @@ export const WithdrawStable: React.FC<IProps> = ({calculateFunc, toTpf}) => {
         small
         crypto={{ kind: 'value', value: 'BPS' }}
         handleChange={(e) => {
-          setBasisPoints(DecimalBigNumber.parseUnits(`${e}`, 18));
+          if(Number(e)) setBasisPoints(DecimalBigNumber.parseUnits(`${e}`, 18));
         }}
       />
       <Button

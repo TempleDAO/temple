@@ -18,20 +18,16 @@ export const JoinPoolRequest: React.FC<IProps> = ({calculateFunc}) => {
       <h3>JoinPoolRequest</h3>
       <Input
         crypto={{ kind: 'value', value: 'TEMPLE' }}
-        value={ethers.utils.formatUnits(amounts.temple)}
-        isNumber
         small
         handleChange={(e: string) => {
-          setAmounts({ ...amounts, temple: ethers.utils.parseUnits(e) });
+          if(Number(e)) setAmounts({ ...amounts, temple: ethers.utils.parseUnits(e) });
         }}
       />
       <Input
         crypto={{ kind: 'value', value: 'STABLE' }}
-        value={ethers.utils.formatUnits(amounts.stable)}
-        isNumber
         small
         handleChange={(e: string) => {
-          setAmounts({ ...amounts, stable: ethers.utils.parseUnits(e) });
+          if(Number(e)) setAmounts({ ...amounts, stable: ethers.utils.parseUnits(e) });
         }}
       />
       <Button

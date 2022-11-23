@@ -9,11 +9,11 @@ import { InputArea, RequestArea } from '../styles';
 import { useRamosAdmin } from '../useRamosAdmin';
 
 interface IProps {
-  calculateFunc: (bps: DecimalBigNumber) => Promise<{amountIn: BigNumber, bptOut: BigNumber} | undefined>;
-  toTpf?: {amountIn: BigNumber, bptOut: BigNumber}
+  calculateFunc: (bps: DecimalBigNumber) => Promise<{ amountIn: BigNumber; bptOut: BigNumber } | undefined>;
+  toTpf?: { amountIn: BigNumber; bptOut: BigNumber };
 }
 
-export const RebalanceDown: React.FC<IProps> = ({calculateFunc, toTpf}) => {
+export const RebalanceDown: React.FC<IProps> = ({ calculateFunc, toTpf }) => {
   const [rebalanceDown, setRebalanceDown] = useState<{ amountIn: BigNumber; bptOut: BigNumber }>();
   const [basisPoints, setBasisPoints] = useState<DecimalBigNumber>();
 
@@ -21,17 +21,19 @@ export const RebalanceDown: React.FC<IProps> = ({calculateFunc, toTpf}) => {
     <InputArea>
       <h3>RebalanceDown</h3>
       <p>To bring {TICKER_SYMBOL.TEMPLE_TOKEN} price down to TPF:</p>
-        <>
-          <RequestArea>templeAmountIn: {toTpf?.amountIn.toString() ?? <EllipsisLoader />}</RequestArea>
-          <RequestArea>minBptOut: {toTpf?.bptOut.toString() ?? <EllipsisLoader />}</RequestArea>
-        </>
+      <>
+        <RequestArea>templeAmountIn: {toTpf?.amountIn.toString() ?? <EllipsisLoader />}</RequestArea>
+        <RequestArea>minBptOut: {toTpf?.bptOut.toString() ?? <EllipsisLoader />}</RequestArea>
+      </>
       <p>To bring {TICKER_SYMBOL.TEMPLE_TOKEN} price down by:</p>
       <Input
         small
         crypto={{ kind: 'value', value: 'BPS' }}
         handleChange={(e: string) => {
-          const dbnAmount = DecimalBigNumber.parseUnits(e, 18);
-          setBasisPoints(dbnAmount);
+          if (Number(e)) {
+            const dbnAmount = DecimalBigNumber.parseUnits(e, 18);
+            setBasisPoints(dbnAmount);
+          }
         }}
       />
       <Button

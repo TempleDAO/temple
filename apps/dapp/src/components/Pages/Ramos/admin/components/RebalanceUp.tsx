@@ -27,7 +27,7 @@ export const RebalanceUp: React.FC<IProps> = ({calculateFunc, toTpf}) => {
         small
         crypto={{ kind: 'value', value: 'BPS' }}
         handleChange={(e: string) => {
-          if (!!Number(e)) {
+          if (Number(e)) {
             const dbnAmount = DecimalBigNumber.parseUnits(e, 18);
             setBasisPoints(dbnAmount);
           } else setBasisPoints(undefined);
