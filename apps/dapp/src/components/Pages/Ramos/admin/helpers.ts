@@ -29,7 +29,7 @@ export const isTemple = (tokenAddress: string): boolean => {
 
 export const getPricePercentageFromTpf = (tpf: DecimalBigNumber, templePrice: DecimalBigNumber) => {
   return DecimalBigNumber.fromBN(
-    tpf.sub(templePrice).div(templePrice, 18).mul(DBN_ONE_HUNDRED).value.abs(),
+    tpf.sub(templePrice).div(templePrice, templePrice.getDecimals()).mul(DBN_ONE_HUNDRED).value.abs(),
     templePrice.getDecimals()
   );
 };
@@ -51,8 +51,8 @@ export const calculateTargetPriceUp = (
 };
 
 export const randomize = (amount: DecimalBigNumber, percentage: number) => {
-  const randomizer = Math.random() * percentage / 100;
+  const randomizer = (Math.random() * percentage) / 100;
   const randomizerDbn = DecimalBigNumber.parseUnits(`${randomizer}`, amount.getDecimals());
 
   return amount.sub(amount.mul(randomizerDbn));
-}
+};

@@ -25,7 +25,7 @@ import {
 import { ZERO } from 'utils/bigNumber';
 import { DBN_ONE_HUNDRED, DBN_TEN_THOUSAND, DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
 
-export function useRamosAdmin(randomise?: number) {
+export function useRamosAdmin() {
   const { ramos: RAMOS_ADDRESS, balancerHelpers: BALANCER_HELPERS_ADDRESS } = environmentConfig.contracts;
 
   //internal state
@@ -43,6 +43,8 @@ export function useRamosAdmin(randomise?: number) {
   const [randomPercent, setRandomPercent] = useState<number>(50);
   const [maxRebalanceAmounts, setMaxRebalanceAmounts] =
     useState<{ bpt: DecimalBigNumber; stable: DecimalBigNumber; temple: DecimalBigNumber }>();
+  const [percentageBounds, setPercentageBounds] = useState<{ up: DecimalBigNumber; down: DecimalBigNumber }>();
+
   const isConnected =
     ramos &&
     tokens.stable.balance.gt(DBN_ZERO) &&
@@ -56,7 +58,8 @@ export function useRamosAdmin(randomise?: number) {
     balancerHelpers &&
     tpf &&
     templePrice &&
-    templePrice.gt(DBN_ZERO);
+    templePrice.gt(DBN_ZERO) &&
+    percentageBounds;
 
   // outputs
   const [rebalanceUpToTpf, setRebalanceUpToTpf] = useState<{ bptIn: BigNumber; amountOut: BigNumber }>();
@@ -76,17 +79,24 @@ export function useRamosAdmin(randomise?: number) {
         const [tokenAddresses, balances] = await BALANCER_VAULT_CONTRACT.getPoolTokens(POOL_ID);
         const TPF = await RAMOS_CONTRACT.templePriceFloorNumerator();
         const MAX_REBALANCE_AMOUNTS = await RAMOS_CONTRACT.maxRebalanceAmounts();
+        const PERCENTAGE_BOUND_LOW = await RAMOS_CONTRACT.rebalancePercentageBoundLow();
+        const PERCENTAGE_BOUND_UP = await RAMOS_CONTRACT.rebalancePercentageBoundUp();
 
         setMaxRebalanceAmounts({
           temple: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.temple, 18),
           stable: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.stable, 18),
           bpt: DecimalBigNumber.fromBN(MAX_REBALANCE_AMOUNTS.bpt, 18),
         });
+        setPercentageBounds({
+          down: DecimalBigNumber.fromBN(PERCENTAGE_BOUND_LOW, 0),
+          up: DecimalBigNumber.fromBN(PERCENTAGE_BOUND_UP, 0),
+        });
         setRamos(RAMOS_CONTRACT);
         setWalletAddress(WALLET_ADDRESS);
         setPoolId(POOL_ID);
         setBalancerHelpers(BALANCER_HELPERS_CONTRACT);
-        setTpf(DecimalBigNumber.fromBN(TPF, 4));
+        //setTpf(DecimalBigNumber.fromBN(TPF, 4));
+        setTpf(DecimalBigNumber.parseUnits('0.95', 4));
         const tempTokens = { ...tokens };
         tokenAddresses.forEach((tokenAddr, index) => {
           if (isTemple(tokenAddr)) {
@@ -280,25 +290,19 @@ export function useRamosAdmin(randomise?: number) {
         tokens.temple.balance.mul(targetPrice.mul(DBN_TEN_THOUSAND)).div(DBN_TEN_THOUSAND, 18)
       );
       if (stableAmount.gt(maxRebalanceAmounts.stable)) stableAmount = maxRebalanceAmounts.stable;
-
       stableAmount = randomize(stableAmount, randomPercent);
-
       const amountsOut = [BigNumber.from(0), stableAmount.toBN(18).abs()];
-
       const maxBPTAmountIn = ethers.utils.parseUnits('100000000', 18);
-
       const tempUserdata = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256[]', 'uint256'],
         [2, amountsOut, maxBPTAmountIn]
       );
-
       const exitRequest = {
         assets: [tokens.temple.address, tokens.stable.address],
         minAmountsOut: amountsOut,
         userData: tempUserdata,
         toInternalBalance: false,
       };
-
       const amounts = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, exitRequest);
 
       return {
@@ -310,22 +314,38 @@ export function useRamosAdmin(randomise?: number) {
 
   const calculateRecommendedAmounts = async () => {
     if (isConnected) {
-      const percentageDiff = getPricePercentageFromTpf(tpf, templePrice);
-      const basisPointsDiff = percentageDiff.mul(DBN_ONE_HUNDRED);
       if (templePrice.gt(tpf)) {
-        const withdrawStable = await calculateWithdrawStable(basisPointsDiff);
-        const rebalanceDown = await calculateRebalanceDown(basisPointsDiff);
-        if (withdrawStable) setWithdrawStableToTpf(withdrawStable);
-        if (rebalanceDown) setRebalanceDownToTpf(rebalanceDown);
         setRebalanceUpToTpf({ amountOut: ZERO, bptIn: ZERO });
         setDepositStableUpToTpf({ amountIn: ZERO, bptOut: ZERO });
+        // account for percentage bounds
+        const tpfRangeAdjusted = tpf.add(tpf.mul(percentageBounds.up).div(DBN_TEN_THOUSAND, tpf.getDecimals()));
+        if (templePrice.gt(tpfRangeAdjusted)) {
+          const percentageDiff = getPricePercentageFromTpf(tpfRangeAdjusted, templePrice);
+          const basisPointsDiff = percentageDiff.mul(DBN_ONE_HUNDRED);
+          const withdrawStable = await calculateWithdrawStable(basisPointsDiff);
+          const rebalanceDown = await calculateRebalanceDown(basisPointsDiff);
+          withdrawStable && setWithdrawStableToTpf(withdrawStable);
+          rebalanceDown && setRebalanceDownToTpf(rebalanceDown);
+        } else {
+          setWithdrawStableToTpf({ amountOut: ZERO, bptIn: ZERO });
+          setRebalanceDownToTpf({ amountIn: ZERO, bptOut: ZERO });
+        }
       } else if (tpf.gt(templePrice)) {
-        const depositStable = await calculateDepositStable(basisPointsDiff);
-        const rebalanceUp = await calculateRebalanceUp(basisPointsDiff);
-        if (depositStable) setDepositStableUpToTpf(depositStable);
-        if (rebalanceUp) setRebalanceUpToTpf(rebalanceUp);
         setWithdrawStableToTpf({ amountOut: ZERO, bptIn: ZERO });
         setRebalanceDownToTpf({ amountIn: ZERO, bptOut: ZERO });
+        // account for RAMOS percentage bounds
+        const tpfRangeAdjusted = tpf.sub(tpf.mul(percentageBounds.down).div(DBN_TEN_THOUSAND, tpf.getDecimals()));
+        if (tpfRangeAdjusted.gt(templePrice)) {
+          const percentageDiff = getPricePercentageFromTpf(tpfRangeAdjusted, templePrice);
+          const basisPointsDiff = percentageDiff.mul(DBN_ONE_HUNDRED);
+          const depositStable = await calculateDepositStable(basisPointsDiff);
+          const rebalanceUp = await calculateRebalanceUp(basisPointsDiff);
+          depositStable && setDepositStableUpToTpf(depositStable);
+          rebalanceUp && setRebalanceUpToTpf(rebalanceUp);
+        } else {
+          setRebalanceUpToTpf({ amountOut: ZERO, bptIn: ZERO });
+          setDepositStableUpToTpf({ amountIn: ZERO, bptOut: ZERO });
+        }
       }
     }
   };
