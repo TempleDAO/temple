@@ -14,7 +14,7 @@ export type NotificationProps = {
   // The title for the notification
   title: string;
   // Indicating if the notification is open or not
-  isOpen: boolean;
+  isOpen?: boolean;
 };
 
 const Notification = ({ hash, title, isOpen }: NotificationProps) => {
@@ -28,7 +28,7 @@ const Notification = ({ hash, title, isOpen }: NotificationProps) => {
   };
 
   return (
-    <NotificationStyled isOpen={isOpen && !clickedClose}>
+    <NotificationStyled isOpen={!!isOpen && !clickedClose}>
       <CloseIcon>
         <Image
           src={crossImage}

@@ -190,8 +190,8 @@ export function stableLotSizeForPriceTarget(
     priceTarget: number // scaled
 ): BigNumber {
     const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
-    const bdDivQuoteWithFee = balances[templeIndexInPool].mul(1_000).mul(10_000).div(BigNumber.from(priceTarget).mul(995));
-    return balances[stableIndexInPool].sub(bdDivQuoteWithFee).abs();
+    const bdQuote = balances[templeIndexInPool].mul(priceTarget).div(10_000);
+    return balances[stableIndexInPool].sub(bdQuote).abs();
 }
 
 export async function templeLotSizeForPriceTarget(
@@ -201,7 +201,7 @@ export async function templeLotSizeForPriceTarget(
 ): Promise<BigNumber> {
     const [, balances,] = await balancerVault.getPoolTokens(TEMPLE_BB_A_USD_BALANCER_POOL_ID);
     const stableIndexInPool = templeIndexInPool == 0 ? 1 : 0;
-    const bdDivQuoteWithFee = balances[stableIndexInPool].mul(1_000).mul(10_000).div(BigNumber.from(priceTarget).mul(995));
+    const bdDivQuoteWithFee = balances[stableIndexInPool].mul(10_000).div(BigNumber.from(priceTarget));
     return balances[templeIndexInPool].sub(bdDivQuoteWithFee).abs();
 }
 
