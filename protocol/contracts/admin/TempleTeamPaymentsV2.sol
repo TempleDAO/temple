@@ -19,6 +19,8 @@ contract TempleTeamPaymentsV2 is Initializable, OwnableUpgradeable {
 
     event Claimed(address indexed member, uint256 amount);
     event TokenRecovered(address indexed token, uint256 amount);
+    event MemberToggled(address indexed member, bool status);
+    event AllocationSet(address indexed member, uint256 allocation);
 
     function initialize(IERC20 _temple) public initializer {
         __Ownable_init_unchained();
@@ -28,6 +30,7 @@ contract TempleTeamPaymentsV2 is Initializable, OwnableUpgradeable {
     function _setAllocation(address _address, uint256 _amount) internal {
         if (_address == address(0)) revert AllocationAddressZero();
         allocation[_address] = _amount;
+        emit AllocationSet(_address, _amount);
     }
 
     function setAllocation(
@@ -61,6 +64,7 @@ contract TempleTeamPaymentsV2 is Initializable, OwnableUpgradeable {
 
     function toggleMember(address _address) external onlyOwner {
         paused[_address] = !paused[_address];
+        emit MemberToggled(_address, paused[_address]);
     }
 
     function calculateClaimable(address _member) public view returns (uint256) {

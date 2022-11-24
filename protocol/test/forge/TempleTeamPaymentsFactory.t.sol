@@ -27,6 +27,8 @@ contract TempleTeamPaymentsFactoryTest is Test {
 
     // payments events
     event Claimed(address indexed member, uint256 amount);
+    event MemberToggled(address indexed member, bool status);
+    event AllocationSet(address indexed member, uint256 allocation);
 
     // admin recovery events
     event TokenRecovered(address indexed token, uint256 amount);
@@ -34,7 +36,7 @@ contract TempleTeamPaymentsFactoryTest is Test {
     function setUp() public {
         vm.createSelectFork(vm.rpcUrl("mainnet"));
         address impl = address(new TempleTeamPaymentsV2());
-        factory = new TempleTeamPaymentsFactory(impl, 0);
+        factory = new TempleTeamPaymentsFactory(temple, impl, 0);
         factory.transferOwnership(multisig);
     }
 
@@ -143,6 +145,26 @@ contract TempleTeamPaymentsFactoryTest is Test {
         assertEq(factory.lastPaidEpoch(), prev + 1);
     }
 
+    function testCanPauseMember() public {
+        TempleTeamPaymentsV2 testContract = testDeployPayoutsSingle();
+
+        bool prevState = testContract.paused(testUser);
+        vm.expectEmit(true, true, true, true);
+        emit MemberToggled(testUser, !prevState);
+        vm.prank(multisig);
+        testContract.toggleMember(testUser);
+    }
+
+    function testCanSetAllocation() public {
+        TempleTeamPaymentsV2 testContract = testDeployPayoutsSingle();
+
+        uint256 newAllocation = 123 ether;
+        vm.expectEmit(true, true, true, true);
+        emit AllocationSet(testUser, newAllocation);
+        vm.prank(multisig);
+        testContract.setAllocation(testUser, newAllocation);
+    }
+
     function testCanClaimAllocation() public {
         TempleTeamPaymentsV2 testContract = testDeployPayoutsSingle();
 
@@ -174,7 +196,6 @@ contract TempleTeamPaymentsFactoryTest is Test {
         emit Claimed(address(testUser), halfAlloc);
         vm.prank(testUser);
         testContract.claim(halfAlloc);
-
 
         assertEq(
             temple.balanceOf(testUser),

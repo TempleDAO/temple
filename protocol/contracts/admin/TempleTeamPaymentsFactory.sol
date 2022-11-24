@@ -18,8 +18,7 @@ contract TempleTeamPaymentsFactory is Ownable {
         uint256 totalFunding;
     }
 
-    IERC20 public immutable temple =
-        IERC20(0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7);
+    IERC20 public temple;
     address public templeTeamPaymentsImplementation;
     uint16 public initialEpoch;
     uint16 public lastPaidEpoch;
@@ -39,7 +38,12 @@ contract TempleTeamPaymentsFactory is Ownable {
     event ImplementationChanged(address indexed newImplementation);
     event TokenRecovered(address indexed token, uint256 amount);
 
-    constructor(address _implementation, uint16 _lastPaidEpoch) {
+    constructor(
+        IERC20 _temple,
+        address _implementation,
+        uint16 _lastPaidEpoch
+    ) {
+        temple = _temple;
         templeTeamPaymentsImplementation = _implementation;
         lastPaidEpoch = _lastPaidEpoch;
         initialEpoch = _lastPaidEpoch + 1;

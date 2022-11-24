@@ -26,7 +26,6 @@ async function main() {
   }
 
   // update with previously funded epoch before the factory came into use
-  const implementationAddress = '';
   const lastPaidEpoch = 8;
   const templeTeamPaymentsFactoryFactory =
     new TempleTeamPaymentsFactory__factory(owner);
@@ -35,12 +34,13 @@ async function main() {
       'Temple Team Payments Factory',
       templeTeamPaymentsFactoryFactory,
       templeTeamPaymentsFactoryFactory.deploy,
-      implementationAddress,
+      DEPLOYED.TEMPLE,
+      DEPLOYED.TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION,
       lastPaidEpoch
     );
 
   console.log(
-    `yarn hardhat verify --network ${network.name} ${templeTeamPaymentsFactory.address} ${implementationAddress} ${lastPaidEpoch}`
+    `yarn hardhat verify --network ${network.name} ${templeTeamPaymentsFactory.address} ${DEPLOYED.TEMPLE} ${DEPLOYED.TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION} ${lastPaidEpoch}`
   );
   console.log('Transfering ownership');
   await mine(templeTeamPaymentsFactory.transferOwnership(DEPLOYED.MULTISIG));
