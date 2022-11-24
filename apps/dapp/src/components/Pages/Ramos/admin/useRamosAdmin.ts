@@ -95,8 +95,7 @@ export function useRamosAdmin() {
         setWalletAddress(WALLET_ADDRESS);
         setPoolId(POOL_ID);
         setBalancerHelpers(BALANCER_HELPERS_CONTRACT);
-        //setTpf(DecimalBigNumber.fromBN(TPF, 4));
-        setTpf(DecimalBigNumber.parseUnits('0.95', 4));
+        setTpf(DecimalBigNumber.fromBN(TPF, 4));
         const tempTokens = { ...tokens };
         tokenAddresses.forEach((tokenAddr, index) => {
           if (isTemple(tokenAddr)) {
