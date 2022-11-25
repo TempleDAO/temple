@@ -5,7 +5,7 @@
     "codegen": "graph codegen",
     "build": "graph build",
     "deploy": "graph deploy --product hosted-service templedao/templedao-governance",
-    "deploy:testnet": "graph deploy --product hosted-service templedao/templedao-governance-testnet",
+    "deploy:testnet": "graph deploy --product hosted-service medariox/temple-governance",
     "prepare:testnet": "mustache ./config/testnet.json subgraph.template.yaml > subgraph.yaml",
     "prepare:mainnet": "mustache ./config/mainnet.json subgraph.template.yaml > subgraph.yaml",
     "lfg:testnet": "yarn prepare:testnet && yarn codegen && yarn build && yarn deploy:testnet",

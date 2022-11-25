@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import styled, { css } from 'styled-components';
 
 import Image from 'components/Image/Image';
@@ -13,53 +13,22 @@ export type NotificationProps = {
   hash: string;
   // The title for the notification
   title: string;
+  // Indicating if the notification is open or not
+  isOpen?: boolean;
 };
 
-const AUTOHIDE_TIMER = 1000 * 10;
-
-const Notification = ({ hash, title }: NotificationProps) => {
+const Notification = ({ hash, title, isOpen }: NotificationProps) => {
   const { closeNotification } = useNotification();
-  const timerRef = useRef(0);
 
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!!timerRef.current) {
-      return;
-    }
-
-    timerRef.current = window.setTimeout(() => {
-      close();
-    }, AUTOHIDE_TIMER);
-
-    return () => {
-      clearTimeout(timerRef.current);
-    };
-  }, [timerRef, hash]);
+  const [clickedClose, setClickedClose] = useState(false);
 
   const close = () => {
-    setIsOpen(false);
-
-    clearTimeout(timerRef.current);
-
-    // avoids the notification disappearing before the animation ends
-    containerRef?.current?.addEventListener(
-      'transitionend',
-      () => closeNotification(hash),
-      {
-        once: true,
-      }
-    );
+    setClickedClose(true);
+    setTimeout(() => closeNotification(hash), 400);
   };
 
-  useEffect(() => {
-    // Done in a timeout to allow animation to work
-    setTimeout(() => setIsOpen(true), 100);
-  }, []);
-
   return (
-    <NotificationStyled isOpen={isOpen} ref={containerRef}>
+    <NotificationStyled isOpen={!!isOpen && !clickedClose}>
       <CloseIcon>
         <Image
           src={crossImage}
@@ -71,18 +40,9 @@ const Notification = ({ hash, title }: NotificationProps) => {
         />
       </CloseIcon>
       <h5 title={title}>{title}</h5>
-      <a
-        href={`${env.etherscan}/tx/${hash}`}
-        target={'_blank'}
-        rel="noreferrer"
-      >
+      <a href={`${env.etherscan}/tx/${hash}`} target={'_blank'} rel="noreferrer">
         View Transaction
-        <Image
-          src={openInNewTabImage}
-          alt={'Open transaction on Etherscan'}
-          width={24}
-          height={24}
-        />
+        <Image src={openInNewTabImage} alt={'Open transaction on Etherscan'} width={24} height={24} />
       </a>
     </NotificationStyled>
   );
