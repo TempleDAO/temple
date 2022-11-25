@@ -25,15 +25,13 @@ async function main() {
     DEPLOYED = DEPLOYED_CONTRACTS[network.name];
   }
 
-  const templeTeamPaymentsImplFactory = new TempleTeamPaymentsV2__factory();
-  const templeTeamPaymentsImpl: TempleTeamPaymentsV2 = await deployAndMine(
+  const templeTeamPaymentsImplFactory = new TempleTeamPaymentsV2__factory(
+    owner
+  );
+  await deployAndMine(
     'Temple Team Payments Implementation',
     templeTeamPaymentsImplFactory,
     templeTeamPaymentsImplFactory.deploy
-  );
-
-  console.log(
-    `yarn hardhat verify --network ${network.name} ${templeTeamPaymentsImpl.address}`
   );
 }
 

@@ -18,9 +18,9 @@ contract TempleTeamPaymentsFactory is Ownable {
         uint256 totalFunding;
     }
 
-    IERC20 public temple;
+    IERC20 immutable public temple;
     address public templeTeamPaymentsImplementation;
-    uint16 public initialEpoch;
+    uint16 immutable public initialEpoch;
     uint16 public lastPaidEpoch;
     mapping(uint256 => FundingData) public epochsFunded;
 

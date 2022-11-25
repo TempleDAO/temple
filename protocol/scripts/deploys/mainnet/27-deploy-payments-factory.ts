@@ -39,9 +39,6 @@ async function main() {
       lastPaidEpoch
     );
 
-  console.log(
-    `yarn hardhat verify --network ${network.name} ${templeTeamPaymentsFactory.address} ${DEPLOYED.TEMPLE} ${DEPLOYED.TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION} ${lastPaidEpoch}`
-  );
   console.log('Transfering ownership');
   await mine(templeTeamPaymentsFactory.transferOwnership(DEPLOYED.MULTISIG));
 }

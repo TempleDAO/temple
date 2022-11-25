@@ -67,7 +67,6 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_7: '',
     TEMPLE_TEAM_EPOCH_8: '',
     TEMPLE_TEAM_EPOCH_9: '',
-
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
     TEMPLE_TEAM_PAYMENTS_FACTORY: '',
 
@@ -111,7 +110,6 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_7: '',
     TEMPLE_TEAM_EPOCH_8: '',
     TEMPLE_TEAM_EPOCH_9: '',
-
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
     TEMPLE_TEAM_PAYMENTS_FACTORY: '',
 
@@ -185,10 +183,10 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_7: process.env.TEMPLE_TEAM_EPOCH_7 || '',
     TEMPLE_TEAM_EPOCH_8: process.env.TEMPLE_TEAM_EPOCH_8 || '',
     TEMPLE_TEAM_EPOCH_9: process.env.TEMPLE_TEAM_EPOCH_9 || '',
-
-    TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
-    TEMPLE_TEAM_PAYMENTS_FACTORY: '',
-
+    TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION:
+      process.env.TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION || '',
+    TEMPLE_TEAM_PAYMENTS_FACTORY:
+      process.env.TEMPLE_TEAM_PAYMENTS_FACTORY || '',
     TEMPLE_V2_FRAX_PAIR: process.env.TEMPLE_V2_FRAX_PAIR || '',
     TEMPLE_V2_FEI_PAIR: process.env.TEMPLE_V2_FEI_PAIR || '',
     TEMPLE_V2_ROUTER: process.env.TEMPLE_V2_ROUTER || '',
