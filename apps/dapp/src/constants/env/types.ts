@@ -23,6 +23,7 @@ interface Contracts {
   teamPaymentsEpoch6: string;
   teamPaymentsEpoch7: string;
   teamPaymentsEpoch8: string;
+  teamPaymentsEpoch9: string;
   temple: string;
   templeStaking: string;
   templeV2FraxPair: string;
