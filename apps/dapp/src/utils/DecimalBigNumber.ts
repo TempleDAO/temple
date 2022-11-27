@@ -160,7 +160,6 @@ export class DecimalBigNumber {
 
 export const DBN_ZERO = DecimalBigNumber.fromBN(BigNumber.from(0), 0);
 export const DBN_ONE_HUNDRED = DecimalBigNumber.fromBN(BigNumber.from(100), 0);
-export const DBN_ONE_THOUSAND = DecimalBigNumber.fromBN(BigNumber.from(1000), 0);
 export const DBN_TEN_THOUSAND = DecimalBigNumber.fromBN(BigNumber.from(10000), 0);
 
 export function minDBN(
