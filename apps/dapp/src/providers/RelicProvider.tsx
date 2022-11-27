@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useContext, useEffect, useState } from 'react';
+import { createContext, PropsWithChildren, useContext, useState } from 'react';
 import { RelicEnclave, ItemInventory, RelicItemData, RelicService, RelicRarity, RelicData } from './types';
 
 import { BigNumber, ContractReceipt, ContractTransaction, Signer } from 'ethers';
@@ -17,11 +17,13 @@ const INITIAL_STATE: RelicService = {
   updateInventory: asyncNoop,
   mintRelic: async () => null,
   renounceRelic: async () => null,
-  mintRelicItem: asyncNoop,
-  equipRelicItems: asyncNoop,
-  unequipRelicItems: asyncNoop,
+  mintShard: asyncNoop,
+  equipShards: asyncNoop,
+  unequipShards: asyncNoop,
   transmute: asyncNoop,
 };
+
+const TXN_SUCCESS_CODE = 1;
 
 const RelicContext = createContext(INITIAL_STATE);
 
@@ -96,11 +98,10 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     return inventory;
   };
 
-  const callRelicFunction = async (fn: (relicContract: Relic) => Promise<ContractTransaction>) => {
-    // TODO: Update with Shards contract
+  const callRelicContractFunction = async (fn: (relicContract: Relic) => Promise<ContractTransaction>) => {
     if (inventoryState && signer) {
       const relicContract = new Relic__factory(signer).attach(env.nexus.templeRelicAddress);
-      const receipt = await (await fn(relicContract)).wait();
+      const receipt = await (await await fn(relicContract)).wait();
       const inventory = (await updateInventory())!;
       return { inventory, receipt };
     }
@@ -130,11 +131,11 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  const callRelicItemsFunction = async (fn: (relicItemsContract: Shards) => Promise<ContractTransaction>) => {
+  const callShardsContractFunction = async (fn: (shardsContract: Shards) => Promise<ContractTransaction>) => {
     // TODO: Error handling?
     if (inventoryState && signer) {
-      const relicItemsContract = new Shards__factory(signer).attach(env.nexus.templeRelicItemsAddress);
-      const receipt = await (await fn(relicItemsContract)).wait();
+      const shardsContract = new Shards__factory(signer).attach(env.nexus.templeRelicItemsAddress);
+      const receipt = await (await fn(shardsContract)).wait();
       const inventory = (await updateInventory())!;
       return { inventory, receipt };
     }
@@ -143,7 +144,7 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
   const callRelicFunctionAndDiffRelics = async (fn: (relicContract: Relic) => Promise<ContractTransaction>) => {
     if (inventoryState) {
       const oldRelics = [...inventoryState.relics];
-      const callResult = await callRelicFunction(fn);
+      const callResult = await callRelicContractFunction(fn);
       if (callResult) {
         const {
           inventory: { relics: newRelics },
@@ -185,10 +186,8 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     return null;
   };
 
-  const mintRelicItem = async (itemId: number) => {
-    console.log('---- inside mintRelicItem');
-    const result = await callRelicItemsFunction((relicItems) => relicItems.mintFromUser(itemId));
-    console.log(result);
+  const mintShard = async (itemId: number) => {
+    const result = await callShardsContractFunction((shardsContract) => shardsContract.mintFromUser(itemId));
     if (result) {
       openNotification({
         title: `Minted Relic Item #${itemId.toString()}`,
@@ -197,15 +196,38 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  const equipRelicItems = async (relicId: BigNumber, items: RelicItemData[]) => {
+  const equipShards = async (relicId: BigNumber, items: RelicItemData[]) => {
     if (items.length == 0) {
       return;
     }
+
+    if (wallet && signer) {
+      const shardsContract = new Shards__factory(signer).attach(env.nexus.templeRelicItemsAddress);
+      const isApproved = await shardsContract.isApprovedForAll(wallet, env.nexus.templeRelicItemsAddress);
+
+      if (!isApproved) {
+        const txn = await shardsContract.setApprovalForAll(env.nexus.templeRelicItemsAddress, true);
+        const txnResult = await txn.wait();
+
+        if (txnResult.status === TXN_SUCCESS_CODE) {
+          return invokeEquipShardes(relicId, items);
+        }
+      }
+
+      return invokeEquipShardes(relicId, items);
+    }
+  };
+
+  const invokeEquipShardes = async (relicId: BigNumber, items: RelicItemData[]) => {
     const itemIds = items.map((item) => item.id);
     const itemCounts = items.map((item) => item.count);
-    const result = await callRelicFunction((relicContract) =>
-      relicContract.batchEquipShard(relicId, itemIds, itemCounts)
+
+    const result = await callRelicContractFunction((relicContract) =>
+      relicContract.batchEquipShard(relicId, itemIds, itemCounts, {
+        gasLimit: 1000000,
+      })
     );
+
     if (result) {
       const idString = itemIds.map((id) => `#${id}`).join(', ');
       openNotification({
@@ -215,13 +237,13 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  const unequipRelicItems = async (relicId: BigNumber, items: RelicItemData[]) => {
+  const unequipShards = async (relicId: BigNumber, items: RelicItemData[]) => {
     if (items.length == 0) {
       return;
     }
     const itemIds = items.map((item) => item.id);
     const itemCounts = items.map((item) => item.count);
-    const result = await callRelicFunction((relic) => relic.batchUnequipShard(relicId, itemIds, itemCounts));
+    const result = await callRelicContractFunction((relic) => relic.batchUnequipShard(relicId, itemIds, itemCounts));
     if (result) {
       const idString = itemIds.map((id) => `#${id}`).join(', ');
       openNotification({
@@ -241,9 +263,9 @@ export const RelicProvider = (props: PropsWithChildren<{}>) => {
         },
         mintRelic,
         renounceRelic,
-        mintRelicItem,
-        equipRelicItems,
-        unequipRelicItems,
+        mintShard,
+        equipShards,
+        unequipShards,
         transmute,
       }}
     >

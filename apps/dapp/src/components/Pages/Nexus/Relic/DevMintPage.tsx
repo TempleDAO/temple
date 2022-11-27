@@ -7,12 +7,12 @@ import { NexusPanel, NexusPanelRow } from './styles';
 const VALID_ITEM_ID_COUNT = 15;
 
 export const DevMintPage = () => {
-  const { mintRelicItem } = useRelic();
+  const { mintShard } = useRelic();
 
   const mintRelicWrapper = (item: number) => {
     console.log('minting relic');
     console.log(item);
-    return mintRelicItem(item);
+    return mintShard(item);
   };
 
   const allItems = useMemo(() => [...Array(VALID_ITEM_ID_COUNT).keys()].map((id) => ({ id, count: 1 })), []);

@@ -18,10 +18,7 @@ type TransmuteState = {
   inventoryItems: RelicItemData[];
 };
 
-const reducer = (state: TransmuteState, action: { type: string; payload: any }): TransmuteState => {
-  console.log('Insider reducer');
-  console.log(action);
-
+const transmuteReducer = (state: TransmuteState, action: { type: string; payload: any }): TransmuteState => {
   if (action.type === 'ADD_TO_PENDING') {
     // map each shard, if it is the one we update, do the logic
     let didUpdate = false;
@@ -29,6 +26,7 @@ const reducer = (state: TransmuteState, action: { type: string; payload: any }):
     let tmpInventory: RelicItemData[] = [];
 
     tmpShards = state.shardsPendingForge.map((shard) => {
+      // this shard is the one we clicked
       if (shard.id === action.payload) {
         didUpdate = true;
         // loop over inventory and update accordingly
@@ -39,9 +37,7 @@ const reducer = (state: TransmuteState, action: { type: string; payload: any }):
               shard.count++;
               inventoryItem.count--;
             }
-            return inventoryItem;
           }
-          // return unmodified
           return inventoryItem;
         });
       }
@@ -68,20 +64,18 @@ const reducer = (state: TransmuteState, action: { type: string; payload: any }):
 
   if (action.type === 'REMOVE_FROM_PENDING') {
     // map each shard, if it is the one we update, do the logic
-    let didUpdate = false;
     let tmpShards: RelicItemData[] = [];
     let tmpInventory: RelicItemData[] = [];
 
     tmpShards = state.shardsPendingForge.map((shard) => {
+      // this shard is the one we clicked
       if (shard.id === action.payload) {
         // loop over inventory and update accordingly
         tmpInventory = state.inventoryItems.map((inventoryItem) => {
           if (inventoryItem.id === action.payload) {
             shard.count--;
             inventoryItem.count++;
-            return inventoryItem;
           }
-          // return unmodified
           return inventoryItem;
         });
       }
@@ -91,7 +85,7 @@ const reducer = (state: TransmuteState, action: { type: string; payload: any }):
     // remove empty items completely
     tmpShards = tmpShards.filter((shard) => shard.count > 0);
 
-    return { ...state, shardsPendingForge: tmpShards };
+    return { inventoryItems: tmpInventory, shardsPendingForge: tmpShards };
   }
 
   if (action.type === 'INIT') {
@@ -132,7 +126,7 @@ const ForgePage = () => {
   const [forgeResult, setForgeResult] = useState<RelicItemData | null>(null);
   const [recipeId, setRecipeId] = useState<number | null>(null);
 
-  const [transmuteState, dispatch] = useReducer(reducer, {
+  const [transmuteState, dispatch] = useReducer(transmuteReducer, {
     shardsPendingForge: [],
     inventoryItems: EMPTY_INVENTORY.items,
   });
