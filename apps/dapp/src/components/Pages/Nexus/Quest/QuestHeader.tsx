@@ -6,9 +6,9 @@ export interface QuestHeaderProps {
   isOpen: boolean;
 }
 
-const QuestCell = ({ id, title, isOpen }: QuestHeaderProps) => {
+const QuestCell = ({ id, title }: QuestHeaderProps) => {
   return (
-    <CellContainer isOpen={isOpen}>
+    <CellContainer>
       <CellRow>
         <RowText align={'left'} bold={true}>
           {title}
@@ -33,13 +33,8 @@ const RowText = styled.span<{ align?: string; bold?: boolean }>`
   flex: 1;
 `;
 
-const CellContainer = styled.div<{ color?: string; isOpen: boolean }>`
-  // .chevron {
-  //   transition: transform 100ms ease-in-out;
-  // }
-  // .chevron.open {
-  //   transform: rotate(180deg);
-  // }
+const CellContainer = styled.div<{ color?: string }>`
+  transition: transform 100ms ease-in-out;
   flex-direction: column;
   align-items: center;
   border: 0.0625rem solid ${(props) => props.color ?? props.theme.palette.brand};

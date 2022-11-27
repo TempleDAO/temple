@@ -122,9 +122,12 @@ const RelicStatsColumn = styled.div`
 `;
 
 const RelicImage = styled.img`
-  width: 200px;
-  margin: 0;
+  width: 270px;
+	margin-left: -50vw;
+	margin-right: -50vw;
+	max-width: 100vw;
 `;
+
 const RelicName = styled.h3<{ enclave: RelicEnclave }>`
   color: ${(props) => props.theme.palette.enclave[getEnclavePalette(props.enclave)]};
   margin: 0;
@@ -132,6 +135,7 @@ const RelicName = styled.h3<{ enclave: RelicEnclave }>`
   padding: 16px;
   border-radius: 16px;
 `;
+
 const RelicBadge = styled.div`
   flex-grow: 1;
   flex-basis: 80px;

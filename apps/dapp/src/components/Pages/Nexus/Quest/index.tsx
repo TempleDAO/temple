@@ -10,7 +10,6 @@ import styled from 'styled-components';
 import QuestCell, { QuestData, RARITY_TYPE } from './QuestCell';
 import Accordion from './QuestAccordion';
 import QuestHeader from './QuestHeader';
-import './style.css';
 
 const QuestPage = () => {
   const { wallet, isConnected } = useWallet();
@@ -74,23 +73,16 @@ const QuestPage = () => {
         'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
       ],
       rarity: RARITY_TYPE.EPIC,
-    } as QuestData,    
+    } as QuestData,
   ];
 
-  // create type if you need intellisense
   type CompProps = typeof quests[0] & {
     isOpen: boolean;
   };
 
-  const SummaryComponent = ({ id, title, isOpen }: CompProps) => (
-    <QuestHeader id={id} title={title} isOpen={isOpen} />
-    // <div className="header">
-    //   {title} <span className={(isOpen ? 'open' : '') + ' chevron'}></span>
-    // </div>
-  );
+  const SummaryComponent = ({ id, title, isOpen }: CompProps) => <QuestHeader id={id} title={title} isOpen={isOpen} />;
 
-  // component will get wrapped in <div class="acc-content">
-  const DetailComponent = ({id,  ...props }: CompProps) => {
+  const DetailComponent = ({ id, ...props }: CompProps) => {
     const quest: QuestData = {
       id,
       title: props.title,
@@ -102,8 +94,6 @@ const QuestPage = () => {
       rarity: props.rarity,
     };
 
-    console.log('props');
-    console.log(quest);
     return <QuestCell quest={quest} />;
   };
 
