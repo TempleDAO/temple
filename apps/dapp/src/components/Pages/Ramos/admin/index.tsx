@@ -1,5 +1,10 @@
 import styled, { css } from 'styled-components';
+
 import { tabletAndAbove } from 'styles/breakpoints';
+import { Tabs } from 'components/Tabs/Tabs';
+import EllipsisLoader from 'components/EllipsisLoader';
+import { Input } from 'components/Input/Input';
+import { Button } from 'components/Button/Button';
 
 import { useRamosAdmin } from './useRamosAdmin';
 import {
@@ -10,11 +15,10 @@ import {
   RebalanceUp,
   WithdrawStable,
 } from './components';
-import { Tabs } from 'components/Tabs/Tabs';
-import EllipsisLoader from 'components/EllipsisLoader';
-import { Input } from 'components/Input/Input';
-import { Button } from 'components/Button/Button';
-import { handleBlur, limitInput } from 'utils/input';
+import {
+  limitInput,
+  handleBlur
+} from "./helpers";
 
 const Container = styled.div`
   display: grid;

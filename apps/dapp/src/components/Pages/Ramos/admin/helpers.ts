@@ -3,6 +3,19 @@ import { BigNumber, ethers } from 'ethers';
 import type { AMO__IBalancerVault } from 'types/typechain/AMO__IBalancerVault';
 import { DBN_ONE_HUNDRED, DBN_TEN_THOUSAND, DecimalBigNumber } from 'utils/DecimalBigNumber';
 
+export const limitInput = (input: string): number => {
+  if (input === '0') return 0;
+
+  return Number(input);
+};
+
+export const handleBlur = (value: number | '', minValue: number, maxValue: number): number => {
+  if (value === '') return minValue;
+  if (value <= minValue) return minValue;
+  if (value >= maxValue) return maxValue;
+  return value;
+};
+
 export const formatJoinRequestTuple = (request?: AMO__IBalancerVault.JoinPoolRequestStruct): string => {
   if (request) {
     return `[[${request.assets.map((asset) => `"${asset}"`).join(',')}],[${request.maxAmountsIn

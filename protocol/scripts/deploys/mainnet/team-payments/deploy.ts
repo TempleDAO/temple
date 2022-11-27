@@ -8,7 +8,7 @@ import {
   toAtto,
   waitForMaxGas,
 } from '../../helpers';
-import epoch8 from './json/epoch8.json';
+import snapshot from './json/epoch9.json';
 
 // @dev: UPDATE THIS
 const maxGasPrice = ethers.utils.parseUnits('18', 'gwei');
@@ -51,8 +51,8 @@ async function main() {
   currentGasPrice = await waitForMaxGas(maxGasPrice);
   console.log('Setting allocations');
   const tx1 = await templeTeamPayments.setAllocations(
-    Object.keys(epoch8),
-    Object.values(epoch8).map((amount) => toAtto(amount)),
+    Object.keys(snapshot),
+    Object.values(snapshot).map((amount) => toAtto(amount)),
     {
       gasPrice: currentGasPrice,
     }
@@ -60,10 +60,10 @@ async function main() {
   await tx1.wait();
   console.log('Mined');
   console.log(
-    `Total $TEMPLE allocated: ${Object.values(epoch8).reduce(
+    `Total $TEMPLE allocated: ${Object.values(snapshot).reduce(
       (sum, cur) => (sum += cur),
       0
-    )}, across ${Object.keys(epoch8).length} addresses`
+    )}, across ${Object.keys(snapshot).length} addresses`
   );
 
   currentGasPrice = await waitForMaxGas(maxGasPrice);

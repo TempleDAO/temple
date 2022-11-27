@@ -36,6 +36,7 @@ export interface DeployedContracts {
   TEMPLE_TEAM_EPOCH_6: string;
   TEMPLE_TEAM_EPOCH_7: string;
   TEMPLE_TEAM_EPOCH_8: string;
+  TEMPLE_TEAM_EPOCH_9: string;
 
   // Temple Zaps
   GENERIC_ZAPS: string;
@@ -62,6 +63,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_6: '',
     TEMPLE_TEAM_EPOCH_7: '',
     TEMPLE_TEAM_EPOCH_8: '',
+    TEMPLE_TEAM_EPOCH_9: '',
 
     TEMPLE_V2_FRAX_PAIR: '0x57fd5b0CcC0Ad528050a2D5e3b3935c08F058Dca',
     TEMPLE_V2_FEI_PAIR: '', // TODO: Update
@@ -80,7 +82,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
 
     RAMOS: '',
     RAMOS_POOL_HELPER: '',
-    RAMOS_AURA_STAKING: ''
+    RAMOS_AURA_STAKING: '',
   },
   goerli: {
     // No longer active/unused
@@ -102,6 +104,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_6: '',
     TEMPLE_TEAM_EPOCH_7: '',
     TEMPLE_TEAM_EPOCH_8: '',
+    TEMPLE_TEAM_EPOCH_9: '',
 
     TEMPLE_V2_FRAX_PAIR: '0x85dA8c4312742522519911052Fa2B4aC302E4d6c', // Frax Pair
     TEMPLE_V2_FEI_PAIR: '0xD83834165E2b130341d58dd5A43460B7f4C491BD', // TODO: Update
@@ -120,7 +123,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
 
     RAMOS: '0x7319fB14aA4f99735d36298025EBf5b4A69E84f3',
     RAMOS_POOL_HELPER: '0x91EfB7Bf58522061A0Ab2c5c9b428243d90580d0',
-    RAMOS_AURA_STAKING: ''
+    RAMOS_AURA_STAKING: '',
   },
   mainnet: {
     // From network/environment
@@ -136,6 +139,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_6: '0x91ad65e053ae98b4fbab84fc38b7bddd17c32cda',
     TEMPLE_TEAM_EPOCH_7: '0x8cded928006feb238617fa5f7b04abeefcde36bf',
     TEMPLE_TEAM_EPOCH_8: '0x008eCB3E53024628a5A8BbE0b142329791ad6f51',
+    TEMPLE_TEAM_EPOCH_9: '0x5461d7Cd3eEB184a83c5a1678335D72ccaf04818',
     TEMPLE_V2_FRAX_PAIR: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
     TEMPLE_V2_FEI_PAIR: '0xf994158766e0a4E64c26feCE675186f489EC9107',
     TEMPLE_V2_ROUTER: '0x98257c876ace5009e7b97843f8c71b3ae795c71e',
@@ -151,7 +155,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
 
     RAMOS: '',
     RAMOS_POOL_HELPER: '',
-    RAMOS_AURA_STAKING: ''
+    RAMOS_AURA_STAKING: '',
   },
   localhost: {
     // From network/environment (setup when 00-localhost-env.ts script is run)
@@ -167,6 +171,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_6: process.env.TEMPLE_TEAM_EPOCH_6 || '',
     TEMPLE_TEAM_EPOCH_7: process.env.TEMPLE_TEAM_EPOCH_7 || '',
     TEMPLE_TEAM_EPOCH_8: process.env.TEMPLE_TEAM_EPOCH_8 || '',
+    TEMPLE_TEAM_EPOCH_9: process.env.TEMPLE_TEAM_EPOCH_9 || '',
     TEMPLE_V2_FRAX_PAIR: process.env.TEMPLE_V2_FRAX_PAIR || '',
     TEMPLE_V2_FEI_PAIR: process.env.TEMPLE_V2_FEI_PAIR || '',
     TEMPLE_V2_ROUTER: process.env.TEMPLE_V2_ROUTER || '',
