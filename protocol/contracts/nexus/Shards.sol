@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "hardhat/console.sol";
 
 
 interface IRelic { 
@@ -69,7 +68,7 @@ contract Shards is
     }
 
     // @dev called from Relic when transfering items from Templar wallet into Relic
-    function equipItems(address _ownerAddress, uint256[] memory _shardIds, uint256[] memory _amounts) external isRelic {
+    function equipShard(address _ownerAddress, uint256[] memory _shardIds, uint256[] memory _amounts) external isRelic {
         
         _beforeTokenTransfer(msg.sender, _ownerAddress, address(RELIC), _shardIds, _amounts, "");
         // transfer to Relic
@@ -77,7 +76,7 @@ contract Shards is
     }
 
      // @dev called from Relic when transfering items from Relic into Templar wallet
-    function unEquipItems(address _target, uint256[] memory _shardIds, uint256[] memory _amounts) external isRelic {
+    function unEquipShard(address _target, uint256[] memory _shardIds, uint256[] memory _amounts) external isRelic {
         
         _beforeTokenTransfer(address(RELIC), address(RELIC), _target, _shardIds, _amounts, "");
 

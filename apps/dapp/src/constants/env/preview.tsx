@@ -124,7 +124,7 @@ const env: Environment = {
   templeMultisig: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
   nexus: {
     templeRelicAddress: '0xbb8bB20DA64D4C595eb4Ac8A7cC2cBDcFBfB4306',
-    templeRelicItemsAddress: '0x4EA1C78102d2C201cFc98fd53b634Cc01294771c',
+    templeRelicItemsAddress: '0xaBf139511C381f7804EdD6E4c78383b775d8CeeF',
   }
 };
 

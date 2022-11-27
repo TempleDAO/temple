@@ -36,7 +36,7 @@ export interface ShardsInterface extends utils.Interface {
     "burnBatch(address,uint256[],uint256[])": FunctionFragment;
     "burnFromRelic(uint256,uint256)": FunctionFragment;
     "createRecipe(uint256,uint256[],uint256[],uint256[],uint256[])": FunctionFragment;
-    "equipItems(address,uint256[],uint256[])": FunctionFragment;
+    "equipShard(address,uint256[],uint256[])": FunctionFragment;
     "exists(uint256)": FunctionFragment;
     "isApprovedForAll(address,address)": FunctionFragment;
     "mint(address,uint256,uint256,bytes)": FunctionFragment;
@@ -61,7 +61,7 @@ export interface ShardsInterface extends utils.Interface {
     "totalSupply(uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
     "transmute(uint256)": FunctionFragment;
-    "unEquipItems(address,uint256[],uint256[])": FunctionFragment;
+    "unEquipShard(address,uint256[],uint256[])": FunctionFragment;
     "unpause()": FunctionFragment;
     "uri(uint256)": FunctionFragment;
     "whiteListItemsForPartner(address,uint256[],bool)": FunctionFragment;
@@ -78,7 +78,7 @@ export interface ShardsInterface extends utils.Interface {
       | "burnBatch"
       | "burnFromRelic"
       | "createRecipe"
-      | "equipItems"
+      | "equipShard"
       | "exists"
       | "isApprovedForAll"
       | "mint"
@@ -103,7 +103,7 @@ export interface ShardsInterface extends utils.Interface {
       | "totalSupply"
       | "transferOwnership"
       | "transmute"
-      | "unEquipItems"
+      | "unEquipShard"
       | "unpause"
       | "uri"
       | "whiteListItemsForPartner"
@@ -154,7 +154,7 @@ export interface ShardsInterface extends utils.Interface {
     ]
   ): string;
   encodeFunctionData(
-    functionFragment: "equipItems",
+    functionFragment: "equipShard",
     values: [
       PromiseOrValue<string>,
       PromiseOrValue<BigNumberish>[],
@@ -276,7 +276,7 @@ export interface ShardsInterface extends utils.Interface {
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: "unEquipItems",
+    functionFragment: "unEquipShard",
     values: [
       PromiseOrValue<string>,
       PromiseOrValue<BigNumberish>[],
@@ -321,7 +321,7 @@ export interface ShardsInterface extends utils.Interface {
     functionFragment: "createRecipe",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "equipItems", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "equipShard", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "exists", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "isApprovedForAll",
@@ -386,7 +386,7 @@ export interface ShardsInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "transmute", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "unEquipItems",
+    functionFragment: "unEquipShard",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
@@ -584,7 +584,7 @@ export interface Shards extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    equipItems(
+    equipShard(
       _ownerAddress: PromiseOrValue<string>,
       _shardIds: PromiseOrValue<BigNumberish>[],
       _amounts: PromiseOrValue<BigNumberish>[],
@@ -725,7 +725,7 @@ export interface Shards extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    unEquipItems(
+    unEquipShard(
       _target: PromiseOrValue<string>,
       _shardIds: PromiseOrValue<BigNumberish>[],
       _amounts: PromiseOrValue<BigNumberish>[],
@@ -808,7 +808,7 @@ export interface Shards extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  equipItems(
+  equipShard(
     _ownerAddress: PromiseOrValue<string>,
     _shardIds: PromiseOrValue<BigNumberish>[],
     _amounts: PromiseOrValue<BigNumberish>[],
@@ -949,7 +949,7 @@ export interface Shards extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  unEquipItems(
+  unEquipShard(
     _target: PromiseOrValue<string>,
     _shardIds: PromiseOrValue<BigNumberish>[],
     _amounts: PromiseOrValue<BigNumberish>[],
@@ -1032,7 +1032,7 @@ export interface Shards extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    equipItems(
+    equipShard(
       _ownerAddress: PromiseOrValue<string>,
       _shardIds: PromiseOrValue<BigNumberish>[],
       _amounts: PromiseOrValue<BigNumberish>[],
@@ -1169,7 +1169,7 @@ export interface Shards extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    unEquipItems(
+    unEquipShard(
       _target: PromiseOrValue<string>,
       _shardIds: PromiseOrValue<BigNumberish>[],
       _amounts: PromiseOrValue<BigNumberish>[],
@@ -1321,7 +1321,7 @@ export interface Shards extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    equipItems(
+    equipShard(
       _ownerAddress: PromiseOrValue<string>,
       _shardIds: PromiseOrValue<BigNumberish>[],
       _amounts: PromiseOrValue<BigNumberish>[],
@@ -1462,7 +1462,7 @@ export interface Shards extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    unEquipItems(
+    unEquipShard(
       _target: PromiseOrValue<string>,
       _shardIds: PromiseOrValue<BigNumberish>[],
       _amounts: PromiseOrValue<BigNumberish>[],
@@ -1546,7 +1546,7 @@ export interface Shards extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    equipItems(
+    equipShard(
       _ownerAddress: PromiseOrValue<string>,
       _shardIds: PromiseOrValue<BigNumberish>[],
       _amounts: PromiseOrValue<BigNumberish>[],
@@ -1687,7 +1687,7 @@ export interface Shards extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    unEquipItems(
+    unEquipShard(
       _target: PromiseOrValue<string>,
       _shardIds: PromiseOrValue<BigNumberish>[],
       _amounts: PromiseOrValue<BigNumberish>[],
