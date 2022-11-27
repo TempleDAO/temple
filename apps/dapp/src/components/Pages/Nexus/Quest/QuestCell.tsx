@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
 import Image from '../../../Image/Image';
@@ -10,7 +9,7 @@ export enum RARITY_TYPE {
 }
 
 export type QuestData = {
-  id: number;
+  id: string;
   title: string;
   origin: string;
   linkUrl: string;
@@ -25,8 +24,6 @@ export interface QuestCellProps {
 }
 
 const QuestCell = ({ quest }: QuestCellProps) => {
-  const dummyImage = 'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png';
-
   return (
     <CellContainer>
       <CellRow>
