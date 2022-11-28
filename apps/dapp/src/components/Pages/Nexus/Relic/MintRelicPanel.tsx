@@ -100,7 +100,7 @@ const EnclaveCard = styled.div<{ enclave: RelicEnclave; selected?: boolean }>`
   transition: ease 0.25s all;
   transform: scale(${(props) => (props.selected ? 1.1 : 1)});
   z-index: ${(props) => (props.selected ? 2 : 1)};
-  color: ${(props) => darken(props.selected ? 0.2 : 0.5, '#FFFFFF')};
+  color: ${(props) => darken(props.selected ? 0 : 0.02, '#FFFFFF')};
   cursor: pointer;
 
   &:hover {
@@ -108,7 +108,7 @@ const EnclaveCard = styled.div<{ enclave: RelicEnclave; selected?: boolean }>`
       lighten(props.selected ? 0.25 : 0.2, props.theme.palette.enclave[getEnclavePalette(props.enclave)])};
     border-color: ${(props) =>
       lighten(props.selected ? 0.25 : 0.2, props.theme.palette.enclave[getEnclavePalette(props.enclave)])};
-    color: ${(props) => darken(props.selected ? 0.1 : 0.3, '#FFFFFF')};
+    color: ${(props) => darken(props.selected ? 0 : 0.02, '#FFFFFF')};
   }
 
   &:before {
