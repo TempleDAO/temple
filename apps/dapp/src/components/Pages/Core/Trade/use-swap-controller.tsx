@@ -20,7 +20,8 @@ export function useSwapController() {
   const { wallet } = useWallet();
   const [state, dispatch] = useReducer(swapReducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
-  const { getBuyQuote, getSellQuote, templePrice, updateTemplePrice, buy, sell, iv, updateIv, error } = useSwap();
+  const { getBuyQuote, getSellQuote, updateTemplePrice, buy, sell, updateIv, get1inchQuote, get1inchSwap, error } =
+    useSwap();
 
   useEffect(() => {
     const onMount = async () => {
@@ -228,23 +229,27 @@ export function useSwapController() {
   const fetchQuote = async (value: BigNumber): Promise<BigNumber> => {
     let quote = value;
 
-    if (state.mode === SwapMode.Buy && isTokenFraxOrFei(state.inputToken)) {
-      const buyQuote = await getBuyQuote(value, state.inputToken);
-      quote = buyQuote ?? ZERO;
-    }
+    const quote1inch = await get1inchQuote(value, state.inputToken, state.outputToken);
+    // debugger;
+    return quote1inch.toTokenAmount;
 
-    if (state.mode === SwapMode.Sell && isTokenFraxOrFei(state.outputToken)) {
-      const sellQuote = await getSellQuote(value, state.outputToken);
+    // if (state.mode === SwapMode.Buy && isTokenFraxOrFei(state.inputToken)) {
+    //   const buyQuote = await getBuyQuote(value, state.inputToken);
+    //   quote = buyQuote ?? ZERO;
+    // }
 
-      quote = sellQuote ? sellQuote.amountOut : ZERO;
-    }
+    // if (state.mode === SwapMode.Sell && isTokenFraxOrFei(state.outputToken)) {
+    //   const sellQuote = await getSellQuote(value, state.outputToken);
 
-    if (!quote) {
-      console.error("couldn't fetch quote");
-      return ZERO;
-    }
+    //   quote = sellQuote ? sellQuote.amountOut : ZERO;
+    // }
 
-    return quote;
+    // if (!quote) {
+    //   console.error("couldn't fetch quote");
+    //   return ZERO;
+    // }
+
+    // return quote;
   };
 
   return {

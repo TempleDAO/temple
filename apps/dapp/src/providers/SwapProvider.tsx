@@ -1,5 +1,6 @@
 import { useState, useContext, createContext, PropsWithChildren } from 'react';
-import { BigNumber, Signer } from 'ethers';
+import { BigNumber, constants, Signer, utils } from 'ethers';
+import axios from 'axios';
 
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
@@ -32,6 +33,8 @@ const INITIAL_STATE: SwapService = {
   updateTemplePrice: asyncNoop,
   updateIv: asyncNoop,
   error: null,
+  get1inchQuote: asyncNoop,
+  get1inchSwap: asyncNoop,
 };
 
 const SwapContext = createContext(INITIAL_STATE);
@@ -43,6 +46,68 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
   const { wallet, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
+
+  const approve1inch = async (inToken: TICKER_SYMBOL, signer: Signer) => {
+    if (!wallet || !signer) return;
+    const address1inch = '0x11111112542d85b3ef69ae05771c2dccff4faa26';
+    const inTokenContract = new ERC20__factory(signer).attach(inToken);
+    const approvedAmount = await inTokenContract.allowance(wallet, address1inch);
+    if (approvedAmount.eq(constants.Zero)) {
+      try {
+        const approveTx = await inTokenContract.approve(address1inch, constants.MaxUint256);
+        const wait = await approveTx.wait();
+      } catch (err) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const get1inchApi = async (queryPath: string) => {
+    return await axios.get(`https://api.1inch.exchange/v5.0/1` + queryPath);
+  };
+
+  const get1inchQuote = async (tokenAmount: BigNumber, tokenIn: TICKER_SYMBOL, tokenOut: TICKER_SYMBOL) => {
+    // @ts-ignore
+    const tokenInInfo = env.tokens[tokenIn.replace('$', '').toLowerCase()];
+    // @ts-ignore
+    const tokenOutInfo = env.tokens[tokenOut.replace('$', '').toLowerCase()];
+
+    const amountFormat = utils.formatUnits(tokenAmount); //, tokenInInfo.decimals);
+    const decimalFormat = utils.parseUnits(amountFormat, tokenInInfo.decimals);
+    // !FIXME: decimals version will need later, but currently everything assumes 18 dec so use above since the input needs conversion from wei
+    // const amountFormat = utils.formatUnits(tokenAmount, tokenInInfo.decimals);
+    // const decimalFormat = utils.parseUnits(amountFormat, tokenInInfo.decimals);
+    debugger;
+    const queryPath =
+      '/quote?' +
+      [
+        `amount=${decimalFormat}`,
+        `fromTokenAddress=${tokenInInfo.address}`,
+        `toTokenAddress=${tokenOutInfo.address}`,
+      ].join('&');
+    const { data } = await get1inchApi(queryPath);
+    return data;
+  };
+
+  const get1inchSwap = async (tokenAmount: BigNumber, tokenIn: TICKER_SYMBOL, tokenOut: TICKER_SYMBOL) => {
+    if (!wallet || !signer) return;
+    // @ts-ignore
+    const tokenInInfo = env.tokens[tokenIn.replace('$', '').toLowerCase()];
+    const bigAmount: BigNumber = utils.parseUnits(tokenAmount.toString(), tokenInInfo.decimals);
+    const queryPath =
+      '/swap?' +
+      [
+        'slippage=1',
+        `amount=${tokenAmount}`,
+        `fromTokenAddress=${tokenIn}`,
+        `toTokenAddress=${tokenOut}`,
+        `from=${wallet}`,
+      ].join('&');
+    const { data } = await get1inchApi(queryPath);
+    const swapTx = await signer.sendTransaction(data.tx);
+    const conf = await swapTx.wait();
+  };
 
   const getTemplePrice = async (walletAddress: string, signerState: Signer, pairAddress: string) => {
     if (!walletAddress) {
@@ -234,7 +299,12 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
   const getBuyQuote = async (
     amountIn: BigNumber,
-    token: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI = TICKER_SYMBOL.FRAX
+    token:
+      | TICKER_SYMBOL.FRAX
+      | TICKER_SYMBOL.FEI
+      | TICKER_SYMBOL.USDC
+      | TICKER_SYMBOL.USDT
+      | TICKER_SYMBOL.DAI = TICKER_SYMBOL.FRAX
   ): Promise<BigNumber> => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
@@ -300,6 +370,8 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         updateTemplePrice,
         updateIv,
         error,
+        get1inchQuote,
+        get1inchSwap,
       }}
     >
       {props.children}
