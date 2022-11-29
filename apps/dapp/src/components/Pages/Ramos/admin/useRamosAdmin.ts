@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BigNumber, Contract, ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 
 import environmentConfig from 'constants/env';
 import { useWallet } from 'providers/WalletProvider';
@@ -150,7 +150,7 @@ export function useRamosAdmin() {
 
   const createDepositAndStakeRequest = async (bptAmountIn: DecimalBigNumber) => {
     if (isConnected) {
-      const amountInContract = await bptToken.balanceOf(environmentConfig.templeMultisig);
+      const amountInContract = await bptToken.balanceOf(ramos.address);
       const bnAmount = bptAmountIn.toBN(bptAmountIn.getDecimals());
       return {
         bptAmountIn: bnAmount,
