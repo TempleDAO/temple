@@ -4,3 +4,4 @@ export { DepositStable } from './DepositStable';
 export { WithdrawStable } from './WithdrawStable';
 export { JoinPoolRequest } from './JoinPoolRequest';
 export { ExitPoolRequest } from './ExitPoolRequest';
+export { DepositAndStake } from './DepositAndStake';

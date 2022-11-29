@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, Contract, ethers } from 'ethers';
 
 import environmentConfig from 'constants/env';
 import { useWallet } from 'providers/WalletProvider';
@@ -10,6 +10,8 @@ import {
   IBalancerHelpers,
   IBalancerHelpers__factory,
   AMO__IBalancerVault__factory,
+  ERC20__factory,
+  ERC20,
 } from 'types/typechain';
 
 import {
@@ -24,11 +26,7 @@ import {
   randomize,
 } from './helpers';
 import { ZERO } from 'utils/bigNumber';
-import {
-  DBN_TEN_THOUSAND,
-  DBN_ZERO,
-  DecimalBigNumber,
-} from 'utils/DecimalBigNumber';
+import { DBN_TEN_THOUSAND, DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export function useRamosAdmin() {
   const { ramos: RAMOS_ADDRESS, balancerHelpers: BALANCER_HELPERS_ADDRESS } = environmentConfig.contracts;
@@ -39,6 +37,7 @@ export function useRamosAdmin() {
     temple: { address: '', balance: DBN_ZERO },
     stable: { address: '', balance: DBN_ZERO },
   });
+  const [bptToken, setBptToken] = useState<ERC20>();
   const [ramos, setRamos] = useState<RAMOSGoerli>();
   const [balancerHelpers, setBalancerHelpers] = useState<IBalancerHelpers>();
   const [poolId, setPoolId] = useState<string>();
@@ -62,7 +61,8 @@ export function useRamosAdmin() {
     tpf &&
     templePrice &&
     templePrice.gt(DBN_ZERO) &&
-    percentageBounds;
+    percentageBounds &&
+    bptToken;
 
   // outputs
   const [rebalanceUpToTpf, setRebalanceUpToTpf] = useState<{ bptIn: BigNumber; amountOut: BigNumber }>();
@@ -79,6 +79,8 @@ export function useRamosAdmin() {
         const BALANCER_VAULT_CONTRACT = AMO__IBalancerVault__factory.connect(BALANCER_VAULT_ADDRESS, signer);
         const BALANCER_HELPERS_CONTRACT = IBalancerHelpers__factory.connect(BALANCER_HELPERS_ADDRESS, signer);
         const [tokenAddresses, balances] = await BALANCER_VAULT_CONTRACT.getPoolTokens(POOL_ID);
+        const BPT_TOKEN_ADDRESS = await RAMOS_CONTRACT.bptToken();
+        const BPT_TOKEN_CONTRACT = new ERC20__factory(signer).attach(BPT_TOKEN_ADDRESS);
         const TPF = await RAMOS_CONTRACT.templePriceFloorNumerator();
         const MAX_REBALANCE_AMOUNTS = await RAMOS_CONTRACT.maxRebalanceAmounts();
         const PERCENTAGE_BOUND_LOW = await RAMOS_CONTRACT.rebalancePercentageBoundLow();
@@ -106,6 +108,7 @@ export function useRamosAdmin() {
           }
         });
         setTokens(tempTokens);
+        setBptToken(BPT_TOKEN_CONTRACT);
       }
     }
     setContracts();
@@ -142,6 +145,17 @@ export function useRamosAdmin() {
       const { bptIn, amountsOut } = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, initExitReq);
       const exitRequest = makeExitRequest(tokenAddrs, amountsOut, bptIn);
       return formatExitRequestTuple(exitRequest);
+    }
+  };
+
+  const createDepositAndStakeRequest = async (bptAmountIn: DecimalBigNumber) => {
+    if (isConnected) {
+      const amountInContract = await bptToken.balanceOf(environmentConfig.templeMultisig);
+      const bnAmount = bptAmountIn.toBN(bptAmountIn.getDecimals());
+      return {
+        bptAmountIn: bnAmount,
+        useContractBalance: bnAmount.lte(amountInContract),
+      };
     }
   };
 
@@ -291,5 +305,6 @@ export function useRamosAdmin() {
     tokens,
     randomPercent,
     setRandomPercent,
+    createDepositAndStakeRequest,
   };
 }

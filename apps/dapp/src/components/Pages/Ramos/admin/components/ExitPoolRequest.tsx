@@ -14,7 +14,7 @@ export const ExitPoolRequest: React.FC<IProps> = ({ calculateFunc }) => {
 
   return (
     <InputArea>
-      <h3>ExitPoolRequest</h3>
+      <h3>RemoveLiquidity</h3>
       <Input
         crypto={{ kind: 'value', value: 'BPT' }}
         isNumber

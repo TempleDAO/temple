@@ -15,7 +15,7 @@ export const JoinPoolRequest: React.FC<IProps> = ({calculateFunc}) => {
 
   return (
     <InputArea>
-      <h3>JoinPoolRequest</h3>
+      <h3>AddLiquidity</h3>
       <Input
         crypto={{ kind: 'value', value: 'TEMPLE' }}
         small

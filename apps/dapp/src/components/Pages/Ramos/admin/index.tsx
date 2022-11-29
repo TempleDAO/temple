@@ -8,6 +8,7 @@ import { Button } from 'components/Button/Button';
 
 import { useRamosAdmin } from './useRamosAdmin';
 import {
+  DepositAndStake,
   DepositStable,
   ExitPoolRequest,
   JoinPoolRequest,
@@ -42,6 +43,7 @@ const RamosAdmin = () => {
     createJoinPoolRequest,
     createExitPoolRequest,
     calculateWithdrawStable,
+    createDepositAndStakeRequest,
     withdrawStableToTpf,
     randomPercent,
     setRandomPercent,
@@ -73,6 +75,7 @@ const RamosAdmin = () => {
         <Container>
           <JoinPoolRequest calculateFunc={createJoinPoolRequest} />
           <ExitPoolRequest calculateFunc={createExitPoolRequest} />
+          <DepositAndStake calculateFunc={createDepositAndStakeRequest} />
         </Container>
       ),
     },
