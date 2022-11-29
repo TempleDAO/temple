@@ -11,6 +11,7 @@ import {
   useFocus,
   useRole,
   useDismiss,
+  safePolygon,
 } from '@floating-ui/react-dom-interactions';
 import { mergeRefs } from 'react-merge-refs';
 import styled from 'styled-components';
@@ -34,7 +35,11 @@ export const NexusTooltip = ({ children, shard, placement = 'top-start' }: Props
   });
 
   const { getReferenceProps, getFloatingProps } = useInteractions([
-    useHover(context),
+    useHover(context, {
+      handleClose: safePolygon({
+        restMs: 50,
+      }),
+    }),
     useFocus(context),
     useRole(context, { role: 'tooltip' }),
     useDismiss(context),
