@@ -14,14 +14,15 @@ import {
 } from '@floating-ui/react-dom-interactions';
 import { mergeRefs } from 'react-merge-refs';
 import styled from 'styled-components';
+import { Shard } from '../types';
 
 interface Props {
-  label: string;
+  shard: Shard;
   placement?: Placement;
   children: JSX.Element;
 }
 
-export const NexusTooltip = ({ children, label, placement = 'top-start' }: Props) => {
+export const NexusTooltip = ({ children, shard, placement = 'top-start' }: Props) => {
   const [open, setOpen] = useState(false);
 
   const { x, y, reference, floating, strategy, context } = useFloating({
@@ -55,36 +56,64 @@ export const NexusTooltip = ({ children, label, placement = 'top-start' }: Props
           }}
           {...getFloatingProps()}
         >
-          <div
-            style={{
-              bottom: 0,
-              display: 'block',
-            }}
-          >
-            <span style={{ display: 'block', float: 'left', width: '100px' }}>Shard</span>
-            <span style={{ display: 'block', float: 'right', width: '100px' }}>shard #1</span>
-          </div>
-          {/* <div style={{ display: 'absolute', width: '100%' }}> */}
-            {/* Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam hendrerit velit ac dolor rhoncus, quis */}
-            {/* lobortis ligula tincidunt. Aliquam risus ex.{' '} */}
-          {/* </div> */}
-          {/* <div>Origin: https://www.foo.com/xyz</div> */}
-          {/* <div style={{ backgroundColor: '#000' }}>Origin: https://www.foo.com/xyz</div> */}
+          <CellRow>
+            <RowText align={'left'} bold={true}>
+              {shard.name}
+            </RowText>
+            <RowText align={'right'} bold={true}>
+              Shard #{shard.id}
+            </RowText>
+          </CellRow>
+          <CellRow>
+            <DescriptionContainer>
+              <span>{shard.description}</span>
+            </DescriptionContainer>
+          </CellRow>
+          <CellRow>
+            <RowText>
+              Origin: <OriginLink href={`https://www.foo.com/xyz`}>https://www.foo.com/xyz</OriginLink>
+            </RowText>
+          </CellRow>
+          <CellRow>
+            <RowText align={'left'}>EPIC</RowText>
+          </CellRow>
         </TooltipContainer>
       )}
     </>
   );
 };
 
+const OriginLink = styled.a`
+  color: #2f6db3;
+  font-weight: normal;
+`;
+
+const DescriptionContainer = styled.div`
+  display: flex;
+`;
+
+const CellRow = styled.div`
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+`;
+
+const RowText = styled.span<{ align?: string; bold?: boolean }>`
+  font-weight: ${(props) => (props.bold ? 'bold' : 'normal')};
+  text-align: ${(props) => (props.align === 'right' ? 'right' : 'left')};
+  flex: 1;
+`;
+
 const TooltipContainer = styled.div`
-  color: '#000000';
+  color: ${(props) => props.theme.palette.brand};
   padding: 10px;
   margin: auto;
   max-width: 500px,
   background-color: ${(props) => props.theme.palette.brand};
-  border: solid 0.0625rem ${(props) => props.theme.palette.brand};
+  background-color: #000000;
+  border: solid 0.0625rem ${(props) => props.theme.palette.brand75};
   border-radius: 15px;
-  background-color: #333;
   background-size: cover;
   background-position: center;
+  max-width: 400px
 `;

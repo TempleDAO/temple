@@ -9,7 +9,7 @@ import { EMPTY_INVENTORY } from '../Relic';
 import { NexusBackground } from '../Relic/styles';
 import InventoryPanel from './InventoryPanel';
 import UsedShardsPanel from './UsedShardsPanel';
-import { getValidRecipe, Recipe } from './recipes';
+import { getValidRecipe } from './recipes';
 import ForgeResult from './ForgeResult';
 import { useNavigate } from 'react-router-dom';
 

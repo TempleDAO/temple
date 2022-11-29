@@ -1,23 +1,8 @@
 import styled from 'styled-components';
 
 import Image from '../../../Image/Image';
+import { QuestData, RARITY_TYPE } from '../types';
 
-export enum RARITY_TYPE {
-  LOW,
-  MEDIUM,
-  EPIC,
-}
-
-export type QuestData = {
-  id: string;
-  title: string;
-  origin: string;
-  linkUrl: string;
-  description: string;
-  logoUrl: string;
-  rewardLogoUrls: string[];
-  rarity: RARITY_TYPE;
-};
 
 export interface QuestCellProps {
   quest: QuestData;

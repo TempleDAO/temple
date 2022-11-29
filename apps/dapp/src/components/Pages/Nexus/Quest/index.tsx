@@ -7,9 +7,11 @@ import { PageWrapper } from '../../Core/utils';
 import { NexusBackground, NexusBodyContainer, NexusContainer } from '../Relic/styles';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import QuestCell, { QuestData, RARITY_TYPE } from './QuestCell';
+import QuestCell from './QuestCell';
 import Accordion from './QuestAccordion';
 import QuestHeader from './QuestHeader';
+import env from '../../../../constants/env';
+import { QuestData } from '../types';
 
 const QuestPage = () => {
   const { wallet, isConnected } = useWallet();
@@ -28,53 +30,7 @@ const QuestPage = () => {
 
   const bgImage = inventory?.relics.length ? bgActive : bgInactive;
 
-  const quests = [
-    {
-      id: '1',
-      title: 'Spirit of the Sands',
-      origin: 'TempleDAO',
-      linkUrl: 'https://templedao.link',
-      description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi accumsan libero sed placerat viverra. Praesent ac vehicula mauris, non ullamcorper metus. Vestibulum ultricies odio at libero pulvinar dapibus sed vel leo.',
-      logoUrl: 'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-      rewardLogoUrls: [
-        'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-        'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-        'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-      ],
-      rarity: RARITY_TYPE.EPIC,
-    } as QuestData,
-    {
-      id: '2',
-      title: 'Spirit in the Sky',
-      origin: 'TempleDAO',
-      linkUrl: 'https://templedao.link',
-      description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi accumsan libero sed placerat viverra. Praesent ac vehicula mauris, non ullamcorper metus. Vestibulum ultricies odio at libero pulvinar dapibus sed vel leo.',
-      logoUrl: 'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-      rewardLogoUrls: [
-        'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-        'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-        'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-      ],
-      rarity: RARITY_TYPE.EPIC,
-    } as QuestData,
-    {
-      id: '3',
-      title: 'Lightning in the Bottle',
-      origin: 'TempleDAO',
-      linkUrl: 'https://templedao.link',
-      description:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi accumsan libero sed placerat viverra. Praesent ac vehicula mauris, non ullamcorper metus. Vestibulum ultricies odio at libero pulvinar dapibus sed vel leo.',
-      logoUrl: 'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-      rewardLogoUrls: [
-        'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-        'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-        'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
-      ],
-      rarity: RARITY_TYPE.EPIC,
-    } as QuestData,
-  ];
+  const quests = env.nexus.quests;
 
   type CompProps = typeof quests[0] & {
     isOpen: boolean;

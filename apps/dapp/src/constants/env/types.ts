@@ -1,3 +1,5 @@
+import { QuestData, Recipe, Shard } from 'components/Pages/Nexus/types';
+
 interface Subgraphs {
   templeCore: string;
   protocolMetrics: string;
@@ -84,6 +86,11 @@ interface Posthog {
 interface Nexus {
   templeRelicAddress: string;
   templeRelicItemsAddress: string;
+  recipes: Recipe[];
+  shardMetadata: {
+    [key: number]: Shard;
+  };
+  quests: QuestData[];
 }
 
 export interface Environment {

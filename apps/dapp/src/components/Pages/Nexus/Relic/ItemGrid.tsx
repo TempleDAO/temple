@@ -3,7 +3,8 @@ import { useWindowResize } from 'components/Vault/useWindowResize';
 import { RelicItemData } from 'providers/types';
 import { FC, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-// import { NexusTooltip } from './NexusTooltip';
+import { NexusTooltip } from './NexusTooltip';
+import env from '../../../../constants/env';
 
 // TODO: Move to env
 const ITEM_IMAGE_BASE_URL = 'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE';
@@ -34,18 +35,24 @@ const ItemGrid: FC<{
       {itemIndexes.map((_, idx) => {
         const item = items[idx];
         return (
-          <ItemWrapper key={idx} columnCount={columnCount}>
+          <>
             {item == undefined ? (
-              <EmptyCell />
+              <ItemWrapper key={idx} columnCount={columnCount}>
+                <EmptyCell />
+              </ItemWrapper>
             ) : (
-              <ItemButton
-                key={item.id}
-                item={item}
-                disabled={props.disabled || item.count === 0}
-                onClick={props.onClick}
-              />
+              <NexusTooltip shard={env.nexus.shardMetadata[item.id as keyof typeof env.nexus.shardMetadata]}>
+                <ItemWrapper key={idx} columnCount={columnCount}>
+                  <ItemButton
+                    key={item.id}
+                    item={item}
+                    disabled={props.disabled || item.count === 0}
+                    onClick={props.onClick}
+                  />
+                </ItemWrapper>
+              </NexusTooltip>
             )}
-          </ItemWrapper>
+          </>
         );
       })}
     </ItemsContainer>
