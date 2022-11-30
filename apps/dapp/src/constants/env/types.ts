@@ -32,6 +32,7 @@ interface Contracts {
   templeV2FraxPair: string;
   templeV2FeiPair: string;
   templeV2Router: string;
+  swap1InchRouter: string;
   treasuryIv: string;
   vaultOps: string;
   vaultProxy: string;
@@ -58,7 +59,7 @@ export interface Token {
   symbol?: string;
 }
 
-interface Tokens {
+export interface Tokens {
   frax: Token;
   temple: Token;
   ogTemple: Token;

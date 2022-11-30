@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react';
-import { BigNumber } from 'ethers';
+import { BigNumber, constants } from 'ethers';
 
 import { Option } from 'components/InputSelect/InputSelect';
 import { TransactionSettings } from 'components/TransactionSettingsModal/TransactionSettingsModal';
@@ -20,8 +20,7 @@ export function useSwapController() {
   const { wallet } = useWallet();
   const [state, dispatch] = useReducer(swapReducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
-  const { getBuyQuote, getSellQuote, updateTemplePrice, buy, sell, updateIv, get1inchQuote, get1inchSwap, error } =
-    useSwap();
+  const { getBuyQuote, getSellQuote, updateTemplePrice, buy, sell, updateIv, get1inchQuote, error } = useSwap();
 
   useEffect(() => {
     const onMount = async () => {
@@ -148,62 +147,60 @@ export function useSwapController() {
   };
 
   const handleBuy = async () => {
-    if (!isTokenFraxOrFei(state.inputToken)) {
-      console.error('Invalid input token');
+    const tokenAmount = getBigNumberFromString(state.inputValue);
+
+    const buyQuote = await getBuyQuote(tokenAmount, state.inputToken);
+
+    if (!tokenAmount || !buyQuote) {
+      console.error("Couldn't get buy quote");
       return;
-    } else {
-      const tokenAmount = getBigNumberFromString(state.inputValue);
+    }
 
-      const buyQuote = await getBuyQuote(tokenAmount, state.inputToken);
+    const minAmountOut = calculateMinAmountOut(buyQuote, state.slippageTolerance);
 
-      if (!tokenAmount || !buyQuote) {
-        console.error("Couldn't get buy quote");
-        return;
-      }
+    const txReceipt = await buy(
+      tokenAmount,
+      minAmountOut,
+      state.inputToken,
+      state.deadlineMinutes,
+      state.slippageTolerance
+    );
 
-      const minAmountOut = calculateMinAmountOut(buyQuote, state.slippageTolerance);
-
-      const txReceipt = await buy(tokenAmount, minAmountOut, state.inputToken, state.deadlineMinutes);
-
-      if (txReceipt) {
-        await updateBalance();
-        await updateTemplePrice();
-        dispatch({
-          type: 'txSuccess',
-        });
-      }
+    if (txReceipt) {
+      await updateBalance();
+      await updateTemplePrice();
+      dispatch({
+        type: 'txSuccess',
+      });
     }
   };
 
   const handleSell = async () => {
-    if (!isTokenFraxOrFei(state.outputToken)) {
-      console.error('Invalid output token');
-    } else {
-      const templeAmount = getBigNumberFromString(state.inputValue);
-      const sellQuote = await getSellQuote(templeAmount);
+    const templeAmount = getBigNumberFromString(state.inputValue);
+    const sellQuote = await getSellQuote(templeAmount);
 
-      if (!templeAmount || !sellQuote) {
-        console.error("Couldn't get sell quote");
-        return;
-      }
+    if (!templeAmount || !sellQuote) {
+      console.error("Couldn't get sell quote");
+      return;
+    }
 
-      const minAmountOut = calculateMinAmountOut(sellQuote.amountOut, state.slippageTolerance);
+    const minAmountOut = calculateMinAmountOut(sellQuote.amountOut, state.slippageTolerance);
 
-      const txReceipt = await sell(
-        templeAmount,
-        minAmountOut,
-        state.outputToken,
-        sellQuote.priceBelowIV,
-        state.deadlineMinutes
-      );
+    const txReceipt = await sell(
+      templeAmount,
+      minAmountOut,
+      state.outputToken,
+      sellQuote.priceBelowIV,
+      state.deadlineMinutes,
+      state.slippageTolerance
+    );
 
-      if (txReceipt) {
-        await updateBalance();
-        await updateTemplePrice();
-        dispatch({
-          type: 'txSuccess',
-        });
-      }
+    if (txReceipt) {
+      await updateBalance();
+      await updateTemplePrice();
+      dispatch({
+        type: 'txSuccess',
+      });
     }
   };
 
@@ -229,27 +226,26 @@ export function useSwapController() {
   const fetchQuote = async (value: BigNumber): Promise<BigNumber> => {
     let quote = value;
 
-    const quote1inch = await get1inchQuote(value, state.inputToken, state.outputToken);
-    // debugger;
-    return quote1inch.toTokenAmount;
+    const isFraxOrFei = isTokenFraxOrFei(state.inputToken);
+    if (isFraxOrFei) {
+      if (state.mode === SwapMode.Buy) {
+        const buyQuote = await getBuyQuote(value, state.inputToken);
+        quote = buyQuote ?? ZERO;
+      } else if (state.mode === SwapMode.Sell) {
+        const sellQuote = await getSellQuote(value, state.outputToken);
+        quote = sellQuote ? sellQuote.amountOut : ZERO;
+      }
+    } else {
+      const quote1inch = await get1inchQuote(value, state.inputToken, state.outputToken);
+      if (quote1inch) quote = quote1inch.toTokenAmount ?? constants.Zero;
+    }
 
-    // if (state.mode === SwapMode.Buy && isTokenFraxOrFei(state.inputToken)) {
-    //   const buyQuote = await getBuyQuote(value, state.inputToken);
-    //   quote = buyQuote ?? ZERO;
-    // }
+    if (!quote) {
+      console.error("couldn't fetch quote");
+      return ZERO;
+    }
 
-    // if (state.mode === SwapMode.Sell && isTokenFraxOrFei(state.outputToken)) {
-    //   const sellQuote = await getSellQuote(value, state.outputToken);
-
-    //   quote = sellQuote ? sellQuote.amountOut : ZERO;
-    // }
-
-    // if (!quote) {
-    //   console.error("couldn't fetch quote");
-    //   return ZERO;
-    // }
-
-    // return quote;
+    return quote;
   };
 
   return {

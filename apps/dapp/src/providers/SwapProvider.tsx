@@ -1,5 +1,6 @@
 import { useState, useContext, createContext, PropsWithChildren } from 'react';
-import { BigNumber, constants, Signer, utils } from 'ethers';
+import { BigNumber, Signer, utils } from 'ethers';
+import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import axios from 'axios';
 
 import { useWallet } from 'providers/WalletProvider';
@@ -22,6 +23,7 @@ import env from 'constants/env';
 import { AnalyticsEvent } from 'constants/events';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { formatBigNumber } from 'components/Vault/utils';
+import { Tokens } from 'constants/env/types';
 
 const INITIAL_STATE: SwapService = {
   templePrice: 0,
@@ -47,66 +49,58 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const { wallet, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
 
-  const approve1inch = async (inToken: TICKER_SYMBOL, signer: Signer) => {
-    if (!wallet || !signer) return;
-    const address1inch = '0x11111112542d85b3ef69ae05771c2dccff4faa26';
-    const inTokenContract = new ERC20__factory(signer).attach(inToken);
-    const approvedAmount = await inTokenContract.allowance(wallet, address1inch);
-    if (approvedAmount.eq(constants.Zero)) {
-      try {
-        const approveTx = await inTokenContract.approve(address1inch, constants.MaxUint256);
-        const wait = await approveTx.wait();
-      } catch (err) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  const get1inchApi = async (queryPath: string) => {
-    return await axios.get(`https://api.1inch.exchange/v5.0/1` + queryPath);
+  const get1inchApi = async (
+    queryPath: 'quote' | 'swap',
+    params:
+      | { amount: BigNumber; fromTokenAddress: string; toTokenAddress: string }
+      | { amount: BigNumber; fromTokenAddress: string; toTokenAddress: string; from: string; slippage: number }
+  ) => {
+    const queryFormat = Object.entries(params)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('&');
+    return await axios.get(`https://api.1inch.exchange/v5.0/1` + `/${queryPath}?${queryFormat}`);
   };
 
   const get1inchQuote = async (tokenAmount: BigNumber, tokenIn: TICKER_SYMBOL, tokenOut: TICKER_SYMBOL) => {
-    // @ts-ignore
-    const tokenInInfo = env.tokens[tokenIn.replace('$', '').toLowerCase()];
-    // @ts-ignore
-    const tokenOutInfo = env.tokens[tokenOut.replace('$', '').toLowerCase()];
-
+    const tokenInFormat = tokenIn.toLowerCase().replace('$', '') as keyof Tokens;
+    const tokenInInfo = env.tokens[tokenInFormat];
+    const tokenOutFormat = tokenOut.toLowerCase().replace('$', '') as keyof Tokens;
+    const tokenOutInfo = env.tokens[tokenOutFormat];
     const amountFormat = utils.formatUnits(tokenAmount); //, tokenInInfo.decimals);
     const decimalFormat = utils.parseUnits(amountFormat, tokenInInfo.decimals);
-    // !FIXME: decimals version will need later, but currently everything assumes 18 dec so use above since the input needs conversion from wei
-    // const amountFormat = utils.formatUnits(tokenAmount, tokenInInfo.decimals);
-    // const decimalFormat = utils.parseUnits(amountFormat, tokenInInfo.decimals);
-    debugger;
-    const queryPath =
-      '/quote?' +
-      [
-        `amount=${decimalFormat}`,
-        `fromTokenAddress=${tokenInInfo.address}`,
-        `toTokenAddress=${tokenOutInfo.address}`,
-      ].join('&');
-    const { data } = await get1inchApi(queryPath);
-    return data;
+    const { data } = await get1inchApi('quote', {
+      amount: decimalFormat,
+      fromTokenAddress: tokenInInfo.address,
+      toTokenAddress: tokenOutInfo.address,
+    });
+    // reformats as a price in wei for formatting
+    const weiFormat = utils.formatUnits(data.toTokenAmount, tokenOutInfo.decimals);
+    const weiBigNumber = utils.parseEther(weiFormat);
+    return { ...data, toTokenAmount: weiBigNumber.toString() };
   };
 
-  const get1inchSwap = async (tokenAmount: BigNumber, tokenIn: TICKER_SYMBOL, tokenOut: TICKER_SYMBOL) => {
+  const get1inchSwap = async (
+    tokenAmount: BigNumber,
+    tokenIn: TICKER_SYMBOL,
+    tokenOut: TICKER_SYMBOL,
+    slippage: number
+  ) => {
     if (!wallet || !signer) return;
-    // @ts-ignore
-    const tokenInInfo = env.tokens[tokenIn.replace('$', '').toLowerCase()];
-    const bigAmount: BigNumber = utils.parseUnits(tokenAmount.toString(), tokenInInfo.decimals);
-    const queryPath =
-      '/swap?' +
-      [
-        'slippage=1',
-        `amount=${tokenAmount}`,
-        `fromTokenAddress=${tokenIn}`,
-        `toTokenAddress=${tokenOut}`,
-        `from=${wallet}`,
-      ].join('&');
-    const { data } = await get1inchApi(queryPath);
+    const tokenInFormat = tokenIn.toLowerCase().replace('$', '') as keyof Tokens;
+    const tokenInInfo = env.tokens[tokenInFormat];
+    const bigAmount = utils.parseUnits(tokenAmount.toString(), tokenInInfo.decimals);
+    const tokenContract = ERC20__factory.connect(tokenInInfo.address, signer);
+
+    await ensureAllowance(tokenIn, tokenContract, env.contracts.swap1InchRouter, bigAmount);
+    const { data } = await get1inchApi('swap', {
+      amount: tokenAmount,
+      slippage: slippage,
+      fromTokenAddress: tokenIn,
+      toTokenAddress: tokenOut,
+      from: wallet,
+    });
     const swapTx = await signer.sendTransaction(data.tx);
-    const conf = await swapTx.wait();
+    return swapTx;
   };
 
   const getTemplePrice = async (walletAddress: string, signerState: Signer, pairAddress: string) => {
@@ -134,6 +128,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
     const pair = token === TICKER_SYMBOL.FEI ? env.contracts.templeV2FeiPair : env.contracts.templeV2FraxPair;
     const price = await getTemplePrice(wallet, signer, pair);
+
     setTemplePrice(price);
   };
 
@@ -160,8 +155,9 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const buy = async (
     amountIn: BigNumber,
     minAmountOutTemple: BigNumber,
-    token: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI = TICKER_SYMBOL.FRAX,
-    deadlineInMinutes = 20
+    token: TICKER_SYMBOL,
+    deadlineInMinutes = 20,
+    slippage?: number
   ) => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
@@ -175,39 +171,35 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     setError(null);
 
     const tokenAddress = token === TICKER_SYMBOL.FEI ? env.contracts.fei : env.contracts.frax;
-    const ammRouter = new TempleStableAMMRouter__factory(signer).attach(env.contracts.templeV2Router);
     const tokenContract = new ERC20__factory(signer).attach(tokenAddress);
-
     const balance = await tokenContract.balanceOf(wallet);
     const verifiedAmountIn = amountIn.lt(balance) ? amountIn : balance;
 
-    const deadlineInSeconds = deadlineInMinutes * 60;
-    const deadline = formatNumberFixedDecimals(Date.now() / 1000 + deadlineInSeconds, 0);
-
-    await ensureAllowance(token, tokenContract, env.contracts.templeV2Router, amountIn);
-
+    let receipt: TransactionReceipt | undefined;
     try {
-      const buyTXN = await ammRouter.swapExactStableForTemple(
-        verifiedAmountIn,
-        minAmountOutTemple,
-        tokenAddress,
-        wallet,
-        deadline,
-        {
-          gasLimit: env.gas?.swapFraxForTemple || 300000,
-        }
-      );
-      const txReceipt = await buyTXN.wait();
+      const nonFrax = [TICKER_SYMBOL.USDC, TICKER_SYMBOL.USDT, TICKER_SYMBOL.DAI];
+      if (nonFrax.includes(token) && slippage) {
+        // has to use balancer via 1inch
+        const swap = await get1inchSwap(verifiedAmountIn, token, TICKER_SYMBOL.TEMPLE_TOKEN, slippage);
+        receipt = await swap?.wait();
+      } else {
+        await ensureAllowance(token, tokenContract, env.contracts.templeV2Router, amountIn);
 
-      AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, { token, amount: formatBigNumber(verifiedAmountIn) });
-
-      // Show feedback to user
-      openNotification({
-        title: `Sacrificed ${token}`,
-        hash: buyTXN.hash,
-      });
-
-      return txReceipt;
+        const deadlineInSeconds = deadlineInMinutes * 60;
+        const deadline = formatNumberFixedDecimals(Date.now() / 1000 + deadlineInSeconds, 0);
+        const ammRouter = new TempleStableAMMRouter__factory(signer).attach(env.contracts.templeV2Router);
+        const buyTXN = await ammRouter.swapExactStableForTemple(
+          verifiedAmountIn,
+          minAmountOutTemple,
+          tokenAddress,
+          wallet,
+          deadline,
+          {
+            gasLimit: env.gas?.swapFraxForTemple || 300000,
+          }
+        );
+        receipt = await buyTXN.wait();
+      }
     } catch (e) {
       // 4001 is user manually cancelling transaction,
       // so we don't want to return it as an error
@@ -215,8 +207,15 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         console.error("Couldn't complete buy transaction", e);
         setError(e as Error);
       }
-      return;
     }
+    if (!receipt) return;
+
+    AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, { token, amount: formatBigNumber(verifiedAmountIn) });
+    openNotification({
+      title: `Sacrificed ${token}`,
+      hash: receipt.transactionHash,
+    });
+    return receipt;
   };
 
   /**
@@ -228,9 +227,10 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const sell = async (
     amountInTemple: BigNumber,
     minAmountOut: BigNumber,
-    token: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI = TICKER_SYMBOL.FRAX,
+    token: TICKER_SYMBOL,
     isIvSwap = false,
-    deadlineInMinutes = 20
+    deadlineInMinutes = 20,
+    slippage?: number
   ) => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
@@ -243,49 +243,42 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
     setError(null);
 
-    let tokenAddress = token === TICKER_SYMBOL.FEI ? env.contracts.fei : env.contracts.frax;
-    const ammRouter = new TempleStableAMMRouter__factory(signer).attach(env.contracts.templeV2Router);
     const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
 
+    let tokenAddress = token === TICKER_SYMBOL.FEI ? env.contracts.fei : env.contracts.frax;
     if (isIvSwap) {
       tokenAddress = env.contracts.fei;
     }
-
-    const deadlineInSeconds = deadlineInMinutes * 60;
-
-    await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, templeContract, env.contracts.templeV2Router, amountInTemple);
-
+    const tokenContract = new ERC20__factory(signer).attach(tokenAddress);
     const balance = await templeContract.balanceOf(wallet);
     const verifiedAmountInTemple = amountInTemple.lt(balance) ? amountInTemple : balance;
 
-    const deadline = formatNumberFixedDecimals(Date.now() / 1000 + deadlineInSeconds, 0);
-
+    let receipt: TransactionReceipt | undefined;
     try {
-      const sellTx = await ammRouter.swapExactTempleForStable(
-        verifiedAmountInTemple,
-        minAmountOut,
-        tokenAddress,
-        wallet,
-        deadline,
-        {
-          gasLimit: env.gas?.swapTempleForFrax || 195000,
-        }
-      );
+      const nonFrax = [TICKER_SYMBOL.USDC, TICKER_SYMBOL.USDT, TICKER_SYMBOL.DAI];
+      if (nonFrax.includes(token) && slippage) {
+        // has to use balancer via 1inch
+        const swap = await get1inchSwap(verifiedAmountInTemple, TICKER_SYMBOL.TEMPLE_TOKEN, token, slippage);
+        receipt = await swap?.wait();
+      } else {
+        await ensureAllowance(TICKER_SYMBOL.TEMPLE_TOKEN, templeContract, env.contracts.templeV2Router, amountInTemple);
 
-      const txReceipt = await sellTx.wait();
+        const deadlineInSeconds = deadlineInMinutes * 60;
+        const deadline = formatNumberFixedDecimals(Date.now() / 1000 + deadlineInSeconds, 0);
+        const ammRouter = new TempleStableAMMRouter__factory(signer).attach(env.contracts.templeV2Router);
+        const sellTx = await ammRouter.swapExactTempleForStable(
+          verifiedAmountInTemple,
+          minAmountOut,
+          tokenAddress,
+          wallet,
+          deadline,
+          {
+            gasLimit: env.gas?.swapTempleForFrax || 195000,
+          }
+        );
 
-      AnalyticsService.captureEvent(AnalyticsEvent.Trade.Sell, {
-        token,
-        amount: formatBigNumber(verifiedAmountInTemple),
-      });
-
-      // Show feedback to user
-      openNotification({
-        title: `${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
-        hash: sellTx.hash,
-      });
-
-      return txReceipt;
+        receipt = await sellTx.wait();
+      }
     } catch (e) {
       // 4001 is user manually cancelling transaction,
       // so we don't want to return it as an error
@@ -293,19 +286,22 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         console.error("Couldn't complete sell transaction", e);
         setError(e as Error);
       }
-      return;
     }
+
+    if (!receipt) return;
+
+    AnalyticsService.captureEvent(AnalyticsEvent.Trade.Sell, {
+      token,
+      amount: formatBigNumber(verifiedAmountInTemple),
+    });
+    openNotification({
+      title: `${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
+      hash: receipt.transactionHash,
+    });
+    return receipt;
   };
 
-  const getBuyQuote = async (
-    amountIn: BigNumber,
-    token:
-      | TICKER_SYMBOL.FRAX
-      | TICKER_SYMBOL.FEI
-      | TICKER_SYMBOL.USDC
-      | TICKER_SYMBOL.USDT
-      | TICKER_SYMBOL.DAI = TICKER_SYMBOL.FRAX
-  ): Promise<BigNumber> => {
+  const getBuyQuote = async (amountIn: BigNumber, token: TICKER_SYMBOL): Promise<BigNumber> => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
 
@@ -328,10 +324,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     return amountOut;
   };
 
-  const getSellQuote = async (
-    amountToSell: BigNumber,
-    token: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI = TICKER_SYMBOL.FRAX
-  ) => {
+  const getSellQuote = async (amountToSell: BigNumber, token: TICKER_SYMBOL) => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
       setError({
