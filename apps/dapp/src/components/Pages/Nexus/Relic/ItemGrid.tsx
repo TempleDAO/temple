@@ -34,6 +34,13 @@ const ItemGrid: FC<{
     <ItemsContainer ref={containerRef}>
       {itemIndexes.map((_, idx) => {
         const item = items[idx];
+
+        let shard;
+
+        if (item) {
+          shard = env.nexus.shardMetadata[item.id as keyof typeof env.nexus.shardMetadata];
+        }
+
         return (
           <>
             {item == undefined ? (
@@ -41,16 +48,29 @@ const ItemGrid: FC<{
                 <EmptyCell />
               </ItemWrapper>
             ) : (
-              <NexusTooltip shard={env.nexus.shardMetadata[item.id as keyof typeof env.nexus.shardMetadata]}>
-                <ItemWrapper key={idx} columnCount={columnCount}>
-                  <ItemButton
-                    key={item.id}
-                    item={item}
-                    disabled={props.disabled || item.count === 0}
-                    onClick={props.onClick}
-                  />
-                </ItemWrapper>
-              </NexusTooltip>
+              <>
+                {shard !== undefined ? (
+                  <NexusTooltip shard={shard}>
+                    <ItemWrapper key={idx} columnCount={columnCount}>
+                      <ItemButton
+                        key={item.id}
+                        item={item}
+                        disabled={props.disabled || item.count === 0}
+                        onClick={props.onClick}
+                      />
+                    </ItemWrapper>
+                  </NexusTooltip>
+                ) : (
+                  <ItemWrapper key={idx} columnCount={columnCount}>
+                    <ItemButton
+                      key={item.id}
+                      item={item}
+                      disabled={props.disabled || item.count === 0}
+                      onClick={props.onClick}
+                    />
+                  </ItemWrapper>
+                )}
+              </>
             )}
           </>
         );

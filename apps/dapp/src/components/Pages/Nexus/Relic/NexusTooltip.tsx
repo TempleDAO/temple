@@ -15,7 +15,7 @@ import {
 } from '@floating-ui/react-dom-interactions';
 import { mergeRefs } from 'react-merge-refs';
 import styled from 'styled-components';
-import { Shard } from '../types';
+import { RARITY_TYPE, Shard } from '../types';
 
 interface Props {
   shard: Shard;
@@ -47,6 +47,15 @@ export const NexusTooltip = ({ children, shard, placement = 'top-start' }: Props
 
   // Preserve the consumer's ref
   const ref = useMemo(() => mergeRefs([reference, (children as any).ref]), [reference, children]);
+
+  const getRarityColor = (rarity: RARITY_TYPE) => {
+    switch (rarity) {
+      case RARITY_TYPE.EPIC:
+        return '#7e3289';
+      default:
+        return '#7e3289';
+    }
+  };
 
   return (
     <>
@@ -80,13 +89,29 @@ export const NexusTooltip = ({ children, shard, placement = 'top-start' }: Props
             </RowText>
           </CellRow>
           <CellRow>
-            <RowText align={'left'}>EPIC</RowText>
+            <Circle color={getRarityColor(shard.rarity)} />
+            <RarityText color={getRarityColor(shard.rarity)}>{RARITY_TYPE[shard.rarity]}</RarityText>
           </CellRow>
         </TooltipContainer>
       )}
     </>
   );
 };
+
+const RarityText = styled.span<{ color?: string }>`
+  font-weight: bold;
+  text-align: left;
+  flex: 1;
+  color: ${(props) => (props.color ? props.color : props.theme.palette.brand)};
+`;
+
+const Circle = styled.div<{ color?: string }>`
+  width: 20px;
+  height: 20px;
+  background-color: ${(props) => (props.color ? props.color : 'green')};
+  border-radius: 50%;
+  margin-right: 10px;
+`;
 
 const OriginLink = styled.a`
   color: #2f6db3;
