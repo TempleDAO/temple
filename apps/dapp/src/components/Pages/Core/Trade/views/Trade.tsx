@@ -5,7 +5,7 @@ import { TransactionSettingsModal } from 'components/TransactionSettingsModal/Tr
 
 import { SwapMode } from '../types';
 import { useSwapController } from '../use-swap-controller';
-import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
+import { getBigNumberFromString, formatBigNumber, getTokenInfo } from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
 
 import {
@@ -47,6 +47,13 @@ export const Trade = () => {
     bigInputValue.gt(state.inputTokenBalance) ||
     state.inputValue === '';
 
+  const inputHint = `Balance: ${formatNumber(
+    formatBigNumber(state.inputTokenBalance, getTokenInfo(state.inputToken).decimals)
+  )}`;
+  const outputHint = `Balance: ${formatNumber(
+    formatBigNumber(state.outputTokenBalance, getTokenInfo(state.outputToken).decimals)
+  )}`;
+
   return (
     <>
       <TransactionSettingsModal
@@ -69,13 +76,13 @@ export const Trade = () => {
             placeholder="0"
             onHintClick={handleHintClick}
             min={0}
-            hint={`Balance: ${formatNumber(formatBigNumber(state.inputTokenBalance))}`}
+            hint={inputHint}
           />
           <Spacer />
           <Input
             crypto={outputCryptoConfig}
-            value={formatNumber(formatBigNumber(state.quoteValue))}
-            hint={`Balance: ${formatNumber(formatBigNumber(state.outputTokenBalance))}`}
+            value={formatNumber(formatBigNumber(state.quoteValue, getTokenInfo(state.outputToken).decimals))}
+            hint={outputHint}
             disabled
           />
           <InvertButton onClick={handleChangeMode} />

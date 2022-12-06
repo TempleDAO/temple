@@ -9,7 +9,7 @@ import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop } from 'utils/helpers';
-import { fromAtto, ZERO } from 'utils/bigNumber';
+import { fromAtto } from 'utils/bigNumber';
 
 import {
   ERC20__factory,
@@ -21,8 +21,7 @@ import {
 import env from 'constants/env';
 import { AnalyticsEvent } from 'constants/events';
 import { AnalyticsService } from 'services/AnalyticsService';
-import { formatBigNumber } from 'components/Vault/utils';
-import { Tokens } from 'constants/env/types';
+import { formatBigNumber, getTokenInfo } from 'components/Vault/utils';
 
 const INITIAL_STATE: SwapService = {
   templePrice: 0,
@@ -34,7 +33,6 @@ const INITIAL_STATE: SwapService = {
   updateTemplePrice: asyncNoop,
   updateIv: asyncNoop,
   error: null,
-  get1inchQuote: asyncNoop,
   get1inchSwap: asyncNoop,
 };
 
@@ -52,7 +50,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     queryPath: 'quote' | 'swap',
     params:
       | { amount: BigNumber; fromTokenAddress: string; toTokenAddress: string }
-      | { amount: BigNumber; fromTokenAddress: string; toTokenAddress: string; from: string; slippage: number }
+      | { amount: BigNumber; fromTokenAddress: string; toTokenAddress: string; fromAddress: string; slippage: number }
   ) => {
     const queryFormat = Object.entries(params)
       .map(([key, value]) => `${key}=${value}`)
@@ -66,20 +64,17 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     tokenIn: TICKER_SYMBOL,
     tokenOut: TICKER_SYMBOL
   ): Promise<{ toTokenAmount: BigNumber }> => {
-    const tokenInFormat = tokenIn.toLowerCase().replace('$', '') as keyof Tokens;
-    const tokenInInfo = env.tokens[tokenInFormat];
-    const tokenOutFormat = tokenOut.toLowerCase().replace('$', '') as keyof Tokens;
-    const tokenOutInfo = env.tokens[tokenOutFormat];
-    const amountFormat = utils.formatUnits(tokenAmount); //, tokenInInfo.decimals);
+    const tokenInInfo = getTokenInfo(tokenIn);
+    const tokenOutInfo = getTokenInfo(tokenOut);
+    const amountFormat = utils.formatUnits(tokenAmount, tokenInInfo.decimals);
     const decimalFormat = utils.parseUnits(amountFormat, tokenInInfo.decimals);
     const data = await get1inchApi('quote', {
       amount: decimalFormat,
       fromTokenAddress: tokenInInfo.address,
       toTokenAddress: tokenOutInfo.address,
     });
-    // reformats as a price in wei for formatting
     const weiFormat = utils.formatUnits(data.toTokenAmount, tokenOutInfo.decimals);
-    const weiBigNumber = utils.parseEther(weiFormat);
+    const weiBigNumber = utils.parseUnits(weiFormat, tokenOutInfo.decimals);
     return { toTokenAmount: weiBigNumber };
   };
 
@@ -90,8 +85,8 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     slippage: number
   ) => {
     if (!wallet || !signer) return;
-    const tokenInFormat = tokenIn.toLowerCase().replace('$', '') as keyof Tokens;
-    const tokenInInfo = env.tokens[tokenInFormat];
+    const tokenInInfo = getTokenInfo(tokenIn);
+    const tokenOutInfo = getTokenInfo(tokenOut);
     const bigAmount = utils.parseUnits(tokenAmount.toString(), tokenInInfo.decimals);
     const tokenContract = ERC20__factory.connect(tokenInInfo.address, signer);
 
@@ -99,10 +94,11 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     const data = await get1inchApi('swap', {
       amount: tokenAmount,
       slippage: slippage,
-      fromTokenAddress: tokenIn,
-      toTokenAddress: tokenOut,
-      from: wallet,
+      fromTokenAddress: tokenInInfo.address,
+      toTokenAddress: tokenOutInfo.address,
+      fromAddress: wallet,
     });
+    delete data.tx.gas;
     const swapTx = await signer.sendTransaction(data.tx);
     return swapTx;
   };
@@ -381,7 +377,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         updateTemplePrice,
         updateIv,
         error,
-        get1inchQuote,
         get1inchSwap,
       }}
     >

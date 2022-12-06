@@ -9,7 +9,7 @@ import { useSwap } from 'providers/SwapProvider';
 
 import { ZERO } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
+import { getBigNumberFromString, formatBigNumber, getTokenInfo } from 'components/Vault/utils';
 
 import { INITIAL_STATE, TOKENS_BY_MODE } from './constants';
 import { SwapMode } from './types';
@@ -20,7 +20,7 @@ export function useSwapController() {
   const { wallet } = useWallet();
   const [state, dispatch] = useReducer(swapReducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
-  const { getBuyQuote, getSellQuote, updateTemplePrice, buy, sell, updateIv, get1inchQuote, error } = useSwap();
+  const { getBuyQuote, getSellQuote, updateTemplePrice, buy, sell, updateIv, error } = useSwap();
 
   useEffect(() => {
     const onMount = async () => {
@@ -93,7 +93,7 @@ export function useSwapController() {
 
   // Handles user input
   const handleInputChange = async (value: string) => {
-    const bigValue = getBigNumberFromString(value || '0');
+    const bigValue = getBigNumberFromString(value || '0', getTokenInfo(state.inputToken).decimals);
     const isZero = bigValue.eq(ZERO);
     dispatch({ type: 'changeInputValue', value: isZero ? '' : value });
 
@@ -117,7 +117,9 @@ export function useSwapController() {
   };
 
   const handleHintClick = () => {
-    const amount = state.inputTokenBalance.eq(ZERO) ? '' : formatBigNumber(state.inputTokenBalance);
+    const amount = state.inputTokenBalance.eq(ZERO)
+      ? ''
+      : formatBigNumber(state.inputTokenBalance, getTokenInfo(state.inputToken).decimals);
     handleInputChange(amount);
   };
 
@@ -147,7 +149,7 @@ export function useSwapController() {
   };
 
   const handleBuy = async () => {
-    const tokenAmount = getBigNumberFromString(state.inputValue);
+    const tokenAmount = getBigNumberFromString(state.inputValue, getTokenInfo(state.inputToken).decimals);
     const buyQuote = await getBuyQuote(tokenAmount, state.inputToken);
 
     if (!tokenAmount || !buyQuote) {
@@ -176,7 +178,7 @@ export function useSwapController() {
   };
 
   const handleSell = async () => {
-    const templeAmount = getBigNumberFromString(state.inputValue);
+    const templeAmount = getBigNumberFromString(state.inputValue, getTokenInfo(state.inputToken).decimals);
     const sellQuote = await getSellQuote(templeAmount, state.outputToken);
 
     if (!templeAmount || !sellQuote) {

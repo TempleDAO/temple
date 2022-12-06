@@ -121,12 +121,6 @@ export interface SwapService {
 
   getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL): Promise<{ amountOut: BigNumber; useApi: boolean } | void>;
 
-  get1inchQuote(
-    tokenAmount: BigNumber,
-    tokenIn: TICKER_SYMBOL,
-    tokenOut: TICKER_SYMBOL
-  ): Promise<{ toTokenAmount: BigNumber } | void>;
-
   get1inchSwap(
     tokenAmount: BigNumber,
     tokenIn: TICKER_SYMBOL,
