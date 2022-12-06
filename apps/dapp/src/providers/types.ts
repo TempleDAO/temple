@@ -100,7 +100,8 @@ export interface SwapService {
     minAmountOutTemple: BigNumber,
     token?: TICKER_SYMBOL,
     deadlineInMinutes?: number,
-    slippage?: number
+    slippage?: number,
+    apiSwap?: boolean
   ): Promise<ContractReceipt | void>;
 
   sell(
@@ -109,15 +110,16 @@ export interface SwapService {
     token?: TICKER_SYMBOL,
     isIvSwap?: boolean,
     deadlineInMinutes?: number,
-    slippage?: number
+    slippage?: number,
+    apiSwap?: boolean
   ): Promise<ContractReceipt | void>;
 
   getSellQuote(
     amountToSell: BigNumber,
     token?: TICKER_SYMBOL
-  ): Promise<{ amountOut: BigNumber; priceBelowIV: boolean } | void>;
+  ): Promise<{ amountOut: BigNumber; priceBelowIV: boolean; useApi: boolean } | void>;
 
-  getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL): Promise<BigNumber | void>;
+  getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL): Promise<{ amountOut: BigNumber; useApi: boolean } | void>;
 
   get1inchQuote(
     tokenAmount: BigNumber,

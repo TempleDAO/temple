@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react';
-import { BigNumber, constants } from 'ethers';
+import { BigNumber } from 'ethers';
 
 import { Option } from 'components/InputSelect/InputSelect';
 import { TransactionSettings } from 'components/TransactionSettingsModal/TransactionSettingsModal';
@@ -148,7 +148,6 @@ export function useSwapController() {
 
   const handleBuy = async () => {
     const tokenAmount = getBigNumberFromString(state.inputValue);
-
     const buyQuote = await getBuyQuote(tokenAmount, state.inputToken);
 
     if (!tokenAmount || !buyQuote) {
@@ -156,14 +155,15 @@ export function useSwapController() {
       return;
     }
 
-    const minAmountOut = calculateMinAmountOut(buyQuote, state.slippageTolerance);
+    const minAmountOut = calculateMinAmountOut(buyQuote.amountOut, state.slippageTolerance);
 
     const txReceipt = await buy(
       tokenAmount,
       minAmountOut,
       state.inputToken,
       state.deadlineMinutes,
-      state.slippageTolerance
+      state.slippageTolerance,
+      buyQuote.useApi
     );
 
     if (txReceipt) {
@@ -177,7 +177,7 @@ export function useSwapController() {
 
   const handleSell = async () => {
     const templeAmount = getBigNumberFromString(state.inputValue);
-    const sellQuote = await getSellQuote(templeAmount);
+    const sellQuote = await getSellQuote(templeAmount, state.outputToken);
 
     if (!templeAmount || !sellQuote) {
       console.error("Couldn't get sell quote");
@@ -192,7 +192,8 @@ export function useSwapController() {
       state.outputToken,
       sellQuote.priceBelowIV,
       state.deadlineMinutes,
-      state.slippageTolerance
+      state.slippageTolerance,
+      sellQuote.useApi
     );
 
     if (txReceipt) {
@@ -226,18 +227,12 @@ export function useSwapController() {
   const fetchQuote = async (value: BigNumber): Promise<BigNumber> => {
     let quote = value;
 
-    const isFraxOrFei = isTokenFraxOrFei(state.inputToken);
-    if (isFraxOrFei) {
-      if (state.mode === SwapMode.Buy) {
-        const buyQuote = await getBuyQuote(value, state.inputToken);
-        quote = buyQuote ?? ZERO;
-      } else if (state.mode === SwapMode.Sell) {
-        const sellQuote = await getSellQuote(value, state.outputToken);
-        quote = sellQuote ? sellQuote.amountOut : ZERO;
-      }
-    } else {
-      const quote1inch = await get1inchQuote(value, state.inputToken, state.outputToken);
-      if (quote1inch) quote = quote1inch.toTokenAmount ?? constants.Zero;
+    if (state.mode === SwapMode.Buy) {
+      const buyQuote = await getBuyQuote(value, state.inputToken);
+      quote = buyQuote?.amountOut ?? ZERO;
+    } else if (state.mode === SwapMode.Sell) {
+      const sellQuote = await getSellQuote(value, state.outputToken);
+      quote = sellQuote ? sellQuote.amountOut : ZERO;
     }
 
     if (!quote) {
