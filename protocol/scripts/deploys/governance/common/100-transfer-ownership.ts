@@ -22,6 +22,17 @@ async function main() {
     const elderElection = ElderElection__factory.connect(DEPLOYED.ELDER_ELECTION, owner);
     const templarMetadata = TemplarMetadata__factory.connect(DEPLOYED.TEMPLAR_METADATA, owner);
 
+    // Assign the discord bot contract it's necessary roles. Do this before
+    // we revoke access to role admin below.
+    if (DEPLOYED.DISCORD_BOT) {
+      const canAssignRole = templarNft.CAN_ASSIGN();
+      await mine(templarNft.grantRole(canAssignRole, DEPLOYED.DISCORD_BOT));
+      const canUpdateRole = templarMetadata.CAN_UPDATE();
+      await mine(templarMetadata.grantRole(canUpdateRole, DEPLOYED.DISCORD_BOT));
+      const canNominate = elderElection.CAN_NOMINATE();
+      await mine(elderElection.grantRole(canNominate, DEPLOYED.DISCORD_BOT));
+    }
+
     // Assign the msig the owner/admin role
     // Then revoke from the existing owner.
     {
