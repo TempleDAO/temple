@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers';
 import { ethers } from 'hardhat';
-import { TemplarMetadata__factory } from '../../../../typechain';
+import { TemplarMetadata, TemplarMetadata__factory } from '../../../../typechain';
 import {
   getDeployedContracts,
 } from '../contract-addresses';
@@ -15,10 +15,13 @@ async function main() {
   const DEPLOYED = getDeployedContracts();
 
   const factory = new TemplarMetadata__factory(owner);
-  await deployAndMine(
+  const templarMetadata = await deployAndMine<TemplarMetadata,any>(
     'TemplarMetadata', factory, factory.deploy,
     DEPLOYED.TEMPLAR_NFT,
   );
+
+  console.log("templar nft", DEPLOYED.TEMPLAR_NFT);
+  console.log("templarMetadata.templars", await templarMetadata.templars());
 }
 
 // We recommend this pattern to be able to use async/await everywhere
