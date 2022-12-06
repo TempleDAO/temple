@@ -6,6 +6,7 @@ import {
   ContractTransaction,
   Signer,
 } from 'ethers';
+import axios from 'axios';
 
 export interface DeployedContracts {
   // From environment
@@ -268,6 +269,26 @@ export async function deployAndMine<
     `yarn hardhat verify --network ${network.name} ${contract.address} ${renderedArgs}`
   );
   console.log('********************\n');
+
+  // Verify the contract on Etherscan
+  const response = await axios.post(
+    `https://api.etherscan.io/api?module=contract&action=verifysourcecode&apikey=${process.env.ETHERSCAN_API_KEY}`,
+    {
+      contractaddress: contract.address,
+      sourceCode: (contract as any).deployedBytecode,
+      contractname: name,
+      compilerversion: 'v0.7.0+commit.9e61f92b',
+      optimizationUsed: 1,
+      runs: 200,
+      constructorArguements: renderedArgs,
+    }
+  );
+
+  if (response.data.status === '1') {
+    console.log(`Successfully verified contract on Etherscan: ${contract.address}`);
+  } else {
+    console.error(`Failed to verify contract on Etherscan: ${response.data.message}`);
+  }
 
   return contract;
 }
