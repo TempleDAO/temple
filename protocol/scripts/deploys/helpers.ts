@@ -270,6 +270,9 @@ export async function deployAndMine<
   );
   console.log('********************\n');
 
+  // Wait for a few blocks to be mined before verifying
+  await contract.deployTransaction.wait(6)
+  
   // Verify the contract on Etherscan
   const response = await axios.post(
     `https://api.etherscan.io/api?module=contract&action=verifysourcecode&apikey=${process.env.ETHERSCAN_API_KEY}`,
