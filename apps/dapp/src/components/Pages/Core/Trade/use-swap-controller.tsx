@@ -157,16 +157,7 @@ export function useSwapController() {
       return;
     }
 
-    const minAmountOut = calculateMinAmountOut(buyQuote.amountOut, state.slippageTolerance);
-
-    const txReceipt = await buy(
-      tokenAmount,
-      minAmountOut,
-      state.inputToken,
-      state.deadlineMinutes,
-      state.slippageTolerance,
-      buyQuote.useApi
-    );
+    const txReceipt = await buy(tokenAmount, state.inputToken, state.slippageTolerance);
 
     if (txReceipt) {
       await updateBalance();
@@ -186,17 +177,7 @@ export function useSwapController() {
       return;
     }
 
-    const minAmountOut = calculateMinAmountOut(sellQuote.amountOut, state.slippageTolerance);
-
-    const txReceipt = await sell(
-      templeAmount,
-      minAmountOut,
-      state.outputToken,
-      sellQuote.priceBelowIV,
-      state.deadlineMinutes,
-      state.slippageTolerance,
-      sellQuote.useApi
-    );
+    const txReceipt = await sell(templeAmount, state.outputToken, state.slippageTolerance);
 
     if (txReceipt) {
       await updateBalance();
@@ -231,10 +212,10 @@ export function useSwapController() {
 
     if (state.mode === SwapMode.Buy) {
       const buyQuote = await getBuyQuote(value, state.inputToken);
-      quote = buyQuote?.amountOut ?? ZERO;
+      quote = buyQuote ?? ZERO;
     } else if (state.mode === SwapMode.Sell) {
       const sellQuote = await getSellQuote(value, state.outputToken);
-      quote = sellQuote ? sellQuote.amountOut : ZERO;
+      quote = sellQuote ?? ZERO;
     }
 
     if (!quote) {
