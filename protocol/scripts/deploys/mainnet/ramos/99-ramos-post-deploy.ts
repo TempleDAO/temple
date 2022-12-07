@@ -1,7 +1,3 @@
-// set amo staking on ramos
-// set operator on ramos
-
-
 import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
 import {
@@ -15,13 +11,6 @@ import {
   ensureExpectedEnvvars,
   mine
 } from "../../helpers";
-
-import amoAddresses from "../../../../test/amo/amo-constants";
-
-
-const { TEMPLE_BB_A_USD_AURA_POOL_ID } = amoAddresses.mainnet.others;
-const { TEMPLE_BB_A_USD_REWARDS } = amoAddresses.mainnet.contracts;
-const { TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN } = amoAddresses.mainnet.tokens;
 
 async function main() {
     ensureExpectedEnvvars();
@@ -44,18 +33,24 @@ async function main() {
 }
 
 async function ramosPostDeploy(ramos: RAMOS, DEPLOYED: DeployedContracts) {
-    // ramos
     await mine(ramos.setPoolHelper(DEPLOYED.RAMOS_POOL_HELPER));
+
     await mine(ramos.transferOwnership(DEPLOYED.MULTISIG));
- }
+}
  
  async function stakingPostDeploy(auraStaking: AuraStaking, DEPLOYED: DeployedContracts) {
     await mine(auraStaking.setOperator(DEPLOYED.RAMOS));
-    await mine(auraStaking.setAuraPoolInfo(TEMPLE_BB_A_USD_AURA_POOL_ID, 
-        TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN, TEMPLE_BB_A_USD_REWARDS));
+    await mine(auraStaking.setAuraPoolInfo(
+        parseInt(DEPLOYED.TEMPLE_BB_A_USD_AURA_POOL_ID), 
+        DEPLOYED.TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN, 
+        DEPLOYED.TEMPLE_BB_A_USD_REWARDS,
+    ));
+
+    // will sit in auraStaking contract until set. leave for multisig to decide
+    // await mine(auraStaking.setRewardsRecipient());
+
     await mine(auraStaking.transferOwnership(DEPLOYED.MULTISIG));
-    // await mine(auraStaking.setRewardsRecipient()); // leave for multisig to decide
- }
+}
  
 
 // We recommend this pattern to be able to use async/await everywhere
