@@ -89,14 +89,27 @@ contract AuraStaking is Ownable {
         emit RecoveredToken(token, to, amount);
     }
     
+    function isAuraShutdown() public view returns (bool) {
+        return booster.isShutdown() || booster.poolInfo(auraPoolInfo.pId).shutdown;
+    }
+
     function depositAndStake(uint256 amount) external onlyOperator {
-        bptToken.safeIncreaseAllowance(address(booster), amount);
-        booster.deposit(auraPoolInfo.pId, amount, true);
+        // Only deposit if the aura pool is open. Otherwise leave the BPT in this contract.
+        if (!isAuraShutdown()) {
+            bptToken.safeIncreaseAllowance(address(booster), amount);
+            booster.deposit(auraPoolInfo.pId, amount, true);
+        }
     }
 
     // withdraw deposit token and unwrap to bpt tokens
     function withdrawAndUnwrap(uint256 amount, bool claim, address to) external onlyOperatorOrOwner {
-        AMO__IBaseRewardPool(auraPoolInfo.rewards).withdrawAndUnwrap(amount, claim);
+        // Optimistically use BPT balance in this contract, and then try and unstake any remaining
+        uint256 bptBalance = bptToken.balanceOf(address(this));
+        uint256 toUnstake = (bptBalance >= amount) ? 0 : bptBalance - amount;
+        if (toUnstake > 0) {
+            AMO__IBaseRewardPool(auraPoolInfo.rewards).withdrawAndUnwrap(amount, claim);
+        }
+
         if (to != address(0)) {
             // unwrapped amount is 1 to 1
             bptToken.safeTransfer(to, amount);
@@ -107,8 +120,9 @@ contract AuraStaking is Ownable {
         uint256 depositTokenBalance = AMO__IBaseRewardPool(auraPoolInfo.rewards).balanceOf(address(this));
         AMO__IBaseRewardPool(auraPoolInfo.rewards).withdrawAllAndUnwrap(claim);
         if (sendToOperator) {
-            // unwrapped amount is 1 to 1
-            bptToken.safeTransfer(operator, depositTokenBalance);
+            // Include any BPT balance in this contract
+            uint256 totalBalance = depositTokenBalance + bptToken.balanceOf(address(this));
+            bptToken.safeTransfer(operator, totalBalance);
         }
     }
 
