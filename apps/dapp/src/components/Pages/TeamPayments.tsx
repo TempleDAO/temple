@@ -4,7 +4,6 @@ import styled from 'styled-components';
 import { TempleTeamPayments__factory } from 'types/typechain';
 import { TEAM_PAYMENTS_EPOCHS, TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH } from 'enums/team-payment';
 import { fromAtto } from 'utils/bigNumber';
-import withWallet from 'hoc/withWallet';
 import { useWallet } from 'providers/WalletProvider';
 
 import Image from 'components/Image/Image';
