@@ -90,7 +90,9 @@ contract AuraStaking is Ownable {
     }
     
     function isAuraShutdown() public view returns (bool) {
-        return booster.isShutdown() || booster.poolInfo(auraPoolInfo.pId).shutdown;
+        // It's not necessary to check that the booster itself is shutdown, as that can only
+        // be shutdown once all the pools are shutdown - see Aura BoosterOwner.shutdownSystem()
+        return booster.poolInfo(auraPoolInfo.pId).shutdown;
     }
 
     function depositAndStake(uint256 amount) external onlyOperator {
@@ -105,9 +107,9 @@ contract AuraStaking is Ownable {
     function withdrawAndUnwrap(uint256 amount, bool claim, address to) external onlyOperatorOrOwner {
         // Optimistically use BPT balance in this contract, and then try and unstake any remaining
         uint256 bptBalance = bptToken.balanceOf(address(this));
-        uint256 toUnstake = (bptBalance >= amount) ? 0 : bptBalance - amount;
+        uint256 toUnstake = (amount < bptBalance) ? 0 : amount - bptBalance;
         if (toUnstake > 0) {
-            AMO__IBaseRewardPool(auraPoolInfo.rewards).withdrawAndUnwrap(amount, claim);
+            AMO__IBaseRewardPool(auraPoolInfo.rewards).withdrawAndUnwrap(toUnstake, claim);
         }
 
         if (to != address(0)) {
@@ -117,11 +119,9 @@ contract AuraStaking is Ownable {
     }
 
     function withdrawAllAndUnwrap(bool claim, bool sendToOperator) external onlyOwner {
-        uint256 depositTokenBalance = AMO__IBaseRewardPool(auraPoolInfo.rewards).balanceOf(address(this));
         AMO__IBaseRewardPool(auraPoolInfo.rewards).withdrawAllAndUnwrap(claim);
         if (sendToOperator) {
-            // Include any BPT balance in this contract
-            uint256 totalBalance = depositTokenBalance + bptToken.balanceOf(address(this));
+            uint256 totalBalance = bptToken.balanceOf(address(this));
             bptToken.safeTransfer(operator, totalBalance);
         }
     }

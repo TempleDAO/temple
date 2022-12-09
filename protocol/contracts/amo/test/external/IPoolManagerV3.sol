@@ -4,5 +4,5 @@ pragma solidity ^0.8.4;
 
 interface AMO__IPoolManagerV3 {
     function addPool(address _gauge, uint256 _stashVersion) external returns(bool);
-    //function addPool(address _gauge) external returns(bool);
+    function shutdownPool(uint256 _pid) external returns(bool);
 }
