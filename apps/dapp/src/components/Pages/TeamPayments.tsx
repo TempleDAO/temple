@@ -65,6 +65,7 @@ const TeamPayments = () => {
     { value: TEAM_PAYMENTS_EPOCHS.R7, label: 'EPOCH 7' },
     { value: TEAM_PAYMENTS_EPOCHS.R8, label: 'EPOCH 8' },
     { value: TEAM_PAYMENTS_EPOCHS.R9, label: 'EPOCH 9' },
+    { value: TEAM_PAYMENTS_EPOCHS.R10, label: 'EPOCH 10' },
   ];
 
   return (

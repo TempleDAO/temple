@@ -3,14 +3,14 @@ import { ethers, network } from 'hardhat';
 import {
   TempleTeamPaymentsFactory,
   TempleTeamPaymentsFactory__factory,
-} from '../../../typechain';
+} from '../../../../typechain';
 import {
   deployAndMine,
   DeployedContracts,
   DEPLOYED_CONTRACTS,
   expectAddressWithPrivateKey,
   mine,
-} from '../helpers';
+} from '../../helpers';
 
 async function main() {
   expectAddressWithPrivateKey();
