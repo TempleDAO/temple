@@ -13,12 +13,6 @@ import {
   mine,
   toAtto
 } from "../../helpers";
-import amoAddresses from "../../../../test/amo/amo-constants";
-
-const { TEMPLE50_FRAX50_POOL_ID, TEMPLE_INDEX_IN_POOL } = amoAddresses.goerli.others;
-const { BALANCER_VAULT } = amoAddresses.goerli.contracts;
-const { FRAX, TEMPLE50_FRAX50_TOKEN } = amoAddresses.goerli.tokens;
-
 
 async function main() {
     ensureExpectedEnvvars();
@@ -36,12 +30,12 @@ async function main() {
     const amoFactory: RAMOSGoerli__factory = new RAMOSGoerli__factory(owner);
     const amo: RAMOSGoerli = await deployAndMine(
         "RAMOSGoerli", amoFactory, amoFactory.deploy,
-        BALANCER_VAULT,
+        DEPLOYED.BALANCER_VAULT,
         DEPLOYED.TEMPLE,
-        FRAX,
-        TEMPLE50_FRAX50_TOKEN,
-        BigNumber.from(TEMPLE_INDEX_IN_POOL),
-        TEMPLE50_FRAX50_POOL_ID
+        DEPLOYED.BBA_USD_TOKEN, // frax
+        DEPLOYED.TEMPLE_BBAUSD_LP_TOKEN, // temple/frax 50:50 LP
+        BigNumber.from(0),
+        DEPLOYED.TEMPLE_BB_A_USD_BALANCER_POOL_ID, // temple/frax 50:50
     );
 
     // post deploy

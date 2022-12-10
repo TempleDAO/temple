@@ -2,6 +2,7 @@ import { network } from "hardhat";
 
 export interface DeployedContracts {
     MULTISIG: string;
+    DISCORD_BOT?: string,
     TEMPLAR_NFT: string;
     ELDER_ELECTION: string;
     TEMPLAR_METADATA: string;
@@ -16,18 +17,19 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     },
     gnosis: {
         MULTISIG: '0x84AF944A0C0b1a7A24D055c07dbbcE1659a73709',
+        DISCORD_BOT: '0x16758B51011EFD4f8883A1BAB90292aaA8a8bcae',
 
         // yarn hardhat run --network gnosis scripts/deploys/governance/gnosis/01-templar-nft.ts
         // yarn hardhat verify --network gnosis 0x848fDdD6dD050355413ce1969262bACAEBD45873
         TEMPLAR_NFT: '0x848fDdD6dD050355413ce1969262bACAEBD45873',
         
         // yarn hardhat run --network gnosis scripts/deploys/governance/gnosis/01-templar-nft.ts
-        // TODO: yarn hardhat verify --network gnosis 0xC76f8247E46E7549022b019bE4522e7Baf124349 0x848fDdD6dD050355413ce1969262bACAEBD45873
-        ELDER_ELECTION: '0xC76f8247E46E7549022b019bE4522e7Baf124349',
+        // yarn hardhat verify --network gnosis 0x52a851DAd3270eafE65BE747eC1A720BAa3BFD5e 0x848fDdD6dD050355413ce1969262bACAEBD45873
+        ELDER_ELECTION: '0x52a851DAd3270eafE65BE747eC1A720BAa3BFD5e',
 
         // yarn hardhat run --network gnosis scripts/deploys/governance/gnosis/03-templar-metadata.ts
-        // TODO: yarn hardhat verify --network gnosis 0xD7B4bA8a52148c49AC7FD73B4ab02B3b865e4De9 0x848fDdD6dD050355413ce1969262bACAEBD45873
-        TEMPLAR_METADATA: '0xD7B4bA8a52148c49AC7FD73B4ab02B3b865e4De9',
+        // yarn hardhat verify --network gnosis 0x3f65828f6F62Ed94974A54E77DC969B16c0765F3 0x848fDdD6dD050355413ce1969262bACAEBD45873
+        TEMPLAR_METADATA: '0x3f65828f6F62Ed94974A54E77DC969B16c0765F3',
 
         // yarn hardhat run --network gnosis scripts/deploys/governance/gnosis/100-transfer-ownership.ts 
     },

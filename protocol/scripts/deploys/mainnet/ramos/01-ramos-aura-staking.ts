@@ -3,17 +3,12 @@ import { ethers, network } from "hardhat";
 import {
     AuraStaking__factory
 } from "../../../../typechain";
-import amoAddresses from "../../../../test/amo/amo-constants";
 import {
   deployAndMine,
   DEPLOYED_CONTRACTS, 
   DeployedContracts,
   ensureExpectedEnvvars,
 } from "../../helpers";
-
-
-const { AURA_BOOSTER } = amoAddresses.mainnet.contracts;
-const { BALANCER_TOKEN, AURA_TOKEN, TEMPLE_BBAUSD_LP_TOKEN } = amoAddresses.mainnet.tokens;
 
 async function main() {
   ensureExpectedEnvvars();
@@ -31,10 +26,10 @@ async function main() {
   const auraStakingFactory: AuraStaking__factory = new AuraStaking__factory(owner);
   await deployAndMine(
       "RAMOS Aura Staking", auraStakingFactory, auraStakingFactory.deploy,
-      DEPLOYED.RAMOS,
-      TEMPLE_BBAUSD_LP_TOKEN,
-      AURA_BOOSTER,
-      [BALANCER_TOKEN, AURA_TOKEN]
+      "0x0000000000000000000000000000000000000000", // Temporary - operator needs setting in post-deploy
+      DEPLOYED.TEMPLE_BBAUSD_LP_TOKEN,
+      DEPLOYED.AURA_BOOSTER,
+      [DEPLOYED.BALANCER_TOKEN, DEPLOYED.AURA_TOKEN]
   );
 }
 

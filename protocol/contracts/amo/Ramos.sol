@@ -31,7 +31,7 @@ contract RAMOS is Ownable, Pausable {
     AMO__IPoolHelper public poolHelper;
     
     // @notice AMO contract for staking into aura 
-    AMO__IAuraStaking public immutable amoStaking;
+    AMO__IAuraStaking public amoStaking;
 
     address public operator;
     IERC20 public immutable temple;
@@ -60,7 +60,7 @@ contract RAMOS is Ownable, Pausable {
     uint64 public postRebalanceSlippage;
 
     // @notice temple index in balancer pool. to avoid recalculation or external calls
-    uint64 public templeBalancerPoolIndex;
+    uint64 public immutable templeBalancerPoolIndex;
 
     struct MaxRebalanceAmounts {
         uint256 bpt;
@@ -81,6 +81,7 @@ contract RAMOS is Ownable, Pausable {
     event WithdrawStable(uint256 bptAmountIn, uint256 amountOut);
     event SetRebalancePercentageBounds(uint64 belowTpf, uint64 aboveTpf);
     event SetTemplePriceFloorNumerator(uint128 numerator);
+    event SetAmoStaking(address indexed amoStaking);
 
     constructor(
         address _balancerVault,
@@ -106,6 +107,12 @@ contract RAMOS is Ownable, Pausable {
         poolHelper = AMO__IPoolHelper(_poolHelper);
 
         emit SetPoolHelper(_poolHelper);
+    }
+
+    function setAmoStaking(address _amoStaking) external onlyOwner {
+        amoStaking = AMO__IAuraStaking(_amoStaking);
+
+        emit SetAmoStaking(_amoStaking);
     }
 
     function setPostRebalanceSlippage(uint64 slippage) external onlyOwner {
