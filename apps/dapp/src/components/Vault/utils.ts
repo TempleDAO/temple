@@ -11,6 +11,10 @@ import { VaultGroupBalances } from 'hooks/core/use-vault-group-token-balance';
 
 import { Nullable } from 'types/util';
 
+import env from 'constants/env';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { Tokens, Token } from 'constants/env/types';
+
 export const createDateFromSeconds = (dateInSeconds: string | number) => {
   const dateMs = Number(dateInSeconds) * 1000;
   return new Date(dateMs);
@@ -207,7 +211,7 @@ export const formatTemple = (templeValue: Nullable<number | BigNumber>) => {
   return millify(amount, { precision: 4 });
 };
 
-export const getBigNumberFromString = (number: string) => {
+export const getBigNumberFromString = (number: string, tokenDecimals?: number) => {
   // make sure number doesn't have more than 18 decimals
   let [int, decimals] = (number || '0').split('.');
 
@@ -215,15 +219,21 @@ export const getBigNumberFromString = (number: string) => {
     decimals = decimals.substring(0, 18);
   }
   const fixedNumber = decimals ? `${int}.${decimals}` : int;
-  const bigNumber = parseUnits(fixedNumber, 18);
+  const bigNumber = parseUnits(fixedNumber, tokenDecimals ?? 18);
 
   return bigNumber;
 };
 
-export const formatBigNumber = (number: BigNumber) => {
-  return formatUnits(number, 18);
+export const formatBigNumber = (number: BigNumber, decimals?: number) => {
+  return formatUnits(number, decimals ?? 18);
 };
 
 export const formatJoiningFee = (stakeAmount: BigNumber, joiningFee: BigNumber) => {
   return joiningFee.mul(stakeAmount).div('1000000000000000000');
+};
+
+export const getTokenInfo = (symbol: TICKER_SYMBOL): Token => {
+  const tokenInFormat = symbol.toLowerCase().replace('$', '') as keyof Tokens;
+  const tokenInfo = env.tokens[tokenInFormat];
+  return tokenInfo;
 };

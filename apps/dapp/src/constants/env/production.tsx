@@ -9,6 +9,9 @@ const env: Environment = {
     farmingWallet: '0x5C8898f8E0F9468D4A677887bC03EE2659321012',
     fei: '0x956F47F50A910163D8BF957Cf5846D573E7f87CA',
     frax: '0x853d955acef822db058eb8505911ed77f175b99e',
+    usdc: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    usdt: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    dai: '0x6b175474e89094c44da98b954eedeac495271d0f',
     frax3CrvFarming: '0xd632f22692fac7611d2aa1c0d552930d43caed3b',
     frax3CrvFarmingRewards: '0xB900EF131301B307dB5eFcbed9DBb50A3e209B2e',
     lbpFactory: '0x0F3e0c4218b7b0108a3643cFe9D3ec0d4F57c54e',
@@ -29,6 +32,7 @@ const env: Environment = {
     templeV2FraxPair: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
     templeV2FeiPair: '0xf994158766e0a4E64c26feCE675186f489EC9107',
     templeV2Router: '0x98257C876ACe5009e7B97843F8c71b3AE795c71E',
+    swap1InchRouter: '0x1111111254EEB25477B68fb85Ed929f73A960582',
     treasuryIv: '0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443',
     vaultOps: '0x65fE8BaBF7DA367b2B45cBD748F0490713f84828',
     vaultProxy: '0x6f5bB7cC4F3D6628d0095545552757AB377FE15C',
@@ -81,6 +85,11 @@ const env: Environment = {
     usdc: {
       name: 'USDC',
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+      decimals: 6,
+    },
+    usdt: {
+      name: 'USDT',
+      address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
       decimals: 6,
     },
     dai: {
