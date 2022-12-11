@@ -161,7 +161,10 @@ export function useRamosAdmin() {
 
   const calculateRebalanceUp = async (bps: DecimalBigNumber) => {
     if (isConnected && bps.gt(DBN_ZERO)) {
-      const targetPrice = calculateTargetPriceUp(templePrice, bps);
+      // account for RAMOS price impact limits
+      let targetPrice = calculateTargetPriceUp(templePrice, bps);
+      const maxTargetPrice = calculateTargetPriceUp(templePrice, DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 18))
+      if (targetPrice.gt(maxTargetPrice )) targetPrice = maxTargetPrice;
 
       const stableBalanceAtTargetPrice = tokens.stable.balance
         .mul(DBN_TEN_THOUSAND)
@@ -169,7 +172,6 @@ export function useRamosAdmin() {
 
       let templeAmountOut = tokens.temple.balance.sub(stableBalanceAtTargetPrice);
       if (templeAmountOut.gt(maxRebalanceAmounts.temple)) templeAmountOut = maxRebalanceAmounts.temple;
-      templeAmountOut = randomize(templeAmountOut, randomPercent);
 
       const amountsOut = [templeAmountOut.toBN(18), ZERO];
 
@@ -187,14 +189,17 @@ export function useRamosAdmin() {
 
   const calculateDepositStable = async (bps: DecimalBigNumber) => {
     if (isConnected && bps.gt(DBN_ZERO)) {
-      const targetPrice = calculateTargetPriceUp(templePrice, bps);
+      // account for RAMOS price impact limits
+      let targetPrice = calculateTargetPriceUp(templePrice, bps);
+      const maxTargetPrice = calculateTargetPriceUp(templePrice, DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 18))
+      if (targetPrice.gt(maxTargetPrice )) targetPrice = maxTargetPrice;
+
       let stableAmount = tokens.temple.balance
         .mul(targetPrice.mul(DBN_TEN_THOUSAND))
         .div(DBN_TEN_THOUSAND, targetPrice.getDecimals())
         .sub(tokens.stable.balance);
 
       if (stableAmount.gt(maxRebalanceAmounts.stable)) stableAmount = maxRebalanceAmounts.stable;
-      stableAmount = randomize(stableAmount, randomPercent);
       const amountsIn = [ZERO, stableAmount.toBN(18)];
       const joinPoolRequest = makeJoinRequest([tokens.temple.address, tokens.stable.address], amountsIn);
       const amounts = await balancerHelpers.queryJoin(poolId, ramos.address, ramos.address, joinPoolRequest);
@@ -207,7 +212,11 @@ export function useRamosAdmin() {
 
   const calculateRebalanceDown = async (bps: DecimalBigNumber) => {
     if (isConnected) {
-      const targetPrice = calculateTargetPriceDown(templePrice, bps);
+      // account for RAMOS max price impact
+      let targetPrice = calculateTargetPriceDown(templePrice, bps);
+      const maxTargetPrice = calculateTargetPriceDown(templePrice, DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 18))
+      if(targetPrice.gt(maxTargetPrice)) targetPrice = maxTargetPrice;
+
       const stableBalanceAtTargetPrice = tokens.stable.balance.div(targetPrice, 18);
       let templeAmount = stableBalanceAtTargetPrice.sub(tokens.temple.balance);
       if (templeAmount.gt(maxRebalanceAmounts.temple)) templeAmount = maxRebalanceAmounts.temple;
@@ -230,7 +239,11 @@ export function useRamosAdmin() {
 
   const calculateWithdrawStable = async (bps: DecimalBigNumber) => {
     if (isConnected) {
-      const targetPrice = calculateTargetPriceDown(templePrice, bps);
+      // account for RAMOS max price impact
+      let targetPrice = calculateTargetPriceDown(templePrice, bps);
+      const maxTargetPrice = calculateTargetPriceDown(templePrice, DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 18))
+      if(targetPrice.gt(maxTargetPrice)) targetPrice = maxTargetPrice;
+      
       let stableAmount = tokens.stable.balance.sub(
         tokens.temple.balance.mul(targetPrice.mul(DBN_TEN_THOUSAND)).div(DBN_TEN_THOUSAND, 18)
       );

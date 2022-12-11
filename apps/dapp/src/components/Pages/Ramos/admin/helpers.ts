@@ -1,6 +1,6 @@
 import environmentConfig from 'constants/env';
 import { BigNumber, ethers } from 'ethers';
-import type { AMO__IBalancerVault } from 'types/typechain/AMO__IBalancerVault';
+import type { AMO__IBalancerVault } from 'types/typechain';
 import { DBN_ONE_HUNDRED, DBN_TEN_THOUSAND, DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export const limitInput = (input: string): number => {
