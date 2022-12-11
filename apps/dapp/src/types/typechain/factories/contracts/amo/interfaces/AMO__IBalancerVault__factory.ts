@@ -7,7 +7,7 @@ import type { Provider } from "@ethersproject/providers";
 import type {
   AMO__IBalancerVault,
   AMO__IBalancerVaultInterface,
-} from "../AMO__IBalancerVault";
+} from "../../../../contracts/amo/interfaces/AMO__IBalancerVault";
 
 const _abi = [
   {

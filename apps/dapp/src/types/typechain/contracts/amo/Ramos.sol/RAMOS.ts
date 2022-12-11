@@ -25,7 +25,7 @@ import type {
   TypedListener,
   OnEvent,
   PromiseOrValue,
-} from "./common";
+} from "../../../common";
 
 export declare namespace AMO__IBalancerVault {
   export type JoinPoolRequestStruct = {
@@ -67,14 +67,17 @@ export declare namespace AMO__IBalancerVault {
   };
 }
 
-export interface RAMOSGoerliInterface extends utils.Interface {
+export interface RAMOSInterface extends utils.Interface {
   functions: {
     "BPS_PRECISION()": FunctionFragment;
     "addLiquidity((address[],uint256[],bytes,bool),uint256)": FunctionFragment;
+    "amoStaking()": FunctionFragment;
     "balancerPoolId()": FunctionFragment;
     "balancerVault()": FunctionFragment;
+    "booster()": FunctionFragment;
     "bptToken()": FunctionFragment;
     "cooldownSecs()": FunctionFragment;
+    "depositAndStakeBptTokens(uint256,bool)": FunctionFragment;
     "depositStable(uint256,uint256)": FunctionFragment;
     "lastRebalanceTimeSecs()": FunctionFragment;
     "maxRebalanceAmounts()": FunctionFragment;
@@ -89,8 +92,9 @@ export interface RAMOSGoerliInterface extends utils.Interface {
     "rebalancePercentageBoundUp()": FunctionFragment;
     "rebalanceUp(uint256,uint256)": FunctionFragment;
     "recoverToken(address,address,uint256)": FunctionFragment;
-    "removeLiquidity((address[],uint256[],bytes,bool))": FunctionFragment;
+    "removeLiquidity((address[],uint256[],bytes,bool),uint256)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
+    "setAmoStaking(address)": FunctionFragment;
     "setCoolDown(uint64)": FunctionFragment;
     "setMaxRebalanceAmounts(uint256,uint256,uint256)": FunctionFragment;
     "setOperator(address)": FunctionFragment;
@@ -111,10 +115,13 @@ export interface RAMOSGoerliInterface extends utils.Interface {
     nameOrSignatureOrTopic:
       | "BPS_PRECISION"
       | "addLiquidity"
+      | "amoStaking"
       | "balancerPoolId"
       | "balancerVault"
+      | "booster"
       | "bptToken"
       | "cooldownSecs"
+      | "depositAndStakeBptTokens"
       | "depositStable"
       | "lastRebalanceTimeSecs"
       | "maxRebalanceAmounts"
@@ -131,6 +138,7 @@ export interface RAMOSGoerliInterface extends utils.Interface {
       | "recoverToken"
       | "removeLiquidity"
       | "renounceOwnership"
+      | "setAmoStaking"
       | "setCoolDown"
       | "setMaxRebalanceAmounts"
       | "setOperator"
@@ -159,6 +167,10 @@ export interface RAMOSGoerliInterface extends utils.Interface {
     ]
   ): string;
   encodeFunctionData(
+    functionFragment: "amoStaking",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "balancerPoolId",
     values?: undefined
   ): string;
@@ -166,10 +178,15 @@ export interface RAMOSGoerliInterface extends utils.Interface {
     functionFragment: "balancerVault",
     values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "booster", values?: undefined): string;
   encodeFunctionData(functionFragment: "bptToken", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "cooldownSecs",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "depositAndStakeBptTokens",
+    values: [PromiseOrValue<BigNumberish>, PromiseOrValue<boolean>]
   ): string;
   encodeFunctionData(
     functionFragment: "depositStable",
@@ -221,11 +238,18 @@ export interface RAMOSGoerliInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "removeLiquidity",
-    values: [AMO__IBalancerVault.ExitPoolRequestStruct]
+    values: [
+      AMO__IBalancerVault.ExitPoolRequestStruct,
+      PromiseOrValue<BigNumberish>
+    ]
   ): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setAmoStaking",
+    values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
     functionFragment: "setCoolDown",
@@ -287,6 +311,7 @@ export interface RAMOSGoerliInterface extends utils.Interface {
     functionFragment: "addLiquidity",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "amoStaking", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "balancerPoolId",
     data: BytesLike
@@ -295,9 +320,14 @@ export interface RAMOSGoerliInterface extends utils.Interface {
     functionFragment: "balancerVault",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "booster", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "bptToken", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "cooldownSecs",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "depositAndStakeBptTokens",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -350,6 +380,10 @@ export interface RAMOSGoerliInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "setAmoStaking",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "setCoolDown",
     data: BytesLike
   ): Result;
@@ -398,12 +432,12 @@ export interface RAMOSGoerliInterface extends utils.Interface {
   ): Result;
 
   events: {
-    "AddedLiquidity(uint256,uint256,uint256)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
     "Paused(address)": EventFragment;
     "RebalanceDown(uint256,uint256)": EventFragment;
     "RebalanceUp(uint256,uint256)": EventFragment;
     "RecoveredToken(address,address,uint256)": EventFragment;
+    "SetAmoStaking(address)": EventFragment;
     "SetCooldown(uint64)": EventFragment;
     "SetMaxRebalanceAmounts(uint256,uint256,uint256)": EventFragment;
     "SetOperator(address)": EventFragment;
@@ -417,12 +451,12 @@ export interface RAMOSGoerliInterface extends utils.Interface {
     "WithdrawStable(uint256,uint256)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: "AddedLiquidity"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Paused"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RebalanceDown"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RebalanceUp"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RecoveredToken"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "SetAmoStaking"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "SetCooldown"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "SetMaxRebalanceAmounts"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "SetOperator"): EventFragment;
@@ -439,18 +473,6 @@ export interface RAMOSGoerliInterface extends utils.Interface {
   getEvent(nameOrSignatureOrTopic: "Unpaused"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "WithdrawStable"): EventFragment;
 }
-
-export interface AddedLiquidityEventObject {
-  amountTemple: BigNumber;
-  amountStable: BigNumber;
-  bptOut: BigNumber;
-}
-export type AddedLiquidityEvent = TypedEvent<
-  [BigNumber, BigNumber, BigNumber],
-  AddedLiquidityEventObject
->;
-
-export type AddedLiquidityEventFilter = TypedEventFilter<AddedLiquidityEvent>;
 
 export interface OwnershipTransferredEventObject {
   previousOwner: string;
@@ -504,6 +526,13 @@ export type RecoveredTokenEvent = TypedEvent<
 >;
 
 export type RecoveredTokenEventFilter = TypedEventFilter<RecoveredTokenEvent>;
+
+export interface SetAmoStakingEventObject {
+  amoStaking: string;
+}
+export type SetAmoStakingEvent = TypedEvent<[string], SetAmoStakingEventObject>;
+
+export type SetAmoStakingEventFilter = TypedEventFilter<SetAmoStakingEvent>;
 
 export interface SetCooldownEventObject {
   cooldownSecs: BigNumber;
@@ -612,12 +641,12 @@ export type WithdrawStableEvent = TypedEvent<
 
 export type WithdrawStableEventFilter = TypedEventFilter<WithdrawStableEvent>;
 
-export interface RAMOSGoerli extends BaseContract {
+export interface RAMOS extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
 
-  interface: RAMOSGoerliInterface;
+  interface: RAMOSInterface;
 
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
@@ -647,13 +676,23 @@ export interface RAMOSGoerli extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    amoStaking(overrides?: CallOverrides): Promise<[string]>;
+
     balancerPoolId(overrides?: CallOverrides): Promise<[string]>;
 
     balancerVault(overrides?: CallOverrides): Promise<[string]>;
 
+    booster(overrides?: CallOverrides): Promise<[string]>;
+
     bptToken(overrides?: CallOverrides): Promise<[string]>;
 
     cooldownSecs(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    depositAndStakeBptTokens(
+      amount: PromiseOrValue<BigNumberish>,
+      useContractBalance: PromiseOrValue<boolean>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
 
     depositStable(
       amountIn: PromiseOrValue<BigNumberish>,
@@ -714,10 +753,16 @@ export interface RAMOSGoerli extends BaseContract {
 
     removeLiquidity(
       request: AMO__IBalancerVault.ExitPoolRequestStruct,
+      bptIn: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     renounceOwnership(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    setAmoStaking(
+      _amoStaking: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -791,13 +836,23 @@ export interface RAMOSGoerli extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  amoStaking(overrides?: CallOverrides): Promise<string>;
+
   balancerPoolId(overrides?: CallOverrides): Promise<string>;
 
   balancerVault(overrides?: CallOverrides): Promise<string>;
 
+  booster(overrides?: CallOverrides): Promise<string>;
+
   bptToken(overrides?: CallOverrides): Promise<string>;
 
   cooldownSecs(overrides?: CallOverrides): Promise<BigNumber>;
+
+  depositAndStakeBptTokens(
+    amount: PromiseOrValue<BigNumberish>,
+    useContractBalance: PromiseOrValue<boolean>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
 
   depositStable(
     amountIn: PromiseOrValue<BigNumberish>,
@@ -856,10 +911,16 @@ export interface RAMOSGoerli extends BaseContract {
 
   removeLiquidity(
     request: AMO__IBalancerVault.ExitPoolRequestStruct,
+    bptIn: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   renounceOwnership(
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  setAmoStaking(
+    _amoStaking: PromiseOrValue<string>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -933,13 +994,23 @@ export interface RAMOSGoerli extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    amoStaking(overrides?: CallOverrides): Promise<string>;
+
     balancerPoolId(overrides?: CallOverrides): Promise<string>;
 
     balancerVault(overrides?: CallOverrides): Promise<string>;
 
+    booster(overrides?: CallOverrides): Promise<string>;
+
     bptToken(overrides?: CallOverrides): Promise<string>;
 
     cooldownSecs(overrides?: CallOverrides): Promise<BigNumber>;
+
+    depositAndStakeBptTokens(
+      amount: PromiseOrValue<BigNumberish>,
+      useContractBalance: PromiseOrValue<boolean>,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     depositStable(
       amountIn: PromiseOrValue<BigNumberish>,
@@ -996,10 +1067,16 @@ export interface RAMOSGoerli extends BaseContract {
 
     removeLiquidity(
       request: AMO__IBalancerVault.ExitPoolRequestStruct,
+      bptIn: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
+
+    setAmoStaking(
+      _amoStaking: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     setCoolDown(
       _seconds: PromiseOrValue<BigNumberish>,
@@ -1062,17 +1139,6 @@ export interface RAMOSGoerli extends BaseContract {
   };
 
   filters: {
-    "AddedLiquidity(uint256,uint256,uint256)"(
-      amountTemple?: null,
-      amountStable?: null,
-      bptOut?: null
-    ): AddedLiquidityEventFilter;
-    AddedLiquidity(
-      amountTemple?: null,
-      amountStable?: null,
-      bptOut?: null
-    ): AddedLiquidityEventFilter;
-
     "OwnershipTransferred(address,address)"(
       previousOwner?: PromiseOrValue<string> | null,
       newOwner?: PromiseOrValue<string> | null
@@ -1113,6 +1179,13 @@ export interface RAMOSGoerli extends BaseContract {
       to?: null,
       amount?: null
     ): RecoveredTokenEventFilter;
+
+    "SetAmoStaking(address)"(
+      amoStaking?: PromiseOrValue<string> | null
+    ): SetAmoStakingEventFilter;
+    SetAmoStaking(
+      amoStaking?: PromiseOrValue<string> | null
+    ): SetAmoStakingEventFilter;
 
     "SetCooldown(uint64)"(cooldownSecs?: null): SetCooldownEventFilter;
     SetCooldown(cooldownSecs?: null): SetCooldownEventFilter;
@@ -1188,13 +1261,23 @@ export interface RAMOSGoerli extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    amoStaking(overrides?: CallOverrides): Promise<BigNumber>;
+
     balancerPoolId(overrides?: CallOverrides): Promise<BigNumber>;
 
     balancerVault(overrides?: CallOverrides): Promise<BigNumber>;
 
+    booster(overrides?: CallOverrides): Promise<BigNumber>;
+
     bptToken(overrides?: CallOverrides): Promise<BigNumber>;
 
     cooldownSecs(overrides?: CallOverrides): Promise<BigNumber>;
+
+    depositAndStakeBptTokens(
+      amount: PromiseOrValue<BigNumberish>,
+      useContractBalance: PromiseOrValue<boolean>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
 
     depositStable(
       amountIn: PromiseOrValue<BigNumberish>,
@@ -1245,10 +1328,16 @@ export interface RAMOSGoerli extends BaseContract {
 
     removeLiquidity(
       request: AMO__IBalancerVault.ExitPoolRequestStruct,
+      bptIn: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     renounceOwnership(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    setAmoStaking(
+      _amoStaking: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -1323,13 +1412,23 @@ export interface RAMOSGoerli extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
+    amoStaking(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     balancerPoolId(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     balancerVault(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    booster(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     bptToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     cooldownSecs(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    depositAndStakeBptTokens(
+      amount: PromiseOrValue<BigNumberish>,
+      useContractBalance: PromiseOrValue<boolean>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
 
     depositStable(
       amountIn: PromiseOrValue<BigNumberish>,
@@ -1390,10 +1489,16 @@ export interface RAMOSGoerli extends BaseContract {
 
     removeLiquidity(
       request: AMO__IBalancerVault.ExitPoolRequestStruct,
+      bptIn: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     renounceOwnership(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setAmoStaking(
+      _amoStaking: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 

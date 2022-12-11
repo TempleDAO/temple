@@ -5,8 +5,8 @@ import environmentConfig from 'constants/env';
 import { useWallet } from 'providers/WalletProvider';
 
 import {
-  RAMOSGoerli,
-  RAMOSGoerli__factory,
+  RAMOS,
+  RAMOS__factory,
   IBalancerHelpers,
   IBalancerHelpers__factory,
   AMO__IBalancerVault__factory,
@@ -38,7 +38,7 @@ export function useRamosAdmin() {
     stable: { address: '', balance: DBN_ZERO },
   });
   const [bptToken, setBptToken] = useState<ERC20>();
-  const [ramos, setRamos] = useState<RAMOSGoerli>();
+  const [ramos, setRamos] = useState<RAMOS>();
   const [balancerHelpers, setBalancerHelpers] = useState<IBalancerHelpers>();
   const [poolId, setPoolId] = useState<string>();
   const [tpf, setTpf] = useState<DecimalBigNumber>();
@@ -73,7 +73,7 @@ export function useRamosAdmin() {
   useEffect(() => {
     async function setContracts() {
       if (signer) {
-        const RAMOS_CONTRACT = new RAMOSGoerli__factory(signer).attach(RAMOS_ADDRESS);
+        const RAMOS_CONTRACT = new RAMOS__factory(signer).attach(RAMOS_ADDRESS);
         const POOL_ID = await RAMOS_CONTRACT.balancerPoolId();
         const BALANCER_VAULT_ADDRESS = await RAMOS_CONTRACT.balancerVault();
         const BALANCER_VAULT_CONTRACT = AMO__IBalancerVault__factory.connect(BALANCER_VAULT_ADDRESS, signer);
