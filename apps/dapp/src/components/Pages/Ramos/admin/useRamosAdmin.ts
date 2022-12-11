@@ -24,6 +24,7 @@ import {
   makeExitRequest,
   makeJoinRequest,
   randomize,
+  WeightedPoolExitKind,
 } from './helpers';
 import { ZERO } from 'utils/bigNumber';
 import { DBN_TEN_THOUSAND, DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
@@ -141,9 +142,9 @@ export function useRamosAdmin() {
   const createExitPoolRequest = async (exitAmountBpt: BigNumber) => {
     if (isConnected) {
       const tokenAddrs = [tokens.temple.address, tokens.stable.address];
-      const initExitReq = makeExitRequest(tokenAddrs, [ZERO, ZERO], exitAmountBpt);
+      const initExitReq = makeExitRequest(tokenAddrs, [ZERO, ZERO], exitAmountBpt, WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT);
       const { bptIn, amountsOut } = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, initExitReq);
-      const exitRequest = makeExitRequest(tokenAddrs, amountsOut, bptIn);
+      const exitRequest = makeExitRequest(tokenAddrs, amountsOut, bptIn, WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT);
       return formatExitRequestTuple(exitRequest);
     }
   };
@@ -164,7 +165,7 @@ export function useRamosAdmin() {
       // account for RAMOS price impact limits
       let targetPrice = calculateTargetPriceUp(templePrice, bps);
       const maxTargetPrice = calculateTargetPriceUp(templePrice, DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 18))
-      if (targetPrice.gt(maxTargetPrice )) targetPrice = maxTargetPrice;
+      if (targetPrice.gt(maxTargetPrice)) targetPrice = maxTargetPrice;
 
       const stableBalanceAtTargetPrice = tokens.stable.balance
         .mul(DBN_TEN_THOUSAND)
@@ -179,7 +180,7 @@ export function useRamosAdmin() {
         [tokens.temple.address, tokens.stable.address],
         amountsOut,
         ethers.constants.MaxInt256,
-        2
+        WeightedPoolExitKind.BPT_IN_FOR_EXACT_TOKENS_OUT
       );
 
       const [bptIn, amounts] = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, exitRequest);
@@ -192,7 +193,7 @@ export function useRamosAdmin() {
       // account for RAMOS price impact limits
       let targetPrice = calculateTargetPriceUp(templePrice, bps);
       const maxTargetPrice = calculateTargetPriceUp(templePrice, DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 18))
-      if (targetPrice.gt(maxTargetPrice )) targetPrice = maxTargetPrice;
+      if (targetPrice.gt(maxTargetPrice)) targetPrice = maxTargetPrice;
 
       let stableAmount = tokens.temple.balance
         .mul(targetPrice.mul(DBN_TEN_THOUSAND))
@@ -215,7 +216,7 @@ export function useRamosAdmin() {
       // account for RAMOS max price impact
       let targetPrice = calculateTargetPriceDown(templePrice, bps);
       const maxTargetPrice = calculateTargetPriceDown(templePrice, DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 18))
-      if(targetPrice.gt(maxTargetPrice)) targetPrice = maxTargetPrice;
+      if (targetPrice.gt(maxTargetPrice)) targetPrice = maxTargetPrice;
 
       const stableBalanceAtTargetPrice = tokens.stable.balance.div(targetPrice, 18);
       let templeAmount = stableBalanceAtTargetPrice.sub(tokens.temple.balance);
@@ -242,8 +243,8 @@ export function useRamosAdmin() {
       // account for RAMOS max price impact
       let targetPrice = calculateTargetPriceDown(templePrice, bps);
       const maxTargetPrice = calculateTargetPriceDown(templePrice, DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 18))
-      if(targetPrice.gt(maxTargetPrice)) targetPrice = maxTargetPrice;
-      
+      if (targetPrice.gt(maxTargetPrice)) targetPrice = maxTargetPrice;
+
       let stableAmount = tokens.stable.balance.sub(
         tokens.temple.balance.mul(targetPrice.mul(DBN_TEN_THOUSAND)).div(DBN_TEN_THOUSAND, 18)
       );
@@ -254,7 +255,7 @@ export function useRamosAdmin() {
         [tokens.temple.address, tokens.stable.address],
         amountsOut,
         ethers.constants.MaxInt256,
-        2
+        WeightedPoolExitKind.BPT_IN_FOR_EXACT_TOKENS_OUT
       );
       const amounts = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, exitRequest);
 

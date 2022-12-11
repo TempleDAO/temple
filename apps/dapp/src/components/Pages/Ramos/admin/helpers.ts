@@ -3,6 +3,11 @@ import { BigNumber, ethers } from 'ethers';
 import type { AMO__IBalancerVault } from 'types/typechain';
 import { DBN_ONE_HUNDRED, DBN_TEN_THOUSAND, DecimalBigNumber } from 'utils/DecimalBigNumber';
 
+export enum WeightedPoolExitKind {
+  EXACT_BPT_IN_FOR_TOKENS_OUT = 1,
+  BPT_IN_FOR_EXACT_TOKENS_OUT,
+}
+
 export const limitInput = (input: string): number => {
   if (input === '0') return 0;
 
@@ -73,6 +78,9 @@ export const makeJoinRequest = (
   tokens: string[],
   amountsIn: BigNumber[],
 ): AMO__IBalancerVault.JoinPoolRequestStruct => {
+  // 1 === WeightedJoinPoolKind.EXACT_TOKENS_IN_FOR_BPT_OUT
+  // https://dev.balancer.fi/resources/joins-and-exits/pool-joins
+  
   const userData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256[]', 'uint256'], [1, amountsIn, 0]);
 
   return {
@@ -87,16 +95,16 @@ export const makeExitRequest = (
   tokens: string[],
   amountsOut: BigNumber[],
   bptAmount: BigNumber,
-  exitType: 1 | 2 = 1
+  exitType: WeightedPoolExitKind,
 ): AMO__IBalancerVault.ExitPoolRequestStruct => {
   let userData = '';
 
   switch (exitType) {
-    case 1: {
+    case WeightedPoolExitKind.BPT_IN_FOR_EXACT_TOKENS_OUT: {
       userData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [exitType, bptAmount]);
       break;
     }
-    case 2: {
+    case WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT: {
       userData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256[]', 'uint256'],
         [exitType, amountsOut, bptAmount]
