@@ -101,11 +101,11 @@ contract PoolHelper {
     ) public view returns (bool) {
         uint256 percentageIncrease = (templePriceFloorNumerator * rebalancePercentageBoundUp) / TPF_PRECISION;
         uint256 maxNewTpf = percentageIncrease + templePriceFloorNumerator;
-        uint256[] memory balances = getBalances();
-        uint256 stableIndexInPool = templeIndexInBalancerPool == 0 ? 1 : 0;
+        (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
+
         // a ratio of stable balances aginst temple balances
-        uint256 newTempleBalance = balances[templeIndexInBalancerPool] - tokensOut;
-        uint256 spot = (balances[stableIndexInPool] * TPF_PRECISION ) / newTempleBalance;
+        uint256 newTempleBalance = templeBalance - tokensOut;
+        uint256 spot = (stableBalance * TPF_PRECISION ) / newTempleBalance;
         return spot > maxNewTpf;
     }
 
@@ -116,10 +116,10 @@ contract PoolHelper {
     ) public view returns (bool) {
         uint256 percentageIncrease = (templePriceFloorNumerator * rebalancePercentageBoundUp) / TPF_PRECISION;
         uint256 maxNewTpf = percentageIncrease + templePriceFloorNumerator;
-        uint256[] memory balances = getBalances();
-        uint256 stableIndexInPool = templeIndexInBalancerPool == 0 ? 1 : 0;
-        uint256 newStableBalance = balances[stableIndexInPool] + tokensIn;
-        uint256 spot = (newStableBalance * TPF_PRECISION ) / balances[templeIndexInBalancerPool];
+        (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
+
+        uint256 newStableBalance = stableBalance + tokensIn;
+        uint256 spot = (newStableBalance * TPF_PRECISION ) / templeBalance;
         return spot > maxNewTpf;
     }
 
@@ -130,10 +130,10 @@ contract PoolHelper {
     ) public view returns (bool) {
         uint256 percentageDecrease = (templePriceFloorNumerator * rebalancePercentageBoundLow) / TPF_PRECISION;
         uint256 minNewTpf = templePriceFloorNumerator - percentageDecrease;
-        (, uint256[] memory balances,) = balancerVault.getPoolTokens(balancerPoolId);
-        uint256 stableIndexInPool = templeIndexInBalancerPool == 0 ? 1 : 0;
-        uint256 newStableBalance = balances[stableIndexInPool] - tokensOut;
-        uint256 spot = (newStableBalance * TPF_PRECISION) / balances[templeIndexInBalancerPool];
+        (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
+
+        uint256 newStableBalance = stableBalance - tokensOut;
+        uint256 spot = (newStableBalance * TPF_PRECISION) / templeBalance;
         return spot < minNewTpf;
     }
 
@@ -144,11 +144,11 @@ contract PoolHelper {
     ) public view returns (bool) {
         uint256 percentageDecrease = (templePriceFloorNumerator * rebalancePercentageBoundLow) / TPF_PRECISION;
         uint256 minNewTpf = templePriceFloorNumerator - percentageDecrease;
-        (, uint256[] memory balances,) = balancerVault.getPoolTokens(balancerPoolId);
-        uint256 stableIndexInPool = templeIndexInBalancerPool == 0 ? 1 : 0;
+        (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
+
         // a ratio of stable balances against temple balances
-        uint256 newTempleBalance = balances[templeIndexInBalancerPool] + tokensIn;
-        uint256 spot = (balances[stableIndexInPool] * TPF_PRECISION) / newTempleBalance;
+        uint256 newTempleBalance = templeBalance + tokensIn;
+        uint256 spot = (stableBalance * TPF_PRECISION) / newTempleBalance;
         return spot < minNewTpf;
     }
 

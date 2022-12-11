@@ -8,7 +8,7 @@ import {
   toAtto,
   waitForMaxGas,
 } from '../../helpers';
-import snapshot from './json/epoch9.json';
+import snapshot from './json/epoch10.json';
 
 // @dev: UPDATE THIS
 const maxGasPrice = ethers.utils.parseUnits('18', 'gwei');
@@ -66,11 +66,8 @@ async function main() {
     )}, across ${Object.keys(snapshot).length} addresses`
   );
 
-  currentGasPrice = await waitForMaxGas(maxGasPrice);
   console.log('Transferring owner');
-  const tx2 = await templeTeamPayments.transferOwnership(DEPLOYED.MULTISIG, {
-    gasPrice: currentGasPrice,
-  });
+  const tx2 = await templeTeamPayments.transferOwnership(DEPLOYED.MULTISIG);
   await tx2.wait();
   console.log('Mined');
 }

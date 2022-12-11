@@ -13,12 +13,6 @@ import {
   mine,
   toAtto
 } from "../../helpers";
-import amoAddresses from "../../../../test/amo/amo-constants";
-
-const { TEMPLE_BB_A_USD_BALANCER_POOL_ID, TEMPLE_INDEX_IN_POOL } = amoAddresses.mainnet.others;
-const { BALANCER_VAULT, AURA_BOOSTER } = amoAddresses.mainnet.contracts;
-const { BBA_USD_TOKEN, TEMPLE_BBAUSD_LP_TOKEN } = amoAddresses.mainnet.tokens;
-
 
 async function main() {
     ensureExpectedEnvvars();
@@ -36,23 +30,23 @@ async function main() {
     const ramosFactory: RAMOS__factory = new RAMOS__factory(owner);
     const ramos: RAMOS = await deployAndMine(
         "RAMOS", ramosFactory, ramosFactory.deploy,
-        BALANCER_VAULT,
+        DEPLOYED.BALANCER_VAULT,
         DEPLOYED.TEMPLE,
-        BBA_USD_TOKEN,
-        TEMPLE_BBAUSD_LP_TOKEN,
+        DEPLOYED.BBA_USD_TOKEN,
+        DEPLOYED.TEMPLE_BBAUSD_LP_TOKEN,
         DEPLOYED.RAMOS_AURA_STAKING,
-        AURA_BOOSTER,
-        BigNumber.from(TEMPLE_INDEX_IN_POOL),
-        TEMPLE_BB_A_USD_BALANCER_POOL_ID
+        DEPLOYED.AURA_BOOSTER,
+        BigNumber.from(0),
+        DEPLOYED.TEMPLE_BB_A_USD_BALANCER_POOL_ID
     );
 
     // post deploy
-    await mine(ramos.setOperator(DEPLOYED.MULTISIG));
-    await mine(ramos.setCoolDown(1800))
-    await mine(ramos.setTemplePriceFloorNumerator(9_700));
-    await mine(ramos.setRebalancePercentageBounds(100, 300));
-    await mine(ramos.setMaxRebalanceAmounts(toAtto(50_000), toAtto(50_000), toAtto(50_000)));
-    await mine(ramos.setPostRebalanceSlippage(500));
+    await mine(ramos.setOperator(DEPLOYED.MULTISIG)); // Will be moved to the bot
+    await mine(ramos.setCoolDown(1_800)); // 30 mins
+    await mine(ramos.setTemplePriceFloorNumerator(9_700)); // $0.97
+    await mine(ramos.setRebalancePercentageBounds(100, 300));  // rebalance_up if 1% below, rebalance_down if 3% above
+    await mine(ramos.setMaxRebalanceAmounts(toAtto(1_000_000), toAtto(1_000_000), toAtto(1_000_000))); // 1Mill max on each
+    await mine(ramos.setPostRebalanceSlippage(5_000)); // 50%
 }
 
 // We recommend this pattern to be able to use async/await everywhere

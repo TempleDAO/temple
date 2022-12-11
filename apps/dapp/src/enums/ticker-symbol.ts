@@ -7,4 +7,6 @@ export enum TICKER_SYMBOL {
   FEI = '$FEI',
   ETH = '$ETH',
   USDC = '$USDC',
+  USDT = '$USDT',
+  DAI = '$DAI',
 }

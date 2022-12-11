@@ -37,6 +37,7 @@ export interface DeployedContracts {
   TEMPLE_TEAM_EPOCH_7: string;
   TEMPLE_TEAM_EPOCH_8: string;
   TEMPLE_TEAM_EPOCH_9: string;
+  TEMPLE_TEAM_EPOCH_10: string;
 
   TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: string;
   TEMPLE_TEAM_PAYMENTS_FACTORY: string;
@@ -49,6 +50,18 @@ export interface DeployedContracts {
   RAMOS: string;
   RAMOS_POOL_HELPER: string;
   RAMOS_AURA_STAKING: string;
+
+  // RAMOS dependencies
+  BBA_USD_TOKEN: string;
+  BALANCER_TOKEN: string;
+  TEMPLE_BBAUSD_LP_TOKEN: string;
+  TEMPLE_BB_A_USD_BALANCER_POOL_ID: string;
+  BALANCER_VAULT: string;
+  AURA_BOOSTER: string;
+  AURA_TOKEN: string;
+  TEMPLE_BB_A_USD_AURA_POOL_ID: string;
+  TEMPLE_BB_A_USD_REWARDS: string;
+  TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN: string;
 }
 
 export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
@@ -67,6 +80,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_7: '',
     TEMPLE_TEAM_EPOCH_8: '',
     TEMPLE_TEAM_EPOCH_9: '',
+    TEMPLE_TEAM_EPOCH_10: '',
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
     TEMPLE_TEAM_PAYMENTS_FACTORY: '',
 
@@ -85,9 +99,22 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     GENERIC_ZAPS: '',
     TEMPLE_ZAPS: '',
 
+    // RAMOS
     RAMOS: '',
     RAMOS_POOL_HELPER: '',
     RAMOS_AURA_STAKING: '',
+
+    // RAMOS dependencies
+    BBA_USD_TOKEN: '',
+    BALANCER_TOKEN: '',
+    TEMPLE_BBAUSD_LP_TOKEN: '',
+    TEMPLE_BB_A_USD_BALANCER_POOL_ID: '',
+    BALANCER_VAULT: '',
+    AURA_BOOSTER: '',
+    AURA_TOKEN: '',
+    TEMPLE_BB_A_USD_AURA_POOL_ID: '',
+    TEMPLE_BB_A_USD_REWARDS: '',
+    TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
   },
   goerli: {
     // No longer active/unused
@@ -110,6 +137,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_7: '',
     TEMPLE_TEAM_EPOCH_8: '',
     TEMPLE_TEAM_EPOCH_9: '',
+    TEMPLE_TEAM_EPOCH_10: '',
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
     TEMPLE_TEAM_PAYMENTS_FACTORY: '',
 
@@ -128,9 +156,23 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     GENERIC_ZAPS: '',
     TEMPLE_ZAPS: '',
 
-    RAMOS: '0x7319fB14aA4f99735d36298025EBf5b4A69E84f3',
-    RAMOS_POOL_HELPER: '0x91EfB7Bf58522061A0Ab2c5c9b428243d90580d0',
+    // RAMOS
+    RAMOS: '0x02783CE28C5B3B015340938A11Aa79BB9f26f1Bc',
+    RAMOS_POOL_HELPER: '0xe3346D1923A9935A581FEa891b027eabF7B35250',
     RAMOS_AURA_STAKING: '',
+
+    // RAMOS dependencies
+    BBA_USD_TOKEN: '0x73651AD693531F9937528009cC204a4d9b696a68', // Frax is used instead
+    BALANCER_TOKEN: '',
+    TEMPLE_BBAUSD_LP_TOKEN: '0x89EA4363Bd541d27d9811E4Df1209dAa73154472', // temple/frax 50:50 LP token
+    TEMPLE_BB_A_USD_BALANCER_POOL_ID:
+      '0x89ea4363bd541d27d9811e4df1209daa731544720002000000000000000002c0', // temple/frax 50:50
+    BALANCER_VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+    AURA_BOOSTER: '',
+    AURA_TOKEN: '',
+    TEMPLE_BB_A_USD_AURA_POOL_ID: '',
+    TEMPLE_BB_A_USD_REWARDS: '',
+    TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
   },
   mainnet: {
     // From network/environment
@@ -147,6 +189,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_7: '0x8cded928006feb238617fa5f7b04abeefcde36bf',
     TEMPLE_TEAM_EPOCH_8: '0x008eCB3E53024628a5A8BbE0b142329791ad6f51',
     TEMPLE_TEAM_EPOCH_9: '0x5461d7Cd3eEB184a83c5a1678335D72ccaf04818',
+    TEMPLE_TEAM_EPOCH_10: '0xdace5aa4D8E1E2678a2F2F6E96F31eBD599503DB',
 
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
     TEMPLE_TEAM_PAYMENTS_FACTORY: '',
@@ -164,9 +207,24 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     GENERIC_ZAPS: '0x388d3C524724541800FD74041136caB40FD4DAfE',
     TEMPLE_ZAPS: '0xb7C30F132DBbBbB1C2b81d9D66a010FB7c72Ff9c',
 
-    RAMOS: '',
-    RAMOS_POOL_HELPER: '',
-    RAMOS_AURA_STAKING: '',
+    // RAMOS
+    RAMOS: '0x40F30803DA042928C88c3bd73806b6125C417a96',
+    RAMOS_POOL_HELPER: '0xe273120e0Ba4ad2B8e2e9291b2e951Bc733a3F4d',
+    RAMOS_AURA_STAKING: '0x0FB80EDE24a16c3496290eDC3f7Fa723378B669a',
+
+    // RAMOS dependencies
+    BBA_USD_TOKEN: '0xA13a9247ea42D743238089903570127DdA72fE44',
+    BALANCER_TOKEN: '0xba100000625a3754423978a60c9317c58a424e3D',
+    TEMPLE_BBAUSD_LP_TOKEN: '0x173063a30e095313eee39411f07e95a8a806014e',
+    TEMPLE_BB_A_USD_BALANCER_POOL_ID:
+      '0x173063a30e095313eee39411f07e95a8a806014e0002000000000000000003ab',
+    BALANCER_VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+    AURA_BOOSTER: '0x7818A1DA7BD1E64c199029E86Ba244a9798eEE10',
+    AURA_TOKEN: '0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF',
+    TEMPLE_BB_A_USD_AURA_POOL_ID: '54',
+    TEMPLE_BB_A_USD_REWARDS: '0x987c70086239e1a1e9f242ca19fb5a270d4e72b2',
+    TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN:
+      '0x058141Ca1097b8D76Ac87aAf012FCB0C088fcBd3',
   },
   localhost: {
     // From network/environment (setup when 00-localhost-env.ts script is run)
@@ -183,6 +241,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_7: process.env.TEMPLE_TEAM_EPOCH_7 || '',
     TEMPLE_TEAM_EPOCH_8: process.env.TEMPLE_TEAM_EPOCH_8 || '',
     TEMPLE_TEAM_EPOCH_9: process.env.TEMPLE_TEAM_EPOCH_9 || '',
+    TEMPLE_TEAM_EPOCH_10: process.env.TEMPLE_TEAM_EPOCH_10 || '',
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION:
       process.env.TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION || '',
     TEMPLE_TEAM_PAYMENTS_FACTORY:
@@ -201,9 +260,22 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     GENERIC_ZAPS: process.env.GENERIC_ZAPS || '',
     TEMPLE_ZAPS: process.env.TEMPLE_ZAPS || '',
 
+    // RAMOS
     RAMOS: '',
     RAMOS_POOL_HELPER: '',
     RAMOS_AURA_STAKING: '',
+
+    // RAMOS dependencies
+    BBA_USD_TOKEN: '',
+    BALANCER_TOKEN: '',
+    TEMPLE_BBAUSD_LP_TOKEN: '',
+    TEMPLE_BB_A_USD_BALANCER_POOL_ID: '',
+    BALANCER_VAULT: '',
+    AURA_BOOSTER: '',
+    AURA_TOKEN: '',
+    TEMPLE_BB_A_USD_AURA_POOL_ID: '',
+    TEMPLE_BB_A_USD_REWARDS: '',
+    TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
 
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
   },
@@ -239,6 +311,7 @@ export async function mine(tx: Promise<ContractTransaction>) {
  */
 export async function deployAndMine<
   T extends BaseContract,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   D extends (...args: any[]) => Promise<T>
 >(
   name: string,
