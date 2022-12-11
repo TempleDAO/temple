@@ -20,6 +20,7 @@ import {
   limitInput,
   handleBlur
 } from "./helpers";
+import { Popover } from 'components/Popover';
 
 const Container = styled.div`
   display: grid;
@@ -34,29 +35,37 @@ const RamosAdmin = () => {
   const {
     tpf,
     templePrice,
-    calculateRebalanceUp,
+    txSubmitted,
+    txError,
+    setTxError,
+    setTxSubmitted,
     rebalanceUpToTpf,
-    calculateRebalanceDown,
     rebalanceDownToTpf,
-    calculateDepositStable,
     depositStableUpToTpf,
     createJoinPoolRequest,
     createExitPoolRequest,
-    calculateWithdrawStable,
     createDepositAndStakeRequest,
     withdrawStableToTpf,
     randomPercent,
     setRandomPercent,
-    calculateRecommendedAmounts
+    calculateRecommendedAmounts,
+    onRebalanceDown,
+    onRebalanceUp,
+    onDepositStable,
+    onWithdrawStable,
+    onAddLiquidity,
+    onRemoveLiquidity
   } = useRamosAdmin();
+
+  const shouldDisableButton = Boolean(txError || txSubmitted);
 
   const tabs = [
     {
       label: 'Rebalance',
       content: (
         <Container>
-          <RebalanceUp calculateFunc={calculateRebalanceUp} toTpf={rebalanceUpToTpf} />
-          <RebalanceDown calculateFunc={calculateRebalanceDown} toTpf={rebalanceDownToTpf} />
+          <RebalanceUp amounts={rebalanceUpToTpf} onRebalanceUp={onRebalanceUp} shouldDisableButton={shouldDisableButton} />
+          <RebalanceDown amounts={rebalanceDownToTpf} onRebalanceDown={onRebalanceDown} shouldDisableButton={shouldDisableButton} />
         </Container>
       ),
     },
@@ -64,8 +73,8 @@ const RamosAdmin = () => {
       label: 'Stable',
       content: (
         <Container>
-          <DepositStable calculateFunc={calculateDepositStable} toTpf={depositStableUpToTpf} />
-          <WithdrawStable calculateFunc={calculateWithdrawStable} toTpf={withdrawStableToTpf} />
+          <DepositStable amounts={depositStableUpToTpf} onDepositStable={onDepositStable} shouldDisableButton={shouldDisableButton} />
+          <WithdrawStable amounts={withdrawStableToTpf} onWithdrawStable={onWithdrawStable} shouldDisableButton={shouldDisableButton} />
         </Container>
       ),
     },
@@ -73,8 +82,8 @@ const RamosAdmin = () => {
       label: 'Liquidity',
       content: (
         <Container>
-          <JoinPoolRequest calculateFunc={createJoinPoolRequest} />
-          <ExitPoolRequest calculateFunc={createExitPoolRequest} />
+          <JoinPoolRequest calculateFunc={createJoinPoolRequest} onAddLiquidity={onAddLiquidity} shouldDisableButton={shouldDisableButton} />
+          <ExitPoolRequest calculateFunc={createExitPoolRequest} onRemoveLiquidity={onRemoveLiquidity} shouldDisableButton={shouldDisableButton} />
           <DepositAndStake calculateFunc={createDepositAndStakeRequest} />
         </Container>
       ),
@@ -82,32 +91,52 @@ const RamosAdmin = () => {
   ];
 
   return (
-    <div>
-      <Container>
-        <p>
-          Temple Price: <strong>{templePrice?.formatUnits() ?? <EllipsisLoader />}</strong>
-        </p>
-        <p>
-          TPF: <strong>{tpf?.formatUnits() ?? <EllipsisLoader />}</strong>
-        </p>
-      </Container>
-      <Container>
-        <Input
-          value={randomPercent}
-          small
-          max={100}
-          crypto={{ kind: 'value', value: 'RANDOM' }}
-          suffix="%"
-          handleChange={(e: string) => {
-            setRandomPercent(limitInput(e));
-          }}
-          onBlur={() => setRandomPercent(handleBlur(randomPercent ?? 0, 0, 100))}
-        />
-        <Button onClick={calculateRecommendedAmounts} label="RECALCULATE"/>
-      </Container>
-      <br />
-      <Tabs tabs={tabs} />
-    </div>
+    <>
+      <Popover isOpen={Boolean(txError || txSubmitted)} onClose={() => {
+        setTxError(undefined);
+        setTxSubmitted(false)
+      }}>
+        {txError ? (
+          <>
+            <h3>{txError.name}</h3>
+            <p>{txError.message}</p>
+          </>
+        ) : (
+          <>
+            <h3>Transaction created!</h3>
+            <p>Please head to Safe to complete submission</p>
+
+          </>
+
+        )}
+      </Popover>
+      <div>
+        <Container>
+          <p>
+            Temple Price: <strong>{templePrice?.formatUnits() ?? <EllipsisLoader />}</strong>
+          </p>
+          <p>
+            TPI: <strong>{tpf?.formatUnits() ?? <EllipsisLoader />}</strong>
+          </p>
+        </Container>
+        <Container>
+          <Input
+            value={randomPercent}
+            small
+            max={100}
+            crypto={{ kind: 'value', value: 'GAP' }}
+            suffix="%"
+            handleChange={(e: string) => {
+              setRandomPercent(limitInput(e));
+            }}
+            onBlur={() => setRandomPercent(handleBlur(randomPercent ?? 0, 0, 100))}
+          />
+          <Button onClick={calculateRecommendedAmounts} label="RECALCULATE" />
+        </Container>
+        <br />
+        <Tabs tabs={tabs} />
+      </div>
+    </>
   );
 };
 

@@ -1,16 +1,19 @@
 import { Button } from 'components/Button/Button';
+import EllipsisLoader from 'components/EllipsisLoader';
 import { Input } from 'components/Input/Input';
 import { BigNumber, ethers } from 'ethers';
 import { useState } from 'react';
-import { ZERO } from 'utils/bigNumber';
+import { AMO__IBalancerVault } from 'types/typechain';
+import { formatExitRequestTuple } from '../helpers';
 import { InputArea, RequestArea } from '../styles';
 
 interface IProps {
-  calculateFunc: (exitAmountBpt: BigNumber) => Promise<string | undefined>;
+  calculateFunc: (exitAmountBpt: BigNumber) => Promise<AMO__IBalancerVault.ExitPoolRequestStruct | undefined>;
+  onRemoveLiquidity: (request: AMO__IBalancerVault.ExitPoolRequestStruct) => Promise<void>;
+  shouldDisableButton: boolean;
 }
-export const ExitPoolRequest: React.FC<IProps> = ({ calculateFunc }) => {
-  const [exitAmountBpt, setExitAmountBpt] = useState(ZERO);
-  const [exitPoolRequest, setExitPoolRequest] = useState<string>();
+export const ExitPoolRequest: React.FC<IProps> = ({ calculateFunc, onRemoveLiquidity, shouldDisableButton }) => {
+  const [exitPoolRequest, setExitPoolRequest] = useState<AMO__IBalancerVault.ExitPoolRequestStruct>();
 
   return (
     <InputArea>
@@ -19,19 +22,29 @@ export const ExitPoolRequest: React.FC<IProps> = ({ calculateFunc }) => {
         crypto={{ kind: 'value', value: 'BPT' }}
         isNumber
         small
-        handleChange={(e) => {
-          if (Number(e)) setExitAmountBpt(ethers.utils.parseUnits(`${e}`));
+        handleChange={async (e) => {
+          if (Number(e) && e > 0) {
+            const request = await calculateFunc(ethers.utils.parseUnits(`${e}`));
+            if(request) {
+              setExitPoolRequest(request);
+            }
+          } else {
+            setExitPoolRequest(undefined);
+          }
         }}
       />
+      <RequestArea>{exitPoolRequest ? formatExitRequestTuple(exitPoolRequest) : <EllipsisLoader />}</RequestArea>
       <Button
+        disabled={shouldDisableButton || !exitPoolRequest}
         isSmall
-        label="CREATE REQUEST PARAMS"
-        onClick={async () => {
-          const request = await calculateFunc(exitAmountBpt);
-          setExitPoolRequest(request);
+        label="REMOVE LIQUIDITY"
+        onClick={() => {
+          if(exitPoolRequest) {
+            onRemoveLiquidity(exitPoolRequest);
+          }
         }}
       />
-      {exitPoolRequest && <RequestArea>{exitPoolRequest}</RequestArea>}
+      
     </InputArea>
   );
 };

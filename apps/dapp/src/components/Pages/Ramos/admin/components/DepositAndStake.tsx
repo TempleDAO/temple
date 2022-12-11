@@ -1,4 +1,5 @@
 import { Button } from 'components/Button/Button';
+import EllipsisLoader from 'components/EllipsisLoader';
 import { Input } from 'components/Input/Input';
 import { BigNumber } from 'ethers';
 import { useState } from 'react';
@@ -13,7 +14,6 @@ interface IProps {
 
 export const DepositAndStake: React.FC<IProps> = ({ calculateFunc }) => {
   const [stakeParams, setStakeParams] = useState<{ bptAmountIn: BigNumber; useContractBalance: boolean }>();
-  const [amount, setAmount] = useState<DecimalBigNumber>();
 
   return (
     <InputArea>
@@ -21,29 +21,30 @@ export const DepositAndStake: React.FC<IProps> = ({ calculateFunc }) => {
       <Input
         small
         crypto={{ kind: 'value', value: 'BPT' }}
-        handleChange={(e: string) => {
+        handleChange={async (e: string) => {
           if (Number(e)) {
             const dbnAmount = DecimalBigNumber.parseUnits(e, 18);
-            setAmount(dbnAmount);
-          }
+            const params = await calculateFunc(dbnAmount);
+            if (params) {
+              setStakeParams(params)
+            }
+          } else setStakeParams(undefined);
         }}
       />
       <Button
         isSmall
-        label="CALCULATE"
-        onClick={async () => {
-          if (amount) {
-            const amounts = await calculateFunc(amount);
-            if (amounts) setStakeParams(amounts);
-          }
-        }}
+        label="APPROVE"
+        onClick={async () => {}}
       />
-      {stakeParams && (
+      <Button
+        isSmall
+        label="DEPOSIT AND STAKE"
+        onClick={async () => {}}
+      />
         <>
-          <RequestArea>amountIn: {stakeParams.bptAmountIn.toString()}</RequestArea>
-          <RequestArea>useContractBalance: {`${stakeParams.useContractBalance}`}</RequestArea>
+          <RequestArea>amountIn: {stakeParams?.bptAmountIn.toString() ?? <EllipsisLoader />}</RequestArea>
+          <RequestArea>useContractBalance: {stakeParams?.useContractBalance !== undefined ? `${stakeParams.useContractBalance}` : <EllipsisLoader />}</RequestArea>
         </>
-      )}
     </InputArea>
   );
 };

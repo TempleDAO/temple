@@ -10,6 +10,7 @@ import walletConnectIcon from 'assets/icons/walletconnect-circle-white.svg';
 import metamaskIcon from 'assets/icons/metamask-icon.png';
 import coinbaseAppIcon from 'assets/icons/coinbase-wallet-appicon.svg';
 import { Popover } from 'components/Popover';
+import environmentConfig from 'constants/env';
 
 interface Props {
   onClose: () => void;
@@ -38,8 +39,9 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
 
   useEffect(() => {
     if (window?.localStorage !== undefined && address) {
+      const isMultisig = address === environmentConfig.templeMultisig;
       const isTosSigned = window.localStorage[`templedao.tos.${address}`];
-      if (!isTosSigned) {
+      if (!isTosSigned && !isMultisig) {
         const message = `I agree to the TempleDAO Terms & Conditions at:\n\nhttps://templedao.link/disclaimer`;
         signMessage({ message });
       }

@@ -1,54 +1,31 @@
 import { Button } from 'components/Button/Button';
 import EllipsisLoader from 'components/EllipsisLoader';
-import { Input } from 'components/Input/Input';
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { BigNumber } from 'ethers';
-import { useState } from 'react';
-import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { ZERO } from 'utils/bigNumber';
 import { InputArea, RequestArea } from '../styles';
 
 interface IProps {
-  calculateFunc: (bps: DecimalBigNumber) => Promise<{ amountIn: BigNumber; bptOut: BigNumber } | undefined>;
-  toTpf?: { amountIn: BigNumber; bptOut: BigNumber };
+  amounts?: { amountIn: BigNumber; bptOut: BigNumber };
+  onDepositStable: (amountIn: BigNumber, bptOut: BigNumber) => Promise<void>;
+  shouldDisableButton: boolean;
 }
 
-export const DepositStable: React.FC<IProps> = ({ calculateFunc, toTpf }) => {
-  const [depositStable, setDepositStable] = useState<{ amountIn: BigNumber; bptOut: BigNumber }>();
-  const [basisPoints, setBasisPoints] = useState<DecimalBigNumber>();
+export const DepositStable: React.FC<IProps> = ({ amounts, onDepositStable, shouldDisableButton }) => {
 
   return (
     <InputArea>
       <h3>DepositStable</h3>
-      <p>To bring {TICKER_SYMBOL.TEMPLE_TOKEN} price up to TPF:</p>
+      <p>To close the gap by 100%:</p>
       <>
-        <RequestArea>stableAmountIn: {toTpf?.amountIn.toString() ?? <EllipsisLoader />}</RequestArea>
-        <RequestArea>minBptOut: {toTpf?.bptOut.toString() ?? <EllipsisLoader />}</RequestArea>
+        <RequestArea>stableAmountIn: {amounts?.amountIn.toString() ?? <EllipsisLoader />}</RequestArea>
+        <RequestArea>minBptOut: {amounts?.bptOut.toString() ?? <EllipsisLoader />}</RequestArea>
       </>
-      <p>To bring {TICKER_SYMBOL.TEMPLE_TOKEN} price up by:</p>
-      <Input
-        small
-        crypto={{ kind: 'value', value: 'BPS' }}
-        handleChange={(e: string) => {
-          const dbnAmount = DecimalBigNumber.parseUnits(e, 18);
-          setBasisPoints(dbnAmount);
-        }}
-      />
       <Button
         isSmall
-        label="CALCULATE"
-        onClick={async () => {
-          if (basisPoints) {
-            const amounts = await calculateFunc(basisPoints);
-            if (amounts) setDepositStable(amounts);
-          }
-        }}
+        disabled ={amounts?.amountIn.eq(ZERO) || shouldDisableButton}
+        label="DEPOSIT STABLE"
+        onClick={() => amounts && onDepositStable(amounts.amountIn, amounts.bptOut)}
       />
-      {depositStable && (
-        <>
-          <RequestArea>amountIn: {depositStable.amountIn.toString()}</RequestArea>
-          <RequestArea>minBptOut: {depositStable.bptOut.toString()}</RequestArea>
-        </>
-      )}
     </InputArea>
   );
 };

@@ -1,57 +1,31 @@
 import { Button } from 'components/Button/Button';
 import EllipsisLoader from 'components/EllipsisLoader';
-import { Input } from 'components/Input/Input';
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { BigNumber } from 'ethers';
-import { useState } from 'react';
-import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { ZERO } from 'utils/bigNumber';
 import { InputArea, RequestArea } from '../styles';
-import { useRamosAdmin } from '../useRamosAdmin';
 
 interface IProps {
-  calculateFunc: (bps: DecimalBigNumber) => Promise<{ amountIn: BigNumber; bptOut: BigNumber } | undefined>;
-  toTpf?: { amountIn: BigNumber; bptOut: BigNumber };
+  amounts?: { amountIn: BigNumber; bptOut: BigNumber };
+  onRebalanceDown: (amountIn: BigNumber, bptOut: BigNumber) => Promise<void>;
+  shouldDisableButton: boolean;
 }
 
-export const RebalanceDown: React.FC<IProps> = ({ calculateFunc, toTpf }) => {
-  const [rebalanceDown, setRebalanceDown] = useState<{ amountIn: BigNumber; bptOut: BigNumber }>();
-  const [basisPoints, setBasisPoints] = useState<DecimalBigNumber>();
+export const RebalanceDown: React.FC<IProps> = ({ amounts, onRebalanceDown, shouldDisableButton }) => {
 
   return (
     <InputArea>
       <h3>RebalanceDown</h3>
-      <p>To bring {TICKER_SYMBOL.TEMPLE_TOKEN} price down to TPF:</p>
+      <p>To close the gap by 100%:</p>
       <>
-        <RequestArea>templeAmountIn: {toTpf?.amountIn.toString() ?? <EllipsisLoader />}</RequestArea>
-        <RequestArea>minBptOut: {toTpf?.bptOut.toString() ?? <EllipsisLoader />}</RequestArea>
+        <RequestArea>templeAmountIn: {amounts?.amountIn.toString() ?? <EllipsisLoader />}</RequestArea>
+        <RequestArea>minBptOut: {amounts?.bptOut.toString() ?? <EllipsisLoader />}</RequestArea>
       </>
-      <p>To bring {TICKER_SYMBOL.TEMPLE_TOKEN} price down by:</p>
-      <Input
-        small
-        crypto={{ kind: 'value', value: 'BPS' }}
-        handleChange={(e: string) => {
-          if (Number(e)) {
-            const dbnAmount = DecimalBigNumber.parseUnits(e, 18);
-            setBasisPoints(dbnAmount);
-          }
-        }}
-      />
       <Button
+        disabled={shouldDisableButton || !amounts || (amounts?.amountIn.eq(ZERO) && amounts?.bptOut.eq(ZERO))}
         isSmall
-        label="CALCULATE"
-        onClick={async () => {
-          if (basisPoints) {
-            const amounts = await calculateFunc(basisPoints);
-            if (amounts) setRebalanceDown(amounts);
-          }
-        }}
+        label="Rebalance Down"
+        onClick={() => amounts && onRebalanceDown(amounts?.amountIn, amounts?.bptOut)}
       />
-      {rebalanceDown && (
-        <>
-          <RequestArea>templeAmountIn: {rebalanceDown?.amountIn.toString()}</RequestArea>
-          <RequestArea>minBptOut: {rebalanceDown?.bptOut.toString()}</RequestArea>
-        </>
-      )}
     </InputArea>
   );
 };

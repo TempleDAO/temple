@@ -1,17 +1,22 @@
 import { Button } from 'components/Button/Button';
+import EllipsisLoader from 'components/EllipsisLoader';
 import { Input } from 'components/Input/Input';
 import { BigNumber, ethers } from 'ethers';
 import { useState } from 'react';
+import { AMO__IBalancerVault } from 'types/typechain';
 import { ZERO } from 'utils/bigNumber';
+import { formatJoinRequestTuple } from '../helpers';
 import { InputArea, RequestArea } from '../styles';
 
 interface IProps {
-  calculateFunc: (templeAmount: BigNumber, stableAmount: BigNumber) => Promise<{joinPoolRequest: string; minBptOut: string} | undefined>;
+  calculateFunc: (templeAmount: BigNumber, stableAmount: BigNumber) => Promise<{ joinPoolRequest: AMO__IBalancerVault.JoinPoolRequestStruct; minBptOut: BigNumber } | undefined>;
+  onAddLiquidity: (joinPoolRequest: AMO__IBalancerVault.JoinPoolRequestStruct, minBptOut: BigNumber) => Promise<void>;
+  shouldDisableButton: boolean;
 }
-export const JoinPoolRequest: React.FC<IProps> = ({calculateFunc}) => {
+export const JoinPoolRequest: React.FC<IProps> = ({ calculateFunc, onAddLiquidity, shouldDisableButton }) => {
 
   const [amounts, setAmounts] = useState({ temple: ZERO, stable: ZERO });
-  const [joinPoolInfo, setJoinPoolInfo] = useState<{joinPoolRequest: string; minBptOut: string}>();
+  const [request, setRequest] = useState<{ joinPoolRequest: AMO__IBalancerVault.JoinPoolRequestStruct; minBptOut: BigNumber }>();
 
   return (
     <InputArea>
@@ -19,32 +24,35 @@ export const JoinPoolRequest: React.FC<IProps> = ({calculateFunc}) => {
       <Input
         crypto={{ kind: 'value', value: 'TEMPLE' }}
         small
-        handleChange={(e: string) => {
-          if(Number(e)) setAmounts({ ...amounts, temple: ethers.utils.parseUnits(e) });
+        handleChange={async (e: string) => {
+          if (Number(e) || e === '0') {
+            const req = await calculateFunc(ethers.utils.parseUnits(e), amounts.stable);
+            setAmounts({ ...amounts, temple: ethers.utils.parseUnits(e) });
+            if (req) setRequest(req);
+          };
         }}
       />
       <Input
         crypto={{ kind: 'value', value: 'STABLE' }}
         small
-        handleChange={(e: string) => {
-          if(Number(e)) setAmounts({ ...amounts, stable: ethers.utils.parseUnits(e) });
+        handleChange={async (e: string) => {
+          if (Number(e) || e === '0') {
+            const req = await calculateFunc(amounts.temple, ethers.utils.parseUnits(e));
+            setAmounts({ ...amounts, stable: ethers.utils.parseUnits(e) });
+            if (req) setRequest(req)
+          };
         }}
       />
+      <RequestArea>joinPoolRequest: {request ? formatJoinRequestTuple(request.joinPoolRequest) : <EllipsisLoader />}</RequestArea>
+      <RequestArea>minBptOut: {request ? request.minBptOut.toString() : <EllipsisLoader />}</RequestArea>
       <Button
+        disabled={shouldDisableButton || !request}
         isSmall
-        label="CREATE REQUEST PARAMS"
-        onClick={async () => {
-          const poolInfo = await calculateFunc(amounts.temple, amounts.stable)
-          setJoinPoolInfo(poolInfo);
+        label="ADD LIQUIDITY"
+        onClick={() => {
+          if (request) onAddLiquidity(request.joinPoolRequest, request.minBptOut);
         }}
       />
-      {joinPoolInfo && (
-        <>
-          <RequestArea>{joinPoolInfo.joinPoolRequest}</RequestArea>
-
-          <RequestArea>{`${joinPoolInfo.minBptOut}`}</RequestArea>
-        </>
-      )}
     </InputArea>
   );
 };

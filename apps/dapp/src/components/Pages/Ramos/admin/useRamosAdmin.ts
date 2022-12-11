@@ -12,13 +12,12 @@ import {
   AMO__IBalancerVault__factory,
   ERC20__factory,
   ERC20,
+  AMO__IBalancerVault,
 } from 'types/typechain';
 
 import {
   calculateTargetPriceDown,
   calculateTargetPriceUp,
-  formatExitRequestTuple,
-  formatJoinRequestTuple,
   getBpsPercentageFromTpf,
   isTemple,
   makeExitRequest,
@@ -69,6 +68,8 @@ export function useRamosAdmin() {
   const [rebalanceDownToTpf, setRebalanceDownToTpf] = useState<{ amountIn: BigNumber; bptOut: BigNumber }>();
   const [depositStableUpToTpf, setDepositStableUpToTpf] = useState<{ amountIn: BigNumber; bptOut: BigNumber }>();
   const [withdrawStableToTpf, setWithdrawStableToTpf] = useState<{ amountOut: BigNumber; bptIn: BigNumber }>();
+  const [txSubmitted, setTxSubmitted] = useState(false);
+  const [txError, setTxError] = useState<Error>()
 
   useEffect(() => {
     async function setContracts() {
@@ -115,7 +116,7 @@ export function useRamosAdmin() {
   }, [signer]);
 
   useEffect(() => {
-    if (tokens.temple.balance.gt(DBN_ZERO) && tokens.stable.balance.gt(DBN_ZERO)) {
+    if ((tokens.temple.balance.gt(DBN_ZERO) && tokens.stable.balance.gt(DBN_ZERO))) {
       setTemplePrice(tokens.stable.balance.div(tokens.temple.balance, 18));
     }
   }, [tokens]);
@@ -123,7 +124,7 @@ export function useRamosAdmin() {
   useEffect(() => {
     const setInitAmounts = async () => await calculateRecommendedAmounts();
     setInitAmounts();
-  }, [isConnected]);
+  }, [isConnected, templePrice]);
 
   const createJoinPoolRequest = async (templeAmount: BigNumber, stableAmount: BigNumber) => {
     if (isConnected) {
@@ -132,11 +133,23 @@ export function useRamosAdmin() {
       const { amountsIn, bptOut } = await balancerHelpers.queryJoin(poolId, ramos.address, ramos.address, initJoinReq);
       const joinPoolRequest = makeJoinRequest(tokenAddrs, amountsIn);
       return {
-        joinPoolRequest: formatJoinRequestTuple(joinPoolRequest),
-        minBptOut: bptOut.toString(),
+        joinPoolRequest: joinPoolRequest,
+        minBptOut: bptOut,
       };
     }
   };
+
+  const onAddLiquidity = async (request: AMO__IBalancerVault.JoinPoolRequestStruct, minBptOut: BigNumber) => {
+    if (isConnected) {
+      try {
+        setTxSubmitted(true);
+        await ramos.addLiquidity(request, minBptOut);
+      } catch(error) {
+        setTxSubmitted(false);
+        setTxError(error as Error);
+      }
+    }
+  }
 
   const createExitPoolRequest = async (exitAmountBpt: BigNumber) => {
     if (isConnected) {
@@ -144,9 +157,22 @@ export function useRamosAdmin() {
       const initExitReq = makeExitRequest(tokenAddrs, [ZERO, ZERO], exitAmountBpt);
       const { bptIn, amountsOut } = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, initExitReq);
       const exitRequest = makeExitRequest(tokenAddrs, amountsOut, bptIn);
-      return formatExitRequestTuple(exitRequest);
+      return exitRequest;
     }
   };
+
+  const onRemoveLiquidity = async (request: AMO__IBalancerVault.ExitPoolRequestStruct): Promise<void> => {
+    if (isConnected) {
+      try {
+        setTxSubmitted(true);
+        await ramos.removeLiquidity(request);
+      } catch (error) {
+        setTxSubmitted(false);
+        setTxError(error as Error)
+        console.log(txError)
+      }
+    }
+  }
 
   const createDepositAndStakeRequest = async (bptAmountIn: DecimalBigNumber) => {
     if (isConnected) {
@@ -185,6 +211,18 @@ export function useRamosAdmin() {
     }
   };
 
+  const onRebalanceUp = async (bptIn: BigNumber, minAmountOut: BigNumber) => {
+    if (isConnected) {
+      try {
+        setTxSubmitted(true);
+        await ramos.rebalanceUp(bptIn, minAmountOut);
+      } catch(error){
+        setTxSubmitted(false);
+        setTxError(error as Error)
+      }
+    }
+  }
+
   const calculateDepositStable = async (bps: DecimalBigNumber) => {
     if (isConnected && bps.gt(DBN_ZERO)) {
       const targetPrice = calculateTargetPriceUp(templePrice, bps);
@@ -204,6 +242,18 @@ export function useRamosAdmin() {
       };
     }
   };
+
+  const onDepositStable = async (amountIn: BigNumber, bptOut: BigNumber) => {
+    if (isConnected) {
+      try {
+        setTxSubmitted(true);
+        await ramos.depositStable(amountIn, bptOut);
+      } catch(error) {
+        setTxSubmitted(false);
+        setTxError(error as Error)
+      }
+    }
+  }
 
   const calculateRebalanceDown = async (bps: DecimalBigNumber) => {
     if (isConnected) {
@@ -228,6 +278,18 @@ export function useRamosAdmin() {
     }
   };
 
+  const onRebalanceDown = async (amountIn: BigNumber, bptOut: BigNumber) => {
+    if (isConnected) {
+      try {
+        setTxSubmitted(true);
+        await ramos.rebalanceDown(amountIn, bptOut);
+      } catch(error) {
+        setTxError(error as Error);
+        setTxSubmitted(false);
+      }
+    }
+  }
+
   const calculateWithdrawStable = async (bps: DecimalBigNumber) => {
     if (isConnected) {
       const targetPrice = calculateTargetPriceDown(templePrice, bps);
@@ -251,6 +313,18 @@ export function useRamosAdmin() {
       };
     }
   };
+
+  const onWithdrawStable = async (amountOut: BigNumber, bptIn: BigNumber) => {
+    if (isConnected) {
+      try{
+        setTxSubmitted(true);
+        await ramos.withdrawStable(amountOut, bptIn);
+      } catch(error) {
+        setTxSubmitted(false);
+        setTxError(error as Error)
+      }
+    }
+  }
 
   const calculateRecommendedAmounts = async () => {
     if (isConnected) {
@@ -291,14 +365,14 @@ export function useRamosAdmin() {
   return {
     tpf,
     templePrice,
-    calculateRebalanceUp,
+    txSubmitted,
+    setTxSubmitted,
+    txError,
+    setTxError,
     rebalanceUpToTpf,
-    calculateRebalanceDown,
     rebalanceDownToTpf,
-    calculateDepositStable,
     calculateRecommendedAmounts,
     depositStableUpToTpf,
-    calculateWithdrawStable,
     withdrawStableToTpf,
     createJoinPoolRequest,
     createExitPoolRequest,
@@ -306,5 +380,11 @@ export function useRamosAdmin() {
     randomPercent,
     setRandomPercent,
     createDepositAndStakeRequest,
+    onRebalanceDown,
+    onRebalanceUp,
+    onDepositStable,
+    onWithdrawStable,
+    onAddLiquidity,
+    onRemoveLiquidity
   };
 }
