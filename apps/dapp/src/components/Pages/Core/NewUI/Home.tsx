@@ -6,7 +6,9 @@ import intrValue from 'assets/images/newui-images/intrValue.svg';
 import treasuryGrowth from 'assets/images/newui-images/treasuryGrowth.svg';
 import elasticFloor from 'assets/images/newui-images/elasticFloor.svg';
 import footerTexture from 'assets/images/newui-images/footerTexture.svg';
-import sun from 'assets/images/newui-images/sun.svg';
+import buildings from './assets/Buildings.svg';
+import ring from './assets/Ring.svg';
+import rays from './assets/Rays.svg';
 
 import socialDiscordIcon from 'assets/images/social-discord.png';
 import socialDocsIcon from 'assets/images/social-docs.png';
@@ -32,40 +34,48 @@ const Home = () => {
   return (
     <>
       <TopContainer>
-        <SunImage src={sun} />
         <TradeWindow>
-          {tradeFormVisible ? (
-            <Trade />
-          ) : (
-            <>
-              <NewTempleText>The New Temple</NewTempleText>
-              <TradeDetailText>A safe and stable token, appreciating over time.</TradeDetailText>
-              <LearnMoreLink>Learn More</LearnMoreLink>
-              <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
-            </>
-          )}
+          <ContentContainer>
+            {tradeFormVisible ? (
+              <Trade />
+            ) : (
+              <>
+                <NewTempleText>The New Temple</NewTempleText>
+                <TradeDetailText>
+                  A safe and stable token,
+                  <br />
+                  appreciating over time.
+                </TradeDetailText>
+                <LearnMoreLink>Learn More</LearnMoreLink>
+                <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
+              </>
+            )}
+          </ContentContainer>
         </TradeWindow>
+        <BuildingsImage src={buildings} />
+        <MetricsRow>
+          <Metric>
+            <MetricValue>$1.68</MetricValue>
+            <MetricTitle>$TEMPLE Price</MetricTitle>
+          </Metric>
+          <Metric>
+            <MetricValue>$1.62</MetricValue>
+            <MetricTitle>Treasury Price Index</MetricTitle>
+          </Metric>
+          <Metric>
+            <MetricValue>$26.71M</MetricValue>
+            <MetricTitle>Treasury Value</MetricTitle>
+          </Metric>
+        </MetricsRow>
       </TopContainer>
+
       <MainContainer>
         <LowerContainerColumn>
-          <MetricsRow>
-            <Metric>
-              <MetricValue>$1.68</MetricValue>
-              <MetricTitle>$TEMPLE Price</MetricTitle>
-            </Metric>
-            <Metric>
-              <MetricValue>$1.62</MetricValue>
-              <MetricTitle>Floor Price</MetricTitle>
-            </Metric>
-            <Metric>
-              <MetricValue>$26.71M</MetricValue>
-              <MetricTitle>Treasury</MetricTitle>
-            </Metric>
-          </MetricsRow>
           <PriceHistory>Price History</PriceHistory>
           <ChartContainer>
             <PriceChartNew />
           </ChartContainer>
+
           <HowDoesItWorkText>How Does It Work?</HowDoesItWorkText>
           <MarketingRow>
             <ObtainTempleImage src={obtainTemple} />
@@ -108,6 +118,7 @@ const Home = () => {
           </MarketingRow>
         </LowerContainerColumn>
       </MainContainer>
+
       <FooterContainer>
         <FooterLine />
         <LinkRow>
@@ -191,70 +202,70 @@ const Home = () => {
   );
 };
 
+const primaryColor = '#bd7b4f';
+const secondaryColor = '#ffdec9';
+
 const TradeButton = styled(Button)`
-  padding: 20px;
-  margin-top: 30px;
-  gap: 20px;
-  width: 94px;
-  height: 48px;
+  padding: 0.75rem 1.5rem;
+  margin-top: 1.5rem;
+  width: min-content;
+  height: min-content;
   background: linear-gradient(180deg, #353535 45.25%, #101010 87.55%);
   border: 1px solid #95613f;
   box-shadow: 0px 0px 20px rgba(222, 92, 6, 0.4);
-  border-radius: 10px;
+  border-radius: 0.75rem;
   font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0.1em;
+  font-size: 1rem;
+  letter-spacing: 0.1rem;
   text-transform: uppercase;
-  color: #ffdec9;
+  color: ${secondaryColor};
 `;
 
 const LearnMoreLink = styled.a`
-  font-size: 12px;
-  line-height: 153.11%;
-  letter-spacing: 0.095em;
+  font-size: 0.75rem;
+  letter-spacing: 0.095rem;
   text-decoration-line: underline;
-  color: #bd7b4f;
-  margin-top: 30px;
+  margin-top: 1rem;
 `;
 
 const TradeDetailText = styled.div`
-  font-size: 24px;
-  text-align: center;
-  color: #bd7b4f;
-  align-self: center;
-  margin-top: 30px;
+  font-size: 1.25rem;
+  margin-top: 1rem;
 `;
 
 const NewTempleText = styled.div`
-  font-size: 36px;
-  align-items: center;
-  text-align: center;
-  color: #ffdec9;
-  align-self: center;
-  margin-top: 50px;
+  font-size: 1.75rem;
+  margin-top: 1rem;
+  color: ${secondaryColor};
 `;
 
 const TradeWindow = styled.div`
+  margin: 4rem 0 0 1rem; // offset so ring can match rays
+  min-width: 600px;
+  width: 600px;
+  height: 600px;
+  background: url(${ring}) center no-repeat;
+  background-size: contain;
+  z-index: 1;
+  text-align: center;
+`;
+
+const ContentContainer = styled.div`
   display: flex;
   flex-direction: column;
-  position: absolute;
   align-items: center;
-  width: 400px;
-  // margin-top: 0px;
-  height: 400px;
-  // border: 1px solid #fff;
+  justify-content: center;
+  padding: 0 6rem;
+  height: 100%;
 `;
 
 const MetricValue = styled.div`
-  height: 89px;
-  font-size: 48px;
-  color: #ffdec9;
+  font-size: 2rem;
+  color: ${secondaryColor};
 `;
 
 const MetricTitle = styled.div`
-  height: 44px;
-  font-size: 24px;
-  color: #bd7b4f;
+  font-size: 1.25rem;
 `;
 
 const Metric = styled.div`
@@ -263,21 +274,22 @@ const Metric = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  border: 1px solid #bd7b4f;
-  border-radius: 10px;
+  border: 1px solid ${primaryColor};
+  border-radius: 0.75rem;
   padding: 10px;
   gap: 10px;
-  height: 123px;
+  padding: 1rem 0;
   background: #0b0a0a;
 `;
 
 const MetricsRow = styled.div`
+  position: absolute;
+  bottom: 2rem;
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
-  margin-top: -150px;
-  padding-bottom: 50px;
-  z-index: 100;
+  gap: 4rem;
+  z-index: 2;
 `;
 
 const ChartContainer = styled.div`
@@ -300,16 +312,20 @@ const PriceHistory = styled.div`
   z-index: 2;
 `;
 
-const SunImage = styled(Image)`
-  width: 1300px;
-  // height: 1000px;
+const BuildingsImage = styled(Image)`
+  height: 550px;
+  position: absolute;
+  bottom: -2rem;
 `;
 
 const TopContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  color: ${primaryColor};
+  height: 100vh;
+  background: url(${rays}) no-repeat;
+  background-position: center;
 `;
 
 const FooterLine = styled.div`
@@ -322,7 +338,7 @@ const CopywriteRow = styled.div`
   padding: 30px;
   font-size: 14px;
   letter-spacing: 0.095em;
-  color: #bd7b4f;
+  color: ${primaryColor};
 `;
 
 const Links = styled.div`
@@ -388,8 +404,8 @@ const MarketingText = styled.div`
   font-size: 16px;
   letter-spacing: 0.05em;
   line-height: 120%;
-  color: #bd7b4f;
-  -webkit-text-stroke: 0.2px #bd7b4f;
+  color: ${primaryColor};
+  -webkit-text-stroke: 0.2px ${primaryColor};
 `;
 
 const ObtainTempleImage = styled(Image)`
