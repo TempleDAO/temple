@@ -100,11 +100,11 @@ export const makeExitRequest = (
   let userData = '';
 
   switch (exitType) {
-    case WeightedPoolExitKind.BPT_IN_FOR_EXACT_TOKENS_OUT: {
+    case WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT: {
       userData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [exitType, bptAmount]);
       break;
     }
-    case WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT: {
+    case WeightedPoolExitKind.BPT_IN_FOR_EXACT_TOKENS_OUT: {
       userData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256[]', 'uint256'],
         [exitType, amountsOut, bptAmount]

@@ -34,19 +34,15 @@ const RamosAdmin = () => {
   const {
     tpf,
     templePrice,
-    calculateRebalanceUp,
     rebalanceUpToTpf,
-    calculateRebalanceDown,
     rebalanceDownToTpf,
-    calculateDepositStable,
     depositStableUpToTpf,
     createJoinPoolRequest,
     createExitPoolRequest,
-    calculateWithdrawStable,
     createDepositAndStakeRequest,
     withdrawStableToTpf,
-    randomPercent,
-    setRandomPercent,
+    percentageOfGapToClose,
+    setPercentageOfGapToClose,
     calculateRecommendedAmounts
   } = useRamosAdmin();
 
@@ -55,8 +51,8 @@ const RamosAdmin = () => {
       label: 'Rebalance',
       content: (
         <Container>
-          <RebalanceUp calculateFunc={calculateRebalanceUp} toTpf={rebalanceUpToTpf} />
-          <RebalanceDown calculateFunc={calculateRebalanceDown} toTpf={rebalanceDownToTpf} />
+          <RebalanceUp toTpf={rebalanceUpToTpf} />
+          <RebalanceDown toTpf={rebalanceDownToTpf} />
         </Container>
       ),
     },
@@ -64,8 +60,8 @@ const RamosAdmin = () => {
       label: 'Stable',
       content: (
         <Container>
-          <DepositStable calculateFunc={calculateDepositStable} toTpf={depositStableUpToTpf} />
-          <WithdrawStable calculateFunc={calculateWithdrawStable} toTpf={withdrawStableToTpf} />
+          <DepositStable toTpf={depositStableUpToTpf} />
+          <WithdrawStable toTpf={withdrawStableToTpf} />
         </Container>
       ),
     },
@@ -92,18 +88,22 @@ const RamosAdmin = () => {
         </p>
       </Container>
       <Container>
-        <Input
-          value={randomPercent}
-          small
-          max={100}
-          crypto={{ kind: 'value', value: 'RANDOM' }}
-          suffix="%"
-          handleChange={(e: string) => {
-            setRandomPercent(limitInput(e));
-          }}
-          onBlur={() => setRandomPercent(handleBlur(randomPercent ?? 0, 0, 100))}
-        />
-        <Button onClick={calculateRecommendedAmounts} label="RECALCULATE"/>
+        <div>
+          <p>Percentage of gap to close: </p>
+          <Input
+            value={percentageOfGapToClose}
+            small
+            max={100}
+            crypto={{ kind: 'value', value: 'GAP' }}
+            suffix="%"
+            handleChange={(e: string) => {
+              setPercentageOfGapToClose(limitInput(e));
+            }}
+            onBlur={() => setPercentageOfGapToClose(handleBlur(percentageOfGapToClose ?? 100, 0, 100))}
+          />
+          <Button isSmall onClick={calculateRecommendedAmounts} label="RECALCULATE" />
+
+        </div>
       </Container>
       <br />
       <Tabs tabs={tabs} />

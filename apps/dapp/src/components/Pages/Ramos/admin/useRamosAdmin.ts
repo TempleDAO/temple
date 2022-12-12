@@ -23,7 +23,6 @@ import {
   isTemple,
   makeExitRequest,
   makeJoinRequest,
-  randomize,
   WeightedPoolExitKind,
 } from './helpers';
 import { ZERO } from 'utils/bigNumber';
@@ -44,7 +43,7 @@ export function useRamosAdmin() {
   const [poolId, setPoolId] = useState<string>();
   const [tpf, setTpf] = useState<DecimalBigNumber>();
   const [templePrice, setTemplePrice] = useState<DecimalBigNumber>();
-  const [randomPercent, setRandomPercent] = useState<number>(50);
+  const [percentageOfGapToClose, setPercentageOfGapToClose] = useState  (100);
   const [maxRebalanceAmounts, setMaxRebalanceAmounts] =
     useState<{ bpt: DecimalBigNumber; stable: DecimalBigNumber; temple: DecimalBigNumber }>();
   const [percentageBounds, setPercentageBounds] = useState<{ up: DecimalBigNumber; down: DecimalBigNumber }>();
@@ -163,19 +162,22 @@ export function useRamosAdmin() {
   const calculateRebalanceUp = async (bps: DecimalBigNumber) => {
     if (isConnected && bps.gt(DBN_ZERO)) {
       // account for RAMOS price impact limits
+      const maxBps = DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 0);
+      if(bps.gt(maxBps)) bps = maxBps;
+      // adjust bps for user-selected % of gap to close
+      bps = bps.mul(DecimalBigNumber.parseUnits(`${percentageOfGapToClose / 100}`,18));
+
       let targetPrice = calculateTargetPriceUp(templePrice, bps);
-      const maxTargetPrice = calculateTargetPriceUp(templePrice, DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 18))
-      if (targetPrice.gt(maxTargetPrice)) targetPrice = maxTargetPrice;
 
       const stableBalanceAtTargetPrice = tokens.stable.balance
         .mul(DBN_TEN_THOUSAND)
         .div(targetPrice.mul(DBN_TEN_THOUSAND), targetPrice.getDecimals());
 
       let templeAmountOut = tokens.temple.balance.sub(stableBalanceAtTargetPrice);
+
       if (templeAmountOut.gt(maxRebalanceAmounts.temple)) templeAmountOut = maxRebalanceAmounts.temple;
 
       const amountsOut = [templeAmountOut.toBN(18), ZERO];
-
       const exitRequest = makeExitRequest(
         [tokens.temple.address, tokens.stable.address],
         amountsOut,
@@ -191,9 +193,12 @@ export function useRamosAdmin() {
   const calculateDepositStable = async (bps: DecimalBigNumber) => {
     if (isConnected && bps.gt(DBN_ZERO)) {
       // account for RAMOS price impact limits
+      const maxBps = DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 0);
+      if(bps.gt(maxBps)) bps = maxBps;
+      // adjust bps for user-selected % of gap to close
+      bps = bps.mul(DecimalBigNumber.parseUnits(`${percentageOfGapToClose / 100}`,18));
+
       let targetPrice = calculateTargetPriceUp(templePrice, bps);
-      const maxTargetPrice = calculateTargetPriceUp(templePrice, DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 18))
-      if (targetPrice.gt(maxTargetPrice)) targetPrice = maxTargetPrice;
 
       let stableAmount = tokens.temple.balance
         .mul(targetPrice.mul(DBN_TEN_THOUSAND))
@@ -213,15 +218,17 @@ export function useRamosAdmin() {
 
   const calculateRebalanceDown = async (bps: DecimalBigNumber) => {
     if (isConnected) {
-      // account for RAMOS max price impact
+      // account for RAMOS price impact limits
+      const maxBps = DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 0);
+      if(bps.gt(maxBps)) bps = maxBps;
+      // adjust bps for user-selected % of gap to close
+      bps = bps.mul(DecimalBigNumber.parseUnits(`${percentageOfGapToClose / 100}`,18));
+
       let targetPrice = calculateTargetPriceDown(templePrice, bps);
-      const maxTargetPrice = calculateTargetPriceDown(templePrice, DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 18))
-      if (targetPrice.gt(maxTargetPrice)) targetPrice = maxTargetPrice;
 
       const stableBalanceAtTargetPrice = tokens.stable.balance.div(targetPrice, 18);
       let templeAmount = stableBalanceAtTargetPrice.sub(tokens.temple.balance);
       if (templeAmount.gt(maxRebalanceAmounts.temple)) templeAmount = maxRebalanceAmounts.temple;
-      templeAmount = randomize(templeAmount, randomPercent);
       const initAmountsIn: BigNumber[] = [templeAmount.toBN(18), ZERO];
       const joinPoolRequest = makeJoinRequest([tokens.temple.address, tokens.stable.address], initAmountsIn);
       const { amountsIn, bptOut } = await balancerHelpers.queryJoin(
@@ -240,16 +247,19 @@ export function useRamosAdmin() {
 
   const calculateWithdrawStable = async (bps: DecimalBigNumber) => {
     if (isConnected) {
-      // account for RAMOS max price impact
+      // account for RAMOS price impact limits
+      const maxBps = DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 0);
+      if(bps.gt(maxBps)) bps = maxBps;
+      // adjust bps for user-selected % of gap to close
+      bps = bps.mul(DecimalBigNumber.parseUnits(`${percentageOfGapToClose / 100}`,18));
+
       let targetPrice = calculateTargetPriceDown(templePrice, bps);
-      const maxTargetPrice = calculateTargetPriceDown(templePrice, DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 18))
-      if (targetPrice.gt(maxTargetPrice)) targetPrice = maxTargetPrice;
 
       let stableAmount = tokens.stable.balance.sub(
         tokens.temple.balance.mul(targetPrice.mul(DBN_TEN_THOUSAND)).div(DBN_TEN_THOUSAND, 18)
       );
       if (stableAmount.gt(maxRebalanceAmounts.stable)) stableAmount = maxRebalanceAmounts.stable;
-      stableAmount = randomize(stableAmount, randomPercent);
+
       const amountsOut = [ZERO, stableAmount.toBN(18).abs()];
       const exitRequest = makeExitRequest(
         [tokens.temple.address, tokens.stable.address],
@@ -290,8 +300,9 @@ export function useRamosAdmin() {
         const tpfRangeAdjusted = tpf.sub(tpf.mul(percentageBounds.down).div(DBN_TEN_THOUSAND, tpf.getDecimals()));
         if (tpfRangeAdjusted.gt(templePrice)) {
           const basisPointsDiff = getBpsPercentageFromTpf(tpfRangeAdjusted, templePrice);
-          const depositStable = await calculateDepositStable(basisPointsDiff);
           const rebalanceUp = await calculateRebalanceUp(basisPointsDiff);
+          const depositStable = await calculateDepositStable(basisPointsDiff);
+          
           depositStable && setDepositStableUpToTpf(depositStable);
           rebalanceUp && setRebalanceUpToTpf(rebalanceUp);
         } else {
@@ -305,20 +316,15 @@ export function useRamosAdmin() {
   return {
     tpf,
     templePrice,
-    calculateRebalanceUp,
     rebalanceUpToTpf,
-    calculateRebalanceDown,
     rebalanceDownToTpf,
-    calculateDepositStable,
-    calculateRecommendedAmounts,
     depositStableUpToTpf,
-    calculateWithdrawStable,
-    withdrawStableToTpf,
     createJoinPoolRequest,
     createExitPoolRequest,
-    tokens,
-    randomPercent,
-    setRandomPercent,
     createDepositAndStakeRequest,
+    withdrawStableToTpf,
+    percentageOfGapToClose,
+    setPercentageOfGapToClose,
+    calculateRecommendedAmounts
   };
 }
