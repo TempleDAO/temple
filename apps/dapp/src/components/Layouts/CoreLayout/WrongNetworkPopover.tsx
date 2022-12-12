@@ -89,7 +89,7 @@ export const WrongNetworkPopover = () => {
       </Message>
       <Menu>
         <li>{switchNetworkButton}</li>
-        {!IS_PROD && (
+        {!IS_PROD && !env.featureFlags.nexusOnlyMode && (
           <li>
             <SwitchNetworkButton role="button" isSmall disabled={loading} onClick={onDismiss}>
               {!!chain?.name ? <>Continue with {chain.name}</> : <>Continue</>}
