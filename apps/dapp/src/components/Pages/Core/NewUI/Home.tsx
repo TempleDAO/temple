@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import Image from '../../../Image/Image';
 
 import obtainTemple from 'assets/images/newui-images/obtainTemple.svg';
@@ -23,6 +23,29 @@ import { Button } from 'components/Button/Button';
 import { useState } from 'react';
 import { Trade } from './TradeNew';
 
+const MarketingContent = [
+  {
+    image: obtainTemple,
+    header: 'Obtain $TEMPLE',
+    text: 'Provide your tokens, growing the Temple Treasury and recieving $TEMPLE in return.',
+  },
+  {
+    image: intrValue,
+    header: 'Intrinsic value',
+    text: 'Each $TEMPLE token has intrinsic value equal to the treasury value, divided by the number of $TEMPLE tokens.',
+  },
+  {
+    image: treasuryGrowth,
+    header: 'Treasury Growth',
+    text: 'The Temple Treasury is put to work, generating revenue for the protocol. This will drive up the intrinsic value of each $TEMPLE token over time.',
+  },
+  {
+    image: elasticFloor,
+    header: 'Elastic Floor',
+    text: 'If the $TEMPLE token price drops below the intrinsic value, a contract will buy back tokens at randomised times and in randomised amounts, restoring the price and maintaining an elastic floor.',
+  },
+];
+
 const Home = () => {
   const [tradeFormVisible, setTradeFormVisible] = useState(false);
 
@@ -33,8 +56,10 @@ const Home = () => {
 
   return (
     <>
+      {/* Top Container */}
       <TopContainer>
-        <TradeWindow>
+        <RaysImage src={rays} />
+        <HeroRing>
           <ContentContainer>
             {tradeFormVisible ? (
               <Trade />
@@ -51,8 +76,9 @@ const Home = () => {
               </>
             )}
           </ContentContainer>
-        </TradeWindow>
+        </HeroRing>
         <BuildingsImage src={buildings} />
+        {/* Metrics */}
         <MetricsRow>
           <Metric>
             <MetricValue>$1.68</MetricValue>
@@ -69,56 +95,27 @@ const Home = () => {
         </MetricsRow>
       </TopContainer>
 
+      {/* Main container */}
       <MainContainer>
-        <LowerContainerColumn>
-          <PriceHistory>Price History</PriceHistory>
-          <ChartContainer>
-            <PriceChartNew />
-          </ChartContainer>
-
-          <HowDoesItWorkText>How Does It Work?</HowDoesItWorkText>
-          <MarketingRow>
-            <ObtainTempleImage src={obtainTemple} />
+        {/* Price chart */}
+        <Header>Price History</Header>
+        <ChartContainer>
+          <PriceChartNew />
+        </ChartContainer>
+        {/* Marketing content */}
+        <Header>How Does It Work?</Header>
+        {MarketingContent.map((content, index) => (
+          <MarketingRow index={index} key={index}>
+            <MarketingImage src={content.image} />
             <MarketingTextWrapper>
-              <MarketingHeader>Obtain $TEMPLE</MarketingHeader>
-              <MarketingText>
-                Provide your tokens, growing the Temple Treasury and recieving $TEMPLE in return.
-              </MarketingText>
+              <MarketingHeader>{content.header}</MarketingHeader>
+              <MarketingText>{content.text}</MarketingText>
             </MarketingTextWrapper>
           </MarketingRow>
-          <MarketingRow>
-            <MarketingTextWrapper>
-              <MarketingHeader>Intrinsic value</MarketingHeader>
-              <MarketingText>
-                Each $TEMPLE token has intrinsic value equal to the treasury value, divided by the number of $TEMPLE
-                tokens.
-              </MarketingText>
-            </MarketingTextWrapper>
-            <IntrinsicValueImage src={intrValue} />
-          </MarketingRow>
-          <MarketingRow>
-            <TreasuryGrowthImage src={treasuryGrowth} />
-            <MarketingTextWrapper>
-              <MarketingHeader>Treasury Growth</MarketingHeader>
-              <MarketingText>
-                The Temple Treasury is put to work, generating revenue for the protocol. This will drive up the
-                intrinsic value of each $TEMPLE token over time.
-              </MarketingText>
-            </MarketingTextWrapper>
-          </MarketingRow>
-          <MarketingRow>
-            <MarketingTextWrapper>
-              <MarketingHeader>Elastic Floor</MarketingHeader>
-              <MarketingText>
-                If the $TEMPLE token price drops below the intrinsic value, a contract will buy back tokens at
-                randomised times and in randomised amounts, restoring the price and maintaining an elastic floor.
-              </MarketingText>
-            </MarketingTextWrapper>
-            <ElasticFloorImage src={elasticFloor} />
-          </MarketingRow>
-        </LowerContainerColumn>
+        ))}
       </MainContainer>
 
+      {/* Footer */}
       <FooterContainer>
         <FooterLine />
         <LinkRow>
@@ -205,6 +202,59 @@ const Home = () => {
 const primaryColor = '#bd7b4f';
 const secondaryColor = '#ffdec9';
 
+// Top Container
+const TopContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${primaryColor};
+  height: 100vh;
+`;
+
+const RaysImage = styled(Image)`
+  position: absolute;
+  margin-top: -6rem;
+  width: 1300px;
+`;
+
+const HeroRing = styled.div`
+  margin: -8rem 0 0 1rem; // offset so ring can match rays
+  min-width: 500px;
+  width: 500px;
+  height: 500px;
+  background: url(${ring}) center no-repeat;
+  background-size: contain;
+  z-index: 1;
+  text-align: center;
+`;
+
+const ContentContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6rem;
+  height: 100%;
+`;
+
+const NewTempleText = styled.div`
+  font-size: 1.75rem;
+  margin-top: 1rem;
+  color: ${secondaryColor};
+`;
+
+const TradeDetailText = styled.div`
+  font-size: 1.25rem;
+  margin-top: 1rem;
+`;
+
+const LearnMoreLink = styled.a`
+  font-size: 0.75rem;
+  letter-spacing: 0.095rem;
+  text-decoration-line: underline;
+  margin-top: 1rem;
+`;
+
 const TradeButton = styled(Button)`
   padding: 0.75rem 1.5rem;
   margin-top: 1.5rem;
@@ -221,51 +271,21 @@ const TradeButton = styled(Button)`
   color: ${secondaryColor};
 `;
 
-const LearnMoreLink = styled.a`
-  font-size: 0.75rem;
-  letter-spacing: 0.095rem;
-  text-decoration-line: underline;
-  margin-top: 1rem;
+const BuildingsImage = styled(Image)`
+  height: 550px;
+  position: absolute;
+  bottom: -2rem;
 `;
 
-const TradeDetailText = styled.div`
-  font-size: 1.25rem;
-  margin-top: 1rem;
-`;
-
-const NewTempleText = styled.div`
-  font-size: 1.75rem;
-  margin-top: 1rem;
-  color: ${secondaryColor};
-`;
-
-const TradeWindow = styled.div`
-  margin: 4rem 0 0 1rem; // offset so ring can match rays
-  min-width: 600px;
-  width: 600px;
-  height: 600px;
-  background: url(${ring}) center no-repeat;
-  background-size: contain;
-  z-index: 1;
-  text-align: center;
-`;
-
-const ContentContainer = styled.div`
+// Metrics
+const MetricsRow = styled.div`
+  position: absolute;
+  bottom: 2rem;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0 6rem;
-  height: 100%;
-`;
-
-const MetricValue = styled.div`
-  font-size: 2rem;
-  color: ${secondaryColor};
-`;
-
-const MetricTitle = styled.div`
-  font-size: 1.25rem;
+  flex-direction: row;
+  justify-content: space-evenly;
+  gap: 4rem;
+  z-index: 2;
 `;
 
 const Metric = styled.div`
@@ -282,68 +302,89 @@ const Metric = styled.div`
   background: #0b0a0a;
 `;
 
-const MetricsRow = styled.div`
-  position: absolute;
-  bottom: 2rem;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-evenly;
-  gap: 4rem;
-  z-index: 2;
+const MetricValue = styled.div`
+  font-size: 2rem;
+  color: ${secondaryColor};
 `;
 
+const MetricTitle = styled.div`
+  font-size: 1.25rem;
+`;
+
+// Main Container
+const MainContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 1100px;
+  justify-content: center;
+  margin: auto;
+`;
+
+const Header = styled.h2`
+  font-size: 36px;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+  margin: 2rem 0;
+  color: ${secondaryColor};
+`;
+
+// Price Chart
 const ChartContainer = styled.div`
   width: 100%;
   height: 500px;
 `;
 
-const HowDoesItWorkText = styled.div`
-  font-size: 36px;
+// Marketing Container
+const MarketingRow = styled.div.attrs((props: { index: number }) => props)`
   display: flex;
-  align-items: center;
-  z-index: 2;
-  padding-top: 100px;
-`;
-
-const PriceHistory = styled.div`
-  font-size: 36px;
-  display: flex;
-  align-items: center;
-  z-index: 2;
-`;
-
-const BuildingsImage = styled(Image)`
-  height: 550px;
-  position: absolute;
-  bottom: -2rem;
-`;
-
-const TopContainer = styled.div`
-  display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  margin-top: -50px;
+  flex-direction: row;
+  ${(props) => props.index % 2 === 1 && `flex-direction: row-reverse; text-align: right;`}
+`;
+
+const MarketingTextWrapper = styled.p`
+  display: flex;
+  flex-direction: column;
+  max-width: 500px;
+`;
+
+const MarketingHeader = styled.h3`
+  color: ${secondaryColor};
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem 0;
+`;
+
+const MarketingText = styled.p`
+  font-size: 1.1rem;
+  margin: 0;
+  letter-spacing: 0.05em;
   color: ${primaryColor};
-  height: 100vh;
-  background: url(${rays}) no-repeat;
-  background-position: center;
+  -webkit-text-stroke: 0.2px ${primaryColor};
+`;
+
+const MarketingImage = styled(Image)`
+  height: 500px;
+  width: 500px;
+`;
+
+// Footer
+const FooterContainer = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-image: url('${footerTexture}');
+  background-size: cover;
 `;
 
 const FooterLine = styled.div`
   border-top: 3px solid #351f11;
   width: 100%;
-`;
-
-const CopywriteRow = styled.div`
-  height: 20px;
-  padding: 30px;
-  font-size: 14px;
-  letter-spacing: 0.095em;
-  color: ${primaryColor};
-`;
-
-const Links = styled.div`
-  display: flex;
-  flex-direction: column;
 `;
 
 const LinkRow = styled.div`
@@ -380,71 +421,17 @@ const LinkRow = styled.div`
   }
 `;
 
-const FooterContainer = styled.div`
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background-image: url('${footerTexture}');
-  background-size: cover;
-`;
-
-const MarketingTextWrapper = styled.div`
+const Links = styled.div`
   display: flex;
   flex-direction: column;
 `;
 
-const MarketingHeader = styled.div``;
-
-const MarketingText = styled.div`
-  align-self: stretch;
-  position: relative;
-  display: inline-block;
-  font-size: 16px;
-  letter-spacing: 0.05em;
-  line-height: 120%;
+const CopywriteRow = styled.div`
+  height: 20px;
+  padding: 30px;
+  font-size: 14px;
+  letter-spacing: 0.095em;
   color: ${primaryColor};
-  -webkit-text-stroke: 0.2px ${primaryColor};
-`;
-
-const ObtainTempleImage = styled(Image)`
-  // display: block;
-  //   margin-top: -100px;
-`;
-
-const IntrinsicValueImage = styled(Image)`
-  // foo
-`;
-
-const TreasuryGrowthImage = styled(Image)`
-  //foo
-`;
-
-const ElasticFloorImage = styled(Image)`
-  // foo
-`;
-
-const MarketingRow = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  margin-top: -100px;
-`;
-
-const LowerContainerColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-`;
-
-const MainContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 1100px;
-  justify-content: center;
-  margin: auto;
 `;
 
 export default Home;
