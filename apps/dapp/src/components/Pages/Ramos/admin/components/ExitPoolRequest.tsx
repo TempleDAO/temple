@@ -31,10 +31,12 @@ export const ExitPoolRequest: React.FC<IProps> = ({ calculateFunc }) => {
           setExitPoolRequest(request);
         }}
       />
-      {exitPoolRequest && <>
-        <p>To apply, create a RAMOS.removeLiquidity() transaction with parameters</p>
-        <RequestArea>request: {exitPoolRequest}</RequestArea>
-        </>}
+      {exitPoolRequest && (
+        <>
+          <p>To apply, create a RAMOS.removeLiquidity() transaction with parameters</p>
+          <RequestArea>request: {exitPoolRequest}</RequestArea>
+        </>
+      )}
     </InputArea>
   );
 };

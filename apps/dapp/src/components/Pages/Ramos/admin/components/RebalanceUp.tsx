@@ -3,11 +3,10 @@ import { BigNumber } from 'ethers';
 import { RequestArea, InputArea } from '../styles';
 
 interface IProps {
-  toTpf?: {bptIn: BigNumber, amountOut: BigNumber}
+  toTpf?: { bptIn: BigNumber; amountOut: BigNumber };
 }
 
-export const RebalanceUp: React.FC<IProps> = ({toTpf}) => {
-
+export const RebalanceUp: React.FC<IProps> = ({ toTpf }) => {
   return (
     <InputArea>
       <h3>RebalanceUp</h3>
