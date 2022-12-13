@@ -8,10 +8,10 @@ import { Button } from 'components/Button/Button';
 
 import { useRamosAdmin } from './useRamosAdmin';
 import {
-  DepositAndStake,
+  DepositAndStakeBpt,
   DepositStable,
-  ExitPoolRequest,
-  JoinPoolRequest,
+  RemoveLiquidity,
+  AddLiquidity,
   RebalanceDown,
   RebalanceUp,
   WithdrawStable,
@@ -76,9 +76,9 @@ const RamosAdmin = () => {
       label: 'Liquidity',
       content: (
         <Container>
-          <JoinPoolRequest calculateFunc={createJoinPoolRequest} />
-          <ExitPoolRequest calculateFunc={createExitPoolRequest} />
-          <DepositAndStake calculateFunc={createDepositAndStakeRequest} />
+          <AddLiquidity calculateFunc={createJoinPoolRequest} />
+          <RemoveLiquidity calculateFunc={createExitPoolRequest} />
+          <DepositAndStakeBpt calculateFunc={createDepositAndStakeRequest} />
         </Container>
       ),
     },

@@ -11,7 +11,7 @@ interface IProps {
     stableAmount: BigNumber
   ) => Promise<{ joinPoolRequest: string; minBptOut: string } | undefined>;
 }
-export const JoinPoolRequest: React.FC<IProps> = ({ calculateFunc }) => {
+export const AddLiquidity: React.FC<IProps> = ({ calculateFunc }) => {
   const [amounts, setAmounts] = useState({ temple: ZERO, stable: ZERO });
   const [joinPoolInfo, setJoinPoolInfo] = useState<{ joinPoolRequest: string; minBptOut: string }>();
 

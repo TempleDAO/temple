@@ -11,7 +11,7 @@ interface IProps {
   ) => Promise<{ bptAmountIn: BigNumber; useContractBalance: boolean } | undefined>;
 }
 
-export const DepositAndStake: React.FC<IProps> = ({ calculateFunc }) => {
+export const DepositAndStakeBpt: React.FC<IProps> = ({ calculateFunc }) => {
   const [stakeParams, setStakeParams] = useState<{ bptAmountIn: BigNumber; useContractBalance: boolean }>();
   const [amount, setAmount] = useState<DecimalBigNumber>();
 

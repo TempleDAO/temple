@@ -100,8 +100,7 @@ export function useRamosAdmin() {
         setRamos(RAMOS_CONTRACT);
         setPoolId(POOL_ID);
         setBalancerHelpers(BALANCER_HELPERS_CONTRACT);
-        //setTpf(DecimalBigNumber.fromBN(TPF, 4));
-        setTpf(DecimalBigNumber.parseUnits('1.5', 4));
+        setTpf(DecimalBigNumber.fromBN(TPF, 4));
         const tempTokens = { ...tokens };
         tokenAddresses.forEach((tokenAddr, index) => {
           if (isTemple(tokenAddr)) {
@@ -320,7 +319,6 @@ export function useRamosAdmin() {
     withdrawStableToTpf,
     percentageOfGapToClose,
     setPercentageOfGapToClose,
-    slippageTolerance,
     setSlippageTolerance,
     calculateRecommendedAmounts,
   };

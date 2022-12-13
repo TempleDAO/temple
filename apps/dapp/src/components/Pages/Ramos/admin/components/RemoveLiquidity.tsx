@@ -8,7 +8,7 @@ import { InputArea, RequestArea } from '../styles';
 interface IProps {
   calculateFunc: (exitAmountBpt: BigNumber) => Promise<string | undefined>;
 }
-export const ExitPoolRequest: React.FC<IProps> = ({ calculateFunc }) => {
+export const RemoveLiquidity: React.FC<IProps> = ({ calculateFunc }) => {
   const [exitAmountBpt, setExitAmountBpt] = useState(ZERO);
   const [exitPoolRequest, setExitPoolRequest] = useState<string>();
 
