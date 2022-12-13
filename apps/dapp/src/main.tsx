@@ -86,9 +86,8 @@ ReactDOM.render(
       <BrowserRouter>
         <Routes>
           <>
-            <Route path="/newui" element={<Home />} />
+            <Route path="/" element={<Home />} />
             <Route path="/" element={<PageLayout />}>
-              <Route path="" element={<HomePage />} />
               {/* Redirect everything else to the home page */}
               <Route path="*" element={<Navigate replace to="/" />} />
               <Route path="disclaimer" element={<Disclaimer />} />
