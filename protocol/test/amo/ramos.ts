@@ -191,7 +191,6 @@ describe("Temple Price Floor AMO", async () => {
             BBA_USD_TOKEN,
             TEMPLE_BBAUSD_LP_TOKEN,
             amoStaking.address,
-            AURA_BOOSTER,
             0,
             TEMPLE_BB_A_USD_BALANCER_POOL_ID
         );

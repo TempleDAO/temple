@@ -35,7 +35,6 @@ async function main() {
         DEPLOYED.BBA_USD_TOKEN,
         DEPLOYED.TEMPLE_BBAUSD_LP_TOKEN,
         DEPLOYED.RAMOS_AURA_STAKING,
-        DEPLOYED.AURA_BOOSTER,
         BigNumber.from(0),
         DEPLOYED.TEMPLE_BB_A_USD_BALANCER_POOL_ID
     );
