@@ -7,14 +7,12 @@ interface IProps {
 }
 
 export const RebalanceDown: React.FC<IProps> = ({ toTpf }) => {
-
   return (
     <InputArea>
       <h3>RebalanceDown</h3>
-      <>
-        <RequestArea>templeAmountIn: {toTpf?.amountIn.toString() ?? <EllipsisLoader />}</RequestArea>
-        <RequestArea>minBptOut: {toTpf?.bptOut.toString() ?? <EllipsisLoader />}</RequestArea>
-      </>
+      <p>To apply, create a RAMOS.rebalanceDown() transaction with parameters</p>
+      <RequestArea>templeAmountIn: {toTpf?.amountIn.toString() ?? <EllipsisLoader />}</RequestArea>
+      <RequestArea>minBptOut: {toTpf?.bptOut.toString() ?? <EllipsisLoader />}</RequestArea>
     </InputArea>
   );
 };

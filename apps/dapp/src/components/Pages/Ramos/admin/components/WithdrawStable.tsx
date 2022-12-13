@@ -7,14 +7,12 @@ interface IProps {
 }
 
 export const WithdrawStable: React.FC<IProps> = ({ toTpf }) => {
-
   return (
     <InputArea>
       <h3>WithdrawStable</h3>
-      <>
-        <RequestArea>bptAmountIn: {toTpf?.bptIn.toString() ?? <EllipsisLoader />}</RequestArea>
-        <RequestArea>minAmountOut: {toTpf?.amountOut.toString() ?? <EllipsisLoader />}</RequestArea>
-      </>
+      <p>To apply, create a RAMOS.withdrawStable() transaction with parameters</p>
+      <RequestArea>bptAmountIn: {toTpf?.bptIn.toString() ?? <EllipsisLoader />}</RequestArea>
+      <RequestArea>minAmountOut: {toTpf?.amountOut.toString() ?? <EllipsisLoader />}</RequestArea>
     </InputArea>
   );
 };

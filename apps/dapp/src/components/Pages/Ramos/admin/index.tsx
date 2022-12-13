@@ -19,7 +19,6 @@ import {
 import { limitInput, handleBlur } from './helpers';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { useState } from 'react';
-import Gear from 'assets/icons/gear.svg';
 
 const Container = styled.div`
   display: grid;
@@ -102,10 +101,10 @@ const RamosAdmin = () => {
       />
       <Container>
         <p>
-          Temple Price: <strong>{templePrice?.formatUnits() ?? <EllipsisLoader />}</strong>
+          Current Spot Price: <strong>{templePrice?.formatUnits() ?? <EllipsisLoader />}</strong>
         </p>
         <p>
-          TPF: <strong>{tpf?.formatUnits() ?? <EllipsisLoader />}</strong>
+          Current TPI: <strong>{tpf?.formatUnits() ?? <EllipsisLoader />}</strong>
         </p>
       </Container>
       <Container>

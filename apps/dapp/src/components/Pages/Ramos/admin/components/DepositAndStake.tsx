@@ -40,6 +40,7 @@ export const DepositAndStake: React.FC<IProps> = ({ calculateFunc }) => {
       />
       {stakeParams && (
         <>
+          <p>To apply, create a RAMOS.depositAndStakeBpt() transaction with parameters</p>
           <RequestArea>amountIn: {stakeParams.bptAmountIn.toString()}</RequestArea>
           <RequestArea>useContractBalance: {`${stakeParams.useContractBalance}`}</RequestArea>
         </>

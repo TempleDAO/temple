@@ -7,14 +7,12 @@ interface IProps {
 }
 
 export const DepositStable: React.FC<IProps> = ({ toTpf }) => {
-
   return (
     <InputArea>
       <h3>DepositStable</h3>
-      <>
-        <RequestArea>stableAmountIn: {toTpf?.amountIn.toString() ?? <EllipsisLoader />}</RequestArea>
-        <RequestArea>minBptOut: {toTpf?.bptOut.toString() ?? <EllipsisLoader />}</RequestArea>
-      </>
+      <p>To apply, create a RAMOS.depositStable() transaction with parameters</p>
+      <RequestArea>stableAmountIn: {toTpf?.amountIn.toString() ?? <EllipsisLoader />}</RequestArea>
+      <RequestArea>minBptOut: {toTpf?.bptOut.toString() ?? <EllipsisLoader />}</RequestArea>
     </InputArea>
   );
 };
