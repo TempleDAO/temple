@@ -84,13 +84,6 @@ export const calculateTargetPriceUp = async (
   return currentPrice.add(currentPrice.mul(adjustedBps));
 };
 
-export const randomize = (amount: DecimalBigNumber, percentage: number) => {
-  const randomizer = (Math.random() * percentage) / 100;
-  const randomizerDbn = DecimalBigNumber.parseUnits(`${randomizer}`, amount.getDecimals());
-
-  return amount.sub(amount.mul(randomizerDbn));
-};
-
 export const makeJoinRequest = (
   tokens: string[],
   amountsIn: BigNumber[]
