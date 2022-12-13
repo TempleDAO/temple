@@ -104,7 +104,7 @@ const RamosAdmin = () => {
           Current Spot Price: <strong>{templePrice?.formatUnits() ?? <EllipsisLoader />}</strong>
         </p>
         <p>
-          Current TPI: <strong>{tpf?.formatUnits() ?? <EllipsisLoader />}</strong>
+          Current Treasury Price Index: <strong>{tpf?.formatUnits() ?? <EllipsisLoader />}</strong>
         </p>
       </Container>
       <Container>

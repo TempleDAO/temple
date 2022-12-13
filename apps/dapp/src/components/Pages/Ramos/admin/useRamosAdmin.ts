@@ -218,12 +218,6 @@ export function useRamosAdmin() {
 
   const calculateRebalanceDown = async (bps: DecimalBigNumber) => {
     if (isConnected) {
-      // account for RAMOS price impact limits
-      const maxBps = DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 0);
-      if (bps.gt(maxBps)) bps = maxBps;
-      // adjust bps for user-selected % of gap to close
-      bps = bps.mul(DecimalBigNumber.parseUnits(`${percentageOfGapToClose / 100}`, 18));
-
       const targetPrice = await calculateTargetPriceDown(templePrice, bps, ramos, percentageOfGapToClose);
 
       const stableBalanceAtTargetPrice = tokens.stable.balance.div(targetPrice, 18);
