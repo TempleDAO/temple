@@ -20,7 +20,7 @@ import socialTwitterIcon from 'assets/images/social-twitter.png';
 import { Link } from 'react-router-dom';
 import PriceChartNew from './PriceChartNew';
 import { Button } from 'components/Button/Button';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Trade } from './TradeNew';
 import ClaimModal from './ClaimModal';
 import UnstakeOgtModal from './UnstakeModal';
@@ -52,7 +52,6 @@ const MarketingContent = [
 
 const Home = () => {
   const { address, isConnected } = useAccount();
-  console.log(address);
 
   const [tradeFormVisible, setTradeFormVisible] = useState(false);
   const [showConnect, setShowConnect] = useState(false);
@@ -92,6 +91,13 @@ const Home = () => {
     setIsUnstakeOgtLegacyModalOpen(true);
   };
 
+  let targetRef = useRef<HTMLDivElement>(null);
+
+  const scrollToContent = () => {
+    // @ts-ignore
+    targetRef.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <>
       {/* Top Container */}
@@ -116,7 +122,7 @@ const Home = () => {
                   <br />
                   appreciating over time.
                 </TradeDetailText>
-                <LearnMoreLink>Learn More</LearnMoreLink>
+                <LearnMoreLink onClick={scrollToContent}>Learn More</LearnMoreLink>
                 <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
               </>
             )}
@@ -148,7 +154,13 @@ const Home = () => {
           <PriceChartNew />
         </ChartContainer>
         {/* Marketing content */}
-        <Header>How Does It Work?</Header>
+        <Header
+          ref={(ref) => {
+            targetRef = ref;
+          }}
+        >
+          How Does It Work?
+        </Header>
         {MarketingContent.map((content, index) => (
           <MarketingRow index={index} key={index}>
             <MarketingImage src={content.image} />
@@ -300,6 +312,7 @@ const LearnMoreLink = styled.a`
   letter-spacing: 0.095rem;
   text-decoration-line: underline;
   margin-top: 1rem;
+  cursor: pointer;
 `;
 
 const ConnectWalletText = styled.div`
