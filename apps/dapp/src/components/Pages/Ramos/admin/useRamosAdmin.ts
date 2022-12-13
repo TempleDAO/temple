@@ -67,10 +67,10 @@ export function useRamosAdmin() {
     bptToken;
 
   // outputs
-  const [rebalanceUpToTpf, setRebalanceUpToTpf] = useState<{ bptIn: BigNumber; amountOut: BigNumber }>();
-  const [rebalanceDownToTpf, setRebalanceDownToTpf] = useState<{ amountIn: BigNumber; bptOut: BigNumber }>();
-  const [depositStableUpToTpf, setDepositStableUpToTpf] = useState<{ amountIn: BigNumber; bptOut: BigNumber }>();
-  const [withdrawStableToTpf, setWithdrawStableToTpf] = useState<{ amountOut: BigNumber; bptIn: BigNumber }>();
+  const [rebalanceUpAmounts, setRebalanceUpAmounts] = useState<{ bptIn: BigNumber; amountOut: BigNumber }>();
+  const [rebalanceDownAmounts, setRebalanceDownAmounts] = useState<{ amountIn: BigNumber; bptOut: BigNumber }>();
+  const [depositStableAmounts, setDepositStableAmounts] = useState<{ amountIn: BigNumber; bptOut: BigNumber }>();
+  const [withdrawStableAmounts, setWithdrawStableAmounts] = useState<{ amountOut: BigNumber; bptIn: BigNumber }>();
 
   useEffect(() => {
     async function setContracts() {
@@ -267,23 +267,23 @@ export function useRamosAdmin() {
   const calculateRecommendedAmounts = async () => {
     if (isConnected) {
       if (templePrice.gt(tpf)) {
-        setRebalanceUpToTpf({ amountOut: ZERO, bptIn: ZERO });
-        setDepositStableUpToTpf({ amountIn: ZERO, bptOut: ZERO });
+        setRebalanceUpAmounts({ amountOut: ZERO, bptIn: ZERO });
+        setDepositStableAmounts({ amountIn: ZERO, bptOut: ZERO });
         // account for percentage bounds
         const tpfRangeAdjusted = tpf.add(tpf.mul(percentageBounds.up).div(DBN_TEN_THOUSAND, tpf.getDecimals()));
         if (templePrice.gt(tpfRangeAdjusted)) {
           const basisPointsDiff = getBpsPercentageFromTpf(tpfRangeAdjusted, templePrice);
           const withdrawStable = await calculateWithdrawStable(basisPointsDiff);
           const rebalanceDown = await calculateRebalanceDown(basisPointsDiff);
-          withdrawStable && setWithdrawStableToTpf(withdrawStable);
-          rebalanceDown && setRebalanceDownToTpf(rebalanceDown);
+          withdrawStable && setWithdrawStableAmounts(withdrawStable);
+          rebalanceDown && setRebalanceDownAmounts(rebalanceDown);
         } else {
-          setWithdrawStableToTpf({ amountOut: ZERO, bptIn: ZERO });
-          setRebalanceDownToTpf({ amountIn: ZERO, bptOut: ZERO });
+          setWithdrawStableAmounts({ amountOut: ZERO, bptIn: ZERO });
+          setRebalanceDownAmounts({ amountIn: ZERO, bptOut: ZERO });
         }
       } else if (tpf.gt(templePrice)) {
-        setWithdrawStableToTpf({ amountOut: ZERO, bptIn: ZERO });
-        setRebalanceDownToTpf({ amountIn: ZERO, bptOut: ZERO });
+        setWithdrawStableAmounts({ amountOut: ZERO, bptIn: ZERO });
+        setRebalanceDownAmounts({ amountIn: ZERO, bptOut: ZERO });
         // account for percentage bounds
         const tpfRangeAdjusted = tpf.sub(tpf.mul(percentageBounds.down).div(DBN_TEN_THOUSAND, tpf.getDecimals()));
         if (tpfRangeAdjusted.gt(templePrice)) {
@@ -291,11 +291,11 @@ export function useRamosAdmin() {
           const rebalanceUp = await calculateRebalanceUp(basisPointsDiff);
           const depositStable = await calculateDepositStable(basisPointsDiff);
 
-          depositStable && setDepositStableUpToTpf(depositStable);
-          rebalanceUp && setRebalanceUpToTpf(rebalanceUp);
+          depositStable && setDepositStableAmounts(depositStable);
+          rebalanceUp && setRebalanceUpAmounts(rebalanceUp);
         } else {
-          setRebalanceUpToTpf({ amountOut: ZERO, bptIn: ZERO });
-          setDepositStableUpToTpf({ amountIn: ZERO, bptOut: ZERO });
+          setRebalanceUpAmounts({ amountOut: ZERO, bptIn: ZERO });
+          setDepositStableAmounts({ amountIn: ZERO, bptOut: ZERO });
         }
       }
     }
@@ -304,14 +304,14 @@ export function useRamosAdmin() {
   return {
     tpf,
     templePrice,
-    rebalanceUpToTpf,
-    rebalanceDownToTpf,
-    depositStableUpToTpf,
+    percentageOfGapToClose,
+    rebalanceUpAmounts,
+    rebalanceDownAmounts,
+    depositStableAmounts,
+    withdrawStableAmounts,
     createJoinPoolRequest,
     createExitPoolRequest,
     createDepositAndStakeRequest,
-    withdrawStableToTpf,
-    percentageOfGapToClose,
     setPercentageOfGapToClose,
     setSlippageTolerance,
     calculateRecommendedAmounts,

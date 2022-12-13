@@ -39,14 +39,14 @@ const RamosAdmin = () => {
   const {
     tpf,
     templePrice,
-    rebalanceUpToTpf,
-    rebalanceDownToTpf,
-    depositStableUpToTpf,
+    percentageOfGapToClose,
+    rebalanceUpAmounts,
+    rebalanceDownAmounts,
+    depositStableAmounts,
+    withdrawStableAmounts,
     createJoinPoolRequest,
     createExitPoolRequest,
     createDepositAndStakeRequest,
-    withdrawStableToTpf,
-    percentageOfGapToClose,
     setPercentageOfGapToClose,
     setSlippageTolerance,
     calculateRecommendedAmounts,
@@ -58,8 +58,8 @@ const RamosAdmin = () => {
       label: 'Rebalance',
       content: (
         <Container>
-          <RebalanceUp toTpf={rebalanceUpToTpf} />
-          <RebalanceDown toTpf={rebalanceDownToTpf} />
+          <RebalanceUp amounts={rebalanceUpAmounts} />
+          <RebalanceDown amounts={rebalanceDownAmounts} />
         </Container>
       ),
     },
@@ -67,8 +67,8 @@ const RamosAdmin = () => {
       label: 'Stable',
       content: (
         <Container>
-          <DepositStable toTpf={depositStableUpToTpf} />
-          <WithdrawStable toTpf={withdrawStableToTpf} />
+          <DepositStable amounts={depositStableAmounts} />
+          <WithdrawStable amounts={withdrawStableAmounts} />
         </Container>
       ),
     },

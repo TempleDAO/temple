@@ -3,16 +3,16 @@ import { BigNumber } from 'ethers';
 import { RequestArea, InputArea } from '../styles';
 
 interface IProps {
-  toTpf?: { bptIn: BigNumber; amountOut: BigNumber };
+  amounts?: { bptIn: BigNumber; amountOut: BigNumber };
 }
 
-export const RebalanceUp: React.FC<IProps> = ({ toTpf }) => {
+export const RebalanceUp: React.FC<IProps> = ({ amounts }) => {
   return (
     <InputArea>
       <h3>RebalanceUp</h3>
       <p>To apply, create a RAMOS.rebalanceUp() transaction with parameters</p>
-      <RequestArea>bptAmountIn: {toTpf?.bptIn.toString() ?? <EllipsisLoader />}</RequestArea>
-      <RequestArea>minAmountOut: {toTpf?.amountOut.toString() ?? <EllipsisLoader />}</RequestArea>
+      <RequestArea>bptAmountIn: {amounts?.bptIn.toString() ?? <EllipsisLoader />}</RequestArea>
+      <RequestArea>minAmountOut: {amounts?.amountOut.toString() ?? <EllipsisLoader />}</RequestArea>
     </InputArea>
   );
 };
