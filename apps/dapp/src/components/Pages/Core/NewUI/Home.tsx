@@ -22,8 +22,6 @@ import PriceChartNew from './PriceChartNew';
 import { Button } from 'components/Button/Button';
 import { useEffect, useState, useRef } from 'react';
 import { Trade } from './TradeNew';
-import ClaimModal from './ClaimModal';
-import UnstakeOgtModal from './UnstakeModal';
 import { useAccount } from 'wagmi';
 import { Account } from 'components/Layouts/CoreLayout/Account';
 import { fetchSubgraph } from 'utils/subgraph';
@@ -75,30 +73,7 @@ const Home = () => {
     }
   };
 
-  const [isClaimFromVaultsLegacyModalOpen, setIsClaimFromVaultsLegacyModalOpen] = useState(false);
-  const [isUnstakeOgtLegacyModalOpen, setIsUnstakeOgtLegacyModalOpen] = useState(false);
-
-  const legacyClaimClickHandler = () => {
-    if (!address) {
-      window.scrollTo(0, 0);
-      setShowConnect(true);
-      return;
-    }
-
-    setIsClaimFromVaultsLegacyModalOpen(true);
-  };
-
-  const legacyUnstakeOgtClickHandler = () => {
-    if (!address) {
-      window.scrollTo(0, 0);
-      setShowConnect(true);
-      return;
-    }
-
-    setIsUnstakeOgtLegacyModalOpen(true);
-  };
-
-  let targetRef = useRef<HTMLDivElement>(null);
+  let targetRef = useRef<HTMLHeadingElement>(null);
 
   const scrollToContent = () => {
     // @ts-ignore
@@ -180,6 +155,7 @@ const Home = () => {
         {/* Marketing content */}
         <Header
           ref={(ref) => {
+            // @ts-ignore
             targetRef = ref;
           }}
         >
@@ -273,11 +249,6 @@ const Home = () => {
         </LinkRow>
         <CopywriteRow>© 2022 TempleDAO. All rights reserved.</CopywriteRow>
       </FooterContainer>
-      <ClaimModal
-        isOpen={isClaimFromVaultsLegacyModalOpen}
-        onClose={() => setIsClaimFromVaultsLegacyModalOpen(false)}
-      />
-      <UnstakeOgtModal isOpen={isUnstakeOgtLegacyModalOpen} onClose={() => setIsUnstakeOgtLegacyModalOpen(false)} />
     </>
   );
 };
