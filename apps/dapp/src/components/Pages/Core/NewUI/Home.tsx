@@ -51,7 +51,6 @@ const Home = () => {
 
   const tradeButtonClickHandler = () => {
     setTradeFormVisible((tradeFormVisible) => !tradeFormVisible);
-    console.log(tradeFormVisible);
   };
 
   return (
@@ -117,7 +116,6 @@ const Home = () => {
 
       {/* Footer */}
       <FooterContainer>
-        <FooterLine />
         <LinkRow>
           <Links>
             <h4>Community</h4>
@@ -286,6 +284,16 @@ const MetricsRow = styled.div`
   justify-content: space-evenly;
   gap: 4rem;
   z-index: 2;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    border: 1px solid ${primaryColor};
+    border-radius: 0.75rem;
+    background: #0b0a0a;
+    padding: 1rem;
+    width: 80%;
+  }
 `;
 
 const Metric = styled.div`
@@ -296,15 +304,27 @@ const Metric = styled.div`
   align-items: center;
   border: 1px solid ${primaryColor};
   border-radius: 0.75rem;
-  padding: 10px;
   gap: 10px;
   padding: 1rem 0;
   background: #0b0a0a;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    gap: 0;
+    padding: 0;
+    flex-direction: row-reverse;
+    justify-content: space-between;
+    border: 0;
+  }
 `;
 
 const MetricValue = styled.div`
   font-size: 2rem;
   color: ${secondaryColor};
+
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+  }
 `;
 
 const MetricTitle = styled.div`
@@ -315,9 +335,11 @@ const MetricTitle = styled.div`
 const MainContainer = styled.div`
   display: flex;
   flex-direction: column;
-  width: 1100px;
+  max-width: 1100px;
+  width: 100%;
   justify-content: center;
   margin: auto;
+  padding: 4rem 2rem;
 `;
 
 const Header = styled.h2`
@@ -341,12 +363,20 @@ const MarketingRow = styled.div.attrs((props: { index: number }) => props)`
   justify-content: center;
   align-items: center;
   gap: 2rem;
-  margin-top: -50px;
+  margin-top: -3rem;
   flex-direction: row;
   ${(props) => props.index % 2 === 1 && `flex-direction: row-reverse; text-align: right;`}
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+    margin-top: 5rem;
+    ${(props) => props.index === 0 && `margin-top: 0;`}
+  }
 `;
 
-const MarketingTextWrapper = styled.p`
+const MarketingTextWrapper = styled.div`
   display: flex;
   flex-direction: column;
   max-width: 500px;
@@ -369,6 +399,11 @@ const MarketingText = styled.p`
 const MarketingImage = styled(Image)`
   height: 500px;
   width: 500px;
+
+  @media (max-width: 768px) {
+    height: 300px;
+    width: 300px;
+  }
 `;
 
 // Footer
@@ -380,11 +415,7 @@ const FooterContainer = styled.div`
   align-items: center;
   background-image: url('${footerTexture}');
   background-size: cover;
-`;
-
-const FooterLine = styled.div`
   border-top: 3px solid #351f11;
-  width: 100%;
 `;
 
 const LinkRow = styled.div`
@@ -392,7 +423,10 @@ const LinkRow = styled.div`
   flex-direction: row;
   justify-content: space-evenly;
   align-items: flex-start;
-  width: 1000px;
+  max-width: 1000px;
+  width: 100%;
+  gap: 2rem;
+  padding: 1rem;
 
   h4 {
     margin-top: 2rem;
