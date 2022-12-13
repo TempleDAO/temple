@@ -174,13 +174,7 @@ export function useRamosAdmin() {
 
   const calculateRebalanceUp = async (bps: DecimalBigNumber) => {
     if (isConnected && bps.gt(DBN_ZERO)) {
-      // account for RAMOS price impact limits
-      const maxBps = DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 0);
-      if (bps.gt(maxBps)) bps = maxBps;
-      // adjust bps for user-selected % of gap to close
-      bps = bps.mul(DecimalBigNumber.parseUnits(`${percentageOfGapToClose / 100}`, 18));
-
-      let targetPrice = calculateTargetPriceUp(templePrice, bps);
+      const targetPrice = await calculateTargetPriceUp(templePrice, bps, ramos, percentageOfGapToClose);
 
       const stableBalanceAtTargetPrice = tokens.stable.balance
         .mul(DBN_TEN_THOUSAND)
@@ -205,13 +199,7 @@ export function useRamosAdmin() {
 
   const calculateDepositStable = async (bps: DecimalBigNumber) => {
     if (isConnected && bps.gt(DBN_ZERO)) {
-      // account for RAMOS price impact limits
-      const maxBps = DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 0);
-      if (bps.gt(maxBps)) bps = maxBps;
-      // adjust bps for user-selected % of gap to close
-      bps = bps.mul(DecimalBigNumber.parseUnits(`${percentageOfGapToClose / 100}`, 18));
-
-      let targetPrice = calculateTargetPriceUp(templePrice, bps);
+      const targetPrice = await calculateTargetPriceUp(templePrice, bps, ramos, percentageOfGapToClose);
 
       let stableAmount = tokens.temple.balance
         .mul(targetPrice.mul(DBN_TEN_THOUSAND))
@@ -237,7 +225,7 @@ export function useRamosAdmin() {
       // adjust bps for user-selected % of gap to close
       bps = bps.mul(DecimalBigNumber.parseUnits(`${percentageOfGapToClose / 100}`, 18));
 
-      let targetPrice = calculateTargetPriceDown(templePrice, bps);
+      const targetPrice = await calculateTargetPriceDown(templePrice, bps, ramos, percentageOfGapToClose);
 
       const stableBalanceAtTargetPrice = tokens.stable.balance.div(targetPrice, 18);
       let templeAmount = stableBalanceAtTargetPrice.sub(tokens.temple.balance);
@@ -260,13 +248,7 @@ export function useRamosAdmin() {
 
   const calculateWithdrawStable = async (bps: DecimalBigNumber) => {
     if (isConnected) {
-      // account for RAMOS price impact limits
-      const maxBps = DecimalBigNumber.fromBN(await ramos.postRebalanceSlippage(), 0);
-      if (bps.gt(maxBps)) bps = maxBps;
-      // adjust bps for user-selected % of gap to close
-      bps = bps.mul(DecimalBigNumber.parseUnits(`${percentageOfGapToClose / 100}`, 18));
-
-      let targetPrice = calculateTargetPriceDown(templePrice, bps);
+      const targetPrice = await calculateTargetPriceDown(templePrice, bps, ramos, percentageOfGapToClose);
 
       let stableAmount = tokens.stable.balance.sub(
         tokens.temple.balance.mul(targetPrice.mul(DBN_TEN_THOUSAND)).div(DBN_TEN_THOUSAND, 18)
