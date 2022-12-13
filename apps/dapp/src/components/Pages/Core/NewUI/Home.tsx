@@ -26,6 +26,13 @@ import ClaimModal from './ClaimModal';
 import UnstakeOgtModal from './UnstakeModal';
 import { useAccount } from 'wagmi';
 import { Account } from 'components/Layouts/CoreLayout/Account';
+import { fetchSubgraph } from 'utils/subgraph';
+
+interface Metrics {
+  price: number;
+  tpi: number;
+  treasury: number;
+}
 
 const MarketingContent = [
   {
@@ -52,7 +59,7 @@ const MarketingContent = [
 
 const Home = () => {
   const { address, isConnected } = useAccount();
-
+  const [metrics, setMetrics] = useState<Metrics>({ price: 0, tpi: 0, treasury: 0 });
   const [tradeFormVisible, setTradeFormVisible] = useState(false);
   const [showConnect, setShowConnect] = useState(false);
 
@@ -98,6 +105,23 @@ const Home = () => {
     targetRef.scrollIntoView({ behavior: 'smooth' });
   };
 
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      const { data } = await fetchSubgraph(`{
+          protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
+            templePrice
+            lockedStables
+          }
+        }`);
+      setMetrics({
+        price: parseFloat(data.protocolMetrics[0].templePrice),
+        tpi: 0,
+        treasury: parseFloat(data.protocolMetrics[0].lockedStables),
+      });
+    };
+    fetchMetrics();
+  });
+
   return (
     <>
       {/* Top Container */}
@@ -132,15 +156,15 @@ const Home = () => {
         {/* Metrics */}
         <MetricsRow>
           <Metric>
-            <MetricValue>$1.68</MetricValue>
+            <MetricValue>${metrics.price.toFixed(3)}</MetricValue>
             <MetricTitle>$TEMPLE Price</MetricTitle>
           </Metric>
           <Metric>
-            <MetricValue>$1.62</MetricValue>
+            <MetricValue>${metrics.tpi.toFixed(3)}</MetricValue>
             <MetricTitle>Treasury Price Index</MetricTitle>
           </Metric>
           <Metric>
-            <MetricValue>$26.71M</MetricValue>
+            <MetricValue>${(metrics.treasury / 1000000).toFixed(2)}M</MetricValue>
             <MetricTitle>Treasury Value</MetricTitle>
           </Metric>
         </MetricsRow>
