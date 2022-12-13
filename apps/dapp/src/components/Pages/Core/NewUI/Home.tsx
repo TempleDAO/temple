@@ -20,8 +20,12 @@ import socialTwitterIcon from 'assets/images/social-twitter.png';
 import { Link } from 'react-router-dom';
 import PriceChartNew from './PriceChartNew';
 import { Button } from 'components/Button/Button';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Trade } from './TradeNew';
+import ClaimModal from './ClaimModal';
+import UnstakeOgtModal from './UnstakeModal';
+import { useAccount } from 'wagmi';
+import { Account } from 'components/Layouts/CoreLayout/Account';
 
 const MarketingContent = [
   {
@@ -47,10 +51,45 @@ const MarketingContent = [
 ];
 
 const Home = () => {
+  const { address, isConnected } = useAccount();
+  console.log(address);
+
   const [tradeFormVisible, setTradeFormVisible] = useState(false);
+  const [showConnect, setShowConnect] = useState(false);
+
+  useEffect(() => {
+    setShowConnect(false);
+  }, [isConnected]);
 
   const tradeButtonClickHandler = () => {
-    setTradeFormVisible((tradeFormVisible) => !tradeFormVisible);
+    if (address) {
+      setTradeFormVisible((tradeFormVisible) => !tradeFormVisible);
+    } else {
+      setShowConnect(true);
+    }
+  };
+
+  const [isClaimFromVaultsLegacyModalOpen, setIsClaimFromVaultsLegacyModalOpen] = useState(false);
+  const [isUnstakeOgtLegacyModalOpen, setIsUnstakeOgtLegacyModalOpen] = useState(false);
+
+  const legacyClaimClickHandler = () => {
+    if (!address) {
+      window.scrollTo(0, 0);
+      setShowConnect(true);
+      return;
+    }
+
+    setIsClaimFromVaultsLegacyModalOpen(true);
+  };
+
+  const legacyUnstakeOgtClickHandler = () => {
+    if (!address) {
+      window.scrollTo(0, 0);
+      setShowConnect(true);
+      return;
+    }
+
+    setIsUnstakeOgtLegacyModalOpen(true);
   };
 
   return (
@@ -60,9 +99,16 @@ const Home = () => {
         <RaysImage src={rays} />
         <HeroRing>
           <ContentContainer>
-            {tradeFormVisible ? (
-              <Trade />
-            ) : (
+            {tradeFormVisible && <Trade />}
+            {showConnect && (
+              <ConnectWalletContainer>
+                <ConnectWalletText>Connect Wallet to Continue</ConnectWalletText>
+                <ConnectButtonWrapper>
+                  <Account />
+                </ConnectButtonWrapper>
+              </ConnectWalletContainer>
+            )}
+            {!tradeFormVisible && !showConnect && (
               <>
                 <NewTempleText>The New Temple</NewTempleText>
                 <TradeDetailText>
@@ -174,25 +220,28 @@ const Home = () => {
             <ul>
               <li>
                 {' '}
-                <Link to={'/disclaimer'}>
+                <Link to={''}>
                   <strong>Disclaimer</strong>
                 </Link>
               </li>
               <li>
-                <Link to={'/disclaimer'}>
-                  <strong>Claim from vaults (Legacy)</strong>
-                </Link>
+                <ClaimFromVaultsLegacyLink onClick={legacyClaimClickHandler}>
+                  Claim from vaults (Legacy)
+                </ClaimFromVaultsLegacyLink>
               </li>
               <li>
-                <Link to={'/disclaimer'}>
-                  <strong>Unstake OGT (Legacy)</strong>
-                </Link>
+                <UnstakeOgtLegacyLink onClick={legacyUnstakeOgtClickHandler}>Unstake OGT (Legacy)</UnstakeOgtLegacyLink>
               </li>
             </ul>
           </Links>
         </LinkRow>
         <CopywriteRow>© 2022 TempleDAO. All rights reserved.</CopywriteRow>
       </FooterContainer>
+      <ClaimModal
+        isOpen={isClaimFromVaultsLegacyModalOpen}
+        onClose={() => setIsClaimFromVaultsLegacyModalOpen(false)}
+      />
+      <UnstakeOgtModal isOpen={isUnstakeOgtLegacyModalOpen} onClose={() => setIsUnstakeOgtLegacyModalOpen(false)} />
     </>
   );
 };
@@ -251,6 +300,34 @@ const LearnMoreLink = styled.a`
   letter-spacing: 0.095rem;
   text-decoration-line: underline;
   margin-top: 1rem;
+`;
+
+const ConnectWalletText = styled.div`
+  font-size: 1.75rem;
+  margin: auto;
+  color: ${secondaryColor};
+  padding-bottom: 20px;
+`;
+
+const ConnectButtonWrapper = styled.div`
+  width: 200px;
+  margin: auto;
+`;
+
+const ConnectWalletContainer = styled.div`
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+`;
+
+const ClaimFromVaultsLegacyLink = styled.a`
+  cursor: pointer;
+  margin-left: 0.75rem;
+`;
+
+const UnstakeOgtLegacyLink = styled.a`
+  cursor: pointer;
+  margin-left: 0.75rem;
 `;
 
 const TradeButton = styled(Button)`
