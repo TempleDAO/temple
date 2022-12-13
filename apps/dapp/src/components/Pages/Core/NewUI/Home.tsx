@@ -225,12 +225,12 @@ const Home = () => {
                 </Link>
               </li>
               <li>
-                <ClaimFromVaultsLegacyLink onClick={legacyClaimClickHandler}>
+                <ClaimFromVaultsLegacyLink to="/dapp/vaults/1m-core/claim">
                   Claim from vaults (Legacy)
                 </ClaimFromVaultsLegacyLink>
               </li>
               <li>
-                <UnstakeOgtLegacyLink onClick={legacyUnstakeOgtClickHandler}>Unstake OGT (Legacy)</UnstakeOgtLegacyLink>
+                <UnstakeOgtLegacyLink to="/dapp/trade/unstake">Unstake OGT (Legacy)</UnstakeOgtLegacyLink>
               </li>
             </ul>
           </Links>
@@ -320,12 +320,12 @@ const ConnectWalletContainer = styled.div`
   flex-direction: column;
 `;
 
-const ClaimFromVaultsLegacyLink = styled.a`
+const ClaimFromVaultsLegacyLink = styled(Link)`
   cursor: pointer;
   margin-left: 0.75rem;
 `;
 
-const UnstakeOgtLegacyLink = styled.a`
+const UnstakeOgtLegacyLink = styled(Link)`
   cursor: pointer;
   margin-left: 0.75rem;
 `;
