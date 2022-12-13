@@ -120,3 +120,10 @@ export const makeExitRequest = (
     toInternalBalance: false,
   };
 };
+
+export const applySlippage = (amount: BigNumber, slippage: number): BigNumber => {
+  const multipleAmount = (100 - slippage) / 100 ;
+  const slippageDBN = DecimalBigNumber.parseUnits(`${multipleAmount}`, 18);
+  const amountDBN = DecimalBigNumber.fromBN(amount, 18);
+  return amountDBN.mul(slippageDBN).toBN(18);
+}

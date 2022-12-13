@@ -15,6 +15,7 @@ import {
 } from 'types/typechain';
 
 import {
+  applySlippage,
   calculateTargetPriceDown,
   calculateTargetPriceUp,
   formatExitRequestTuple,
@@ -47,6 +48,7 @@ export function useRamosAdmin() {
   const [maxRebalanceAmounts, setMaxRebalanceAmounts] =
     useState<{ bpt: DecimalBigNumber; stable: DecimalBigNumber; temple: DecimalBigNumber }>();
   const [percentageBounds, setPercentageBounds] = useState<{ up: DecimalBigNumber; down: DecimalBigNumber }>();
+  const [slippageTolerance, setSlippageTolerance] = useState(0.5);
 
   const isConnected =
     ramos &&
@@ -98,7 +100,8 @@ export function useRamosAdmin() {
         setRamos(RAMOS_CONTRACT);
         setPoolId(POOL_ID);
         setBalancerHelpers(BALANCER_HELPERS_CONTRACT);
-        setTpf(DecimalBigNumber.fromBN(TPF, 4));
+        //setTpf(DecimalBigNumber.fromBN(TPF, 4));
+        setTpf(DecimalBigNumber.parseUnits('1.5', 4));
         const tempTokens = { ...tokens };
         tokenAddresses.forEach((tokenAddr, index) => {
           if (isTemple(tokenAddr)) {
@@ -133,7 +136,7 @@ export function useRamosAdmin() {
       const joinPoolRequest = makeJoinRequest(tokenAddrs, amountsIn);
       return {
         joinPoolRequest: formatJoinRequestTuple(joinPoolRequest),
-        minBptOut: bptOut.toString(),
+        minBptOut: applySlippage(bptOut, slippageTolerance).toString(),
       };
     }
   };
@@ -186,7 +189,7 @@ export function useRamosAdmin() {
       );
 
       const [bptIn, amounts] = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, exitRequest);
-      return { bptIn, amountOut: amounts[0] };
+      return { bptIn, amountOut: applySlippage(amounts[0], slippageTolerance) };
     }
   };
 
@@ -211,7 +214,7 @@ export function useRamosAdmin() {
       const amounts = await balancerHelpers.queryJoin(poolId, ramos.address, ramos.address, joinPoolRequest);
       return {
         amountIn: amounts.amountsIn[1],
-        bptOut: amounts.bptOut,
+        bptOut: applySlippage(amounts.bptOut, slippageTolerance),
       };
     }
   };
@@ -240,7 +243,7 @@ export function useRamosAdmin() {
 
       return {
         amountIn: amountsIn[0],
-        bptOut: bptOut,
+        bptOut: applySlippage(bptOut, slippageTolerance),
       };
     }
   };
@@ -270,7 +273,7 @@ export function useRamosAdmin() {
       const amounts = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, exitRequest);
 
       return {
-        amountOut: amounts.amountsOut[1],
+        amountOut: applySlippage(amounts.amountsOut[1], slippageTolerance),
         bptIn: amounts.bptIn,
       };
     }
@@ -325,6 +328,8 @@ export function useRamosAdmin() {
     withdrawStableToTpf,
     percentageOfGapToClose,
     setPercentageOfGapToClose,
+    slippageTolerance,
+    setSlippageTolerance,
     calculateRecommendedAmounts
   };
 }

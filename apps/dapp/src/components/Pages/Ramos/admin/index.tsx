@@ -16,10 +16,10 @@ import {
   RebalanceUp,
   WithdrawStable,
 } from './components';
-import {
-  limitInput,
-  handleBlur
-} from "./helpers";
+import { limitInput, handleBlur } from './helpers';
+import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
+import { useState } from 'react';
+import Gear from 'assets/icons/gear.svg';
 
 const Container = styled.div`
   display: grid;
@@ -28,6 +28,12 @@ const Container = styled.div`
   ${tabletAndAbove(css`
     grid-template-columns: 1fr 1fr;
   `)}
+`;
+
+const Content = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 `;
 
 const RamosAdmin = () => {
@@ -43,8 +49,10 @@ const RamosAdmin = () => {
     withdrawStableToTpf,
     percentageOfGapToClose,
     setPercentageOfGapToClose,
-    calculateRecommendedAmounts
+    setSlippageTolerance,
+    calculateRecommendedAmounts,
   } = useRamosAdmin();
+  const [isTxSettingsOpen, setIsTxSettingsOpen] = useState(false);
 
   const tabs = [
     {
@@ -79,6 +87,19 @@ const RamosAdmin = () => {
 
   return (
     <div>
+      <TransactionSettingsModal
+        hasDeadline={false}
+        closeOnClickOutside={false}
+        defaultSlippage={0.5}
+        isOpen={isTxSettingsOpen}
+        onClose={() => {
+          setIsTxSettingsOpen(false);
+          calculateRecommendedAmounts();
+        }}
+        onChange={(settings) => {
+          setSlippageTolerance(settings.slippageTolerance);
+        }}
+      />
       <Container>
         <p>
           Temple Price: <strong>{templePrice?.formatUnits() ?? <EllipsisLoader />}</strong>
@@ -88,22 +109,23 @@ const RamosAdmin = () => {
         </p>
       </Container>
       <Container>
-        <div>
+        <Content>
           <p>Percentage of gap to close: </p>
           <Input
             value={percentageOfGapToClose}
             small
             max={100}
-            crypto={{ kind: 'value', value: 'GAP' }}
             suffix="%"
             handleChange={(e: string) => {
               setPercentageOfGapToClose(limitInput(e));
             }}
             onBlur={() => setPercentageOfGapToClose(handleBlur(percentageOfGapToClose ?? 100, 0, 100))}
           />
+        </Content>
+        <Content>
           <Button isSmall onClick={calculateRecommendedAmounts} label="RECALCULATE" />
-
-        </div>
+          <Button isSmall onClick={() => setIsTxSettingsOpen(true)} label="TRANSACTION SETTINGS" />
+        </Content>
       </Container>
       <br />
       <Tabs tabs={tabs} />
