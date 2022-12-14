@@ -17,7 +17,7 @@ export const DepositAndStakeBpt: React.FC<IProps> = ({ calculateFunc }) => {
 
   return (
     <InputArea>
-      <h3>DepositAndStake</h3>
+      <h3>DepositAndStakeBpt</h3>
       <Input
         small
         crypto={{ kind: 'value', value: 'BPT' }}
@@ -30,7 +30,7 @@ export const DepositAndStakeBpt: React.FC<IProps> = ({ calculateFunc }) => {
       />
       <Button
         isSmall
-        label="CALCULATE"
+        label="CREATE REQUEST PARAMS"
         onClick={async () => {
           if (amount) {
             const amounts = await calculateFunc(amount);
