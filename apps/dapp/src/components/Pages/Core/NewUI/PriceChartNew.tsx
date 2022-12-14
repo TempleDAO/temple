@@ -120,8 +120,8 @@ function useTemplePrice(data: ChartData, interval: TIME_INTERVAL) {
     ramosPriceDataPoints: data.ramosPriceDataPoints.filter(domainFilter),
   };
 
-  const lowerPriceThreshold = Math.abs(Math.min(...domainDataPoints.templePriceDataPoints.map(({ y }) => y)) * 0.9);
-  const upperPriceThreshold = Math.abs(Math.max(...domainDataPoints.templePriceDataPoints.map(({ y }) => y)) * 1.1);
+  const lowerPriceThreshold = Math.abs(Math.min(...domainDataPoints.templePriceDataPoints.map(({ y }) => y)) * 0.97);
+  const upperPriceThreshold = Math.abs(Math.max(...domainDataPoints.templePriceDataPoints.map(({ y }) => y)) * 1.05);
 
   const xDomain = [lowerDateThreshold, now];
   const yDomain = [lowerPriceThreshold, upperPriceThreshold];
