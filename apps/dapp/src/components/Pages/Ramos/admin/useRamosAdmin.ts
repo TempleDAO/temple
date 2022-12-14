@@ -175,11 +175,11 @@ export function useRamosAdmin() {
     if (isConnected && bps.gt(DBN_ZERO)) {
       const targetPrice = await calculateTargetPriceUp(templePrice, bps, ramos, percentageOfGapToClose);
 
-      const stableBalanceAtTargetPrice = tokens.stable.balance
+      const templeBalanceAtTargetPrice = tokens.stable.balance
         .mul(DBN_TEN_THOUSAND)
         .div(targetPrice.mul(DBN_TEN_THOUSAND), targetPrice.getDecimals());
 
-      let templeAmountOut = tokens.temple.balance.sub(stableBalanceAtTargetPrice);
+      let templeAmountOut = tokens.temple.balance.sub(templeBalanceAtTargetPrice);
 
       if (templeAmountOut.gt(maxRebalanceAmounts.temple)) templeAmountOut = maxRebalanceAmounts.temple;
 
@@ -220,8 +220,8 @@ export function useRamosAdmin() {
     if (isConnected) {
       const targetPrice = await calculateTargetPriceDown(templePrice, bps, ramos, percentageOfGapToClose);
 
-      const stableBalanceAtTargetPrice = tokens.stable.balance.div(targetPrice, 18);
-      let templeAmount = stableBalanceAtTargetPrice.sub(tokens.temple.balance);
+      const templeBalanceAtTargetPrice = tokens.stable.balance.div(targetPrice, 18);
+      let templeAmount = templeBalanceAtTargetPrice.sub(tokens.temple.balance);
       if (templeAmount.gt(maxRebalanceAmounts.temple)) templeAmount = maxRebalanceAmounts.temple;
       const initAmountsIn: BigNumber[] = [templeAmount.toBN(18), ZERO];
       const joinPoolRequest = makeJoinRequest([tokens.temple.address, tokens.stable.address], initAmountsIn);
