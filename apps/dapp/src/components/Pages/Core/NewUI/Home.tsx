@@ -35,23 +35,30 @@ interface Metrics {
 const MarketingContent = [
   {
     image: obtainTemple,
-    header: 'Obtain $TEMPLE',
-    text: 'Provide your tokens, growing the Temple Treasury and recieving $TEMPLE in return.',
+    header: 'No Staking Required',
+    text: 'Simply buy and hold $TEMPLE in your wallet, then relax as the Treasury farms on your behalf.',
   },
   {
     image: intrValue,
-    header: 'Intrinsic value',
-    text: 'Each $TEMPLE token has intrinsic value equal to the treasury value, divided by the number of $TEMPLE tokens.',
+    header: 'Backed by Stable Treasury Assets',
+    text: 'Each $TEMPLE token is backed by stable assets in the Treasury. The $TEMPLE price is indexed to these Treasury assets through a metric called Treasury Price Index (TPI).',
   },
   {
     image: treasuryGrowth,
-    header: 'Treasury Growth',
-    text: 'The Temple Treasury is put to work, generating revenue for the protocol. This will drive up the intrinsic value of each $TEMPLE token over time.',
+    header: 'DeFi Yields Without the Worry',
+    text: (
+      <>
+        Get exposure to the top stable yields in DeFi without worrying about actively managing any positions.
+        <br />
+        <br />
+        TPI and $TEMPLE price both rise over time as the Temple Treasury generates revenue and grows in value.
+      </>
+    ),
   },
   {
     image: elasticFloor,
-    header: 'Elastic Floor',
-    text: 'If the $TEMPLE token price drops below the intrinsic value, a contract will buy back tokens at randomised times and in randomised amounts, restoring the price and maintaining an elastic floor.',
+    header: 'Downside Price Protection',
+    text: 'If $TEMPLE price trades below the TPI, automated price protection is engaged through our AMO-styled liquidity manager (RAMOS).',
   },
 ];
 
@@ -262,7 +269,7 @@ const Home = () => {
             </ul>
           </Links>
         </LinkRow>
-        <CopywriteRow>© 2022 TempleDAO. All rights reserved.</CopywriteRow>
+        <CopyrightRow>© 2022 TempleDAO. All rights reserved.</CopyrightRow>
       </FooterContainer>
     </>
   );
@@ -474,16 +481,16 @@ const MarketingTextWrapper = styled.div`
 
 const MarketingHeader = styled.h3`
   color: ${secondaryColor};
-  font-size: 1.5rem;
-  margin: 0 0 0.5rem 0;
+  font-size: 1.6rem;
+  margin: 0 0 0.75rem 0;
 `;
 
 const MarketingText = styled.p`
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   margin: 0;
   letter-spacing: 0.05em;
+  line-height: 1.75rem;
   color: ${primaryColor};
-  -webkit-text-stroke: 0.2px ${primaryColor};
 `;
 
 const MarketingImage = styled(Image)`
@@ -567,7 +574,7 @@ const FooterImage = styled(Image)`
   }
 `;
 
-const CopywriteRow = styled.div`
+const CopyrightRow = styled.div`
   height: 20px;
   padding: 30px;
   font-size: 14px;
