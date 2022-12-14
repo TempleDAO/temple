@@ -5,10 +5,11 @@ import { curveCatmullRom } from 'd3-shape';
 import { FlexibleXYPlot, XAxis, YAxis, LineSeries, Crosshair, HorizontalGridLines } from 'react-vis';
 import Image from 'components/Image/Image';
 import Loader from 'components/Loader/Loader';
-import useRefreshablePriceMetrics, { PriceMetrics } from 'hooks/use-refreshable-price-metrics';
+import { PriceMetricsRamos } from 'hooks/use-refreshable-price-metrics-ramos';
 import sunImage from 'assets/images/sun-art-new.svg';
 import 'react-vis/dist/style.css';
 import { queryPhone } from 'styles/breakpoints';
+import useRefreshablePriceMetricsRamos from 'hooks/use-refreshable-price-metrics-ramos';
 
 const CHART_SIZE = {
   width: 800,
@@ -55,7 +56,7 @@ type LineChartProps = {
 };
 
 function useProtocolMetrics(timeInterval: TIME_INTERVAL) {
-  const { hourlyPriceMetrics, dailyPriceMetrics } = useRefreshablePriceMetrics();
+  const { hourlyPriceMetrics, dailyPriceMetrics } = useRefreshablePriceMetricsRamos();
 
   let hourlyData: ChartData = {
     templePriceDataPoints: [],
@@ -152,7 +153,7 @@ function useTemplePrice(data: ChartData, interval: TIME_INTERVAL) {
   return { dataPoints: domainDataPoints, xDomain, yDomain, priceData };
 }
 
-function formatMetrics(metrics: PriceMetrics[]) {
+function formatMetrics(metrics: PriceMetricsRamos[]) {
   type ReducerState = {
     templePriceDataPoints: DataPoint[];
     ramosPriceDataPoints: DataPoint[];
@@ -172,12 +173,12 @@ function formatMetrics(metrics: PriceMetrics[]) {
 
     acc.templePriceDataPoints.push({
       x: utcTimestamp,
-      y: Number(dataPoint.templePrice),
+      y: Number(dataPoint.templePriceUSD),
     });
 
     acc.ramosPriceDataPoints.push({
       x: utcTimestamp,
-      y: Number(dataPoint.intrinsicValue),
+      y: Number(dataPoint.tpiLowerBoundUSD),
     });
 
     return acc;
@@ -197,7 +198,7 @@ export const PriceChart = ({ timeInterval = TIME_INTERVAL.ONE_WEEK }: LineChartP
   const [loading, setLoading] = useState(true);
   const data = useProtocolMetrics(selectedInterval);
 
-  const { dataPoints, xDomain, yDomain, priceData } = useTemplePrice(data, selectedInterval);
+  const { dataPoints, xDomain, yDomain } = useTemplePrice(data, selectedInterval);
 
   const { crosshairValues, onMouseLeave, onNearestX } = useCrosshairs(dataPoints);
 
