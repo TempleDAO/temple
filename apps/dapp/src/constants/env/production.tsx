@@ -37,8 +37,8 @@ const env: Environment = {
     vaultOps: '0x65fE8BaBF7DA367b2B45cBD748F0490713f84828',
     vaultProxy: '0x6f5bB7cC4F3D6628d0095545552757AB377FE15C',
     vaultEarlyExit: '0x7C6f1b4891ff8CAcCeC97DbbD9Df3b773d88A03E',
-    ramos: '0x3892A041F7DD71363D70a52D23CaFd991ACa8635',
-    ramosPoolHelper: '0x1B9441fcf40f8dC85Cf3511Eff67c953028c927A',
+    ramos: '0x8C18b1619362C1f89a688294db9EDbb7947a710f',
+    ramosPoolHelper: '0x0bD02b31B3a6aFB335a4C62c53BfdDD38D388075',
     balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E'
   },
   fraxSellDisabledIvMultiple: 1.02,
