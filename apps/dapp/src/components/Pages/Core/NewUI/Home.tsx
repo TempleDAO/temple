@@ -1,4 +1,4 @@
-import styled, { keyframes } from 'styled-components';
+import styled from 'styled-components';
 import Image from '../../../Image/Image';
 
 import obtainTemple from 'assets/images/newui-images/obtainTemple.svg';
@@ -24,7 +24,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Trade } from './TradeNew';
 import { useAccount } from 'wagmi';
 import { Account } from 'components/Layouts/CoreLayout/Account';
-import { fetchSubgraph } from 'utils/subgraph';
+import { fetchGenericSubgraph } from 'utils/subgraph';
 
 interface Metrics {
   price: number;
@@ -55,6 +55,54 @@ const MarketingContent = [
   },
 ];
 
+const FooterContent = [
+  {
+    header: 'Community',
+    links: [
+      {
+        text: 'Discord',
+        image: socialDiscordIcon,
+        link: 'https://discord.gg/templedao',
+      },
+      {
+        text: 'Telegram',
+        image: socialTelegramIcon,
+        link: 'https://t.me/templedao',
+      },
+      {
+        text: 'Twitter',
+        image: socialTwitterIcon,
+        link: 'https://twitter.com/templedao',
+      },
+      {
+        text: 'Codex',
+        image: socialCodexIcon,
+        link: 'https://codex.templedao.link/',
+      },
+    ],
+  },
+  {
+    header: 'Resources',
+    links: [
+      {
+        text: 'Docs',
+        image: socialDocsIcon,
+        link: 'https://docs.templedao.link/',
+      },
+      {
+        text: 'Medium',
+        image: socialMediumIcon,
+        link: 'https://medium.com/templedao',
+      },
+      {
+        text: 'Contact Us',
+        image: socialMessageIcon,
+        link: 'mailto:templedao@protonmail.com/',
+      },
+    ],
+  },
+];
+
 const Home = () => {
   const { address, isConnected } = useAccount();
   const [metrics, setMetrics] = useState<Metrics>({ price: 0, tpi: 0, treasury: 0 });
@@ -82,16 +130,25 @@ const Home = () => {
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      const { data } = await fetchSubgraph(`{
-          protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
-            templePrice
-            lockedStables
+      // const { data: treasuryData } = await fetchSubgraph(`{
+      //     protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
+      //       lockedStables
+      //     }
+      //   }`);
+      const { data: ramosData } = await fetchGenericSubgraph(
+        'https://api.thegraph.com/subgraphs/name/medariox/temple-ramos',
+        `{
+          metrics {
+            templePriceIndexUSD
+            templePriceUSD
           }
-        }`);
+        }`
+      );
       setMetrics({
-        price: parseFloat(data.protocolMetrics[0].templePrice),
-        tpi: 0,
-        treasury: parseFloat(data.protocolMetrics[0].lockedStables),
+        price: parseFloat(ramosData.metrics[0].templePriceUSD),
+        tpi: parseFloat(ramosData.metrics[0].templePriceIndexUSD),
+        // treasury: parseFloat(treasuryData.protocolMetrics[0].lockedStables),
+        treasury: 37000000,
       });
     };
     fetchMetrics();
@@ -135,12 +192,12 @@ const Home = () => {
             <MetricTitle>$TEMPLE Price</MetricTitle>
           </Metric>
           <Metric>
-            <MetricValue>${metrics.tpi.toFixed(3)}</MetricValue>
+            <MetricValue>${metrics.tpi.toFixed(2)}</MetricValue>
             <MetricTitle>Treasury Price Index</MetricTitle>
           </Metric>
           <Metric>
-            <MetricValue>${(metrics.treasury / 1000000).toFixed(2)}M</MetricValue>
-            <MetricTitle>Treasury Value</MetricTitle>
+            <MetricValue>${(metrics.treasury / 1000000).toFixed(0)}M</MetricValue>
+            <MetricTitle>RAMOS TVL</MetricTitle>
           </Metric>
         </MetricsRow>
       </TopContainer>
@@ -175,74 +232,32 @@ const Home = () => {
       {/* Footer */}
       <FooterContainer>
         <LinkRow>
-          <Links>
-            <h4>Community</h4>
-            <ul>
-              <li>
-                <a href={'https://discord.gg/templedao'} target={'_blank'} rel="noreferrer">
-                  <Image src={socialDiscordIcon} alt={''} width={24} height={24} />
-                  <strong>Discord</strong>
-                </a>
-              </li>
-              <li>
-                <a href={'https://twitter.com/templedao'} target={'_blank'} rel="noreferrer">
-                  <Image src={socialTwitterIcon} alt={''} width={24} height={24} />
-                  <strong>Twitter</strong>
-                </a>
-              </li>
-              <li>
-                <a href={'https://t.me/TempleDAOcommunity'} target={'_blank'} rel="noreferrer">
-                  <Image src={socialTelegramIcon} alt={''} width={24} height={24} />
-                  <strong>Telegram</strong>
-                </a>
-              </li>
-              <li>
-                <a href={'https://templecodex.link'} target={'_blank'} rel="noreferrer">
-                  <Image src={socialCodexIcon} alt={''} width={24} height={24} />
-                  <strong>Codex</strong>
-                </a>
-              </li>
-            </ul>
-          </Links>
-          <Links>
-            <h4>Resources</h4>
-            <ul>
-              <li>
-                <a href={'https://docs.templedao.link/'} target={'_blank'} rel="noreferrer">
-                  <Image src={socialDocsIcon} alt={''} width={24} height={24} />
-                  <strong>Docs</strong>
-                </a>
-              </li>
-              <li>
-                <a href={'https://templedao.medium.com/'} target={'_blank'} rel="noreferrer">
-                  <Image src={socialMediumIcon} alt={''} width={24} height={24} />
-                  <strong>Medium</strong>
-                </a>
-              </li>
-              <li>
-                <a href={'mailto:templedao@protonmail.com'}>
-                  <Image src={socialMessageIcon} alt={''} width={24} height={24} />
-                  <strong>Contact Us</strong>
-                </a>
-              </li>
-            </ul>
-          </Links>
+          {FooterContent.map((col, index) => (
+            <Links key={index}>
+              <h4>{col.header}</h4>
+              <ul>
+                {col.links.map((link, index) => (
+                  <li>
+                    <a href={link.link} target="_blank" rel="noreferrer">
+                      <FooterImage src={link.image} alt={link.text} />
+                      <strong>{link.text}</strong>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </Links>
+          ))}
           <Links>
             <h4>Links</h4>
             <ul>
               <li>
-                {' '}
-                <Link to={''}>
-                  <strong>Disclaimer</strong>
-                </Link>
+                <Link to="/disclaimer">Disclaimer</Link>
               </li>
               <li>
-                <ClaimFromVaultsLegacyLink to="/dapp/vaults/1m-core/claim">
-                  Claim from vaults (Legacy)
-                </ClaimFromVaultsLegacyLink>
+                <Link to="/dapp/vaults/1m-core/claim">Claim from vaults (Legacy)</Link>
               </li>
               <li>
-                <UnstakeOgtLegacyLink to="/dapp/trade/unstake">Unstake OGT (Legacy)</UnstakeOgtLegacyLink>
+                <Link to="/dapp/trade/unstake">Unstake OGT (Legacy)</Link>
               </li>
             </ul>
           </Links>
@@ -326,16 +341,6 @@ const ConnectWalletContainer = styled.div`
   margin: auto;
   display: flex;
   flex-direction: column;
-`;
-
-const ClaimFromVaultsLegacyLink = styled(Link)`
-  cursor: pointer;
-  margin-left: 0.75rem;
-`;
-
-const UnstakeOgtLegacyLink = styled(Link)`
-  cursor: pointer;
-  margin-left: 0.75rem;
 `;
 
 const TradeButton = styled(Button)`
@@ -515,6 +520,11 @@ const LinkRow = styled.div`
 
   h4 {
     margin-top: 2rem;
+    margin-bottom: 1rem;
+    @media (max-width: 768px) {
+      font-size: 1.25rem;
+      margin: 0.5rem 0;
+    }
   }
 
   ul {
@@ -531,6 +541,9 @@ const LinkRow = styled.div`
 
       strong {
         margin-left: 0.75rem;
+        @media (max-width: 768px) {
+          margin-left: 0;
+        }
       }
     }
   }
@@ -543,6 +556,15 @@ const LinkRow = styled.div`
 const Links = styled.div`
   display: flex;
   flex-direction: column;
+`;
+
+const FooterImage = styled(Image)`
+  height: 24px;
+  width: 24px;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const CopywriteRow = styled.div`

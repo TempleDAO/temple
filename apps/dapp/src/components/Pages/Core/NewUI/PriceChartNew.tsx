@@ -234,7 +234,7 @@ export const PriceChart = ({ timeInterval = TIME_INTERVAL.ONE_WEEK }: LineChartP
                 <Circle color={TEMPLE_COLOR} /> Temple Price
               </Legend>
               <Legend>
-                <Circle color={RAMOS_COLOR} /> RAMOS floor price
+                <Circle color={RAMOS_COLOR} /> Treasury Price Index (TPI)
               </Legend>
             </LegendRow>
             <FlexibleXYPlot xType={'time-utc'} xDomain={xDomain} yDomain={yDomain} onMouseLeave={onMouseLeave}>
