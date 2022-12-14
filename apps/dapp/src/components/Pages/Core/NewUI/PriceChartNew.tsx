@@ -291,7 +291,7 @@ export const PriceChart = ({ timeInterval = TIME_INTERVAL.ONE_WEEK }: LineChartP
                 })}
                 itemsFormat={(d) => [
                   { title: 'Temple Price', value: `$${+Number(d[0].y).toFixed(4)}` },
-                  { title: 'Ramos Floor Price', value: `$${+Number(d[1].y).toFixed(4)}` },
+                  { title: 'TPI', value: `$${+Number(d[1].y).toFixed(4)}` },
                 ]}
               />
             </FlexibleXYPlot>
