@@ -8,21 +8,15 @@ import { useSwapController } from '../../Core/Trade/use-swap-controller';
 import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
 
-import {
-  SwapContainer,
-  InputsContainer,
-  SettingsButton,
-  Spacer,
-  InvertButton,
-  CtaButton,
-  Header,
-  ErrorLabel,
-} from '../../Core/Trade/styles';
+import { InvertButton, CtaButton } from '../../Core/Trade/styles';
 import { ZERO } from 'utils/bigNumber';
 import { INITIAL_STATE } from '../../Core/Trade/constants';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
 import { Button } from 'components/Button/Button';
+import { pixelsToRems } from 'styles/mixins';
+import { theme } from 'styles/theme';
+import { useEffect } from 'react';
+import { useNotification } from 'providers/NotificationProvider';
 
 export const Trade = () => {
   const {
@@ -34,6 +28,7 @@ export const Trade = () => {
     handleTxSettingsUpdate,
     handleTransaction,
   } = useSwapController();
+
   const [isSlippageModalOpen, setIsSlippageModalOpen] = useState(false);
 
   const inputCryptoConfig =
@@ -49,6 +44,26 @@ export const Trade = () => {
     state.inputTokenBalance.eq(ZERO) ||
     bigInputValue.gt(state.inputTokenBalance) ||
     state.inputValue === '';
+
+  const formatErrorMessage = (errorMessage: string) => {
+    const boundary = errorMessage.indexOf('(');
+    if (boundary > 0) {
+      return errorMessage.substring(0, boundary - 1);
+    }
+    return errorMessage.substring(0, 20).concat('...');
+  };
+
+  const { openNotification } = useNotification();
+
+  useEffect(() => {
+    if (state.error) {
+      openNotification({
+        title: `Error: ${formatErrorMessage(state.error.message)}`,
+        hash: new Date().getTime().toString(),
+        isError: true,
+      });
+    }
+  }, [state.error]);
 
   return (
     <>
@@ -80,17 +95,27 @@ export const Trade = () => {
           />
           <InvertButton onClick={handleChangeMode} />
         </InputsContainer>
-        {/* <Spacer /> */}
         <AdvancedSettingsButton onClick={() => setIsSlippageModalOpen(true)}>Advanced Settings</AdvancedSettingsButton>
-        <TradeButton label={'Confirm'} onClick={handleTransaction} />
+        <TradeButton disabled={isButtonDisabled} label={'Confirm'} onClick={handleTransaction} />
       </SwapContainer>
-      {state.error && <ErrorLabel>{state.error.message}</ErrorLabel>}
     </>
   );
 };
 
+const Spacer = styled.div`
+  height: ${pixelsToRems(10)}rem;
+`;
+
+const InputsContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  position: relative;
+`;
+
 const TradeButton = styled(Button)`
-  padding: 20px;
+  padding: 10px;
   gap: 20px;
   width: 120px;
   height: 52px;
@@ -116,6 +141,7 @@ const AdvancedSettingsButton = styled.div`
   text-decoration-line: underline;
   color: #bd7b4f;
   margin: 10px;
+  cursor: pointer;
 `;
 
 const HeaderText = styled.div`
@@ -127,4 +153,12 @@ const HeaderText = styled.div`
   align-items: center;
   text-align: center;
   color: #ffdec9;
+`;
+
+const SwapContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  position: relative;
 `;

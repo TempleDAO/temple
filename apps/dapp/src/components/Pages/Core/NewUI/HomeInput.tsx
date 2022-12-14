@@ -179,7 +179,6 @@ const InputTokenWrapper = styled.div<SizeProps>`
   align-items: flex-start;
   justify-content: space-between;
   margin-left: -10px;
-  // width: 7.25rem;
 
   min-width: ${pixelsToRems(120)}rem;
   p {
@@ -217,7 +216,7 @@ export const InputStyled = styled.input<InputStyledProps>`
   ${theme.typography.h3};
   color: ${theme.palette.brand};
   background-color: transparent;
-  font-size: 36px;
+  font-size: 30px;
   border: none;
   outline: none;
   width: 100%;
