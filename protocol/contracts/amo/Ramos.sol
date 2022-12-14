@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./interfaces/AMO__IPoolHelper.sol";
-import "./interfaces/AMO__IAuraBooster.sol";
 import "./interfaces/AMO__ITempleERC20Token.sol";
 import "./helpers/AMOCommon.sol";
 import "./interfaces/AMO__IAuraStaking.sol";
@@ -25,13 +24,11 @@ contract RAMOS is Ownable, Pausable {
     AMO__IBalancerVault public immutable balancerVault;
     // @notice BPT token address
     IERC20 public immutable bptToken;
-    // @notice Aura booster
-    AMO__IAuraBooster public immutable booster;
     // @notice pool helper contract
     AMO__IPoolHelper public poolHelper;
     
     // @notice AMO contract for staking into aura 
-    AMO__IAuraStaking public immutable amoStaking;
+    AMO__IAuraStaking public amoStaking;
 
     address public operator;
     IERC20 public immutable temple;
@@ -60,7 +57,7 @@ contract RAMOS is Ownable, Pausable {
     uint64 public postRebalanceSlippage;
 
     // @notice temple index in balancer pool. to avoid recalculation or external calls
-    uint64 public templeBalancerPoolIndex;
+    uint64 public immutable templeBalancerPoolIndex;
 
     struct MaxRebalanceAmounts {
         uint256 bpt;
@@ -81,6 +78,7 @@ contract RAMOS is Ownable, Pausable {
     event WithdrawStable(uint256 bptAmountIn, uint256 amountOut);
     event SetRebalancePercentageBounds(uint64 belowTpf, uint64 aboveTpf);
     event SetTemplePriceFloorNumerator(uint128 numerator);
+    event SetAmoStaking(address indexed amoStaking);
 
     constructor(
         address _balancerVault,
@@ -88,7 +86,6 @@ contract RAMOS is Ownable, Pausable {
         address _stable,
         address _bptToken,
         address _amoStaking,
-        address _booster,
         uint64 _templeIndexInPool,
         bytes32 _balancerPoolId
     ) {
@@ -97,7 +94,6 @@ contract RAMOS is Ownable, Pausable {
         stable = IERC20(_stable);
         bptToken = IERC20(_bptToken);
         amoStaking = AMO__IAuraStaking(_amoStaking);
-        booster = AMO__IAuraBooster(_booster);
         templeBalancerPoolIndex = _templeIndexInPool;
         balancerPoolId = _balancerPoolId;
     }
@@ -106,6 +102,12 @@ contract RAMOS is Ownable, Pausable {
         poolHelper = AMO__IPoolHelper(_poolHelper);
 
         emit SetPoolHelper(_poolHelper);
+    }
+
+    function setAmoStaking(address _amoStaking) external onlyOwner {
+        amoStaking = AMO__IAuraStaking(_amoStaking);
+
+        emit SetAmoStaking(_amoStaking);
     }
 
     function setPostRebalanceSlippage(uint64 slippage) external onlyOwner {

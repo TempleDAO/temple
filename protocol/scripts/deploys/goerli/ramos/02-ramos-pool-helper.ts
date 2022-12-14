@@ -4,18 +4,12 @@ import { BigNumber } from "ethers";
 import {
   PoolHelper__factory
 } from "../../../../typechain";
-import amoAddresses from "../../../../test/amo/amo-constants";
 import {
   deployAndMine,
   DEPLOYED_CONTRACTS, 
   DeployedContracts,
   ensureExpectedEnvvars,
 } from "../../helpers";
-
-
-const { TEMPLE50_FRAX50_POOL_ID, TEMPLE_INDEX_IN_POOL } = amoAddresses.goerli.others;
-const { BALANCER_VAULT } = amoAddresses.goerli.contracts;
-const { FRAX, TEMPLE50_FRAX50_TOKEN } = amoAddresses.goerli.tokens;
 
 async function main() {
   ensureExpectedEnvvars();
@@ -33,13 +27,13 @@ async function main() {
   const poolHelperFactory = new PoolHelper__factory(owner);
   await deployAndMine(
     "RAMOS Pool Helper", poolHelperFactory, poolHelperFactory.deploy,
-    BALANCER_VAULT,
+    DEPLOYED.BALANCER_VAULT,
     DEPLOYED.TEMPLE,
-    FRAX,
-    TEMPLE50_FRAX50_TOKEN,
+    DEPLOYED.BBA_USD_TOKEN, // FRAX
+    DEPLOYED.TEMPLE_BBAUSD_LP_TOKEN, // temple/frax 50:50 LP
     DEPLOYED.RAMOS,
-    BigNumber.from(TEMPLE_INDEX_IN_POOL),
-    TEMPLE50_FRAX50_POOL_ID
+    BigNumber.from(0),
+    DEPLOYED.TEMPLE_BB_A_USD_BALANCER_POOL_ID, // temple/frax 50:50 LP
   );
 }
 

@@ -191,7 +191,6 @@ describe("Temple Price Floor AMO", async () => {
             BBA_USD_TOKEN,
             TEMPLE_BBAUSD_LP_TOKEN,
             amoStaking.address,
-            AURA_BOOSTER,
             0,
             TEMPLE_BB_A_USD_BALANCER_POOL_ID
         );
@@ -338,6 +337,7 @@ describe("Temple Price Floor AMO", async () => {
             await expect(connectAMO.setCoolDown(1800)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.setTemplePriceFloorNumerator(9700)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.setPoolHelper(alanAddress)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(connectAMO.setAmoStaking(alanAddress)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.setTemplePriceFloorNumerator(1_000)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.setRebalancePercentageBounds(100,100)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.setMaxRebalanceAmounts(100, 100, 100)).to.be.revertedWith("Ownable: caller is not the owner");
@@ -373,6 +373,12 @@ describe("Temple Price Floor AMO", async () => {
             await expect(amo.setPoolHelper(poolHelper.address))
                 .to.emit(amo, "SetPoolHelper")
                 .withArgs(poolHelper.address);
+        });
+
+        it("sets amo staking", async () => {
+            await expect(amo.setAmoStaking(amoStaking.address))
+                .to.emit(amo, "SetAmoStaking")
+                .withArgs(amoStaking.address);
         });
 
         it("sets aura pool info", async () => {
@@ -839,28 +845,49 @@ describe("Temple Price Floor AMO", async () => {
         it("withdraws", async () => {
             const amount = toAtto(100);
             await ownerAddLiquidity(amount);
-            let balance = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
+            const toWithdraw1 = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
+            const toWithdraw2 = toWithdraw1.div(2);
+
             // admin withdraws
-            expect(await bptToken.balanceOf(amoStaking.address)).to.eq(0);
-            await amoStaking.withdrawAndUnwrap(balance, true, ZERO_ADDRESS);
-            expect(await bptToken.balanceOf(amoStaking.address)).to.eq(balance);
+            {
+                expect(await bptToken.balanceOf(amoStaking.address)).to.eq(0);
+                await amoStaking.withdrawAndUnwrap(toWithdraw1, true, ZERO_ADDRESS);
+                expect(await bptToken.balanceOf(amoStaking.address)).to.eq(toWithdraw1);
+            }
 
-            let amoBalanceBefore = await bptToken.balanceOf(amo.address);
-            await ownerAddLiquidity(amount);
-            const toWithdraw = balance.div(2);
-            await amoStaking.withdrawAndUnwrap(toWithdraw, true, amo.address);
-            let amoBalanceAfter = await bptToken.balanceOf(amo.address);
-            expect(amoBalanceAfter).to.eq(amoBalanceBefore.add(toWithdraw));
-            amoBalanceBefore = await bptToken.balanceOf(amo.address);
+            // admin withdraws sending to ramos
+            {
+                const amoBalanceBefore = await bptToken.balanceOf(amo.address);
+                await ownerAddLiquidity(amount);
+                await amoStaking.withdrawAndUnwrap(toWithdraw2, true, amo.address);
+                const amoBalanceAfter = await bptToken.balanceOf(amo.address);
+                expect(amoBalanceAfter).to.eq(amoBalanceBefore.add(toWithdraw2));
+            }
+            
+            // admin withdraws all, sending to operator
+            {
+                const amoBalanceBefore = await bptToken.balanceOf(amo.address);
+                await ownerAddLiquidity(amount);
+                const toWithdraw3 = amoBalanceBefore.add(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address));
+                await amoStaking.withdrawAllAndUnwrap(true, true);
+                const amoBalanceAfter = await bptToken.balanceOf(amo.address);
+                const amountTransferred = amoBalanceAfter.sub(amoBalanceBefore);
 
-            await ownerAddLiquidity(amount);
-            balance = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
-            await amoStaking.withdrawAllAndUnwrap(true, true);
-            amoBalanceAfter = await bptToken.balanceOf(amo.address);
-            expect(amoBalanceAfter).to.eq(amoBalanceBefore.add(balance));
+                // expect that the amount sent to the amo in this instance =
+                //    The first withdrawal's BPT (since that was left in the amoStaking)
+                //  + The third withdrawal's BPT (also sent to amoStaking)
+                expect(amountTransferred).to.eq(toWithdraw3);
+            }
 
-            await ownerAddLiquidity(amount);
-            await amoStaking.withdrawAllAndUnwrap(true, false);
+            // admin withdraws all, not sending to operator
+            {               
+                const amoBalanceBefore = await bptToken.balanceOf(amo.address);
+                await ownerAddLiquidity(amount);
+                const toWithdraw4 = await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address);
+                await amoStaking.withdrawAllAndUnwrap(true, false);
+                expect(await bptToken.balanceOf(amo.address)).eq(amoBalanceBefore);
+                expect(await bptToken.balanceOf(amoStaking.address)).eq(toWithdraw4);
+            }
         });
 
         it("helper functions", async () => {
@@ -910,6 +937,88 @@ describe("Temple Price Floor AMO", async () => {
 
         it("deposits and stakes", async () => {
             // tested in amo tests
+        });
+
+        it("ensure aura shutdown view works as expected when the pool is shutdown", async () => {
+            expect(await amoStaking.isAuraShutdown()).eq(false);
+            await auraPoolManagerV3.shutdownPool(bbaUsdTempleAuraPID);
+            expect(await amoStaking.isAuraShutdown()).eq(true);
+        });
+
+        it("deposits and withdrawals when Aura pool is shutdown", async () => {
+            const amount = toAtto(100);
+
+            const depositedBpt1 = BigNumber.from("199993718169269512888");
+            const depositedBpt2 = BigNumber.from("199993718169284128992");
+            const depositedBpt3 = BigNumber.from("199993718169297863178");
+            const withdrawalAmount1 = depositedBpt2.div(2);
+            const withdrawalAmount2 = depositedBpt2;
+
+            // Deposit by adding liquidity, which gets staked in Aura
+            {
+                await ownerAddLiquidity(amount);
+                expect(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address)).eq(depositedBpt1);
+                expect(await bptToken.balanceOf(amoStaking.address)).eq(0);
+            }
+
+            // Shutdown the pool
+            await auraPoolManagerV3.shutdownPool(bbaUsdTempleAuraPID);
+
+            // Now deposit again, this time the BPT should go into amoStaking only
+            {
+                await ownerAddLiquidity(amount);
+                expect(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address)).eq(depositedBpt1);
+                expect(await bptToken.balanceOf(amoStaking.address)).eq(depositedBpt2);
+            }           
+
+            // Withdrawal - should come from the BPT sitting in the contract
+            {
+                await amoStaking.withdrawAndUnwrap(withdrawalAmount1, false, await alan.getAddress());
+                // Alan gets the withdrawn BPT
+                expect(await bptToken.balanceOf(await alan.getAddress())).eq(withdrawalAmount1);
+
+                // amoStaking's BPT decreases
+                expect(await bptToken.balanceOf(amoStaking.address)).eq(depositedBpt2.sub(withdrawalAmount1));
+
+                // Staked BPT is the same
+                expect(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address)).eq(depositedBpt1);
+            }
+
+            let totalDeposited = depositedBpt1.add(depositedBpt2);
+            const totalWithdrawn = withdrawalAmount1.add(withdrawalAmount2);
+
+            // Withdrawal - should come from the BPT sitting in the contract
+            {   
+                await amoStaking.withdrawAndUnwrap(withdrawalAmount2, false, await alan.getAddress());
+                // Alan gets the withdrawn BPT
+                expect(await bptToken.balanceOf(await alan.getAddress())).eq(totalWithdrawn);
+
+                // amoStaking's has no more BPT left
+                expect(await bptToken.balanceOf(amoStaking.address)).eq(0);
+
+                // Staked BPT decreases
+                expect(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address)).eq(totalDeposited.sub(totalWithdrawn));
+            }
+
+            totalDeposited = totalDeposited.add(depositedBpt3);
+
+            // Withdraw all
+            {   
+                // Despoit some more so there's unstaked BPT in the contract
+                await ownerAddLiquidity(amount);
+                expect(await bptToken.balanceOf(amoStaking.address)).eq(depositedBpt3);
+
+                // operator == RAMOS
+                const ramosBalBefore = await bptToken.balanceOf(amo.address);
+                await amoStaking.withdrawAllAndUnwrap(false, true);
+                const ramosBalAfter = await bptToken.balanceOf(amo.address);
+
+                expect(ramosBalAfter.sub(ramosBalBefore)).eq(totalDeposited.sub(totalWithdrawn));
+
+                // amoStaking's has no more BPT left, nor any staked
+                expect(await bptToken.balanceOf(amoStaking.address)).eq(0);
+                expect(await bbaUsdTempleAuraRewardPool.balanceOf(amoStaking.address)).eq(0);
+            }
         });
     });
 });
