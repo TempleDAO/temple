@@ -37,6 +37,9 @@ const env: Environment = {
     vaultOps: '0x542891Faf336d69E440De80145Df21510dCa6a78',
     vaultProxy: '0xb0043346da58ce01EaE3246664Cb5984f75adC1b',
     vaultEarlyExit: '0x7Edb6ea1A90318E9D2B3Ae03e5617A5AAFd7b249',
+    ramos: '0x02783CE28C5B3B015340938A11Aa79BB9f26f1Bc',
+    ramosPoolHelper: '0xe3346D1923A9935A581FEa891b027eabF7B35250',
+    balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E'
   },
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-goerli',

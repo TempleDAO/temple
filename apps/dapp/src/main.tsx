@@ -37,6 +37,7 @@ import { AnalyticsService } from 'services/AnalyticsService';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
+const RamosAdmin = React.lazy(() => import('components/Pages/Ramos/admin'))
 
 const LoaderWrapper = styled.div`
   display: flex;
@@ -92,6 +93,7 @@ ReactDOM.render(
               <Route path="*" element={<Navigate replace to="/" />} />
               <Route path="disclaimer" element={<Disclaimer />} />
               <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
+              <Route path="ramos" element={<LazyPage component={RamosAdmin} />} />
             </Route>
             <Route path="/dapp/*" element={<CoreLayout />}>
               <Route path="" element={<VaultListPage />} />

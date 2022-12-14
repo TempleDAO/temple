@@ -39,6 +39,9 @@ const env: Environment = {
     vaultOps: '0x4C2F7092C2aE51D986bEFEe378e50BD4dB99C901',
     vaultProxy: '0xAA292E8611aDF267e563f334Ee42320aC96D0463',
     vaultEarlyExit: '',
+    ramos: '',
+    ramosPoolHelper: '',
+    balancerHelpers: ''
   },
   fraxSellDisabledIvMultiple: 1.02,
   infuraId: '4cd22916292d4fb6be156454978c326b',
