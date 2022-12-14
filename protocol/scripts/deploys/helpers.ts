@@ -7,6 +7,7 @@ import {
   Signer,
 } from 'ethers';
 import axios from 'axios';
+import {flatternFile} from "@ericxstone/sol-flattener"
 
 export interface DeployedContracts {
   // From environment
@@ -270,21 +271,38 @@ export async function deployAndMine<
   );
   console.log('********************\n');
 
-  // If we are on hardhat chain
-  if (network.config.chainId === 4 && process.env.ETHERSCAN_API_KEY) {
+  // If we are on goerli chain
+  if (process.env.ETHERSCAN_API_KEY) {
+
+  console.log("Attempting to verify contract on etherscan...")
+
   // Wait for a few blocks to be mined before verifying
   await contract.deployTransaction.wait(6)
-  // Verify the contract on Etherscan
+
+  // API call to verify
+  const qs = require('qs');
   const response = await axios.post(
-    `https://api.etherscan.io/api?module=contract&action=verifysourcecode&apikey=${process.env.ETHERSCAN_API_KEY}`,
-    {
+    `https://api-goerli.etherscan.io/api`,
+    qs.stringify({
+      apiKey: process.env.ETHERSCAN_API_KEY,
+      network: network.name,
+      module: "contract",
+      action: "verifysourcecode",
       contractaddress: contract.address,
-      sourceCode: (contract as any).deployedBytecode,
+      codeformat: 'solidity-single-file',
       contractname: name,
-      compilerversion: 'v0.7.0+commit.9e61f92b',
+      compilerversion: 'v0.8.4+commit.c7e474f2',
       optimizationUsed: 1,
-      runs: 200,
-      constructorArguements: renderedArgs,
+      runs: 999999,
+      constructorArguments: renderedArgs,
+      sourceCode: readFile(name.replace(/\s/g, "")+".sol"),
+      evmversion: "",
+
+    }),
+    {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
     }
   );
 
@@ -298,6 +316,42 @@ export async function deployAndMine<
 
   return contract;
 }
+
+import * as glob from 'glob';
+import * as path from 'path';
+
+function readFile(filename: string): string {
+  // Go back two directories
+  const rootDir = path.join(__dirname, '../../');
+
+  // Change into the "contracts" directory
+  const contractsDir = path.join(rootDir, 'contracts');
+  process.chdir(contractsDir);
+
+  // Use glob to match all files and directories in the current directory
+  // and all subdirectories
+  const matches = glob.sync('**/*', { nodir: true });
+
+  // Loop through the matched files and directories and check if
+  // the specified filename exists
+  for (const item of matches) {
+
+    const split = item.split("/")
+    const result = split.pop()
+
+    if (result === filename) {
+      // Construct the path to the file
+      const filePath = path.join(contractsDir, item);
+      const nodePath = path.join(__dirname, '../../../node_modules');
+      
+      const resultSol: string = flatternFile(filePath, nodePath);
+      return resultSol;
+    }
+  }
+  // If the file was not found, return an empty string
+  return 'Cannot find file ' + filename;
+}
+
 
 /**
  * Check if process.env.MAINNET_ADDRESS_PRIVATE_KEY (required when doing deploy)

@@ -159,6 +159,7 @@ module.exports = {
 
     apiKey: {
       mainnet: process.env.ETHERSCAN_API_KEY,
+      goerli: process.env.ETHERSCAN_API_KEY,
       gnosis: process.env.GNOSISSCAN_API_KEY,
     }
   },

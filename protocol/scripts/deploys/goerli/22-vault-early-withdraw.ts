@@ -48,7 +48,7 @@ async function main() {
 
   const vaultEarlyWithdrawFactory = new VaultEarlyWithdraw__factory(owner);
   const vaultEarlyWithdraw: VaultEarlyWithdraw = await deployAndMine(
-    "Temple Vault Early Withdraw", vaultEarlyWithdrawFactory, vaultEarlyWithdrawFactory.deploy,
+    "Vault Early Withdraw", vaultEarlyWithdrawFactory, vaultEarlyWithdrawFactory.deploy,
     DEPLOYED.TEMPLE,
     validVaults,
   );
