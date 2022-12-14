@@ -1,13 +1,14 @@
 import React, { useState, useCallback, useEffect, MouseEventHandler } from 'react';
 import styled from 'styled-components';
+import { useMediaQuery } from 'react-responsive';
 import { curveCatmullRom } from 'd3-shape';
-import { FlexibleXYPlot, XAxis, YAxis, LineSeries, Crosshair } from 'react-vis';
-import { formatNumber } from 'utils/formatter';
+import { FlexibleXYPlot, XAxis, YAxis, LineSeries, Crosshair, HorizontalGridLines } from 'react-vis';
 import Image from 'components/Image/Image';
 import Loader from 'components/Loader/Loader';
 import useRefreshablePriceMetrics, { PriceMetrics } from 'hooks/use-refreshable-price-metrics';
 import sunImage from 'assets/images/sun-art-new.svg';
 import 'react-vis/dist/style.css';
+import { queryPhone } from 'styles/breakpoints';
 
 const CHART_SIZE = {
   width: 800,
@@ -51,7 +52,6 @@ type CrosshairData = {
 
 type LineChartProps = {
   timeInterval?: TIME_INTERVAL;
-  noTicks?: boolean;
 };
 
 function useProtocolMetrics(timeInterval: TIME_INTERVAL) {
@@ -192,7 +192,7 @@ function formatDate(utcDate: Date) {
   return `${date} @ ${time.split('.')[0]} UTC+0`;
 }
 
-export const PriceChart = ({ timeInterval = TIME_INTERVAL.ONE_WEEK, noTicks }: LineChartProps) => {
+export const PriceChart = ({ timeInterval = TIME_INTERVAL.ONE_WEEK }: LineChartProps) => {
   const [selectedInterval, setSelectedInterval] = useState(timeInterval);
   const [loading, setLoading] = useState(true);
   const data = useProtocolMetrics(selectedInterval);
@@ -201,7 +201,9 @@ export const PriceChart = ({ timeInterval = TIME_INTERVAL.ONE_WEEK, noTicks }: L
 
   const { crosshairValues, onMouseLeave, onNearestX } = useCrosshairs(dataPoints);
 
-  const priceChange = formatNumber(priceData.domainPriceChangePercentage);
+  const isDesktop = useMediaQuery({
+    query: queryPhone,
+  });
 
   useEffect(() => {
     if (data.templePriceDataPoints.length && loading) {
@@ -246,17 +248,19 @@ export const PriceChart = ({ timeInterval = TIME_INTERVAL.ONE_WEEK, noTicks }: L
                     fontSize: 14,
                   },
                 }}
-                tickTotal={noTicks ? 0 : 10}
+                tickTotal={isDesktop ? 5 : 4}
               />
               <YAxis
                 style={{
                   line: { stroke: '#2b2a2d' },
                   ticks: { stroke: '#6b6b76' },
-                  text: { stroke: 'none', fill: '#FFDEC9' },
+                  text: { stroke: 'none', fill: '#FFDEC9', fontSize: 14 },
                 }}
-                //{...(noTicks ? { tickTotal: 0 } : {})}
-                tickFormat={(v) => `$${v}`}
+                tickFormat={(v) => `${v}`}
+                tickTotal={5}
+                tickLabelAngle={isDesktop ? 0 : -90}
               />
+              <HorizontalGridLines tickTotal={5} style={{ stroke: RAMOS_COLOR }} />
               <LineSeries
                 data={dataPoints.ramosPriceDataPoints}
                 color={RAMOS_COLOR}
@@ -289,18 +293,6 @@ export const PriceChart = ({ timeInterval = TIME_INTERVAL.ONE_WEEK, noTicks }: L
               />
             </FlexibleXYPlot>
             <TogglerRow>
-              <PriceInfoContainer>
-                {/* <TemplePrice>{`$${formatNumber(
-                        priceData.currentPrice
-                      )}`}</TemplePrice> */}
-                {/* <PriceChange>
-                        {`${priceChange <= 0 ? '' : '+'}${priceChange} % past ${
-                          availableIntervals.find(
-                            ({ interval }) => interval === selectedInterval
-                          )!.label
-                        }`}
-                      </PriceChange> */}
-              </PriceInfoContainer>
               <TogglerContainer>
                 {availableIntervals.map(({ interval, label }) => (
                   <Toggle
@@ -381,18 +373,6 @@ const TogglerContainer = styled.div`
   font-size: 0.7rem;
 `;
 
-const PriceInfoContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const TemplePrice = styled.span`
-  font-size: 2rem;
-  color: #ffffff;
-  font-weight: bold;
-  opacity: 0.7;
-`;
-
 type ToggleProps = {
   selected?: boolean;
   onClick: MouseEventHandler;
@@ -402,12 +382,12 @@ const Toggle = styled.span<ToggleProps>`
   display: inline-block;
   user-select: none;
   cursor: pointer;
-  color: ${({ selected, theme }) => (selected ? theme.palette.brand : '#6b6b76')};
+  color: ${({ selected, theme }) => (selected ? theme.palette.brandLight : theme.palette.brand)};
   &:hover {
     color: white;
   }
   font-size: 1rem;
-  font-weight: bold;
+  font-weight: ${({ selected }) => (selected ? 'bold' : '')};
 `;
 
 const NotEnoughData = styled.div`
