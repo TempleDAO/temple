@@ -40,7 +40,7 @@ export const formatExitRequestTuple = (request?: AMO__IBalancerVault.ExitPoolReq
 };
 
 export const isTemple = (tokenAddress: string): boolean => {
-  return tokenAddress === environmentConfig.tokens.temple.address;
+  return tokenAddress.toLowerCase() === environmentConfig.tokens.temple.address.toLowerCase();
 };
 
 export const getBpsPercentageFromTpf = (tpf: DecimalBigNumber, templePrice: DecimalBigNumber) => {
