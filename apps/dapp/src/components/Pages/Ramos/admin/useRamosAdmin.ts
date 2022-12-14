@@ -100,8 +100,7 @@ export function useRamosAdmin() {
         setRamos(RAMOS_CONTRACT);
         setPoolId(POOL_ID);
         setBalancerHelpers(BALANCER_HELPERS_CONTRACT);
-        //setTpf(DecimalBigNumber.fromBN(TPF, 4));
-        setTpf(DecimalBigNumber.parseUnits('2', 4))
+        setTpf(DecimalBigNumber.fromBN(TPF, 4));
         const tempTokens = { ...tokens };
         tokenAddresses.forEach((tokenAddr, index) => {
           if (isTemple(tokenAddr)) {
@@ -226,7 +225,7 @@ export function useRamosAdmin() {
       let templeAmount = templeBalanceAtTargetPrice.sub(tokens.temple.balance);
 
       if (templeAmount.gt(maxRebalanceAmounts.temple)) templeAmount = maxRebalanceAmounts.temple;
-      
+
       const initAmountsIn: BigNumber[] = [templeAmount.toBN(18), ZERO];
       const joinPoolRequest = makeJoinRequest([tokens.temple.address, tokens.stable.address], initAmountsIn);
       const { amountsIn, bptOut } = await balancerHelpers.queryJoin(
