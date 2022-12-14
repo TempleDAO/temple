@@ -150,9 +150,15 @@ export function useRamosAdmin() {
         WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT
       );
       const { bptIn, amountsOut } = await balancerHelpers.queryExit(poolId, ramos.address, ramos.address, initExitReq);
+
+      const minAmountsOut = [
+        applySlippage(amountsOut[0], slippageTolerance),
+        applySlippage(amountsOut[1], slippageTolerance),
+      ];
+
       const exitRequest = makeExitRequest(
         tokenAddrs,
-        amountsOut,
+        minAmountsOut,
         bptIn,
         WeightedPoolExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT
       );
