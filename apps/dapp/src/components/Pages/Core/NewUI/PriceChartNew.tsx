@@ -343,6 +343,10 @@ const Container = styled.div`
   * {
     font-family: megant;
   }
+  @media (max-width: 768px) {
+    min-width: 100%;
+    min-height: 100%;
+  }
 `;
 
 const Legend = styled.div`
