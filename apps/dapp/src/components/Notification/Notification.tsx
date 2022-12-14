@@ -15,9 +15,10 @@ export type NotificationProps = {
   title: string;
   // Indicating if the notification is open or not
   isOpen?: boolean;
+  isError?: boolean;
 };
 
-const Notification = ({ hash, title, isOpen }: NotificationProps) => {
+const Notification = ({ hash, title, isOpen, isError }: NotificationProps) => {
   const { closeNotification } = useNotification();
 
   const [clickedClose, setClickedClose] = useState(false);
@@ -40,10 +41,12 @@ const Notification = ({ hash, title, isOpen }: NotificationProps) => {
         />
       </CloseIcon>
       <h5 title={title}>{title}</h5>
-      <a href={`${env.etherscan}/tx/${hash}`} target={'_blank'} rel="noreferrer">
-        View Transaction
-        <Image src={openInNewTabImage} alt={'Open transaction on Etherscan'} width={24} height={24} />
-      </a>
+      {!isError && (
+        <a href={`${env.etherscan}/tx/${hash}`} target={'_blank'} rel="noreferrer">
+          View Transaction
+          <Image src={openInNewTabImage} alt={'Open transaction on Etherscan'} width={24} height={24} />
+        </a>
+      )}
     </NotificationStyled>
   );
 };
