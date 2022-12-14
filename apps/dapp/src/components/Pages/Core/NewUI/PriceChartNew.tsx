@@ -120,7 +120,7 @@ function useTemplePrice(data: ChartData, interval: TIME_INTERVAL) {
     ramosPriceDataPoints: data.ramosPriceDataPoints.filter(domainFilter),
   };
 
-  const lowerPriceThreshold = Math.abs(Math.min(...domainDataPoints.templePriceDataPoints.map(({ y }) => y)) * 0.5);
+  const lowerPriceThreshold = Math.abs(Math.min(...domainDataPoints.templePriceDataPoints.map(({ y }) => y)) * 0.9);
   const upperPriceThreshold = Math.abs(Math.max(...domainDataPoints.templePriceDataPoints.map(({ y }) => y)) * 1.1);
 
   const xDomain = [lowerDateThreshold, now];
@@ -178,7 +178,7 @@ function formatMetrics(metrics: PriceMetricsRamos[]) {
 
     acc.ramosPriceDataPoints.push({
       x: utcTimestamp,
-      y: Number(dataPoint.tpiLowerBoundUSD),
+      y: Number(dataPoint.templePriceIndexUSD),
     });
 
     return acc;
@@ -257,9 +257,11 @@ export const PriceChart = ({ timeInterval = TIME_INTERVAL.ONE_WEEK }: LineChartP
                   ticks: { stroke: '#6b6b76' },
                   text: { stroke: 'none', fill: '#FFDEC9', fontSize: 14 },
                 }}
-                tickFormat={(v) => `${v}`}
+                tickFormat={(v) => `${Number(v).toFixed(2)}`}
                 tickTotal={5}
                 tickLabelAngle={isDesktop ? 0 : -90}
+                tickPadding={isDesktop ? 0 : 2}
+                marginTop={isDesktop ? 10 : -3}
               />
               <HorizontalGridLines tickTotal={5} style={{ stroke: RAMOS_COLOR }} />
               <LineSeries
@@ -289,7 +291,7 @@ export const PriceChart = ({ timeInterval = TIME_INTERVAL.ONE_WEEK }: LineChartP
                 })}
                 itemsFormat={(d) => [
                   { title: 'Temple Price', value: `$${+Number(d[0].y).toFixed(4)}` },
-                  { title: 'Ramos Price', value: `$${+Number(d[1].y).toFixed(4)}` },
+                  { title: 'Ramos Floor Price', value: `$${+Number(d[1].y).toFixed(4)}` },
                 ]}
               />
             </FlexibleXYPlot>
@@ -334,8 +336,8 @@ const Container = styled.div`
   align-items: center;
   //not using rem as not to have the value hardcoded
   //see <FlexibleXYPlot> component usage below
-  //min-width: ${CHART_SIZE.width}px;
-  //min-height: ${CHART_SIZE.height}px;
+  min-width: ${CHART_SIZE.width}px;
+  min-height: ${CHART_SIZE.height}px;
   width: 100%;
   height: 100%;
   * {
