@@ -18,7 +18,6 @@ contract TempleTeamPaymentsFactory is Ownable {
         uint256 totalFunding;
     }
 
-    IERC20 immutable public temple;
     address public templeTeamPaymentsImplementation;
     uint16 immutable public initialEpoch;
     uint16 public lastPaidEpoch;
@@ -38,12 +37,7 @@ contract TempleTeamPaymentsFactory is Ownable {
     event ImplementationChanged(address indexed newImplementation);
     event TokenRecovered(address indexed token, uint256 amount);
 
-    constructor(
-        IERC20 _temple,
-        address _implementation,
-        uint16 _lastPaidEpoch
-    ) {
-        temple = _temple;
+    constructor(address _implementation, uint16 _lastPaidEpoch) {
         templeTeamPaymentsImplementation = _implementation;
         lastPaidEpoch = _lastPaidEpoch;
         initialEpoch = _lastPaidEpoch + 1;
@@ -83,22 +77,23 @@ contract TempleTeamPaymentsFactory is Ownable {
      * @param _totalFunding the total funding to supply the contract with initially
      */
     function deployPayouts(
+        IERC20 _token,
         address[] calldata _dests,
         uint256[] calldata _allocations,
         uint256 _totalFunding
     ) external onlyOwner returns (TempleTeamPaymentsV2) {
-        bytes32 salt = keccak256(abi.encodePacked(temple, lastPaidEpoch + 1));
+        bytes32 salt = keccak256(abi.encodePacked(_token, lastPaidEpoch + 1));
         TempleTeamPaymentsV2 paymentContract = TempleTeamPaymentsV2(
             Clones.cloneDeterministic(templeTeamPaymentsImplementation, salt)
         );
-        paymentContract.initialize(temple);
+        paymentContract.initialize(_token);
         paymentContract.setAllocations(_dests, _allocations);
 
         paymentContract.transferOwnership(msg.sender);
 
         if (_totalFunding != 0)
             SafeERC20.safeTransferFrom(
-                temple,
+                _token,
                 msg.sender,
                 address(paymentContract),
                 _totalFunding
@@ -122,6 +117,7 @@ contract TempleTeamPaymentsFactory is Ownable {
      * @param _allocations the recipients respective amounts
      */
     function directPayouts(
+        IERC20 _token,
         address[] calldata _dests,
         uint256[] calldata _allocations
     ) external onlyOwner {
@@ -134,7 +130,7 @@ contract TempleTeamPaymentsFactory is Ownable {
             if (dest == address(0)) revert AllocationAddressZero();
             uint256 value = _allocations[i];
             if (value == 0) revert ClaimZeroValue();
-            SafeERC20.safeTransferFrom(temple, msg.sender, dest, value);
+            SafeERC20.safeTransferFrom(_token, msg.sender, dest, value);
             totalFunding += value;
             unchecked {
                 i++;

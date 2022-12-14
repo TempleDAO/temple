@@ -9,7 +9,7 @@ import { useSwap } from 'providers/SwapProvider';
 
 import { ZERO } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
+import { getBigNumberFromString, formatBigNumber, getTokenInfo } from 'components/Vault/utils';
 
 import { INITIAL_STATE, TOKENS_BY_MODE } from './constants';
 import { SwapMode } from './types';
@@ -20,7 +20,7 @@ export function useSwapController() {
   const { wallet } = useWallet();
   const [state, dispatch] = useReducer(swapReducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
-  const { getBuyQuote, getSellQuote, templePrice, updateTemplePrice, buy, sell, iv, updateIv, error } = useSwap();
+  const { getBuyQuote, getSellQuote, updateTemplePrice, buy, sell, updateIv, error } = useSwap();
 
   useEffect(() => {
     const onMount = async () => {
@@ -93,7 +93,7 @@ export function useSwapController() {
 
   // Handles user input
   const handleInputChange = async (value: string) => {
-    const bigValue = getBigNumberFromString(value || '0');
+    const bigValue = getBigNumberFromString(value || '0', getTokenInfo(state.inputToken).decimals);
     const isZero = bigValue.eq(ZERO);
     dispatch({ type: 'changeInputValue', value: isZero ? '' : value });
 
@@ -117,7 +117,9 @@ export function useSwapController() {
   };
 
   const handleHintClick = () => {
-    const amount = state.inputTokenBalance.eq(ZERO) ? '' : formatBigNumber(state.inputTokenBalance);
+    const amount = state.inputTokenBalance.eq(ZERO)
+      ? ''
+      : formatBigNumber(state.inputTokenBalance, getTokenInfo(state.inputToken).decimals);
     handleInputChange(amount);
   };
 
@@ -147,62 +149,42 @@ export function useSwapController() {
   };
 
   const handleBuy = async () => {
-    if (!isTokenFraxOrFei(state.inputToken)) {
-      console.error('Invalid input token');
+    const tokenAmount = getBigNumberFromString(state.inputValue, getTokenInfo(state.inputToken).decimals);
+    const buyQuote = await getBuyQuote(tokenAmount, state.inputToken);
+
+    if (!tokenAmount || !buyQuote) {
+      console.error("Couldn't get buy quote");
       return;
-    } else {
-      const tokenAmount = getBigNumberFromString(state.inputValue);
+    }
 
-      const buyQuote = await getBuyQuote(tokenAmount, state.inputToken);
+    const txReceipt = await buy(tokenAmount, state.inputToken, state.slippageTolerance);
 
-      if (!tokenAmount || !buyQuote) {
-        console.error("Couldn't get buy quote");
-        return;
-      }
-
-      const minAmountOut = calculateMinAmountOut(buyQuote, state.slippageTolerance);
-
-      const txReceipt = await buy(tokenAmount, minAmountOut, state.inputToken, state.deadlineMinutes);
-
-      if (txReceipt) {
-        await updateBalance();
-        await updateTemplePrice();
-        dispatch({
-          type: 'txSuccess',
-        });
-      }
+    if (txReceipt) {
+      await updateBalance();
+      await updateTemplePrice();
+      dispatch({
+        type: 'txSuccess',
+      });
     }
   };
 
   const handleSell = async () => {
-    if (!isTokenFraxOrFei(state.outputToken)) {
-      console.error('Invalid output token');
-    } else {
-      const templeAmount = getBigNumberFromString(state.inputValue);
-      const sellQuote = await getSellQuote(templeAmount);
+    const templeAmount = getBigNumberFromString(state.inputValue, getTokenInfo(state.inputToken).decimals);
+    const sellQuote = await getSellQuote(templeAmount, state.outputToken);
 
-      if (!templeAmount || !sellQuote) {
-        console.error("Couldn't get sell quote");
-        return;
-      }
+    if (!templeAmount || !sellQuote) {
+      console.error("Couldn't get sell quote");
+      return;
+    }
 
-      const minAmountOut = calculateMinAmountOut(sellQuote.amountOut, state.slippageTolerance);
+    const txReceipt = await sell(templeAmount, state.outputToken, state.slippageTolerance);
 
-      const txReceipt = await sell(
-        templeAmount,
-        minAmountOut,
-        state.outputToken,
-        sellQuote.priceBelowIV,
-        state.deadlineMinutes
-      );
-
-      if (txReceipt) {
-        await updateBalance();
-        await updateTemplePrice();
-        dispatch({
-          type: 'txSuccess',
-        });
-      }
+    if (txReceipt) {
+      await updateBalance();
+      await updateTemplePrice();
+      dispatch({
+        type: 'txSuccess',
+      });
     }
   };
 
@@ -212,6 +194,12 @@ export function useSwapController() {
         return balance.frax;
       case TICKER_SYMBOL.FEI:
         return balance.fei;
+      case TICKER_SYMBOL.USDC:
+        return balance.usdc;
+      case TICKER_SYMBOL.USDT:
+        return balance.usdt;
+      case TICKER_SYMBOL.DAI:
+        return balance.dai;
       case TICKER_SYMBOL.TEMPLE_TOKEN:
         return balance.temple;
       default:
@@ -222,15 +210,12 @@ export function useSwapController() {
   const fetchQuote = async (value: BigNumber): Promise<BigNumber> => {
     let quote = value;
 
-    if (state.mode === SwapMode.Buy && isTokenFraxOrFei(state.inputToken)) {
+    if (state.mode === SwapMode.Buy) {
       const buyQuote = await getBuyQuote(value, state.inputToken);
       quote = buyQuote ?? ZERO;
-    }
-
-    if (state.mode === SwapMode.Sell && isTokenFraxOrFei(state.outputToken)) {
+    } else if (state.mode === SwapMode.Sell) {
       const sellQuote = await getSellQuote(value, state.outputToken);
-
-      quote = sellQuote ? sellQuote.amountOut : ZERO;
+      quote = sellQuote ?? ZERO;
     }
 
     if (!quote) {
