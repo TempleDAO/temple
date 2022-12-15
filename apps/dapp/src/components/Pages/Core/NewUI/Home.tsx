@@ -204,7 +204,7 @@ const Home = () => {
           </Metric>
           <Metric>
             <MetricValue>${(metrics.treasury / 1000000).toFixed(0)}M</MetricValue>
-            <MetricTitle>RAMOS TVL</MetricTitle>
+            <MetricTitle>Treasury Value</MetricTitle>
           </Metric>
         </MetricsRow>
       </TopContainer>
