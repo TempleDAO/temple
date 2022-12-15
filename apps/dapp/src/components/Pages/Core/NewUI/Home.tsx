@@ -35,17 +35,17 @@ interface Metrics {
 const MarketingContent = [
   {
     image: obtainTemple,
-    header: 'No Staking Required',
+    header: 'Elevate Your Portfolio',
     text: 'Simply buy and hold $TEMPLE in your wallet, then relax as the Treasury farms on your behalf.',
   },
   {
     image: intrValue,
-    header: 'Backed by Stable Treasury Assets',
+    header: 'Find Refuge in the Temple',
     text: 'Each $TEMPLE token is backed by stable assets in the Treasury. The $TEMPLE price is indexed to these Treasury assets through a metric called Treasury Price Index (TPI).',
   },
   {
     image: treasuryGrowth,
-    header: 'DeFi Yields Without the Worry',
+    header: 'Growth that Transcends Volatility',
     text: (
       <>
         Get exposure to the top stable yields in DeFi without worrying about actively managing any positions.
@@ -57,7 +57,7 @@ const MarketingContent = [
   },
   {
     image: elasticFloor,
-    header: 'Downside Price Protection',
+    header: 'A Token for All Seasons',
     text: 'If $TEMPLE price trades below the TPI, automated price protection is engaged through our AMO-styled liquidity manager (RAMOS).',
   },
 ];
@@ -185,11 +185,7 @@ const Home = () => {
             {!tradeFormVisible && !showConnect && (
               <>
                 <NewTempleText>The New Temple</NewTempleText>
-                <TradeDetailText>
-                  A downside-protected token,
-                  <br />
-                  appreciating with treasury growth.
-                </TradeDetailText>
+                <TradeDetailText>A wrapped treasury token with steady price growth in all seasons</TradeDetailText>
                 <LearnMoreLink onClick={scrollToContent}>Learn More</LearnMoreLink>
                 <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
               </>
@@ -304,6 +300,7 @@ const LegacyLinkHeader = styled.div`
   flex-direction: row;
   justify-content: right;
   padding: 5px;
+  background-color: black;
   background-image: url('${footerTexture}');
   background-size: cover;
   border-bottom: 2px solid #351f11;
