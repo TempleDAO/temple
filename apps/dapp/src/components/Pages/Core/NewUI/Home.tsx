@@ -191,9 +191,7 @@ const Home = () => {
             {!tradeFormVisible && !showConnect && (
               <>
                 <NewTempleText>The New Temple</NewTempleText>
-                <TradeDetailText>
-                  A wrapped treasury token with steady price appreciation in all conditions
-                </TradeDetailText>
+                <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
                 <LearnMoreLink onClick={scrollToContent}>Learn More</LearnMoreLink>
                 <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
               </>
