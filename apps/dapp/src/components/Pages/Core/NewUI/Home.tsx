@@ -163,6 +163,11 @@ const Home = () => {
 
   return (
     <>
+      <LegacyLinkHeader>
+        <LegacyText>Legacy features</LegacyText>
+        <LegacyLink to="/dapp/vaults/1m-core/claim">Claim from vaults</LegacyLink>
+        <LegacyLink to="/dapp/trade/unstake">Unstake OGT</LegacyLink>
+      </LegacyLinkHeader>
       {/* Top Container */}
       <TopContainer>
         <RaysImage src={rays} />
@@ -273,6 +278,35 @@ const Home = () => {
 
 const primaryColor = '#bd7b4f';
 const secondaryColor = '#ffdec9';
+
+const LegacyText = styled.span`
+  padding: 5px;
+  margin-right: 10px;
+  color: ${primaryColor};
+`;
+
+const LegacyLink = styled(Link)`
+  text-decoration: underline;
+  padding: 5px;
+  cursor: pointer;
+  margin-right: 10px;
+  margin-left: 10px;
+`;
+
+const LegacyLinkHeader = styled.div`
+  position: absolute;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: right;
+  padding: 5px;
+  background-image: url('${footerTexture}');
+  background-size: cover;
+  border-bottom: 2px solid #351f11;
+  border-top: 2px solid #351f11;
+  font-size: 14px;
+  z-index: 3;
+`;
 
 // Top Container
 const TopContainer = styled.div`
