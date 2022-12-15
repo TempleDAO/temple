@@ -6,7 +6,7 @@ export type PriceMetricsRamos = {
   timestamp: number;
   timeframe: number;
   templePriceUSD: number;
-  templePriceIndexUSD: number;
+  treasuryPriceIndexUSD: number;
 };
 
 export default function useRefreshablePriceMetricsRamos(intervalMinutes = 20) {
@@ -20,7 +20,7 @@ export default function useRefreshablePriceMetricsRamos(intervalMinutes = 20) {
 
   async function refreshMetrics() {
     const hourlyRequest = await fetch(
-      'https://api.thegraph.com/subgraphs/name/medariox/temple-ramos',
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
       {
         method: 'POST',
         headers: {
@@ -34,7 +34,7 @@ export default function useRefreshablePriceMetricsRamos(intervalMinutes = 20) {
               timestamp
               timeframe
               templePriceUSD
-              templePriceIndexUSD
+              treasuryPriceIndexUSD
             }
           }`,
         }),
@@ -42,7 +42,7 @@ export default function useRefreshablePriceMetricsRamos(intervalMinutes = 20) {
     );
 
     const dailyRequest = await fetch(
-      'https://api.thegraph.com/subgraphs/name/medariox/temple-ramos',
+      'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
       {
         method: 'POST',
         headers: {
@@ -56,7 +56,7 @@ export default function useRefreshablePriceMetricsRamos(intervalMinutes = 20) {
               timestamp
               timeframe
               templePriceUSD
-              templePriceIndexUSD
+              treasuryPriceIndexUSD
             }
           }`,
         }),

@@ -178,7 +178,7 @@ function formatMetrics(metrics: PriceMetricsRamos[]) {
 
     acc.ramosPriceDataPoints.push({
       x: utcTimestamp,
-      y: Number(dataPoint.templePriceIndexUSD),
+      y: Number(dataPoint.treasuryPriceIndexUSD),
     });
 
     return acc;
