@@ -300,6 +300,7 @@ const LegacyLinkHeader = styled.div`
   flex-direction: row;
   justify-content: right;
   padding: 5px;
+  background-color: black;
   background-image: url('${footerTexture}');
   background-size: cover;
   border-bottom: 2px solid #351f11;
