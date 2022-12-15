@@ -263,7 +263,7 @@ export const PriceChart = ({ timeInterval = TIME_INTERVAL.ONE_WEEK }: LineChartP
                 tickPadding={isDesktop ? 0 : 2}
                 marginTop={isDesktop ? 10 : -3}
               />
-              <HorizontalGridLines tickTotal={5} style={{ stroke: RAMOS_COLOR }} />
+              <HorizontalGridLines tickTotal={5} style={{ stroke: '#3f3e42' }} />
               <LineSeries
                 data={dataPoints.ramosPriceDataPoints}
                 color={RAMOS_COLOR}
@@ -285,6 +285,9 @@ export const PriceChart = ({ timeInterval = TIME_INTERVAL.ONE_WEEK }: LineChartP
               />
               <Crosshair
                 values={crosshairValues}
+                style={{
+                  line: { background: '#3f3e42' },
+                }}
                 titleFormat={(d) => ({
                   title: 'date',
                   value: formatDate(d[0].x),
