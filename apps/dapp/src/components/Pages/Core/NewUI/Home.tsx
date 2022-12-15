@@ -180,11 +180,7 @@ const Home = () => {
             {!tradeFormVisible && !showConnect && (
               <>
                 <NewTempleText>The New Temple</NewTempleText>
-                <TradeDetailText>
-                  A downside-protected token,
-                  <br />
-                  appreciating with treasury growth.
-                </TradeDetailText>
+                <TradeDetailText>A wrapped treasury token with steady price growth in all seasons</TradeDetailText>
                 <LearnMoreLink onClick={scrollToContent}>Learn More</LearnMoreLink>
                 <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
               </>
