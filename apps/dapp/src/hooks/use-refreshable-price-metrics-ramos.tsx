@@ -6,7 +6,7 @@ export type PriceMetricsRamos = {
   timestamp: number;
   timeframe: number;
   templePriceUSD: number;
-  templePriceIndexUSD: number;
+  treasuryPriceIndexUSD: number;
 };
 
 export default function useRefreshablePriceMetricsRamos(intervalMinutes = 20) {
@@ -34,7 +34,7 @@ export default function useRefreshablePriceMetricsRamos(intervalMinutes = 20) {
               timestamp
               timeframe
               templePriceUSD
-              templePriceIndexUSD
+              treasuryPriceIndexUSD
             }
           }`,
         }),
@@ -56,7 +56,7 @@ export default function useRefreshablePriceMetricsRamos(intervalMinutes = 20) {
               timestamp
               timeframe
               templePriceUSD
-              templePriceIndexUSD
+              treasuryPriceIndexUSD
             }
           }`,
         }),
