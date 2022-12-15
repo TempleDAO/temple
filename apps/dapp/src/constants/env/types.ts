@@ -74,11 +74,6 @@ export interface Tokens {
   dai: Token;
 }
 
-interface Sentry {
-  environment: string;
-  dsn: string;
-}
-
 interface Posthog {
   token: string;
   api_host: string;
@@ -92,7 +87,6 @@ export interface Environment {
   fraxSellDisabledIvMultiple: number;
   tokens: Tokens;
   infuraId: string;
-  sentry?: Sentry;
   posthog?: Posthog;
   subgraph: Subgraphs;
   templeMultisig: string;
