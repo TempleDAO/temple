@@ -143,17 +143,17 @@ const Home = () => {
       //     }
       //   }`);
       const { data: ramosData } = await fetchGenericSubgraph(
-        'https://api.thegraph.com/subgraphs/name/medariox/temple-ramos',
+        'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
         `{
           metrics {
-            templePriceIndexUSD
+            treasuryPriceIndexUSD
             templePriceUSD
           }
         }`
       );
       setMetrics({
         price: parseFloat(ramosData.metrics[0].templePriceUSD),
-        tpi: parseFloat(ramosData.metrics[0].templePriceIndexUSD),
+        tpi: parseFloat(ramosData.metrics[0].treasuryPriceIndexUSD),
         // treasury: parseFloat(treasuryData.protocolMetrics[0].lockedStables),
         treasury: 37000000,
       });
