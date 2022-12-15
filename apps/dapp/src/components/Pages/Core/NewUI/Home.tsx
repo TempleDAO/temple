@@ -333,6 +333,7 @@ const RaysImage = styled(Image)`
 const BackgroundTexture = styled.svg`
   position: absolute;
   margin-top: -4rem;
+  margin-left: 6.5px;
   width: 700px;
 `;
 
