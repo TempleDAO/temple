@@ -181,9 +181,9 @@ const Home = () => {
               <>
                 <NewTempleText>The New Temple</NewTempleText>
                 <TradeDetailText>
-                  A safe and stable token,
+                  A downside-protected token,
                   <br />
-                  appreciating over time.
+                  appreciating with treasury growth.
                 </TradeDetailText>
                 <LearnMoreLink onClick={scrollToContent}>Learn More</LearnMoreLink>
                 <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
