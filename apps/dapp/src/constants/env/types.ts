@@ -10,6 +10,9 @@ interface Contracts {
   farmingWallet: string;
   fei: string;
   frax: string;
+  usdc: string;
+  usdt: string;
+  dai: string;
   frax3CrvFarming: string;
   frax3CrvFarmingRewards: string;
   lbpFactory: string;
@@ -30,10 +33,14 @@ interface Contracts {
   templeV2FraxPair: string;
   templeV2FeiPair: string;
   templeV2Router: string;
+  swap1InchRouter: string;
   treasuryIv: string;
   vaultOps: string;
   vaultProxy: string;
   vaultEarlyExit: string;
+  ramos: string;
+  ramosPoolHelper: string;
+  balancerHelpers: string;
 }
 
 interface Gas {
@@ -56,13 +63,14 @@ export interface Token {
   symbol?: string;
 }
 
-interface Tokens {
+export interface Tokens {
   frax: Token;
   temple: Token;
   ogTemple: Token;
   fei: Token;
   eth: Token;
   usdc: Token;
+  usdt: Token;
   dai: Token;
 }
 

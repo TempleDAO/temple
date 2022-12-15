@@ -36,7 +36,7 @@ contract TempleTeamPaymentsFactoryTest is Test {
     function setUp() public {
         vm.createSelectFork(vm.rpcUrl("mainnet"));
         address impl = address(new TempleTeamPaymentsV2());
-        factory = new TempleTeamPaymentsFactory(temple, impl, 0);
+        factory = new TempleTeamPaymentsFactory(impl, 0);
         factory.transferOwnership(multisig);
     }
 
@@ -57,7 +57,7 @@ contract TempleTeamPaymentsFactoryTest is Test {
 
         vm.expectEmit(true, true, true, true);
         emit FundingPaid(factory.lastPaidEpoch() + 1, recip, values);
-        factory.directPayouts(recip, values);
+        factory.directPayouts(temple, recip, values);
         vm.stopPrank();
 
         for (uint256 i; i < recip.length; i++) {
@@ -110,6 +110,7 @@ contract TempleTeamPaymentsFactoryTest is Test {
             nextEpochClone
         );
         TempleTeamPaymentsV2 testContract = factory.deployPayouts(
+            temple,
             recip,
             values,
             totalPaid

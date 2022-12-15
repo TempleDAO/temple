@@ -1,6 +1,5 @@
 import { Network } from '@ethersproject/providers';
-import { BigNumber, ContractReceipt, Signer } from 'ethers';
-
+import { BigNumber, ContractReceipt, Signer, ContractTransaction } from 'ethers';
 import { Nullable } from 'types/util';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
@@ -23,6 +22,9 @@ export enum ETH_ACTIONS {
 export type Balance = {
   frax: BigNumber;
   fei: BigNumber;
+  usdc: BigNumber;
+  usdt: BigNumber;
+  dai: BigNumber;
   temple: BigNumber;
   ogTemple: BigNumber;
 };
@@ -93,27 +95,20 @@ export interface SwapService {
   templePrice: number;
   iv: number;
 
-  buy(
-    amountIn: BigNumber,
-    minAmountOutTemple: BigNumber,
-    token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI,
-    deadlineInMinutes?: number
-  ): Promise<ContractReceipt | void>;
+  buy(amountIn: BigNumber, token: TICKER_SYMBOL, slippage: number): Promise<ContractReceipt | void>;
 
-  sell(
-    amountInTemple: BigNumber,
-    minAmountOut: BigNumber,
-    token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI,
-    isIvSwap?: boolean,
-    deadlineInMinutes?: number
-  ): Promise<ContractReceipt | void>;
+  sell(amountInTemple: BigNumber, token: TICKER_SYMBOL, slippage: number): Promise<ContractReceipt | void>;
 
-  getSellQuote(
-    amountToSell: BigNumber,
-    token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI
-  ): Promise<{ amountOut: BigNumber; priceBelowIV: boolean } | void>;
+  getSellQuote(amountToSell: BigNumber, token?: TICKER_SYMBOL): Promise<BigNumber | void>;
 
-  getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<BigNumber | void>;
+  getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL): Promise<BigNumber | void>;
+
+  get1inchSwap(
+    tokenAmount: BigNumber,
+    tokenIn: TICKER_SYMBOL,
+    tokenOut: TICKER_SYMBOL,
+    slippage: number
+  ): Promise<ContractTransaction | void>;
 
   updateTemplePrice(token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<void>;
 

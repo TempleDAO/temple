@@ -107,7 +107,7 @@ const ConnectButton = styled(BaseButton)`
   border: transparent; 
   color: ${({ theme }) => theme.palette.brand};
   border: 1px solid ${({ theme }) => theme.palette.brand};
-  margin: 0 0 0 0.75rem;
+
   font-size: .75rem;
   letter-spacing: 0.1em;
   transition: background .2s ease-in-out;

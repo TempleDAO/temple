@@ -35,15 +35,14 @@ async function main() {
         DEPLOYED.BBA_USD_TOKEN,
         DEPLOYED.TEMPLE_BBAUSD_LP_TOKEN,
         DEPLOYED.RAMOS_AURA_STAKING,
-        DEPLOYED.AURA_BOOSTER,
         BigNumber.from(0),
         DEPLOYED.TEMPLE_BB_A_USD_BALANCER_POOL_ID
     );
 
     // post deploy
-    await mine(ramos.setOperator(DEPLOYED.MULTISIG)); // Will be moved to the bot
+    await mine(ramos.setOperator("0x628a05f7dc7356349813b6e1ef74caa8069eea19")); // The bot relayer wallet
     await mine(ramos.setCoolDown(1_800)); // 30 mins
-    await mine(ramos.setTemplePriceFloorNumerator(9_700)); // $0.97
+    await mine(ramos.setTemplePriceFloorNumerator(9_782)); // 0.9782 BB-A-USD => $0.98 USD
     await mine(ramos.setRebalancePercentageBounds(100, 300));  // rebalance_up if 1% below, rebalance_down if 3% above
     await mine(ramos.setMaxRebalanceAmounts(toAtto(1_000_000), toAtto(1_000_000), toAtto(1_000_000))); // 1Mill max on each
     await mine(ramos.setPostRebalanceSlippage(5_000)); // 50%

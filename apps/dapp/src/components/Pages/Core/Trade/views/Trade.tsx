@@ -5,7 +5,7 @@ import { TransactionSettingsModal } from 'components/TransactionSettingsModal/Tr
 
 import { SwapMode } from '../types';
 import { useSwapController } from '../use-swap-controller';
-import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
+import { getBigNumberFromString, formatBigNumber, getTokenInfo } from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
 
 import {
@@ -40,8 +40,19 @@ export const Trade = () => {
     state.mode === SwapMode.Sell ? { ...state.outputConfig, onCryptoChange: handleSelectChange } : state.outputConfig;
 
   const bigInputValue = getBigNumberFromString(state.inputValue || '0');
-  
-  const isButtonDisabled = state.isTransactionPending || state.inputTokenBalance.eq(ZERO) ||bigInputValue.gt(state.inputTokenBalance) ||state.inputValue === '';
+
+  const isButtonDisabled =
+    state.isTransactionPending ||
+    state.inputTokenBalance.eq(ZERO) ||
+    bigInputValue.gt(state.inputTokenBalance) ||
+    state.inputValue === '';
+
+  const inputHint = `Balance: ${formatNumber(
+    formatBigNumber(state.inputTokenBalance, getTokenInfo(state.inputToken).decimals)
+  )}`;
+  const outputHint = `Balance: ${formatNumber(
+    formatBigNumber(state.outputTokenBalance, getTokenInfo(state.outputToken).decimals)
+  )}`;
 
   return (
     <>
@@ -65,23 +76,19 @@ export const Trade = () => {
             placeholder="0"
             onHintClick={handleHintClick}
             min={0}
-            hint={`Balance: ${formatNumber(formatBigNumber(state.inputTokenBalance))}`}
+            hint={inputHint}
           />
           <Spacer />
           <Input
             crypto={outputCryptoConfig}
-            value={formatNumber(formatBigNumber(state.quoteValue))}
-            hint={`Balance: ${formatNumber(formatBigNumber(state.outputTokenBalance))}`}
+            value={formatNumber(formatBigNumber(state.quoteValue, getTokenInfo(state.outputToken).decimals))}
+            hint={outputHint}
             disabled
           />
           <InvertButton onClick={handleChangeMode} />
         </InputsContainer>
         <Spacer />
-        <CtaButton
-          label={state.buttonLabel}
-          onClick={handleTransaction}
-          disabled={isButtonDisabled}
-        />
+        <CtaButton label={state.buttonLabel} onClick={handleTransaction} disabled={isButtonDisabled} />
       </SwapContainer>
       {state.error && <ErrorLabel>{state.error.message}</ErrorLabel>}
     </>
