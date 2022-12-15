@@ -25,6 +25,8 @@ import { Trade } from './TradeNew';
 import { useAccount } from 'wagmi';
 import { Account } from 'components/Layouts/CoreLayout/Account';
 import { fetchGenericSubgraph } from 'utils/subgraph';
+import { Background } from 'components/Vault/desktop-parts/Background';
+import { Definitions } from 'components/Vault/desktop-parts/Definitions';
 
 interface Metrics {
   price: number;
@@ -41,17 +43,17 @@ const MarketingContent = [
   {
     image: intrValue,
     header: 'Find Refuge in the Temple',
-    text: 'Each $TEMPLE token is backed by stable assets in the Treasury. The $TEMPLE price is indexed to these Treasury assets through a metric called Treasury Price Index (TPI).',
+    text: 'Each $TEMPLE token is backed by stable assets in the Treasury. The $TEMPLE price tracks the growth of Treasury assets through a metric called Treasury Price Index (TPI).',
   },
   {
     image: treasuryGrowth,
     header: 'Growth that Transcends Volatility',
     text: (
       <>
-        Get exposure to the top stable yields in DeFi without worrying about actively managing any positions.
+        Enjoy the top stable yields in DeFi without worrying about actively managing any positions.
         <br />
         <br />
-        TPI and $TEMPLE price both rise over time as the Temple Treasury generates revenue and grows in value.
+        TPI rises over time as the Temple Treasury generates revenue and grows in value.
       </>
     ),
   },
@@ -171,6 +173,10 @@ const Home = () => {
       {/* Top Container */}
       <TopContainer>
         <RaysImage src={rays} />
+        <BackgroundTexture viewBox="0 0 1000 1000" fill="none">
+          <Background />
+          <Definitions />
+        </BackgroundTexture>
         <HeroRing>
           <ContentContainer>
             {tradeFormVisible && <Trade />}
@@ -185,7 +191,7 @@ const Home = () => {
             {!tradeFormVisible && !showConnect && (
               <>
                 <NewTempleText>The New Temple</NewTempleText>
-                <TradeDetailText>A wrapped treasury token with steady price growth in all seasons</TradeDetailText>
+                <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
                 <LearnMoreLink onClick={scrollToContent}>Learn More</LearnMoreLink>
                 <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
               </>
@@ -196,11 +202,11 @@ const Home = () => {
         {/* Metrics */}
         <MetricsRow>
           <Metric>
-            <MetricValue>${metrics.price.toFixed(3)}</MetricValue>
+            <MetricValue>${metrics.price.toFixed(4)}</MetricValue>
             <MetricTitle>$TEMPLE Price</MetricTitle>
           </Metric>
           <Metric>
-            <MetricValue>${metrics.tpi.toFixed(2)}</MetricValue>
+            <MetricValue>${metrics.tpi.toFixed(4)}</MetricValue>
             <MetricTitle>Treasury Price Index</MetricTitle>
           </Metric>
           <Metric>
@@ -322,6 +328,13 @@ const RaysImage = styled(Image)`
   position: absolute;
   margin-top: -6rem;
   width: 1300px;
+`;
+
+const BackgroundTexture = styled.svg`
+  position: absolute;
+  margin-top: -4rem;
+  margin-left: 6.5px;
+  width: 700px;
 `;
 
 const HeroRing = styled.div`
