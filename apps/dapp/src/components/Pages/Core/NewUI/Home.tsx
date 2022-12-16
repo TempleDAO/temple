@@ -25,8 +25,6 @@ import { Trade } from './TradeNew';
 import { useAccount } from 'wagmi';
 import { Account } from 'components/Layouts/CoreLayout/Account';
 import { fetchGenericSubgraph } from 'utils/subgraph';
-import { Background } from 'components/Vault/desktop-parts/Background';
-import { Definitions } from 'components/Vault/desktop-parts/Definitions';
 
 interface Metrics {
   price: number;
@@ -173,10 +171,6 @@ const Home = () => {
       {/* Top Container */}
       <TopContainer>
         <RaysImage src={rays} />
-        <BackgroundTexture viewBox="0 0 1000 1000" fill="none">
-          <Background />
-          <Definitions />
-        </BackgroundTexture>
         <HeroRing>
           <ContentContainer>
             {tradeFormVisible && <Trade />}
@@ -328,13 +322,6 @@ const RaysImage = styled(Image)`
   position: absolute;
   margin-top: -6rem;
   width: 1300px;
-`;
-
-const BackgroundTexture = styled.svg`
-  position: absolute;
-  margin-top: -4rem;
-  margin-left: 6.5px;
-  width: 700px;
 `;
 
 const HeroRing = styled.div`
