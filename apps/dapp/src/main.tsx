@@ -2,9 +2,6 @@ import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import styled from 'styled-components';
-import * as Sentry from '@sentry/react';
-import { BrowserTracing } from '@sentry/tracing';
-import { CaptureConsole } from '@sentry/integrations';
 
 import { GlobalStyle } from 'styles/GlobalStyle';
 import { AppProvider } from 'providers/AppProvider';
@@ -37,7 +34,7 @@ import { AnalyticsService } from 'services/AnalyticsService';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
-const RamosAdmin = React.lazy(() => import('components/Pages/Ramos/admin'))
+const RamosAdmin = React.lazy(() => import('components/Pages/Ramos/admin'));
 
 const LoaderWrapper = styled.div`
   display: flex;
@@ -63,20 +60,6 @@ const LazyPage = ({ component: Component }: LazyPageProps) => (
     <Component />
   </Suspense>
 );
-
-if (env.sentry) {
-  Sentry.init({
-    dsn: env.sentry.dsn,
-    integrations: [
-      new BrowserTracing(),
-      new CaptureConsole({
-        levels: ['error'],
-      }),
-    ],
-    tracesSampleRate: 0.2,
-    environment: env.sentry.environment,
-  });
-}
 
 AnalyticsService.init();
 
@@ -107,7 +90,7 @@ ReactDOM.render(
               </Route>
               <Route path="trade/*" element={<TradeRoutes />} />
               <Route path="profile" element={<ProfilePage />} />
-              
+
               {env.featureFlags.enableAscend && (
                 <>
                   <Route path="ascend/*" element={<AscendLayout />}>
