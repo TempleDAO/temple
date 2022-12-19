@@ -7,8 +7,7 @@ import treasuryGrowth from 'assets/images/newui-images/treasuryGrowth.svg';
 import elasticFloor from 'assets/images/newui-images/elasticFloor.svg';
 import footerTexture from 'assets/images/newui-images/footerTexture.svg';
 import buildings from './assets/Buildings.svg';
-import ring from './assets/Ring.svg';
-import rays from './assets/Rays.svg';
+import hero from './assets/Hero.svg';
 
 import socialDiscordIcon from 'assets/images/social-discord.png';
 import socialDocsIcon from 'assets/images/social-docs.png';
@@ -170,7 +169,7 @@ const Home = () => {
       </LegacyLinkHeader>
       {/* Top Container */}
       <TopContainer>
-        <RaysImage src={rays} />
+        <RaysImage src={hero} />
         <HeroRing>
           <ContentContainer>
             {tradeFormVisible && <Trade />}
@@ -325,12 +324,10 @@ const RaysImage = styled(Image)`
 `;
 
 const HeroRing = styled.div`
-  margin: -8rem 0 0 1rem; // offset so ring can match rays
+  margin: -6rem 0 0 1rem; // offset so ring can match rays
   min-width: 500px;
   width: 500px;
   height: 500px;
-  background: url(${ring}) center no-repeat;
-  background-size: contain;
   z-index: 1;
   text-align: center;
 `;
