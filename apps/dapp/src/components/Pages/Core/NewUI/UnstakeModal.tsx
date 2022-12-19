@@ -1,6 +1,19 @@
-import { Popover } from 'components/Popover';
+import { useState } from 'react';
 import styled from 'styled-components';
 import { Button } from 'components/Button/Button';
+
+import { useWallet } from 'providers/WalletProvider';
+import { Input } from 'components/Input/Input';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { useUnstakeOGTemple } from 'hooks/core/use-unstake-ogtemple';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
+import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
+import { ZERO } from 'utils/bigNumber';
+import { formatNumber } from 'utils/formatter';
+import { useAppContext } from 'providers/AppProvider';
+import { Button as BaseButton } from 'components/Button/Button';
+import { verySmallDesktop } from 'styles/breakpoints';
+import { Popover } from 'components/Popover';
 
 interface IProps {
   isOpen: boolean;
@@ -8,25 +21,66 @@ interface IProps {
 }
 
 export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
+  const { balance } = useWallet();
+  const { showConnectPopover } = useAppContext();
+  const [_, refreshWallet] = useRefreshWalletState();
+  const [unstakeAmount, setUnstakeAmount] = useState<string>('');
+  const [unstake, { isLoading: unstakeLoading }] = useUnstakeOGTemple(() => {
+    refreshWallet();
+    setUnstakeAmount('');
+  });
+
+  const clickConnect = () => {
+    showConnectPopover();
+  };
+
+  const onChange = (amount: string) => {
+    const numberAmount = Number(amount);
+    if (numberAmount === 0) {
+      setUnstakeAmount('');
+    } else {
+      setUnstakeAmount(amount);
+    }
+  };
+
+  const bigAmount = getBigNumberFromString(unstakeAmount || '0');
+  const buttonIsDisabled =
+    unstakeLoading || !unstakeAmount || balance.ogTemple.lte(ZERO) || bigAmount.gt(balance.ogTemple);
+
   return (
-    <>
-      <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside showCloseButton>
-        <UnstakeOgtContainer>
-          <UnstakeTitle>Unstake OGT</UnstakeTitle>
-          <UnstakeSubtitle>You are eligible to unstake:</UnstakeSubtitle>
-          <TempleAmountContainer>
-            <Temple>$TEMPLE</Temple>
-            <TempleAmount>0.00</TempleAmount>
-          </TempleAmountContainer>
-          <UnstakeButton>Unstake</UnstakeButton>
-        </UnstakeOgtContainer>
-      </Popover>
-    </>
+    <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside showCloseButton>
+      <UnstakeTitle>Unstake {TICKER_SYMBOL.OG_TEMPLE_TOKEN}</UnstakeTitle>
+      <InputWrapper>
+        <Input
+          crypto={{
+            kind: 'value',
+            value: TICKER_SYMBOL.OG_TEMPLE_TOKEN,
+          }}
+          handleChange={onChange}
+          isNumber
+          value={unstakeAmount}
+          placeholder="0"
+          onHintClick={() => {
+            const amount = balance.ogTemple.eq(ZERO) ? '' : formatBigNumber(balance.ogTemple);
+            setUnstakeAmount(amount);
+          }}
+          min={0}
+          hint={`Balance: ${formatNumber(formatBigNumber(balance.ogTemple))}`}
+        />
+      </InputWrapper>
+      <UnstakeButton disabled={buttonIsDisabled} onClick={() => unstake(unstakeAmount)}>
+        Unstake {TICKER_SYMBOL.OG_TEMPLE_TOKEN}
+      </UnstakeButton>
+    </Popover>
   );
 };
 
+const InputWrapper = styled.div`
+  margin-bottom: 1rem;
+`;
+
 const UnstakeButton = styled(Button)`
-  width: 100px;
+  width: 150px;
   height: 60px;
   background: linear-gradient(180deg, #353535 45.25%, #101010 87.55%);
   border: 1px solid #95613f;
@@ -42,34 +96,6 @@ const UnstakeButton = styled(Button)`
   margin-top: 10px;
 `;
 
-const TempleAmount = styled.div`
-  font-size: 36px;
-  display: flex;
-  align-items: center;
-  text-align: right;
-  color: #ffdec9;
-  padding: 20px;
-`;
-
-const Temple = styled.div`
-  font-style: normal;
-  font-size: 36px;
-  display: flex;
-  letter-spacing: 0.05em;
-  color: #ffdec9;
-  margin-right: auto;
-`;
-
-const UnstakeSubtitle = styled.div`
-  font-style: normal;
-  font-weight: 700;
-  font-size: 16px;
-  line-height: 20px;
-  align-items: center;
-  letter-spacing: 0.1em;
-  color: #bd7b4f;
-`;
-
 const UnstakeTitle = styled.div`
   font-size: 24px;
   line-height: 28px;
@@ -77,20 +103,6 @@ const UnstakeTitle = styled.div`
   align-items: center;
   color: #bd7b4f;
   padding-bottom: 20px;
-`;
-
-const TempleAmountContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 20px;
-  margin-bottom: 20px;
-`;
-
-const UnstakeOgtContainer = styled.div`
-  display: flex;
-  flex-direction: column;
 `;
 
 export default UnstakeOgtModal;

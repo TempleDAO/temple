@@ -25,6 +25,7 @@ import { Trade } from './TradeNew';
 import { useAccount } from 'wagmi';
 import { Account } from 'components/Layouts/CoreLayout/Account';
 import { fetchGenericSubgraph } from 'utils/subgraph';
+import { UnstakeOgtModal } from './UnstakeModal';
 
 interface Metrics {
   price: number;
@@ -115,6 +116,7 @@ const Home = () => {
   const [metrics, setMetrics] = useState<Metrics>({ price: 0, tpi: 0, treasury: 0 });
   const [tradeFormVisible, setTradeFormVisible] = useState(false);
   const [showConnect, setShowConnect] = useState(false);
+  const [unstakeOpen, setUnstakeOpen] = useState(false);
 
   useEffect(() => {
     setShowConnect(false);
@@ -167,6 +169,7 @@ const Home = () => {
         <LegacyText>Legacy features</LegacyText>
         <LegacyLink to="/dapp/vaults/1m-core/claim">Claim from vaults</LegacyLink>
         <LegacyLink to="/dapp/trade/unstake">Unstake OGT</LegacyLink>
+        <LegacyText onClick={() => setUnstakeOpen(true)}>Unstake OGT (Test Modal)</LegacyText>
       </LegacyLinkHeader>
       {/* Top Container */}
       <TopContainer>
@@ -235,6 +238,7 @@ const Home = () => {
             </MarketingTextWrapper>
           </MarketingRow>
         ))}
+        {unstakeOpen && <UnstakeOgtModal isOpen={unstakeOpen} onClose={() => setUnstakeOpen(false)} />}
       </MainContainer>
 
       {/* Footer */}
