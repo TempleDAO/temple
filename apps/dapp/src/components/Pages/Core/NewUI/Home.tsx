@@ -164,8 +164,12 @@ const Home = () => {
     <>
       <LegacyLinkHeader>
         <LegacyText>Legacy features</LegacyText>
-        <LegacyLink to="/dapp/vaults/1m-core/claim">Claim from vaults</LegacyLink>
-        <LegacyLink to="/dapp/trade/unstake">Unstake OGT</LegacyLink>
+        <Link to="/dapp/vaults/1m-core/claim">
+          <LegacyLink>Claim from vaults</LegacyLink>
+        </Link>
+        <a href="https://old.templedao.link/dapp" target="_blank">
+          <LegacyLink>Unstake OGT</LegacyLink>
+        </a>
       </LegacyLinkHeader>
       {/* Top Container */}
       <TopContainer>
@@ -264,7 +268,9 @@ const Home = () => {
                 <Link to="/dapp/vaults/1m-core/claim">Claim from vaults (Legacy)</Link>
               </li>
               <li>
-                <Link to="/dapp/trade/unstake">Unstake OGT (Legacy)</Link>
+                <a href="https://old.templedao.link/dapp" target="_blank">
+                  Unstake OGT (Legacy)
+                </a>
               </li>
             </ul>
           </Links>
@@ -284,7 +290,7 @@ const LegacyText = styled.span`
   color: ${primaryColor};
 `;
 
-const LegacyLink = styled(Link)`
+const LegacyLink = styled.div`
   text-decoration: underline;
   padding: 5px;
   cursor: pointer;
