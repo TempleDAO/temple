@@ -79,7 +79,7 @@ export const Stake = () => {
     console.error(`Programming Error: ${option} not implemented.`);
   };
 
-  const [{ allowance, isLoading: allowanceLoading }, increaseAllowance] = useTokenVaultProxyAllowance(ticker);
+  const [{ allowance }, increaseAllowance] = useTokenVaultProxyAllowance(ticker);
 
   const handleUpdateStakingAmount = (value: string) => {
     const amount = Number(value || '0');
@@ -100,9 +100,6 @@ export const Stake = () => {
   const stakingAmountBigNumber = getBigNumberFromString(stakingAmount);
   const bigTokenBalance = tokenBalance!;
   const amountIsOutOfBounds = stakingAmountBigNumber.gt(bigTokenBalance) || stakingAmountBigNumber.lte(ZERO);
-
-  const stakeButtonDisabled =
-    !isConnected || amountIsOutOfBounds || refreshIsLoading || depositLoading || allowanceLoading;
 
   const error =
     !!depositError && ((depositError as MetaMaskError).data?.message || depositError.message || 'Something went wrong');
@@ -219,7 +216,7 @@ export const Stake = () => {
         <VaultButton
           label="Approve"
           autoWidth
-          disabled={allowanceLoading}
+          disabled={true}
           onClick={async () => {
             return increaseAllowance();
           }}
@@ -229,7 +226,7 @@ export const Stake = () => {
         <VaultButton
           label="Stake"
           autoWidth
-          disabled={stakeButtonDisabled}
+          disabled={true}
           loading={refreshIsLoading || depositLoading}
           onClick={async () => {
             await deposit(ticker!, stakingAmount || '0', false);
