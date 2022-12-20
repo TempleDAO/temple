@@ -332,7 +332,7 @@ const HeroRing = styled.div`
   width: 500px;
   height: 500px;
   margin-left: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 3rem;
   display: flex;
   align-items: center;
   justify-content: center;
