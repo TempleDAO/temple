@@ -28,7 +28,6 @@ export const INITIAL_STATE: SwapReducerState = {
   outputConfig: buildValueConfig(TICKER_SYMBOL.TEMPLE_TOKEN),
   buttonLabel: createButtonLabel(TICKER_SYMBOL.FRAX, TICKER_SYMBOL.TEMPLE_TOKEN, SwapMode.Buy),
   isTransactionPending: false,
-  isFraxSellDisabled: false,
   error: null,
 };
 

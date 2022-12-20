@@ -7,8 +7,11 @@ import { Ticks } from './timeline/Ticks';
 import TimelineTippy from '../TimelineTippy';
 
 export const Timeline = () => {
-  const { vaultGroup, balances: { balances } } = useVaultContext();
-  
+  const {
+    vaultGroup,
+    balances: { balances },
+  } = useVaultContext();
+
   const markers = getMarkers(vaultGroup!, balances[vaultGroup!.id])
     .filter((marker) => marker.type !== MarkerType.HIDDEN)
     .map((marker) => {

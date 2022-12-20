@@ -1,5 +1,3 @@
-import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-
 import { INITIAL_STATE } from './constants';
 import { SwapMode, SwapReducerAction, SwapReducerState } from './types';
 import { buildSelectConfig, buildValueConfig, createButtonLabel } from './utils';
@@ -10,21 +8,15 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
       return action.value === SwapMode.Buy
         ? {
             ...INITIAL_STATE,
-            isFraxSellDisabled: state.isFraxSellDisabled,
           }
         : {
             ...INITIAL_STATE,
             mode: SwapMode.Sell,
             inputToken: INITIAL_STATE.outputToken,
-            outputToken: state.isFraxSellDisabled ? TICKER_SYMBOL.FEI : INITIAL_STATE.inputToken,
+            outputToken: INITIAL_STATE.inputToken,
             inputConfig: buildValueConfig(INITIAL_STATE.outputToken),
-            outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, SwapMode.Sell, state.isFraxSellDisabled),
-            buttonLabel: createButtonLabel(
-              INITIAL_STATE.outputToken,
-              state.isFraxSellDisabled ? TICKER_SYMBOL.FEI : INITIAL_STATE.inputToken,
-              SwapMode.Sell
-            ),
-            isFraxSellDisabled: state.isFraxSellDisabled,
+            outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, SwapMode.Sell),
+            buttonLabel: createButtonLabel(INITIAL_STATE.outputToken, INITIAL_STATE.inputToken, SwapMode.Sell),
           };
     }
 
@@ -89,35 +81,6 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
         ...state,
         inputValue: INITIAL_STATE.inputValue,
         quoteValue: INITIAL_STATE.quoteValue,
-      };
-
-    case 'disableFraxSell':
-      return {
-        ...state,
-        isFraxSellDisabled: true,
-        outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, SwapMode.Sell, true),
-        outputToken: TICKER_SYMBOL.FEI,
-        outputTokenBalance: action.feiBalance,
-        buttonLabel:
-          state.mode === SwapMode.Sell
-            ? createButtonLabel(state.inputToken, TICKER_SYMBOL.FEI, state.mode)
-            : state.buttonLabel,
-      };
-
-    case 'enableFraxSell':
-      return {
-        ...state,
-        isFraxSellDisabled: false,
-        outputToken: state.mode === SwapMode.Sell ? INITIAL_STATE.inputToken : state.outputToken,
-        outputTokenBalance: state.mode === SwapMode.Sell ? action.fraxBalance : state.outputTokenBalance,
-        outputConfig:
-          state.mode === SwapMode.Sell
-            ? buildSelectConfig(INITIAL_STATE.inputToken, state.mode, false)
-            : state.outputConfig,
-        buttonLabel:
-          state.mode === SwapMode.Sell
-            ? createButtonLabel(state.inputToken, INITIAL_STATE.inputToken, state.mode)
-            : state.buttonLabel,
       };
 
     case 'setError': {

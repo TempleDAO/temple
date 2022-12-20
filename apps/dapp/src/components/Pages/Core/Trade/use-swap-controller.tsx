@@ -1,32 +1,26 @@
 import { useEffect, useReducer } from 'react';
 import { BigNumber } from 'ethers';
-
 import { Option } from 'components/InputSelect/InputSelect';
 import { TransactionSettings } from 'components/TransactionSettingsModal/TransactionSettingsModal';
-
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
-
 import { ZERO } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { getBigNumberFromString, formatBigNumber, getTokenInfo } from 'components/Vault/utils';
-
 import { INITIAL_STATE, TOKENS_BY_MODE } from './constants';
 import { SwapMode } from './types';
-import { calculateMinAmountOut, isTokenFraxOrFei } from './utils';
 import { swapReducer } from './reducer';
 
 export function useSwapController() {
   const { wallet } = useWallet();
   const [state, dispatch] = useReducer(swapReducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
-  const { getBuyQuote, getSellQuote, updateTemplePrice, buy, sell, updateIv, error } = useSwap();
+  const { getBuyQuote, getSellQuote, updateTemplePrice, buy, sell, error } = useSwap();
 
   useEffect(() => {
     const onMount = async () => {
       await updateBalance();
       await updateTemplePrice();
-      await updateIv();
 
       dispatch({
         type: 'changeInputTokenBalance',
@@ -86,9 +80,7 @@ export function useSwapController() {
       });
     }
 
-    if (isTokenFraxOrFei(token)) {
-      updateTemplePrice(token);
-    }
+    updateTemplePrice(token);
   };
 
   // Handles user input
@@ -192,8 +184,6 @@ export function useSwapController() {
     switch (token) {
       case TICKER_SYMBOL.FRAX:
         return balance.frax;
-      case TICKER_SYMBOL.FEI:
-        return balance.fei;
       case TICKER_SYMBOL.USDC:
         return balance.usdc;
       case TICKER_SYMBOL.USDT:

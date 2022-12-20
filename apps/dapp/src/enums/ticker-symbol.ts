@@ -4,7 +4,6 @@ export enum TICKER_SYMBOL {
   OG_TEMPLE_TOKEN = '$OGTEMPLE',
   FAITH = '$FAITH',
   FRAX = '$FRAX',
-  FEI = '$FEI',
   ETH = '$ETH',
   USDC = '$USDC',
   USDT = '$USDT',

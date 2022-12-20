@@ -41,7 +41,6 @@ const env: Environment = {
     ramosPoolHelper: '0x0bD02b31B3a6aFB335a4C62c53BfdDD38D388075',
     balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
   },
-  fraxSellDisabledIvMultiple: 1.02,
   gas: {
     swapFraxForTemple: 300000,
     swapTempleForFrax: 300000,
@@ -73,11 +72,6 @@ const env: Environment = {
     ogTemple: {
       name: 'OGTemple',
       address: '0x654590f810f01b51dc7b86915d4632977e49ea33',
-      decimals: 18,
-    },
-    fei: {
-      name: 'Fei',
-      address: '0x956f47f50a910163d8bf957cf5846d573e7f87ca',
       decimals: 18,
     },
     eth: {

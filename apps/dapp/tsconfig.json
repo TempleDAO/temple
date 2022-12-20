@@ -8,6 +8,7 @@
     "resolveJsonModule": true,
     "paths": {
       "components/*": ["./components/*"],
+      "pages/*": ["./pages/*"],
       "providers/*": ["./providers/*"],
       "assets/*": ["./assets/*"],
       "styles/*": ["./styles/*"],
@@ -22,5 +23,5 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx","**/*.json"],
-  "exclude": ["node_modules", "tests/e2e"]
+  "exclude": ["node_modules"]
 }

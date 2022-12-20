@@ -48,7 +48,6 @@ const env: Environment = {
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
   },
-  fraxSellDisabledIvMultiple: 1.02,
   gas: {
     swapFraxForTemple: 300000,
     swapTempleForFrax: 300000,
@@ -84,12 +83,6 @@ const env: Environment = {
       address: '0x07d6c81fce4263ddeb0610c217c673b315e766f1',
       decimals: 18,
       symbol: 'OGTEMPLE',
-    },
-    fei: {
-      name: 'Fei',
-      address: '0xa1e7CdD887d6fac4861b5663984A9Ba72cFF9522',
-      decimals: 18,
-      symbol: 'FEI',
     },
     eth: {
       name: 'WETH',

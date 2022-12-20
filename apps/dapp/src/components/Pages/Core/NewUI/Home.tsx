@@ -1,6 +1,5 @@
 import styled from 'styled-components';
 import Image from '../../../Image/Image';
-
 import obtainTemple from 'assets/images/newui-images/obtainTemple.svg';
 import intrValue from 'assets/images/newui-images/intrValue.svg';
 import treasuryGrowth from 'assets/images/newui-images/treasuryGrowth.svg';
@@ -8,7 +7,6 @@ import elasticFloor from 'assets/images/newui-images/elasticFloor.svg';
 import footerTexture from 'assets/images/newui-images/footerTexture.svg';
 import buildings from './assets/Buildings.svg';
 import hero from './assets/Hero.svg';
-
 import socialDiscordIcon from 'assets/images/social-discord.png';
 import socialDocsIcon from 'assets/images/social-docs.png';
 import socialCodexIcon from 'assets/images/social-codex.png';
@@ -158,7 +156,7 @@ const Home = () => {
       });
     };
     fetchMetrics();
-  });
+  }, []);
 
   return (
     <>
@@ -243,12 +241,12 @@ const Home = () => {
       {/* Footer */}
       <FooterContainer>
         <LinkRow>
-          {FooterContent.map((col, index) => (
-            <Links key={index}>
+          {FooterContent.map((col, i) => (
+            <Links key={i}>
               <h4>{col.header}</h4>
               <ul>
-                {col.links.map((link, index) => (
-                  <li>
+                {col.links.map((link, j) => (
+                  <li key={j}>
                     <a href={link.link} target="_blank" rel="noreferrer">
                       <FooterImage src={link.image} alt={link.text} />
                       <strong>{link.text}</strong>
@@ -325,15 +323,22 @@ const TopContainer = styled.div`
 
 const RaysImage = styled(Image)`
   position: absolute;
-  margin-top: -6rem;
+  top: -170px;
   width: 1300px;
+  height: 1050px;
 `;
 
 const HeroRing = styled.div`
-  margin: -6rem 0 0 1rem; // offset so ring can match rays
+  position: absolute;
+  top: 150px;
   min-width: 500px;
   width: 500px;
   height: 500px;
+  margin-left: 16px;
+  margin-bottom: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1;
   text-align: center;
 `;

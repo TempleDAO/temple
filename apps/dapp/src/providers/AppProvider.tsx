@@ -1,10 +1,4 @@
-import {
-  PropsWithChildren,
-  useState,
-  useCallback,
-  useContext,
-  createContext,
-} from 'react';
+import { PropsWithChildren, useState, useCallback, useContext, createContext } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { theme } from 'styles/theme';
 import { NotificationProvider } from 'providers/NotificationProvider';
