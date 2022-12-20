@@ -69,20 +69,11 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
           <MenuItem to="/dapp/vaults" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
             Vaults
           </MenuItem>
-          <MenuItem to="/dapp/trade" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
-            Trade
-          </MenuItem>
           {env.featureFlags.enableAscend && (
             <MenuItem to="/dapp/ascend" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
               Ascend
             </MenuItem>
           )}
-          <MenuItem to="/dapp/profile" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
-            Profile
-          </MenuItem>
-          <MenuItem to="/dapp/analytics" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
-            Analytics
-          </MenuItem>
         </Menu>
         <Selector $position={selectorPosition} />
       </MenuWrapper>
