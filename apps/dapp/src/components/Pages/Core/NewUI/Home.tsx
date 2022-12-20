@@ -158,7 +158,7 @@ const Home = () => {
       });
     };
     fetchMetrics();
-  });
+  }, []);
 
   return (
     <>
