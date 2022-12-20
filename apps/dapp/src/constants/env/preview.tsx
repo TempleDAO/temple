@@ -39,7 +39,7 @@ const env: Environment = {
     vaultEarlyExit: '0x7Edb6ea1A90318E9D2B3Ae03e5617A5AAFd7b249',
     ramos: '0x02783CE28C5B3B015340938A11Aa79BB9f26f1Bc',
     ramosPoolHelper: '0xe3346D1923A9935A581FEa891b027eabF7B35250',
-    balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E'
+    balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
   },
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core-goerli',
@@ -116,10 +116,6 @@ const env: Environment = {
     },
   },
   etherscan: 'https://goerli.etherscan.io',
-  sentry: {
-    environment: 'preview',
-    dsn: 'https://ab0c41c30fbb405da50d9803819b1d60@o1268430.ingest.sentry.io/6456054',
-  },
   featureFlags: {
     enableAscend: true,
   },

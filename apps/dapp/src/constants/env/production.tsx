@@ -39,7 +39,7 @@ const env: Environment = {
     vaultEarlyExit: '0x7C6f1b4891ff8CAcCeC97DbbD9Df3b773d88A03E',
     ramos: '0x8C18b1619362C1f89a688294db9EDbb7947a710f',
     ramosPoolHelper: '0x0bD02b31B3a6aFB335a4C62c53BfdDD38D388075',
-    balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E'
+    balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
   },
   fraxSellDisabledIvMultiple: 1.02,
   gas: {
@@ -102,10 +102,6 @@ const env: Environment = {
     },
   },
   etherscan: 'https://etherscan.io',
-  sentry: {
-    environment: 'production',
-    dsn: 'https://ab0c41c30fbb405da50d9803819b1d60@o1268430.ingest.sentry.io/6456054',
-  },
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
