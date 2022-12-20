@@ -323,15 +323,19 @@ const TopContainer = styled.div`
 
 const RaysImage = styled(Image)`
   position: absolute;
-  margin-top: -6rem;
+  bottom: -25px;
   width: 1300px;
 `;
 
 const HeroRing = styled.div`
-  margin: -6rem 0 0 1rem; // offset so ring can match rays
   min-width: 500px;
   width: 500px;
   height: 500px;
+  margin-left: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1;
   text-align: center;
 `;
