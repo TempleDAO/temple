@@ -1,12 +1,11 @@
 import styled from 'styled-components';
 import { Outlet } from 'react-router-dom';
 
-import { PillMenu } from 'components/PillMenu';
+import { PillMenu } from 'components/Layouts/Ascend/PillMenu';
 
 import { pixelsToRems } from 'styles/mixins';
 import { tabletAndAbove } from 'styles/breakpoints';
 import { NAV_MOBILE_HEIGHT_PIXELS, NAV_DESKTOP_HEIGHT_PIXELS } from 'components/Layouts/CoreLayout/Header';
-
 
 export const AscendLayout = () => {
   const isAdmin = false;
@@ -16,16 +15,20 @@ export const AscendLayout = () => {
       {isAdmin && (
         <AdminMenuWrapper>
           <PillMenu
-            links={[{
-              to: '/dapp/ascend',
-              label: 'Current',
-            }, {
-              to: '/dapp/ascend/edit',
-              label: 'Edit',
-            }, {
-              to: '/dapp/ascend/create',
-              label: 'Create',
-            }]}
+            links={[
+              {
+                to: '/dapp/ascend',
+                label: 'Current',
+              },
+              {
+                to: '/dapp/ascend/edit',
+                label: 'Edit',
+              },
+              {
+                to: '/dapp/ascend/create',
+                label: 'Create',
+              },
+            ]}
           />
         </AdminMenuWrapper>
       )}

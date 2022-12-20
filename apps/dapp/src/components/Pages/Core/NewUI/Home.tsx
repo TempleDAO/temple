@@ -1,6 +1,5 @@
 import styled from 'styled-components';
 import Image from '../../../Image/Image';
-
 import obtainTemple from 'assets/images/newui-images/obtainTemple.svg';
 import intrValue from 'assets/images/newui-images/intrValue.svg';
 import treasuryGrowth from 'assets/images/newui-images/treasuryGrowth.svg';
@@ -8,7 +7,6 @@ import elasticFloor from 'assets/images/newui-images/elasticFloor.svg';
 import footerTexture from 'assets/images/newui-images/footerTexture.svg';
 import buildings from './assets/Buildings.svg';
 import hero from './assets/Hero.svg';
-
 import socialDiscordIcon from 'assets/images/social-discord.png';
 import socialDocsIcon from 'assets/images/social-docs.png';
 import socialCodexIcon from 'assets/images/social-codex.png';

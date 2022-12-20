@@ -1,24 +1,12 @@
-import {
-  FC,
-  useRef,
-  useState,
-  useCallback,
-  useLayoutEffect,
-  SyntheticEvent,
-} from 'react';
+import { FC, useRef, useState, useCallback, useLayoutEffect, SyntheticEvent } from 'react';
 import { Link, useResolvedPath, useMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
-import {
-  flexCenter,
-  buttonResets,
-  backgroundImage,
-  pixelsToRems,
-} from 'styles/mixins';
+import { flexCenter, buttonResets, backgroundImage, pixelsToRems } from 'styles/mixins';
 import { UnstyledList } from 'styles/common';
 import { theme } from 'styles/theme';
 import { phoneAndAbove, verySmallDesktop } from 'styles/breakpoints';
-import { Lottie } from 'components/Lottie';
+import { Lottie } from 'components/Layouts/CoreLayout/Lottie';
 
 import env from 'constants/env';
 import selectorIcon from 'assets/icons/nav-selector-icon.svg';
@@ -47,10 +35,7 @@ const Header = () => {
             <Lottie animationData={animationData} height={36} width={36} />
           </Logo>
         </MobileNavLeft>
-        <Navigation
-          isNavOpenMobile={isNavOpen}
-          onClickMenuItem={onClickMenuItem}
-        />
+        <Navigation isNavOpenMobile={isNavOpen} onClickMenuItem={onClickMenuItem} />
         <AccountWrapper>
           <Account />
         </AccountWrapper>
@@ -81,41 +66,21 @@ const Navigation = ({ isNavOpenMobile, onClickMenuItem }: NavigationProps) => {
     <NavWrapper $isOpen={isNavOpenMobile}>
       <MenuWrapper>
         <Menu id="menu">
-          <MenuItem
-            to="/dapp/vaults"
-            onMenuItemActive={onMenuItemActive}
-            onClick={onClickMenuItem}
-          >
+          <MenuItem to="/dapp/vaults" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
             Vaults
           </MenuItem>
-          <MenuItem
-            to="/dapp/trade"
-            onMenuItemActive={onMenuItemActive}
-            onClick={onClickMenuItem}
-          >
+          <MenuItem to="/dapp/trade" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
             Trade
           </MenuItem>
           {env.featureFlags.enableAscend && (
-            <MenuItem
-              to="/dapp/ascend"
-              onMenuItemActive={onMenuItemActive}
-              onClick={onClickMenuItem}
-            >
+            <MenuItem to="/dapp/ascend" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
               Ascend
             </MenuItem>
           )}
-          <MenuItem
-            to="/dapp/profile"
-            onMenuItemActive={onMenuItemActive}
-            onClick={onClickMenuItem}
-          >
+          <MenuItem to="/dapp/profile" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
             Profile
           </MenuItem>
-          <MenuItem
-            to="/dapp/analytics"
-            onMenuItemActive={onMenuItemActive}
-            onClick={onClickMenuItem}
-          >
+          <MenuItem to="/dapp/analytics" onMenuItemActive={onMenuItemActive} onClick={onClickMenuItem}>
             Analytics
           </MenuItem>
         </Menu>
@@ -132,13 +97,7 @@ interface MenuItemProps {
   onClick?: (event: SyntheticEvent) => void;
 }
 
-const MenuItem: FC<MenuItemProps> = ({
-  to,
-  children,
-  onMenuItemActive,
-  strictMatch = false,
-  onClick,
-}) => {
+const MenuItem: FC<MenuItemProps> = ({ to, children, onMenuItemActive, strictMatch = false, onClick }) => {
   const resolved = useResolvedPath(to);
   const match = useMatch({ path: resolved.pathname, end: strictMatch });
   const menuItemRef = useRef<HTMLAnchorElement>(null);
@@ -229,7 +188,6 @@ const Logo = styled(Link)`
   width: 2.125rem;
   height: 2.125rem;
   overflow: hidden;
-  
 
   ${phoneAndAbove(`
     width: 2.125rem;
@@ -333,14 +291,12 @@ const NavLink = styled(Link)<{ $active?: boolean }>`
   font-weight: normal;
   transition: all 150ms ease-in;
 
-  color: ${({ theme, $active }) =>
-    $active ? theme.palette.brandLight : theme.palette.brand};
+  color: ${({ theme, $active }) => ($active ? theme.palette.brandLight : theme.palette.brand)};
   text-shadow: ${({ $active }) => ($active ? COLOR_NAV_SHADOW_MOBILE : 'none')};
 
   &:hover {
     color: ${theme.palette.brandLight};
-    text-shadow: ${({ $active }) =>
-      $active ? COLOR_NAV_SHADOW_MOBILE : 'none'};
+    text-shadow: ${({ $active }) => ($active ? COLOR_NAV_SHADOW_MOBILE : 'none')};
   }
 
   ${({ $active }) =>
