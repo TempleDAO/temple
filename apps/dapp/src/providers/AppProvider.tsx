@@ -7,7 +7,7 @@ import { SwapProvider } from 'providers/SwapProvider';
 import { StakingProvider } from 'providers/StakingProvider';
 import { FaithProvider } from 'providers/FaithProvider';
 import { WagmiProvider } from 'components/WagmiProvider';
-import { VaultContextProvider } from 'Pages/Core/VaultContext';
+import { VaultContextProvider } from 'pages/Core/VaultContext';
 
 import { noop } from 'utils/helpers';
 import { ConnectorPopover } from 'components/Layouts/CoreLayout/ConnectorPopover';

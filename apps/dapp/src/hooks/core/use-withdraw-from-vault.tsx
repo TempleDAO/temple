@@ -3,7 +3,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { Callback } from './types';
 import useRequestState from 'hooks/use-request-state';
 import { useNotification } from 'providers/NotificationProvider';
-import { Operation, useVaultContext } from 'Pages/Core/VaultContext';
+import { Operation, useVaultContext } from 'pages/Core/VaultContext';
 import { getBigNumberFromString } from 'components/Vault/utils';
 import { BigNumber, Contract } from 'ethers';
 import { useState } from 'react';

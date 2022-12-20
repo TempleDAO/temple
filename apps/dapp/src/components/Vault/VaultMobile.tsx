@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import { pixelsToRems } from 'styles/mixins';
 import { Definitions } from './mobile-parts/Definitions';
 import { Header } from './mobile-parts/Header';
-import { useVaultContext } from 'Pages/Core/VaultContext';
+import { useVaultContext } from 'pages/Core/VaultContext';
 import { Nav } from './mobile-parts/Nav';
 import { Timeline } from './mobile-parts/Timeline';
 import { VaultProps, VaultRef } from './types';

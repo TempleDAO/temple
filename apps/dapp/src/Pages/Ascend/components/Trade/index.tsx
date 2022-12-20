@@ -6,7 +6,7 @@ import { Pool } from 'components/Layouts/Ascend/types';
 import { Input } from 'components/Input/Input';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
-import { CircularLoader as BaseCircularLoader, CircularLoader } from 'Pages/Ascend/components/Trade/CircularLoader';
+import { CircularLoader as BaseCircularLoader, CircularLoader } from 'pages/Ascend/components/Trade/CircularLoader';
 import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 import { useVaultTradeState } from './hooks/use-vault-trade-state';

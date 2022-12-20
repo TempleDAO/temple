@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-import VaultContent from 'Pages/Core/VaultPages/VaultContent';
+import VaultContent from 'pages/Core/VaultPages/VaultContent';
 
 import { Header } from 'styles/vault';
 import { useVaultContext } from '../VaultContext';

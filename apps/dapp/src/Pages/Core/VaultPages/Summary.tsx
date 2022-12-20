@@ -6,7 +6,7 @@ import Tooltip from 'components/Tooltip/Tooltip';
 
 import { formatNumberWithCommas } from 'utils/formatter';
 import VaultContent from './VaultContent';
-import { useVaultContext } from 'Pages/Core/VaultContext';
+import { useVaultContext } from 'pages/Core/VaultContext';
 import { useVaultMetrics } from 'hooks/core/subgraph';
 import EllipsisLoader from 'components/EllipsisLoader';
 

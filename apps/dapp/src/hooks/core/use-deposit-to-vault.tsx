@@ -5,7 +5,7 @@ import useRequestState from 'hooks/use-request-state';
 import { useNotification } from 'providers/NotificationProvider';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { DepositSuccessCallback } from './types';
-import { useVaultContext, Operation } from 'Pages/Core/VaultContext';
+import { useVaultContext, Operation } from 'pages/Core/VaultContext';
 import { useVaultJoiningFee } from './use-vault-joining-fee';
 import { useFaith } from 'providers/FaithProvider';
 import { useGetZappedAssetValue } from './use-get-zapped-asset-value';

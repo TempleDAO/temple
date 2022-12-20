@@ -5,7 +5,7 @@ import { createPool } from 'components/Layouts/Ascend/utils';
 import Loader from 'components/Loader/Loader';
 import { LBPForm } from '../components/LBPForm';
 import { useTemplePool } from 'hooks/ascend';
-import { AuctionContextProvider } from 'Pages/Ascend/components/AuctionContext';
+import { AuctionContextProvider } from 'pages/Ascend/components/AuctionContext';
 
 export const EditLBPPage = () => {
   const { poolAddress } = useParams();

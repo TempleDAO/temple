@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 import Loader from 'components/Loader/Loader';
 import { useListCoreVaultGroups } from 'hooks/core/subgraph';
-import { CenterScreenWrapper } from 'Pages/Core/styles';
+import { CenterScreenWrapper } from 'pages/Core/styles';
 import { SubgraphError } from 'hooks/core/types';
 
 const VaultListPage = () => {

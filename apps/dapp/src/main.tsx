@@ -8,30 +8,30 @@ import { AppProvider } from 'providers/AppProvider';
 import NotificationManager from 'components/Notification/NotificationManager';
 import PageLayout from 'components/Layouts/Page';
 import Loader from 'components/Loader/Loader';
-import Disclaimer from 'Pages/Disclaimer';
+import Disclaimer from 'pages/Disclaimer';
 import CoreLayout from 'components/Layouts/CoreLayout';
-import VaultPage from 'Pages/Core/Vault';
-import ProfilePage from 'Pages/Core/Profile/Profile';
-import VaultListPage from 'Pages/Core/VaultList';
-import Home from 'Pages/Core/NewUI/Home';
-import PoolListPage from 'Pages/Ascend/PoolList';
-import { Claim as VaultClaim } from 'Pages/Core/VaultPages/Claim';
-import { Stake } from 'Pages/Core/VaultPages/Stake';
-import { Summary } from 'Pages/Core/VaultPages/Summary';
-import { Strategy } from 'Pages/Core/VaultPages/Strategy';
-import Timing from 'Pages/Core/VaultPages/Timing';
+import VaultPage from 'pages/Core/Vault';
+import ProfilePage from 'pages/Core/Profile/Profile';
+import VaultListPage from 'pages/Core/VaultList';
+import Home from 'pages/Core/NewUI/Home';
+import PoolListPage from 'pages/Ascend/PoolList';
+import { Claim as VaultClaim } from 'pages/Core/VaultPages/Claim';
+import { Stake } from 'pages/Core/VaultPages/Stake';
+import { Summary } from 'pages/Core/VaultPages/Summary';
+import { Strategy } from 'pages/Core/VaultPages/Strategy';
+import Timing from 'pages/Core/VaultPages/Timing';
 import { AscendLayout } from 'components/Layouts/Ascend';
-import { CreateLBPPage } from 'Pages/Ascend/admin/create';
-import { EditLBPPage } from 'Pages/Ascend/admin/edit';
-import { AscendPage } from 'Pages/Ascend';
-import { AscendListPage } from 'Pages/AscendList';
+import { CreateLBPPage } from 'pages/Ascend/admin/create';
+import { EditLBPPage } from 'pages/Ascend/admin/edit';
+import { AscendPage } from 'pages/Ascend';
+import { AscendListPage } from 'pages/AscendList';
 
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
 
 // Separate Chunks
-const TeamPayments = React.lazy(() => import('Pages/TeamPayments'));
-const RamosAdmin = React.lazy(() => import('Pages/Ramos/admin'));
+const TeamPayments = React.lazy(() => import('pages/TeamPayments'));
+const RamosAdmin = React.lazy(() => import('pages/Ramos/admin'));
 
 const LoaderWrapper = styled.div`
   display: flex;
