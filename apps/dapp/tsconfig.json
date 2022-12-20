@@ -8,6 +8,7 @@
     "resolveJsonModule": true,
     "paths": {
       "components/*": ["./components/*"],
+      "pages/*": ["./pages/*"],
       "providers/*": ["./providers/*"],
       "assets/*": ["./assets/*"],
       "styles/*": ["./styles/*"],
