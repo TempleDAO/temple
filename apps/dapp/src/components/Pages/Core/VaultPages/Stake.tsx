@@ -2,7 +2,7 @@ import { useState, useEffect, ReactNode } from 'react';
 import styled from 'styled-components';
 
 import { Option } from 'components/InputSelect/InputSelect';
-import VaultContent, { VaultButton } from 'pages/Core/VaultPages/VaultContent';
+import VaultContent, { VaultButton } from 'components/Pages/Core/VaultPages/VaultContent';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatNumber } from 'utils/formatter';
 import { Header } from 'styles/vault';
@@ -11,7 +11,7 @@ import { VaultInput } from 'components/Input/VaultInput';
 import { CryptoSelect } from 'components/Input/CryptoSelect';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useDepositToVault } from 'hooks/core/use-deposit-to-vault';
-import { useVaultContext } from 'pages/Core/VaultContext';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { useWallet } from 'providers/WalletProvider';
 import { MetaMaskError } from 'hooks/core/types';
 import { useTokenVaultProxyAllowance } from 'hooks/core/use-token-vault-proxy-allowance';

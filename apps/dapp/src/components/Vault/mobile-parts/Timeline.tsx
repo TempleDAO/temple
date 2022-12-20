@@ -1,4 +1,4 @@
-import { useVaultContext } from 'pages/Core/VaultContext';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { getMarkers } from 'components/Vault/utils';
 import { MarkerType } from '../types';
 import { BGTrack } from './timeline/BGTrack';

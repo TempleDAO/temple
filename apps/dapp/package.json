@@ -11,7 +11,6 @@
     "build": "tsc && vite build",
     "vercel-build": "tsc && vite build",
     "serve": "vite preview",
-    "storybook": "start-storybook -p 6006",
     "version:release": "standard-version",
     "version:prerelease": "standard-version --prerelease beta",
     "build-with-stats": "tsc && BUILD_STATS=true vite build"

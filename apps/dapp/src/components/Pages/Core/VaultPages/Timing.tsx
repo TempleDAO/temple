@@ -3,7 +3,7 @@ import { format, isDate } from 'date-fns';
 
 import { Table as BaseTable, Head, Row, Body, Cell } from 'components/Table/Table';
 
-import { useVaultContext } from 'pages/Core/VaultContext';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import VaultContent from './VaultContent';
 import { formatTemple } from 'components/Vault/utils';
 import { ZERO } from 'utils/bigNumber';

@@ -1,7 +1,7 @@
 import styled, { css } from 'styled-components';
 
 import { tabletAndAbove } from 'styles/breakpoints';
-import { Tabs } from 'pages/Ramos/admin/components/Tabs';
+import { Tabs } from 'components/Pages/Ramos/admin/components/Tabs';
 import EllipsisLoader from 'components/EllipsisLoader';
 import { Input } from 'components/Input/Input';
 import { Button } from 'components/Button/Button';

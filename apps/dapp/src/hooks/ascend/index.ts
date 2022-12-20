@@ -4,10 +4,10 @@ import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { Pool } from 'components/Layouts/Ascend/types';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
-import { getRemainingTime } from 'pages/Ascend/utils';
+import { getRemainingTime } from 'components/Pages/Ascend/utils';
 import { SubgraphPool, GraphResponse } from 'components/Layouts/Ascend/types';
-import { useAuctionContext } from 'pages/Ascend/components/AuctionContext';
-import { useVaultContract } from 'pages/Ascend/components/Trade/hooks/use-vault-contract';
+import { useAuctionContext } from 'components/Pages/Ascend/components/AuctionContext';
+import { useVaultContract } from 'components/Pages/Ascend/components/Trade/hooks/use-vault-contract';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { truncateDecimals } from 'utils/formatter';
 

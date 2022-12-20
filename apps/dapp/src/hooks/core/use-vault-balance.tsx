@@ -1,5 +1,5 @@
 import { BigNumber } from 'ethers';
-import { useVaultContext } from 'pages/Core/VaultContext';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { ZERO } from 'utils/bigNumber';
 
 type HookResponseType = [

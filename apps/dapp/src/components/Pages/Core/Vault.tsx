@@ -1,8 +1,8 @@
 import { Outlet, Link } from 'react-router-dom';
 
 import { VaultSVG } from 'components/Vault/VaultSVG';
-import { Spinner } from 'pages/Core/components/LoaderVault/Spinner';
-import { CenterScreenWrapper } from 'pages/Core/styles';
+import { Spinner } from 'components/Pages/Core/components/LoaderVault/Spinner';
+import { CenterScreenWrapper } from 'components/Pages/Core/styles';
 import { useVaultContext } from './VaultContext';
 
 const VaultPage = () => {

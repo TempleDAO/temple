@@ -3,7 +3,7 @@ import useInterval from 'use-interval';
 import { TreasuryMetrics } from 'services/MetricsService';
 import { fetchGenericSubgraph, fetchSubgraph } from 'utils/subgraph';
 import env from 'constants/env';
-import { FALLBACK_VAULT_APY } from 'pages/Core/Trade/constants';
+import { FALLBACK_VAULT_APY } from 'components/Pages/Core/Trade/constants';
 
 export default function useRefreshableTreasuryMetrics() {
   const [treasuryMetrics, setTreasuryMetrics] = useState<TreasuryMetrics | null>(null);

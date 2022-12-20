@@ -5,7 +5,7 @@ import { TimelineChannel } from './TimelineChannel';
 import { TimelineBackground } from './TimelineBackground';
 import { MarkerType } from 'components/Vault/types';
 import TimelineTippy from '../../TimelineTippy';
-import { useVaultContext } from 'pages/Core/VaultContext';
+import { useVaultContext } from 'components/Pages/Core/VaultContext';
 import { getMarkers } from 'components/Vault/utils';
 
 export const Timeline = () => {

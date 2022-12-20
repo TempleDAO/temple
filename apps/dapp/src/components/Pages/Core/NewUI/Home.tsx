@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import Image from '../../../components/Image/Image';
+import Image from '../../../Image/Image';
 import obtainTemple from 'assets/images/newui-images/obtainTemple.svg';
 import intrValue from 'assets/images/newui-images/intrValue.svg';
 import treasuryGrowth from 'assets/images/newui-images/treasuryGrowth.svg';
