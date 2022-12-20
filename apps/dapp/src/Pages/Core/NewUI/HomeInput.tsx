@@ -2,7 +2,7 @@ import React, { InputHTMLAttributes, KeyboardEvent } from 'react';
 import styled, { css } from 'styled-components';
 import { phoneAndAbove, tabletAndAbove } from 'styles/breakpoints';
 import { theme } from 'styles/theme';
-import { InputSelect, Option, SelectTempleDaoOptions } from '../../../InputSelect/InputSelect';
+import { InputSelect, Option, SelectTempleDaoOptions } from '../../../components/InputSelect/InputSelect';
 
 import divider from 'assets/images/divider.svg';
 import { pixelsToRems } from 'styles/mixins';

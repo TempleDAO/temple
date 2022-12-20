@@ -3,7 +3,7 @@ import useInterval from 'use-interval';
 import { TreasuryMetrics } from 'services/MetricsService';
 import { fetchGenericSubgraph, fetchSubgraph } from 'utils/subgraph';
 import env from 'constants/env';
-import { FALLBACK_VAULT_APY } from 'components/Pages/Core/Trade/constants';
+import { FALLBACK_VAULT_APY } from 'Pages/Core/Trade/constants';
 
 export default function useRefreshableTreasuryMetrics() {
   const [treasuryMetrics, setTreasuryMetrics] = useState<TreasuryMetrics | null>(null);
@@ -33,7 +33,7 @@ export default function useRefreshableTreasuryMetrics() {
 
       const tvl = totalLockedQueryResult?.data?.vaultGroup?.tvlUSD;
       const apr = (dailyEarnings / tvl) * 365 * 100;
-      const apy = ((1 + (apr / 100) / 13) ** 13 - 1) * 100;
+      const apy = ((1 + apr / 100 / 13) ** 13 - 1) * 100;
 
       return Math.floor(apy);
     } catch (error) {

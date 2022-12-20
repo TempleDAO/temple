@@ -1,10 +1,4 @@
-import {
-  PropsWithChildren,
-  useState,
-  useCallback,
-  useContext,
-  createContext,
-} from 'react';
+import { PropsWithChildren, useState, useCallback, useContext, createContext } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { theme } from 'styles/theme';
 import { NotificationProvider } from 'providers/NotificationProvider';
@@ -13,7 +7,7 @@ import { SwapProvider } from 'providers/SwapProvider';
 import { StakingProvider } from 'providers/StakingProvider';
 import { FaithProvider } from 'providers/FaithProvider';
 import { WagmiProvider } from 'components/WagmiProvider';
-import { VaultContextProvider } from 'components/Pages/Core/VaultContext';
+import { VaultContextProvider } from 'Pages/Core/VaultContext';
 
 import { noop } from 'utils/helpers';
 import { ConnectorPopover } from 'components/Layouts/CoreLayout/ConnectorPopover';

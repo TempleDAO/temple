@@ -5,7 +5,7 @@ import { FlexibleXYPlot, XAxis, YAxis, LineSeries, ChartLabel } from 'react-vis'
 import { BigNumber } from 'ethers';
 
 import { PageWrapper } from '../utils';
-import StatsCard from 'components/Pages/Core/Profile/components/StatsCard';
+import StatsCard from 'Pages/Core/Profile/components/StatsCard';
 import { ProfileVaults } from './components/ProfileVaults';
 import { ProfileLegacyTemple } from './components/ProfileLegacyTemple';
 

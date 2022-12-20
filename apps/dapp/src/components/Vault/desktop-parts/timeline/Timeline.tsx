@@ -5,12 +5,15 @@ import { TimelineChannel } from './TimelineChannel';
 import { TimelineBackground } from './TimelineBackground';
 import { MarkerType } from 'components/Vault/types';
 import TimelineTippy from '../../TimelineTippy';
-import { useVaultContext } from 'components/Pages/Core/VaultContext';
+import { useVaultContext } from 'Pages/Core/VaultContext';
 import { getMarkers } from 'components/Vault/utils';
 
 export const Timeline = () => {
-  const { vaultGroup, balances: { balances } } = useVaultContext();
-  
+  const {
+    vaultGroup,
+    balances: { balances },
+  } = useVaultContext();
+
   const markers = getMarkers(vaultGroup!, balances[vaultGroup!.id])
     .filter((marker) => marker.type !== MarkerType.HIDDEN)
     .map((marker) => {

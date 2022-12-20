@@ -6,7 +6,7 @@ import { tabletAndAbove } from 'styles/breakpoints';
 
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
-import StatsCard from 'components/Pages/Core/Profile/components/StatsCard';
+import StatsCard from 'Pages/Core/Profile/components/StatsCard';
 import { Button } from 'components/Button/Button';
 
 import background2 from 'assets/images/dashboard-2.png';

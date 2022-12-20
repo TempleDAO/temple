@@ -4,10 +4,10 @@ import { useSubgraphRequest } from 'hooks/use-subgraph-request';
 import { Pool } from 'components/Layouts/Ascend/types';
 import env from 'constants/env';
 import { SubGraphResponse } from 'hooks/core/types';
-import { getRemainingTime } from 'components/Pages/Ascend/utils';
+import { getRemainingTime } from 'Pages/Ascend/utils';
 import { SubgraphPool, GraphResponse } from 'components/Layouts/Ascend/types';
-import { useAuctionContext } from 'components/Pages/Ascend/components/AuctionContext';
-import { useVaultContract } from 'components/Pages/Ascend/components/Trade/hooks/use-vault-contract';
+import { useAuctionContext } from 'Pages/Ascend/components/AuctionContext';
+import { useVaultContract } from 'Pages/Ascend/components/Trade/hooks/use-vault-contract';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 import { truncateDecimals } from 'utils/formatter';
 
@@ -119,20 +119,19 @@ export const useTemplePool = (poolAddress = '') => {
 };
 
 export const usePoolTokenValues = (pool: Pool) => {
-  const {
-    vaultAddress,
-    accrued,
-    base,
-  } = useAuctionContext();
+  const { vaultAddress, accrued, base } = useAuctionContext();
   const intervalRef = useRef<number>();
-  const { isReady, getSwapQuote: { request: getSwapQuoteRequest, isLoading } } = useVaultContract(pool, vaultAddress);
+  const {
+    isReady,
+    getSwapQuote: { request: getSwapQuoteRequest, isLoading },
+  } = useVaultContract(pool, vaultAddress);
   const [spotPrice, setSpotPrice] = useState<string>('0');
 
   useEffect(() => {
     if (!isReady || !base.address || !accrued.address || intervalRef.current) {
       return;
     }
-    
+
     const request = async () => {
       try {
         const oneTemple = DecimalBigNumber.parseUnits('1', accrued.decimals);
@@ -155,7 +154,7 @@ export const usePoolTokenValues = (pool: Pool) => {
         window.clearInterval(intervalRef.current);
         intervalRef.current = undefined;
       }
-    }
+    };
   }, [intervalRef]);
 
   return {
