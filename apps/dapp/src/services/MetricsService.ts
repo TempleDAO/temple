@@ -42,7 +42,6 @@ export interface DashboardMetrics {
   ogTemplePrice: number;
   ogTempleRatio: number;
   ogTempleTotalSupply: number;
-  iv: number;
   circMCap: number;
   circTempleSupply: number;
   socialMetrics: SocialMetrics;
@@ -160,7 +159,6 @@ export class MetricsService {
     const epy = Number(stakingContractApy) / 10000000;
 
     const { templeValue, circulatingSupply, riskFreeValue } = await this.getProtocolMetrics();
-    const iv = await this.getIV();
 
     const ogTempleRatio = Number(await this.templeStakingContract.balance(1000)) / 1000;
 
@@ -180,7 +178,6 @@ export class MetricsService {
       ogTemplePrice: templeValue * ogTempleRatio,
       ogTempleTotalSupply,
       ogTempleRatio,
-      iv,
       riskFreeValue,
     };
   }
@@ -249,16 +246,6 @@ export class MetricsService {
     }
 
     return treasuryValue;
-  };
-
-  /**
-   * Helper to get the Temple IV
-   */
-  private getIV = async (): Promise<number> => {
-    const iv = await this.treasuryContract.intrinsicValueRatio();
-    const { temple, frax } = iv;
-    const rate = fromAtto(frax) / fromAtto(temple);
-    return formatNumber(rate);
   };
 
   /**

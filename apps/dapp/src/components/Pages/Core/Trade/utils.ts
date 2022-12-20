@@ -14,11 +14,7 @@ export function buildValueConfig(token: TICKER_SYMBOL): CryptoValue {
 }
 
 // See apps/dapp/src/components/Input/Input.tsx
-export function buildSelectConfig(
-  defaultToken: TICKER_SYMBOL,
-  mode: SwapMode,
-  isFraxSellDisabled?: boolean
-): CryptoSelector | CryptoValue {
+export function buildSelectConfig(defaultToken: TICKER_SYMBOL, mode: SwapMode): CryptoSelector | CryptoValue {
   const defaultOption = {
     value: defaultToken,
     label: defaultToken,
@@ -28,13 +24,6 @@ export function buildSelectConfig(
     value: token,
     label: token,
   }));
-
-  if (mode === SwapMode.Sell && isFraxSellDisabled) {
-    return {
-      kind: 'value',
-      value: TICKER_SYMBOL.FEI,
-    };
-  }
 
   return {
     kind: 'select',
@@ -53,10 +42,6 @@ export function createButtonLabel(inputToken: TICKER_SYMBOL, outputToken: TICKER
     default:
       return 'Swap';
   }
-}
-
-export function isTokenFraxOrFei(token: TICKER_SYMBOL): token is TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI {
-  return token === TICKER_SYMBOL.FRAX || token === TICKER_SYMBOL.FEI;
 }
 
 export function calculateMinAmountOut(amount: BigNumber, slippageTolerance: number, decimals: number = 18) {

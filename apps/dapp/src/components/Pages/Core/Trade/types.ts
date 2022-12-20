@@ -1,5 +1,4 @@
 import { BigNumber } from 'ethers';
-
 import { CryptoValue, CryptoSelector } from 'components/Input/Input';
 import { TransactionSettings } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
@@ -30,8 +29,6 @@ export type SwapReducerAction =
   | { type: 'endTx' }
   | { type: 'txSuccess' }
   | { type: 'slippageTooHigh' }
-  | { type: 'disableFraxSell'; feiBalance: BigNumber }
-  | { type: 'enableFraxSell'; fraxBalance: BigNumber }
   | { type: 'setError'; value: Error | null };
 
 export interface SwapReducerState {
@@ -49,6 +46,5 @@ export interface SwapReducerState {
   outputConfig: SwapInputConfig;
   buttonLabel: string;
   isTransactionPending: boolean;
-  isFraxSellDisabled: boolean;
   error: Error | null;
 }

@@ -1,23 +1,14 @@
 import { useState, useContext, createContext, PropsWithChildren } from 'react';
 import { BigNumber, Signer, utils } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
-
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
 import { SwapService } from 'providers/types';
 import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { formatNumberFixedDecimals } from 'utils/formatter';
 import { asyncNoop } from 'utils/helpers';
 import { fromAtto } from 'utils/bigNumber';
-
-import {
-  ERC20__factory,
-  TempleERC20Token__factory,
-  TempleStableAMMRouter__factory,
-  TempleUniswapV2Pair__factory,
-  TreasuryIV__factory,
-} from 'types/typechain';
+import { ERC20__factory, TempleERC20Token__factory, TempleUniswapV2Pair__factory } from 'types/typechain';
 import env from 'constants/env';
 import { AnalyticsEvent } from 'constants/events';
 import { AnalyticsService } from 'services/AnalyticsService';
@@ -25,13 +16,11 @@ import { formatBigNumber, getTokenInfo } from 'components/Vault/utils';
 
 const INITIAL_STATE: SwapService = {
   templePrice: 0,
-  iv: 0,
   buy: asyncNoop,
   sell: asyncNoop,
   getSellQuote: asyncNoop,
   getBuyQuote: asyncNoop,
   updateTemplePrice: asyncNoop,
-  updateIv: asyncNoop,
   error: null,
   get1inchSwap: asyncNoop,
 };
@@ -40,7 +29,6 @@ const SwapContext = createContext(INITIAL_STATE);
 
 export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const [templePrice, setTemplePrice] = useState(INITIAL_STATE.templePrice);
-  const [iv, setIv] = useState(INITIAL_STATE.iv);
   const [error, setError] = useState<Error | null>(null);
 
   const { wallet, signer, ensureAllowance } = useWallet();
@@ -115,7 +103,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     return fromAtto(_reserve1) / fromAtto(_reserve0);
   };
 
-  const updateTemplePrice = async (token: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI = TICKER_SYMBOL.FRAX) => {
+  const updateTemplePrice = async (token: TICKER_SYMBOL = TICKER_SYMBOL.FRAX) => {
     if (!wallet || !signer) {
       setError({
         name: 'Missing wallet or signer',
@@ -126,30 +114,9 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
     setError(null);
 
-    const pair = token === TICKER_SYMBOL.FEI ? env.contracts.templeV2FeiPair : env.contracts.templeV2FraxPair;
-    const price = await getTemplePrice(wallet, signer, pair);
+    const price = await getTemplePrice(wallet, signer, env.contracts.templeV2FraxPair);
 
     setTemplePrice(price);
-  };
-
-  const getIv = async (walletAddress: string, signerState: Signer) => {
-    if (!walletAddress) {
-      throw new NoWalletAddressError();
-    }
-
-    const templeTreasury = new TreasuryIV__factory(signerState).attach(env.contracts.treasuryIv);
-
-    const { frax, temple } = await templeTreasury.intrinsicValueRatio();
-    return fromAtto(frax) / fromAtto(temple);
-  };
-
-  const updateIv = async () => {
-    if (!wallet || !signer) {
-      return;
-    }
-
-    const iv = await getIv(wallet, signer);
-    setIv(iv);
   };
 
   const buy = async (amountIn: BigNumber, token: TICKER_SYMBOL, slippage: number) => {
@@ -253,13 +220,11 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     <SwapContext.Provider
       value={{
         templePrice,
-        iv,
         buy,
         sell,
         getBuyQuote,
         getSellQuote,
         updateTemplePrice,
-        updateIv,
         error,
         get1inchSwap,
       }}
