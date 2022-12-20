@@ -7,8 +7,7 @@ import treasuryGrowth from 'assets/images/newui-images/treasuryGrowth.svg';
 import elasticFloor from 'assets/images/newui-images/elasticFloor.svg';
 import footerTexture from 'assets/images/newui-images/footerTexture.svg';
 import buildings from './assets/Buildings.svg';
-import ring from './assets/Ring.svg';
-import rays from './assets/Rays.svg';
+import hero from './assets/Hero.svg';
 
 import socialDiscordIcon from 'assets/images/social-discord.png';
 import socialDocsIcon from 'assets/images/social-docs.png';
@@ -165,12 +164,16 @@ const Home = () => {
     <>
       <LegacyLinkHeader>
         <LegacyText>Legacy features</LegacyText>
-        <LegacyLink to="/dapp/vaults/1m-core/claim">Claim from vaults</LegacyLink>
-        <LegacyLink to="/dapp/trade/unstake">Unstake OGT</LegacyLink>
+        <Link to="/dapp/vaults/1m-core/claim">
+          <LegacyLink>Claim from vaults</LegacyLink>
+        </Link>
+        <a href="https://old.templedao.link/dapp" target="_blank">
+          <LegacyLink>Unstake OGT</LegacyLink>
+        </a>
       </LegacyLinkHeader>
       {/* Top Container */}
       <TopContainer>
-        <RaysImage src={rays} />
+        <RaysImage src={hero} />
         <HeroRing>
           <ContentContainer>
             {tradeFormVisible && <Trade />}
@@ -265,7 +268,9 @@ const Home = () => {
                 <Link to="/dapp/vaults/1m-core/claim">Claim from vaults (Legacy)</Link>
               </li>
               <li>
-                <Link to="/dapp/trade/unstake">Unstake OGT (Legacy)</Link>
+                <a href="https://old.templedao.link/dapp" target="_blank">
+                  Unstake OGT (Legacy)
+                </a>
               </li>
             </ul>
           </Links>
@@ -285,7 +290,7 @@ const LegacyText = styled.span`
   color: ${primaryColor};
 `;
 
-const LegacyLink = styled(Link)`
+const LegacyLink = styled.div`
   text-decoration: underline;
   padding: 5px;
   cursor: pointer;
@@ -325,12 +330,10 @@ const RaysImage = styled(Image)`
 `;
 
 const HeroRing = styled.div`
-  margin: -8rem 0 0 1rem; // offset so ring can match rays
+  margin: -6rem 0 0 1rem; // offset so ring can match rays
   min-width: 500px;
   width: 500px;
   height: 500px;
-  background: url(${ring}) center no-repeat;
-  background-size: contain;
   z-index: 1;
   text-align: center;
 `;
