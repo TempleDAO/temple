@@ -67,7 +67,6 @@ export interface Tokens {
   frax: Token;
   temple: Token;
   ogTemple: Token;
-  fei: Token;
   eth: Token;
   usdc: Token;
   usdt: Token;
@@ -84,7 +83,6 @@ export interface Environment {
   backendUrl: string;
   contracts: Contracts;
   gas?: Gas;
-  fraxSellDisabledIvMultiple: number;
   tokens: Tokens;
   infuraId: string;
   posthog?: Posthog;

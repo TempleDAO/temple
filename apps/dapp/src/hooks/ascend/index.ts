@@ -119,20 +119,19 @@ export const useTemplePool = (poolAddress = '') => {
 };
 
 export const usePoolTokenValues = (pool: Pool) => {
-  const {
-    vaultAddress,
-    accrued,
-    base,
-  } = useAuctionContext();
+  const { vaultAddress, accrued, base } = useAuctionContext();
   const intervalRef = useRef<number>();
-  const { isReady, getSwapQuote: { request: getSwapQuoteRequest, isLoading } } = useVaultContract(pool, vaultAddress);
+  const {
+    isReady,
+    getSwapQuote: { request: getSwapQuoteRequest, isLoading },
+  } = useVaultContract(pool, vaultAddress);
   const [spotPrice, setSpotPrice] = useState<string>('0');
 
   useEffect(() => {
     if (!isReady || !base.address || !accrued.address || intervalRef.current) {
       return;
     }
-    
+
     const request = async () => {
       try {
         const oneTemple = DecimalBigNumber.parseUnits('1', accrued.decimals);
@@ -155,7 +154,7 @@ export const usePoolTokenValues = (pool: Pool) => {
         window.clearInterval(intervalRef.current);
         intervalRef.current = undefined;
       }
-    }
+    };
   }, [intervalRef]);
 
   return {

@@ -3,18 +3,16 @@ import { useState } from 'react';
 import { Input } from './HomeInput';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 
-import { SwapMode } from '../../Core/Trade/types';
-import { useSwapController } from '../../Core/Trade/use-swap-controller';
+import { SwapMode } from '../Trade/types';
+import { useSwapController } from '../Trade/use-swap-controller';
 import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
-
-import { InvertButton, CtaButton } from '../../Core/Trade/styles';
+import { InvertButton } from '../Trade/styles';
 import { ZERO } from 'utils/bigNumber';
-import { INITIAL_STATE } from '../../Core/Trade/constants';
+import { INITIAL_STATE } from '../Trade/constants';
 import styled from 'styled-components';
 import { Button } from 'components/Button/Button';
 import { pixelsToRems } from 'styles/mixins';
-import { theme } from 'styles/theme';
 import { useEffect } from 'react';
 import { useNotification } from 'providers/NotificationProvider';
 

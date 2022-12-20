@@ -10,18 +10,15 @@ import PageLayout from 'components/Layouts/Page';
 import Loader from 'components/Loader/Loader';
 import Disclaimer from 'components/Pages/Disclaimer';
 import CoreLayout from 'components/Layouts/CoreLayout';
-import AnalyticsPage from 'components/Pages/Core/Analytics';
 import VaultPage from 'components/Pages/Core/Vault';
 import ProfilePage from 'components/Pages/Core/Profile/Profile';
 import VaultListPage from 'components/Pages/Core/VaultList';
-import HomePage from 'components/Pages/Core/HomePage';
 import Home from 'components/Pages/Core/NewUI/Home';
 import PoolListPage from 'components/Pages/Ascend/PoolList';
 import { Claim as VaultClaim } from 'components/Pages/Core/VaultPages/Claim';
 import { Stake } from 'components/Pages/Core/VaultPages/Stake';
 import { Summary } from 'components/Pages/Core/VaultPages/Summary';
 import { Strategy } from 'components/Pages/Core/VaultPages/Strategy';
-import TradeRoutes from 'components/Pages/Core/Trade';
 import Timing from 'components/Pages/Core/VaultPages/Timing';
 import { AscendLayout } from 'components/Layouts/Ascend';
 import { CreateLBPPage } from 'components/Pages/Ascend/admin/create';
@@ -88,7 +85,6 @@ ReactDOM.render(
                 <Route path="strategy" element={<Strategy />} />
                 <Route path="timing" element={<Timing />} />
               </Route>
-              <Route path="trade/*" element={<TradeRoutes />} />
               <Route path="profile" element={<ProfilePage />} />
 
               {env.featureFlags.enableAscend && (
@@ -102,8 +98,6 @@ ReactDOM.render(
                   </Route>
                 </>
               )}
-
-              <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
           </>
         </Routes>

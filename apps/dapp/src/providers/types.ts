@@ -93,7 +93,6 @@ export interface FaithService {
 
 export interface SwapService {
   templePrice: number;
-  iv: number;
 
   buy(amountIn: BigNumber, token: TICKER_SYMBOL, slippage: number): Promise<ContractReceipt | void>;
 
@@ -110,9 +109,7 @@ export interface SwapService {
     slippage: number
   ): Promise<ContractTransaction | void>;
 
-  updateTemplePrice(token?: TICKER_SYMBOL.FRAX | TICKER_SYMBOL.FEI): Promise<void>;
-
-  updateIv(): Promise<void>;
+  updateTemplePrice(token?: TICKER_SYMBOL): Promise<void>;
 
   error: Error | null;
 }

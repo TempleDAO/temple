@@ -1,12 +1,16 @@
 import { Outlet, Link } from 'react-router-dom';
 
 import { VaultSVG } from 'components/Vault/VaultSVG';
-import { Spinner } from 'components/LoaderVault/Spinner';
+import { Spinner } from 'components/Pages/Core/components/LoaderVault/Spinner';
 import { CenterScreenWrapper } from 'components/Pages/Core/styles';
 import { useVaultContext } from './VaultContext';
 
 const VaultPage = () => {
-  const { vaultGroups: { isLoading, error }, activeVault, vaultGroup } = useVaultContext();
+  const {
+    vaultGroups: { isLoading, error },
+    activeVault,
+    vaultGroup,
+  } = useVaultContext();
 
   if (isLoading) {
     return (
@@ -29,11 +33,9 @@ const VaultPage = () => {
     return (
       <CenterScreenWrapper>
         <h2>Invalid Vault.</h2>
-        <Link to="/dapp/vaults">
-          Go To Vaults
-        </Link>
+        <Link to="/dapp/vaults">Go To Vaults</Link>
       </CenterScreenWrapper>
-    )
+    );
   }
 
   return (

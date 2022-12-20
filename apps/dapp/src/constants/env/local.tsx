@@ -41,9 +41,8 @@ const env: Environment = {
     vaultEarlyExit: '',
     ramos: '',
     ramosPoolHelper: '',
-    balancerHelpers: ''
+    balancerHelpers: '',
   },
-  fraxSellDisabledIvMultiple: 1.02,
   infuraId: '4cd22916292d4fb6be156454978c326b',
   subgraph: {
     templeCore: 'http://localhost:8000/subgraphs/name/templedao-core',
@@ -75,12 +74,6 @@ const env: Environment = {
       address: ENV.VITE_PUBLIC_OG_TEMPLE_ADDRESS,
       decimals: 18,
       symbol: 'OGTemple',
-    },
-    fei: {
-      name: 'Fei',
-      address: ENV.VITE_PUBLIC_FEI_ADDRESS,
-      decimals: 18,
-      symbol: 'FEI',
     },
     eth: {
       name: 'WETH',

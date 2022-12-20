@@ -15,7 +15,7 @@ export const EditLBPPage = () => {
     if (!poolAddress) {
       return;
     }
-    
+
     request();
   }, [request, poolAddress]);
 
@@ -33,10 +33,10 @@ export const EditLBPPage = () => {
 
   const subgraphPool = response?.data?.pools[0];
   const pool = createPool(subgraphPool);
-  
+
   return (
     <AuctionContextProvider pool={pool}>
-      <LBPForm pool={pool}/>
+      <LBPForm pool={pool} />
     </AuctionContextProvider>
   );
 };
