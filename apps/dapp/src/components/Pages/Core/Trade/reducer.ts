@@ -1,4 +1,5 @@
 import { BigNumber } from 'ethers';
+import { ZERO } from 'utils/bigNumber';
 import { INITIAL_STATE } from './constants';
 import { SwapMode, SwapReducerAction, SwapReducerState } from './types';
 import { buildSelectConfig, buildValueConfig } from './utils';
@@ -14,6 +15,7 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
             outputToken: state.inputToken,
             inputConfig: buildSelectConfig(state.outputToken, SwapMode.Buy),
             outputConfig: buildValueConfig(state.inputToken),
+            quoteValue: ZERO,
           }
         : {
             ...state,
@@ -22,6 +24,7 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
             outputToken: state.inputToken,
             inputConfig: buildValueConfig(state.outputToken),
             outputConfig: buildSelectConfig(state.inputToken, SwapMode.Sell),
+            quoteValue: ZERO,
           };
     }
 
@@ -30,6 +33,7 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
         ...state,
         inputToken: action.value.token,
         inputTokenBalance: action.value.balance,
+        quoteValue: ZERO,
       };
 
     case 'changeInputTokenBalance':
@@ -43,6 +47,7 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
         ...state,
         outputToken: action.value.token,
         outputTokenBalance: action.value.balance,
+        quoteValue: ZERO,
       };
 
     case 'changeOutputTokenBalance':

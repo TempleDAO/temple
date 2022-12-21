@@ -1,5 +1,5 @@
-import { useState, useContext, createContext, PropsWithChildren } from 'react';
-import { BigNumber, Signer, utils } from 'ethers';
+import { useState, useContext, createContext, PropsWithChildren, useEffect } from 'react';
+import { BigNumber, ethers } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
@@ -11,6 +11,18 @@ import env from 'constants/env';
 import { AnalyticsEvent } from 'constants/events';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { formatBigNumber, getTokenInfo } from 'components/Vault/utils';
+import { SwapInfo } from '@balancer-labs/sor';
+import { BalancerSDK, Network } from '@balancer-labs/sdk';
+
+// Initialize balancer SOR
+const gasPrice = BigNumber.from('14000000000');
+const maxPools = 4;
+const balancer = new BalancerSDK({
+  network: Network.MAINNET,
+  rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
+  // customSubgraphUrl: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
+});
+const sor = balancer.sor;
 
 const INITIAL_STATE: SwapService = {
   buy: asyncNoop,
@@ -18,7 +30,7 @@ const INITIAL_STATE: SwapService = {
   getSellQuote: asyncNoop,
   getBuyQuote: asyncNoop,
   error: null,
-  get1inchSwap: asyncNoop,
+  sor: balancer.sor,
 };
 
 const SwapContext = createContext(INITIAL_STATE);
@@ -28,62 +40,41 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const { wallet, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
 
-  const get1inchApi = async (
-    queryPath: 'quote' | 'swap',
-    params:
-      | { amount: BigNumber; fromTokenAddress: string; toTokenAddress: string }
-      | { amount: BigNumber; fromTokenAddress: string; toTokenAddress: string; fromAddress: string; slippage: number }
-  ) => {
-    const queryFormat = Object.entries(params)
-      .map(([key, value]) => `${key}=${value}`)
-      .join('&');
-    const data = await fetch(`https://api.1inch.exchange/v5.0/1` + `/${queryPath}?${queryFormat}`);
-    return await data.json();
-  };
+  useEffect(() => {
+    const onMount = async () => {
+      try {
+        await sor.fetchPools();
+      } catch (e) {
+        console.log('test');
+      }
+    };
+    onMount();
+  }, []);
 
-  const get1inchQuote = async (
-    tokenAmount: BigNumber,
-    tokenIn: TICKER_SYMBOL,
-    tokenOut: TICKER_SYMBOL
-  ): Promise<{ toTokenAmount: BigNumber }> => {
-    const tokenInInfo = getTokenInfo(tokenIn);
-    const tokenOutInfo = getTokenInfo(tokenOut);
-    const amountFormat = utils.formatUnits(tokenAmount, tokenInInfo.decimals);
-    const decimalFormat = utils.parseUnits(amountFormat, tokenInInfo.decimals);
-    const data = await get1inchApi('quote', {
-      amount: decimalFormat,
-      fromTokenAddress: tokenInInfo.address,
-      toTokenAddress: tokenOutInfo.address,
-    });
-    const weiFormat = utils.formatUnits(data.toTokenAmount, tokenOutInfo.decimals);
-    const weiBigNumber = utils.parseUnits(weiFormat, tokenOutInfo.decimals);
-    return { toTokenAmount: weiBigNumber };
-  };
+  // const get1inchSwap = async (
+  //   tokenAmount: BigNumber,
+  //   tokenIn: TICKER_SYMBOL,
+  //   tokenOut: TICKER_SYMBOL,
+  //   slippage: number
+  // ) => {
+  //   if (!wallet || !signer) return;
+  //   const tokenInInfo = getTokenInfo(tokenIn);
+  //   const tokenOutInfo = getTokenInfo(tokenOut);
+  //   const bigAmount = utils.parseUnits(tokenAmount.toString(), tokenInInfo.decimals);
+  //   const tokenContract = ERC20__factory.connect(tokenInInfo.address, signer);
 
-  const get1inchSwap = async (
-    tokenAmount: BigNumber,
-    tokenIn: TICKER_SYMBOL,
-    tokenOut: TICKER_SYMBOL,
-    slippage: number
-  ) => {
-    if (!wallet || !signer) return;
-    const tokenInInfo = getTokenInfo(tokenIn);
-    const tokenOutInfo = getTokenInfo(tokenOut);
-    const bigAmount = utils.parseUnits(tokenAmount.toString(), tokenInInfo.decimals);
-    const tokenContract = ERC20__factory.connect(tokenInInfo.address, signer);
-
-    await ensureAllowance(tokenIn, tokenContract, env.contracts.swap1InchRouter, bigAmount);
-    const data = await get1inchApi('swap', {
-      amount: tokenAmount,
-      slippage: slippage,
-      fromTokenAddress: tokenInInfo.address,
-      toTokenAddress: tokenOutInfo.address,
-      fromAddress: wallet,
-    });
-    delete data.tx.gas;
-    const swapTx = await signer.sendTransaction(data.tx);
-    return swapTx;
-  };
+  //   await ensureAllowance(tokenIn, tokenContract, env.contracts.swap1InchRouter, bigAmount);
+  //   const data = await get1inchApi('swap', {
+  //     amount: tokenAmount,
+  //     slippage: slippage,
+  //     fromTokenAddress: tokenInInfo.address,
+  //     toTokenAddress: tokenOutInfo.address,
+  //     fromAddress: wallet,
+  //   });
+  //   delete data.tx.gas;
+  //   const swapTx = await signer.sendTransaction(data.tx);
+  //   return swapTx;
+  // };
 
   const buy = async (amountIn: BigNumber, token: TICKER_SYMBOL, slippage: number) => {
     if (!wallet || !signer) {
@@ -104,8 +95,8 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
     let receipt: TransactionReceipt | undefined;
     try {
-      const swap = await get1inchSwap(verifiedAmountIn, token, TICKER_SYMBOL.TEMPLE_TOKEN, slippage);
-      receipt = await swap?.wait();
+      // const swap = await get1inchSwap(verifiedAmountIn, token, TICKER_SYMBOL.TEMPLE_TOKEN, slippage);
+      // receipt = await swap?.wait();
     } catch (e) {
       // 4001 is user manually cancelling transaction,
       // so we don't want to return it as an error
@@ -128,7 +119,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
    * AMM Sell
    * @param amountInTemple: Amount of $TEMPLE user wants to sell
    * @param minAmountOutFrax: % user is giving as slippage
-   * @param isIvSwap: should sale be directed to TempleIvSwap contract
    */
   const sell = async (amountInTemple: BigNumber, token: TICKER_SYMBOL, slippage: number) => {
     if (!wallet || !signer) {
@@ -148,8 +138,8 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
 
     let receipt: TransactionReceipt | undefined;
     try {
-      const swap = await get1inchSwap(verifiedAmountInTemple, TICKER_SYMBOL.TEMPLE_TOKEN, token, slippage);
-      receipt = await swap?.wait();
+      // const swap = await get1inchSwap(verifiedAmountInTemple, TICKER_SYMBOL.TEMPLE_TOKEN, token, slippage);
+      // receipt = await swap?.wait();
     } catch (e) {
       // 4001 is user manually cancelling transaction,
       // so we don't want to return it as an error
@@ -173,13 +163,33 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   };
 
   const getBuyQuote = async (amountIn: BigNumber, token: TICKER_SYMBOL) => {
-    const { toTokenAmount } = await get1inchQuote(amountIn, token, TICKER_SYMBOL.TEMPLE_TOKEN);
-    return toTokenAmount;
+    const tokenInInfo = getTokenInfo(token);
+    const tokenOutInfo = getTokenInfo(TICKER_SYMBOL.TEMPLE_TOKEN);
+    // Find swapInfo for best trade given pair and amount
+    const swapInfo: SwapInfo = await sor.getSwaps(
+      tokenInInfo.address,
+      tokenOutInfo.address,
+      0,
+      amountIn,
+      { gasPrice, maxPools },
+      false
+    );
+    return swapInfo.returnAmount;
   };
 
   const getSellQuote = async (amountToSell: BigNumber, token: TICKER_SYMBOL) => {
-    const { toTokenAmount } = await get1inchQuote(amountToSell, TICKER_SYMBOL.TEMPLE_TOKEN, token);
-    return toTokenAmount;
+    const tokenInInfo = getTokenInfo(TICKER_SYMBOL.TEMPLE_TOKEN);
+    const tokenOutInfo = getTokenInfo(token);
+    // Find swapInfo for best trade given pair and amount
+    const swapInfo: SwapInfo = await sor.getSwaps(
+      tokenInInfo.address,
+      tokenOutInfo.address,
+      0,
+      amountToSell,
+      { gasPrice, maxPools },
+      false
+    );
+    return swapInfo.returnAmount;
   };
 
   return (
@@ -190,7 +200,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         getBuyQuote,
         getSellQuote,
         error,
-        get1inchSwap,
+        sor,
       }}
     >
       {props.children}
