@@ -5,7 +5,7 @@ import { TransactionSettingsModal } from 'components/TransactionSettingsModal/Tr
 
 import { SwapMode } from '../Trade/types';
 import { useSwapController } from '../Trade/use-swap-controller';
-import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
+import { getBigNumberFromString, formatBigNumber, getTokenInfo } from 'components/Vault/utils';
 import { formatNumber } from 'utils/formatter';
 import { InvertButton } from '../Trade/styles';
 import { ZERO } from 'utils/bigNumber';
@@ -87,7 +87,7 @@ export const Trade = () => {
           <Spacer />
           <Input
             crypto={outputCryptoConfig}
-            value={formatNumber(formatBigNumber(state.quoteValue))}
+            value={formatNumber(formatBigNumber(state.quoteValue, getTokenInfo(state.outputToken).decimals))}
             hint={`Balance: ${formatNumber(formatBigNumber(state.outputTokenBalance))}`}
             disabled
           />
