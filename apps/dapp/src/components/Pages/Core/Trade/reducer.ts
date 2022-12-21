@@ -1,6 +1,6 @@
 import { INITIAL_STATE } from './constants';
 import { SwapMode, SwapReducerAction, SwapReducerState } from './types';
-import { buildSelectConfig, buildValueConfig, createButtonLabel } from './utils';
+import { buildSelectConfig, buildValueConfig } from './utils';
 
 export function swapReducer(state: SwapReducerState, action: SwapReducerAction): SwapReducerState {
   switch (action.type) {
@@ -16,7 +16,6 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
             outputToken: INITIAL_STATE.inputToken,
             inputConfig: buildValueConfig(INITIAL_STATE.outputToken),
             outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, SwapMode.Sell),
-            buttonLabel: createButtonLabel(INITIAL_STATE.outputToken, INITIAL_STATE.inputToken, SwapMode.Sell),
           };
     }
 
@@ -27,7 +26,6 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
         inputValue: INITIAL_STATE.inputValue,
         inputTokenBalance: action.value.balance,
         quoteValue: INITIAL_STATE.quoteValue,
-        buttonLabel: createButtonLabel(action.value.token, state.outputToken, state.mode),
       };
 
     case 'changeInputTokenBalance':
@@ -43,7 +41,6 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
         outputToken: action.value.token,
         outputTokenBalance: action.value.balance,
         quoteValue: INITIAL_STATE.quoteValue,
-        buttonLabel: createButtonLabel(state.inputToken, action.value.token, state.mode),
       };
 
     case 'changeOutputTokenBalance':
@@ -63,7 +60,6 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
         ...state,
         slippageTolerance: action.value.slippageTolerance,
         deadlineMinutes: action.value.deadlineMinutes,
-        buttonLabel: createButtonLabel(state.inputToken, state.outputToken, state.mode),
       };
     case 'startTx':
       return {

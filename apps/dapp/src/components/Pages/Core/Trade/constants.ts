@@ -1,7 +1,7 @@
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 import { SwapMode, SwapReducerState } from './types';
-import { buildSelectConfig, buildValueConfig, createButtonLabel } from './utils';
+import { buildSelectConfig, buildValueConfig } from './utils';
 import { ZERO } from 'utils/bigNumber';
 
 const { FRAX, DAI, USDC, USDT } = TICKER_SYMBOL;
@@ -26,7 +26,6 @@ export const INITIAL_STATE: SwapReducerState = {
   deadlineMinutes: 20,
   inputConfig: buildSelectConfig(TICKER_SYMBOL.FRAX, SwapMode.Buy),
   outputConfig: buildValueConfig(TICKER_SYMBOL.TEMPLE_TOKEN),
-  buttonLabel: createButtonLabel(TICKER_SYMBOL.FRAX, TICKER_SYMBOL.TEMPLE_TOKEN, SwapMode.Buy),
   isTransactionPending: false,
   error: null,
 };

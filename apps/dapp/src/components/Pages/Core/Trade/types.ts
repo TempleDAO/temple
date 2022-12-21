@@ -44,7 +44,6 @@ export interface SwapReducerState {
   deadlineMinutes: number;
   inputConfig: SwapInputConfig;
   outputConfig: SwapInputConfig;
-  buttonLabel: string;
   isTransactionPending: boolean;
   error: Error | null;
 }

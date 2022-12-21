@@ -88,7 +88,7 @@ export const Trade = () => {
           <InvertButton onClick={handleChangeMode} />
         </InputsContainer>
         <Spacer />
-        <CtaButton label={state.buttonLabel} onClick={handleTransaction} disabled={isButtonDisabled} />
+        <CtaButton label="Swap" onClick={handleTransaction} disabled={isButtonDisabled} />
       </SwapContainer>
       {state.error && <ErrorLabel>{state.error.message}</ErrorLabel>}
     </>

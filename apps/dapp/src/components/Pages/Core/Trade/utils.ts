@@ -33,17 +33,6 @@ export function buildSelectConfig(defaultToken: TICKER_SYMBOL, mode: SwapMode): 
   };
 }
 
-export function createButtonLabel(inputToken: TICKER_SYMBOL, outputToken: TICKER_SYMBOL, swapMode: SwapMode): string {
-  switch (swapMode) {
-    case SwapMode.Buy:
-      return `Buy ${outputToken} with ${inputToken}`;
-    case SwapMode.Sell:
-      return `Sell ${inputToken} for ${outputToken}`;
-    default:
-      return 'Swap';
-  }
-}
-
 export function calculateMinAmountOut(amount: BigNumber, slippageTolerance: number, decimals: number = 18) {
   const slippage = `${1 - slippageTolerance / 100}`;
   const slippageDbn = DecimalBigNumber.parseUnits(slippage, decimals);
