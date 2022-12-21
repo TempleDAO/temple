@@ -188,9 +188,7 @@ const Home = () => {
                 <NewTempleText>The New Temple</NewTempleText>
                 <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
                 <LearnMoreLink onClick={scrollToContent}>Learn More</LearnMoreLink>
-                <TradeButton href="https://app.balancer.fi/#/ethereum/trade" target="_blank">
-                  Trade
-                </TradeButton>
+                <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
               </>
             )}
           </ContentContainer>
@@ -391,7 +389,7 @@ const ConnectWalletContainer = styled.div`
   flex-direction: column;
 `;
 
-const TradeButton = styled.a`
+const TradeButton = styled(Button)`
   padding: 0.75rem 1.5rem;
   margin-top: 1.5rem;
   width: min-content;

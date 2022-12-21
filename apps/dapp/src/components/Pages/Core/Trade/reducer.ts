@@ -5,17 +5,22 @@ import { buildSelectConfig, buildValueConfig } from './utils';
 export function swapReducer(state: SwapReducerState, action: SwapReducerAction): SwapReducerState {
   switch (action.type) {
     case 'changeMode': {
+      console.log(state);
       return action.value === SwapMode.Buy
         ? {
             ...INITIAL_STATE,
+            inputToken: state.outputToken,
+            outputToken: state.inputToken,
+            inputConfig: buildSelectConfig(state.outputToken, SwapMode.Buy),
+            outputConfig: buildValueConfig(state.inputToken),
           }
         : {
             ...INITIAL_STATE,
             mode: SwapMode.Sell,
-            inputToken: INITIAL_STATE.outputToken,
-            outputToken: INITIAL_STATE.inputToken,
-            inputConfig: buildValueConfig(INITIAL_STATE.outputToken),
-            outputConfig: buildSelectConfig(INITIAL_STATE.inputToken, SwapMode.Sell),
+            inputToken: state.outputToken,
+            outputToken: state.inputToken,
+            inputConfig: buildValueConfig(state.outputToken),
+            outputConfig: buildSelectConfig(state.inputToken, SwapMode.Sell),
           };
     }
 
@@ -23,9 +28,9 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
       return {
         ...state,
         inputToken: action.value.token,
-        inputValue: INITIAL_STATE.inputValue,
+        inputValue: state.inputValue,
         inputTokenBalance: action.value.balance,
-        quoteValue: INITIAL_STATE.quoteValue,
+        quoteValue: state.quoteValue,
       };
 
     case 'changeInputTokenBalance':
@@ -37,10 +42,10 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
     case 'changeOutputToken':
       return {
         ...state,
-        inputValue: INITIAL_STATE.inputValue,
+        inputValue: state.inputValue,
         outputToken: action.value.token,
         outputTokenBalance: action.value.balance,
-        quoteValue: INITIAL_STATE.quoteValue,
+        quoteValue: state.quoteValue,
       };
 
     case 'changeOutputTokenBalance':
