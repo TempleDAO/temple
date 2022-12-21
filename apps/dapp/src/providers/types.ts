@@ -4,6 +4,7 @@ import { Nullable } from 'types/util';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { Sor } from '@balancer-labs/sdk';
 
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
@@ -100,14 +101,9 @@ export interface SwapService {
 
   getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL): Promise<BigNumber | void>;
 
-  get1inchSwap(
-    tokenAmount: BigNumber,
-    tokenIn: TICKER_SYMBOL,
-    tokenOut: TICKER_SYMBOL,
-    slippage: number
-  ): Promise<ContractTransaction | void>;
-
   error: Error | null;
+
+  sor: Sor;
 }
 
 export interface WalletState {

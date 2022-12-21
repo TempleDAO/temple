@@ -10,13 +10,24 @@ import { getBigNumberFromString, formatBigNumber, getTokenInfo } from 'component
 import { INITIAL_STATE, TOKENS_BY_MODE } from './constants';
 import { SwapMode } from './types';
 import { swapReducer } from './reducer';
+import { useDebouncedCallback } from 'use-debounce';
 
-export function useSwapController() {
+export const useSwapController = () => {
   const { wallet } = useWallet();
   const [state, dispatch] = useReducer(swapReducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
   const { getBuyQuote, getSellQuote, buy, sell, error } = useSwap();
 
+  // Fetch quote, debounced
+  const debouncedFetchQuote = useDebouncedCallback(async (amount: BigNumber) => {
+    const quote =
+      state.mode === SwapMode.Buy
+        ? await getBuyQuote(amount, state.inputToken)
+        : await getSellQuote(amount, state.outputToken);
+    dispatch({ type: 'changeQuoteValue', value: quote ?? ZERO });
+  }, 1000);
+
+  // Update token balances on mount
   useEffect(() => {
     const onMount = async () => {
       await updateBalance();
@@ -33,6 +44,7 @@ export function useSwapController() {
     onMount();
   }, [wallet]);
 
+  // Update token balances on balance or mode change
   useEffect(() => {
     dispatch({
       type: 'changeInputTokenBalance',
@@ -44,6 +56,7 @@ export function useSwapController() {
     });
   }, [state.mode, balance]);
 
+  // Set error message on error
   useEffect(() => {
     const setErrorMessage = () => {
       if (wallet) {
@@ -53,26 +66,26 @@ export function useSwapController() {
         });
       }
     };
-
     setErrorMessage();
   }, [error]);
+
+  // Update quote on input value change or input/output token change
+  useEffect(() => {
+    const bigValue = getBigNumberFromString(state.inputValue || '0', getTokenInfo(state.inputToken).decimals);
+    if (bigValue.eq(ZERO)) dispatch({ type: 'changeQuoteValue', value: ZERO });
+    else debouncedFetchQuote(bigValue);
+  }, [state.inputValue, state.inputToken, state.outputToken]);
 
   // Handles selection of a new value in the select dropdown
   const handleSelectChange = (event: Option) => {
     const token = Object.values(TOKENS_BY_MODE[state.mode]).find((token) => token === event.value);
-
-    if (!token) {
-      throw new Error('Invalid token selected');
-    }
-
+    if (!token) throw new Error('Invalid token selected');
     if (state.mode === SwapMode.Sell) {
       dispatch({
         type: 'changeOutputToken',
         value: { token, balance: getTokenBalance(token) },
       });
-    }
-
-    if (state.mode === SwapMode.Buy) {
+    } else if (state.mode === SwapMode.Buy) {
       dispatch({
         type: 'changeInputToken',
         value: { token, balance: getTokenBalance(token) },
@@ -80,20 +93,14 @@ export function useSwapController() {
     }
   };
 
-  // Handles user input
+  // Handles user input change
   const handleInputChange = async (value: string) => {
     const bigValue = getBigNumberFromString(value || '0', getTokenInfo(state.inputToken).decimals);
     const isZero = bigValue.eq(ZERO);
     dispatch({ type: 'changeInputValue', value: isZero ? '' : value });
-
-    if (isZero) {
-      dispatch({ type: 'changeQuoteValue', value: ZERO });
-    } else {
-      const quote = await fetchQuote(bigValue);
-      dispatch({ type: 'changeQuoteValue', value: quote });
-    }
   };
 
+  // Switch buy/sell mode
   const handleChangeMode = () => {
     dispatch({
       type: 'changeMode',
@@ -101,6 +108,7 @@ export function useSwapController() {
     });
   };
 
+  // Set input value to max balance
   const handleHintClick = () => {
     const amount = state.inputTokenBalance.eq(ZERO)
       ? ''
@@ -108,6 +116,7 @@ export function useSwapController() {
     handleInputChange(amount);
   };
 
+  // Update slippage/deadline settings
   const handleTxSettingsUpdate = (settings: TransactionSettings) => {
     dispatch({
       type: 'changeTxSettings',
@@ -115,59 +124,43 @@ export function useSwapController() {
     });
   };
 
+  // Handle buy/sell transaction
   const handleTransaction = async () => {
-    dispatch({
-      type: 'startTx',
-    });
-
-    if (state.mode === SwapMode.Buy) {
-      await handleBuy();
-    }
-
-    if (state.mode === SwapMode.Sell) {
-      await handleSell();
-    }
-
-    dispatch({
-      type: 'endTx',
-    });
+    dispatch({ type: 'startTx' });
+    if (state.mode === SwapMode.Buy) await handleBuy();
+    else if (state.mode === SwapMode.Sell) await handleSell();
+    dispatch({ type: 'endTx' });
   };
 
+  // Execute buy transaction
   const handleBuy = async () => {
     const tokenAmount = getBigNumberFromString(state.inputValue, getTokenInfo(state.inputToken).decimals);
     const buyQuote = await getBuyQuote(tokenAmount, state.inputToken);
-
     if (!tokenAmount || !buyQuote) {
       console.error("Couldn't get buy quote");
       return;
     }
-
+    // Buy
     const txReceipt = await buy(tokenAmount, state.inputToken, state.slippageTolerance);
-
     if (txReceipt) {
       await updateBalance();
-      dispatch({
-        type: 'txSuccess',
-      });
+      dispatch({ type: 'txSuccess' });
     }
   };
 
+  // Execute sell transaction
   const handleSell = async () => {
     const templeAmount = getBigNumberFromString(state.inputValue, getTokenInfo(state.inputToken).decimals);
     const sellQuote = await getSellQuote(templeAmount, state.outputToken);
-
     if (!templeAmount || !sellQuote) {
       console.error("Couldn't get sell quote");
       return;
     }
 
     const txReceipt = await sell(templeAmount, state.outputToken, state.slippageTolerance);
-
     if (txReceipt) {
       await updateBalance();
-      dispatch({
-        type: 'txSuccess',
-      });
+      dispatch({ type: 'txSuccess' });
     }
   };
 
@@ -188,25 +181,6 @@ export function useSwapController() {
     }
   };
 
-  const fetchQuote = async (value: BigNumber): Promise<BigNumber> => {
-    let quote = value;
-
-    if (state.mode === SwapMode.Buy) {
-      const buyQuote = await getBuyQuote(value, state.inputToken);
-      quote = buyQuote ?? ZERO;
-    } else if (state.mode === SwapMode.Sell) {
-      const sellQuote = await getSellQuote(value, state.outputToken);
-      quote = sellQuote ?? ZERO;
-    }
-
-    if (!quote) {
-      console.error("couldn't fetch quote");
-      return ZERO;
-    }
-
-    return quote;
-  };
-
   return {
     state,
     handleSelectChange,
@@ -216,4 +190,4 @@ export function useSwapController() {
     handleTxSettingsUpdate,
     handleTransaction,
   };
-}
+};

@@ -1,3 +1,4 @@
+import { BigNumber } from 'ethers';
 import { INITIAL_STATE } from './constants';
 import { SwapMode, SwapReducerAction, SwapReducerState } from './types';
 import { buildSelectConfig, buildValueConfig } from './utils';
@@ -5,17 +6,17 @@ import { buildSelectConfig, buildValueConfig } from './utils';
 export function swapReducer(state: SwapReducerState, action: SwapReducerAction): SwapReducerState {
   switch (action.type) {
     case 'changeMode': {
-      console.log(state);
       return action.value === SwapMode.Buy
         ? {
-            ...INITIAL_STATE,
+            ...state,
+            mode: SwapMode.Buy,
             inputToken: state.outputToken,
             outputToken: state.inputToken,
             inputConfig: buildSelectConfig(state.outputToken, SwapMode.Buy),
             outputConfig: buildValueConfig(state.inputToken),
           }
         : {
-            ...INITIAL_STATE,
+            ...state,
             mode: SwapMode.Sell,
             inputToken: state.outputToken,
             outputToken: state.inputToken,
@@ -28,9 +29,7 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
       return {
         ...state,
         inputToken: action.value.token,
-        inputValue: state.inputValue,
         inputTokenBalance: action.value.balance,
-        quoteValue: state.quoteValue,
       };
 
     case 'changeInputTokenBalance':
@@ -42,10 +41,8 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
     case 'changeOutputToken':
       return {
         ...state,
-        inputValue: state.inputValue,
         outputToken: action.value.token,
         outputTokenBalance: action.value.balance,
-        quoteValue: state.quoteValue,
       };
 
     case 'changeOutputTokenBalance':

@@ -16,6 +16,8 @@
     "build-with-stats": "tsc && BUILD_STATS=true vite build"
   },
   "dependencies": {
+    "@balancer-labs/sdk": "^0.1.43",
+    "@balancer-labs/sor": "^4.0.1-beta.16",
     "@tippyjs/react": "^4.2.6",
     "axios": "^0.24.0",
     "buffer": "^6.0.3",
@@ -39,6 +41,7 @@
     "react-vis": "^1.11.7",
     "styled-components": "^5.3.3",
     "tippy.js": "^6.3.7",
+    "use-debounce": "^9.0.2",
     "use-interval": "^1.4.0",
     "util": "^0.12.4",
     "wagmi": "^0.6.0"
