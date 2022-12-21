@@ -94,7 +94,7 @@ const env: Environment = {
       symbol: 'USDT',
     },
     dai: {
-      name: 'Dai',
+      name: 'DAI',
       address: ENV.VITE_PUBLIC_DAI_ADDRESS,
       decimals: 18,
       symbol: 'DAI',

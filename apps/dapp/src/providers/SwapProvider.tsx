@@ -4,23 +4,19 @@ import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
 import { SwapService } from 'providers/types';
-import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { asyncNoop } from 'utils/helpers';
-import { fromAtto } from 'utils/bigNumber';
-import { ERC20__factory, TempleERC20Token__factory, TempleUniswapV2Pair__factory } from 'types/typechain';
+import { ERC20__factory, TempleERC20Token__factory } from 'types/typechain';
 import env from 'constants/env';
 import { AnalyticsEvent } from 'constants/events';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { formatBigNumber, getTokenInfo } from 'components/Vault/utils';
 
 const INITIAL_STATE: SwapService = {
-  templePrice: 0,
   buy: asyncNoop,
   sell: asyncNoop,
   getSellQuote: asyncNoop,
   getBuyQuote: asyncNoop,
-  updateTemplePrice: asyncNoop,
   error: null,
   get1inchSwap: asyncNoop,
 };
@@ -28,9 +24,7 @@ const INITIAL_STATE: SwapService = {
 const SwapContext = createContext(INITIAL_STATE);
 
 export const SwapProvider = (props: PropsWithChildren<{}>) => {
-  const [templePrice, setTemplePrice] = useState(INITIAL_STATE.templePrice);
   const [error, setError] = useState<Error | null>(null);
-
   const { wallet, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
 
@@ -89,34 +83,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     delete data.tx.gas;
     const swapTx = await signer.sendTransaction(data.tx);
     return swapTx;
-  };
-
-  const getTemplePrice = async (walletAddress: string, signerState: Signer, pairAddress: string) => {
-    if (!walletAddress) {
-      throw new NoWalletAddressError();
-    }
-
-    const pairContract = new TempleUniswapV2Pair__factory(signerState).attach(env.contracts.templeV2FraxPair);
-
-    const { _reserve0, _reserve1 } = await pairContract.getReserves();
-
-    return fromAtto(_reserve1) / fromAtto(_reserve0);
-  };
-
-  const updateTemplePrice = async (token: TICKER_SYMBOL = TICKER_SYMBOL.FRAX) => {
-    if (!wallet || !signer) {
-      setError({
-        name: 'Missing wallet or signer',
-        message: "Couldn't update temple price - unable to get wallet or signer",
-      });
-      return;
-    }
-
-    setError(null);
-
-    const price = await getTemplePrice(wallet, signer, env.contracts.templeV2FraxPair);
-
-    setTemplePrice(price);
   };
 
   const buy = async (amountIn: BigNumber, token: TICKER_SYMBOL, slippage: number) => {
@@ -219,12 +185,10 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   return (
     <SwapContext.Provider
       value={{
-        templePrice,
         buy,
         sell,
         getBuyQuote,
         getSellQuote,
-        updateTemplePrice,
         error,
         get1inchSwap,
       }}

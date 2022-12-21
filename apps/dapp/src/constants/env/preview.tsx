@@ -102,7 +102,7 @@ const env: Environment = {
       decimals: 6,
     },
     dai: {
-      name: 'Dai',
+      name: 'DAI',
       address: '0x8c9e6c40d3402480ace624730524facc5482798c',
       decimals: 18,
       symbol: 'DAI',

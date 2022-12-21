@@ -15,12 +15,11 @@ export function useSwapController() {
   const { wallet } = useWallet();
   const [state, dispatch] = useReducer(swapReducer, INITIAL_STATE);
   const { balance, updateBalance } = useWallet();
-  const { getBuyQuote, getSellQuote, updateTemplePrice, buy, sell, error } = useSwap();
+  const { getBuyQuote, getSellQuote, buy, sell, error } = useSwap();
 
   useEffect(() => {
     const onMount = async () => {
       await updateBalance();
-      await updateTemplePrice();
 
       dispatch({
         type: 'changeInputTokenBalance',
@@ -79,8 +78,6 @@ export function useSwapController() {
         value: { token, balance: getTokenBalance(token) },
       });
     }
-
-    updateTemplePrice(token);
   };
 
   // Handles user input
@@ -98,10 +95,6 @@ export function useSwapController() {
   };
 
   const handleChangeMode = () => {
-    if (state.inputToken !== TICKER_SYMBOL.FRAX && state.outputToken !== TICKER_SYMBOL.FRAX) {
-      updateTemplePrice(TICKER_SYMBOL.FRAX);
-    }
-
     dispatch({
       type: 'changeMode',
       value: state.mode === SwapMode.Buy ? SwapMode.Sell : SwapMode.Buy,
@@ -153,7 +146,6 @@ export function useSwapController() {
 
     if (txReceipt) {
       await updateBalance();
-      await updateTemplePrice();
       dispatch({
         type: 'txSuccess',
       });
@@ -173,7 +165,6 @@ export function useSwapController() {
 
     if (txReceipt) {
       await updateBalance();
-      await updateTemplePrice();
       dispatch({
         type: 'txSuccess',
       });
