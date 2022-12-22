@@ -5,13 +5,15 @@ import { formatBigNumber, formatTemple } from 'components/Vault/utils';
 import { format, isDate } from 'date-fns';
 import { ZERO } from 'utils/bigNumber';
 import { useEffect, useState } from 'react';
-import { VaultGroup } from 'components/Vault/types';
+import { Vault, VaultGroup } from 'components/Vault/types';
 import { BigNumber } from 'ethers';
 import { useWithdrawFromVault } from 'hooks/core/use-withdraw-from-vault';
 import { VaultButton } from '../VaultPages/VaultContent';
 import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
+import { VaultBalance } from 'hooks/core/use-vault-group-token-balance';
 import env from 'constants/env';
 import _ from 'lodash';
+import { ContinuousColorLegend } from 'react-vis';
 
 interface IProps {
   isOpen: boolean;
@@ -28,13 +30,12 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   const {
     balances: { balances, isLoading: balancesIsLoading },
     vaultGroups: { vaultGroups, isLoading: vaultGroupsIsLoading },
-    refreshVaultBalance
+    refreshVaultBalance,
   } = useVaultContext();
 
   const { withdrawFromVault: withdrawRequest, withdrawEarly: earlyWithdrawRequest } = useWithdrawFromVault(
     '',
     async () => {
-      console.log('>>>> after claim');
       await refreshVaultBalance(claimState.claimSubvaultAddress);
       // AnalyticsService.captureEvent(AnalyticsEvent.Vault.Claim, { name: vault.id, amount });
       clearClaimState();
@@ -49,10 +50,13 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (!balancesIsLoading && !vaultGroupsIsLoading) {
       setAssumedActiveVaultGroup(vaultGroups[0]);
+      const nonZeroBalances = getVaultBalances(vaultGroups[0]?.vaults).filter(vb => vb);
+      setZeroVaultBalance(nonZeroBalances.length === 0);
     }
   }, [balancesIsLoading, vaultGroupsIsLoading, vaultGroups]);
 
   const [claimState, setClaimState] = useState(EMPTY_CLAIM_STATE);
+  const [zeroVaultBalance, setZeroVaultBalance] = useState(false);
 
   const claimAmountHandler = (contract: string, value: BigNumber, isEarly: boolean) => {
     setClaimState({
@@ -87,33 +91,49 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     return errorMessage.substring(0, 20).concat('...');
   };
 
+  const emptyBalance = (inputBalance: VaultBalance) => {
+    return !inputBalance.balance || inputBalance.balance?.lte(ZERO);
+  };
+
+  const getVaultBalances = (vaults: Vault[] | undefined) => {
+    if (!vaults) return [];
+    return vaults.map((vault) => {
+      const vaultGroupBalances = balances[vaultGroups[0].id];
+      const vaultBalance = vaultGroupBalances[vault.id] || {};
+      const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
+      const isEarly = unlockValue !== 'now';
+
+      if (emptyBalance(vaultBalance)) {
+        // empty balance should not render
+        return;
+      }
+
+      return (
+        <SubvaultRow key={vault.id}>
+          <SubvaultCell>Subvault {vault.label}</SubvaultCell>
+          <SubvaultCell>
+            <ClaimAmount onClick={() => claimAmountHandler(vault.id, vaultBalance.balance || ZERO, isEarly)}>
+              Claim {formatTemple(vaultBalance.balance)} $T
+            </ClaimAmount>
+          </SubvaultCell>
+        </SubvaultRow>
+      );
+    });
+  };
+
   return (
     <>
       <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside showCloseButton>
         <ClaimContainer>
           <ClaimTitle>Claim from vaults</ClaimTitle>
-          <ClaimSubtitle>Select a subvault to claim:</ClaimSubtitle>
-          <SubvaultContainer>
-            {assumedActiveVaultGroup?.vaults?.map((vault) => {
-              const vaultGroupBalances = balances[vaultGroups[0].id];
-              const vaultBalance = vaultGroupBalances[vault.id] || {};
-              const unlockValue = isDate(vault.unlockDate) ? format(vault.unlockDate as Date, 'MMM do') : 'now';
-              const isEarly = unlockValue !== 'now';
-
-              if (vaultBalance.balance?.lte(ZERO)) return;
-
-              return (
-                <SubvaultRow key={vault.id}>
-                  <SubvaultCell>Subvault {vault.label}</SubvaultCell>
-                  <SubvaultCell>
-                    <ClaimAmount onClick={() => claimAmountHandler(vault.id, vaultBalance.balance || ZERO, isEarly)}>
-                      Claim {formatTemple(vaultBalance.balance)} $T
-                    </ClaimAmount>
-                  </SubvaultCell>
-                </SubvaultRow>
-              );
-            })}
-          </SubvaultContainer>
+          {zeroVaultBalance ? (
+            <ClaimSubtitle>Nothing to claim.</ClaimSubtitle>
+          ) : (
+            <>
+              <ClaimSubtitle>Select a subvault to claim:</ClaimSubtitle>
+              <SubvaultContainer>{getVaultBalances(assumedActiveVaultGroup?.vaults)}</SubvaultContainer>
+            </>
+          )}
           <TempleAmountContainer>
             <Temple>$TEMPLE</Temple>
             <TempleAmount>{claimState.claimAmount ? claimState.claimAmount : '0.00'}</TempleAmount>
