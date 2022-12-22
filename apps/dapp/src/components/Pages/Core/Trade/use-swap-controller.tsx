@@ -24,7 +24,7 @@ export const useSwapController = () => {
       state.mode === SwapMode.Buy
         ? await getBuyQuote(amount, state.inputToken)
         : await getSellQuote(amount, state.outputToken);
-    dispatch({ type: 'changeQuoteValue', value: quote ?? ZERO });
+    dispatch({ type: 'changeQuoteValue', value: quote ?? null });
   }, 1000);
 
   // Update token balances on mount
@@ -72,7 +72,7 @@ export const useSwapController = () => {
   // Update quote on input value change or input/output token change
   useEffect(() => {
     const bigValue = getBigNumberFromString(state.inputValue || '0', getTokenInfo(state.inputToken).decimals);
-    if (bigValue.eq(ZERO)) dispatch({ type: 'changeQuoteValue', value: ZERO });
+    if (bigValue.eq(ZERO)) dispatch({ type: 'changeQuoteValue', value: null });
     else debouncedFetchQuote(bigValue);
   }, [state.inputValue, state.inputToken, state.outputToken]);
 

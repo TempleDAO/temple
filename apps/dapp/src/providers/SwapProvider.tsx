@@ -169,7 +169,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       { gasPrice, maxPools },
       false
     );
-    return swapInfo.returnAmount;
+    return swapInfo;
   };
 
   const getSellQuote = async (amountToSell: BigNumber, token: TICKER_SYMBOL) => {
@@ -184,7 +184,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       { gasPrice, maxPools },
       false
     );
-    return swapInfo.returnAmount;
+    return swapInfo;
   };
 
   return (

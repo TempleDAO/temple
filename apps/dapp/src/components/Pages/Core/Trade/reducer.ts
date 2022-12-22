@@ -15,7 +15,7 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
             outputToken: state.inputToken,
             inputConfig: buildSelectConfig(state.outputToken, SwapMode.Buy),
             outputConfig: buildValueConfig(state.inputToken),
-            quoteValue: ZERO,
+            quote: null,
           }
         : {
             ...state,
@@ -24,7 +24,7 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
             outputToken: state.inputToken,
             inputConfig: buildValueConfig(state.outputToken),
             outputConfig: buildSelectConfig(state.inputToken, SwapMode.Sell),
-            quoteValue: ZERO,
+            quote: null,
           };
     }
 
@@ -33,7 +33,7 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
         ...state,
         inputToken: action.value.token,
         inputTokenBalance: action.value.balance,
-        quoteValue: ZERO,
+        quote: null,
       };
 
     case 'changeInputTokenBalance':
@@ -47,7 +47,7 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
         ...state,
         outputToken: action.value.token,
         outputTokenBalance: action.value.balance,
-        quoteValue: ZERO,
+        quote: null,
       };
 
     case 'changeOutputTokenBalance':
@@ -60,7 +60,7 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
       return { ...state, inputValue: action.value };
 
     case 'changeQuoteValue':
-      return { ...state, quoteValue: action.value };
+      return { ...state, quote: action.value };
 
     case 'changeTxSettings':
       return {
@@ -83,7 +83,7 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
       return {
         ...state,
         inputValue: INITIAL_STATE.inputValue,
-        quoteValue: INITIAL_STATE.quoteValue,
+        quote: INITIAL_STATE.quote,
       };
 
     case 'setError': {

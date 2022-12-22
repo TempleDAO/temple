@@ -19,7 +19,7 @@ export const INITIAL_STATE: SwapReducerState = {
   inputToken: DAI,
   outputToken: TEMPLE_TOKEN,
   inputValue: '',
-  quoteValue: ZERO,
+  quote: null,
   inputTokenBalance: ZERO,
   outputTokenBalance: ZERO,
   slippageTolerance: 0.5,

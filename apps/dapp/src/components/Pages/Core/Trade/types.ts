@@ -2,6 +2,7 @@ import { BigNumber } from 'ethers';
 import { CryptoValue, CryptoSelector } from 'components/Input/Input';
 import { TransactionSettings } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { SwapInfo } from '@balancer-labs/sor';
 
 export enum SwapMode {
   Buy = 'BUY',
@@ -21,7 +22,7 @@ export type SwapReducerAction =
       value: { token: TICKER_SYMBOL; balance: BigNumber };
     }
   | { type: 'changeInputValue'; value: string }
-  | { type: 'changeQuoteValue'; value: BigNumber }
+  | { type: 'changeQuoteValue'; value: SwapInfo | null }
   | { type: 'changeTxSettings'; value: TransactionSettings }
   | { type: 'changeInputTokenBalance'; value: BigNumber }
   | { type: 'changeOutputTokenBalance'; value: BigNumber }
@@ -37,7 +38,7 @@ export interface SwapReducerState {
   inputToken: TICKER_SYMBOL;
   outputToken: TICKER_SYMBOL;
   inputValue: string;
-  quoteValue: BigNumber;
+  quote: SwapInfo | null;
   inputTokenBalance: BigNumber;
   outputTokenBalance: BigNumber;
   slippageTolerance: number;
