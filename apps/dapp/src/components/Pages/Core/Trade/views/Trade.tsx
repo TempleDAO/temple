@@ -6,7 +6,7 @@ import { TransactionSettingsModal } from 'components/TransactionSettingsModal/Tr
 import { SwapMode } from '../types';
 import { useSwapController } from '../use-swap-controller';
 import { getBigNumberFromString, formatBigNumber, getTokenInfo } from 'components/Vault/utils';
-import { formatNumber } from 'utils/formatter';
+import { formatNumber, formatToken } from 'utils/formatter';
 
 import {
   SwapContainer,
@@ -81,7 +81,7 @@ export const Trade = () => {
           <Spacer />
           <Input
             crypto={outputCryptoConfig}
-            value={formatNumber(formatBigNumber(state.quoteValue, getTokenInfo(state.outputToken).decimals))}
+            value={formatToken(state.quote?.returnAmount, state.outputToken)}
             hint={outputHint}
             disabled
           />
