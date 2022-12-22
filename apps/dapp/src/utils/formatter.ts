@@ -23,9 +23,9 @@ export const formatNumberFixedDecimals = (n: number | string, decimals = 2): num
   return +Number(n).toFixed(decimals);
 };
 
-export const formatToken = (value: BigNumber | undefined, token: TICKER_SYMBOL) => {
+export const formatToken = (value: BigNumber | undefined, token: TICKER_SYMBOL, decimals = 2) => {
   if (!value) return '0';
-  return `${formatNumber(formatBigNumber(value, getTokenInfo(token).decimals))}`;
+  return `${formatNumberFixedDecimals(formatBigNumber(value, getTokenInfo(token).decimals), decimals)}`;
 };
 
 export const formatMillions = (n: number | string): string => {
