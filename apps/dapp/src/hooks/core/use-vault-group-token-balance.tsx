@@ -11,7 +11,7 @@ import { VaultGroup } from 'components/Vault/types';
 import { Nullable } from 'types/util';
 import useIsMounted from 'hooks/use-is-mounted';
 
-interface VaultBalance {
+export interface VaultBalance {
   isLoading: boolean;
   balance: Nullable<BigNumber>;
   staked: Nullable<BigNumber>;
