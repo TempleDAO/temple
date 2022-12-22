@@ -115,11 +115,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     return receipt;
   };
 
-  /**
-   * AMM Sell
-   * @param amountInTemple: Amount of $TEMPLE user wants to sell
-   * @param minAmountOutFrax: % user is giving as slippage
-   */
   const sell = async (amountInTemple: BigNumber, token: TICKER_SYMBOL, slippage: number) => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");

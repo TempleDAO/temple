@@ -166,8 +166,6 @@ export const useSwapController = () => {
 
   const getTokenBalance = (token: TICKER_SYMBOL): BigNumber => {
     switch (token) {
-      case TICKER_SYMBOL.FRAX:
-        return balance.frax;
       case TICKER_SYMBOL.USDC:
         return balance.usdc;
       case TICKER_SYMBOL.USDT:
