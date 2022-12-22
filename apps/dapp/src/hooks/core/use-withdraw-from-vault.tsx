@@ -40,6 +40,33 @@ export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: C
     }
   };
 
+  // used in the modal
+  const withdrawFromVault = async (vaultAddress: string, amount: string) => {
+    if (!signer || !wallet) {
+      console.error(`
+        Attempted to withdraw from vault: ${vaultAddress} without a valid signer.
+      `);
+      return;
+    }
+
+    const bigAmount = getBigNumberFromString(amount);
+    const vault = new Vault__factory(signer).attach(vaultAddress);
+
+    const receipt = await vault.withdraw(bigAmount, { gasLimit: 400000 });
+    await receipt.wait();
+
+    optimisticallyUpdateVaultStaked(vaultAddress, Operation.Decrease, bigAmount);
+
+    openNotification({
+      title: 'Withdraw success',
+      hash: receipt.hash,
+    });
+
+    if (onSuccess) {
+      await onSuccess();
+    }
+  };
+
   const withdraw = async (amount: string) => {
     if (!signer || !wallet) {
       console.error(`
@@ -69,5 +96,6 @@ export const useWithdrawFromVault = (vaultContractAddress: string, onSuccess?: C
   return {
     withdraw: useRequestState(withdraw),
     withdrawEarly: useRequestState(withdrawEarly),
+    withdrawFromVault: useRequestState(withdrawFromVault),
   };
 };
