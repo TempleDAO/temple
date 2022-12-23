@@ -14,7 +14,6 @@ import { formatBigNumber, getTokenInfo } from 'components/Vault/utils';
 import { SwapInfo } from '@balancer-labs/sor';
 import { BalancerSDK, Network, SwapType } from '@balancer-labs/sdk';
 import vaultArtifact from 'data/abis/balancerVault.json';
-import environmentConfig from 'constants/env';
 import { formatToken } from 'utils/formatter';
 
 // Initialize balancer SOR
@@ -22,7 +21,8 @@ const gasPrice = BigNumber.from('14000000000');
 const maxPools = 4;
 const balancer = new BalancerSDK({
   network: Network.MAINNET,
-  rpcUrl: `https://eth-mainnet.g.alchemy.com/v2/${environmentConfig.alchemyId}`,
+  rpcUrl: `https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ`,
+  // rpcUrl: `https://eth-mainnet.g.alchemy.com/v2/${env.alchemyId}`,
 });
 const sor = balancer.sor;
 
@@ -110,7 +110,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     const tokenContract = new ERC20__factory(signer).attach(tokenInfo.address);
     const balance = await tokenContract.balanceOf(wallet);
     const amountIn = quote.swapAmount.lt(balance) ? quote.swapAmount : balance;
-    const vaultContract = new Contract(environmentConfig.contracts.balancerVault, vaultArtifact, signer);
+    const vaultContract = new Contract(env.contracts.balancerVault, vaultArtifact, signer);
 
     // Execute batch swap
     try {
@@ -138,7 +138,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     // Posthog event
     AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, {
       token: tokenInfo.address,
-      amount: formatBigNumber(quote.swapAmount),
+      amount: formatBigNumber(amountIn),
     });
     openNotification({
       title: `Sacrificed ${formatToken(quote.swapAmount, tokenIn, 0)} ${tokenInfo.name}`,
@@ -147,7 +147,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     return receipt;
   };
 
-  const sell = async (amountInTemple: BigNumber, token: TICKER_SYMBOL, slippage: number) => {
+  const sell = async (quote: SwapInfo, tokenOut: TICKER_SYMBOL, deadline: number, slippage: number) => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
       setError({
@@ -156,17 +156,29 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       });
       return;
     }
-
     setError(null);
 
+    // Initialize vars
+    let receipt: TransactionReceipt | undefined;
+    const swapType: SwapType = SwapType.SwapExactIn;
     const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
     const balance = await templeContract.balanceOf(wallet);
-    const verifiedAmountInTemple = amountInTemple.lt(balance) ? amountInTemple : balance;
+    const amountOut = quote.swapAmount.lt(balance) ? quote.swapAmount : balance;
+    const vaultContract = new Contract(env.contracts.balancerVault, vaultArtifact, signer);
 
-    let receipt: TransactionReceipt | undefined;
     try {
-      // const swap = await get1inchSwap(verifiedAmountInTemple, TICKER_SYMBOL.TEMPLE_TOKEN, token, slippage);
-      // receipt = await swap?.wait();
+      await ensureAllowance(env.contracts.temple, templeContract, env.contracts.balancerVault, amountOut);
+      const tx = buildTransaction(quote, wallet, deadline, slippage);
+      const swap = await vaultContract.batchSwap(
+        swapType,
+        quote.swaps,
+        quote.tokenAddresses,
+        tx.funds,
+        tx.limits,
+        tx.deadline,
+        tx.overRides
+      );
+      receipt = await swap.wait();
     } catch (e) {
       // 4001 is user manually cancelling transaction,
       // so we don't want to return it as an error
@@ -175,15 +187,13 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         setError(e as Error);
       }
     }
-
     if (!receipt) return;
-
     AnalyticsService.captureEvent(AnalyticsEvent.Trade.Sell, {
-      token,
-      amount: formatBigNumber(verifiedAmountInTemple),
+      token: quote.tokenOut,
+      amount: formatBigNumber(amountOut),
     });
     openNotification({
-      title: `${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
+      title: `${formatBigNumber(amountOut)} ${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
       hash: receipt.transactionHash,
     });
     return receipt;
