@@ -5,6 +5,7 @@ interface Subgraphs {
 }
 
 interface Contracts {
+  balancerVault: string;
   exitQueue: string;
   faith: string;
   farmingWallet: string;

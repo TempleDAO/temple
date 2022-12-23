@@ -15,8 +15,15 @@ import { useNotification } from 'providers/NotificationProvider';
 import { TransactionPreviewModal } from 'components/TransactionSettingsModal/TransactionPreviewModal';
 
 export const Trade = () => {
-  const { state, handleSelectChange, handleInputChange, handleChangeMode, handleHintClick, handleTxSettingsUpdate } =
-    useSwapController();
+  const {
+    state,
+    handleSelectChange,
+    handleInputChange,
+    handleChangeMode,
+    handleHintClick,
+    handleTxSettingsUpdate,
+    handleTransaction,
+  } = useSwapController();
 
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isSlippageModalOpen, setIsSlippageModalOpen] = useState(false);
@@ -55,7 +62,12 @@ export const Trade = () => {
         onClose={() => setIsSlippageModalOpen(false)}
         onChange={(settings) => handleTxSettingsUpdate(settings)}
       />
-      <TransactionPreviewModal isOpen={isPreviewModalOpen} onClose={() => setIsPreviewModalOpen(false)} state={state} />
+      <TransactionPreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        state={state}
+        handleTransaction={handleTransaction}
+      />
       <HeaderText>Trade</HeaderText>
       <SwapContainer>
         <InputsContainer>
@@ -79,7 +91,11 @@ export const Trade = () => {
           <InvertButton onClick={handleChangeMode} />
         </InputsContainer>
         <AdvancedSettingsButton onClick={() => setIsSlippageModalOpen(true)}>Advanced Settings</AdvancedSettingsButton>
-        <TradeButton disabled={!state.quote} label="Preview" onClick={() => setIsPreviewModalOpen(true)} />
+        <TradeButton
+          disabled={!state.quote || state.quote.returnAmount.lte(0)}
+          label="Preview"
+          onClick={() => setIsPreviewModalOpen(true)}
+        />
       </SwapContainer>
     </>
   );

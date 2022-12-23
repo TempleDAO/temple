@@ -141,7 +141,7 @@ export const useSwapController = () => {
       return;
     }
     // Buy
-    const txReceipt = await buy(tokenAmount, state.inputToken, state.slippageTolerance);
+    const txReceipt = await buy(buyQuote, state.inputToken, state.deadlineMinutes, state.slippageTolerance);
     if (txReceipt) {
       await updateBalance();
       dispatch({ type: 'txSuccess' });

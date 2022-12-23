@@ -6,6 +6,7 @@ const env: Environment = {
   alchemyId: '-nNWThz_YpX1cGffGiz-lbSMu7dmp4GK',
   backendUrl: 'http://localhost:3001',
   contracts: {
+    balancerVault: '',
     exitQueue: '0x0165878A594ca255338adfa4d48449f69242Eb8F',
     faith: '0xBEc49fA140aCaA83533fB00A2BB19bDdd0290f25',
     farmingWallet: '',

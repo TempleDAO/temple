@@ -4,6 +4,7 @@ const env: Environment = {
   alchemyId: 'XiIZxWykHU5AOFBwxKgxseXWN984Mp8F',
   backendUrl: 'https://backend.templedao.link',
   contracts: {
+    balancerVault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     exitQueue: '0xC6d556C34a179a224AEBE42e77c6e76594148B97',
     faith: '0x78F683247cb2121B4eBfbD04110760da42752a6B',
     farmingWallet: '0x5C8898f8E0F9468D4A677887bC03EE2659321012',
@@ -101,7 +102,7 @@ const env: Environment = {
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
     balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // Original Balancer Subgraph
-    // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
+    // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2-beta',
   },
   featureFlags: {
     enableAscend: false,

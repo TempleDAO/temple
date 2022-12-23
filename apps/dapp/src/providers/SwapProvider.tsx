@@ -1,5 +1,5 @@
 import { useState, useContext, createContext, PropsWithChildren, useEffect } from 'react';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, Contract, ethers } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
@@ -12,15 +12,17 @@ import { AnalyticsEvent } from 'constants/events';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { formatBigNumber, getTokenInfo } from 'components/Vault/utils';
 import { SwapInfo } from '@balancer-labs/sor';
-import { BalancerSDK, Network } from '@balancer-labs/sdk';
+import { BalancerSDK, Network, SwapType } from '@balancer-labs/sdk';
+import vaultArtifact from 'data/abis/balancerVault.json';
+import environmentConfig from 'constants/env';
+import { formatToken } from 'utils/formatter';
 
 // Initialize balancer SOR
 const gasPrice = BigNumber.from('14000000000');
 const maxPools = 4;
 const balancer = new BalancerSDK({
   network: Network.MAINNET,
-  rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
-  // customSubgraphUrl: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',
+  rpcUrl: `https://eth-mainnet.g.alchemy.com/v2/${environmentConfig.alchemyId}`,
 });
 const sor = balancer.sor;
 
@@ -31,6 +33,44 @@ const INITIAL_STATE: SwapService = {
   getBuyQuote: asyncNoop,
   error: null,
   sor: balancer.sor,
+};
+
+// Compute slippage tolerance
+function getLimits(quote: SwapInfo, slippage: number): string[] {
+  const limits: string[] = [];
+  const slippageBps = BigNumber.from(10_000 + 100 * slippage);
+  quote.tokenAddresses.forEach((token, i) => {
+    // tokenIn = Max to send, should be positive
+    // tokenOut = Min to receive, should be negative
+    // Intermediate tokens should be 0 for multihops
+    if (token.toLowerCase() === quote.tokenIn.toLowerCase()) limits[i] = quote.swapAmount.toString();
+    else if (token.toLowerCase() === quote.tokenOut.toLowerCase())
+      limits[i] = quote.returnAmount.mul(10_000).div(slippageBps).mul(-1).toString();
+    else limits[i] = '0';
+  });
+  return limits;
+}
+// Build batchSwap transaction details
+const buildTransaction = (quote: SwapInfo, wallet: string, deadline: number, slippage: number) => {
+  const tx = {
+    funds: {
+      sender: wallet,
+      recipient: wallet,
+      fromInternalBalance: false,
+      toInternalBalance: false,
+    },
+    limits: getLimits(quote, slippage),
+    deadline: Math.floor(Date.now() / 1000) + deadline,
+    overRides: {
+      // gasLimit: '2000000',
+      // gasPrice: '20000000000',
+    },
+  };
+  // ETH in swaps must send ETH value
+  // if (quote.tokenIn === AddressZero) {
+  //     overRides['value'] = swapInfo.swapAmount.toString();
+  // }
+  return tx;
 };
 
 const SwapContext = createContext(INITIAL_STATE);
@@ -51,32 +91,8 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     onMount();
   }, []);
 
-  // const get1inchSwap = async (
-  //   tokenAmount: BigNumber,
-  //   tokenIn: TICKER_SYMBOL,
-  //   tokenOut: TICKER_SYMBOL,
-  //   slippage: number
-  // ) => {
-  //   if (!wallet || !signer) return;
-  //   const tokenInInfo = getTokenInfo(tokenIn);
-  //   const tokenOutInfo = getTokenInfo(tokenOut);
-  //   const bigAmount = utils.parseUnits(tokenAmount.toString(), tokenInInfo.decimals);
-  //   const tokenContract = ERC20__factory.connect(tokenInInfo.address, signer);
-
-  //   await ensureAllowance(tokenIn, tokenContract, env.contracts.swap1InchRouter, bigAmount);
-  //   const data = await get1inchApi('swap', {
-  //     amount: tokenAmount,
-  //     slippage: slippage,
-  //     fromTokenAddress: tokenInInfo.address,
-  //     toTokenAddress: tokenOutInfo.address,
-  //     fromAddress: wallet,
-  //   });
-  //   delete data.tx.gas;
-  //   const swapTx = await signer.sendTransaction(data.tx);
-  //   return swapTx;
-  // };
-
-  const buy = async (amountIn: BigNumber, token: TICKER_SYMBOL, slippage: number) => {
+  const buy = async (quote: SwapInfo, tokenIn: TICKER_SYMBOL, deadline: number, slippage: number) => {
+    // Check for signer
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
       setError({
@@ -85,18 +101,31 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       });
       return;
     }
-
     setError(null);
 
-    const tokenInfo = getTokenInfo(token);
+    // Initialize vars
+    let receipt: TransactionReceipt | undefined;
+    const swapType: SwapType = SwapType.SwapExactIn;
+    const tokenInfo = getTokenInfo(tokenIn);
     const tokenContract = new ERC20__factory(signer).attach(tokenInfo.address);
     const balance = await tokenContract.balanceOf(wallet);
-    const verifiedAmountIn = amountIn.lt(balance) ? amountIn : balance;
+    const amountIn = quote.swapAmount.lt(balance) ? quote.swapAmount : balance;
+    const vaultContract = new Contract(environmentConfig.contracts.balancerVault, vaultArtifact, signer);
 
-    let receipt: TransactionReceipt | undefined;
+    // Execute batch swap
     try {
-      // const swap = await get1inchSwap(verifiedAmountIn, token, TICKER_SYMBOL.TEMPLE_TOKEN, slippage);
-      // receipt = await swap?.wait();
+      await ensureAllowance(tokenInfo.address, tokenContract, env.contracts.balancerVault, amountIn);
+      const tx = buildTransaction(quote, wallet, deadline, slippage);
+      const swap = await vaultContract.batchSwap(
+        swapType,
+        quote.swaps,
+        quote.tokenAddresses,
+        tx.funds,
+        tx.limits,
+        tx.deadline,
+        tx.overRides
+      );
+      receipt = await swap.wait();
     } catch (e) {
       // 4001 is user manually cancelling transaction,
       // so we don't want to return it as an error
@@ -106,10 +135,13 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       }
     }
     if (!receipt) return;
-
-    AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, { token, amount: formatBigNumber(verifiedAmountIn) });
+    // Posthog event
+    AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, {
+      token: tokenInfo.address,
+      amount: formatBigNumber(quote.swapAmount),
+    });
     openNotification({
-      title: `Sacrificed ${token}`,
+      title: `Sacrificed ${formatToken(quote.swapAmount, tokenIn, 0)} ${tokenInfo.name}`,
       hash: receipt.transactionHash,
     });
     return receipt;

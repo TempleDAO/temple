@@ -13,18 +13,16 @@ interface IProps {
   isOpen: boolean;
   onClose: () => void;
   state: SwapReducerState;
+  handleTransaction: () => void;
 }
 
-export const TransactionPreviewModal: React.FC<IProps> = ({ isOpen, onClose, state }) => {
-  const { handleTransaction } = useSwapController();
-
+export const TransactionPreviewModal: React.FC<IProps> = ({ isOpen, onClose, state, handleTransaction }) => {
   // Check if swap should be disabled
   const bigInputValue = getBigNumberFromString(state.inputValue || '0');
   const isButtonDisabled =
-    state.isTransactionPending ||
-    state.inputTokenBalance.eq(ZERO) ||
-    bigInputValue.gt(state.inputTokenBalance) ||
-    state.inputValue === '';
+    state.isTransactionPending || state.inputTokenBalance.eq(ZERO) || bigInputValue.gt(state.inputTokenBalance);
+
+  // TODO: Display error message if input value is greater than input token balance
 
   // TODO: Refresh quote every 30 seconds
   // useEffect(() => {

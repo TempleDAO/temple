@@ -93,7 +93,7 @@ export interface FaithService {
 }
 
 export interface SwapService {
-  buy(amountIn: BigNumber, token: TICKER_SYMBOL, slippage: number): Promise<ContractReceipt | void>;
+  buy(quote: SwapInfo, tokenIn: TICKER_SYMBOL, deadline: number, slippage: number): Promise<ContractReceipt | void>;
 
   sell(amountInTemple: BigNumber, token: TICKER_SYMBOL, slippage: number): Promise<ContractReceipt | void>;
 

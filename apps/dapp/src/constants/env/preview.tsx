@@ -4,6 +4,7 @@ const env: Environment = {
   alchemyId: '-nNWThz_YpX1cGffGiz-lbSMu7dmp4GK',
   backendUrl: 'https://backend-stage.templedao.link',
   contracts: {
+    balancerVault: '0x65748E8287Ce4B9E6D83EE853431958851550311',
     exitQueue: '0x75a89f50cb40aec7Ed237F1Bfab562A60023ebE6',
     faith: '0x2c20342F1B27Ca1E4e6668A623084Bb9fC086A4D',
     farmingWallet: '0x5C8898f8E0F9468D4A677887bC03EE2659321012',
