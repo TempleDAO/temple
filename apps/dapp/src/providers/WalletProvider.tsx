@@ -27,7 +27,6 @@ const DEFAULT_ALLOWANCE = toAtto(100000000);
 const INITIAL_STATE: WalletState = {
   balance: {
     frax: ZERO,
-    fei: ZERO,
     usdc: ZERO,
     usdt: ZERO,
     dai: ZERO,
@@ -67,37 +66,22 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     }
 
     const fraxContract = new ERC20__factory(signer).attach(env.contracts.frax);
-
-    const feiContract = new ERC20__factory(signer).attach(env.contracts.fei);
-
     const usdcContract = new ERC20__factory(signer).attach(env.contracts.usdc);
-
     const usdtContract = new ERC20__factory(signer).attach(env.contracts.usdt);
-
     const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
-
     const templeStakingContract = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
-
     const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(await templeStakingContract.OG_TEMPLE());
-
     const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
 
     const fraxBalance: BigNumber = await fraxContract.balanceOf(walletAddress);
-
-    const feiBalance: BigNumber = await feiContract.balanceOf(walletAddress);
-
     const usdcBalance: BigNumber = await usdcContract.balanceOf(walletAddress);
-
     const usdtBalance: BigNumber = await usdtContract.balanceOf(walletAddress);
-
     const daiBalance: BigNumber = await daiContract.balanceOf(walletAddress);
-
     const ogTemple = await OG_TEMPLE_CONTRACT.balanceOf(walletAddress);
     const temple = await templeContract.balanceOf(walletAddress);
 
     return {
       frax: fraxBalance,
-      fei: feiBalance,
       dai: daiBalance,
       usdt: usdtBalance,
       usdc: usdcBalance,

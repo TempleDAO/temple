@@ -36,10 +36,11 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
         quote: null,
       };
 
-    case 'changeInputTokenBalance':
+    case 'changeTokenBalances':
       return {
         ...state,
-        inputTokenBalance: action.value,
+        inputTokenBalance: action.value.input,
+        outputTokenBalance: action.value.output,
       };
 
     case 'changeOutputToken':
@@ -48,12 +49,6 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
         outputToken: action.value.token,
         outputTokenBalance: action.value.balance,
         quote: null,
-      };
-
-    case 'changeOutputTokenBalance':
-      return {
-        ...state,
-        outputTokenBalance: action.value,
       };
 
     case 'changeInputValue':

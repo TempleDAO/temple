@@ -9,7 +9,6 @@ interface Contracts {
   exitQueue: string;
   faith: string;
   farmingWallet: string;
-  fei: string;
   frax: string;
   usdc: string;
   usdt: string;
@@ -32,7 +31,6 @@ interface Contracts {
   temple: string;
   templeStaking: string;
   templeV2FraxPair: string;
-  templeV2FeiPair: string;
   templeV2Router: string;
   swap1InchRouter: string;
   treasuryIv: string;

@@ -31,14 +31,12 @@ export const useSwapController = () => {
   useEffect(() => {
     const onMount = async () => {
       await updateBalance();
-
       dispatch({
-        type: 'changeInputTokenBalance',
-        value: getTokenBalance(state.inputToken),
-      });
-      dispatch({
-        type: 'changeOutputTokenBalance',
-        value: getTokenBalance(state.outputToken),
+        type: 'changeTokenBalances',
+        value: {
+          input: getTokenBalance(state.inputToken),
+          output: getTokenBalance(state.outputToken),
+        },
       });
     };
     onMount();
@@ -47,12 +45,11 @@ export const useSwapController = () => {
   // Update token balances on balance or mode change
   useEffect(() => {
     dispatch({
-      type: 'changeInputTokenBalance',
-      value: getTokenBalance(state.inputToken),
-    });
-    dispatch({
-      type: 'changeOutputTokenBalance',
-      value: getTokenBalance(state.outputToken),
+      type: 'changeTokenBalances',
+      value: {
+        input: getTokenBalance(state.inputToken),
+        output: getTokenBalance(state.outputToken),
+      },
     });
   }, [state.mode, balance]);
 
@@ -135,9 +132,17 @@ export const useSwapController = () => {
   // Execute buy transaction
   const handleBuy = async () => {
     const tokenAmount = getBigNumberFromString(state.inputValue, getTokenInfo(state.inputToken).decimals);
+    // Get latest quote
     const buyQuote = await getBuyQuote(tokenAmount, state.inputToken);
     if (!tokenAmount || !buyQuote) {
       console.error("Couldn't get buy quote");
+      return;
+    }
+    // Don't execute if old quote was better than new quote
+    if (state.quote?.returnAmount.lt(buyQuote.returnAmount)) {
+      // TODO: Display warning to user that the price has changed
+      console.log('Buy quote updated');
+      dispatch({ type: 'changeQuoteValue', value: buyQuote });
       return;
     }
     // Buy
@@ -151,13 +156,21 @@ export const useSwapController = () => {
   // Execute sell transaction
   const handleSell = async () => {
     const templeAmount = getBigNumberFromString(state.inputValue, getTokenInfo(state.inputToken).decimals);
+    // Get latest quote
     const sellQuote = await getSellQuote(templeAmount, state.outputToken);
     if (!templeAmount || !sellQuote) {
       console.error("Couldn't get sell quote");
       return;
     }
-
-    const txReceipt = await sell(templeAmount, state.outputToken, state.slippageTolerance);
+    // Don't execute if old quote was better than new quote
+    if (state.quote?.returnAmount.gt(sellQuote.returnAmount)) {
+      // TODO: Display warning to user that the price has changed
+      console.log('Sell quote updated');
+      dispatch({ type: 'changeQuoteValue', value: sellQuote });
+      return;
+    }
+    // Sell
+    const txReceipt = await sell(sellQuote, state.outputToken, state.deadlineMinutes, state.slippageTolerance);
     if (txReceipt) {
       await updateBalance();
       dispatch({ type: 'txSuccess' });

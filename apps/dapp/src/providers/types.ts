@@ -22,7 +22,6 @@ export enum ETH_ACTIONS {
 
 export type Balance = {
   frax: BigNumber;
-  fei: BigNumber;
   usdc: BigNumber;
   usdt: BigNumber;
   dai: BigNumber;
@@ -95,7 +94,7 @@ export interface FaithService {
 export interface SwapService {
   buy(quote: SwapInfo, tokenIn: TICKER_SYMBOL, deadline: number, slippage: number): Promise<ContractReceipt | void>;
 
-  sell(amountInTemple: BigNumber, token: TICKER_SYMBOL, slippage: number): Promise<ContractReceipt | void>;
+  sell(quote: SwapInfo, tokenOut: TICKER_SYMBOL, deadline: number, slippage: number): Promise<ContractReceipt | void>;
 
   getSellQuote(amountToSell: BigNumber, token?: TICKER_SYMBOL): Promise<SwapInfo | void>;
 
