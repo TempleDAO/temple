@@ -62,13 +62,11 @@ const XIcon = styled.button`
 `;
 
 const Header = styled.h4`
-  color: ${({ theme }) => theme.palette.brand};
-  margin-top: 0;
-
   font-size: 1.5rem;
   text-align: center;
   color: ${({ theme }) => theme.palette.brandLight};
-  font-weight: 300;
+  margin-top: 0;
+  margin-bottom: 1rem;
 `;
 
 const Wrapper = styled.div<{ isOpen: boolean }>`

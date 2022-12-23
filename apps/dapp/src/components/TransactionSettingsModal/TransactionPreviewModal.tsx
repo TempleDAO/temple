@@ -1,12 +1,13 @@
 import styled from 'styled-components';
 import { Popover } from 'components/Popover';
 import { useSwapController } from 'components/Pages/Core/Trade/use-swap-controller';
-import { formatNumberFixedDecimals, formatToken } from 'utils/formatter';
+import { formatNumber, formatNumberFixedDecimals, formatToken } from 'utils/formatter';
 import { SwapReducerState } from 'components/Pages/Core/Trade/types';
-import { BigNumber } from 'ethers';
-import { TradeButton } from 'components/Pages/Core/NewUI/TradeNew';
+import { BigNumber, ethers } from 'ethers';
 import { ZERO } from 'utils/bigNumber';
 import { getBigNumberFromString } from 'components/Vault/utils';
+import { Button } from 'components/Button/Button';
+import { transparentize } from 'polished';
 
 interface IProps {
   isOpen: boolean;
@@ -35,38 +36,113 @@ export const TransactionPreviewModal: React.FC<IProps> = ({ isOpen, onClose, sta
 
   return (
     <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside={true} showCloseButton header="Preview Swap">
-      <p>
-        {state.inputValue} {state.inputToken} ($
-        {formatNumberFixedDecimals((1 / Number(state.quote.marketSp)) * Number(state.inputValue), 2)})
-      </p>
-      <p>
-        {formatToken(state.quote.returnAmount, state.outputToken, 4)} {state.outputToken}
-      </p>
-      <p>Swap from {state.inputToken} details</p>
-      <p>
-        Total to receive before fees: {formatToken(state.quote.returnAmount, state.outputToken, 4)} {state.outputToken}
-      </p>
-      <p>Gas costs: -0.0 ETH</p>
-      <p>
-        Swap fees:{' '}
-        {formatToken(state.quote.returnAmount.sub(state.quote.returnAmountConsideringFees), state.outputToken, 4)}{' '}
+      <PriceContainer>
+        <div>
+          <span>
+            <b>{formatNumberFixedDecimals(state.inputValue)}</b>
+          </span>
+          <Subtext>Sending {state.inputToken}</Subtext>
+        </div>
+        <div>
+          <span>
+            <b>{formatToken(state.quote.returnAmount, state.outputToken)}</b>
+          </span>
+          <Subtext>Receiving {state.outputToken}</Subtext>
+        </div>
+      </PriceContainer>
+      <PriceMarker>
+        1 {state.inputToken} ={' '}
+        {(Number(ethers.utils.formatEther(state.quote.returnAmount)) / Number(state.inputValue)).toFixed(4)}{' '}
         {state.outputToken}
-      </p>
-      <p>
-        Total expected after fees: {formatToken(state.quote.returnAmountConsideringFees, state.outputToken, 4)}{' '}
-        {state.outputToken}
-      </p>
-      <p>
-        The least you'll get at {state.slippageTolerance}% slippage:{' '}
-        {formatToken(
-          state.quote.returnAmountConsideringFees
-            .mul(BigNumber.from((100 - state.slippageTolerance) * 100))
-            .div(BigNumber.from(10_000)),
-          state.outputToken,
-          4
-        )}
-      </p>
-      <TradeButton disabled={isButtonDisabled} label="Swap" onClick={() => handleTransaction()} />
+      </PriceMarker>
+      <SwapDetails>
+        <SwapDetailsHeader>Swap Details</SwapDetailsHeader>
+        <AmountAfterFees>
+          <span>Total expected after fees:</span>
+          <span>
+            {formatToken(state.quote.returnAmount, state.outputToken, 4)} {state.outputToken}
+          </span>
+        </AmountAfterFees>
+        <div>
+          <span>The least you'll get at {state.slippageTolerance}% slippage:</span>
+          <span>
+            {formatToken(
+              state.quote.returnAmount
+                .mul(BigNumber.from(10_000))
+                .div(BigNumber.from((100 + state.slippageTolerance) * 100)),
+              state.outputToken,
+              4
+            )}{' '}
+            {state.outputToken}
+          </span>
+        </div>
+      </SwapDetails>
+      <TradeButton disabled={isButtonDisabled} label="Confirm Swap" onClick={() => handleTransaction()} />
     </Popover>
   );
 };
+
+const PriceContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  text-align: left;
+  color: ${({ theme }) => theme.palette.brandLight};
+  font-size: 1.25rem;
+  justify-content: center;
+  gap: 2rem;
+  max-width: 400px;
+  margin: auto;
+  text-align: center;
+`;
+const Subtext = styled.div`
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.palette.brand};
+  font-weight: normal;
+  padding-bottom: 0.25rem;
+`;
+const PriceMarker = styled.div`
+  padding: 1rem;
+`;
+const SwapDetails = styled.div`
+  padding: 1rem;
+  border: 1px solid ${({ theme }) => theme.palette.brand};
+  border-radius: 0.5rem;
+  box-shadow: 0 0 0.3rem 0.3rem rgba(0, 0, 0, 0.2);
+
+  div {
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+`;
+const SwapDetailsHeader = styled.h5`
+  font-size: 1rem;
+  margin: 0;
+  font-family: 'Megant';
+  color: ${({ theme }) => transparentize(0.1, theme.palette.brandLight)};
+  font-weight: bold;
+  text-align: left;
+  border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
+  padding-bottom: 0.5rem;
+`;
+const AmountAfterFees = styled.div`
+  color: ${({ theme }) => theme.palette.brandLight};
+  padding: 1rem 0 0.5rem 0;
+`;
+const TradeButton = styled(Button)`
+  padding: 10px;
+  gap: 20px;
+  height: 52px;
+  background: ${({ theme }) => theme.palette.gradients.dark};
+  border: 1px solid ${({ theme }) => theme.palette.brandDark};
+  box-shadow: 0px 0px 20px rgba(222, 92, 6, 0.4);
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: ${({ theme }) => theme.palette.brandLight};
+  width: 100%;
+  margin-top: 1rem;
+`;

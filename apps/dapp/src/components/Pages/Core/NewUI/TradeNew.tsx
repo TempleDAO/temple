@@ -97,7 +97,7 @@ const InputsContainer = styled.div`
   position: relative;
 `;
 
-export const TradeButton = styled(Button)`
+const TradeButton = styled(Button)`
   padding: 10px;
   gap: 20px;
   width: 120px;
