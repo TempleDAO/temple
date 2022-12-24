@@ -124,9 +124,9 @@ export const useSwapController = () => {
   // Handle buy/sell transaction
   const handleTransaction = async () => {
     dispatch({ type: 'startTx' });
-    if (state.mode === SwapMode.Buy) await handleBuy();
-    else if (state.mode === SwapMode.Sell) await handleSell();
+    const success = state.mode === SwapMode.Buy ? await handleBuy() : await handleSell();
     dispatch({ type: 'endTx' });
+    return success;
   };
 
   // Execute buy transaction
@@ -136,21 +136,23 @@ export const useSwapController = () => {
     const buyQuote = await getBuyQuote(tokenAmount, state.inputToken);
     if (!tokenAmount || !buyQuote) {
       console.error("Couldn't get buy quote");
-      return;
+      return false;
     }
     // Don't execute if old quote was better than new quote
     if (state.quote?.returnAmount.lt(buyQuote.returnAmount)) {
       // TODO: Display warning to user that the price has changed
       console.log('Buy quote updated');
       dispatch({ type: 'changeQuoteValue', value: buyQuote });
-      return;
+      return false;
     }
     // Buy
     const txReceipt = await buy(buyQuote, state.inputToken, state.deadlineMinutes, state.slippageTolerance);
     if (txReceipt) {
       await updateBalance();
       dispatch({ type: 'txSuccess' });
+      return true;
     }
+    return false;
   };
 
   // Execute sell transaction
@@ -160,21 +162,23 @@ export const useSwapController = () => {
     const sellQuote = await getSellQuote(templeAmount, state.outputToken);
     if (!templeAmount || !sellQuote) {
       console.error("Couldn't get sell quote");
-      return;
+      return false;
     }
     // Don't execute if old quote was better than new quote
     if (state.quote?.returnAmount.gt(sellQuote.returnAmount)) {
       // TODO: Display warning to user that the price has changed
       console.log('Sell quote updated');
       dispatch({ type: 'changeQuoteValue', value: sellQuote });
-      return;
+      return false;
     }
     // Sell
     const txReceipt = await sell(sellQuote, state.outputToken, state.deadlineMinutes, state.slippageTolerance);
     if (txReceipt) {
       await updateBalance();
       dispatch({ type: 'txSuccess' });
+      return true;
     }
+    return false;
   };
 
   const getTokenBalance = (token: TICKER_SYMBOL): BigNumber => {

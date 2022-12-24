@@ -13,7 +13,7 @@ interface IProps {
   isOpen: boolean;
   onClose: () => void;
   state: SwapReducerState;
-  handleTransaction: () => void;
+  handleTransaction: () => Promise<boolean>;
 }
 
 export const TransactionPreviewModal: React.FC<IProps> = ({ isOpen, onClose, state, handleTransaction }) => {
@@ -75,7 +75,14 @@ export const TransactionPreviewModal: React.FC<IProps> = ({ isOpen, onClose, sta
           </span>
         </div>
       </SwapDetails>
-      <TradeButton disabled={isButtonDisabled} label="Confirm Swap" onClick={() => handleTransaction()} />
+      <TradeButton
+        disabled={isButtonDisabled}
+        label="Confirm Swap"
+        onClick={async () => {
+          const success = await handleTransaction();
+          if (success) onClose();
+        }}
+      />
     </Popover>
   );
 };

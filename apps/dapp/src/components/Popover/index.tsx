@@ -73,6 +73,9 @@ const Wrapper = styled.div<{ isOpen: boolean }>`
   display: ${({ isOpen }) => (isOpen ? 'flex' : 'none')};
   background: #1d1a1a;
   position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 10;
   padding: 1.5rem 2rem 2rem;
   flex-direction: column;
