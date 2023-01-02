@@ -81,7 +81,7 @@ const FooterContent = [
       {
         text: 'Codex',
         image: socialCodexIcon,
-        link: 'https://codex.templedao.link/',
+        link: 'https://templecodex.link',
       },
     ],
   },
