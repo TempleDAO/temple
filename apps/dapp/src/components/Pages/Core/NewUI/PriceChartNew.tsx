@@ -73,7 +73,7 @@ function useProtocolMetrics(timeInterval: TIME_INTERVAL) {
     dailyData = formatMetrics(dailyPriceMetrics);
   }
 
-  return timeInterval <= TIME_INTERVAL.ONE_WEEK ? hourlyData : dailyData;
+  return timeInterval < TIME_INTERVAL.ONE_WEEK ? hourlyData : dailyData;
 }
 
 function useCrosshairs(data: ChartData) {
@@ -113,7 +113,7 @@ function useTemplePrice(data: ChartData, interval: TIME_INTERVAL) {
 
   const now = Date.now();
   const lowerDateThreshold = now - interval;
-  const domainFilter = ({ x }: DataPoint) => x > lowerDateThreshold;
+  const domainFilter = ({ x }: DataPoint) => x >= lowerDateThreshold;
 
   const domainDataPoints: ChartData = {
     templePriceDataPoints: data.templePriceDataPoints.filter(domainFilter),
