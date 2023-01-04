@@ -61,8 +61,7 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   const claimAmountHandler = (contract: string, value: BigNumber, isEarly: boolean) => {
     setClaimState({
       claimSubvaultAddress: contract,
-      // TODO: Update with the actual amount, because I don't want to withdraw everything because I can't re-deposit
-      claimAmount: formatBigNumber(BigNumber.from('1000000000000000000')),
+      claimAmount: formatBigNumber(value),
       isEarly,
     });
   };
