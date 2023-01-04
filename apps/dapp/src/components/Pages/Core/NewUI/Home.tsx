@@ -22,6 +22,9 @@ import { Trade } from './TradeNew';
 import { useAccount } from 'wagmi';
 import { Account } from 'components/Layouts/CoreLayout/Account';
 import { fetchGenericSubgraph } from 'utils/subgraph';
+import ClaimModal from './ClaimModal';
+import UnstakeOgtModal from './UnstakeModal';
+import { useVaultContext } from '../VaultContext';
 
 interface Metrics {
   price: number;
@@ -132,6 +135,29 @@ const Home = () => {
     targetRef.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const [isClaimFromVaultsLegacyModalOpen, setIsClaimFromVaultsLegacyModalOpen] = useState(false);
+  const [isUnstakeOgtLegacyModalOpen, setIsUnstakeOgtLegacyModalOpen] = useState(false);
+
+  const legacyClaimClickHandler = () => {
+    if (!address) {
+      window.scrollTo(0, 0);
+      setShowConnect(true);
+      return;
+    }
+
+    setIsClaimFromVaultsLegacyModalOpen(true);
+  };
+
+  const legacyUnstakeOgtClickHandler = () => {
+    if (!address) {
+      window.scrollTo(0, 0);
+      setShowConnect(true);
+      return;
+    }
+
+    setIsUnstakeOgtLegacyModalOpen(true);
+  };
+
   useEffect(() => {
     const fetchMetrics = async () => {
       // const { data: treasuryData } = await fetchSubgraph(`{
@@ -162,9 +188,7 @@ const Home = () => {
     <>
       <LegacyLinkHeader>
         <LegacyText>Legacy features</LegacyText>
-        <Link to="/dapp/vaults/1m-core/claim">
-          <LegacyLink>Claim from vaults</LegacyLink>
-        </Link>
+        <LegacyLink onClick={legacyClaimClickHandler}>Claim from vaults</LegacyLink>
         <a href="https://old.templedao.link/dapp" target="_blank">
           <LegacyLink>Unstake OGT</LegacyLink>
         </a>
@@ -277,6 +301,11 @@ const Home = () => {
         </LinkRow>
         <CopyrightRow>© 2022 TempleDAO. All rights reserved.</CopyrightRow>
       </FooterContainer>
+      <ClaimModal
+        isOpen={!!address && isClaimFromVaultsLegacyModalOpen}
+        onClose={() => setIsClaimFromVaultsLegacyModalOpen(false)}
+      />
+      <UnstakeOgtModal isOpen={isUnstakeOgtLegacyModalOpen} onClose={() => setIsUnstakeOgtLegacyModalOpen(false)} />
     </>
   );
 };
@@ -296,6 +325,8 @@ const LegacyLink = styled.div`
   cursor: pointer;
   margin-right: 10px;
   margin-left: 10px;
+  color: ${primaryColor};
+  font-weight: bold;
 `;
 
 const LegacyLinkHeader = styled.div`
