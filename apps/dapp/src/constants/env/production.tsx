@@ -2,6 +2,7 @@ import { Environment } from './types';
 
 const env: Environment = {
   alchemyId: 'XiIZxWykHU5AOFBwxKgxseXWN984Mp8F',
+  rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
   backendUrl: 'https://backend.templedao.link',
   contracts: {
     balancerVault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
@@ -94,6 +95,7 @@ const env: Environment = {
       decimals: 18,
     },
   },
+  network: 1,
   etherscan: 'https://etherscan.io',
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',

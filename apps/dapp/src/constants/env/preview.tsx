@@ -2,6 +2,7 @@ import { Environment } from './types';
 
 const env: Environment = {
   alchemyId: '-nNWThz_YpX1cGffGiz-lbSMu7dmp4GK',
+  rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
   backendUrl: 'https://backend-stage.templedao.link',
   contracts: {
     balancerVault: '0x65748E8287Ce4B9E6D83EE853431958851550311',
@@ -107,6 +108,7 @@ const env: Environment = {
       symbol: 'DAI',
     },
   },
+  network: 5,
   etherscan: 'https://goerli.etherscan.io',
   featureFlags: {
     enableAscend: true,

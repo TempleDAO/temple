@@ -4,6 +4,7 @@ const ENV = import.meta.env;
 
 const env: Environment = {
   alchemyId: '-nNWThz_YpX1cGffGiz-lbSMu7dmp4GK',
+  rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
   backendUrl: 'http://localhost:3001',
   contracts: {
     balancerVault: '',
@@ -99,6 +100,7 @@ const env: Environment = {
       symbol: 'DAI',
     },
   },
+  network: 30001,
   featureFlags: {
     enableAscend: true,
   },

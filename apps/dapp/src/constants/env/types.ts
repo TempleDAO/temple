@@ -79,6 +79,7 @@ interface Posthog {
 
 export interface Environment {
   alchemyId: string;
+  rpcUrl: string;
   backendUrl: string;
   contracts: Contracts;
   gas?: Gas;
@@ -91,6 +92,7 @@ export interface Environment {
     ascendData: number;
     ascendQuote: number;
   };
+  network: number;
   etherscan: string;
   featureFlags: {
     enableAscend: boolean;

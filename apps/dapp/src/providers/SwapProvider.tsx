@@ -1,5 +1,5 @@
 import { useState, useContext, createContext, PropsWithChildren, useEffect } from 'react';
-import { BigNumber, Contract, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
@@ -13,16 +13,14 @@ import { AnalyticsService } from 'services/AnalyticsService';
 import { formatBigNumber, getTokenInfo } from 'components/Vault/utils';
 import { SwapInfo } from '@balancer-labs/sor';
 import { BalancerSDK, Network, SwapType } from '@balancer-labs/sdk';
-import vaultArtifact from 'data/abis/balancerVault.json';
+import { Vault__factory } from '@balancer-labs/typechain/dist/factories/Vault__factory';
 import { formatToken } from 'utils/formatter';
 
 // Initialize balancer SOR
-const gasPrice = BigNumber.from('14000000000');
 const maxPools = 4;
 const balancer = new BalancerSDK({
   network: Network.MAINNET,
-  rpcUrl: `https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ`,
-  // rpcUrl: `https://eth-mainnet.g.alchemy.com/v2/${env.alchemyId}`,
+  rpcUrl: env.rpcUrl,
 });
 const sor = balancer.sor;
 
@@ -61,10 +59,8 @@ const buildTransaction = (quote: SwapInfo, wallet: string, deadline: number, sli
     },
     limits: getLimits(quote, slippage),
     deadline: Math.floor(Date.now() / 1000) + deadline,
-    overRides: {
-      // gasLimit: '2000000',
-      // gasPrice: '20000000000',
-    },
+    // Can override gasLimit and gasPrice
+    overRides: {},
   };
   // ETH in swaps must send ETH value
   // if (quote.tokenIn === AddressZero) {
@@ -108,13 +104,11 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     const swapType: SwapType = SwapType.SwapExactIn;
     const tokenInfo = getTokenInfo(tokenIn);
     const tokenContract = new ERC20__factory(signer).attach(tokenInfo.address);
-    const balance = await tokenContract.balanceOf(wallet);
-    const amountIn = quote.swapAmount.lt(balance) ? quote.swapAmount : balance;
-    const vaultContract = new Contract(env.contracts.balancerVault, vaultArtifact, signer);
+    const vaultContract = Vault__factory.connect(env.contracts.balancerVault, signer);
 
     // Execute batch swap
     try {
-      await ensureAllowance(tokenInfo.address, tokenContract, env.contracts.balancerVault, amountIn);
+      await ensureAllowance(tokenInfo.address, tokenContract, env.contracts.balancerVault, quote.swapAmount);
       const tx = buildTransaction(quote, wallet, deadline, slippage);
       const swap = await vaultContract.batchSwap(
         swapType,
@@ -138,7 +132,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     // Posthog event
     AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, {
       token: tokenInfo.address,
-      amount: formatBigNumber(amountIn),
+      amount: formatBigNumber(quote.swapAmount),
     });
     openNotification({
       title: `Sacrificed ${formatToken(quote.swapAmount, tokenIn, 0)} ${tokenInfo.name}`,
@@ -162,12 +156,10 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     let receipt: TransactionReceipt | undefined;
     const swapType: SwapType = SwapType.SwapExactIn;
     const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
-    const balance = await templeContract.balanceOf(wallet);
-    const amountOut = quote.swapAmount.lt(balance) ? quote.swapAmount : balance;
-    const vaultContract = new Contract(env.contracts.balancerVault, vaultArtifact, signer);
+    const vaultContract = Vault__factory.connect(env.contracts.balancerVault, signer);
 
     try {
-      await ensureAllowance(env.contracts.temple, templeContract, env.contracts.balancerVault, amountOut);
+      await ensureAllowance(env.contracts.temple, templeContract, env.contracts.balancerVault, quote.swapAmount);
       const tx = buildTransaction(quote, wallet, deadline, slippage);
       const swap = await vaultContract.batchSwap(
         swapType,
@@ -190,10 +182,10 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     if (!receipt) return;
     AnalyticsService.captureEvent(AnalyticsEvent.Trade.Sell, {
       token: quote.tokenOut,
-      amount: formatBigNumber(amountOut),
+      amount: formatBigNumber(quote.swapAmount),
     });
     openNotification({
-      title: `${formatBigNumber(amountOut)} ${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
+      title: `${formatBigNumber(quote.swapAmount)} ${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
       hash: receipt.transactionHash,
     });
     return receipt;
@@ -202,6 +194,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const getBuyQuote = async (amountIn: BigNumber, token: TICKER_SYMBOL) => {
     const tokenInInfo = getTokenInfo(token);
     const tokenOutInfo = getTokenInfo(TICKER_SYMBOL.TEMPLE_TOKEN);
+    const gasPrice = await signer?.getGasPrice();
     // Find swapInfo for best trade given pair and amount
     const swapInfo: SwapInfo = await sor.getSwaps(
       tokenInInfo.address,
@@ -217,6 +210,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
   const getSellQuote = async (amountToSell: BigNumber, token: TICKER_SYMBOL) => {
     const tokenInInfo = getTokenInfo(TICKER_SYMBOL.TEMPLE_TOKEN);
     const tokenOutInfo = getTokenInfo(token);
+    const gasPrice = await signer?.getGasPrice();
     // Find swapInfo for best trade given pair and amount
     const swapInfo: SwapInfo = await sor.getSwaps(
       tokenInInfo.address,
