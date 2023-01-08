@@ -1,11 +1,11 @@
 import { Button } from 'components/Button/Button';
 import { Input } from 'components/Input/Input';
+import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { BigNumber } from 'ethers';
 import { useState } from 'react';
-import { PoolHelper } from 'types/typechain';
 import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
-import { InputArea, RequestArea } from '../styles';
+import { InputArea, RequestArea, TitleWrapper } from '../styles';
 
 interface IProps {
   handleInput: (
@@ -22,7 +22,21 @@ export const AddLiquidity: React.FC<IProps> = ({ calculateFunc, handleInput }) =
   const [joinPoolInfo, setJoinPoolInfo] = useState<{ joinPoolRequest: string; minBptOut: string }>();
   return (
     <InputArea>
-      <h3>AddLiquidity</h3>
+    <TitleWrapper>
+        <h3>AddLiquidity</h3>
+        <Tooltip
+          content={
+            <>
+              <p>Add liquidity with both {TICKER_SYMBOL.TEMPLE_TOKEN} and stable tokens into balancer pool. </p>
+              <p>Treasury Price Floor is expected to be within bounds of multisig set range.</p>
+              <p>BPT tokens are then deposited and staked in Aura.</p>
+              <p>{TICKER_SYMBOL.TEMPLE_TOKEN} amount is minted by RAMOS and calculated here to preserve spot price</p>
+            </>
+          }
+        >
+          <TooltipIcon />
+        </Tooltip>
+      </TitleWrapper>
       <Input
         crypto={{ kind: 'value', value: 'STABLE' }}
         small

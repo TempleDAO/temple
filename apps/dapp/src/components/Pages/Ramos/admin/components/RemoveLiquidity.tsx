@@ -1,9 +1,11 @@
 import { Button } from 'components/Button/Button';
 import { Input } from 'components/Input/Input';
+import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { BigNumber, ethers } from 'ethers';
 import { useState } from 'react';
 import { ZERO } from 'utils/bigNumber';
-import { InputArea, RequestArea } from '../styles';
+import { InputArea, RequestArea, TitleWrapper } from '../styles';
 
 interface IProps {
   calculateFunc: (exitAmountBpt: BigNumber) => Promise<string | undefined>;
@@ -14,7 +16,21 @@ export const RemoveLiquidity: React.FC<IProps> = ({ calculateFunc }) => {
 
   return (
     <InputArea>
-      <h3>RemoveLiquidity</h3>
+      <TitleWrapper>
+        <h3>RemoveLiquidity</h3>
+        <Tooltip
+          content={
+            <>
+              <p>Remove liquidity from balancer pool receiving both {TICKER_SYMBOL.TEMPLE_TOKEN} and stable tokens from balancer pool. </p>
+              <p>Treasury Price Floor is expected to be within bounds of multisig set range.</p>
+              <p>Withdraw and unwrap BPT tokens from Aura staking and send to balancer pool to receive both tokens.</p>
+            </>
+          }
+        >
+          <TooltipIcon />
+        </Tooltip>
+      </TitleWrapper>
+
       <Input
         crypto={{ kind: 'value', value: 'BPT' }}
         isNumber

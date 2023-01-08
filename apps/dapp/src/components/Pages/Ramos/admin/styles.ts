@@ -20,3 +20,12 @@ export const RequestArea = styled.code`
   overflow-wrap: anywhere;
   color: ${({ theme }) => theme.palette.brand}
 `;     
+
+export const TitleWrapper = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  small {
+    margin-top: 0.5rem;
+  }
+`;
