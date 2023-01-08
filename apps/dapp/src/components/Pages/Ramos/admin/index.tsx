@@ -19,6 +19,7 @@ import {
 import { limitInput, handleBlur } from './helpers';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { useState } from 'react';
+import environmentConfig from 'constants/env';
 
 const Container = styled.div`
   display: grid;
@@ -37,7 +38,6 @@ const Content = styled.div`
 
 const RamosAdmin = () => {
   const {
-    ramos,
     tpf,
     templePrice,
     percentageOfGapToClose,
@@ -86,6 +86,8 @@ const RamosAdmin = () => {
     },
   ];
 
+  const ramosAddress = environmentConfig.contracts.ramos;
+
   return (
     <div>
       <TransactionSettingsModal
@@ -103,7 +105,7 @@ const RamosAdmin = () => {
       />
       <div>
         <p>
-          RAMOS: <a href={`https://etherscan.io/address/${ramos?.address}`} target="_blank">{ramos?.address ?? <EllipsisLoader />}</a>
+          RAMOS: <a href={`https://etherscan.io/address/${ramosAddress}`} target="_blank">{ramosAddress}</a>
         </p>
       </div>
       <Container>

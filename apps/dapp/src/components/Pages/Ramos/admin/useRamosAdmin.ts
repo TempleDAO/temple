@@ -313,7 +313,6 @@ export function useRamosAdmin() {
   };
 
   return {
-    ramos,
     tpf,
     templePrice,
     percentageOfGapToClose,
