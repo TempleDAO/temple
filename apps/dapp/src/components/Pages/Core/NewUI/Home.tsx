@@ -320,7 +320,7 @@ const LegacyLink = styled.div`
   cursor: pointer;
   margin-right: 10px;
   margin-left: 10px;
-  color: ${primaryColor};
+  color: ${({ theme }) => theme.palette.brand};
   font-weight: bold;
 `;
 
