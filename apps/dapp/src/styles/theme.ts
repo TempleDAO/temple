@@ -31,6 +31,7 @@ const spinKeyframe = keyframes`
 const theme: DefaultTheme = {
   // Pallete is in sync with Figma TempleDAO SD => https://www.figma.com/file/UA58EtNIjomjY9maDMCPtH/TempleDAO-DS
   palette: {
+    black: '#0B0A0A',
     brand: brandColor,
     brandLight: '#FFDEC9',
     brandDark: '#95613F',
@@ -65,7 +66,7 @@ const theme: DefaultTheme = {
     devices: {
       tablet: '64rem' /* 1024/16 */,
       laptop: '90rem' /* 1440/16 */,
-      phone: '37.5rem' /* 600/16 */
+      phone: '37.5rem' /* 600/16 */,
     },
   },
   typography: {

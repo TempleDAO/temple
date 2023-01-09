@@ -2,12 +2,13 @@ import { Environment } from './types';
 
 const env: Environment = {
   alchemyId: '-nNWThz_YpX1cGffGiz-lbSMu7dmp4GK',
+  rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
   backendUrl: 'https://backend-stage.templedao.link',
   contracts: {
+    balancerVault: '0x65748E8287Ce4B9E6D83EE853431958851550311',
     exitQueue: '0x75a89f50cb40aec7Ed237F1Bfab562A60023ebE6',
     faith: '0x2c20342F1B27Ca1E4e6668A623084Bb9fC086A4D',
     farmingWallet: '0x5C8898f8E0F9468D4A677887bC03EE2659321012',
-    fei: '0xa1e7CdD887d6fac4861b5663984A9Ba72cFF9522',
     frax: '0x73651AD693531F9937528009cC204a4d9b696a68',
     usdc: '0x07865c6e87b9f70255377e024ace6630c1eaa37f',
     usdt: '',
@@ -30,7 +31,6 @@ const env: Environment = {
     temple: '0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf',
     templeStaking: '0x20Ab503De9859eecB22EaB0ddEc9Bcd8bAFB876C',
     templeV2FraxPair: '0x85dA8c4312742522519911052Fa2B4aC302E4d6c',
-    templeV2FeiPair: '0x519462fD548D0Ba1e7d380Ed7F3DA10Cab912Fa7',
     templeV2Router: '0x7a19509307648b0bf00dd7349F2dDaE716B9a998',
     swap1InchRouter: '0x1111111254EEB25477B68fb85Ed929f73A960582',
     treasuryIv: '0xA443355cE4F9c1AA6d68e057a962E86E071B0ed3',
@@ -102,12 +102,13 @@ const env: Environment = {
       decimals: 6,
     },
     dai: {
-      name: 'Dai',
+      name: 'DAI',
       address: '0x8c9e6c40d3402480ace624730524facc5482798c',
       decimals: 18,
       symbol: 'DAI',
     },
   },
+  network: 5,
   etherscan: 'https://goerli.etherscan.io',
   featureFlags: {
     enableAscend: true,

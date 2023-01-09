@@ -212,9 +212,7 @@ const Home = () => {
                 <NewTempleText>The New Temple</NewTempleText>
                 <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
                 <LearnMoreLink onClick={scrollToContent}>Learn More</LearnMoreLink>
-                <TradeButton href="https://app.balancer.fi/#/ethereum/trade" target="_blank">
-                  Trade
-                </TradeButton>
+                <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
               </>
             )}
           </ContentContainer>
@@ -310,13 +308,10 @@ const Home = () => {
   );
 };
 
-const primaryColor = '#bd7b4f';
-const secondaryColor = '#ffdec9';
-
 const LegacyText = styled.span`
   padding: 5px;
   margin-right: 10px;
-  color: ${primaryColor};
+  color: ${({ theme }) => theme.palette.brand};
 `;
 
 const LegacyLink = styled.div`
@@ -339,8 +334,8 @@ const LegacyLinkHeader = styled.div`
   background-color: black;
   background-image: url('${footerTexture}');
   background-size: cover;
-  border-bottom: 2px solid #351f11;
-  border-top: 2px solid #351f11;
+  border-bottom: 2px solid ${({ theme }) => theme.palette.brandDarker};
+  border-top: 2px solid ${({ theme }) => theme.palette.brandDarker};
   font-size: 14px;
   z-index: 3;
 `;
@@ -350,7 +345,7 @@ const TopContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${primaryColor};
+  color: ${({ theme }) => theme.palette.brand};
   height: 100vh;
 `;
 
@@ -388,7 +383,7 @@ const ContentContainer = styled.div`
 const NewTempleText = styled.div`
   font-size: 1.75rem;
   margin-top: 1rem;
-  color: ${secondaryColor};
+  color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 const TradeDetailText = styled.div`
@@ -407,7 +402,7 @@ const LearnMoreLink = styled.a`
 const ConnectWalletText = styled.div`
   font-size: 1.75rem;
   margin: auto;
-  color: ${secondaryColor};
+  color: ${({ theme }) => theme.palette.brandLight};
   padding-bottom: 20px;
 `;
 
@@ -422,20 +417,20 @@ const ConnectWalletContainer = styled.div`
   flex-direction: column;
 `;
 
-const TradeButton = styled.a`
+const TradeButton = styled(Button)`
   padding: 0.75rem 1.5rem;
   margin-top: 1.5rem;
   width: min-content;
   height: min-content;
-  background: linear-gradient(180deg, #353535 45.25%, #101010 87.55%);
-  border: 1px solid #95613f;
+  background: ${({ theme }) => theme.palette.gradients.dark};
+  border: 1px solid ${({ theme }) => theme.palette.brandDark};
   box-shadow: 0px 0px 20px rgba(222, 92, 6, 0.4);
   border-radius: 0.75rem;
   font-weight: 700;
   font-size: 1rem;
   letter-spacing: 0.1rem;
   text-transform: uppercase;
-  color: ${secondaryColor};
+  color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 const BuildingsImage = styled(Image)`
@@ -457,9 +452,9 @@ const MetricsRow = styled.div`
   @media (max-width: 768px) {
     flex-direction: column;
     gap: 1rem;
-    border: 1px solid ${primaryColor};
+    border: 1px solid ${({ theme }) => theme.palette.brand};
     border-radius: 0.75rem;
-    background: #0b0a0a;
+    background: ${({ theme }) => theme.palette.black};
     padding: 1rem;
     width: 80%;
   }
@@ -471,11 +466,11 @@ const Metric = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  border: 1px solid ${primaryColor};
+  border: 1px solid ${({ theme }) => theme.palette.brand};
   border-radius: 0.75rem;
   gap: 10px;
   padding: 1rem 0;
-  background: #0b0a0a;
+  background: ${({ theme }) => theme.palette.black};
 
   @media (max-width: 768px) {
     width: 100%;
@@ -489,7 +484,7 @@ const Metric = styled.div`
 
 const MetricValue = styled.div`
   font-size: 2rem;
-  color: ${secondaryColor};
+  color: ${({ theme }) => theme.palette.brandLight};
 
   @media (max-width: 768px) {
     font-size: 1.25rem;
@@ -517,7 +512,7 @@ const Header = styled.h2`
   align-items: center;
   z-index: 2;
   margin: 2rem 0;
-  color: ${secondaryColor};
+  color: ${({ theme }) => theme.palette.brandLight};
 `;
 
 // Price Chart
@@ -552,7 +547,7 @@ const MarketingTextWrapper = styled.div`
 `;
 
 const MarketingHeader = styled.h3`
-  color: ${secondaryColor};
+  color: ${({ theme }) => theme.palette.brandLight};
   font-size: 1.6rem;
   margin: 0 0 0.75rem 0;
 `;
@@ -562,7 +557,7 @@ const MarketingText = styled.p`
   margin: 0;
   letter-spacing: 0.05em;
   line-height: 1.75rem;
-  color: ${primaryColor};
+  color: ${({ theme }) => theme.palette.brand};
 `;
 
 const MarketingImage = styled(Image)`
@@ -584,7 +579,7 @@ const FooterContainer = styled.div`
   align-items: center;
   background-image: url('${footerTexture}');
   background-size: cover;
-  border-top: 3px solid #351f11;
+  border-top: 3px solid ${({ theme }) => theme.palette.brandDarker};
 `;
 
 const LinkRow = styled.div`
@@ -651,7 +646,7 @@ const CopyrightRow = styled.div`
   padding: 30px;
   font-size: 14px;
   letter-spacing: 0.095em;
-  color: ${primaryColor};
+  color: ${({ theme }) => theme.palette.brand};
 `;
 
 export default Home;
