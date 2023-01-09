@@ -1,5 +1,6 @@
 import { ADDRESS_ZERO } from 'utils/bigNumber';
 import { Environment } from './types';
+import { RARITY_TYPE } from 'components/Pages/Nexus/types';
 
 const env: Environment = {
   alchemyId: 'XiIZxWykHU5AOFBwxKgxseXWN984Mp8F',
@@ -134,12 +135,95 @@ const env: Environment = {
   },
   featureFlags: {
     enableAscend: false,
+    nexusOnlyMode: false,
   },
   posthog: {
     token: 'phc_pa9tsK76qoRqgsvMh9rDLtBKbOaawlwvJTLkcNDtxab',
     api_host: 'https://app.posthog.com',
   },
   templeMultisig: '0xe2Bb722DA825eBfFa1E368De244bdF08ed68B5c4',
+  nexus: {
+    templeRelicAddress: '0x9CaFd1421aAa1015b64F755Ff49499455f46cA70',
+    templeRelicItemsAddress: '0x4EA1C78102d2C201cFc98fd53b634Cc01294771c',
+    recipes: [
+      { id: 0, required_ids: [0, 1], required_amounts: [1, 1], reward_ids: [2], reward_amounts: [1] },
+      { id: 2, required_ids: [0, 1], required_amounts: [2, 3], reward_ids: [2], reward_amounts: [1] },
+      { id: 3, required_ids: [0, 1, 2], required_amounts: [1, 2, 1], reward_ids: [3], reward_amounts: [1] },
+    ],
+    shardMetadata: {
+      0: {
+        id: 1,
+        name: 'One',
+        description:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam hendrerit velit ac dolor rhoncus, quis lobortis asdf tincidunt. Aliquam risus ex.',
+        originUrl: 'https://yyz.com',
+        rarity: RARITY_TYPE.EPIC,
+      },
+      1: {
+        id: 2,
+        name: 'Two',
+        description:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam hendrerit velit ac dolor rhoncus, quis lobortis asdf tincidunt. Aliquam risus ex.',
+        originUrl: 'https://yyz.com',
+        rarity: RARITY_TYPE.EPIC,
+      },
+      2: {
+        id: 3,
+        name: 'Three',
+        description:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam hendrerit velit ac dolor rhoncus, quis lobortis asdf tincidunt. Aliquam risus ex.',
+        originUrl: 'https://yyz.com',
+        rarity: RARITY_TYPE.EPIC,
+      },
+    },
+    quests: [
+      {
+        id: '1',
+        title: 'Spirit of the Sands',
+        origin: 'TempleDAO',
+        linkUrl: 'https://templedao.link',
+        description:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi accumsan libero sed placerat viverra. Praesent ac vehicula mauris, non ullamcorper metus. Vestibulum ultricies odio at libero pulvinar dapibus sed vel leo.',
+        logoUrl: 'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
+        rewardLogoUrls: [
+          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
+          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
+          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
+        ],
+        rarity: RARITY_TYPE.EPIC,
+      },
+      {
+        id: '2',
+        title: 'Spirit in the Sky',
+        origin: 'TempleDAO',
+        linkUrl: 'https://templedao.link',
+        description:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi accumsan libero sed placerat viverra. Praesent ac vehicula mauris, non ullamcorper metus. Vestibulum ultricies odio at libero pulvinar dapibus sed vel leo.',
+        logoUrl: 'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
+        rewardLogoUrls: [
+          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
+          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
+          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
+        ],
+        rarity: RARITY_TYPE.EPIC,
+      },
+      {
+        id: '3',
+        title: 'Lightning in the Bottle',
+        origin: 'TempleDAO',
+        linkUrl: 'https://templedao.link',
+        description:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi accumsan libero sed placerat viverra. Praesent ac vehicula mauris, non ullamcorper metus. Vestibulum ultricies odio at libero pulvinar dapibus sed vel leo.',
+        logoUrl: 'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
+        rewardLogoUrls: [
+          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
+          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
+          'https://myst.mypinata.cloud/ipfs/QmaTErwf7sV9WzfP86GjDfnRBwKL74y2j9H4vUwNr7jMhE/0.png',
+        ],
+        rarity: RARITY_TYPE.EPIC,
+      },
+    ],
+  },
 };
 
 export default env;
