@@ -38,6 +38,7 @@ export interface DeployedContracts {
   TEMPLE_TEAM_EPOCH_8: string;
   TEMPLE_TEAM_EPOCH_9: string;
   TEMPLE_TEAM_EPOCH_10: string;
+  TEMPLE_TEAM_EPOCH_11: string;
 
   TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: string;
   TEMPLE_TEAM_PAYMENTS_FACTORY: string;
@@ -81,6 +82,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_8: '',
     TEMPLE_TEAM_EPOCH_9: '',
     TEMPLE_TEAM_EPOCH_10: '',
+    TEMPLE_TEAM_EPOCH_11: '',
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
     TEMPLE_TEAM_PAYMENTS_FACTORY: '',
 
@@ -138,6 +140,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_8: '',
     TEMPLE_TEAM_EPOCH_9: '',
     TEMPLE_TEAM_EPOCH_10: '',
+    TEMPLE_TEAM_EPOCH_11: '',
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
     TEMPLE_TEAM_PAYMENTS_FACTORY: '',
 
@@ -190,6 +193,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_8: '0x008eCB3E53024628a5A8BbE0b142329791ad6f51',
     TEMPLE_TEAM_EPOCH_9: '0x5461d7Cd3eEB184a83c5a1678335D72ccaf04818',
     TEMPLE_TEAM_EPOCH_10: '0xdace5aa4D8E1E2678a2F2F6E96F31eBD599503DB',
+    TEMPLE_TEAM_EPOCH_11: '0x49fb6dbe198f61d8962cb069ca1bc7f2daff4de6',
 
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
     TEMPLE_TEAM_PAYMENTS_FACTORY: '',
@@ -242,6 +246,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_TEAM_EPOCH_8: process.env.TEMPLE_TEAM_EPOCH_8 || '',
     TEMPLE_TEAM_EPOCH_9: process.env.TEMPLE_TEAM_EPOCH_9 || '',
     TEMPLE_TEAM_EPOCH_10: process.env.TEMPLE_TEAM_EPOCH_10 || '',
+    TEMPLE_TEAM_EPOCH_11: process.env.TEMPLE_TEAM_EPOCH_11 || '',
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION:
       process.env.TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION || '',
     TEMPLE_TEAM_PAYMENTS_FACTORY:
@@ -323,7 +328,7 @@ export async function deployAndMine<
     throw new Error("Contract factory and deploy method don't match");
   }
 
-  const renderedArgs: string = args.map((a) => a.toString()).join(' ');
+  const renderedArgs: string = args.map(a => a.toString()).join(' ');
 
   console.log(
     `*******Deploying ${name} on ${network.name} with args ${renderedArgs}`
@@ -418,7 +423,7 @@ export async function waitForMaxGas(
         'gwei'
       )}. Waiting for 30 seconds...`
     );
-    await new Promise((resolve) => setTimeout(resolve, 30000));
+    await new Promise(resolve => setTimeout(resolve, 30000));
     // Refresh current gas price
     currentGasPrice = await ethers.provider.getGasPrice();
     if (!currentGasPrice) throw new Error('No current gas price');

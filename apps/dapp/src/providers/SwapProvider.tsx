@@ -1,125 +1,94 @@
-import { useState, useContext, createContext, PropsWithChildren } from 'react';
-import { BigNumber, Signer, utils } from 'ethers';
+import { useState, useContext, createContext, PropsWithChildren, useEffect } from 'react';
+import { BigNumber } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
 import { SwapService } from 'providers/types';
-import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { asyncNoop } from 'utils/helpers';
-import { fromAtto } from 'utils/bigNumber';
-import { ERC20__factory, TempleERC20Token__factory, TempleUniswapV2Pair__factory } from 'types/typechain';
+import { ERC20__factory, TempleERC20Token__factory } from 'types/typechain';
 import env from 'constants/env';
 import { AnalyticsEvent } from 'constants/events';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { formatBigNumber, getTokenInfo } from 'components/Vault/utils';
+import { SwapInfo } from '@balancer-labs/sor';
+import { BalancerSDK, Network, SwapType } from '@balancer-labs/sdk';
+import { Vault__factory } from '@balancer-labs/typechain/dist/factories/Vault__factory';
+import { formatToken } from 'utils/formatter';
+
+// Initialize balancer SOR
+const maxPools = 4;
+const balancer = new BalancerSDK({
+  network: Network.MAINNET,
+  rpcUrl: env.rpcUrl,
+});
+const sor = balancer.sor;
 
 const INITIAL_STATE: SwapService = {
-  templePrice: 0,
   buy: asyncNoop,
   sell: asyncNoop,
   getSellQuote: asyncNoop,
   getBuyQuote: asyncNoop,
-  updateTemplePrice: asyncNoop,
   error: null,
-  get1inchSwap: asyncNoop,
+  sor: balancer.sor,
+};
+
+// Compute slippage tolerance
+function getLimits(quote: SwapInfo, slippage: number): string[] {
+  const limits: string[] = [];
+  const slippageBps = BigNumber.from(10_000 + 100 * slippage);
+  quote.tokenAddresses.forEach((token, i) => {
+    // tokenIn = Max to send, should be positive
+    // tokenOut = Min to receive, should be negative
+    // Intermediate tokens should be 0 for multihops
+    if (token.toLowerCase() === quote.tokenIn.toLowerCase()) limits[i] = quote.swapAmount.toString();
+    else if (token.toLowerCase() === quote.tokenOut.toLowerCase())
+      limits[i] = quote.returnAmount.mul(10_000).div(slippageBps).mul(-1).toString();
+    else limits[i] = '0';
+  });
+  return limits;
+}
+// Build batchSwap transaction details
+const buildTransaction = (quote: SwapInfo, wallet: string, deadline: number, slippage: number) => {
+  const tx = {
+    funds: {
+      sender: wallet,
+      recipient: wallet,
+      fromInternalBalance: false,
+      toInternalBalance: false,
+    },
+    limits: getLimits(quote, slippage),
+    deadline: Math.floor(Date.now() / 1000) + deadline,
+    // Can override gasLimit and gasPrice
+    overRides: {},
+  };
+  // ETH in swaps must send ETH value
+  // if (quote.tokenIn === AddressZero) {
+  //     overRides['value'] = swapInfo.swapAmount.toString();
+  // }
+  return tx;
 };
 
 const SwapContext = createContext(INITIAL_STATE);
 
 export const SwapProvider = (props: PropsWithChildren<{}>) => {
-  const [templePrice, setTemplePrice] = useState(INITIAL_STATE.templePrice);
   const [error, setError] = useState<Error | null>(null);
-
   const { wallet, signer, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
 
-  const get1inchApi = async (
-    queryPath: 'quote' | 'swap',
-    params:
-      | { amount: BigNumber; fromTokenAddress: string; toTokenAddress: string }
-      | { amount: BigNumber; fromTokenAddress: string; toTokenAddress: string; fromAddress: string; slippage: number }
-  ) => {
-    const queryFormat = Object.entries(params)
-      .map(([key, value]) => `${key}=${value}`)
-      .join('&');
-    const data = await fetch(`https://api.1inch.exchange/v5.0/1` + `/${queryPath}?${queryFormat}`);
-    return await data.json();
-  };
+  useEffect(() => {
+    const onMount = async () => {
+      try {
+        await sor.fetchPools();
+      } catch (e) {
+        console.log('test');
+      }
+    };
+    onMount();
+  }, []);
 
-  const get1inchQuote = async (
-    tokenAmount: BigNumber,
-    tokenIn: TICKER_SYMBOL,
-    tokenOut: TICKER_SYMBOL
-  ): Promise<{ toTokenAmount: BigNumber }> => {
-    const tokenInInfo = getTokenInfo(tokenIn);
-    const tokenOutInfo = getTokenInfo(tokenOut);
-    const amountFormat = utils.formatUnits(tokenAmount, tokenInInfo.decimals);
-    const decimalFormat = utils.parseUnits(amountFormat, tokenInInfo.decimals);
-    const data = await get1inchApi('quote', {
-      amount: decimalFormat,
-      fromTokenAddress: tokenInInfo.address,
-      toTokenAddress: tokenOutInfo.address,
-    });
-    const weiFormat = utils.formatUnits(data.toTokenAmount, tokenOutInfo.decimals);
-    const weiBigNumber = utils.parseUnits(weiFormat, tokenOutInfo.decimals);
-    return { toTokenAmount: weiBigNumber };
-  };
-
-  const get1inchSwap = async (
-    tokenAmount: BigNumber,
-    tokenIn: TICKER_SYMBOL,
-    tokenOut: TICKER_SYMBOL,
-    slippage: number
-  ) => {
-    if (!wallet || !signer) return;
-    const tokenInInfo = getTokenInfo(tokenIn);
-    const tokenOutInfo = getTokenInfo(tokenOut);
-    const bigAmount = utils.parseUnits(tokenAmount.toString(), tokenInInfo.decimals);
-    const tokenContract = ERC20__factory.connect(tokenInInfo.address, signer);
-
-    await ensureAllowance(tokenIn, tokenContract, env.contracts.swap1InchRouter, bigAmount);
-    const data = await get1inchApi('swap', {
-      amount: tokenAmount,
-      slippage: slippage,
-      fromTokenAddress: tokenInInfo.address,
-      toTokenAddress: tokenOutInfo.address,
-      fromAddress: wallet,
-    });
-    delete data.tx.gas;
-    const swapTx = await signer.sendTransaction(data.tx);
-    return swapTx;
-  };
-
-  const getTemplePrice = async (walletAddress: string, signerState: Signer, pairAddress: string) => {
-    if (!walletAddress) {
-      throw new NoWalletAddressError();
-    }
-
-    const pairContract = new TempleUniswapV2Pair__factory(signerState).attach(env.contracts.templeV2FraxPair);
-
-    const { _reserve0, _reserve1 } = await pairContract.getReserves();
-
-    return fromAtto(_reserve1) / fromAtto(_reserve0);
-  };
-
-  const updateTemplePrice = async (token: TICKER_SYMBOL = TICKER_SYMBOL.FRAX) => {
-    if (!wallet || !signer) {
-      setError({
-        name: 'Missing wallet or signer',
-        message: "Couldn't update temple price - unable to get wallet or signer",
-      });
-      return;
-    }
-
-    setError(null);
-
-    const price = await getTemplePrice(wallet, signer, env.contracts.templeV2FraxPair);
-
-    setTemplePrice(price);
-  };
-
-  const buy = async (amountIn: BigNumber, token: TICKER_SYMBOL, slippage: number) => {
+  const buy = async (quote: SwapInfo, tokenIn: TICKER_SYMBOL, deadline: number, slippage: number) => {
+    // Check for signer
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
       setError({
@@ -128,18 +97,29 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       });
       return;
     }
-
     setError(null);
 
-    const tokenInfo = getTokenInfo(token);
-    const tokenContract = new ERC20__factory(signer).attach(tokenInfo.address);
-    const balance = await tokenContract.balanceOf(wallet);
-    const verifiedAmountIn = amountIn.lt(balance) ? amountIn : balance;
-
+    // Initialize vars
     let receipt: TransactionReceipt | undefined;
+    const swapType: SwapType = SwapType.SwapExactIn;
+    const tokenInfo = getTokenInfo(tokenIn);
+    const tokenContract = new ERC20__factory(signer).attach(tokenInfo.address);
+    const vaultContract = Vault__factory.connect(env.contracts.balancerVault, signer);
+
+    // Execute batch swap
     try {
-      const swap = await get1inchSwap(verifiedAmountIn, token, TICKER_SYMBOL.TEMPLE_TOKEN, slippage);
-      receipt = await swap?.wait();
+      await ensureAllowance(tokenInfo.address, tokenContract, env.contracts.balancerVault, quote.swapAmount);
+      const tx = buildTransaction(quote, wallet, deadline, slippage);
+      const swap = await vaultContract.batchSwap(
+        swapType,
+        quote.swaps,
+        quote.tokenAddresses,
+        tx.funds,
+        tx.limits,
+        tx.deadline,
+        tx.overRides
+      );
+      receipt = await swap.wait();
     } catch (e) {
       // 4001 is user manually cancelling transaction,
       // so we don't want to return it as an error
@@ -149,22 +129,19 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       }
     }
     if (!receipt) return;
-
-    AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, { token, amount: formatBigNumber(verifiedAmountIn) });
+    // Posthog event
+    AnalyticsService.captureEvent(AnalyticsEvent.Trade.Buy, {
+      token: tokenInfo.address,
+      amount: formatBigNumber(quote.swapAmount),
+    });
     openNotification({
-      title: `Sacrificed ${token}`,
+      title: `Sacrificed ${formatToken(quote.swapAmount, tokenIn, 0)} ${tokenInfo.name}`,
       hash: receipt.transactionHash,
     });
     return receipt;
   };
 
-  /**
-   * AMM Sell
-   * @param amountInTemple: Amount of $TEMPLE user wants to sell
-   * @param minAmountOutFrax: % user is giving as slippage
-   * @param isIvSwap: should sale be directed to TempleIvSwap contract
-   */
-  const sell = async (amountInTemple: BigNumber, token: TICKER_SYMBOL, slippage: number) => {
+  const sell = async (quote: SwapInfo, tokenOut: TICKER_SYMBOL, deadline: number, slippage: number) => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
       setError({
@@ -173,17 +150,27 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       });
       return;
     }
-
     setError(null);
 
-    const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
-    const balance = await templeContract.balanceOf(wallet);
-    const verifiedAmountInTemple = amountInTemple.lt(balance) ? amountInTemple : balance;
-
+    // Initialize vars
     let receipt: TransactionReceipt | undefined;
+    const swapType: SwapType = SwapType.SwapExactIn;
+    const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
+    const vaultContract = Vault__factory.connect(env.contracts.balancerVault, signer);
+
     try {
-      const swap = await get1inchSwap(verifiedAmountInTemple, TICKER_SYMBOL.TEMPLE_TOKEN, token, slippage);
-      receipt = await swap?.wait();
+      await ensureAllowance(env.contracts.temple, templeContract, env.contracts.balancerVault, quote.swapAmount);
+      const tx = buildTransaction(quote, wallet, deadline, slippage);
+      const swap = await vaultContract.batchSwap(
+        swapType,
+        quote.swaps,
+        quote.tokenAddresses,
+        tx.funds,
+        tx.limits,
+        tx.deadline,
+        tx.overRides
+      );
+      receipt = await swap.wait();
     } catch (e) {
       // 4001 is user manually cancelling transaction,
       // so we don't want to return it as an error
@@ -192,41 +179,59 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         setError(e as Error);
       }
     }
-
     if (!receipt) return;
-
     AnalyticsService.captureEvent(AnalyticsEvent.Trade.Sell, {
-      token,
-      amount: formatBigNumber(verifiedAmountInTemple),
+      token: quote.tokenOut,
+      amount: formatBigNumber(quote.swapAmount),
     });
     openNotification({
-      title: `${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
+      title: `${formatBigNumber(quote.swapAmount)} ${TICKER_SYMBOL.TEMPLE_TOKEN} renounced`,
       hash: receipt.transactionHash,
     });
     return receipt;
   };
 
   const getBuyQuote = async (amountIn: BigNumber, token: TICKER_SYMBOL) => {
-    const { toTokenAmount } = await get1inchQuote(amountIn, token, TICKER_SYMBOL.TEMPLE_TOKEN);
-    return toTokenAmount;
+    const tokenInInfo = getTokenInfo(token);
+    const tokenOutInfo = getTokenInfo(TICKER_SYMBOL.TEMPLE_TOKEN);
+    const gasPrice = await signer?.getGasPrice();
+    // Find swapInfo for best trade given pair and amount
+    const swapInfo: SwapInfo = await sor.getSwaps(
+      tokenInInfo.address,
+      tokenOutInfo.address,
+      0,
+      amountIn,
+      { gasPrice, maxPools },
+      false
+    );
+    return swapInfo;
   };
 
   const getSellQuote = async (amountToSell: BigNumber, token: TICKER_SYMBOL) => {
-    const { toTokenAmount } = await get1inchQuote(amountToSell, TICKER_SYMBOL.TEMPLE_TOKEN, token);
-    return toTokenAmount;
+    const tokenInInfo = getTokenInfo(TICKER_SYMBOL.TEMPLE_TOKEN);
+    const tokenOutInfo = getTokenInfo(token);
+    const gasPrice = await signer?.getGasPrice();
+    // Find swapInfo for best trade given pair and amount
+    const swapInfo: SwapInfo = await sor.getSwaps(
+      tokenInInfo.address,
+      tokenOutInfo.address,
+      0,
+      amountToSell,
+      { gasPrice, maxPools },
+      false
+    );
+    return swapInfo;
   };
 
   return (
     <SwapContext.Provider
       value={{
-        templePrice,
         buy,
         sell,
         getBuyQuote,
         getSellQuote,
-        updateTemplePrice,
         error,
-        get1inchSwap,
+        sor,
       }}
     >
       {props.children}

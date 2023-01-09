@@ -2,12 +2,13 @@ import { Environment } from './types';
 
 const env: Environment = {
   alchemyId: 'XiIZxWykHU5AOFBwxKgxseXWN984Mp8F',
+  rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/AorwfDdHDsEjIX4HPwS70zkVjWqjv5vZ',
   backendUrl: 'https://backend.templedao.link',
   contracts: {
+    balancerVault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     exitQueue: '0xC6d556C34a179a224AEBE42e77c6e76594148B97',
     faith: '0x78F683247cb2121B4eBfbD04110760da42752a6B',
     farmingWallet: '0x5C8898f8E0F9468D4A677887bC03EE2659321012',
-    fei: '0x956F47F50A910163D8BF957Cf5846D573E7f87CA',
     frax: '0x853d955acef822db058eb8505911ed77f175b99e',
     usdc: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     usdt: '0xdac17f958d2ee523a2206206994597c13d831ec7',
@@ -27,10 +28,10 @@ const env: Environment = {
     teamPaymentsEpoch8: '0x008eCB3E53024628a5A8BbE0b142329791ad6f51',
     teamPaymentsEpoch9: '0x5461d7Cd3eEB184a83c5a1678335D72ccaf04818',
     teamPaymentsEpoch10: '0xdace5aa4D8E1E2678a2F2F6E96F31eBD599503DB',
+    teamPaymentsEpoch11: '0x49fb6dbe198f61d8962cb069ca1bc7f2daff4de6',
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
     templeV2FraxPair: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
-    templeV2FeiPair: '0xf994158766e0a4E64c26feCE675186f489EC9107',
     templeV2Router: '0x98257C876ACe5009e7B97843F8c71b3AE795c71E',
     swap1InchRouter: '0x1111111254EEB25477B68fb85Ed929f73A960582',
     treasuryIv: '0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443',
@@ -90,18 +91,19 @@ const env: Environment = {
       decimals: 6,
     },
     dai: {
-      name: 'Dai',
+      name: 'DAI',
       address: '0x6b175474e89094c44da98b954eedeac495271d0f',
       decimals: 18,
     },
   },
+  network: 1,
   etherscan: 'https://etherscan.io',
   subgraph: {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
     balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
     // Original Balancer Subgraph
-    // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',
+    // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2-beta',
   },
   featureFlags: {
     enableAscend: false,

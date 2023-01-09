@@ -19,6 +19,7 @@ import {
 import { limitInput, handleBlur } from './helpers';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { useState } from 'react';
+import environmentConfig from 'constants/env';
 
 const Container = styled.div`
   display: grid;
@@ -44,6 +45,7 @@ const RamosAdmin = () => {
     rebalanceDownAmounts,
     depositStableAmounts,
     withdrawStableAmounts,
+    handleAddLiquidityInput,
     createJoinPoolRequest,
     createExitPoolRequest,
     createDepositAndStakeRequest,
@@ -76,13 +78,15 @@ const RamosAdmin = () => {
       label: 'Liquidity',
       content: (
         <Container>
-          <AddLiquidity calculateFunc={createJoinPoolRequest} />
+          <AddLiquidity calculateFunc={createJoinPoolRequest} handleInput={handleAddLiquidityInput}/>
           <RemoveLiquidity calculateFunc={createExitPoolRequest} />
           <DepositAndStakeBpt calculateFunc={createDepositAndStakeRequest} />
         </Container>
       ),
     },
   ];
+
+  const ramosAddress = environmentConfig.contracts.ramos;
 
   return (
     <div>
@@ -99,6 +103,11 @@ const RamosAdmin = () => {
           setSlippageTolerance(settings.slippageTolerance);
         }}
       />
+      <div>
+        <p>
+          RAMOS: <a href={`https://etherscan.io/address/${ramosAddress}`} target="_blank">{ramosAddress}</a>
+        </p>
+      </div>
       <Container>
         <p>
           Current Spot Price: <strong>{templePrice?.formatUnits() ?? <EllipsisLoader />}</strong>

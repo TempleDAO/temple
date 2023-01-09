@@ -127,6 +127,14 @@ export function useRamosAdmin() {
     setInitAmounts();
   }, [isConnected]);
 
+  const handleAddLiquidityInput = async (stableAmount: DecimalBigNumber) => {
+    let templeAmount = DBN_ZERO;
+    if(isConnected) {
+      templeAmount = stableAmount.mul(templePrice);
+    }
+    return {templeAmount: templeAmount, stableAmount: stableAmount}
+  }
+
   const createJoinPoolRequest = async (templeAmount: BigNumber, stableAmount: BigNumber) => {
     if (isConnected) {
       const tokenAddrs = [tokens.temple.address, tokens.stable.address];
@@ -313,6 +321,7 @@ export function useRamosAdmin() {
     depositStableAmounts,
     withdrawStableAmounts,
     createJoinPoolRequest,
+    handleAddLiquidityInput,
     createExitPoolRequest,
     createDepositAndStakeRequest,
     setPercentageOfGapToClose,
