@@ -2,11 +2,12 @@
 /* tslint:disable */
 /* eslint-disable */
 import { Signer, utils, Contract, ContractFactory, Overrides } from "ethers";
-import { Provider, TransactionRequest } from "@ethersproject/providers";
+import type { Provider, TransactionRequest } from "@ethersproject/providers";
+import type { PromiseOrValue } from "../../../common";
 import type {
   NoopVaultedTempleLiquidator,
   NoopVaultedTempleLiquidatorInterface,
-} from "../NoopVaultedTempleLiquidator";
+} from "../../../contracts/fakes/NoopVaultedTempleLiquidator";
 
 const _abi = [
   {
@@ -34,11 +35,7 @@ const _abi = [
       },
       {
         internalType: "address",
-<<<<<<< HEAD
         name: "",
-=======
-        name: "toAccount",
->>>>>>> 4db351e9 (All of xavs work from earlier branch)
         type: "address",
       },
     ],
@@ -50,11 +47,7 @@ const _abi = [
 ];
 
 const _bytecode =
-<<<<<<< HEAD
-  "0x608060405234801561001057600080fd5b5060405161021438038061021483398101604081905261002f91610060565b600080546001600160a01b039384166001600160a01b031991821617909155600180549290931691161790556100b1565b60008060408385031215610072578182fd5b825161007d81610099565b602084015190925061008e81610099565b809150509250929050565b6001600160a01b03811681146100ae57600080fd5b50565b610154806100c06000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c80634d4c23a814610030575b600080fd5b61004361003e3660046100d7565b610045565b005b6000546001546040517f40c10f1900000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff9182166004820152602481018590529116906340c10f1990604401600060405180830381600087803b1580156100bb57600080fd5b505af11580156100cf573d6000803e3d6000fd5b505050505050565b600080604083850312156100e9578182fd5b82359150602083013573ffffffffffffffffffffffffffffffffffffffff81168114610113578182fd5b80915050925092905056fea264697066735822122040741adfe03a8b920d9945141ebb674ce20dc6c6fd54b8e5f27f74774dc921b164736f6c63430008040033";
-=======
-  "0x608060405234801561001057600080fd5b5060405161021438038061021483398101604081905261002f91610060565b600080546001600160a01b039384166001600160a01b031991821617909155600180549290931691161790556100b1565b60008060408385031215610072578182fd5b825161007d81610099565b602084015190925061008e81610099565b809150509250929050565b6001600160a01b03811681146100ae57600080fd5b50565b610154806100c06000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c80634d4c23a814610030575b600080fd5b61004361003e3660046100d7565b610045565b005b6000546001546040517f40c10f1900000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff9182166004820152602481018590529116906340c10f1990604401600060405180830381600087803b1580156100bb57600080fd5b505af11580156100cf573d6000803e3d6000fd5b505050505050565b600080604083850312156100e9578182fd5b82359150602083013573ffffffffffffffffffffffffffffffffffffffff81168114610113578182fd5b80915050925092905056fea2646970667358221220244e1e41fadaa986d82ab64704b453e48b2b90c007336c29f07b15abe1d5df8d64736f6c63430008040033";
->>>>>>> 4db351e9 (All of xavs work from earlier branch)
+  "0x608060405234801561001057600080fd5b5060405161021438038061021483398101604081905261002f91610060565b600080546001600160a01b039384166001600160a01b031991821617909155600180549290931691161790556100b1565b60008060408385031215610072578182fd5b825161007d81610099565b602084015190925061008e81610099565b809150509250929050565b6001600160a01b03811681146100ae57600080fd5b50565b610154806100c06000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c80634d4c23a814610030575b600080fd5b61004361003e3660046100d7565b610045565b005b6000546001546040517f40c10f1900000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff9182166004820152602481018590529116906340c10f1990604401600060405180830381600087803b1580156100bb57600080fd5b505af11580156100cf573d6000803e3d6000fd5b505050505050565b600080604083850312156100e9578182fd5b82359150602083013573ffffffffffffffffffffffffffffffffffffffff81168114610113578182fd5b80915050925092905056fea2646970667358221220544daee49d1d88b822946350a56725a1c864c9da3a3f416e0fd541c5c9ad965264736f6c63430008040033";
 
 type NoopVaultedTempleLiquidatorConstructorParams =
   | [signer?: Signer]
@@ -71,13 +64,12 @@ export class NoopVaultedTempleLiquidator__factory extends ContractFactory {
     } else {
       super(_abi, _bytecode, args[0]);
     }
-    this.contractName = "NoopVaultedTempleLiquidator";
   }
 
-  deploy(
-    _templeToken: string,
-    _vaultedTemple: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
+  override deploy(
+    _templeToken: PromiseOrValue<string>,
+    _vaultedTemple: PromiseOrValue<string>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<NoopVaultedTempleLiquidator> {
     return super.deploy(
       _templeToken,
@@ -85,10 +77,10 @@ export class NoopVaultedTempleLiquidator__factory extends ContractFactory {
       overrides || {}
     ) as Promise<NoopVaultedTempleLiquidator>;
   }
-  getDeployTransaction(
-    _templeToken: string,
-    _vaultedTemple: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
+  override getDeployTransaction(
+    _templeToken: PromiseOrValue<string>,
+    _vaultedTemple: PromiseOrValue<string>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): TransactionRequest {
     return super.getDeployTransaction(
       _templeToken,
@@ -96,14 +88,13 @@ export class NoopVaultedTempleLiquidator__factory extends ContractFactory {
       overrides || {}
     );
   }
-  attach(address: string): NoopVaultedTempleLiquidator {
+  override attach(address: string): NoopVaultedTempleLiquidator {
     return super.attach(address) as NoopVaultedTempleLiquidator;
   }
-  connect(signer: Signer): NoopVaultedTempleLiquidator__factory {
+  override connect(signer: Signer): NoopVaultedTempleLiquidator__factory {
     return super.connect(signer) as NoopVaultedTempleLiquidator__factory;
   }
-  static readonly contractName: "NoopVaultedTempleLiquidator";
-  public readonly contractName: "NoopVaultedTempleLiquidator";
+
   static readonly bytecode = _bytecode;
   static readonly abi = _abi;
   static createInterface(): NoopVaultedTempleLiquidatorInterface {

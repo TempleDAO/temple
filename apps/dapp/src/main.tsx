@@ -29,8 +29,10 @@ import { AscendListPage } from 'components/Pages/AscendList';
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { Unstake } from 'components/Pages/Core/Trade/views/Unstake';
+
 import NexusPage from 'components/Pages/Nexus/Relic';
 import QuestPage from 'components/Pages/Nexus/Quest';
+import ForgePage from 'components/Pages/Nexus/Forge';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -63,12 +65,15 @@ const LazyPage = ({ component: Component }: LazyPageProps) => (
 
 AnalyticsService.init();
 
+const nexusOnly = !!env.featureFlags.nexusOnlyMode;
+
 ReactDOM.render(
   <React.StrictMode>
     <AppProvider>
       <GlobalStyle />
       <BrowserRouter>
         <Routes>
+          {nexusOnly && (
           <>
             <Route path="/" element={<Home />} />
             <Route path="/tlc" element={<Home tlc={true} />} />
@@ -79,7 +84,7 @@ ReactDOM.render(
               <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
               <Route path="ramos" element={<LazyPage component={RamosAdmin} />} />
             </Route>
-            <Route path="/dapp/*" element={<CoreLayout mode='dapp' />}>
+            <Route path="/dapp/*" element={<CoreLayout mode={'dapp'} />}>
               <Route path="" element={<VaultListPage />} />
               <Route path="vaults" element={<VaultListPage />} />
               <Route path="unstake" element={<Unstake />} />
@@ -104,12 +109,50 @@ ReactDOM.render(
                 </>
               )}
             </Route>
-            <Route path="/nexus/*" element={<CoreLayout mode='nexus' />}>
-              <Route path="" element={<Navigate to="relic" />} />
-              <Route path="relic/*" element={<NexusPage />} />
-              <Route path="quests/*" element={<QuestPage />} />
-            </Route>
           </>
+          )}
+           {nexusOnly && (
+            <>
+              <Route path="/nexus/*" element={<CoreLayout mode="nexus" />}>
+                <Route path="" element={<Navigate to="relic" />} />
+                <Route path="relic/*" element={<NexusPage />} />
+                <Route path="quests/*" element={<QuestPage />} />
+                <Route path="forge/*" element={<ForgePage />} />
+              </Route>
+              <Route
+                path="/nexus/quests/library"
+                element={
+                  <>
+                    <CoreLayout mode="nexus" />
+                  </>
+                }
+              />
+              <Route
+                path="/nexus/quests/quiz"
+                element={
+                  <>
+                    <CoreLayout mode="nexus" />
+                  </>
+                }
+              />
+              <Route
+                path="/nexus/quests/pathoftemplar/:enclave"
+                element={
+                  <>
+                    <CoreLayout mode="nexus" />
+                  </>
+                }
+              />
+              <Route
+                path="/origami"
+                element={
+                  <>
+                    <CoreLayout mode="nexus" />
+                  </>
+                }
+              />
+            </>
+          )}
         </Routes>
       </BrowserRouter>
       <NotificationManager />

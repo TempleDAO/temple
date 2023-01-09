@@ -28,7 +28,7 @@ const RelicPanel = (props: {
   prevRelic?: RelicData,
   nextRelic?: RelicData,
 }) => {
-  const { unequipRelicItems } = useRelic();
+  const { unequipShards } = useRelic();
   const navigate = useNavigate();
   const { thisRelic, prevRelic, nextRelic } = props;
   if (!thisRelic) {
@@ -41,7 +41,7 @@ const RelicPanel = (props: {
         <br />
         <BufferedItemGrid items={thisRelic.items}
           actionLabel="Unequip"
-          onAction={async selectedItems => unequipRelicItems(thisRelic.id, selectedItems)}
+          onAction={async selectedItems => unequipShards(thisRelic.id, selectedItems)}
         />
         { (prevRelic || nextRelic) &&
           <NexusPanelRow>
@@ -65,11 +65,11 @@ const RelicPanel = (props: {
 };
 
 const EnclavePanel = styled(NexusPanel)<{ enclave: RelicEnclave }>`
-  border: 4px solid ${(props) => props.theme.palette.enclave[getEnclavePalette(props.enclave)]};
+  border: 0.0625rem solid ${(props) => props.theme.palette.enclave[getEnclavePalette(props.enclave)]};
 `
 
 const OuterPanel = styled.div<{ rarity: RelicRarity }>`
-  border: 3px solid ${(props) => props.theme.palette.brand};
+  border: 0.0625rem solid ${(props) => props.theme.palette.brand};
   border-radius: 20px;
   padding: 6px;
 `
@@ -79,7 +79,7 @@ const MyItemPanel: FC<{
   items: RelicItemData[];
 }> = (props) => {
   const { relicId, items } = props;
-  const { equipRelicItems } = useRelic();
+  const { equipShards } = useRelic();
 
   return (
     <NexusPanel>
@@ -90,7 +90,7 @@ const MyItemPanel: FC<{
         actionLabel="Equip"
         onAction={async selectedItems => {
           if (relicId) {
-            await equipRelicItems(relicId, selectedItems)
+            await equipShards(relicId, selectedItems)
           }
         }}
       />

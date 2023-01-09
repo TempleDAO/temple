@@ -1,3 +1,5 @@
+import { QuestData, Recipe, Shard } from 'components/Pages/Nexus/types';
+
 interface Subgraphs {
   templeCore: string;
   protocolMetrics: string;
@@ -76,6 +78,16 @@ interface Posthog {
   api_host: string;
 }
 
+interface Nexus {
+  templeRelicAddress: string;
+  templeRelicItemsAddress: string;
+  recipes: Recipe[];
+  shardMetadata: {
+    [key: number]: Shard;
+  };
+  quests: QuestData[];
+}
+
 export interface Environment {
   alchemyId: string;
   rpcUrl: string;
@@ -95,5 +107,7 @@ export interface Environment {
   etherscan: string;
   featureFlags: {
     enableAscend: boolean;
+    nexusOnlyMode: boolean;
   };
+  nexus: Nexus;
 }
