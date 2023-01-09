@@ -4,6 +4,7 @@ import { Nullable } from 'types/util';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { Sor, SwapInfo } from '@balancer-labs/sdk';
 
 export enum RitualKind {
   OFFERING_STAKING = 'OFFERING_STAKING',
@@ -21,7 +22,6 @@ export enum ETH_ACTIONS {
 
 export type Balance = {
   frax: BigNumber;
-  fei: BigNumber;
   usdc: BigNumber;
   usdt: BigNumber;
   dai: BigNumber;
@@ -92,26 +92,17 @@ export interface FaithService {
 }
 
 export interface SwapService {
-  templePrice: number;
+  buy(quote: SwapInfo, tokenIn: TICKER_SYMBOL, deadline: number, slippage: number): Promise<ContractReceipt | void>;
 
-  buy(amountIn: BigNumber, token: TICKER_SYMBOL, slippage: number): Promise<ContractReceipt | void>;
+  sell(quote: SwapInfo, tokenOut: TICKER_SYMBOL, deadline: number, slippage: number): Promise<ContractReceipt | void>;
 
-  sell(amountInTemple: BigNumber, token: TICKER_SYMBOL, slippage: number): Promise<ContractReceipt | void>;
+  getSellQuote(amountToSell: BigNumber, token?: TICKER_SYMBOL): Promise<SwapInfo | void>;
 
-  getSellQuote(amountToSell: BigNumber, token?: TICKER_SYMBOL): Promise<BigNumber | void>;
-
-  getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL): Promise<BigNumber | void>;
-
-  get1inchSwap(
-    tokenAmount: BigNumber,
-    tokenIn: TICKER_SYMBOL,
-    tokenOut: TICKER_SYMBOL,
-    slippage: number
-  ): Promise<ContractTransaction | void>;
-
-  updateTemplePrice(token?: TICKER_SYMBOL): Promise<void>;
+  getBuyQuote(amountIn: BigNumber, token?: TICKER_SYMBOL): Promise<SwapInfo | void>;
 
   error: Error | null;
+
+  sor: Sor;
 }
 
 export interface WalletState {

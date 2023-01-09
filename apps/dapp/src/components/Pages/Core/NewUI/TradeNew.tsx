@@ -1,20 +1,18 @@
 import { useState } from 'react';
-
 import { Input } from './HomeInput';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
-
 import { SwapMode } from '../Trade/types';
 import { useSwapController } from '../Trade/use-swap-controller';
-import { getBigNumberFromString, formatBigNumber } from 'components/Vault/utils';
-import { formatNumber } from 'utils/formatter';
+import { formatBigNumber } from 'components/Vault/utils';
+import { formatNumber, formatToken } from 'utils/formatter';
 import { InvertButton } from '../Trade/styles';
-import { ZERO } from 'utils/bigNumber';
 import { INITIAL_STATE } from '../Trade/constants';
 import styled from 'styled-components';
 import { Button } from 'components/Button/Button';
 import { pixelsToRems } from 'styles/mixins';
 import { useEffect } from 'react';
 import { useNotification } from 'providers/NotificationProvider';
+import { TransactionPreviewModal } from 'components/TransactionSettingsModal/TransactionPreviewModal';
 
 export const Trade = () => {
   const {
@@ -27,6 +25,7 @@ export const Trade = () => {
     handleTransaction,
   } = useSwapController();
 
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isSlippageModalOpen, setIsSlippageModalOpen] = useState(false);
 
   const inputCryptoConfig =
@@ -34,14 +33,6 @@ export const Trade = () => {
 
   const outputCryptoConfig =
     state.mode === SwapMode.Sell ? { ...state.outputConfig, onCryptoChange: handleSelectChange } : state.outputConfig;
-
-  const bigInputValue = getBigNumberFromString(state.inputValue || '0');
-
-  const isButtonDisabled =
-    state.isTransactionPending ||
-    state.inputTokenBalance.eq(ZERO) ||
-    bigInputValue.gt(state.inputTokenBalance) ||
-    state.inputValue === '';
 
   const formatErrorMessage = (errorMessage: string) => {
     const boundary = errorMessage.indexOf('(');
@@ -71,6 +62,12 @@ export const Trade = () => {
         onClose={() => setIsSlippageModalOpen(false)}
         onChange={(settings) => handleTxSettingsUpdate(settings)}
       />
+      <TransactionPreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        state={state}
+        handleTransaction={handleTransaction}
+      />
       <HeaderText>Trade</HeaderText>
       <SwapContainer>
         <InputsContainer>
@@ -87,14 +84,18 @@ export const Trade = () => {
           <Spacer />
           <Input
             crypto={outputCryptoConfig}
-            value={formatNumber(formatBigNumber(state.quoteValue))}
+            value={formatToken(state.quote?.returnAmount, state.outputToken)}
             hint={`Balance: ${formatNumber(formatBigNumber(state.outputTokenBalance))}`}
             disabled
           />
           <InvertButton onClick={handleChangeMode} />
         </InputsContainer>
         <AdvancedSettingsButton onClick={() => setIsSlippageModalOpen(true)}>Advanced Settings</AdvancedSettingsButton>
-        <TradeButton disabled={isButtonDisabled} label={'Confirm'} onClick={handleTransaction} />
+        <TradeButton
+          disabled={!state.quote || state.quote.returnAmount.lte(0)}
+          label="Preview"
+          onClick={() => setIsPreviewModalOpen(true)}
+        />
       </SwapContainer>
     </>
   );

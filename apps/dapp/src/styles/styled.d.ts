@@ -6,6 +6,7 @@ import { FlattenSimpleInterpolation, Keyframes } from 'styled-components';
 declare module 'styled-components' {
   export interface DefaultTheme {
     palette: {
+      black: string;
       brand: string;
       brandLight: string;
       brandDark: string;

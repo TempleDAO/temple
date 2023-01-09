@@ -1,3 +1,7 @@
+import { formatBigNumber, getTokenInfo } from 'components/Vault/utils';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { BigNumber } from 'ethers';
+
 /**
  * Formats the input number to 2 decimals if it has decimals or no decimals if no decimals
  * @param n: number to format
@@ -19,6 +23,11 @@ export const formatNumberFixedDecimals = (n: number | string, decimals = 2): num
   return +Number(n).toFixed(decimals);
 };
 
+export const formatToken = (value: BigNumber | undefined, token: TICKER_SYMBOL, decimals = 2) => {
+  if (!value) return '0';
+  return `${formatNumberFixedDecimals(formatBigNumber(value, getTokenInfo(token).decimals), decimals)}`;
+};
+
 export const formatMillions = (n: number | string): string => {
   if (typeof n === 'string') n = Number(n);
   const million = 1000000;
@@ -36,6 +45,6 @@ export const truncateDecimals = (number: string | number, targetDecimals = 2): s
   if (decimals && decimals.length > targetDecimals) {
     decimals = decimals.substring(0, targetDecimals);
   }
- 
+
   return decimals ? `${int}.${decimals}` : int;
 };
