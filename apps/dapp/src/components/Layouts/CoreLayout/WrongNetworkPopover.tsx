@@ -16,6 +16,8 @@ import {
   isSupportedChain,
 } from 'utils/envChainMapping';
 
+import env from '../../../constants/env';
+
 const ENV_VARS = import.meta.env;
 const ENV = ENV_VARS.VITE_ENV;
 const IS_PROD = ENV === 'production';
@@ -111,7 +113,7 @@ export const WrongNetworkPopover = () => {
       </Message>
       <Menu>
         <li>{switchNetworkButton}</li>
-        {!IS_PROD && (
+        {!IS_PROD && !env.featureFlags.nexusOnlyMode && (
           <li>
             <SwitchNetworkButton role="button" isSmall disabled={loading} onClick={onDismiss}>
               {!!currentChain?.name ? <>Continue with {currentChain.name}</> : <>Continue</>}

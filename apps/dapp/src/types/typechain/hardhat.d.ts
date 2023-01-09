@@ -57,6 +57,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC20__factory>;
     getContractFactory(
+      name: "IERC20Permit",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20Permit__factory>;
+    getContractFactory(
       name: "ERC20Burnable",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC20Burnable__factory>;
@@ -266,19 +270,40 @@ declare module "hardhat/types/runtime" {
     ): Promise<Contracts.NoopLiquidator__factory>;
     getContractFactory(
       name: "NoopVaultedTempleLiquidator",
-<<<<<<< HEAD
-=======
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.NoopVaultedTempleLiquidator__factory>;
-    getContractFactory(
-      name: "TestTreasuryAllocation",
->>>>>>> 4db351e9 (All of xavs work from earlier branch)
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.NoopVaultedTempleLiquidator__factory>;
     getContractFactory(
       name: "UniswapV2Router02NoEth",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.UniswapV2Router02NoEth__factory>;
+    getContractFactory(
+      name: "ElderElection",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ElderElection__factory>;
+    getContractFactory(
+      name: "Templar",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Templar__factory>;
+    getContractFactory(
+      name: "TemplarMetadata",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TemplarMetadata__factory>;
+    getContractFactory(
+      name: "IShards",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IShards__factory>;
+    getContractFactory(
+      name: "Relic",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Relic__factory>;
+    getContractFactory(
+      name: "IRelic",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IRelic__factory>;
+    getContractFactory(
+      name: "Shards",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Shards__factory>;
     getContractFactory(
       name: "GenericZap",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -292,27 +317,7 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ICurveFactory__factory>;
     getContractFactory(
-<<<<<<< HEAD
       name: "ICurvePool",
-=======
-      name: "IItems",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IItems__factory>;
-    getContractFactory(
-      name: "Relic",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.Relic__factory>;
-    getContractFactory(
-      name: "IRelic",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IRelic__factory>;
-    getContractFactory(
-      name: "RelicItems",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.RelicItems__factory>;
-    getContractFactory(
-      name: "OGTemple",
->>>>>>> 4db351e9 (All of xavs work from earlier branch)
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ICurvePool__factory>;
     getContractFactory(
@@ -411,6 +416,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ERC20>;
+    getContractAt(
+      name: "IERC20Permit",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC20Permit>;
     getContractAt(
       name: "ERC20Burnable",
       address: string,
@@ -673,14 +683,6 @@ declare module "hardhat/types/runtime" {
     ): Promise<Contracts.NoopLiquidator>;
     getContractAt(
       name: "NoopVaultedTempleLiquidator",
-<<<<<<< HEAD
-=======
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.NoopVaultedTempleLiquidator>;
-    getContractAt(
-      name: "TestTreasuryAllocation",
->>>>>>> 4db351e9 (All of xavs work from earlier branch)
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.NoopVaultedTempleLiquidator>;
@@ -689,6 +691,41 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.UniswapV2Router02NoEth>;
+    getContractAt(
+      name: "ElderElection",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ElderElection>;
+    getContractAt(
+      name: "Templar",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Templar>;
+    getContractAt(
+      name: "TemplarMetadata",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TemplarMetadata>;
+    getContractAt(
+      name: "IShards",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IShards>;
+    getContractAt(
+      name: "Relic",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Relic>;
+    getContractAt(
+      name: "IRelic",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IRelic>;
+    getContractAt(
+      name: "Shards",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Shards>;
     getContractAt(
       name: "GenericZap",
       address: string,
@@ -705,31 +742,7 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.ICurveFactory>;
     getContractAt(
-<<<<<<< HEAD
       name: "ICurvePool",
-=======
-      name: "IItems",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IItems>;
-    getContractAt(
-      name: "Relic",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.Relic>;
-    getContractAt(
-      name: "IRelic",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IRelic>;
-    getContractAt(
-      name: "RelicItems",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.RelicItems>;
-    getContractAt(
-      name: "OGTemple",
->>>>>>> 4db351e9 (All of xavs work from earlier branch)
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ICurvePool>;

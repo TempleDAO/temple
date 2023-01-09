@@ -64,9 +64,15 @@ export const APP_CHAINS_FOR_WEB3_INIT = APP_CHAINS.map((chainDefinition) => ({
   rpcUrl: chainDefinition.rpcUrl,
 }));
 
-ENV_CHAIN_MAPPING.set('production', MAINNET_CHAIN);
-ENV_CHAIN_MAPPING.set('preview', SEPOLIA_CHAIN);
-ENV_CHAIN_MAPPING.set('local', LOCAL_CHAIN);
+if (env.featureFlags.nexusOnlyMode) {
+  ENV_CHAIN_MAPPING.set('production', ARBITRUM_CHAIN);
+  ENV_CHAIN_MAPPING.set('preview', ARBITRUM_GOERLI_CHAIN);
+  ENV_CHAIN_MAPPING.set('local', LOCAL_CHAIN);
+} else {
+  ENV_CHAIN_MAPPING.set('production', MAINNET_CHAIN);
+  ENV_CHAIN_MAPPING.set('preview', SEPOLIA_CHAIN);
+  ENV_CHAIN_MAPPING.set('local', LOCAL_CHAIN);
+}
 
 export const isSupportedChain = (chainId: number) => {
   return Array.from(ENV_CHAIN_MAPPING).some(([_, chainDefinition]) => chainDefinition.id === chainId);
