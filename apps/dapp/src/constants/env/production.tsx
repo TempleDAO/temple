@@ -27,6 +27,7 @@ const env: Environment = {
     teamPaymentsEpoch8: '0x008eCB3E53024628a5A8BbE0b142329791ad6f51',
     teamPaymentsEpoch9: '0x5461d7Cd3eEB184a83c5a1678335D72ccaf04818',
     teamPaymentsEpoch10: '0xdace5aa4D8E1E2678a2F2F6E96F31eBD599503DB',
+    teamPaymentsEpoch11: '0x49fb6dbe198f61d8962cb069ca1bc7f2daff4de6',
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
     templeV2FraxPair: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
