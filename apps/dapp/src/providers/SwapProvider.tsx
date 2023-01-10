@@ -58,7 +58,7 @@ const buildTransaction = (quote: SwapInfo, wallet: string, deadline: number, sli
       toInternalBalance: false,
     },
     limits: getLimits(quote, slippage),
-    deadline: Math.floor(Date.now() / 1000) + deadline,
+    deadline: Math.floor(Date.now() / 1000) + deadline * 60,
     // Can override gasLimit and gasPrice
     overRides: {},
   };
