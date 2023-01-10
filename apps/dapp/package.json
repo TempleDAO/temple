@@ -7,7 +7,7 @@
   "scripts": {
     "prepare": "yarn typechain:compile && yarn typechain:copy",
     "typechain:compile": "cd ../../protocol && yarn compile --force",
-    "typechain:copy": "cp -r ../../protocol/typechain ./src/types/typechain",
+    "typechain:copy": "cp -r ../../protocol/typechain ./src/types",
     "dev": "vite",
     "compile": "tsc",
     "vite:build": "vite build",

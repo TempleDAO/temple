@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { Input } from 'components/Input/Input';
 import { Popover } from 'components/Popover';
 import Tooltip from 'components/Tooltip/Tooltip';
+import { Account } from 'components/Layouts/CoreLayout/Account';
 
 import { limitInput, handleBlur } from './utils';
 
@@ -130,9 +131,15 @@ export const TransactionSettingsModal: React.FC<IProps> = ({
           />
         </>
       )}
+      <Spacer />
+      <Account />
     </Popover>
   );
 };
+
+const Spacer = styled.div`
+  height: 10px;
+`;
 
 const Header = styled.div`
   width: 100%;
