@@ -50,9 +50,6 @@ function getLimits(quote: SwapInfo, slippage: number): string[] {
 }
 // Build batchSwap transaction details
 const buildTransaction = (quote: SwapInfo, wallet: string, deadline: number, slippage: number) => {
-  console.log(deadline);
-  console.log(Math.floor(Date.now() / 1000) + deadline);
-
   const tx = {
     funds: {
       sender: wallet,
@@ -113,8 +110,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     try {
       await ensureAllowance(tokenInfo.address, tokenContract, env.contracts.balancerVault, quote.swapAmount);
       const tx = buildTransaction(quote, wallet, deadline, slippage);
-      console.log(tx);
-      return;
       const swap = await vaultContract.batchSwap(
         swapType,
         quote.swaps,
@@ -175,8 +170,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
         tx.deadline,
         tx.overRides
       );
-      console.log(tx);
-      return;
       receipt = await swap.wait();
     } catch (e) {
       // 4001 is user manually cancelling transaction,
