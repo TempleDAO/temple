@@ -62,9 +62,10 @@ export const Account = () => {
               }
             }}
           >
-            {ensName || <TruncatedAddress address={address} />}
+            Connected: {ensName || <TruncatedAddress address={address} />}
           </UserAddress>
         )}
+        <Spacer />
         {!isMetaMask ? disconnectButton : (
           <Tooltip
             content={
@@ -99,6 +100,10 @@ const getChainExplorerURL = (ensOrAddress: string, chainId?: number) => {
     default: return '#';
   }
 };
+
+const Spacer = styled.div`
+  height: 10px;
+`;
 
 const ConnectButton = styled(BaseButton)`
   background-color: rgba(0, 0, 0, 0);
