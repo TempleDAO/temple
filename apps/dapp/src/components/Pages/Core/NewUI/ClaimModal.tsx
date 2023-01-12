@@ -135,7 +135,7 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
           )}
           <TempleAmountContainer>
             <Temple>$TEMPLE</Temple>
-            <TempleAmount>{claimState.claimAmount ? claimState.claimAmount : '0.00'}</TempleAmount>
+            <TempleAmount>{claimState.claimAmount ? formatTemple(Number(claimState.claimAmount)) : '0.00'}</TempleAmount>
           </TempleAmountContainer>
           {!!withdrawError && (
             <ErrorLabel>{formatErrorMessage(withdrawError.message) || 'Something went wrong'}</ErrorLabel>
@@ -266,6 +266,7 @@ const TempleAmountContainer = styled.div`
 const ClaimContainer = styled.div`
   display: flex;
   flex-direction: column;
+  width: 350px;
 `;
 
 export default ClaimModal;

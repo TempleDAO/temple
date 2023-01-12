@@ -79,13 +79,13 @@ export const Trade = () => {
             placeholder="0"
             onHintClick={handleHintClick}
             min={0}
-            hint={`Balance: ${formatNumber(formatBigNumber(state.inputTokenBalance))}`}
+            hint={`Balance: ${formatToken(state.inputTokenBalance, state.inputToken)}`}
           />
           <Spacer />
           <Input
             crypto={outputCryptoConfig}
             value={formatToken(state.quote?.returnAmount, state.outputToken)}
-            hint={`Balance: ${formatNumber(formatBigNumber(state.outputTokenBalance))}`}
+            hint={`Balance: ${formatToken(state.outputTokenBalance, state.outputToken)}`}
             disabled
           />
           <InvertButton onClick={handleChangeMode} />
