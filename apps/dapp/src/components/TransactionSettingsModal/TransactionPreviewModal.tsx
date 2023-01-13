@@ -1,11 +1,10 @@
 import styled from 'styled-components';
 import { Popover } from 'components/Popover';
-import { useSwapController } from 'components/Pages/Core/Trade/use-swap-controller';
-import { formatNumber, formatNumberFixedDecimals, formatToken } from 'utils/formatter';
+import { formatNumberFixedDecimals, formatToken } from 'utils/formatter';
 import { SwapReducerState } from 'components/Pages/Core/Trade/types';
 import { BigNumber, ethers } from 'ethers';
 import { ZERO } from 'utils/bigNumber';
-import { getBigNumberFromString } from 'components/Vault/utils';
+import { getBigNumberFromString, getTokenInfo } from 'components/Vault/utils';
 import { Button } from 'components/Button/Button';
 import { transparentize } from 'polished';
 
@@ -18,7 +17,7 @@ interface IProps {
 
 export const TransactionPreviewModal: React.FC<IProps> = ({ isOpen, onClose, state, handleTransaction }) => {
   // Check if swap should be disabled
-  const bigInputValue = getBigNumberFromString(state.inputValue || '0');
+  const bigInputValue = getBigNumberFromString(state.inputValue || '0', getTokenInfo(state.inputToken).decimals);
   const isButtonDisabled =
     state.isTransactionPending || state.inputTokenBalance.eq(ZERO) || bigInputValue.gt(state.inputTokenBalance);
 
@@ -57,13 +56,13 @@ export const TransactionPreviewModal: React.FC<IProps> = ({ isOpen, onClose, sta
         <SwapDetailsHeader>Swap Details</SwapDetailsHeader>
         <AmountAfterFees>
           <span>Total expected after fees:</span>
-          <span>
+          <NoWrapSpan>
             {formatToken(state.quote.returnAmount, state.outputToken, 4)} {state.outputToken}
-          </span>
+          </NoWrapSpan>
         </AmountAfterFees>
         <div>
           <span>The least you'll get at {state.slippageTolerance}% slippage:</span>
-          <span>
+          <NoWrapSpan>
             {formatToken(
               state.quote.returnAmount
                 .mul(BigNumber.from(10_000))
@@ -72,7 +71,7 @@ export const TransactionPreviewModal: React.FC<IProps> = ({ isOpen, onClose, sta
               4
             )}{' '}
             {state.outputToken}
-          </span>
+          </NoWrapSpan>
         </div>
       </SwapDetails>
       <TradeButton
@@ -113,6 +112,7 @@ const SwapDetails = styled.div`
   border: 1px solid ${({ theme }) => theme.palette.brand};
   border-radius: 0.5rem;
   box-shadow: 0 0 0.3rem 0.3rem rgba(0, 0, 0, 0.2);
+  text-align: left;
 
   div {
     font-size: 0.9rem;
@@ -134,6 +134,9 @@ const SwapDetailsHeader = styled.h5`
 const AmountAfterFees = styled.div`
   color: ${({ theme }) => theme.palette.brandLight};
   padding: 1rem 0 0.5rem 0;
+`;
+const NoWrapSpan = styled.span`
+  white-space: nowrap;
 `;
 const TradeButton = styled(Button)`
   padding: 10px;

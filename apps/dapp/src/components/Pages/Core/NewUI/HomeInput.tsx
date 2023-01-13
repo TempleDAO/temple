@@ -153,22 +153,19 @@ export const InputWrapper = styled.div<InputWrapperProps>`
   position: relative;
   margin-bottom: 0.2rem;
   padding: 0.7rem 0.5rem;
-  background-color: ${(props) => props.theme.palette.dark};
+  background-color: ${props => props.theme.palette.dark};
   height: ${({ small }) => (small ? '3rem' : '4.5rem')};
 
-  border: 0.125rem /* 2/16 */ solid ${(props) => props.theme.palette.brand};
+  border: 0.125rem /* 2/16 */ solid ${props => props.theme.palette.brand};
   // width will be manage by layout case by case
   width: 90%;
   border-radius: 10px;
+  padding: 0.7rem 1.5rem;
 
-  ${tabletAndAbove(`
-    padding: 0.7rem 1.5rem;
-  `)}
-
-  ${(props) =>
+  ${props =>
     props.isDisabled &&
     css`
-      background-color: ${(props) => props.theme.palette.brand25};
+      background-color: ${props => props.theme.palette.brand25};
     `}
 `;
 
@@ -198,7 +195,7 @@ export const InputHint = styled.small<InputHintProps>`
   text-transform: uppercase;
   width: max-content;
 
-  ${(props) =>
+  ${props =>
     props.hasAction &&
     css`
       border-radius: 0.25em;
@@ -243,23 +240,6 @@ const Ticker = styled.p`
   margin: 0;
   color: ${theme.palette.brandLight};
   font-weight: bold;
-`;
-
-const Divider = styled.div`
-  display: none;
-  position: absolute;
-  width: ${pixelsToRems(10)}rem;
-  height: 80%;
-  left: ${pixelsToRems(160)}rem;
-  top: 10%;
-  bottom: 10%;
-  background: url(${divider});
-  background-repeat: no-repeat;
-  background-size: cover;
-
-  ${phoneAndAbove(`
-    display: inline-block;
-  `)};
 `;
 
 const Suffix = styled.p<SizeProps>`
