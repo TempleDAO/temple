@@ -1,3 +1,4 @@
+import { ADDRESS_ZERO } from 'utils/bigNumber';
 import { Environment } from './types';
 
 const env: Environment = {
@@ -13,6 +14,7 @@ const env: Environment = {
     usdc: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     usdt: '0xdac17f958d2ee523a2206206994597c13d831ec7',
     dai: '0x6b175474e89094c44da98b954eedeac495271d0f',
+    weth: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     frax3CrvFarming: '0xd632f22692fac7611d2aa1c0d552930d43caed3b',
     frax3CrvFarmingRewards: '0xB900EF131301B307dB5eFcbed9DBb50A3e209B2e',
     lbpFactory: '0x0F3e0c4218b7b0108a3643cFe9D3ec0d4F57c54e',
@@ -76,6 +78,11 @@ const env: Environment = {
       decimals: 18,
     },
     eth: {
+      name: 'ETH',
+      address: ADDRESS_ZERO,
+      decimals: 18,
+    },
+    weth: {
       name: 'WETH',
       address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
       decimals: 18,

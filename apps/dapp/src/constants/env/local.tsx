@@ -1,3 +1,4 @@
+import { ADDRESS_ZERO } from 'utils/bigNumber';
 import { Environment } from './types';
 
 const ENV = import.meta.env;
@@ -15,6 +16,7 @@ const env: Environment = {
     usdc: '',
     usdt: '',
     dai: '',
+    weth: '',
     frax3CrvFarming: '',
     frax3CrvFarmingRewards: '',
     lbpFactory: '',
@@ -77,6 +79,11 @@ const env: Environment = {
       symbol: 'OGTemple',
     },
     eth: {
+      name: 'ETH',
+      address: ADDRESS_ZERO,
+      decimals: 18,
+    },
+    weth: {
       name: 'WETH',
       address: '',
       decimals: 18,

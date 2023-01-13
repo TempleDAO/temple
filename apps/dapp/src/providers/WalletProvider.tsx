@@ -30,6 +30,8 @@ const INITIAL_STATE: WalletState = {
     usdc: ZERO,
     usdt: ZERO,
     dai: ZERO,
+    eth: ZERO,
+    weth: ZERO,
     temple: ZERO,
     ogTemple: ZERO,
   },
@@ -69,6 +71,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     const usdcContract = new ERC20__factory(signer).attach(env.contracts.usdc);
     const usdtContract = new ERC20__factory(signer).attach(env.contracts.usdt);
     const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
+    const wethContract = new ERC20__factory(signer).attach(env.contracts.weth);
     const templeStakingContract = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
     const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(await templeStakingContract.OG_TEMPLE());
     const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
@@ -77,14 +80,18 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     const usdcBalance: BigNumber = await usdcContract.balanceOf(walletAddress);
     const usdtBalance: BigNumber = await usdtContract.balanceOf(walletAddress);
     const daiBalance: BigNumber = await daiContract.balanceOf(walletAddress);
+    const wethBalance: BigNumber = await wethContract.balanceOf(walletAddress);
     const ogTemple = await OG_TEMPLE_CONTRACT.balanceOf(walletAddress);
     const temple = await templeContract.balanceOf(walletAddress);
+    const ethBalance = await signer.getBalance();
 
     return {
       frax: fraxBalance,
       dai: daiBalance,
       usdt: usdtBalance,
       usdc: usdcBalance,
+      eth: ethBalance,
+      weth: wethBalance,
       temple,
       ogTemple,
     };
