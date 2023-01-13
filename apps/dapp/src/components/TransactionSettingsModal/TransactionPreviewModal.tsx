@@ -49,7 +49,10 @@ export const TransactionPreviewModal: React.FC<IProps> = ({ isOpen, onClose, sta
       </PriceContainer>
       <PriceMarker>
         1 {state.inputToken} ={' '}
-        {(Number(ethers.utils.formatEther(state.quote.returnAmount)) / Number(state.inputValue)).toFixed(4)}{' '}
+        {(
+          Number(ethers.utils.formatUnits(state.quote.returnAmount, getTokenInfo(state.outputToken).decimals)) /
+          Number(state.inputValue)
+        ).toFixed(4)}{' '}
         {state.outputToken}
       </PriceMarker>
       <SwapDetails>
