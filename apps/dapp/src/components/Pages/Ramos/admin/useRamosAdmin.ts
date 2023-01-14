@@ -130,7 +130,7 @@ export function useRamosAdmin() {
   const handleAddLiquidityInput = async (stableAmount: DecimalBigNumber) => {
     let templeAmount = DBN_ZERO;
     if(isConnected) {
-      templeAmount = stableAmount.mul(templePrice);
+      templeAmount = stableAmount.div(templePrice, stableAmount.getDecimals());
     }
     return {templeAmount: templeAmount, stableAmount: stableAmount}
   }
