@@ -25,6 +25,8 @@ export type Balance = {
   usdc: BigNumber;
   usdt: BigNumber;
   dai: BigNumber;
+  eth: BigNumber;
+  weth: BigNumber;
   temple: BigNumber;
   ogTemple: BigNumber;
 };

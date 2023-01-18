@@ -13,6 +13,7 @@ interface Contracts {
   usdc: string;
   usdt: string;
   dai: string;
+  weth: string;
   frax3CrvFarming: string;
   frax3CrvFarmingRewards: string;
   lbpFactory: string;
@@ -68,6 +69,7 @@ export interface Tokens {
   temple: Token;
   ogTemple: Token;
   eth: Token;
+  weth: Token;
   usdc: Token;
   usdt: Token;
   dai: Token;

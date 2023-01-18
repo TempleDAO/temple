@@ -12,3 +12,5 @@ export const toAtto = (n: number): BigNumber => {
 };
 
 export const ZERO = Object.freeze(BigNumber.from(0));
+
+export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';

@@ -15,6 +15,7 @@ import { SwapInfo } from '@balancer-labs/sor';
 import { BalancerSDK, Network, SwapType } from '@balancer-labs/sdk';
 import { Vault__factory } from '@balancer-labs/typechain/dist/factories/Vault__factory';
 import { formatToken } from 'utils/formatter';
+import { ADDRESS_ZERO } from 'utils/bigNumber';
 
 // Initialize balancer SOR
 const maxPools = 4;
@@ -59,13 +60,11 @@ const buildTransaction = (quote: SwapInfo, wallet: string, deadline: number, sli
     },
     limits: getLimits(quote, slippage),
     deadline: Math.floor(Date.now() / 1000) + deadline * 60,
-    // Can override gasLimit and gasPrice
-    overRides: {},
+    overRides: {
+      // ETH in swaps must send ETH value
+      value: quote.tokenIn === ADDRESS_ZERO ? quote.swapAmount.toString() : '0',
+    },
   };
-  // ETH in swaps must send ETH value
-  // if (quote.tokenIn === AddressZero) {
-  //     overRides['value'] = swapInfo.swapAmount.toString();
-  // }
   return tx;
 };
 

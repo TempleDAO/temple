@@ -30,6 +30,8 @@ const INITIAL_STATE: WalletState = {
     usdc: ZERO,
     usdt: ZERO,
     dai: ZERO,
+    eth: ZERO,
+    weth: ZERO,
     temple: ZERO,
     ogTemple: ZERO,
   },
@@ -65,28 +67,60 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       throw new NoWalletAddressError();
     }
 
-    const fraxContract = new ERC20__factory(signer).attach(env.contracts.frax);
-    const usdcContract = new ERC20__factory(signer).attach(env.contracts.usdc);
-    const usdtContract = new ERC20__factory(signer).attach(env.contracts.usdt);
-    const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
+    let response: Balance = {
+      eth: ZERO,
+      temple: ZERO,
+      ogTemple: ZERO,
+      frax: ZERO,
+      usdc: ZERO,
+      usdt: ZERO,
+      dai: ZERO,
+      weth: ZERO,
+    };
+
+    if (env.contracts.frax) {
+      const fraxContract = new ERC20__factory(signer).attach(env.contracts.frax);
+      const fraxBalance: BigNumber = await fraxContract.balanceOf(walletAddress);
+      response = { ...response, frax: fraxBalance };
+    }
+
+    if (env.contracts.usdc) {
+      const usdcContract = new ERC20__factory(signer).attach(env.contracts.usdc);
+      const usdcBalance: BigNumber = await usdcContract.balanceOf(walletAddress);
+      response = { ...response, usdc: usdcBalance };
+    }
+
+    if (env.contracts.usdt) {
+      const usdtContract = new ERC20__factory(signer).attach(env.contracts.usdt);
+      const usdtBalance: BigNumber = await usdtContract.balanceOf(walletAddress);
+      response = { ...response, usdt: usdtBalance };
+    }
+
+    if (env.contracts.dai) {
+      const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
+      const daiBalance: BigNumber = await daiContract.balanceOf(walletAddress);
+      response = { ...response, dai: daiBalance };
+    }
+
+    if (env.contracts.weth) {
+      const wethContract = new ERC20__factory(signer).attach(env.contracts.weth);
+      const wethBalance: BigNumber = await wethContract.balanceOf(walletAddress);
+      response = { ...response, weth: wethBalance };
+    }
+
     const templeStakingContract = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
     const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(await templeStakingContract.OG_TEMPLE());
     const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
 
-    const fraxBalance: BigNumber = await fraxContract.balanceOf(walletAddress);
-    const usdcBalance: BigNumber = await usdcContract.balanceOf(walletAddress);
-    const usdtBalance: BigNumber = await usdtContract.balanceOf(walletAddress);
-    const daiBalance: BigNumber = await daiContract.balanceOf(walletAddress);
     const ogTemple = await OG_TEMPLE_CONTRACT.balanceOf(walletAddress);
     const temple = await templeContract.balanceOf(walletAddress);
+    const ethBalance = await signer.getBalance();
 
     return {
-      frax: fraxBalance,
-      dai: daiBalance,
-      usdt: usdtBalance,
-      usdc: usdcBalance,
+      ...response,
       temple,
       ogTemple,
+      eth: ethBalance,
     };
   };
 

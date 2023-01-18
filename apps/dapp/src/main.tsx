@@ -28,6 +28,7 @@ import { AscendListPage } from 'components/Pages/AscendList';
 
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
+import { Unstake } from 'components/Pages/Core/Trade/views/Unstake';
 
 // Separate Chunks
 const TeamPayments = React.lazy(() => import('components/Pages/TeamPayments'));
@@ -78,6 +79,7 @@ ReactDOM.render(
             <Route path="/dapp/*" element={<CoreLayout />}>
               <Route path="" element={<VaultListPage />} />
               <Route path="vaults" element={<VaultListPage />} />
+              <Route path="unstake" element={<Unstake />} />
               <Route path="vaults/:vaultId/*" element={<VaultPage />}>
                 <Route path="claim" element={<VaultClaim />} />
                 <Route path="stake" element={<Stake />} />

@@ -1,6 +1,12 @@
 import { Popover } from 'components/Popover';
 import styled from 'styled-components';
 import { Button } from 'components/Button/Button';
+import { useWallet } from 'providers/WalletProvider';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
+import { useEffect, useState } from 'react';
+import { useUnstakeOGTemple } from 'hooks/core/use-unstake-ogtemple';
+import { formatBigNumber, formatTemple, getBigNumberFromString } from 'components/Vault/utils';
+import { ZERO } from 'utils/bigNumber';
 
 interface IProps {
   isOpen: boolean;
@@ -8,6 +14,23 @@ interface IProps {
 }
 
 export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
+  const { balance } = useWallet();
+  const [_, refreshWallet] = useRefreshWalletState();
+  const [unstakeAmount, setUnstakeAmount] = useState<string>('');
+  const [unstake, { isLoading: unstakeLoading }] = useUnstakeOGTemple(() => {
+    refreshWallet();
+    setUnstakeAmount('');
+  });
+
+  useEffect(() => {
+    const amount = balance.ogTemple.eq(ZERO) ? '' : formatBigNumber(balance.ogTemple);
+    setUnstakeAmount(amount);
+  }, [balance]);
+
+  const bigAmount = getBigNumberFromString(unstakeAmount || '0');
+  const buttonIsDisabled =
+    unstakeLoading || !unstakeAmount || balance.ogTemple.lte(ZERO) || bigAmount.gt(balance.ogTemple);
+
   return (
     <>
       <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside showCloseButton>
@@ -15,10 +38,12 @@ export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
           <UnstakeTitle>Unstake OGT</UnstakeTitle>
           <UnstakeSubtitle>You are eligible to unstake:</UnstakeSubtitle>
           <TempleAmountContainer>
-            <Temple>$TEMPLE</Temple>
-            <TempleAmount>0.00</TempleAmount>
+            <Temple>$OGTEMPLE</Temple>
+            <TempleAmount>{balance.ogTemple ? formatTemple(balance.ogTemple) : '0.00'}</TempleAmount>
           </TempleAmountContainer>
-          <UnstakeButton>Unstake</UnstakeButton>
+          <UnstakeButton disabled={buttonIsDisabled} onClick={() => unstake(unstakeAmount)}>
+            Unstake
+          </UnstakeButton>
         </UnstakeOgtContainer>
       </Popover>
     </>
@@ -91,6 +116,7 @@ const TempleAmountContainer = styled.div`
 const UnstakeOgtContainer = styled.div`
   display: flex;
   flex-direction: column;
+  width: 350px;
 `;
 
 export default UnstakeOgtModal;

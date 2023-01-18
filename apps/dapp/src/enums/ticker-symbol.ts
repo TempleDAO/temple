@@ -8,4 +8,5 @@ export enum TICKER_SYMBOL {
   USDC = 'USDC',
   USDT = 'USDT',
   DAI = 'DAI',
+  WETH = 'WETH',
 }
