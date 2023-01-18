@@ -24,7 +24,8 @@ import { Account } from 'components/Layouts/CoreLayout/Account';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import ClaimModal from './ClaimModal';
 import UnstakeOgtModal from './UnstakeModal';
-import { useVaultContext } from '../VaultContext';
+import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
+import { useWallet } from 'providers/WalletProvider';
 
 interface Metrics {
   price: number;
@@ -112,6 +113,7 @@ const FooterContent = [
 
 const Home = () => {
   const { address, isConnected } = useAccount();
+  const { wallet, signer, updateBalance } = useWallet();
   const [metrics, setMetrics] = useState<Metrics>({ price: 0, tpi: 0, treasury: 0 });
   const [tradeFormVisible, setTradeFormVisible] = useState(false);
   const [showConnect, setShowConnect] = useState(false);
@@ -119,6 +121,13 @@ const Home = () => {
   useEffect(() => {
     setShowConnect(false);
   }, [isConnected]);
+
+  useEffect(() => {
+    const onMount = async () => {
+      await updateBalance();
+    };
+    onMount();
+  }, [wallet, signer]);
 
   const tradeButtonClickHandler = () => {
     if (address) {
@@ -189,9 +198,7 @@ const Home = () => {
       <LegacyLinkHeader>
         <LegacyText>Legacy features</LegacyText>
         <LegacyLink onClick={legacyClaimClickHandler}>Claim from vaults</LegacyLink>
-        <a href="https://old.templedao.link/dapp" target="_blank">
-          <LegacyLink>Unstake OGT</LegacyLink>
-        </a>
+        <LegacyLink onClick={legacyUnstakeOgtClickHandler}>Unstake OGT</LegacyLink>
       </LegacyLinkHeader>
       {/* Top Container */}
       <TopContainer>
