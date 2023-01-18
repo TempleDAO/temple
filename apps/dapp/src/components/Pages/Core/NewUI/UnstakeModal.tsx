@@ -38,7 +38,7 @@ export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
           <UnstakeTitle>Unstake OGT</UnstakeTitle>
           <UnstakeSubtitle>You are eligible to unstake:</UnstakeSubtitle>
           <TempleAmountContainer>
-            <Temple>$TEMPLE</Temple>
+            <Temple>$OGTEMPLE</Temple>
             <TempleAmount>{balance.ogTemple ? formatTemple(balance.ogTemple) : '0.00'}</TempleAmount>
           </TempleAmountContainer>
           <UnstakeButton disabled={buttonIsDisabled} onClick={() => unstake(unstakeAmount)}>
