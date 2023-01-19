@@ -102,12 +102,14 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     let receipt: TransactionReceipt | undefined;
     const swapType: SwapType = SwapType.SwapExactIn;
     const tokenInfo = getTokenInfo(tokenIn);
-    const tokenContract = new ERC20__factory(signer).attach(tokenInfo.address);
     const vaultContract = Vault__factory.connect(env.contracts.balancerVault, signer);
 
     // Execute batch swap
     try {
-      await ensureAllowance(tokenInfo.address, tokenContract, env.contracts.balancerVault, quote.swapAmount);
+      if (tokenInfo.address !== ADDRESS_ZERO) {
+        const tokenContract = new ERC20__factory(signer).attach(tokenInfo.address);
+        await ensureAllowance(tokenInfo.address, tokenContract, env.contracts.balancerVault, quote.swapAmount);
+      }
       const tx = buildTransaction(quote, wallet, deadline, slippage);
       const swap = await vaultContract.batchSwap(
         swapType,
