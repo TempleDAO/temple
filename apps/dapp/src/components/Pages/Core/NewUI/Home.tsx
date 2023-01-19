@@ -169,11 +169,14 @@ const Home = () => {
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      // const { data: treasuryData } = await fetchSubgraph(`{
-      //     protocolMetrics(first: 1, orderBy: timestamp, orderDirection: desc) {
-      //       lockedStables
-      //     }
-      //   }`);
+      const { data: treasuryData } = await fetchGenericSubgraph(
+        'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics',
+        `{
+          metrics {
+            treasuryValueUSD
+          }
+        }`
+      );
       const { data: ramosData } = await fetchGenericSubgraph(
         'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
         `{
@@ -186,8 +189,7 @@ const Home = () => {
       setMetrics({
         price: parseFloat(ramosData.metrics[0].templePriceUSD),
         tpi: parseFloat(ramosData.metrics[0].treasuryPriceIndexUSD),
-        // treasury: parseFloat(treasuryData.protocolMetrics[0].lockedStables),
-        treasury: 37000000,
+        treasury: parseFloat(treasuryData.metrics[0].treasuryValueUSD),
       });
     };
     fetchMetrics();
@@ -236,7 +238,7 @@ const Home = () => {
             <MetricTitle>Treasury Price Index</MetricTitle>
           </Metric>
           <Metric>
-            <MetricValue>${(metrics.treasury / 1000000).toFixed(0)}M</MetricValue>
+            <MetricValue>${(metrics.treasury / 1000000).toFixed(2)}M</MetricValue>
             <MetricTitle>Treasury Value</MetricTitle>
           </Metric>
         </MetricsRow>
