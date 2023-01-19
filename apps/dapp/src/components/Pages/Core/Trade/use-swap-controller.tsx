@@ -189,6 +189,8 @@ export const useSwapController = () => {
         return balance.usdt;
       case TICKER_SYMBOL.DAI:
         return balance.dai;
+      case TICKER_SYMBOL.FRAX:
+        return balance.frax;
       case TICKER_SYMBOL.TEMPLE_TOKEN:
         return balance.temple;
       case TICKER_SYMBOL.WETH:
