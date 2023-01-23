@@ -2,45 +2,32 @@ import '@nomiclabs/hardhat-ethers';
 import { ethers, network } from 'hardhat';
 import { TempleTeamPayments__factory } from '../../../../typechain';
 import {
-  DeployedContracts,
   DEPLOYED_CONTRACTS,
   expectAddressWithPrivateKey,
   toAtto,
-  waitForMaxGas,
 } from '../../helpers';
-import snapshot from './json/epoch10.json';
+import snapshot from './json/epoch12.json';
 
-// @dev: UPDATE THIS
-const maxGasPrice = ethers.utils.parseUnits('18', 'gwei');
-
-// TODO: Add command line arguments for max gas price and json allocations file
+// TODO: Add command line arguments for json allocations file
 async function main() {
   expectAddressWithPrivateKey();
   const [owner] = await ethers.getSigners();
 
-  let DEPLOYED: DeployedContracts;
-
   if (DEPLOYED_CONTRACTS[network.name] === undefined) {
     console.log(`No contracts configured for ${network.name}`);
     return;
-  } else {
-    DEPLOYED = DEPLOYED_CONTRACTS[network.name];
   }
-
-  let currentGasPrice = await waitForMaxGas(maxGasPrice);
+  const DEPLOYED = DEPLOYED_CONTRACTS[network.name];
 
   const templeTeamPaymentsFactory = new TempleTeamPayments__factory(owner);
   const startDate = Math.round(Date.now() / 1000);
   const templeTeamPayments = await templeTeamPaymentsFactory.deploy(
     DEPLOYED.TEMPLE,
     10, // although no vesting, but has to be at least 1 second vesting else division by zero error
-    startDate,
-    {
-      gasPrice: currentGasPrice,
-    }
+    startDate
   );
   console.log(
-    `Deployed... waiting for transaction to mine: ${templeTeamPayments.deployTransaction.hash}`
+    `Deployment mining...: https://etherscan.io/tx/${templeTeamPayments.deployTransaction.hash}`
   );
   await templeTeamPayments.deployed();
   console.log('Contract deployed');
@@ -48,14 +35,10 @@ async function main() {
     `yarn hardhat verify --network ${network.name} ${templeTeamPayments.address} ${DEPLOYED.TEMPLE} 10 ${startDate}`
   );
 
-  currentGasPrice = await waitForMaxGas(maxGasPrice);
   console.log('Setting allocations');
   const tx1 = await templeTeamPayments.setAllocations(
     Object.keys(snapshot),
-    Object.values(snapshot).map((amount) => toAtto(amount)),
-    {
-      gasPrice: currentGasPrice,
-    }
+    Object.values(snapshot).map((amount) => toAtto(amount))
   );
   await tx1.wait();
   console.log('Mined');

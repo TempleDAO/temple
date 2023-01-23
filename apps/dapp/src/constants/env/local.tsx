@@ -33,6 +33,7 @@ const env: Environment = {
     teamPaymentsEpoch9: '',
     teamPaymentsEpoch10: '',
     teamPaymentsEpoch11: '',
+    teamPaymentsEpoch12: '',
     temple: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
     templeStaking: '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6',
     templeV2FraxPair: '',
