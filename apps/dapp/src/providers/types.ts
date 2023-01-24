@@ -109,7 +109,7 @@ export interface SwapService {
 
 export interface WalletState {
   // has the user connected a wallet to the dapp
-  wallet: Nullable<string>;
+  wallet: `0x${string}` | undefined;
   // current
   balance: Balance;
   signer: Nullable<Signer>;

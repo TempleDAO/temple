@@ -3,7 +3,7 @@ import { BigNumber } from 'ethers';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
 
 export interface SubgraphPool {
-  address: string;
+  address: `0x${string}`;
   symbol: string;
   createTime: number;
   holdersCount: string;
@@ -25,7 +25,7 @@ export interface SubgraphPool {
   swapsCount: string;
   tokens: {
     symbol: string;
-    address: string;
+    address: `0x${string}`;
     balance: string;
     name: string;
     priceRate: string;
@@ -49,8 +49,19 @@ export interface SubgraphPool {
 
 export type GraphResponse = SubGraphResponse<{ pools: SubgraphPool[] }>;
 
-type OverWritteFields = 
-  'createTime' | 'symbol' | 'holdersCount' | 'shares' | 'swapFee' | 'tokens' | 'totalLiquidity' | 'totalSwapFee' | 'totalSwapVolume' | 'totalWeight' | 'weightUpdates' | 'symbol';
+type OverWritteFields =
+  | 'createTime'
+  | 'symbol'
+  | 'holdersCount'
+  | 'shares'
+  | 'swapFee'
+  | 'tokens'
+  | 'totalLiquidity'
+  | 'totalSwapFee'
+  | 'totalSwapVolume'
+  | 'totalWeight'
+  | 'weightUpdates'
+  | 'symbol';
 
 export type Pool = Omit<SubgraphPool, OverWritteFields> & {
   createTime: Date;
@@ -65,7 +76,7 @@ export type Pool = Omit<SubgraphPool, OverWritteFields> & {
   swapFee: BigNumber;
   tokens: {
     symbol: string;
-    address: string;
+    address: `0x${string}`;
     balance: BigNumber;
     name: string;
     priceRate: string;
@@ -82,9 +93,8 @@ export type Pool = Omit<SubgraphPool, OverWritteFields> & {
     endWeights: [DecimalBigNumber, DecimalBigNumber];
     startWeights: [DecimalBigNumber, DecimalBigNumber];
   }[];
-}
+};
 
 export interface AuctionContext {
   pool?: Pool;
 }
-

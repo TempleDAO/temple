@@ -57,7 +57,7 @@ export const Trade = ({ pool }: Props) => {
   );
 
   const [{ allowance, isLoading: allowanceIsLoading }, increaseAllowance] = useTokenContractAllowance(
-    sell,
+    sell as any,
     vaultAddress
   );
 
@@ -79,8 +79,8 @@ export const Trade = ({ pool }: Props) => {
     };
   }, [state.quote, buy]);
 
-  const sellBalance = userBalances[sell.address] || DBN_ZERO;
-  const buyBalance = userBalances[buy.address] || DBN_ZERO;
+  const sellBalance = userBalances[sell.address as any] || DBN_ZERO;
+  const buyBalance = userBalances[buy.address as any] || DBN_ZERO;
 
   if (!wallet) {
     return (

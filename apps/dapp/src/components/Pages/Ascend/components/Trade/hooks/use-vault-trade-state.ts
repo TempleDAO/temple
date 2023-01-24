@@ -11,7 +11,7 @@ import { useAuctionContext } from '../../AuctionContext';
 import { getBalancerErrorMessage } from 'utils/balancer';
 import env from 'constants/env';
 
-type Action<A extends ActionType, P extends any> = { type: A, payload: P };
+type Action<A extends ActionType, P extends any> = { type: A; payload: P };
 
 enum ActionType {
   SetSellValue,
@@ -27,15 +27,15 @@ enum ActionType {
 
 type TokenValue = { token: string; value: DecimalBigNumber };
 
-type Actions = 
-  Action<ActionType.SetSellValue, string> |
-  Action<ActionType.SetSwapQuoteRequest, TokenValue> |
-  Action<ActionType.SetSwapQuoteStart, TokenValue> |
-  Action<ActionType.SetSwapQuoteSuccess, TokenValue & { quote: DecimalBigNumber }> |
-  Action<ActionType.SetSwapQuoteError, TokenValue & { error: string }> |
-  Action<ActionType.SetTransactionSettings, TradeState['transactionSettings']> |
-  Action<ActionType.ResetQuoteState, null> |
-  Action<ActionType.UpdateSwapState, { isLoading: boolean; error: string }>;
+type Actions =
+  | Action<ActionType.SetSellValue, string>
+  | Action<ActionType.SetSwapQuoteRequest, TokenValue>
+  | Action<ActionType.SetSwapQuoteStart, TokenValue>
+  | Action<ActionType.SetSwapQuoteSuccess, TokenValue & { quote: DecimalBigNumber }>
+  | Action<ActionType.SetSwapQuoteError, TokenValue & { error: string }>
+  | Action<ActionType.SetTransactionSettings, TradeState['transactionSettings']>
+  | Action<ActionType.ResetQuoteState, null>
+  | Action<ActionType.UpdateSwapState, { isLoading: boolean; error: string }>;
 
 interface TradeState {
   inputValue: string;
@@ -161,7 +161,7 @@ const reducer = (state: TradeState, action: Actions): TradeState => {
         ...state,
         quote: {
           ...state.quote,
-          estimateWithSlippage: getSwapLimit(state.quote.estimate, action.payload.slippageTolerance)
+          estimateWithSlippage: getSwapLimit(state.quote.estimate, action.payload.slippageTolerance),
         },
         transactionSettings: {
           ...action.payload,
@@ -182,11 +182,20 @@ const INITIAL_QUOTE_STATE = {
   error: null,
 };
 
-export type VaultTradeSuccessCallback = (tokenSold: string, tokenBought: string, amount: string, poolId: string) => Promise<void>;
+export type VaultTradeSuccessCallback = (
+  tokenSold: string,
+  tokenBought: string,
+  amount: string,
+  poolId: string
+) => Promise<void>;
 
 export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCallback) => {
-  const { swapState: { sell, buy }, vaultAddress, refetchPoolTokenBalances } = useAuctionContext();
-  const vaultContract = useVaultContract(pool, vaultAddress);
+  const {
+    swapState: { sell, buy },
+    vaultAddress,
+    refetchPoolTokenBalances,
+  } = useAuctionContext();
+  const vaultContract = useVaultContract(pool, vaultAddress as any);
   const { openNotification } = useNotification();
 
   const [state, dispatch] = useReducer(reducer, {
@@ -236,27 +245,26 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
       return;
     }
 
-
     const token = sell.address;
-    dispatch({ type: ActionType.SetSwapQuoteRequest,  payload: { value, token } });
+    dispatch({ type: ActionType.SetSwapQuoteRequest, payload: { value, token } as any });
 
     const fetchQuote = async () => {
-      dispatch({ type: ActionType.SetSwapQuoteStart, payload: { value, token } });
+      dispatch({ type: ActionType.SetSwapQuoteStart, payload: { value, token } as any });
 
       try {
-        const quotes = await vaultContract.getSwapQuote.request(value, token, buy.address);
+        const quotes = await vaultContract.getSwapQuote.request(value, token as any, buy.address as any);
         const quote = DecimalBigNumber.fromBN(quotes[buy.tokenIndex].abs(), value.getDecimals());
-       
+
         dispatch({
           type: ActionType.SetSwapQuoteSuccess,
-          payload: { quote, token, value },
+          payload: { quote, token, value } as any,
         });
       } catch (err) {
         console.error('Error fetching swap quote', err);
         const error = getBalancerErrorMessage((err as Error).message || '');
         dispatch({
           type: ActionType.SetSwapQuoteError,
-          payload: { error, token, value },
+          payload: { error, token, value } as any,
         });
       }
     };
@@ -281,17 +289,17 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
       const deadline = getSwapDeadline(state.transactionSettings.deadlineMinutes);
       const transaction = await vaultContract.swap(
         amount,
-        sell.address,
-        buy.address,
+        sell.address as any,
+        buy.address as any,
         state.quote.estimateWithSlippage!.value,
-        deadline,
+        deadline
       );
 
       await transaction.wait();
 
       dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error: '' } });
       dispatch({ type: ActionType.ResetQuoteState, payload: null });
-      
+
       openNotification({
         title: 'Swap success',
         hash: transaction.hash,
@@ -307,7 +315,6 @@ export const useVaultTradeState = (pool: Pool, onSuccess?: VaultTradeSuccessCall
       dispatch({ type: ActionType.UpdateSwapState, payload: { isLoading: false, error } });
     }
   };
-
 
   return {
     state,

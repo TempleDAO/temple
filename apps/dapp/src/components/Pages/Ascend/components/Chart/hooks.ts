@@ -22,18 +22,18 @@ const createQueryFragment = (after: number, before: number) => {
       price
       timestamp
     }
-  `; 
-}
+  `;
+};
 
 const createTokenPricesQuery = (
   auctionId: string,
   before: number,
   after: number,
   asset: string,
-  pricingAsset: string,
+  pricingAsset: string
 ) => {
   const fragments: string[] = [];
-  
+
   let currentBefore = after + 3600;
   while (currentBefore < before) {
     fragments.push(createQueryFragment(currentBefore - 3600, currentBefore));
@@ -61,7 +61,7 @@ const createTokenPricesQuery = (
       pricingAsset,
     },
   };
-}
+};
 
 type LatestPriceResponse = SubGraphResponse<{
   [key: string]: {
@@ -76,14 +76,8 @@ export const useLatestPriceData = (pool: Pool) => {
   const auctionStartSeconds = Number(lastUpdate.startTimestamp) / 1000;
   const mainAsset = pool.tokens[0].address;
   const accruedAsset = pool.tokens[1].address;
-  
-  const query = createTokenPricesQuery(
-    pool.id,
-    auctionEndSeconds,
-    auctionStartSeconds,
-    mainAsset,
-    accruedAsset,
-  );
+
+  const query = createTokenPricesQuery(pool.id, auctionEndSeconds, auctionStartSeconds, mainAsset, accruedAsset);
 
   return useSubgraphRequest<LatestPriceResponse>(env.subgraph.balancerV2, query);
 };
@@ -96,12 +90,9 @@ export interface Point {
 export const useCrosshairs = (data: Point[][]) => {
   const [crosshairValues, setCrosshairValues] = useState<Point[]>([]);
 
-  const onMouseLeave = useCallback(
-    () => {
-      setCrosshairValues([]);
-    },
-    [setCrosshairValues]
-  );
+  const onMouseLeave = useCallback(() => {
+    setCrosshairValues([]);
+  }, [setCrosshairValues]);
 
   const ranges = data.map((range) => {
     if (!range.length) {
@@ -136,65 +127,63 @@ export const useCrosshairs = (data: Point[][]) => {
   return { crosshairValues, onMouseLeave, onNearestX };
 };
 
-export const useGetFutureDataPoints = (
-  pool: Pool
-) => {
+export const useGetFutureDataPoints = (pool: Pool) => {
   const { balances, accrued, base, weights } = useAuctionContext();
   const currentWeights = weights;
   const currentBalances = balances;
-  
-  return useCallback((lastPoint: Point) => {
-    if (!pool) {
-      return [];
-    }
 
-    const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
-    const endDate = lastUpdate.endTimestamp.getTime();
-    const endWeights = {
-      [base.address]: lastUpdate.endWeights[base.tokenIndex],
-      [accrued.address]: lastUpdate.endWeights[accrued.tokenIndex],
-    };
+  return useCallback(
+    (lastPoint: Point) => {
+      if (!pool) {
+        return [];
+      }
 
-    const swapFee = pool.swapFee;
-    const oneHourMillis = 1000 * 60 * 60;
-    const totalPoints = Math.floor((endDate - lastPoint.x) / oneHourMillis);
+      const lastUpdate = pool.weightUpdates[pool.weightUpdates.length - 1];
+      const endDate = lastUpdate.endTimestamp.getTime();
+      const endWeights = {
+        [base.address as any]: lastUpdate.endWeights[base.tokenIndex],
+        [accrued.address as any]: lastUpdate.endWeights[accrued.tokenIndex],
+      };
 
-    // Weights from the subgraph are formatted differently, need to be reparsed with correct decimals
-    const accruedEndWeight = DecimalBigNumber.fromBN(endWeights[accrued.address].value, 18);
-    const accruedCurrentWeight = currentWeights[accrued.address];
-    const accruedRange = accruedEndWeight.sub(accruedCurrentWeight);
-    const interval = accruedRange.div(DecimalBigNumber.parseUnits(totalPoints.toString(), 18), accruedRange.getDecimals());
+      const swapFee = pool.swapFee;
+      const oneHourMillis = 1000 * 60 * 60;
+      const totalPoints = Math.floor((endDate - lastPoint.x) / oneHourMillis);
 
-    const predicted = [lastPoint];
-
-    let weightAccrued = accruedCurrentWeight;
-    let weightBase = currentWeights[base.address];
-    let currentX = lastPoint.x + oneHourMillis;
-    for (let i = 0; i < totalPoints; i++) {
-      const priceEstimate = getSpotPrice(
-        currentBalances[base.address],
-        currentBalances[accrued.address],
-        weightBase,
-        weightAccrued,
-        swapFee,
+      // Weights from the subgraph are formatted differently, need to be reparsed with correct decimals
+      const accruedEndWeight = DecimalBigNumber.fromBN(endWeights[accrued.address as any].value, 18);
+      const accruedCurrentWeight = currentWeights[accrued.address as any];
+      const accruedRange = accruedEndWeight.sub(accruedCurrentWeight);
+      const interval = accruedRange.div(
+        DecimalBigNumber.parseUnits(totalPoints.toString(), 18),
+        accruedRange.getDecimals()
       );
-      
-      predicted.push({
-        x: currentX,
-        y: formatNumberFixedDecimals(formatBigNumber(priceEstimate), 4),
-      });
 
-      currentX += oneHourMillis;
-      weightAccrued = weightAccrued.add(interval);
-      weightBase = weightBase.sub(interval);
-    }
+      const predicted = [lastPoint];
 
-    return predicted;
-  }, [
-    pool,
-    base,
-    accrued,
-    currentBalances,
-    currentWeights,
-  ]);
+      let weightAccrued = accruedCurrentWeight;
+      let weightBase = currentWeights[base.address as any];
+      let currentX = lastPoint.x + oneHourMillis;
+      for (let i = 0; i < totalPoints; i++) {
+        const priceEstimate = getSpotPrice(
+          currentBalances[base.address as any],
+          currentBalances[accrued.address as any],
+          weightBase,
+          weightAccrued,
+          swapFee
+        );
+
+        predicted.push({
+          x: currentX,
+          y: formatNumberFixedDecimals(formatBigNumber(priceEstimate), 4),
+        });
+
+        currentX += oneHourMillis;
+        weightAccrued = weightAccrued.add(interval);
+        weightBase = weightBase.sub(interval);
+      }
+
+      return predicted;
+    },
+    [pool, base, accrued, currentBalances, currentWeights]
+  );
 };

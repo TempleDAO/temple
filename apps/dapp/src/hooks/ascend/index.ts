@@ -124,7 +124,7 @@ export const usePoolTokenValues = (pool: Pool) => {
   const {
     isReady,
     getSwapQuote: { request: getSwapQuoteRequest, isLoading },
-  } = useVaultContract(pool, vaultAddress);
+  } = useVaultContract(pool, vaultAddress as any);
   const [spotPrice, setSpotPrice] = useState<string>('0');
 
   useEffect(() => {
@@ -135,7 +135,7 @@ export const usePoolTokenValues = (pool: Pool) => {
     const request = async () => {
       try {
         const oneTemple = DecimalBigNumber.parseUnits('1', accrued.decimals);
-        const quotes = await getSwapQuoteRequest(oneTemple, accrued.address, base.address);
+        const quotes = await getSwapQuoteRequest(oneTemple, accrued.address as any, base.address as any);
         const quote = DecimalBigNumber.fromBN(quotes[base.tokenIndex].abs(), accrued.decimals);
         setSpotPrice(quote.formatUnits());
       } catch (err) {

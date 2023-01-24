@@ -17,7 +17,7 @@ export enum JoinType {
 export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) => {
   const { wallet, signer } = useWallet();
   const [vaultContract, setVaultContract] = useState<Contract>();
-  
+
   useEffect(() => {
     if (vaultContract || !vaultAddress || !signer) {
       return;
@@ -27,19 +27,14 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
   }, [vaultAddress, vaultContract, signer, setVaultContract]);
 
   const _poolBalance = useBalance({
-    addressOrName: (wallet || ''),
-    token: pool?.address || '',
+    address: wallet,
+    token: pool?.address,
     enabled: !!wallet && !!pool?.address,
   });
 
   const poolBalance = _poolBalance?.data?.value || ZERO;
 
-  const joinPool = async (
-    poolId: string,
-    joinType: JoinType,
-    assets: string[],
-    _maxAmountsIn: DecimalBigNumber[],
-  ) => {
+  const joinPool = async (poolId: string, joinType: JoinType, assets: string[], _maxAmountsIn: DecimalBigNumber[]) => {
     const maxAmountsIn = _maxAmountsIn.map((dbn) => dbn.value);
     return vaultContract!.joinPool(
       poolId,
@@ -62,7 +57,7 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
     sellAssetAddress: string,
     buyAssetAddress: string,
     limits: BigNumber,
-    deadline: BigNumber,
+    deadline: BigNumber
   ) => {
     const swap = {
       kind: 0,
@@ -72,7 +67,7 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
       amount: amount.toBN(amount.getDecimals()),
       userData: '0x',
     };
-    
+
     const funds = {
       sender: wallet!.toLowerCase(),
       recipient: wallet!.toLowerCase(),
@@ -91,20 +86,23 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
 
     return vaultContract!.callStatic.queryBatchSwap(
       0,
-      [{
-        poolId: pool!.id,
-        assetInIndex,
-        assetOutIndex,
-        amount: amount.value,
-        userData: '0x',
-      }],
+      [
+        {
+          poolId: pool!.id,
+          assetInIndex,
+          assetOutIndex,
+          amount: amount.value,
+          userData: '0x',
+        },
+      ],
       pool!.tokensList,
       {
         sender: wallet!.toLowerCase(),
         recipient: wallet!.toLowerCase(),
         fromInternalBalance: false,
         toInternalBalance: false,
-      }, {
+      },
+      {
         gasLimit: 400000,
       }
     );
@@ -136,7 +134,7 @@ export const useVaultContract = (pool: undefined | Pool, vaultAddress: string) =
   return {
     address: vaultContract?.address || '',
     isReady: !!vaultContract && !!wallet,
-    swap, 
+    swap,
     joinPool: {
       request: joinPoolRequest,
       ...joinPoolRequestState,
