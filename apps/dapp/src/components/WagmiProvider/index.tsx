@@ -1,5 +1,6 @@
 import { FC } from 'react';
-import { WagmiConfig, chain, createClient, configureChains } from 'wagmi';
+import { WagmiConfig, createClient, configureChains } from 'wagmi';
+import { mainnet, goerli, hardhat } from 'wagmi/chains';
 import { Buffer } from 'buffer';
 
 import { alchemyProvider } from 'wagmi/providers/alchemy';
@@ -18,11 +19,11 @@ if (!window.Buffer) {
 
 // The default WAGMI HardHat Chain has the wrong ChainId.
 export const LOCAL_CHAIN = {
-  ...chain.hardhat,
+  ...hardhat,
   id: 31337,
 };
 
-const APP_CHAINS = [chain.mainnet, chain.rinkeby, chain.goerli, LOCAL_CHAIN];
+const APP_CHAINS = [mainnet, goerli, LOCAL_CHAIN];
 
 const { chains, provider } = configureChains(APP_CHAINS, [
   alchemyProvider({ apiKey: env.alchemyId }),

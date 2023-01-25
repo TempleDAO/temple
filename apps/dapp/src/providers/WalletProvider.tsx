@@ -35,7 +35,7 @@ const INITIAL_STATE: WalletState = {
     temple: ZERO,
     ogTemple: ZERO,
   },
-  wallet: null,
+  wallet: undefined,
   isConnected: false,
   isConnecting: false,
   signer: null,
@@ -195,7 +195,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
         balance: balanceState,
         isConnected: isConnected,
         isConnecting: signerLoading || connectLoading || accountLoading,
-        wallet: walletAddress || null,
+        wallet: walletAddress,
         ensureAllowance,
         signer: signer || null,
         network: !chain

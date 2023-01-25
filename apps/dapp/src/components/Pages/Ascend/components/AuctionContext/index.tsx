@@ -14,7 +14,7 @@ import { useWallet } from 'providers/WalletProvider';
 import { sortAndGroupLBPTokens } from 'utils/balancer';
 import env from 'constants/env';
 
-type TokenMap<T> = { [tokenAddress: string]: T };
+type TokenMap<T> = { [tokenAddress: `0x${string}`]: T };
 
 interface AuctionContext {
   // The token the user is selling by default/Temple is accumulating.
@@ -30,7 +30,7 @@ interface AuctionContext {
 
   toggleTokenPair: () => void;
 
-  vaultAddress: string;
+  vaultAddress: `0x${string}` | undefined;
   isPaused: boolean;
 
   weights: TokenMap<DecimalBigNumber>;
@@ -44,7 +44,7 @@ interface AuctionContext {
 const DEFAULT_SELL = {
   name: '',
   symbol: '',
-  address: '',
+  address: undefined,
   decimals: 0,
   tokenIndex: 1,
 };
@@ -52,9 +52,9 @@ const DEFAULT_SELL = {
 const DEFAULT_BUY = {
   name: '',
   symbol: '',
-  address: '',
+  address: undefined,
   decimals: 0,
-  tokenIndex: 0, 
+  tokenIndex: 0,
 };
 
 const AuctionContext = createContext<AuctionContext>({
@@ -71,7 +71,7 @@ const AuctionContext = createContext<AuctionContext>({
   balances: {},
 
   toggleTokenPair: noop,
-  vaultAddress: '',
+  vaultAddress: undefined,
   isPaused: false,
 
   refetchPoolTokenBalances: noop,
@@ -79,7 +79,7 @@ const AuctionContext = createContext<AuctionContext>({
 
 interface AuctionToken {
   name: string;
-  address: string;
+  address: string | undefined;
   symbol: string;
   tokenIndex: number;
   decimals: number;
@@ -100,59 +100,64 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
   });
 
   const { data: poolData, refetch: refetchPoolState } = useContractReads({
-    contracts: [{
-      addressOrName: pool.address,
-      contractInterface: balancerPoolAbi,
-      functionName: 'getVault',
-    }, {
-      addressOrName: pool.address,
-      contractInterface: balancerPoolAbi,
-      functionName: 'getPausedState',
-    }, {
-      addressOrName: pool.address,
-      contractInterface: balancerPoolAbi,
-      functionName: 'getNormalizedWeights',
-    }],
+    contracts: [
+      {
+        address: pool.address,
+        abi: balancerPoolAbi,
+        functionName: 'getVault',
+      },
+      {
+        address: pool.address,
+        abi: balancerPoolAbi,
+        functionName: 'getPausedState',
+      },
+      {
+        address: pool.address,
+        abi: balancerPoolAbi,
+        functionName: 'getNormalizedWeights',
+      },
+    ],
     enabled: !!wallet,
   });
 
-  const [vaultAddress = '', pausedState = [], tokenWeights = []] = poolData || [];
+  const [vaultAddress, pausedState = [], tokenWeights = []]: any = poolData || [];
 
   const { data: vaultData } = useContractReads({
-    contracts: [{
-      addressOrName: vaultAddress as string,
-      contractInterface: balancerVaultAbi,
-      functionName: 'getPoolTokens',
-      args: [pool.id],
-    }],
+    contracts: [
+      {
+        address: vaultAddress as `0x${string}` | undefined,
+        abi: balancerVaultAbi,
+        functionName: 'getPoolTokens',
+        args: [pool.id],
+      },
+    ],
     enabled: !!vaultAddress && !!wallet,
   });
 
-  const [vaultTokens] = vaultData || [];
+  const [vaultTokens]: any = vaultData || [];
 
-  const toggleTokenPair = () => setSwapState(({ sell, buy }) => ({
-    sell: buy,
-    buy: sell,
-  }));
+  const toggleTokenPair = () =>
+    setSwapState(({ sell, buy }) => ({
+      sell: buy,
+      buy: sell,
+    }));
 
   const { data: sellTokenData, refetch: refetchSell } = useBalance({
-    addressOrName: (wallet || ''),
-    token: swapState.sell.address,
+    address: wallet,
+    token: swapState.sell.address as `0x${string}`,
     enabled: !!wallet,
   });
 
   const { data: buyTokenData, refetch: refetchBuy } = useBalance({
-    addressOrName: (wallet || ''),
-    token: swapState.buy.address,
+    address: wallet,
+    token: swapState.buy.address as `0x${string}`,
     enabled: !!wallet,
   });
 
   const sellTokenBalance = sellTokenData
     ? DecimalBigNumber.fromBN(sellTokenData.value, sellTokenData.decimals)
     : DBN_ZERO;
-  const buyTokenBalance = buyTokenData
-    ? DecimalBigNumber.fromBN(buyTokenData.value, buyTokenData.decimals)
-    : DBN_ZERO;
+  const buyTokenBalance = buyTokenData ? DecimalBigNumber.fromBN(buyTokenData.value, buyTokenData.decimals) : DBN_ZERO;
 
   useEffect(() => {
     if (intervalRef.current) {
@@ -221,15 +226,15 @@ export const AuctionContextProvider: FC<Props> = ({ pool, children }) => {
         swapState,
 
         userBalances: {
-          [swapState.buy.address]: buyTokenBalance,
-          [swapState.sell.address]: sellTokenBalance,
+          [swapState.buy.address || '']: buyTokenBalance,
+          [swapState.sell.address || '']: sellTokenBalance,
         },
 
         balances,
         weights,
 
         toggleTokenPair,
-        vaultAddress: vaultAddress as string,
+        vaultAddress: vaultAddress,
         isPaused: pausedState ? pausedState.paused : true,
 
         refetchPoolTokenBalances,

@@ -13,20 +13,9 @@ import { formatNumber } from 'utils/formatter';
 import { useVaultContract, JoinType } from '../Trade/hooks/use-vault-contract';
 import { AdminCryptoInput } from './components/AdminCryptoInput';
 
-import {
-  getInitialValues,
-  createTokenDefaults,
-  formatValueByType,
-  formatDate,
-  formatWeight,
-} from './utils';
+import { getInitialValues, createTokenDefaults, formatValueByType, formatDate, formatWeight } from './utils';
 
-import {
-  Props,
-  FormToken,
-  Values,
-  InputType,
-} from './types'
+import { Props, FormToken, Values, InputType } from './types';
 
 const MAX_TOKENS = 2;
 
@@ -35,7 +24,7 @@ export const LBPForm = ({ pool }: Props) => {
 
   const { setSwapEnabled, updateWeightsGradually } = usePoolContract(pool);
   const { balances, userBalances, vaultAddress } = useAuctionContext();
-  const vaultContract = useVaultContract(pool!!, vaultAddress);
+  const vaultContract = useVaultContract(pool!!, vaultAddress as any);
   const { createPool } = useFactoryContract();
   const [addTokenAddress, setAddTokenAddress] = useState(env.tokens.temple.address);
   const [formValues, setFormValues] = useState(getInitialValues(pool));
@@ -52,24 +41,24 @@ export const LBPForm = ({ pool }: Props) => {
   };
 
   const createTokenChangeHandler =
-    (tokenAddress: string, key: keyof FormToken, type: InputType) =>
-      (event: React.ChangeEvent<any>) => {
-        setFormValues((values) => {
-          const token = values.tokens[tokenAddress]!;
-          return {
-            ...values,
-            tokens: {
-              ...values.tokens,
-              [tokenAddress]: {
-                ...token,
-                [key]: formatValueByType(event.target.value, type),
-              },
+    (tokenAddress: string, key: keyof FormToken, type: InputType) => (event: React.ChangeEvent<any>) => {
+      setFormValues((values) => {
+        const token = values.tokens[tokenAddress]!;
+        return {
+          ...values,
+          tokens: {
+            ...values.tokens,
+            [tokenAddress]: {
+              ...token,
+              [key]: formatValueByType(event.target.value, type),
             },
-          };
-        });
-      };
-  
-  const getOrderedFormTokens = () => Object.values(formValues.tokens).sort((a, b) => a.address.localeCompare(b.address));
+          },
+        };
+      });
+    };
+
+  const getOrderedFormTokens = () =>
+    Object.values(formValues.tokens).sort((a, b) => a.address.localeCompare(b.address));
 
   const saveForm = () => {
     const tokens = getOrderedFormTokens();
@@ -87,21 +76,20 @@ export const LBPForm = ({ pool }: Props) => {
   const updateWeights = () => {
     const tokens = getOrderedFormTokens();
     const endWeights = tokens.map(({ endWeight }) => endWeight);
-    return updateWeightsGradually.handler(
-      formValues.startDate,
-      formValues.endDate,
-      endWeights,
-    );
+    return updateWeightsGradually.handler(formValues.startDate, formValues.endDate, endWeights);
   };
 
   const resetJoinPool = () => {
     // Clear join pool values
     setFormValues((values) => ({
       ...values,
-      joinPool: Object.keys(formValues.tokens).reduce((acc, address) => ({
-        ...acc,
-        [address]: '',
-      }), {}),
+      joinPool: Object.keys(formValues.tokens).reduce(
+        (acc, address) => ({
+          ...acc,
+          [address]: '',
+        }),
+        {}
+      ),
     }));
   };
 
@@ -136,7 +124,7 @@ export const LBPForm = ({ pool }: Props) => {
     if (!pool) {
       return;
     }
-    
+
     const tokens = getOrderedFormTokens().map(({ address }) => address);
     try {
       const tx = await vaultContract.exitPool.request(pool.id, tokens);
@@ -235,58 +223,58 @@ export const LBPForm = ({ pool }: Props) => {
         <div>
           <FieldGroup>
             <Label>Pool Tokens</Label>
-            {(!isEditMode && Object.keys(formValues.tokens).length < MAX_TOKENS) && (
-            <FieldGroup>
-              <AddTokenWrapper>
-                <Select
-                  id="token-to-add"
-                  onChange={(evt) => {
-                    setAddTokenAddress(evt.target.value);
-                  }}
-                  value={addTokenAddress}
-                >
-                  {Object.values(env.tokens).map((token) => (
-                    <option value={token.address} key={token.address}>
-                      {token.name}
-                    </option>
-                  ))}
-                </Select>
-                <AddButton
-                  isSmall
-                  disabled={!!formValues.tokens[addTokenAddress]}
-                  onClick={() => {
-                    const envTokens = Object.values(env.tokens);
-                    const addToken = envTokens.find(({ address }) => address === addTokenAddress);
-                    setFormValues((values) => ({
-                      ...values,
-                      tokens: {
-                        ...values.tokens,
-                        [addTokenAddress]: createTokenDefaults(addToken, tokens.length + 1),
-                      },
-                    }));
-                    const currentTokens = new Set(Object.keys(formValues.tokens).concat(addTokenAddress));
-                    const nextToken = envTokens.filter(({ address }) => !currentTokens.has(address));
-                    setAddTokenAddress(nextToken[0]?.address || '');
-                  }}
-                >
-                  Add Token
-                </AddButton>
-              </AddTokenWrapper>
-            </FieldGroup>
-          )}
+            {!isEditMode && Object.keys(formValues.tokens).length < MAX_TOKENS && (
+              <FieldGroup>
+                <AddTokenWrapper>
+                  <Select
+                    id="token-to-add"
+                    onChange={(evt) => {
+                      setAddTokenAddress(evt.target.value);
+                    }}
+                    value={addTokenAddress}
+                  >
+                    {Object.values(env.tokens).map((token) => (
+                      <option value={token.address} key={token.address}>
+                        {token.name}
+                      </option>
+                    ))}
+                  </Select>
+                  <AddButton
+                    isSmall
+                    disabled={!!formValues.tokens[addTokenAddress]}
+                    onClick={() => {
+                      const envTokens = Object.values(env.tokens);
+                      const addToken = envTokens.find(({ address }) => address === addTokenAddress);
+                      setFormValues((values) => ({
+                        ...values,
+                        tokens: {
+                          ...values.tokens,
+                          [addTokenAddress]: createTokenDefaults(addToken, tokens.length + 1),
+                        },
+                      }));
+                      const currentTokens = new Set(Object.keys(formValues.tokens).concat(addTokenAddress));
+                      const nextToken = envTokens.filter(({ address }) => !currentTokens.has(address));
+                      setAddTokenAddress(nextToken[0]?.address || '');
+                    }}
+                  >
+                    Add Token
+                  </AddButton>
+                </AddTokenWrapper>
+              </FieldGroup>
+            )}
             {tokens.length > 0 && (
               <UnstyledList>
                 {tokens.map((token, i) => {
-                  const poolBalance = balances![token.address];
+                  const poolBalance = balances![token.address as any];
 
                   return (
                     <li key={token.address}>
                       <FieldGroup>
-                        <>{i + 1}. <Bold>{token.name}</Bold> ({token.address})</>
+                        <>
+                          {i + 1}. <Bold>{token.name}</Bold> ({token.address})
+                        </>
                         <br />
-                        <Label htmlFor={`${token.address}-startWeight`}>
-                          Start Weight
-                        </Label>
+                        <Label htmlFor={`${token.address}-startWeight`}>Start Weight</Label>
                         <Input
                           min="0"
                           max="100"
@@ -301,9 +289,7 @@ export const LBPForm = ({ pool }: Props) => {
                         {isEditMode && (
                           <>
                             <br />
-                            <Label htmlFor={`${token.address}-endWeight`}>
-                              End Weight
-                            </Label>
+                            <Label htmlFor={`${token.address}-endWeight`}>End Weight</Label>
                             <Input
                               min="0"
                               max="100"
@@ -324,42 +310,38 @@ export const LBPForm = ({ pool }: Props) => {
                             />
                           </>
                         )}
-                        
                       </FieldGroup>
                     </li>
                   );
                 })}
               </UnstyledList>
             )}
-          {isEditMode && (
-            <Button
-              isSmall
-              autoWidth
-              loading={updateWeightsGradually.isLoading}
-              label="Update Weights"
-              onClick={updateWeights}
-            />
-          )}
+            {isEditMode && (
+              <Button
+                isSmall
+                autoWidth
+                loading={updateWeightsGradually.isLoading}
+                label="Update Weights"
+                onClick={updateWeights}
+              />
+            )}
           </FieldGroup>
           {isEditMode && (
             <FieldGroup>
               <Label>{formValues.joinType === JoinType.Add ? 'Add' : 'Initialize'} Liquidity</Label>
-              <Select
-                value={formValues.joinType}
-                onChange={createChangeHandler('joinType', 'number')}
-              >
+              <Select value={formValues.joinType} onChange={createChangeHandler('joinType', 'number')}>
                 <option value={JoinType.Init}>Init</option>
                 <option value={JoinType.Add}>Add</option>
               </Select>
               <br />
               {Object.values(formValues.tokens).map((token) => {
-                const userBalance = userBalances[token.address];
+                const userBalance = userBalances[token.address as any];
 
                 return (
                   <div key={token.address}>
                     <AdminCryptoInput
                       token={token}
-                      vaultAddress={vaultAddress}
+                      vaultAddress={vaultAddress as any}
                       userBalance={userBalance}
                       onHintClick={() => {
                         setFormValues((values) => ({
@@ -370,7 +352,7 @@ export const LBPForm = ({ pool }: Props) => {
                           },
                         }));
                       }}
-                      value={formValues.joinPool[token.address] || ''} 
+                      value={formValues.joinPool[token.address] || ''}
                       handleChange={(value) => {
                         setFormValues((values) => ({
                           ...values,
@@ -392,7 +374,7 @@ export const LBPForm = ({ pool }: Props) => {
                 label="Add To Pool"
                 onClick={joinPool}
                 autoWidth
-              /> 
+              />
             </FieldGroup>
           )}
         </div>
