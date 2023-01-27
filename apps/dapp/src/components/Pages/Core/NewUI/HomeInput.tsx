@@ -4,6 +4,14 @@ import { useWallet } from 'providers/WalletProvider';
 import React, { InputHTMLAttributes, KeyboardEvent, useState } from 'react';
 import styled, { css } from 'styled-components';
 import { theme } from 'styles/theme';
+import { formatToken } from 'utils/formatter';
+import ethImg from 'assets/images/newui-images/tokens/eth.png';
+import wethImg from 'assets/images/newui-images/tokens/weth.png';
+import daiImg from 'assets/images/newui-images/tokens/dai.png';
+import fraxImg from 'assets/images/newui-images/tokens/frax.png';
+import usdcImg from 'assets/images/newui-images/tokens/usdc.png';
+import usdtImg from 'assets/images/newui-images/tokens/usdt.png';
+import templeImg from 'assets/images/newui-images/tokens/temple.png';
 
 interface SizeProps {
   small?: boolean;
@@ -42,6 +50,17 @@ export interface InputProps extends SizeProps, InputHTMLAttributes<HTMLInputElem
   suffix?: string;
 }
 
+const TickerImages: Record<TICKER_SYMBOL, string> = {
+  ETH: ethImg,
+  WETH: wethImg,
+  DAI: daiImg,
+  FRAX: fraxImg,
+  USDC: usdcImg,
+  USDT: usdtImg,
+  TEMPLE: templeImg,
+  OGTEMPLE: templeImg,
+};
+
 /**
  * Primary UI component for user interaction
  */
@@ -66,14 +85,27 @@ export const Input = ({
       return (
         <>
           <div>
-            <Ticker onClick={() => setIsOpen(true)}>{crypto.selected}</Ticker>
+            <Ticker onClick={() => setIsOpen(true)} style={{ cursor: 'pointer' }}>
+              {crypto.selected}
+            </Ticker>
           </div>
-          <Popover isOpen={isOpen} onClose={() => setIsOpen(false)} closeOnClickOutside={true} showCloseButton>
-            {crypto.cryptoOptions.map((option) => (
-              <div key={option} onClick={() => crypto.onCryptoChange?.(option)}>
-                {option} {balance[option]}
-              </div>
-            ))}
+          <Popover isOpen={isOpen} onClose={() => setIsOpen(false)} closeOnClickOutside={true} showCloseButton={false}>
+            <SwapOptions>
+              {crypto.cryptoOptions.map((option) => (
+                <TokenOption
+                  key={option}
+                  onClick={() => {
+                    crypto.onCryptoChange?.(option);
+                    setIsOpen(false);
+                  }}
+                >
+                  <TokenOptionName>
+                    <img src={TickerImages[option]} width="32px" /> {option}
+                  </TokenOptionName>
+                  <span>{formatToken(balance[option], option)}</span>
+                </TokenOption>
+              ))}
+            </SwapOptions>
           </Popover>
         </>
       );
@@ -185,7 +217,6 @@ export const InputHint = styled.small<InputHintProps>`
     props.hasAction &&
     css`
       border-radius: 0.25em;
-      padding: 0.0625rem 0.25rem;
       cursor: pointer;
     `}
 `;
@@ -215,4 +246,30 @@ const Ticker = styled.p`
   margin: 0;
   color: ${theme.palette.brandLight};
   font-weight: bold;
+`;
+
+const SwapOptions = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const TokenOption = styled.div`
+  padding: 0.75rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+  min-width: 20rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  :hover {
+    background-color: ${theme.palette.brand25};
+    border-radius: 0.5rem;
+  }
+`;
+
+const TokenOptionName = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
 `;
