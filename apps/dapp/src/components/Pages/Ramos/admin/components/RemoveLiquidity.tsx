@@ -1,5 +1,5 @@
 import { Button } from 'components/Button/Button';
-import { Input } from 'components/Input/Input';
+import { Input } from 'components/Pages/Core/NewUI/HomeInput';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { BigNumber, ethers } from 'ethers';
@@ -21,7 +21,10 @@ export const RemoveLiquidity: React.FC<IProps> = ({ calculateFunc }) => {
         <Tooltip
           content={
             <>
-              <p>Remove liquidity from balancer pool receiving both {TICKER_SYMBOL.TEMPLE_TOKEN} and stable tokens from balancer pool. </p>
+              <p>
+                Remove liquidity from balancer pool receiving both {TICKER_SYMBOL.TEMPLE_TOKEN} and stable tokens from
+                balancer pool.{' '}
+              </p>
               <p>Treasury Price Floor is expected to be within bounds of multisig set range.</p>
               <p>Withdraw and unwrap BPT tokens from Aura staking and send to balancer pool to receive both tokens.</p>
             </>

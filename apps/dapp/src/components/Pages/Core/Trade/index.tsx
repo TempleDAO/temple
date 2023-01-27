@@ -4,7 +4,6 @@ import styled from 'styled-components';
 
 import BaseImage from 'components/Image/Image';
 import { useWatchAsset, TEMPLE_ASSET } from 'hooks/use-watch-asset';
-import { Trade } from './views/Trade';
 import { Unstake } from './views/Unstake';
 import { PageWrapper } from '../utils';
 import { Container } from './styles';
@@ -28,7 +27,6 @@ const TradeRoutes = () => {
             </MenuWrapper>
             <Wrapper>
               <Routes>
-                <Route path="/" element={<Trade />} />
                 <Route path="/unstake" element={<Unstake />} />
                 <Route path="/*" element={<Navigate to=".." replace />} />
               </Routes>

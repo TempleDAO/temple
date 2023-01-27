@@ -23,13 +23,13 @@ export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   });
 
   useEffect(() => {
-    const amount = balance.ogTemple.eq(ZERO) ? '' : formatBigNumber(balance.ogTemple);
+    const amount = balance.OGTEMPLE.eq(ZERO) ? '' : formatBigNumber(balance.OGTEMPLE);
     setUnstakeAmount(amount);
   }, [balance]);
 
   const bigAmount = getBigNumberFromString(unstakeAmount || '0');
   const buttonIsDisabled =
-    unstakeLoading || !unstakeAmount || balance.ogTemple.lte(ZERO) || bigAmount.gt(balance.ogTemple);
+    unstakeLoading || !unstakeAmount || balance.OGTEMPLE.lte(ZERO) || bigAmount.gt(balance.OGTEMPLE);
 
   return (
     <>
@@ -39,7 +39,7 @@ export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
           <UnstakeSubtitle>You are eligible to unstake:</UnstakeSubtitle>
           <TempleAmountContainer>
             <Temple>$OGTEMPLE</Temple>
-            <TempleAmount>{balance.ogTemple ? formatTemple(balance.ogTemple) : '0.00'}</TempleAmount>
+            <TempleAmount>{balance.OGTEMPLE ? formatTemple(balance.OGTEMPLE) : '0.00'}</TempleAmount>
           </TempleAmountContainer>
           <UnstakeButton disabled={buttonIsDisabled} onClick={() => unstake(unstakeAmount)}>
             Unstake

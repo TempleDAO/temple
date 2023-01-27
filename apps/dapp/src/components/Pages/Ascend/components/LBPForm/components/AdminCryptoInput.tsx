@@ -1,10 +1,10 @@
 import { Button } from 'components/Button/Button';
 import { DBN_ZERO, DecimalBigNumber } from 'utils/DecimalBigNumber';
-import { Input as CryptoInput } from 'components/Input/Input';
 import { formatNumber } from 'utils/formatter';
 import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
 
 import { FormToken } from '../types';
+import { Input } from 'components/Pages/Core/NewUI/HomeInput';
 
 interface Props {
   userBalance?: DecimalBigNumber;
@@ -15,11 +15,18 @@ interface Props {
   vaultAddress: string;
 }
 
-export const AdminCryptoInput = ({ userBalance = DBN_ZERO, onHintClick, value, handleChange, token, vaultAddress }: Props) => {
+export const AdminCryptoInput = ({
+  userBalance = DBN_ZERO,
+  onHintClick,
+  value,
+  handleChange,
+  token,
+  vaultAddress,
+}: Props) => {
   const [{ allowance, isLoading }, increaseAllowance] = useTokenContractAllowance(token, vaultAddress);
   return (
     <>
-      <CryptoInput
+      <Input
         isNumber
         crypto={{ kind: 'value', value: token.symbol || '' }}
         hint={`Balance: ${formatNumber(userBalance.formatUnits())}`}
@@ -29,7 +36,7 @@ export const AdminCryptoInput = ({ userBalance = DBN_ZERO, onHintClick, value, h
         handleChange={(value) => {
           const stringValue = value.toString();
           const isZero = !stringValue.startsWith('.') && Number(stringValue) === 0;
-          handleChange(isZero ? '' : stringValue)
+          handleChange(isZero ? '' : stringValue);
         }}
       />
       {allowance === 0 && (
