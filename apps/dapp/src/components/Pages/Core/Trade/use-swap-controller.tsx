@@ -92,9 +92,7 @@ export const useSwapController = () => {
 
   // Handles user input change
   const handleInputChange = async (value: string) => {
-    const bigValue = getBigNumberFromString(value || '0', getTokenInfo(state.inputToken).decimals);
-    const isZero = bigValue.eq(ZERO);
-    dispatch({ type: 'changeInputValue', value: isZero ? '' : value });
+    dispatch({ type: 'changeInputValue', value });
   };
 
   // Switch buy/sell mode
