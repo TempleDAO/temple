@@ -100,7 +100,7 @@ const FooterContent = [
       {
         text: 'Medium',
         image: socialMediumIcon,
-        link: 'https://medium.com/templedao',
+        link: 'https://templedao.medium.com/',
       },
       {
         text: 'Contact Us',
@@ -296,12 +296,10 @@ const Home = () => {
                 <Link to="/disclaimer">Disclaimer</Link>
               </li>
               <li>
-                <Link to="/dapp/vaults/1m-core/claim">Claim from vaults (Legacy)</Link>
+                <LegacyFooterLink onClick={legacyClaimClickHandler}>Claim from vaults (Legacy)</LegacyFooterLink>
               </li>
               <li>
-                <a href="https://old.templedao.link/dapp" target="_blank">
-                  Unstake OGT (Legacy)
-                </a>
+                <LegacyFooterLink onClick={legacyUnstakeOgtClickHandler}>Unstake OGT (Legacy)</LegacyFooterLink>
               </li>
             </ul>
           </Links>
@@ -329,6 +327,12 @@ const LegacyLink = styled.div`
   cursor: pointer;
   margin-right: 10px;
   margin-left: 10px;
+  color: ${({ theme }) => theme.palette.brand};
+  font-weight: bold;
+`;
+
+const LegacyFooterLink = styled.div`
+  cursor: pointer;
   color: ${({ theme }) => theme.palette.brand};
   font-weight: bold;
 `;
