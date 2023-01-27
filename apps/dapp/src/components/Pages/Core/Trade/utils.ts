@@ -1,11 +1,10 @@
-import { CryptoValue, CryptoSelector } from 'components/Input/Input';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { SwapMode } from './types';
 import { TOKENS_BY_MODE } from './constants';
 import { BigNumber } from 'ethers';
 import { DecimalBigNumber } from 'utils/DecimalBigNumber';
+import { CryptoSelector, CryptoValue } from '../NewUI/HomeInput';
 
-// See apps/dapp/src/components/Input/Input.tsx
 export function buildValueConfig(token: TICKER_SYMBOL): CryptoValue {
   return {
     kind: 'value',
@@ -13,23 +12,12 @@ export function buildValueConfig(token: TICKER_SYMBOL): CryptoValue {
   };
 }
 
-// See apps/dapp/src/components/Input/Input.tsx
-export function buildSelectConfig(defaultToken: TICKER_SYMBOL, mode: SwapMode): CryptoSelector | CryptoValue {
-  const defaultOption = {
-    value: defaultToken,
-    label: defaultToken,
-  };
-
-  const selectOptions = Object.values(TOKENS_BY_MODE[mode]).map((token) => ({
-    value: token,
-    label: token,
-  }));
-
+export function buildSelectConfig(mode: SwapMode): CryptoSelector {
   return {
     kind: 'select',
-    cryptoOptions: selectOptions,
-    defaultValue: defaultOption,
+    cryptoOptions: TOKENS_BY_MODE[mode],
     onCryptoChange: () => {},
+    selected: TOKENS_BY_MODE[mode][0],
   };
 }
 

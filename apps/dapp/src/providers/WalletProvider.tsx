@@ -26,14 +26,14 @@ const DEFAULT_ALLOWANCE = toAtto(100000000);
 
 const INITIAL_STATE: WalletState = {
   balance: {
-    frax: ZERO,
-    usdc: ZERO,
-    usdt: ZERO,
-    dai: ZERO,
-    eth: ZERO,
-    weth: ZERO,
-    temple: ZERO,
-    ogTemple: ZERO,
+    FRAX: ZERO,
+    USDC: ZERO,
+    USDT: ZERO,
+    DAI: ZERO,
+    ETH: ZERO,
+    WETH: ZERO,
+    TEMPLE: ZERO,
+    OGTEMPLE: ZERO,
   },
   wallet: undefined,
   isConnected: false,
@@ -68,59 +68,62 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     }
 
     let response: Balance = {
-      eth: ZERO,
-      temple: ZERO,
-      ogTemple: ZERO,
-      frax: ZERO,
-      usdc: ZERO,
-      usdt: ZERO,
-      dai: ZERO,
-      weth: ZERO,
+      ETH: ZERO,
+      TEMPLE: ZERO,
+      OGTEMPLE: ZERO,
+      FRAX: ZERO,
+      USDC: ZERO,
+      USDT: ZERO,
+      DAI: ZERO,
+      WETH: ZERO,
     };
 
     if (env.contracts.frax) {
       const fraxContract = new ERC20__factory(signer).attach(env.contracts.frax);
       const fraxBalance: BigNumber = await fraxContract.balanceOf(walletAddress);
-      response = { ...response, frax: fraxBalance };
+      response = { ...response, FRAX: fraxBalance };
     }
 
     if (env.contracts.usdc) {
       const usdcContract = new ERC20__factory(signer).attach(env.contracts.usdc);
       const usdcBalance: BigNumber = await usdcContract.balanceOf(walletAddress);
-      response = { ...response, usdc: usdcBalance };
+      response = { ...response, USDC: usdcBalance };
     }
 
     if (env.contracts.usdt) {
       const usdtContract = new ERC20__factory(signer).attach(env.contracts.usdt);
       const usdtBalance: BigNumber = await usdtContract.balanceOf(walletAddress);
-      response = { ...response, usdt: usdtBalance };
+      response = { ...response, USDT: usdtBalance };
     }
 
     if (env.contracts.dai) {
       const daiContract = new ERC20__factory(signer).attach(env.contracts.dai);
       const daiBalance: BigNumber = await daiContract.balanceOf(walletAddress);
-      response = { ...response, dai: daiBalance };
+      response = { ...response, DAI: daiBalance };
     }
 
     if (env.contracts.weth) {
       const wethContract = new ERC20__factory(signer).attach(env.contracts.weth);
       const wethBalance: BigNumber = await wethContract.balanceOf(walletAddress);
-      response = { ...response, weth: wethBalance };
+      response = { ...response, WETH: wethBalance };
     }
 
-    const templeStakingContract = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
-    const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(await templeStakingContract.OG_TEMPLE());
-    const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
+    if (env.contracts.templeStaking) {
+      const templeStakingContract = new TempleStaking__factory(signer).attach(env.contracts.templeStaking);
+      const OG_TEMPLE_CONTRACT = new OGTemple__factory(signer).attach(await templeStakingContract.OG_TEMPLE());
+      const ogTempleBalance = await OG_TEMPLE_CONTRACT.balanceOf(walletAddress);
+      response = { ...response, OGTEMPLE: ogTempleBalance };
+    }
 
-    const ogTemple = await OG_TEMPLE_CONTRACT.balanceOf(walletAddress);
-    const temple = await templeContract.balanceOf(walletAddress);
-    const ethBalance = await signer.getBalance();
+    if (env.contracts.temple) {
+      const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
+      const templeBalance = await templeContract.balanceOf(walletAddress);
+      response = { ...response, TEMPLE: templeBalance };
+    }
 
     return {
       ...response,
-      temple,
-      ogTemple,
-      eth: ethBalance,
+      ETH: await signer.getBalance(),
     };
   };
 

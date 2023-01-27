@@ -20,16 +20,7 @@ export enum ETH_ACTIONS {
   REQUEST_PERMISSIONS = 'wallet_requestPermissions',
 }
 
-export type Balance = {
-  frax: BigNumber;
-  usdc: BigNumber;
-  usdt: BigNumber;
-  dai: BigNumber;
-  eth: BigNumber;
-  weth: BigNumber;
-  temple: BigNumber;
-  ogTemple: BigNumber;
-};
+export type Balance = Record<TICKER_SYMBOL, BigNumber>;
 
 export type FaithBalance = {
   lifeTimeFaith: number;

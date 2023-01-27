@@ -1,7 +1,9 @@
-import React, { InputHTMLAttributes, KeyboardEvent } from 'react';
+import { Popover } from 'components/Popover';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
+import { useWallet } from 'providers/WalletProvider';
+import React, { InputHTMLAttributes, KeyboardEvent, useState } from 'react';
 import styled, { css } from 'styled-components';
 import { theme } from 'styles/theme';
-import { InputSelect, Option, SelectTempleDaoOptions } from '../../../InputSelect/InputSelect';
 
 interface SizeProps {
   small?: boolean;
@@ -10,13 +12,13 @@ interface SizeProps {
 export interface CryptoSelector {
   kind: 'select';
   // A selector for the crypto, must provide onCryptoChange
-  cryptoOptions: SelectTempleDaoOptions;
-  defaultValue?: Option;
+  cryptoOptions: TICKER_SYMBOL[];
   // use to limit the number of elements shown in the selector at anytime
   maxSelectorItems?: number;
+  selected: TICKER_SYMBOL;
 
   // Callback for cryptoSelector value change
-  onCryptoChange?(option: Option): void;
+  onCryptoChange?(option: TICKER_SYMBOL): void;
 }
 
 export interface CryptoValue {
@@ -54,18 +56,28 @@ export const Input = ({
   disabled,
   ...props
 }: InputProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const { balance } = useWallet();
+
   const renderCrypto = () => {
     if (!crypto) return null;
     if (crypto.kind === 'value') return <Ticker>{crypto.value}</Ticker>;
-    if (crypto.kind === 'select')
+    if (crypto.kind === 'select') {
       return (
-        <InputSelect
-          options={crypto.cryptoOptions}
-          defaultValue={crypto.defaultValue}
-          onChange={crypto.onCryptoChange}
-          maxMenuItems={crypto.maxSelectorItems}
-        />
+        <>
+          <div>
+            <Ticker onClick={() => setIsOpen(true)}>{crypto.selected}</Ticker>
+          </div>
+          <Popover isOpen={isOpen} onClose={() => setIsOpen(false)} closeOnClickOutside={true} showCloseButton>
+            {crypto.cryptoOptions.map((option) => (
+              <div key={option} onClick={() => crypto.onCryptoChange?.(option)}>
+                {option} {balance[option]}
+              </div>
+            ))}
+          </Popover>
+        </>
       );
+    }
     return null;
   };
 

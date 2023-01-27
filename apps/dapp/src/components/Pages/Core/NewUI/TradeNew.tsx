@@ -28,10 +28,14 @@ export const Trade = () => {
   const [isSlippageModalOpen, setIsSlippageModalOpen] = useState(false);
 
   const inputCryptoConfig =
-    state.mode === SwapMode.Buy ? { ...state.inputConfig, onCryptoChange: handleSelectChange } : state.inputConfig;
+    state.mode === SwapMode.Buy
+      ? { ...state.inputConfig, onCryptoChange: handleSelectChange, selected: state.inputToken }
+      : state.inputConfig;
 
   const outputCryptoConfig =
-    state.mode === SwapMode.Sell ? { ...state.outputConfig, onCryptoChange: handleSelectChange } : state.outputConfig;
+    state.mode === SwapMode.Sell
+      ? { ...state.outputConfig, onCryptoChange: handleSelectChange, selected: state.outputToken }
+      : state.outputConfig;
 
   const formatErrorMessage = (errorMessage: string) => {
     const boundary = errorMessage.indexOf('(');

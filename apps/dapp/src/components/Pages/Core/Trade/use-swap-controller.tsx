@@ -74,8 +74,7 @@ export const useSwapController = () => {
   }, [state.inputValue, state.inputToken, state.outputToken]);
 
   // Handles selection of a new value in the select dropdown
-  const handleSelectChange = (event: Option) => {
-    const token = Object.values(TOKENS_BY_MODE[state.mode]).find((token) => token === event.value);
+  const handleSelectChange = (token: TICKER_SYMBOL) => {
     if (!token) throw new Error('Invalid token selected');
     if (state.mode === SwapMode.Sell) {
       dispatch({
@@ -180,24 +179,7 @@ export const useSwapController = () => {
   };
 
   const getTokenBalance = (token: TICKER_SYMBOL): BigNumber => {
-    switch (token) {
-      case TICKER_SYMBOL.USDC:
-        return balance.usdc;
-      case TICKER_SYMBOL.USDT:
-        return balance.usdt;
-      case TICKER_SYMBOL.DAI:
-        return balance.dai;
-      case TICKER_SYMBOL.FRAX:
-        return balance.frax;
-      case TICKER_SYMBOL.TEMPLE_TOKEN:
-        return balance.temple;
-      case TICKER_SYMBOL.WETH:
-        return balance.weth;
-      case TICKER_SYMBOL.ETH:
-        return balance.eth;
-      default:
-        return ZERO;
-    }
+    return balance[token] || ZERO;
   };
 
   return {
