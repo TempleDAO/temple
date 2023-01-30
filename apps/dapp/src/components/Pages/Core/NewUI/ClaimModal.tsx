@@ -100,8 +100,6 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     });
   };
 
-  console.log(claimState.claimAmount);
-
   return (
     <>
       <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside showCloseButton>
