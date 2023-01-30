@@ -2,7 +2,6 @@ import React, { useEffect, useState, useReducer, useRef, SetStateAction } from '
 import styled from 'styled-components';
 
 import { TempleTeamPayments__factory } from 'types/typechain';
-import { TEAM_PAYMENTS_EPOCHS, TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH } from 'enums/team-payment';
 import { fromAtto } from 'utils/bigNumber';
 import { useWallet } from 'providers/WalletProvider';
 
@@ -11,6 +10,7 @@ import { Button } from 'components/Button/Button';
 import { Flex } from 'components/Layout/Flex';
 import { InputSelect } from 'components/InputSelect/InputSelect';
 import eyeImage from 'assets/images/no-pupil-eye.png';
+import env from 'constants/env';
 
 type ReducerState = {
   collectingFixed: boolean;
@@ -21,7 +21,7 @@ type TeamPaymentsState = ReducerState & {
   allocationFixed: number;
   claimableFixed: number;
   remainingAllocationFixed: number;
-  setSelectedEpoch: React.Dispatch<SetStateAction<TEAM_PAYMENTS_EPOCHS>>;
+  setSelectedEpoch: React.Dispatch<SetStateAction<number>>;
   onCollectTeamFixedPayment(): void;
 };
 
@@ -54,20 +54,16 @@ const TeamPayments = () => {
     transform: getPupilTransform(imageRef, cursorCoords),
   };
 
-  const dropdownOptions = [
-    { value: TEAM_PAYMENTS_EPOCHS.R1, label: 'EPOCH 1' },
-    { value: TEAM_PAYMENTS_EPOCHS.R2, label: 'EPOCH 2' },
-    { value: TEAM_PAYMENTS_EPOCHS.R3, label: 'EPOCH 3' },
-    { value: TEAM_PAYMENTS_EPOCHS.R4, label: 'EPOCH 4' },
-    { value: TEAM_PAYMENTS_EPOCHS.R5, label: 'EPOCH 5' },
-    { value: TEAM_PAYMENTS_EPOCHS.R6, label: 'EPOCH 6' },
-    { value: TEAM_PAYMENTS_EPOCHS.R7, label: 'EPOCH 7' },
-    { value: TEAM_PAYMENTS_EPOCHS.R8, label: 'EPOCH 8' },
-    { value: TEAM_PAYMENTS_EPOCHS.R9, label: 'EPOCH 9' },
-    { value: TEAM_PAYMENTS_EPOCHS.R10, label: 'EPOCH 10' },
-    { value: TEAM_PAYMENTS_EPOCHS.R11, label: 'EPOCH 11' },
-    { value: TEAM_PAYMENTS_EPOCHS.R12, label: 'EPOCH 12' },
-  ];
+  const teamPayments = env.contracts.teamPayments;
+  let dropdownOptions: { value: number; label: string }[] = [];
+  if (teamPayments) {
+    dropdownOptions = teamPayments
+      .map((_, i) => ({
+        value: i,
+        label: `EPOCH ${i + 1}`,
+      }))
+      .reverse();
+  }
 
   return (
     <div onMouseMove={(e) => setCursorCoords([e.clientX, e.clientY])}>
@@ -126,7 +122,7 @@ const TeamPayments = () => {
             onClick={() => onCollectTeamFixedPayment()}
           />
         </ButtonArea>
-        {TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[TEAM_PAYMENTS_EPOCHS.R2] && (
+        {teamPayments && (
           <EpochDropdownContainer>
             <InputSelect
               options={dropdownOptions}
@@ -145,7 +141,9 @@ function useTempleTeamPayments(): TeamPaymentsState {
 
   const [state, dispatch] = useReducer(reducer, { ...reducerInitialState });
 
-  const [selectedEpoch, setSelectedEpoch] = useState(TEAM_PAYMENTS_EPOCHS.R1);
+  const [selectedEpoch, setSelectedEpoch] = useState<number>(
+    env.contracts.teamPayments ? env.contracts.teamPayments.length - 1 : 0
+  );
 
   const [claimableFixed, setClaimableFixed] = useState(0);
 
@@ -185,12 +183,11 @@ function useTempleTeamPayments(): TeamPaymentsState {
 
   useEffect(() => {
     const getAllocationAndClaimableAmounts = async () => {
-      if (wallet && signer) {
-        // Get addresses based on selected epoch
-        const fixedTeamPaymentAddress = TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[selectedEpoch];
-
+      if (wallet && signer && selectedEpoch && env.contracts.teamPayments) {
         // Retrieve fixed allocation & claimable amounts
-        const fixedTeamPayments = new TempleTeamPayments__factory(signer).attach(fixedTeamPaymentAddress);
+        const fixedTeamPayments = new TempleTeamPayments__factory(signer).attach(
+          env.contracts.teamPayments[selectedEpoch]
+        );
 
         const fixedAllocation = await fixedTeamPayments.allocation(wallet);
         const fixedClaimedAmount = await fixedTeamPayments.claimed(wallet);
@@ -212,7 +209,7 @@ function useTempleTeamPayments(): TeamPaymentsState {
     };
 
     getAllocationAndClaimableAmounts();
-  }, [claimed, selectedEpoch]);
+  }, [wallet, signer, claimed, selectedEpoch]);
 
   async function onCollectTeamFixedPayment() {
     dispatch({ type: 'collect-fixed' });

@@ -7,6 +7,22 @@ import {
   Signer,
 } from 'ethers';
 
+interface TeamPayments {
+  TEMPLE_TEAM_FIXED_PAYMENTS: string;
+  TEMPLE_TEAM_EPOCH_2: string;
+  TEMPLE_TEAM_EPOCH_3: string;
+  TEMPLE_TEAM_EPOCH_4: string;
+  TEMPLE_TEAM_EPOCH_5: string;
+  TEMPLE_TEAM_EPOCH_6: string;
+  TEMPLE_TEAM_EPOCH_7: string;
+  TEMPLE_TEAM_EPOCH_8: string;
+  TEMPLE_TEAM_EPOCH_9: string;
+  TEMPLE_TEAM_EPOCH_10: string;
+  TEMPLE_TEAM_EPOCH_11: string;
+  TEMPLE_TEAM_EPOCH_12: string;
+  TEMPLE_TEAM_EPOCH_13: string;
+}
+
 export interface DeployedContracts {
   // From environment
   FRAX: string;
@@ -28,19 +44,7 @@ export interface DeployedContracts {
   TEMPLE_V2_ROUTER: string;
 
   // Temple Admin
-  TEMPLE_TEAM_FIXED_PAYMENTS: string;
-  TEMPLE_TEAM_EPOCH_2: string;
-  TEMPLE_TEAM_EPOCH_3: string;
-  TEMPLE_TEAM_EPOCH_4: string;
-  TEMPLE_TEAM_EPOCH_5: string;
-  TEMPLE_TEAM_EPOCH_6: string;
-  TEMPLE_TEAM_EPOCH_7: string;
-  TEMPLE_TEAM_EPOCH_8: string;
-  TEMPLE_TEAM_EPOCH_9: string;
-  TEMPLE_TEAM_EPOCH_10: string;
-  TEMPLE_TEAM_EPOCH_11: string;
-  TEMPLE_TEAM_EPOCH_12: string;
-
+  TEAM_PAYMENTS?: TeamPayments;
   TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: string;
   TEMPLE_TEAM_PAYMENTS_FACTORY: string;
 
@@ -73,18 +77,6 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
 
     TEMPLE: '0x359655dcB8A32479680Af81Eb38eA3Bb2B42Af54',
 
-    TEMPLE_TEAM_FIXED_PAYMENTS: '',
-    TEMPLE_TEAM_EPOCH_2: '',
-    TEMPLE_TEAM_EPOCH_3: '',
-    TEMPLE_TEAM_EPOCH_4: '',
-    TEMPLE_TEAM_EPOCH_5: '',
-    TEMPLE_TEAM_EPOCH_6: '',
-    TEMPLE_TEAM_EPOCH_7: '',
-    TEMPLE_TEAM_EPOCH_8: '',
-    TEMPLE_TEAM_EPOCH_9: '',
-    TEMPLE_TEAM_EPOCH_10: '',
-    TEMPLE_TEAM_EPOCH_11: '',
-    TEMPLE_TEAM_EPOCH_12: '',
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
     TEMPLE_TEAM_PAYMENTS_FACTORY: '',
 
@@ -132,18 +124,6 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE: '0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf',
     // currently not configured, need to swap treasury owner via
     // multisig. Test on rinkeby before doing the same on mainnet
-    TEMPLE_TEAM_FIXED_PAYMENTS: '',
-    TEMPLE_TEAM_EPOCH_2: '',
-    TEMPLE_TEAM_EPOCH_3: '',
-    TEMPLE_TEAM_EPOCH_4: '',
-    TEMPLE_TEAM_EPOCH_5: '',
-    TEMPLE_TEAM_EPOCH_6: '',
-    TEMPLE_TEAM_EPOCH_7: '',
-    TEMPLE_TEAM_EPOCH_8: '',
-    TEMPLE_TEAM_EPOCH_9: '',
-    TEMPLE_TEAM_EPOCH_10: '',
-    TEMPLE_TEAM_EPOCH_11: '',
-    TEMPLE_TEAM_EPOCH_12: '',
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
     TEMPLE_TEAM_PAYMENTS_FACTORY: '',
 
@@ -186,18 +166,21 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     MULTISIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
 
     TEMPLE: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
-    TEMPLE_TEAM_FIXED_PAYMENTS: '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
-    TEMPLE_TEAM_EPOCH_2: '0xe0Aafcf26576a53Cbec99481607FB53384909C36',
-    TEMPLE_TEAM_EPOCH_3: '0xf86c2dbd16f05e86bff72ce89b3c2915812e92d0',
-    TEMPLE_TEAM_EPOCH_4: '0x07888e0a8929eb922Aee5930f7B0894BaB5D8120',
-    TEMPLE_TEAM_EPOCH_5: '0x32fbd318e0c029bfa6c6088196f184ca2e3fbdd1',
-    TEMPLE_TEAM_EPOCH_6: '0x91ad65e053ae98b4fbab84fc38b7bddd17c32cda',
-    TEMPLE_TEAM_EPOCH_7: '0x8cded928006feb238617fa5f7b04abeefcde36bf',
-    TEMPLE_TEAM_EPOCH_8: '0x008eCB3E53024628a5A8BbE0b142329791ad6f51',
-    TEMPLE_TEAM_EPOCH_9: '0x5461d7Cd3eEB184a83c5a1678335D72ccaf04818',
-    TEMPLE_TEAM_EPOCH_10: '0xdace5aa4D8E1E2678a2F2F6E96F31eBD599503DB',
-    TEMPLE_TEAM_EPOCH_11: '0x49fb6dbe198f61d8962cb069ca1bc7f2daff4de6',
-    TEMPLE_TEAM_EPOCH_12: '0x465451535c4518d805cbead0b95e1a1a677ddeae',
+    TEAM_PAYMENTS: {
+      TEMPLE_TEAM_FIXED_PAYMENTS: '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
+      TEMPLE_TEAM_EPOCH_2: '0xe0Aafcf26576a53Cbec99481607FB53384909C36',
+      TEMPLE_TEAM_EPOCH_3: '0xf86c2dbd16f05e86bff72ce89b3c2915812e92d0',
+      TEMPLE_TEAM_EPOCH_4: '0x07888e0a8929eb922Aee5930f7B0894BaB5D8120',
+      TEMPLE_TEAM_EPOCH_5: '0x32fbd318e0c029bfa6c6088196f184ca2e3fbdd1',
+      TEMPLE_TEAM_EPOCH_6: '0x91ad65e053ae98b4fbab84fc38b7bddd17c32cda',
+      TEMPLE_TEAM_EPOCH_7: '0x8cded928006feb238617fa5f7b04abeefcde36bf',
+      TEMPLE_TEAM_EPOCH_8: '0x008eCB3E53024628a5A8BbE0b142329791ad6f51',
+      TEMPLE_TEAM_EPOCH_9: '0x5461d7Cd3eEB184a83c5a1678335D72ccaf04818',
+      TEMPLE_TEAM_EPOCH_10: '0xdace5aa4D8E1E2678a2F2F6E96F31eBD599503DB',
+      TEMPLE_TEAM_EPOCH_11: '0x49fb6dbe198f61d8962cb069ca1bc7f2daff4de6',
+      TEMPLE_TEAM_EPOCH_12: '0x465451535c4518d805cbead0b95e1a1a677ddeae',
+      TEMPLE_TEAM_EPOCH_13: '0x8c45f988fd3a2657d2b32ff5340d858370d408ef',
+    },
 
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
     TEMPLE_TEAM_PAYMENTS_FACTORY: '',
@@ -240,18 +223,6 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
 
     // Active contrats
     TEMPLE: process.env.TEMPLE || '',
-    TEMPLE_TEAM_FIXED_PAYMENTS: process.env.TEMPLE_TEAM_FIXED_PAYMENTS || '',
-    TEMPLE_TEAM_EPOCH_2: process.env.TEMPLE_TEAM_EPOCH_2 || '',
-    TEMPLE_TEAM_EPOCH_3: process.env.TEMPLE_TEAM_EPOCH_3 || '',
-    TEMPLE_TEAM_EPOCH_4: process.env.TEMPLE_TEAM_EPOCH_4 || '',
-    TEMPLE_TEAM_EPOCH_5: process.env.TEMPLE_TEAM_EPOCH_5 || '',
-    TEMPLE_TEAM_EPOCH_6: process.env.TEMPLE_TEAM_EPOCH_6 || '',
-    TEMPLE_TEAM_EPOCH_7: process.env.TEMPLE_TEAM_EPOCH_7 || '',
-    TEMPLE_TEAM_EPOCH_8: process.env.TEMPLE_TEAM_EPOCH_8 || '',
-    TEMPLE_TEAM_EPOCH_9: process.env.TEMPLE_TEAM_EPOCH_9 || '',
-    TEMPLE_TEAM_EPOCH_10: process.env.TEMPLE_TEAM_EPOCH_10 || '',
-    TEMPLE_TEAM_EPOCH_11: process.env.TEMPLE_TEAM_EPOCH_11 || '',
-    TEMPLE_TEAM_EPOCH_12: process.env.TEMPLE_TEAM_EPOCH_12 || '',
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION:
       process.env.TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION || '',
     TEMPLE_TEAM_PAYMENTS_FACTORY:
@@ -334,7 +305,7 @@ export async function deployAndMine<
     throw new Error("Contract factory and deploy method don't match");
   }
 
-  const renderedArgs: string = args.map((a) => a.toString()).join(' ');
+  const renderedArgs: string = args.map(a => a.toString()).join(' ');
 
   console.log(
     `*******Deploying ${name} on ${network.name} with args ${renderedArgs}`
@@ -429,7 +400,7 @@ export async function waitForMaxGas(
         'gwei'
       )}. Waiting for 30 seconds...`
     );
-    await new Promise((resolve) => setTimeout(resolve, 30000));
+    await new Promise(resolve => setTimeout(resolve, 30000));
     // Refresh current gas price
     currentGasPrice = await ethers.provider.getGasPrice();
     if (!currentGasPrice) throw new Error('No current gas price');
