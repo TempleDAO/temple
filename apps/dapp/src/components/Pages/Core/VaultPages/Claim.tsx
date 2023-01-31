@@ -50,17 +50,13 @@ export const Claim = () => {
   const [amount, setAmount] = useState<string>('');
   const [{ balance, isLoading: getBalanceLoading }, getBalance] = useVaultBalance(vault.id);
   const [{ isLoading: refreshLoading }, refreshWalletState] = useRefreshWalletState();
-  const { withdraw: withdrawRequest, withdrawEarly: earlyWithdrawRequest } = useWithdrawFromVault(
-    vault!.id,
-    async () => {
-      await refreshWalletState();
-      await getBalance();
-      AnalyticsService.captureEvent(AnalyticsEvent.Vault.Claim, { name: vault.id, amount });
-      setAmount('');
-    }
-  );
+  const { withdrawEarly: earlyWithdrawRequest } = useWithdrawFromVault(vault!.id, async () => {
+    await refreshWalletState();
+    await getBalance();
+    AnalyticsService.captureEvent(AnalyticsEvent.Vault.Claim, { name: vault.id, amount });
+    setAmount('');
+  });
 
-  const [withdraw, { isLoading: withdrawIsLoading, error }] = withdrawRequest;
   const [earlyWithdraw, { isLoading: earlyWithdrawIsLoading, error: earlyWithdrawError }] = earlyWithdrawRequest;
 
   const [checkExitStatus, { response: canExit }] = useIsVaultExitable(vault.id);
@@ -98,8 +94,7 @@ export const Claim = () => {
 
   const buttonIsDisabled =
     (earlyClaimState.isClaimingEarly && (earlyWithdrawIsLoading || !earlyClaimState.earlyClaimAmount)) ||
-    (!earlyClaimState.isClaimingEarly &&
-      (getBalanceLoading || refreshLoading || withdrawIsLoading || !amount || bigInputValue.gt(balance)));
+    (!earlyClaimState.isClaimingEarly && (getBalanceLoading || refreshLoading || !amount || bigInputValue.gt(balance)));
 
   let claimLabel =
     balance.gt(ZERO) && !!canExit ? (
@@ -130,13 +125,10 @@ export const Claim = () => {
   }
 
   useEffect(() => {
-    if (error) {
-      console.error(error);
-    }
     if (earlyWithdrawError) {
       console.error(earlyWithdrawError);
     }
-  }, [error, earlyWithdrawError]);
+  }, [earlyWithdrawError]);
 
   const isRegularClaimPossible = balance.lte(ZERO) || !canExit;
   const isInputDisabled = isRegularClaimPossible && !earlyClaimState.isClaimingEarly;
@@ -153,21 +145,17 @@ export const Claim = () => {
         value={amount}
         disabled={isInputDisabled}
       />
-      {!!error && <ErrorLabel>{error.message || 'Something went wrong'}</ErrorLabel>}
       {!!earlyWithdrawError && <ErrorLabel>{earlyWithdrawError.message || 'Something went wrong'}</ErrorLabel>}
 
       {earlyWithdrawAllowance !== 0 && (
         <VaultButton
           label={earlyClaimState.isClaimingEarly ? 'Claim Early' : 'Claim'}
           autoWidth
-          marginTop={error ? '0.5rem' : '3.5rem'}
           disabled={buttonIsDisabled}
           onClick={async () => {
             if (earlyClaimState.isClaimingEarly) {
               await earlyWithdraw(earlyClaimState.earlyClaimSubvaultAddress, amount);
               clearEarlyExitState();
-            } else {
-              await withdraw(amount);
             }
           }}
         />
@@ -176,7 +164,6 @@ export const Claim = () => {
         <VaultButton
           label={'Approve'}
           autoWidth
-          marginTop={error ? '0.5rem' : '3.5rem'}
           disabled={earlyWithdrawAllowanceIsLoading}
           onClick={async () => {
             await increaseEarlyWithdrawAllowance();
