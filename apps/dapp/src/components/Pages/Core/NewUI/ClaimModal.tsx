@@ -2,7 +2,6 @@ import { Popover } from 'components/Popover';
 import styled from 'styled-components';
 import { useVaultContext } from '../VaultContext';
 import { formatBigNumber, formatTemple } from 'components/Vault/utils';
-import { format, isDate } from 'date-fns';
 import { ZERO } from 'utils/bigNumber';
 import { useEffect, useState } from 'react';
 import { Vault, VaultGroup } from 'components/Vault/types';
