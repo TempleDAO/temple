@@ -9,6 +9,7 @@ import { publicProvider } from 'wagmi/providers/public';
 import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
 import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
+import { InjectedConnector } from 'wagmi/connectors/injected';
 import env from 'constants/env';
 
 // polyfill Buffer for client
@@ -48,6 +49,12 @@ const connectors = [
     chains,
     options: {
       appName: 'TempleDAO',
+    },
+  }),
+  new InjectedConnector({
+    chains,
+    options: {
+      shimDisconnect: true,
     },
   }),
 ];
