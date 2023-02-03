@@ -43,12 +43,14 @@ export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
 
   const handleUnlockOGT = async () => {
     try {
-      await Promise.all(lockedEntries.map((entry) => claimOgTemple(entry.index)));
+      lockedEntries.map(async (entry) => {
+        await claimOgTemple(entry.index);
+        updateLockedEntries();
+        updateBalance();
+      });
     } catch (e) {
       console.log(e);
     }
-    updateLockedEntries();
-    updateBalance();
   };
 
   return (
