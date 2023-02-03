@@ -77,7 +77,7 @@ async function main() {
   );
 
   // stake, lock and exit some temple
-  let nLocks = 1;
+  let nLocks = 2;
   for (const account of accounts.slice(0, 5)) {
     const address = await account.getAddress();
     await templeToken.mint(address, toAtto(30000));

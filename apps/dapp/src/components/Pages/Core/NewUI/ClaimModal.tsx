@@ -41,6 +41,7 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     if (!balancesIsLoading && !vaultGroupsIsLoading) {
       const vaultGroup = vaultGroups[0];
       setAssumedActiveVaultGroup(vaultGroup);
+      if (!vaultGroup) return;
       const initialVault = vaultGroup.vaults[0];
       setClaimState({
         claimSubvaultAddress: initialVault.id,
@@ -79,9 +80,6 @@ export const ClaimModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     return vaults.map((vault) => {
       const vaultGroupBalances = balances[vaultGroups[0].id];
       const vaultBalance = vaultGroupBalances[vault.id] || {};
-
-      // Empty balances won't render
-      // if (!vaultBalance.balance || vaultBalance.balance?.lte(ZERO)) return;
 
       return (
         <div key={vault.id}>
