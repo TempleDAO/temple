@@ -1,14 +1,15 @@
 import { FC } from 'react';
 import { WagmiConfig, createClient, configureChains } from 'wagmi';
-import { mainnet, goerli, hardhat } from 'wagmi/chains';
+import { mainnet, goerli, hardhat, arbitrum, arbitrumGoerli } from 'wagmi/chains';
 import { Buffer } from 'buffer';
 
 import { alchemyProvider } from 'wagmi/providers/alchemy';
 import { infuraProvider } from 'wagmi/providers/infura';
 import { publicProvider } from 'wagmi/providers/public';
 import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
-import { InjectedConnector } from 'wagmi/connectors/injected';
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
+import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
+import { InjectedConnector } from 'wagmi/connectors/injected';
 import env from 'constants/env';
 
 // polyfill Buffer for client
@@ -23,7 +24,7 @@ export const LOCAL_CHAIN = {
   id: 31337,
 };
 
-const APP_CHAINS = [mainnet, goerli, LOCAL_CHAIN];
+const APP_CHAINS = [mainnet, goerli, LOCAL_CHAIN, arbitrum, arbitrumGoerli];
 
 const { chains, provider } = configureChains(APP_CHAINS, [
   alchemyProvider({ apiKey: env.alchemyId }),
@@ -32,7 +33,7 @@ const { chains, provider } = configureChains(APP_CHAINS, [
 ]);
 
 const connectors = [
-  new InjectedConnector({
+  new MetaMaskConnector({
     chains,
     options: {
       shimDisconnect: true,
@@ -48,6 +49,12 @@ const connectors = [
     chains,
     options: {
       appName: 'TempleDAO',
+    },
+  }),
+  new InjectedConnector({
+    chains,
+    options: {
+      shimDisconnect: true,
     },
   }),
 ];
