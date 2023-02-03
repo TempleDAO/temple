@@ -46,6 +46,13 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
     }
   }, [address]);
 
+  useEffect(() => {
+    const totalMetaMaskConnectors = connectors.filter(c => c.name === 'MetaMask');
+    if (totalMetaMaskConnectors.length === 2) {
+      connectors.pop();
+    }
+  }, [connectors]);
+
   return (
     <Popover
       isOpen={isOpen}
@@ -57,7 +64,7 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
       <Menu>
         {connectors.map((connector) => (
           <li key={connector.id}>
-            <ConnectorButon
+            <ConnectorButton
               disabled={!connector.ready || loading}
               onClick={() => {
                 connect({ connector });
@@ -67,7 +74,7 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
                 {getConnectorIcon(connector.id)}
                 <span>{connector.name} {!connector.ready ? ' (unsupported)' : ''}</span>
               </ButtonContent>
-            </ConnectorButon>
+            </ConnectorButton>
           </li>
         ))}
       </Menu>
@@ -78,7 +85,7 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
 
 const getConnectorIcon = (connectorId: string) => {
   switch (connectorId) {
-    case 'injected': return <Icon bgImg={metamaskIcon} />;
+    case 'metaMask': return <Icon bgImg={metamaskIcon} />;
     case 'walletConnect': return <Icon bgImg={walletConnectIcon} />;
     case 'coinbaseWallet': return <Icon bgImg={coinbaseAppIcon} />;
   }
@@ -102,7 +109,7 @@ const ButtonContent = styled.span`
   }
 `;
 
-const ConnectorButon = styled(Button)`
+const ConnectorButton = styled(Button)`
   border: 1px solid;
   color: ${({ theme }) => theme.palette.brand};
   margin: 0 0 0 0.5rem;
@@ -117,12 +124,12 @@ const ErrorMessage = styled.span`
 
 const Menu = styled(UnstyledList)`
   > li {
-    ${ConnectorButon} { 
+    ${ConnectorButton} { 
       border-bottom: none;
     }
 
     &:last-of-type {
-      ${ConnectorButon} {
+      ${ConnectorButton} {
         border-bottom: 1px solid;
       }
     }
