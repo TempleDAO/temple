@@ -72,19 +72,14 @@ const FooterContent = [
         link: 'https://discord.gg/templedao',
       },
       {
-        text: 'Telegram',
-        image: socialTelegramIcon,
-        link: 'https://t.me/templedao',
-      },
-      {
         text: 'Twitter',
         image: socialTwitterIcon,
         link: 'https://twitter.com/templedao',
       },
       {
-        text: 'Codex',
-        image: socialCodexIcon,
-        link: 'https://templecodex.link',
+        text: 'Telegram',
+        image: socialTelegramIcon,
+        link: 'https://t.me/templedao',
       },
     ],
   },
@@ -102,9 +97,9 @@ const FooterContent = [
         link: 'https://templedao.medium.com/',
       },
       {
-        text: 'Contact Us',
-        image: socialMessageIcon,
-        link: 'mailto:templedao@protonmail.com/',
+        text: 'Codex',
+        image: socialCodexIcon,
+        link: 'https://templecodex.link',
       },
     ],
   },
@@ -273,18 +268,18 @@ const Home = () => {
             <h4>Links</h4>
             <ul>
               <li>
-                <Link to="/disclaimer">Disclaimer</Link>
-              </li>
-              <li>
                 <LegacyFooterLink onClick={legacyClaimClickHandler}>Claim from vaults (Legacy)</LegacyFooterLink>
               </li>
               <li>
                 <LegacyFooterLink onClick={legacyUnstakeOgtClickHandler}>Unstake OGT (Legacy)</LegacyFooterLink>
               </li>
+              <li>
+                <Link to="/disclaimer">Disclaimer</Link>
+              </li>
             </ul>
           </Links>
         </LinkRow>
-        <CopyrightRow>© 2022 TempleDAO. All rights reserved.</CopyrightRow>
+        <CopyrightRow>© {new Date().getFullYear()} TempleDAO. All rights reserved.</CopyrightRow>
       </FooterContainer>
       <ClaimModal
         isOpen={!!address && isClaimFromVaultsLegacyModalOpen}
@@ -385,8 +380,8 @@ const TradeDetailText = styled.div`
 `;
 
 const LearnMoreLink = styled.span`
-  font-size: 0.8rem;
-  letter-spacing: 0.1rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.06rem;
   margin-top: 1rem;
   padding-bottom: 0.15rem;
   border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
