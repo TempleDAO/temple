@@ -79,7 +79,7 @@ export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
                     <br />
                   </span>
                 )}
-                After claiming locked OGT, you will be able to convert it to TEMPLE on this same screen.
+                After unlocking OGT, you will be able to convert it to TEMPLE on this same screen.
               </Subtitle>
             </>
           ) : (
