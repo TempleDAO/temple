@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react';
 import { useUnstakeOGTemple } from 'hooks/core/use-unstake-ogtemple';
 import { formatBigNumber, formatTemple, getBigNumberFromString } from 'components/Vault/utils';
 import { ZERO } from 'utils/bigNumber';
+import { useStaking } from 'providers/StakingProvider';
+import { BigNumber } from 'ethers';
 
 interface IProps {
   isOpen: boolean;
@@ -14,9 +16,10 @@ interface IProps {
 }
 
 export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
-  const { balance } = useWallet();
+  const { wallet, signer, balance, updateBalance } = useWallet();
   const [_, refreshWallet] = useRefreshWalletState();
   const [unstakeAmount, setUnstakeAmount] = useState<string>('');
+  const { lockedEntries, updateLockedEntries, claimOgTemple } = useStaking();
   const [unstake, { isLoading: unstakeLoading }] = useUnstakeOGTemple(() => {
     refreshWallet();
     setUnstakeAmount('');
@@ -27,33 +30,83 @@ export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     setUnstakeAmount(amount);
   }, [balance]);
 
+  useEffect(() => {
+    const onMount = async () => {
+      if (wallet && signer) await updateLockedEntries();
+    };
+    onMount();
+  }, [wallet, signer]);
+
   const bigAmount = getBigNumberFromString(unstakeAmount || '0');
   const buttonIsDisabled =
     unstakeLoading || !unstakeAmount || balance.ogTemple.lte(ZERO) || bigAmount.gt(balance.ogTemple);
 
+  const handleUnlockOGT = async () => {
+    try {
+      lockedEntries.map(async (entry) => {
+        if (Date.now() > entry.lockedUntilTimestamp) await claimOgTemple(0);
+        updateLockedEntries();
+        updateBalance();
+      });
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   return (
     <>
       <Popover isOpen={isOpen} onClose={onClose} closeOnClickOutside showCloseButton>
-        <UnstakeOgtContainer>
-          <UnstakeTitle>Unstake OGT</UnstakeTitle>
-          <UnstakeSubtitle>You are eligible to unstake:</UnstakeSubtitle>
-          <TempleAmountContainer>
-            <Temple>$OGTEMPLE</Temple>
-            <TempleAmount>{balance.ogTemple ? formatTemple(balance.ogTemple) : '0.00'}</TempleAmount>
-          </TempleAmountContainer>
-          <UnstakeButton disabled={buttonIsDisabled} onClick={() => unstake(unstakeAmount)}>
-            Unstake
-          </UnstakeButton>
-        </UnstakeOgtContainer>
+        <ModalContainer>
+          <Title>Unstake OGTemple</Title>
+          {/* Display Unlock if they have lockedOGT, then display Unstake */}
+          {lockedEntries.length > 0 ? (
+            <>
+              <Subtitle>You can claim locked OGTemple from the Opening Ceremony:</Subtitle>
+              <ClaimButton
+                isSmall
+                onClick={() => handleUnlockOGT()}
+                disabled={Date.now() < lockedEntries[0].lockedUntilTimestamp}
+              >
+                Claim{' '}
+                {formatTemple(lockedEntries.reduce((sum, cur) => sum.add(cur.balanceOGTemple), BigNumber.from('0')))}{' '}
+                OGTemple
+              </ClaimButton>
+              <Subtitle>
+                {lockedEntries.length > 1 && (
+                  <span>
+                    You will have {lockedEntries.length} transactions to claim your locked OGTemple.
+                    <br />
+                    <br />
+                  </span>
+                )}
+                After unlocking OGT, you will be able to convert it to TEMPLE on this same screen.
+              </Subtitle>
+            </>
+          ) : (
+            <>
+              <Subtitle>
+                You have {balance.ogTemple ? formatTemple(balance.ogTemple) : '0.00'} OGT you can unstake and convert to
+                TEMPLE.
+              </Subtitle>
+              <ClaimButton
+                isSmall
+                disabled={buttonIsDisabled}
+                onClick={() => unstake(unstakeAmount)}
+                style={{ margin: '1rem auto 0 auto' }}
+              >
+                Unstake OGTEMPLE
+              </ClaimButton>
+            </>
+          )}
+        </ModalContainer>
       </Popover>
     </>
   );
 };
 
-const UnstakeButton = styled(Button)`
-  width: 100px;
-  height: 60px;
-  background: linear-gradient(180deg, #353535 45.25%, #101010 87.55%);
+const ClaimButton = styled(Button)`
+  background: ${({ theme }) => theme.palette.gradients.dark};
+  color: ${({ theme }) => theme.palette.brandLight};
   border: 1px solid #95613f;
   box-shadow: 0px 0px 20px rgba(222, 92, 6, 0.4);
   border-radius: 0.75rem;
@@ -61,61 +114,28 @@ const UnstakeButton = styled(Button)`
   font-size: 1rem;
   letter-spacing: 0.1rem;
   text-transform: uppercase;
-  color: #ffdec9;
-  margin-left: auto;
-  margin-right: auto;
-  margin-top: 10px;
+  width: max-content;
+  margin: 1rem auto;
 `;
 
-const TempleAmount = styled.div`
-  font-size: 36px;
-  display: flex;
-  align-items: center;
-  text-align: right;
-  color: #ffdec9;
-  padding: 20px;
+const Subtitle = styled.div`
+  color: ${({ theme }) => theme.palette.brand};
+  letter-spacing: 0.05rem;
+  line-height: 1.25rem;
 `;
 
-const Temple = styled.div`
-  font-style: normal;
-  font-size: 36px;
-  display: flex;
-  letter-spacing: 0.05em;
-  color: #ffdec9;
-  margin-right: auto;
+const Title = styled.div`
+  font-size: 1.5rem;
+  padding-bottom: 1rem;
+  color: ${({ theme }) => theme.palette.brandLight};
 `;
 
-const UnstakeSubtitle = styled.div`
-  font-style: normal;
-  font-weight: 700;
-  font-size: 16px;
-  line-height: 20px;
-  align-items: center;
-  letter-spacing: 0.1em;
-  color: #bd7b4f;
-`;
-
-const UnstakeTitle = styled.div`
-  font-size: 24px;
-  line-height: 28px;
-  display: flex;
-  align-items: center;
-  color: #bd7b4f;
-  padding-bottom: 20px;
-`;
-
-const TempleAmountContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 20px;
-  margin-bottom: 20px;
-`;
-
-const UnstakeOgtContainer = styled.div`
+const ModalContainer = styled.div`
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  color: ${({ theme }) => theme.palette.brand};
   width: 350px;
 `;
 
