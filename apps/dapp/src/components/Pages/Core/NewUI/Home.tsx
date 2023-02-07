@@ -24,7 +24,6 @@ import { Account } from 'components/Layouts/CoreLayout/Account';
 import { fetchGenericSubgraph } from 'utils/subgraph';
 import ClaimModal from './ClaimModal';
 import UnstakeOgtModal from './UnstakeModal';
-import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
 import { useWallet } from 'providers/WalletProvider';
 
 interface Metrics {
@@ -73,19 +72,14 @@ const FooterContent = [
         link: 'https://discord.gg/templedao',
       },
       {
-        text: 'Telegram',
-        image: socialTelegramIcon,
-        link: 'https://t.me/templedao',
-      },
-      {
         text: 'Twitter',
         image: socialTwitterIcon,
         link: 'https://twitter.com/templedao',
       },
       {
-        text: 'Codex',
-        image: socialCodexIcon,
-        link: 'https://templecodex.link',
+        text: 'Telegram',
+        image: socialTelegramIcon,
+        link: 'https://t.me/templedao',
       },
     ],
   },
@@ -100,12 +94,12 @@ const FooterContent = [
       {
         text: 'Medium',
         image: socialMediumIcon,
-        link: 'https://medium.com/templedao',
+        link: 'https://templedao.medium.com/',
       },
       {
-        text: 'Contact Us',
-        image: socialMessageIcon,
-        link: 'mailto:templedao@protonmail.com/',
+        text: 'Codex',
+        image: socialCodexIcon,
+        link: 'https://templecodex.link',
       },
     ],
   },
@@ -130,18 +124,8 @@ const Home = () => {
   }, [wallet, signer]);
 
   const tradeButtonClickHandler = () => {
-    if (address) {
-      setTradeFormVisible((tradeFormVisible) => !tradeFormVisible);
-    } else {
-      setShowConnect(true);
-    }
-  };
-
-  let targetRef = useRef<HTMLHeadingElement>(null);
-
-  const scrollToContent = () => {
-    // @ts-ignore
-    targetRef.scrollIntoView({ behavior: 'smooth' });
+    if (address) setTradeFormVisible((tradeFormVisible) => !tradeFormVisible);
+    else setShowConnect(true);
   };
 
   const [isClaimFromVaultsLegacyModalOpen, setIsClaimFromVaultsLegacyModalOpen] = useState(false);
@@ -153,7 +137,6 @@ const Home = () => {
       setShowConnect(true);
       return;
     }
-
     setIsClaimFromVaultsLegacyModalOpen(true);
   };
 
@@ -163,7 +146,6 @@ const Home = () => {
       setShowConnect(true);
       return;
     }
-
     setIsUnstakeOgtLegacyModalOpen(true);
   };
 
@@ -220,8 +202,8 @@ const Home = () => {
               <>
                 <NewTempleText>The New Temple</NewTempleText>
                 <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
-                <LearnMoreLink onClick={scrollToContent}>Learn More</LearnMoreLink>
                 <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
+                <LearnMoreLink onClick={legacyClaimClickHandler}>Claim from Vaults</LearnMoreLink>
               </>
             )}
           </ContentContainer>
@@ -252,14 +234,7 @@ const Home = () => {
           <PriceChartNew />
         </ChartContainer>
         {/* Marketing content */}
-        <Header
-          ref={(ref) => {
-            // @ts-ignore
-            targetRef = ref;
-          }}
-        >
-          How Does It Work?
-        </Header>
+        <Header>How Does It Work?</Header>
         {MarketingContent.map((content, index) => (
           <MarketingRow index={index} key={index}>
             <MarketingImage src={content.image} />
@@ -293,20 +268,18 @@ const Home = () => {
             <h4>Links</h4>
             <ul>
               <li>
+                <LegacyFooterLink onClick={legacyClaimClickHandler}>Claim from vaults (Legacy)</LegacyFooterLink>
+              </li>
+              <li>
+                <LegacyFooterLink onClick={legacyUnstakeOgtClickHandler}>Unstake OGT (Legacy)</LegacyFooterLink>
+              </li>
+              <li>
                 <Link to="/disclaimer">Disclaimer</Link>
-              </li>
-              <li>
-                <Link to="/dapp/vaults/1m-core/claim">Claim from vaults (Legacy)</Link>
-              </li>
-              <li>
-                <a href="https://old.templedao.link/dapp" target="_blank">
-                  Unstake OGT (Legacy)
-                </a>
               </li>
             </ul>
           </Links>
         </LinkRow>
-        <CopyrightRow>© 2022 TempleDAO. All rights reserved.</CopyrightRow>
+        <CopyrightRow>© {new Date().getFullYear()} TempleDAO. All rights reserved.</CopyrightRow>
       </FooterContainer>
       <ClaimModal
         isOpen={!!address && isClaimFromVaultsLegacyModalOpen}
@@ -329,6 +302,12 @@ const LegacyLink = styled.div`
   cursor: pointer;
   margin-right: 10px;
   margin-left: 10px;
+  color: ${({ theme }) => theme.palette.brand};
+  font-weight: bold;
+`;
+
+const LegacyFooterLink = styled.div`
+  cursor: pointer;
   color: ${({ theme }) => theme.palette.brand};
   font-weight: bold;
 `;
@@ -400,12 +379,17 @@ const TradeDetailText = styled.div`
   margin-top: 1rem;
 `;
 
-const LearnMoreLink = styled.a`
-  font-size: 0.75rem;
-  letter-spacing: 0.095rem;
-  text-decoration-line: underline;
+const LearnMoreLink = styled.span`
+  font-size: 0.85rem;
+  letter-spacing: 0.06rem;
   margin-top: 1rem;
+  padding-bottom: 0.15rem;
+  border-bottom: 1px solid ${({ theme }) => theme.palette.brand};
   cursor: pointer;
+  &:hover {
+    color: ${({ theme }) => theme.palette.brandLight};
+    border-bottom: 1px solid ${({ theme }) => theme.palette.brandLight};
+  }
 `;
 
 const ConnectWalletText = styled.div`

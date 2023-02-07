@@ -5,7 +5,6 @@ import { useAccount, useSigner, useNetwork, useConnect } from 'wagmi';
 import { useNotification } from 'providers/NotificationProvider';
 import { NoWalletAddressError } from 'providers/errors';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { TEAM_PAYMENTS_EPOCHS, TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH } from 'enums/team-payment';
 import { toAtto } from 'utils/bigNumber';
 import { asyncNoop } from 'utils/helpers';
 import { WalletState, Balance } from 'providers/types';
@@ -171,14 +170,12 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
     }
   };
 
-  const collectTempleTeamPayment = async (epoch: TEAM_PAYMENTS_EPOCHS) => {
-    if (walletAddress && signer) {
-      const fixedTeamPaymentAddress = TEAM_PAYMENTS_FIXED_ADDRESSES_BY_EPOCH[epoch];
-
-      const teamPaymentContract = new TempleTeamPayments__factory(signer).attach(fixedTeamPaymentAddress);
+  const collectTempleTeamPayment = async (epoch: number) => {
+    if (walletAddress && signer && env.contracts.teamPayments) {
+      const contractAddress = env.contracts.teamPayments[epoch];
+      const teamPaymentContract = new TempleTeamPayments__factory(signer).attach(contractAddress);
 
       const collectTxn = await teamPaymentContract.claim();
-
       const txnReceipt = await collectTxn.wait();
 
       openNotification({

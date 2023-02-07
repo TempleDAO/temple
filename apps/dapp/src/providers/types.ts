@@ -2,7 +2,6 @@ import { Network } from '@ethersproject/providers';
 import { BigNumber, ContractReceipt, Signer, ContractTransaction } from 'ethers';
 import { Nullable } from 'types/util';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
-import { TEAM_PAYMENTS_EPOCHS } from 'enums/team-payment';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { Sor, SwapInfo } from '@balancer-labs/sdk';
 
@@ -111,7 +110,7 @@ export interface WalletState {
 
   getBalance(): Promise<Balance | void>;
   updateBalance(): Promise<void>;
-  collectTempleTeamPayment(epoch: TEAM_PAYMENTS_EPOCHS): Promise<void | TransactionReceipt>;
+  collectTempleTeamPayment(epoch: number): Promise<void | TransactionReceipt>;
 
   ensureAllowance(
     tokenName: string,
