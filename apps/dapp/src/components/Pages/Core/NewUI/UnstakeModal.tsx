@@ -85,7 +85,7 @@ export const UnstakeOgtModal: React.FC<IProps> = ({ isOpen, onClose }) => {
           ) : (
             <>
               <Subtitle>
-                You have {balance.ogTemple ? formatTemple(balance.ogTemple) : '0.00'} OGT you can unstake and convert to
+                You have {balance.OGTEMPLE ? formatTemple(balance.OGTEMPLE) : '0.00'} OGT you can unstake and convert to
                 TEMPLE.
               </Subtitle>
               <ClaimButton
