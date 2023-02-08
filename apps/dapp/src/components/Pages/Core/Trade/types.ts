@@ -1,8 +1,8 @@
 import { BigNumber } from 'ethers';
-import { CryptoValue, CryptoSelector } from 'components/Input/Input';
 import { TransactionSettings } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { SwapInfo } from '@balancer-labs/sor';
+import { CryptoSelector, CryptoValue } from '../NewUI/HomeInput';
 
 export enum SwapMode {
   Buy = 'BUY',

@@ -242,7 +242,7 @@ type TickerValue = TICKER_SYMBOL;
 
 const useStakeOptions = () => {
   const {
-    balance: { temple, ogTemple },
+    balance: { TEMPLE: temple, OGTEMPLE: ogTemple },
   } = useWallet();
   const [stakingAmount, setStakingAmount] = useState('');
 

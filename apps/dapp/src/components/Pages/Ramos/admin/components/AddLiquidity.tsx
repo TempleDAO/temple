@@ -1,5 +1,5 @@
 import { Button } from 'components/Button/Button';
-import { Input } from 'components/Input/Input';
+import { Input } from 'components/Pages/Core/NewUI/HomeInput';
 import Tooltip, { TooltipIcon } from 'components/Tooltip/Tooltip';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { BigNumber } from 'ethers';
@@ -22,7 +22,7 @@ export const AddLiquidity: React.FC<IProps> = ({ calculateFunc, handleInput }) =
   const [joinPoolInfo, setJoinPoolInfo] = useState<{ joinPoolRequest: string; minBptOut: string }>();
   return (
     <InputArea>
-    <TitleWrapper>
+      <TitleWrapper>
         <h3>AddLiquidity</h3>
         <Tooltip
           content={

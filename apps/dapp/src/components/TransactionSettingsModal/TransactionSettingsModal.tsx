@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 
-import { Input } from 'components/Input/Input';
 import { Popover } from 'components/Popover';
 import Tooltip from 'components/Tooltip/Tooltip';
 import { Account } from 'components/Layouts/CoreLayout/Account';
 
 import { limitInput, handleBlur } from './utils';
+import { Input } from 'components/Pages/Core/NewUI/HomeInput';
 
 export interface TransactionSettings {
   slippageTolerance: number;

@@ -3,7 +3,6 @@ import styled, { css } from 'styled-components';
 import { tabletAndAbove } from 'styles/breakpoints';
 import { Tabs } from 'components/Pages/Ramos/admin/components/Tabs';
 import EllipsisLoader from 'components/EllipsisLoader';
-import { Input } from 'components/Input/Input';
 import { Button } from 'components/Button/Button';
 
 import { useRamosAdmin } from './useRamosAdmin';
@@ -20,6 +19,7 @@ import { limitInput, handleBlur } from './helpers';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { useState } from 'react';
 import environmentConfig from 'constants/env';
+import { Input } from 'components/Pages/Core/NewUI/HomeInput';
 
 const Container = styled.div`
   display: grid;
@@ -78,7 +78,7 @@ const RamosAdmin = () => {
       label: 'Liquidity',
       content: (
         <Container>
-          <AddLiquidity calculateFunc={createJoinPoolRequest} handleInput={handleAddLiquidityInput}/>
+          <AddLiquidity calculateFunc={createJoinPoolRequest} handleInput={handleAddLiquidityInput} />
           <RemoveLiquidity calculateFunc={createExitPoolRequest} />
           <DepositAndStakeBpt calculateFunc={createDepositAndStakeRequest} />
         </Container>
@@ -105,7 +105,10 @@ const RamosAdmin = () => {
       />
       <div>
         <p>
-          RAMOS: <a href={`https://etherscan.io/address/${ramosAddress}`} target="_blank">{ramosAddress}</a>
+          RAMOS:{' '}
+          <a href={`https://etherscan.io/address/${ramosAddress}`} target="_blank">
+            {ramosAddress}
+          </a>
         </p>
       </div>
       <Container>

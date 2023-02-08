@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react';
 import { useWallet } from 'providers/WalletProvider';
 import { formatNumber, formatNumberFixedDecimals } from 'utils/formatter';
 import { Pool } from 'components/Layouts/Ascend/types';
-import { Input } from 'components/Input/Input';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { useTokenContractAllowance } from 'hooks/core/use-token-contract-allowance';
 import {
@@ -28,6 +27,7 @@ import {
 } from './styles';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { AnalyticsEvent } from 'constants/events';
+import { Input } from 'components/Pages/Core/NewUI/HomeInput';
 
 interface Props {
   pool: Pool;

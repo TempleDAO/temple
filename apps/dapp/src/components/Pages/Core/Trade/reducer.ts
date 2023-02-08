@@ -11,19 +11,21 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
         ? {
             ...state,
             mode: SwapMode.Buy,
+            inputValue: INITIAL_STATE.inputValue,
             inputToken: state.outputToken,
             outputToken: state.inputToken,
-            inputConfig: buildSelectConfig(state.outputToken, SwapMode.Buy),
+            inputConfig: buildSelectConfig(SwapMode.Buy),
             outputConfig: buildValueConfig(state.inputToken),
             quote: null,
           }
         : {
             ...state,
             mode: SwapMode.Sell,
+            inputValue: INITIAL_STATE.inputValue,
             inputToken: state.outputToken,
             outputToken: state.inputToken,
             inputConfig: buildValueConfig(state.outputToken),
-            outputConfig: buildSelectConfig(state.inputToken, SwapMode.Sell),
+            outputConfig: buildSelectConfig(SwapMode.Sell),
             quote: null,
           };
     }
@@ -31,6 +33,7 @@ export function swapReducer(state: SwapReducerState, action: SwapReducerAction):
     case 'changeInputToken':
       return {
         ...state,
+        inputValue: INITIAL_STATE.inputValue,
         inputToken: action.value.token,
         inputTokenBalance: action.value.balance,
         quote: null,

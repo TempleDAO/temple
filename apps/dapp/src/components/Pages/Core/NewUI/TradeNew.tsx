@@ -3,8 +3,7 @@ import { Input } from './HomeInput';
 import { TransactionSettingsModal } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { SwapMode } from '../Trade/types';
 import { useSwapController } from '../Trade/use-swap-controller';
-import { formatBigNumber } from 'components/Vault/utils';
-import { formatNumber, formatToken } from 'utils/formatter';
+import { formatToken } from 'utils/formatter';
 import { InvertButton } from '../Trade/styles';
 import { INITIAL_STATE } from '../Trade/constants';
 import styled from 'styled-components';
@@ -29,10 +28,14 @@ export const Trade = () => {
   const [isSlippageModalOpen, setIsSlippageModalOpen] = useState(false);
 
   const inputCryptoConfig =
-    state.mode === SwapMode.Buy ? { ...state.inputConfig, onCryptoChange: handleSelectChange } : state.inputConfig;
+    state.mode === SwapMode.Buy
+      ? { ...state.inputConfig, onCryptoChange: handleSelectChange, selected: state.inputToken }
+      : state.inputConfig;
 
   const outputCryptoConfig =
-    state.mode === SwapMode.Sell ? { ...state.outputConfig, onCryptoChange: handleSelectChange } : state.outputConfig;
+    state.mode === SwapMode.Sell
+      ? { ...state.outputConfig, onCryptoChange: handleSelectChange, selected: state.outputToken }
+      : state.outputConfig;
 
   const formatErrorMessage = (errorMessage: string) => {
     const boundary = errorMessage.indexOf('(');
