@@ -2,7 +2,6 @@ import { useState } from 'react';
 import styled from 'styled-components';
 
 import { useWallet } from 'providers/WalletProvider';
-import { Input } from 'components/Input/Input';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { useUnstakeOGTemple } from 'hooks/core/use-unstake-ogtemple';
 import { useRefreshWalletState } from 'hooks/use-refresh-wallet-state';
@@ -11,6 +10,7 @@ import { ZERO } from 'utils/bigNumber';
 import { formatNumber } from 'utils/formatter';
 
 import { Header, CtaButton } from '../styles';
+import { Input } from '../../NewUI/HomeInput';
 
 export const Unstake = () => {
   const { balance } = useWallet();
@@ -31,7 +31,8 @@ export const Unstake = () => {
   };
 
   const bigAmount = getBigNumberFromString(unstakeAmount || '0');
-  const buttonIsDisabled = unstakeLoading || !unstakeAmount || balance.ogTemple.lte(ZERO)|| bigAmount.gt(balance.ogTemple);
+  const buttonIsDisabled =
+    unstakeLoading || !unstakeAmount || balance.OGTEMPLE.lte(ZERO) || bigAmount.gt(balance.OGTEMPLE);
 
   return (
     <>
@@ -47,17 +48,14 @@ export const Unstake = () => {
           value={unstakeAmount}
           placeholder="0"
           onHintClick={() => {
-            const amount = balance.ogTemple.eq(ZERO) ? '' : formatBigNumber(balance.ogTemple);
+            const amount = balance.OGTEMPLE.eq(ZERO) ? '' : formatBigNumber(balance.OGTEMPLE);
             setUnstakeAmount(amount);
           }}
           min={0}
-          hint={`Balance: ${formatNumber(formatBigNumber(balance.ogTemple))}`}
+          hint={`Balance: ${formatNumber(formatBigNumber(balance.OGTEMPLE))}`}
         />
       </InputWrapper>
-      <CtaButton
-        disabled={buttonIsDisabled}
-        onClick={() => unstake(unstakeAmount)}
-      >
+      <CtaButton disabled={buttonIsDisabled} onClick={() => unstake(unstakeAmount)}>
         Unstake {TICKER_SYMBOL.OG_TEMPLE_TOKEN}
       </CtaButton>
     </>

@@ -63,13 +63,6 @@ export const ProfileLegacyTemple: React.FC<IProps> = ({ lockedOgTempleBalance = 
             backgroundImageUrl={background3}
             darken
           />
-          <StatsCard
-            label={`Usable ${TICKER_SYMBOL.FAITH}`}
-            stat={formatTemple(faithBalance)}
-            backgroundColor={background2}
-            backgroundImageUrl={texture2}
-            darken
-          />
         </LegacyTempleArea>
         {lockedOgTempleBalance.gt(ZERO) && (
           <LegacyTempleArea>

@@ -6,12 +6,9 @@ import { ZERO } from 'utils/bigNumber';
 
 const { DAI, FRAX, USDC, USDT, ETH, WETH, TEMPLE_TOKEN } = TICKER_SYMBOL;
 
-const buyTokens = new Set([DAI, USDC, USDT, FRAX, ETH, WETH]);
-const sellTokens = new Set([DAI, USDC, USDT, FRAX, ETH, WETH]);
-
 export const TOKENS_BY_MODE = {
-  BUY: [...buyTokens],
-  SELL: [...sellTokens],
+  BUY: [DAI, USDC, USDT, FRAX, ETH, WETH],
+  SELL: [DAI, USDC, USDT, FRAX, ETH, WETH],
 };
 
 export const INITIAL_STATE: SwapReducerState = {
@@ -24,7 +21,7 @@ export const INITIAL_STATE: SwapReducerState = {
   outputTokenBalance: ZERO,
   slippageTolerance: 0.5,
   deadlineMinutes: 20,
-  inputConfig: buildSelectConfig(DAI, SwapMode.Buy),
+  inputConfig: buildSelectConfig(SwapMode.Buy),
   outputConfig: buildValueConfig(TEMPLE_TOKEN),
   isTransactionPending: false,
   error: null,
