@@ -1,11 +1,11 @@
 import { expect } from "chai";
-import { OudToken, OudToken__factory } from "../../../typechain";
+import { OudToken, OudToken__factory } from "../../typechain";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { BigNumberish, Signer, TypedDataDomain, TypedDataField } from "ethers";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 import { splitSignature } from "ethers/lib/utils";
-import { blockTimestamp } from "../../helpers";
+import { blockTimestamp } from "../helpers";
  
 describe("Oud Token", async () => {
     let token: OudToken;
