@@ -26,6 +26,8 @@ import { EditLBPPage } from 'components/Pages/Ascend/admin/edit';
 import { AscendPage } from 'components/Pages/Ascend';
 import { AscendListPage } from 'components/Pages/AscendList';
 
+import { AnalyticsPage } from 'components/Pages/Analytics';
+
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { Unstake } from 'components/Pages/Core/Trade/views/Unstake';
@@ -88,6 +90,8 @@ ReactDOM.render(
                 <Route path="timing" element={<Timing />} />
               </Route>
               <Route path="profile" element={<ProfilePage />} />
+
+              <Route path="analytics" element={<AnalyticsPage />} />
 
               {env.featureFlags.enableAscend && (
                 <>

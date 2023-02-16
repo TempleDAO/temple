@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, MouseEventHandler } from 'react';
+import { useState, useCallback, useEffect, MouseEventHandler } from 'react';
 import styled from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
 import { curveCatmullRom } from 'd3-shape';
@@ -6,6 +6,7 @@ import { FlexibleXYPlot, XAxis, YAxis, LineSeries, Crosshair, HorizontalGridLine
 import Image from 'components/Image/Image';
 import Loader from 'components/Loader/Loader';
 import { PriceMetricsRamos } from 'hooks/use-refreshable-price-metrics-ramos';
+import { TIME_INTERVAL, DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
 import sunImage from 'assets/images/sun-art-new.svg';
 import 'react-vis/dist/style.css';
 import { queryPhone } from 'styles/breakpoints';
@@ -17,24 +18,6 @@ const CHART_SIZE = {
 };
 
 const CORRUPTED_TIMESTAMPS = [1640696724000, 1640700414000];
-
-export enum TIME_INTERVAL {
-  ONE_HOUR = 60 * 60 * 1000,
-  ONE_DAY = 24 * ONE_HOUR,
-  ONE_WEEK = 7 * ONE_DAY,
-  TWO_WEEKS = ONE_WEEK * 2,
-  ONE_MONTH = ONE_DAY * 30,
-  THREE_MONTHS = ONE_MONTH * 3,
-  SIX_MONTHS = ONE_MONTH * 6,
-  ONE_YEAR = ONE_MONTH * 12,
-}
-
-const availableIntervals = [
-  { interval: TIME_INTERVAL.ONE_DAY, label: '1D' },
-  { interval: TIME_INTERVAL.ONE_WEEK, label: '1W' },
-  { interval: TIME_INTERVAL.ONE_MONTH, label: '1M' },
-  { interval: TIME_INTERVAL.ONE_YEAR, label: '1Y' },
-];
 
 export type ChartData = {
   templePriceDataPoints: DataPoint[];
@@ -300,7 +283,7 @@ export const PriceChart = ({ timeInterval = TIME_INTERVAL.ONE_WEEK }: LineChartP
             </FlexibleXYPlot>
             <TogglerRow>
               <TogglerContainer>
-                {availableIntervals.map(({ interval, label }) => (
+                {DEFAULT_CHART_INTERVALS.map(({ interval, label }) => (
                   <Toggle
                     key={interval}
                     onClick={() => setSelectedInterval(interval)}
