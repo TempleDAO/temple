@@ -1,15 +1,15 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Oud (protocol/contracts/amo/oud/Oud.sol)
+// Oud (protocol/contracts/oud/OudToken.sol)
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC20, ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {AMO__IOudToken} from "../interfaces/AMO__IOudtoken.sol";
+import {IOudToken} from "../interfaces/oud/IOudtoken.sol";
 
 /// @notice An ERC20 token which can be minted/burnt by approved accounts
-contract OudToken is AMO__IOudToken, ERC20Permit, Ownable {
+contract OudToken is IOudToken, ERC20Permit, Ownable {
     using SafeERC20 for IERC20;
 
     /// @notice A set of addresses which are approved to mint/burn

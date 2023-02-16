@@ -1,6 +1,5 @@
 import { expect } from "chai";
 import { OudToken, OudToken__factory } from "../../../typechain";
-// import { recoverToken, shouldRevertNotOwner, testErc20Permit } from "../../helpers";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { BigNumberish, Signer, TypedDataDomain, TypedDataField } from "ethers";
 import { ethers } from "hardhat";
@@ -8,7 +7,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 import { splitSignature } from "ethers/lib/utils";
 import { blockTimestamp } from "../../helpers";
  
-describe("Mintable Token", async () => {
+describe("Oud Token", async () => {
     let token: OudToken;
     let owner: SignerWithAddress;
     let minter: SignerWithAddress;
@@ -51,7 +50,7 @@ describe("Mintable Token", async () => {
         const amount = 50;
         await token.addMinter(owner.getAddress());
         await token.mint(token.address, amount);
-        // await recoverToken(token, amount, token, owner);
+        // TODO await recoverToken(token, amount, token, owner);
     });
 
     it("Only specified roles can mint", async () => {
@@ -64,7 +63,6 @@ describe("Mintable Token", async () => {
             .withArgs(await owner.getAddress());
 
         // Only admin can add a minter
-        // await shouldRevertNotOwner(token.connect(alan).addMinter(alanAddress));
         await expect(token.connect(alan).addMinter(alanAddress)).to.revertedWith("Ownable: caller is not the owner");
         await expect(token.addMinter(minterAddress))
             .to.emit(token, "AddedMinter")
@@ -79,7 +77,6 @@ describe("Mintable Token", async () => {
             .withArgs(await owner.getAddress());
 
         // Only admin can remove a minter
-        // await shouldRevertNotOwner(token.connect(alan).removeMinter(minterAddress));
         await expect(token.connect(alan).removeMinter(minterAddress)).to.revertedWith("Ownable: caller is not the owner");
         await expect(token.removeMinter(minterAddress))
             .to.emit(token, "RemovedMinter")
