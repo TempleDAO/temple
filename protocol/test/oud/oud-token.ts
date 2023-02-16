@@ -23,6 +23,101 @@ describe("Oud Token", async () => {
         expect(balAfter.sub(balBefore)).eq(amount);
     }
 
+    const signedPermit = async (
+        signer: SignerWithAddress,
+        token: OudToken,
+        spender: string,
+        amount: BigNumberish,
+        deadline: number,
+    ) => {
+        const chainId = await signer.getChainId();
+        const signerAddr = await signer.getAddress();
+        const nonce = await token.nonces(signerAddr);
+
+        const domain: TypedDataDomain = {
+            name: await token.name(),
+            version: '1',
+            chainId,
+            verifyingContract: token.address
+        };
+
+        const permit: Record<string, TypedDataField[]> = {
+            Permit: [
+                { name: 'owner', type: 'address' },
+                { name: 'spender', type: 'address' },
+                { name: 'value', type: 'uint256' },
+                { name: 'nonce', type: 'uint256' },
+                { name: 'deadline', type: 'uint256' },
+            ],
+        };
+
+        const value = {
+            owner: signerAddr,
+            spender,
+            value: amount,
+            nonce,
+            deadline,
+        };
+
+        const signature = await signer._signTypedData(domain, permit, value);
+        return splitSignature(signature);
+    }
+
+    const testErc20Permit = async (
+        token: OudToken,
+        signer: SignerWithAddress,
+        spender: Signer,
+        amount: BigNumberish
+    ) => {
+        const now = await blockTimestamp();
+        const allowanceBefore = await token.allowance(signer.getAddress(), spender.getAddress());
+
+        // Check for expired deadlines
+        {
+            const deadline = now - 1;
+            const { v, r, s } = await signedPermit(signer, token, await spender.getAddress(), amount, deadline);
+            await expect(token.permit(
+                signer.getAddress(),
+                spender.getAddress(),
+                amount,
+                deadline,
+                v,
+                r,
+                s
+            )).to.revertedWith("ERC20Permit: expired deadline");
+        }
+
+        // Permit successfully increments the allowance
+        const deadline = now + 3600;
+        const { v, r, s } = await signedPermit(signer, token, await spender.getAddress(), amount, deadline);
+        {
+            await token.permit(
+                signer.getAddress(),
+                spender.getAddress(),
+                amount,
+                deadline,
+                v,
+                r,
+                s,
+            );
+
+            expect(await token.allowance(signer.getAddress(), spender.getAddress())).to.eq(allowanceBefore.add(amount));
+        }
+
+        // Can't re-use the same signature for another permit (the nonce was incremented)
+        {
+            await expect(token.permit(
+                signer.getAddress(),
+                spender.getAddress(),
+                amount,
+                deadline,
+                v,
+                r,
+                s,
+            )).to.revertedWith("ERC20Permit: invalid signature");
+        }
+    }
+
     before(async () => {
         [owner, minter, alan, spender] = await ethers.getSigners();
     });
@@ -117,7 +212,6 @@ describe("Oud Token", async () => {
     });
 
     it("permit works as expected", async () => {
-
-
+        await testErc20Permit(token, alan, spender, 123);
     });
 });
