@@ -1,16 +1,17 @@
+import type {
+  SubGraphQuery,
+  GetVaultGroupsResponse,
+  GetVaultGroupResponse,
+  GetMetricsResponse,
+  GetRAMOSMetricsResponse,
+} from './types';
+
 import { useEffect, useState, useMemo, useRef } from 'react';
 
 import { useWallet } from 'providers/WalletProvider';
 import env from 'constants/env';
 import { createVaultGroup } from 'components/Vault/utils';
 import { useSubgraphRequest } from 'hooks/use-subgraph-request';
-
-import {
-  SubGraphQuery,
-  GetVaultGroupsResponse,
-  GetVaultGroupResponse,
-  GetMetricsResponse,
-} from './types'
 
 const createVaultUserFragment = (walletAddress = '') => {
   return `
@@ -105,17 +106,26 @@ const createVaultGroupQuery = (vaultGroupId: string, walletAddress = ''): SubGra
   }`,
 });
 
+export const createRAMOSDailyMetricsQuery = (): SubGraphQuery => ({
+  query: `{
+    metricDailySnapshots(orderDirection: asc, orderBy: timestamp) {
+      templeBurned
+      totalProfitUSD
+      treasuryPriceIndexUSD
+      templeVolume
+      timestamp
+    }
+  }`,
+});
+
 export const useVaultMetrics = () => {
-  const [request, resp] = useSubgraphRequest<GetMetricsResponse>(
-    env.subgraph.templeCore,
-    {
-      query: `{
+  const [request, resp] = useSubgraphRequest<GetMetricsResponse>(env.subgraph.templeCore, {
+    query: `{
         metrics {
           tvlUSD
         }
       }`,
-    },
-  );
+  });
 
   useEffect(() => {
     request();
@@ -131,7 +141,7 @@ export const useListCoreVaultGroups = () => {
 
   const [request, { response, isLoading: requestPending, error }] = useSubgraphRequest<GetVaultGroupsResponse>(
     env.subgraph.templeCore,
-    createGetVaultGroupsQuery(wallet || ''),
+    createGetVaultGroupsQuery(wallet || '')
   );
 
   useEffect(() => {
@@ -172,7 +182,7 @@ export const useGetVaultGroup = (vaultGroupId: string) => {
     env.subgraph.templeCore,
     createVaultGroupQuery(vaultGroupId, wallet || '')
   );
-  
+
   useEffect(() => {
     if (isConnecting) {
       return;
@@ -193,4 +203,17 @@ export const useGetVaultGroup = (vaultGroupId: string) => {
     isLoading: isLoading || requestPending,
     error,
   };
+};
+
+export const useRAMOSMetrics = () => {
+  const [request, response] = useSubgraphRequest<GetRAMOSMetricsResponse>(
+    env.subgraph.ramos,
+    createRAMOSDailyMetricsQuery()
+  );
+
+  useEffect(() => {
+    request();
+  }, [request]);
+
+  return response;
 };
