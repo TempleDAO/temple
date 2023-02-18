@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 // Oud Redeemer (protocol/contracts/oud/OudRedeemer.sol)
 
 import '@openzeppelin/contracts/access/Ownable.sol';
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '../interfaces/oud/IOudRedeemer.sol';
 import '../interfaces/oud/Oud__ITempleLineOfCredit.sol';
 import '../interfaces/oud/IOudtoken.sol';
@@ -39,7 +39,7 @@ contract OudRedeemer is IOudRedeemer, Ownable {
   // Target address for 'stable' token used for redemption of Oud + stable for Temple
   address public depositStableTo;
 
-// @dev requires this contract to have minting rights for both Temple and Oud
+  // @dev requires this contract to have minting rights for both Temple and Oud
   constructor(
     address _oudToken,
     address _templeToken,
@@ -54,13 +54,13 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     tpi = _tpi;
   }
 
-//  @notice Returns the index at which 'stable' token required to mint Temple
+  //  @notice Returns the index at which 'stable' token required to mint Temple
   function treasuryPriceIndex() external view returns (uint256) {
     return tpi;
   }
 
-// @dev Allows the tpi to be adjusted.
-// @param 'value' is the new TPI
+  // @dev Allows the tpi to be adjusted.
+  // @param 'value' is the new TPI
   function setTreasuryPriceIndex(uint256 value) external override onlyOwner {
     tpi = value;
   }
@@ -75,15 +75,15 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     return tpiDecimals;
   }
 
-// @notice Redeems Oud and Stable token (@ tpi) for Temple
-// @dev requires allowances for Oud and Stable Token
-// @param 'oudAmoun' The amount of Oud to be redeemed for Temple
-// @returns 'templeAmount' The amount of Temple that has been minted to sender.
+  // @notice Redeems Oud and Stable token (@ tpi) for Temple
+  // @dev requires allowances for Oud and Stable Token
+  // @param 'oudAmount' The amount of Oud to be redeemed for Temple
+  // @returns 'templeAmount' The amount of Temple that has been minted to sender.
   function redeem(uint256 oudAmount) external returns (uint256 templeAmount) {
     if (oudAmount == 0) revert RedeemAmountZero();
     address account = msg.sender;
     uint256 _stableAmount;
-    _stableAmount = oudAmount * tpi / 10 ** tpiDecimals;
+    _stableAmount = (oudAmount * tpi) / 10 ** tpiDecimals;
     IOudToken(oudToken).burn(account, oudAmount);
     SafeERC20.safeTransferFrom(stable, account, address(this), _stableAmount);
     SafeERC20.safeIncreaseAllowance(stable, depositStableTo, _stableAmount);
@@ -94,7 +94,7 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     );
 
     // @dev Conversion is 1 OUD + (Stable*TPI) = 1 Temple thus Temple Amount == Oud Amount.
-    Oud__ITempleERC20Token(templeToken).mint(account,oudAmount);
+    Oud__ITempleERC20Token(templeToken).mint(account, oudAmount);
     emit OudRedeemed(account, oudAmount, tpi, oudAmount);
     return oudAmount;
   }
