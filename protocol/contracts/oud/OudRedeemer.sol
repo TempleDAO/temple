@@ -12,10 +12,6 @@ import '../interfaces/oud/Oud__ITempleERC20Token.sol';
 /**
  * @title Allows for the redemption of Oud + a stable coin for Temple at the Temple Treasury Price index
  */
-// @notice
-// @dev
-// @param
-// @return
 contract OudRedeemer is IOudRedeemer, Ownable {
   using SafeERC20 for IERC20;
   error AddressZero();
@@ -54,7 +50,7 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     tpi = _tpi;
   }
 
-  //  @notice Returns the index at which 'stable' token required to mint Temple
+  //  @notice Returns the index at which 'stable' token is required to mint Temple
   function treasuryPriceIndex() external view returns (uint256) {
     return tpi;
   }
@@ -75,6 +71,41 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     return tpiDecimals;
   }
 
+  /**
+   * @notice Provides a quote for 'oudAmount' with relevant token addresses:
+   *  'oudAmount' provided, 'stable' token required, 'templeAmount' that will be minted to caller
+   * @param oudAmount amount of Oud that will be redeemed
+   * @return _oudAmount amount of Oud that wil be redeemed
+   * @return _oudTokenAddress address of the Oud token
+   * @return _stableAmount amount of Stable token required at tpi
+   * @return _stableAddress address of the Stable token in use
+   * @return _templeAmount amount of Temple that will be minted
+   * @return _templeTokenAddress address of the Temple token
+   */
+  function getQuote(
+    uint256 oudAmount
+  )
+    external
+    view
+    returns (
+      uint256 _oudAmount,
+      address _oudTokenAddress,
+      uint256 _stableAmount,
+      address _stableAddress,
+      uint256 _templeAmount,
+      address _templeTokenAddress
+    )
+  {
+    return (
+      oudAmount,
+      oudToken,
+      _getStableAmount(oudAmount),
+      address(stable),
+      oudAmount,
+      templeToken
+    );
+  }
+
   // @notice Redeems Oud and Stable token (@ tpi) for Temple
   // @dev requires allowances for Oud and Stable Token
   // @param 'oudAmount' The amount of Oud to be redeemed for Temple
@@ -83,7 +114,7 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     if (oudAmount == 0) revert RedeemAmountZero();
     address account = msg.sender;
     uint256 _stableAmount;
-    _stableAmount = (oudAmount * tpi) / 10 ** tpiDecimals;
+    _stableAmount = _getStableAmount(oudAmount);
     IOudToken(oudToken).burn(account, oudAmount);
     SafeERC20.safeTransferFrom(stable, account, address(this), _stableAmount);
     SafeERC20.safeIncreaseAllowance(stable, depositStableTo, _stableAmount);
@@ -97,6 +128,12 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     Oud__ITempleERC20Token(templeToken).mint(account, oudAmount);
     emit OudRedeemed(account, oudAmount, tpi, oudAmount);
     return oudAmount;
+  }
+
+  function _getStableAmount(
+    uint256 oudAmount
+  ) internal view returns (uint256 stableAmount) {
+    return (oudAmount * tpi) / (10 ** tpiDecimals);
   }
 
   event OudRedeemed(

@@ -100,6 +100,16 @@ describe("Oud Redeemer", async () => {
     });
 
     describe("Redemption TXS", () => {
+        it("Returns the correct quote given Oud amount", async () => {
+            const [ _oudAmount, _oudTokenAddress, _stableAmount, _stableAddress, _templeAmount, _templeTokenAddress] 
+                = await oudRedeemer.getQuote(toAtto(OUD_AMOUNT));
+            expect(_oudAmount).to.eq(toAtto(OUD_AMOUNT));
+            expect(_oudTokenAddress).to.eq(oudToken.address);
+            expect(_stableAmount).to.eq(toAtto(STABLE_AMOUNT));
+            expect(_stableAddress).to.eq(stableToken.address);
+            expect(_templeAmount).to.eq(toAtto(OUD_AMOUNT));
+            expect(_templeTokenAddress).to.eq(templeToken.address);
+        });
         it("Correct amount of Oud is burned for redemption", async () => {
             expect(await oudToken.balanceOf(alanAddress)).to.eq(toAtto(OPENING_BALANCE));
             await stableToken.connect(alan).approve(oudRedeemer.address,toAtto(STABLE_AMOUNT));         
