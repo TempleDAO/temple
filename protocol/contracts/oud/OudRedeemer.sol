@@ -86,8 +86,8 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     if (oudAmount == 0) revert RedeemAmountZero();
     uint256 _stableAmount = _getStableAmount(oudAmount);
     IOudToken(oudToken).burn(msg.sender, oudAmount);
-    SafeERC20.safeTransferFrom(stable, msg.sender, address(this), _stableAmount);
-    SafeERC20.safeIncreaseAllowance(stable, depositStableTo, _stableAmount);
+    stable.safeTransferFrom ( msg.sender, address(this), _stableAmount);
+    stable.safeIncreaseAllowance( depositStableTo, _stableAmount);
     ITempleLineOfCredit(depositStableTo).depositReserve(
       stable,
       address(this),
