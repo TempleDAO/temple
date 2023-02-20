@@ -1,8 +1,10 @@
 import { ethers, network } from "hardhat";
-import { BaseContract, BigNumber, BigNumberish, Signer } from "ethers";
+import { BaseContract, BigNumber, BigNumberish, Contract, Signer, TypedDataDomain, TypedDataField } from "ethers";
 import { assert, expect } from "chai";
 import { TempleERC20Token, TempleERC20Token__factory } from "../typechain";
 import { impersonateAccount, time as timeHelpers } from "@nomicfoundation/hardhat-network-helpers";
+import { splitSignature } from "ethers/lib/utils";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export const NULL_ADDR = "0x0000000000000000000000000000000000000000"
 
@@ -160,4 +162,108 @@ export async function deployAndAirdropTemple(
   }
 
   return templeToken;
+}
+
+export async function recoverToken(token: Contract, amount: BigNumberish, from: Contract, signer: Signer) {
+  const balBefore = await token.balanceOf(await signer.getAddress());
+  await expect(from.recoverToken(token.address, await signer.getAddress(), amount))
+    .to.emit(from, "TokenRecovered")
+    .withArgs(token.address, await signer.getAddress(), amount);
+  const balAfter = await token.balanceOf(await signer.getAddress());
+  expect(balAfter.sub(balBefore)).eq(amount);
+}
+
+export const signedPermit = async (
+    signer: SignerWithAddress,
+    token: Contract,
+    spender: string,
+    amount: BigNumberish,
+    deadline: number,
+) => {
+    const chainId = await signer.getChainId();
+    const signerAddr = await signer.getAddress();
+    const nonce = await token.nonces(signerAddr);
+
+    const domain: TypedDataDomain = {
+        name: await token.name(),
+        version: '1',
+        chainId,
+        verifyingContract: token.address
+    };
+
+    const permit: Record<string, TypedDataField[]> = {
+        Permit: [
+            { name: 'owner', type: 'address' },
+            { name: 'spender', type: 'address' },
+            { name: 'value', type: 'uint256' },
+            { name: 'nonce', type: 'uint256' },
+            { name: 'deadline', type: 'uint256' },
+        ],
+    };
+
+    const value = {
+        owner: signerAddr,
+        spender,
+        value: amount,
+        nonce,
+        deadline,
+    };
+
+    const signature = await signer._signTypedData(domain, permit, value);
+    return splitSignature(signature);
+}
+
+export const testErc20Permit = async (
+    token: Contract,
+    signer: SignerWithAddress,
+    spender: Signer,
+    amount: BigNumberish
+) => {
+    const now = await blockTimestamp();
+    const allowanceBefore = await token.allowance(signer.getAddress(), spender.getAddress());
+
+    // Check for expired deadlines
+    {
+        const deadline = now - 1;
+        const { v, r, s } = await signedPermit(signer, token, await spender.getAddress(), amount, deadline);
+        await expect(token.permit(
+            signer.getAddress(),
+            spender.getAddress(),
+            amount,
+            deadline,
+            v,
+            r,
+            s
+        )).to.revertedWith("ERC20Permit: expired deadline");
+    }
+
+    // Permit successfully increments the allowance
+    const deadline = now + 3600;
+    const { v, r, s } = await signedPermit(signer, token, await spender.getAddress(), amount, deadline);
+    {
+        await token.permit(
+            signer.getAddress(),
+            spender.getAddress(),
+            amount,
+            deadline,
+            v,
+            r,
+            s,
+        );
+
+        expect(await token.allowance(signer.getAddress(), spender.getAddress())).to.eq(allowanceBefore.add(amount));
+    }
+
+    // Can't re-use the same signature for another permit (the nonce was incremented)
+    {
+        await expect(token.permit(
+            signer.getAddress(),
+            spender.getAddress(),
+            amount,
+            deadline,
+            v,
+            r,
+            s,
+        )).to.revertedWith("ERC20Permit: invalid signature");
+    }
 }
