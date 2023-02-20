@@ -6,7 +6,7 @@ import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
 import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '../interfaces/oud/IOudRedeemer.sol';
 import '../interfaces/templeLineOfCredit/ITempleLineOfCredit.sol';
-import '../interfaces/oud/IOudtoken.sol';
+import '../interfaces/oud/IOudToken.sol';
 import '../interfaces/oud/ITempleERC20Token.sol';
 
 /**
