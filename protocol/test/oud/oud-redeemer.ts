@@ -129,10 +129,14 @@ describe("Oud Redeemer", async () => {
             expect(await oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT)))
                 .to.changeTokenBalance(stableToken, templeLineOfCredit, toAtto(STABLE_AMOUNT));
         });
-        it("Should emit the correct event", async () => {
+        it("Should emit the correct events", async () => {
             await stableToken.connect(alan).approve(oudRedeemer.address, toAtto(STABLE_AMOUNT));
-            expect(await oudRedeemer.connect(alan).redeem(toAtto(1))).to.emit(oudRedeemer, "OudRedeemed")
-                .withArgs(alanAddress, toAtto(1), TPI, toAtto(1));
+            await expect( oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT))).to.emit(oudRedeemer, "OudRedeemed")
+                .withArgs(alanAddress, toAtto(OUD_AMOUNT), toAtto(STABLE_AMOUNT), TPI, toAtto(OUD_AMOUNT));
+            await expect(oudRedeemer.connect(owner).setTreasuryPriceIndex(2400)).to.emit(oudRedeemer,"TreasuryPriceIndexSet")
+                .withArgs(TPI, 2400);
+            await expect(oudRedeemer.connect(owner).setStableCoin(alanAddress)).to.emit(oudRedeemer,"StableCoinSet")
+                .withArgs(stableToken.address, alanAddress);
 
         });
         it("Reverts 0 Oud redemption", async () => {
