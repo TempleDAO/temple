@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 // Fake Temple Line of Credit (protocol/contracts/fakes/FakeTempleLineofCredit.sol)
 
 import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import {IERC20Permit} from '@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol';
 import {ITempleLineOfCredit} from '../interfaces/templeLineOfCredit/ITempleLineOfCredit.sol';
 
@@ -24,6 +24,6 @@ contract FakeTempleLineOfCredit is ITempleLineOfCredit {
     uint256 amount
   ) external override {
 
-    SafeERC20.safeTransferFrom(debtToken, account, address(this), amount);
+    debtToken.safeTransferFrom( account, address(this), amount);
   }
 }
