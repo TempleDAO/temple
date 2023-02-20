@@ -2,8 +2,8 @@ pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Oud Redeemer (protocol/contracts/oud/OudRedeemer.sol)
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '../interfaces/oud/IOudRedeemer.sol';
 import '../interfaces/templeLineOfCredit/ITempleLineOfCredit.sol';
 import '../interfaces/oud/IOudtoken.sol';
