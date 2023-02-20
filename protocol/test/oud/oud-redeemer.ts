@@ -21,7 +21,7 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const TPI = 9800;
 const OPENING_BALANCE = 10_000;
 const OUD_AMOUNT = 2;
-const STABLE_AMOUNT = (OUD_AMOUNT * TPI) / (10**4);
+const STABLE_AMOUNT = (OUD_AMOUNT * TPI) / (10 ** 4);
 
 describe("Oud Redeemer", async () => {
     let oudToken: OudToken;
