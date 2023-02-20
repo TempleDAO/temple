@@ -36,6 +36,15 @@ contract OudRedeemer is IOudRedeemer, Ownable {
   /// Target address for 'stable' token used for redemption of Oud + stable for Temple
   address public depositStableTo;
 
+  event TreasuryPriceIndexSet (uint256 oldTPI, uint256 newTPI);
+  event StableCoinSet (address oldStable, address newStable);
+  event OudRedeemed(
+    address account,
+    uint256 oudRedeemed,
+    uint256 staleRedeemed,
+    uint256 tpi,
+    uint256 templeAmount
+  );
   /// @dev requires this contract to have minting rights for both Temple and Oud
   constructor(
     address _oudToken,
@@ -54,6 +63,7 @@ contract OudRedeemer is IOudRedeemer, Ownable {
   /// @dev Allows the tpi to be adjusted.
   /// @param value is the new TPI
   function setTreasuryPriceIndex(uint256 value) external override onlyOwner {
+    emit TreasuryPriceIndexSet (treasuryPriceIndex, value);
     treasuryPriceIndex = value;
   }
 
@@ -61,6 +71,7 @@ contract OudRedeemer is IOudRedeemer, Ownable {
 /// @param newStable updated address fo 'stable', cannot be 0
   function setStableCoin(address newStable) external override onlyOwner {
     if (newStable == address(0)) revert AddressZero();
+    emit StableCoinSet (address(stable), newStable);
     stable = IERC20(newStable);
   }
 
@@ -96,7 +107,7 @@ contract OudRedeemer is IOudRedeemer, Ownable {
 
     /// @dev Conversion is 1 OUD + (Stable*TPI) = 1 Temple thus Temple Amount == Oud Amount.
     Oud__ITempleERC20Token(templeToken).mint(msg.sender, oudAmount);
-    emit OudRedeemed(msg.sender, oudAmount, treasuryPriceIndex, oudAmount);
+    emit OudRedeemed(msg.sender, oudAmount,_stableAmount, treasuryPriceIndex, oudAmount);
     return oudAmount;
   }
 
@@ -106,10 +117,4 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     return (oudAmount * treasuryPriceIndex) / (10 ** TPI_DECIMALS);
   }
 
-  event OudRedeemed(
-    address account,
-    uint256 OudRedeemed,
-    uint256 tpi,
-    uint256 templeAmount
-  );
 }
