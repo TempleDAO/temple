@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { toAtto } from "../helpers";
+import { recoverToken, toAtto } from "../helpers";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 import { getAddress } from "ethers/lib/utils";
@@ -82,12 +82,14 @@ describe("Oud Redeemer", async () => {
                 expect(await oudRedeemer.TPI_DECIMALS()).to.eq(4);
             });
         });
+
         it("Only owner can set TPI", async () => {
             await expect(oudRedeemer.connect(alan).setTreasuryPriceIndex(2000))
                 .to.revertedWith("Ownable: caller is not the owner");
             await oudRedeemer.connect(owner).setTreasuryPriceIndex(2000);
             expect(await oudRedeemer.treasuryPriceIndex()).to.eq(2000);
         });
+
         it("Only owner can set Stable coin to valid address", async () => {
             await expect(oudRedeemer.connect(alan).setStableCoin(templeToken.address))
                 .to.revertedWith("Ownable: caller is not the owner");
@@ -96,39 +98,58 @@ describe("Oud Redeemer", async () => {
             await oudRedeemer.connect(owner).setStableCoin(templeToken.address);
             expect(await oudRedeemer.stable()).to.eq(getAddress(templeToken.address));
         });
+
+        it("Only owner can recover tokens", async () => {
+            await expect(oudRedeemer.connect(alan).recoverToken(templeToken.address, alan.getAddress(), 10)).to.revertedWith("Ownable: caller is not the owner");
+
+            // Happy paths
+            await expect(oudRedeemer.recoverToken(templeToken.address, alan.getAddress(), 10))
+                .to.revertedWith("ERC20: transfer amount exceeds balance");
+        });
+
+        it("owner can recover tokens", async () => {
+            const amount = 50;
+            await templeToken.mint(oudRedeemer.address, amount);
+            await recoverToken(templeToken, amount, oudRedeemer, owner);
+        });
     });
 
     describe("Redemption TXS", () => {
         it("Returns the correct quote given Oud amount", async () => {
             const [_stableAmount, _templeAmount]
-                = await oudRedeemer.getQuote(toAtto(OUD_AMOUNT));
+                = await oudRedeemer.redeemQuote(toAtto(OUD_AMOUNT));
             expect(_stableAmount).to.eq(toAtto(STABLE_AMOUNT));
             expect(_templeAmount).to.eq(toAtto(OUD_AMOUNT));
         });
+
         it("Correct amount of Oud is burned for redemption", async () => {
             expect(await oudToken.balanceOf(alanAddress)).to.eq(toAtto(OPENING_BALANCE));
             await stableToken.connect(alan).approve(oudRedeemer.address, toAtto(STABLE_AMOUNT));
             expect(await oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT)))
                 .to.changeTokenBalance(oudToken, alanAddress, toAtto(OPENING_BALANCE - OUD_AMOUNT));
         });
+
         it("Correct amount of Temple is redeemed for Oud + Stable(at TPI)", async () => {
             expect(await templeToken.balanceOf(alanAddress)).to.eq(0);
             await stableToken.connect(alan).approve(oudRedeemer.address, toAtto(STABLE_AMOUNT));
             expect(await oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT)))
                 .to.changeTokenBalance(templeToken, alanAddress, toAtto(OUD_AMOUNT));
         });
+
         it("Correct amount of Stable(at TPI) is charged", async () => {
             expect(await stableToken.balanceOf(alanAddress)).to.eq(toAtto(OPENING_BALANCE));
             await stableToken.connect(alan).approve(oudRedeemer.address, toAtto(STABLE_AMOUNT));
             expect(await oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT)))
                 .to.changeTokenBalance(stableToken, alanAddress, toAtto(OPENING_BALANCE - STABLE_AMOUNT));
         });
+
         it("Redeem deposits correct amount to TLC", async () => {
             expect(await stableToken.balanceOf(templeLineOfCredit.address)).to.eq(0);
             await stableToken.connect(alan).approve(oudRedeemer.address, toAtto(STABLE_AMOUNT));
             expect(await oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT)))
                 .to.changeTokenBalance(stableToken, templeLineOfCredit, toAtto(STABLE_AMOUNT));
         });
+
         it("Should emit the correct events", async () => {
             await stableToken.connect(alan).approve(oudRedeemer.address, toAtto(STABLE_AMOUNT));
             await expect( oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT))).to.emit(oudRedeemer, "OudRedeemed")
@@ -139,10 +160,12 @@ describe("Oud Redeemer", async () => {
                 .withArgs(stableToken.address, alanAddress);
 
         });
+
         it("Reverts 0 Oud redemption", async () => {
             await expect(oudRedeemer.connect(alan).redeem(toAtto(0)))
                 .to.be.revertedWithCustomError(oudRedeemer, "RedeemAmountZero");
         });
+
         it("Reverts with insufficient Stable allowance", async () => {
             await expect(oudRedeemer.connect(alan).redeem(toAtto(1)))
                 .to.be.revertedWith("ERC20: insufficient allowance");
