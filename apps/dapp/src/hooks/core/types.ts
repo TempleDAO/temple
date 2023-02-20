@@ -51,13 +51,13 @@ export type Metrics = {
   tvlUSD: string;
 }[];
 
-export type RAMOSMetrics = {
+export type RAMOSMetric = {
   templeBurned: string;
   totalProfitUSD: string;
   treasuryPriceIndexUSD: string;
   templeVolume: string;
   timestamp: string;
-}[];
+};
 
 export interface SubGraphResponse<T extends object> {
   data?: T;
@@ -72,7 +72,7 @@ export interface SubGraphQuery {
 export type GetVaultGroupsResponse = SubGraphResponse<{ vaultGroups: GraphVaultGroup[] }>;
 export type GetVaultGroupResponse = SubGraphResponse<{ vaultGroup: GraphVaultGroup }>;
 export type GetMetricsResponse = SubGraphResponse<{ metrics: Metrics }>;
-export type GetRAMOSMetricsResponse = SubGraphResponse<{ metricDailySnapshots: RAMOSMetrics }>;
+export type GetRAMOSMetricsResponse = SubGraphResponse<{ metricDailySnapshots: RAMOSMetric[] }>;
 export class SubgraphError extends Error {
   constructor(public message: string, public cause: Error) {
     super(message);
