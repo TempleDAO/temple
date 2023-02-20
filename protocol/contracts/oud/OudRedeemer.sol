@@ -27,10 +27,11 @@ contract OudRedeemer is IOudRedeemer, Ownable {
   IERC20 public stable;
 
   ///   @notice The Treasury Price Index, used to calculate amount of 'stable' required to mint Temple
-  uint256 public tpi;
+  uint256 public treasuryPriceIndex;
 
   /// @notice The decimal precision of 'tpi'/Temple Price index
-  uint256 public constant tpiDecimals = 4;
+  /// @dev Decimal precision for 'tpi', 9880 == $0.988, precision = 4
+  uint256 public constant TPI_DECIMALS = 4;
 
   /// Target address for 'stable' token used for redemption of Oud + stable for Temple
   address public depositStableTo;
@@ -47,18 +48,13 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     oudToken = _oudToken;
     stable = IERC20(_stable);
     depositStableTo = _depositStableTo;
-    tpi = _tpi;
-  }
-
-  ///  @notice Returns the index at which 'stable' token is required to mint Temple
-  function treasuryPriceIndex() external view returns (uint256) {
-    return tpi;
+    treasuryPriceIndex = _tpi;
   }
 
   /// @dev Allows the tpi to be adjusted.
   /// @param value is the new TPI
   function setTreasuryPriceIndex(uint256 value) external override onlyOwner {
-    tpi = value;
+    treasuryPriceIndex = value;
   }
 
 /// @dev set address of stable coin used for minting Temple 
@@ -66,11 +62,6 @@ contract OudRedeemer is IOudRedeemer, Ownable {
   function setStableCoin(address newStable) external override onlyOwner {
     if (newStable == address(0)) revert AddressZero();
     stable = IERC20(newStable);
-  }
-
-  /// @dev Decimal precision for 'tpi', 9880 == $0.988, precision = 4
-  function TPI_PRECISION() external pure returns (uint256) {
-    return tpiDecimals;
   }
 
   /**
@@ -107,14 +98,14 @@ contract OudRedeemer is IOudRedeemer, Ownable {
 
     /// @dev Conversion is 1 OUD + (Stable*TPI) = 1 Temple thus Temple Amount == Oud Amount.
     Oud__ITempleERC20Token(templeToken).mint(account, oudAmount);
-    emit OudRedeemed(account, oudAmount, tpi, oudAmount);
+    emit OudRedeemed(account, oudAmount, treasuryPriceIndex, oudAmount);
     return oudAmount;
   }
 
   function _getStableAmount(
     uint256 oudAmount
   ) internal view returns (uint256 stableAmount) {
-    return (oudAmount * tpi) / (10 ** tpiDecimals);
+    return (oudAmount * treasuryPriceIndex) / (10 ** TPI_DECIMALS);
   }
 
   event OudRedeemed(
