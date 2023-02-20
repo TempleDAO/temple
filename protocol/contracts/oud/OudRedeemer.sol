@@ -75,35 +75,13 @@ contract OudRedeemer is IOudRedeemer, Ownable {
    * @notice Provides a quote for 'oudAmount' with relevant token addresses:
    *  'oudAmount' provided, 'stable' token required, 'templeAmount' that will be minted to caller
    * @param oudAmount amount of Oud that will be redeemed
-   * @return _oudAmount amount of Oud that wil be redeemed
-   * @return _oudTokenAddress address of the Oud token
    * @return _stableAmount amount of Stable token required at tpi
-   * @return _stableAddress address of the Stable token in use
    * @return _templeAmount amount of Temple that will be minted
-   * @return _templeTokenAddress address of the Temple token
    */
   function getQuote(
     uint256 oudAmount
-  )
-    external
-    view
-    returns (
-      uint256 _oudAmount,
-      address _oudTokenAddress,
-      uint256 _stableAmount,
-      address _stableAddress,
-      uint256 _templeAmount,
-      address _templeTokenAddress
-    )
-  {
-    return (
-      oudAmount,
-      oudToken,
-      _getStableAmount(oudAmount),
-      address(stable),
-      oudAmount,
-      templeToken
-    );
+  ) external view returns (uint256 _stableAmount, uint256 _templeAmount) {
+    return (_getStableAmount(oudAmount), oudAmount);
   }
 
   // @notice Redeems Oud and Stable token (@ tpi) for Temple

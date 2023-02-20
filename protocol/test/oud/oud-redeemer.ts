@@ -1,10 +1,9 @@
 import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { BigNumberish, TypedDataDomain, TypedDataField } from "ethers";
 import { toAtto } from "../helpers";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
-import { getAddress, splitSignature } from "ethers/lib/utils";
+import { getAddress } from "ethers/lib/utils";
 import {
     OudToken,
     OudToken__factory,
@@ -101,14 +100,10 @@ describe("Oud Redeemer", async () => {
 
     describe("Redemption TXS", () => {
         it("Returns the correct quote given Oud amount", async () => {
-            const [ _oudAmount, _oudTokenAddress, _stableAmount, _stableAddress, _templeAmount, _templeTokenAddress] 
+            const [ _stableAmount,  _templeAmount ] 
                 = await oudRedeemer.getQuote(toAtto(OUD_AMOUNT));
-            expect(_oudAmount).to.eq(toAtto(OUD_AMOUNT));
-            expect(_oudTokenAddress).to.eq(oudToken.address);
             expect(_stableAmount).to.eq(toAtto(STABLE_AMOUNT));
-            expect(_stableAddress).to.eq(stableToken.address);
             expect(_templeAmount).to.eq(toAtto(OUD_AMOUNT));
-            expect(_templeTokenAddress).to.eq(templeToken.address);
         });
         it("Correct amount of Oud is burned for redemption", async () => {
             expect(await oudToken.balanceOf(alanAddress)).to.eq(toAtto(OPENING_BALANCE));
