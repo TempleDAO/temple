@@ -17,25 +17,25 @@ contract OudRedeemer is IOudRedeemer, Ownable {
   error AddressZero();
   error RedeemAmountZero();
 
-  // @notice Temple token address
+  /// @notice Temple token address
   address public immutable templeToken;
 
-  // @notice Oud token address
+  /// @notice Oud token address
   address public immutable oudToken;
 
-  // @notice Stable token address
+  /// @notice Stable token address
   IERC20 public stable;
 
-  //   @notice The Temple Price Index, used to calculate amount of 'stable' required to mint Temple
+  ///   @notice The Treasury Price Index, used to calculate amount of 'stable' required to mint Temple
   uint256 public tpi;
 
-  // @notice The decimal precision of 'tpi'/Temple Price index
+  /// @notice The decimal precision of 'tpi'/Temple Price index
   uint256 public constant tpiDecimals = 4;
 
-  // Target address for 'stable' token used for redemption of Oud + stable for Temple
+  /// Target address for 'stable' token used for redemption of Oud + stable for Temple
   address public depositStableTo;
 
-  // @dev requires this contract to have minting rights for both Temple and Oud
+  /// @dev requires this contract to have minting rights for both Temple and Oud
   constructor(
     address _oudToken,
     address _templeToken,
@@ -50,23 +50,25 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     tpi = _tpi;
   }
 
-  //  @notice Returns the index at which 'stable' token is required to mint Temple
+  ///  @notice Returns the index at which 'stable' token is required to mint Temple
   function treasuryPriceIndex() external view returns (uint256) {
     return tpi;
   }
 
-  // @dev Allows the tpi to be adjusted.
-  // @param 'value' is the new TPI
+  /// @dev Allows the tpi to be adjusted.
+  /// @param value is the new TPI
   function setTreasuryPriceIndex(uint256 value) external override onlyOwner {
     tpi = value;
   }
 
+/// @dev set address of stable coin used for minting Temple 
+/// @param newStable updated address fo 'stable', cannot be 0
   function setStableCoin(address newStable) external override onlyOwner {
     if (newStable == address(0)) revert AddressZero();
     stable = IERC20(newStable);
   }
 
-  // @dev Decimal precision for 'tpi', 9880 == $0.988, precision = 4
+  /// @dev Decimal precision for 'tpi', 9880 == $0.988, precision = 4
   function TPI_PRECISION() external pure returns (uint256) {
     return tpiDecimals;
   }
@@ -83,11 +85,12 @@ contract OudRedeemer is IOudRedeemer, Ownable {
   ) external view returns (uint256 _stableAmount, uint256 _templeAmount) {
     return (_getStableAmount(oudAmount), oudAmount);
   }
-
-  // @notice Redeems Oud and Stable token (@ tpi) for Temple
-  // @dev requires allowances for Oud and Stable Token
-  // @param 'oudAmount' The amount of Oud to be redeemed for Temple
-  // @returns 'templeAmount' The amount of Temple that has been minted to sender.
+/**
+  * @notice Redeems Oud and Stable token (@ tpi) for Temple
+  * @dev requires allowances for Oud and Stable Token
+  * @param oudAmount The amount of Oud to be redeemed for Temple
+  * @return templeAmount The amount of Temple that has been minted to sender.
+  */ 
   function redeem(uint256 oudAmount) external returns (uint256 templeAmount) {
     if (oudAmount == 0) revert RedeemAmountZero();
     address account = msg.sender;
@@ -102,7 +105,7 @@ contract OudRedeemer is IOudRedeemer, Ownable {
       _stableAmount
     );
 
-    // @dev Conversion is 1 OUD + (Stable*TPI) = 1 Temple thus Temple Amount == Oud Amount.
+    /// @dev Conversion is 1 OUD + (Stable*TPI) = 1 Temple thus Temple Amount == Oud Amount.
     Oud__ITempleERC20Token(templeToken).mint(account, oudAmount);
     emit OudRedeemed(account, oudAmount, tpi, oudAmount);
     return oudAmount;
