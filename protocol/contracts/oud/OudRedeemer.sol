@@ -84,11 +84,9 @@ contract OudRedeemer is IOudRedeemer, Ownable {
   */ 
   function redeem(uint256 oudAmount) external returns (uint256 templeAmount) {
     if (oudAmount == 0) revert RedeemAmountZero();
-    address account = msg.sender;
-    uint256 _stableAmount;
-    _stableAmount = _getStableAmount(oudAmount);
-    IOudToken(oudToken).burn(account, oudAmount);
-    SafeERC20.safeTransferFrom(stable, account, address(this), _stableAmount);
+    uint256 _stableAmount = _getStableAmount(oudAmount);
+    IOudToken(oudToken).burn(msg.sender, oudAmount);
+    SafeERC20.safeTransferFrom(stable, msg.sender, address(this), _stableAmount);
     SafeERC20.safeIncreaseAllowance(stable, depositStableTo, _stableAmount);
     ITempleLineOfCredit(depositStableTo).depositReserve(
       stable,
@@ -97,8 +95,8 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     );
 
     /// @dev Conversion is 1 OUD + (Stable*TPI) = 1 Temple thus Temple Amount == Oud Amount.
-    Oud__ITempleERC20Token(templeToken).mint(account, oudAmount);
-    emit OudRedeemed(account, oudAmount, treasuryPriceIndex, oudAmount);
+    Oud__ITempleERC20Token(templeToken).mint(msg.sender, oudAmount);
+    emit OudRedeemed(msg.sender, oudAmount, treasuryPriceIndex, oudAmount);
     return oudAmount;
   }
 
