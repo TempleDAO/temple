@@ -6,7 +6,7 @@ import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
 import {ERC20, ERC20Permit} from '@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol';
 import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import {IOudToken} from '../interfaces/oud/IOudtoken.sol';
+import {IOudToken} from '../interfaces/oud/IOudToken.sol';
 
 /// @notice An ERC20 token which can be minted/burnt by approved accounts
 contract OudToken is IOudToken, ERC20Permit, Ownable {
