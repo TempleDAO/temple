@@ -9,11 +9,6 @@ import {IERC20Permit} from '@openzeppelin/contracts/token/ERC20/extensions/draft
  * @title Allows for the redemption of Oud + a stable coin for Temple at the Temple Treasury Price index
  */
 interface IOudRedeemer {
-  ///  @notice Returns the index at which 'stable' token is required to mint Temple
-  function treasuryPriceIndex() external view returns (uint256);
-
-  /// @dev Decimal precision for 'tpi', 9880 == $0.988, precision = 4
-  function TPI_PRECISION() external pure returns (uint256);
 
   /// @dev Allows the tpi to be adjusted.
   /// @param value is the new TPI
