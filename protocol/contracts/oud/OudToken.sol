@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Oud (protocol/contracts/oud/OudToken.sol)
+// Oud Token (protocol/contracts/oud/OudToken.sol)
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC20, ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";

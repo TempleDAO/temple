@@ -1,14 +1,14 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Oud TODO)
+// Fake Temple Line of Credit (protocol/contracts/fakes/FakeTempleLineofCredit.sol)
 
 import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import {IERC20Permit} from '@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol';
-import {Oud__ITempleLineOfCredit} from '../interfaces/oud/Oud__ITempleLineOfCredit.sol';
+import {ITempleLineOfCredit} from '../interfaces/templeLineOfCredit/ITempleLineOfCredit.sol';
 
 /// @notice Helper interface for calling the TempleLineOfCredit contract
-contract FakeTempleLineOfCredit is Oud__ITempleLineOfCredit {
+contract FakeTempleLineOfCredit is ITempleLineOfCredit {
   using SafeERC20 for IERC20;
 
   /**

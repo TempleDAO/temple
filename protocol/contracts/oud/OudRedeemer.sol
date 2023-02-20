@@ -5,9 +5,9 @@ pragma solidity ^0.8.17;
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '../interfaces/oud/IOudRedeemer.sol';
-import '../interfaces/oud/Oud__ITempleLineOfCredit.sol';
+import '../interfaces/templeLineOfCredit/ITempleLineOfCredit.sol';
 import '../interfaces/oud/IOudtoken.sol';
-import '../interfaces/oud/Oud__ITempleERC20Token.sol';
+import '../interfaces/oud/ITempleERC20Token.sol';
 
 /**
  * @title Allows for the redemption of Oud + a stable coin for Temple at the Temple Treasury Price index
@@ -118,7 +118,7 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     IOudToken(oudToken).burn(account, oudAmount);
     SafeERC20.safeTransferFrom(stable, account, address(this), _stableAmount);
     SafeERC20.safeIncreaseAllowance(stable, depositStableTo, _stableAmount);
-    Oud__ITempleLineOfCredit(depositStableTo).depositReserve(
+    ITempleLineOfCredit(depositStableTo).depositReserve(
       stable,
       address(this),
       _stableAmount
