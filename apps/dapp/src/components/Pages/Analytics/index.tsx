@@ -1,9 +1,10 @@
-import type { FC } from 'react';
-import type { GetRAMOSMetricsResponse } from 'hooks/core/types';
+import type { FC, MouseEventHandler } from 'react';
+import type { GetRAMOSDailyMetricsResponse, GetRAMOSHourlyMetricsResponse } from 'hooks/core/types';
 import type { RAMOSMetric } from 'hooks/core/types';
 import type { LabeledTimeIntervals, ChartSupportedTimeInterval } from 'utils/time-intervals';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import styled from 'styled-components';
 import { format } from 'date-fns';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
 import { LineChart, Line, Tooltip, XAxis, YAxis } from 'recharts';
@@ -20,23 +21,22 @@ type PreparedData = Record<ChartSupportedTimeInterval, FormattedDataPoint[]>;
 //TODO: Create components to handle error cases
 
 export const AnalyticsPage: FC = () => {
-  const { isLoading, response, error } = useRAMOSMetrics();
-  const [preparedData, setPreparedData] = useState<PreparedData | null>(null);
-  const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeInterval>('1Y');
+  const { dailyMetrics, hourlyMetrics, isLoading, errors } = useRAMOSMetrics();
+  const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeInterval>('1M');
 
-  useEffect(() => {
-    if (response) {
-      setPreparedData(prepareChartData(response));
-    }
-  }, [response]);
-
-  if (error) {
+  if (errors.some(Boolean)) {
     return <div>Error fetching data</div>;
   }
 
-  if (isLoading || !response) {
+  if (isLoading) {
     return <div>Loading</div>;
   }
+
+  if (dailyMetrics === null || hourlyMetrics === null) {
+    return <div>Invalid subgraph response</div>;
+  }
+
+  const preparedData = prepareChartData(dailyMetrics, hourlyMetrics);
 
   if (preparedData === null) {
     return <div>Empty payload</div>;
@@ -46,12 +46,15 @@ export const AnalyticsPage: FC = () => {
 
   return (
     <>
-      <div>
-        <p onClick={() => setSelectedInterval('1D')}>1D</p>
-        <p onClick={() => setSelectedInterval('1W')}>1W</p>
-        <p onClick={() => setSelectedInterval('1M')}>1M</p>
-        <p onClick={() => setSelectedInterval('1Y')}>1Y</p>
-      </div>
+      <TogglerRow>
+        <TogglerContainer>
+          {DEFAULT_CHART_INTERVALS.map(({ label }) => (
+            <Toggle key={label} onClick={() => setSelectedInterval(label)} selected={label === selectedInterval}>
+              {label}
+            </Toggle>
+          ))}
+        </TogglerContainer>
+      </TogglerRow>
       <h1>Temple Burned</h1>
       <div>
         <LineChart width={600} height={300} data={chartData}>
@@ -74,18 +77,33 @@ export const AnalyticsPage: FC = () => {
   );
 };
 
-function prepareChartData(response: GetRAMOSMetricsResponse) {
-  const data = response.data?.metricDailySnapshots;
+function prepareChartData(dailyMetrics: GetRAMOSDailyMetricsResponse, hourlyMetrics: GetRAMOSHourlyMetricsResponse) {
+  const dailyData = dailyMetrics.data?.metricDailySnapshots;
+  const hourlyData = hourlyMetrics.data?.metricHourlySnapshots;
 
-  if (!data) {
-    console.warn('No data to show for RAMOS metrics');
+  if (!dailyData) {
+    console.warn('Missing response data for RAMOS daily metrics');
     return null;
   }
 
-  return filterByTimeIntervals(data, DEFAULT_CHART_INTERVALS);
+  const now = new Date().getTime();
+
+  const preparedDailyData = filterByTimeIntervals(dailyData, DEFAULT_CHART_INTERVALS, now);
+
+  if (!hourlyData) {
+    console.warn('Missing response data for RAMOS hourly metrics');
+    return preparedDailyData;
+  }
+
+  const preparedHourlyData = hourlyData.map((metric) => getDataPoint(metric, now));
+
+  return {
+    ...preparedDailyData,
+    '1D': preparedHourlyData,
+  };
 }
 
-function filterByTimeIntervals(data: RAMOSMetric[], timeIntervals: LabeledTimeIntervals) {
+function filterByTimeIntervals(data: RAMOSMetric[], timeIntervals: LabeledTimeIntervals, now: number) {
   const metricsByIntervalAccumulator: PreparedData = {
     '1D': [],
     '1W': [],
@@ -94,8 +112,6 @@ function filterByTimeIntervals(data: RAMOSMetric[], timeIntervals: LabeledTimeIn
   };
 
   const sortedTimeIntervals = timeIntervals.map((interval) => interval).sort((a, b) => a.interval - b.interval);
-
-  const now = new Date().getTime();
 
   return data.reduce((acc, metric) => {
     const formattedDataPoint = getDataPoint(metric, now);
@@ -132,3 +148,37 @@ function getDataPoint(metric: RAMOSMetric, now: number) {
     },
   };
 }
+
+const TogglerRow = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.25rem;
+  width: 90%;
+`;
+
+const TogglerContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.25rem;
+  font-size: 0.7rem;
+`;
+
+type ToggleProps = {
+  selected?: boolean;
+  onClick: MouseEventHandler;
+};
+
+const Toggle = styled.span<ToggleProps>`
+  display: inline-block;
+  user-select: none;
+  cursor: pointer;
+  color: ${({ selected, theme }) => (selected ? theme.palette.brandLight : theme.palette.brand)};
+  &:hover {
+    color: white;
+  }
+  font-size: 1rem;
+  font-weight: ${({ selected }) => (selected ? 'bold' : '')};
+`;

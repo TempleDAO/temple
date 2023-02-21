@@ -3,7 +3,8 @@ import type {
   GetVaultGroupsResponse,
   GetVaultGroupResponse,
   GetMetricsResponse,
-  GetRAMOSMetricsResponse,
+  GetRAMOSDailyMetricsResponse,
+  GetRAMOSHourlyMetricsResponse,
 } from './types';
 
 import { useEffect, useState, useMemo, useRef } from 'react';
@@ -118,6 +119,18 @@ export const createRAMOSDailyMetricsQuery = (): SubGraphQuery => ({
   }`,
 });
 
+export const createRAMOSHourlyMetricsQuery = (): SubGraphQuery => ({
+  query: `{
+    metricHourlySnapshots(orderDirection: desc, orderBy: timestamp first: 24) {
+      templeBurned
+      totalProfitUSD
+      treasuryPriceIndexUSD
+      templeVolume
+      timestamp
+    }
+  }`,
+});
+
 export const useVaultMetrics = () => {
   const [request, resp] = useSubgraphRequest<GetMetricsResponse>(env.subgraph.templeCore, {
     query: `{
@@ -206,14 +219,28 @@ export const useGetVaultGroup = (vaultGroupId: string) => {
 };
 
 export const useRAMOSMetrics = () => {
-  const [request, response] = useSubgraphRequest<GetRAMOSMetricsResponse>(
+  const [dailyMetricsRequest, dailyRequestState] = useSubgraphRequest<GetRAMOSDailyMetricsResponse>(
     env.subgraph.ramos,
     createRAMOSDailyMetricsQuery()
   );
 
-  useEffect(() => {
-    request();
-  }, [request]);
+  const [hourlyMetricsRequest, hourlyRequestState] = useSubgraphRequest<GetRAMOSHourlyMetricsResponse>(
+    env.subgraph.ramos,
+    createRAMOSHourlyMetricsQuery()
+  );
 
-  return response;
+  useEffect(() => {
+    async function fetchMetrics() {
+      await dailyMetricsRequest();
+      await hourlyMetricsRequest();
+    }
+    fetchMetrics();
+  }, []);
+
+  return {
+    dailyMetrics: dailyRequestState.response,
+    hourlyMetrics: hourlyRequestState.response,
+    isLoading: dailyRequestState.isLoading || hourlyRequestState.isLoading,
+    errors: [dailyRequestState.error, hourlyRequestState.error],
+  };
 };
