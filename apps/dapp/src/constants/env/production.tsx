@@ -46,8 +46,8 @@ const env: Environment = {
     vaultProxy: '0x6f5bB7cC4F3D6628d0095545552757AB377FE15C',
     vaultEarlyExit: '0x7C6f1b4891ff8CAcCeC97DbbD9Df3b773d88A03E',
     ramos: '0xa2eac1DF5E89cA694c78626Dd862d9398DBBA6EF',
-    ramosPoolHelper: '0x0bD02b31B3a6aFB335a4C62c53BfdDD38D388075',
-    balancerHelpers: '0xC260576fec862BED7A35E64BBF800Fe49899BaC0',
+    ramosPoolHelper: '0xC260576fec862BED7A35E64BBF800Fe49899BaC0',
+    balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
   },
   gas: {
     swapFraxForTemple: 300000,
