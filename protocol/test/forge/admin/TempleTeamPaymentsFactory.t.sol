@@ -2,9 +2,10 @@
 pragma solidity ^0.8.4;
 
 import "forge-std/Test.sol";
-import "../../contracts/admin/TempleTeamPaymentsFactory.sol";
+import "contracts/admin/TempleTeamPaymentsFactory.sol";
+import {TempleTest} from "../TempleTest.sol";
 
-contract TempleTeamPaymentsFactoryTest is Test {
+contract TempleTeamPaymentsFactoryTest is TempleTest {
     //
     TempleTeamPaymentsFactory public factory;
     IERC20 public temple = IERC20(0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7);
@@ -34,7 +35,7 @@ contract TempleTeamPaymentsFactoryTest is Test {
     event TokenRecovered(address indexed token, uint256 amount);
 
     function setUp() public {
-        vm.createSelectFork(vm.rpcUrl("mainnet"));
+        fork("mainnet", 16060000);
         address impl = address(new TempleTeamPaymentsV2());
         factory = new TempleTeamPaymentsFactory(impl, 0);
         factory.transferOwnership(multisig);
