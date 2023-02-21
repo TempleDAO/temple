@@ -47,6 +47,7 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
   }, [address]);
 
   useEffect(() => {
+    // Note: Metamask removed here to avoid duplication with injected connector
     const totalMetaMaskConnectors = connectors.filter(c => c.name === 'MetaMask');
     if (totalMetaMaskConnectors.length === 2) {
       connectors.pop();
