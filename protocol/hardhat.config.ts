@@ -62,8 +62,22 @@ subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS).setAction(
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
+  paths: {
+    sources: "./contracts",
+    artifacts: "./artifacts-hardhat",
+    cache: "./cache-hardhat", // Use a different cache for Hardhat than Foundry
+  },
   solidity: {
     compilers: [
+      {
+        version: '0.8.17',
+        settings: {
+        optimizer: {
+            enabled: true,
+            runs: 999999,
+        },
+        },
+      },
       {
         version: '0.8.4',
         settings: {
@@ -163,7 +177,7 @@ module.exports = {
     }
   },
   mocha: {
-    timeout: 120000,
+    timeout: 300000,
   },
   contractSizer: {
     alphaSort: true,
