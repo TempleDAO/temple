@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Oud Token (protocol/contracts/oud/OudToken.sol)
+// Temple (protocol/contracts/oud/OudToken.sol)
 
 import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
 import {ERC20, ERC20Permit} from '@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol';
@@ -18,12 +18,11 @@ contract OudToken is IOudToken, ERC20Permit, Ownable {
   event AddedMinter(address indexed account);
   event RemovedMinter(address indexed account);
   event TokenRecovered(address token, address to, uint256 amount);
+  error CannotMintOrBurn(address caller);
 
   function isMinter(address account) external view returns (bool) {
     return _minters[account];
   }
-
-  error CannotMintOrBurn(address caller);
 
   constructor(
     string memory _name,
