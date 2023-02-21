@@ -77,6 +77,7 @@ ReactDOM.render(
               <Route path="disclaimer" element={<Disclaimer />} />
               <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
               <Route path="ramos" element={<LazyPage component={RamosAdmin} />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
             <Route path="/dapp/*" element={<CoreLayout />}>
               <Route path="" element={<VaultListPage />} />
@@ -90,8 +91,6 @@ ReactDOM.render(
                 <Route path="timing" element={<Timing />} />
               </Route>
               <Route path="profile" element={<ProfilePage />} />
-
-              <Route path="analytics" element={<AnalyticsPage />} />
 
               {env.featureFlags.enableAscend && (
                 <>

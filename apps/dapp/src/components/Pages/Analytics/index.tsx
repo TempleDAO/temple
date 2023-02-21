@@ -4,11 +4,12 @@ import type { RAMOSMetric } from 'hooks/core/types';
 import type { LabeledTimeIntervals, ChartSupportedTimeInterval } from 'utils/time-intervals';
 
 import { useState } from 'react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { format } from 'date-fns';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
-import { LineChart, Line, Tooltip, XAxis, YAxis } from 'recharts';
+import { LineChart, Line, Tooltip, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
+import { formatNumberAbbreviated } from 'utils/formatter';
 
 type FormattedDataPoint = {
   timestamp: number;
@@ -18,11 +19,21 @@ type FormattedDataPoint = {
 
 type PreparedData = Record<ChartSupportedTimeInterval, FormattedDataPoint[]>;
 
+type XAxisTickFormatter = (timestamp: number) => string;
+
+const tickFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormatter> = {
+  '1D': (timestamp) => format(timestamp, 'H aaa'),
+  '1W': (timestamp) => format(timestamp, 'eee d LLL'),
+  '1M': (timestamp) => format(timestamp, 'MMM do'),
+  '1Y': (timestamp) => format(timestamp, 'MMM do y'),
+};
+
 //TODO: Create components to handle error cases
 
 export const AnalyticsPage: FC = () => {
   const { dailyMetrics, hourlyMetrics, isLoading, errors } = useRAMOSMetrics();
   const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeInterval>('1M');
+  const theme = useTheme();
 
   if (errors.some(Boolean)) {
     return <div>Error fetching data</div>;
@@ -56,23 +67,23 @@ export const AnalyticsPage: FC = () => {
         </TogglerContainer>
       </TogglerRow>
       <h1>Temple Burned</h1>
-      <div>
-        <LineChart width={600} height={300} data={chartData}>
-          <Line type="monotone" dataKey="templeBurned" stroke="#239966" dot={false} />
-          <XAxis dataKey="timestamp" scale="time" tickFormatter={(timestamp) => format(timestamp, 'PP')} />
-          <YAxis />
+      <ResponsiveContainer minHeight={200} minWidth={320} height={350}>
+        <LineChart data={chartData}>
+          <Line type="monotone" dataKey="templeBurned" stroke={theme.palette.brand} strokeWidth={4} dot={false} />
+          <XAxis dataKey="timestamp" scale="time" tickFormatter={tickFormatters[selectedInterval]} />
+          <YAxis tickFormatter={(value) => formatNumberAbbreviated(value)} />
           <Tooltip />
         </LineChart>
-      </div>
+      </ResponsiveContainer>
       <h1>Total Profit USD</h1>
-      <div>
-        <LineChart width={600} height={300} data={chartData}>
-          <Line type="monotone" dataKey="totalProfitUSD" stroke="#5566d8" dot={false} />
-          <XAxis dataKey="timestamp" scale="time" tickFormatter={(timestamp) => format(timestamp, 'PP')} />
-          <YAxis />
+      <ResponsiveContainer minHeight={200} minWidth={320} height={350}>
+        <LineChart data={chartData}>
+          <Line type="monotone" dataKey="totalProfitUSD" stroke={theme.palette.brand} strokeWidth={4} dot={false} />
+          <XAxis dataKey="timestamp" scale="time" tickFormatter={tickFormatters[selectedInterval]} />
+          <YAxis tickFormatter={(value) => formatNumberAbbreviated(value)} />
           <Tooltip />
         </LineChart>
-      </div>
+      </ResponsiveContainer>
     </>
   );
 };

@@ -48,3 +48,24 @@ export const truncateDecimals = (number: string | number, targetDecimals = 2): s
 
   return decimals ? `${int}.${decimals}` : int;
 };
+
+export const formatNumberAbbreviated = (number: number): string => {
+  const stringified = number.toString();
+  const decimalPlaces = stringified.includes('.') ? stringified.split('.')[1].length : 0;
+
+  const localeFormatted =
+    decimalPlaces > 3
+      ? number.toLocaleString('en-US', {
+          minimumFractionDigits: 3,
+        })
+      : number.toLocaleString('en-US');
+
+  const thousandsSeparatorCount = localeFormatted.split(',').length - 1;
+  const shortenedString = localeFormatted.slice(0, 4);
+
+  if (thousandsSeparatorCount > 0) {
+    return shortenedString.replace(',', '.') + ` ${thousandsSeparatorCount > 1 ? 'M' : 'k'}`;
+  } else {
+    return shortenedString;
+  }
+};
