@@ -85,7 +85,7 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     * @return _stableAmount The amount of Stable token required from the user
     * @return _templeAmount The amount of Temple that will be minted to the user
     */
-  function redeemQuote(
+  function quoteForRedeem(
     uint256 oudAmount
   ) external override view returns (uint256 _stableAmount, uint256 _templeAmount) {
     _stableAmount = _getStableAmount(oudAmount, treasuryPriceIndex);
