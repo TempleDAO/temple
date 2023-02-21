@@ -117,7 +117,7 @@ describe("Oud Redeemer", async () => {
     describe("Redemption TXS", () => {
         it("Returns the correct quote given Oud amount", async () => {
             const [_stableAmount, _templeAmount]
-                = await oudRedeemer.redeemQuote(toAtto(OUD_AMOUNT));
+                = await oudRedeemer.quoteForRedeem(toAtto(OUD_AMOUNT));
             expect(_stableAmount).to.eq(toAtto(STABLE_AMOUNT));
             expect(_templeAmount).to.eq(toAtto(OUD_AMOUNT));
         });
