@@ -6,8 +6,8 @@ import type { LabeledTimeIntervals, ChartSupportedTimeInterval } from 'utils/tim
 import { useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { format } from 'date-fns';
+import { LineChart } from './LineChart';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
-import { LineChart, Line, Tooltip, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
 import { formatNumberAbbreviated } from 'utils/formatter';
 
@@ -67,23 +67,19 @@ export const AnalyticsPage: FC = () => {
         </TogglerContainer>
       </TogglerRow>
       <h1>Temple Burned</h1>
-      <ResponsiveContainer minHeight={200} minWidth={320} height={350}>
-        <LineChart data={chartData}>
-          <Line type="monotone" dataKey="templeBurned" stroke={theme.palette.brand} strokeWidth={4} dot={false} />
-          <XAxis dataKey="timestamp" scale="time" tickFormatter={tickFormatters[selectedInterval]} />
-          <YAxis tickFormatter={(value) => formatNumberAbbreviated(value)} />
-          <Tooltip />
-        </LineChart>
-      </ResponsiveContainer>
+      <LineChart
+        chartData={chartData}
+        xDataKey={'timestamp'}
+        yDataKey={'templeBurned'}
+        xTickFormatter={tickFormatters[selectedInterval]}
+      />
       <h1>Total Profit USD</h1>
-      <ResponsiveContainer minHeight={200} minWidth={320} height={350}>
-        <LineChart data={chartData}>
-          <Line type="monotone" dataKey="totalProfitUSD" stroke={theme.palette.brand} strokeWidth={4} dot={false} />
-          <XAxis dataKey="timestamp" scale="time" tickFormatter={tickFormatters[selectedInterval]} />
-          <YAxis tickFormatter={(value) => formatNumberAbbreviated(value)} />
-          <Tooltip />
-        </LineChart>
-      </ResponsiveContainer>
+      <LineChart
+        chartData={chartData}
+        xDataKey={'timestamp'}
+        yDataKey={'totalProfitUSD'}
+        xTickFormatter={tickFormatters[selectedInterval]}
+      />
     </>
   );
 };
