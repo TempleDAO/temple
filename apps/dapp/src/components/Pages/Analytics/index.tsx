@@ -102,9 +102,7 @@ function prepareChartData(dailyMetrics: GetRAMOSDailyMetricsResponse, hourlyMetr
     return preparedDailyData;
   }
 
-  console.log('hourlyData', hourlyData);
   const preparedHourlyData = hourlyData.map((metric) => getDataPoint(metric, now));
-  console.log('preparedHourly', preparedHourlyData);
 
   return {
     ...preparedDailyData,
