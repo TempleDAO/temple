@@ -109,7 +109,7 @@ const createVaultGroupQuery = (vaultGroupId: string, walletAddress = ''): SubGra
 
 export const createRAMOSDailyMetricsQuery = (): SubGraphQuery => ({
   query: `{
-    metricDailySnapshots(orderDirection: desc, orderBy: timestamp) {
+    metricDailySnapshots(orderDirection: desc, orderBy: timestamp, first: 365) {
       templeBurned
       totalProfitUSD
       treasuryPriceIndexUSD
@@ -121,7 +121,7 @@ export const createRAMOSDailyMetricsQuery = (): SubGraphQuery => ({
 
 export const createRAMOSHourlyMetricsQuery = (): SubGraphQuery => ({
   query: `{
-    metricHourlySnapshots(orderDirection: desc, orderBy: timestamp first: 24) {
+    metricHourlySnapshots(orderDirection: desc, orderBy: timestamp, first: 24) {
       templeBurned
       totalProfitUSD
       treasuryPriceIndexUSD
