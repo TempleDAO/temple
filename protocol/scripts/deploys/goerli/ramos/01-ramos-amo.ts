@@ -32,8 +32,8 @@ async function main() {
         "RAMOSGoerli", amoFactory, amoFactory.deploy,
         DEPLOYED.BALANCER_VAULT,
         DEPLOYED.TEMPLE,
-        DEPLOYED.BBA_USD_TOKEN, // frax
-        DEPLOYED.TEMPLE_BBAUSD_LP_TOKEN, // temple/frax 50:50 LP
+        DEPLOYED.BB_A_USD_TOKEN, // frax
+        DEPLOYED.TEMPLE_BB_A_USD_LP_TOKEN, // temple/frax 50:50 LP
         BigNumber.from(0),
         DEPLOYED.TEMPLE_BB_A_USD_BALANCER_POOL_ID, // temple/frax 50:50
     );

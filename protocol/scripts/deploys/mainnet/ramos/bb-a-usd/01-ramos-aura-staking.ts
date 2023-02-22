@@ -1,15 +1,14 @@
 import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
-import { BigNumber } from "ethers";
 import {
-  PoolHelper__factory
-} from "../../../../typechain";
+    AuraStaking__factory
+} from "../../../../../typechain";
 import {
   deployAndMine,
   DEPLOYED_CONTRACTS, 
   DeployedContracts,
   ensureExpectedEnvvars,
-} from "../../helpers";
+} from "../../../helpers";
 
 async function main() {
   ensureExpectedEnvvars();
@@ -24,16 +23,13 @@ async function main() {
       DEPLOYED = DEPLOYED_CONTRACTS[network.name];
   }
 
-  const poolHelperFactory = new PoolHelper__factory(owner);
+  const auraStakingFactory: AuraStaking__factory = new AuraStaking__factory(owner);
   await deployAndMine(
-    "RAMOS Pool Helper", poolHelperFactory, poolHelperFactory.deploy,
-    DEPLOYED.BALANCER_VAULT,
-    DEPLOYED.TEMPLE,
-    DEPLOYED.BB_A_USD_TOKEN, // FRAX
-    DEPLOYED.TEMPLE_BB_A_USD_LP_TOKEN, // temple/frax 50:50 LP
-    DEPLOYED.RAMOS_BB_A_USD,
-    BigNumber.from(0),
-    DEPLOYED.TEMPLE_BB_A_USD_BALANCER_POOL_ID, // temple/frax 50:50 LP
+      "RAMOS Aura Staking", auraStakingFactory, auraStakingFactory.deploy,
+      "0x0000000000000000000000000000000000000000", // Temporary - operator needs setting in post-deploy
+      DEPLOYED.TEMPLE_BB_A_USD_LP_TOKEN,
+      DEPLOYED.AURA_BOOSTER,
+      [DEPLOYED.BALANCER_TOKEN, DEPLOYED.AURA_TOKEN]
   );
 }
 
