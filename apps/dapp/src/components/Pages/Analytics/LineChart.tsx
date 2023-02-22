@@ -3,7 +3,6 @@ import type { ScaleType, DataKey } from 'recharts/types/util/types';
 
 import React from 'react';
 import { useTheme } from 'styled-components';
-import { format } from 'date-fns';
 import { ResponsiveContainer, LineChart as RechartsLineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 import { formatNumberAbbreviated } from 'utils/formatter';
 

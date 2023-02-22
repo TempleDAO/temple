@@ -121,7 +121,7 @@ export const createRAMOSDailyMetricsQuery = (): SubGraphQuery => ({
 
 export const createRAMOSHourlyMetricsQuery = (): SubGraphQuery => ({
   query: `{
-    metricHourlySnapshots(orderDirection: desc, orderBy: timestamp first: 24) {
+    metricHourlySnapshots(orderDirection: asc, orderBy: timestamp first: 24) {
       templeBurned
       totalProfitUSD
       treasuryPriceIndexUSD
