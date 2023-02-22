@@ -53,7 +53,7 @@ export const AnalyticsPage: FC = () => {
     return <div>Empty payload</div>;
   }
 
-  const chartData = preparedData[selectedInterval];
+  const chartData = preparedData[selectedInterval].reverse();
 
   return (
     <>
