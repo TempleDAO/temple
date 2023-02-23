@@ -9,7 +9,7 @@ import { format, differenceInDays } from 'date-fns';
 import { LineChart } from './LineChart';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
 import { DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
-import { formatNumberWithCommas } from 'utils/formatter';
+import { formatNumberAbbreviated } from 'utils/formatter';
 import * as breakpoints from 'styles/breakpoints';
 
 type FormattedDataPoint = {
@@ -77,7 +77,7 @@ export const AnalyticsPage: FC = () => {
         </LatestMetricValue>
         <LatestMetricValue>
           <h2>Temple burned</h2>
-          <p>{formatNumberWithCommas(latestValues.templeBurned)}</p>
+          <p>{formatNumberAbbreviated(latestValues.templeBurned)}</p>
         </LatestMetricValue>
       </MetricsBadgeRow>
       <TogglerRow>
@@ -204,7 +204,7 @@ const MetricsBadgeRow = styled.div`
   gap: 30px;
   padding-bottom: 50px;
 
-  ${breakpoints.tabletAndAbove(`
+  ${breakpoints.phoneAndAbove(`
     flex-direction: row;
   `)}
 `;
