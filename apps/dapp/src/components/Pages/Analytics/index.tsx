@@ -9,7 +9,7 @@ import { format, differenceInDays } from 'date-fns';
 import { LineChart } from './LineChart';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
 import { DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
-import { formatNumberAbbreviated } from 'utils/formatter';
+import { formatNumberAbbreviated, formatNumberWithCommas } from 'utils/formatter';
 import * as breakpoints from 'styles/breakpoints';
 
 type FormattedDataPoint = {
@@ -30,6 +30,8 @@ const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormat
   '1M': (timestamp) => `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
   '1Y': (timestamp) => `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
 };
+
+const tooltipValuesFormatter = (value: number, name: string) => [formatNumberWithCommas(value), name];
 
 const xTickFormatter = (value: number, _index: number) =>
   `  ${differenceInDays(value, RAMOS_LAUNCH_DATE).toString()}  `;
@@ -65,6 +67,11 @@ export const AnalyticsPage: FC = () => {
     daysSinceLaunch: differenceInDays(new Date(), RAMOS_LAUNCH_DATE),
   };
 
+  const tooltipValueNames = {
+    templeBurned: 'Temple burned',
+    totalProfitUSD: 'Total profit (USD)',
+  };
+
   const chartData = preparedData[selectedInterval].reverse();
 
   return (
@@ -97,6 +104,7 @@ export const AnalyticsPage: FC = () => {
           lines={[{ series: 'templeBurned', color: theme.palette.brand }]}
           xTickFormatter={xTickFormatter}
           tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
+          tooltipValuesFormatter={(value) => tooltipValuesFormatter(value, tooltipValueNames.templeBurned)}
         />
       </ChartContainer>
       <ChartTitle>Total Profit USD</ChartTitle>
@@ -107,6 +115,7 @@ export const AnalyticsPage: FC = () => {
           lines={[{ series: 'totalProfitUSD', color: theme.palette.brand }]}
           xTickFormatter={xTickFormatter}
           tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
+          tooltipValuesFormatter={(value) => tooltipValuesFormatter(value, tooltipValueNames.totalProfitUSD)}
         />
       </ChartContainer>
       <ChartTitle>Both</ChartTitle>
@@ -120,6 +129,12 @@ export const AnalyticsPage: FC = () => {
           ]}
           xTickFormatter={xTickFormatter}
           tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
+          tooltipValuesFormatter={(value, name) =>
+            tooltipValuesFormatter(
+              value,
+              name === 'templeBurned' ? tooltipValueNames.templeBurned : tooltipValueNames.totalProfitUSD
+            )
+          }
         />
       </ChartContainer>
     </>

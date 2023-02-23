@@ -11,17 +11,33 @@ type LineChartProps<T> = {
   lines: { series: DataKey<keyof T>; color: string }[];
   xTickFormatter: (xValue: any, index: number) => string;
   tooltipLabelFormatter: (value: any) => string;
+  tooltipValuesFormatter?: (value: number, name: string) => string[];
   scaleX?: ScaleType;
 };
 
 export function LineChart<T>(props: React.PropsWithChildren<LineChartProps<T>>) {
-  const { chartData, xDataKey, lines, scaleX = 'time', xTickFormatter, tooltipLabelFormatter } = props;
+  const {
+    chartData,
+    xDataKey,
+    lines,
+    scaleX = 'time',
+    xTickFormatter,
+    tooltipLabelFormatter,
+    tooltipValuesFormatter,
+  } = props;
   const theme = useTheme();
   return (
     <ResponsiveContainer minHeight={200} minWidth={320} height={350}>
       <RechartsLineChart data={chartData}>
         {lines.map((line) => (
-          <Line type="monotone" dataKey={line.series} stroke={line.color} strokeWidth={4} dot={false} />
+          <Line
+            key={line.series.toString()}
+            type="monotone"
+            dataKey={line.series}
+            stroke={line.color}
+            strokeWidth={4}
+            dot={false}
+          />
         ))}
         <XAxis
           dataKey={xDataKey}
@@ -42,6 +58,10 @@ export function LineChart<T>(props: React.PropsWithChildren<LineChartProps<T>>) 
           itemStyle={{ backgroundColor: theme.palette.dark75, color: theme.palette.brandLight }}
           labelStyle={{ backgroundColor: theme.palette.dark75, fontWeight: 'bold' }}
           labelFormatter={tooltipLabelFormatter}
+          formatter={(value, name, _props) => {
+            //@ts-ignore
+            return tooltipValuesFormatter(value, name);
+          }}
         />
         {lines.length > 1 ? <Legend verticalAlign="top" height={20} /> : null}
       </RechartsLineChart>
