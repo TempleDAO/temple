@@ -12,6 +12,7 @@ type LineChartProps<T> = {
   xTickFormatter: (xValue: any, index: number) => string;
   tooltipLabelFormatter: (value: any) => string;
   tooltipValuesFormatter?: (value: number, name: string) => string[];
+  legendFormatter?: (value: string) => string;
   scaleX?: ScaleType;
 };
 
@@ -24,6 +25,7 @@ export function LineChart<T>(props: React.PropsWithChildren<LineChartProps<T>>) 
     xTickFormatter,
     tooltipLabelFormatter,
     tooltipValuesFormatter,
+    legendFormatter,
   } = props;
   const theme = useTheme();
   return (
@@ -63,7 +65,7 @@ export function LineChart<T>(props: React.PropsWithChildren<LineChartProps<T>>) 
             return tooltipValuesFormatter(value, name);
           }}
         />
-        {lines.length > 1 ? <Legend verticalAlign="top" height={20} /> : null}
+        {lines.length > 1 ? <Legend verticalAlign="top" height={20} formatter={legendFormatter} /> : null}
       </RechartsLineChart>
     </ResponsiveContainer>
   );

@@ -135,6 +135,9 @@ export const AnalyticsPage: FC = () => {
               name === 'templeBurned' ? tooltipValueNames.templeBurned : tooltipValueNames.totalProfitUSD
             )
           }
+          legendFormatter={(name) =>
+            name === 'templeBurned' ? tooltipValueNames.templeBurned : tooltipValueNames.totalProfitUSD
+          }
         />
       </ChartContainer>
     </>
