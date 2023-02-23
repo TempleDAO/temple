@@ -43,7 +43,7 @@ export function LineChart<T>(props: React.PropsWithChildren<LineChartProps<T>>) 
           labelStyle={{ backgroundColor: theme.palette.dark75, fontWeight: 'bold' }}
           labelFormatter={tooltipLabelFormatter}
         />
-        {lines.length > 1 ? <Legend verticalAlign="top" height={36} /> : null}
+        {lines.length > 1 ? <Legend verticalAlign="top" height={20} /> : null}
       </RechartsLineChart>
     </ResponsiveContainer>
   );
