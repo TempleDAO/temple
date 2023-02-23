@@ -52,6 +52,7 @@ export const truncateDecimals = (number: string | number, targetDecimals = 2): s
 export const formatNumberAbbreviated = (number: number): string => {
   const stringified = number.toString();
   const decimalPlaces = stringified.includes('.') ? stringified.split('.')[1].length : 0;
+  const abbreviations = ['k', 'M', 'B'];
 
   const localeFormatted =
     decimalPlaces > 3
@@ -64,7 +65,7 @@ export const formatNumberAbbreviated = (number: number): string => {
   const shortenedString = localeFormatted.slice(0, 4);
 
   if (thousandsSeparatorCount > 0) {
-    return shortenedString.replace(',', '.') + ` ${thousandsSeparatorCount > 1 ? 'M' : 'k'}`;
+    return shortenedString.replace(',', '.') + ` ${abbreviations[thousandsSeparatorCount - 1]}`;
   } else {
     return shortenedString;
   }

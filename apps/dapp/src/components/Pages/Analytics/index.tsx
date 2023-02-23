@@ -5,11 +5,12 @@ import type { LabeledTimeIntervals, ChartSupportedTimeInterval } from 'utils/tim
 
 import { useState } from 'react';
 import styled, { useTheme } from 'styled-components';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { LineChart } from './LineChart';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
 import { DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
-import { formatNumberAbbreviated } from 'utils/formatter';
+import { formatNumberWithCommas } from 'utils/formatter';
+import * as breakpoints from 'styles/breakpoints';
 
 type FormattedDataPoint = {
   timestamp: number;
@@ -21,12 +22,17 @@ type PreparedData = Record<ChartSupportedTimeInterval, FormattedDataPoint[]>;
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
-const tickFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormatter> = {
+const RAMOS_LAUNCH_DATE = new Date(1671058907000);
+
+const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormatter> = {
   '1D': (timestamp) => format(timestamp, 'H aaa'),
-  '1W': (timestamp) => format(timestamp, 'eee d LLL'),
-  '1M': (timestamp) => format(timestamp, 'MMM do'),
-  '1Y': (timestamp) => format(timestamp, 'MMM do y'),
+  '1W': (timestamp) => `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
+  '1M': (timestamp) => `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
+  '1Y': (timestamp) => `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
 };
+
+const xTickFormatter = (value: number, _index: number) =>
+  `  ${differenceInDays(value, RAMOS_LAUNCH_DATE).toString()}  `;
 
 //TODO: Create components to handle error cases
 
@@ -53,10 +59,27 @@ export const AnalyticsPage: FC = () => {
     return <div>Empty payload</div>;
   }
 
+  const latestValues = {
+    templeBurned: preparedData['1D'][0].templeBurned,
+    totalProfitUSD: preparedData['1D'][0].totalProfitUSD,
+    daysSinceLaunch: differenceInDays(new Date(), RAMOS_LAUNCH_DATE),
+  };
+
   const chartData = preparedData[selectedInterval].reverse();
 
   return (
     <>
+      <h1>RAMOS Analytics</h1>
+      <MetricsBadgeRow>
+        <LatestMetricValue>
+          <h2>Days since launch</h2>
+          <p>{latestValues.daysSinceLaunch}</p>
+        </LatestMetricValue>
+        <LatestMetricValue>
+          <h2>Temple burned</h2>
+          <p>{formatNumberWithCommas(latestValues.templeBurned)}</p>
+        </LatestMetricValue>
+      </MetricsBadgeRow>
       <TogglerRow>
         <TogglerContainer>
           {DEFAULT_CHART_INTERVALS.map(({ label }) => (
@@ -66,20 +89,39 @@ export const AnalyticsPage: FC = () => {
           ))}
         </TogglerContainer>
       </TogglerRow>
-      <h1>Temple Burned</h1>
-      <LineChart
-        chartData={chartData}
-        xDataKey={'timestamp'}
-        yDataKey={'templeBurned'}
-        xTickFormatter={tickFormatters[selectedInterval]}
-      />
-      <h1>Total Profit USD</h1>
-      <LineChart
-        chartData={chartData}
-        xDataKey={'timestamp'}
-        yDataKey={'totalProfitUSD'}
-        xTickFormatter={tickFormatters[selectedInterval]}
-      />
+      <ChartTitle>Temple Burned</ChartTitle>
+      <ChartContainer>
+        <LineChart
+          chartData={chartData}
+          xDataKey={'timestamp'}
+          lines={[{ series: 'templeBurned', color: theme.palette.brand }]}
+          xTickFormatter={xTickFormatter}
+          tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
+        />
+      </ChartContainer>
+      <ChartTitle>Total Profit USD</ChartTitle>
+      <ChartContainer>
+        <LineChart
+          chartData={chartData}
+          xDataKey={'timestamp'}
+          lines={[{ series: 'totalProfitUSD', color: theme.palette.brand }]}
+          xTickFormatter={xTickFormatter}
+          tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
+        />
+      </ChartContainer>
+      <ChartTitle>Both</ChartTitle>
+      <ChartContainer>
+        <LineChart
+          chartData={chartData}
+          xDataKey={'timestamp'}
+          lines={[
+            { series: 'templeBurned', color: theme.palette.brand },
+            { series: 'totalProfitUSD', color: theme.palette.light },
+          ]}
+          xTickFormatter={xTickFormatter}
+          tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
+        />
+      </ChartContainer>
     </>
   );
 };
@@ -156,6 +198,36 @@ function getDataPoint(metric: RAMOSMetric, now: number) {
   };
 }
 
+const MetricsBadgeRow = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  padding-bottom: 50px;
+
+  ${breakpoints.tabletAndAbove(`
+    flex-direction: row;
+  `)}
+`;
+
+const LatestMetricValue = styled.article`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  h2 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 3rem;
+    font-weight: bold;
+    color: ${({ theme }) => theme.palette.brandLight};
+  }
+`;
+
 const TogglerRow = styled.div`
   display: flex;
   flex-direction: row;
@@ -188,4 +260,12 @@ const Toggle = styled.span<ToggleProps>`
   }
   font-size: 1rem;
   font-weight: ${({ selected }) => (selected ? 'bold' : '')};
+`;
+
+const ChartContainer = styled.div`
+  padding: 20px;
+`;
+
+const ChartTitle = styled.h2`
+  margin: 0;
 `;
