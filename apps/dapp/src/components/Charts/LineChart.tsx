@@ -8,7 +8,7 @@ import { formatNumberAbbreviated } from 'utils/formatter';
 type LineChartProps<T> = {
   chartData: T[];
   xDataKey: DataKey<keyof T>;
-  lines: { series: DataKey<keyof T>; color: string; yAxisId: 'left' | 'right' }[];
+  lines: { series: DataKey<keyof T>; color: string }[];
   xTickFormatter: (xValue: any, index: number) => string;
   tooltipLabelFormatter: (value: any) => string;
   tooltipValuesFormatter?: (value: number, name: string) => string[];
@@ -16,7 +16,7 @@ type LineChartProps<T> = {
   scaleX?: ScaleType;
 };
 
-export function BiAxialLineChart<T>(props: React.PropsWithChildren<LineChartProps<T>>) {
+export default function LineChart<T>(props: React.PropsWithChildren<LineChartProps<T>>) {
   const {
     chartData,
     xDataKey,
@@ -36,7 +36,6 @@ export function BiAxialLineChart<T>(props: React.PropsWithChildren<LineChartProp
             key={line.series.toString()}
             type="monotone"
             dataKey={line.series}
-            yAxisId={line.yAxisId}
             stroke={line.color}
             strokeWidth={2}
             dot={false}
@@ -49,18 +48,7 @@ export function BiAxialLineChart<T>(props: React.PropsWithChildren<LineChartProp
           tick={{ stroke: theme.palette.brandLight }}
           minTickGap={25}
         />
-        <YAxis
-          yAxisId="right"
-          orientation="right"
-          tickFormatter={(value) => formatNumberAbbreviated(value)}
-          tick={{ stroke: theme.palette.brandLight }}
-        />
-        <YAxis
-          yAxisId="left"
-          orientation="left"
-          tickFormatter={(value) => formatNumberAbbreviated(value)}
-          tick={{ stroke: theme.palette.brandLight }}
-        />
+        <YAxis tickFormatter={(value) => formatNumberAbbreviated(value)} tick={{ stroke: theme.palette.brandLight }} />
         <Tooltip
           wrapperStyle={{ outline: 'none' }}
           contentStyle={{

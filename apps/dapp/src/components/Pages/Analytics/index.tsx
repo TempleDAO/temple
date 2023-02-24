@@ -6,8 +6,7 @@ import type { LabeledTimeIntervals, ChartSupportedTimeInterval } from 'utils/tim
 import { useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { format, differenceInDays } from 'date-fns';
-import { LineChart } from './LineChart';
-import { BiAxialLineChart } from './BiAxialLineChart';
+import { LineChart, BiAxialLineChart } from 'components/Charts';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
 import { DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
 import { formatNumberAbbreviated, formatNumberWithCommas } from 'utils/formatter';
