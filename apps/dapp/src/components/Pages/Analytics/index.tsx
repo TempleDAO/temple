@@ -5,10 +5,9 @@ import type { ChartSupportedTimeInterval } from 'utils/time-intervals';
 import { useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { format, differenceInDays } from 'date-fns';
-import { LineChart, BiAxialLineChart } from 'components/Charts';
+import { LineChart, BiAxialLineChart, IntervalToggler } from 'components/Charts';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
 import { formatTimestampedChartData } from 'utils/charts';
-import { DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
 import { formatNumberAbbreviated, formatNumberWithCommas } from 'utils/formatter';
 import * as breakpoints from 'styles/breakpoints';
 
@@ -51,19 +50,19 @@ export const AnalyticsPage: FC = () => {
     return <div>Empty payload</div>;
   }
 
-  const preparedData = formatTimestampedChartData(
+  const formattedData = formatTimestampedChartData(
     dailyMetrics.data.metricDailySnapshots,
     hourlyMetrics.data.metricHourlySnapshots,
     formatDataPoint
   );
 
-  if (preparedData === null) {
+  if (formattedData === null) {
     return <div>Empty payload</div>;
   }
 
   const latestValues = {
-    templeBurned: preparedData['1D'][0].templeBurned,
-    totalProfitUSD: preparedData['1D'][0].totalProfitUSD,
+    templeBurned: formattedData['1D'][0].templeBurned,
+    totalProfitUSD: formattedData['1D'][0].totalProfitUSD,
     daysSinceLaunch: differenceInDays(new Date(), RAMOS_LAUNCH_DATE),
   };
 
@@ -72,7 +71,7 @@ export const AnalyticsPage: FC = () => {
     totalProfitUSD: 'Total profit (USD)',
   };
 
-  const chartData = preparedData[selectedInterval].reverse();
+  const chartData = formattedData[selectedInterval].reverse();
 
   return (
     <>
@@ -87,15 +86,7 @@ export const AnalyticsPage: FC = () => {
           <p>{formatNumberAbbreviated(latestValues.templeBurned)}</p>
         </LatestMetricValue>
       </MetricsBadgeRow>
-      <TogglerRow>
-        <TogglerContainer>
-          {DEFAULT_CHART_INTERVALS.map(({ label }) => (
-            <Toggle key={label} onClick={() => setSelectedInterval(label)} selected={label === selectedInterval}>
-              {label}
-            </Toggle>
-          ))}
-        </TogglerContainer>
-      </TogglerRow>
+      <IntervalToggler selectedInterval={selectedInterval} setSelectedInterval={setSelectedInterval} />
       <ChartTitle>Temple Burned</ChartTitle>
       <ChartContainer>
         <LineChart
@@ -202,40 +193,6 @@ const LatestMetricValue = styled.article`
     font-weight: bold;
     color: ${({ theme }) => theme.palette.brandLight};
   }
-`;
-
-const TogglerRow = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1.25rem;
-  width: 90%;
-`;
-
-const TogglerContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 1.25rem;
-  font-size: 0.7rem;
-`;
-
-type ToggleProps = {
-  selected?: boolean;
-  onClick: MouseEventHandler;
-};
-
-const Toggle = styled.span<ToggleProps>`
-  display: inline-block;
-  user-select: none;
-  cursor: pointer;
-  color: ${({ selected, theme }) => (selected ? theme.palette.brandLight : theme.palette.brand)};
-  &:hover {
-    color: white;
-  }
-  font-size: 1rem;
-  font-weight: ${({ selected }) => (selected ? 'bold' : '')};
 `;
 
 const ChartContainer = styled.div`

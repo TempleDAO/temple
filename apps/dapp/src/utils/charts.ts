@@ -3,7 +3,7 @@ import type { LabeledTimeIntervals, ChartSupportedTimeInterval } from 'utils/tim
 import { DEFAULT_CHART_INTERVALS } from './time-intervals';
 
 interface UnformattedTimestampedValue {
-  timestamp: string;
+  timestamp: string | number;
 }
 
 interface FormattedTimestampedValue {
