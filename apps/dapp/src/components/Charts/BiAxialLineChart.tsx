@@ -53,13 +53,15 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
           yAxisId="right"
           orientation="right"
           tickFormatter={(value) => formatNumberAbbreviated(value)}
-          tick={{ stroke: theme.palette.brandLight }}
+          tick={{ stroke: lines.find((line) => line.yAxisId === 'right')?.color }}
+          stroke={lines.find((line) => line.yAxisId === 'right')?.color}
         />
         <YAxis
           yAxisId="left"
           orientation="left"
           tickFormatter={(value) => formatNumberAbbreviated(value)}
-          tick={{ stroke: theme.palette.brandLight }}
+          tick={{ stroke: lines.find((line) => line.yAxisId === 'left')?.color }}
+          stroke={lines.find((line) => line.yAxisId === 'left')?.color}
         />
         <Tooltip
           wrapperStyle={{ outline: 'none' }}
