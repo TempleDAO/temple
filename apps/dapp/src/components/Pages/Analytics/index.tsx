@@ -7,6 +7,7 @@ import { useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { format, differenceInDays } from 'date-fns';
 import { LineChart } from './LineChart';
+import { BiAxialLineChart } from './BiAxialLineChart';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
 import { DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
 import { formatNumberAbbreviated, formatNumberWithCommas } from 'utils/formatter';
@@ -126,6 +127,28 @@ export const AnalyticsPage: FC = () => {
           lines={[
             { series: 'templeBurned', color: theme.palette.brand },
             { series: 'totalProfitUSD', color: theme.palette.light },
+          ]}
+          xTickFormatter={xTickFormatter}
+          tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
+          tooltipValuesFormatter={(value, name) =>
+            tooltipValuesFormatter(
+              value,
+              name === 'templeBurned' ? tooltipValueNames.templeBurned : tooltipValueNames.totalProfitUSD
+            )
+          }
+          legendFormatter={(name) =>
+            name === 'templeBurned' ? tooltipValueNames.templeBurned : tooltipValueNames.totalProfitUSD
+          }
+        />
+      </ChartContainer>
+      <ChartTitle>Biaxial</ChartTitle>
+      <ChartContainer>
+        <BiAxialLineChart
+          chartData={chartData}
+          xDataKey={'timestamp'}
+          lines={[
+            { series: 'templeBurned', color: theme.palette.brand, yAxisId: 'left' },
+            { series: 'totalProfitUSD', color: theme.palette.light, yAxisId: 'right' },
           ]}
           xTickFormatter={xTickFormatter}
           tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
