@@ -8,17 +8,10 @@ import styled, { useTheme } from 'styled-components';
 import { format, differenceInDays } from 'date-fns';
 import { LineChart, BiAxialLineChart } from 'components/Charts';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
+import { prepareTimestampedChartData } from 'utils/charts';
 import { DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
 import { formatNumberAbbreviated, formatNumberWithCommas } from 'utils/formatter';
 import * as breakpoints from 'styles/breakpoints';
-
-type FormattedDataPoint = {
-  timestamp: number;
-  templeBurned: number;
-  totalProfitUSD: number;
-};
-
-type PreparedData = Record<ChartSupportedTimeInterval, FormattedDataPoint[]>;
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
@@ -55,7 +48,15 @@ export const AnalyticsPage: FC = () => {
     return <div>Invalid subgraph response</div>;
   }
 
-  const preparedData = prepareChartData(dailyMetrics, hourlyMetrics);
+  if (dailyMetrics.data === undefined || hourlyMetrics.data === undefined) {
+    return <div>Empty payload</div>;
+  }
+
+  const preparedData = prepareTimestampedChartData(
+    dailyMetrics.data.metricDailySnapshots,
+    hourlyMetrics.data.metricHourlySnapshots,
+    formatDataPoint
+  );
 
   if (preparedData === null) {
     return <div>Empty payload</div>;
@@ -166,75 +167,11 @@ export const AnalyticsPage: FC = () => {
   );
 };
 
-function prepareChartData(dailyMetrics: GetRAMOSDailyMetricsResponse, hourlyMetrics: GetRAMOSHourlyMetricsResponse) {
-  const dailyData = dailyMetrics.data?.metricDailySnapshots;
-  const hourlyData = hourlyMetrics.data?.metricHourlySnapshots;
-
-  if (!dailyData) {
-    console.warn('Missing response data for RAMOS daily metrics');
-    return null;
-  }
-
-  const now = new Date().getTime();
-
-  const preparedDailyData = filterByTimeIntervals(dailyData, DEFAULT_CHART_INTERVALS, now);
-
-  if (!hourlyData) {
-    console.warn('Missing response data for RAMOS hourly metrics');
-    return preparedDailyData;
-  }
-
-  const preparedHourlyData = hourlyData.map((metric) => getDataPoint(metric, now));
-
-  return {
-    ...preparedDailyData,
-    '1D': preparedHourlyData,
-  };
-}
-
-function filterByTimeIntervals(data: RAMOSMetric[], timeIntervals: LabeledTimeIntervals, now: number) {
-  const metricsByIntervalAccumulator: PreparedData = {
-    '1D': [],
-    '1W': [],
-    '1M': [],
-    '1Y': [],
-  };
-
-  const sortedTimeIntervals = timeIntervals.map((interval) => interval).sort((a, b) => a.interval - b.interval);
-
-  return data.reduce((acc, metric) => {
-    const formattedDataPoint = getDataPoint(metric, now);
-
-    const biggestIntervalMatchIndex = sortedTimeIntervals.findIndex((labeledInterval) =>
-      formattedDataPoint.isWithinTimeIntervalOf(labeledInterval.interval)
-    );
-
-    if (biggestIntervalMatchIndex === -1) {
-      return acc;
-    }
-
-    for (
-      let timeIntervalIndex = biggestIntervalMatchIndex;
-      timeIntervalIndex < sortedTimeIntervals.length;
-      timeIntervalIndex++
-    ) {
-      const key = sortedTimeIntervals[timeIntervalIndex].label;
-
-      acc[key].push(formattedDataPoint);
-    }
-
-    return acc;
-  }, metricsByIntervalAccumulator);
-}
-
-function getDataPoint(metric: RAMOSMetric, now: number) {
+function formatDataPoint(metric: RAMOSMetric) {
   return {
     timestamp: parseInt(metric.timestamp) * 1000,
     templeBurned: parseFloat(metric.templeBurned),
     totalProfitUSD: parseFloat(metric.totalProfitUSD),
-    isWithinTimeIntervalOf(threshold: number) {
-      return now - this.timestamp <= threshold;
-    },
   };
 }
 
