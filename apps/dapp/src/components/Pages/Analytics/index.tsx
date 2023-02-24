@@ -24,6 +24,11 @@ const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormat
 
 const tooltipValuesFormatter = (value: number, name: string) => [formatNumberWithCommas(value), name];
 
+const tooltipValueNames = {
+  templeBurned: 'Temple burned',
+  totalProfitUSD: 'Total profit (USD)',
+};
+
 const xTickFormatter = (value: number, _index: number) =>
   `  ${differenceInDays(value, RAMOS_LAUNCH_DATE).toString()}  `;
 
@@ -64,11 +69,6 @@ export const AnalyticsPage: FC = () => {
     templeBurned: formattedData['1D'][0].templeBurned,
     totalProfitUSD: formattedData['1D'][0].totalProfitUSD,
     daysSinceLaunch: differenceInDays(new Date(), RAMOS_LAUNCH_DATE),
-  };
-
-  const tooltipValueNames = {
-    templeBurned: 'Temple burned',
-    totalProfitUSD: 'Total profit (USD)',
   };
 
   const chartData = formattedData[selectedInterval].reverse();

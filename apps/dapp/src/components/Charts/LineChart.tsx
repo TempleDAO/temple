@@ -1,4 +1,4 @@
-import type { ScaleType, DataKey } from 'recharts/types/util/types';
+import type { ScaleType, DataKey, AxisDomain } from 'recharts/types/util/types';
 
 import React from 'react';
 import { useTheme } from 'styled-components';
@@ -14,6 +14,7 @@ type LineChartProps<T> = {
   tooltipValuesFormatter?: (value: number, name: string) => string[];
   legendFormatter?: (value: string) => string;
   scaleX?: ScaleType;
+  yDomain?: AxisDomain;
 };
 
 export default function LineChart<T>(props: React.PropsWithChildren<LineChartProps<T>>) {
@@ -26,6 +27,7 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
     tooltipLabelFormatter,
     tooltipValuesFormatter,
     legendFormatter,
+    yDomain,
   } = props;
   const theme = useTheme();
   return (
@@ -48,7 +50,11 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
           tick={{ stroke: theme.palette.brandLight }}
           minTickGap={25}
         />
-        <YAxis tickFormatter={(value) => formatNumberAbbreviated(value)} tick={{ stroke: theme.palette.brandLight }} />
+        <YAxis
+          tickFormatter={(value) => formatNumberAbbreviated(value)}
+          tick={{ stroke: theme.palette.brandLight }}
+          domain={yDomain}
+        />
         <Tooltip
           wrapperStyle={{ outline: 'none' }}
           contentStyle={{
@@ -60,12 +66,18 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
           itemStyle={{ backgroundColor: theme.palette.dark75, color: theme.palette.brandLight }}
           labelStyle={{ backgroundColor: theme.palette.dark75, fontWeight: 'bold' }}
           labelFormatter={tooltipLabelFormatter}
-          formatter={(value, name, _props) => {
-            //@ts-ignore
-            return tooltipValuesFormatter(value, name);
-          }}
+          formatter={
+            tooltipValuesFormatter
+              ? (value, name, _props) => {
+                  //@ts-ignore
+                  return tooltipValuesFormatter(value, name);
+                }
+              : undefined
+          }
         />
-        {lines.length > 1 ? <Legend verticalAlign="top" height={20} formatter={legendFormatter} /> : null}
+        {lines.length > 1 && legendFormatter ? (
+          <Legend verticalAlign="top" height={20} formatter={legendFormatter} />
+        ) : null}
       </RechartsLineChart>
     </ResponsiveContainer>
   );

@@ -21,6 +21,8 @@ const IntervalToggler: FC<IntervalTogglerProps> = ({ selectedInterval, setSelect
   </TogglerRow>
 );
 
+export default IntervalToggler;
+
 const TogglerRow = styled.div`
   display: flex;
   flex-direction: row;
