@@ -1,14 +1,13 @@
 import type { FC, MouseEventHandler } from 'react';
-import type { GetRAMOSDailyMetricsResponse, GetRAMOSHourlyMetricsResponse } from 'hooks/core/types';
 import type { RAMOSMetric } from 'hooks/core/types';
-import type { LabeledTimeIntervals, ChartSupportedTimeInterval } from 'utils/time-intervals';
+import type { ChartSupportedTimeInterval } from 'utils/time-intervals';
 
 import { useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { format, differenceInDays } from 'date-fns';
 import { LineChart, BiAxialLineChart } from 'components/Charts';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
-import { prepareTimestampedChartData } from 'utils/charts';
+import { formatTimestampedChartData } from 'utils/charts';
 import { DEFAULT_CHART_INTERVALS } from 'utils/time-intervals';
 import { formatNumberAbbreviated, formatNumberWithCommas } from 'utils/formatter';
 import * as breakpoints from 'styles/breakpoints';
@@ -52,7 +51,7 @@ export const AnalyticsPage: FC = () => {
     return <div>Empty payload</div>;
   }
 
-  const preparedData = prepareTimestampedChartData(
+  const preparedData = formatTimestampedChartData(
     dailyMetrics.data.metricDailySnapshots,
     hourlyMetrics.data.metricHourlySnapshots,
     formatDataPoint

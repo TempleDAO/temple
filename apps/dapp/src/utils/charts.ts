@@ -14,9 +14,9 @@ type DataPointFormatter<U extends UnformattedTimestampedValue, F extends Formatt
   dataPoint: U
 ) => F;
 
-type PreparedData<T extends FormattedTimestampedValue> = Record<ChartSupportedTimeInterval, T[]>;
+type FormattedChartData<T extends FormattedTimestampedValue> = Record<ChartSupportedTimeInterval, T[]>;
 
-export function prepareTimestampedChartData<
+export function formatTimestampedChartData<
   U extends UnformattedTimestampedValue,
   D extends U[],
   H extends U[],
@@ -25,36 +25,25 @@ export function prepareTimestampedChartData<
   const dailyData = dailySnapshots;
   const hourlyData = hourlySnapshots;
 
-  if (!dailyData) {
-    console.warn('Missing response data for daily metrics');
-    return null;
-  }
-
   const now = new Date().getTime();
 
-  const preparedDailyData = filterByTimeIntervals(dailyData, DEFAULT_CHART_INTERVALS, now, formatDataPoint);
+  const formattedDailyData = formatDailyDataPoints(dailyData, DEFAULT_CHART_INTERVALS, now, formatDataPoint);
 
-  if (!hourlyData) {
-    console.warn('Missing response data for hourly metrics');
-    return preparedDailyData;
-  }
-
-  const preparedHourlyData = hourlyData.map((metric) => formatDataPoint(metric));
+  const formattedHourlyData = hourlyData.map((metric) => formatDataPoint(metric));
 
   return {
-    ...preparedDailyData,
-    '1D': preparedHourlyData,
+    ...formattedDailyData,
+    '1D': formattedHourlyData,
   };
 }
 
-function filterByTimeIntervals<U extends UnformattedTimestampedValue, F extends FormattedTimestampedValue>(
+function formatDailyDataPoints<U extends UnformattedTimestampedValue, F extends FormattedTimestampedValue>(
   data: U[],
   timeIntervals: LabeledTimeIntervals,
   now: number,
   formatDataPoint: DataPointFormatter<U, F>
 ) {
-  const metricsByIntervalAccumulator: PreparedData<F> = {
-    '1D': [],
+  const metricsByIntervalAccumulator: Omit<FormattedChartData<F>, '1D'> = {
     '1W': [],
     '1M': [],
     '1Y': [],
@@ -79,6 +68,10 @@ function filterByTimeIntervals<U extends UnformattedTimestampedValue, F extends 
       timeIntervalIndex++
     ) {
       const key = sortedTimeIntervals[timeIntervalIndex].label;
+
+      if (key === '1D') {
+        continue;
+      }
 
       acc[key].push(formattedDataPoint);
     }
