@@ -17,7 +17,7 @@ interface Props {
 }
 
 export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
-  const { address, isConnected: connected } = useAccount();
+  const { address, isConnected: connected, connector } = useAccount();
   const { error, isLoading: loading, connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const { signMessage } = useSignMessage({
@@ -38,30 +38,26 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
 
   useEffect(() => {
     if (window?.localStorage !== undefined && address) {
-      const isTosSigned = window.localStorage[`templedao.tos.${address}`];
-      if (!isTosSigned) {
-        const message = `I agree to the TempleDAO Terms & Conditions at:\n\nhttps://templedao.link/disclaimer`;
-        signMessage({ message });
+      if (connector?.name !== 'Safe') {
+        const isTosSigned = window.localStorage[`templedao.tos.${address}`];
+        if (!isTosSigned) {
+          const message = `I agree to the TempleDAO Terms & Conditions at:\n\nhttps://templedao.link/disclaimer`;
+          signMessage({ message });
+        }
       }
     }
   }, [address]);
 
   useEffect(() => {
     // Note: Metamask removed here to avoid duplication with injected connector
-    const totalMetaMaskConnectors = connectors.filter(c => c.name === 'MetaMask');
+    const totalMetaMaskConnectors = connectors.filter((c) => c.name === 'MetaMask');
     if (totalMetaMaskConnectors.length === 2) {
       connectors.pop();
     }
   }, [connectors]);
 
   return (
-    <Popover
-      isOpen={isOpen}
-      onClose={onClose}
-      header="Select Wallet"
-      closeOnEscape
-      closeOnClickOutside
-    >
+    <Popover isOpen={isOpen} onClose={onClose} header="Select Wallet" closeOnEscape closeOnClickOutside>
       <Menu>
         {connectors.map((connector) => (
           <li key={connector.id}>
@@ -73,7 +69,9 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
             >
               <ButtonContent>
                 {getConnectorIcon(connector.id)}
-                <span>{connector.name} {!connector.ready ? ' (unsupported)' : ''}</span>
+                <span>
+                  {connector.name} {!connector.ready ? ' (unsupported)' : ''}
+                </span>
               </ButtonContent>
             </ConnectorButton>
           </li>
@@ -86,9 +84,12 @@ export const ConnectorPopover = ({ onClose, isOpen }: Props) => {
 
 const getConnectorIcon = (connectorId: string) => {
   switch (connectorId) {
-    case 'metaMask': return <Icon bgImg={metamaskIcon} />;
-    case 'walletConnect': return <Icon bgImg={walletConnectIcon} />;
-    case 'coinbaseWallet': return <Icon bgImg={coinbaseAppIcon} />;
+    case 'metaMask':
+      return <Icon bgImg={metamaskIcon} />;
+    case 'walletConnect':
+      return <Icon bgImg={walletConnectIcon} />;
+    case 'coinbaseWallet':
+      return <Icon bgImg={coinbaseAppIcon} />;
   }
   return null;
 };
@@ -125,7 +126,7 @@ const ErrorMessage = styled.span`
 
 const Menu = styled(UnstyledList)`
   > li {
-    ${ConnectorButton} { 
+    ${ConnectorButton} {
       border-bottom: none;
     }
 
