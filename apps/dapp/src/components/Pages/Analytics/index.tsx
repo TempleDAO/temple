@@ -92,6 +92,7 @@ export const AnalyticsPage: FC = () => {
         <BiAxialLineChart
           chartData={chartData}
           xDataKey={'timestamp'}
+          xLabel="Days since launch"
           lines={[
             { series: 'templeBurned', color: theme.palette.brand, yAxisId: 'left' },
             { series: 'totalProfitUSD', color: theme.palette.light, yAxisId: 'right' },

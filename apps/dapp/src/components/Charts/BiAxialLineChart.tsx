@@ -1,6 +1,7 @@
-import type { ScaleType, DataKey } from 'recharts/types/util/types';
+import type { DataKey } from 'recharts/types/util/types';
 
 import React from 'react';
+import styled from 'styled-components';
 import { useTheme } from 'styled-components';
 import { ResponsiveContainer, AreaChart as RechartsChart, Area, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { formatNumberAbbreviated } from 'utils/formatter';
@@ -13,16 +14,24 @@ type LineChartProps<T> = {
   tooltipLabelFormatter: (value: any) => string;
   tooltipValuesFormatter?: (value: number, name: string) => string[];
   legendFormatter?: (value: string) => string;
-  scaleX?: ScaleType;
+  xLabel?: string;
 };
 
 export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineChartProps<T>>) {
-  const { chartData, xDataKey, lines, xTickFormatter, tooltipLabelFormatter, tooltipValuesFormatter, legendFormatter } =
-    props;
+  const {
+    chartData,
+    xDataKey,
+    lines,
+    xTickFormatter,
+    tooltipLabelFormatter,
+    tooltipValuesFormatter,
+    legendFormatter,
+    xLabel,
+  } = props;
   const theme = useTheme();
 
   return (
-    <ResponsiveContainer minHeight={200} minWidth={320} height={350}>
+    <ResponsiveContainer minHeight={200} minWidth={320} height={400}>
       <RechartsChart data={chartData}>
         {lines.map((line) => (
           <Area
@@ -35,9 +44,16 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
             fillOpacity={0.3}
             strokeWidth={2}
             dot={false}
+            stackId="1"
           />
         ))}
-        <XAxis dataKey={xDataKey} tickFormatter={xTickFormatter} tick={{ stroke: theme.palette.brandLight }} />
+        <XAxis
+          dataKey={xDataKey}
+          label={{ value: xLabel, position: 'bottom', fill: theme.palette.brandLight, offset: -15 }}
+          tickFormatter={xTickFormatter}
+          tick={{ stroke: theme.palette.brandLight }}
+          height={50}
+        />
         <YAxis
           yAxisId="right"
           orientation="right"
@@ -73,3 +89,9 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
     </ResponsiveContainer>
   );
 }
+
+const Label = styled.label`
+  display: flex;
+  margin-top: 30px;
+  color: white;
+`;
