@@ -10,6 +10,7 @@ import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
 import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
 import { InjectedConnector } from 'wagmi/connectors/injected';
+import { SafeConnector } from '@wagmi/connectors/safe';
 import env from 'constants/env';
 
 // polyfill Buffer for client
@@ -51,6 +52,15 @@ const connectors = [
       appName: 'TempleDAO',
     },
   }),
+  new SafeConnector({
+    chains,
+    options: {
+      allowedDomains: [/https:\/\/app.safe.global$/],
+      debug: false,
+    },
+  }),
+  // NOTE: This should always remain the last in this array
+  // https://github.com/TempleDAO/temple/blob/1fab91737d7fe91a0945a3318e848f577ef98511/apps/dapp/src/components/Layouts/CoreLayout/ConnectorPopover.tsx#L49
   new InjectedConnector({
     chains,
     options: {
