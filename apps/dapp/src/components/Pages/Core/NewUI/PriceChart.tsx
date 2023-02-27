@@ -26,7 +26,7 @@ const tooltipValueNames = {
 
 const tooltipValuesFormatter = (value: number, name: string) => [formatNumberWithCommas(value), name];
 
-const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin - dataMin * 0.1, dataMax + dataMax * 0.1];
+const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin - dataMin * 0.005, dataMax + dataMax * 0.005];
 
 export const TemplePriceChart = () => {
   const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeInterval>('1M');

@@ -49,7 +49,7 @@ export const truncateDecimals = (number: string | number, targetDecimals = 2): s
   return decimals ? `${int}.${decimals}` : int;
 };
 
-export const formatNumberAbbreviated = (number: number): string => {
+export const formatNumberAbbreviated = (number: number) => {
   const stringified = number.toString();
   const decimalPlaces = stringified.includes('.') ? stringified.split('.')[1].length : 0;
   const abbreviations = ['K', 'M', 'B'];
@@ -57,16 +57,24 @@ export const formatNumberAbbreviated = (number: number): string => {
   const localeFormatted =
     decimalPlaces > 3
       ? number.toLocaleString('en-US', {
-          minimumFractionDigits: 3,
+          minimumFractionDigits: 4,
         })
       : number.toLocaleString('en-US');
 
   const thousandsSeparatorCount = localeFormatted.split(',').length - 1;
-  const shortenedString = localeFormatted.slice(0, 4);
+  const shortenedString = localeFormatted.slice(0, 5);
 
   if (thousandsSeparatorCount > 0) {
-    return shortenedString.replace(',', '.') + ` ${abbreviations[thousandsSeparatorCount - 1]}`;
+    return {
+      number: parseFloat(shortenedString),
+      thousandsSuffix: abbreviations[thousandsSeparatorCount - 1],
+      string: shortenedString.replace(',', '.') + abbreviations[thousandsSeparatorCount - 1],
+    };
   } else {
-    return shortenedString;
+    return {
+      number: parseFloat(shortenedString),
+      thousandsSuffix: '',
+      string: shortenedString.replace(',', '.'),
+    };
   }
 };

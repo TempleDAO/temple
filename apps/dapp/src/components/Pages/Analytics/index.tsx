@@ -83,7 +83,7 @@ export const AnalyticsPage: FC = () => {
         </LatestMetricValue>
         <LatestMetricValue>
           <h2>Temple burned</h2>
-          <p>{formatNumberAbbreviated(latestValues.templeBurned)}</p>
+          <p>{formatNumberAbbreviated(latestValues.templeBurned).string}</p>
         </LatestMetricValue>
       </MetricsBadgeRow>
       <IntervalToggler selectedInterval={selectedInterval} setSelectedInterval={setSelectedInterval} />

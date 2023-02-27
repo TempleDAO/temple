@@ -1,10 +1,9 @@
 import type { DataKey } from 'recharts/types/util/types';
 
 import React from 'react';
-import styled from 'styled-components';
 import { useTheme } from 'styled-components';
 import { ResponsiveContainer, AreaChart as RechartsChart, Area, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import { formatNumberAbbreviated } from 'utils/formatter';
+import { formatNumberAbbreviated, formatNumberFixedDecimals } from 'utils/formatter';
 
 type LineChartProps<T> = {
   chartData: T[];
@@ -57,14 +56,14 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
         <YAxis
           yAxisId="right"
           orientation="right"
-          tickFormatter={(value) => formatNumberAbbreviated(value)}
+          tickFormatter={formatTicker}
           tick={{ stroke: lines.find((line) => line.yAxisId === 'right')?.color }}
           stroke={lines.find((line) => line.yAxisId === 'right')?.color}
         />
         <YAxis
           yAxisId="left"
           orientation="left"
-          tickFormatter={(value) => formatNumberAbbreviated(value)}
+          tickFormatter={formatTicker}
           tick={{ stroke: lines.find((line) => line.yAxisId === 'left')?.color }}
           stroke={lines.find((line) => line.yAxisId === 'left')?.color}
         />
@@ -90,8 +89,7 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
   );
 }
 
-const Label = styled.label`
-  display: flex;
-  margin-top: 30px;
-  color: white;
-`;
+function formatTicker(ticker: any) {
+  const abbreviated = formatNumberAbbreviated(ticker);
+  return formatNumberFixedDecimals(abbreviated.number, 1) + ' ' + abbreviated.thousandsSuffix;
+}

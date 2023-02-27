@@ -1,4 +1,4 @@
-import type { ScaleType, DataKey, AxisDomain } from 'recharts/types/util/types';
+import type { DataKey, AxisDomain } from 'recharts/types/util/types';
 
 import React from 'react';
 import { useTheme } from 'styled-components';
@@ -46,11 +46,13 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
           tickFormatter={xTickFormatter}
           tick={{ stroke: theme.palette.brandLight }}
           minTickGap={25}
+          tickMargin={10}
         />
         <YAxis
-          tickFormatter={(value) => formatNumberAbbreviated(value)}
+          tickFormatter={(value) => formatNumberAbbreviated(value).string}
           tick={{ stroke: theme.palette.brandLight }}
           domain={yDomain}
+          tickMargin={10}
         />
         <Tooltip
           wrapperStyle={{ outline: 'none' }}
