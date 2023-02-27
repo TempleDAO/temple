@@ -45,7 +45,7 @@ export const TemplePriceChart = () => {
       <IntervalToggler selectedInterval={selectedInterval} setSelectedInterval={setSelectedInterval} />
       {
         <LineChart
-          chartData={formattedData[selectedInterval]}
+          chartData={formattedData[selectedInterval].reverse()}
           xDataKey="timestamp"
           lines={[
             { series: 'templePriceUSD', color: theme.palette.brand },

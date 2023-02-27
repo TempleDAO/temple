@@ -1,11 +1,11 @@
-import type { FC, MouseEventHandler } from 'react';
+import type { FC } from 'react';
 import type { RAMOSMetric } from 'hooks/core/types';
 import type { ChartSupportedTimeInterval } from 'utils/time-intervals';
 
 import { useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { format, differenceInDays } from 'date-fns';
-import { LineChart, BiAxialLineChart, IntervalToggler } from 'components/Charts';
+import { BiAxialLineChart, IntervalToggler } from 'components/Charts';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
 import { formatTimestampedChartData } from 'utils/charts';
 import { formatNumberAbbreviated, formatNumberWithCommas } from 'utils/formatter';
@@ -26,7 +26,7 @@ const tooltipValuesFormatter = (value: number, name: string) => [formatNumberWit
 
 const tooltipValueNames = {
   templeBurned: 'Temple burned',
-  totalProfitUSD: 'Total profit (USD)',
+  totalProfitUSD: 'Value accrual to holders (USD)',
 };
 
 const xTickFormatter = (value: number, _index: number) =>
@@ -87,51 +87,7 @@ export const AnalyticsPage: FC = () => {
         </LatestMetricValue>
       </MetricsBadgeRow>
       <IntervalToggler selectedInterval={selectedInterval} setSelectedInterval={setSelectedInterval} />
-      <ChartTitle>Temple Burned</ChartTitle>
-      <ChartContainer>
-        <LineChart
-          chartData={chartData}
-          xDataKey={'timestamp'}
-          lines={[{ series: 'templeBurned', color: theme.palette.brand }]}
-          xTickFormatter={xTickFormatter}
-          tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
-          tooltipValuesFormatter={(value) => tooltipValuesFormatter(value, tooltipValueNames.templeBurned)}
-        />
-      </ChartContainer>
-      <ChartTitle>Total Profit USD</ChartTitle>
-      <ChartContainer>
-        <LineChart
-          chartData={chartData}
-          xDataKey={'timestamp'}
-          lines={[{ series: 'totalProfitUSD', color: theme.palette.brand }]}
-          xTickFormatter={xTickFormatter}
-          tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
-          tooltipValuesFormatter={(value) => tooltipValuesFormatter(value, tooltipValueNames.totalProfitUSD)}
-        />
-      </ChartContainer>
-      <ChartTitle>Both</ChartTitle>
-      <ChartContainer>
-        <LineChart
-          chartData={chartData}
-          xDataKey={'timestamp'}
-          lines={[
-            { series: 'templeBurned', color: theme.palette.brand },
-            { series: 'totalProfitUSD', color: theme.palette.light },
-          ]}
-          xTickFormatter={xTickFormatter}
-          tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
-          tooltipValuesFormatter={(value, name) =>
-            tooltipValuesFormatter(
-              value,
-              name === 'templeBurned' ? tooltipValueNames.templeBurned : tooltipValueNames.totalProfitUSD
-            )
-          }
-          legendFormatter={(name) =>
-            name === 'templeBurned' ? tooltipValueNames.templeBurned : tooltipValueNames.totalProfitUSD
-          }
-        />
-      </ChartContainer>
-      <ChartTitle>Biaxial</ChartTitle>
+      <ChartTitle>Overlay of Temple Burned and Value Accrual</ChartTitle>
       <ChartContainer>
         <BiAxialLineChart
           chartData={chartData}
