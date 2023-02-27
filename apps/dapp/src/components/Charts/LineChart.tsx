@@ -13,7 +13,6 @@ type LineChartProps<T> = {
   tooltipLabelFormatter: (value: any) => string;
   tooltipValuesFormatter?: (value: number, name: string) => string[];
   legendFormatter?: (value: string) => string;
-  scaleX?: ScaleType;
   yDomain?: AxisDomain;
 };
 
@@ -22,7 +21,6 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
     chartData,
     xDataKey,
     lines,
-    scaleX = 'time',
     xTickFormatter,
     tooltipLabelFormatter,
     tooltipValuesFormatter,
@@ -45,7 +43,6 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
         ))}
         <XAxis
           dataKey={xDataKey}
-          scale={scaleX}
           tickFormatter={xTickFormatter}
           tick={{ stroke: theme.palette.brandLight }}
           minTickGap={25}
