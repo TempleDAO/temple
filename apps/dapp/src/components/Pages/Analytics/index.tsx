@@ -5,7 +5,7 @@ import type { ChartSupportedTimeInterval } from 'utils/time-intervals';
 import { useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { format, differenceInDays } from 'date-fns';
-import { BiAxialLineChart, IntervalToggler } from 'components/Charts';
+import { BiAxialAreaChart, IntervalToggler } from 'components/Charts';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
 import { formatTimestampedChartData } from 'utils/charts';
 import { formatNumberAbbreviated, formatNumberWithCommas } from 'utils/formatter';
@@ -89,7 +89,7 @@ export const AnalyticsPage: FC = () => {
       <IntervalToggler selectedInterval={selectedInterval} setSelectedInterval={setSelectedInterval} />
       <ChartTitle>Overlay of Temple Burned and Value Accrual</ChartTitle>
       <ChartContainer>
-        <BiAxialLineChart
+        <BiAxialAreaChart
           chartData={chartData}
           xDataKey={'timestamp'}
           xLabel="Days since launch"
