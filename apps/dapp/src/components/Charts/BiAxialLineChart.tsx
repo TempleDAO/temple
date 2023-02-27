@@ -69,15 +69,15 @@ export default function BiAxialLineChart<T>(props: React.PropsWithChildren<LineC
           stroke={lines.find((line) => line.yAxisId === 'left')?.color}
         />
         <Tooltip
-          wrapperStyle={{ outline: 'none' }}
+          wrapperStyle={{ outline: 'none', opacity: 0.9 }}
           contentStyle={{
-            backgroundColor: theme.palette.dark75,
+            backgroundColor: theme.palette.dark,
             color: theme.palette.brand,
             borderRadius: '15px',
             border: 0,
           }}
-          itemStyle={{ backgroundColor: theme.palette.dark75, color: theme.palette.brandLight }}
-          labelStyle={{ backgroundColor: theme.palette.dark75, fontWeight: 'bold' }}
+          itemStyle={{ backgroundColor: theme.palette.dark, color: theme.palette.brandLight }}
+          labelStyle={{ backgroundColor: theme.palette.dark, fontWeight: 'bold' }}
           labelFormatter={tooltipLabelFormatter}
           formatter={(value, name, _props) => {
             //@ts-ignore
