@@ -45,7 +45,7 @@ export default function LineChart<T>(props: React.PropsWithChildren<LineChartPro
           dataKey={xDataKey}
           tickFormatter={xTickFormatter}
           tick={{ stroke: theme.palette.brandLight }}
-          minTickGap={25}
+          minTickGap={10}
           tickMargin={10}
         />
         <YAxis

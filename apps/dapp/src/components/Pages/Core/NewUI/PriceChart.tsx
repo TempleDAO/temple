@@ -7,16 +7,21 @@ import { useTheme } from 'styled-components';
 import { format } from 'date-fns';
 import { LineChart, IntervalToggler } from 'components/Charts';
 import useRefreshablePriceMetricsRamos from 'hooks/use-refreshable-price-metrics-ramos';
-import { formatNumberWithCommas } from 'utils/formatter';
+import { formatNumberFixedDecimals } from 'utils/formatter';
 import { formatTimestampedChartData } from 'utils/charts';
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
 const tickFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormatter> = {
-  '1D': (timestamp) => format(timestamp, 'H aaa'),
+  '1D': (timestamp) => format(timestamp, 'h aaa'),
   '1W': (timestamp) => format(timestamp, 'eee d LLL'),
   '1M': (timestamp) => format(timestamp, 'MMM do'),
   '1Y': (timestamp) => format(timestamp, 'MMM do y'),
+};
+
+const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormatter> = {
+  ...tickFormatters,
+  '1D': (timestamp) => format(timestamp, 'MMM do, h aaa'),
 };
 
 const tooltipValueNames = {
@@ -24,9 +29,9 @@ const tooltipValueNames = {
   templePriceUSD: 'Temple price (USD)',
 };
 
-const tooltipValuesFormatter = (value: number, name: string) => [formatNumberWithCommas(value), name];
+const tooltipValuesFormatter = (value: number, name: string) => [formatNumberFixedDecimals(value, 4).toString(), name];
 
-const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin - dataMin * 0.005, dataMax + dataMax * 0.005];
+const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin - dataMin * 0.01, dataMax + dataMax * 0.01];
 
 export const TemplePriceChart = () => {
   const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeInterval>('1M');
@@ -38,7 +43,11 @@ export const TemplePriceChart = () => {
     return <div>Loading...</div>;
   }
 
-  const formattedData = formatTimestampedChartData(dailyPriceMetrics, hourlyPriceMetrics, formatData);
+  const filteredHourlyMetrics = hourlyPriceMetrics.reverse().slice(0, 24);
+
+  const formattedData = formatTimestampedChartData(dailyPriceMetrics, filteredHourlyMetrics, formatData);
+
+  console.log('1D records', formattedData['1D'].length);
 
   return (
     <>
@@ -52,7 +61,7 @@ export const TemplePriceChart = () => {
             { series: 'tpiUSD', color: theme.palette.light },
           ]}
           xTickFormatter={tickFormatters[selectedInterval]}
-          tooltipLabelFormatter={tickFormatters[selectedInterval]}
+          tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
           yDomain={yDomain}
           legendFormatter={(name) => (name === 'tpiUSD' ? tooltipValueNames.tpiUSD : tooltipValueNames.templePriceUSD)}
           tooltipValuesFormatter={(value, name) =>

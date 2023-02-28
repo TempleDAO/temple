@@ -16,7 +16,8 @@ type XAxisTickFormatter = (timestamp: number) => string;
 const RAMOS_LAUNCH_DATE = new Date(1671058907000);
 
 const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormatter> = {
-  '1D': (timestamp) => format(timestamp, 'H aaa'),
+  '1D': (timestamp) =>
+    `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}, ${format(timestamp, 'h aaa')}`,
   '1W': (timestamp) => `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
   '1M': (timestamp) => `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
   '1Y': (timestamp) => `Day ${differenceInDays(timestamp, RAMOS_LAUNCH_DATE).toString()}`,
@@ -34,9 +35,10 @@ const xTickFormatter = (value: number, _index: number) =>
 
 //TODO: Create components to handle error cases
 
+const CHART_INTERVAL: ChartSupportedTimeInterval = '1Y';
+
 export const AnalyticsPage: FC = () => {
   const { dailyMetrics, hourlyMetrics, isLoading, errors } = useRAMOSMetrics();
-  const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeInterval>('1M');
   const theme = useTheme();
 
   if (errors.some(Boolean)) {
@@ -71,7 +73,7 @@ export const AnalyticsPage: FC = () => {
     daysSinceLaunch: differenceInDays(new Date(), RAMOS_LAUNCH_DATE),
   };
 
-  const chartData = formattedData[selectedInterval].reverse();
+  const chartData = formattedData[CHART_INTERVAL].reverse();
 
   return (
     <>
@@ -86,7 +88,6 @@ export const AnalyticsPage: FC = () => {
           <p>{formatNumberAbbreviated(latestValues.templeBurned).string}</p>
         </LatestMetricValue>
       </MetricsBadgeRow>
-      <IntervalToggler selectedInterval={selectedInterval} setSelectedInterval={setSelectedInterval} />
       <ChartTitle>Overlay of Temple Burned and Value Accrual</ChartTitle>
       <ChartContainer>
         <BiAxialAreaChart
@@ -98,7 +99,7 @@ export const AnalyticsPage: FC = () => {
             { series: 'totalProfitUSD', color: theme.palette.light, yAxisId: 'right' },
           ]}
           xTickFormatter={xTickFormatter}
-          tooltipLabelFormatter={tooltipLabelFormatters[selectedInterval]}
+          tooltipLabelFormatter={tooltipLabelFormatters[CHART_INTERVAL]}
           tooltipValuesFormatter={(value, name) =>
             tooltipValuesFormatter(
               value,
