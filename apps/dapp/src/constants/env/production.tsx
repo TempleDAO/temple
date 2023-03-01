@@ -35,6 +35,7 @@ const env: Environment = {
       '0x49fb6dbe198f61d8962cb069ca1bc7f2daff4de6',
       '0x465451535c4518d805cbead0b95e1a1a677ddeae',
       '0x8C45f988fD3A2657d2B32Ff5340D858370D408Ef',
+      '0x476Cba8D051f8F375D7E0aEFb09F74D13c777f23',
     ],
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
@@ -45,8 +46,8 @@ const env: Environment = {
     vaultOps: '0x65fE8BaBF7DA367b2B45cBD748F0490713f84828',
     vaultProxy: '0x6f5bB7cC4F3D6628d0095545552757AB377FE15C',
     vaultEarlyExit: '0x7C6f1b4891ff8CAcCeC97DbbD9Df3b773d88A03E',
-    ramos: '0x8C18b1619362C1f89a688294db9EDbb7947a710f',
-    ramosPoolHelper: '0x0bD02b31B3a6aFB335a4C62c53BfdDD38D388075',
+    ramos: '0xa2eac1DF5E89cA694c78626Dd862d9398DBBA6EF',
+    ramosPoolHelper: '0xC260576fec862BED7A35E64BBF800Fe49899BaC0',
     balancerHelpers: '0x5aDDCCa35b7A0D07C74063c48700C8590E87864E',
   },
   gas: {

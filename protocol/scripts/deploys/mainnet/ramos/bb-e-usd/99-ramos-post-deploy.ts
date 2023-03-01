@@ -4,13 +4,13 @@ import {
     AuraStaking,
     AuraStaking__factory,
   RAMOS, RAMOS__factory
-} from "../../../../typechain";
+} from "../../../../../typechain";
 import {
   DEPLOYED_CONTRACTS, 
   DeployedContracts,
   ensureExpectedEnvvars,
   mine
-} from "../../helpers";
+} from "../../../helpers";
 
 async function main() {
     ensureExpectedEnvvars();
@@ -25,25 +25,25 @@ async function main() {
         DEPLOYED = DEPLOYED_CONTRACTS[network.name];
     }
 
-    const auraStaking = AuraStaking__factory.connect(DEPLOYED.RAMOS_AURA_STAKING, owner);
-    const ramos = RAMOS__factory.connect(DEPLOYED.RAMOS, owner);
+    const auraStaking = AuraStaking__factory.connect(DEPLOYED.RAMOS_BB_E_USD_AURA_STAKING, owner);
+    const ramos = RAMOS__factory.connect(DEPLOYED.RAMOS_BB_E_USD, owner);
 
     await ramosPostDeploy(ramos, DEPLOYED);
     await stakingPostDeploy(auraStaking, DEPLOYED);
 }
 
 async function ramosPostDeploy(ramos: RAMOS, DEPLOYED: DeployedContracts) {
-    await mine(ramos.setPoolHelper(DEPLOYED.RAMOS_POOL_HELPER));
+    await mine(ramos.setPoolHelper(DEPLOYED.RAMOS_BB_E_USD_POOL_HELPER));
 
     await mine(ramos.transferOwnership(DEPLOYED.MULTISIG));
 }
  
  async function stakingPostDeploy(auraStaking: AuraStaking, DEPLOYED: DeployedContracts) {
-    await mine(auraStaking.setOperator(DEPLOYED.RAMOS));
+    await mine(auraStaking.setOperator(DEPLOYED.RAMOS_BB_E_USD));
     await mine(auraStaking.setAuraPoolInfo(
-        parseInt(DEPLOYED.TEMPLE_BB_A_USD_AURA_POOL_ID), 
-        DEPLOYED.TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN, 
-        DEPLOYED.TEMPLE_BB_A_USD_REWARDS,
+        parseInt(DEPLOYED.TEMPLE_BB_E_USD_AURA_POOL_ID), 
+        DEPLOYED.TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN, 
+        DEPLOYED.TEMPLE_BB_E_USD_REWARDS,
     ));
 
     // will sit in auraStaking contract until set. leave for multisig to decide

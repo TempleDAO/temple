@@ -1,7 +1,6 @@
-'ds-test/=lib/ds-test/src/',
-'@openzeppelin=lib/openzeppelin-contracts/',
-'@uniswap/lib/contracts/=lib/solidity-lib/contracts/',
-'@uniswap/v2-core/contracts/=lib/v2-core/contracts/',
-'@uniswap/v2-periphery/contracts/=lib/v2-periphery/contracts/',
-'@uniswap/v3-core/contracts/=lib/v3-core/contracts/',
-'@uniswap/v3-periphery/contracts/=lib/v3-periphery/contracts/'
+@openzeppelin/=node_modules/@openzeppelin/
+@uniswap/=node_modules/@uniswap/
+ds-test/=lib/forge-std/lib/ds-test/src/
+eth-gas-reporter/=node_modules/eth-gas-reporter/
+forge-std/=lib/forge-std/src/
+hardhat/=node_modules/hardhat/

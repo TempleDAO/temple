@@ -1,16 +1,10 @@
-[default]
+[profile.default]
 src = 'contracts'
-out = 'artifacts'
-libs = ["node_modules", "lib"]
-remappings = [
-    'ds-test/=lib/ds-test/src/',
-    '@uniswap/v2-core/contracts/=lib/v2-core/contracts/',
-    '@uniswap/v2-periphery/contracts/=lib/v2-periphery/contracts/',
-    '@uniswap/v3-core/contracts/=lib/v3-core/contracts/',
-    '@uniswap/v3-periphery/contracts/=lib/v3-periphery/contracts/', 
-]
+out = 'artifacts-foundry'
+libs = ['node_modules', 'lib']
+test = 'test/forge'
+cache_path = 'cache-foundry'
 gas_reports = ["*"]
 
-[rpc_endpoints]
-mainnet = "https://rpc.ankr.com/eth"
-# See more config options https://github.com/gakonst/foundry/tree/master/config
+[etherscan]
+mainnet = { key = "${ETHERSCAN_MAINNET_KEY}" }

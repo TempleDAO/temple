@@ -159,6 +159,14 @@ const Home = () => {
           }
         }`
       );
+      const { data: arbitrumTreasuryData } = await fetchGenericSubgraph(
+        'https://api.thegraph.com/subgraphs/name/medariox/temple-metrics-arbitrum',
+        `{
+          metrics {
+            treasuryValueUSD
+          }
+        }`
+      );
       const { data: ramosData } = await fetchGenericSubgraph(
         'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
         `{
@@ -171,7 +179,9 @@ const Home = () => {
       setMetrics({
         price: parseFloat(ramosData.metrics[0].templePriceUSD),
         tpi: parseFloat(ramosData.metrics[0].treasuryPriceIndexUSD),
-        treasury: parseFloat(treasuryData.metrics[0].treasuryValueUSD),
+        treasury:
+          parseFloat(treasuryData.metrics[0].treasuryValueUSD) +
+          parseFloat(arbitrumTreasuryData.metrics[0].treasuryValueUSD),
       });
     };
     fetchMetrics();

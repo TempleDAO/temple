@@ -2,13 +2,13 @@ import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
 import {
     AuraStaking__factory
-} from "../../../../typechain";
+} from "../../../../../typechain";
 import {
   deployAndMine,
   DEPLOYED_CONTRACTS, 
   DeployedContracts,
   ensureExpectedEnvvars,
-} from "../../helpers";
+} from "../../../helpers";
 
 async function main() {
   ensureExpectedEnvvars();
@@ -27,7 +27,7 @@ async function main() {
   await deployAndMine(
       "RAMOS Aura Staking", auraStakingFactory, auraStakingFactory.deploy,
       "0x0000000000000000000000000000000000000000", // Temporary - operator needs setting in post-deploy
-      DEPLOYED.TEMPLE_BBAUSD_LP_TOKEN,
+      DEPLOYED.TEMPLE_BB_E_USD_LP_TOKEN,
       DEPLOYED.AURA_BOOSTER,
       [DEPLOYED.BALANCER_TOKEN, DEPLOYED.AURA_TOKEN]
   );

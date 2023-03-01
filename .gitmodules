@@ -1,6 +1,3 @@
-[submodule "protocol/lib/ds-test"]
-	path = protocol/lib/ds-test
-	url = https://github.com/dapphub/ds-test
 [submodule "protocol/lib/solidity-lib"]
 	path = protocol/lib/solidity-lib
 	url = https://github.com/uniswap/solidity-lib

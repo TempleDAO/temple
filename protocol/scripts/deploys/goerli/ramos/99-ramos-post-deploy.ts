@@ -24,14 +24,14 @@ async function main() {
         DEPLOYED = DEPLOYED_CONTRACTS[network.name];
     }
 
-    const ramos = RAMOS__factory.connect(DEPLOYED.RAMOS, owner);
+    const ramos = RAMOS__factory.connect(DEPLOYED.RAMOS_BB_A_USD, owner);
    
     await ramosPostDeploy(ramos, DEPLOYED);
 }
 
 async function ramosPostDeploy(ramos: RAMOS, DEPLOYED: DeployedContracts) {
    // ramos
-   await mine(ramos.setPoolHelper(DEPLOYED.RAMOS_POOL_HELPER));
+   await mine(ramos.setPoolHelper(DEPLOYED.RAMOS_BB_A_USD_POOL_HELPER));
    await mine(ramos.transferOwnership(DEPLOYED.MULTISIG));
 }
 

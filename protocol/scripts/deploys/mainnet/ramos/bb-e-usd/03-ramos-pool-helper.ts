@@ -3,13 +3,13 @@ import { ethers, network } from "hardhat";
 import { BigNumber } from "ethers";
 import {
   PoolHelper__factory
-} from "../../../../typechain";
+} from "../../../../../typechain";
 import {
   deployAndMine,
   DEPLOYED_CONTRACTS, 
   DeployedContracts,
   ensureExpectedEnvvars,
-} from "../../helpers";
+} from "../../../helpers";
 
 async function main() {
   ensureExpectedEnvvars();
@@ -29,11 +29,11 @@ async function main() {
     "RAMOS Pool Helper", poolHelperFactory, poolHelperFactory.deploy,
     DEPLOYED.BALANCER_VAULT,
     DEPLOYED.TEMPLE,
-    DEPLOYED.BBA_USD_TOKEN,
-    DEPLOYED.TEMPLE_BBAUSD_LP_TOKEN,
-    DEPLOYED.RAMOS,
+    DEPLOYED.BB_E_USD_TOKEN,
+    DEPLOYED.TEMPLE_BB_E_USD_LP_TOKEN,
+    DEPLOYED.RAMOS_BB_E_USD,
     BigNumber.from(0),
-    DEPLOYED.TEMPLE_BB_A_USD_BALANCER_POOL_ID
+    DEPLOYED.TEMPLE_BB_E_USD_BALANCER_POOL_ID
   );
 }
 

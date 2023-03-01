@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useNetwork, AddChainError, useSwitchNetwork } from 'wagmi';
+import { useNetwork, AddChainError, useSwitchNetwork, Chain } from 'wagmi';
 import { mainnet, goerli } from 'wagmi/chains';
 
 import { UnstyledList } from 'styles/common';
@@ -71,7 +71,7 @@ export const WrongNetworkPopover = () => {
     errorMessage = (
       <ErrorMessage>
         Error connecting to {LOCAL_CHAIN.name}. Please make sure you have {LOCAL_CHAIN.name} added to your MetaMask
-        Networks with RPC Url: {LOCAL_CHAIN.rpcUrls[0]} and ChainId: {LOCAL_CHAIN.id}.
+        Networks with RPC Url: {LOCAL_CHAIN.rpcUrls.default} and ChainId: {LOCAL_CHAIN.id}.
       </ErrorMessage>
     );
   }
@@ -102,11 +102,11 @@ export const WrongNetworkPopover = () => {
   );
 };
 
-const ENV_CHAIN_MAPPING = new Map([
-  ['production', mainnet],
-  ['preview', goerli],
-  ['local', LOCAL_CHAIN],
-]);
+// TODO: Wat
+const ENV_CHAIN_MAPPING = new Map<string, Chain>();
+ENV_CHAIN_MAPPING.set('production', mainnet);
+ENV_CHAIN_MAPPING.set('preview', goerli);
+ENV_CHAIN_MAPPING.set('local', LOCAL_CHAIN);
 
 const isSupportedChain = (chainId: number) => {
   return Array.from(ENV_CHAIN_MAPPING).some(([_, chain]) => chain.id === chainId);

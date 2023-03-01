@@ -2,7 +2,7 @@ import { ethers, network } from "hardhat";
 import { BaseContract, BigNumber, BigNumberish, Signer } from "ethers";
 import { assert, expect } from "chai";
 import { TempleERC20Token, TempleERC20Token__factory } from "../typechain";
-import { mine, impersonateAccount, time as timeHelpers } from "@nomicfoundation/hardhat-network-helpers";
+import { impersonateAccount, time as timeHelpers } from "@nomicfoundation/hardhat-network-helpers";
 
 export const NULL_ADDR = "0x0000000000000000000000000000000000000000"
 
@@ -10,7 +10,7 @@ export async function resetFork(
   blockNumber: number, 
   rpcUrl: string | undefined = process.env.TESTS_MAINNET_RPC_URL
 ) {
-  console.log("Forking Mainnet:", blockNumber);
+  console.log("Forking Mainnet:", blockNumber, rpcUrl);
   await network.provider.request({
     method: "hardhat_reset",
     params: [
