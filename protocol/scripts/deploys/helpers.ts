@@ -21,6 +21,7 @@ interface TeamPayments {
   TEMPLE_TEAM_EPOCH_11: string;
   TEMPLE_TEAM_EPOCH_12: string;
   TEMPLE_TEAM_EPOCH_13: string;
+  TEMPLE_TEAM_EPOCH_14: string;
 }
 
 export interface DeployedContracts {
@@ -62,7 +63,7 @@ export interface DeployedContracts {
   RAMOS_BB_E_USD_POOL_HELPER: string;
   RAMOS_BB_E_USD_AURA_STAKING: string;
 
-  // Balancer 
+  // Balancer
   BALANCER_TOKEN: string;
   BALANCER_VAULT: string;
   BB_A_USD_TOKEN: string;
@@ -122,7 +123,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     RAMOS_BB_E_USD_POOL_HELPER: '',
     RAMOS_BB_E_USD_AURA_STAKING: '',
 
-    // Balancer 
+    // Balancer
     BALANCER_TOKEN: '',
     BALANCER_VAULT: '',
     BB_A_USD_TOKEN: '',
@@ -186,7 +187,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     RAMOS_BB_E_USD_POOL_HELPER: '',
     RAMOS_BB_E_USD_AURA_STAKING: '',
 
-    // Balancer 
+    // Balancer
     BALANCER_TOKEN: '',
     BALANCER_VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     BB_A_USD_TOKEN: '0x73651AD693531F9937528009cC204a4d9b696a68', // Frax is used instead
@@ -198,7 +199,8 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
 
     // RAMOS dependencies (BB-A-USD)
     TEMPLE_BB_A_USD_LP_TOKEN: '0x89EA4363Bd541d27d9811E4Df1209dAa73154472', // temple/frax 50:50 LP token
-    TEMPLE_BB_A_USD_BALANCER_POOL_ID: '0x89ea4363bd541d27d9811e4df1209daa731544720002000000000000000002c0',  // temple/frax 50:50
+    TEMPLE_BB_A_USD_BALANCER_POOL_ID:
+      '0x89ea4363bd541d27d9811e4df1209daa731544720002000000000000000002c0', // temple/frax 50:50
     TEMPLE_BB_A_USD_AURA_POOL_ID: '',
     TEMPLE_BB_A_USD_REWARDS: '',
     TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
@@ -230,6 +232,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
       TEMPLE_TEAM_EPOCH_11: '0x49fb6dbe198f61d8962cb069ca1bc7f2daff4de6',
       TEMPLE_TEAM_EPOCH_12: '0x465451535c4518d805cbead0b95e1a1a677ddeae',
       TEMPLE_TEAM_EPOCH_13: '0x8c45f988fd3a2657d2b32ff5340d858370d408ef',
+      TEMPLE_TEAM_EPOCH_14: '0x476Cba8D051f8F375D7E0aEFb09F74D13c777f23',
     },
 
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
@@ -271,7 +274,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     // RAMOS (bb-a-usd) dependencies
     TEMPLE_BB_A_USD_LP_TOKEN: '0x173063a30e095313eee39411f07e95a8a806014e',
     TEMPLE_BB_A_USD_BALANCER_POOL_ID:
-    '0x173063a30e095313eee39411f07e95a8a806014e0002000000000000000003ab',
+      '0x173063a30e095313eee39411f07e95a8a806014e0002000000000000000003ab',
     TEMPLE_BB_A_USD_AURA_POOL_ID: '38',
     TEMPLE_BB_A_USD_REWARDS: '0x07A38A3aEa0b25364b1f9c66C8ddFA1FbD1c8fE0',
     TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN:
@@ -280,7 +283,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     // RAMOS (bb-e-usd) dependencies
     TEMPLE_BB_E_USD_LP_TOKEN: '0xa718042e5622099e5f0ace4e7122058ab39e1bbe',
     TEMPLE_BB_E_USD_BALANCER_POOL_ID:
-    '0xa718042e5622099e5f0ace4e7122058ab39e1bbe000200000000000000000475',
+      '0xa718042e5622099e5f0ace4e7122058ab39e1bbe000200000000000000000475',
     TEMPLE_BB_E_USD_AURA_POOL_ID: '59',
     TEMPLE_BB_E_USD_REWARDS: '0x2cfa7bbc6311a3fc6adcee5ad9ac19b84187a2e0',
     TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN:
@@ -321,7 +324,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     RAMOS_BB_E_USD_POOL_HELPER: '',
     RAMOS_BB_E_USD_AURA_STAKING: '',
 
-    // Balancer 
+    // Balancer
     BALANCER_TOKEN: '',
     BALANCER_VAULT: '',
     BB_A_USD_TOKEN: '',
@@ -344,7 +347,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_BB_E_USD_AURA_POOL_ID: '',
     TEMPLE_BB_E_USD_REWARDS: '',
     TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
-    
+
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
   },
 };
@@ -391,7 +394,7 @@ export async function deployAndMine<
     throw new Error("Contract factory and deploy method don't match");
   }
 
-  const renderedArgs: string = args.map(a => a.toString()).join(' ');
+  const renderedArgs: string = args.map((a) => a.toString()).join(' ');
 
   console.log(
     `*******Deploying ${name} on ${network.name} with args ${renderedArgs}`
@@ -486,7 +489,7 @@ export async function waitForMaxGas(
         'gwei'
       )}. Waiting for 30 seconds...`
     );
-    await new Promise(resolve => setTimeout(resolve, 30000));
+    await new Promise((resolve) => setTimeout(resolve, 30000));
     // Refresh current gas price
     currentGasPrice = await ethers.provider.getGasPrice();
     if (!currentGasPrice) throw new Error('No current gas price');
