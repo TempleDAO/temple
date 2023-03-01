@@ -6,7 +6,7 @@ import {
   expectAddressWithPrivateKey,
   toAtto,
 } from '../../helpers';
-import snapshot from './json/epoch13.json';
+import snapshot from './json/epoch14.json';
 
 // TODO: Add command line arguments for json allocations file
 async function main() {
@@ -38,7 +38,7 @@ async function main() {
   console.log('Setting allocations');
   const tx1 = await templeTeamPayments.setAllocations(
     Object.keys(snapshot),
-    Object.values(snapshot).map(amount => toAtto(amount))
+    Object.values(snapshot).map((amount) => toAtto(amount))
   );
   await tx1.wait();
   console.log('Mined');
@@ -59,7 +59,7 @@ async function main() {
 // and properly handle errors.
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });
