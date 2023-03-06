@@ -2,10 +2,9 @@ import type { FC } from 'react';
 import type { RAMOSMetric } from 'hooks/core/types';
 import type { ChartSupportedTimeInterval } from 'utils/time-intervals';
 
-import { useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { format, differenceInDays } from 'date-fns';
-import { BiAxialAreaChart, IntervalToggler } from 'components/Charts';
+import { BiAxialAreaChart } from 'components/Charts';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
 import { formatTimestampedChartData } from 'utils/charts';
 import { formatNumberAbbreviated, formatNumberWithCommas } from 'utils/formatter';
@@ -37,7 +36,7 @@ const xTickFormatter = (value: number, _index: number) =>
 
 const CHART_INTERVAL: ChartSupportedTimeInterval = '1Y';
 
-export const AnalyticsPage: FC = () => {
+export const RAMOSMetrics: FC = () => {
   const { dailyMetrics, hourlyMetrics, isLoading, errors } = useRAMOSMetrics();
   const theme = useTheme();
 
@@ -77,14 +76,13 @@ export const AnalyticsPage: FC = () => {
 
   return (
     <>
-      <h1>RAMOS Analytics</h1>
       <MetricsBadgeRow>
         <LatestMetricValue>
-          <h2>Days since launch</h2>
+          <h3>Days since launch</h3>
           <p>{latestValues.daysSinceLaunch}</p>
         </LatestMetricValue>
         <LatestMetricValue>
-          <h2>Temple burned</h2>
+          <h3>Temple burned</h3>
           <p>{formatNumberAbbreviated(latestValues.templeBurned).string}</p>
         </LatestMetricValue>
       </MetricsBadgeRow>
@@ -140,8 +138,9 @@ const LatestMetricValue = styled.article`
   justify-content: center;
   align-items: center;
 
-  h2 {
+  h3 {
     margin: 0;
+    padding-bottom: 1.5rem;
     font-size: 1rem;
   }
 
@@ -157,6 +156,6 @@ const ChartContainer = styled.div`
   padding: 20px;
 `;
 
-const ChartTitle = styled.h2`
+const ChartTitle = styled.h3`
   margin: 0;
 `;

@@ -26,8 +26,6 @@ import { EditLBPPage } from 'components/Pages/Ascend/admin/edit';
 import { AscendPage } from 'components/Pages/Ascend';
 import { AscendListPage } from 'components/Pages/AscendList';
 
-import { AnalyticsPage } from 'components/Pages/Analytics';
-
 import env from 'constants/env';
 import { AnalyticsService } from 'services/AnalyticsService';
 import { Unstake } from 'components/Pages/Core/Trade/views/Unstake';
@@ -77,7 +75,6 @@ ReactDOM.render(
               <Route path="disclaimer" element={<Disclaimer />} />
               <Route path="team-payments" element={<LazyPage component={TeamPayments} />} />
               <Route path="ramos" element={<LazyPage component={RamosAdmin} />} />
-              <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
             <Route path="/dapp/*" element={<CoreLayout />}>
               <Route path="" element={<VaultListPage />} />

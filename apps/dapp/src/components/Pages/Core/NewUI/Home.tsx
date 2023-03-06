@@ -15,6 +15,7 @@ import socialTelegramIcon from 'assets/images/social-telegram.png';
 import socialTwitterIcon from 'assets/images/social-twitter.png';
 import { Link } from 'react-router-dom';
 import { TemplePriceChart } from './PriceChart';
+import { RAMOSMetrics } from './RAMOSMetrics';
 import { Button } from 'components/Button/Button';
 import { useEffect, useState, useRef } from 'react';
 import { Trade } from './TradeNew';
@@ -231,6 +232,10 @@ const Home = () => {
         <Header>Price History</Header>
         <ChartContainer>
           <TemplePriceChart />
+        </ChartContainer>
+        <ChartContainer>
+          <Header>RAMOS Analytics</Header>
+          <RAMOSMetrics />
         </ChartContainer>
         {/* Marketing content */}
         <Header>How Does It Work?</Header>
@@ -510,7 +515,7 @@ const Header = styled.h2`
 // Price Chart
 const ChartContainer = styled.div`
   width: 100%;
-  height: 500px;
+  min-height: 500px;
 `;
 
 // Marketing Container
