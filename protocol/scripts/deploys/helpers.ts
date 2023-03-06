@@ -21,6 +21,7 @@ interface TeamPayments {
   TEMPLE_TEAM_EPOCH_11: string;
   TEMPLE_TEAM_EPOCH_12: string;
   TEMPLE_TEAM_EPOCH_13: string;
+  TEMPLE_TEAM_EPOCH_14: string;
 }
 
 export interface DeployedContracts {
@@ -52,22 +53,39 @@ export interface DeployedContracts {
   GENERIC_ZAPS: string;
   TEMPLE_ZAPS: string;
 
-  // RAMOS
-  RAMOS: string;
-  RAMOS_POOL_HELPER: string;
-  RAMOS_AURA_STAKING: string;
+  // RAMOS (BB-A-USD)
+  RAMOS_BB_A_USD: string;
+  RAMOS_BB_A_USD_POOL_HELPER: string;
+  RAMOS_BB_A_USD_AURA_STAKING: string;
 
-  // RAMOS dependencies
-  BBA_USD_TOKEN: string;
+  // RAMOS (BB-E-USD)
+  RAMOS_BB_E_USD: string;
+  RAMOS_BB_E_USD_POOL_HELPER: string;
+  RAMOS_BB_E_USD_AURA_STAKING: string;
+
+  // Balancer
   BALANCER_TOKEN: string;
-  TEMPLE_BBAUSD_LP_TOKEN: string;
-  TEMPLE_BB_A_USD_BALANCER_POOL_ID: string;
   BALANCER_VAULT: string;
-  AURA_BOOSTER: string;
+  BB_A_USD_TOKEN: string;
+  BB_E_USD_TOKEN: string;
+
+  // Aura
   AURA_TOKEN: string;
+  AURA_BOOSTER: string;
+
+  // RAMOS dependencies (BB-A-USD)
+  TEMPLE_BB_A_USD_LP_TOKEN: string;
+  TEMPLE_BB_A_USD_BALANCER_POOL_ID: string;
   TEMPLE_BB_A_USD_AURA_POOL_ID: string;
   TEMPLE_BB_A_USD_REWARDS: string;
   TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN: string;
+
+  // RAMOS dependencies (BB-E-USD)
+  TEMPLE_BB_E_USD_LP_TOKEN: string;
+  TEMPLE_BB_E_USD_BALANCER_POOL_ID: string;
+  TEMPLE_BB_E_USD_AURA_POOL_ID: string;
+  TEMPLE_BB_E_USD_REWARDS: string;
+  TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN: string;
 }
 
 export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
@@ -95,22 +113,39 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     GENERIC_ZAPS: '',
     TEMPLE_ZAPS: '',
 
-    // RAMOS
-    RAMOS: '',
-    RAMOS_POOL_HELPER: '',
-    RAMOS_AURA_STAKING: '',
+    // RAMOS (BB-A-USD)
+    RAMOS_BB_A_USD: '',
+    RAMOS_BB_A_USD_POOL_HELPER: '',
+    RAMOS_BB_A_USD_AURA_STAKING: '',
 
-    // RAMOS dependencies
-    BBA_USD_TOKEN: '',
+    // RAMOS (BB-E-USD)
+    RAMOS_BB_E_USD: '',
+    RAMOS_BB_E_USD_POOL_HELPER: '',
+    RAMOS_BB_E_USD_AURA_STAKING: '',
+
+    // Balancer
     BALANCER_TOKEN: '',
-    TEMPLE_BBAUSD_LP_TOKEN: '',
-    TEMPLE_BB_A_USD_BALANCER_POOL_ID: '',
     BALANCER_VAULT: '',
-    AURA_BOOSTER: '',
+    BB_A_USD_TOKEN: '',
+    BB_E_USD_TOKEN: '',
+
+    // Aura
     AURA_TOKEN: '',
+    AURA_BOOSTER: '',
+
+    // RAMOS dependencies (BB-A-USD)
+    TEMPLE_BB_A_USD_LP_TOKEN: '',
+    TEMPLE_BB_A_USD_BALANCER_POOL_ID: '',
     TEMPLE_BB_A_USD_AURA_POOL_ID: '',
     TEMPLE_BB_A_USD_REWARDS: '',
     TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
+
+    // RAMOS dependencies (BB-E-USD)
+    TEMPLE_BB_E_USD_LP_TOKEN: '',
+    TEMPLE_BB_E_USD_BALANCER_POOL_ID: '',
+    TEMPLE_BB_E_USD_AURA_POOL_ID: '',
+    TEMPLE_BB_E_USD_REWARDS: '',
+    TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
   },
   goerli: {
     // No longer active/unused
@@ -142,23 +177,40 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     GENERIC_ZAPS: '',
     TEMPLE_ZAPS: '',
 
-    // RAMOS
-    RAMOS: '0x02783CE28C5B3B015340938A11Aa79BB9f26f1Bc',
-    RAMOS_POOL_HELPER: '0xe3346D1923A9935A581FEa891b027eabF7B35250',
-    RAMOS_AURA_STAKING: '',
+    // RAMOS (BB-A-USD)
+    RAMOS_BB_A_USD: '0x02783CE28C5B3B015340938A11Aa79BB9f26f1Bc',
+    RAMOS_BB_A_USD_POOL_HELPER: '0xe3346D1923A9935A581FEa891b027eabF7B35250',
+    RAMOS_BB_A_USD_AURA_STAKING: '',
 
-    // RAMOS dependencies
-    BBA_USD_TOKEN: '0x73651AD693531F9937528009cC204a4d9b696a68', // Frax is used instead
+    // RAMOS (BB-E-USD)
+    RAMOS_BB_E_USD: '',
+    RAMOS_BB_E_USD_POOL_HELPER: '',
+    RAMOS_BB_E_USD_AURA_STAKING: '',
+
+    // Balancer
     BALANCER_TOKEN: '',
-    TEMPLE_BBAUSD_LP_TOKEN: '0x89EA4363Bd541d27d9811E4Df1209dAa73154472', // temple/frax 50:50 LP token
+    BALANCER_VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+    BB_A_USD_TOKEN: '0x73651AD693531F9937528009cC204a4d9b696a68', // Frax is used instead
+    BB_E_USD_TOKEN: '',
+
+    // Aura
+    AURA_TOKEN: '',
+    AURA_BOOSTER: '',
+
+    // RAMOS dependencies (BB-A-USD)
+    TEMPLE_BB_A_USD_LP_TOKEN: '0x89EA4363Bd541d27d9811E4Df1209dAa73154472', // temple/frax 50:50 LP token
     TEMPLE_BB_A_USD_BALANCER_POOL_ID:
       '0x89ea4363bd541d27d9811e4df1209daa731544720002000000000000000002c0', // temple/frax 50:50
-    BALANCER_VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-    AURA_BOOSTER: '',
-    AURA_TOKEN: '',
     TEMPLE_BB_A_USD_AURA_POOL_ID: '',
     TEMPLE_BB_A_USD_REWARDS: '',
     TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
+
+    // RAMOS dependencies (BB-E-USD)
+    TEMPLE_BB_E_USD_LP_TOKEN: '',
+    TEMPLE_BB_E_USD_BALANCER_POOL_ID: '',
+    TEMPLE_BB_E_USD_AURA_POOL_ID: '',
+    TEMPLE_BB_E_USD_REWARDS: '',
+    TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
   },
   mainnet: {
     // From network/environment
@@ -180,6 +232,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
       TEMPLE_TEAM_EPOCH_11: '0x49fb6dbe198f61d8962cb069ca1bc7f2daff4de6',
       TEMPLE_TEAM_EPOCH_12: '0x465451535c4518d805cbead0b95e1a1a677ddeae',
       TEMPLE_TEAM_EPOCH_13: '0x8c45f988fd3a2657d2b32ff5340d858370d408ef',
+      TEMPLE_TEAM_EPOCH_14: '0x476Cba8D051f8F375D7E0aEFb09F74D13c777f23',
     },
 
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
@@ -198,24 +251,43 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     GENERIC_ZAPS: '0x388d3C524724541800FD74041136caB40FD4DAfE',
     TEMPLE_ZAPS: '0xb7C30F132DBbBbB1C2b81d9D66a010FB7c72Ff9c',
 
-    // RAMOS
-    RAMOS: '0x8C18b1619362C1f89a688294db9EDbb7947a710f',
-    RAMOS_POOL_HELPER: '0x0bD02b31B3a6aFB335a4C62c53BfdDD38D388075',
-    RAMOS_AURA_STAKING: '0xDaAC0A9818aFA6f8Fb4672Dc8284940B169c96e8',
+    // RAMOS (BB-A-USD)
+    RAMOS_BB_A_USD: '0x8C18b1619362C1f89a688294db9EDbb7947a710f',
+    RAMOS_BB_A_USD_POOL_HELPER: '0x0bD02b31B3a6aFB335a4C62c53BfdDD38D388075',
+    RAMOS_BB_A_USD_AURA_STAKING: '0xDaAC0A9818aFA6f8Fb4672Dc8284940B169c96e8',
 
-    // RAMOS dependencies
-    BBA_USD_TOKEN: '0xA13a9247ea42D743238089903570127DdA72fE44',
+    // RAMOS (BB-E-USD)
+    RAMOS_BB_E_USD: '0xa2eac1DF5E89cA694c78626Dd862d9398DBBA6EF',
+    RAMOS_BB_E_USD_POOL_HELPER: '0xC260576fec862BED7A35E64BBF800Fe49899BaC0',
+    RAMOS_BB_E_USD_AURA_STAKING: '0xDc7bF7bB3D5ee262017D85062cc6d48D693B4616',
+
+    // Balancer
     BALANCER_TOKEN: '0xba100000625a3754423978a60c9317c58a424e3D',
-    TEMPLE_BBAUSD_LP_TOKEN: '0x173063a30e095313eee39411f07e95a8a806014e',
+    BALANCER_VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+    BB_A_USD_TOKEN: '0xA13a9247ea42D743238089903570127DdA72fE44',
+    BB_E_USD_TOKEN: '0x50Cf90B954958480b8DF7958A9E965752F627124',
+
+    // Aura
+    AURA_TOKEN: '0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF',
+    AURA_BOOSTER: '0xA57b8d98dAE62B26Ec3bcC4a365338157060B234',
+
+    // RAMOS (bb-a-usd) dependencies
+    TEMPLE_BB_A_USD_LP_TOKEN: '0x173063a30e095313eee39411f07e95a8a806014e',
     TEMPLE_BB_A_USD_BALANCER_POOL_ID:
       '0x173063a30e095313eee39411f07e95a8a806014e0002000000000000000003ab',
-    BALANCER_VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-    AURA_BOOSTER: '0xA57b8d98dAE62B26Ec3bcC4a365338157060B234',
-    AURA_TOKEN: '0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF',
     TEMPLE_BB_A_USD_AURA_POOL_ID: '38',
     TEMPLE_BB_A_USD_REWARDS: '0x07A38A3aEa0b25364b1f9c66C8ddFA1FbD1c8fE0',
     TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN:
       '0xaC10009Ed7845897E205FAf7CE25552dF3F928c4',
+
+    // RAMOS (bb-e-usd) dependencies
+    TEMPLE_BB_E_USD_LP_TOKEN: '0xa718042e5622099e5f0ace4e7122058ab39e1bbe',
+    TEMPLE_BB_E_USD_BALANCER_POOL_ID:
+      '0xa718042e5622099e5f0ace4e7122058ab39e1bbe000200000000000000000475',
+    TEMPLE_BB_E_USD_AURA_POOL_ID: '59',
+    TEMPLE_BB_E_USD_REWARDS: '0x2cfa7bbc6311a3fc6adcee5ad9ac19b84187a2e0',
+    TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN:
+      '0xe15ACEca2c2b58C72dAE1aB4fFB75CEbC1c59E7A',
   },
   localhost: {
     // From network/environment (setup when 00-localhost-env.ts script is run)
@@ -242,22 +314,39 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     GENERIC_ZAPS: process.env.GENERIC_ZAPS || '',
     TEMPLE_ZAPS: process.env.TEMPLE_ZAPS || '',
 
-    // RAMOS
-    RAMOS: '',
-    RAMOS_POOL_HELPER: '',
-    RAMOS_AURA_STAKING: '',
+    // RAMOS (BB-A-USD)
+    RAMOS_BB_A_USD: '',
+    RAMOS_BB_A_USD_POOL_HELPER: '',
+    RAMOS_BB_A_USD_AURA_STAKING: '',
 
-    // RAMOS dependencies
-    BBA_USD_TOKEN: '',
+    // RAMOS (BB-E-USD)
+    RAMOS_BB_E_USD: '',
+    RAMOS_BB_E_USD_POOL_HELPER: '',
+    RAMOS_BB_E_USD_AURA_STAKING: '',
+
+    // Balancer
     BALANCER_TOKEN: '',
-    TEMPLE_BBAUSD_LP_TOKEN: '',
-    TEMPLE_BB_A_USD_BALANCER_POOL_ID: '',
     BALANCER_VAULT: '',
-    AURA_BOOSTER: '',
+    BB_A_USD_TOKEN: '',
+    BB_E_USD_TOKEN: '',
+
+    // Aura
     AURA_TOKEN: '',
+    AURA_BOOSTER: '',
+
+    // RAMOS dependencies (BB-A-USD)
+    TEMPLE_BB_A_USD_LP_TOKEN: '',
+    TEMPLE_BB_A_USD_BALANCER_POOL_ID: '',
     TEMPLE_BB_A_USD_AURA_POOL_ID: '',
     TEMPLE_BB_A_USD_REWARDS: '',
     TEMPLE_BB_A_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
+
+    // RAMOS dependencies (BB-E-USD)
+    TEMPLE_BB_E_USD_LP_TOKEN: '',
+    TEMPLE_BB_E_USD_BALANCER_POOL_ID: '',
+    TEMPLE_BB_E_USD_AURA_POOL_ID: '',
+    TEMPLE_BB_E_USD_REWARDS: '',
+    TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
 
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
   },
@@ -305,7 +394,7 @@ export async function deployAndMine<
     throw new Error("Contract factory and deploy method don't match");
   }
 
-  const renderedArgs: string = args.map(a => a.toString()).join(' ');
+  const renderedArgs: string = args.map((a) => a.toString()).join(' ');
 
   console.log(
     `*******Deploying ${name} on ${network.name} with args ${renderedArgs}`
@@ -400,7 +489,7 @@ export async function waitForMaxGas(
         'gwei'
       )}. Waiting for 30 seconds...`
     );
-    await new Promise(resolve => setTimeout(resolve, 30000));
+    await new Promise((resolve) => setTimeout(resolve, 30000));
     // Refresh current gas price
     currentGasPrice = await ethers.provider.getGasPrice();
     if (!currentGasPrice) throw new Error('No current gas price');
