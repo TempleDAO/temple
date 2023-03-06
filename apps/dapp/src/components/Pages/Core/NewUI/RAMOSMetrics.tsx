@@ -5,6 +5,7 @@ import type { ChartSupportedTimeInterval } from 'utils/time-intervals';
 import styled, { useTheme } from 'styled-components';
 import { format, differenceInDays } from 'date-fns';
 import { BiAxialAreaChart } from 'components/Charts';
+import Loader from 'components/Loader/Loader';
 import { useRAMOSMetrics } from 'hooks/core/subgraph';
 import { formatTimestampedChartData } from 'utils/charts';
 import { formatNumberAbbreviated, formatNumberWithCommas } from 'utils/formatter';
@@ -32,8 +33,6 @@ const tooltipValueNames = {
 const xTickFormatter = (value: number, _index: number) =>
   `  ${differenceInDays(value, RAMOS_LAUNCH_DATE).toString()}  `;
 
-//TODO: Create components to handle error cases
-
 const CHART_INTERVAL: ChartSupportedTimeInterval = '1Y';
 
 export const RAMOSMetrics: FC = () => {
@@ -41,19 +40,22 @@ export const RAMOSMetrics: FC = () => {
   const theme = useTheme();
 
   if (errors.some(Boolean)) {
-    return <div>Error fetching data</div>;
+    console.error('Error fetching data', errors);
+    return null;
   }
 
   if (isLoading) {
-    return <div>Loading</div>;
+    return <Loader iconSize={48} />;
   }
 
   if (dailyMetrics === null || hourlyMetrics === null) {
-    return <div>Invalid subgraph response</div>;
+    console.error('Invalid subgraph response', dailyMetrics, hourlyMetrics);
+    return null;
   }
 
   if (dailyMetrics.data === undefined || hourlyMetrics.data === undefined) {
-    return <div>Empty payload</div>;
+    console.error('Empty subgraph response', dailyMetrics, hourlyMetrics);
+    return null;
   }
 
   const formattedData = formatTimestampedChartData(

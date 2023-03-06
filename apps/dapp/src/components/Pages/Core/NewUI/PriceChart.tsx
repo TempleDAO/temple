@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useTheme } from 'styled-components';
 import { format } from 'date-fns';
 import { LineChart, IntervalToggler } from 'components/Charts';
+import Loader from 'components/Loader/Loader';
 import useRefreshablePriceMetricsRamos from 'hooks/use-refreshable-price-metrics-ramos';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { formatTimestampedChartData } from 'utils/charts';
@@ -40,7 +41,7 @@ export const TemplePriceChart = () => {
   const theme = useTheme();
 
   if (dailyPriceMetrics.length === 0 || hourlyPriceMetrics.length === 0) {
-    return <div>Loading...</div>;
+    return <Loader iconSize={48} />;
   }
 
   const filteredHourlyMetrics = hourlyPriceMetrics.reverse().slice(0, 24);
