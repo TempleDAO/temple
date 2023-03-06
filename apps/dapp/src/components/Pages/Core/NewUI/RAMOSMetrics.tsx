@@ -26,7 +26,7 @@ const tooltipLabelFormatters: Record<ChartSupportedTimeInterval, XAxisTickFormat
 const tooltipValuesFormatter = (value: number, name: string) => [formatNumberWithCommas(value), name];
 
 const tooltipValueNames = {
-  templeBurned: 'Temple burned',
+  templeBurned: 'TEMPLE burned',
   totalProfitUSD: 'Value accrual to holders (USD)',
 };
 
@@ -84,11 +84,11 @@ export const RAMOSMetrics: FC = () => {
           <p>{latestValues.daysSinceLaunch}</p>
         </LatestMetricValue>
         <LatestMetricValue>
-          <h3>Temple burned</h3>
+          <h3>TEMPLE burned</h3>
           <p>{formatNumberAbbreviated(latestValues.templeBurned).string}</p>
         </LatestMetricValue>
       </MetricsBadgeRow>
-      <ChartTitle>Overlay of Temple Burned and Value Accrual</ChartTitle>
+      <ChartTitle>Overlay of TEMPLE Burned and Value Accrual</ChartTitle>
       <ChartContainer>
         <BiAxialAreaChart
           chartData={chartData}
