@@ -1,5 +1,5 @@
 import { useState, useContext, createContext, PropsWithChildren, useEffect } from 'react';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 import { useWallet } from 'providers/WalletProvider';
 import { useNotification } from 'providers/NotificationProvider';
@@ -13,7 +13,7 @@ import { AnalyticsService } from 'services/AnalyticsService';
 import { formatBigNumber, getTokenInfo } from 'components/Vault/utils';
 import { SwapInfo } from '@balancer-labs/sor';
 import { BalancerSDK, Network, SwapType } from '@balancer-labs/sdk';
-import { Vault__factory } from '@balancer-labs/typechain/dist/factories/Vault__factory';
+import VaultABI from 'data/abis/balancerVault.json';
 import { formatToken } from 'utils/formatter';
 import { ADDRESS_ZERO } from 'utils/bigNumber';
 
@@ -102,7 +102,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     let receipt: TransactionReceipt | undefined;
     const swapType: SwapType = SwapType.SwapExactIn;
     const tokenInfo = getTokenInfo(tokenIn);
-    const vaultContract = Vault__factory.connect(env.contracts.balancerVault, signer);
+    const vaultContract = new ethers.Contract(env.contracts.balancerVault, VaultABI, signer);
 
     // Execute batch swap
     try {
@@ -157,7 +157,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     let receipt: TransactionReceipt | undefined;
     const swapType: SwapType = SwapType.SwapExactIn;
     const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
-    const vaultContract = Vault__factory.connect(env.contracts.balancerVault, signer);
+    const vaultContract = new ethers.Contract(env.contracts.balancerVault, VaultABI, signer);
 
     try {
       await ensureAllowance(env.contracts.temple, templeContract, env.contracts.balancerVault, quote.swapAmount);
@@ -205,6 +205,8 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       { gasPrice, maxPools },
       false
     );
+    console.log(swapInfo);
+
     return swapInfo;
   };
 
@@ -221,6 +223,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       { gasPrice, maxPools },
       false
     );
+    console.log(swapInfo);
     return swapInfo;
   };
 
