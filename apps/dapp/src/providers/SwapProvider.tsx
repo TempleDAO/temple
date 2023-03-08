@@ -205,8 +205,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       { gasPrice, maxPools },
       false
     );
-    console.log(swapInfo);
-
     return swapInfo;
   };
 
@@ -223,7 +221,6 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       { gasPrice, maxPools },
       false
     );
-    console.log(swapInfo);
     return swapInfo;
   };
 
