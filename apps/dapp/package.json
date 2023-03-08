@@ -19,8 +19,8 @@
     "build-with-stats": "tsc && BUILD_STATS=true vite build"
   },
   "dependencies": {
-    "@balancer-labs/sdk": "^0.1.43",
-    "@balancer-labs/sor": "^4.0.1-beta.16",
+    "@balancer-labs/sdk": "^1.0.0-hotfix.1",
+    "@balancer-labs/sor": "^4.1.1-beta.3",
     "@balancer-labs/typechain": "^1.0.0",
     "@ethersproject/abi": "^5.7.0",
     "@ethersproject/abstract-signer": "^5.7.0",
