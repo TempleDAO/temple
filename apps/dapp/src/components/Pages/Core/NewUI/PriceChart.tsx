@@ -48,8 +48,6 @@ export const TemplePriceChart = () => {
 
   const formattedData = formatTimestampedChartData(dailyPriceMetrics, filteredHourlyMetrics, formatData);
 
-  console.log('1D records', formattedData['1D'].length);
-
   return (
     <>
       <IntervalToggler selectedInterval={selectedInterval} setSelectedInterval={setSelectedInterval} />

@@ -65,7 +65,8 @@ export const RAMOSMetrics: FC = () => {
   );
 
   if (formattedData === null) {
-    return <div>Empty payload</div>;
+    console.error('Empty formatted dataset for RAMOS metrics');
+    return null;
   }
 
   const latestValues = {
