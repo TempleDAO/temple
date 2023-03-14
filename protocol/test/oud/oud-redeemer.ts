@@ -13,8 +13,8 @@ import {
     TempleERC20Token__factory,
     FakeERC20__factory,
     FakeERC20,
-    FakeTempleLineOfCredit,
-    FakeTempleLineOfCredit__factory
+    FakeTreasuryReservesVault,
+    FakeTreasuryReservesVault__factory
 } from "../../typechain";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -28,7 +28,7 @@ describe("Oud Redeemer", async () => {
     let oudRedeemer: OudRedeemer;
     let templeToken: TempleERC20Token;
     let stableToken: FakeERC20;
-    let templeLineOfCredit: FakeTempleLineOfCredit;
+    let treasuryReservesVault: FakeTreasuryReservesVault;
     let owner: SignerWithAddress;
     let alan: SignerWithAddress;
     let alanAddress: string;
@@ -46,13 +46,13 @@ describe("Oud Redeemer", async () => {
         templeToken = await new TempleERC20Token__factory(owner).deploy();
         await templeToken.addMinter(owner.address);
         stableToken = await new FakeERC20__factory(owner).deploy("Stable token", "STBL");
-        stableToken.connect(owner).mint(alanAddress, toAtto(OPENING_BALANCE));
-        templeLineOfCredit = await new FakeTempleLineOfCredit__factory(owner).deploy();
+        await stableToken.connect(owner).mint(alanAddress, toAtto(OPENING_BALANCE));
+        treasuryReservesVault = await new FakeTreasuryReservesVault__factory(owner).deploy();
         oudRedeemer = await new OudRedeemer__factory(owner).deploy(
             oudToken.address,
             templeToken.address,
             stableToken.address,
-            templeLineOfCredit.address,
+            treasuryReservesVault.address,
             TPI
         );
         await templeToken.addMinter(oudRedeemer.address);
@@ -126,37 +126,37 @@ describe("Oud Redeemer", async () => {
             expect(await oudToken.balanceOf(alanAddress)).to.eq(toAtto(OPENING_BALANCE));
             await stableToken.connect(alan).approve(oudRedeemer.address, toAtto(STABLE_AMOUNT));
             expect(await oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT)))
-                .to.changeTokenBalance(oudToken, alanAddress, toAtto(OPENING_BALANCE - OUD_AMOUNT));
+            .to.changeTokenBalance(oudToken, alanAddress, toAtto(OPENING_BALANCE - OUD_AMOUNT));
         });
-
+        
         it("Correct amount of Temple is redeemed for Oud + Stable(at TPI)", async () => {
             expect(await templeToken.balanceOf(alanAddress)).to.eq(0);
             await stableToken.connect(alan).approve(oudRedeemer.address, toAtto(STABLE_AMOUNT));
             expect(await oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT)))
-                .to.changeTokenBalance(templeToken, alanAddress, toAtto(OUD_AMOUNT));
+            .to.changeTokenBalance(templeToken, alanAddress, toAtto(OUD_AMOUNT));
         });
 
         it("Correct amount of Stable(at TPI) is charged", async () => {
             expect(await stableToken.balanceOf(alanAddress)).to.eq(toAtto(OPENING_BALANCE));
             await stableToken.connect(alan).approve(oudRedeemer.address, toAtto(STABLE_AMOUNT));
-            expect(await oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT)))
+            expect(await oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT),{gasLimit:5000000},))
                 .to.changeTokenBalance(stableToken, alanAddress, toAtto(OPENING_BALANCE - STABLE_AMOUNT));
         });
 
         it("Redeem deposits correct amount to TLC", async () => {
-            expect(await stableToken.balanceOf(templeLineOfCredit.address)).to.eq(0);
+            expect(await stableToken.balanceOf(treasuryReservesVault.address)).to.eq(0);
             await stableToken.connect(alan).approve(oudRedeemer.address, toAtto(STABLE_AMOUNT));
             expect(await oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT)))
-                .to.changeTokenBalance(stableToken, templeLineOfCredit, toAtto(STABLE_AMOUNT));
+                .to.changeTokenBalance(stableToken, treasuryReservesVault, toAtto(STABLE_AMOUNT));
         });
 
         it("Should emit the correct events", async () => {
             await stableToken.connect(alan).approve(oudRedeemer.address, toAtto(STABLE_AMOUNT));
-            await expect( oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT))).to.emit(oudRedeemer, "OudRedeemed")
+            await expect(oudRedeemer.connect(alan).redeem(toAtto(OUD_AMOUNT))).to.emit(oudRedeemer, "OudRedeemed")
                 .withArgs(alanAddress, toAtto(OUD_AMOUNT), toAtto(STABLE_AMOUNT), TPI, toAtto(OUD_AMOUNT));
-            await expect(oudRedeemer.connect(owner).setTreasuryPriceIndex(2400)).to.emit(oudRedeemer,"TreasuryPriceIndexSet")
+            await expect(oudRedeemer.connect(owner).setTreasuryPriceIndex(2400)).to.emit(oudRedeemer, "TreasuryPriceIndexSet")
                 .withArgs(TPI, 2400);
-            await expect(oudRedeemer.connect(owner).setStableCoin(alanAddress)).to.emit(oudRedeemer,"StableCoinSet")
+            await expect(oudRedeemer.connect(owner).setStableCoin(alanAddress)).to.emit(oudRedeemer, "StableCoinSet")
                 .withArgs(stableToken.address, alanAddress);
 
         });

@@ -5,7 +5,7 @@ pragma solidity ^0.8.17;
 import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
 import {SafeERC20, IERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import {IOudRedeemer} from '../interfaces/oud/IOudRedeemer.sol';
-import {ITempleLineOfCredit} from '../interfaces/templeLineOfCredit/ITempleLineOfCredit.sol';
+import {ITreasuryReservesVault} from '../interfaces/reserves/ITreasuryReservesVault.sol';
 import {IOudToken} from '../interfaces/oud/IOudToken.sol';
 import {ITempleERC20Token} from '../interfaces/core/ITempleERC20Token.sol';
 
@@ -112,9 +112,8 @@ contract OudRedeemer is IOudRedeemer, Ownable {
     // Pull the user's $Stable and deposit into TLC
     _stable.safeTransferFrom(msg.sender, address(this), stableAmount);
     _stable.safeIncreaseAllowance(_depositStableTo, stableAmount);
-    ITempleLineOfCredit(_depositStableTo).depositReserve(
-      _stable,
-      address(this),
+    ITreasuryReservesVault(_depositStableTo).deposit(
+      address(_stable),
       stableAmount
     );
 
