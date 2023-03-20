@@ -6,39 +6,32 @@ import { useEffect, useState } from 'react';
 import { formatTemple, getBigNumberFromString } from 'components/Vault/utils';
 import { ZERO } from 'utils/bigNumber';
 import { BigNumber } from 'ethers';
-import { CryptoSelector, CryptoValue, Input } from './HomeInput';
+import { Input } from './HomeInput';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatToken } from 'utils/formatter';
 import env from 'constants/env';
-import { TempleStableAMMRouter__factory, TreasuryIV__factory } from 'types/typechain';
+import { TempleStableAMMRouter__factory, TreasuryIV__factory, ERC20__factory } from 'types/typechain';
 import { useNotification } from 'providers/NotificationProvider';
 import { useDebouncedCallback } from 'use-debounce';
+import { Account } from 'components/Layouts/CoreLayout/Account';
 
 interface IProps {
   isOpen: boolean;
   onClose: () => void;
 }
+interface Quote {
+  amountOut: BigNumber;
+  priceBelowIV: boolean;
+}
 
-const { DAI, TEMPLE_TOKEN } = TICKER_SYMBOL;
-
-const inputConfig: CryptoValue = {
-  kind: 'value',
-  value: `${TEMPLE_TOKEN}`,
-};
-
-const outputConfig: CryptoSelector = {
-  kind: 'select',
-  cryptoOptions: [DAI],
-  onCryptoChange: () => {},
-  selected: DAI,
-};
+const { DAI, FRAX, TEMPLE_TOKEN } = TICKER_SYMBOL;
 
 export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
-  const { wallet, signer, balance } = useWallet();
+  const { wallet, signer, balance, ensureAllowance } = useWallet();
   const { openNotification } = useNotification();
   const [inputValue, setInputValue] = useState('');
-  const [iv, setIv] = useState<BigNumber>();
-  const [quote, setQuote] = useState<BigNumber>();
+  const [iv, setIv] = useState<number>();
+  const [quote, setQuote] = useState<Quote>();
 
   // Set intrinsic value on mount
   useEffect(() => {
@@ -46,7 +39,7 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
       if (!signer) return;
       const treasuryIv = new TreasuryIV__factory(signer).attach(env.contracts.treasuryIv);
       const { frax, temple } = await treasuryIv.intrinsicValueRatio();
-      setIv(frax.div(temple));
+      setIv(frax.mul(10_000).div(temple).toNumber() / 10000); // Parse ratio as float
     };
     getIv();
   }, [signer]);
@@ -63,13 +56,12 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   }, [inputValue]);
 
   // Get quote from router
-  const fetchQuote = async (input: string): Promise<BigNumber> => {
-    if (!signer || !wallet) return ZERO;
+  const fetchQuote = async (input: string): Promise<Quote> => {
+    if (!signer) return { amountOut: ZERO, priceBelowIV: true };
     const router = new TempleStableAMMRouter__factory(signer).attach(env.contracts.templeV2Router);
     const amountIn = getBigNumberFromString(input, 18);
-    if (amountIn.lte(ZERO)) return ZERO;
-    const { amountOut } = await router.swapExactTempleForStableQuote(env.contracts.templeV2FraxPair, amountIn);
-    return amountOut;
+    if (amountIn.lte(ZERO)) return { amountOut: ZERO, priceBelowIV: true };
+    return await router.swapExactTempleForStableQuote(env.contracts.templeV2FraxPair, amountIn);
   };
 
   // Sell TEMPLE
@@ -79,7 +71,7 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     const router = new TempleStableAMMRouter__factory(signer).attach(env.contracts.templeV2Router);
 
     // Build swap parameters
-    const amountOut = await fetchQuote(inputValue);
+    const { amountOut } = await fetchQuote(inputValue);
     if (!amountOut) return;
     const fraxAddress = env.contracts.frax; // Use FRAX address even though Defend returns DAI
     const deadline = 20;
@@ -88,6 +80,10 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     const slippage = 0.5;
     const slippageBps = BigNumber.from(10_000 + 100 * slippage);
     const minAmountOut = amountOut.mul(10_000).div(slippageBps);
+
+    // Ensure router has allowance to spend TEMPLE
+    const tokenContract = new ERC20__factory(signer).attach(env.contracts.temple);
+    await ensureAllowance(TEMPLE_TOKEN, tokenContract, env.contracts.templeV2Router, amountIn);
 
     // Execute swap
     try {
@@ -102,7 +98,9 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const isSellButtonDisabled = Number(inputValue) <= 0 || getBigNumberFromString(inputValue, 18).gt(balance.TEMPLE);
+  const outputToken = quote?.priceBelowIV ? DAI : FRAX;
+  const isSellButtonDisabled =
+    !signer || Number(inputValue) <= 0 || getBigNumberFromString(inputValue, 18).gt(balance.TEMPLE);
 
   return (
     <>
@@ -115,11 +113,14 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
             <br />
             <br />
             For those who need urgent liquidity, Temple Defend has been re-activated at a fixed rate of $
-            {iv ? iv.toNumber().toFixed(2) : '0.80'} per TEMPLE.
+            {iv ? iv.toFixed(2) : '0.80'} per TEMPLE.
           </Subtitle>
           <InputContainer>
             <Input
-              crypto={inputConfig}
+              crypto={{
+                kind: 'value',
+                value: TEMPLE_TOKEN,
+              }}
               handleChange={(value: string) => setInputValue(value)}
               isNumber
               value={inputValue}
@@ -129,15 +130,24 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
               hint={`Balance: ${formatToken(balance.TEMPLE, TEMPLE_TOKEN)}`}
             />
             <Input
-              crypto={outputConfig}
-              value={formatToken(quote, DAI)}
-              hint={`Balance: ${formatToken(balance.DAI, DAI)}`}
+              crypto={{
+                kind: 'value',
+                value: outputToken,
+              }}
+              value={formatToken(quote?.amountOut, outputToken)}
+              hint={`Balance: ${formatToken(balance[outputToken], outputToken)}`}
               disabled
             />
           </InputContainer>
-          <SellButton disabled={isSellButtonDisabled} onClick={() => sell()}>
-            Sell {inputValue || '0'} TEMPLE
-          </SellButton>
+          {!signer ? (
+            <ConnectWalletContainer onClick={() => onClose()}>
+              <Account />
+            </ConnectWalletContainer>
+          ) : (
+            <SellButton disabled={isSellButtonDisabled} onClick={() => sell()}>
+              Sell {inputValue || '0'} TEMPLE
+            </SellButton>
+          )}
         </ModalContainer>
       </Popover>
     </>
@@ -186,6 +196,10 @@ const InputContainer = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  margin-top: 1rem;
+`;
+
+const ConnectWalletContainer = styled.div`
   margin-top: 1rem;
 `;
 

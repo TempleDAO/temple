@@ -215,7 +215,7 @@ const Home = () => {
               <>
                 <NewTempleText>The New Temple</NewTempleText>
                 <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
-                <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
+                <TradeButton onClick={() => setIsDefendModalOpen(true)}>Trade</TradeButton>
                 <LearnMoreLink onClick={legacyClaimClickHandler}>Claim from Vaults</LearnMoreLink>
               </>
             )}
