@@ -10,8 +10,7 @@ import { CryptoSelector, CryptoValue, Input } from './HomeInput';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { formatToken } from 'utils/formatter';
 import env from 'constants/env';
-import { TempleStableAMMRouter__factory } from 'types/typechain';
-import { TreasuryIV__factory } from 'types/typechain/typechain';
+import { TempleStableAMMRouter__factory, TreasuryIV__factory } from 'types/typechain';
 import { useNotification } from 'providers/NotificationProvider';
 import { useDebouncedCallback } from 'use-debounce';
 
