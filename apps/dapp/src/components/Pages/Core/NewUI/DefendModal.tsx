@@ -37,7 +37,7 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
   const { wallet, signer, balance } = useWallet();
   const { openNotification } = useNotification();
   const [inputValue, setInputValue] = useState('');
-  const [iv, setIv] = useState(ZERO);
+  const [iv, setIv] = useState<BigNumber>();
   const [quote, setQuote] = useState<BigNumber>();
 
   // Set intrinsic value on mount
@@ -110,12 +110,12 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
         <ModalContainer>
           <Title>Temple Defend</Title>
           <Subtitle>
-            TempleDAO suffered material damages from the Euler Finance hack via Balancer's boosted pool. We have paused
-            trading while we work on the best path forward.
+            The TEMPLE token has been adversely affected by the recent Euler exploit. Trading may resume once we have
+            clarity on the extent of the damage and how to best move forward.
             <br />
             <br />
-            For those who need liquidity urgently, Temple Defend has been re-opened at a fixed rate of $
-            {iv.toNumber().toFixed(2)} per TEMPLE
+            For those who need urgent liquidity, Temple Defend has been re-activated at a fixed rate of $
+            {iv ? iv.toNumber().toFixed(2) : '0.80'} per TEMPLE.
           </Subtitle>
           <InputContainer>
             <Input
