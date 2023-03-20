@@ -25,6 +25,7 @@ import { fetchGenericSubgraph } from 'utils/subgraph';
 import ClaimModal from './ClaimModal';
 import UnstakeOgtModal from './UnstakeModal';
 import { useWallet } from 'providers/WalletProvider';
+import DefendModal from './DefendModal';
 
 interface Metrics {
   price: number;
@@ -130,6 +131,7 @@ const Home = () => {
 
   const [isClaimFromVaultsLegacyModalOpen, setIsClaimFromVaultsLegacyModalOpen] = useState(false);
   const [isUnstakeOgtLegacyModalOpen, setIsUnstakeOgtLegacyModalOpen] = useState(false);
+  const [isDefendModalOpen, setIsDefendModalOpen] = useState(true);
 
   const legacyClaimClickHandler = () => {
     if (!address) {
@@ -191,6 +193,7 @@ const Home = () => {
     <>
       <LegacyLinkHeader>
         <LegacyText>Legacy features</LegacyText>
+        <LegacyLink onClick={() => setIsDefendModalOpen(true)}>Temple Defend</LegacyLink>
         <LegacyLink onClick={legacyClaimClickHandler}>Claim from vaults</LegacyLink>
         <LegacyLink onClick={legacyUnstakeOgtClickHandler}>Unstake OGT</LegacyLink>
       </LegacyLinkHeader>
@@ -300,6 +303,7 @@ const Home = () => {
         onClose={() => setIsClaimFromVaultsLegacyModalOpen(false)}
       />
       <UnstakeOgtModal isOpen={isUnstakeOgtLegacyModalOpen} onClose={() => setIsUnstakeOgtLegacyModalOpen(false)} />
+      <DefendModal isOpen={isDefendModalOpen} onClose={() => setIsDefendModalOpen(false)} />
     </>
   );
 };
