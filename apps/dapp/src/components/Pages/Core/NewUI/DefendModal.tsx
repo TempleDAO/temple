@@ -54,7 +54,7 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
 
   // Fetch quote, debounced
   const debouncedFetchQuote = useDebouncedCallback(async (amount: string) => {
-    const quote = await fetchQuote(inputValue);
+    const quote = await fetchQuote(amount);
     setQuote(quote);
   }, 750);
 
@@ -69,11 +69,8 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
     const router = new TempleStableAMMRouter__factory(signer).attach(env.contracts.templeV2Router);
     const amountIn = getBigNumberFromString(input, 18);
     if (amountIn.lte(ZERO)) return ZERO;
-    const { amountOut, priceBelowIV } = await router.swapExactTempleForStableQuote(
-      env.contracts.templeV2FraxPair,
-      amountIn
-    );
-    return priceBelowIV ? amountIn.mul(10_000).div(iv) : amountOut;
+    const { amountOut } = await router.swapExactTempleForStableQuote(env.contracts.templeV2FraxPair, amountIn);
+    return amountOut;
   };
 
   // Sell TEMPLE
@@ -118,7 +115,8 @@ export const DefendModal: React.FC<IProps> = ({ isOpen, onClose }) => {
             trading while we work on the best path forward.
             <br />
             <br />
-            For those who need liquidity urgently, Temple Defend has been re-opened at a fixed rate of $0.80 per TEMPLE
+            For those who need liquidity urgently, Temple Defend has been re-opened at a fixed rate of $
+            {iv.toNumber().toFixed(2)} per TEMPLE
           </Subtitle>
           <InputContainer>
             <Input
