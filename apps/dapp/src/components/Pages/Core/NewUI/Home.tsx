@@ -11,11 +11,11 @@ import socialDiscordIcon from 'assets/images/social-discord.png';
 import socialDocsIcon from 'assets/images/social-docs.png';
 import socialCodexIcon from 'assets/images/social-codex.png';
 import socialMediumIcon from 'assets/images/social-medium.png';
-import socialMessageIcon from 'assets/images/social-twitter.png';
 import socialTelegramIcon from 'assets/images/social-telegram.png';
 import socialTwitterIcon from 'assets/images/social-twitter.png';
 import { Link } from 'react-router-dom';
-import PriceChartNew from './PriceChartNew';
+import { TemplePriceChart } from './PriceChart';
+import { RAMOSMetrics } from './RAMOSMetrics';
 import { Button } from 'components/Button/Button';
 import { useEffect, useState, useRef } from 'react';
 import { Trade } from './TradeNew';
@@ -25,6 +25,7 @@ import { fetchGenericSubgraph } from 'utils/subgraph';
 import ClaimModal from './ClaimModal';
 import UnstakeOgtModal from './UnstakeModal';
 import { useWallet } from 'providers/WalletProvider';
+import DefendModal from './DefendModal';
 
 interface Metrics {
   price: number;
@@ -130,6 +131,7 @@ const Home = () => {
 
   const [isClaimFromVaultsLegacyModalOpen, setIsClaimFromVaultsLegacyModalOpen] = useState(false);
   const [isUnstakeOgtLegacyModalOpen, setIsUnstakeOgtLegacyModalOpen] = useState(false);
+  const [isDefendModalOpen, setIsDefendModalOpen] = useState(true);
 
   const legacyClaimClickHandler = () => {
     if (!address) {
@@ -191,6 +193,7 @@ const Home = () => {
     <>
       <LegacyLinkHeader>
         <LegacyText>Legacy features</LegacyText>
+        <LegacyLink onClick={() => setIsDefendModalOpen(true)}>Temple Defend</LegacyLink>
         <LegacyLink onClick={legacyClaimClickHandler}>Claim from vaults</LegacyLink>
         <LegacyLink onClick={legacyUnstakeOgtClickHandler}>Unstake OGT</LegacyLink>
       </LegacyLinkHeader>
@@ -212,7 +215,7 @@ const Home = () => {
               <>
                 <NewTempleText>The New Temple</NewTempleText>
                 <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
-                <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
+                <TradeButton onClick={() => setIsDefendModalOpen(true)}>Trade</TradeButton>
                 <LearnMoreLink onClick={legacyClaimClickHandler}>Claim from Vaults</LearnMoreLink>
               </>
             )}
@@ -241,7 +244,11 @@ const Home = () => {
         {/* Price chart */}
         <Header>Price History</Header>
         <ChartContainer>
-          <PriceChartNew />
+          <TemplePriceChart />
+        </ChartContainer>
+        <ChartContainer>
+          <Header>RAMOS Analytics</Header>
+          <RAMOSMetrics />
         </ChartContainer>
         {/* Marketing content */}
         <Header>How Does It Work?</Header>
@@ -296,6 +303,7 @@ const Home = () => {
         onClose={() => setIsClaimFromVaultsLegacyModalOpen(false)}
       />
       <UnstakeOgtModal isOpen={isUnstakeOgtLegacyModalOpen} onClose={() => setIsUnstakeOgtLegacyModalOpen(false)} />
+      <DefendModal isOpen={isDefendModalOpen} onClose={() => setIsDefendModalOpen(false)} />
     </>
   );
 };
@@ -521,7 +529,7 @@ const Header = styled.h2`
 // Price Chart
 const ChartContainer = styled.div`
   width: 100%;
-  height: 500px;
+  min-height: 500px;
 `;
 
 // Marketing Container

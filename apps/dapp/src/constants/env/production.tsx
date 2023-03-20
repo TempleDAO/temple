@@ -42,7 +42,7 @@ const env: Environment = {
     templeV2FraxPair: '0x6021444f1706f15465bEe85463BCc7d7cC17Fc03',
     templeV2Router: '0x98257C876ACe5009e7B97843F8c71b3AE795c71E',
     swap1InchRouter: '0x1111111254EEB25477B68fb85Ed929f73A960582',
-    treasuryIv: '0x22c2fE05f55F81Bf32310acD9a7C51c4d7b4e443',
+    treasuryIv: '0xae8a796bd9437Bd266664e8e9B8428B25A7D2477',
     vaultOps: '0x65fE8BaBF7DA367b2B45cBD748F0490713f84828',
     vaultProxy: '0x6f5bB7cC4F3D6628d0095545552757AB377FE15C',
     vaultEarlyExit: '0x7C6f1b4891ff8CAcCeC97DbbD9Df3b773d88A03E',
@@ -115,6 +115,7 @@ const env: Environment = {
     templeCore: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-core',
     protocolMetrics: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-metrics',
     balancerV2: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-balancer-v2',
+    ramos: 'https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos',
     // Original Balancer Subgraph
     // balancerV2: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2-beta',
   },
