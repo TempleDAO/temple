@@ -159,7 +159,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
 
     if (allowance.lt(minAllowance)) {
       // increase allowance
-      const approveTXN = await token.approve(spender, DEFAULT_ALLOWANCE);
+      const approveTXN = await token.approve(spender, DEFAULT_ALLOWANCE, { gasLimit: 50000 });
       await approveTXN.wait();
 
       // Show feedback to user
