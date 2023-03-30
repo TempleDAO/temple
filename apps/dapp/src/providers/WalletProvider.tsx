@@ -179,7 +179,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       const txnReceipt = await collectTxn.wait();
 
       openNotification({
-        title: `${TICKER_SYMBOL.TEMPLE_TOKEN} claimed`,
+        title: `${epoch <= 14 ? TICKER_SYMBOL.TEMPLE_TOKEN : TICKER_SYMBOL.DAI} claimed`,
         hash: collectTxn.hash,
       });
 
