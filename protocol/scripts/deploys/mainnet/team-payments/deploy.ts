@@ -6,7 +6,7 @@ import {
   expectAddressWithPrivateKey,
   toAtto,
 } from '../../helpers';
-import snapshot from './json/epoch14.json';
+import snapshot from './json/epoch15.json';
 
 // TODO: Add command line arguments for json allocations file
 async function main() {
@@ -21,8 +21,9 @@ async function main() {
 
   const templeTeamPaymentsFactory = new TempleTeamPayments__factory(owner);
   const startDate = Math.round(Date.now() / 1000);
+  const DAI = '0x6b175474e89094c44da98b954eedeac495271d0f';
   const templeTeamPayments = await templeTeamPaymentsFactory.deploy(
-    DEPLOYED.TEMPLE,
+    DAI,
     10, // although no vesting, but has to be at least 1 second vesting else division by zero error
     startDate
   );
@@ -32,7 +33,7 @@ async function main() {
   await templeTeamPayments.deployed();
   console.log('Contract deployed');
   console.log(
-    `yarn hardhat verify --network ${network.name} ${templeTeamPayments.address} ${DEPLOYED.TEMPLE} 10 ${startDate}`
+    `yarn hardhat verify --network ${network.name} ${templeTeamPayments.address} ${DAI} 10 ${startDate}`
   );
 
   console.log('Setting allocations');
@@ -43,10 +44,12 @@ async function main() {
   await tx1.wait();
   console.log('Mined');
   console.log(
-    `Total $TEMPLE allocated: ${Object.values(snapshot).reduce(
-      (sum, cur) => (sum += cur),
-      0
-    )}, across ${Object.keys(snapshot).length} addresses`
+    `https://etherscan.io/address/${templeTeamPayments.address}
+    ${Object.values(snapshot)
+      .reduce((sum, cur) => (sum += cur), 0)
+      .toFixed(2)} DAI allocated across ${
+      Object.keys(snapshot).length
+    } addresses`
   );
 
   console.log('Transferring owner');
