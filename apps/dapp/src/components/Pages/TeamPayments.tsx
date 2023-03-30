@@ -11,6 +11,7 @@ import { Flex } from 'components/Layout/Flex';
 import { InputSelect } from 'components/InputSelect/InputSelect';
 import eyeImage from 'assets/images/no-pupil-eye.png';
 import env from 'constants/env';
+import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 
 type ReducerState = {
   collectingFixed: boolean;
@@ -31,9 +32,11 @@ type Action =
   | { type: 'success-fixed' }
   | { type: 'failure-fixed' };
 
+const PAYMENT_TOKEN = TICKER_SYMBOL.DAI;
+
 const reducerInitialState: ReducerState = {
   collectingFixed: false,
-  labelFixed: 'COLLECT $TEMPLE FOR IMPACT',
+  labelFixed: `COLLECT ${PAYMENT_TOKEN} FOR IMPACT`,
 };
 
 const TeamPayments = () => {
@@ -97,8 +100,8 @@ const TeamPayments = () => {
           </EyeArea>
         </div>
 
-        <TotalAllocation title={`Total epoch allocation: ${allocationFixed} $TEMPLE`}>
-          Total epoch allocation: {allocationFixed.toLocaleString()} $TEMPLE
+        <TotalAllocation title={`Total epoch allocation: ${allocationFixed} ${PAYMENT_TOKEN}`}>
+          Total epoch allocation: {allocationFixed.toLocaleString()} {PAYMENT_TOKEN}
         </TotalAllocation>
 
         <ButtonArea>
@@ -108,11 +111,11 @@ const TeamPayments = () => {
               justifyContent: 'space-between',
             }}
           >
-            <label title={`Collectable: ${claimableFixed} $TEMPLE`}>
-              Collectable: {claimableFixed.toLocaleString()} $TEMPLE
+            <label title={`Collectable: ${claimableFixed} ${PAYMENT_TOKEN}`}>
+              Collectable: {claimableFixed.toLocaleString()} {PAYMENT_TOKEN}
             </label>
-            <label title={`Vested: ${remainingAllocationFixed} $TEMPLE`}>
-              Vested: {remainingAllocationFixed.toLocaleString()} $TEMPLE
+            <label title={`Vested: ${remainingAllocationFixed} ${PAYMENT_TOKEN}`}>
+              Vested: {remainingAllocationFixed.toLocaleString()} {PAYMENT_TOKEN}
             </label>
           </CollectionValues>
           <Button
@@ -159,7 +162,7 @@ function useTempleTeamPayments(): TeamPaymentsState {
         return {
           ...state,
           collectingFixed: false,
-          labelFixed: 'Collect $TEMPLE for impact',
+          labelFixed: `Collect ${PAYMENT_TOKEN} for impact`,
         };
       case 'collect-fixed':
         return { ...state, collectingFixed: true, labelFixed: 'Collecting...' };
