@@ -57,7 +57,7 @@ export const useTokenVaultProxyAllowance = (ticker: TICKER_SYMBOL = TICKER_SYMBO
     }
 
     const token = await createTokenFactoryInstance(ticker, signer);
-    const approveTXN = await token.approve(env.contracts.vaultProxy, DEFAULT_ALLOWANCE);
+    const approveTXN = await token.approve(env.contracts.vaultProxy, DEFAULT_ALLOWANCE, { gasLimit: 50000 });
     await approveTXN.wait();
 
     openNotification({

@@ -18,8 +18,8 @@ export const createTokenFactoryInstance = async (ticker: TICKER_SYMBOL | string,
 type HookReturnType = [{ allowance: Nullable<number>; isLoading: boolean }, () => Promise<void>];
 
 export const useTokenContractAllowance = (
-  tokenInfo: { address: string, name: string, ticker?: string },
-  contractAddress = '',
+  tokenInfo: { address: string; name: string; ticker?: string },
+  contractAddress = ''
 ): HookReturnType => {
   const { signer, wallet, isConnected } = useWallet();
   const { openNotification } = useNotification();
@@ -29,7 +29,6 @@ export const useTokenContractAllowance = (
       console.error(`Programming Error: Missing signer or wallet address when trying to get token allowance.`);
       return;
     }
-
 
     const token = new ERC20__factory(signer).attach(tokenInfo.address);
     const allowance = await token.allowance(wallet, contractAddress);
@@ -46,7 +45,7 @@ export const useTokenContractAllowance = (
     }
 
     const token = new ERC20__factory(signer).attach(tokenInfo.address);
-    const approveTXN = await token.approve(contractAddress, DEFAULT_ALLOWANCE);
+    const approveTXN = await token.approve(contractAddress, DEFAULT_ALLOWANCE, { gasLimit: 50000 });
     await approveTXN.wait();
 
     openNotification({
