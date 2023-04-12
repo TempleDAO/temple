@@ -41,6 +41,7 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
     // @todo Can probably flatten this rather than a struct.
     struct BaseInterest {
         /// @notice The current base interest rate
+        // @todo These aren't bps
         uint256 interestRateBps;
 
         /// @notice The total shares allocated out to users
@@ -59,6 +60,7 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
     // @todo Can optimise byte packing in the struct (reason why the params are in a weird order)
     struct Debtor {
         /// @notice The current interest rate specific to this debtor
+        // @todo These aren't bps
         uint256 interestRateBps;
 
         /// @notice The last checkpoint time of this user's specific interest only
@@ -266,6 +268,11 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
 
         debtor.baseInterestShares = _debtorShares - _totalSharesRepaid;
         baseInterest.totalShares = _totalBaseShares - _totalSharesRepaid;
+
+        // Take off any of the debtor repaid interest
+        console2.log("estimatedTotalDebtorInterest - ", _debtorDebtRepaid);
+        estimatedTotalDebtorInterest -= _debtorDebtRepaid;
+        debtor.debtCheckpoint -= _debtorDebtRepaid;
     }
 
     function _repayDebtorInterest(
@@ -358,7 +365,8 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
      */
     function _checkpointDebtor(Debtor storage debtor) internal returns (uint256) {
         uint256 interest = _debtorInterest(debtor);
-        estimatedTotalDebtorInterest = estimatedTotalDebtorInterest + interest - debtor.debtCheckpoint;
+        estimatedTotalDebtorInterest += (interest - debtor.debtCheckpoint);
+        console2.log("estimatedTotalDebtorInterest + ", (interest - debtor.debtCheckpoint));
         debtor.debtCheckpoint = interest;
         debtor.debtCheckpointTime = block.timestamp;
         return interest;
@@ -371,10 +379,14 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
 
     /// @notice The current specific interest owed by a debtor (doesn't include principal or base interest)
     function _debtorInterest(Debtor storage debtor) internal view returns (uint256) {
+        uint256 _rate = debtor.interestRateBps;
+        if (_rate == 0) return 0;
+
         uint256 _timeElapsed = block.timestamp - debtor.debtCheckpointTime;
+        console2.log("_debtorInterest:", _timeElapsed);
         uint256 _principal = debtor.principal;
         uint256 _principalAndInterest = _principal + debtor.debtCheckpoint;
-        return _principalAndInterest.continuouslyCompounded(_timeElapsed, debtor.interestRateBps) - _principal;
+        return _principalAndInterest.continuouslyCompounded(_timeElapsed, _rate) - _principal;
     }
 
     /**
@@ -441,6 +453,16 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
         if (roundUp && mulmod(x, y, denominator) > 0) {
             result += 1;
         }
+    }
+
+    // @todo still probably want public functions to convert shares to debt
+    function debtToShares(uint256 debt) external view returns (uint256) {
+        return _debtToShares(debt, totalBaseDebt(), baseInterest.totalShares, false);
+    }
+
+    // @todo still probably want public functions to convert shares to debt
+    function sharesToDebt(uint256 shares) external view returns (uint256) {
+        return _sharesToDebt(shares, totalBaseDebt(), baseInterest.totalShares, false);
     }
 
     /**

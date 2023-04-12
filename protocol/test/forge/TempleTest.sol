@@ -3,7 +3,7 @@ pragma solidity 0.8.17;
 
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {Test, StdChains} from "forge-std/Test.sol";
-import {Operators} from "contracts/admin/Operators.sol";
+import {Operators} from "contracts/common/access/Operators.sol";
 import {GovernableBase} from "contracts/common/access/Governable.sol";
 
 /// @notice A forge test base class which can setup to use a fork, deploy UUPS proxies, etc
