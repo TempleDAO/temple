@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import { TempleTest } from "../TempleTest.sol";
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 
 import {console2} from "forge-std/Test.sol";
 
@@ -17,7 +18,7 @@ contract TempleDebtTokenTestBase is TempleTest {
     event RecoveredToken(address indexed token, address to, uint256 amount);
     event Transfer(address indexed from, address indexed to, uint256 value);
 
-    function setUp() public {
+    function _setUp() public {
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", gov, defaultBaseInterest);
         vm.prank(gov);
         dUSD.addOperator(operator);
@@ -26,11 +27,6 @@ contract TempleDebtTokenTestBase is TempleTest {
     function setBaseInterest(uint256 r) internal {
         vm.prank(gov);
         dUSD.setBaseInterestRate(r);
-    }
-
-    function setDebtorInterest(address a, uint256 r) internal {
-        vm.prank(gov);
-        dUSD.setDebtorInterestRate(a, r);
     }
 
     function dumpBase() internal view {
@@ -103,8 +99,12 @@ contract TempleDebtTokenTestBase is TempleTest {
 }
 
 contract TempleDebtTokenTestAdmin is TempleDebtTokenTestBase {
+    function setUp() public {
+        _setUp();
+    }
 
     function test_initalization() public {
+        assertEq(dUSD.version(), "0.1.0");
         assertEq(dUSD.name(), "Temple Debt");
         assertEq(dUSD.symbol(), "dUSD");
         assertEq(dUSD.decimals(), 18);
@@ -164,9 +164,26 @@ contract TempleDebtTokenTestAdmin is TempleDebtTokenTestBase {
         dUSD.repayAll(alice);
     }
 
+    function test_recoverToken() public {
+        uint256 amount = 100 ether;
+        FakeERC20 token = new FakeERC20("fake", "fake", address(dUSD), amount);
+
+        vm.expectEmit(true, true, true, true);
+        emit RecoveredToken(address(token), alice, amount);
+
+        vm.startPrank(gov);
+        dUSD.recoverToken(address(token), alice, amount);
+        assertEq(token.balanceOf(alice), amount);
+        assertEq(token.balanceOf(address(dUSD)), 0);
+    }
+
 }
 
 contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
+    function setUp() public {
+        _setUp();
+    }
+
     function test_borrow_invalidParams() public {
         vm.startPrank(operator);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
@@ -221,9 +238,6 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         checkDebtor(bob, 0, amount, amount, 0, block.timestamp, expectedDebt);
     }
 
-// @todo check emit's
-// @todo check 0 amounts/addrs
-
     function test_borrow_aliceAndBobInDifferentBlock() public {
         vm.startPrank(operator);
         uint256 amount = 100e18;
@@ -265,19 +279,13 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         dUSD.repay(alice, 0);
     }
 
-    function test_repayAll_invalidParams() public {
-        vm.startPrank(operator);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
-        dUSD.repayAll(address(0));
-
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
-        dUSD.repayAll(alice);
-    }
-
     function test_repay_alice_InSameBlock() public {
         vm.startPrank(operator);
         uint256 amount = 100e18;
         dUSD.borrow(alice, amount);
+
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(alice, address(0), amount);
         dUSD.repay(alice, amount);
 
         checkBaseInterest(defaultBaseInterest, 0, 0, block.timestamp, 0, 0);
@@ -532,13 +540,104 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         bobBal = 106180745553163435825;
         checkDebtor(bob, 0, amount, bobExpectedShares, 0, startBlockTs + 1 days, bobBal);
     }
+
+    function test_repayAll_invalidParams() public {
+        vm.startPrank(operator);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
+        dUSD.repayAll(address(0));
+
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        dUSD.repayAll(alice);
+    }
+
+    function test_repayAll() public {
+        vm.startPrank(operator);
+
+        uint256 amount = 100e18;
+        uint256 startBlockTs = block.timestamp;
+        dUSD.borrow(alice, amount);
+        vm.warp(block.timestamp + 1 days);
+        dUSD.borrow(bob, amount);
+
+        vm.warp(block.timestamp + 364 days);
+        changePrank(gov);
+        dUSD.setBaseInterestRate(0.05e18);
+        vm.warp(block.timestamp + 365 days);
+
+        uint256 bobExpectedShares = 99997260311502753656;
+        uint256 bobBal = 106180745553163435826;
+
+        changePrank(operator);
+        dUSD.repayAll(alice);
+        checkBaseInterest(0.05e18, bobExpectedShares, bobBal, block.timestamp, bobBal, 0);
+        checkDebtor(alice, 0, 0, 0, 0, block.timestamp, 0);
+        checkDebtor(bob, 0, amount, bobExpectedShares, 0, startBlockTs + 1 days, bobBal);
+
+        dUSD.repayAll(bob);
+        checkBaseInterest(0.05e18, 0, 0, block.timestamp, 0, 0);
+        checkDebtor(alice, 0, 0, 0, 0, block.timestamp, 0);
+        checkDebtor(bob, 0, 0, 0, 0, block.timestamp, 0);
+    }
+
+    function test_shareToDebtConversion() public {
+        vm.startPrank(operator);
+
+        uint256 amount = 100e18;
+        dUSD.borrow(alice, amount);
+        vm.warp(block.timestamp + 1 days);
+        dUSD.borrow(bob, amount);
+
+        vm.warp(block.timestamp + 364 days);
+        changePrank(gov);
+        dUSD.setBaseInterestRate(0.05e18);
+        vm.warp(block.timestamp + 365 days);
+
+        uint256 bobExpectedShares = 99997260311502753656;
+        uint256 bobBal = 112364400207699397755;
+
+        // Test converting one way and back again.
+        (uint256 basePrincipalAndInterest,) = dUSD.currentTotalDebt();
+        assertEq(basePrincipalAndInterest, amount+bobBal);
+        assertEq(dUSD.baseDebtToShares(basePrincipalAndInterest), amount+bobExpectedShares);
+        assertEq(dUSD.baseSharesToDebt(dUSD.baseDebtToShares(basePrincipalAndInterest)), basePrincipalAndInterest);
+    }
+
+    function test_currentDebtOf() public {
+        vm.startPrank(operator);
+
+        uint256 amount = 100e18;
+        dUSD.borrow(alice, amount);
+        vm.warp(block.timestamp + 1 days);
+        dUSD.borrow(bob, amount);
+
+        vm.warp(block.timestamp + 364 days);
+        changePrank(gov);
+        dUSD.setBaseInterestRate(0.05e18);
+        vm.warp(block.timestamp + 365 days);
+
+        uint256 aliceBal = 6183654654535961929;
+        (uint256 principal, uint256 baseInterest, uint256 riskPremiumInterest) = dUSD.currentDebtOf(alice);
+        assertEq(principal, amount);
+        assertEq(baseInterest, aliceBal);
+        assertEq(riskPremiumInterest, 0);
+        assertEq(dUSD.balanceOf(alice), principal+baseInterest+riskPremiumInterest);
+
+        uint256 bobBal = 6180745553163435825;
+        (principal, baseInterest, riskPremiumInterest) = dUSD.currentDebtOf(bob);
+        assertEq(principal, amount);
+        assertEq(baseInterest, bobBal);
+        assertEq(riskPremiumInterest, 0);
+        assertEq(dUSD.balanceOf(bob), principal+baseInterest+riskPremiumInterest);
+    }
 }
 
 contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     uint256 aliceInterestRate = 0.02e18;
     uint256 bobInterestRate = 0.05e18;
 
-    function setRates() internal {
+    function setUp() public {
+        _setUp();
+
         vm.startPrank(gov);
         dUSD.setBaseInterestRate(0);
         dUSD.setDebtorInterestRate(alice, aliceInterestRate);
@@ -547,8 +646,6 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_borrow_alice() public {
-        setRates();
-
         vm.prank(operator);
         uint256 amount = 100e18;
         dUSD.borrow(alice, amount);
@@ -569,8 +666,6 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_borrow_aliceAndBobInSameBlock() public {
-        setRates();
-
         vm.startPrank(operator);
         uint256 amount = 100e18;
         dUSD.borrow(alice, amount);
@@ -602,8 +697,6 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_borrow_aliceAndBobInDifferentBlock() public {
-        setRates();
-
         vm.startPrank(operator);
         uint256 amount = 100e18;
         dUSD.borrow(alice, amount);
@@ -636,8 +729,6 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_repay_alice_InSameBlock() public {
-        setRates();
-
         vm.startPrank(operator);
         uint256 amount = 100e18;
         dUSD.borrow(alice, amount);
@@ -648,8 +739,6 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_repay_alice_ADayLater() public {
-        setRates();
-
         vm.startPrank(operator);
         uint256 amount = 100e18;
         dUSD.borrow(alice, amount);
@@ -668,8 +757,6 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_repay_aliceAndBob_InSameBlock() public {
-        setRates();
-
         vm.startPrank(operator);
         uint256 amount = 100e18;
         dUSD.borrow(alice, amount);
@@ -683,8 +770,6 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_repay_aliceAndBob_ADayLater() public {
-        setRates();
-
         vm.startPrank(operator);
         uint256 amount = 100e18;
         dUSD.borrow(alice, amount);
@@ -711,8 +796,6 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_repay_aliceAndBob_InDifferentBlocks() public {
-        setRates();
-
         vm.startPrank(operator);
         uint256 amount = 100e18;
         dUSD.borrow(alice, amount);
@@ -749,8 +832,6 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_repay_alice_interestRepayOnly() public {
-        setRates();
-
         vm.startPrank(operator);
         uint256 amount = 100e18;
         dUSD.borrow(alice, amount);
@@ -772,8 +853,6 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_repay_aliceAndBob_partial() public {
-        setRates();
-
         vm.startPrank(operator);
         uint256 amount = 100e18;
         dUSD.borrow(alice, amount);
@@ -821,8 +900,6 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function testSetDebtorInterestRate() public {
-        setRates();
-
         vm.startPrank(operator);
         uint256 amount = 100e18;
         uint256 startBlockTs = block.timestamp;
@@ -865,6 +942,88 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
         checkDebtor(alice, updatedRate, amount, amount, aliceBal-amount, ts, aliceBal2);
         checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
     }
-}
+    
+    function test_repayAll() public {
+        vm.startPrank(operator);
 
-// @todo add a test to check estimatedDebtorInterest pre and post debtor checkpoint
+        uint256 amount = 100e18;
+        uint256 startBlockTs = block.timestamp;
+        dUSD.borrow(alice, amount);
+        vm.warp(block.timestamp + 1 days);
+        dUSD.borrow(bob, amount);
+
+        vm.warp(block.timestamp + 364 days);
+        changePrank(gov);
+        dUSD.setDebtorInterestRate(alice, 0.1e18);
+        vm.warp(block.timestamp + 365 days);
+
+        uint256 bobBal = 110501953516812792800;
+
+        changePrank(operator);
+        dUSD.repayAll(alice);
+        checkBaseInterest(0, amount, amount, block.timestamp, amount, 0);
+        checkDebtor(alice, 0.1e18, 0, 0, 0, block.timestamp, 0);
+        checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
+
+        dUSD.repayAll(bob);
+        checkBaseInterest(0, 0, 0, block.timestamp, 0, 0);
+        checkDebtor(alice, 0.1e18, 0, 0, 0, block.timestamp, 0);
+        checkDebtor(bob, bobInterestRate, 0, 0, 0, block.timestamp, 0);
+    }
+
+    function test_checkpointDebtorsInterest() public {
+        vm.startPrank(operator);
+        uint256 amount = 100e18;
+        uint256 startBlockTs = block.timestamp;
+        dUSD.borrow(alice, amount);
+        vm.warp(block.timestamp + 1 days);
+        dUSD.borrow(bob, amount);
+        vm.warp(block.timestamp + 364 days);
+
+        // 1yr of 2% cont. compounded on 100e18.
+        uint256 aliceBal = 102020134002675580900;
+
+        // 1 year of 5% cont. compounded on 100e18
+        uint256 bobBal = 105112709650002483400;
+
+        checkBaseInterest(0, 2*amount, 2*amount, startBlockTs + 1 days, 2*amount, 0);
+        checkDebtor(alice, aliceInterestRate, amount, amount, 0, startBlockTs, aliceBal);
+        checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
+
+        address[] memory ds = new address[](2);
+        ds[0] = alice;
+        ds[1] = bob;
+        dUSD.checkpointDebtorsInterest(ds);
+        checkBaseInterest(0, 2*amount, 2*amount, startBlockTs + 1 days, 2*amount, (aliceBal+bobBal)-2*amount);
+        checkDebtor(alice, aliceInterestRate, amount, amount, aliceBal-amount, block.timestamp, aliceBal);
+        checkDebtor(bob, bobInterestRate, amount, amount, bobBal-amount, block.timestamp, bobBal);
+    }
+
+    function test_currentDebtOf() public {
+        vm.startPrank(operator);
+
+        uint256 amount = 100e18;
+        dUSD.borrow(alice, amount);
+        vm.warp(block.timestamp + 1 days);
+        dUSD.borrow(bob, amount);
+
+        vm.warp(block.timestamp + 364 days);
+        changePrank(gov);
+        dUSD.setDebtorInterestRate(alice, 0.1e18);
+        vm.warp(block.timestamp + 365 days);
+
+        uint256 aliceBal = 12749685157937566936;
+        (uint256 principal, uint256 baseInterest, uint256 riskPremiumInterest) = dUSD.currentDebtOf(alice);
+        assertEq(principal, amount);
+        assertEq(baseInterest, 0);
+        assertEq(riskPremiumInterest, aliceBal);
+        assertEq(dUSD.balanceOf(alice), principal+baseInterest+riskPremiumInterest);
+
+        uint256 bobBal = 10501953516812792800;
+        (principal, baseInterest, riskPremiumInterest) = dUSD.currentDebtOf(bob);
+        assertEq(principal, amount);
+        assertEq(baseInterest, 0);
+        assertEq(riskPremiumInterest, bobBal);
+        assertEq(dUSD.balanceOf(bob), principal+baseInterest+riskPremiumInterest);
+    }
+}
