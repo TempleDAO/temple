@@ -2,36 +2,41 @@ pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Origami (v2/TempleBaseDebtToken.sol)
 
-import { IERC20, IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
-import { mulDiv } from "@prb/math/src/Common.sol";
-import { Governable } from "contracts/common/access/Governable.sol";
-import { Operators } from "contracts/common/access/Operators.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { mulDiv } from "@prb/math/src/Common.sol";
 
-// @todo remove after testing
-import {console2} from "forge-std/Test.sol";
+import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+import { CompoundedInterest } from "contracts/interestRate/CompoundedInterest.sol";
+import { Governable } from "contracts/common/access/Governable.sol";
 
 /**
  * @title Temple Debt Token
  * @notice A rebasing ERC20 representing principal accruing at a `base + risk premium` continuously compounding interest rate.
  *
+ * All borrowers utilising the treasury will be issued accruing debt, such that the net performance (equity = assets - debt) of each strategy can be
+ * evaluated on-chain. This Temple Debt Token will from the `debt` part of the equity equation in each strategy (an `asset` for the Treasury)
+ *
  * There are 3 components to the debt:
  *   1/ Principal
- *   2/ 'base' interest, which a common rate for all borrowers, representing a Temple wide risk free rate.
- *      It is implemented using a vaults/share based implementation.
- *   3/ 'risk premium' interest, where the interest rate is set per borrower
+ *   2/ 'base rate' interest, which is a common rate for all borrowers. 
+ *         This represents an opportunity cost - a rate at which the Treasury would be able to otherwise earn safely
+ *         (eg DAI's DSR at 1% APR). 
+ *      It is implemented using a share based implementation such this base rate can be updated for all debtors
+ *   3/ 'risk premium' interest, where the interest rate is set per borrower.
+ *         This represents a governance set premium for that individual borrower depending on it's purpose. 
+ *         For example a higher risk / higher return borrower would have a higher risk premium.
  *
  * On a repayment, the interest accruing at the higher rate is paid down first.
  * 
- * This token is is non-transferrable. Only approved Operators can borrow/repay the debt on behalf of a user.
+ * This token is is non-transferrable. Only approved Minters can mint/burn the debt on behalf of a user.
  */
-contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
+contract TempleDebtToken is ITempleDebtToken, Governable {
     using CompoundedInterest for uint256;
     using SafeERC20 for IERC20;
 
-    string public constant VERSION = "0.1.0";
+    string public constant VERSION = "1.0.0";
 
     /**
      * @dev Returns the name of the token.
@@ -52,45 +57,28 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
      * @notice The current (base rate) interest common for all users. This can be updated by governance
      * @dev 1e18 format, where 0.01e18 = 1%
      */
-    uint256 public baseRate;
+    uint256 public override baseRate;
 
     /**
      * @notice The (base rate) total number of shares allocated out to users for internal book keeping
      */
-    uint256 public baseShares;
+    uint256 public override baseShares;
 
     /**
      * @notice The (base rate) total principal and interest owed across all debtors as of the latest checkpoint
      */
-    uint256 public baseCheckpoint;
+    uint256 public override baseCheckpoint;
 
     /**
      * @notice The last checkpoint time of the (base rate) principal and interest checkpoint
      */
-    uint256 public baseCheckpointTime;
+    uint256 public override baseCheckpointTime;
 
-    struct Debtor {
-        /// @notice The current principal owed by this debtor
-        uint256 principal;
-
-        /// @notice The number of this shares this debtor is allocated of the base interest.
-        uint256 baseShares;
-
-        /// @notice The current (risk premium) interest rate specific to this debtor. This can be updated by governance
-        /// @dev 1e18 format, where 0.01e18 = 1%
-        uint256 rate;
-
-        /// @notice The debtor's (risk premium) interest (no principal) owed as of the last checkpoint
-        uint256 checkpoint;
-
-        /// @notice The last checkpoint time of this debtor's (risk premium) interest
-        uint256 checkpointTime;
-    }
 
     /**
      * @notice Per address status of debt
      */
-    mapping(address => Debtor) public debtors;
+    mapping(address => Debtor) public override debtors;
 
     /**
      * @notice The latest estimate of the (risk premium) interest (no principal) owed.
@@ -99,14 +87,10 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
      * So it is generally always going to be out of date as each strategy will accrue interest independently 
      * on different rates.
      */
-    uint256 public estimatedTotalDebtorInterest;
+    uint256 public override estimatedTotalDebtorInterest;
 
-    error NonTransferrable();
-    error RepayingMoreThanDebt(uint256 remainingDebt, uint256 repayAmount);
-
-    event BaseInterestRateSet(uint256 rate);
-    event DebtorInterestRateSet(address indexed debtor, uint256 rate);
-    event RecoveredToken(address indexed token, address to, uint256 amount);
+    /// @notice A set of addresses which are approved to mint/burn
+    mapping(address => bool) public override minters;
 
     constructor(
         string memory _name,
@@ -122,32 +106,34 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
     }
 
     /**
-     * @notice Governance can add an address which is able to add or paydown debt 
+     * @notice Governance can add an address which is able to mint or burn debt
      * positions on behalf of users.
      */
-    function addOperator(address _account) external override onlyGov {
-        _addOperator(_account);
+    function addMinter(address account) external override onlyGov {
+        minters[account] = true;
+        emit AddedMinter(account);
     }
 
     /**
-     * @notice Governance can remove an address which is able to add or paydown debt 
+     * @notice Governance can remove an address which is able to mint or burn debt
      * positions on behalf of users.
      */
-    function removeOperator(address _account) external override onlyGov {
-        _removeOperator(_account);
+    function removeMinter(address account) external override onlyGov {
+        minters[account] = false;
+        emit RemovedMinter(account);
     }
 
     /**
      * @notice Track the deployed version of this contract. 
      */
-    function version() external pure returns (string memory) {
+    function version() external pure override returns (string memory) {
         return VERSION;
     }
 
     /**
      * @notice Governance can update the continuously compounding (base) interest rate of all debtors, from this block onwards.
      */
-    function setBaseInterestRate(uint256 _rate) external onlyGov {
+    function setBaseInterestRate(uint256 _rate) external override onlyGov {
         _checkpointBase(_compoundedBaseInterest());
         baseRate = _rate;
         emit BaseInterestRateSet(_rate);
@@ -156,21 +142,22 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
     /**
      * @notice Governance can update the continuously compounding (risk premium) interest rate for a given debtor, from this block onwards
      */
-    function setDebtorInterestRate(address _debtor, uint256 _rate) external onlyGov {
+    function setRiskPremiumInterestRate(address _debtor, uint256 _rate) external override onlyGov {
         Debtor storage debtor = debtors[_debtor];
         _checkpointDebtor(debtor);
-        debtor.rate = _rate;
-        emit DebtorInterestRateSet(_debtor, _rate);
+        debtor.rate = uint64(_rate);
+        emit RiskPremiumInterestRateSet(_debtor, _rate);
     }
 
     /**
-     * @notice Approved operators can add a new borrow position on behalf of a user.
+     * @notice Approved Minters can add a new debt position on behalf of a user.
      * @param _debtor The address of the debtor who is issued new debt
-     * @param _borrowAmount The notional amount of debt tokens to issue.
+     * @param _mintAmount The notional amount of debt tokens to issue.
      */
-    function borrow(address _debtor, uint256 _borrowAmount) external onlyOperators {
+    function mint(address _debtor, uint256 _mintAmount) external override {
+        if (!minters[msg.sender]) revert CannotMintOrBurn(msg.sender);
         if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress(_debtor);
-        if (_borrowAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+        if (_mintAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         // Checkpoint the (base) debt and the (risk premium) debt for this borrower
         uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
@@ -181,23 +168,25 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
         _checkpointDebtor(debtor);              
         
         // Calculate the number of (base) debt shares for this borrow amount. Ensure this is rounded down (same as EIP-4626)
-        uint256 sharesAmount = _debtToShares(_borrowAmount, _totalPrincipalAndBase, _totalBaseShares, false);
-        console2.log("BORROWING: debt=", _borrowAmount, " shares=", sharesAmount);
+        uint256 sharesAmount = _debtToShares(_mintAmount, _totalPrincipalAndBase, _totalBaseShares, false);
 
-        // Add the shares to the debtor and total
-        debtor.baseShares += sharesAmount;
-        baseShares = _totalBaseShares + sharesAmount;
+        // Update the contract state
+        {
+            // Add the shares to the debtor and total
+            debtor.baseShares += uint128(sharesAmount);
+            baseShares = _totalBaseShares + sharesAmount;
 
-        // The principal borrowed now increases (which affects the risk premium interest accrual)
-        // and also the (base rate) checkpoint representing the principal+base interest
-        debtor.principal += _borrowAmount;
-        baseCheckpoint += _borrowAmount;
+            // The principal borrowed now increases (which affects the risk premium interest accrual)
+            // and also the (base rate) checkpoint representing the principal+base interest
+            debtor.principal += uint128(_mintAmount);
+            baseCheckpoint += _mintAmount;
+        }
 
-        emit Transfer(address(0), _debtor, _borrowAmount);
+        emit Transfer(address(0), _debtor, _mintAmount);
     }
 
     /**
-     * @notice Approved operators can repay debt on behalf of a user.
+     * @notice Approved Minters can burn debt on behalf of a user.
      * @dev Interest is repaid in preference:
      *   1/ Firstly to the higher interest rate of (baseRate, debtor risk premium rate)
      *   2/ Any remaining of the repayment is then paid of the other interest amount.
@@ -205,11 +194,12 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
      *      then the principal will be paid down. This is like a new debt is issued for the lower balance,
      *      where interest accrual starts fresh.
      * @param _debtor The address of the debtor
-     * @param _repayAmount The notional amount of debt tokens to repay.
+     * @param _burnAmount The notional amount of debt tokens to repay.
      */
-    function repay(address _debtor, uint256 _repayAmount) external onlyOperators {
+    function burn(address _debtor, uint256 _burnAmount) external override {
+        if (!minters[msg.sender]) revert CannotMintOrBurn(msg.sender);
         if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress(_debtor);
-        if (_repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+        if (_burnAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         Debtor storage debtor = debtors[_debtor];
         uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
@@ -217,28 +207,29 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
         {
             // Check the user isn't paying off more debt than they have
             uint256 _debtorBalance = _balanceOf(debtor, _totalPrincipalAndBase);
-            if (_repayAmount > _debtorBalance) revert RepayingMoreThanDebt(_balanceOf(debtor, _totalPrincipalAndBase), _repayAmount);
+            if (_burnAmount > _debtorBalance) revert BurnExceedsBalance(_balanceOf(debtor, _totalPrincipalAndBase), _burnAmount);
         }
-        emit Transfer(_debtor, address(0), _repayAmount);
-        _repay(debtor, _repayAmount, _totalPrincipalAndBase);
+        emit Transfer(_debtor, address(0), _burnAmount);
+        _burn(debtor, _burnAmount, _totalPrincipalAndBase);
     }
 
     /**
-     * @notice Approved operators can repay the entire debt on behalf of a user.
+     * @notice Approved Minters can burn the entire debt on behalf of a user.
      * @param _debtor The address of the debtor
      */
-    function repayAll(address _debtor) external onlyOperators {
+    function burnAll(address _debtor) external override {
+        if (!minters[msg.sender]) revert CannotMintOrBurn(msg.sender);
         if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress(_debtor);
         Debtor storage debtor = debtors[_debtor];
         uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
-        uint256 _repayAmount = _balanceOf(debtor, _totalPrincipalAndBase);
+        uint256 _burnAmount = _balanceOf(debtor, _totalPrincipalAndBase);
 
-        if (_repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        emit Transfer(_debtor, address(0), _repayAmount);
-        _repay(debtor, _repayAmount, _totalPrincipalAndBase);
+        if (_burnAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+        emit Transfer(_debtor, address(0), _burnAmount);
+        _burn(debtor, _burnAmount, _totalPrincipalAndBase);
     }
 
-    function _repay(Debtor storage debtor, uint256 _repayAmount, uint256 _totalPrincipalAndBase) internal {
+    function _burn(Debtor storage debtor, uint256 _burnAmount, uint256 _totalPrincipalAndBase) internal {
         // First checkpoint both the base interest and (risk premium) interest of the debtor.
         _checkpointBase(_totalPrincipalAndBase);
         _checkpointDebtor(debtor);
@@ -254,89 +245,85 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
         // Calculate what can be repaid out of the (base interest) and (risk premium interest).
         // Pay off the the item with the higher interest rate first.
         if (debtor.rate > baseRate) {
-            _debtorDebtRepaid = _repayDebtorInterest(
-                _repayAmount,
+            _debtorDebtRepaid = _burnDebtorInterest(
+                _burnAmount,
                 _debtorCheckpoint
             );
-            _repayAmount -= _debtorDebtRepaid;
+            _burnAmount -= _debtorDebtRepaid;
 
-            _baseDebtRepaid = _repayBaseInterest(
-                _repayAmount,
+            _baseDebtRepaid = _burnBaseInterest(
+                _burnAmount,
                 _debtorShares,
                 _totalPrincipalAndBase,
                 _totalBaseShares,
                 _debtorPrincipal
             );
-            _repayAmount -= _baseDebtRepaid;
+            _burnAmount -= _baseDebtRepaid;
         } else {
-            _baseDebtRepaid = _repayBaseInterest(
-                _repayAmount,
+            _baseDebtRepaid = _burnBaseInterest(
+                _burnAmount,
                 _debtorShares,
                 _totalPrincipalAndBase,
                 _totalBaseShares,
                 _debtorPrincipal
             );
-            _repayAmount -= _baseDebtRepaid;
+            _burnAmount -= _baseDebtRepaid;
 
-            _debtorDebtRepaid = _repayDebtorInterest(
-                _repayAmount,
+            _debtorDebtRepaid = _burnDebtorInterest(
+                _burnAmount,
                 _debtorCheckpoint
             );
-            _repayAmount -= _debtorDebtRepaid;
+            _burnAmount -= _debtorDebtRepaid;
         }
 
-        // Any remaining out of `_repayAmount` is principal which is repaid.
-        console2.log("REPAYING PRINCIPAL:", _repayAmount);
-
-        /**
-         * @todo Can this ever overflow because of rounding? Possibly...
-         * might need to handle that explicitly.
-         * debtor.principal = (_repayAmount == _debtorPrincipal+1) 
-         *     ? 0
-         *     : _debtorPrincipal - _repayAmount;
-         * I want to see it happen first though.
-         */
-        debtor.principal = _debtorPrincipal - _repayAmount;
-
-        // The base principal and interest checkpoint is updated, the sum of the base debt repaid plus any remaining
-        // repayment which represents a principal paydown.
-        uint256 _totalBaseRepaid = _baseDebtRepaid + _repayAmount;
-        baseCheckpoint -= _totalBaseRepaid;
-
-        // Calculate the number of shares (base) total repayment represents. Round up to the nearest share (same as EIP-4626)
+        // Update the contract state.
+        // Any remaining out of `_burnAmount` is principal which is repaid.
         {
+            unchecked {
+                debtor.principal = uint128(_debtorPrincipal - _burnAmount);
+            }
+
+            // The base principal and interest checkpoint is updated, the sum of the base debt repaid plus any remaining
+            // repayment which represents a principal paydown.
+            uint256 _totalBaseRepaid = _baseDebtRepaid + _burnAmount;
+            unchecked {
+                baseCheckpoint -= _totalBaseRepaid;
+            }
+
+            // Calculate the number of shares (base) total repayment represents. Round up to the nearest share (same as EIP-4626)
             uint256 _totalSharesRepaid = _debtToShares(_totalBaseRepaid, _totalPrincipalAndBase, _totalBaseShares, true);
-            debtor.baseShares = _debtorShares - _totalSharesRepaid;
-            baseShares = _totalBaseShares - _totalSharesRepaid;
-        }
+            unchecked {
+                debtor.baseShares = uint128(_debtorShares - _totalSharesRepaid);
+                baseShares = _totalBaseShares - _totalSharesRepaid;
+            }
 
-        // Update the per debtor checkpoint of (risk premium) interest, and also update the 
-        // cumulative estimate of total debtor interest owing.
-        {
-            debtor.checkpoint = _debtorCheckpoint - _debtorDebtRepaid;
-            estimatedTotalDebtorInterest -= _debtorDebtRepaid;
+            // Update the per debtor checkpoint of (risk premium) interest, and also update the 
+            // cumulative estimate of total debtor interest owing.
+            unchecked {
+                debtor.checkpoint = uint160(_debtorCheckpoint - _debtorDebtRepaid);
+                estimatedTotalDebtorInterest -= _debtorDebtRepaid;
+            }
         }
     }
 
-    function _repayDebtorInterest(
-        uint256 _repayAmount, 
+    function _burnDebtorInterest(
+        uint256 _burnAmount, 
         uint256 _debtorCheckpoint
-    ) internal view returns (
+    ) internal pure returns (
         uint256 _debtRepaid
     ) {
         // Repay the per debtor interest - the minimum of what's debt is still outstanding, 
         // and what of the repayment amount is still unallocated
-        _debtRepaid = _debtorCheckpoint < _repayAmount ? _debtorCheckpoint : _repayAmount;
-        console2.log("repaying PER DEBTOR INTEREST:", _debtRepaid);
+        _debtRepaid = _debtorCheckpoint < _burnAmount ? _debtorCheckpoint : _burnAmount;
     }
 
-    function _repayBaseInterest(
-        uint256 _repayAmount,
+    function _burnBaseInterest(
+        uint256 _burnAmount,
         uint256 _baseInterestShares,
         uint256 _totalPrincipalAndBase,
         uint256 _totalBaseShares,
         uint256 _debtorPrincipal
-    ) internal view returns (
+    ) internal pure returns (
         uint256 _debtRepaid
     ) {
         // Get the interest-only portion remaining of the base debt given the amount of shares.
@@ -344,8 +331,7 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
         _debtRepaid = _sharesToDebt(_baseInterestShares, _totalPrincipalAndBase, _totalBaseShares, false) - _debtorPrincipal;
 
         // Use the minimum of what's debt is still outstanding, and what of the repayment amount is still unallocated.
-        _debtRepaid = _debtRepaid < _repayAmount ? _debtRepaid : _repayAmount;
-        console2.log("repaying BASE INTEREST:", _debtRepaid);
+        _debtRepaid = _debtRepaid < _burnAmount ? _debtRepaid : _burnAmount;
     }
 
     /**
@@ -364,7 +350,7 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
     function allowance(
         address /*owner*/,
         address /*spender*/
-    ) external pure returns (uint256) {
+    ) external pure override returns (uint256) {
         return 0;
     }
 
@@ -374,7 +360,7 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
     function approve(
         address /*spender*/,
         uint256 /*amount*/
-    ) external pure returns (bool) {
+    ) external pure override returns (bool) {
         revert NonTransferrable();
     }
 
@@ -392,7 +378,7 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
     /**
      * @notice Checkpoint the total principal and (base) interest owed by all debtors up to this block.
      */
-    function checkpointPrincipalAndBaseInterest() external returns (uint256) {
+    function checkpointPrincipalAndBaseInterest() external override returns (uint256) {
         uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
         _checkpointBase(_totalPrincipalAndBase);
         return _totalPrincipalAndBase;
@@ -406,7 +392,7 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
     /**
      * @notice Checkpoint a debtor's (risk premium) interest (no principal) owed up to this block.
      */
-    function checkpointDebtorInterest(address debtor) external returns (uint256) {
+    function checkpointDebtorInterest(address debtor) external override returns (uint256) {
         return _checkpointDebtor(debtors[debtor]);
     }
 
@@ -414,7 +400,7 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
      * @notice Checkpoint multiple accounts (risk premium) interest (no principal) owed up to this block.
      * @dev Provided in case there needs to be block synchronisation on the total debt.
      */
-    function checkpointDebtorsInterest(address[] memory _debtors) external {
+    function checkpointDebtorsInterest(address[] memory _debtors) external override {
         uint256 _length = _debtors.length;
         for (uint256 i; i < _length; ++i) {
             _checkpointDebtor(debtors[_debtors[i]]);
@@ -426,10 +412,11 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
      */
     function _checkpointDebtor(Debtor storage debtor) internal returns (uint256) {
         uint256 interest = _compoundedDebtorInterest(debtor);
-        estimatedTotalDebtorInterest += (interest - debtor.checkpoint);
-        console2.log("estimatedTotalDebtorInterest + ", (interest - debtor.checkpoint));
-        debtor.checkpoint = interest;
-        debtor.checkpointTime = block.timestamp;
+        unchecked {
+            estimatedTotalDebtorInterest += (interest - debtor.checkpoint);
+        }
+        debtor.checkpoint = uint160(interest);
+        debtor.checkpointTime = uint32(block.timestamp);
         return interest;
     }
 
@@ -449,7 +436,6 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
         if (_rate == 0) return 0;
 
         uint256 _timeElapsed = block.timestamp - debtor.checkpointTime;
-        console2.log("_debtorInterest:", _timeElapsed);
         uint256 _principal = debtor.principal;
         uint256 _principalAndInterest = _principal + debtor.checkpoint;
         return _principalAndInterest.continuouslyCompounded(_timeElapsed, _rate) - _principal;
@@ -459,7 +445,7 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
      * @notice Returns the amount of tokens owed by the debtor as of this block.
      * It includes the principal + the base interest + specific debtor risk premium interest
      */
-    function balanceOf(address _debtor) public view returns (uint256) {
+    function balanceOf(address _debtor) public override view returns (uint256) {
         return _balanceOf(debtors[_debtor], _compoundedBaseInterest());
     }
 
@@ -478,14 +464,13 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
      * @notice The current debt for a given user split out by
      * principal, base interest, risk premium (per debtor) interest
      */
-    function currentDebtOf(address _debtor) external view returns (
+    function currentDebtOf(address _debtor) external override view returns (
         uint256 principal, 
         uint256 baseInterest, 
         uint256 riskPremiumInterest
     ) {
         Debtor storage debtor = debtors[_debtor];
         principal = debtor.principal;
-        console2.log("currentDebtOf:", debtor.baseShares, _sharesToDebt(debtor.baseShares, _compoundedBaseInterest(), baseShares, false));
         baseInterest = _sharesToDebt(debtor.baseShares, _compoundedBaseInterest(), baseShares, false) - principal;
         riskPremiumInterest = _compoundedDebtorInterest(debtor);
     }
@@ -497,7 +482,7 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
       * The `estimatedTotalDebtorInterest` is only updated when each debtor checkpoints, so it's going to be out of date.
       * For more up to date current totals, off-chain aggregation of balanceOf() will be required - eg via subgraph.
       */
-    function currentTotalDebt() public view returns (
+    function currentTotalDebt() public override view returns (
         uint256 basePrincipalAndInterest, 
         uint256 estimatedDebtorInterest
     ) {
@@ -514,7 +499,7 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
       * The `estimatedTotalDebtorInterest` is only updated when each debtor checkpoints, so it's going to be out of date.
       * For more up to date current totals, off-chain aggregation of balanceOf() will be required - eg via subgraph.
       */
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() public override view returns (uint256) {
         (uint256 basePrincipalAndInterest, uint256 estimatedDebtorInterest) = currentTotalDebt();
         return basePrincipalAndInterest + estimatedDebtorInterest;
     }
@@ -522,7 +507,7 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
     /**
      * @notice Convert a (base interest) debt amount into proportional amount of shares
      */
-    function baseDebtToShares(uint256 debt) external view returns (uint256) {
+    function baseDebtToShares(uint256 debt) external override view returns (uint256) {
         return _debtToShares(debt, _compoundedBaseInterest(), baseShares, false);
     }
 
@@ -535,7 +520,7 @@ contract TempleDebtToken is IERC20, IERC20Metadata, Governable, Operators {
     /**
      * @notice Convert a number of (base interest) shares into proportional amount of debt
      */
-    function baseSharesToDebt(uint256 shares) external view returns (uint256) {
+    function baseSharesToDebt(uint256 shares) external override view returns (uint256) {
         return _sharesToDebt(shares, _compoundedBaseInterest(), baseShares, false);
     }
 

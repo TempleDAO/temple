@@ -22,6 +22,7 @@ import {
 
 import { BigNumber, Signer } from "ethers";
 import { toAtto, shouldThrow, blockTimestamp, fromAtto } from "./helpers";
+import { zeroAddress } from "ethereumjs-util";
 
 const fmtPricePair = (pair: [BigNumber, BigNumber, number?]): [number, number] => {
   return [fromAtto(pair[0]), fromAtto(pair[1])]
@@ -47,8 +48,8 @@ describe("AMM", async () => {
       [owner, alan, ben] = await ethers.getSigners();
 
       templeToken = await new TempleERC20Token__factory(owner).deploy();
-      fraxToken = await new FakeERC20__factory(owner).deploy("STABLEC", "STABLEC");
-      feiToken = await new FakeERC20__factory(owner).deploy("FEI", "FEI"); 
+      fraxToken = await new FakeERC20__factory(owner).deploy("STABLEC", "STABLEC", zeroAddress(), 0);
+      feiToken = await new FakeERC20__factory(owner).deploy("FEI", "FEI", zeroAddress(), 0); 
 
       await templeToken.addMinter(await owner.getAddress()),
 
@@ -271,7 +272,7 @@ describe("AMM", async () => {
       });
 
       it("sets correctly", async () => {
-          const fakeToken = await new FakeERC20__factory(owner).deploy("STABLEC", "STABLEC");
+          const fakeToken = await new FakeERC20__factory(owner).deploy("STABLEC", "STABLEC", zeroAddress(), 0);
           await templeRouter.addPair(fakeToken.address, templeRouter.address);
           expect(await templeRouter.tokenPair(fakeToken.address)).to.eq(templeRouter.address);
       });

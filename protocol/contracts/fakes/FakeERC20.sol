@@ -12,9 +12,22 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * mint to aid testing
  */
 contract FakeERC20 is ERC20 {
-    constructor (string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
+    constructor (
+        string memory name_,
+        string memory symbol_,
+        address initialAccount,
+        uint256 initialBalance
+    ) ERC20(name_, symbol_) {
+        if (initialAccount != address(0) && initialBalance > 0) {
+            _mint(initialAccount, initialBalance);
+        }
+    }
 
     function mint(address to, uint256 amount) external {
       _mint(to, amount);
+    }
+
+    function burn(address account, uint256 amount) external {
+        _burn(account, amount);
     }
 }

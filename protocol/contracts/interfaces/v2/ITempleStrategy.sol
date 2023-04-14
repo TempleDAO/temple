@@ -1,4 +1,4 @@
-pragma solidity 0.8.17;
+pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Origami (interfaces/v2/ITempleStrategy.sol)
 
@@ -37,7 +37,7 @@ interface ITempleStrategy {
 
     /// @dev Calculate the latest assets and liabilities and checkpoint
     /// eg For DAI's DSR, we need to checkpoint to get the latest total.
-    function markToMarket() external returns (uint256 assets, uint256 debt);
+    function markToMarket() external returns (uint256 equity, uint256 assets, uint256 debt);
 
     /// @notice Governance can call to shutdown this strategy. It must be set to 'isShuttingDown' in the StrategyManager first.
     /// 1/ All positions must be unwound before calling - which will be specific to the underlying strategy.

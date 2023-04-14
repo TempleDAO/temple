@@ -1,0 +1,25 @@
+import { network } from "hardhat";
+
+export interface V2DeployedContracts {
+    TEMPLE: {
+        TEMPLE_DEBT_TOKEN: string,
+    },
+}
+
+const V2_DEPLOYED_CONTRACTS: {[key: string]: V2DeployedContracts} = {
+    polygonMumbai: {
+        TEMPLE: {
+            TEMPLE_DEBT_TOKEN: '0xFE0A7607f9D5f0A6669ed010Aba8fC64a7c86874',
+            // yarn hardhat verify --network polygonMumbai 0xFE0A7607f9D5f0A6669ed010Aba8fC64a7c86874 "Temple Debt Token" dUSD 0xA7F0F04efB55eaEfBC4649C523F7a773f91D5526 10000000000000000
+        }
+    },
+}
+
+export function getDeployedContracts(): V2DeployedContracts {
+    if (V2_DEPLOYED_CONTRACTS[network.name] === undefined) {
+      console.log(`No contracts configured for ${network.name}`);
+      throw new Error(`No contracts configured for ${network.name}`);
+    } else {
+      return V2_DEPLOYED_CONTRACTS[network.name];
+    }
+}

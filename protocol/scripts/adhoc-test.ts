@@ -8,6 +8,7 @@ import {
   TempleStaking__factory,
   TempleTreasury__factory
 } from '../typechain';
+import { zeroAddress } from 'ethereumjs-util';
 
 function toAtto(n: number) {
   return BigNumber.from(10).pow(18).mul(n);
@@ -36,7 +37,7 @@ async function main() {
   await STAKING.setStartingBlock(await EXIT_QUEUE.firstBlock());
   await STAKING.setEpy(100,1000);
 
-  const DAI = await new FakeERC20__factory(owner).deploy("DAI", "DAI");
+  const DAI = await new FakeERC20__factory(owner).deploy("DAI", "DAI", zeroAddress(), 0);
   const TREASURY = await new TempleTreasury__factory(owner).deploy(
         TEMPLE.address,
         DAI.address,

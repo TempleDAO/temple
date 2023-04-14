@@ -74,7 +74,8 @@ interface ZeroExQuote {
   guaranteedPrice: string;
 }
 
-describe("Temple Stax Core Zaps", async () => {
+// Intentionally skipped as these were never rolled out.
+describe.skip("Temple Stax Core Zaps", async () => {
   before(async () => {
     [owner, alice, alan] = await ethers.getSigners();
     ownerAddress = await owner.getAddress();

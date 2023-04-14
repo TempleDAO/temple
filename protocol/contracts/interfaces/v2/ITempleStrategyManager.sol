@@ -1,4 +1,4 @@
-pragma solidity 0.8.17;
+pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Origami (interfaces/v2/ITempleStrategyManager.sol)
 
@@ -53,10 +53,9 @@ interface ITempleStrategyManager {
         string memory strategyName,
         string memory strategyVersion,
         uint256 debtCeilingAmount,
-        uint256 currentDebtAmount,
         uint256 latestTotalEquity,
         uint256 latestAssetsValue,
-        uint256 latestDebt,
+        uint256 currentDebtAmount,
         bool isUnderPerforming
     );
 
@@ -72,6 +71,9 @@ interface ITempleStrategyManager {
      * WRITE FUNCTIONS WHICH GOVERNANCE/DELEGATE CALLS
      *
      */
+
+    /// Governance can pause all strategy borrow and repays
+    function globalSetPaused(bool borrow, bool repay) external;
 
     /// Governance can add a new strategy
     function addNewStrategy(address strategy, uint256 debtCeiling) external;
