@@ -8,3 +8,6 @@ gas_reports = ["*"]
 
 [etherscan]
 mainnet = { key = "${ETHERSCAN_MAINNET_KEY}" }
+
+[fuzz]
+runs = 1000

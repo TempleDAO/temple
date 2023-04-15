@@ -85,13 +85,18 @@ interface ITempleDebtToken is IERC20, IERC20Metadata {
     );
 
     /**
+     * @notice The net amount of principal amount of debt minted across all users.
+     */
+    function totalPrincipal() external view returns (uint256);
+
+    /**
      * @notice The latest estimate of the (risk premium) interest (no principal) owed.
      * @dev Indicative only. This total is only updated on a per strategy basis when that strategy gets 
      * checkpointed (on borrow/repay rate change).
      * So it is generally always going to be out of date as each strategy will accrue interest independently 
      * on different rates.
      */
-    function estimatedTotalDebtorInterest() external view returns (uint256);
+    function estimatedTotalRiskPremiumInterest() external view returns (uint256);
 
     /// @notice A set of addresses which are approved to mint/burn
     function minters(address account) external view returns (bool);
@@ -145,9 +150,9 @@ interface ITempleDebtToken is IERC20, IERC20Metadata {
     function burnAll(address _debtor) external;
 
     /**
-     * @notice Checkpoint the total principal and (base) interest owed by all debtors up to this block.
+     * @notice Checkpoint the base interest owed by all debtors up to this block.
      */
-    function checkpointPrincipalAndBaseInterest() external returns (uint256);
+    function checkpointBaseInterest() external returns (uint256);
 
     /**
      * @notice Checkpoint a debtor's (risk premium) interest (no principal) owed up to this block.
@@ -178,8 +183,9 @@ interface ITempleDebtToken is IERC20, IERC20Metadata {
       * For more up to date current totals, off-chain aggregation of balanceOf() will be required - eg via subgraph.
       */
     function currentTotalDebt() external view returns (
-        uint256 basePrincipalAndInterest, 
-        uint256 estimatedDebtorInterest
+        uint256 principal,
+        uint256 baseInterest, 
+        uint256 estimatedRiskPremiumInterest
     );
 
     /**

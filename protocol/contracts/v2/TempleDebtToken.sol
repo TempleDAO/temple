@@ -81,13 +81,18 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
     mapping(address => Debtor) public override debtors;
 
     /**
+     * @notice The net amount of principal amount of debt minted across all users.
+     */
+    uint256 public override totalPrincipal;
+
+    /**
      * @notice The latest estimate of the (risk premium) interest (no principal) owed.
      * @dev Indicative only. This total is only updated on a per strategy basis when that strategy gets 
      * checkpointed (on borrow/repay rate change).
      * So it is generally always going to be out of date as each strategy will accrue interest independently 
      * on different rates.
      */
-    uint256 public override estimatedTotalDebtorInterest;
+    uint256 public override estimatedTotalRiskPremiumInterest;
 
     /// @notice A set of addresses which are approved to mint/burn
     mapping(address => bool) public override minters;
@@ -179,6 +184,7 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
             // The principal borrowed now increases (which affects the risk premium interest accrual)
             // and also the (base rate) checkpoint representing the principal+base interest
             debtor.principal += uint128(_mintAmount);
+            totalPrincipal += _mintAmount;
             baseCheckpoint += _mintAmount;
         }
 
@@ -281,6 +287,7 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
         {
             unchecked {
                 debtor.principal = uint128(_debtorPrincipal - _burnAmount);
+                totalPrincipal -= _burnAmount;
             }
 
             // The base principal and interest checkpoint is updated, the sum of the base debt repaid plus any remaining
@@ -301,7 +308,7 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
             // cumulative estimate of total debtor interest owing.
             unchecked {
                 debtor.checkpoint = uint160(_debtorCheckpoint - _debtorDebtRepaid);
-                estimatedTotalDebtorInterest -= _debtorDebtRepaid;
+                estimatedTotalRiskPremiumInterest -= _debtorDebtRepaid;
             }
         }
     }
@@ -378,7 +385,7 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
     /**
      * @notice Checkpoint the total principal and (base) interest owed by all debtors up to this block.
      */
-    function checkpointPrincipalAndBaseInterest() external override returns (uint256) {
+    function checkpointBaseInterest() external override returns (uint256) {
         uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
         _checkpointBase(_totalPrincipalAndBase);
         return _totalPrincipalAndBase;
@@ -413,7 +420,7 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
     function _checkpointDebtor(Debtor storage debtor) internal returns (uint256) {
         uint256 interest = _compoundedDebtorInterest(debtor);
         unchecked {
-            estimatedTotalDebtorInterest += (interest - debtor.checkpoint);
+            estimatedTotalRiskPremiumInterest += (interest - debtor.checkpoint);
         }
         debtor.checkpoint = uint160(interest);
         debtor.checkpointTime = uint32(block.timestamp);
@@ -479,16 +486,19 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
       * @notice The current total principal + total base interest, total (estimate) debtor specific risk premium interest owed by all debtors.
       * @dev Note the (total principal + total base interest) portion is up to date.
       * However the (debtor specific risk premium interest) portion is likely stale.
-      * The `estimatedTotalDebtorInterest` is only updated when each debtor checkpoints, so it's going to be out of date.
+      * The `estimatedTotalRiskPremiumInterest` is only updated when each debtor checkpoints, so it's going to be out of date.
       * For more up to date current totals, off-chain aggregation of balanceOf() will be required - eg via subgraph.
       */
     function currentTotalDebt() public override view returns (
-        uint256 basePrincipalAndInterest, 
-        uint256 estimatedDebtorInterest
+        uint256 principal,
+        uint256 baseInterest, 
+        uint256 estimatedRiskPremiumInterest
     ) {
+        uint256 _basePrincipalAndInterest = _compoundedBaseInterest();
         return (
-            _compoundedBaseInterest(),
-            estimatedTotalDebtorInterest
+            totalPrincipal,
+            _basePrincipalAndInterest - totalPrincipal,
+            estimatedTotalRiskPremiumInterest
         );
     }
 
@@ -496,12 +506,12 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
       * @notice The current total principal + total base interest, total (estimate) debtor specific risk premium interest owed by all debtors.
       * @dev Note the (total principal + total base interest) portion is up to date.
       * However the (debtor specific risk premium interest) portion is likely stale.
-      * The `estimatedTotalDebtorInterest` is only updated when each debtor checkpoints, so it's going to be out of date.
+      * The `estimatedTotalRiskPremiumInterest` is only updated when each debtor checkpoints, so it's going to be out of date.
       * For more up to date current totals, off-chain aggregation of balanceOf() will be required - eg via subgraph.
       */
     function totalSupply() public override view returns (uint256) {
-        (uint256 basePrincipalAndInterest, uint256 estimatedDebtorInterest) = currentTotalDebt();
-        return basePrincipalAndInterest + estimatedDebtorInterest;
+        (uint256 principal, uint256 baseInterest, uint256 estimatedRiskPremiumInterest) = currentTotalDebt();
+        return principal + baseInterest + estimatedRiskPremiumInterest;
     }
 
     /**
