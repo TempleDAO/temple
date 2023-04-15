@@ -11,8 +11,6 @@ interface ITempleDebtToken is IERC20, IERC20Metadata {
 
     event BaseInterestRateSet(uint256 rate);
     event RiskPremiumInterestRateSet(address indexed debtor, uint256 rate);
-    event RecoveredToken(address indexed token, address to, uint256 amount);
-
     event AddedMinter(address indexed account);
     event RemovedMinter(address indexed account);
 

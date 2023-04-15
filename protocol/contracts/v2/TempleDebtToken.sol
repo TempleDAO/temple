@@ -556,7 +556,7 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
      * @param amount Amount to recover
      */
     function recoverToken(address token, address to, uint256 amount) external onlyGov {
-        emit RecoveredToken(token, to, amount);
+        emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
         IERC20(token).safeTransfer(to, amount);
     }
 

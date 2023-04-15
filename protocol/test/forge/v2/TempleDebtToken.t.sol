@@ -41,7 +41,6 @@ contract TempleDebtTokenTestBase is TempleTest {
 
     event BaseInterestRateSet(uint256 rate);
     event RiskPremiumInterestRateSet(address indexed debtor, uint256 rate);
-    event RecoveredToken(address indexed token, address to, uint256 amount);
     event AddedMinter(address indexed account);
     event RemovedMinter(address indexed account);
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -246,7 +245,7 @@ contract TempleDebtTokenTestAdmin is TempleDebtTokenTestBase {
         FakeERC20 token = new FakeERC20("fake", "fake", address(dUSD), amount);
 
         vm.expectEmit(true, true, true, true);
-        emit RecoveredToken(address(token), alice, amount);
+        emit CommonEventsAndErrors.TokenRecovered(alice, address(token), amount);
 
         vm.startPrank(gov);
         dUSD.recoverToken(address(token), alice, amount);
