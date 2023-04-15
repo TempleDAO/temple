@@ -522,9 +522,9 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
     }
 
     function _debtToShares(uint256 _debt, uint256 _totalDebt, uint256 _totalShares, bool roundUp) internal pure returns (uint256) {
-        return _totalDebt == 0 
-            ? _debt 
-            : mulDivRound(_debt, _totalShares, _totalDebt, roundUp); 
+        return _totalDebt > 0 
+            ? mulDivRound(_debt, _totalShares, _totalDebt, roundUp)
+            : _debt;
     }
 
     /**
@@ -535,9 +535,9 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
     }
 
     function _sharesToDebt(uint256 _shares, uint256 _totalDebt, uint256 _totalShares, bool roundUp) internal pure returns (uint256) {
-        return _totalShares == 0 
-            ? _shares
-            : mulDivRound(_shares, _totalDebt, _totalShares, roundUp);
+        return _totalShares > 0 
+            ? mulDivRound(_shares, _totalDebt, _totalShares, roundUp)
+            : _shares;
     }
 
     /// @notice mulDiv with an option to round the result up or down to the nearest wei
@@ -556,8 +556,8 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
      * @param amount Amount to recover
      */
     function recoverToken(address token, address to, uint256 amount) external onlyGov {
-        IERC20(token).safeTransfer(to, amount);
         emit RecoveredToken(token, to, amount);
+        IERC20(token).safeTransfer(to, amount);
     }
 
 }

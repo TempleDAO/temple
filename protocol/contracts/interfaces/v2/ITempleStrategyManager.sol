@@ -16,10 +16,11 @@ interface ITempleStrategyManager {
         bool repaysPaused;
 
         /// @dev Governance nominates this strategy to be shutdown.
-        /// The strategy then needs to unwind and call shutdown() when ready.
+        /// The strategy executor then needs to unwind (may be manual) 
+        /// and call shutdown() when ready.
         bool isShuttingDown;
 
-        /// @dev The total amount of dUSD the strategy can borrow.
+        /// @dev The total amount of Temple Debt Token the strategy can accrue.
         /// Note: The strategy may end up accruing more debt than this ceiling as it accrues
         uint256 debtCeiling;
 
