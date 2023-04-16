@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Origami (v2/DSRStrategy.sol)
+// Temple (v2/DSRStrategy.sol)
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Governable } from "contracts/common/access/Governable.sol";

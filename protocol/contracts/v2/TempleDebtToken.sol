@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Origami (v2/TempleBaseDebtToken.sol)
+// Temple (v2/TempleBaseDebtToken.sol)
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";

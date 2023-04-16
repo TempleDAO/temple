@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Origami (common/access/GovernableBase.sol)
+// Temple (common/access/GovernableBase.sol)
 
 import {CommonEventsAndErrors} from "contracts/common/CommonEventsAndErrors.sol";
 

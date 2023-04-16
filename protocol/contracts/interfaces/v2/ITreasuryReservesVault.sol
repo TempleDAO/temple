@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Origami (interfaces/v2/ITreasuryReservesVault.sol)
+// Temple (interfaces/v2/ITreasuryReservesVault.sol)
 
 /**
  * @title Treasury Reserves Vault (TRV)

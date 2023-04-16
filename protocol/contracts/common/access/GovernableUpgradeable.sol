@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Origami (common/access/GovernableUpgradeable.sol)
+// Temple (common/access/GovernableUpgradeable.sol)
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {GovernableBase} from "contracts/common/access/GovernableBase.sol";

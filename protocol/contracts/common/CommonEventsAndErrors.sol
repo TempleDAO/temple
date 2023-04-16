@@ -1,8 +1,8 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Origami (common/CommonEventsAndErrors.sol)
+// Temple (common/CommonEventsAndErrors.sol)
 
-/// @notice A collection of common errors thrown within the Origami contracts
+/// @notice A collection of common errors thrown within the Temple contracts
 library CommonEventsAndErrors {
     error InsufficientBalance(address token, uint256 required, uint256 balance);
     error InvalidToken(address token);

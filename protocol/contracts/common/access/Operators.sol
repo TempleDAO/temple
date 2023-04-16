@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Origami (common/access/Operators.sol)
+// Temple (common/access/Operators.sol)
 
 /// @notice Inherit to add an Operator role which multiple addreses can be granted.
 /// @dev Derived classes to implement addOperator() and removeOperator()

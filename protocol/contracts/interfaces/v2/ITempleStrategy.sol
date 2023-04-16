@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Origami (interfaces/v2/ITempleStrategy.sol)
+// Temple (interfaces/v2/ITempleStrategy.sol)
 
 import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";

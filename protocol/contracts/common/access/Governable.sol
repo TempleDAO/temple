@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Origami (common/access/Governable.sol)
+// Temple (common/access/Governable.sol)
 
 import {GovernableBase} from "contracts/common/access/GovernableBase.sol";
 

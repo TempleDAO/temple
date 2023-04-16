@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Origami (v2/DSRStrategy.sol)
+// Temple (v2/DSRStrategy.sol)
 
 import { SafeERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -126,6 +126,19 @@ contract DSRStrategy is StrategyBase {
         debt = internalDebtToken.balanceOf(address(this));
         equity = int256(assets) - int256(debt);
     }
+
+// @todo think about the lifecycle / flow of funds here.
+
+// Perhaps:
+// 1/ Anyone can send $$ to TRV. 
+//     This is immediately available for strategies to draw on (and will be minted dUSD)
+
+// 2/ <elevated> can call TRV.applyToBaseStrategy() which will call baseStrategy.apply()
+//     We need some generic function on the strategy to do this.
+//     Maybe have a BaseStrategy interface for this?
+//     This will end up calling applyDeposits() here.
+
+// 3/ When strategies need to draw $$, it will take out of the TRV idle cash first
 
     /**
       * @notice Apply any balance of DAI into DSR.
