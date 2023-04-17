@@ -29,9 +29,9 @@ const plugins = [
   legacy(),
 ];
 
-if (process.env.BUILD_STATS) {
-  plugins.push(visualizer());
-}
+// if (process.env.BUILD_STATS) {
+//   plugins.push(visualizer());
+// }
 
 const VITE_ENV = process.env.VITE_ENV;
 const shouldBuildSourceMap = VITE_ENV === 'local' || VITE_ENV === 'preview';
