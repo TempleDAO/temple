@@ -3,16 +3,18 @@ pragma solidity ^0.8.17;
 // Temple (v2/DSRStrategy.sol)
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Governable } from "contracts/common/access/Governable.sol";
 
-import { ITempleStrategy, ITreasuryReservesVault } from "contracts/interfaces/v2/ITempleStrategy.sol";
+import { ITempleStrategy, ITreasuryReservesVault } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 import { StrategyExecutors } from "contracts/v2/StrategyExecutors.sol";
 
 /// @title Deposit idle DAI into the Maker DSR (DAI Savings Rate module)
-abstract contract StrategyBase is ITempleStrategy, Governable, StrategyExecutors {
+abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecutors {
+    using SafeERC20 for IERC20;
     string public constant API_VERSION = "1.0.0";
 
     /// A human readable name of the strategy
@@ -66,6 +68,26 @@ abstract contract StrategyBase is ITempleStrategy, Governable, StrategyExecutors
         return API_VERSION;
     }
 
-    // @todo add recover token...
+    /**
+     * @notice The strategy executor can shutdown this strategy, only after Governance has 
+     * marked the strategy as `isShuttingDown` in the TRV.
+     * This assumes all liquidations were handled manually and sent back to the Treasury.
+     * It will call `TRV.shutdown()` to apply the shutdown.
+    */
+    function forceShutdown(uint256 stablesRecovered) external onlyStrategyExecutors {
+        emit Shutdown(true, stablesRecovered);
+        treasuryReservesVault.shutdown(address(this), stablesRecovered);
+    }
+
+    /**
+     * @notice Governance can recover any token
+     * @param token Token to recover
+     * @param to Recipient address
+     * @param amount Amount to recover
+     */
+    function recoverToken(address token, address to, uint256 amount) external onlyGov {
+        emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
+        IERC20(token).safeTransfer(to, amount);
+    }
 
 }

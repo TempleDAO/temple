@@ -16,16 +16,17 @@ import { Governable } from "contracts/common/access/Governable.sol";
  * @notice A rebasing ERC20 representing principal accruing at a `base + risk premium` continuously compounding interest rate.
  *
  * All borrowers utilising the treasury will be issued accruing debt, such that the net performance (equity = assets - debt) of each strategy can be
- * evaluated on-chain. This Temple Debt Token will from the `debt` part of the equity equation in each strategy (an `asset` for the Treasury)
+ * evaluated on-chain. This Temple Debt Token will form the `debt` part of the equity equation in each strategy (an `asset` for the Treasury)
  *
  * There are 3 components to the debt:
  *   1/ Principal
+        This 
  *   2/ 'base rate' interest, which is a common rate for all borrowers. 
  *         This represents an opportunity cost - a rate at which the Treasury would be able to otherwise earn safely
  *         (eg DAI's DSR at 1% APR). 
- *      It is implemented using a share based implementation such this base rate can be updated for all debtors
+ *      It is implemented using a share based implementation such that this base rate can be updated for all debtors
  *   3/ 'risk premium' interest, where the interest rate is set per borrower.
- *         This represents a governance set premium for that individual borrower depending on it's purpose. 
+ *         This represents a governance set premium for that individual borrower depending on its purpose. 
  *         For example a higher risk / higher return borrower would have a higher risk premium.
  *
  * On a repayment, the interest accruing at the higher rate is paid down first.

@@ -20,6 +20,14 @@ contract TempleDebtTokenTestnetAdmin {
         dUSD.removeMinter(account);
     }
 
+    function mint(address to, uint256 amount) external {
+        dUSD.mint(to, amount);
+    }
+
+    function burn(address from, uint256 amount) external {
+        dUSD.burn(from, amount);
+    }
+
     function setBaseInterestRate(uint256 _rate) external {
         dUSD.setBaseInterestRate(_rate);
     }
