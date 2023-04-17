@@ -28,6 +28,7 @@ import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 interface ITempleStrategy {
     event TreasuryReservesVaultSet(address indexed trv);
     event Shutdown(bool forced, uint256 stablesRecovered);
+    event EquityCheckpoint(int256 equity, uint256 assets, uint256 debt);
     error InvalidVersion(string expected, string actual);
     error OnlyStrategyExecutorsOrTRV(address caller);
 

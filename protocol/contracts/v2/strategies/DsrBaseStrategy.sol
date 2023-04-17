@@ -148,6 +148,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         assets = _checkpointDaiBalance();
         debt = internalDebtToken.balanceOf(address(this));
         equity = int256(assets) - int256(debt);
+        emit EquityCheckpoint(equity, assets, debt);
     }
 
     /**
