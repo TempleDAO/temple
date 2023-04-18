@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Temple (v2/StrategyExecutors.sol)
+// Temple (v2/access/StrategyExecutors.sol)
 
 /**
  * @notice Inherit to add an StrategyExecutors role which multiple addreses can be granted.

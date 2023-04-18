@@ -27,10 +27,11 @@ import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
  */
 interface ITempleStrategy {
     event TreasuryReservesVaultSet(address indexed trv);
-    event Shutdown(bool forced, uint256 stablesRecovered);
+    event Shutdown(uint256 stablesRecovered);
     event EquityCheckpoint(int256 equity, uint256 assets, uint256 debt);
     error InvalidVersion(string expected, string actual);
-    error OnlyStrategyExecutorsOrTRV(address caller);
+    error OnlyTreasuryReserveVault(address caller);
+    error Unimplemented();
 
     /**
      * @notice API version to help with future integrations/migrations
@@ -68,6 +69,11 @@ interface ITempleStrategy {
     function internalDebtToken() external view returns (ITempleDebtToken);
 
     /**
+     * @notice The current dUSD debt of this strategy
+     */
+    function currentDebt() external view returns (uint256);
+
+    /**
      * @notice The latest checkpoint of total equity (latestAssetsValue - latestInternalDebt)
      *  Where:
      *     assets = Latest checkpoint of value of assets in this strategy
@@ -89,14 +95,5 @@ interface ITempleStrategy {
      * This should handle all liquidations and send all funds back to the TRV, and will then call `TRV.shutdown()`
      * to apply the shutdown.
      */
-    function gracefulShutdown() external;
-
-    /**
-     * @notice The strategy executor can shutdown this strategy, only after Governance has 
-     * marked the strategy as `isShuttingDown` in the TRV.
-     * This assumes all liquidations were handled manually and sent back to the Treasury.
-     * It will call `TRV.shutdown()` to apply the shutdown.
-     */
-    function forceShutdown(uint256 stablesRecovered) external;
-
+    function automatedShutdown() external;
 }

@@ -4,12 +4,13 @@ pragma solidity ^0.8.17;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
+import { ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
 
 /**
  * @title Treasury Reserves Vault (TRV)
  *
  * @notice Temple has various strategies which utilise the treasury funds to generate 
- * profits for token holders.
+ * gains for token holders.
  * 
  * The maximum amount of funds allocated to each strategy is determined by governance, 
  * and then each strategy can borrow/repay as required (up to the cap).
@@ -25,7 +26,7 @@ interface ITreasuryReservesVault {
     event DebtCeilingUpdated(address indexed strategy, uint256 oldDebtCeiling, uint256 newDebtCeiling);
     event UnderperformingEquityThresholdUpdated(address indexed strategy, uint256 oldThreshold, uint256 newThreshold);
     event StrategyIsShuttingDownSet(address indexed strategy, bool isShuttingDown);
-    event StrategyShutdown(address indexed strategy, uint256 stablesRecovered, uint256 remainingBadDebt, uint256 remainingProfit);
+    event StrategyShutdown(address indexed strategy, uint256 stablesRecovered, uint256 debtBurned, int256 realisedGainOrLoss);
 
     event Borrow(address indexed strategy, uint256 stablesAmount);
     event Repay(address indexed strategy, uint256 stablesAmount);
@@ -35,12 +36,12 @@ interface ITreasuryReservesVault {
     error BorrowPaused();
     error RepaysPaused();
     error StrategyIsShutdown();
-    error TooMuchDebt(uint256 available, uint256 borrowAmount);
+    error DebtCeilingBreached(uint256 available, uint256 borrowAmount);
     error DebtOverpayment(uint256 current, uint256 repayAmount);
     error NotShuttingDown();
     error OnlyGovOrStrategy();
 
-    struct StrategyConfig {
+    struct Strategy {
         /**
          * @notice Whether this address is enabled as a valid strategy.
          */
@@ -100,6 +101,11 @@ interface ITreasuryReservesVault {
     );
 
     /**
+     * @notice The base strategy used to keep transient vault deposits
+     */
+    function baseStrategy() external view returns (ITempleBaseStrategy);
+
+    /**
      * API version to help with future integrations/migrations
      */
     function apiVersion() external pure returns (string memory);
@@ -115,6 +121,15 @@ interface ITreasuryReservesVault {
     function internalDebtToken() external view returns (ITempleDebtToken);
 
     /**
+     * @notice When strategies are shutdown, all remaining stables are recovered
+     * and outstanding debt is burned.
+     * This leaves a net balance of positive or negative equity, which is tracked.
+     * @dev Total current equity == shutdownStrategyNetEquity + 
+                                    SUM(strategy.equity() for strategy in active strategies)
+     */
+    function shutdownStrategyNetEquity() external view returns (int256);
+
+    /**
      * @notice A helper to collate information about a given strategy for reporting purposes.
      * @dev Note the current assets may not be 100% up to date, as some strategies may need to checkpoint based
      * on the underlying strategy protocols (eg DSR for DAI would need to checkpoint to get the latest valuation).
@@ -122,14 +137,26 @@ interface ITreasuryReservesVault {
     function strategyDetails(address strategy) external view returns (
         string memory name,
         string memory version,
-        StrategyConfig memory config,
+        Strategy memory strategyData,
         int256 estimateTotalEquity,
         uint256 estimateAssetsValue,
         uint256 debtBalance
     );
 
     /**
-     * @notice availableToBorrow = debtCeiling - debtBalance;
+     * @notice The total available stables, both as a balance in this contract and
+     * any available to withdraw from the baseStrategy
+     */
+    function totalAvailableStables() external view returns (uint256);
+
+    /**
+     * @notice The current dUSD debt of this strategy
+     */
+    function currentStrategyDebt(address strategy) external view returns (uint256);
+
+    /**
+     * @notice How much a given strategy is free to borrow
+     * @dev availableToBorrow = max(debtCeiling - debtBalance, 0);
      */
     function availableToBorrow(address strategy) external view returns (uint256);
 
@@ -165,7 +192,7 @@ interface ITreasuryReservesVault {
     function checkpointEquity(address[] memory strategyAddrs) external;
 
     /**
-     * @notice Governance sets whether a strategy is slated for shutdown.
+     * @notice The first step in a two-phase shutdown. Governance first sets whether a strategy is slated for shutdown.
      * The strategy (or governance) then needs to call shutdown as a separate call once ready.
      */
     function setStrategyIsShuttingDown(address strategy, bool isShuttingDown) external;
@@ -175,13 +202,20 @@ interface ITreasuryReservesVault {
      * @dev This will revert if the strategy requests more stables than it's able to borrow.
      * `dUSD` will be minted 1:1 for the amount of stables borrowed
      */
-    function borrow(uint256 stablesAmount) external;
+    function borrow(uint256 borrowAmount) external;
+
+    /**
+     * @notice A strategy calls to request the most funding it can.
+     * @dev This will revert if the strategy requests more stables than it's able to borrow.
+     * `dUSD` will be minted 1:1 for the amount of stables borrowed
+     */
+    function borrowMax() external returns (uint256);
 
     /**
      * @notice A strategy calls to paydown it's debt
      * This will pull the stables, and will burn the equivalent amount of dUSD from the strategy.
      */
-    function repay(uint256 stablesAmount) external;
+    function repay(uint256 repayAmount) external;
 
     /**
      * @notice A strategy calls to paydown all of it's debt
@@ -190,14 +224,10 @@ interface ITreasuryReservesVault {
     function repayAll() external;
 
     /**
-     * @notice A strategy calls when it shuts down (or governance forces it). 
-     * isShuttingDown must be true.
-     * 1/ The strategy is responsible for unwinding all it's positions first.
-     * 2/ The nominated stables are pulled from the caller and used to pay off as much of the strategies debt as possible
-     * 3/ Any remaining debt is a realised loss (bad debt). This debt is then wiped.
-     * 4/ Any remaining stables are a realised profit.
+     * @notice The second step in a two-phase shutdown. A strategy (automated) or governance (manual) calls
+     * to effect the shutdown. isShuttingDown must be true for the strategy first.
+     * The strategy executor is responsible for unwinding all it's positions first and sending stables to the TRV.
+     * All outstanding dUSD debt is burned, leaving a net gain/loss of equity for the shutdown strategy.
      */
-    function shutdown(address strategy, uint256 stablesRecovered) external;
-
-    
+    function shutdown(address strategy, uint256 stablesRecovered) external;   
 }

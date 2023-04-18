@@ -10,7 +10,7 @@ import { ITempleStrategy, ITreasuryReservesVault } from "contracts/interfaces/v2
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
-import { StrategyExecutors } from "contracts/v2/StrategyExecutors.sol";
+import { StrategyExecutors } from "contracts/v2/access/StrategyExecutors.sol";
 
 /**
  * @dev Abstract base contract implementation of a Temple Strategy. 
@@ -85,6 +85,13 @@ abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecu
     }
 
     /**
+     * @notice The current dUSD debt of a strategy
+     */
+    function currentDebt() public override view returns (uint256) {
+        return internalDebtToken.balanceOf(address(this));
+    }
+
+    /**
      * @notice Track the deployed version of this contract. 
      */
     function apiVersion() external pure override returns (string memory) {
@@ -92,18 +99,7 @@ abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecu
     }
 
     /**
-     * @notice The strategy executor can shutdown this strategy, only after Governance has 
-     * marked the strategy as `isShuttingDown` in the TRV.
-     * This assumes all liquidations were handled manually and sent back to the Treasury.
-     * It will call `TRV.shutdown()` to apply the shutdown.
-    */
-    function forceShutdown(uint256 stablesRecovered) external onlyStrategyExecutors {
-        emit Shutdown(true, stablesRecovered);
-        treasuryReservesVault.shutdown(address(this), stablesRecovered);
-    }
-
-    /**
-     * @notice Governance can recover any token
+     * @notice Governance can recover any token from the strategy.
      * @param token Token to recover
      * @param to Recipient address
      * @param amount Amount to recover

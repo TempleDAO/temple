@@ -145,7 +145,7 @@ interface ITempleDebtToken is IERC20, IERC20Metadata {
      * @notice Approved Minters can burn the entire debt on behalf of a user.
      * @param _debtor The address of the debtor
      */
-    function burnAll(address _debtor) external;
+    function burnAll(address _debtor) external returns (uint256 burnedAmount);
 
     /**
      * @notice Checkpoint the base interest owed by all debtors up to this block.

@@ -35,24 +35,8 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      */
     uint256 public constant RAY = 10 ** 27;
 
-    /**
-     * @notice Upon applying deposits, if the balance is less than
-     * this threshold, then it won't push into DSR.
-     * @dev This is because the DSR deposit is relatively expensive for gas.
-     */
-    uint256 public depositThreshold;
-
-    /**
-     * @notice Upon withdrawal, if a withdrawal from DSR is required,
-     * it will attempt to withdraw at least this amount into the contract, to save from
-     * withdrawing immediately again next time.
-     * @dev This is because the DSR withdrawal is relatively expensive for gas.
-     */
-    uint256 public withdrawalThreshold;
-
-    event DaiDeposited(address indexed token, uint256 amount);
-    event DaiWithdrawn(address indexed token, uint256 amount);
-    event ThresholdsSet(uint256 depositThreshold, uint256 withdrawalThreshold);
+    event DaiDeposited(uint256 amount);
+    event DaiWithdrawn(uint256 amount);
     error NotEnoughShares(uint256 daiAmountRequested, uint256 sharesRequested, uint256 sharesAvailable);
 
     constructor(
@@ -62,9 +46,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         address _stableToken,
         address _internalDebtToken,
         address _daiJoin, 
-        address _pot, 
-        uint256 _depositThreshold, 
-        uint256 _withdrawalThreshold
+        address _pot
     ) AbstractStrategy(_initialGov, _strategyName, _treasuryReservesVault, _stableToken, _internalDebtToken) {
         daiJoin = IMakerDaoDaiJoinLike(_daiJoin);
         IMakerDaoVatLike vat = IMakerDaoVatLike(daiJoin.vat());
@@ -72,9 +54,6 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         vat.hope(address(daiJoin));
         vat.hope(address(pot));
         stableToken.safeApprove(address(daiJoin), type(uint256).max);
-
-        depositThreshold = _depositThreshold;
-        withdrawalThreshold = _withdrawalThreshold;
     }
 
     /**
@@ -82,16 +61,6 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      */
     function strategyVersion() external pure returns (string memory) {
         return VERSION;
-    }
-
-    /**
-     * @notice Owner can set the threshold at which balances are actually added/removed into DSR.
-     * eg If DAI balanceOf(this) is below the `_depositThreshold`, applyDeposits() will be a no-op
-     */
-    function setThresholds(uint256 _depositThreshold, uint256 _withdrawalThreshold) external onlyStrategyExecutors {
-        depositThreshold = _depositThreshold;
-        withdrawalThreshold = _withdrawalThreshold;
-        emit ThresholdsSet(_depositThreshold, _withdrawalThreshold);
     }
 
     /**
@@ -116,14 +85,17 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     function _latestDaiBalance() internal view returns (uint256) {
         // pot.chi() == DAI/share (accurate to the last checkpoint)
         // pot.pie() == number of shares this contract holds.
-        uint256 dsrAmount = _rmul(pot.chi(), pot.pie(address(this)));
-        return stableToken.balanceOf(address(this)) + dsrAmount;
+        return _rmul(pot.chi(), pot.pie(address(this)));
     }
 
-    function _checkpointDaiBalance() internal returns (uint256) {
-        uint256 chi = (block.timestamp > pot.rho()) ? pot.drip() : pot.chi();
-        uint256 dsrAmount = _rmul(chi, pot.pie(address(this)));
-        return stableToken.balanceOf(address(this)) + dsrAmount;
+    function _checkpointChi() internal returns (uint256 chi) {
+        chi = (block.timestamp > pot.rho()) ? pot.drip() : pot.chi();
+    }
+
+    function _checkpointDaiBalance() internal returns (uint256 dai, uint256 chi, uint256 shares) {
+        chi = _checkpointChi();
+        shares = pot.pie(address(this));
+        dai = _rmul(chi, shares);
     }
 
     /**
@@ -135,8 +107,8 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      *     equity = assets - debt. This could be negative.
      */
     function latestEquityCheckpoint() external override view returns (int256 equity, uint256 assets, uint256 debt) {
-        assets = _latestDaiBalance();
-        debt = internalDebtToken.balanceOf(address(this));
+        assets = stableToken.balanceOf(address(this)) + _latestDaiBalance();
+        debt = currentDebt();
         equity = int256(assets) - int256(debt);
     }
 
@@ -145,128 +117,110 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * For DAI's Savings Rate contract, we need to call a writable function to get the latest total.
      */
     function checkpointEquity() external override returns (int256 equity, uint256 assets, uint256 debt) {
-        assets = _checkpointDaiBalance();
-        debt = internalDebtToken.balanceOf(address(this));
+        (assets,,) = _checkpointDaiBalance();
+        assets += stableToken.balanceOf(address(this)); 
+        debt = currentDebt();
         equity = int256(assets) - int256(debt);
         emit EquityCheckpoint(equity, assets, debt);
     }
 
     /**
-     * @notice Periodically, the Base Strategy will pull as many idle DAI reserves
+     * @notice Periodically, the Base Strategy will pull all DAI reserves
      * from the TRV contract and apply into DSR in order to generate base yield 
      * (the basis of the dUSD base in interest rate.)
      *
      * These idle DAI will only be drawn from a balance of tokens in the TRV itself.
+     * 
+     * This will be likely be called from a bot. It should only do this if there's a 
+     * minimum threshold to pull and deposit given gas costs to deposit into DSR.
      */
-    function borrowAndDepositMax() external onlyStrategyExecutors returns (uint256) {
-        uint256 amount = stableToken.balanceOf(address(treasuryReservesVault));
-        return _borrowAndDeposit(amount);
+    function borrowAndDepositMax() external onlyStrategyExecutors returns (uint256 borrowedAmount) {
+        // Borrow the DAI. This will also mint `dUSD` debt.
+        borrowedAmount = treasuryReservesVault.borrowMax();
+        _dsrDeposit(borrowedAmount);
     }
 
     /**
-     * @notice The same as `borrowMax()` but for a pre-determined amount to borrow,
-     * such that something upstream/off-chain can determine the amount.
+     * @notice Periodically, the Base Strategy will pull a fixed amount of idle DAI reserves
+     * from the TRV contract and apply into DSR in order to generate base yield 
+     * (the basis of the dUSD base in interest rate.)
+     *
+     * These idle DAI will only be drawn from a balance of tokens in the TRV itself.
+     * 
+     * This will be likely be called from a bot. It should only do this if there's a 
+     * minimum threshold to pull and deposit given gas costs to deposit into DSR.
      */
-    function borrowAndDeposit(uint256 amount) external onlyStrategyExecutors returns (uint256) {
-        return _borrowAndDeposit(amount);
-    }
-
-    function _borrowAndDeposit(uint256 amount) internal returns (uint256) {
-        if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-
+    function borrowAndDeposit(uint256 amount) external onlyStrategyExecutors {
         // Borrow the DAI. This will also mint `dUSD` debt.
         treasuryReservesVault.borrow(amount);
+        _dsrDeposit(amount);
+    }
 
-        // Don't apply the deposit if there isn't enough balance yet in the account
-        amount = stableToken.balanceOf(address(this));
-        if (amount < depositThreshold) return amount;
+    function _dsrDeposit(uint256 amount) internal {
+        // Ensure the latest DSR checkpoint has occurred so we join with the
+        // correct shares. Use `_rdiv()` on deposits.
+        uint256 shares = _rdiv(amount, _checkpointChi());
 
-        emit DaiDeposited(address(stableToken), amount);
-
-        // Ensure the latest checkpoint has occurred
-        uint256 chi = (block.timestamp > pot.rho()) ? pot.drip() : pot.chi();
-        uint256 shares = _rdiv(amount, chi);
-
+        emit DaiDeposited(amount);
         daiJoin.join(address(this), amount);
         pot.join(shares);
-
-        return amount;
     }
 
     /**
-     * @notice Withdraw an amount of DAI from the DSR, and send to the TRV
+     * @notice The TRV is able to withdraw on demand in order to fund other strategies which 
+     * wish to borrow from the TRV.
+     * @dev It may withdraw less than requested if there isn't enough balance in the DSR.
      */
-    function withdraw(uint256 amount) external onlyStrategyExecutors returns (uint256) {
-        // The TRV is also able to withdraw on demand in order to fund other strategies which wish to borrow from the TRV.
-        if (!(msg.sender == address(treasuryReservesVault) || strategyExecutors[msg.sender])) {
-            revert OnlyStrategyExecutorsOrTRV(msg.sender);
+    function trvWithdraw(uint256 requestedAmount) external returns (uint256 amountWithdrawn) {
+        if (msg.sender != address(treasuryReservesVault)) revert OnlyTreasuryReserveVault(msg.sender);
+        if (requestedAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
+
+        // Checkpoint DSR and calculate how many DSR shares the request equates to.
+        //  Use `_rdivup()` on withdrawals.
+        (uint256 daiAvailable, uint256 chi, uint256 sharesAvailable) = _checkpointDaiBalance();
+        uint256 sharesAmount = _rdivup(requestedAmount, chi);
+
+        // Cap at the max balance in DSR
+        if (sharesAmount > sharesAvailable) {
+            requestedAmount = daiAvailable;
+            sharesAmount = sharesAvailable;
         }
 
-        if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+        _dsrWithdrawal(sharesAmount, requestedAmount);
+        stableToken.safeTransfer(address(treasuryReservesVault), requestedAmount);
+        return amountWithdrawn;
+    }
 
-        // First use any balance which is still sitting in this contract (not yet in the DSR)
-        uint256 balance = stableToken.balanceOf(address(this));
-        uint256 transferAmount = balance > amount ? amount : balance;
-        uint256 withdrawAmount = amount - transferAmount;
+    function _dsrWithdrawal(uint256 sharesAmount, uint256 daiAmount) internal {
+        pot.exit(sharesAmount);
+        daiJoin.exit(address(this), daiAmount);
+        emit DaiWithdrawn(daiAmount);
+    }
 
-        // Pull any remainder required from DSR
-        if (withdrawAmount != 0) {
-            // Ensure the latest checkpoint has occurred
-            uint256 chi = (block.timestamp > pot.rho()) ? pot.drip() : pot.chi();
-            uint256 dsrSharesAvailable = pot.pie(address(this));
+    /**
+     * @notice The strategy executor may withdraw DAI from DSR and pay back to Treasury Reserves Vault
+     */
+    function withdrawAndRepay(uint256 withdrawalAmount) external onlyStrategyExecutors {
+        if (withdrawalAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
 
-            // Attempt to withdraw at least the threshold.
-            uint256 daiToExit = withdrawAmount < withdrawalThreshold ? withdrawalThreshold : withdrawAmount;
-            uint256 sharesToExit = _rdivup(daiToExit, chi);
-            
-            // If not enough shares based on the threshold, then fallback to the requested amount only
-            if (sharesToExit > dsrSharesAvailable) {
-                daiToExit = withdrawAmount;
-                sharesToExit = _rdivup(daiToExit, chi);
-            }
-
-            // If still not enough shares, then error.
-            if (sharesToExit > dsrSharesAvailable) revert NotEnoughShares(withdrawAmount, sharesToExit, dsrSharesAvailable);
-
-            pot.exit(sharesToExit);
-            daiJoin.exit(address(this), daiToExit);
-        }
+        (uint256 daiAvailable, uint256 chi, ) = _checkpointDaiBalance();
+        if (withdrawalAmount > daiAvailable) revert CommonEventsAndErrors.InsufficientBalance(address(stableToken), withdrawalAmount, daiAvailable);
         
-        emit DaiWithdrawn(address(stableToken), amount);
-        stableToken.safeTransfer(address(treasuryReservesVault), amount);
-        return amount;
+        //  Use `_rdivup()` on withdrawals.
+        uint256 sharesAmount = _rdivup(withdrawalAmount, chi);
+        _dsrWithdrawal(sharesAmount, withdrawalAmount);
+        treasuryReservesVault.repay(withdrawalAmount);
     }
 
     /**
      * @notice Withdraw all possible DAI from the DSR, and send to the Treasury Reserves Vault
      */
-    function withdrawAll() external onlyStrategyExecutors returns (uint256) {
-        return _withdrawAll();
-    }
+    function withdrawAndRepayAll() external onlyStrategyExecutors returns (uint256) {
+        (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
+        _dsrWithdrawal(sharesAvailable, daiAvailable);
 
-    function _withdrawAll() internal returns (uint256) {
-        uint256 amount = stableToken.balanceOf(address(this));
-
-        // Send any balance of DAI sitting in the contract
-        if (amount != 0) {
-            stableToken.safeTransfer(address(treasuryReservesVault), amount);
-        }
-
-        // And also withdraw all from the DSR
-        uint256 dsrShares = pot.pie(address(this));
-        if (dsrShares != 0) {
-            uint256 chi = (block.timestamp > pot.rho()) ? pot.drip() : pot.chi();
-            uint256 daiToReceive = dsrShares * chi / RAY;
-
-            pot.exit(dsrShares);
-            daiJoin.exit(address(treasuryReservesVault), daiToReceive);
-
-            amount += daiToReceive;
-        }
-
-        if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        emit DaiWithdrawn(address(stableToken), amount);
-        return amount;
+        treasuryReservesVault.repay(daiAvailable);
+        return daiAvailable;
     }
 
     /**
@@ -276,14 +230,16 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * @dev This first withdraws all DAI from the DSR and sends all funds to the TRV, and then 
      * applies the shutdown in the TRV.
      */
-    function gracefulShutdown() external onlyStrategyExecutors override {
+    function automatedShutdown() external onlyStrategyExecutors override {
         // Withdraw all from DSR and send everything back to the Treasury Reserves Vault.
-        uint256 stablesRecovered = _withdrawAll();
-        emit Shutdown(false, stablesRecovered);
+        (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
+        _dsrWithdrawal(sharesAvailable, daiAvailable);
+
+        emit Shutdown(daiAvailable);
 
         // Now mark as shutdown in the TRV.
         // This will only succeed if governance has first set the strategy to `isShuttingDown`
-        treasuryReservesVault.shutdown(address(this), stablesRecovered);
+        treasuryReservesVault.shutdown(address(this), daiAvailable);
     }
 
 }

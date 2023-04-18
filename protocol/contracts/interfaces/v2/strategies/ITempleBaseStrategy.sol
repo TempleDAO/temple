@@ -27,12 +27,13 @@ interface ITempleBaseStrategy is ITempleStrategy {
      * @notice The same as `borrowMax()` but for a pre-determined amount to borrow,
      * such that something upstream/off-chain can determine the amount.
      */
-    function borrowAndDeposit(uint256 amount) external returns (uint256);
+    function borrowAndDeposit(uint256 amount) external;
 
     /**
-     * @notice Withdraw funds from the Base Strategy and send to the TRV, 
-     * in order to fund other strategy's borrow requests
+     * @notice The TRV is able to withdraw on demand in order to fund other strategies which 
+     * wish to borrow from the TRV.
+     * @dev It may withdraw less than requested if there isn't enough balance in the DSR.
      */
-    function withdraw(uint256 amount) external returns (uint256);
+    function trvWithdraw(uint256 requestedAmount) external returns (uint256 amountWithdrawn);
 
 }

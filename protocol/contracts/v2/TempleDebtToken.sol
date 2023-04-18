@@ -20,7 +20,6 @@ import { Governable } from "contracts/common/access/Governable.sol";
  *
  * There are 3 components to the debt:
  *   1/ Principal
-        This 
  *   2/ 'base rate' interest, which is a common rate for all borrowers. 
  *         This represents an opportunity cost - a rate at which the Treasury would be able to otherwise earn safely
  *         (eg DAI's DSR at 1% APR). 
@@ -29,7 +28,8 @@ import { Governable } from "contracts/common/access/Governable.sol";
  *         This represents a governance set premium for that individual borrower depending on its purpose. 
  *         For example a higher risk / higher return borrower would have a higher risk premium.
  *
- * On a repayment, the interest accruing at the higher rate is paid down first.
+ * On a repayment, the interest accruing at the higher rate is paid down first. When there is no more `base rate` or
+ * `risk premium` interest, then the principal portion is paid down.
  * 
  * This token is is non-transferrable. Only approved Minters can mint/burn the debt on behalf of a user.
  */
@@ -224,16 +224,16 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
      * @notice Approved Minters can burn the entire debt on behalf of a user.
      * @param _debtor The address of the debtor
      */
-    function burnAll(address _debtor) external override {
+    function burnAll(address _debtor) external override returns (uint256 burnedAmount) {
         if (!minters[msg.sender]) revert CannotMintOrBurn(msg.sender);
         if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress(_debtor);
         Debtor storage debtor = debtors[_debtor];
         uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
-        uint256 _burnAmount = _balanceOf(debtor, _totalPrincipalAndBase);
+        burnedAmount = _balanceOf(debtor, _totalPrincipalAndBase);
 
-        if (_burnAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        emit Transfer(_debtor, address(0), _burnAmount);
-        _burn(debtor, _burnAmount, _totalPrincipalAndBase);
+        if (burnedAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+        emit Transfer(_debtor, address(0), burnedAmount);
+        _burn(debtor, burnedAmount, _totalPrincipalAndBase);
     }
 
     function _burn(Debtor storage debtor, uint256 _burnAmount, uint256 _totalPrincipalAndBase) internal {
@@ -320,7 +320,7 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
     ) internal pure returns (
         uint256 _debtRepaid
     ) {
-        // Repay the per debtor interest - the minimum of what's debt is still outstanding, 
+        // Repay the per debtor interest - the minimum of what debt is still outstanding, 
         // and what of the repayment amount is still unallocated
         _debtRepaid = _debtorCheckpoint < _burnAmount ? _debtorCheckpoint : _burnAmount;
     }
