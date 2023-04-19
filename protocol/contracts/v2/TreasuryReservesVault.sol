@@ -311,8 +311,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
      * @notice A strategy calls to paydown all of it's debt
      * This will pull the stables for the entire dUSD balance of the strategy, and burn the dUSD.
      */
-    function repayAll() external override {
-        _repay(msg.sender, currentStrategyDebt(msg.sender));
+    function repayAll() external override returns (uint256 amountRepaid) {
+        amountRepaid = currentStrategyDebt(msg.sender);
+        _repay(msg.sender, amountRepaid);
     }
 
     function _repay(address _strategyAddr, uint256 _repayAmount) internal {

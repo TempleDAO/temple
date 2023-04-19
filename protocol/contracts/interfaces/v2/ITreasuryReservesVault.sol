@@ -220,7 +220,7 @@ interface ITreasuryReservesVault {
      * @notice A strategy calls to paydown all of it's debt
      * This will pull the stables for the entire dUSD balance of the strategy, and burn the dUSD.
      */
-    function repayAll() external;
+    function repayAll() external returns (uint256 amountRepaid);
 
     /**
      * @notice The second step in a two-phase shutdown. A strategy (automated) or governance (manual) calls

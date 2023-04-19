@@ -2,10 +2,11 @@ pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/strategies/GnosisStrategy.sol)
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 
 contract GnosisStrategy  is AbstractStrategy {
+    using SafeERC20 for IERC20;
     string public constant VERSION = "1.0.0";
 
     /**
@@ -39,9 +40,54 @@ contract GnosisStrategy  is AbstractStrategy {
         return VERSION;
     }
 
+    /**
+     * @notice The assets on which to report balances need to be set by the Strategy Executors
+     * @dev Use the zero address (0x000) to represent native ETH
+     */
     function setAssets(address[] calldata _assets) external onlyStrategyExecutors {
         assets = _assets;
         emit AssetsSet(_assets);
+    }
+
+    /**
+     * @notice A strategy executor borrows a fixed amount from the Treasury Reserves
+     * These stables are sent to the Gnosis wallet
+     */
+    function borrow(uint256 amount) external onlyStrategyExecutors {
+        treasuryReservesVault.borrow(amount);
+        stableToken.safeTransfer(gnosisSafeWallet, amount);
+    }
+
+    /**
+     * @notice A strategy executor borrows the max amount from the Treasury Reserves
+     * These stables are sent to the Gnosis wallet
+     */
+    function borrowMax() external onlyStrategyExecutors returns (uint256 borrowedAmount) {
+        borrowedAmount = treasuryReservesVault.borrowMax();
+        stableToken.safeTransfer(gnosisSafeWallet, borrowedAmount);
+    }
+
+    /**
+     * @notice A strategy executor repays debt back to the Treasury Reserves.
+     * They must send the stable tokens to this strategy prior to calling.
+     */
+    function repay(uint256 amount) external onlyStrategyExecutors {
+        treasuryReservesVault.repay(amount);
+    }
+
+    /**
+     * @notice A strategy executor repays debt back to the Treasury Reserves.
+     * They must send the stable tokens to this strategy prior to calling.
+     */
+    function repayAll() external onlyStrategyExecutors returns (uint256) {
+        return treasuryReservesVault.repayAll();
+    }
+
+    /** 
+     * @notice A strategy executor pulls tokens from this contract back into it's whitelisted gnosis
+     */
+    function recoverToGnosis(address token, uint256 amount) external onlyStrategyExecutors {
+        IERC20(token).safeTransfer(gnosisSafeWallet, amount);
     }
 
     /**
@@ -60,7 +106,18 @@ contract GnosisStrategy  is AbstractStrategy {
         uint256 _gnosisBalance;
         for (uint256 i; i < _length; ++i) {
             _asset = assets[i];
-            _gnosisBalance = (_asset == address(0) ? gnosisSafeWallet.balance : IERC20(_asset).balanceOf(gnosisSafeWallet));
+
+            if (_asset == address(0)) {
+                // 0x00 == ETH
+                _gnosisBalance = gnosisSafeWallet.balance;
+            } else {
+                // Sum the gnosis balance and this contract's balance of the ERC20.
+                _gnosisBalance = (
+                    IERC20(_asset).balanceOf(gnosisSafeWallet) +
+                    IERC20(_asset).balanceOf(address(this))
+                );
+            }
+
             assetBalances[i] = AssetBalance({
                 asset: _asset,
                 balance: addManualAssetBalanceDelta(_gnosisBalance, _asset)
