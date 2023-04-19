@@ -8,7 +8,7 @@ import { IMakerDaoDaiJoinLike } from "contracts/interfaces/external/makerDao/IMa
 import { IMakerDaoPotLike } from "contracts/interfaces/external/makerDao/IMakerDaoPotLike.sol";
 import { IMakerDaoVatLike } from "contracts/interfaces/external/makerDao/IMakerDaoVatLike.sol";
 import { ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
-import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
+import { AbstractStrategy, ITempleStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 /**
@@ -59,7 +59,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     /**
      * The version of this particular strategy
      */
-    function strategyVersion() external pure returns (string memory) {
+    function strategyVersion() external override pure returns (string memory) {
         return VERSION;
     }
 
@@ -99,29 +99,35 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     }
 
     /**
-     * @notice The latest checkpoint of total equity (latestAssetsValue - latestInternalDebt)
-     *  Where:
-     *     assets = Latest checkpoint of value of assets in this strategy
-     *     debt   = The latest checkpoint of the internal Temple debt this strategy has accrued
-     *              The same as `dUSD.balanceOf(strategy)`
-     *     equity = assets - debt. This could be negative.
+     * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
+     * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
+     * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
+     *
+     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
-    function latestEquityCheckpoint() external override view returns (int256 equity, uint256 assets, uint256 debt) {
-        assets = stableToken.balanceOf(address(this)) + _latestDaiBalance();
+    function latestAssetBalances() public override(AbstractStrategy, ITempleStrategy) view returns (AssetBalance[] memory assetBalances, uint256 debt) {
+        assetBalances = new AssetBalance[](1);
+        assetBalances[0] = AssetBalance({
+            asset: address(stableToken), 
+            balance: addManualAssetBalanceDelta(_latestDaiBalance(), address(stableToken))
+        });
         debt = currentDebt();
-        equity = int256(assets) - int256(debt);
     }
 
     /**
      * @notice Calculate the latest assets and liabilities and checkpoint
      * For DAI's Savings Rate contract, we need to call a writable function to get the latest total.
      */
-    function checkpointEquity() external override returns (int256 equity, uint256 assets, uint256 debt) {
-        (assets,,) = _checkpointDaiBalance();
-        assets += stableToken.balanceOf(address(this)); 
+    function checkpointAssetBalances() external override(AbstractStrategy, ITempleStrategy) returns (AssetBalance[] memory assetBalances, uint256 debt) {
+        (uint256 daiBalance,,) = _checkpointDaiBalance();
+        assetBalances = new AssetBalance[](1);
+        assetBalances[0] = AssetBalance({
+            asset: address(stableToken), 
+            balance: addManualAssetBalanceDelta(daiBalance, address(stableToken))
+        });
         debt = currentDebt();
-        equity = int256(assets) - int256(debt);
-        emit EquityCheckpoint(equity, assets, debt);
+        emit AssetBalancesCheckpoint(assetBalances, debt);
     }
 
     /**
@@ -134,7 +140,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * This will be likely be called from a bot. It should only do this if there's a 
      * minimum threshold to pull and deposit given gas costs to deposit into DSR.
      */
-    function borrowAndDepositMax() external onlyStrategyExecutors returns (uint256 borrowedAmount) {
+    function borrowAndDepositMax() external override onlyStrategyExecutors returns (uint256 borrowedAmount) {
         // Borrow the DAI. This will also mint `dUSD` debt.
         borrowedAmount = treasuryReservesVault.borrowMax();
         _dsrDeposit(borrowedAmount);
@@ -150,7 +156,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * This will be likely be called from a bot. It should only do this if there's a 
      * minimum threshold to pull and deposit given gas costs to deposit into DSR.
      */
-    function borrowAndDeposit(uint256 amount) external onlyStrategyExecutors {
+    function borrowAndDeposit(uint256 amount) external override onlyStrategyExecutors {
         // Borrow the DAI. This will also mint `dUSD` debt.
         treasuryReservesVault.borrow(amount);
         _dsrDeposit(amount);
@@ -171,7 +177,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * wish to borrow from the TRV.
      * @dev It may withdraw less than requested if there isn't enough balance in the DSR.
      */
-    function trvWithdraw(uint256 requestedAmount) external returns (uint256 amountWithdrawn) {
+    function trvWithdraw(uint256 requestedAmount) external override returns (uint256 amountWithdrawn) {
         if (msg.sender != address(treasuryReservesVault)) revert OnlyTreasuryReserveVault(msg.sender);
         if (requestedAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
 
@@ -230,7 +236,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * @dev This first withdraws all DAI from the DSR and sends all funds to the TRV, and then 
      * applies the shutdown in the TRV.
      */
-    function automatedShutdown() external onlyStrategyExecutors override {
+    function automatedShutdown() external override onlyStrategyExecutors {
         // Withdraw all from DSR and send everything back to the Treasury Reserves Vault.
         (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
         _dsrWithdrawal(sharesAvailable, daiAvailable);

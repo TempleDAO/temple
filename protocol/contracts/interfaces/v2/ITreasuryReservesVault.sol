@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
-import { ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
+import { ITempleStrategy, ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
 
 /**
  * @title Treasury Reserves Vault (TRV)
@@ -138,8 +138,7 @@ interface ITreasuryReservesVault {
         string memory name,
         string memory version,
         Strategy memory strategyData,
-        int256 estimateTotalEquity,
-        uint256 estimateAssetsValue,
+        ITempleStrategy.AssetBalance[] memory assetBalances,
         uint256 debtBalance
     );
 
@@ -189,7 +188,7 @@ interface ITreasuryReservesVault {
      * @notice Checkpoint each of the strategies such that they calculate the latest value of their assets and debt.
      * @dev Each strategy should do this itself - this is a helper in case we need to schedule it centrally - eg daily/weekly for all.
      */
-    function checkpointEquity(address[] memory strategyAddrs) external;
+    function checkpointAssetBalances(address[] memory strategyAddrs) external;
 
     /**
      * @notice The first step in a two-phase shutdown. Governance first sets whether a strategy is slated for shutdown.

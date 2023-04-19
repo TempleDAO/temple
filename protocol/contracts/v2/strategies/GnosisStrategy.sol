@@ -2,17 +2,24 @@ pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/strategies/GnosisStrategy.sol)
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 
 contract GnosisStrategy  is AbstractStrategy {
     string public constant VERSION = "1.0.0";
 
+    /**
+     * @notice The underlying gnosis safe wallet which is reported on.
+     */
     address public gnosisSafeWallet;
 
-    uint256 public assetsValue;
-    uint256 public assetsValuedAt;
+    /**
+     * @notice The list of assets which are reporting on for equity performance updates
+     * Total balances = the gnosis safe balance of the asset + any delta from `assetBalanceDeltas`
+     */
+    address[] public assets;
 
-    event AssetsValued(uint256 value);
+    event AssetsSet(address[] _assets);
 
     constructor(
         address _initialGov,
@@ -28,44 +35,39 @@ contract GnosisStrategy  is AbstractStrategy {
     /**
      * The version of this particular strategy
      */
-    function strategyVersion() external pure returns (string memory) {
+    function strategyVersion() external override pure returns (string memory) {
         return VERSION;
     }
 
-    /**
-     * @notice The latest checkpoint of total equity (latestAssetsValue - latestInternalDebt)
-     *  Where:
-     *     assets = Latest checkpoint of value of assets in this strategy
-     *     debt   = The latest checkpoint of the internal Temple debt this strategy has accrued
-     *              The same as `dUSD.balanceOf(strategy)`
-     *     equity = assets - debt. This could be negative.
-     */
-    function latestEquityCheckpoint() external view returns (int256 equity, uint256 assets, uint256 debt) {
-        debt = currentDebt();
-        uint256 _assetsValue = assetsValue;
-        equity = int256(_assetsValue) - int256(debt);
-        emit EquityCheckpoint(equity, _assetsValue, debt);
+    function setAssets(address[] calldata _assets) external onlyStrategyExecutors {
+        assets = _assets;
+        emit AssetsSet(_assets);
     }
 
     /**
-     * For a Gnosis Safe, the valuation of the assets needs to be done manually
-     * 
+     * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
+     * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
+     * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
+     *
+     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
-    function manualEquityCheckpoint(uint256 _assetsValue) external returns (int256 equity, uint256 assets, uint256 debt) {
-        assetsValue = _assetsValue;
-        assetsValuedAt = block.timestamp;
+    function latestAssetBalances() public override view returns (AssetBalance[] memory assetBalances, uint256 debt) {
+        uint256 _length = assets.length;
+        assetBalances = new AssetBalance[](_length);
+
+        address _asset;
+        uint256 _gnosisBalance;
+        for (uint256 i; i < _length; ++i) {
+            _asset = assets[i];
+            _gnosisBalance = (_asset == address(0) ? gnosisSafeWallet.balance : IERC20(_asset).balanceOf(gnosisSafeWallet));
+            assetBalances[i] = AssetBalance({
+                asset: _asset,
+                balance: addManualAssetBalanceDelta(_gnosisBalance, _asset)
+            });
+        }
 
         debt = currentDebt();
-        equity = int256(_assetsValue) - int256(debt);
-        emit EquityCheckpoint(equity, _assetsValue, debt);
-    }
-
-    /**
-     * @notice Calculate the latest assets and liabilities and checkpoint
-     * eg For DAI's Savings Rate contract, we need to call a writable function to get the latest total.
-     */
-    function checkpointEquity() external returns (int256 equity, uint256 assets, uint256 debt) {
-        return stableToken.balanceOf(gnosisSafeWallet) + stableToken.balanceOf(address(this));
     }
 
     /**

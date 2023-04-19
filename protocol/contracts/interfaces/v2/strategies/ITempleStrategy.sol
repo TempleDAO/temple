@@ -26,12 +26,25 @@ import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
  *   b/ Force shutdown, where the Executor needs to handle any liquidations manually and send funds back to Treasury first.
  */
 interface ITempleStrategy {
+    struct AssetBalance {
+        address asset;
+        uint256 balance;
+    }
+
+    struct AssetBalanceDelta {
+        address asset;
+        int256 delta;
+    }
+
     event TreasuryReservesVaultSet(address indexed trv);
     event Shutdown(uint256 stablesRecovered);
-    event EquityCheckpoint(int256 equity, uint256 assets, uint256 debt);
+    event AssetBalancesCheckpoint(AssetBalance[] assetBalances, uint256 debt);
+    event ManualAssetBalanceDeltasSet(AssetBalanceDelta[] assetDeltas);
+    
     error InvalidVersion(string expected, string actual);
     error OnlyTreasuryReserveVault(address caller);
     error Unimplemented();
+    error InvalidAssetBalanceDelta(address asset, uint256 balance, int256 manualAssetBalanceDelta);
 
     /**
      * @notice API version to help with future integrations/migrations
@@ -69,25 +82,50 @@ interface ITempleStrategy {
     function internalDebtToken() external view returns (ITempleDebtToken);
 
     /**
+     * @notice The Strategy Executor may set manual updates to asset balances
+     * if they cannot be reported automatically - eg a staked position with no receipt token.
+     */
+    function manualAssetBalanceDeltas(address asset) external view returns (int256);
+
+    /**
      * @notice The current dUSD debt of this strategy
      */
     function currentDebt() external view returns (uint256);
 
     /**
-     * @notice The latest checkpoint of total equity (latestAssetsValue - latestInternalDebt)
-     *  Where:
-     *     assets = Latest checkpoint of value of assets in this strategy
-     *     debt   = The latest checkpoint of the internal Temple debt this strategy has accrued
-     *              The same as `dUSD.balanceOf(strategy)`
-     *     equity = assets - debt. This could be negative.
+     * @notice The Strategy Executor may set manual updates to asset balances
+     * if they cannot be reported automatically - eg a staked position with no receipt token.
+     * 
+     * @dev It is up to the Strategy implementation to add these deltas to the `latestAssetBalances()`
+     * and `checkpointAssetBalances()` functions.
      */
-    function latestEquityCheckpoint() external view returns (int256 equity, uint256 assets, uint256 debt);
+    function setManualAssetBalanceDeltas(AssetBalanceDelta[] calldata assetDeltas) external;
 
     /**
-     * @notice Calculate the latest assets and liabilities and checkpoint
-     * eg For DAI's Savings Rate contract, we need to call a writable function to get the latest total.
+     * @notice Get the set of manual asset balance deltas, set by the Strategy Executor.
      */
-    function checkpointEquity() external returns (int256 equity, uint256 assets, uint256 debt);
+    function getManualAssetBalanceDeltas() external view returns (AssetBalanceDelta[] memory assetDeltas);
+
+    /**
+     * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
+     * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
+     * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
+     *
+     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
+     */
+    function latestAssetBalances() external view returns (AssetBalance[] memory assetBalances, uint256 debt);
+
+    /**
+     * @notice Update each asset balance this stratgy holds, prior to returning those balances 
+     * and the current debt.
+     * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
+     * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
+     *
+     * @dev If the strategy's balances are always 'current', and no checkpoint is required
+     * this just returns `latestAssetBalances()`.
+     */
+    function checkpointAssetBalances() external returns (AssetBalance[] memory assetBalances, uint256 debt);
 
     /**
      * @notice The strategy executor can shutdown this strategy, only after Governance has 
@@ -96,4 +134,9 @@ interface ITempleStrategy {
      * to apply the shutdown.
      */
     function automatedShutdown() external;
+
+    /**
+     * @notice Governance can recover any token from the strategy.
+     */
+    function recoverToken(address token, address to, uint256 amount) external;
 }

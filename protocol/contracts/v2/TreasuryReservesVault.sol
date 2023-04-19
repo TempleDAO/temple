@@ -105,15 +105,14 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
         string memory name,
         string memory version,
         Strategy memory strategyData,
-        int256 estimateTotalEquity,
-        uint256 estimateAssetsValue,
+        ITempleStrategy.AssetBalance[] memory assetBalances,
         uint256 debtBalance
     ) {
         ITempleStrategy _strategy = ITempleStrategy(strategyAddr);
         strategyData = strategies[strategyAddr];
         name = _strategy.strategyName();
         version = _strategy.strategyVersion();
-        (estimateTotalEquity, estimateAssetsValue, debtBalance) = _strategy.latestEquityCheckpoint();
+        (assetBalances, debtBalance) = _strategy.latestAssetBalances();
     }
 
     /**
@@ -121,8 +120,12 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
      * any available to withdraw from the baseStrategy
      */
     function totalAvailableStables() public override view returns (uint256) {
-        (, uint256 baseStrategyStables, ) = baseStrategy.latestEquityCheckpoint();
-        return stableToken.balanceOf(address(this)) + baseStrategyStables;
+        (ITempleStrategy.AssetBalance[] memory assetBalances, ) = baseStrategy.latestAssetBalances();
+
+        // The base strategy should only have one Asset balance, which should be the stable.
+        if (assetBalances.length != 1 || assetBalances[0].asset != address(stableToken)) revert CommonEventsAndErrors.InvalidParam();
+
+        return stableToken.balanceOf(address(this)) + assetBalances[0].balance;
     }
 
     /**
@@ -211,10 +214,10 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
      * @notice Checkpoint each of the strategies such that they calculate the latest value of their assets and debt.
      * @dev Each strategy should do this itself - this is a helper in case we need to schedule it centrally - eg daily/weekly for all.
      */
-    function checkpointEquity(address[] memory strategyAddrs) external override {
+    function checkpointAssetBalances(address[] memory strategyAddrs) external override {
         uint256 length = strategyAddrs.length;
         for (uint256 i; i < length; ++i) {
-            ITempleStrategy(strategyAddrs[i]).checkpointEquity();
+            ITempleStrategy(strategyAddrs[i]).checkpointAssetBalances();
         }
     }
 
