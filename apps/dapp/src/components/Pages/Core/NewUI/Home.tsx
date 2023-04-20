@@ -9,7 +9,6 @@ import buildings from './assets/Buildings.svg';
 import hero from './assets/Hero.svg';
 import socialDiscordIcon from 'assets/images/social-discord.png';
 import socialDocsIcon from 'assets/images/social-docs.png';
-import socialCodexIcon from 'assets/images/social-codex.png';
 import socialMediumIcon from 'assets/images/social-medium.png';
 import socialTelegramIcon from 'assets/images/social-telegram.png';
 import socialTwitterIcon from 'assets/images/social-twitter.png';
@@ -96,11 +95,6 @@ const FooterContent = [
         text: 'Medium',
         image: socialMediumIcon,
         link: 'https://templedao.medium.com/',
-      },
-      {
-        text: 'Codex',
-        image: socialCodexIcon,
-        link: 'https://templecodex.link',
       },
     ],
   },
