@@ -97,11 +97,6 @@ const FooterContent = [
         image: socialMediumIcon,
         link: 'https://templedao.medium.com/',
       },
-      {
-        text: 'Codex',
-        image: socialCodexIcon,
-        link: 'https://templecodex.link',
-      },
     ],
   },
 ];
@@ -131,7 +126,6 @@ const Home = () => {
 
   const [isClaimFromVaultsLegacyModalOpen, setIsClaimFromVaultsLegacyModalOpen] = useState(false);
   const [isUnstakeOgtLegacyModalOpen, setIsUnstakeOgtLegacyModalOpen] = useState(false);
-  const [isDefendModalOpen, setIsDefendModalOpen] = useState(true);
 
   const legacyClaimClickHandler = () => {
     if (!address) {
@@ -193,7 +187,6 @@ const Home = () => {
     <>
       <LegacyLinkHeader>
         <LegacyText>Legacy features</LegacyText>
-        <LegacyLink onClick={() => setIsDefendModalOpen(true)}>Temple Defend</LegacyLink>
         <LegacyLink onClick={legacyClaimClickHandler}>Claim from vaults</LegacyLink>
         <LegacyLink onClick={legacyUnstakeOgtClickHandler}>Unstake OGT</LegacyLink>
       </LegacyLinkHeader>
@@ -215,7 +208,7 @@ const Home = () => {
               <>
                 <NewTempleText>The New Temple</NewTempleText>
                 <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
-                <TradeButton onClick={() => setIsDefendModalOpen(true)}>Trade</TradeButton>
+                <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
                 <LearnMoreLink onClick={legacyClaimClickHandler}>Claim from Vaults</LearnMoreLink>
               </>
             )}
@@ -303,7 +296,6 @@ const Home = () => {
         onClose={() => setIsClaimFromVaultsLegacyModalOpen(false)}
       />
       <UnstakeOgtModal isOpen={isUnstakeOgtLegacyModalOpen} onClose={() => setIsUnstakeOgtLegacyModalOpen(false)} />
-      <DefendModal isOpen={isDefendModalOpen} onClose={() => setIsDefendModalOpen(false)} />
     </>
   );
 };
