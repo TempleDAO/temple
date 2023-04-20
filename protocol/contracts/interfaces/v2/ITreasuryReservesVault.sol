@@ -27,7 +27,8 @@ interface ITreasuryReservesVault {
     event UnderperformingEquityThresholdUpdated(address indexed strategy, uint256 oldThreshold, uint256 newThreshold);
     event StrategyIsShuttingDownSet(address indexed strategy, bool isShuttingDown);
     event StrategyShutdown(address indexed strategy, uint256 stablesRecovered, uint256 debtBurned, int256 realisedGainOrLoss);
-
+    event BaseStrategySet(address indexed baseStrategy);
+    
     event Borrow(address indexed strategy, uint256 stablesAmount);
     event Repay(address indexed strategy, uint256 stablesAmount);
 
@@ -104,6 +105,11 @@ interface ITreasuryReservesVault {
      * @notice The base strategy used to keep transient vault deposits
      */
     function baseStrategy() external view returns (ITempleBaseStrategy);
+
+    /**
+     * @notice Governor can set the base strategy
+     */
+    function setBaseStrategy(address _baseStrategy) external;
 
     /**
      * API version to help with future integrations/migrations

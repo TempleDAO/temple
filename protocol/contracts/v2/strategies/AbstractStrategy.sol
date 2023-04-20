@@ -87,10 +87,10 @@ abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecu
 
         emit TreasuryReservesVaultSet(_trv);
         treasuryReservesVault = ITreasuryReservesVault(_trv);
+
         string memory trvVersion = treasuryReservesVault.apiVersion();
-        if (keccak256(abi.encodePacked(trvVersion)) == keccak256(abi.encodePacked(API_VERSION))) {
-            revert InvalidVersion(API_VERSION, trvVersion);
-        }
+        if (keccak256(abi.encodePacked(trvVersion)) != keccak256(abi.encodePacked(apiVersion())))
+            revert InvalidVersion(apiVersion(), trvVersion);
     }
 
     /**
@@ -103,7 +103,7 @@ abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecu
     /**
      * @notice Track the deployed version of this contract. 
      */
-    function apiVersion() external pure override returns (string memory) {
+    function apiVersion() public view virtual override returns (string memory) {
         return API_VERSION;
     }
 

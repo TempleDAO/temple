@@ -89,6 +89,20 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
         _removeEmergencyOperator(_account);
     }
 
+    function setBaseStrategy(address _baseStrategy) external override onlyGov {
+        baseStrategy = ITempleBaseStrategy(_baseStrategy);
+
+        // Ensure the new base strategy has it's TRV set as this contract.
+        if (address(baseStrategy.treasuryReservesVault()) != address(this)) 
+            revert CommonEventsAndErrors.InvalidAddress(address(baseStrategy.treasuryReservesVault()));
+
+        // Also check the API version matches.
+        if (keccak256(abi.encodePacked(baseStrategy.apiVersion())) != keccak256(abi.encodePacked(API_VERSION)))
+            revert CommonEventsAndErrors.InvalidAddress(address(baseStrategy.treasuryReservesVault()));
+
+        emit BaseStrategySet(_baseStrategy);
+    }
+
     /**
      * @notice Track the deployed version of this contract. 
      */
@@ -147,8 +161,13 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
 
     function _availableToBorrow(address strategy, uint256 debtCeiling) internal view returns (uint256) {
         uint256 _currentDebt = currentStrategyDebt(strategy);
+
+        // The debt ceiling minus the current debt (floor at 0)
         uint256 _strategyMax = debtCeiling > _currentDebt ? debtCeiling - _currentDebt : 0;
+
         uint256 _totalAvailableStables = totalAvailableStables();
+
+        // The max of the max amount the strategy can borrow and the available stables in the TRV.
         return _totalAvailableStables < _strategyMax ? _totalAvailableStables : _strategyMax;
     }
 

@@ -9,7 +9,7 @@ import { CompoundedInterest } from "contracts/interestRate/CompoundedInterest.so
 import { console2 } from "forge-std/Test.sol";
 
 contract TempleDebtTokenTestBase is TempleTest {
-    bool public constant LOG = true;
+    bool public constant LOG = false;
 
     TempleDebtToken public dUSD;
     address public bob = makeAddr("bob");
@@ -251,6 +251,30 @@ contract TempleDebtTokenTestAdmin is TempleDebtTokenTestBase {
         dUSD.recoverToken(address(token), alice, amount);
         assertEq(token.balanceOf(alice), amount);
         assertEq(token.balanceOf(address(dUSD)), 0);
+    }
+
+    function test_access_proposeNewGov() public {
+        expectOnlyGov();
+        dUSD.proposeNewGov(alice);
+    }
+
+    function test_access_acceptGov() public {
+        vm.prank(gov);
+        dUSD.proposeNewGov(alice);
+
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, unauthorizedUser));
+        vm.prank(unauthorizedUser);
+        dUSD.acceptGov();
+    }
+
+    function test_changeGov() public {
+        assertEq(dUSD.gov(), gov);
+        vm.prank(gov);
+        dUSD.proposeNewGov(alice);
+        assertEq(dUSD.gov(), gov);
+        vm.prank(alice);
+        dUSD.acceptGov();
+        assertEq(dUSD.gov(), alice);
     }
 }
 
