@@ -22,7 +22,7 @@ const COMMON_CONFIG: CommonConfig = {
 
 const CONFIG = {
     stableSellAmount: 15_000,
-    buyThresholdPrice: 9700, // $0.97
+    buyThresholdPrice: 10100, // $1.01
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     frax: '0x853d955acef822db058eb8505911ed77f175b99e',
     ammRouter: '0x98257c876ace5009e7b97843f8c71b3ae795c71e',
