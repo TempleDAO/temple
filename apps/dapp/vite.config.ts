@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import legacy from '@vitejs/plugin-legacy';
 import path from 'path';
-import { visualizer } from 'rollup-plugin-visualizer';
 import { dependencies } from './package.json';
 
 const VENDOR_CHUNKS = new Set(['react', 'react-router-dom', 'react-dom', 'styled-components', 'polished']);
@@ -28,10 +27,6 @@ const plugins = [
   }),
   legacy(),
 ];
-
-if (process.env.BUILD_STATS) {
-  plugins.push(visualizer());
-}
 
 const VITE_ENV = process.env.VITE_ENV;
 const shouldBuildSourceMap = VITE_ENV === 'local' || VITE_ENV === 'preview';
