@@ -314,11 +314,11 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
 
         assertEq(strategy.availableToBorrow(), 0);
 
-        vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.DebtCeilingBreached.selector, 0, 0.02e18));
-        strategy.borrow(0.02e18);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
+        strategy.borrowMax();
     }  
 
-    function test_repay() public {       
+    function test_repay() public {
         uint256 borrowAmount = 1e18;
         uint256 repayAmount = 0.25e18;
         vm.startPrank(executor);

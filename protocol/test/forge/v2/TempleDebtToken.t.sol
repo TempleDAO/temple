@@ -387,6 +387,34 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         checkDebtor(alice, 0, 0, 0, 0, block.timestamp, 0);
     }
 
+    function test_burn_alice_dust() public {
+        vm.startPrank(operator);
+        uint256 amount = 100e18;
+
+        {
+            dUSD.mint(alice, amount);
+
+            vm.expectEmit(true, true, true, true);
+            emit Transfer(alice, address(0), amount);
+            dUSD.burn(alice, amount-1);
+
+            checkBaseInterest(defaultBaseInterest, 0, 0, block.timestamp, 0, 0, 0);
+            checkDebtor(alice, 0, 0, 0, 0, block.timestamp, 0);
+        }
+
+        {
+            dUSD.mint(alice, amount);
+
+            vm.expectEmit(true, true, true, true);
+            emit Transfer(alice, address(0), amount-2);
+            dUSD.burn(alice, amount-2);
+
+            checkBaseInterest(defaultBaseInterest, 2, 2, block.timestamp, 2, 2, 0);
+            checkDebtor(alice, 0, 2, 2, 0, block.timestamp, 2);
+        }
+
+    }
+
     function test_burn_tooMuch() public {
         vm.startPrank(operator);
         uint256 amount = 100e18;

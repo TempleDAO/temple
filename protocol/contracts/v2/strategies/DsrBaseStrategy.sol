@@ -37,7 +37,6 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
 
     event DaiDeposited(uint256 amount);
     event DaiWithdrawn(uint256 amount);
-    error NotEnoughShares(uint256 daiAmountRequested, uint256 sharesRequested, uint256 sharesAvailable);
 
     constructor(
         address _initialGov,
@@ -82,7 +81,11 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         z = ((x * RAY) + (y - 1)) / y;
     }
     
-    function _latestDaiBalance() internal view returns (uint256) {
+    /**
+     * @notice The latest balance available in DSR. 
+     * This may be stale if the DSR rate hasn't been updated for a while.
+     */
+    function latestDsrBalance() public view returns (uint256) {
         // pot.chi() == DAI/share (accurate to the last checkpoint)
         // pot.pie() == number of shares this contract holds.
         return _rmul(pot.chi(), pot.pie(address(this)));
@@ -110,7 +113,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         assetBalances = new AssetBalance[](1);
         assetBalances[0] = AssetBalance({
             asset: address(stableToken), 
-            balance: addManualAssetBalanceDelta(_latestDaiBalance(), address(stableToken))
+            balance: addManualAssetBalanceDelta(latestDsrBalance(), address(stableToken))
         });
         debt = currentDebt();
     }
@@ -131,22 +134,6 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     }
 
     /**
-     * @notice Periodically, the Base Strategy will pull all DAI reserves
-     * from the TRV contract and apply into DSR in order to generate base yield 
-     * (the basis of the dUSD base in interest rate.)
-     *
-     * These idle DAI will only be drawn from a balance of tokens in the TRV itself.
-     * 
-     * This will be likely be called from a bot. It should only do this if there's a 
-     * minimum threshold to pull and deposit given gas costs to deposit into DSR.
-     */
-    function borrowAndDepositMax() external override onlyStrategyExecutors returns (uint256 borrowedAmount) {
-        // Borrow the DAI. This will also mint `dUSD` debt.
-        borrowedAmount = treasuryReservesVault.borrowMax();
-        _dsrDeposit(borrowedAmount);
-    }
-
-    /**
      * @notice Periodically, the Base Strategy will pull a fixed amount of idle DAI reserves
      * from the TRV contract and apply into DSR in order to generate base yield 
      * (the basis of the dUSD base in interest rate.)
@@ -162,6 +149,22 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         _dsrDeposit(amount);
     }
 
+    /**
+     * @notice Periodically, the Base Strategy will pull all DAI reserves
+     * from the TRV contract and apply into DSR in order to generate base yield 
+     * (the basis of the dUSD base in interest rate.)
+     *
+     * These idle DAI will only be drawn from a balance of tokens in the TRV itself.
+     * 
+     * This will be likely be called from a bot. It should only do this if there's a 
+     * minimum threshold to pull and deposit given gas costs to deposit into DSR.
+     */
+    function borrowAndDepositMax() external override onlyStrategyExecutors returns (uint256 borrowedAmount) {
+        // Borrow the DAI. This will also mint `dUSD` debt.
+        borrowedAmount = treasuryReservesVault.borrowMax();
+        _dsrDeposit(borrowedAmount);
+    }
+
     function _dsrDeposit(uint256 amount) internal {
         // Ensure the latest DSR checkpoint has occurred so we join with the
         // correct shares. Use `_rdiv()` on deposits.
@@ -170,6 +173,32 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         emit DaiDeposited(amount);
         daiJoin.join(address(this), amount);
         pot.join(shares);
+    }
+
+    /**
+     * @notice The strategy executor may withdraw DAI from DSR and pay back to Treasury Reserves Vault
+     */
+    function withdrawAndRepay(uint256 withdrawalAmount) external onlyStrategyExecutors {
+        if (withdrawalAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
+
+        (uint256 daiAvailable, uint256 chi, ) = _checkpointDaiBalance();
+        if (withdrawalAmount > daiAvailable) revert CommonEventsAndErrors.InsufficientBalance(address(stableToken), withdrawalAmount, daiAvailable);
+        
+        //  Use `_rdivup()` on withdrawals.
+        uint256 sharesAmount = _rdivup(withdrawalAmount, chi);
+        _dsrWithdrawal(sharesAmount, withdrawalAmount);
+        treasuryReservesVault.repay(withdrawalAmount);
+    }
+
+    /**
+     * @notice Withdraw all possible DAI from the DSR, and send to the Treasury Reserves Vault
+     */
+    function withdrawAndRepayAll() external onlyStrategyExecutors returns (uint256) {
+        (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
+        _dsrWithdrawal(sharesAvailable, daiAvailable);
+
+        treasuryReservesVault.repay(daiAvailable);
+        return daiAvailable;
     }
 
     /**
@@ -202,33 +231,6 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         daiJoin.exit(address(this), daiAmount);
         emit DaiWithdrawn(daiAmount);
     }
-
-    /**
-     * @notice The strategy executor may withdraw DAI from DSR and pay back to Treasury Reserves Vault
-     */
-    function withdrawAndRepay(uint256 withdrawalAmount) external onlyStrategyExecutors {
-        if (withdrawalAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
-
-        (uint256 daiAvailable, uint256 chi, ) = _checkpointDaiBalance();
-        if (withdrawalAmount > daiAvailable) revert CommonEventsAndErrors.InsufficientBalance(address(stableToken), withdrawalAmount, daiAvailable);
-        
-        //  Use `_rdivup()` on withdrawals.
-        uint256 sharesAmount = _rdivup(withdrawalAmount, chi);
-        _dsrWithdrawal(sharesAmount, withdrawalAmount);
-        treasuryReservesVault.repay(withdrawalAmount);
-    }
-
-    /**
-     * @notice Withdraw all possible DAI from the DSR, and send to the Treasury Reserves Vault
-     */
-    function withdrawAndRepayAll() external onlyStrategyExecutors returns (uint256) {
-        (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
-        _dsrWithdrawal(sharesAvailable, daiAvailable);
-
-        treasuryReservesVault.repay(daiAvailable);
-        return daiAvailable;
-    }
-
     /**
      * @notice The strategy executor can shutdown this strategy, only after Governance has 
      * marked the strategy as `isShuttingDown` in the TRV.

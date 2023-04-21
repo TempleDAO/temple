@@ -215,7 +215,13 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
             // Check the user isn't paying off more debt than they have
             uint256 _debtorBalance = _balanceOf(debtor, _totalPrincipalAndBase);
             if (_burnAmount > _debtorBalance) revert BurnExceedsBalance(_balanceOf(debtor, _totalPrincipalAndBase), _burnAmount);
+
+            // If this would leave a dust amount (eg DAI DSR rounding), just burn it all.
+            if (_debtorBalance - _burnAmount < 2) {
+                _burnAmount = _debtorBalance;
+            }
         }
+
         emit Transfer(_debtor, address(0), _burnAmount);
         _burn(debtor, _burnAmount, _totalPrincipalAndBase);
     }
