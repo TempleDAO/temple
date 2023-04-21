@@ -84,11 +84,16 @@ export const Input = ({
     if (crypto.kind === 'select') {
       return (
         <>
-          <div>
-            <Ticker onClick={() => setIsOpen(true)} style={{ cursor: 'pointer' }}>
+          <OptionContainer onClick={() => setIsOpen(true)}>
+            <Ticker>
               {crypto.selected}
             </Ticker>
-          </div>
+              <ChevronDownImg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </ChevronDownImg>
+          </OptionContainer>
           <Popover isOpen={isOpen} onClose={() => setIsOpen(false)} closeOnClickOutside={true} showCloseButton={false}>
             <SwapOptions>
               {crypto.cryptoOptions.map((option) => (
@@ -246,6 +251,19 @@ const Ticker = styled.p`
   margin: 0;
   color: ${theme.palette.brandLight};
   font-weight: bold;
+`;
+
+const OptionContainer = styled.div`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+`;
+
+const ChevronDownImg = styled.div`
+  margin-left: 0.5rem;
+  margin-top: 0.6rem;
+  width: 1rem;
+  color: ${theme.palette.brand};
 `;
 
 const SwapOptions = styled.div`
