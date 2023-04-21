@@ -134,12 +134,20 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
      * any available to withdraw from the baseStrategy
      */
     function totalAvailableStables() public override view returns (uint256) {
-        (ITempleStrategy.AssetBalance[] memory assetBalances, ) = baseStrategy.latestAssetBalances();
+        uint256 baseStrategyAvailable;
+        ITempleBaseStrategy _baseStrategy = baseStrategy;
 
-        // The base strategy should only have one Asset balance, which should be the stable.
-        if (assetBalances.length != 1 || assetBalances[0].asset != address(stableToken)) revert CommonEventsAndErrors.InvalidParam();
+        // Pull the available from the baseStrategy if it's set.
+        if (address(_baseStrategy) != address(0)) {
+            (ITempleStrategy.AssetBalance[] memory assetBalances, ) = _baseStrategy.latestAssetBalances();
 
-        return stableToken.balanceOf(address(this)) + assetBalances[0].balance;
+            // The base strategy should only have one Asset balance, which should be the stable.
+            if (assetBalances.length != 1 || assetBalances[0].asset != address(stableToken)) revert CommonEventsAndErrors.InvalidParam();
+
+            baseStrategyAvailable = assetBalances[0].balance;
+        }
+
+        return stableToken.balanceOf(address(this)) + baseStrategyAvailable;
     }
 
     /**
@@ -196,11 +204,10 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
     /**
      * Governance can add a new strategy
      */
-    function addNewStrategy(address strategy, uint256 debtCeiling, uint256 underperformingEquityThreshold) external override onlyGov {
+    function addNewStrategy(address strategy, uint256 debtCeiling, int256 underperformingEquityThreshold) external override onlyGov {
         Strategy storage strategyData = strategies[strategy];
         if (strategyData.isEnabled) revert AlreadyEnabled();
         if (debtCeiling == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        if (underperformingEquityThreshold == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         strategyData.isEnabled = true;
         strategyData.debtCeiling = debtCeiling;
         strategyData.underperformingEquityThreshold = underperformingEquityThreshold;
@@ -221,7 +228,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
     /**
      * @notice Governance can update the underperforming equity threshold.
      */
-    function setStrategyUnderperformingThreshold(address strategy, uint256 underperformingEquityThreshold) external override onlyGov {
+    function setStrategyUnderperformingThreshold(address strategy, int256 underperformingEquityThreshold) external override onlyGov {
         Strategy storage strategyData = strategies[strategy];
         if (!strategyData.isEnabled) revert NotEnabled();
         if (underperformingEquityThreshold == 0) revert CommonEventsAndErrors.ExpectedNonZero();
@@ -292,26 +299,33 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
     }
     
     function _withdrawAndSendStables(address to, uint256 amount) internal {
-        // First use any stables balance (not yet deposited into the baseStrategy)
-        uint256 balance = stableToken.balanceOf(address(this));
-        uint256 transferAmount = balance > amount ? amount : balance;
-        uint256 withdrawAmount = amount - transferAmount;
+        // If a baseStrategy is defined, then pull as many stables directly from this
+        // contract (not yet deposited into the baseStrategy)
+        // and then pull the rest from baseStrategyDeposits.
+        ITempleBaseStrategy _baseStrategy = baseStrategy;
+        if (address(_baseStrategy) != address(0)) {
+            uint256 withdrawFromBaseStrategyAmount;
+            {
+                uint256 _balance = stableToken.balanceOf(address(this));
+                uint256 _directTransferAmount = _balance > amount ? amount : _balance;
+                withdrawFromBaseStrategyAmount = amount - _directTransferAmount;
+            }
 
-        // Pull any remainder required from the base strategy.
-        // This will ensure we get at least the min threshold amount.
-        if (withdrawAmount != 0) {
-            // So there aren't many small withdrawals, ensure we withdraw at least
-            // some minimum threshold amount each time.
-            uint256 _threshold = baseStrategyWithdrawalThreshold;
-            uint256 stablesToWithdraw = withdrawAmount < _threshold ? _threshold : withdrawAmount;
-            ITempleBaseStrategy _baseStrategy = baseStrategy;
+            // Pull any remainder required from the base strategy.
+            // This will ensure we get at least the min threshold amount.
+            if (withdrawFromBaseStrategyAmount != 0) {
+                // So there aren't many small withdrawals, ensure we withdraw at least
+                // some minimum threshold amount each time.
+                uint256 _threshold = baseStrategyWithdrawalThreshold;
+                uint256 _stablesToWithdraw = withdrawFromBaseStrategyAmount < _threshold ? _threshold : withdrawFromBaseStrategyAmount;
 
-            // The amount actually withdrawn may be less than requested
-            // as it's capped to any actual remaining balance.
-            uint256 withdrawnAmount = _baseStrategy.trvWithdraw(stablesToWithdraw);
+                // The amount actually withdrawn may be less than requested
+                // as it's capped to any actual remaining balance.
+                uint256 _withdrawnAmount = _baseStrategy.trvWithdraw(_stablesToWithdraw);
 
-            // Burn that amount of dUSD from the base strategy.
-            internalDebtToken.burn(address(_baseStrategy), withdrawnAmount);
+                // Burn that amount of dUSD from the base strategy.
+                internalDebtToken.burn(address(_baseStrategy), _withdrawnAmount);
+            }
         }
 
         // Finally send the stables.
@@ -336,6 +350,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
     }
 
     function _repay(address _strategyAddr, uint256 _repayAmount) internal {
+        if (_repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         if (globalRepaysPaused) revert RepaysPaused();
 
         Strategy storage strategyData = strategies[_strategyAddr];

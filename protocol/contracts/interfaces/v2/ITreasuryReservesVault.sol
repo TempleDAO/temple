@@ -22,13 +22,13 @@ import { ITempleStrategy, ITempleBaseStrategy } from "contracts/interfaces/v2/st
 interface ITreasuryReservesVault {
     event GlobalPausedSet(bool borrow, bool repay);
     event StrategyPausedSet(address indexed strategy, bool borrow, bool repay);
-    event NewStrategyAdded(address indexed strategy, uint256 debtCeiling, uint256 underperformingEquityThreshold);
+    event NewStrategyAdded(address indexed strategy, uint256 debtCeiling, int256 underperformingEquityThreshold);
     event DebtCeilingUpdated(address indexed strategy, uint256 oldDebtCeiling, uint256 newDebtCeiling);
-    event UnderperformingEquityThresholdUpdated(address indexed strategy, uint256 oldThreshold, uint256 newThreshold);
+    event UnderperformingEquityThresholdUpdated(address indexed strategy, int256 oldThreshold, int256 newThreshold);
     event StrategyIsShuttingDownSet(address indexed strategy, bool isShuttingDown);
     event StrategyShutdown(address indexed strategy, uint256 stablesRecovered, uint256 debtBurned, int256 realisedGainOrLoss);
     event BaseStrategySet(address indexed baseStrategy);
-    
+
     event Borrow(address indexed strategy, uint256 stablesAmount);
     event Repay(address indexed strategy, uint256 stablesAmount);
 
@@ -76,7 +76,7 @@ interface ITreasuryReservesVault {
          * @notice Each strategy will have a different threshold of expected performance.
          * This underperforming threshold is used for reporting to determine if the strategy is underperforming.
          */
-        uint256 underperformingEquityThreshold;
+        int256 underperformingEquityThreshold;
     }
 
     /**
@@ -98,7 +98,7 @@ interface ITreasuryReservesVault {
         bool repaysPaused,
         bool isShuttingDown,
         uint256 debtCeiling,
-        uint256 underperformingEquityThreshold
+        int256 underperformingEquityThreshold
     );
 
     /**
@@ -178,7 +178,7 @@ interface ITreasuryReservesVault {
     /**
      * Governance can add a new strategy
      */
-    function addNewStrategy(address strategy, uint256 debtCeiling, uint256 underperformingEquityThreshold) external;
+    function addNewStrategy(address strategy, uint256 debtCeiling, int256 underperformingEquityThreshold) external;
 
     /**
      * @notice Governance can update the debt ceiling for a given strategy
@@ -188,7 +188,7 @@ interface ITreasuryReservesVault {
     /**
      * @notice Governance can update the underperforming equity threshold.
      */
-    function setStrategyUnderperformingThreshold(address strategy, uint256 underperformingEquityThreshold) external;
+    function setStrategyUnderperformingThreshold(address strategy, int256 underperformingEquityThreshold) external;
 
     /**
      * @notice Checkpoint each of the strategies such that they calculate the latest value of their assets and debt.

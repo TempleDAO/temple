@@ -93,6 +93,14 @@ interface ITempleStrategy {
     function currentDebt() external view returns (uint256);
 
     /**
+     * @notice How much this strategy is free to borrow from the Treasury Reserves Vault
+     * @dev This is bound by:
+     *   1/ How much stables is globally available (in the TRV + in the TRV base strategy)
+     *   2/ The amount this individual strategy is whitelisted to borrow.
+     */
+    function availableToBorrow() external view returns (uint256);
+
+    /**
      * @notice The Strategy Executor may set manual updates to asset balances
      * if they cannot be reported automatically - eg a staked position with no receipt token.
      * 

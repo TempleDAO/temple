@@ -34,6 +34,10 @@ contract MockStrategy is AbstractStrategy {
         return VERSION;
     }
 
+    function superApiVersion() public view returns (string memory) {
+        return super.apiVersion();
+    }
+
     function apiVersion() public view override returns (string memory) {
         return API_VERSION_X;
     }
@@ -62,8 +66,8 @@ contract MockStrategy is AbstractStrategy {
         debt = currentDebt();
     }
 
-    function automatedShutdown() external {
-
+    function automatedShutdown() external pure {
+        revert Unimplemented();
     }
 }
 
@@ -110,6 +114,7 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
     function test_initalization() public {
         assertEq(strategy.gov(), gov);
         assertEq(strategy.apiVersion(), "1.0.0");
+        assertEq(strategy.superApiVersion(), "1.0.0");
         assertEq(strategy.strategyName(), "MockStrategy");
         assertEq(strategy.strategyVersion(), "X.0.0");
         assertEq(address(strategy.treasuryReservesVault()), address(trv));
@@ -117,6 +122,8 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
         assertEq(address(strategy.internalDebtToken()), address(dUSD));
         assertEq(strategy.manualAssetBalanceDeltas(address(dai)), 0);
         assertEq(strategy.currentDebt(), 0);
+        assertEq(strategy.availableToBorrow(), 0);
+        assertEq(dai.allowance(address(strategy), address(trv)), type(uint256).max);
     }
 
     function test_recoverToken() public {
@@ -165,10 +172,19 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
         strategy.setTreasuryReservesVault(address(trv2));
         assertEq(address(strategy.treasuryReservesVault()), address(trv2));
 
+        assertEq(dai.allowance(address(strategy), address(trv)), 0);
+        assertEq(dai.allowance(address(strategy), address(trv2)), type(uint256).max);
+
         strategy.setApiVersion("XXX");
         vm.expectRevert(abi.encodeWithSelector(ITempleStrategy.InvalidVersion.selector, "XXX", "1.0.0"));
         strategy.setTreasuryReservesVault(address(trv2));
     }
+
+    function test_automatedShutdown() public {
+        vm.expectRevert(abi.encodeWithSelector(ITempleStrategy.Unimplemented.selector));
+        strategy.automatedShutdown();
+    }
+
 }
 
 contract AbstractStrategyTestAccess is AbstractStrategyTestBase {
@@ -210,6 +226,18 @@ contract AbstractStrategyTestBalances is AbstractStrategyTestBase {
 
     function setUp() public {
         _setUp();
+    }
+
+    function test_availableToBorrow() public {
+        vm.startPrank(gov);
+        trv.addNewStrategy(address(strategy), 100e18, 0);
+        assertEq(strategy.availableToBorrow(), 0);
+
+        deal(address(dai), address(trv), 1000e18, true);
+        assertEq(strategy.availableToBorrow(), 100e18);
+
+        dUSD.mint(address(strategy), 25e18);
+        assertEq(strategy.availableToBorrow(), 75e18);
     }
 
     function test_currentDebt() public {

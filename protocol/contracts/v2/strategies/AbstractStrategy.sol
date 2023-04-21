@@ -61,6 +61,9 @@ abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecu
         treasuryReservesVault = ITreasuryReservesVault(_treasuryReservesVault);
         stableToken = IERC20(_stableToken);
         internalDebtToken = ITempleDebtToken(_internalDebtToken);
+
+        // Give the TRV rights to pull back the stables at any time.
+        stableToken.safeApprove(_treasuryReservesVault, type(uint256).max);
     }
 
     /**
@@ -85,6 +88,11 @@ abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecu
     function setTreasuryReservesVault(address _trv) external override onlyGov {
         if (_trv == address(0)) revert CommonEventsAndErrors.InvalidAddress(_trv);
 
+        // Remove stable approvals from the old TRV, and give to the new TRV.
+        stableToken.safeApprove(address(treasuryReservesVault), 0);
+        stableToken.safeApprove(_trv, 0);
+        stableToken.safeApprove(_trv, type(uint256).max);
+
         emit TreasuryReservesVaultSet(_trv);
         treasuryReservesVault = ITreasuryReservesVault(_trv);
 
@@ -98,6 +106,16 @@ abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecu
      */
     function currentDebt() public override view returns (uint256) {
         return internalDebtToken.balanceOf(address(this));
+    }
+
+    /**
+     * @notice How much a given strategy is free to borrow
+     * @dev This is bound by:
+     *   1/ How much stables is globally available (in the TRV + in the TRV base strategy)
+     *   2/ The amount this individual strategy is whitelisted to borrow.
+     */
+    function availableToBorrow() external override view returns (uint256) {
+        return treasuryReservesVault.availableToBorrow(address(this));
     }
 
     /**
