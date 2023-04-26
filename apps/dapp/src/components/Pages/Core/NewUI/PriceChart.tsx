@@ -1,13 +1,11 @@
 import type { ChartSupportedTimeInterval } from 'utils/time-intervals';
-import type { PriceMetricsRamos } from 'hooks/use-refreshable-price-metrics-ramos';
 import type { AxisDomain } from 'recharts/types/util/types';
-
 import { useState } from 'react';
 import { useTheme } from 'styled-components';
 import { format } from 'date-fns';
 import { LineChart, IntervalToggler } from 'components/Charts';
 import Loader from 'components/Loader/Loader';
-import useRefreshablePriceMetricsRamos from 'hooks/use-refreshable-price-metrics-ramos';
+import useRefreshableRamosMetrics, { RamosMetrics } from 'hooks/use-refreshable-ramos-metrics';
 import { formatNumberFixedDecimals } from 'utils/formatter';
 import { formatTimestampedChartData } from 'utils/charts';
 
@@ -36,17 +34,17 @@ const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin - dataMin * 0.01, d
 
 export const TemplePriceChart = () => {
   const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeInterval>('1M');
-  const { dailyPriceMetrics, hourlyPriceMetrics } = useRefreshablePriceMetricsRamos();
+  const { dailyMetrics, hourlyMetrics } = useRefreshableRamosMetrics();
 
   const theme = useTheme();
 
-  if (dailyPriceMetrics.length === 0 || hourlyPriceMetrics.length === 0) {
+  if (dailyMetrics.length === 0 || hourlyMetrics.length === 0) {
     return <Loader iconSize={48} />;
   }
 
-  const filteredHourlyMetrics = hourlyPriceMetrics.reverse().slice(0, 24);
+  const filteredHourlyMetrics = hourlyMetrics.reverse().slice(0, 24);
 
-  const formattedData = formatTimestampedChartData(dailyPriceMetrics, filteredHourlyMetrics, formatData);
+  const formattedData = formatTimestampedChartData(dailyMetrics, filteredHourlyMetrics, formatData);
 
   return (
     <>
@@ -75,7 +73,7 @@ export const TemplePriceChart = () => {
   );
 };
 
-function formatData(metric: PriceMetricsRamos) {
+function formatData(metric: RamosMetrics) {
   return {
     timestamp: metric.timestamp * 1000,
     templePriceUSD: metric.templePriceUSD,

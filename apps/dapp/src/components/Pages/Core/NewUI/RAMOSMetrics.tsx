@@ -1,15 +1,14 @@
 import type { FC } from 'react';
-import type { RAMOSMetric } from 'hooks/core/types';
 import type { ChartSupportedTimeInterval } from 'utils/time-intervals';
 
 import styled, { useTheme } from 'styled-components';
 import { format, differenceInDays } from 'date-fns';
 import { BiAxialAreaChart } from 'components/Charts';
 import Loader from 'components/Loader/Loader';
-import { useRAMOSMetrics } from 'hooks/core/subgraph';
 import { formatTimestampedChartData } from 'utils/charts';
 import { formatNumberAbbreviated, formatNumberWithCommas } from 'utils/formatter';
 import * as breakpoints from 'styles/breakpoints';
+import useRefreshableRamosMetrics, { RamosMetrics } from 'hooks/use-refreshable-ramos-metrics';
 
 type XAxisTickFormatter = (timestamp: number) => string;
 
@@ -36,33 +35,23 @@ const xTickFormatter = (value: number, _index: number) =>
 const CHART_INTERVAL: ChartSupportedTimeInterval = '1Y';
 
 export const RAMOSMetrics: FC = () => {
-  const { dailyMetrics, hourlyMetrics, isLoading, errors } = useRAMOSMetrics();
+  const { dailyMetrics, hourlyMetrics } = useRefreshableRamosMetrics();
   const theme = useTheme();
 
-  if (errors.some(Boolean)) {
-    console.error('Error fetching data', errors);
-    return null;
-  }
-
-  if (isLoading) {
+  if (dailyMetrics.length === 0 || hourlyMetrics.length === 0) {
     return <Loader iconSize={48} />;
   }
 
-  if (dailyMetrics === null || hourlyMetrics === null) {
-    console.error('Invalid subgraph response', dailyMetrics, hourlyMetrics);
-    return null;
+  function formatData(metric: RamosMetrics) {
+    return {
+      timestamp: metric.timestamp * 1000,
+      templeBurned: metric.templeBurned,
+      totalProfitUSD: metric.totalProfitUSD,
+    };
   }
 
-  if (dailyMetrics.data === undefined || hourlyMetrics.data === undefined) {
-    console.error('Empty subgraph response', dailyMetrics, hourlyMetrics);
-    return null;
-  }
-
-  const formattedData = formatTimestampedChartData(
-    dailyMetrics.data.metricDailySnapshots,
-    hourlyMetrics.data.metricHourlySnapshots,
-    formatDataPoint
-  );
+  const filteredHourlyMetrics = hourlyMetrics.reverse().slice(0, 24);
+  const formattedData = formatTimestampedChartData(dailyMetrics, filteredHourlyMetrics, formatData);
 
   if (formattedData === null) {
     console.error('Empty formatted dataset for RAMOS metrics');
@@ -115,14 +104,6 @@ export const RAMOSMetrics: FC = () => {
     </>
   );
 };
-
-function formatDataPoint(metric: RAMOSMetric) {
-  return {
-    timestamp: parseInt(metric.timestamp) * 1000,
-    templeBurned: parseFloat(metric.templeBurned),
-    totalProfitUSD: parseFloat(metric.totalProfitUSD),
-  };
-}
 
 const MetricsBadgeRow = styled.div`
   display: flex;
