@@ -35,16 +35,13 @@ const yDomain: AxisDomain = ([dataMin, dataMax]) => [dataMin - dataMin * 0.01, d
 export const TemplePriceChart = () => {
   const [selectedInterval, setSelectedInterval] = useState<ChartSupportedTimeInterval>('1M');
   const { dailyMetrics, hourlyMetrics } = useRefreshableRamosMetrics();
-
   const theme = useTheme();
 
   if (dailyMetrics.length === 0 || hourlyMetrics.length === 0) {
     return <Loader iconSize={48} />;
   }
 
-  const filteredHourlyMetrics = hourlyMetrics.reverse().slice(0, 24);
-
-  const formattedData = formatTimestampedChartData(dailyMetrics, filteredHourlyMetrics, formatData);
+  const formattedData = formatTimestampedChartData(dailyMetrics, hourlyMetrics, formatData);
 
   return (
     <>

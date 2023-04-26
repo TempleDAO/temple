@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import useInterval from 'use-interval';
+import env from 'constants/env';
 
 export type RamosMetrics = {
   templeBurned: number;
   templePriceUSD: number;
   templeVolume: number;
-  timestamp: number;
   timeframe: number;
+  timestamp: number;
   totalProfitUSD: number;
   tpiLowerBoundUSD: number;
   treasuryPriceIndexUSD: number;
@@ -14,11 +15,10 @@ export type RamosMetrics = {
 
 export default function useRefreshableRamosMetrics(intervalMinutes = 20) {
   const [hourlyMetrics, setHourlyMetrics] = useState<RamosMetrics[]>([]);
-
   const [dailyMetrics, setDailyMetrics] = useState<RamosMetrics[]>([]);
 
   async function refreshMetrics() {
-    const hourlyRequest = await fetch('https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos', {
+    const hourlyRequest = await fetch(env.subgraph.ramos, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -26,12 +26,12 @@ export default function useRefreshableRamosMetrics(intervalMinutes = 20) {
       },
       body: JSON.stringify({
         query: `{
-            metricHourlySnapshots(orderDirection: desc, orderBy: timeframe, limit: 24) {
+            metricHourlySnapshots(orderDirection: desc, orderBy: timeframe, first: 24) {
               templeBurned
               templePriceUSD
               templeVolume
-              timestamp
               timeframe
+              timestamp
               totalProfitUSD
               tpiLowerBoundUSD
               treasuryPriceIndexUSD
@@ -40,7 +40,7 @@ export default function useRefreshableRamosMetrics(intervalMinutes = 20) {
       }),
     });
 
-    const dailyRequest = await fetch('https://api.thegraph.com/subgraphs/name/templedao/templedao-ramos', {
+    const dailyRequest = await fetch(env.subgraph.ramos, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -48,12 +48,12 @@ export default function useRefreshableRamosMetrics(intervalMinutes = 20) {
       },
       body: JSON.stringify({
         query: `{
-            metricDailySnapshots(orderDirection: desc, orderBy: timeframe, limit: 365) {
+            metricDailySnapshots(orderDirection: desc, orderBy: timeframe, first: 365) {
               templeBurned
               templePriceUSD
               templeVolume
-              timestamp
               timeframe
+              timestamp
               totalProfitUSD
               tpiLowerBoundUSD
               treasuryPriceIndexUSD
@@ -63,7 +63,6 @@ export default function useRefreshableRamosMetrics(intervalMinutes = 20) {
     });
 
     const [hourlyResult, dailyResult] = await Promise.all([hourlyRequest, dailyRequest]);
-
     const [hourlyMetrics, dailyMetrics] = await Promise.all([hourlyResult.json(), dailyResult.json()]);
 
     setHourlyMetrics(hourlyMetrics?.data?.metricHourlySnapshots ?? []);
