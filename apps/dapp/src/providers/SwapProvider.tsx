@@ -33,8 +33,9 @@ const INITIAL_STATE: SwapService = {
   sor: balancer.sor,
 };
 
-// Compute slippage tolerance
-function getLimits(quote: SwapInfo, slippage: number): string[] {
+// Build batchSwap transaction details
+const buildBatchTransaction = (quote: SwapInfo, wallet: string, slippage: number) => {
+  // Compute slippage tolerance
   const limits: string[] = [];
   const slippageBps = BigNumber.from(10_000 + 100 * slippage);
   quote.tokenAddresses.forEach((token, i) => {
@@ -46,26 +47,46 @@ function getLimits(quote: SwapInfo, slippage: number): string[] {
       limits[i] = quote.returnAmount.mul(10_000).div(slippageBps).mul(-1).toString();
     else limits[i] = '0';
   });
-  return limits;
-}
-// Build batchSwap transaction details
-const buildTransaction = (quote: SwapInfo, wallet: string, deadline: number, slippage: number) => {
-  const tx = {
+
+  return {
     funds: {
       sender: wallet,
       recipient: wallet,
       fromInternalBalance: false,
       toInternalBalance: false,
     },
-    limits: getLimits(quote, slippage),
-    deadline: Math.floor(Date.now() / 1000) + deadline * 60,
-    overRides: {
+    limits,
+    overrides: {
       // ETH in swaps must send ETH value
       value: quote.tokenIn === ADDRESS_ZERO ? quote.swapAmount.toString() : '0',
     },
   };
-  return tx;
 };
+
+const buildSingleTransaction = (quote: SwapInfo, wallet: string, slippage: number) => {
+  const slippageBps = BigNumber.from(10_000 + 100 * slippage);
+  return {
+    single: {
+      poolId: quote.swaps[0].poolId,
+      kind: SwapType.SwapExactIn,
+      assetIn: quote.tokenAddresses[quote.swaps[0].assetInIndex],
+      assetOut: quote.tokenAddresses[quote.swaps[0].assetOutIndex],
+      amount: quote.swaps[0].amount,
+      userData: quote.swaps[0].userData,
+    },
+    funds: {
+      sender: wallet,
+      recipient: wallet,
+      fromInternalBalance: false,
+      toInternalBalance: false,
+    },
+    limit: quote.returnAmount.mul(10_000).div(slippageBps),
+    overrides: {
+      // ETH in swaps must send ETH value
+      value: quote.tokenIn === ADDRESS_ZERO ? quote.swapAmount.toString() : '0',
+    }
+  }
+}
 
 const SwapContext = createContext(INITIAL_STATE);
 
@@ -79,12 +100,13 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
       try {
         await sor.fetchPools();
       } catch (e) {
-        console.log('test');
+        console.log('failed to fetch sor pools');
       }
     };
     onMount();
   }, []);
 
+  // Buy TEMPLE with tokenIn
   const buy = async (quote: SwapInfo, tokenIn: TICKER_SYMBOL, deadline: number, slippage: number) => {
     // Check for signer
     if (!wallet || !signer) {
@@ -102,24 +124,34 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     const swapType: SwapType = SwapType.SwapExactIn;
     const tokenInfo = getTokenInfo(tokenIn);
     const vaultContract = new ethers.Contract(env.contracts.balancerVault, VaultABI, signer);
+    const deadlineBn = Math.floor(Date.now() / 1000) + deadline * 60
 
-    // Execute batch swap
+    // Execute swap
     try {
       if (tokenInfo.address !== ADDRESS_ZERO) {
         const tokenContract = new ERC20__factory(signer).attach(tokenInfo.address);
         await ensureAllowance(tokenInfo.address, tokenContract, env.contracts.balancerVault, quote.swapAmount);
       }
-      const tx = buildTransaction(quote, wallet, deadline, slippage);
-      const swap = await vaultContract.batchSwap(
-        swapType,
-        quote.swaps,
-        quote.tokenAddresses,
-        tx.funds,
-        tx.limits,
-        tx.deadline,
-        tx.overRides
-      );
-      receipt = await swap.wait();
+      // Execute single swap
+      if (quote.swaps.length === 1) {
+        const tx = buildSingleTransaction(quote, wallet, slippage)
+        const swap = await vaultContract.swap(tx.single, tx.funds, tx.limit, deadlineBn, tx.overrides);
+        receipt = await swap.wait();
+      }
+      else {
+        // Execute batch swap
+        const tx = buildBatchTransaction(quote, wallet, slippage);
+        const swap = await vaultContract.batchSwap(
+          swapType,
+          quote.swaps,
+          quote.tokenAddresses,
+          tx.funds,
+          tx.limits,
+          deadlineBn,
+          tx.overrides
+        );
+        receipt = await swap.wait();
+      }
     } catch (e) {
       // 4001 is user manually cancelling transaction,
       // so we don't want to return it as an error
@@ -141,6 +173,7 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     return receipt;
   };
 
+  // Sell TEMPLE for tokenOut
   const sell = async (quote: SwapInfo, tokenOut: TICKER_SYMBOL, deadline: number, slippage: number) => {
     if (!wallet || !signer) {
       console.error("Couldn't find wallet or signer");
@@ -157,20 +190,30 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     const swapType: SwapType = SwapType.SwapExactIn;
     const templeContract = new TempleERC20Token__factory(signer).attach(env.contracts.temple);
     const vaultContract = new ethers.Contract(env.contracts.balancerVault, VaultABI, signer);
+    const deadlineBn = Math.floor(Date.now() / 1000) + deadline * 60
 
     try {
       await ensureAllowance(env.contracts.temple, templeContract, env.contracts.balancerVault, quote.swapAmount);
-      const tx = buildTransaction(quote, wallet, deadline, slippage);
-      const swap = await vaultContract.batchSwap(
-        swapType,
-        quote.swaps,
-        quote.tokenAddresses,
-        tx.funds,
-        tx.limits,
-        tx.deadline,
-        tx.overRides
-      );
-      receipt = await swap.wait();
+      // Execute single swap
+      if (quote.swaps.length === 1) {
+        const tx = buildSingleTransaction(quote, wallet, slippage)
+        const swap = await vaultContract.swap(tx.single, tx.funds, tx.limit, deadlineBn, tx.overrides);
+        receipt = await swap.wait();
+      }
+      else {
+        // Execute batch swap
+        const tx = buildBatchTransaction(quote, wallet, slippage);
+        const swap = await vaultContract.batchSwap(
+          swapType,
+          quote.swaps,
+          quote.tokenAddresses,
+          tx.funds,
+          tx.limits,
+          deadlineBn,
+          tx.overrides
+        );
+        receipt = await swap.wait();
+      }
     } catch (e) {
       // 4001 is user manually cancelling transaction,
       // so we don't want to return it as an error
@@ -191,10 +234,12 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     return receipt;
   };
 
+  // Get quote for buying TEMPLE_TOKEN with tokenIn
   const getBuyQuote = async (amountIn: BigNumber, token: TICKER_SYMBOL) => {
     const tokenInInfo = getTokenInfo(token);
     const tokenOutInfo = getTokenInfo(TICKER_SYMBOL.TEMPLE_TOKEN);
-    const gasPrice = await signer?.getGasPrice();
+    const gasPrice = signer ? await signer?.getGasPrice() : BigNumber.from(0); 
+    
     // Find swapInfo for best trade given pair and amount
     const swapInfo: SwapInfo = await sor.getSwaps(
       tokenInInfo.address,
@@ -207,10 +252,12 @@ export const SwapProvider = (props: PropsWithChildren<{}>) => {
     return swapInfo;
   };
 
+  // Get quote for selling TEMPLE_TOKEN for tokenOut
   const getSellQuote = async (amountToSell: BigNumber, token: TICKER_SYMBOL) => {
     const tokenInInfo = getTokenInfo(TICKER_SYMBOL.TEMPLE_TOKEN);
     const tokenOutInfo = getTokenInfo(token);
-    const gasPrice = await signer?.getGasPrice();
+    const gasPrice = signer ? await signer?.getGasPrice() : BigNumber.from(0); 
+
     // Find swapInfo for best trade given pair and amount
     const swapInfo: SwapInfo = await sor.getSwaps(
       tokenInInfo.address,
