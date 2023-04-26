@@ -50,8 +50,7 @@ export const RAMOSMetrics: FC = () => {
     };
   }
 
-  const filteredHourlyMetrics = hourlyMetrics.reverse().slice(0, 24);
-  const formattedData = formatTimestampedChartData(dailyMetrics, filteredHourlyMetrics, formatData);
+  const formattedData = formatTimestampedChartData(dailyMetrics, hourlyMetrics, formatData);
 
   if (formattedData === null) {
     console.error('Empty formatted dataset for RAMOS metrics');
