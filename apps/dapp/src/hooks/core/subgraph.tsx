@@ -1,11 +1,4 @@
-import type {
-  SubGraphQuery,
-  GetVaultGroupsResponse,
-  GetVaultGroupResponse,
-  GetMetricsResponse,
-  GetRAMOSDailyMetricsResponse,
-  GetRAMOSHourlyMetricsResponse,
-} from './types';
+import type { SubGraphQuery, GetVaultGroupsResponse, GetVaultGroupResponse, GetMetricsResponse } from './types';
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 
@@ -107,30 +100,6 @@ const createVaultGroupQuery = (vaultGroupId: string, walletAddress = ''): SubGra
   }`,
 });
 
-export const createRAMOSDailyMetricsQuery = (): SubGraphQuery => ({
-  query: `{
-    metricDailySnapshots(orderDirection: desc, orderBy: timestamp, first: 365) {
-      templeBurned
-      totalProfitUSD
-      treasuryPriceIndexUSD
-      templeVolume
-      timestamp
-    }
-  }`,
-});
-
-export const createRAMOSHourlyMetricsQuery = (): SubGraphQuery => ({
-  query: `{
-    metricHourlySnapshots(orderDirection: desc, orderBy: timestamp, first: 24) {
-      templeBurned
-      totalProfitUSD
-      treasuryPriceIndexUSD
-      templeVolume
-      timestamp
-    }
-  }`,
-});
-
 export const useVaultMetrics = () => {
   const [request, resp] = useSubgraphRequest<GetMetricsResponse>(env.subgraph.templeCore, {
     query: `{
@@ -215,32 +184,5 @@ export const useGetVaultGroup = (vaultGroupId: string) => {
     vaultGroup: !vaultGroup ? null : createVaultGroup(vaultGroup),
     isLoading: isLoading || requestPending,
     error,
-  };
-};
-
-export const useRAMOSMetrics = () => {
-  const [dailyMetricsRequest, dailyRequestState] = useSubgraphRequest<GetRAMOSDailyMetricsResponse>(
-    env.subgraph.ramos,
-    createRAMOSDailyMetricsQuery()
-  );
-
-  const [hourlyMetricsRequest, hourlyRequestState] = useSubgraphRequest<GetRAMOSHourlyMetricsResponse>(
-    env.subgraph.ramos,
-    createRAMOSHourlyMetricsQuery()
-  );
-
-  useEffect(() => {
-    async function fetchMetrics() {
-      await dailyMetricsRequest();
-      await hourlyMetricsRequest();
-    }
-    fetchMetrics();
-  }, []);
-
-  return {
-    dailyMetrics: dailyRequestState.response,
-    hourlyMetrics: hourlyRequestState.response,
-    isLoading: dailyRequestState.isLoading || hourlyRequestState.isLoading,
-    errors: [dailyRequestState.error, hourlyRequestState.error],
   };
 };
