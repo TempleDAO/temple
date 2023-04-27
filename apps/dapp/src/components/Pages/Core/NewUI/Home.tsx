@@ -16,7 +16,7 @@ import { Link } from 'react-router-dom';
 import { TemplePriceChart } from './PriceChart';
 import { RAMOSMetrics } from './RAMOSMetrics';
 import { Button } from 'components/Button/Button';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Trade } from './TradeNew';
 import { useAccount } from 'wagmi';
 import { Account } from 'components/Layouts/CoreLayout/Account';
@@ -24,7 +24,6 @@ import { fetchGenericSubgraph } from 'utils/subgraph';
 import ClaimModal from './ClaimModal';
 import UnstakeOgtModal from './UnstakeModal';
 import { useWallet } from 'providers/WalletProvider';
-import DefendModal from './DefendModal';
 
 interface Metrics {
   price: number;

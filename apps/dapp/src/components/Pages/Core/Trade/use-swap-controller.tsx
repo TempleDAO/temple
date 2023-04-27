@@ -1,13 +1,12 @@
 import { useEffect, useReducer } from 'react';
 import { BigNumber } from 'ethers';
-import { Option } from 'components/InputSelect/InputSelect';
 import { TransactionSettings } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { useWallet } from 'providers/WalletProvider';
 import { useSwap } from 'providers/SwapProvider';
 import { ZERO } from 'utils/bigNumber';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
 import { getBigNumberFromString, formatBigNumber, getTokenInfo } from 'components/Vault/utils';
-import { INITIAL_STATE, TOKENS_BY_MODE } from './constants';
+import { INITIAL_STATE } from './constants';
 import { SwapMode } from './types';
 import { swapReducer } from './reducer';
 import { useDebouncedCallback } from 'use-debounce';

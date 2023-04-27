@@ -20,6 +20,7 @@ const env: Environment = {
     lbpFactory: '0x0F3e0c4218b7b0108a3643cFe9D3ec0d4F57c54e',
     lockedOgTemple: '0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949',
     ogTemple: '0x654590F810f01B51dc7B86915D4632977e49EA33',
+    olympus: '0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5',
     // Preserve the order of this array: array index == epoch number. Append only.
     teamPayments: [
       '0xF7b10A0C780a3906D9A9F3d706EcD2624B6ED84e',
@@ -83,6 +84,11 @@ const env: Environment = {
       name: 'OGTemple',
       address: '0x654590f810f01b51dc7b86915d4632977e49ea33',
       decimals: 18,
+    },
+    ohm: {
+      name: 'Olympus',
+      address: '0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5',
+      decimals: 9,
     },
     eth: {
       name: 'ETH',

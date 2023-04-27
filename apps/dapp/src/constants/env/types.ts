@@ -20,6 +20,7 @@ interface Contracts {
   lbpFactory: string;
   lockedOgTemple: string;
   ogTemple: string;
+  olympus: string;
   teamPayments?: string[];
   temple: string;
   templeStaking: string;
@@ -64,6 +65,7 @@ export interface Tokens {
   usdc: Token;
   usdt: Token;
   dai: Token;
+  ohm: Token;
 }
 
 interface Posthog {
