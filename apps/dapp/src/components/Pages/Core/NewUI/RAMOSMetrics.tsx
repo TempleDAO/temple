@@ -45,8 +45,8 @@ export const RAMOSMetrics: FC = () => {
   function formatData(metric: RamosMetrics) {
     return {
       timestamp: metric.timestamp * 1000,
-      templeBurned: metric.templeBurned,
-      totalProfitUSD: metric.totalProfitUSD,
+      templeBurned: parseFloat(metric.templeBurned),
+      totalProfitUSD: parseFloat(metric.totalProfitUSD),
     };
   }
 

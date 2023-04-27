@@ -3,14 +3,14 @@ import useInterval from 'use-interval';
 import env from 'constants/env';
 
 export type RamosMetrics = {
-  templeBurned: number;
-  templePriceUSD: number;
-  templeVolume: number;
+  templeBurned: string;
+  templePriceUSD: string;
+  templeVolume: string;
   timeframe: number;
   timestamp: number;
-  totalProfitUSD: number;
-  tpiLowerBoundUSD: number;
-  treasuryPriceIndexUSD: number;
+  totalProfitUSD: string;
+  tpiLowerBoundUSD: string;
+  treasuryPriceIndexUSD: string;
 };
 
 export default function useRefreshableRamosMetrics(intervalMinutes = 20) {
