@@ -6,7 +6,7 @@ import {
   expectAddressWithPrivateKey,
   toAtto,
 } from '../../helpers';
-import snapshot from './json/epoch15.json';
+import snapshot from './json/epoch16.json';
 
 // TODO: Add command line arguments for json allocations file
 async function main() {
@@ -44,8 +44,9 @@ async function main() {
   await tx1.wait();
   console.log('Mined');
   console.log(
-    `https://etherscan.io/address/${templeTeamPayments.address}
-    ${Object.values(snapshot)
+    `https://etherscan.io/address/${templeTeamPayments.address} ${Object.values(
+      snapshot
+    )
       .reduce((sum, cur) => (sum += cur), 0)
       .toFixed(2)} DAI allocated across ${
       Object.keys(snapshot).length

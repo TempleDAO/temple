@@ -33,6 +33,7 @@ const INITIAL_STATE: WalletState = {
     WETH: ZERO,
     TEMPLE: ZERO,
     OGTEMPLE: ZERO,
+    OHM: ZERO,
   },
   wallet: undefined,
   isConnected: false,
@@ -75,6 +76,7 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       USDT: ZERO,
       DAI: ZERO,
       WETH: ZERO,
+      OHM: ZERO,
     };
 
     if (env.contracts.frax) {
@@ -105,6 +107,12 @@ export const WalletProvider = (props: PropsWithChildren<{}>) => {
       const wethContract = new ERC20__factory(signer).attach(env.contracts.weth);
       const wethBalance: BigNumber = await wethContract.balanceOf(walletAddress);
       response = { ...response, WETH: wethBalance };
+    }
+
+    if (env.contracts.olympus) {
+      const ohmContract = new ERC20__factory(signer).attach(env.contracts.olympus);
+      const ohmBalance: BigNumber = await ohmContract.balanceOf(walletAddress);
+      response = { ...response, OHM: ohmBalance };
     }
 
     if (env.contracts.templeStaking) {
