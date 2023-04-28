@@ -20,7 +20,7 @@ const env: Environment = {
     lockedOgTemple: '0x564462C807600684965d8A8f57eA190F2F66169C',
     lbpFactory: '0xB0C726778C3AE4B3454D85557A48e8fa502bDD6A',
     ogTemple: '0x07d6c81fce4263ddeb0610c217c673b315e766f1',
-    olympus: '0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5',
+    olympus: '',
     temple: '0x5631d8eA427129e15bDa68F0F9227C149bD29Dcf',
     templeStaking: '0x20Ab503De9859eecB22EaB0ddEc9Bcd8bAFB876C',
     templeV2FraxPair: '0x85dA8c4312742522519911052Fa2B4aC302E4d6c',
