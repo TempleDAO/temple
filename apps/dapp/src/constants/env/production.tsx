@@ -37,6 +37,7 @@ const env: Environment = {
       '0x8C45f988fD3A2657d2B32Ff5340D858370D408Ef',
       '0x476Cba8D051f8F375D7E0aEFb09F74D13c777f23',
       '0xc3B8080cB0b9bAeEc1c2Ca8B50BF80edf4f94eA9',
+      '0xb1a91c8f0a54cb0a2970423f83ec11bf9e414038',
     ],
     temple: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     templeStaking: '0x4D14b24EDb751221B3Ff08BBB8bd91D4b1c8bc77',
