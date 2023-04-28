@@ -80,7 +80,7 @@ const env: Environment = {
     },
     ohm: {
       name: 'Olympus',
-      address: '0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5',
+      address: '',
       decimals: 9,
     },
     eth: {
