@@ -4,11 +4,11 @@ import { SwapMode, SwapReducerState } from './types';
 import { buildSelectConfig, buildValueConfig } from './utils';
 import { ZERO } from 'utils/bigNumber';
 
-const { DAI, FRAX, USDC, USDT, ETH, WETH, TEMPLE_TOKEN } = TICKER_SYMBOL;
+const { DAI, FRAX, USDC, USDT, ETH, WETH, TEMPLE_TOKEN, OHM } = TICKER_SYMBOL;
 
 export const TOKENS_BY_MODE = {
-  BUY: [DAI, USDC, USDT, FRAX, ETH, WETH],
-  SELL: [DAI, USDC, USDT, FRAX, ETH, WETH],
+  BUY: [DAI, USDC, USDT, FRAX, ETH, WETH, OHM],
+  SELL: [DAI, USDC, USDT, FRAX, ETH, WETH, OHM],
 };
 
 export const INITIAL_STATE: SwapReducerState = {
