@@ -324,7 +324,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
                 uint256 _withdrawnAmount = _baseStrategy.trvWithdraw(_stablesToWithdraw);
 
                 // Burn that amount of dUSD from the base strategy.
-                internalDebtToken.burn(address(_baseStrategy), _withdrawnAmount);
+                internalDebtToken.burn(address(_baseStrategy), _withdrawnAmount, true);
             }
         }
 
@@ -360,10 +360,17 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
         emit Repay(_strategyAddr, _repayAmount);
 
         // Burn the dUSD tokens. This will fail if the repayment amount is greater than the balance.
-        internalDebtToken.burn(_strategyAddr, _repayAmount);
+        uint256 burnedAmount = internalDebtToken.burn(_strategyAddr, _repayAmount, true);
 
         // Pull the stables from the strategy.
         stableToken.safeTransferFrom(_strategyAddr, address(this), _repayAmount);
+
+        // If more stables are repaid than their total debt, then that difference is a realised gain.
+        if (_repayAmount > burnedAmount) {
+            uint256 gain = _repayAmount-burnedAmount;
+            emit RealisedGain(_strategyAddr, gain);
+            shutdownStrategyNetEquity += int256(gain);
+        }
     }
 
     /**
@@ -384,7 +391,13 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
 
         int256 _realisedGainOrLoss = int256(stablesRecovered) - int256(_remainingDebt);
         shutdownStrategyNetEquity += _realisedGainOrLoss;
-        emit StrategyShutdown(strategyAddr, stablesRecovered, _remainingDebt, _realisedGainOrLoss);
+
+        if (_realisedGainOrLoss > 0) {
+            emit RealisedGain(strategyAddr, uint256(_realisedGainOrLoss));
+        } else {
+            emit RealisedLoss(strategyAddr, uint256(-_realisedGainOrLoss));
+        }
+        emit StrategyShutdown(strategyAddr, stablesRecovered, _remainingDebt);
 
         // Clears all config, and sets isEnabled = false
         delete strategies[strategyAddr];

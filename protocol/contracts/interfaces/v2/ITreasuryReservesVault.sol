@@ -26,11 +26,13 @@ interface ITreasuryReservesVault {
     event DebtCeilingUpdated(address indexed strategy, uint256 oldDebtCeiling, uint256 newDebtCeiling);
     event UnderperformingEquityThresholdUpdated(address indexed strategy, int256 oldThreshold, int256 newThreshold);
     event StrategyIsShuttingDownSet(address indexed strategy, bool isShuttingDown);
-    event StrategyShutdown(address indexed strategy, uint256 stablesRecovered, uint256 debtBurned, int256 realisedGainOrLoss);
+    event StrategyShutdown(address indexed strategy, uint256 stablesRecovered, uint256 debtBurned);
     event BaseStrategySet(address indexed baseStrategy);
 
     event Borrow(address indexed strategy, uint256 stablesAmount);
     event Repay(address indexed strategy, uint256 stablesAmount);
+    event RealisedGain(address indexed strategy, uint256 amount);
+    event RealisedLoss(address indexed strategy, uint256 amount);
 
     error NotEnabled();
     error AlreadyEnabled();

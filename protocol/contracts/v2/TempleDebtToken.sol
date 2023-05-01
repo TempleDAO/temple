@@ -202,8 +202,16 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
      *      where interest accrual starts fresh.
      * @param _debtor The address of the debtor
      * @param _burnAmount The notional amount of debt tokens to repay.
+     * @param _capBurnAmount Cap the amount burned, up to the debtor's current balance. 
+     *        If false and `_burnAmount` is greater than their balance then this will revert.
      */
-    function burn(address _debtor, uint256 _burnAmount) external override {
+    function burn(
+        address _debtor, 
+        uint256 _burnAmount, 
+        bool _capBurnAmount
+    ) external override returns (
+        uint256 burnedAmount
+    ) {
         if (!minters[msg.sender]) revert CannotMintOrBurn(msg.sender);
         if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress(_debtor);
         if (_burnAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
@@ -214,16 +222,18 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
         {
             // Check the user isn't paying off more debt than they have
             uint256 _debtorBalance = _balanceOf(debtor, _totalPrincipalAndBase);
-            if (_burnAmount > _debtorBalance) revert BurnExceedsBalance(_balanceOf(debtor, _totalPrincipalAndBase), _burnAmount);
-
-            // If this would leave a dust amount (eg DAI DSR rounding), just burn it all.
-            if (_debtorBalance - _burnAmount < 2) {
-                _burnAmount = _debtorBalance;
+            if (_burnAmount > _debtorBalance) {
+                if (_capBurnAmount) {
+                    _burnAmount = _debtorBalance;
+                } else {
+                    revert BurnExceedsBalance(_balanceOf(debtor, _totalPrincipalAndBase), _burnAmount);
+                }
             }
         }
 
         emit Transfer(_debtor, address(0), _burnAmount);
         _burn(debtor, _burnAmount, _totalPrincipalAndBase);
+        return _burnAmount;
     }
 
     /**

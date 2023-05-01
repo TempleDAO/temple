@@ -29,7 +29,7 @@ contract GnosisStrategyTestBase is TempleTest {
     function _setUp() public {
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", gov, defaultBaseInterest);
         trv = new TreasuryReservesVault(gov, address(dai), address(dUSD));
-        strategy = new GnosisStrategy(gov, "GnosisStrategy", address(trv), address(dai), address(dUSD), gnosisSafeWallet);
+        strategy = new GnosisStrategy(gov, "GnosisStrategy", address(trv), gnosisSafeWallet);
 
         vm.startPrank(gov);
         dUSD.addMinter(gov);
@@ -132,7 +132,7 @@ contract GnosisStrategyTestBalances is GnosisStrategyTestBase {
         vm.startPrank(gov);
         dUSD.mint(address(strategy), 100e18);
         assertEq(strategy.currentDebt(), 100e18);
-        dUSD.burn(address(strategy), 100e18);
+        dUSD.burn(address(strategy), 100e18, false);
         assertEq(strategy.currentDebt(), 0);
     }
 
@@ -334,7 +334,7 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
 
         vm.expectEmit(true, true, true, true);
         emit Repay(repayAmount);
-        strategy.repay(repayAmount);      
+        strategy.repay(repayAmount);
 
         assertEq(dai.balanceOf(gnosisSafeWallet), borrowAmount-repayAmount);
         assertEq(dai.balanceOf(address(strategy)), 0);
@@ -346,8 +346,11 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
 
         assertEq(strategy.availableToBorrow(), borrowCeiling-borrowAmount+repayAmount);
 
-        vm.expectRevert(abi.encodeWithSelector(ITempleDebtToken.BurnExceedsBalance.selector, 0.75e18, 0.76e18));
+        // Only has 0.75 dUSD left, but we can still repay more DAI.
+        // This generates a positive
+        deal(address(dai), address(strategy), 1e18, true);
         strategy.repay(0.76e18);
+        assertEq(dUSD.balanceOf(address(strategy)), 0);
     }
 
     function test_repayAll() public {       

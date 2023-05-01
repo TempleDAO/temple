@@ -53,14 +53,12 @@ abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecu
     constructor(
         address _initialGov,
         string memory _strategyName,
-        address _treasuryReservesVault,
-        address _stableToken,
-        address _internalDebtToken
+        address _treasuryReservesVault
     ) Governable(_initialGov) {
         strategyName = _strategyName;
         treasuryReservesVault = ITreasuryReservesVault(_treasuryReservesVault);
-        stableToken = IERC20(_stableToken);
-        internalDebtToken = ITempleDebtToken(_internalDebtToken);
+        stableToken = treasuryReservesVault.stableToken();
+        internalDebtToken = treasuryReservesVault.internalDebtToken();
 
         // Give the TRV rights to pull back the stables at any time.
         stableToken.safeApprove(_treasuryReservesVault, type(uint256).max);

@@ -24,8 +24,8 @@ contract TempleDebtTokenTestnetAdmin {
         dUSD.mint(to, amount);
     }
 
-    function burn(address from, uint256 amount) external {
-        dUSD.burn(from, amount);
+    function burn(address from, uint256 amount, bool capBurnAmount) external {
+        dUSD.burn(from, amount, capBurnAmount);
     }
 
     function setBaseInterestRate(uint256 _rate) external {

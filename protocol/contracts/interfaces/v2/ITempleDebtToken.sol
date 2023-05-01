@@ -138,8 +138,10 @@ interface ITempleDebtToken is IERC20, IERC20Metadata {
      *      where interest accrual starts fresh.
      * @param _debtor The address of the debtor
      * @param _burnAmount The notional amount of debt tokens to repay.
+     * @param _capBurnAmount Cap the amount burned, up to the debtor's current balance.
+     *        If false and `_burnAmount` is greater than their balance then this will revert.
      */
-    function burn(address _debtor, uint256 _burnAmount) external;
+    function burn(address _debtor, uint256 _burnAmount, bool _capBurnAmount) external returns (uint256 burnedAmount);
 
     /**
      * @notice Approved Minters can burn the entire debt on behalf of a user.

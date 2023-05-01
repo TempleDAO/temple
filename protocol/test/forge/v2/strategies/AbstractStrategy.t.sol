@@ -22,10 +22,8 @@ contract MockStrategy is AbstractStrategy {
         address _initialGov,
         string memory _strategyName,
         address _treasuryReservesVault,
-        address _stableToken,
-        address _internalDebtToken,
         address[] memory _assets 
-    ) AbstractStrategy(_initialGov, _strategyName, _treasuryReservesVault, _stableToken, _internalDebtToken) {
+    ) AbstractStrategy(_initialGov, _strategyName, _treasuryReservesVault) {
         assets = _assets;
         API_VERSION_X = "1.0.0";
     }
@@ -66,7 +64,7 @@ contract MockStrategy is AbstractStrategy {
         debt = currentDebt();
     }
 
-    function automatedShutdown() external pure {
+    function automatedShutdown() external pure returns (uint256) {
         revert Unimplemented();
     }
 }
@@ -87,7 +85,7 @@ contract AbstractStrategyTestBase is TempleTest {
     function _setUp() public {
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", gov, defaultBaseInterest);
         trv = new TreasuryReservesVault(gov, address(dai), address(dUSD));
-        strategy = new MockStrategy(gov, "MockStrategy", address(trv), address(dai), address(dUSD), reportedAssets);
+        strategy = new MockStrategy(gov, "MockStrategy", address(trv), reportedAssets);
 
         vm.startPrank(gov);
         dUSD.addMinter(gov);
@@ -244,7 +242,7 @@ contract AbstractStrategyTestBalances is AbstractStrategyTestBase {
         vm.startPrank(gov);
         dUSD.mint(address(strategy), 100e18);
         assertEq(strategy.currentDebt(), 100e18);
-        dUSD.burn(address(strategy), 100e18);
+        dUSD.burn(address(strategy), 100e18, false);
         assertEq(strategy.currentDebt(), 0);
     }
 

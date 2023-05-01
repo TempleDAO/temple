@@ -29,10 +29,8 @@ contract GnosisStrategy  is AbstractStrategy {
         address _initialGov,
         string memory _strategyName,
         address _treasuryReservesVault,
-        address _stableToken,
-        address _internalDebtToken,
         address _gnosisSafeWallet
-    ) AbstractStrategy(_initialGov, _strategyName, _treasuryReservesVault, _stableToken, _internalDebtToken) {
+    ) AbstractStrategy(_initialGov, _strategyName, _treasuryReservesVault) {
         gnosisSafeWallet = _gnosisSafeWallet;
     }
 
@@ -150,7 +148,7 @@ contract GnosisStrategy  is AbstractStrategy {
      * Once done, they can give the all clear for governance to then shutdown the strategy
      * by calling TRV.shutdown(strategy, stables recovered)
      */
-    function automatedShutdown() external virtual override {
+    function automatedShutdown() external virtual override returns (uint256) {
         revert Unimplemented();
     }
 

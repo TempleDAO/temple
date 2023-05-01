@@ -42,11 +42,9 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         address _initialGov,
         string memory _strategyName,
         address _treasuryReservesVault,
-        address _stableToken,
-        address _internalDebtToken,
         address _daiJoin, 
         address _pot
-    ) AbstractStrategy(_initialGov, _strategyName, _treasuryReservesVault, _stableToken, _internalDebtToken) {
+    ) AbstractStrategy(_initialGov, _strategyName, _treasuryReservesVault) {
         daiJoin = IMakerDaoDaiJoinLike(_daiJoin);
         IMakerDaoVatLike vat = IMakerDaoVatLike(daiJoin.vat());
         pot = IMakerDaoPotLike(_pot);
@@ -206,7 +204,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * wish to borrow from the TRV.
      * @dev It may withdraw less than requested if there isn't enough balance in the DSR.
      */
-    function trvWithdraw(uint256 requestedAmount) external override returns (uint256 amountWithdrawn) {
+    function trvWithdraw(uint256 requestedAmount) external override returns (uint256) {
         if (msg.sender != address(treasuryReservesVault)) revert OnlyTreasuryReserveVault(msg.sender);
         if (requestedAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
 
@@ -223,7 +221,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
 
         _dsrWithdrawal(sharesAmount, requestedAmount);
         stableToken.safeTransfer(address(treasuryReservesVault), requestedAmount);
-        return amountWithdrawn;
+        return requestedAmount;
     }
 
     function _dsrWithdrawal(uint256 sharesAmount, uint256 daiAmount) internal {
@@ -238,16 +236,20 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * @dev This first withdraws all DAI from the DSR and sends all funds to the TRV, and then 
      * applies the shutdown in the TRV.
      */
-    function automatedShutdown() external override onlyStrategyExecutors {
+    function automatedShutdown() external override onlyStrategyExecutors returns (uint256) {
         // Withdraw all from DSR and send everything back to the Treasury Reserves Vault.
         (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
         _dsrWithdrawal(sharesAvailable, daiAvailable);
 
         emit Shutdown(daiAvailable);
+        
+        // Transfer the stables to TRV
+        stableToken.safeTransfer(address(treasuryReservesVault), daiAvailable);
 
         // Now mark as shutdown in the TRV.
         // This will only succeed if governance has first set the strategy to `isShuttingDown`
         treasuryReservesVault.shutdown(address(this), daiAvailable);
+        return daiAvailable;
     }
 
 }

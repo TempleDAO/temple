@@ -141,7 +141,7 @@ interface ITempleStrategy {
      * This should handle all liquidations and send all funds back to the TRV, and will then call `TRV.shutdown()`
      * to apply the shutdown.
      */
-    function automatedShutdown() external;
+    function automatedShutdown() external returns (uint256 stablesReturned);
 
     /**
      * @notice Governance can recover any token from the strategy.
