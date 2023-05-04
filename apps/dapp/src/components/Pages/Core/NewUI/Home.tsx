@@ -343,6 +343,8 @@ const TopContainer = styled.div`
   justify-content: center;
   color: ${({ theme }) => theme.palette.brand};
   height: 100vh;
+  position: relative;
+  overflow: hidden;
 `;
 
 const RaysImage = styled(Image)`
@@ -350,6 +352,13 @@ const RaysImage = styled(Image)`
   top: -170px;
   width: 1300px;
   height: 1050px;
+
+  @media (max-height: 700px) {
+    margin-top: -100px;
+  }
+  @media (max-height: 520px) {
+    margin-top: -200px;
+  }
 `;
 
 const HeroRing = styled.div`
@@ -365,6 +374,13 @@ const HeroRing = styled.div`
   justify-content: center;
   z-index: 1;
   text-align: center;
+
+  @media (max-height: 700px) {
+    margin-top: -100px;
+  }
+  @media (max-height: 520px) {
+    margin-top: -200px;
+  }
 `;
 
 const ContentContainer = styled.div`
