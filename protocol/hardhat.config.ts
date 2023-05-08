@@ -126,12 +126,9 @@ module.exports = {
               interval: 5000,
             },
     },
-    rinkeby: {
-      url: process.env.RINKEBY_RPC_URL || '',
-      accounts: process.env.RINKEBY_ADDRESS_PRIVATE_KEY
-        ? [process.env.RINKEBY_ADDRESS_PRIVATE_KEY]
-        : [],
-      gasPrice: 8000000000,
+    anvil: {
+        url: "http://127.0.0.1:8545/",
+        accounts: "remote",
     },
     goerli: {
       url: process.env.GOERLI_RPC_URL || '',
