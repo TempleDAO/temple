@@ -35,8 +35,8 @@ library SafeForked {
     // The only addition is to pass through the executor, and to throw a custom error if the number of signatories doesn't match.
     function checkNSignatures(address executor, GnosisSafe safe, bytes32 dataHash, bytes memory data, bytes memory signatures, uint256 requiredSignatures) internal view {
         // Check that the provided signature data is not too short
-        if (signatures.length < requiredSignatures*65) revert IThresholdSafeGuard.DynamicSignatureThresholdNotMet(requiredSignatures, signatures.length / 65);
-        // require(signatures.length >= requiredSignatures.mul(65), "GS020");
+        // Left as a revert string so it shows in the Safe UI, and made more descriptive.
+        require(signatures.length >= requiredSignatures * 65, "Dynamic Signature Threshold Not Met");
 
         // There cannot be an owner with address 0.
         address lastOwner = address(0);

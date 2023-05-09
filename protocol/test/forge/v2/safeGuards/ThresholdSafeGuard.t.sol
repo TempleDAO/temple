@@ -281,7 +281,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
         changePrank(address(safe));
         
-        vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.DynamicSignatureThresholdNotMet.selector, 3, 0));
+        vm.expectRevert("Dynamic Signature Threshold Not Met");
         doCheck("", safeOwners[0], "");
     }
 
@@ -290,7 +290,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         guard.setDefaultSignaturesThreshold(3);
         changePrank(address(safe));
 
-        vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.DynamicSignatureThresholdNotMet.selector, 3, 1));
+        vm.expectRevert("Dynamic Signature Threshold Not Met");
         doCheck("", safeOwners[0], signOwner(safeOwners[0]));
     }
 
@@ -305,7 +305,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
             signEOA(dataHash, pk2)
         );
 
-        vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.DynamicSignatureThresholdNotMet.selector, 3, 2));
+        vm.expectRevert("Dynamic Signature Threshold Not Met");
         doCheck("", safeOwners[0], signature);
     }
 
@@ -373,7 +373,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
                 signEOA(dataHash, pk2),
                 signEOA(dataHash, pk3)
             );
-            vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.DynamicSignatureThresholdNotMet.selector, 4, 3));
+            vm.expectRevert("Dynamic Signature Threshold Not Met");
             doCheck(fnCall, safeOwners[0], signature);
         }
     }
@@ -388,7 +388,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         // Not enough signers
         {
             changePrank(address(safe));
-            vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.DynamicSignatureThresholdNotMet.selector, 3, 1));
+            vm.expectRevert("Dynamic Signature Threshold Not Met");
             doCheck(fnCall, safeOwners[0], signature);
         }
 
@@ -404,7 +404,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
             changePrank(gov);
             guard.setDisableGuardChecks(false);
             changePrank(address(safe));
-            vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.DynamicSignatureThresholdNotMet.selector, 3, 1));
+            vm.expectRevert("Dynamic Signature Threshold Not Met");
             doCheck(fnCall, safeOwners[0], signature);
         }
     }

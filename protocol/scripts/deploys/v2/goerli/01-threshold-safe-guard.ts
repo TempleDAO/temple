@@ -10,14 +10,10 @@ async function main() {
   ensureExpectedEnvvars();
   const [owner] = await ethers.getSigners();
 
-  // Something weird with my hh - i need to override the nonce
-  // @todo remove.
-  const nonce = await ethers.provider.getTransactionCount(await owner.getAddress());
-
   const factory = new ThresholdSafeGuard__factory(owner);
   await deployAndMine(
     "Threshold Safe Guard", factory, factory.deploy,
-    await owner.getAddress(), 3, {nonce: nonce}
+    await owner.getAddress(), 3
   );
 }
 

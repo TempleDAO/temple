@@ -48,6 +48,7 @@
     "coverage": "hardhat coverage",
     "slither": "slither $PWD --triage-mode --foundry-out-directory ./artifacts-foundry --hardhat-cache-directory ./cache-hardhat --hardhat-artifacts-directory ./artifacts-hardhat",
     "slither-check": "slither $PWD --foundry-out-directory ./artifacts-foundry --hardhat-cache-directory ./cache-hardhat --hardhat-artifacts-directory ./artifacts-hardhat",
+    "slither-function-summary": "slither $PWD --foundry-out-directory ./artifacts-foundry --hardhat-cache-directory ./cache-hardhat --hardhat-artifacts-directory ./artifacts-hardhat --print function-summary --config-file ./slither.config.json --filter-paths \"(node_modules/|contracts/test/|contracts/amm/|contracts/amo/|contracts/interfaces/|contracts/common/|contracts/core/|contracts/deprecated/|contracts/fakes/|contracts/governance/|contracts/interestRate/|contracts/interfaces/|contracts/util/|contracts/v2/templeLineOfCredit|contracts/zaps/|lib/)\" > function-summary.md 2>err",
     "local-node": "hardhat node",
     "local-deploy": "hardhat run --network localhost scripts/local-dapp-dev/deploy.ts",
     "local-deploy-e2e-test": "env-cmd -f ../apps/dapp/.env.local hardhat run --network localhost scripts/local-dapp-dev/deploy.ts",
