@@ -1,0 +1,214 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+// Temple (v2/SafeGuards/ThresholdSafeGuard.sol)
+
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { EnumerableSet } from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import { GnosisSafe } from '@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol';
+import { Enum } from '@gnosis.pm/safe-contracts/contracts/common/Enum.sol';
+
+import { IThresholdSafeGuard } from "contracts/interfaces/v2/safeGuards/IThresholdSafeGuard.sol";
+import { Governable } from "contracts/common/access/Governable.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+import { SafeForked } from "contracts/v2/safeGuards/SafeForked.sol";
+
+/**
+  * @title Threshold Safe Guard
+  * @notice This Safe Guard performs two pre-execute checks:
+  *    1/ The transactionExecutor is a safe owner or a pre-approved executor
+  *    2/ The number of signers is >= a per contract/function defined threshold
+  *       (or a default threshold if not explicitly set per contract/function)
+ */
+contract ThresholdSafeGuard is IThresholdSafeGuard, Governable {
+    using SafeERC20 for IERC20;
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    string public constant VERSION = "1.0.0";
+    
+    /**
+      * @notice Break-glass to disable this guard such that the default Safe behaviour is resumed.
+      * Only the Owner is allowed to disable. Never set the owner to the same safe which this is guarding
+      * as it could be bricked.
+     */
+    bool public override disableGuardChecks;
+
+    /**
+     * @notice The required number of signatures required by default for all transactions.
+     */
+    uint256 public override defaultSignaturesThreshold;
+    
+    /**
+      * @notice Per contract and function override of required signature thresholds on the Safe.
+      * If not explicitly set for a contract/function, then the `defaultSignaturesThreshold` is used.
+      * If the threshold is less than the builtin Safe threshold, no signature checks are performed 
+      * in this guard -- the Safe has already verified the signers.
+      */
+    mapping(address => mapping(bytes4 => uint256)) public override functionThresholds;
+
+    /**
+      * @notice Approved addresses which are allowed to execute approved transactions
+      * Safe owners are also allowed to execute.
+     */
+    EnumerableSet.AddressSet internal _executors;
+
+    constructor(address _initialGov, uint256 _defaultSignaturesThreshold) 
+        Governable(_initialGov)
+    {
+        defaultSignaturesThreshold = _defaultSignaturesThreshold;
+    }
+
+    // Who should have access to do this? Rescue mode disables the guard
+    function setDisableGuardChecks(bool value) external onlyGov {
+        disableGuardChecks = value;
+        emit DisableGuardChecksSet(value);
+    }
+
+    /**
+      * @notice Add an address to the allowed list who can execute the transaction
+      * once the minimum threshold of signers have approved
+     */
+    function addExecutor(address executor) external onlyGov {
+        if (executor == address(0)) revert InvalidAddress();
+        emit AddedExecutor(executor);
+        if (!_executors.add(executor)) revert InvalidExecutor();
+    }
+
+    /**
+      * @notice Remove an address from the allowed list who can execute the transaction
+      * once the minimum threshold of signers have approved
+     */
+    function removeExecutor(address executor) external onlyGov {
+        if (executor == address(0)) revert InvalidAddress();
+        emit RemovedExecutor(executor);
+        if (!_executors.remove(executor)) revert InvalidExecutor();
+    }
+
+    /**
+      * @notice Set the default number of signatories required, when a contract/function signature
+      * not explicitly defined.
+     */
+    function setDefaultSignaturesThreshold(uint256 threshold) external onlyGov {
+        emit DefaultSignaturesThresholdSet(threshold);
+        defaultSignaturesThreshold = threshold;
+    }
+
+    /**
+      * @notice Set the number of signatories required for a contract/function signature pair.
+     */
+    function setFunctionThreshold(address contractAddr, bytes4 functionSignature, uint256 threshold) external onlyGov {
+        if (contractAddr == address(0)) revert InvalidAddress();
+        if (functionSignature == bytes4(0)) revert InvalidFunctionSignature();
+
+        emit FunctionThresholdSet(contractAddr, functionSignature, threshold);
+        functionThresholds[contractAddr][functionSignature] = threshold;
+    }
+
+    /**
+      * @notice The set of extra addresses (along with the Safe owners) allowed to execute
+      * the transaction once the minimum threshold of signers have approved
+     */
+    function executors() external view returns (address[] memory _executorsArray) {
+        return _executors.values();
+    }
+
+    /**
+      * @notice The required signatory threshold for a given contract and functionSignature
+     */
+    function getThreshold(address contractAddr, bytes4 fnSignature) public view returns (uint256) {
+        uint256 threshold = functionThresholds[contractAddr][fnSignature];
+        return threshold > 0 ? threshold : defaultSignaturesThreshold;
+    }
+
+    /**
+      * @notice The Safe will call this method once the signatories has been checked vs Safe's builtin threshold.
+      * This will revert:
+      *    1/ If the transactionExecutor is not either a safe owner or pre-approved executor
+      *    2/ The number of signers does not meet a per contract/function defined threshold
+      *       (or a default threshold if not explicitly set per contract/function)
+      * 
+      * Exceptions:
+      *    a/ If the builtin Safe's threshold == 1, the number of signatories here isn't checked. 
+      *       So the proposer can execute immediately. 
+      *       This is to handle Tenderly transaction simulations via the dapp.
+      *    b/ If number of signers for the contract/function is less than the safe threshold - then no extra
+      *       signatory checks are done here, as it's already been done in the Safe.
+     */
+    function checkTransaction(
+        address to,
+        uint256 value,
+        bytes memory data,
+        Enum.Operation operation,
+        uint256 safeTxGas,
+        uint256 baseGas,
+        uint256 gasPrice,
+        address gasToken,
+        // solhint-disable-next-line no-unused-vars
+        address payable refundReceiver,
+        bytes memory signatures,
+        address transactionExecutor
+    ) external view {
+        // Circuit breaker
+        if (disableGuardChecks) return;
+
+        GnosisSafe safe = GnosisSafe(payable(msg.sender));
+
+        if (!(_executors.contains(transactionExecutor) || safe.isOwner(transactionExecutor))) {
+            revert InvalidExecutor();
+        }
+
+        uint256 threshold;
+        {
+            uint256 safeThreshold = safe.getThreshold();
+
+            // When Tenderly simulations run, the Safe's threshold is overriden to 1.
+            // So only check the signatures when the threshold is > 1
+            // WARNING: This means that we aren't doing any extra checks if the Safe's threshold == 1. It should always be > 1
+            // Note - if multiple signers have already signed, then the Safe dapp doesn't do this override. So it may still fail if
+            //        number of signers == 1 < x < dynamicThresholdRequirement
+            if (safeThreshold == 1) return;
+
+            // @todo check if this is how we get the function signature.
+            // Perhaps in future there could be some custom decoding/approvals based on the arguments too
+            threshold = getThreshold(to, bytes4(data));
+
+            // No need for extra threshold checks - it already has the required signers, because we know Safe
+            // has checked these already prior to calling the guard.
+            if (safeThreshold >= threshold) return;
+        }
+
+        // Check the signatures for the function being called.
+        {
+            bytes memory txHashData = safe.encodeTransactionData(
+                to, 
+                value, 
+                data, 
+                operation, 
+                safeTxGas, 
+                baseGas, 
+                gasPrice, 
+                gasToken, 
+                refundReceiver, 
+                safe.nonce() - 1 // Remove one from the nonce, as the Safe.execTransaction increased it prior to calling the guard.
+            );
+            SafeForked.checkNSignatures(transactionExecutor, safe, keccak256(txHashData), data, signatures, threshold);
+        }
+    }
+
+    /// @notice unused
+    function checkAfterExecution(bytes32, bool) external view {}
+
+    // solhint-disable-next-line payable-fallback
+    fallback() external {
+        // We don't revert on fallback to avoid issues in case of a Safe upgrade
+        // E.g. The expected check method might change and then the Safe would be locked.
+    }
+
+    /**
+      * @notice Governance can recover any token from the strategy.
+     */
+    function recoverToken(address token, address to, uint256 amount) external onlyGov {
+        emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
+        IERC20(token).safeTransfer(to, amount);
+    }
+}
