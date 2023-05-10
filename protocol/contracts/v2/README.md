@@ -1,6 +1,7 @@
 # Temple V2
 
 - [Temple V2](#temple-v2)
+  - [**VERY VERY VERY IMPORTANT**](#very-very-very-important)
   - [Contract Overview](#contract-overview)
     - [Contract Flows](#contract-flows)
       - [Strategy Borrowing From TRV](#strategy-borrowing-from-trv)
@@ -11,11 +12,15 @@
     - [Rescuer - A Gnosis Safe](#rescuer---a-gnosis-safe)
     - [Bots](#bots)
   - [Gnosis Safe Guards](#gnosis-safe-guards)
-    - [Threshold Safe Guard](#threshold-safe-guard)
-    - [**VERY VERY VERY IMPORTANT**](#very-very-very-important)
+    - [The Safe Signatory Flow is](#the-safe-signatory-flow-is)
+    - [**VERY VERY VERY IMPORTANT**](#very-very-very-important-1)
       - [RISK OF BRICKING THE SAFE](#risk-of-bricking-the-safe)
       - [RISK OF DISABLING THE GUARD](#risk-of-disabling-the-guard)
 
+
+## <span style="color:red">**VERY VERY VERY IMPORTANT**</span>
+
+[ENSURE YOU READ AND UNDERSTAND THIS](#very-very-very-important-1)
 
 ## Contract Overview
 
@@ -97,36 +102,20 @@ This access can be granted by the Executor, but given it's an important Administ
 
 ## Gnosis Safe Guards
 
-### Threshold Safe Guard
-
 We use a [Safe Transaction Guard](https://help.safe.global/en/articles/5324092-what-is-a-transaction-guard) in order to verify that MORE than just the base Safe threshold of owners have signed a transaction.
 
 The signer threshold in the Safe needs to be at least 2. The guard can then have a default (if the threshold for the `contract.function()` isn't explicitly defined in the guard). Then on a per `contract.function()` basis, a specific threshold that's required can be defined.
 
 For example:
 
-* Safe Threshold: 2/X
-* Guard Default Threshold: 3/X
-* `strategyA.weeklyOperationalThing()` Threshold: 2/X
-* `TRV.setBaseRate()` Threshold: 4/X
+- Safe Threshold: 2/X
+- Guard Default Threshold: 3/X
+- `strategyA.weeklyOperationalThing()` Threshold: 2/X
+- `TRV.setBaseRate()` Threshold: 4/X
 
 That means by default all operations will need 3/X, unless otherwise explicitly set per function.
 
-### **VERY VERY VERY IMPORTANT**
-
-#### RISK OF BRICKING THE SAFE
-
-The functions on this Guard are protected. It is super super super important to have the elevated access of this granted to a multisig which IS NOT the Safe which this is guarding for.
-
-Otherwise it may end up in a situation where the guard is blocking the execution transactions of the Safe, but we cannot disable the guard.
-
-#### RISK OF DISABLING THE GUARD
-
-The Threshold in the Safe should always be 2+. If it is set to 1, then it effectively disables any further signatory checking in the Guard.
-
-Reason: In order to run Tenderly simulations successfully, Safe overrides the threshold=1. So in order to make simulations succeed, we need to disable any further signatory checks.
-
-The Safe signatory flow is
+### The Safe Signatory Flow is
 
 1. **For a 2/X required function**:
    1. An owner proposes a transaction, and signs it in Safe UI (1/X)
@@ -143,3 +132,17 @@ The Safe signatory flow is
       2. We can sign using the Safe SDK though, that we can bake into the Temple Dapp
    4. Any owner can then execute using the Safe UI
       1. and/or the Temple Dapp via the Safe SDK
+
+### <span style="color:red">**VERY VERY VERY IMPORTANT**</span>
+
+#### <span style="color:red">RISK OF BRICKING THE SAFE</span>
+
+The functions on this Guard are protected. It is super super super important to have the elevated access of this granted to a multisig which IS NOT the Safe which this is guarding for.
+
+Otherwise it may end up in a situation where the guard is blocking the execution transactions of the Safe, but we cannot disable the guard.
+
+#### <span style="color:red">RISK OF DISABLING THE GUARD</span>
+
+The Threshold in the Safe should always be 2+. If it is set to 1, then it effectively disables any further signatory checking in the Guard.
+
+Reason: In order to run Tenderly simulations successfully, Safe overrides the threshold=1. So in order to make simulations succeed, we need to disable any further signatory checks.
