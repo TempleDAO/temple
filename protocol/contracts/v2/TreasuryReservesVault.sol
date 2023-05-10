@@ -9,10 +9,9 @@ import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReserve
 import { ITempleStrategy, ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { Governable } from "contracts/common/access/Governable.sol";
-import { EmergencyOperators } from "contracts/v2/access/EmergencyOperators.sol";
+import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 
-contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyOperators {
+contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     string public constant API_VERSION = "1.0.0";
 
@@ -64,32 +63,17 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
     int256 public override shutdownStrategyNetEquity;
 
     constructor(
-        address _initialGov,
+        address _initialRescuer,
+        address _initialExecutor,
         address _stableToken,
         address _internalDebtToken
-    ) Governable(_initialGov)
+    ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
         stableToken = IERC20(_stableToken);
         internalDebtToken = ITempleDebtToken(_internalDebtToken);
     }
 
-    /**
-     * @notice Grant `_account` the emergency operator role
-     * @dev Derived classes to implement and add protection on who can call
-     */
-    function addEmergencyOperator(address _account) external override onlyGov {
-        _addEmergencyOperator(_account);
-    }
-
-    /**
-     * @notice Revoke the emergency operator role from `_account`
-     * @dev Derived classes to implement and add protection on who can call
-     */
-    function removeEmergencyOperator(address _account) external override onlyGov {
-        _removeEmergencyOperator(_account);
-    }
-
-    function setBaseStrategy(address _baseStrategy) external override onlyGov {
+    function setBaseStrategy(address _baseStrategy) external override onlyElevatedAccess {
         baseStrategy = ITempleBaseStrategy(_baseStrategy);
 
         // Ensure the new base strategy has it's TRV set as this contract.
@@ -180,10 +164,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
     }
 
     /**
-     * Governance can pause all strategy borrow and repays
+     * Pause all strategy borrow and repays
      */
-    function globalSetPaused(bool _pauseBorrow, bool _pauseRepays) external override {
-        if (msg.sender != _gov && !emergencyOperators[msg.sender]) revert CommonEventsAndErrors.InvalidAccess();
+    function globalSetPaused(bool _pauseBorrow, bool _pauseRepays) external override onlyElevatedAccess {
         emit GlobalPausedSet(_pauseBorrow, _pauseRepays);
         globalBorrowPaused = _pauseBorrow;
         globalRepaysPaused = _pauseRepays;
@@ -192,8 +175,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
     /**
      * @notice Set whether borrows and repayments are paused for a given strategy.
      */
-    function strategySetPaused(address _strategy, bool _pauseBorrow, bool _pauseRepays) external override {
-        if (msg.sender != _gov && !emergencyOperators[msg.sender]) revert CommonEventsAndErrors.InvalidAccess();
+    function strategySetPaused(address _strategy, bool _pauseBorrow, bool _pauseRepays) external override onlyElevatedAccess {
         Strategy storage strategyData = strategies[_strategy];
         if (!strategyData.isEnabled) revert NotEnabled();
         emit StrategyPausedSet(_strategy, _pauseBorrow, _pauseRepays);
@@ -202,9 +184,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
     }
 
     /**
-     * Governance can add a new strategy
+     * Add a new strategy
      */
-    function addNewStrategy(address strategy, uint256 debtCeiling, int256 underperformingEquityThreshold) external override onlyGov {
+    function addNewStrategy(address strategy, uint256 debtCeiling, int256 underperformingEquityThreshold) external override onlyElevatedAccess {
         Strategy storage strategyData = strategies[strategy];
         if (strategyData.isEnabled) revert AlreadyEnabled();
         if (debtCeiling == 0) revert CommonEventsAndErrors.ExpectedNonZero();
@@ -215,9 +197,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
     }
 
     /**
-     * @notice Governance can update the debt ceiling for a given strategy
+     * @notice Update the debt ceiling for a given strategy
      */
-    function setStrategyDebtCeiling(address strategy, uint256 newDebtCeiling) external override onlyGov {
+    function setStrategyDebtCeiling(address strategy, uint256 newDebtCeiling) external override onlyElevatedAccess {
         Strategy storage strategyData = strategies[strategy];
         if (!strategyData.isEnabled) revert NotEnabled();
         if (newDebtCeiling == 0) revert CommonEventsAndErrors.ExpectedNonZero();
@@ -226,9 +208,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
     }
 
     /**
-     * @notice Governance can update the underperforming equity threshold.
+     * @notice Update the underperforming equity threshold.
      */
-    function setStrategyUnderperformingThreshold(address strategy, int256 underperformingEquityThreshold) external override onlyGov {
+    function setStrategyUnderperformingThreshold(address strategy, int256 underperformingEquityThreshold) external override onlyElevatedAccess {
         Strategy storage strategyData = strategies[strategy];
         if (!strategyData.isEnabled) revert NotEnabled();
         if (underperformingEquityThreshold == 0) revert CommonEventsAndErrors.ExpectedNonZero();
@@ -248,10 +230,10 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
     }
 
     /**
-     * @notice Governance sets whether a strategy is slated for shutdown.
-     * The strategy (or governance) then needs to call shutdown as a separate call once ready.
+     * @notice The first step in a two-phase shutdown. Executor first sets whether a strategy is slated for shutdown.
+     * The strategy then needs to call shutdown as a separate call once ready.
      */
-    function setStrategyIsShuttingDown(address strategy, bool isShuttingDown) external override onlyGov {
+    function setStrategyIsShuttingDown(address strategy, bool isShuttingDown) external override onlyElevatedAccess {
         Strategy storage strategyData = strategies[strategy];
         if (!strategyData.isEnabled) revert NotEnabled();
         emit StrategyIsShuttingDownSet(strategy, isShuttingDown);
@@ -374,13 +356,13 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
     }
 
     /**
-     * @notice The second step in a two-phase shutdown. A strategy (automated) or governance (manual) calls
+     * @notice The second step in a two-phase shutdown. A strategy (automated) or executor (manual) calls
      * to effect the shutdown. isShuttingDown must be true for the strategy first.
      * The strategy executor is responsible for unwinding all it's positions first and sending stables to the TRV.
      * All outstanding dUSD debt is burned, leaving a net gain/loss of equity for the shutdown strategy.
      */
     function shutdown(address strategyAddr, uint256 stablesRecovered) external override {
-        if (!(msg.sender == _gov || msg.sender == strategyAddr)) revert OnlyGovOrStrategy();
+        if (msg.sender != strategyAddr) validateElevatedAccess(msg.sender, msg.sig);
 
         Strategy storage strategyData = strategies[strategyAddr];
         if (!strategyData.isEnabled) revert NotEnabled();
@@ -409,7 +391,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, Governable, EmergencyO
      * @param to Recipient address
      * @param amount Amount to recover
      */
-    function recoverToken(address token, address to, uint256 amount) external onlyGov {
+    function recoverToken(address token, address to, uint256 amount) external onlyElevatedAccess {
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
         IERC20(token).safeTransfer(to, amount);
     }

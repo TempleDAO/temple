@@ -9,7 +9,7 @@ import { mulDiv } from "@prb/math/src/Common.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { CompoundedInterest } from "contracts/interestRate/CompoundedInterest.sol";
-import { Governable } from "contracts/common/access/Governable.sol";
+import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 
 /**
  * @title Temple Debt Token
@@ -33,7 +33,7 @@ import { Governable } from "contracts/common/access/Governable.sol";
  * 
  * This token is is non-transferrable. Only approved Minters can mint/burn the debt on behalf of a user.
  */
-contract TempleDebtToken is ITempleDebtToken, Governable {
+contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     using CompoundedInterest for uint256;
     using SafeERC20 for IERC20;
 
@@ -101,9 +101,10 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
     constructor(
         string memory _name,
         string memory _symbol,
-        address _initialGov,
+        address _initialRescuer,
+        address _initialExecutor,
         uint256 _baseInterestRate
-    ) Governable(_initialGov)
+    ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
         name = _name;
         symbol = _symbol;
@@ -115,7 +116,7 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
      * @notice Governance can add an address which is able to mint or burn debt
      * positions on behalf of users.
      */
-    function addMinter(address account) external override onlyGov {
+    function addMinter(address account) external override onlyElevatedAccess {
         minters[account] = true;
         emit AddedMinter(account);
     }
@@ -124,7 +125,7 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
      * @notice Governance can remove an address which is able to mint or burn debt
      * positions on behalf of users.
      */
-    function removeMinter(address account) external override onlyGov {
+    function removeMinter(address account) external override onlyElevatedAccess {
         minters[account] = false;
         emit RemovedMinter(account);
     }
@@ -139,7 +140,7 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
     /**
      * @notice Governance can update the continuously compounding (base) interest rate of all debtors, from this block onwards.
      */
-    function setBaseInterestRate(uint256 _rate) external override onlyGov {
+    function setBaseInterestRate(uint256 _rate) external override onlyElevatedAccess {
         _checkpointBase(_compoundedBaseInterest());
         baseRate = _rate;
         emit BaseInterestRateSet(_rate);
@@ -148,7 +149,7 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
     /**
      * @notice Governance can update the continuously compounding (risk premium) interest rate for a given debtor, from this block onwards
      */
-    function setRiskPremiumInterestRate(address _debtor, uint256 _rate) external override onlyGov {
+    function setRiskPremiumInterestRate(address _debtor, uint256 _rate) external override onlyElevatedAccess {
         Debtor storage debtor = debtors[_debtor];
         _checkpointDebtor(debtor);
         debtor.rate = uint64(_rate);
@@ -572,7 +573,7 @@ contract TempleDebtToken is ITempleDebtToken, Governable {
      * @param to Recipient address
      * @param amount Amount to recover
      */
-    function recoverToken(address token, address to, uint256 amount) external onlyGov {
+    function recoverToken(address token, address to, uint256 amount) external onlyElevatedAccess {
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
         IERC20(token).safeTransfer(to, amount);
     }

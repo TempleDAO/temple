@@ -5,6 +5,7 @@ pragma solidity ^0.8.17;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { ITempleStrategy, ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
+import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 
 /**
  * @title Treasury Reserves Vault (TRV)
@@ -19,7 +20,7 @@ import { ITempleStrategy, ITempleBaseStrategy } from "contracts/interfaces/v2/st
  * the debt to the temple treasury. This is used to compare strategies performance, where
  * we can determine an equity value (assets - debt).
  */
-interface ITreasuryReservesVault {
+interface ITreasuryReservesVault is ITempleElevatedAccess {
     event GlobalPausedSet(bool borrow, bool repay);
     event StrategyPausedSet(address indexed strategy, bool borrow, bool repay);
     event NewStrategyAdded(address indexed strategy, uint256 debtCeiling, int256 underperformingEquityThreshold);
@@ -42,7 +43,6 @@ interface ITreasuryReservesVault {
     error DebtCeilingBreached(uint256 available, uint256 borrowAmount);
     error DebtOverpayment(uint256 current, uint256 repayAmount);
     error NotShuttingDown();
-    error OnlyGovOrStrategy();
 
     struct Strategy {
         /**
@@ -51,12 +51,12 @@ interface ITreasuryReservesVault {
         bool isEnabled;
 
         /**
-         * @notice Governance can pause borrows
+         * @notice Pause borrows
          */
         bool borrowPaused;
 
         /**
-         * @notice Governance can pause repayments
+         * @notice Pause repayments
          */
         bool repaysPaused;
 
@@ -109,7 +109,7 @@ interface ITreasuryReservesVault {
     function baseStrategy() external view returns (ITempleBaseStrategy);
 
     /**
-     * @notice Governor can set the base strategy
+     * @notice Set the base strategy
      */
     function setBaseStrategy(address _baseStrategy) external;
 
@@ -168,7 +168,7 @@ interface ITreasuryReservesVault {
     function availableToBorrow(address strategy) external view returns (uint256);
 
     /**
-     * Governance can pause all strategy borrow and repays
+     * Pause all strategy borrow and repays
      */
     function globalSetPaused(bool borrow, bool repays) external;
 
@@ -178,17 +178,17 @@ interface ITreasuryReservesVault {
     function strategySetPaused(address strategy, bool borrow, bool repays) external;
 
     /**
-     * Governance can add a new strategy
+     * Add a new strategy
      */
     function addNewStrategy(address strategy, uint256 debtCeiling, int256 underperformingEquityThreshold) external;
 
     /**
-     * @notice Governance can update the debt ceiling for a given strategy
+     * @notice Update the debt ceiling for a given strategy
      */
     function setStrategyDebtCeiling(address strategy, uint256 newDebtCeiling) external;
 
     /**
-     * @notice Governance can update the underperforming equity threshold.
+     * @notice Update the underperforming equity threshold.
      */
     function setStrategyUnderperformingThreshold(address strategy, int256 underperformingEquityThreshold) external;
 
@@ -199,8 +199,8 @@ interface ITreasuryReservesVault {
     function checkpointAssetBalances(address[] memory strategyAddrs) external;
 
     /**
-     * @notice The first step in a two-phase shutdown. Governance first sets whether a strategy is slated for shutdown.
-     * The strategy (or governance) then needs to call shutdown as a separate call once ready.
+     * @notice The first step in a two-phase shutdown. Executor first sets whether a strategy is slated for shutdown.
+     * The strategy then needs to call shutdown as a separate call once ready.
      */
     function setStrategyIsShuttingDown(address strategy, bool isShuttingDown) external;
 
@@ -231,7 +231,7 @@ interface ITreasuryReservesVault {
     function repayAll() external returns (uint256 amountRepaid);
 
     /**
-     * @notice The second step in a two-phase shutdown. A strategy (automated) or governance (manual) calls
+     * @notice The second step in a two-phase shutdown. A strategy (automated) or executor (manual) calls
      * to effect the shutdown. isShuttingDown must be true for the strategy first.
      * The strategy executor is responsible for unwinding all it's positions first and sending stables to the TRV.
      * All outstanding dUSD debt is burned, leaving a net gain/loss of equity for the shutdown strategy.

@@ -2,7 +2,6 @@ pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
-import { Governable } from "contracts/common/access/Governable.sol";
 
 contract TempleDebtTokenTestnetAdmin {
 
@@ -36,11 +35,19 @@ contract TempleDebtTokenTestnetAdmin {
         dUSD.setRiskPremiumInterestRate(_debtor, _rate);
     }
 
-    function proposeNewGov(address newProposedGov) external {
-        Governable(address(dUSD)).proposeNewGov(newProposedGov);
+    function setRescueMode(bool value) external {
+        dUSD.setRescueMode(value);
     }
 
-    function acceptGov() external {
-        Governable(address(dUSD)).acceptGov();
+    function setRescuer(address account, bool value) external {
+        dUSD.setRescuer(account, value);
+    }
+
+    function setExecutor(address account, bool value) external {
+        dUSD.setExecutor(account, value);
+    }
+
+    function setExplicitAccess(address allowedCaller, bytes4 fnSelector, bool value) external {
+        dUSD.setExplicitAccess(allowedCaller, fnSelector, value);
     }
 }

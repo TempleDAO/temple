@@ -8,7 +8,7 @@ import { GnosisStrategy } from "contracts/v2/strategies/GnosisStrategy.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
-import { StrategyExecutors } from "contracts/v2/access/StrategyExecutors.sol";
+import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { ITreasuryReservesVault, TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
@@ -24,8 +24,6 @@ contract DsrBaseStrategyTestBase is TempleTest {
     IMakerDaoDaiJoinLike public daiJoin = IMakerDaoDaiJoinLike(0x9759A6Ac90977b93B58547b4A71c78317f391A28);
     IMakerDaoPotLike public pot = IMakerDaoPotLike(0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7);
 
-    address public executor = makeAddr("executor");
-
     FakeERC20 public frax = new FakeERC20("FRAX", "FRAX", address(0), 0);
     FakeERC20 public usdc = new FakeERC20("USDC", "USDC", address(0), 0);
 
@@ -40,19 +38,13 @@ contract DsrBaseStrategyTestBase is TempleTest {
     function _setUp() public {
         fork("mainnet", 16675385);
 
-        dUSD = new TempleDebtToken("Temple Debt", "dUSD", gov, defaultBaseInterest);
-        trv = new TreasuryReservesVault(gov, address(dai), address(dUSD));
-        strategy = new DsrBaseStrategy(gov, "DsrBaseStrategy", address(trv), address(daiJoin), address(pot));
+        dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
+        trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD));
+        strategy = new DsrBaseStrategy(rescuer, executor, "DsrBaseStrategy", address(trv), address(daiJoin), address(pot));
 
-        vm.startPrank(gov);
-        dUSD.addMinter(gov);
-        strategy.addStrategyExecutor(executor);
+        vm.startPrank(executor);
+        dUSD.addMinter(executor);
         vm.stopPrank();
-    }
-
-    function expectOnlyStrategyExecutors() internal {
-        vm.prank(unauthorizedUser);
-        vm.expectRevert(abi.encodeWithSelector(StrategyExecutors.OnlyStrategyExecutors.selector, unauthorizedUser));
     }
 
     function expectOnlyTrv() internal {
@@ -68,7 +60,8 @@ contract DsrBaseStrategyTestAdmin is DsrBaseStrategyTestBase {
     }
 
     function test_initalization() public {
-        assertEq(strategy.gov(), gov);
+        assertEq(strategy.executors(executor), true);
+        assertEq(strategy.rescuers(rescuer), true);
         assertEq(strategy.apiVersion(), "1.0.0");
         assertEq(strategy.strategyName(), "DsrBaseStrategy");
         assertEq(strategy.strategyVersion(), "1.0.0");
@@ -89,22 +82,22 @@ contract DsrBaseStrategyTestAccess is DsrBaseStrategyTestBase {
     }
 
     function test_access_borrowAndDeposit() public {
-        expectOnlyStrategyExecutors();
+        expectElevatedAccess();
         strategy.borrowAndDeposit(0);
     }
 
     function test_access_borrowAndDepositMax() public {
-        expectOnlyStrategyExecutors();
+        expectElevatedAccess();
         strategy.borrowAndDepositMax();
     }
 
     function test_access_withdrawAndRepay() public {
-        expectOnlyStrategyExecutors();
+        expectElevatedAccess();
         strategy.withdrawAndRepay(0);
     }
 
     function test_access_withdrawAndRepayAll() public {
-        expectOnlyStrategyExecutors();
+        expectElevatedAccess();
         strategy.withdrawAndRepayAll();
     }
 
@@ -114,7 +107,7 @@ contract DsrBaseStrategyTestAccess is DsrBaseStrategyTestBase {
     }
 
     function test_access_automatedShutdown() public {
-        expectOnlyStrategyExecutors();
+        expectElevatedAccess();
         strategy.automatedShutdown();
     }
 }
@@ -132,7 +125,7 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
 
         // Add the new strategy, and setup TRV such that it has stables 
         // to lend and issue dUSD.
-        vm.startPrank(gov);
+        vm.startPrank(executor);
         trv.addNewStrategy(address(strategy), borrowCeiling, 0);
         deal(address(dai), address(trv), trvStartingBalance, true);
         dUSD.addMinter(address(trv));
@@ -144,7 +137,7 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
         assertEq(dai.balanceOf(address(trv)), trvStartingBalance);
         assertEq(strategy.availableToBorrow(), borrowCeiling);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit DaiDeposited(amount);
 
         vm.startPrank(executor);
@@ -167,7 +160,7 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
         assertEq(dai.balanceOf(address(trv)), trvStartingBalance);
         assertEq(strategy.availableToBorrow(), borrowCeiling);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit DaiDeposited(borrowCeiling);
 
         vm.startPrank(executor);
@@ -198,7 +191,7 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InsufficientBalance.selector, address(dai), borrowAmount+1, borrowAmount-1));
         strategy.withdrawAndRepay(borrowAmount+1);
         
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit DaiWithdrawn(repayAmount);
         strategy.withdrawAndRepay(repayAmount);
 
@@ -217,7 +210,7 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
         vm.startPrank(executor);
         strategy.borrowAndDeposit(borrowAmount);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit DaiWithdrawn(borrowAmount-1);
         uint256 repayAmount = strategy.withdrawAndRepayAll();
         
@@ -243,7 +236,7 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
     function test_dsrEarning() public 
     {
         uint256 borrowAmount = 100e18;
-        vm.startPrank(gov);
+        vm.startPrank(executor);
         trv.setStrategyDebtCeiling(address(strategy), borrowAmount);
         deal(address(dai), address(trv), 100e18, true);
 
@@ -274,9 +267,9 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
         vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.NotShuttingDown.selector));
         uint256 repayAmount = strategy.automatedShutdown();
 
-        // Gov starts the shutdown.
+        // Executor initiates the shutdown.
         {
-            changePrank(gov);
+            changePrank(executor);
             trv.setStrategyIsShuttingDown(address(strategy), true);
             (bool isEnabled,,, bool isShuttingDown,,) = trv.strategies(address(strategy));
             assertTrue(isEnabled);
@@ -291,7 +284,7 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
         // Do the shutdown
         {
             changePrank(executor);
-            vm.expectEmit(true, true, true, true);
+            vm.expectEmit();
             emit Shutdown(borrowAmount-1);
             repayAmount = strategy.automatedShutdown();
             assertApproxEqAbs(repayAmount, borrowAmount, 1);
@@ -319,15 +312,14 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
     function setUp() public {
         _setUp();
 
-        gnosisStrategy = new GnosisStrategy(gov, "GnosisStrategy", address(trv), gnosisSafeWallet);
+        gnosisStrategy = new GnosisStrategy(rescuer, executor, "GnosisStrategy", address(trv), gnosisSafeWallet);
 
-        vm.startPrank(gov);
+        vm.startPrank(executor);
         trv.addNewStrategy(address(strategy), borrowCeiling, 0);
         trv.setBaseStrategy(address(strategy));
         deal(address(dai), address(trv), trvStartingBalance, true);
         dUSD.addMinter(address(trv));
         trv.addNewStrategy(address(gnosisStrategy), borrowCeiling, 0);
-        gnosisStrategy.addStrategyExecutor(executor);
         vm.stopPrank();
     }
 
@@ -341,7 +333,7 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         strategy.trvWithdraw(0);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit DaiWithdrawn(withdrawAmount);
         uint256 withdrawn = strategy.trvWithdraw(withdrawAmount);
         assertEq(withdrawn, withdrawAmount); // DSR Rounding
@@ -363,7 +355,7 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
 
         changePrank(address(trv));
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit DaiWithdrawn(borrowAmount - 1); // DSR Rounding
         uint256 withdrawn = strategy.trvWithdraw(withdrawAmount);
         assertEq(withdrawn, borrowAmount - 1); // DSR Rounding

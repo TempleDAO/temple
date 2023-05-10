@@ -54,13 +54,13 @@ contract TempleDebtTokenTestBase is TempleTest {
     }
 
     function _setUp() public {
-        dUSD = new TempleDebtToken("Temple Debt", "dUSD", gov, defaultBaseInterest);
-        vm.prank(gov);
-        dUSD.addMinter(operator);
+        dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
+        vm.prank(executor);
+        dUSD.addMinter(executor);
     }
 
     function setBaseInterest(uint256 r) internal {
-        vm.prank(gov);
+        vm.prank(executor);
         dUSD.setBaseInterestRate(r);
     }
 
@@ -183,40 +183,40 @@ contract TempleDebtTokenTestAdmin is TempleDebtTokenTestBase {
     }
 
     function test_access_addAndRemoveMinter() public {
-        expectOnlyGov();
+        expectElevatedAccess();
         dUSD.addMinter(alice);
 
-        expectOnlyGov();
+        expectElevatedAccess();
         dUSD.removeMinter(alice);
     }
 
     function test_addAndRemoveMinter() public {
-        vm.startPrank(gov);
+        vm.startPrank(executor);
         assertEq(dUSD.minters(alice), false);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit AddedMinter(alice);
         dUSD.addMinter(alice);
         assertEq(dUSD.minters(alice), true);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit RemovedMinter(alice);
         dUSD.removeMinter(alice);
         assertEq(dUSD.minters(alice), false);
     }
 
     function test_access_setBaseInterestRate() public {
-        expectOnlyGov();
+        expectElevatedAccess();
         dUSD.setBaseInterestRate(0);
     }
 
     function test_access_setRiskPremiumInterestRate() public {
-        expectOnlyGov();
+        expectElevatedAccess();
         dUSD.setRiskPremiumInterestRate(alice, 0);
     }
 
     function test_access_recoverToken() public {
-        expectOnlyGov();
+        expectElevatedAccess();
         dUSD.recoverToken(address(dUSD), alice, 100);
     }
 
@@ -244,38 +244,15 @@ contract TempleDebtTokenTestAdmin is TempleDebtTokenTestBase {
         uint256 amount = 100 ether;
         FakeERC20 token = new FakeERC20("fake", "fake", address(dUSD), amount);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit CommonEventsAndErrors.TokenRecovered(alice, address(token), amount);
 
-        vm.startPrank(gov);
+        vm.startPrank(executor);
         dUSD.recoverToken(address(token), alice, amount);
         assertEq(token.balanceOf(alice), amount);
         assertEq(token.balanceOf(address(dUSD)), 0);
     }
 
-    function test_access_proposeNewGov() public {
-        expectOnlyGov();
-        dUSD.proposeNewGov(alice);
-    }
-
-    function test_access_acceptGov() public {
-        vm.prank(gov);
-        dUSD.proposeNewGov(alice);
-
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, unauthorizedUser));
-        vm.prank(unauthorizedUser);
-        dUSD.acceptGov();
-    }
-
-    function test_changeGov() public {
-        assertEq(dUSD.gov(), gov);
-        vm.prank(gov);
-        dUSD.proposeNewGov(alice);
-        assertEq(dUSD.gov(), gov);
-        vm.prank(alice);
-        dUSD.acceptGov();
-        assertEq(dUSD.gov(), alice);
-    }
 }
 
 contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
@@ -284,7 +261,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_mint_invalidParams() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
         dUSD.mint(address(0), 100);
 
@@ -293,10 +270,10 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_mint_alice() public {
-        vm.prank(operator);
+        vm.prank(executor);
         uint256 amount = 100e18;
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit Transfer(address(0), alice, amount);
         dUSD.mint(alice, amount);
 
@@ -314,7 +291,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_mint_aliceAndBob_inSameBlock() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         dUSD.mint(bob, amount);
@@ -336,7 +313,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_mint_aliceAndBob_inDifferentBlock() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
 
@@ -366,7 +343,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_invalidParams() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
         dUSD.burn(address(0), 100, false);
 
@@ -375,11 +352,11 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_alice_inSameBlock() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit Transfer(alice, address(0), amount);
         uint256 burnedAmount = dUSD.burn(alice, amount, false);
 
@@ -389,7 +366,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_tooMuch_error() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
 
@@ -398,7 +375,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_tooMuch_cap() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
 
@@ -409,7 +386,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_alice_aDayLater() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         uint256 blockTs = block.timestamp;
@@ -427,7 +404,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_aliceAndBob_inSameBlock() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         dUSD.mint(bob, amount);
@@ -440,7 +417,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_aliceAndBob_aDayLater() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         dUSD.mint(bob, amount);
@@ -461,7 +438,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_aliceAndBob_inDifferentBlocks() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         uint256 blockTs1 = block.timestamp;
@@ -496,7 +473,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_alice_interestRepayOnly() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         uint256 blockTs = block.timestamp;
@@ -515,7 +492,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_aliceAndBob_partial() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         uint256 blockTs1 = block.timestamp;
@@ -563,7 +540,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     function test_zeroInterest() public {
         setBaseInterest(0);
 
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         uint256 blockTs1 = block.timestamp;
@@ -593,7 +570,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_setBaseInterestRate() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         uint256 startBlockTs = block.timestamp;
         dUSD.mint(alice, amount);
@@ -616,7 +593,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         uint256 bobBal = one_pct_364day;
         checkDebtor(bob, 0, amount, bobExpectedShares, 0, startBlockTs + 1 days, bobBal-1);
 
-        changePrank(gov);
+        changePrank(executor);
         uint256 updatedBaseRate = 0.05e18;
         dUSD.setBaseInterestRate(updatedBaseRate);
 
@@ -642,7 +619,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burnAll_invalidParams() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
         dUSD.burnAll(address(0));
 
@@ -651,7 +628,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burnAll() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
 
         uint256 amount = 100e18;
         uint256 startBlockTs = block.timestamp;
@@ -660,14 +637,14 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         dUSD.mint(bob, amount);
 
         vm.warp(block.timestamp + 364 days);
-        changePrank(gov);
+        changePrank(executor);
         dUSD.setBaseInterestRate(0.05e18);
         vm.warp(block.timestamp + 365 days);
 
         uint256 bobExpectedShares = second_day_shares;
         uint256 bobBal = 106180745553163435826;
 
-        changePrank(operator);
+        changePrank(executor);
         dUSD.burnAll(alice);
         checkBaseInterest(0.05e18, bobExpectedShares, bobBal, block.timestamp, bobBal, amount, 0);
         checkDebtor(alice, 0, 0, 0, 0, block.timestamp, 0);
@@ -680,7 +657,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_shareToDebtConversion() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
 
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
@@ -688,7 +665,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         dUSD.mint(bob, amount);
 
         vm.warp(block.timestamp + 364 days);
-        changePrank(gov);
+        changePrank(executor);
         dUSD.setBaseInterestRate(0.05e18);
         vm.warp(block.timestamp + 365 days);
 
@@ -704,7 +681,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_currentDebtOf() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
 
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
@@ -712,7 +689,7 @@ contract TempleDebtTokenTestBaseInterestOnly is TempleDebtTokenTestBase {
         dUSD.mint(bob, amount);
 
         vm.warp(block.timestamp + 364 days);
-        changePrank(gov);
+        changePrank(executor);
         dUSD.setBaseInterestRate(0.05e18);
         vm.warp(block.timestamp + 365 days);
 
@@ -739,7 +716,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     function setUp() public {
         _setUp();
 
-        vm.startPrank(gov);
+        vm.startPrank(executor);
         dUSD.setBaseInterestRate(0);
         dUSD.setRiskPremiumInterestRate(alice, aliceInterestRate);
         dUSD.setRiskPremiumInterestRate(bob, bobInterestRate);
@@ -747,7 +724,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_mint_alice() public {
-        vm.prank(operator);
+        vm.prank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
 
@@ -766,7 +743,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_mint_aliceAndBob_inSameBlock() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         dUSD.mint(bob, amount);
@@ -793,7 +770,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_mint_aliceAndBob_inDifferentBlock() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
 
@@ -821,7 +798,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_alice_inSameBlock() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         dUSD.burn(alice, amount, false);
@@ -831,7 +808,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_alice_aDayLater() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         uint256 blockTs = block.timestamp;
@@ -848,7 +825,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_aliceAndBob_inSameBlock() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         dUSD.mint(bob, amount);
@@ -861,7 +838,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_aliceAndBob_aDayLater() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         dUSD.mint(bob, amount);
@@ -884,7 +861,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_aliceAndBob_inDifferentBlocks() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         uint256 blockTs1 = block.timestamp;
@@ -917,7 +894,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_alice_interestRepayOnly() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         uint256 blockTs = block.timestamp;
@@ -937,7 +914,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_burn_aliceAndBob_partial() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         uint256 blockTs1 = block.timestamp;
@@ -981,7 +958,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_setRiskPremiumInterestRate() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         uint256 startBlockTs = block.timestamp;
         dUSD.mint(alice, amount);
@@ -997,7 +974,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
         checkDebtor(alice, aliceInterestRate, amount, amount, 0, startBlockTs, aliceBal);
         checkDebtor(bob, bobInterestRate, amount, amount, 0, startBlockTs + 1 days, bobBal);
 
-        changePrank(gov);
+        changePrank(executor);
         uint256 updatedRate = 0.1e18;
         dUSD.setRiskPremiumInterestRate(alice, updatedRate);
 
@@ -1020,7 +997,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
     
     function test_burnAll() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
 
         uint256 amount = 100e18;
         uint256 startBlockTs = block.timestamp;
@@ -1029,13 +1006,13 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
         dUSD.mint(bob, amount);
 
         vm.warp(block.timestamp + 364 days);
-        changePrank(gov);
+        changePrank(executor);
         dUSD.setRiskPremiumInterestRate(alice, 0.1e18);
         vm.warp(block.timestamp + 365 days);
 
         uint256 bobBal = five_pct_729day;
 
-        changePrank(operator);
+        changePrank(executor);
         dUSD.burnAll(alice);
         checkBaseInterest(0, amount, amount, block.timestamp, amount, amount, 0);
         checkDebtor(alice, 0.1e18, 0, 0, 0, block.timestamp, 0);
@@ -1048,7 +1025,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_checkpointDebtorsInterest() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         uint256 startBlockTs = block.timestamp;
         dUSD.mint(alice, amount);
@@ -1073,7 +1050,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
     }
 
     function test_currentDebtOf() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
 
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
@@ -1081,7 +1058,7 @@ contract TempleDebtTokenTestDebtorInterestOnly is TempleDebtTokenTestBase {
         dUSD.mint(bob, amount);
 
         vm.warp(block.timestamp + 364 days);
-        changePrank(gov);
+        changePrank(executor);
         dUSD.setRiskPremiumInterestRate(alice, 0.1e18);
         vm.warp(block.timestamp + 365 days);
 
@@ -1107,14 +1084,14 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     function setUp() public {
         _setUp();
 
-        vm.startPrank(gov);
+        vm.startPrank(executor);
         dUSD.setRiskPremiumInterestRate(alice, aliceInterestRate);
         dUSD.setRiskPremiumInterestRate(bob, bobInterestRate);
         vm.stopPrank();
     }
 
     function test_mint_alice() public {
-        vm.prank(operator);
+        vm.prank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
 
@@ -1134,7 +1111,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     }
 
     function test_mint_aliceAndBob_inSameBlock() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         dUSD.mint(bob, amount);
@@ -1169,7 +1146,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     }
 
     function test_mint_aliceAndBob_inDifferentBlock() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
 
@@ -1214,7 +1191,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     }
 
     function test_burn_alice_inSameBlock() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         dUSD.burn(alice, amount, false);
@@ -1224,7 +1201,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     }
 
     function test_burn_alice_aDayLater() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         uint256 blockTs = block.timestamp;
@@ -1244,7 +1221,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     }
 
     function test_burn_aliceAndBob_inSameBlock() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         dUSD.mint(bob, amount);
@@ -1257,7 +1234,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     }
 
     function test_burn_aliceAndBob_aDayLater() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         dUSD.mint(bob, amount);
@@ -1285,7 +1262,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     }
 
     function test_burn_aliceAndBob_inDifferentBlocks() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         uint256 blockTs1 = block.timestamp;
@@ -1326,7 +1303,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     }
 
     function test_burn_alice_interestRepayOnly() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         uint256 blockTs = block.timestamp;
@@ -1353,12 +1330,12 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     function test_burn_alice_flippedRates() public {
         // Flip so the base rate is higher than Alice's rate
         // so we can check the order of what gets paid off first.
-        vm.startPrank(gov);
+        vm.startPrank(executor);
         dUSD.setBaseInterestRate(aliceInterestRate);
         dUSD.setRiskPremiumInterestRate(alice, defaultBaseInterest);
         vm.stopPrank();
 
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         uint256 blockTs = block.timestamp;
@@ -1384,7 +1361,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     }
 
     function test_burn_aliceAndBob_partial() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
         vm.warp(block.timestamp + 1 days);
@@ -1443,7 +1420,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     }
 
     function test_setRiskPremiumInterestRate() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         uint256 startBlockTs = block.timestamp;
         dUSD.mint(alice, amount);
@@ -1467,7 +1444,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         checkDebtor(alice, aliceInterestRate, amount, aliceExpected.baseShares, 0, startBlockTs, aliceExpected.balanceOf);
         checkDebtor(bob, bobInterestRate, amount, bobExpected.baseShares, 0, startBlockTs + 1 days, bobExpected.balanceOf-1); // balanceOf rounded down
 
-        changePrank(gov);
+        changePrank(executor);
         uint256 updatedRate = 0.1e18;
         dUSD.setRiskPremiumInterestRate(alice, updatedRate);
 
@@ -1518,7 +1495,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     }
     
     function test_burnAll() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
 
         uint256 amount = 100e18;
         uint256 startBlockTs = block.timestamp;
@@ -1527,7 +1504,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         dUSD.mint(bob, amount);
 
         vm.warp(block.timestamp + 364 days);
-        changePrank(gov);
+        changePrank(executor);
         dUSD.setRiskPremiumInterestRate(alice, 0.1e18);
         vm.warp(block.timestamp + 365 days);
 
@@ -1540,7 +1517,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
             amount
         );
 
-        changePrank(operator);
+        changePrank(executor);
         dUSD.burnAll(alice);
         checkBaseInterest(defaultBaseInterest, bobExpectedShares, compoundedBobBase, block.timestamp, compoundedBobBase, amount, 0);
         checkDebtor(alice, 0.1e18, 0, 0, 0, block.timestamp, 0);
@@ -1553,7 +1530,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     }
 
     function test_checkpointDebtorsInterest() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
         uint256 amount = 100e18;
         uint256 startBlockTs = block.timestamp;
         dUSD.mint(alice, amount);
@@ -1592,7 +1569,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
     }
 
     function test_currentDebtOf() public {
-        vm.startPrank(operator);
+        vm.startPrank(executor);
 
         uint256 amount = 100e18;
         dUSD.mint(alice, amount);
@@ -1600,7 +1577,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         dUSD.mint(bob, amount);
 
         vm.warp(block.timestamp + 364 days);
-        changePrank(gov);
+        changePrank(executor);
         dUSD.setRiskPremiumInterestRate(alice, 0.1e18);
         vm.warp(block.timestamp + 365 days);
 
@@ -1630,9 +1607,9 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         vm.assume(amount < 100_000_000e18);
         vm.assume(timeGap < 5 * 365 days);
 
-        vm.startPrank(gov);
+        vm.startPrank(executor);
         dUSD.setRiskPremiumInterestRate(account, aliceInterestRate);
-        changePrank(operator);
+        changePrank(executor);
 
         dUSD.mint(account, amount);
 

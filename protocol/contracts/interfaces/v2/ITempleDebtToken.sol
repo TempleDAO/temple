@@ -3,8 +3,9 @@ pragma solidity ^0.8.17;
 // Temple (interfaces/v2/ITempleDebtToken.sol)
 
 import { IERC20, IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 
-interface ITempleDebtToken is IERC20, IERC20Metadata {
+interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
     error NonTransferrable();
     error BurnExceedsBalance(uint256 availableToBurn, uint256 amount);
     error CannotMintOrBurn(address caller);

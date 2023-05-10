@@ -5,6 +5,7 @@ pragma solidity ^0.8.17;
 import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
+import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 
 /**
  * @title Temple Strategy
@@ -25,7 +26,7 @@ import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
  *   a/ Graceful shutdown, where any liquidation can happen automatically
  *   b/ Force shutdown, where the Executor needs to handle any liquidations manually and send funds back to Treasury first.
  */
-interface ITempleStrategy {
+interface ITempleStrategy is ITempleElevatedAccess {
     struct AssetBalance {
         address asset;
         uint256 balance;

@@ -4,20 +4,18 @@ pragma solidity ^0.8.17;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Governable } from "contracts/common/access/Governable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import { ITempleStrategy, ITreasuryReservesVault } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-
-import { StrategyExecutors } from "contracts/v2/access/StrategyExecutors.sol";
+import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 
 /**
  * @dev Abstract base contract implementation of a Temple Strategy. 
  * All strategies should inherit this.
  */
-abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecutors {
+abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -51,10 +49,11 @@ abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecu
     EnumerableSet.AddressSet private manualAssetBalanceDeltasKeys;
 
     constructor(
-        address _initialGov,
+        address _initialRescuer,
+        address _initialExecutor,
         string memory _strategyName,
         address _treasuryReservesVault
-    ) Governable(_initialGov) {
+    ) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
         strategyName = _strategyName;
         treasuryReservesVault = ITreasuryReservesVault(_treasuryReservesVault);
         stableToken = treasuryReservesVault.stableToken();
@@ -65,25 +64,9 @@ abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecu
     }
 
     /**
-     * @notice Grant `_account` the strategy executor role
-     * @dev Derived classes to implement and add protection on who can call
-     */
-    function addStrategyExecutor(address _account) external override onlyGov {
-        _addStrategyExecutor(_account);
-    }
-
-    /**
-     * @notice Revoke the strategy executor role from `_account`
-     * @dev Derived classes to implement and add protection on who can call
-     */
-    function removeStrategyExecutor(address _account) external override onlyGov {
-        _removeStrategyExecutor(_account);
-    }
-
-    /**
      * @notice Governance can set the address of the treasury reserves vault.
      */
-    function setTreasuryReservesVault(address _trv) external override onlyGov {
+    function setTreasuryReservesVault(address _trv) external override onlyElevatedAccess {
         if (_trv == address(0)) revert CommonEventsAndErrors.InvalidAddress(_trv);
 
         // Remove stable approvals from the old TRV, and give to the new TRV.
@@ -130,7 +113,7 @@ abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecu
      * @dev It is up to the Strategy implementation to add these deltas to the `latestAssetBalances()`
      * and `checkpointAssetBalances()` functions.
      */
-    function setManualAssetBalanceDeltas(AssetBalanceDelta[] calldata assetDeltas) external onlyStrategyExecutors {
+    function setManualAssetBalanceDeltas(AssetBalanceDelta[] calldata assetDeltas) external onlyElevatedAccess {
         // This doesn't delete prior deltas. If no longer required then set to 0
         uint256 _length = assetDeltas.length;
         AssetBalanceDelta calldata abd;
@@ -189,7 +172,7 @@ abstract contract AbstractStrategy is ITempleStrategy, Governable, StrategyExecu
     /**
      * @notice Governance can recover any token from the strategy.
      */
-    function recoverToken(address token, address to, uint256 amount) external override onlyGov {
+    function recoverToken(address token, address to, uint256 amount) external override onlyElevatedAccess {
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
         IERC20(token).safeTransfer(to, amount);
     }

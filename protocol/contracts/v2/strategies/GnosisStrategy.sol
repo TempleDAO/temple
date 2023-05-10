@@ -26,11 +26,12 @@ contract GnosisStrategy  is AbstractStrategy {
     event Repay(uint256 amount);
 
     constructor(
-        address _initialGov,
+        address _initialRescuer,
+        address _initialExecutor,
         string memory _strategyName,
         address _treasuryReservesVault,
         address _gnosisSafeWallet
-    ) AbstractStrategy(_initialGov, _strategyName, _treasuryReservesVault) {
+    ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
         gnosisSafeWallet = _gnosisSafeWallet;
     }
 
@@ -45,7 +46,7 @@ contract GnosisStrategy  is AbstractStrategy {
      * @notice The assets on which to report balances need to be set by the Strategy Executors
      * @dev Use the zero address (0x000) to represent native ETH
      */
-    function setAssets(address[] calldata _assets) external onlyStrategyExecutors {
+    function setAssets(address[] calldata _assets) external onlyElevatedAccess {
         assets = _assets;
         emit AssetsSet(_assets);
     }
@@ -59,47 +60,47 @@ contract GnosisStrategy  is AbstractStrategy {
     }
 
     /**
-     * @notice A strategy executor borrows a fixed amount from the Treasury Reserves
+     * @notice Borrow a fixed amount from the Treasury Reserves
      * These stables are sent to the Gnosis wallet
      */
-    function borrow(uint256 amount) external onlyStrategyExecutors {
+    function borrow(uint256 amount) external onlyElevatedAccess {
         emit Borrow(amount);
         treasuryReservesVault.borrow(amount);
         stableToken.safeTransfer(gnosisSafeWallet, amount);
     }
 
     /**
-     * @notice A strategy executor borrows the max amount from the Treasury Reserves
+     * @notice Borrow the max amount from the Treasury Reserves
      * These stables are sent to the Gnosis wallet
      */
-    function borrowMax() external onlyStrategyExecutors returns (uint256 borrowedAmount) {
+    function borrowMax() external onlyElevatedAccess returns (uint256 borrowedAmount) {
         borrowedAmount = treasuryReservesVault.borrowMax();
         emit Borrow(borrowedAmount);
         stableToken.safeTransfer(gnosisSafeWallet, borrowedAmount);
     }
 
     /**
-     * @notice A strategy executor repays debt back to the Treasury Reserves.
-     * They must send the stable tokens to this strategy prior to calling.
+     * @notice Repay debt back to the Treasury Reserves.
+     * First send the stable tokens to this strategy prior to calling.
      */
-    function repay(uint256 amount) external onlyStrategyExecutors {
+    function repay(uint256 amount) external onlyElevatedAccess {
         emit Repay(amount);
         treasuryReservesVault.repay(amount);
     }
 
     /**
-     * @notice A strategy executor repays debt back to the Treasury Reserves.
-     * They must send the stable tokens to this strategy prior to calling.
+     * @notice Repay debt back to the Treasury Reserves.
+     * First send the stable tokens to this strategy prior to calling.
      */
-    function repayAll() external onlyStrategyExecutors returns (uint256 repaidAmount) {
+    function repayAll() external onlyElevatedAccess returns (uint256 repaidAmount) {
         repaidAmount = treasuryReservesVault.repayAll();
         emit Repay(repaidAmount);
     }
 
     /** 
-     * @notice A strategy executor pulls tokens from this contract back into it's whitelisted gnosis
+     * @notice Pull tokens from this contract back into it's whitelisted gnosis
      */
-    function recoverToGnosis(address token, uint256 amount) external onlyStrategyExecutors {
+    function recoverToGnosis(address token, uint256 amount) external onlyElevatedAccess {
         IERC20(token).safeTransfer(gnosisSafeWallet, amount);
         emit CommonEventsAndErrors.TokenRecovered(gnosisSafeWallet, token, amount);
     }

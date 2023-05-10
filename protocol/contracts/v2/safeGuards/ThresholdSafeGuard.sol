@@ -9,18 +9,18 @@ import { GnosisSafe } from '@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol';
 import { Enum } from '@gnosis.pm/safe-contracts/contracts/common/Enum.sol';
 
 import { IThresholdSafeGuard } from "contracts/interfaces/v2/safeGuards/IThresholdSafeGuard.sol";
-import { Governable } from "contracts/common/access/Governable.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { SafeForked } from "contracts/v2/safeGuards/SafeForked.sol";
+import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 
 /**
   * @title Threshold Safe Guard
   * @notice This Safe Guard performs two pre-execute checks:
-  *    1/ The transactionExecutor is a safe owner or a pre-approved executor
+  *    1/ The safeTxExecutor is a safe owner or a pre-approved executor
   *    2/ The number of signers is >= a per contract/function defined threshold
   *       (or a default threshold if not explicitly set per contract/function)
  */
-contract ThresholdSafeGuard is IThresholdSafeGuard, Governable {
+contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -50,16 +50,16 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, Governable {
       * @notice Approved addresses which are allowed to execute approved transactions
       * Safe owners are also allowed to execute.
      */
-    EnumerableSet.AddressSet internal _executors;
+    EnumerableSet.AddressSet internal _safeTxExecutors;
 
-    constructor(address _initialGov, uint256 _defaultSignaturesThreshold) 
-        Governable(_initialGov)
+    constructor(address _initialRescuer, address _initialExecutor, uint256 _defaultSignaturesThreshold) 
+        TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
         defaultSignaturesThreshold = _defaultSignaturesThreshold;
     }
 
     // Who should have access to do this? Rescue mode disables the guard
-    function setDisableGuardChecks(bool value) external onlyGov {
+    function setDisableGuardChecks(bool value) external onlyElevatedAccess {
         disableGuardChecks = value;
         emit DisableGuardChecksSet(value);
     }
@@ -68,27 +68,27 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, Governable {
       * @notice Add an address to the allowed list who can execute the transaction
       * once the minimum threshold of signers have approved
      */
-    function addExecutor(address executor) external onlyGov {
+    function addSafeTxExecutor(address executor) external onlyElevatedAccess {
         if (executor == address(0)) revert InvalidAddress();
-        emit AddedExecutor(executor);
-        if (!_executors.add(executor)) revert InvalidExecutor();
+        emit SafeTxExecutorAdded(executor);
+        if (!_safeTxExecutors.add(executor)) revert InvalidExecutor();
     }
 
     /**
       * @notice Remove an address from the allowed list who can execute the transaction
       * once the minimum threshold of signers have approved
      */
-    function removeExecutor(address executor) external onlyGov {
+    function removeSafeTxExecutor(address executor) external onlyElevatedAccess {
         if (executor == address(0)) revert InvalidAddress();
-        emit RemovedExecutor(executor);
-        if (!_executors.remove(executor)) revert InvalidExecutor();
+        emit SafeTxExecutorRemoved(executor);
+        if (!_safeTxExecutors.remove(executor)) revert InvalidExecutor();
     }
 
     /**
       * @notice Set the default number of signatories required, when a contract/function signature
       * not explicitly defined.
      */
-    function setDefaultSignaturesThreshold(uint256 threshold) external onlyGov {
+    function setDefaultSignaturesThreshold(uint256 threshold) external onlyElevatedAccess {
         emit DefaultSignaturesThresholdSet(threshold);
         defaultSignaturesThreshold = threshold;
     }
@@ -96,7 +96,7 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, Governable {
     /**
       * @notice Set the number of signatories required for a contract/function signature pair.
      */
-    function setFunctionThreshold(address contractAddr, bytes4 functionSignature, uint256 threshold) external onlyGov {
+    function setFunctionThreshold(address contractAddr, bytes4 functionSignature, uint256 threshold) external onlyElevatedAccess {
         if (contractAddr == address(0)) revert InvalidAddress();
         if (functionSignature == bytes4(0)) revert InvalidFunctionSignature();
 
@@ -108,8 +108,8 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, Governable {
       * @notice The set of extra addresses (along with the Safe owners) allowed to execute
       * the transaction once the minimum threshold of signers have approved
      */
-    function executors() external view returns (address[] memory _executorsArray) {
-        return _executors.values();
+    function safeTxExecutors() external view returns (address[] memory executors) {
+        return _safeTxExecutors.values();
     }
 
     /**
@@ -123,7 +123,7 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, Governable {
     /**
       * @notice The Safe will call this method once the signatories has been checked vs Safe's builtin threshold.
       * This will revert:
-      *    1/ If the transactionExecutor is not either a safe owner or pre-approved executor
+      *    1/ If the safeTxExecutor is not either a safe owner or pre-approved executor
       *    2/ The number of signers does not meet a per contract/function defined threshold
       *       (or a default threshold if not explicitly set per contract/function)
       * 
@@ -146,14 +146,14 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, Governable {
         // solhint-disable-next-line no-unused-vars
         address payable refundReceiver,
         bytes memory signatures,
-        address transactionExecutor
+        address safeTxExecutor
     ) external view {
         // Circuit breaker
         if (disableGuardChecks) return;
 
         GnosisSafe safe = GnosisSafe(payable(msg.sender));
 
-        if (!(_executors.contains(transactionExecutor) || safe.isOwner(transactionExecutor))) {
+        if (!(_safeTxExecutors.contains(safeTxExecutor) || safe.isOwner(safeTxExecutor))) {
             revert InvalidExecutor();
         }
 
@@ -191,7 +191,7 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, Governable {
                 refundReceiver, 
                 safe.nonce() - 1 // Remove one from the nonce, as the Safe.execTransaction increased it prior to calling the guard.
             );
-            SafeForked.checkNSignatures(transactionExecutor, safe, keccak256(txHashData), data, signatures, threshold);
+            SafeForked.checkNSignatures(safeTxExecutor, safe, keccak256(txHashData), data, signatures, threshold);
         }
     }
 
@@ -207,7 +207,7 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, Governable {
     /**
       * @notice Governance can recover any token from the strategy.
      */
-    function recoverToken(address token, address to, uint256 amount) external onlyGov {
+    function recoverToken(address token, address to, uint256 amount) external onlyElevatedAccess {
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
         IERC20(token).safeTransfer(to, amount);
     }

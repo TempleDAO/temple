@@ -39,12 +39,13 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     event DaiWithdrawn(uint256 amount);
 
     constructor(
-        address _initialGov,
+        address _initialRescuer,
+        address _initialExecutor,
         string memory _strategyName,
         address _treasuryReservesVault,
         address _daiJoin, 
         address _pot
-    ) AbstractStrategy(_initialGov, _strategyName, _treasuryReservesVault) {
+    ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
         daiJoin = IMakerDaoDaiJoinLike(_daiJoin);
         IMakerDaoVatLike vat = IMakerDaoVatLike(daiJoin.vat());
         pot = IMakerDaoPotLike(_pot);
@@ -141,7 +142,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * This will be likely be called from a bot. It should only do this if there's a 
      * minimum threshold to pull and deposit given gas costs to deposit into DSR.
      */
-    function borrowAndDeposit(uint256 amount) external override onlyStrategyExecutors {
+    function borrowAndDeposit(uint256 amount) external override onlyElevatedAccess {
         // Borrow the DAI. This will also mint `dUSD` debt.
         treasuryReservesVault.borrow(amount);
         _dsrDeposit(amount);
@@ -157,7 +158,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * This will be likely be called from a bot. It should only do this if there's a 
      * minimum threshold to pull and deposit given gas costs to deposit into DSR.
      */
-    function borrowAndDepositMax() external override onlyStrategyExecutors returns (uint256 borrowedAmount) {
+    function borrowAndDepositMax() external override onlyElevatedAccess returns (uint256 borrowedAmount) {
         // Borrow the DAI. This will also mint `dUSD` debt.
         borrowedAmount = treasuryReservesVault.borrowMax();
         _dsrDeposit(borrowedAmount);
@@ -174,9 +175,9 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     }
 
     /**
-     * @notice The strategy executor may withdraw DAI from DSR and pay back to Treasury Reserves Vault
+     * @notice Withdraw DAI from DSR and pay back to Treasury Reserves Vault
      */
-    function withdrawAndRepay(uint256 withdrawalAmount) external onlyStrategyExecutors {
+    function withdrawAndRepay(uint256 withdrawalAmount) external onlyElevatedAccess {
         if (withdrawalAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();       
 
         (uint256 daiAvailable, uint256 chi, ) = _checkpointDaiBalance();
@@ -191,7 +192,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     /**
      * @notice Withdraw all possible DAI from the DSR, and send to the Treasury Reserves Vault
      */
-    function withdrawAndRepayAll() external onlyStrategyExecutors returns (uint256) {
+    function withdrawAndRepayAll() external onlyElevatedAccess returns (uint256) {
         (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
         _dsrWithdrawal(sharesAvailable, daiAvailable);
 
@@ -229,14 +230,15 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         daiJoin.exit(address(this), daiAmount);
         emit DaiWithdrawn(daiAmount);
     }
+    
     /**
-     * @notice The strategy executor can shutdown this strategy, only after Governance has 
-     * marked the strategy as `isShuttingDown` in the TRV.
+     * @notice Shutdown this strategy, only after it has first been
+     * marked the in the Treasury Reserve Vault as `isShuttingDown` in the TRV.
      *
      * @dev This first withdraws all DAI from the DSR and sends all funds to the TRV, and then 
      * applies the shutdown in the TRV.
      */
-    function automatedShutdown() external override onlyStrategyExecutors returns (uint256) {
+    function automatedShutdown() external override onlyElevatedAccess returns (uint256) {
         // Withdraw all from DSR and send everything back to the Treasury Reserves Vault.
         (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
         _dsrWithdrawal(sharesAvailable, daiAvailable);

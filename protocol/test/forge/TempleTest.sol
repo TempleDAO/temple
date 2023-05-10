@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { Test, StdChains } from "forge-std/Test.sol";
-import { GovernableBase } from "contracts/common/access/Governable.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 /// @notice A forge test base class which can setup to use a fork, deploy UUPS proxies, etc
 abstract contract TempleTest is Test {
@@ -14,7 +14,8 @@ abstract contract TempleTest is Test {
     address public unauthorizedUser = makeAddr("unauthorizedUser");
     address public alice = makeAddr("alice");
     address public operator = makeAddr("operator");
-    address public gov = makeAddr("gov");
+    address public executor = makeAddr("executor");
+    address public rescuer = makeAddr("rescuer");
 
     // Fork using .env $<CHAIN_ALIAS>_RPC_URL (or the default RPC URL), and a specified blockNumber.
     function fork(string memory chainAlias, uint256 _blockNumber) internal {
@@ -31,13 +32,8 @@ abstract contract TempleTest is Test {
         return address(new ERC1967Proxy(_implementation, ""));
     }
 
-    function expectOnlyOwner() internal {
+    function expectElevatedAccess() internal {
         vm.prank(unauthorizedUser);
-        vm.expectRevert("Ownable: caller is not the owner");
-    }
-
-    function expectOnlyGov() internal {
-        vm.prank(unauthorizedUser);
-        vm.expectRevert(abi.encodeWithSelector(GovernableBase.NotGovernor.selector));
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
     }
 }

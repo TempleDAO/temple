@@ -56,7 +56,7 @@ contract TempleTeamPaymentsFactoryTest is TempleTest {
         vm.startPrank(multisig);
         temple.approve(address(factory), type(uint256).max);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit FundingPaid(factory.lastPaidEpoch() + 1, recip, values);
         factory.directPayouts(temple, recip, values);
         vm.stopPrank();
@@ -103,7 +103,7 @@ contract TempleTeamPaymentsFactoryTest is TempleTest {
             salt,
             address(factory)
         );
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit FundingDeployed(
             factory.lastPaidEpoch() + 1,
             recip,
@@ -151,7 +151,7 @@ contract TempleTeamPaymentsFactoryTest is TempleTest {
         TempleTeamPaymentsV2 testContract = testDeployPayoutsSingle();
 
         bool prevState = testContract.paused(testUser);
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit MemberToggled(testUser, !prevState);
         vm.prank(multisig);
         testContract.toggleMember(testUser);
@@ -161,7 +161,7 @@ contract TempleTeamPaymentsFactoryTest is TempleTest {
         TempleTeamPaymentsV2 testContract = testDeployPayoutsSingle();
 
         uint256 newAllocation = 123 ether;
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit AllocationSet(testUser, newAllocation);
         vm.prank(multisig);
         testContract.setAllocation(testUser, newAllocation);
@@ -172,7 +172,7 @@ contract TempleTeamPaymentsFactoryTest is TempleTest {
 
         uint256 prev = temple.balanceOf(testUser);
         uint256 alloc = testContract.allocation(testUser);
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit Claimed(address(testUser), alloc);
         vm.prank(testUser);
         testContract.claim(type(uint256).max);
@@ -189,12 +189,12 @@ contract TempleTeamPaymentsFactoryTest is TempleTest {
         uint256 prev = temple.balanceOf(testUser);
         uint256 alloc = testContract.allocation(testUser);
         uint256 halfAlloc = alloc / 2;
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit Claimed(address(testUser), halfAlloc);
         vm.prank(testUser);
         testContract.claim(halfAlloc);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit Claimed(address(testUser), halfAlloc);
         vm.prank(testUser);
         testContract.claim(halfAlloc);
