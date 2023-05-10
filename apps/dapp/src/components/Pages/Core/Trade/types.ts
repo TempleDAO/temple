@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { TransactionSettings } from 'components/TransactionSettingsModal/TransactionSettingsModal';
 import { TICKER_SYMBOL } from 'enums/ticker-symbol';
-import { SwapInfo } from '@balancer-labs/sor';
+import { SwapInfo } from '@balancer-labs/sdk';
 import { CryptoSelector, CryptoValue } from '../NewUI/HomeInput';
 
 export enum SwapMode {

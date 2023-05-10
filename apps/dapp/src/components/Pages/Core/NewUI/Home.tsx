@@ -9,7 +9,6 @@ import buildings from './assets/Buildings.svg';
 import hero from './assets/Hero.svg';
 import socialDiscordIcon from 'assets/images/social-discord.png';
 import socialDocsIcon from 'assets/images/social-docs.png';
-import socialCodexIcon from 'assets/images/social-codex.png';
 import socialMediumIcon from 'assets/images/social-medium.png';
 import socialTelegramIcon from 'assets/images/social-telegram.png';
 import socialTwitterIcon from 'assets/images/social-twitter.png';
@@ -17,7 +16,7 @@ import { Link } from 'react-router-dom';
 import { TemplePriceChart } from './PriceChart';
 import { RAMOSMetrics } from './RAMOSMetrics';
 import { Button } from 'components/Button/Button';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Trade } from './TradeNew';
 import { useAccount } from 'wagmi';
 import { Account } from 'components/Layouts/CoreLayout/Account';
@@ -25,7 +24,6 @@ import { fetchGenericSubgraph } from 'utils/subgraph';
 import ClaimModal from './ClaimModal';
 import UnstakeOgtModal from './UnstakeModal';
 import { useWallet } from 'providers/WalletProvider';
-import DefendModal from './DefendModal';
 
 interface Metrics {
   price: number;
@@ -97,11 +95,6 @@ const FooterContent = [
         image: socialMediumIcon,
         link: 'https://templedao.medium.com/',
       },
-      {
-        text: 'Codex',
-        image: socialCodexIcon,
-        link: 'https://templecodex.link',
-      },
     ],
   },
 ];
@@ -131,7 +124,6 @@ const Home = () => {
 
   const [isClaimFromVaultsLegacyModalOpen, setIsClaimFromVaultsLegacyModalOpen] = useState(false);
   const [isUnstakeOgtLegacyModalOpen, setIsUnstakeOgtLegacyModalOpen] = useState(false);
-  const [isDefendModalOpen, setIsDefendModalOpen] = useState(true);
 
   const legacyClaimClickHandler = () => {
     if (!address) {
@@ -193,7 +185,6 @@ const Home = () => {
     <>
       <LegacyLinkHeader>
         <LegacyText>Legacy features</LegacyText>
-        <LegacyLink onClick={() => setIsDefendModalOpen(true)}>Temple Defend</LegacyLink>
         <LegacyLink onClick={legacyClaimClickHandler}>Claim from vaults</LegacyLink>
         <LegacyLink onClick={legacyUnstakeOgtClickHandler}>Unstake OGT</LegacyLink>
       </LegacyLinkHeader>
@@ -215,7 +206,7 @@ const Home = () => {
               <>
                 <NewTempleText>The New Temple</NewTempleText>
                 <TradeDetailText>A wrapped treasury token with steady price growth in all conditions</TradeDetailText>
-                <TradeButton onClick={() => setIsDefendModalOpen(true)}>Trade</TradeButton>
+                <TradeButton onClick={tradeButtonClickHandler}>Trade</TradeButton>
                 <LearnMoreLink onClick={legacyClaimClickHandler}>Claim from Vaults</LearnMoreLink>
               </>
             )}
@@ -303,7 +294,6 @@ const Home = () => {
         onClose={() => setIsClaimFromVaultsLegacyModalOpen(false)}
       />
       <UnstakeOgtModal isOpen={isUnstakeOgtLegacyModalOpen} onClose={() => setIsUnstakeOgtLegacyModalOpen(false)} />
-      <DefendModal isOpen={isDefendModalOpen} onClose={() => setIsDefendModalOpen(false)} />
     </>
   );
 };
@@ -353,6 +343,8 @@ const TopContainer = styled.div`
   justify-content: center;
   color: ${({ theme }) => theme.palette.brand};
   height: 100vh;
+  position: relative;
+  overflow: hidden;
 `;
 
 const RaysImage = styled(Image)`
@@ -360,6 +352,13 @@ const RaysImage = styled(Image)`
   top: -170px;
   width: 1300px;
   height: 1050px;
+
+  @media (max-height: 700px) {
+    margin-top: -100px;
+  }
+  @media (max-height: 520px) {
+    margin-top: -200px;
+  }
 `;
 
 const HeroRing = styled.div`
@@ -375,6 +374,13 @@ const HeroRing = styled.div`
   justify-content: center;
   z-index: 1;
   text-align: center;
+
+  @media (max-height: 700px) {
+    margin-top: -100px;
+  }
+  @media (max-height: 520px) {
+    margin-top: -200px;
+  }
 `;
 
 const ContentContainer = styled.div`

@@ -12,6 +12,7 @@ import fraxImg from 'assets/images/newui-images/tokens/frax.png';
 import usdcImg from 'assets/images/newui-images/tokens/usdc.png';
 import usdtImg from 'assets/images/newui-images/tokens/usdt.png';
 import templeImg from 'assets/images/newui-images/tokens/temple.png';
+import ohmImg from 'assets/images/newui-images/tokens/ohm.png';
 
 interface SizeProps {
   small?: boolean;
@@ -59,6 +60,7 @@ const TickerImages: Record<TICKER_SYMBOL, string> = {
   USDT: usdtImg,
   TEMPLE: templeImg,
   OGTEMPLE: templeImg,
+  OHM: ohmImg,
 };
 
 /**
@@ -84,11 +86,20 @@ export const Input = ({
     if (crypto.kind === 'select') {
       return (
         <>
-          <div>
-            <Ticker onClick={() => setIsOpen(true)} style={{ cursor: 'pointer' }}>
-              {crypto.selected}
-            </Ticker>
-          </div>
+          <OptionContainer onClick={() => setIsOpen(true)}>
+            <Ticker>{crypto.selected}</Ticker>
+            <ChevronDownImg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </ChevronDownImg>
+          </OptionContainer>
           <Popover isOpen={isOpen} onClose={() => setIsOpen(false)} closeOnClickOutside={true} showCloseButton={false}>
             <SwapOptions>
               {crypto.cryptoOptions.map((option) => (
@@ -246,6 +257,19 @@ const Ticker = styled.p`
   margin: 0;
   color: ${theme.palette.brandLight};
   font-weight: bold;
+`;
+
+const OptionContainer = styled.div`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+`;
+
+const ChevronDownImg = styled.div`
+  margin-left: 0.5rem;
+  margin-top: 0.6rem;
+  width: 1rem;
+  color: ${theme.palette.brand};
 `;
 
 const SwapOptions = styled.div`

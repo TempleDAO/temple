@@ -23,12 +23,14 @@ interface TeamPayments {
   TEMPLE_TEAM_EPOCH_13: string;
   TEMPLE_TEAM_EPOCH_14: string;
   TEMPLE_TEAM_EPOCH_15: string;
+  TEMPLE_TEAM_EPOCH_16: string;
 }
 
 export interface DeployedContracts {
   // From environment
   FRAX: string;
   MULTISIG: string;
+  FARM_MULTISIG: string;
 
   // Temple Core
   TEMPLE: string;
@@ -64,11 +66,16 @@ export interface DeployedContracts {
   RAMOS_BB_E_USD_POOL_HELPER: string;
   RAMOS_BB_E_USD_AURA_STAKING: string;
 
+  RAMOS_DAI: string;
+  RAMOS_DAI_POOL_HELPER: string;
+  RAMOS_DAI_AURA_STAKING: string;
+
   // Balancer
   BALANCER_TOKEN: string;
   BALANCER_VAULT: string;
   BB_A_USD_TOKEN: string;
   BB_E_USD_TOKEN: string;
+  DAI_TOKEN: string;
 
   // Aura
   AURA_TOKEN: string;
@@ -87,6 +94,13 @@ export interface DeployedContracts {
   TEMPLE_BB_E_USD_AURA_POOL_ID: string;
   TEMPLE_BB_E_USD_REWARDS: string;
   TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN: string;
+
+  // RAMOS dependencies (DAI)
+  TEMPLE_DAI_LP_TOKEN: string;
+  TEMPLE_DAI_BALANCER_POOL_ID: string;
+  TEMPLE_DAI_AURA_POOL_ID: string;
+  TEMPLE_DAI_REWARDS: string;
+  TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN: string;
 }
 
 export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
@@ -111,6 +125,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TREASURY_IV: '',
 
     MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
+    FARM_MULTISIG: '0x577BB87962b76e60d3d930c1B9Ddd6DFD64d24A2',
     GENERIC_ZAPS: '',
     TEMPLE_ZAPS: '',
 
@@ -124,11 +139,17 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     RAMOS_BB_E_USD_POOL_HELPER: '',
     RAMOS_BB_E_USD_AURA_STAKING: '',
 
+    // RAMOS (DAI)
+    RAMOS_DAI: '',
+    RAMOS_DAI_POOL_HELPER: '',
+    RAMOS_DAI_AURA_STAKING: '',
+
     // Balancer
     BALANCER_TOKEN: '',
     BALANCER_VAULT: '',
     BB_A_USD_TOKEN: '',
     BB_E_USD_TOKEN: '',
+    DAI_TOKEN: '',
 
     // Aura
     AURA_TOKEN: '',
@@ -147,6 +168,13 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_BB_E_USD_AURA_POOL_ID: '',
     TEMPLE_BB_E_USD_REWARDS: '',
     TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
+
+    // RAMOS dependencies (DAI)
+    TEMPLE_DAI_LP_TOKEN: '',
+    TEMPLE_DAI_BALANCER_POOL_ID: '',
+    TEMPLE_DAI_AURA_POOL_ID: '',
+    TEMPLE_DAI_REWARDS: '',
+    TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN: '',
   },
   goerli: {
     // No longer active/unused
@@ -175,6 +203,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TREASURY_IV: '0x5B0eeE1336cD3f5136D3DaF6970236365b9E9cd7',
 
     MULTISIG: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
+    FARM_MULTISIG: '0x3a320fF715dCBbF097e15257B7051dd08fdfb7A2',
     GENERIC_ZAPS: '',
     TEMPLE_ZAPS: '',
 
@@ -188,11 +217,17 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     RAMOS_BB_E_USD_POOL_HELPER: '',
     RAMOS_BB_E_USD_AURA_STAKING: '',
 
+    // RAMOS (DAI)
+    RAMOS_DAI: '',
+    RAMOS_DAI_POOL_HELPER: '',
+    RAMOS_DAI_AURA_STAKING: '',
+
     // Balancer
     BALANCER_TOKEN: '',
     BALANCER_VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     BB_A_USD_TOKEN: '0x73651AD693531F9937528009cC204a4d9b696a68', // Frax is used instead
     BB_E_USD_TOKEN: '',
+    DAI_TOKEN: '',
 
     // Aura
     AURA_TOKEN: '',
@@ -212,11 +247,19 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_BB_E_USD_AURA_POOL_ID: '',
     TEMPLE_BB_E_USD_REWARDS: '',
     TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
+
+    // RAMOS dependencies (DAI)
+    TEMPLE_DAI_LP_TOKEN: '',
+    TEMPLE_DAI_BALANCER_POOL_ID: '',
+    TEMPLE_DAI_AURA_POOL_ID: '',
+    TEMPLE_DAI_REWARDS: '',
+    TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN: '',
   },
   mainnet: {
     // From network/environment
     FRAX: '0x853d955acef822db058eb8505911ed77f175b99e',
     MULTISIG: '0x4D6175d58C5AceEf30F546C0d5A557efFa53A950',
+    FARM_MULTISIG: '0xb1BD5762fAf7D6F86f965a3fF324BD81bB746d00',
 
     TEMPLE: '0x470ebf5f030ed85fc1ed4c2d36b9dd02e77cf1b7',
     TEAM_PAYMENTS: {
@@ -235,6 +278,7 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
       TEMPLE_TEAM_EPOCH_13: '0x8c45f988fd3a2657d2b32ff5340d858370d408ef',
       TEMPLE_TEAM_EPOCH_14: '0x476Cba8D051f8F375D7E0aEFb09F74D13c777f23',
       TEMPLE_TEAM_EPOCH_15: '0xc3B8080cB0b9bAeEc1c2Ca8B50BF80edf4f94eA9',
+      TEMPLE_TEAM_EPOCH_16: '0xb1a91c8f0a54cb0a2970423f83ec11bf9e414038',
     },
 
     TEMPLE_TEAM_PAYMENTS_IMPLEMENTATION: '',
@@ -263,11 +307,17 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     RAMOS_BB_E_USD_POOL_HELPER: '0xC260576fec862BED7A35E64BBF800Fe49899BaC0',
     RAMOS_BB_E_USD_AURA_STAKING: '0xDc7bF7bB3D5ee262017D85062cc6d48D693B4616',
 
+    // RAMOS (DAI)
+    RAMOS_DAI: '0xC3133cB9e685ccc82C73FbE580eCeDC667B41917',
+    RAMOS_DAI_POOL_HELPER: '0x4A02CbdBcd97BC639a13b864710550A7c39A3416',
+    RAMOS_DAI_AURA_STAKING: '0x70989E7D20C065ce7628C8DdAA240853437953d7',
+
     // Balancer
     BALANCER_TOKEN: '0xba100000625a3754423978a60c9317c58a424e3D',
     BALANCER_VAULT: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     BB_A_USD_TOKEN: '0xA13a9247ea42D743238089903570127DdA72fE44',
     BB_E_USD_TOKEN: '0x50Cf90B954958480b8DF7958A9E965752F627124',
+    DAI_TOKEN: '0x6b175474e89094c44da98b954eedeac495271d0f',
 
     // Aura
     AURA_TOKEN: '0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF',
@@ -290,6 +340,15 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_BB_E_USD_REWARDS: '0x2cfa7bbc6311a3fc6adcee5ad9ac19b84187a2e0',
     TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN:
       '0xe15ACEca2c2b58C72dAE1aB4fFB75CEbC1c59E7A',
+
+    // RAMOS (DAI) dependencies
+    TEMPLE_DAI_LP_TOKEN: '0x8bd4a1e74a27182d23b98c10fd21d4fbb0ed4ba0',
+    TEMPLE_DAI_BALANCER_POOL_ID:
+      '0x8bd4a1e74a27182d23b98c10fd21d4fbb0ed4ba00002000000000000000004ed',
+    TEMPLE_DAI_AURA_POOL_ID: '79',
+    TEMPLE_DAI_REWARDS: '0x13544617b10e1923363c89d902b749bea331ac4e',
+    TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN:
+      '0x0B7C71d61D960F70d89ecaC55DC2B4c1A7b508ee',
   },
   localhost: {
     // From network/environment (setup when 00-localhost-env.ts script is run)
@@ -326,11 +385,17 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     RAMOS_BB_E_USD_POOL_HELPER: '',
     RAMOS_BB_E_USD_AURA_STAKING: '',
 
+    // RAMOS (DAI)
+    RAMOS_DAI: '',
+    RAMOS_DAI_POOL_HELPER: '',
+    RAMOS_DAI_AURA_STAKING: '',
+
     // Balancer
     BALANCER_TOKEN: '',
     BALANCER_VAULT: '',
     BB_A_USD_TOKEN: '',
     BB_E_USD_TOKEN: '',
+    DAI_TOKEN: '',
 
     // Aura
     AURA_TOKEN: '',
@@ -350,7 +415,15 @@ export const DEPLOYED_CONTRACTS: { [key: string]: DeployedContracts } = {
     TEMPLE_BB_E_USD_REWARDS: '',
     TEMPLE_BB_E_USD_AURA_STAKING_DEPOSIT_TOKEN: '',
 
+    // RAMOS dependencies (DAI)
+    TEMPLE_DAI_LP_TOKEN: '',
+    TEMPLE_DAI_BALANCER_POOL_ID: '',
+    TEMPLE_DAI_AURA_POOL_ID: '',
+    TEMPLE_DAI_REWARDS: '',
+    TEMPLE_DAI_AURA_STAKING_DEPOSIT_TOKEN: '',
+
     MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199', // Account #19
+    FARM_MULTISIG: '0x8626f6940e2eb28930efb4cef49b2d1f2c9c1199',
   },
 };
 
