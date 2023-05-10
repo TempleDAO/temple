@@ -44,6 +44,13 @@ contract TempleElevatedAccessTest is TempleElevatedAccessTestBase {
     function test_access_setRescueMode() public {
         expectElevatedAccess();
         mock.setRescueMode(true);
+
+        // Works for either executor or rescuer
+        vm.prank(executor);
+        mock.setRescueMode(true);
+
+        vm.prank(rescuer);
+        mock.setRescueMode(true);
     }
 
     function test_access_setRescuer() public {

@@ -8,6 +8,7 @@
       - [Strategy Shutdown](#strategy-shutdown)
   - [Dashboard and Reporting](#dashboard-and-reporting)
   - [Elevated Access](#elevated-access)
+    - [Multisig Summary](#multisig-summary)
     - [Executor - A Gnosis Safe](#executor---a-gnosis-safe)
     - [Rescuer - A Gnosis Safe](#rescuer---a-gnosis-safe)
     - [Bots](#bots)
@@ -17,19 +18,18 @@
       - [RISK OF BRICKING THE SAFE](#risk-of-bricking-the-safe)
       - [RISK OF DISABLING THE GUARD](#risk-of-disabling-the-guard)
 
-
 ## <span style="color:red">**VERY VERY VERY IMPORTANT**</span>
 
 [ENSURE YOU READ AND UNDERSTAND THIS](#very-very-very-important-1)
 
 ## Contract Overview
 
-| Contract                      | Description                                                                                                                                                                                                                                                                                                                                                                                                           |
-| :---------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Treasury Reserves Vault (TRV) | The central orchestration of strategies, and lender of the Temple Treasury.<br>Strategies are added/reconfigured/shutdown via here, by Executors.<br>Strategies borrow/repay funds from here, and this issues the dUSD to the strategy.                                                                                                                                                                               |
+| Contract                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| :---------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Treasury Reserves Vault (TRV) | The central orchestration of strategies, and lender of the Temple Treasury.<br>Strategies are added/reconfigured/shutdown via here, by Executors.<br>Strategies borrow/repay funds from here, and this issues the dUSD to the strategy.                                                                                                                                                                                           |
 | Temple Debt Token (dUSD)      | The (internal) representation of risk and opportunity cost, issued to strategies when they borrow.<br>This debt increases each second by:<br>  &nbsp;a/ The base rate of interest we could get (eg 1% APR for DAI’s DSR)<br>  &nbsp;b/ An extra rate of interest determined by the DAO, given the risk of that strategy.                                                                                                          |
-| DSR Base Strategy             | Any idle treasury is deposited into the DAI Savings Rate (DSR).<br>So for this strategy, the EQUITY = ~0. Since ASSETS (DAI increasing at 1%) == LIABILITIES (dUSD increasing at 1%)<br>When any other strategy borrows from the TRV, it will withdraw the funds from this base strategy (with some buffer for gas optimisation).                                                                                     |
-| Strategy N (of M)                    | Each separate implementation of a strategy. This:<br>  &nbsp;a/ Reports the assets in the strategy for reporting purposes<br>  &nbsp;b/ Implements any automation required for the strategy - borrow/repay/deploy funds/withdraw liquidity/etc<br>It may be as simple as a wrapper over a Gnosis Safe (where executors are the signer of this Safe), or as partially/fully automated, where a bot can interact with the strategy. |
+| DSR Base Strategy             | Any idle treasury is deposited into the DAI Savings Rate (DSR).<br>So for this strategy, the EQUITY = ~0. Since ASSETS (DAI increasing at 1%) == LIABILITIES (dUSD increasing at 1%)<br>When any other strategy borrows from the TRV, it will withdraw the funds from this base strategy (with some buffer for gas optimisation).                                                                                                 |
+| Strategy N (of M)             | Each separate implementation of a strategy. This:<br>  &nbsp;a/ Reports the assets in the strategy for reporting purposes<br>  &nbsp;b/ Implements any automation required for the strategy - borrow/repay/deploy funds/withdraw liquidity/etc<br>It may be as simple as a wrapper over a Gnosis Safe (where executors are the signer of this Safe), or as partially/fully automated, where a bot can interact with the strategy. |
 
 ### Contract Flows
 
@@ -65,6 +65,13 @@ Each of the above contracts can only be updated by DAO nominated addresses. Cate
 The scope of this document doesn't describe how the owners of the Safe are chosen, or the required permission level of each capability. Here we are only concerned by the mechanics once those have been decided by the DAO.
 
 This access is implemented using the **Temple Elevated Access** abstract base contract.
+
+### Multisig Summary
+
+| Multisig | Signer Threshold                         | Safe Guards     |
+| :------- | :--------------------------------------- | :-------------- |
+| Executor | 2+/X - dependant on contract method call | Threshold Guard |
+| Rescuer  | 2/X                                      | NONE            |
 
 ### Executor - A Gnosis Safe
 
@@ -145,4 +152,4 @@ Otherwise it may end up in a situation where the guard is blocking the execution
 
 The Threshold in the Safe should always be 2+. If it is set to 1, then it effectively disables any further signatory checking in the Guard.
 
-Reason: In order to run Tenderly simulations successfully, Safe overrides the threshold=1. So in order to make simulations succeed, we need to disable any further signatory checks.
+Reason: In order to run Tenderly simulations successfully, Safe overrides t he threshold=1. So in order to make simulations succeed, we need to disable any further signatory checks.

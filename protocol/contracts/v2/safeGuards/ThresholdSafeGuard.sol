@@ -59,7 +59,7 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
     }
 
     // Who should have access to do this? Rescue mode disables the guard
-    function setDisableGuardChecks(bool value) external onlyElevatedAccess {
+    function setDisableGuardChecks(bool value) external onlyExecutorsOrResucers {
         disableGuardChecks = value;
         emit DisableGuardChecksSet(value);
     }

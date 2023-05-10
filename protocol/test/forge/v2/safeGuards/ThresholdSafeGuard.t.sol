@@ -156,6 +156,13 @@ contract ThresholdSafeGuardTestAccess is ThresholdSafeGuardTestBase {
     function test_access_setDisableGuardChecks() public {
         expectElevatedAccess();
         guard.setDisableGuardChecks(true);
+
+        // Works for either executor or rescuer
+        vm.prank(executor);
+        guard.setDisableGuardChecks(true);
+
+        vm.prank(rescuer);
+        guard.setDisableGuardChecks(true);
     }
 
     function test_access_addSafeTxExecutor() public {
