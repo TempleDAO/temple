@@ -27,10 +27,10 @@
 
 | Contract                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | :---------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Treasury Reserves Vault (TRV) | The central orchestration of strategies, and lender of the Temple Treasury.<br>Strategies are added/reconfigured/shutdown via here, by Executors.<br>Strategies borrow/repay funds from here, and this issues the dUSD to the strategy.                                                                                                                                                                                           |
-| Temple Debt Token (dUSD)      | The (internal) representation of risk and opportunity cost, issued to strategies when they borrow.<br>This debt increases each second by:<br>  &nbsp;a/ The base rate of interest we could get (eg 1% APR for DAI’s DSR)<br>  &nbsp;b/ An extra rate of interest determined by the DAO, given the risk of that strategy.                                                                                                          |
-| DSR Base Strategy             | Any idle treasury is deposited into the DAI Savings Rate (DSR).<br>So for this strategy, the EQUITY = ~0. Since ASSETS (DAI increasing at 1%) == LIABILITIES (dUSD increasing at 1%)<br>When any other strategy borrows from the TRV, it will withdraw the funds from this base strategy (with some buffer for gas optimisation).                                                                                                 |
-| Strategy N (of M)             | Each separate implementation of a strategy. This:<br>  &nbsp;a/ Reports the assets in the strategy for reporting purposes<br>  &nbsp;b/ Implements any automation required for the strategy - borrow/repay/deploy funds/withdraw liquidity/etc<br>It may be as simple as a wrapper over a Gnosis Safe (where executors are the signer of this Safe), or as partially/fully automated, where a bot can interact with the strategy. |
+| Treasury Reserves Vault (TRV) | The central orchestration of strategies and lender of the Temple Treasury.<br>Strategies are added/reconfigured/shutdown via this contract by the Executor.<br>Strategies borrow/repay funds from the TRV contract, which also issues the Temple Debt Token (dUSD) to the Strategy borrower.                                                                                                                                                                                           |
+| Temple Debt Token (dUSD)      | Treasury's internal accounting unit used to quantify risk and opportunity cost for funds allocated to Strategy Borrowers.<br>This debt token increases each second by:<br>  &nbsp;a/ The baseline rate of interest in the system, or the risk-free rate we could get (eg 1% APR for Maker's Dai Savings Rate)<br>  &nbsp;b/ plus an additional risk premium rate determined by the DAO, given the idiosyncratic risk of that Strategy.                                                                                                          |
+| DSR Base Strategy             | Idle treasury funds are deposited into the DAI Savings Rate (DSR) Oasis vault.<br>For this baseline strategy, the net EQUITY will always be approximately 0 since ASSETS (DAI earning yield at 1% rate) == LIABILITIES (dUSD also increasing at 1% rate)<br>When any other non-Base Strategy borrows from the TRV, the funds will be withdrawn from this Base Strategy (with some buffer for gas optimisation).                                                                                                 |
+| Strategy N (of M)             | Each separate implementation of a strategy to generate returns. The Strategy shall:<br>  &nbsp;a/ Report the assets currently deployed in the strategy for bookkeeping purposes<br>  &nbsp;b/ Implements any automation required for the strategy - borrow/repay/deploy funds/withdraw liquidity/compound etc<br>A Strategy may be as simple as a wrapper over a Gnosis Safe (where Executors are the owners of this Safe), or alternatively as partially/fully automated, where a bot can interact with the Strategy to perform upkeep. |
 
 ### Contract Flows
 
@@ -46,24 +46,24 @@
 
 ## Dashboard and Reporting
 
-Each Strategy will be able to report:
+Each Strategy will report:
 
-1. ASSETS: The total USD equivalent of the stables borrowed and deployed into the underlying strategy protocols
-2. LIABILITIES: The current dUSD (risk adjusted) debt
+1. ASSETS: The total USD equivalent value of the tokens held by the Strategy which may include receipt tokens for funds deployed into external protocols to generate returns.
+2. LIABILITIES: The outstanding dUSD debt owed to the TRV which rebases at the APR of the Base Strategy plus an idiosyncratic risk premium rate.
 3. EQUITY: ASSETS - LIABILITIES
 
-Subgraph can pick this info up and track performance over time. So:
+A Subgraph can poll the Strategy contract and track performance over time such that:
 
-- Performance can be compared, track over time
-- Decisions can be made if the strategy should should be liquidated (underperforming), borrow more, etc
+- Performance can be discounted by risk and opportunity cost and compared to peers
+- Data-informed decisions can be made if the Strategy should be liquidated due to underperformance, or scaled up with more borrowing
 
-Note: This dashboard may introduce functionality to call specific functions on the contracts over time, but functions such as liquidations will remain a manual Executor decision.
+Note: In the future, the Treasury dashboard may introduce functionality to call specific functions in the contracts, but functions like liquidations will remain a manual Executor operation directed by governance.
 
 ## Elevated Access
 
-Each of the above contracts can only be updated by DAO nominated addresses. Categorising as 'actors' they may be multi-sig Gnosis Safe's or bot EOAs for automation.
+The details of how the owners of the Safe are chosen and the required permission level of each capability are beyond the scope of this document. Here we are only focused on the mechanics of how a Strategy is managed once those initial decisions have been stipulated by the DAO.
 
-The scope of this document doesn't describe how the owners of the Safe are chosen, or the required permission level of each capability. Here we are only concerned by the mechanics once those have been decided by the DAO.
+Each of the above contracts can only be updated by one or more DAO designated addresses that we categorise here as 'actors'. Actors may be multi-sig Gnosis Safes or bot EOAs for automation.
 
 This access is implemented using the **Temple Elevated Access** abstract base contract.
 
@@ -71,95 +71,95 @@ This access is implemented using the **Temple Elevated Access** abstract base co
 
 | Multisig | Signer Threshold                         | Safe Guards     |
 | :------- | :--------------------------------------- | :-------------- |
-| Executor | 2+/X - dependant on contract method call | Threshold Guard |
+| Executor | 2+/X - dependent on contract method call | Threshold Guard |
 | Rescuer  | 2/X                                      | NONE            |
 
 ### Executor - A Gnosis Safe
 
-The Executor enacts the will of the DAO. Signers on this multisig are trusted, and know in depth how to execute on the strategies.
+The Executor Gnosis enacts the will of the DAO. Signers on this Multisig are trusted members of the community who have demonstrated high integrity and technical knowledge to execute Strategy operations. These signers do not have agency over Executor actions beyond committing to the blockchain the decisions approved by the DAO, or as part of the implementation for that Specific strategy. An Executore who act on their own outside of governance or the scope of the Strategy may be removed by the other Executors.
 
-They wear multiple hats:
+The Executor serves multiple roles:
 
-1. **Administration**:
-   1. Critical functions for administration purposes.
-   2. eg Add new strategies, update the base dUSD interest rate, update strategy parameters, apply the strategy borrow caps
+1. **Administrative Operations**:
+   1. Call critical functions for Administration purposes.
+   2. Examples: Add new Strategies, update the base interest rate for dUSD, update the risk premium rate, apply the strategy borrow caps
 2. **Strategy Operations**:
-   1. For each strategy, there will be some management required - may be daily/weekly/etc depending on the strategy.
-   2. eg Borrow more funds or repay, apply funds in strategy, etc
+   1. For each strategy, some position management may be required on a daily/weekly/monthly basis depending on the Strategy.
+   2. eg Borrow more funds or repay, Deploy funds, Liquidate to paydown dUSD debt, etc
 
-Each of these functions will require **at least 2** signers in the multisig:
+Each of these functions will require **at least 2** signers in the Executor multisig:
 
-1. Within the Gnosis Safe, the required signer threshold is set to 2.
-2. Some of the functions will require **more than 2** signers. This is controlled via a *Gnosis Safe Guard*, detailed below.
+1. Within the Executor Gnosis Safe, the required signer threshold is set to 2.
+2. Some of the Strategy or TRV functions will require **more than 2** signers. This is controlled via a *Gnosis Safe Guard* as detailed below.
 
 ### Rescuer - A Gnosis Safe
 
-The Rescuer acts as an on-call backup in case of emergency. Signers on this multisig are trusted, well respected members of the DAO (who have skin in the game).
+The Rescuer acts as an on-call backup operator of the Strategy in case of emergency. Signers on this multisig are highly trusted members of the DAO who have demonstrated proficiency with dApp and contract interactions, and a track record of putting the best interests of the DAO first. These signers should meet minimum time requirements in terms of being available online.
 
-2 signers are required on the Rescuer multisig. As part of the emergency, they may elect to temporarily add more signers to the multisig - eg adding executors on such that the people in the know can help in the emergency.
+Each of the Strategy contracts can be set to 'rescue mode', by either the Executor or the Rescuer multisig. When a Strategy is in Rescue mode, the Executor loses its permissions, and the Rescuer is granted those same permissions.
 
-Each of the contracts can be set to 'rescue mode', by either the Executor or the Rescuer multisig. When in rescue mode, the Executor loses its rights, and the Rescuer is granted those rights.
+Two (2) signers are required on the Rescuer multisig to send a transaction. As part of the emergency, the Rescuer signers may elect to temporarily add more signers - i.e. adding more Executors or other owners to the Safe such that the Rescuers can quickly onboard the experts who can provide technical support.
 
-A full Post Incident Response will be written up any time Rescue Mode is enabled.
+A full Post Mortem Report should be written up any time Rescue Mode is enabled to debrief the community about the incident.
 
 ### Bots
 
-In order to enable automation, access can be granted to certain addresses, on a per-function basis. So this can be used to say allow a bot to call one or two functions only on one of the strategies.
+In order to facilitate automation, contract access can be granted as feasible to certain addresses on a per-function basis. Granting access would allow a bot to call some of the functions on one or more of the Strategies. 
 
-This access can be granted by the Executor, but given it's an important Administration method, it will require >2 signers.
+This supplemental access can be granted by the Executor, but given it is an important Administration method, granting this access will trigger elevated signature requirement (3+) on the Executor.
 
 ## Gnosis Safe Guards
 
-We use a [Safe Transaction Guard](https://help.safe.global/en/articles/5324092-what-is-a-transaction-guard) in order to verify that MORE than just the base Safe threshold of owners have signed a transaction.
+We use a [Safe Transaction Guard](https://help.safe.global/en/articles/5324092-what-is-a-transaction-guard) in order to verify that MORE than just the base threshold (2) of Safe owners have signed a particular transaction that affect critical functions or parameters.
 
-The signer threshold in the Safe needs to be at least 2. The guard can then have a default (if the threshold for the `contract.function()` isn't explicitly defined in the guard). Then on a per `contract.function()` basis, a specific threshold that's required can be defined.
+For normal transactions, the signer threshold in the Safe needs to be at least 2. The Safe Guard can then have a default threshold (if the threshold for the `contract.function()` is not explicitly defined in the guard). Then on a per `contract.function()` basis, a specific threshold that is required can be defined e.g. at least 3 signers.
 
-For example:
+For Example:
 
 - Safe Threshold: 2/X
 - Guard Default Threshold: 3/X
 - `strategyA.weeklyOperationalThing()` Threshold: 2/X
 - `TRV.setBaseRate()` Threshold: 4/X
 
-That means by default all operations will need 3/X, unless otherwise explicitly set per function.
+In this specific example above, by default, the Safe Guard will require 3/X signatures except for the specific Strategy functions where the Threshold was explicitly set to 2/X or 4/X to override the Default.
 
 ### The Safe Signatory Flow is
 
 1. **For a 2/X required function**:
    1. An owner proposes a transaction, and signs it in Safe UI (1/X)
       1. A Tenderly simulation can be run at this point
-   2. A subsequent owner signs this transaction in Safe UI (2/X)
+   2. A second owner signs this transaction in Safe UI (2/X)
       1. This can be executed immediately
 2. **For a 3+/X required function**:
-   1. An owner proposes a transaction, and signs it in Safe UI (1/X)
+   1. An owner proposes a transaction and signs it in Safe UI (1/X)
       1. A Tenderly simulation can be run at this point
-   2. A subsequent owner signs this transaction in Safe UI (2/X)
+   2. A second owner signs this transaction in Safe UI (2/X)
       1. The function CANNOT be executed. Safe will report this as going to fail, with the error message: *"Dynamic Signature Threshold Not Met"*
-   3. A 3rd owner needs to sign using the Temple Dapp
-      1. They can't sign using the Safe UI (only execute function is allowed...)
-      2. We can sign using the Safe SDK though, that we can bake into the Temple Dapp
-   4. Any owner can then execute using the Safe UI
-      1. and/or the Temple Dapp via the Safe SDK
+   3. A third owner needs to sign using the Temple dApp
+      1. The third owner can't sign using the Safe UI (only execute function is allowed...)
+      2. The third owner can sign using the Safe SDK that we can bake into the Temple dApp
+   4. Any owner on the Safe can then execute using the Safe UI
+      1. and/or the Temple dApp via the Safe SDK
 
 ### <span style="color:red">**VERY VERY VERY IMPORTANT**</span>
 
 #### <span style="color:red">RISK OF BRICKING THE SAFE</span>
 
-The functions on this Guard are protected. It is super super super important to have the elevated access of this granted to a multisig which IS NOT the Safe which this is guarding for.
+The functions on this Guard are protected. It is super super super important to have the elevated access of the Guard granted to a Multisig which IS NOT the Safe which on which the Guard is applied.
 
-Otherwise it may end up in a situation where the guard is blocking the execution transactions of the Safe, but we cannot disable the guard.
+Otherwise a situation could arise where the Guard is blocking the execution transactions of the Safe, but we cannot disable the Guard which would render the underlying Safe unusable.
 
 #### <span style="color:red">RISK OF DISABLING THE GUARD</span>
 
 The Threshold in the Safe should always be 2+. If it is set to 1, then it effectively disables any further signatory checking in the Guard.
 
-Reason: In order to run Tenderly simulations successfully, Safe overrides t he threshold=1. So in order to make simulations succeed, we need to disable any further signatory checks.
+Reason: In order to run Tenderly simulations successfully, Safe overrides the threshold=1. So in order to make simulations succeed, we need to disable any further signatory checks.
 
 ## Contract Permissions
 
 Proposed permissions for the Contract functions [are listed in this spreadsheet](https://docs.google.com/spreadsheets/d/1H6-cZLsxgIDg_CNmU4syTHJ9Df5jsGFAg2yh9klIEkw/edit#gid=1843345640)
 
-Where `onlyElevatedAccess` is noted in column G, the number of executor signers for that function is listed in column H.
+Where `onlyElevatedAccess` is noted in column G, the number of Executor signers for that function is listed in column H.
 
 To implement this:
 
