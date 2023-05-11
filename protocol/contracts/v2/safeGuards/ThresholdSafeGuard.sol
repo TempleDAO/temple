@@ -105,6 +105,23 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
     }
 
     /**
+      * @notice Set the number of signatories required for a number of function signatures at a time.
+     */
+    function setFunctionThresholdBatch(address contractAddr, bytes4[] memory functionSignatures, uint256 threshold) external onlyElevatedAccess {
+        if (contractAddr == address(0)) revert InvalidAddress();
+
+        uint256 length = functionSignatures.length;
+        bytes4 sig;
+        for (uint256 i; i < length; ++i) {
+            sig = functionSignatures[i];
+            if (sig == bytes4(0)) revert InvalidFunctionSignature();
+
+            emit FunctionThresholdSet(contractAddr, sig, threshold);
+            functionThresholds[contractAddr][sig] = threshold;
+        }
+    }
+
+    /**
       * @notice The set of extra addresses (along with the Safe owners) allowed to execute
       * the transaction once the minimum threshold of signers have approved
      */

@@ -186,6 +186,14 @@ contract ThresholdSafeGuardTestAccess is ThresholdSafeGuardTestBase {
         guard.setFunctionThreshold(address(mock), fnSelector, 5);
     }
 
+    function test_access_setFunctionThresholdBatch() public {
+        expectElevatedAccess();
+        bytes4[] memory fnSels = new bytes4[](2);
+        fnSels[0] = bytes4(keccak256("doThing(string,uint256)"));
+        fnSels[1] = bytes4(keccak256("doThing()"));
+        guard.setFunctionThresholdBatch(address(mock), fnSels, 5);
+    }
+
     function test_access_recoverToken() public {
         expectElevatedAccess();
         guard.recoverToken(address(dai), alice, 100);
@@ -216,6 +224,39 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
                 assertEq(guard.getThreshold(contractAddr, functionSignature), defaultSignaturesThreshold);
             } else {
                 assertEq(guard.getThreshold(contractAddr, functionSignature), threshold);
+            }
+        }
+    }
+
+    function test_setFunctionThresholdBatch(address contractAddr, bytes4 functionSignature1, bytes4 functionSignature2, uint256 threshold) public {
+        vm.startPrank(executor);
+
+        bytes4[] memory fnSels = new bytes4[](2);
+        fnSels[0] = functionSignature1;
+        fnSels[1] = functionSignature2;
+
+        if (contractAddr == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.InvalidAddress.selector));
+            guard.setFunctionThresholdBatch(contractAddr, fnSels, threshold);
+        } else if (functionSignature1 == bytes4(0) || functionSignature2 == bytes4(0)) {
+            vm.expectRevert(abi.encodeWithSelector(IThresholdSafeGuard.InvalidFunctionSignature.selector));
+            guard.setFunctionThresholdBatch(contractAddr, fnSels, threshold);
+        } else {
+            vm.expectEmit();
+            emit FunctionThresholdSet(contractAddr, functionSignature1, threshold);
+            emit FunctionThresholdSet(contractAddr, functionSignature2, threshold);
+
+            guard.setFunctionThresholdBatch(contractAddr, fnSels, threshold);
+            assertEq(guard.functionThresholds(contractAddr, functionSignature1), threshold);
+            assertEq(guard.functionThresholds(contractAddr, functionSignature2), threshold);
+
+            // Check the derived getThreshold
+            if (threshold == 0) {
+                assertEq(guard.getThreshold(contractAddr, functionSignature1), defaultSignaturesThreshold);
+                assertEq(guard.getThreshold(contractAddr, functionSignature2), defaultSignaturesThreshold);
+            } else {
+                assertEq(guard.getThreshold(contractAddr, functionSignature1), threshold);
+                assertEq(guard.getThreshold(contractAddr, functionSignature2), threshold);
             }
         }
     }

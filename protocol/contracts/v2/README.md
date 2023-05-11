@@ -17,6 +17,7 @@
     - [**VERY VERY VERY IMPORTANT**](#very-very-very-important-1)
       - [RISK OF BRICKING THE SAFE](#risk-of-bricking-the-safe)
       - [RISK OF DISABLING THE GUARD](#risk-of-disabling-the-guard)
+  - [Contract Permissions](#contract-permissions)
 
 ## <span style="color:red">**VERY VERY VERY IMPORTANT**</span>
 
@@ -153,3 +154,14 @@ Otherwise it may end up in a situation where the guard is blocking the execution
 The Threshold in the Safe should always be 2+. If it is set to 1, then it effectively disables any further signatory checking in the Guard.
 
 Reason: In order to run Tenderly simulations successfully, Safe overrides t he threshold=1. So in order to make simulations succeed, we need to disable any further signatory checks.
+
+## Contract Permissions
+
+Proposed permissions for the Contract functions [are listed in this spreadsheet](https://docs.google.com/spreadsheets/d/1H6-cZLsxgIDg_CNmU4syTHJ9Df5jsGFAg2yh9klIEkw/edit#gid=1843345640)
+
+Where `onlyElevatedAccess` is noted in column G, the number of executor signers for that function is listed in column H.
+
+To implement this:
+
+- `ThresholdSafeGuard` would have a `defaultSignaturesThreshold` of 3
+- `ThresholdSafeGuard` would have `setFunctionThreshold()` set for each of the functions listed with `executor signers = 2`
