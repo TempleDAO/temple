@@ -94,12 +94,19 @@ interface ITempleStrategy is ITempleElevatedAccess {
     function currentDebt() external view returns (uint256);
 
     /**
-     * @notice How much this strategy is free to borrow from the Treasury Reserves Vault
-     * @dev This is bound by:
-     *   1/ How much stables is globally available (in the TRV + in the TRV base strategy)
-     *   2/ The amount this individual strategy is whitelisted to borrow.
+     * @notice A strategy's current amount borrowed from the TRV, and how much remaining is free to borrow
+     * @dev The remaining amount free to borrow is bound by:
+     *   1/ How much stables is globally available (in this contract + in the base strategy)
+     *   2/ The amount each individual strategy is whitelisted to borrow.
+     * @return currentDebt The current debt position for the strategy, 
+     * @return availableToBorrow The remaining amount which the strategy can borrow
+     * @return debtCeiling The debt ceiling of the stratgy
      */
-    function availableToBorrow() external view returns (uint256);
+    function trvBorrowPosition() external view returns (
+        uint256 currentDebt, 
+        uint256 availableToBorrow,
+        uint256 debtCeiling
+    );
 
     /**
      * @notice The Strategy Executor may set manual updates to asset balances

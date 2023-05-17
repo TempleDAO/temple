@@ -144,7 +144,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      */
     function borrowAndDeposit(uint256 amount) external override onlyElevatedAccess {
         // Borrow the DAI. This will also mint `dUSD` debt.
-        treasuryReservesVault.borrow(amount);
+        treasuryReservesVault.borrow(amount, address(this));
         _dsrDeposit(amount);
     }
 
@@ -160,7 +160,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      */
     function borrowAndDepositMax() external override onlyElevatedAccess returns (uint256 borrowedAmount) {
         // Borrow the DAI. This will also mint `dUSD` debt.
-        borrowedAmount = treasuryReservesVault.borrowMax();
+        borrowedAmount = treasuryReservesVault.borrowMax(address(this));
         _dsrDeposit(borrowedAmount);
     }
 

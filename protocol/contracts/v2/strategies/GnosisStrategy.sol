@@ -65,8 +65,7 @@ contract GnosisStrategy  is AbstractStrategy {
      */
     function borrow(uint256 amount) external onlyElevatedAccess {
         emit Borrow(amount);
-        treasuryReservesVault.borrow(amount);
-        stableToken.safeTransfer(gnosisSafeWallet, amount);
+        treasuryReservesVault.borrow(amount, gnosisSafeWallet);
     }
 
     /**
@@ -74,9 +73,8 @@ contract GnosisStrategy  is AbstractStrategy {
      * These stables are sent to the Gnosis wallet
      */
     function borrowMax() external onlyElevatedAccess returns (uint256 borrowedAmount) {
-        borrowedAmount = treasuryReservesVault.borrowMax();
+        borrowedAmount = treasuryReservesVault.borrowMax(gnosisSafeWallet);
         emit Borrow(borrowedAmount);
-        stableToken.safeTransfer(gnosisSafeWallet, borrowedAmount);
     }
 
     /**

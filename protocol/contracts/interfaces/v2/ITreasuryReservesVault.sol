@@ -30,10 +30,11 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     event StrategyShutdown(address indexed strategy, uint256 stablesRecovered, uint256 debtBurned);
     event BaseStrategySet(address indexed baseStrategy);
 
-    event Borrow(address indexed strategy, uint256 stablesAmount);
+    event Borrow(address indexed strategy, address indexed recipient, uint256 stablesAmount);
     event Repay(address indexed strategy, uint256 stablesAmount);
     event RealisedGain(address indexed strategy, uint256 amount);
     event RealisedLoss(address indexed strategy, uint256 amount);
+    event TreasuryPriceIndexSet(uint256 oldTpi, uint256 newTpi);
 
     error NotEnabled();
     error AlreadyEnabled();
@@ -114,6 +115,22 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     function setBaseStrategy(address _baseStrategy) external;
 
     /**
+     * @notice The Treasury Price Index, used within strategies.
+     */
+    function treasuryPriceIndex() external view returns (uint256);
+
+    /**
+     * @notice The decimal precision of 'tpi'/Temple Price index
+     * @dev Decimal precision for 'tpi', 9880 == $0.988, precision = 4
+     */
+    function TPI_DECIMALS() external view returns (uint256);
+
+    /**
+     * @notice Set the Treasury Price Index (TPI)
+     */
+    function setTreasuryPriceIndex(uint256 value) external;
+
+    /**
      * API version to help with future integrations/migrations
      */
     function apiVersion() external pure returns (string memory);
@@ -151,21 +168,30 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     );
 
     /**
+     * @notice The current max debt ceiling that a strategy is allowed to borrow up to.
+     */
+    function strategyDebtCeiling(address strategy) external view returns (uint256);
+
+    /**
      * @notice The total available stables, both as a balance in this contract and
      * any available to withdraw from the baseStrategy
      */
     function totalAvailableStables() external view returns (uint256);
 
     /**
-     * @notice The current dUSD debt of this strategy
+     * @notice A strategy's current amount borrowed, and how much remaining is free to borrow
+     * @dev The remaining amount free to borrow is bound by:
+     *   1/ How much stables is globally available (in this contract + in the base strategy)
+     *   2/ The amount each individual strategy is whitelisted to borrow.
+     * @return currentDebt The current debt position for the strategy, 
+     * @return availableToBorrow The remaining amount which the strategy can borrow
+     * @return debtCeiling The debt ceiling of the stratgy
      */
-    function currentStrategyDebt(address strategy) external view returns (uint256);
-
-    /**
-     * @notice How much a given strategy is free to borrow
-     * @dev availableToBorrow = max(debtCeiling - debtBalance, 0);
-     */
-    function availableToBorrow(address strategy) external view returns (uint256);
+    function strategyBorrowPosition(address strategy) external view returns (
+        uint256 currentDebt, 
+        uint256 availableToBorrow,
+        uint256 debtCeiling
+    );
 
     /**
      * Pause all strategy borrow and repays
@@ -209,14 +235,14 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
      * @dev This will revert if the strategy requests more stables than it's able to borrow.
      * `dUSD` will be minted 1:1 for the amount of stables borrowed
      */
-    function borrow(uint256 borrowAmount) external;
+    function borrow(uint256 borrowAmount, address recipient) external;
 
     /**
      * @notice A strategy calls to request the most funding it can.
      * @dev This will revert if the strategy requests more stables than it's able to borrow.
      * `dUSD` will be minted 1:1 for the amount of stables borrowed
      */
-    function borrowMax() external returns (uint256);
+    function borrowMax(address recipient) external returns (uint256);
 
     /**
      * @notice A strategy calls to paydown it's debt

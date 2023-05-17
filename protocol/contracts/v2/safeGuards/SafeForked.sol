@@ -32,7 +32,7 @@ library SafeForked {
     }
 
     // Forked from Safe
-    // The only addition is to pass through the executor, and to throw a custom error if the number of signatories doesn't match.
+    // The only addition is to pass through the executor, and to throw a more descriptive error if the number of signatories doesn't match.
     function checkNSignatures(address executor, GnosisSafe safe, bytes32 dataHash, bytes memory data, bytes memory signatures, uint256 requiredSignatures) internal view {
         // Check that the provided signature data is not too short
         // Left as a revert string so it shows in the Safe UI, and made more descriptive.

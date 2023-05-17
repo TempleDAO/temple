@@ -4,6 +4,8 @@ pragma solidity ^0.8.17;
 import { UD60x18, ud } from "@prb/math/src/UD60x18.sol";
 import { mulDiv, UNIT } from "@prb/math/src/Common.sol";
 
+// @todo consider using Aave's calculateCompoundedInterest() (MathUtils.sol)
+
 library CompoundedInterest {
     uint256 public constant ONE_YEAR = 365 days;
 

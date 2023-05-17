@@ -62,15 +62,28 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      */
     int256 public override shutdownStrategyNetEquity;
 
+    /**
+     * @notice The Treasury Price Index, used within strategies.
+     */
+    uint256 public override treasuryPriceIndex;
+
+    /**
+     * @notice The decimal precision of 'tpi'/Temple Price index
+     * @dev Decimal precision for 'tpi', 9880 == $0.988, precision = 4
+     */
+    uint256 public constant override TPI_DECIMALS = 4;
+
     constructor(
         address _initialRescuer,
         address _initialExecutor,
         address _stableToken,
-        address _internalDebtToken
+        address _internalDebtToken,
+        uint256 _treasuryPriceIndex
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
         stableToken = IERC20(_stableToken);
         internalDebtToken = ITempleDebtToken(_internalDebtToken);
+        treasuryPriceIndex = _treasuryPriceIndex;
     }
 
     function setBaseStrategy(address _baseStrategy) external override onlyElevatedAccess {
@@ -85,6 +98,15 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
             revert CommonEventsAndErrors.InvalidAddress(address(baseStrategy.treasuryReservesVault()));
 
         emit BaseStrategySet(_baseStrategy);
+    }
+
+    /**
+     * @notice Set the Treasury Price Index (TPI)
+     * @dev 4dp, so 9800 = 0.98
+     */
+    function setTreasuryPriceIndex(uint256 value) external override onlyElevatedAccess {
+        emit TreasuryPriceIndexSet(treasuryPriceIndex, value);
+        treasuryPriceIndex = value;
     }
 
     /**
@@ -113,6 +135,10 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         (assetBalances, debtBalance) = _strategy.latestAssetBalances();
     }
 
+    function strategyDebtCeiling(address strategy) external override view returns (uint256) {
+        return strategies[strategy].debtCeiling;
+    }
+
     /**
      * @notice The total available stables, both as a balance in this contract and
      * any available to withdraw from the baseStrategy
@@ -135,32 +161,40 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     }
 
     /**
-     * @notice The current dUSD debt of a strategy
-     */
-    function currentStrategyDebt(address strategy) public override view returns (uint256) {
-        return internalDebtToken.balanceOf(strategy);
-    }
-
-    /**
-     * @notice How much a given strategy is free to borrow
-     * @dev This is bound by:
+     * @notice A strategy's current amount borrowed, and how much remaining is free to borrow
+     * @dev The remaining amount free to borrow is bound by:
      *   1/ How much stables is globally available (in this contract + in the base strategy)
      *   2/ The amount each individual strategy is whitelisted to borrow.
+     * @return currentDebt The current debt position for the strategy, 
+     * @return availableToBorrow The remaining amount which the strategy can borrow
+     * @return debtCeiling The debt ceiling of the stratgy
      */
-    function availableToBorrow(address strategy) external override view returns (uint256) {
-        return _availableToBorrow(strategy, strategies[strategy].debtCeiling);
+    function strategyBorrowPosition(address strategy) external override view returns (
+        uint256 currentDebt, 
+        uint256 availableToBorrow,
+        uint256 debtCeiling
+    ) {
+        return _borrowPosition(strategy, strategies[strategy].debtCeiling);
     }
 
-    function _availableToBorrow(address strategy, uint256 debtCeiling) internal view returns (uint256) {
-        uint256 _currentDebt = currentStrategyDebt(strategy);
+    function _borrowPosition(
+        address strategy, 
+        uint256 debtCeiling
+    ) internal view returns (
+        uint256 debt, 
+        uint256 available,
+        uint256 ceiling
+    ) {
+        debt = internalDebtToken.balanceOf(strategy);
 
         // The debt ceiling minus the current debt (floor at 0)
-        uint256 _strategyMax = debtCeiling > _currentDebt ? debtCeiling - _currentDebt : 0;
+        uint256 _strategyMax = debtCeiling > debt ? debtCeiling - debt : 0;
 
         uint256 _totalAvailableStables = totalAvailableStables();
 
         // The max of the max amount the strategy can borrow and the available stables in the TRV.
-        return _totalAvailableStables < _strategyMax ? _totalAvailableStables : _strategyMax;
+        available = _totalAvailableStables < _strategyMax ? _totalAvailableStables : _strategyMax;
+        ceiling = debtCeiling;
     }
 
     /**
@@ -245,14 +279,14 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * @dev This will revert if the strategy requests more stables than it's able to borrow.
      * `dUSD` will be minted 1:1 for the amount of stables borrowed
      */
-    function borrow(uint256 borrowAmount) external override {
+    function borrow(uint256 borrowAmount, address recipient) external override {
         Strategy storage strategyData = strategies[msg.sender];
 
         // This is not allowed to take the borrower over the debt ceiling
-        uint256 available = _availableToBorrow(msg.sender, strategyData.debtCeiling);
+        (, uint256 available,) = _borrowPosition(msg.sender, strategyData.debtCeiling);
         if (borrowAmount > available) revert DebtCeilingBreached(available, borrowAmount);
 
-        _borrow(msg.sender, strategyData, borrowAmount);
+        _borrow(msg.sender, recipient, strategyData, borrowAmount);
     }
 
     /**
@@ -260,24 +294,24 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * @dev This will revert if the strategy requests more stables than it's able to borrow.
      * `dUSD` will be minted 1:1 for the amount of stables borrowed
      */
-    function borrowMax() external override returns (uint256 borrowedAmount) {
+    function borrowMax(address recipient) external override returns (uint256 borrowedAmount) {
         Strategy storage strategyData = strategies[msg.sender];
-        borrowedAmount = _availableToBorrow(msg.sender, strategyData.debtCeiling);
-        _borrow(msg.sender, strategyData, borrowedAmount);
+        (, borrowedAmount,) = _borrowPosition(msg.sender, strategyData.debtCeiling);
+        _borrow(msg.sender, recipient, strategyData, borrowedAmount);
     }
 
-    function _borrow(address strategyAddr, Strategy storage strategyData, uint256 borrowAmount) internal {
+    function _borrow(address strategyAddr, address recipient, Strategy storage strategyData, uint256 borrowAmount) internal {
         if (borrowAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         if (globalBorrowPaused) revert BorrowPaused();
         if (strategyData.borrowPaused) revert BorrowPaused();
         if (!strategyData.isEnabled) revert NotEnabled();
         if (strategyData.isShuttingDown) revert StrategyIsShutdown();
 
-        emit Borrow(strategyAddr, borrowAmount);
+        emit Borrow(strategyAddr, recipient, borrowAmount);
 
         // Mint new dUSD, source stables from the baseStrategy and send the strategy wanting to borrow.
         internalDebtToken.mint(strategyAddr, borrowAmount);
-        _withdrawAndSendStables(strategyAddr, borrowAmount);
+        _withdrawAndSendStables(recipient, borrowAmount);
     }
     
     function _withdrawAndSendStables(address to, uint256 amount) internal {
@@ -322,12 +356,14 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         _repay(msg.sender, repayAmount);
     }
 
+// @todo Ability for anyone to pay debt off on behalf of strategies
+
     /**
      * @notice A strategy calls to paydown all of it's debt
      * This will pull the stables for the entire dUSD balance of the strategy, and burn the dUSD.
      */
     function repayAll() external override returns (uint256 amountRepaid) {
-        amountRepaid = currentStrategyDebt(msg.sender);
+        amountRepaid = internalDebtToken.balanceOf(msg.sender);
         _repay(msg.sender, amountRepaid);
     }
 
