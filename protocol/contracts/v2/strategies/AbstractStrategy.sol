@@ -103,7 +103,7 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
         uint256 availableToBorrow,
         uint256 debtCeiling
     ) {
-        return treasuryReservesVault.borrowPosition(address(this));
+        return treasuryReservesVault.strategyBorrowPosition(address(this));
     }
 
     /**
