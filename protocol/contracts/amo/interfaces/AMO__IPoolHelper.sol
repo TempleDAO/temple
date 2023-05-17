@@ -8,6 +8,8 @@ interface AMO__IPoolHelper {
 
     function getBalances() external view returns (uint256[] memory balances);
 
+    function getTempleStableBalances() external view returns (uint256 templeBalance, uint256 stableBalance);
+
     function spotPriceUsingLPRatio() external view returns (uint256 templeBalance, uint256 stableBalance);
 
     function getSpotPriceScaled() external view returns (uint256 spotPriceScaled);
