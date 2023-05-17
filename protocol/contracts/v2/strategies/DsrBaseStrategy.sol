@@ -186,7 +186,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         //  Use `_rdivup()` on withdrawals.
         uint256 sharesAmount = _rdivup(withdrawalAmount, chi);
         _dsrWithdrawal(sharesAmount, withdrawalAmount);
-        treasuryReservesVault.repay(withdrawalAmount);
+        treasuryReservesVault.repay(withdrawalAmount, address(this));
     }
 
     /**
@@ -196,7 +196,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
         _dsrWithdrawal(sharesAvailable, daiAvailable);
 
-        treasuryReservesVault.repay(daiAvailable);
+        treasuryReservesVault.repay(daiAvailable, address(this));
         return daiAvailable;
     }
 

@@ -31,7 +31,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     event BaseStrategySet(address indexed baseStrategy);
 
     event Borrow(address indexed strategy, address indexed recipient, uint256 stablesAmount);
-    event Repay(address indexed strategy, uint256 stablesAmount);
+    event Repay(address indexed strategy, address indexed from, uint256 stablesAmount);
     event RealisedGain(address indexed strategy, uint256 amount);
     event RealisedLoss(address indexed strategy, uint256 amount);
     event TreasuryPriceIndexSet(uint256 oldTpi, uint256 newTpi);
@@ -248,13 +248,13 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
      * @notice A strategy calls to paydown it's debt
      * This will pull the stables, and will burn the equivalent amount of dUSD from the strategy.
      */
-    function repay(uint256 repayAmount) external;
+    function repay(uint256 repayAmount, address strategy) external;
 
     /**
      * @notice A strategy calls to paydown all of it's debt
      * This will pull the stables for the entire dUSD balance of the strategy, and burn the dUSD.
      */
-    function repayAll() external returns (uint256 amountRepaid);
+    function repayAll(address strategy) external returns (uint256 amountRepaid);
 
     /**
      * @notice The second step in a two-phase shutdown. A strategy (automated) or executor (manual) calls

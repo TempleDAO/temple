@@ -352,22 +352,20 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * @notice A strategy calls to paydown it's debt
      * This will pull the stables, and will burn the equivalent amount of dUSD from the strategy.
      */
-    function repay(uint256 repayAmount) external override {
-        _repay(msg.sender, repayAmount);
+    function repay(uint256 repayAmount, address strategy) external override {
+        _repay(msg.sender, strategy, repayAmount);
     }
-
-// @todo Ability for anyone to pay debt off on behalf of strategies
 
     /**
      * @notice A strategy calls to paydown all of it's debt
      * This will pull the stables for the entire dUSD balance of the strategy, and burn the dUSD.
      */
-    function repayAll() external override returns (uint256 amountRepaid) {
-        amountRepaid = internalDebtToken.balanceOf(msg.sender);
-        _repay(msg.sender, amountRepaid);
+    function repayAll(address strategy) external override returns (uint256 amountRepaid) {
+        amountRepaid = internalDebtToken.balanceOf(strategy);
+        _repay(msg.sender, strategy, amountRepaid);
     }
 
-    function _repay(address _strategyAddr, uint256 _repayAmount) internal {
+    function _repay(address _from, address _strategyAddr, uint256 _repayAmount) internal {
         if (_repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         if (globalRepaysPaused) revert RepaysPaused();
 
@@ -375,13 +373,13 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         if (!strategyData.isEnabled) revert NotEnabled();
         if (strategyData.repaysPaused) revert RepaysPaused();
 
-        emit Repay(_strategyAddr, _repayAmount);
+        emit Repay(_strategyAddr, _from, _repayAmount);
 
         // Burn the dUSD tokens. This will fail if the repayment amount is greater than the balance.
         uint256 burnedAmount = internalDebtToken.burn(_strategyAddr, _repayAmount, true);
 
         // Pull the stables from the strategy.
-        stableToken.safeTransferFrom(_strategyAddr, address(this), _repayAmount);
+        stableToken.safeTransferFrom(_from, address(this), _repayAmount);
 
         // If more stables are repaid than their total debt, then that difference is a realised gain.
         if (_repayAmount > burnedAmount) {

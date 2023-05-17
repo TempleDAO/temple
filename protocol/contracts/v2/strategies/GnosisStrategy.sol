@@ -83,7 +83,7 @@ contract GnosisStrategy  is AbstractStrategy {
      */
     function repay(uint256 amount) external onlyElevatedAccess {
         emit Repay(amount);
-        treasuryReservesVault.repay(amount);
+        treasuryReservesVault.repay(amount, address(this));
     }
 
     /**
@@ -91,7 +91,7 @@ contract GnosisStrategy  is AbstractStrategy {
      * First send the stable tokens to this strategy prior to calling.
      */
     function repayAll() external onlyElevatedAccess returns (uint256 repaidAmount) {
-        repaidAmount = treasuryReservesVault.repayAll();
+        repaidAmount = treasuryReservesVault.repayAll(address(this));
         emit Repay(repaidAmount);
     }
 
