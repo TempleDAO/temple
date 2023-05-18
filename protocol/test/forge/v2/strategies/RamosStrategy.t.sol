@@ -38,7 +38,7 @@ contract RamosStrategyTestBase is TempleTest {
         fork("mainnet", 17090437);
 
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
-        trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD));
+        trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD), 9700);
         strategy = new RamosStrategy(rescuer, executor, "RamosStrategy", address(trv), address(ramos));
 
         bptToken = IERC20(ramos.bptToken());
