@@ -8,7 +8,7 @@ import { mulDiv } from "@prb/math/src/Common.sol";
 
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { CompoundedInterest } from "contracts/interestRate/CompoundedInterest.sol";
+import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 
 /**
@@ -25,7 +25,7 @@ import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.s
  *         (eg DAI's DSR at 1% APR). 
  *      It is implemented using a share based implementation such that this base rate can be updated for all debtors
  *   3/ 'risk premium' interest, where the interest rate is set per borrower.
- *         This represents a governance set premium for that individual borrower depending on its purpose. 
+ *         This represents a premium for that individual borrower depending on its purpose. 
  *         For example a higher risk / higher return borrower would have a higher risk premium.
  *
  * On a repayment, the interest accruing at the higher rate is paid down first. When there is no more `base rate` or
@@ -55,7 +55,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     uint8 public constant override decimals = 18;
 
     /**
-     * @notice The current (base rate) interest common for all users. This can be updated by governance
+     * @notice The current (base rate) interest common for all users. This can be updated by the DAO
      * @dev 1e18 format, where 0.01e18 = 1%
      */
     uint256 public override baseRate;
@@ -113,7 +113,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     }
 
     /**
-     * @notice Governance can add an address which is able to mint or burn debt
+     * @notice Add an address which is able to mint or burn debt
      * positions on behalf of users.
      */
     function addMinter(address account) external override onlyElevatedAccess {
@@ -122,7 +122,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     }
 
     /**
-     * @notice Governance can remove an address which is able to mint or burn debt
+     * @notice Remove an address which is able to mint or burn debt
      * positions on behalf of users.
      */
     function removeMinter(address account) external override onlyElevatedAccess {
@@ -138,7 +138,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     }
 
     /**
-     * @notice Governance can update the continuously compounding (base) interest rate of all debtors, from this block onwards.
+     * @notice Update the continuously compounding (base) interest rate of all debtors, from this block onwards.
      */
     function setBaseInterestRate(uint256 _rate) external override onlyElevatedAccess {
         _checkpointBase(_compoundedBaseInterest());
@@ -147,7 +147,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     }
 
     /**
-     * @notice Governance can update the continuously compounding (risk premium) interest rate for a given debtor, from this block onwards
+     * @notice Update the continuously compounding (risk premium) interest rate for a given debtor, from this block onwards
      */
     function setRiskPremiumInterestRate(address _debtor, uint256 _rate) external override onlyElevatedAccess {
         Debtor storage debtor = debtors[_debtor];

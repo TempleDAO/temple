@@ -185,7 +185,6 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
             //        number of signers == 1 < x < dynamicThresholdRequirement
             if (safeThreshold == 1) return;
 
-            // @todo check if this is how we get the function signature.
             // Perhaps in future there could be some custom decoding/approvals based on the arguments too
             threshold = getThreshold(to, bytes4(data));
 

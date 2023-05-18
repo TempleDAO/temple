@@ -144,7 +144,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      */
     function borrowAndDeposit(uint256 amount) external override onlyElevatedAccess {
         // Borrow the DAI. This will also mint `dUSD` debt.
-        treasuryReservesVault.borrow(amount);
+        treasuryReservesVault.borrow(amount, address(this));
         _dsrDeposit(amount);
     }
 
@@ -160,7 +160,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      */
     function borrowAndDepositMax() external override onlyElevatedAccess returns (uint256 borrowedAmount) {
         // Borrow the DAI. This will also mint `dUSD` debt.
-        borrowedAmount = treasuryReservesVault.borrowMax();
+        borrowedAmount = treasuryReservesVault.borrowMax(address(this));
         _dsrDeposit(borrowedAmount);
     }
 
@@ -186,7 +186,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         //  Use `_rdivup()` on withdrawals.
         uint256 sharesAmount = _rdivup(withdrawalAmount, chi);
         _dsrWithdrawal(sharesAmount, withdrawalAmount);
-        treasuryReservesVault.repay(withdrawalAmount);
+        treasuryReservesVault.repay(withdrawalAmount, address(this));
     }
 
     /**
@@ -196,7 +196,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
         _dsrWithdrawal(sharesAvailable, daiAvailable);
 
-        treasuryReservesVault.repay(daiAvailable);
+        treasuryReservesVault.repay(daiAvailable, address(this));
         return daiAvailable;
     }
 

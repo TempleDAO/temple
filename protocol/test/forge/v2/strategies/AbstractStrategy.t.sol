@@ -84,12 +84,11 @@ contract AbstractStrategyTestBase is TempleTest {
 
     function _setUp() public {
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
-        trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD));
+        trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD), 9700);
         strategy = new MockStrategy(rescuer, executor, "MockStrategy", address(trv), reportedAssets);
 
-        vm.startPrank(executor);
+        vm.prank(executor);
         dUSD.addMinter(executor);
-        vm.stopPrank();
     }
 }
 
@@ -112,7 +111,10 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
         assertEq(address(strategy.internalDebtToken()), address(dUSD));
         assertEq(strategy.manualAssetBalanceDeltas(address(dai)), 0);
         assertEq(strategy.currentDebt(), 0);
-        assertEq(strategy.availableToBorrow(), 0);
+        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, 0);
+        assertEq(available, 0);
+        assertEq(ceiling, 0);
         assertEq(dai.allowance(address(strategy), address(trv)), type(uint256).max);
     }
 
@@ -140,7 +142,7 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
         vm.expectRevert();
         strategy.setTreasuryReservesVault(alice);
 
-        TreasuryReservesVault trv2 = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD));
+        TreasuryReservesVault trv2 = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD), 9700);
 
         vm.expectEmit();
         emit TreasuryReservesVaultSet(address(trv2));
@@ -193,16 +195,32 @@ contract AbstractStrategyTestBalances is AbstractStrategyTestBase {
         _setUp();
     }
 
-    function test_availableToBorrow() public {
+    function test_trvBorrowPosition() public {
         vm.startPrank(executor);
-        trv.addNewStrategy(address(strategy), 100e18, 0);
-        assertEq(strategy.availableToBorrow(), 0);
+        uint256 borrowCeiling = 100e18;
+        trv.addNewStrategy(address(strategy), borrowCeiling, 0);
+        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, 0);
+        assertEq(available, 0);
+        assertEq(ceiling, borrowCeiling);
 
         deal(address(dai), address(trv), 1000e18, true);
-        assertEq(strategy.availableToBorrow(), 100e18);
+        (debt, available, ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, 0);
+        assertEq(available, 100e18);
+        assertEq(ceiling, borrowCeiling);
 
         dUSD.mint(address(strategy), 25e18);
-        assertEq(strategy.availableToBorrow(), 75e18);
+        (debt, available, ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, 25e18);
+        assertEq(available, 75e18);
+        assertEq(ceiling, borrowCeiling);
+
+        dUSD.burn(address(strategy), 10e18, false);
+        (debt, available, ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, 15e18);
+        assertEq(available, 85e18);
+        assertEq(ceiling, borrowCeiling);
     }
 
     function test_currentDebt() public {

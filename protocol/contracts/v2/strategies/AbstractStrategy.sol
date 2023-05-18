@@ -90,13 +90,20 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     }
 
     /**
-     * @notice How much a given strategy is free to borrow
-     * @dev This is bound by:
-     *   1/ How much stables is globally available (in the TRV + in the TRV base strategy)
-     *   2/ The amount this individual strategy is whitelisted to borrow.
+     * @notice A strategy's current amount borrowed from the TRV, and how much remaining is free to borrow
+     * @dev The remaining amount free to borrow is bound by:
+     *   1/ How much stables is globally available (in this contract + in the base strategy)
+     *   2/ The amount each individual strategy is whitelisted to borrow.
+     * @return debt The current debt position for the strategy, 
+     * @return availableToBorrow The remaining amount which the strategy can borrow
+     * @return debtCeiling The debt ceiling of the stratgy
      */
-    function availableToBorrow() external override view returns (uint256) {
-        return treasuryReservesVault.availableToBorrow(address(this));
+    function trvBorrowPosition() external override view returns (
+        uint256 debt, 
+        uint256 availableToBorrow,
+        uint256 debtCeiling
+    ) {
+        return treasuryReservesVault.strategyBorrowPosition(address(this));
     }
 
     /**

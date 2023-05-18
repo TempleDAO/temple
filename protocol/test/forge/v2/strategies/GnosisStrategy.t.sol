@@ -27,7 +27,7 @@ contract GnosisStrategyTestBase is TempleTest {
 
     function _setUp() public {
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
-        trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD));
+        trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD), 9700);
         strategy = new GnosisStrategy(rescuer, executor, "GnosisStrategy", address(trv), gnosisSafeWallet);
 
         vm.startPrank(executor);
@@ -265,7 +265,11 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
     function test_borrow() public {       
         uint256 amount = 1e18;
         assertEq(dai.balanceOf(address(trv)), trvStartingBalance);
-        assertEq(strategy.availableToBorrow(), borrowCeiling);
+
+        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, 0);
+        assertEq(available, borrowCeiling);
+        assertEq(ceiling, borrowCeiling);
 
         vm.expectEmit();
         emit Borrow(amount);
@@ -281,7 +285,10 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         assertEq(dUSD.balanceOf(address(strategy)), amount);
         assertEq(dUSD.balanceOf(address(trv)), 0);
 
-        assertEq(strategy.availableToBorrow(), 0.01e18);
+        (debt, available, ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, amount);
+        assertEq(available, 0.01e18);   
+        assertEq(ceiling, borrowCeiling);     
 
         vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.DebtCeilingBreached.selector, 0.01e18, 0.02e18));
         strategy.borrow(0.02e18);
@@ -289,7 +296,10 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
 
     function test_borrowMax() public {       
         assertEq(dai.balanceOf(address(trv)), trvStartingBalance);
-        assertEq(strategy.availableToBorrow(), borrowCeiling);
+        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, 0);
+        assertEq(available, borrowCeiling);
+        assertEq(ceiling, borrowCeiling);
 
         vm.expectEmit();
         emit Borrow(borrowCeiling);
@@ -306,7 +316,10 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         assertEq(dUSD.balanceOf(address(strategy)), borrowCeiling);
         assertEq(dUSD.balanceOf(address(trv)), 0);
 
-        assertEq(strategy.availableToBorrow(), 0);
+        (debt, available, ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, borrowCeiling);
+        assertEq(available, 0);
+        assertEq(ceiling, borrowCeiling);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         strategy.borrowMax();
@@ -338,7 +351,10 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         assertEq(dUSD.balanceOf(address(strategy)), borrowAmount-repayAmount);
         assertEq(dUSD.balanceOf(address(trv)), 0);
 
-        assertEq(strategy.availableToBorrow(), borrowCeiling-borrowAmount+repayAmount);
+        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, borrowAmount-repayAmount);
+        assertEq(available, borrowCeiling-borrowAmount+repayAmount);
+        assertEq(ceiling, borrowCeiling);
 
         // Only has 0.75 dUSD left, but we can still repay more DAI.
         // This generates a positive
@@ -370,7 +386,10 @@ contract GnosisStrategyTestBorrowAndRepay is GnosisStrategyTestBase {
         assertEq(dUSD.balanceOf(address(strategy)), 0);
         assertEq(dUSD.balanceOf(address(trv)), 0);
 
-        assertEq(strategy.availableToBorrow(), borrowCeiling);
+        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, 0);
+        assertEq(available, borrowCeiling);
+        assertEq(ceiling, borrowCeiling);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         strategy.repayAll();

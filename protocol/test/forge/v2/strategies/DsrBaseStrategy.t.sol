@@ -39,7 +39,7 @@ contract DsrBaseStrategyTestBase is TempleTest {
         fork("mainnet", 16675385);
 
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
-        trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD));
+        trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD), 9700);
         strategy = new DsrBaseStrategy(rescuer, executor, "DsrBaseStrategy", address(trv), address(daiJoin), address(pot));
 
         vm.startPrank(executor);
@@ -135,7 +135,11 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
     function test_borrowAndDeposit() public {       
         uint256 amount = 1e18;
         assertEq(dai.balanceOf(address(trv)), trvStartingBalance);
-        assertEq(strategy.availableToBorrow(), borrowCeiling);
+
+        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, 0);
+        assertEq(available, borrowCeiling);
+        assertEq(ceiling, borrowCeiling);
 
         vm.expectEmit();
         emit DaiDeposited(amount);
@@ -150,7 +154,10 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
         assertEq(dUSD.balanceOf(address(strategy)), amount);
         assertEq(dUSD.balanceOf(address(trv)), 0);
 
-        assertEq(strategy.availableToBorrow(), 0.01e18);
+        (debt, available, ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, amount);
+        assertEq(available, 0.01e18);
+        assertEq(ceiling, borrowCeiling);
 
         vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.DebtCeilingBreached.selector, 0.01e18, 0.02e18));
         strategy.borrowAndDeposit(0.02e18);
@@ -158,7 +165,11 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
 
     function test_borrowAndDepositMax() public {       
         assertEq(dai.balanceOf(address(trv)), trvStartingBalance);
-        assertEq(strategy.availableToBorrow(), borrowCeiling);
+
+        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, 0);
+        assertEq(available, borrowCeiling);
+        assertEq(ceiling, borrowCeiling);
 
         vm.expectEmit();
         emit DaiDeposited(borrowCeiling);
@@ -173,7 +184,10 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
         assertEq(dUSD.balanceOf(address(strategy)), borrowCeiling);
         assertEq(dUSD.balanceOf(address(trv)), 0);
 
-        assertEq(strategy.availableToBorrow(), 0);
+        (debt, available, ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, borrowCeiling);
+        assertEq(available, 0);
+        assertEq(ceiling, borrowCeiling);
 
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         strategy.borrowAndDepositMax();
@@ -202,7 +216,10 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
         assertEq(dUSD.balanceOf(address(strategy)), borrowAmount-repayAmount);
         assertEq(dUSD.balanceOf(address(trv)), 0);
 
-        assertEq(strategy.availableToBorrow(), borrowCeiling-borrowAmount+repayAmount);
+        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, borrowAmount-repayAmount);
+        assertEq(available, borrowCeiling-borrowAmount+repayAmount);
+        assertEq(ceiling, borrowCeiling);
     }  
 
     function test_withdrawAndRepayAll() public {   
@@ -227,8 +244,11 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
         assertApproxEqAbs(dUSD.balanceOf(address(strategy)), 0, 1);
         assertEq(dUSD.balanceOf(address(trv)), 0);
 
-        assertApproxEqAbs(strategy.availableToBorrow(), borrowCeiling, 1);
-
+        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, dUSD.balanceOf(address(strategy)));
+        assertApproxEqAbs(available, borrowCeiling, 1);
+        assertEq(ceiling, borrowCeiling);
+        
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         strategy.withdrawAndRepayAll();
     }
@@ -278,7 +298,11 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
             assertEq(dai.balanceOf(address(strategy)), 0);
             assertEq(dai.balanceOf(address(trv)), trvStartingBalance-borrowAmount);
             assertEq(dUSD.balanceOf(address(strategy)), borrowAmount);
-            assertEq(strategy.availableToBorrow(), borrowCeiling-borrowAmount);
+            
+            (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+            assertEq(debt, dUSD.balanceOf(address(strategy)));
+            assertEq(available, borrowCeiling-borrowAmount);
+            assertEq(ceiling, borrowCeiling);
         }
 
         // Do the shutdown
@@ -296,7 +320,12 @@ contract DsrBaseStrategyTestBorrowAndRepay is DsrBaseStrategyTestBase {
             assertEq(dai.balanceOf(address(strategy)), 0);
             assertApproxEqAbs(dai.balanceOf(address(trv)), trvStartingBalance, 1);
             assertEq(dUSD.balanceOf(address(strategy)), 0);
-            assertEq(strategy.availableToBorrow(), 0);
+
+             // Post shutdown, the debt ceiling is now 0
+            (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+            assertEq(debt, dUSD.balanceOf(address(strategy)));
+            assertEq(available, 0);
+            assertEq(ceiling, 0);
         }
     }
 }
@@ -344,7 +373,11 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
 
         assertEq(dUSD.balanceOf(address(strategy)), borrowAmount);
         assertEq(dUSD.balanceOf(address(trv)), 0);
-        assertApproxEqAbs(strategy.availableToBorrow(), trvStartingBalance, 1);
+
+        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, dUSD.balanceOf(address(strategy)));
+        assertApproxEqAbs(available, trvStartingBalance, 1);
+        assertEq(ceiling, borrowCeiling);
     }
 
     function test_trvWithdraw_capped() public {   
@@ -368,7 +401,11 @@ contract DsrBaseStrategyTestTrvWithdraw is DsrBaseStrategyTestBase {
         assertEq(dUSD.balanceOf(address(strategy)), borrowAmount);
         assertEq(dUSD.balanceOf(address(trv)), 0);
         assertApproxEqAbs(trv.totalAvailableStables(), trvStartingBalance, 1);
-        assertApproxEqAbs(strategy.availableToBorrow(), trvStartingBalance, 1);
+        
+        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, dUSD.balanceOf(address(strategy)));
+        assertApproxEqAbs(available, trvStartingBalance, 1); 
+        assertEq(ceiling, borrowCeiling);       
     }
 
     function test_trvWithdraw_complex() public {

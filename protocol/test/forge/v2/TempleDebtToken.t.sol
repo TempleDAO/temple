@@ -5,7 +5,7 @@ import { TempleTest } from "../TempleTest.sol";
 import { ITempleDebtToken, TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
-import { CompoundedInterest } from "contracts/interestRate/CompoundedInterest.sol";
+import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
 import { console2 } from "forge-std/Test.sol";
 
 contract TempleDebtTokenTestBase is TempleTest {
