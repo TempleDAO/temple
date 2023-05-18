@@ -6,11 +6,10 @@ import { RamosStrategy } from "contracts/v2/strategies/RamosStrategy.sol";
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { ITempleDebtToken, TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
+import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
-import { ITreasuryReservesVault, TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
+import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { AMO__IRamos } from "contracts/amo/interfaces/AMO__IRamos.sol";
 import { AMO__IAuraStaking } from "contracts/amo/interfaces/AMO__IAuraStaking.sol";
@@ -33,7 +32,7 @@ contract RamosStrategyTestBase is TempleTest {
     TempleDebtToken public dUSD;
     TreasuryReservesVault public trv;
 
-    address[] public reportedAssets = [address(dai), address(aura), address(bal), address(0)];
+    address[] public reportedAssets = [address(dai), address(aura), address(bal)];
 
     function _setUp() public {
         fork("mainnet", 17090437);
@@ -126,11 +125,20 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
         strategy.setAssets(reportedAssets);
 
         assets = strategy.getAssets();
-        assertEq(assets.length, 4);
+        assertEq(assets.length, 3);
         assertEq(assets[0], reportedAssets[0]);
         assertEq(assets[1], reportedAssets[1]);
         assertEq(assets[2], reportedAssets[2]);
-        assertEq(assets[3], reportedAssets[3]);
+
+        // RAMOS strategy can't accept eth
+        address[] memory invalidReportedAssets = new address[](4);
+        invalidReportedAssets[0] = reportedAssets[0];
+        invalidReportedAssets[1] = reportedAssets[1];
+        invalidReportedAssets[2] = reportedAssets[2];
+        invalidReportedAssets[3] = address(0);
+        
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAddress.selector, address(0)));
+        strategy.setAssets(invalidReportedAssets);
     }
 
     function test_latestAssetBalances_default() public {
@@ -161,7 +169,7 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
         // Assets set, no balances
         {
             (assetBalances, debt) = strategy.latestAssetBalances();
-            assertEq(assetBalances.length, 4);
+            assertEq(assetBalances.length, 3);
             for (uint256 i; i < assetBalances.length; ++i) {
                 assertEq(assetBalances[i].asset, reportedAssets[i]);
                 if (reportedAssets[i] == address(dai)) {
@@ -182,15 +190,13 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             dUSD.mint(address(strategy), 100e18);
 
             (assetBalances, debt) = strategy.latestAssetBalances();
-            assertEq(assetBalances.length, 4);
+            assertEq(assetBalances.length, 3);
             assertEq(assetBalances[0].asset, reportedAssets[0]);
             assertEq(assetBalances[0].balance, initialDaiBalance+50);
             assertEq(assetBalances[1].asset, reportedAssets[1]);
             assertEq(assetBalances[1].balance, 100);
             assertEq(assetBalances[2].asset, reportedAssets[2]);
             assertEq(assetBalances[2].balance, 200);
-            assertEq(assetBalances[3].asset, address(0));
-            assertEq(assetBalances[3].balance, 0); // The RAMOS strategy can't accept eth, it's not payable.
             assertEq(debt, 100e18);
         }
 
@@ -199,15 +205,13 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             deal(address(bptToken), address(amoStaking), 100, true);
 
             (assetBalances, debt) = strategy.latestAssetBalances();
-            assertEq(assetBalances.length, 4);
+            assertEq(assetBalances.length, 3);
             assertEq(assetBalances[0].asset, reportedAssets[0]);
             assertEq(assetBalances[0].balance, initialDaiBalance+50);
             assertEq(assetBalances[1].asset, reportedAssets[1]);
             assertEq(assetBalances[1].balance, 100);
             assertEq(assetBalances[2].asset, reportedAssets[2]);
             assertEq(assetBalances[2].balance, 200);
-            assertEq(assetBalances[3].asset, address(0));
-            assertEq(assetBalances[3].balance, 0); // The RAMOS strategy can't accept eth, it's not payable.
             assertEq(debt, 100e18);
         }
 
@@ -216,15 +220,13 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             deal(address(bptToken), alice, 100, true);
             (assetBalances, debt) = strategy.latestAssetBalances();
 
-            assertEq(assetBalances.length, 4);
+            assertEq(assetBalances.length, 3);
             assertEq(assetBalances[0].asset, reportedAssets[0]);
             assertApproxEqAbs(assetBalances[0].balance, (initialDaiBalance+50) * initialBptTotalSupply / (initialBptTotalSupply+100), 1);  // delta by the rounding
             assertEq(assetBalances[1].asset, reportedAssets[1]);
             assertEq(assetBalances[1].balance, 100);
             assertEq(assetBalances[2].asset, reportedAssets[2]);
             assertEq(assetBalances[2].balance, 200);
-            assertEq(assetBalances[3].asset, address(0));
-            assertEq(assetBalances[3].balance, 0); // The RAMOS strategy can't accept eth, it's not payable.
             assertEq(debt, 100e18);
         }
 
@@ -234,19 +236,17 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             deal(address(bal), address(amoStaking), 200, true);
 
             (assetBalances, debt) = strategy.latestAssetBalances();
-            assertEq(assetBalances.length, 4);
+            assertEq(assetBalances.length, 3);
             assertEq(assetBalances[0].asset, reportedAssets[0]);
             assertApproxEqAbs(assetBalances[0].balance, (initialDaiBalance+50) * initialBptTotalSupply / (initialBptTotalSupply+100), 1);  // delta by the rounding
             assertEq(assetBalances[1].asset, reportedAssets[1]);
             assertEq(assetBalances[1].balance, 2*100);
             assertEq(assetBalances[2].asset, reportedAssets[2]);
             assertEq(assetBalances[2].balance, 2*200);
-            assertEq(assetBalances[3].asset, address(0));
-            assertEq(assetBalances[3].balance, 0); // The RAMOS strategy can't accept eth, it's not payable.
             assertEq(debt, 100e18);
         }
 
-        // Deal some rewards to the `rewardsRecipient` of `amoStaking`
+        // Deal some rewards to the `rewardsRecipient` of `amoStaking`, no balance changes, we won't include the `rewardsRecipient` balance
         {
             address rewardsRecipient = amoStaking.rewardsRecipient();
 
@@ -254,15 +254,13 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             deal(address(bal), address(rewardsRecipient), 200, true);
 
             (assetBalances, debt) = strategy.latestAssetBalances();
-            assertEq(assetBalances.length, 4);
+            assertEq(assetBalances.length, 3);
             assertEq(assetBalances[0].asset, reportedAssets[0]);
             assertApproxEqAbs(assetBalances[0].balance, (initialDaiBalance+50) * initialBptTotalSupply / (initialBptTotalSupply+100), 1);  // delta by the rounding
             assertEq(assetBalances[1].asset, reportedAssets[1]);
-            assertEq(assetBalances[1].balance, 3*100);
+            assertEq(assetBalances[1].balance, 2*100);
             assertEq(assetBalances[2].asset, reportedAssets[2]);
-            assertEq(assetBalances[2].balance, 3*200);
-            assertEq(assetBalances[3].asset, address(0));
-            assertEq(assetBalances[3].balance, 0); // The RAMOS strategy can't accept eth, it's not payable.
+            assertEq(assetBalances[2].balance, 2*200);
             assertEq(debt, 100e18);
         }
 
@@ -273,20 +271,17 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             deltas[0] = ITempleStrategy.AssetBalanceDelta(address(dai), -50);
             deltas[1] = ITempleStrategy.AssetBalanceDelta(address(aura), 50);
             deltas[2] = ITempleStrategy.AssetBalanceDelta(address(bal), -50);
-            deltas[3] = ITempleStrategy.AssetBalanceDelta(address(0), 2000);
             vm.prank(executor);
             strategy.setManualAssetBalanceDeltas(deltas);
 
             (assetBalances, debt) = strategy.latestAssetBalances();
-            assertEq(assetBalances.length, 4);
+            assertEq(assetBalances.length, 3);
             assertEq(assetBalances[0].asset, reportedAssets[0]);
             assertApproxEqAbs(assetBalances[0].balance, (initialDaiBalance+50) * initialBptTotalSupply / (initialBptTotalSupply+100) - 50, 1);
             assertEq(assetBalances[1].asset, reportedAssets[1]);
-            assertEq(assetBalances[1].balance, 3*100+50);
+            assertEq(assetBalances[1].balance, 2*100+50);
             assertEq(assetBalances[2].asset, reportedAssets[2]);
-            assertEq(assetBalances[2].balance, 3*200-50);
-            assertEq(assetBalances[3].asset, address(0));
-            assertEq(assetBalances[3].balance, 2000);
+            assertEq(assetBalances[2].balance, 2*200-50);
             assertEq(debt, 100e18);
         }
     }
