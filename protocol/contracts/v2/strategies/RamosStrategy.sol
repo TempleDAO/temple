@@ -50,6 +50,10 @@ contract RamosStrategy  is AbstractStrategy {
      * @dev Use the zero address (0x000) to represent native ETH
      */
     function setAssets(address[] calldata _assets) external onlyElevatedAccess {
+        for (uint256 i; i < _assets.length; ++i) {
+            if (_assets[i] == address(0)) revert CommonEventsAndErrors.InvalidAddress(_assets[i]);   // 0x00 == ETH
+        }
+
         assets = _assets;
         emit AssetsSet(_assets);
     }
@@ -80,7 +84,6 @@ contract RamosStrategy  is AbstractStrategy {
         AMO__IPoolHelper poolHelper = AMO__IPoolHelper(ramos.poolHelper());
         IERC20 bptToken = IERC20(ramos.bptToken());
         address stable = ramos.stable();
-        address rewardsRecipient = amoStaking.rewardsRecipient();
 
         uint256 stableBalanceInRamos;
         {
@@ -97,28 +100,22 @@ contract RamosStrategy  is AbstractStrategy {
 
         address asset;
         uint256 ramosStrategyBalance;
-        for (uint256 i = 0; i < length;) {
+        for (uint256 i; i < length; ++i) {
             asset = assets[i];
 
-            if (asset == address(0)) {
-                // 0x00 == ETH
-                ramosStrategyBalance = 0;
-            } else if (asset == stable) {
+            if (asset == stable) {
                 // Sum the RAMOS balance and this contract's balance of the ERC20.
                 ramosStrategyBalance = stableBalanceInRamos + IERC20(asset).balanceOf(address(this));
             } else {
                 // Sum the `amoStaking` balance, `rewardsRecipient` balance and this contract's balance of the ERC20.
-                ramosStrategyBalance = IERC20(asset).balanceOf(address(amoStaking)) + IERC20(asset).balanceOf(rewardsRecipient) + IERC20(asset).balanceOf(address(this));
+                // But since `rewardsRecipient` address may be a hot wallet with a bunch of different things going on, we won't include that balance
+                ramosStrategyBalance = IERC20(asset).balanceOf(address(amoStaking)) + IERC20(asset).balanceOf(address(this));
             }
 
             assetBalances[i] = AssetBalance({
                 asset: asset,
                 balance: addManualAssetBalanceDelta(ramosStrategyBalance, asset)
             });
-
-            unchecked {
-                ++i;
-            }
         }
 
         debt = currentDebt();
