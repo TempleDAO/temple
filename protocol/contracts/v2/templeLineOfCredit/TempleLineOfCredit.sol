@@ -4,27 +4,31 @@ pragma solidity ^0.8.17;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { mulDiv } from "@prb/math/src/Common.sol";
 
 import { ITempleLineOfCredit } from "contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol";
 import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
 import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
 import { IMintableToken } from "contracts/interfaces/common/IMintableToken.sol";
+import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol";
+
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
-import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { mulDiv } from "@prb/math/src/Common.sol";
 import { TlcReserveLogic } from "contracts/v2/templeLineOfCredit/TlcReserveLogic.sol";
-import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol";
+import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 
 import "forge-std/console.sol";
 
 // @todo need to pause/unpause borrows/repays
 // @todo add liquidations
 
-contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
+contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
     using SafeERC20 for IERC20;
     using CompoundedInterest for uint256;
     using TlcReserveLogic for ReserveCache;
+
+    string public constant VERSION = "1.0.0";
 
     /**
      * @notice Collateral Token supplied by users
@@ -44,32 +48,32 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
     mapping(IERC20 => ReserveToken) private reserveTokens;
 
-    IERC20 public immutable daiToken;
-
-    // @todo change dai to be updatable since it will be deployed later.
+    // @todo change oud to be updatable since it will be deployed later.
     IMintableToken public immutable oudToken;
-
-    ITreasuryReservesVault public treasuryReservesVault;
 
     constructor(
         address _initialRescuer,
         address _initialExecutor,
+        string memory _strategyName,
+        address _treasuryReservesVault,
         address _templeToken,
-        address _daiAddress,
-        ReserveTokenConfig memory _daiTokenConfig,
+        ReserveTokenConfig memory _stableTokenConfig,
         address _oudAddress,
-        ReserveTokenConfig memory _oudTokenConfig,
-        address _treasuryReservesVault
-    ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
-    {
+        ReserveTokenConfig memory _oudTokenConfig
+    ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
         templeToken = IERC20(_templeToken);
 
-        daiToken = IERC20(_daiAddress);
-        reserveTokens[IERC20(_daiAddress)].config = _daiTokenConfig;
+        reserveTokens[stableToken].config = _stableTokenConfig;
 
         oudToken = IMintableToken(_oudAddress);
         reserveTokens[IERC20(_oudAddress)].config = _oudTokenConfig;
-        treasuryReservesVault = ITreasuryReservesVault(_treasuryReservesVault);
+    }
+
+    /**
+     * The version of this particular strategy
+     */
+    function strategyVersion() external override pure returns (string memory) {
+        return VERSION;
     }
 
     function getReserveToken(address token) external view returns (ReserveToken memory) {
@@ -120,42 +124,24 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         reserveToken.config.maxLtvRatio = maxLtvRatio;
     }
 
-    // @todo remove once we inherit from AbstractStrategy
-    /**
-     * @notice A strategy's current amount borrowed from the TRV, and how much remaining is free to borrow
-     * @dev The remaining amount free to borrow is bound by:
-     *   1/ How much stables is globally available (in this contract + in the base strategy)
-     *   2/ The amount each individual strategy is whitelisted to borrow.
-     * @return currentDebt The current debt position for the strategy, 
-     * @return availableToBorrow The remaining amount which the strategy can borrow
-     * @return debtCeiling The debt ceiling of the stratgy
-     */
-    function trvBorrowPosition() external view returns (
-        uint256 currentDebt, 
-        uint256 availableToBorrow, 
-        uint256 debtCeiling
-    ) {
-        return treasuryReservesVault.strategyBorrowPosition(address(this));
-    }
-
     // @todo when the TRV cap changes, the UR will change. A checkpoint will need to be done then too, 
     // so the rate is updated.
     // add a test for this.
 
     function totalDebtInfo() external view returns (
-        uint256 daiUtilizationRatio, // based off the last debt checkpoint
-        uint256 daiBorrowRate,  // based off the last debt checkpoint
-        uint256 daiTotalDebt, // the last debt checkpoint compounded to now
+        uint256 stableUtilizationRatio, // based off the last debt checkpoint
+        uint256 stableBorrowRate,  // based off the last debt checkpoint
+        uint256 stableTotalDebt, // the last debt checkpoint compounded to now
         uint256 oudBorrowRate, // based off the last debt checkpoint
         uint256 oudTotalDebt // the last debt checkpoint compounded to now
     ) {
         ITreasuryReservesVault trv = treasuryReservesVault;
 
-        // DAI
-        ReserveCache memory reserveCache = TlcReserveLogic.cache(reserveTokens[daiToken], trv);
-        daiUtilizationRatio = reserveCache.utilizationRatio();
-        daiBorrowRate = reserveCache.interestRate; //getBorrowRate(0, 0);
-        daiTotalDebt = reserveCache.compoundDebt();
+        // Stable (eg DAI)
+        ReserveCache memory reserveCache = TlcReserveLogic.cache(reserveTokens[stableToken], trv);
+        stableUtilizationRatio = reserveCache.utilizationRatio();
+        stableBorrowRate = reserveCache.interestRate; //getBorrowRate(0, 0);
+        stableTotalDebt = reserveCache.compoundDebt();
 
         // OUD
         reserveCache = TlcReserveLogic.cache(reserveTokens[oudToken], trv);
@@ -167,17 +153,17 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
      * @dev Get user total debt incurred (principal + interest)
      * @param account user address
      */
-    function userTotalDebt(address account) public view returns (uint256 daiAmount, uint256 oudAmount) {
+    function userTotalDebt(address account) public view returns (uint256 stableAmount, uint256 oudAmount) {
         mapping(IERC20 => uint256) storage _userShares = userDebtShares[account];
         ITreasuryReservesVault _trv = treasuryReservesVault;
         ReserveCache memory _reserveCache;
 
-        // DAI Debt
+        // Stable (eg DAI) Debt
         {
-            _reserveCache = TlcReserveLogic.cache(reserveTokens[daiToken], _trv);
+            _reserveCache = TlcReserveLogic.cache(reserveTokens[stableToken], _trv);
 
-            daiAmount = _sharesToDebt(
-                _userShares[daiToken],
+            stableAmount = _sharesToDebt(
+                _userShares[stableToken],
                 _reserveCache.compoundDebt(),
                 _reserveCache.shares, 
                 false
@@ -216,16 +202,16 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
     /**
      * @dev Allows user to borrow debt tokens
-     * @param daiBorrowAmount amount of dai to borrow
-     * @param oudBorrowAmount amount of oud to borrow
+     * @param stableBorrowAmount amount of stable (eg DAI) to borrow
+     * @param oudBorrowAmount amount of OUD to borrow
      */
-    function borrow(uint256 daiBorrowAmount, uint256 oudBorrowAmount) external {
+    function borrow(uint256 stableBorrowAmount, uint256 oudBorrowAmount) external {
         uint256 collateralAmount = userCollateralPosted[msg.sender];
 
-        if (daiBorrowAmount != 0 ) {
+        if (stableBorrowAmount != 0 ) {
             // @todo keep a buffer?
-            treasuryReservesVault.borrow(daiBorrowAmount, msg.sender);
-            _borrow(daiToken, collateralAmount, daiBorrowAmount);
+            treasuryReservesVault.borrow(stableBorrowAmount, msg.sender);
+            _borrow(stableToken, collateralAmount, stableBorrowAmount);
         } 
         
         if (oudBorrowAmount != 0) {
@@ -282,16 +268,16 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
     /**
      * @notice Allows borrower to repay borrowed amount
-     * @param repayDaiAmount amount of dai to repay
+     * @param repayStableAmount amount of stable (eg DAI) to repay
      * @param repayOudAmount amount of oud to repay
      */
-    function repay(uint256 repayDaiAmount, uint256 repayOudAmount) public {
-        if (repayDaiAmount != 0 ) {
-            _repay(daiToken, repayDaiAmount);
-            daiToken.safeTransferFrom(
+    function repay(uint256 repayStableAmount, uint256 repayOudAmount) public {
+        if (repayStableAmount != 0 ) {
+            _repay(stableToken, repayStableAmount);
+            stableToken.safeTransferFrom(
                 msg.sender,
                 address(this),
-                repayDaiAmount 
+                repayStableAmount 
             );
         } 
         
@@ -311,8 +297,8 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
     function repayAll() external {
         // @todo this is filling in the cache twice...
         // can optimise
-        (uint256 daiTotalAmount, uint256 oudTotalAmount) = userTotalDebt(msg.sender);
-        repay(daiTotalAmount, oudTotalAmount);
+        (uint256 stableTotalAmount, uint256 oudTotalAmount) = userTotalDebt(msg.sender);
+        repay(stableTotalAmount, oudTotalAmount);
     }
 
     function _repay(
@@ -432,4 +418,40 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
             : _shares;
     }
 
+    /**
+     * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
+     * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
+     * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
+     *
+     * @dev The asset value may be stale at any point in time, depending onthe strategy. 
+     * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
+     */
+    function latestAssetBalances() public override view returns (AssetBalance[] memory assetBalances, uint256 debt) {
+        // The only asset which TLC has is the Temple collateral given by users.
+        // In the case of a user liquidation, that user Temple is burned, and
+        // the equivalent dUSD debt is also reduced by `Temple x TPI`
+        assetBalances = new AssetBalance[](1);
+        assetBalances[0] = AssetBalance({
+            asset: address(templeToken),
+            balance: addManualAssetBalanceDelta(
+                templeToken.balanceOf(address(this)), 
+                address(templeToken)
+            )
+        });
+
+        debt = currentDebt();
+    }
+    
+    /**
+     * @notice An automated shutdown is not possible for TLC. All users will first have to exit positions:
+     *   - Pause new borrows
+     *   - Comms for users to exit
+     *   - Increase the borrow rate | reduce maxLTV such that users are slowly liquidated
+     *
+     * Once done and all debt is repaid, they can give the all clear for governance to then shutdown the strategy
+     * by calling TRV.shutdown(strategy, stables recovered)
+     */
+    function automatedShutdown() external virtual override returns (uint256) {
+        revert Unimplemented();
+    }
 }

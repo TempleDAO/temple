@@ -76,12 +76,12 @@ contract TempleLineOfCreditTestBase is TempleTest {
         tlc = new TempleLineOfCredit(
             rescuer, 
             executor, 
+            "TempleLineOfCredit",
+            address(trv),
             address(templeToken),
-            address(daiToken),
             defaultDaiConfig(),
             address(oudToken),
-            defaultOudConfig(),
-            address(trv)
+            defaultOudConfig()
         );
 
         vm.startPrank(executor);

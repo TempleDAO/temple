@@ -6,7 +6,7 @@ import { SafeERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/Saf
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
-contract GnosisStrategy  is AbstractStrategy {
+contract GnosisStrategy is AbstractStrategy {
     using SafeERC20 for IERC20;
     string public constant VERSION = "1.0.0";
 
