@@ -7,7 +7,8 @@ import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { AMO__IRamos } from "contracts/amo/interfaces/AMO__IRamos.sol";
 import { AMO__IAuraStaking } from "contracts/amo/interfaces/AMO__IAuraStaking.sol";
-import { AMO__IPoolHelper } from "contracts/amo/interfaces/AMO__IPoolHelper.sol";
+import { AMO__IPoolHelper, AMO__IBalancerVault } from "contracts/amo/interfaces/AMO__IPoolHelper.sol";
+import { AMOCommon } from "contracts/amo/helpers/AMOCommon.sol";
 
 contract RamosStrategy  is AbstractStrategy {
     using SafeERC20 for IERC20;
@@ -24,9 +25,19 @@ contract RamosStrategy  is AbstractStrategy {
      */
     address[] public assets;
 
+    address public operator;
+
     event AssetsSet(address[] _assets);
+    event SetOperator(address operator);
     event Borrow(uint256 amount);
     event Repay(uint256 amount);
+
+    modifier onlyOperator() {
+        if (msg.sender != operator) {
+            revert AMOCommon.NotOperator();
+        }
+        _;
+    }
 
     constructor(
         address _initialRescuer,
@@ -64,6 +75,16 @@ contract RamosStrategy  is AbstractStrategy {
      */
     function getAssets() external view returns (address[] memory) {
         return assets;
+    }
+
+    /**
+     * @notice Set operator
+     * @param _operator New operator
+     */
+    function setOperator(address _operator) external onlyElevatedAccess {
+        operator = _operator;
+
+        emit SetOperator(_operator);
     }
 
     /**
@@ -119,6 +140,36 @@ contract RamosStrategy  is AbstractStrategy {
         }
 
         debt = currentDebt();
+    }
+
+    /**
+     * @notice Borrow a fixed amount from the Treasury Reserves and add liquidity
+     * These stables are sent to the RAMOS to add liquidity and stake BPT
+     */
+    function borrowAndAddLiquidity(uint256 amount, uint256 slippageBps) external onlyOperator {
+        // Borrow the DAI and send it to RAMOS. This will also mint `dUSD` debt.
+        treasuryReservesVault.borrow(amount, address(ramos));
+        emit Borrow(amount);
+
+        // Add liquidity
+        AMO__IPoolHelper poolHelper = AMO__IPoolHelper(ramos.poolHelper());
+        (,, uint256 minBptAmount, AMO__IBalancerVault.JoinPoolRequest memory requestData) = poolHelper.addLiquidityQuote(amount, slippageBps);
+        ramos.addLiquidity(requestData, minBptAmount);
+    }
+
+    /**
+     * @notice Remove liquidity and repay debt back to the Treasury Reserves
+     * The stables from the removed liquidity are sent from RAMOS to this address to repay debt
+     */
+    function removeLiquidityAndRepay(uint256 bptAmount, uint256 slippageBps) external onlyOperator {
+        // Remove liquidity
+        AMO__IPoolHelper poolHelper = AMO__IPoolHelper(ramos.poolHelper());
+        (,,,, AMO__IBalancerVault.ExitPoolRequest memory requestData) = poolHelper.removeLiquidityQuote(bptAmount, slippageBps);
+        ramos.removeLiquidity(requestData, bptAmount);
+
+        // Repay debt back to the Treasury Reserves
+        IERC20 stableToken = treasuryReservesVault.stableToken();
+        treasuryReservesVault.repay(stableToken.balanceOf(address(this)), address(this));
     }
 
     /**

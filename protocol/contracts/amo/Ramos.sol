@@ -267,7 +267,7 @@ contract RAMOS is Ownable, Pausable {
     function depositStable(
         uint256 amountIn,
         uint256 minBptOut
-    ) external onlyOwner whenNotPaused {
+    ) external onlyOperatorOrOwner whenNotPaused {
         _validateParams(minBptOut, amountIn, maxRebalanceAmounts.stable);
 
         stable.safeTransfer(address(poolHelper), amountIn);
@@ -296,7 +296,7 @@ contract RAMOS is Ownable, Pausable {
     function withdrawStable(
         uint256 bptAmountIn,
         uint256 minAmountOut
-    ) external onlyOwner whenNotPaused {
+    ) external onlyOperatorOrOwner whenNotPaused {
         _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
 
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
@@ -322,7 +322,7 @@ contract RAMOS is Ownable, Pausable {
     function addLiquidity(
         AMO__IBalancerVault.JoinPoolRequest memory request,
         uint256 minBptOut
-    ) external onlyOwner {
+    ) external onlyOperatorOrOwner {
         // validate request
         if (request.assets.length != request.maxAmountsIn.length || 
             request.assets.length != 2 || 
@@ -362,7 +362,7 @@ contract RAMOS is Ownable, Pausable {
     function removeLiquidity(
         AMO__IBalancerVault.ExitPoolRequest memory request,
         uint256 bptIn
-    ) external onlyOwner {
+    ) external onlyOperatorOrOwner {
         // validate request
         if (request.assets.length != request.minAmountsOut.length || 
             request.assets.length != 2 || 
@@ -390,6 +390,9 @@ contract RAMOS is Ownable, Pausable {
                 unchecked {
                     receivedAmount = stable.balanceOf(address(this)) - stableAmountBefore;
                 }
+                if (receivedAmount > 0) {
+                    stable.safeTransfer(msg.sender, receivedAmount);
+                }
             }
         }
     }
@@ -402,7 +405,7 @@ contract RAMOS is Ownable, Pausable {
     function depositAndStakeBptTokens(
         uint256 amount,
         bool useContractBalance
-    ) external onlyOwner {
+    ) external onlyOperatorOrOwner {
         if (!useContractBalance) {
             bptToken.safeTransferFrom(msg.sender, address(this), amount);
         }
