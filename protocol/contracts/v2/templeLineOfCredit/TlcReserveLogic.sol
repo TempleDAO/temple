@@ -10,31 +10,95 @@ import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDa
 
 import "forge-std/console.sol";
 
+// @todo revisit just making this an abstract base contract.
 library TlcReserveLogic { 
     using CompoundedInterest for uint256;
 
     event InterestRateUpdate(address indexed token, uint256 newInterestRate);
 
+    function initCache(
+        ITlcDataTypes.ReserveToken storage reserveToken,
+        ITreasuryReservesVault treasuryReservesVault,
+        ITlcDataTypes.ReserveCache memory reserveCache
+    ) internal view returns (bool dirty) {
+        reserveCache.interestRateModel = reserveToken.config.interestRateModel;
+        reserveCache.interestRateModelType = reserveToken.config.interestRateModelType;
+        // reserveCache.tokenPriceType = reserveToken.config.tokenPriceType;
+        reserveCache.maxLtvRatio = reserveToken.config.maxLtvRatio;
+
+        reserveCache.interestAccumulator = reserveToken.totals.interestAccumulator;
+
+        // reserveCache.collateral = reserveToken.totals.collateral;
+        reserveCache.debt = reserveToken.totals.debt;
+        reserveCache.interestRate = reserveToken.totals.interestRate;
+
+        // @todo rename to interestAccumulatorUpdatedAt
+        reserveCache.lastUpdatedAt = reserveToken.totals.lastUpdatedAt;
+        // reserveCache.trvDebtCeiling = reserveToken.totals.maxBorrowLimit;
+
+        // @todo These aren't stored in storage.
+        {
+            if (reserveCache.interestRateModelType == ITlcDataTypes.InterestRateModelType.TRV_UTILIZATION_RATE) {
+                reserveCache.trvDebtCeiling = treasuryReservesVault.strategyDebtCeiling(address(this));
+            }
+
+            reserveCache.price = (reserveToken.config.tokenPriceType == ITlcDataTypes.TokenPriceType.STABLE)
+                ? treasuryReservesVault.treasuryPriceIndex()
+                : 10_000;
+        }
+
+        if (block.timestamp != reserveCache.lastUpdatedAt) {
+            dirty = true;
+
+            // @todo Euler also checks for overflows and ignores if it will take it over...?
+            {
+                console.log("updating accumulator:");
+                console.log("\twas:", reserveCache.interestAccumulator);
+                console.log("\tdelta:", block.timestamp - reserveCache.lastUpdatedAt);
+                console.log("\trate:", reserveCache.interestRate);
+                console.log("\tanswer:", reserveCache.interestAccumulator.continuouslyCompounded(
+                    block.timestamp - reserveCache.lastUpdatedAt,
+                    reserveCache.interestRate
+                ));
+            }
+
+            uint256 newInterestAccumulator = reserveCache.interestAccumulator.continuouslyCompounded(
+                block.timestamp - reserveCache.lastUpdatedAt,
+                reserveCache.interestRate
+            );
+            // @todo need a muldiv?
+            reserveCache.debt = reserveCache.debt * newInterestAccumulator / reserveCache.interestAccumulator;
+            reserveCache.interestAccumulator = newInterestAccumulator;
+
+
+            // if (reserveCache.tokenPriceType == TokenPriceType.STABLE) {
+            //     reserveCache.price = treasuryReservesVault.treasuryPriceIndex();
+            // }
+            
+            reserveCache.lastUpdatedAt = block.timestamp;
+        }  
+    }
+
     function cache(
+        ITlcDataTypes.ReserveToken storage reserveToken,
+        ITreasuryReservesVault treasuryReservesVault
+    ) internal returns (
+        ITlcDataTypes.ReserveCache memory reserveCache
+    ) {
+        if (initCache(reserveToken, treasuryReservesVault, reserveCache)) {
+            reserveToken.totals.lastUpdatedAt = reserveCache.lastUpdatedAt;
+            reserveToken.totals.debt = reserveCache.debt;
+            reserveToken.totals.interestAccumulator = reserveCache.interestAccumulator;
+        }
+    }
+
+    function cacheRO(
         ITlcDataTypes.ReserveToken storage reserveToken,
         ITreasuryReservesVault treasuryReservesVault
     ) internal view returns (
         ITlcDataTypes.ReserveCache memory reserveCache
     ) {
-        // reserveCache.collateral = reserveToken.totals.collateral;
-        reserveCache.debt = reserveToken.totals.debt;
-        reserveCache.shares = reserveToken.totals.shares;
-        reserveCache.interestRate = reserveToken.totals.interestRate;
-        reserveCache.lastUpdatedAt = reserveToken.totals.lastUpdatedAt;
-
-        reserveCache.interestRateModel = reserveToken.config.interestRateModel;
-        reserveCache.interestRateModelType = reserveToken.config.interestRateModelType;
-        reserveCache.tokenPriceType = reserveToken.config.tokenPriceType;
-        reserveCache.maxLtvRatio = reserveToken.config.maxLtvRatio;
-
-        if (reserveCache.interestRateModelType == ITlcDataTypes.InterestRateModelType.TRV_UTILIZATION_RATE) {
-            reserveCache.trvDebtCeiling = treasuryReservesVault.strategyDebtCeiling(address(this));
-        }
+        initCache(reserveToken, treasuryReservesVault, reserveCache);
     }
 
     // @todo when the TRV cap changes, the UR will change. A checkpoint will need to be done then too, 
@@ -52,18 +116,6 @@ library TlcReserveLogic {
         );
     }
 
-    function updateState(
-        ITlcDataTypes.ReserveCache memory reserveCache,
-        ITlcDataTypes.ReserveToken storage reserveToken
-    ) internal {
-        if (reserveCache.lastUpdatedAt == block.timestamp) {
-            return;
-        }
-
-        reserveToken.totals.debt = reserveCache.debt = compoundDebt(reserveCache);
-        reserveToken.totals.lastUpdatedAt = reserveCache.lastUpdatedAt = block.timestamp;
-    }
-
     function utilizationRatio(
         ITlcDataTypes.ReserveCache memory reserveCache
     ) internal pure returns (uint256 ur) {
@@ -73,36 +125,44 @@ library TlcReserveLogic {
     }
 
     function getBorrowRate(
-        ITlcDataTypes.ReserveCache memory reserveCache, 
-        uint256 amountAddedToDebt,
-        uint256 amountRemovedFromDebt
+        ITlcDataTypes.ReserveCache memory reserveCache
     ) internal view returns (uint256) {
-        if (reserveCache.interestRateModelType == ITlcDataTypes.InterestRateModelType.TRV_UTILIZATION_RATE) {
-            console.log("getBorrowRate TRV:");
-            console.log("\tdebt params:", reserveCache.debt, amountAddedToDebt, amountRemovedFromDebt);
-            console.log("\tnumerator:", reserveCache.debt + amountAddedToDebt - amountRemovedFromDebt);
-            console.log("\tdenominator:", reserveCache.trvDebtCeiling);
-            console.log("\tanswer:", reserveCache.interestRateModel.getBorrowRate(
-                reserveCache.debt + amountAddedToDebt - amountRemovedFromDebt, 
-                reserveCache.trvDebtCeiling
-            ));
-            return reserveCache.interestRateModel.getBorrowRate(
-                reserveCache.debt + amountAddedToDebt - amountRemovedFromDebt, 
-                reserveCache.trvDebtCeiling
-            );
-        } else {
-            return reserveCache.interestRateModel.getBorrowRate(0, 0);
-        }
+        return reserveCache.interestRateModel.calculateInterestRate(
+                utilizationRatio(reserveCache)
+        );
+        // // uint256 utilizationRatio: (reserveCache.debt * 1e18) /  totalAvailable, 
+
+        // // @todo do the UR here and pass it through instead.
+
+        // if (reserveCache.interestRateModelType == ITlcDataTypes.InterestRateModelType.TRV_UTILIZATION_RATE) {
+        //     console.log("getBorrowRate TRV:");
+        //     console.log("\tdebt params:", reserveCache.debt); //, amountAddedToDebt, amountRemovedFromDebt);
+        //     console.log("\tnumerator:", reserveCache.debt); // + amountAddedToDebt - amountRemovedFromDebt);
+        //     console.log("\tdenominator:", reserveCache.trvDebtCeiling);
+        //     console.log("\tanswer:", reserveCache.interestRateModel.getBorrowRate(
+        //         utilizationRatio(reserveCache)
+        //         // reserveCache.debt, // + amountAddedToDebt - amountRemovedFromDebt, 
+        //         // reserveCache.trvDebtCeiling
+        //     ));
+        //     return reserveCache.interestRateModel.getBorrowRate(
+        //         utilizationRatio(reserveCache)
+        //         // reserveCache.debt, // + amountAddedToDebt - amountRemovedFromDebt, 
+        //         // reserveCache.trvDebtCeiling
+        //     );
+        // } else {
+        //     // @todo I still don't like this. Perhaps just defer to another
+        //     return reserveCache.interestRateModel.getBorrowRate(0, 0);
+        // }
     }
 
     function updateInterestRates(
         ITlcDataTypes.ReserveCache memory reserveCache, 
         ITlcDataTypes.ReserveToken storage reserveToken, 
-        address reserveAddress,
-        uint256 amountAddedToDebt,
-        uint256 amountRemovedFromDebt
+        address reserveAddress
+        // uint256 amountAddedToDebt,
+        // uint256 amountRemovedFromDebt
     ) internal {
-        uint256 newInterestRate = getBorrowRate(reserveCache, amountAddedToDebt, amountRemovedFromDebt);
+        uint256 newInterestRate = getBorrowRate(reserveCache); //, amountAddedToDebt, amountRemovedFromDebt);
         console.log("updateInterestRates:", reserveAddress, reserveCache.interestRate, newInterestRate);
         if (reserveCache.interestRate != newInterestRate) {
             emit InterestRateUpdate(reserveAddress, newInterestRate);

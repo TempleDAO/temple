@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 // Temple (interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol)
 
 import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ITlcDataTypes {
     enum TokenPriceType {
@@ -39,15 +40,18 @@ interface ITlcDataTypes {
     // @todo byte pack all of these
     struct ReserveTokenTotals {
         /// @notice Total amount that has already been borrowed, which increases as interest accrues
+        // uint108
         uint256 debt;
 
-        //// @notice Total number of shares that have been issued
-        uint256 shares;
-
         /// @notice The interest rate as of the last borrow/repay/
+        // uint108
         uint256 interestRate;
 
+        // uint256
+        uint256 interestAccumulator;
+
         /// @notice The last time the debt was updated for this token
+        // uint40
         uint256 lastUpdatedAt;
     }
 
@@ -56,16 +60,28 @@ interface ITlcDataTypes {
         ReserveTokenTotals totals;
     }
 
+    struct UserTokenDebt {
+        uint256 debt;
+        uint256 interestAccumulator;
+    }
+
+    struct UserData {
+        uint256 collateralPosted;
+        mapping(IERC20 => UserTokenDebt) debtData;
+    }
+
     // @todo check if all of these are actually used
     struct ReserveCache {
+        // @todo rename to totalDebt?
         /// @notice Total amount that has already been borrowed, which increases as interest accrues
         uint256 debt;
 
-        //// @notice Total number of shares that have been issued
-        uint256 shares;
-
         /// @notice The interest rate as of the last borrow/repay/
         uint256 interestRate;
+
+        uint256 interestAccumulator;
+
+        uint256 price;
 
         /// @notice The last time the debt was updated for this token
         uint256 lastUpdatedAt;
@@ -79,10 +95,6 @@ interface ITlcDataTypes {
         /// @notice The max allowed to be borrowed from the TRV
         /// @dev Used as the denominator in the Utilisation Ratio
         uint256 trvDebtCeiling;
-        // ITreasuryReservesVault treasuryReservesVault;
-
-        /// @notice The type of how to lookup the price of the token
-        TokenPriceType tokenPriceType;
 
         /// @notice Maximum Loan To Value (LTV) ratio to prevent liquidation
         uint256 maxLtvRatio;

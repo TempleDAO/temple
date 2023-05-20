@@ -3,14 +3,14 @@ pragma solidity ^0.8.17;
 
 // import "forge-std/console.sol";
 
-import {IInterestRateModel} from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
+import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
 
 // @todo consider making this a lib instead to save gas.
 // depends if we are likely to change it.
 
 import "forge-std/console.sol";
 
-contract LinearInterestRateModel is IInterestRateModel {
+contract LinearWithKinkInterestRateModel is IInterestRateModel {
     
     uint256 private constant PRECISION = 1e18;
 
@@ -53,53 +53,30 @@ contract LinearInterestRateModel is IInterestRateModel {
         kinkUtilization = _kinkUtilization;
         kinkInterestRate = _kinkInterestRate;
     }
-
+    
     // @todo add setters
 
-    struct BorrowRateVars {
-        uint256 actualUtilizationRatio;
-        uint256 baseRate;
-        uint256 rateAtKink;
-        uint256 maxRate;
-        uint256 kinkUtilizationRatio;
-    }
-
     /**
-     * @notice Calculates the current borrow rate per block
-     * @param totalBorrow total borrowed
-     * @param totalAvailable total reserve available for borrowing
-     * @return The borrow rate (scaled by PRECISION)
+     * @notice Calculates the current interest rate based on a utilization ratio
+     * @param utilizationRatio The utilization ratio scaled to `PRECISION`
+     * @return interestRate The interest rate (scaled by PRECISION). 0.05e18 == 5%
      */
-    function getBorrowRate(uint256 totalBorrow, uint256 totalAvailable) public view returns (uint256) {
-        console.log("getBorrowRate:", totalBorrow, totalAvailable);
+    function calculateInterestRate(uint256 utilizationRatio) public view returns (uint256 interestRate) {
+        uint256 _kinkUtilizationRatio = kinkUtilization;
+        uint256 _kinkInterestRate = kinkInterestRate;
+        if (utilizationRatio <= _kinkUtilizationRatio) {
+            uint256 _baseRate = baseInterestRate;
 
-        // If totalAvailable == 0, then just return the minimum rate
-        if (totalAvailable == 0) {
-            return baseInterestRate;
-        }
-        console.log("getBorrowRate1:");
-
-        BorrowRateVars memory vars = BorrowRateVars({
-            actualUtilizationRatio: (totalBorrow * PRECISION) /  totalAvailable, 
-            baseRate: baseInterestRate,
-            rateAtKink: kinkInterestRate,
-            maxRate: maxInterestRate,
-            kinkUtilizationRatio: kinkUtilization
-        });
-        
-        // utilizationRate(totalBorrow, totalAvailable);
-        console.log("\t\tgetBorrowRate: UR:", vars.actualUtilizationRatio, "kink at:", vars.kinkUtilizationRatio);
-
-        if (vars.actualUtilizationRatio <= vars.kinkUtilizationRatio) {
             // Slope between base% -> kink%
-            uint256 slope = ((vars.rateAtKink - vars.baseRate) * PRECISION ) / vars.kinkUtilizationRatio;
-            console.log("\t<=KINK:", vars.baseRate, slope, vars.baseRate + ((vars.actualUtilizationRatio * slope) / PRECISION));
-            return vars.baseRate + ((vars.actualUtilizationRatio * slope) / PRECISION);
+            uint256 slope = ((_kinkInterestRate - _baseRate) * PRECISION ) / _kinkUtilizationRatio;
+            // console.log("\t<=KINK:", vars.baseRate, slope, vars.baseRate + ((vars.actualUtilizationRatio * slope) / PRECISION));
+            interestRate = _baseRate + ((utilizationRatio * slope) / PRECISION);
         } else {
+
             // Slope between kink% -> max%
-            uint256 slope = (((vars.maxRate - vars.rateAtKink ) * PRECISION) / ( PRECISION  - vars.kinkUtilizationRatio));
-            console.log("\t>KINK:", vars.rateAtKink, vars.rateAtKink + (((vars.actualUtilizationRatio - vars.kinkUtilizationRatio) * slope) / PRECISION));
-            return vars.rateAtKink + (((vars.actualUtilizationRatio - vars.kinkUtilizationRatio) * slope) / PRECISION);
+            uint256 slope = (((maxInterestRate - _kinkInterestRate ) * PRECISION) / ( PRECISION  - _kinkUtilizationRatio));
+            // console.log("\t>KINK:", vars.rateAtKink, vars.rateAtKink + (((vars.actualUtilizationRatio - vars.kinkUtilizationRatio) * slope) / PRECISION));
+            interestRate = _kinkInterestRate + (((utilizationRatio - _kinkUtilizationRatio) * slope) / PRECISION);
         }
     }
 }

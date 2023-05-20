@@ -4,11 +4,11 @@ pragma solidity ^0.8.17;
 
 interface IInterestRateModel {
     /**
-     * @notice Get the current borrow rate, based on the utilisation ratio (totallBorrow/totalReserve)
-     * @dev Not all models will require all params.
+     * @notice Calculates the current interest rate based on a utilization ratio
+     * @param utilizationRatio The utilization ratio scaled to `PRECISION`
+     * @return interestRate The interest rate (scaled by PRECISION). 0.05e18 == 5%
      */
-    function getBorrowRate(
-        uint256 totalBorrow, 
-        uint256 totalReserve
-    ) external view returns (uint256);
+    function calculateInterestRate(
+        uint256 utilizationRatio
+    ) external view returns (uint256 interestRate);
 }

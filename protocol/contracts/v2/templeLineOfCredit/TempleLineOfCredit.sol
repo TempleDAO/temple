@@ -7,14 +7,10 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { mulDiv } from "@prb/math/src/Common.sol";
 
 import { ITempleLineOfCredit } from "contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol";
-import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
 import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
 import { IMintableToken } from "contracts/interfaces/common/IMintableToken.sol";
-import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol";
 
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
-import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
-import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { TlcReserveLogic } from "contracts/v2/templeLineOfCredit/TlcReserveLogic.sol";
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 
@@ -25,7 +21,6 @@ import "forge-std/console.sol";
 
 contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
     using SafeERC20 for IERC20;
-    using CompoundedInterest for uint256;
     using TlcReserveLogic for ReserveCache;
 
     string public constant VERSION = "1.0.0";
@@ -36,20 +31,25 @@ contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
     IERC20 public immutable templeToken;
 
     /**
-     * @notice Total collateral posted per user
+     * @notice User collateral and current token debt information
      */
-    mapping(address => uint256) public userCollateralPosted;
+    mapping(address => UserData) userData;
 
     /**
-     * @notice The per user amount of shares issued
-     * @dev account => tokenAddress => amount
+     * @notice Configuration and current data for borrowed tokens
      */
-    mapping(address => mapping(IERC20 => uint256)) public userDebtShares;
-
     mapping(IERC20 => ReserveToken) private reserveTokens;
 
     // @todo change oud to be updatable since it will be deployed later.
     IMintableToken public immutable oudToken;
+
+    TokenPriceType public tpt; // 1
+    InterestRateModelType public irmt; // 1
+    address public irm;
+    uint256 public mlr;
+    
+    ReserveToken public rtx;
+    UserData public udx;
 
     constructor(
         address _initialRescuer,
@@ -62,11 +62,19 @@ contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
         ReserveTokenConfig memory _oudTokenConfig
     ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
         templeToken = IERC20(_templeToken);
-
-        reserveTokens[stableToken].config = _stableTokenConfig;
-
         oudToken = IMintableToken(_oudAddress);
-        reserveTokens[IERC20(_oudAddress)].config = _oudTokenConfig;
+
+        ReserveToken storage rt = reserveTokens[stableToken];
+        rt.config = _stableTokenConfig;
+        rt.totals.interestAccumulator = 1e18;
+        rt.totals.lastUpdatedAt = block.timestamp;
+
+        rt = reserveTokens[IERC20(_oudAddress)];
+        rt.config = _oudTokenConfig;
+        rt.totals.interestAccumulator = 1e18;
+        rt.totals.lastUpdatedAt = block.timestamp;
+
+        // reserveTokens[IERC20(_oudAddress)].config = _oudTokenConfig;
     }
 
     /**
@@ -78,6 +86,17 @@ contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
 
     function getReserveToken(address token) external view returns (ReserveToken memory) {
         return _getReserveToken(IERC20(token));
+    }
+
+    function getUserData(address account) external view returns (
+        uint256 collateralPosted, 
+        UserTokenDebt memory daiDebt, 
+        UserTokenDebt memory oudDebt
+    ) {
+        UserData storage _userData = userData[account];
+        collateralPosted = _userData.collateralPosted;
+        daiDebt = _userData.debtData[stableToken];
+        oudDebt = _userData.debtData[oudToken];
     }
 
     function _getReserveToken(IERC20 token) internal view returns (
@@ -99,8 +118,8 @@ contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
         ReserveCache memory reserveCache = TlcReserveLogic.cache(reserveToken, treasuryReservesVault);
 
         // Checkpoint the interest up until now, using the prior interest rate
-        reserveCache.updateState(reserveToken);
-        reserveCache.updateInterestRates(reserveToken, address(token), 0, 0);
+        // reserveCache.updateState(reserveToken);
+        reserveCache.updateInterestRates(reserveToken, address(token)); //, 0, 0);
     }
 
     function setReserveTokenConfig(address token, ReserveTokenConfig memory config) external onlyElevatedAccess {
@@ -108,15 +127,15 @@ contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
         ReserveCache memory reserveCache = TlcReserveLogic.cache(reserveToken, treasuryReservesVault);
 
         // Checkpoint the interest up until now, using the prior interest rate
-        reserveCache.updateState(reserveToken);
+        // reserveCache.updateState(reserveToken);
 
-        reserveToken.config.tokenPriceType = reserveCache.tokenPriceType = config.tokenPriceType;
+        reserveToken.config.tokenPriceType = /*reserveCache.tokenPriceType =*/ config.tokenPriceType;
         reserveToken.config.interestRateModelType = reserveCache.interestRateModelType = config.interestRateModelType;
         reserveToken.config.interestRateModel = reserveCache.interestRateModel = config.interestRateModel;
-        reserveToken.config.maxLtvRatio = config.maxLtvRatio;
+        // reserveToken.config.maxLtvRatio = config.maxLtvRatio;
         reserveToken.config.maxLtvRatio = reserveCache.maxLtvRatio = config.maxLtvRatio;
 
-        reserveCache.updateInterestRates(reserveToken, address(token), 0, 0);
+        reserveCache.updateInterestRates(reserveToken, address(token)); //, 0, 0);
     }
 
     function setMaxLtvRatio(address token, uint256 maxLtvRatio) external onlyElevatedAccess {
@@ -138,13 +157,14 @@ contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
         ITreasuryReservesVault trv = treasuryReservesVault;
 
         // Stable (eg DAI)
-        ReserveCache memory reserveCache = TlcReserveLogic.cache(reserveTokens[stableToken], trv);
+        ReserveCache memory reserveCache = TlcReserveLogic.cacheRO(reserveTokens[stableToken], trv);
         stableUtilizationRatio = reserveCache.utilizationRatio();
         stableBorrowRate = reserveCache.interestRate; //getBorrowRate(0, 0);
         stableTotalDebt = reserveCache.compoundDebt();
 
         // OUD
-        reserveCache = TlcReserveLogic.cache(reserveTokens[oudToken], trv);
+        reserveCache = TlcReserveLogic.cacheRO(reserveTokens[oudToken], trv);
+        // utilization ratio for OUD is always zero
         oudBorrowRate = reserveCache.interestRate; //getBorrowRate(0, 0);
         oudTotalDebt = reserveCache.compoundDebt();
     }
@@ -154,34 +174,26 @@ contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
      * @param account user address
      */
     function userTotalDebt(address account) public view returns (uint256 stableAmount, uint256 oudAmount) {
-        mapping(IERC20 => uint256) storage _userShares = userDebtShares[account];
         ITreasuryReservesVault _trv = treasuryReservesVault;
-        ReserveCache memory _reserveCache;
 
         // Stable (eg DAI) Debt
-        {
-            _reserveCache = TlcReserveLogic.cache(reserveTokens[stableToken], _trv);
-
-            stableAmount = _sharesToDebt(
-                _userShares[stableToken],
-                _reserveCache.compoundDebt(),
-                _reserveCache.shares, 
-                false
-            );
-        }
+        ReserveCache memory _reserveCache = TlcReserveLogic.cacheRO(reserveTokens[stableToken], _trv);
+        UserTokenDebt storage _userTokenDebt = userData[account].debtData[stableToken];
+        stableAmount = currentUserTokenDebt(
+            _reserveCache,
+            _userTokenDebt
+        );
 
         // OUD Debt
-        {
-            _reserveCache = TlcReserveLogic.cache(reserveTokens[oudToken], _trv);
-
-            oudAmount = _sharesToDebt(
-                _userShares[oudToken], 
-                _reserveCache.compoundDebt(),
-                _reserveCache.shares, 
-                false
-            );
-        }
+        _reserveCache = TlcReserveLogic.cacheRO(reserveTokens[oudToken], _trv);
+        _userTokenDebt = userData[account].debtData[oudToken];
+        oudAmount = currentUserTokenDebt(
+            _reserveCache,
+            _userTokenDebt
+        );
     }
+
+    // @todo add a version where i can post collateral for someone else?
 
     /**
      * @dev Allows borrower to deposit temple collateral
@@ -191,7 +203,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
         if (collateralAmount == 0) revert CommonEventsAndErrors.InvalidAmount(address(templeToken), collateralAmount);
         emit PostCollateral(msg.sender, collateralAmount);
 
-        userCollateralPosted[msg.sender] += collateralAmount;
+        userData[msg.sender].collateralPosted += collateralAmount;
 
         templeToken.safeTransferFrom(
             msg.sender,
@@ -200,71 +212,80 @@ contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
         );
     }
 
+    // @todo add a version where i can state the recipient
+
     /**
      * @dev Allows user to borrow debt tokens
      * @param stableBorrowAmount amount of stable (eg DAI) to borrow
      * @param oudBorrowAmount amount of OUD to borrow
      */
     function borrow(uint256 stableBorrowAmount, uint256 oudBorrowAmount) external {
-        uint256 collateralAmount = userCollateralPosted[msg.sender];
+        UserData storage _userData = userData[msg.sender];
 
         if (stableBorrowAmount != 0 ) {
             // @todo keep a buffer?
             treasuryReservesVault.borrow(stableBorrowAmount, msg.sender);
-            _borrow(stableToken, collateralAmount, stableBorrowAmount);
-        } 
+            _borrow(_userData, stableToken, stableBorrowAmount);
+        }
         
         if (oudBorrowAmount != 0) {
-            _borrow(oudToken, collateralAmount, oudBorrowAmount);
+            _borrow(_userData, oudToken, oudBorrowAmount);
             oudToken.mint(
                msg.sender,
-               oudBorrowAmount 
+               oudBorrowAmount
             );
-        } 
+        }
     }
 
     function _borrow(
-        IERC20 token,
-        uint256 collateralAmount, 
-        uint256 borrowAmount
+        UserData storage _userData,
+        IERC20 _token,
+        uint256 _borrowAmount
     ) internal {
-        ReserveToken storage reserveToken = _getReserveToken(token);
-        ReserveCache memory reserveCache = TlcReserveLogic.cache(reserveToken, treasuryReservesVault);
+        ReserveToken storage _reserveToken = _getReserveToken(_token);
+        ReserveCache memory _reserveCache = TlcReserveLogic.cache(_reserveToken, treasuryReservesVault);
+        UserTokenDebt storage _userTokenDebt = _userData.debtData[_token];
+        uint256 _newDebt = updateUserTokenDebt(_userTokenDebt, _reserveCache);
 
-        reserveCache.updateState(reserveToken);
+        uint256 _borrowCapacity = maxBorrowCapacityInternal(_userData, _reserveCache) - _newDebt;
+        if (_borrowAmount > _borrowCapacity) revert InsufficentCollateral(_borrowCapacity, _borrowAmount);
 
-        console.log("\n_borrow:", address(token));
-        console.log("\tdebt:", reserveCache.debt, "shares:", reserveCache.shares);
+        emit Borrow(msg.sender, address(_token), _borrowAmount);
 
-        // Check if user has sufficient collateral
-        uint256 sharesAmount = userDebtShares[msg.sender][token];
-        {
-            uint256 existingBorrowedAmount = _sharesToDebt(sharesAmount, reserveCache.debt, reserveCache.shares, false);
-            uint256 borrowCapacity = (
-                _maxBorrowCapacity(collateralAmount, reserveCache.tokenPriceType, reserveCache.maxLtvRatio) - 
-                existingBorrowedAmount
-            );
+        _newDebt += _borrowAmount;
+        _userTokenDebt.debt = _newDebt;
+        _reserveToken.totals.debt = _reserveCache.debt = _reserveCache.debt + _borrowAmount;
 
-            console.log("collateral check:", sharesAmount, existingBorrowedAmount);
-            console.log("\t:", borrowAmount, borrowCapacity);
-            if (borrowAmount > borrowCapacity) {
-                revert InsufficentCollateral(borrowCapacity, borrowAmount);
-            }
-        }
-
-        emit Borrow(msg.sender, address(token), borrowAmount);
-
-        sharesAmount = _debtToShares(borrowAmount, reserveCache.debt, reserveCache.shares, false);
-        
-        userDebtShares[msg.sender][token] += sharesAmount;
-        reserveToken.totals.shares = reserveCache.shares + sharesAmount;
-        reserveToken.totals.debt = reserveCache.debt + borrowAmount; 
-
-        console.log("debt:", reserveToken.totals.debt, "shares:", reserveToken.totals.shares);
-        console.log("------:");
-
-        reserveCache.updateInterestRates(reserveToken, address(token), borrowAmount, 0);
+        _reserveCache.updateInterestRates(_reserveToken, address(_token));
     }
+
+    // Use this to do the interest rate calcs
+
+    // function callInternalModule(uint moduleId, bytes memory input) internal returns (bytes memory) {
+    //     (bool success, bytes memory result) = moduleLookup[moduleId].delegatecall(input);
+    //     if (!success) revertBytes(result);
+    //     return result;
+    // }
+
+    function currentUserTokenDebt(
+        ReserveCache memory _reserveCache,
+        UserTokenDebt storage _userTokenDebt
+    ) internal view returns (uint256) {
+        uint256 prevDebt = _userTokenDebt.debt;
+        return (prevDebt == 0) 
+            ? 0
+            : prevDebt * _reserveCache.interestAccumulator / _userTokenDebt.interestAccumulator;
+    }
+
+    function updateUserTokenDebt(
+        UserTokenDebt storage _userTokenDebt,
+        ReserveCache memory _reserveCache
+    ) internal returns (uint256 newDebt) {
+        newDebt = _userTokenDebt.debt = currentUserTokenDebt(_reserveCache, _userTokenDebt);
+        _userTokenDebt.interestAccumulator = _reserveCache.interestAccumulator;
+    }
+
+    // @todo add a version where i can repay on behalf of
 
     /**
      * @notice Allows borrower to repay borrowed amount
@@ -272,8 +293,10 @@ contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
      * @param repayOudAmount amount of oud to repay
      */
     function repay(uint256 repayStableAmount, uint256 repayOudAmount) public {
+        UserData storage _userData = userData[msg.sender];
+
         if (repayStableAmount != 0 ) {
-            _repay(stableToken, repayStableAmount);
+            _repay(_userData, stableToken, repayStableAmount);
             stableToken.safeTransferFrom(
                 msg.sender,
                 address(this),
@@ -282,7 +305,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
         } 
         
         if (repayOudAmount != 0) {
-            _repay(oudToken, repayOudAmount);
+            _repay(_userData, oudToken, repayOudAmount);
             oudToken.burn(
                 msg.sender,
                 repayOudAmount
@@ -302,47 +325,24 @@ contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
     }
 
     function _repay(
-        IERC20 token,
-        uint256 repayAmount
+        UserData storage _userData,
+        IERC20 _token,
+        uint256 _repayAmount
     ) internal {
-        ReserveToken storage reserveToken = _getReserveToken(token);
-        ReserveCache memory reserveCache = TlcReserveLogic.cache(reserveToken, treasuryReservesVault);
+        ReserveToken storage _reserveToken = _getReserveToken(_token);
+        ReserveCache memory _reserveCache = TlcReserveLogic.cache(_reserveToken, treasuryReservesVault);
+        UserTokenDebt storage _userTokenDebt = _userData.debtData[_token];
+        uint256 _newDebt = updateUserTokenDebt(_userTokenDebt, _reserveCache);
 
-        reserveCache.updateState(reserveToken);
+        if (_repayAmount > _newDebt) revert ExceededBorrowedAmount(_newDebt, _repayAmount);
 
-        console.log("\n_repay:", address(token));
-        console.log("\tdebt:", reserveCache.debt, "shares:", reserveCache.shares);
+        emit Repay(msg.sender, address(_token), _repayAmount);
 
-        // _accrueInterest(token, reserveToken);
+        _newDebt -= _repayAmount;
+        _userTokenDebt.debt = _newDebt;
+        _reserveToken.totals.debt = _reserveCache.debt = _reserveCache.debt - _repayAmount;
 
-        // uint256 _totalDebt = reserveToken.totals.debt;
-        // uint256 _totalShares = reserveToken.totals.shares;
-        uint256 sharesAmount = userDebtShares[msg.sender][token];
-        {
-            uint256 existingBorrowedAmount = _sharesToDebt(sharesAmount, reserveCache.debt, reserveCache.shares, false);
-
-            console.log("repay too much check:", sharesAmount);
-            console.log("\t:", repayAmount, existingBorrowedAmount);
-            if (repayAmount > existingBorrowedAmount) {
-                revert ExceededBorrowedAmount(existingBorrowedAmount, repayAmount);
-            }
-        }
-
-        emit Repay(msg.sender, address(token), repayAmount);
-
-        sharesAmount = _debtToShares(repayAmount, reserveCache.debt, reserveCache.shares, true);
-        
-        userDebtShares[msg.sender][token] -= sharesAmount;
-        reserveToken.totals.shares = reserveCache.shares - sharesAmount;
-        reserveToken.totals.debt = reserveCache.debt - repayAmount; 
-
-        console.log("debt:", reserveToken.totals.debt, "shares:", reserveToken.totals.shares);
-        console.log("------:");
-
-        // _totalDebt -= repayAmount;
-
-        // _updateInterestRates(token, reserveToken, _totalDebt);
-        reserveCache.updateInterestRates(reserveToken, address(token), 0, repayAmount);
+        _reserveCache.updateInterestRates(_reserveToken, address(_token));
     }
 
     /**
@@ -352,70 +352,25 @@ contract TempleLineOfCredit is ITempleLineOfCredit, AbstractStrategy {
      */
     function maxBorrowCapacity(address token, address account) external view returns(uint256) {
         ReserveToken storage reserveToken = _getReserveToken(IERC20(token));
+        ReserveCache memory reserveCache = TlcReserveLogic.cacheRO(reserveToken, treasuryReservesVault);
 
-        return _maxBorrowCapacity(
-            userCollateralPosted[account], 
-            reserveToken.config.tokenPriceType, 
-            reserveToken.config.maxLtvRatio
+        return maxBorrowCapacityInternal(
+            userData[account],
+            reserveCache
         );
     }
 
-    function _maxBorrowCapacity(
-        uint256 collateralAmount, 
-        TokenPriceType debtPriceType,
-        uint256 maxLtvRatio
+    function maxBorrowCapacityInternal(
+        UserData storage _userData,
+        ReserveCache memory reserveCache
     ) internal view returns (uint256) {
-        if (debtPriceType == TokenPriceType.STABLE) {
-            // // Debt token isn't the same price as the Temple collateral (eg it's DAI)
-            // console.log("_maxBorrowCapacity debt=STABLE (DAI):");
-            // console.log("\ttemple:", treasuryReservesVault.treasuryPriceIndex());
-            // console.log("\tparams:", collateralAmount, maxLtvRatio);
-            // console.log("\tresult:", mulDiv(
-            //     collateralAmount * treasuryReservesVault.treasuryPriceIndex(), 
-            //     maxLtvRatio,
-            //     1e8)
-            // );
-
-            // collateralAmount [1e18] * TPI [1e4] * maxLTV [1e4] / [1e8]
-            return mulDiv(
-                collateralAmount * treasuryReservesVault.treasuryPriceIndex(), 
-                maxLtvRatio,
-                1e8
-            );
-        } else {
-            // // Debt token is the same price type as the Temple collateral (eg it's OUD)
-            // console.log("_maxBorrowCapacity debt=TPI (OUD):");
-            // console.log("\tparams:", collateralAmount, maxLtvRatio);
-            // console.log("\tresult:", (
-            //     collateralAmount *           /* 1e18 */
-            //     maxLtvRatio /                  /* 10_000 */
-            //     10_000                       /* 10_000 */
-            // ));
-
-            // collateralAmount [1e18] * maxLTV [1e4] / [1e4]
-            return mulDiv(collateralAmount, maxLtvRatio, 1e4);
-        }
-    }
-
-    /// @notice mulDiv with an option to round the result up or down to the nearest wei
-    function mulDivRound(uint256 x, uint256 y, uint256 denominator, bool roundUp) internal pure returns (uint256 result) {
-        result = mulDiv(x, y, denominator);
-        // See OZ Math.sol for the equivalent mulDiv() with rounding.
-        if (roundUp && mulmod(x, y, denominator) > 0) {
-            result += 1;
-        }
-    }
-
-    function _debtToShares(uint256 _debt, uint256 _totalDebt, uint256 _totalShares, bool roundUp) internal pure returns (uint256) {
-        return _totalDebt > 0 
-            ? mulDivRound(_debt, _totalShares, _totalDebt, roundUp)
-            : _debt;
-    }
-
-    function _sharesToDebt(uint256 _shares, uint256 _totalDebt, uint256 _totalShares, bool roundUp) internal pure returns (uint256) {
-        return _totalShares > 0 
-            ? mulDivRound(_shares, _totalDebt, _totalShares, roundUp)
-            : _shares;
+        console.log("_maxBorrowCapacity:", _userData.collateralPosted);
+        console.log("\t:", reserveCache.price, reserveCache.maxLtvRatio);
+        return mulDiv(
+            _userData.collateralPosted * reserveCache.price,
+            reserveCache.maxLtvRatio,
+            1e8
+        );
     }
 
     /**
