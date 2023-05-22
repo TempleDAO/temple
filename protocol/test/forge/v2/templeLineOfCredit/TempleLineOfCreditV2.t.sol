@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "forge-std/Test.sol";
+// import "forge-std/Test.sol";
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
@@ -15,17 +15,18 @@ import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol";
+import { SafeCast } from "contracts/common/SafeCast.sol";
 
-import { UD60x18, ud } from "@prb/math/src/UD60x18.sol";
+import { ud } from "@prb/math/src/UD60x18.sol";
 
 contract TempleLineOfCreditTestBase is TempleTest {
     TempleLineOfCredit public tlc;
     FakeERC20 templeToken;
-    // ITempleLineOfCredit.TokenPriceType templePrice;
-
+    using SafeCast for uint256;
+    
     FakeERC20 daiToken;
     IInterestRateModel daiInterestRateModel;
-    uint256 daiMaxLtvRatio = 8500; // 85%
+    uint216 daiMaxLtvRatio = 8500; // 85%
 
     uint256 templePrice = 9700;
 
@@ -36,7 +37,7 @@ contract TempleLineOfCreditTestBase is TempleTest {
     TreasuryReservesVault public trv;
     TempleDebtToken public dUSD;
     uint256 public constant defaultBaseInterest = 0.01e18;
-    uint256 public constant oudInterestRate = 0.05e18;
+    int96 public constant oudInterestRate = 0.05e18;
 
     // @todo move to sub tests.
     uint256 public constant trvStartingBalance = 1_000_000e18;
@@ -44,7 +45,7 @@ contract TempleLineOfCreditTestBase is TempleTest {
 
     uint256 public constant PRICE_PRECISION = 10_000;
 
-    event InterestRateUpdate(address indexed token, uint256 newInterestRate);
+    event InterestRateUpdate(address indexed token, int96 newInterestRate);
 
     function setUp() public {
         // Default starts at 0 which can hide some issues
@@ -69,7 +70,7 @@ contract TempleLineOfCreditTestBase is TempleTest {
 
         oudToken = new FakeERC20("OUD Token", "OUD", executor, 500_000e18);
         vm.label(address(oudToken), "OUD");
-        oudInterestRateModel = new FlatInterestRateModel(oudInterestRate);
+        oudInterestRateModel = new FlatInterestRateModel(uint256(int256(oudInterestRate)));
 
         tlc = new TempleLineOfCredit(
             rescuer, 
@@ -101,7 +102,7 @@ contract TempleLineOfCreditTestBase is TempleTest {
     function defaultOudConfig() internal view returns (ITempleLineOfCredit.ReserveTokenConfig memory) {
         return ITlcDataTypes.ReserveTokenConfig({
             tokenPriceType: ITlcDataTypes.TokenPriceType.TPI, // #OUD * TPI
-            maxLtvRatio: oudMaxLtvRatio,
+            maxLtvRatio: oudMaxLtvRatio.encodeUInt216(),
             interestRateModelType: ITlcDataTypes.InterestRateModelType.FLAT,
             interestRateModel: oudInterestRateModel
         });
@@ -125,17 +126,17 @@ contract TempleLineOfCreditTestBase is TempleTest {
         ITempleLineOfCredit.ReserveTokenTotals memory actual,
         ITempleLineOfCredit.ReserveTokenTotals memory expected
     ) internal {
-        assertEq(actual.debt, expected.debt, "debt");
+        assertEq(actual.totalDebt, expected.totalDebt, "totalDebt");
         assertApproxEqAbs(actual.interestRate, expected.interestRate, 1, "interestRate");
         assertApproxEqAbs(actual.interestAccumulator, expected.interestAccumulator, 1, "interestAccumulator");
-        assertEq(actual.lastUpdatedAt, expected.lastUpdatedAt, "lastUpdatedAt");
+        assertEq(actual.interestAccumulatorUpdatedAt, expected.interestAccumulatorUpdatedAt, "interestAccumulatorUpdatedAt");
     }
 
     function checkAfterBorrow(
         address user,
         IERC20 token,
         uint256 borrowedAmount,
-        uint256 expectedInterestRate,
+        int96 expectedInterestRate,
         uint256 expectedInterestAccumulator
     ) internal {
         assertEq(token.balanceOf(user), borrowedAmount, "balanceOf");
@@ -144,10 +145,10 @@ contract TempleLineOfCreditTestBase is TempleTest {
         checkReserveTokenConfig(rt.config, getDefaultConfig(token));
 
         checkReserveTotals(rt.totals, ITlcDataTypes.ReserveTokenTotals({
-            debt: borrowedAmount,
+            totalDebt: borrowedAmount.encodeUInt128(),
             interestRate: expectedInterestRate,
             interestAccumulator: expectedInterestAccumulator,
-            lastUpdatedAt: block.timestamp
+            interestAccumulatorUpdatedAt: uint32(block.timestamp)
         }));
     }
 
@@ -174,22 +175,22 @@ contract TempleLineOfCreditTestBase is TempleTest {
 
     function checkTotalDebtInfo(
         uint256 expectedUR, 
-        uint256 expectedDaiInterestRate, 
+        int96 expectedDaiInterestRate, 
         uint256 expectedDaiDebt, 
-        uint256 expectedOudInterestRate, 
+        int96 expectedOudInterestRate, 
         uint256 expectedOudDebt
     ) internal returns (uint256, uint256) {
         (
             uint256 daiUtilizationRatio, 
-            uint256 daiBorrowRate, 
+            int256 daiBorrowRate, 
             uint256 daiTotalDebt,
-            uint256 oudBorrowRate,
+            int256 oudBorrowRate,
             uint256 oudTotalDebt
         ) = tlc.totalDebtInfo();
         assertApproxEqRel(daiUtilizationRatio, expectedUR, 1e9);
-        assertEq(daiBorrowRate, expectedDaiInterestRate); 
+        assertEq(daiBorrowRate, int96(expectedDaiInterestRate)); 
         assertApproxEqRel(daiTotalDebt, expectedDaiDebt, 1e9);
-        assertEq(oudBorrowRate, expectedOudInterestRate);
+        assertEq(oudBorrowRate, int96(expectedOudInterestRate));
         assertApproxEqRel(oudTotalDebt, expectedOudDebt, 1e9);
         return (daiTotalDebt, oudTotalDebt);
     }
@@ -199,7 +200,7 @@ contract TempleLineOfCreditTestBase is TempleTest {
         deal(address(templeToken), user, collateralAmount);
         vm.startPrank(user);
         templeToken.approve(address(tlc), collateralAmount);
-        tlc.postCollateral(collateralAmount);
+        tlc.postCollateral(collateralAmount, user);
         vm.stopPrank();
     }
 
@@ -213,23 +214,22 @@ contract TempleLineOfCreditTestBase is TempleTest {
             postCollateral(_account, collateralAmount);
         }
         vm.startPrank(_account);
-        tlc.borrow(daiBorrowAmount, oudBorrowAmount);
+        tlc.borrow(daiBorrowAmount, oudBorrowAmount, _account);
         vm.stopPrank();
     }
 
-    function approxInterest(uint256 principal, uint256 rate, uint256 age) internal pure returns (uint256) {
+    function approxInterest(uint256 principal, int96 rate, uint256 age) internal pure returns (uint256) {
         // Approxmiate as P * (1 + r/365 days)^(age)
         // ie compounding every 1 second (almost but not quite continuous)
-        return ud(principal).mul(
-            ud(1e18 + (rate/365 days)).powu(age)
-        ).unwrap();
+        uint256 onePlusRate = uint256(int256(int96(1e18) + rate / 365 days));
+        return ud(principal).mul(ud(onePlusRate).powu(age)).unwrap();
     }
 
     function utilizationRatio(uint256 borrowed, uint256 cap) internal pure returns (uint256) {
         return borrowed * 1e18 / cap;
     }
 
-    function calculateInterestRate(IInterestRateModel model, uint256 borrowed, uint256 cap) internal view returns (uint256) {
+    function calculateInterestRate(IInterestRateModel model, uint256 borrowed, uint256 cap) internal view returns (int96) {
         return model.calculateInterestRate(utilizationRatio(borrowed, cap));
     }
 
@@ -244,10 +244,10 @@ contract TempleLineOfCreditTestAdmin is TempleLineOfCreditTestBase {
             ITempleLineOfCredit.ReserveToken memory daiRt = tlc.getReserveToken(address(daiToken));
             checkReserveTokenConfig(daiRt.config, defaultDaiConfig());
             checkReserveTotals(daiRt.totals, ITlcDataTypes.ReserveTokenTotals({
-                debt: 0,
+                totalDebt: 0,
                 interestRate: 0,
                 interestAccumulator: 1e18,
-                lastUpdatedAt: block.timestamp
+                interestAccumulatorUpdatedAt: uint32(block.timestamp)
             }));
         }
 
@@ -255,10 +255,10 @@ contract TempleLineOfCreditTestAdmin is TempleLineOfCreditTestBase {
             ITempleLineOfCredit.ReserveToken memory oudRt = tlc.getReserveToken(address(oudToken));
             checkReserveTokenConfig(oudRt.config, defaultOudConfig());
             checkReserveTotals(oudRt.totals, ITlcDataTypes.ReserveTokenTotals({
-                debt: 0,
+                totalDebt: 0,
                 interestRate: 0,
                 interestAccumulator: 1e18,
-                lastUpdatedAt: block.timestamp
+                interestAccumulatorUpdatedAt: uint32(block.timestamp)
             }));
         }
 
@@ -269,18 +269,18 @@ contract TempleLineOfCreditTestAdmin is TempleLineOfCreditTestBase {
         // By default, the interest rate is 0
         ITempleLineOfCredit.ReserveToken memory rt = tlc.getReserveToken(address(daiToken));
         assertEq(address(rt.config.interestRateModel), address(daiInterestRateModel));
-        assertEq(rt.totals.debt, 0);
+        assertEq(rt.totals.totalDebt, 0);
         assertEq(rt.totals.interestRate, 0);
         assertEq(rt.totals.interestAccumulator, 1e18);
-        assertEq(rt.totals.lastUpdatedAt, block.timestamp);
+        assertEq(rt.totals.interestAccumulatorUpdatedAt, uint32(block.timestamp));
 
         tlc.refreshInterestRates(address(daiToken));
         rt = tlc.getReserveToken(address(daiToken));
         assertEq(address(rt.config.interestRateModel), address(daiInterestRateModel));
-        assertEq(rt.totals.debt, 0);
+        assertEq(rt.totals.totalDebt, 0);
         assertEq(rt.totals.interestRate, oudInterestRate);
         assertEq(rt.totals.interestAccumulator, 1e18);
-        assertEq(rt.totals.lastUpdatedAt, block.timestamp);
+        assertEq(rt.totals.interestAccumulatorUpdatedAt, uint32(block.timestamp));
 
         uint256 age = 10000;
         vm.warp(block.timestamp + age);
@@ -305,36 +305,36 @@ contract TempleLineOfCreditTestAdmin is TempleLineOfCreditTestBase {
         rt = tlc.getReserveToken(address(daiToken));
         assertEq(address(rt.config.interestRateModel), address(updatedInterestRateModel));
         assertEq(rt.totals.interestRate, 10e18 / 100);
-        assertEq(rt.totals.debt, 0);
+        assertEq(rt.totals.totalDebt, 0);
 
         // The interest was accumulated up to now, using the prior interest rate 
         assertApproxEqAbs(rt.totals.interestAccumulator, approxInterest(1e18, oudInterestRate, age), 1e6);
-        assertEq(rt.totals.lastUpdatedAt, block.timestamp);
+        assertEq(rt.totals.interestAccumulatorUpdatedAt, uint32(block.timestamp));
     }
 
     function test_SetReserveTokenConfig_WithDebt() public {
         // By default, the interest rate is 0
         ITempleLineOfCredit.ReserveToken memory rt = tlc.getReserveToken(address(daiToken));
         assertEq(address(rt.config.interestRateModel), address(daiInterestRateModel));
-        assertEq(rt.totals.debt, 0);
+        assertEq(rt.totals.totalDebt, 0);
         assertEq(rt.totals.interestRate, 0);
         assertEq(rt.totals.interestAccumulator, 1e18);
-        assertEq(rt.totals.lastUpdatedAt, block.timestamp);
+        assertEq(rt.totals.interestAccumulatorUpdatedAt, uint32(block.timestamp));
 
         uint256 borrowDaiAmount = 1 ether;
         postCollateral(alice, 10 ether);
         vm.startPrank(alice);
-        tlc.borrow(1 ether, 0);
+        tlc.borrow(1 ether, 0, alice);
         vm.stopPrank();
         
         // tlc.refreshInterestRates(address(daiToken));
         rt = tlc.getReserveToken(address(daiToken));
         assertEq(address(rt.config.interestRateModel), address(daiInterestRateModel));
-        assertEq(rt.totals.debt, 1 ether);
-        uint256 expectedInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
+        assertEq(rt.totals.totalDebt, 1 ether);
+        int96 expectedInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
         assertEq(rt.totals.interestRate, expectedInterestRate);
         assertEq(rt.totals.interestAccumulator, 1e18);
-        assertEq(rt.totals.lastUpdatedAt, block.timestamp);
+        assertEq(rt.totals.interestAccumulatorUpdatedAt, uint32(block.timestamp));
 
         uint256 age = 10000;
         vm.warp(block.timestamp + age);
@@ -359,11 +359,11 @@ contract TempleLineOfCreditTestAdmin is TempleLineOfCreditTestBase {
         rt = tlc.getReserveToken(address(daiToken));
         assertEq(address(rt.config.interestRateModel), address(updatedInterestRateModel));
         assertEq(rt.totals.interestRate, calculateInterestRate(updatedInterestRateModel, borrowDaiAmount, borrowCeiling));
-        assertEq(rt.totals.debt, 1 ether * rt.totals.interestAccumulator / 1e18);
+        assertEq(rt.totals.totalDebt, 1 ether * rt.totals.interestAccumulator / 1e18);
 
         // The interest was accumulated up to now, using the prior interest rate 
         assertApproxEqAbs(rt.totals.interestAccumulator, approxInterest(1e18, expectedInterestRate, age), 1e6);
-        assertEq(rt.totals.lastUpdatedAt, block.timestamp);
+        assertEq(rt.totals.interestAccumulatorUpdatedAt, uint32(block.timestamp));
     }
 
 //     function test_setMaxLtvRatio() internal {
@@ -387,14 +387,22 @@ contract TempleLineOfCreditTestAdmin is TempleLineOfCreditTestBase {
 //     }
 // }
 
+
+
+    // @todo when the TRV cap changes, the UR will change. A checkpoint will need to be done then too, 
+    // so the rate is updated.
+    // add a test for this.
+
+
+
 contract TempleLineOfCreditTestCollateral is TempleLineOfCreditTestBase {
-    event PostCollateral(address indexed account, uint256 collateralAmount);
+    event PostCollateral(address indexed fundedBy, address indexed onBehalfOf, uint256 collateralAmount);
 
     function testPostCollateralZeroBalanceRevert() external {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAmount.selector, address(templeToken), 0));
         vm.prank(alice);
         uint256 collateralAmount = 0;
-        tlc.postCollateral(collateralAmount);
+        tlc.postCollateral(collateralAmount, alice);
     }
 
     function testPostCollateralPasses() external {
@@ -405,9 +413,9 @@ contract TempleLineOfCreditTestCollateral is TempleLineOfCreditTestBase {
 
         // assert emit 
         vm.expectEmit(true, true, true, true, address(tlc));
-        emit PostCollateral(alice, collateralAmount);
+        emit PostCollateral(alice, alice, collateralAmount);
 
-        tlc.postCollateral(collateralAmount);
+        tlc.postCollateral(collateralAmount, alice);
         assertEq(templeToken.balanceOf(address(tlc)), collateralAmount);
         // assertEq(tlc.userCollateralPosted(alice), collateralAmount);
         checkUserData(
@@ -423,9 +431,9 @@ contract TempleLineOfCreditTestCollateral is TempleLineOfCreditTestBase {
 
         // assert emit 
         vm.expectEmit(true, true, true, true, address(tlc));
-        emit PostCollateral(alice, newCollateralAmount);
+        emit PostCollateral(alice, alice, newCollateralAmount);
 
-        tlc.postCollateral(newCollateralAmount);
+        tlc.postCollateral(newCollateralAmount, alice);
         assertEq(templeToken.balanceOf(address(tlc)), collateralAmount + newCollateralAmount);
 
         checkUserData(
@@ -449,7 +457,7 @@ contract TempleLineOfCreditTestCollateral is TempleLineOfCreditTestBase {
 }
 
 contract TempleLineOfCreditTestBorrow is TempleLineOfCreditTestBase {
-    event Borrow(address indexed account, address indexed token, uint256 amount);
+    event Borrow(address indexed account, address indexed recipient, address indexed token, uint256 amount);
 
     function testBorrowInsufficientCollateral() external {
         uint256 collateralAmount = 100_000e18;
@@ -459,7 +467,7 @@ contract TempleLineOfCreditTestBorrow is TempleLineOfCreditTestBase {
         vm.expectRevert(abi.encodeWithSelector(ITempleLineOfCredit.InsufficentCollateral.selector, maxBorrowCapacity, borrowAmount));
 
         vm.startPrank(alice);
-        tlc.borrow(borrowAmount, 0);
+        tlc.borrow(borrowAmount, 0, alice);
         vm.stopPrank();
     }
 
@@ -476,14 +484,14 @@ contract TempleLineOfCreditTestBorrow is TempleLineOfCreditTestBase {
         vm.prank(alice);
 
         {
-            vm.expectEmit(address(tlc));
-            emit Borrow(alice, address(daiToken), borrowAmount);
-
             // An IR update is logged for DAI
             vm.expectEmit(address(tlc));
             emit InterestRateUpdate(address(daiToken), 0.1e18-1);
 
-            tlc.borrow(borrowAmount, 0);
+            vm.expectEmit(address(tlc));
+            emit Borrow(alice, alice, address(daiToken), borrowAmount);
+
+            tlc.borrow(borrowAmount, 0, alice);
         }
 
         // checkAfterBorrow(alice, daiToken, borrowAmount, 0.1e18, 1e18);
@@ -507,18 +515,18 @@ contract TempleLineOfCreditTestBorrow is TempleLineOfCreditTestBase {
 
         // postCollateral(alice, 10 ether);
         // vm.startPrank(alice);
-        // tlc.borrow(1 ether, 0);
+        // tlc.borrow(1 ether, 0, alice);
         // vm.stopPrank();
 
         // postCollateral(unauthorizedUser, 10 ether);
         // vm.startPrank(unauthorizedUser);
-        // tlc.borrow(1 ether, 0);
+        // tlc.borrow(1 ether, 0, unauthorizedUser);
         // vm.stopPrank();
 
         // postCollateral(rescuer, 10 ether);
         // vm.startPrank(rescuer);
         // console.log(gasleft());
-        // tlc.borrow(1 ether, 0);
+        // tlc.borrow(1 ether, 0, rescuer);
         // console.log(gasleft());
         // vm.stopPrank();
     }
@@ -535,14 +543,14 @@ contract TempleLineOfCreditTestBorrow is TempleLineOfCreditTestBase {
         vm.prank(alice);
 
         {
-            // An IR update is not logged for OUD as it didn't change
-            vm.expectEmit(address(tlc));
-            emit Borrow(alice, address(oudToken), borrowAmount);
-
             vm.expectEmit(address(tlc));
             emit InterestRateUpdate(address(oudToken), oudInterestRate);
 
-            tlc.borrow(0, borrowAmount);
+            // An IR update is not logged for OUD as it didn't change
+            vm.expectEmit(address(tlc));
+            emit Borrow(alice, alice, address(oudToken), borrowAmount);
+
+            tlc.borrow(0, borrowAmount, alice);
         }
 
         checkAfterBorrow(alice, daiToken, 0, 0, 1e18); //, 0);
@@ -558,21 +566,21 @@ contract TempleLineOfCreditTestBorrow is TempleLineOfCreditTestBase {
         // postCollateral(alice, 10 ether);
         // vm.startPrank(alice);
         // gasBefore = gasleft();
-        // tlc.borrow(0, 1 ether);
+        // tlc.borrow(0, 1 ether, alice);
         // console.log("Gas:", gasBefore-gasleft());
         // vm.stopPrank();
 
         // postCollateral(unauthorizedUser, 10 ether);
         // vm.startPrank(unauthorizedUser);
         // gasBefore = gasleft();
-        // tlc.borrow(0, 1 ether);
+        // tlc.borrow(0, 1 ether, unauthorizedUser);
         // console.log("Gas:", gasBefore-gasleft());
         // vm.stopPrank();
 
         // postCollateral(rescuer, 10 ether);
         // vm.startPrank(rescuer);
         // gasBefore = gasleft();
-        // tlc.borrow(0, 1 ether);
+        // tlc.borrow(0, 1 ether, rescuer);
         // console.log("Gas:", gasBefore-gasleft());
         // vm.stopPrank();
     }
@@ -585,22 +593,22 @@ contract TempleLineOfCreditTestBorrow is TempleLineOfCreditTestBase {
 
         vm.startPrank(alice);
 
-        uint256 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount / 2, borrowCeiling);
+        int96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount / 2, borrowCeiling);
 
         {
-            vm.expectEmit(address(tlc));
-            emit Borrow(alice, address(daiToken), borrowDaiAmount / 2);
-
             vm.expectEmit(address(tlc));
             emit InterestRateUpdate(address(daiToken), expectedDaiInterestRate);
 
             vm.expectEmit(address(tlc));
-            emit Borrow(alice, address(oudToken), borrowOudAmount / 2);
+            emit Borrow(alice, alice, address(daiToken), borrowDaiAmount / 2);
 
             vm.expectEmit(address(tlc));
             emit InterestRateUpdate(address(oudToken), oudInterestRate);
 
-            tlc.borrow(borrowDaiAmount/2 , borrowOudAmount/2);
+            vm.expectEmit(address(tlc));
+            emit Borrow(alice, alice, address(oudToken), borrowOudAmount / 2);
+
+            tlc.borrow(borrowDaiAmount/2 , borrowOudAmount/2, alice);
         }
 
         checkAfterBorrow(alice, daiToken, borrowDaiAmount / 2, expectedDaiInterestRate, 1e18);
@@ -610,41 +618,41 @@ contract TempleLineOfCreditTestBorrow is TempleLineOfCreditTestBase {
 
         {
             vm.expectEmit(address(tlc));
-            emit Borrow(alice, address(daiToken), borrowDaiAmount / 2);
-
-            vm.expectEmit(address(tlc));
             emit InterestRateUpdate(address(daiToken), expectedDaiInterestRate);
 
             vm.expectEmit(address(tlc));
-            emit Borrow(alice, address(oudToken), borrowOudAmount / 2);
+            emit Borrow(alice, alice, address(daiToken), borrowDaiAmount / 2);
+
+            vm.expectEmit(address(tlc));
+            emit Borrow(alice, alice, address(oudToken), borrowOudAmount / 2);
 
             // No OUD IR event as that hasn't changed.
 
-            tlc.borrow(borrowDaiAmount/2 , borrowOudAmount/2);
+            tlc.borrow(borrowDaiAmount/2 , borrowOudAmount/2, alice);
         }
 
         checkAfterBorrow(alice, daiToken, borrowDaiAmount, expectedDaiInterestRate, 1e18);
         checkAfterBorrow(alice, oudToken, borrowOudAmount, oudInterestRate, 1e18);
 
         vm.expectRevert(abi.encodeWithSelector(ITempleLineOfCredit.InsufficentCollateral.selector, 0,  1)); 
-        tlc.borrow(1, 0);
+        tlc.borrow(1, 0, alice);
 
         vm.expectRevert(abi.encodeWithSelector(ITempleLineOfCredit.InsufficentCollateral.selector, 0,  1)); 
-        tlc.borrow(0, 1);
+        tlc.borrow(0, 1, alice);
     }
 
     function testBorrowAlreadyBorrowedFailInsufficientCollateral() external {
         uint256 borrowDaiAmountFirst = 30_000e18;
         uint256 borrowOudAmountFirst = 20_000e18;
         
-        console.log("Max Borrow Capacity 1:", tlc.maxBorrowCapacity(address(daiToken), alice));
+        // console.log("Max Borrow Capacity 1:", tlc.maxBorrowCapacity(address(daiToken), alice));
         borrow(alice, 100_000e18, borrowDaiAmountFirst, borrowOudAmountFirst);
 
         uint256 borrowDaiAmountSecond = tlc.maxBorrowCapacity(address(daiToken), alice) - borrowDaiAmountFirst + 1;
         uint256 borrowOudAmountSecond = 10_000e18;
 
-        console.log("Max Borrow Capacity 2:", tlc.maxBorrowCapacity(address(daiToken), alice));
-        console.log("Borrowing:", borrowDaiAmountSecond, borrowOudAmountSecond);
+        // console.log("Max Borrow Capacity 2:", tlc.maxBorrowCapacity(address(daiToken), alice));
+        // console.log("Borrowing:", borrowDaiAmountSecond, borrowOudAmountSecond);
 
         vm.expectRevert(abi.encodeWithSelector(ITempleLineOfCredit.InsufficentCollateral.selector, borrowDaiAmountSecond - 1,  borrowDaiAmountSecond)); 
         borrow(alice, 0, borrowDaiAmountSecond, borrowOudAmountSecond);
@@ -656,11 +664,11 @@ contract TempleLineOfCreditTestInterestAccrual is TempleLineOfCreditTestBase {
     function testBorrowAccruesInterestRate() external {
         // For DAI, borrowing 90k / 100k available, so it's right at the kink - 10% interest rate
         uint256 borrowDaiAmount = 90_000e18;
-        uint256 expectedDaiRate = 0.1e18;
+        int96 expectedDaiRate = 0.1e18;
 
         // Flat interest rate of 5%
         uint256 borrowOudAmount = 20_000e18;
-        uint256 expectedOudRate = 0.05e18;
+        int96 expectedOudRate = 0.05e18;
         
         borrow(alice, 200_000e18, borrowDaiAmount, borrowOudAmount);
 
@@ -702,7 +710,7 @@ contract TempleLineOfCreditTestInterestAccrual is TempleLineOfCreditTestBase {
 // // add a test to ensure that the denominator on the UR is using the max available, not the ceiling.
 
 contract TempleLineOfCreditTestRepay is TempleLineOfCreditTestBase {
-    event Repay(address indexed account, address indexed token, uint256 repayAmount);
+    event Repay(address indexed fundedBy, address indexed onBehalfOf, address indexed token, uint256 repayAmount);
 
     function testRepayExceedBorrowedAmountFails() external {
 
@@ -714,7 +722,7 @@ contract TempleLineOfCreditTestRepay is TempleLineOfCreditTestBase {
 
         vm.expectRevert(abi.encodeWithSelector(ITempleLineOfCredit.ExceededBorrowedAmount.selector, borrowDaiAmountFirst, borrowDaiAmountFirst + 1)); 
         vm.startPrank(alice);
-        tlc.repay(borrowDaiAmountFirst + 1, 0);
+        tlc.repay(borrowDaiAmountFirst + 1, 0, alice);
         vm.stopPrank();
     }
 
@@ -744,7 +752,7 @@ contract TempleLineOfCreditTestRepay is TempleLineOfCreditTestBase {
 
         uint256 daiTotalDebt;
         {
-            uint256 expectedDaiInterestRate = 77777777777777777; // 7.77 %
+            int96 expectedDaiInterestRate = 77777777777777777; // 7.77 %
             uint256 expectedDaiDebt = approxInterest(borrowDaiAmountFirst, expectedDaiInterestRate, age); // ~54k
             uint256 expectedUR = utilizationRatio(expectedDaiDebt, borrowCeiling); // ~54%
             (daiTotalDebt,) = checkTotalDebtInfo(
@@ -758,21 +766,20 @@ contract TempleLineOfCreditTestRepay is TempleLineOfCreditTestBase {
 
         (uint256 userDaiDebt1, uint256 userOudDebt1) = tlc.userTotalDebt(alice);
 
-        // assert emit    
-        vm.expectEmit(address(tlc));
-        emit Repay(alice, address(daiToken), repayDaiAmount);
-
         vm.expectEmit(address(tlc));
         // console.log("expected _updateRate:", daiTotalDebt, repayDaiAmount, borrowCeiling);
         emit InterestRateUpdate(address(daiToken), calculateInterestRate(daiInterestRateModel, daiTotalDebt-repayDaiAmount, borrowCeiling));
-        console.log("!!!!");
+
+        // assert emit    
+        vm.expectEmit(address(tlc));
+        emit Repay(alice, alice, address(daiToken), repayDaiAmount);
 
         // No InterestRateUpdate for OUD as the rate didn't change
 
         vm.expectEmit(address(tlc));
-        emit Repay(alice, address(oudToken), repayOudAmount);
+        emit Repay(alice, alice, address(oudToken), repayOudAmount);
 
-        tlc.repay(repayDaiAmount, repayOudAmount);
+        tlc.repay(repayDaiAmount, repayOudAmount, alice);
 
         (uint256 userDaiDebt2, uint256 userOudDebt2) = tlc.userTotalDebt(alice);
 
@@ -781,7 +788,7 @@ contract TempleLineOfCreditTestRepay is TempleLineOfCreditTestBase {
         // // vm.stopPrank();
     }
 
-    function testRepayAllSuccess() external {
+    function test_RepayEverythingSuccess() external {
 
         // uint256 reserveAmount = 100_000e18;
         uint256 borrowDaiAmountFirst = 50_000e18; // At kink approximately 10% interest rate
@@ -800,12 +807,12 @@ contract TempleLineOfCreditTestRepay is TempleLineOfCreditTestBase {
 
         // assert emit 
         vm.expectEmit(true, true, true, true, address(tlc));
-        emit Repay(alice, address(daiToken), repayDaiAmount);
+        emit Repay(alice, alice, address(daiToken), repayDaiAmount);
 
         vm.expectEmit(true, true, true, true, address(tlc));
-        emit Repay(alice, address(oudToken), repayOudAmount);
+        emit Repay(alice, alice, address(oudToken), repayOudAmount);
 
-        tlc.repay(repayDaiAmount, repayOudAmount);
+        tlc.repay(repayDaiAmount, repayOudAmount, alice);
 
         (uint256 totalDaiDebt, uint256 totalOudDebt) = tlc.userTotalDebt(alice);
 
@@ -814,4 +821,36 @@ contract TempleLineOfCreditTestRepay is TempleLineOfCreditTestBase {
         vm.stopPrank();
     }
 
+    function test_RepayAllSuccess() external {
+
+        // uint256 reserveAmount = 100_000e18;
+        uint256 borrowDaiAmountFirst = 50_000e18; // At kink approximately 10% interest rate
+        uint256 borrowOudAmountFirst = 20_000e18; // Flat interest rate of 5%
+        
+        borrow(alice, 200_000e18, borrowDaiAmountFirst, borrowOudAmountFirst);
+        vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
+
+        vm.startPrank(alice);
+
+        (uint256 repayDaiAmount, uint256 repayOudAmount) = tlc.userTotalDebt(alice); // Repay all debt
+
+        deal(address(daiToken), alice, repayDaiAmount); // Give to pay of interest payment
+        deal(address(oudToken), alice, repayOudAmount);
+        daiToken.approve(address(tlc), repayDaiAmount);
+
+        // assert emit 
+        vm.expectEmit(true, true, true, true, address(tlc));
+        emit Repay(alice, alice, address(daiToken), repayDaiAmount);
+
+        vm.expectEmit(true, true, true, true, address(tlc));
+        emit Repay(alice, alice, address(oudToken), repayOudAmount);
+
+        tlc.repayAll(alice);
+
+        (uint256 totalDaiDebt, uint256 totalOudDebt) = tlc.userTotalDebt(alice);
+
+        assertEq(totalDaiDebt, 0);
+        assertEq(totalOudDebt, 0);
+        vm.stopPrank();
+    }
 }

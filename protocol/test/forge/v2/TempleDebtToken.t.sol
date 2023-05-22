@@ -1460,17 +1460,17 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         // The net amount of base interest for Alice is the first day's interest, compounded for another 729 days
         // There are very insignificant rounding diffs if we were to compound in steps
         //  - eg: 1 day => 364 days => 365 days (net 730 days)
-        uint256 compoundedAliceBase = CompoundedInterest.continuouslyCompounded(one_pct_1day, 729 days, defaultBaseInterest);
+        uint256 compoundedAliceBase = CompoundedInterest.continuouslyCompounded(one_pct_1day, 729 days, int96(int256(defaultBaseInterest)));
         // Since alice was checkpoint setRiskPremiumInterestRate, we need to then compound at the new rate for another yr.
         uint256 compoundedAliceDebtorInterest = (
-            CompoundedInterest.continuouslyCompounded(aliceExpected.debtorInterestOnly + amount, 365 days, updatedRate) -
+            CompoundedInterest.continuouslyCompounded(aliceExpected.debtorInterestOnly + amount, 365 days, int96(int256(updatedRate))) -
             amount
         );
 
         // Similarly for precision, we need to compound Bob in one hit.
-        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 729 days, defaultBaseInterest);
+        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 729 days, int96(int256(defaultBaseInterest)));
         uint256 compoundedBobDebtorInterest = (
-            CompoundedInterest.continuouslyCompounded(amount, 729 days, bobInterestRate) -
+            CompoundedInterest.continuouslyCompounded(amount, 729 days, int96(int256(bobInterestRate))) -
             amount
         );
 
@@ -1511,9 +1511,9 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         uint256 bobExpectedShares = second_day_shares;
 
         // Bob's interest compounds in one hit as there was no checkpoint.
-        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 729 days, defaultBaseInterest);
+        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 729 days, int96(int256(defaultBaseInterest)));
         uint256 compoundedBobDebtorInterest = (
-            CompoundedInterest.continuouslyCompounded(amount, 729 days, bobInterestRate) -
+            CompoundedInterest.continuouslyCompounded(amount, 729 days, int96(int256(bobInterestRate))) -
             amount
         );
 
@@ -1581,7 +1581,7 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         dUSD.setRiskPremiumInterestRate(alice, 0.1e18);
         vm.warp(block.timestamp + 365 days);
 
-        uint256 compoundedAliceBase = CompoundedInterest.continuouslyCompounded(one_pct_1day, 729 days, defaultBaseInterest);
+        uint256 compoundedAliceBase = CompoundedInterest.continuouslyCompounded(one_pct_1day, 729 days, int96(int256(defaultBaseInterest)));
 
         (uint256 principal, uint256 baseInterest, uint256 riskPremiumInterest) = dUSD.currentDebtOf(alice);
         assertEq(principal, amount);
@@ -1589,9 +1589,9 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         assertEq(riskPremiumInterest, ten_pct_365day_1-amount);
         assertEq(dUSD.balanceOf(alice), principal+baseInterest+riskPremiumInterest);
 
-        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 729 days, defaultBaseInterest);
+        uint256 compoundedBobBase = CompoundedInterest.continuouslyCompounded(amount, 729 days, int96(int256(defaultBaseInterest)));
         uint256 compoundedBobDebtorInterest = (
-            CompoundedInterest.continuouslyCompounded(amount, 729 days, bobInterestRate) -
+            CompoundedInterest.continuouslyCompounded(amount, 729 days, int96(int256(bobInterestRate))) -
             amount
         );
         (principal, baseInterest, riskPremiumInterest) = dUSD.currentDebtOf(bob);
@@ -1620,8 +1620,8 @@ contract TempleDebtTokenTestBaseAndDebtorInterest is TempleDebtTokenTestBase {
         vm.warp(block.timestamp + timeGap);
 
         uint256 expectedTotalBalance = (
-            CompoundedInterest.continuouslyCompounded(amount, timeGap, defaultBaseInterest) +
-            CompoundedInterest.continuouslyCompounded(amount, timeGap, aliceInterestRate) - amount
+            CompoundedInterest.continuouslyCompounded(amount, timeGap, int96(int256(defaultBaseInterest))) +
+            CompoundedInterest.continuouslyCompounded(amount, timeGap, int96(int256(aliceInterestRate))) - amount
         );
 
         uint256 balance = dUSD.balanceOf(account);

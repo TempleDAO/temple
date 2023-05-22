@@ -3,55 +3,53 @@ pragma solidity ^0.8.17;
 
 // import "forge-std/console.sol";
 
-import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
+import { BaseInterestRateModel } from "contracts/v2/interestRate/BaseInterestRateModel.sol";
+import { SafeCast } from "contracts/common/SafeCast.sol";
 
 // @todo consider making this a lib instead to save gas.
 // depends if we are likely to change it.
 
 import "forge-std/console.sol";
 
-contract LinearWithKinkInterestRateModel is IInterestRateModel {
-    
-    uint256 private constant PRECISION = 1e18;
+contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
+    using SafeCast for uint256;
 
-    /**
-     * @notice The base interest rate which is the y-intercept when utilization rate is 0
-     */
-    uint256 public baseInterestRate;
+    struct RateParams {
+        /// @notice The base interest rate which is the y-intercept when utilization rate is 0
+        uint80 baseInterestRate;
 
-    /**
-     * @notice Interest rate at 100 percent utilization
-     */
-    uint256 public maxInterestRate;
+        /// @notice Interest rate at 100 percent utilization
+        uint80 maxInterestRate;
 
-    /**
-     * @notice The utilization point at which slope changes
-     */
-    uint256 public kinkUtilization;
+        /// @notice Interest rate at kink
+        uint80 kinkInterestRate;
 
-    /**
-     * @notice Interest rate at kink
-     */
-    uint256 public kinkInterestRate;
+        /// @notice The utilization ratio point at which slope changes
+        uint256 kinkUtilizationRatio;
+    }
+
+    RateParams public rateParams;
 
     /**
      * @notice Construct an interest rate model
      * @param _baseInterestRate base interest rate which is the y-intercept when utilization rate is 0
      * @param _maxInterestRate Interest rate at 100 percent utilization
-     * @param _kinkUtilization The utilization point at which slope changes
+     * @param _kinkUtilizationRatio The utilization point at which slope changes
      * @param _kinkInterestRate Interest rate at the `kinkUtiliszation`;
      */
     constructor(
         uint256 _baseInterestRate, 
         uint256 _maxInterestRate, 
-        uint256 _kinkUtilization, 
+        uint256 _kinkUtilizationRatio, 
         uint256 _kinkInterestRate
     ) {
         // @todo : assert the validity of this information
-        baseInterestRate = _baseInterestRate;
-        maxInterestRate  = _maxInterestRate;
-        kinkUtilization = _kinkUtilization;
-        kinkInterestRate = _kinkInterestRate;
+        rateParams = RateParams({
+            baseInterestRate: _baseInterestRate.encodeUInt80(),
+            maxInterestRate: _maxInterestRate.encodeUInt80(),
+            kinkInterestRate: _kinkInterestRate.encodeUInt80(),
+            kinkUtilizationRatio: _kinkUtilizationRatio
+        });
     }
     
     // @todo add setters
@@ -59,25 +57,36 @@ contract LinearWithKinkInterestRateModel is IInterestRateModel {
     /**
      * @notice Calculates the current interest rate based on a utilization ratio
      * @param utilizationRatio The utilization ratio scaled to `PRECISION`
-     * @return interestRate The interest rate (scaled by PRECISION). 0.05e18 == 5%
      */
-    function calculateInterestRate(uint256 utilizationRatio) public view returns (uint256 interestRate) {
-        uint256 _kinkUtilizationRatio = kinkUtilization;
-        uint256 _kinkInterestRate = kinkInterestRate;
-        if (utilizationRatio <= _kinkUtilizationRatio) {
-            uint256 _baseRate = baseInterestRate;
+    function computeInterestRateImpl(uint256 utilizationRatio) internal override view returns (int96) {
+        RateParams memory _rateParams = rateParams;
 
+        uint256 interestRate;
+        if (utilizationRatio <= _rateParams.kinkUtilizationRatio) {
             // Slope between base% -> kink%
-            uint256 slope = ((_kinkInterestRate - _baseRate) * PRECISION ) / _kinkUtilizationRatio;
-            // console.log("\t<=KINK:", vars.baseRate, slope, vars.baseRate + ((vars.actualUtilizationRatio * slope) / PRECISION));
-            interestRate = _baseRate + ((utilizationRatio * slope) / PRECISION);
+            uint256 slope = (
+                (PRECISION * (_rateParams.kinkInterestRate - _rateParams.baseInterestRate))
+                 / _rateParams.kinkUtilizationRatio
+            );
+            interestRate = (
+                (utilizationRatio * slope / PRECISION) 
+                + _rateParams.baseInterestRate
+            );
         } else {
-
             // Slope between kink% -> max%
-            uint256 slope = (((maxInterestRate - _kinkInterestRate ) * PRECISION) / ( PRECISION  - _kinkUtilizationRatio));
-            // console.log("\t>KINK:", vars.rateAtKink, vars.rateAtKink + (((vars.actualUtilizationRatio - vars.kinkUtilizationRatio) * slope) / PRECISION));
-            interestRate = _kinkInterestRate + (((utilizationRatio - _kinkUtilizationRatio) * slope) / PRECISION);
+            uint256 slope = (
+                (PRECISION * (_rateParams.maxInterestRate - _rateParams.kinkInterestRate))
+                / (PRECISION - _rateParams.kinkUtilizationRatio)
+            );
+            interestRate = (
+                (
+                    (slope * (utilizationRatio - _rateParams.kinkUtilizationRatio)) 
+                    / PRECISION
+                ) + _rateParams.kinkInterestRate
+            );
         }
+
+        return int96(uint96(interestRate));
     }
 }
 

@@ -178,6 +178,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         uint256 sharesAmount = _debtToShares(_mintAmount, _totalPrincipalAndBase, _totalBaseShares, false);
 
         // Update the contract state
+        // @todo need to safe cast these
         {
             // Add the shares to the debtor and total
             debtor.baseShares += uint128(sharesAmount);
@@ -450,7 +451,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      */
     function _compoundedBaseInterest() internal view returns (uint256) {
         uint256 _timeElapsed = block.timestamp - baseCheckpointTime;
-        return baseCheckpoint.continuouslyCompounded(_timeElapsed, baseRate);
+        return baseCheckpoint.continuouslyCompounded(_timeElapsed, int96(int256(baseRate)));
     }
 
     /**
@@ -463,7 +464,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         uint256 _timeElapsed = block.timestamp - debtor.checkpointTime;
         uint256 _principal = debtor.principal;
         uint256 _principalAndInterest = _principal + debtor.checkpoint;
-        return _principalAndInterest.continuouslyCompounded(_timeElapsed, _rate) - _principal;
+        return _principalAndInterest.continuouslyCompounded(_timeElapsed, int96(int256(_rate))) - _principal;
     }
 
     /**

@@ -34,25 +34,23 @@ interface ITlcDataTypes {
         IInterestRateModel interestRateModel;
 
         /// @notice Maximum Loan To Value (LTV) ratio to prevent liquidation
-        uint256 maxLtvRatio;
+        uint216 maxLtvRatio;
     }
 
     // @todo byte pack all of these
     struct ReserveTokenTotals {
-        /// @notice Total amount that has already been borrowed, which increases as interest accrues
-        // uint108
-        uint256 debt;
-
-        /// @notice The interest rate as of the last borrow/repay/
-        // uint108
-        uint256 interestRate;
-
-        // uint256
-        uint256 interestAccumulator;
+        // Packed slot: 32 + 128 + 96 = 256
 
         /// @notice The last time the debt was updated for this token
-        // uint40
-        uint256 lastUpdatedAt;
+        uint32 interestAccumulatorUpdatedAt;
+
+        /// @notice Total amount that has already been borrowed, which increases as interest accrues
+        uint128 totalDebt;
+
+        /// @notice The interest rate as of the last borrow/repay/
+        int96 interestRate;
+
+        uint256 interestAccumulator;
     }
 
     struct ReserveToken {
@@ -61,8 +59,8 @@ interface ITlcDataTypes {
     }
 
     struct UserTokenDebt {
-        uint256 debt;
-        uint256 interestAccumulator;
+        uint128 debt;
+        uint128 interestAccumulator;
     }
 
     struct UserData {
@@ -73,18 +71,18 @@ interface ITlcDataTypes {
     // @todo check if all of these are actually used
     struct ReserveCache {
         // @todo rename to totalDebt?
+        /// @notice The last time the debt was updated for this token
+        uint32 interestAccumulatorUpdatedAt;
+
         /// @notice Total amount that has already been borrowed, which increases as interest accrues
-        uint256 debt;
+        uint128 totalDebt;
 
         /// @notice The interest rate as of the last borrow/repay/
-        uint256 interestRate;
+        int96 interestRate;
 
-        uint256 interestAccumulator;
+        uint128 interestAccumulator;
 
         uint256 price;
-
-        /// @notice The last time the debt was updated for this token
-        uint256 lastUpdatedAt;
 
         /// @notice The type of interest rate model used for this token
         InterestRateModelType interestRateModelType;
@@ -92,11 +90,11 @@ interface ITlcDataTypes {
         /// @notice The interest rate model contract
         IInterestRateModel interestRateModel;
 
+        /// @notice Maximum Loan To Value (LTV) ratio to prevent liquidation
+        uint216 maxLtvRatio;
+
         /// @notice The max allowed to be borrowed from the TRV
         /// @dev Used as the denominator in the Utilisation Ratio
         uint256 trvDebtCeiling;
-
-        /// @notice Maximum Loan To Value (LTV) ratio to prevent liquidation
-        uint256 maxLtvRatio;
     }
 }
