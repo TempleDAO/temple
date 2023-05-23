@@ -10,6 +10,8 @@ import "./interfaces/AMO__ITempleERC20Token.sol";
 import "./helpers/AMOCommon.sol";
 import "./interfaces/AMO__IAuraStaking.sol";
 
+import "forge-std/console.sol";
+
 /**
  * @title AMO built for 50TEMPLE-50BB-A-USD balancer pool
  *
@@ -331,9 +333,11 @@ contract RAMOS is Ownable, Pausable {
         }
 
         uint256 templeAmount = request.maxAmountsIn[templeBalancerPoolIndex];
+        uint256 stableAmount = request.maxAmountsIn[1 - templeBalancerPoolIndex];
         AMO__ITempleERC20Token(address(temple)).mint(address(this), templeAmount);
         // safe allowance stable and TEMPLE
         temple.safeIncreaseAllowance(address(balancerVault), templeAmount);
+        stable.safeIncreaseAllowance(address(balancerVault), stableAmount);
 
         // join pool
         uint256 bptAmountBefore = bptToken.balanceOf(address(this));

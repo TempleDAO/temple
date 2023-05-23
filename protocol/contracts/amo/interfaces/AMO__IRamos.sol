@@ -4,6 +4,8 @@ pragma solidity ^0.8.4;
 import "./AMO__IPoolHelper.sol";
 
 interface AMO__IRamos {
+    function setOperator(address operator) external; 
+
     function bptToken() external view returns (address);
 
     function poolHelper() external view returns (address);

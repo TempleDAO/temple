@@ -345,9 +345,13 @@ contract PoolHelper {
         AMO__IBalancerVault.JoinPoolRequest memory requestData
     ) {
         (uint256 templeBalanceInLP, uint256 stableBalanceInLP) = getTempleStableBalances();
-        templeAmount = templeBalanceInLP * stablesAmount / stableBalanceInLP;
-        expectedBptAmount = bptToken.totalSupply() * stablesAmount / stableBalanceInLP;
-        minBptAmount = expectedBptAmount * slippageBps / TPF_PRECISION;
+        if (stableBalanceInLP == 0) {
+            templeAmount = stablesAmount;
+        } else {
+            templeAmount = templeBalanceInLP * stablesAmount / stableBalanceInLP;
+            expectedBptAmount = bptToken.totalSupply() * stablesAmount / stableBalanceInLP;
+            minBptAmount = expectedBptAmount * slippageBps / TPF_PRECISION;
+        }
 
         IERC20[] memory assets = new IERC20[](2);
         uint256[] memory maxAmountsIn = new uint256[](2);
