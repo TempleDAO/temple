@@ -302,11 +302,9 @@ contract RAMOSGoerli is Ownable, Pausable {
      * BPT tokens are then deposited and staked in Aura.
      * @param request Request data for joining balancer pool. Assumes userdata of request is
      * encoded with EXACT_TOKENS_IN_FOR_BPT_OUT type
-     * @param minBptOut Minimum amount of BPT tokens expected to receive
      */
     function addLiquidity(
-        AMO__IBalancerVault.JoinPoolRequest memory request,
-        uint256 minBptOut
+        AMO__IBalancerVault.JoinPoolRequest memory request
     ) external onlyOwner {
         // validate request
         if (request.assets.length != request.maxAmountsIn.length || 
@@ -327,9 +325,6 @@ contract RAMOSGoerli is Ownable, Pausable {
         uint256 bptIn;
         unchecked {
             bptIn = bptAmountAfter - bptAmountBefore;
-        }
-        if (bptIn < minBptOut) {
-            revert AMOCommon.InsufficientAmountOutPostcall(minBptOut, bptIn);
         }
 
         emit AddedLiquidity(request.maxAmountsIn[0], request.maxAmountsIn[1], bptIn);

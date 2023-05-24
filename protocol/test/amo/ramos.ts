@@ -113,7 +113,7 @@ let auraToken: ERC20;
 let balToken: ERC20;
 let poolHelper: PoolHelper;
 
-describe("Temple Price Floor AMO", async () => {
+describe.only("Temple Price Floor AMO", async () => {
 
     before( async () => {
         [owner, alan, operator] = await ethers.getSigners();
@@ -197,6 +197,7 @@ describe("Temple Price Floor AMO", async () => {
 
         poolHelper = await new PoolHelper__factory(owner).deploy(
             BALANCER_VAULT,
+            BALANCER_HELPERS,
             TEMPLE,
             BBA_USD_TOKEN,
             bptToken.address,
@@ -347,11 +348,11 @@ describe("Temple Price Floor AMO", async () => {
             await expect(connectAMO.recoverToken(TEMPLE , alanAddress, 100)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.rebalanceDown(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
             await expect(connectAMO.rebalanceUp(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
-            await expect(connectAMO.depositStable(100, 1)).to.be.revertedWith("Ownable: caller is not the owner");
-            await expect(connectAMO.withdrawStable(100, 1)).to.be.revertedWith("Ownable: caller is not the owner");
-            await expect(connectAMO.addLiquidity(joinPoolRequest, 1)).to.be.revertedWith("Ownable: caller is not the owner");
-            await expect(connectAMO.removeLiquidity(exitPoolRequest, 100)).to.be.revertedWith("Ownable: caller is not the owner");
-            await expect(connectAMO.depositAndStakeBptTokens(100, true)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(connectAMO.depositStable(100, 1)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
+            await expect(connectAMO.withdrawStable(100, 1)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
+            await expect(connectAMO.addLiquidity(joinPoolRequest)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
+            await expect(connectAMO.removeLiquidity(exitPoolRequest, 100)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
+            await expect(connectAMO.depositAndStakeBptTokens(100, true)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
 
             // passes
             await amo.setMaxRebalanceAmounts(100, 100, 100);
@@ -478,16 +479,27 @@ describe("Temple Price Floor AMO", async () => {
                 userData: joinPoolRequest.userData,
                 fromInternalBalance: true
             }
-            await expect(amo.addLiquidity(failRequest, bptOut)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
+            await expect(amo.addLiquidity(failRequest)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
             failRequest.assets = [TEMPLE];
-            await expect(amo.addLiquidity(failRequest, bptOut)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
+            await expect(amo.addLiquidity(failRequest)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
             failRequest.assets = tokens;
             failRequest.maxAmountsIn = [BigNumber.from(1)];
-            await expect(amo.addLiquidity(failRequest, bptOut)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
+            await expect(amo.addLiquidity(failRequest)).to.be.revertedWithCustomError(amo, "InvalidBalancerVaultRequest");
+            {
+                const newFailRequest = {
+                    assets: tokens,
+                    maxAmountsIn,
+                    userData: ethers.utils.defaultAbiCoder.encode(["uint256", "uint256[]", "uint256"], [1, maxAmountsIn, bptOut.add(1)]),
+                    fromInternalBalance: false
+                }
+
+                // https://docs.balancer.fi/reference/contracts/error-codes.html#input
+                // 208 BPT_OUT_MIN_AMOUNT    Slippage/front-running protection check failed on a pool join
+                await expect(amo.addLiquidity(newFailRequest)).to.be.revertedWith("BAL#208");
+            }
             failRequest.fromInternalBalance = false;
             failRequest.maxAmountsIn = maxAmountsIn;
-            await expect(amo.addLiquidity(failRequest, bptOut.add(1))).to.be.revertedWithCustomError(amo, "InsufficientAmountOutPostcall");
-            await expect(amo.addLiquidity(joinPoolRequest, bptOut))
+            await expect(amo.addLiquidity(joinPoolRequest))
                 .to.emit(templeToken, "Transfer").withArgs(ZERO_ADDRESS, amo.address, joinPoolRequest.maxAmountsIn[0])
                 .to.emit(auraBooster, "Deposited").withArgs(amoStaking.address, bbaUsdTempleAuraPID, bptOut);
 
@@ -532,7 +544,8 @@ describe("Temple Price Floor AMO", async () => {
 
             exitRequest.minAmountsOut = amountsOut;
             exitRequest.userData = ethers.utils.defaultAbiCoder.encode(["uint256", "uint256"], [1, bptAmountIn]);
-            const stableBefore = await bbaUsdToken.balanceOf(amo.address);
+            const amoStableBefore = await bbaUsdToken.balanceOf(amo.address);
+            const operatorStableBefore = await bbaUsdToken.balanceOf(ownerAddress);
             
             expect(await amo.removeLiquidity(exitRequest, bptIn))
                 .to.emit(templeToken, "Transfer").withArgs(amoStaking.address, ZERO_ADDRESS, amountsOut[0])
@@ -543,10 +556,12 @@ describe("Temple Price Floor AMO", async () => {
             const templeIndex = await amo.templeBalancerPoolIndex();
             const expectedStable = (templeIndex.toNumber() == 0) ? amountsOut[1] : amountsOut[0];
 
-            const templeAfter= await templeToken.balanceOf(amo.address);
-            const stableAfter = await bbaUsdToken.balanceOf(amo.address);
-            expect(stableAfter).to.gte(stableBefore.add(expectedStable));
-            expect(templeAfter).to.eq(0);
+            const amoTempleAfter= await templeToken.balanceOf(amo.address);
+            const amoStableAfter = await bbaUsdToken.balanceOf(amo.address);
+            const operatorStableAfter = await bbaUsdToken.balanceOf(ownerAddress);
+            expect(amoStableBefore).to.eq(amoStableAfter);
+            expect(operatorStableAfter).to.eq(operatorStableBefore.add(expectedStable))
+            expect(amoTempleAfter).to.eq(0);
         });
 
         it("deposits stable", async () => {
@@ -1134,7 +1149,7 @@ async function ownerAddLiquidity(
     const reqData = await getAmoJoinPoolRequest(amo.address, [bptAmountIn, bptAmountIn]);
     const bptOut = reqData.bptOut;
     const req = reqData.joinPoolRequest;
-    await amo.addLiquidity(req, bptOut);
+    await amo.addLiquidity(req);
 }
 
 async function getAmoJoinPoolRequest(

@@ -5,6 +5,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/AMO__IBalancerVault.sol";
+import "../interfaces/AMO__IBalancerHelpers.sol";
 import "../helpers/AMOCommon.sol";
 
 
@@ -16,6 +17,7 @@ contract PoolHelper {
     using SafeERC20 for IERC20;
 
     AMO__IBalancerVault public immutable balancerVault;
+    AMO__IBalancerHelpers public immutable balancerHelpers;
     IERC20 public immutable bptToken;
     IERC20 public immutable temple;
     IERC20 public immutable stable;
@@ -30,6 +32,7 @@ contract PoolHelper {
 
     constructor(
       address _balancerVault,
+      address _balancerHelpers,
       address _temple,
       address _stable,
       address _bptToken,
@@ -39,6 +42,7 @@ contract PoolHelper {
     ) {
       balancerPoolId = _balancerPoolId;
       balancerVault = AMO__IBalancerVault(_balancerVault);
+      balancerHelpers = AMO__IBalancerHelpers(_balancerHelpers);
       temple = IERC20(_temple);
       stable = IERC20(_stable);
       bptToken = IERC20(_bptToken);
@@ -335,10 +339,10 @@ contract PoolHelper {
         }
     }
 
-    function addLiquidityQuote(
+    function proportionalAddLiquidityQuote(
         uint256 stablesAmount,
         uint256 slippageBps
-    ) external view returns (
+    ) external returns (
         uint256 templeAmount,
         uint256 expectedBptAmount,
         uint256 minBptAmount,
@@ -349,8 +353,6 @@ contract PoolHelper {
             templeAmount = stablesAmount;
         } else {
             templeAmount = templeBalanceInLP * stablesAmount / stableBalanceInLP;
-            expectedBptAmount = bptToken.totalSupply() * stablesAmount / stableBalanceInLP;
-            minBptAmount = expectedBptAmount * slippageBps / TPF_PRECISION;
         }
 
         IERC20[] memory assets = new IERC20[](2);
@@ -359,41 +361,42 @@ contract PoolHelper {
         (assets[0], assets[1]) = templeIndexInBalancerPool == 0 ? (temple, stable) : (stable, temple);
         (maxAmountsIn[0], maxAmountsIn[1]) = templeIndexInBalancerPool == 0 ? (templeAmount, stablesAmount) : (stablesAmount, templeAmount);
         //uint256 joinKind = 1; //EXACT_TOKENS_IN_FOR_BPT_OUT
-        bytes memory encodedUserdata = abi.encode(uint256(1), maxAmountsIn, minBptAmount);
+        bytes memory encodedUserdata = abi.encode(uint256(1), maxAmountsIn, 0);
         requestData.assets = assets;
         requestData.maxAmountsIn = maxAmountsIn;
         requestData.userData = encodedUserdata;
         requestData.fromInternalBalance = false;
+
+        (expectedBptAmount, ) = balancerHelpers.queryJoin(balancerPoolId, amo, amo, requestData);
+        minBptAmount = expectedBptAmount * (TPF_PRECISION - slippageBps) / TPF_PRECISION;
     }
 
-    function removeLiquidityQuote(
+    function proportionalRemoveLiquidityQuote(
         uint256 bptAmount,
         uint256 slippageBps
-    ) external view returns (
+    ) external returns (
         uint256 expectedTempleAmount,
         uint256 expectedStablesAmount,
         uint256 minTempleAmount,
         uint256 minStablesAmount,
         AMO__IBalancerVault.ExitPoolRequest memory requestData
     ) {
-        (uint256 templeBalanceInLP, uint256 stableBalanceInLP) = getTempleStableBalances();
-        uint256 bptTotalSupply = bptToken.totalSupply();
-        expectedTempleAmount = templeBalanceInLP * bptAmount / bptTotalSupply;
-        expectedStablesAmount = stableBalanceInLP * bptAmount / bptTotalSupply;
-        minTempleAmount = expectedTempleAmount * slippageBps / TPF_PRECISION;
-        minStablesAmount = expectedStablesAmount * slippageBps / TPF_PRECISION;
-
         address[] memory assets = new address[](2);
         uint256[] memory minAmountsOut = new uint256[](2);
 
         (assets[0], assets[1]) = templeIndexInBalancerPool == 0 ? (address(temple), address(stable)) : (address(stable), address(temple));
-        (minAmountsOut[0], minAmountsOut[1]) = templeIndexInBalancerPool == 0 ? (minTempleAmount, minStablesAmount) : (minStablesAmount, minTempleAmount); 
+        // (minAmountsOut[0], minAmountsOut[1]) = templeIndexInBalancerPool == 0 ? (minTempleAmount, minStablesAmount) : (minStablesAmount, minTempleAmount); 
         // EXACT_BPT_IN_FOR_TOKENS_OUT index is 1 for exitKind
         bytes memory encodedUserdata = abi.encode(uint256(1), bptAmount);
         requestData.assets = assets;
-        requestData.minAmountsOut = minAmountsOut;
+        requestData.minAmountsOut = minAmountsOut;  // [0, 0]
         requestData.userData = encodedUserdata;
         requestData.toInternalBalance = false;
+
+        (, minAmountsOut) = balancerHelpers.queryExit(balancerPoolId, amo, amo, requestData);
+        (expectedTempleAmount, expectedStablesAmount) = templeIndexInBalancerPool == 0 ? (minAmountsOut[0], minAmountsOut[1]) : (minAmountsOut[1], minAmountsOut[0]);
+        minTempleAmount = expectedTempleAmount * (TPF_PRECISION - slippageBps) / TPF_PRECISION;
+        minStablesAmount = expectedStablesAmount * (TPF_PRECISION - slippageBps) / TPF_PRECISION;
     }
 
     modifier onlyAmo() {

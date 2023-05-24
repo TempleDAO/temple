@@ -10,7 +10,6 @@ library AMOCommon {
     error AboveCappedAmount(uint256 amountIn);
     error InsufficientBPTAmount(uint256 amount);
     error InvalidBPSValue(uint256 value);
-    error InsufficientAmountOutPostcall(uint256 expectedAmount, uint256 actualAmount);
     error InvalidMaxAmounts(uint256 bptMaxAmount, uint256 stableMaxAmount, uint256 templeMaxAmount);
     error InvalidBalancerVaultRequest();
     error NotEnoughCooldown();

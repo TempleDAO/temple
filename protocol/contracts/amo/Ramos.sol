@@ -10,8 +10,6 @@ import "./interfaces/AMO__ITempleERC20Token.sol";
 import "./helpers/AMOCommon.sol";
 import "./interfaces/AMO__IAuraStaking.sol";
 
-import "forge-std/console.sol";
-
 /**
  * @title AMO built for 50TEMPLE-50BB-A-USD balancer pool
  *
@@ -319,11 +317,9 @@ contract RAMOS is Ownable, Pausable {
      * BPT tokens are then deposited and staked in Aura.
      * @param request Request data for joining balancer pool. Assumes userdata of request is
      * encoded with EXACT_TOKENS_IN_FOR_BPT_OUT type
-     * @param minBptOut Minimum amount of BPT tokens expected to receive
      */
     function addLiquidity(
-        AMO__IBalancerVault.JoinPoolRequest memory request,
-        uint256 minBptOut
+        AMO__IBalancerVault.JoinPoolRequest memory request
     ) external onlyOperatorOrOwner {
         // validate request
         if (request.assets.length != request.maxAmountsIn.length || 
@@ -337,7 +333,11 @@ contract RAMOS is Ownable, Pausable {
         AMO__ITempleERC20Token(address(temple)).mint(address(this), templeAmount);
         // safe allowance stable and TEMPLE
         temple.safeIncreaseAllowance(address(balancerVault), templeAmount);
-        stable.safeIncreaseAllowance(address(balancerVault), stableAmount);
+        if (stable.allowance(address(this), address(balancerVault)) < stableAmount) {
+            // some tokens like bb-a-USD always set the max allowance for `balancerVault`
+            // in this case, `safeIncreaseAllowance` will fail due to the arithmetic operation overflow issue
+            stable.safeIncreaseAllowance(address(balancerVault), stableAmount);
+        }
 
         // join pool
         uint256 bptAmountBefore = bptToken.balanceOf(address(this));
@@ -346,9 +346,6 @@ contract RAMOS is Ownable, Pausable {
         uint256 bptIn;
         unchecked {
             bptIn = bptAmountAfter - bptAmountBefore;
-        }
-        if (bptIn < minBptOut) {
-            revert AMOCommon.InsufficientAmountOutPostcall(minBptOut, bptIn);
         }
 
         // stake BPT
