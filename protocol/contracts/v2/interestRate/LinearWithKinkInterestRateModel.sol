@@ -9,7 +9,7 @@ import { SafeCast } from "contracts/common/SafeCast.sol";
 // @todo consider making this a lib instead to save gas.
 // depends if we are likely to change it.
 
-import "forge-std/console.sol";
+// import "forge-std/console.sol";
 
 contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
     using SafeCast for uint256;
