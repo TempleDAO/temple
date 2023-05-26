@@ -256,7 +256,10 @@ contract PoolHelper {
         AMO__IBalancerVault.JoinPoolRequest memory joinPoolRequest = createPoolJoinRequest(amountIn, joinTokenIndex, minBptOut);
 
         // approve
-        if (joinPoolToken == temple) {
+        if (joinPoolToken.allowance(address(this), address(balancerVault)) < amountIn) {
+            // some tokens like bb-a-USD always set the max allowance for `balancerVault`
+            // in this case, `safeIncreaseAllowance` will fail due to the arithmetic operation overflow issue
+            joinPoolToken.safeDecreaseAllowance(address(balancerVault), joinPoolToken.allowance(address(this), address(balancerVault)));
             joinPoolToken.safeIncreaseAllowance(address(balancerVault), amountIn);
         }
 
@@ -339,8 +342,11 @@ contract PoolHelper {
         }
     }
 
+    // @notice Get the quote used to add liquidity proportionally
+    // @dev Since this is not the view function, this should be called with `callStatic`
     function proportionalAddLiquidityQuote(
         uint256 stablesAmount,
+        uint256 stableWeightBps,
         uint256 slippageBps
     ) external returns (
         uint256 templeAmount,
@@ -349,11 +355,9 @@ contract PoolHelper {
         AMO__IBalancerVault.JoinPoolRequest memory requestData
     ) {
         (uint256 templeBalanceInLP, uint256 stableBalanceInLP) = getTempleStableBalances();
-        if (stableBalanceInLP == 0) {
-            templeAmount = stablesAmount;
-        } else {
-            templeAmount = templeBalanceInLP * stablesAmount / stableBalanceInLP;
-        }
+        templeAmount = stableBalanceInLP == 0
+            ? stablesAmount / stableWeightBps * (TPF_PRECISION - stableWeightBps)
+            : (templeBalanceInLP * stablesAmount / stableBalanceInLP);
 
         IERC20[] memory assets = new IERC20[](2);
         uint256[] memory maxAmountsIn = new uint256[](2);
@@ -369,8 +373,14 @@ contract PoolHelper {
 
         (expectedBptAmount, ) = balancerHelpers.queryJoin(balancerPoolId, amo, amo, requestData);
         minBptAmount = expectedBptAmount * (TPF_PRECISION - slippageBps) / TPF_PRECISION;
+
+        // update `requestData` with the `minBptAmount` to which the slippage was applied
+        encodedUserdata = abi.encode(uint256(1), maxAmountsIn, minBptAmount);
+        requestData.userData = encodedUserdata;
     }
 
+    // @notice Get the quote used to remove liquidity
+    // @dev Since this is not the view function, this should be called with `callStatic`
     function proportionalRemoveLiquidityQuote(
         uint256 bptAmount,
         uint256 slippageBps
@@ -385,7 +395,6 @@ contract PoolHelper {
         uint256[] memory minAmountsOut = new uint256[](2);
 
         (assets[0], assets[1]) = templeIndexInBalancerPool == 0 ? (address(temple), address(stable)) : (address(stable), address(temple));
-        // (minAmountsOut[0], minAmountsOut[1]) = templeIndexInBalancerPool == 0 ? (minTempleAmount, minStablesAmount) : (minStablesAmount, minTempleAmount); 
         // EXACT_BPT_IN_FOR_TOKENS_OUT index is 1 for exitKind
         bytes memory encodedUserdata = abi.encode(uint256(1), bptAmount);
         requestData.assets = assets;
@@ -397,6 +406,10 @@ contract PoolHelper {
         (expectedTempleAmount, expectedStablesAmount) = templeIndexInBalancerPool == 0 ? (minAmountsOut[0], minAmountsOut[1]) : (minAmountsOut[1], minAmountsOut[0]);
         minTempleAmount = expectedTempleAmount * (TPF_PRECISION - slippageBps) / TPF_PRECISION;
         minStablesAmount = expectedStablesAmount * (TPF_PRECISION - slippageBps) / TPF_PRECISION;
+
+        // update `requestData` with the `minAmountsOut` to which the slippage was applied
+        (minAmountsOut[0], minAmountsOut[1]) = templeIndexInBalancerPool == 0 ? (minTempleAmount, minStablesAmount) : (minStablesAmount, minTempleAmount);
+        requestData.minAmountsOut = minAmountsOut;
     }
 
     modifier onlyAmo() {

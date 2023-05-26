@@ -14,7 +14,7 @@ interface AMO__IRamos {
     
     function stable() external view returns (address);
 
-    function addLiquidity(AMO__IBalancerVault.JoinPoolRequest memory request, uint256 minBptOut) external;
+    function addLiquidity(AMO__IBalancerVault.JoinPoolRequest memory request) external;
 
-    function removeLiquidity(AMO__IBalancerVault.ExitPoolRequest memory request, uint256 bptIn) external;
+    function removeLiquidity(AMO__IBalancerVault.ExitPoolRequest memory request, uint256 bptIn, address to) external;
 }

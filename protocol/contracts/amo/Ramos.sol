@@ -72,10 +72,12 @@ contract RAMOS is Ownable, Pausable {
     event SetPauseState(bool paused);
     event StableDeposited(uint256 amountIn, uint256 bptOut);
     event RebalanceUp(uint256 bptAmountIn, uint256 templeAmountOut);
-    event RebalanceDown(uint256 templeAmountIn, uint256 bptIn);
+    event RebalanceDown(uint256 templeAmountIn, uint256 bptOut);
     event SetPoolHelper(address poolHelper);
     event SetMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 stableMaxAmount, uint256 templeMaxAmount);
-    event WithdrawStable(uint256 bptAmountIn, uint256 amountOut);
+    event WithdrawStable(uint256 bptAmountIn, uint256 amountOut, address to);
+    event LiquidityAdded(uint256 stableAdded, uint256 templeAdded, uint256 bptReceived);
+    event LiquidityRemoved(uint256 stableReceuved, uint256 templeReceived, uint256 bptRemoved);
     event SetRebalancePercentageBounds(uint64 belowTpf, uint64 aboveTpf);
     event SetTemplePriceFloorNumerator(uint128 numerator);
     event SetAmoStaking(address indexed amoStaking);
@@ -292,10 +294,12 @@ contract RAMOS is Ownable, Pausable {
      * BPT tokens are then sent into balancer pool for stable tokens in return.
      * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
      * @param minAmountOut Minimum amount of stable tokens expected to receive
+     * @param to Address to which the stable tokens withdrawn are transferred
      */
     function withdrawStable(
         uint256 bptAmountIn,
-        uint256 minAmountOut
+        uint256 minAmountOut,
+        address to
     ) external onlyOperatorOrOwner whenNotPaused {
         _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
 
@@ -308,7 +312,9 @@ contract RAMOS is Ownable, Pausable {
         );
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
-        emit WithdrawStable(bptAmountIn, amountOut);
+        stable.safeTransfer(to, stable.balanceOf(address(this)));
+
+        emit WithdrawStable(bptAmountIn, amountOut, to);
     }
 
     /**
@@ -336,6 +342,7 @@ contract RAMOS is Ownable, Pausable {
         if (stable.allowance(address(this), address(balancerVault)) < stableAmount) {
             // some tokens like bb-a-USD always set the max allowance for `balancerVault`
             // in this case, `safeIncreaseAllowance` will fail due to the arithmetic operation overflow issue
+            stable.safeDecreaseAllowance(address(balancerVault), stable.allowance(address(this), address(balancerVault)));
             stable.safeIncreaseAllowance(address(balancerVault), stableAmount);
         }
 
@@ -351,6 +358,8 @@ contract RAMOS is Ownable, Pausable {
         // stake BPT
         bptToken.safeTransfer(address(amoStaking), bptIn);
         amoStaking.depositAndStake(bptIn);
+
+        emit LiquidityAdded(stableAmount, templeAmount, bptIn);
     }
 
     /**
@@ -359,10 +368,12 @@ contract RAMOS is Ownable, Pausable {
      * Withdraw and unwrap BPT tokens from Aura staking and send to balancer pool to receive both tokens.
      * @param request Request for use in balancer pool exit
      * @param bptIn Amount of BPT tokens to send into balancer pool
+     * @param to Address to which the stable tokens received from balancer pool are transferred
      */
     function removeLiquidity(
         AMO__IBalancerVault.ExitPoolRequest memory request,
-        uint256 bptIn
+        uint256 bptIn,
+        address to
     ) external onlyOperatorOrOwner {
         // validate request
         if (request.assets.length != request.minAmountsOut.length || 
@@ -378,24 +389,27 @@ contract RAMOS is Ownable, Pausable {
 
         balancerVault.exitPool(balancerPoolId, address(this), address(this), request);
         // validate amounts received
-        uint256 receivedAmount;
+        uint256 templeReceivedAmount;
+        uint256 stableReceivedAmount;
         for (uint i=0; i<request.assets.length; ++i) {
             if (request.assets[i] == address(temple)) {
                 unchecked {
-                    receivedAmount = temple.balanceOf(address(this)) - templeAmountBefore;
+                    templeReceivedAmount = temple.balanceOf(address(this)) - templeAmountBefore;
                 }
-                if (receivedAmount > 0) {
-                    AMO__ITempleERC20Token(address(temple)).burn(receivedAmount);
+                if (templeReceivedAmount > 0) {
+                    AMO__ITempleERC20Token(address(temple)).burn(templeReceivedAmount);
                 }
             } else if (request.assets[i] == address(stable)) {
                 unchecked {
-                    receivedAmount = stable.balanceOf(address(this)) - stableAmountBefore;
+                    stableReceivedAmount = stable.balanceOf(address(this)) - stableAmountBefore;
                 }
-                if (receivedAmount > 0) {
-                    stable.safeTransfer(msg.sender, receivedAmount);
+                if (stableReceivedAmount > 0) {
+                    stable.safeTransfer(to, stableReceivedAmount);
                 }
             }
         }
+
+        emit LiquidityRemoved(stableReceivedAmount, templeReceivedAmount, bptIn);
     }
 
     /**
