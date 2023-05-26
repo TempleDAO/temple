@@ -8,7 +8,6 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { AMO__IRamos } from "contracts/amo/interfaces/AMO__IRamos.sol";
 import { AMO__IAuraStaking } from "contracts/amo/interfaces/AMO__IAuraStaking.sol";
 import { AMO__IPoolHelper, AMO__IBalancerVault } from "contracts/amo/interfaces/AMO__IPoolHelper.sol";
-import { AMOCommon } from "contracts/amo/helpers/AMOCommon.sol";
 
 contract RamosStrategy  is AbstractStrategy {
     using SafeERC20 for IERC20;
@@ -29,15 +28,8 @@ contract RamosStrategy  is AbstractStrategy {
 
     event AssetsSet(address[] _assets);
     event SetOperator(address operator);
-    event Borrow(uint256 amount);
-    event Repay(uint256 amount);
-
-    modifier onlyOperator() {
-        if (msg.sender != operator) {
-            revert AMOCommon.NotOperator();
-        }
-        _;
-    }
+    event BorrowAndAddLiquidity(uint256 amount);
+    event RemoveLiquidityAndRepay(uint256 amount);
 
     constructor(
         address _initialRescuer,
@@ -109,10 +101,12 @@ contract RamosStrategy  is AbstractStrategy {
         uint256 stableBalanceInRamos;
         {
             uint256 bptTotalSupply = bptToken.totalSupply();
-            uint256 bptBalanceInRamos = amoStaking.stakedBalance() + bptToken.balanceOf(address(amoStaking));
-            (, uint256 stableBalanceInLP) = poolHelper.getTempleStableBalances();
+            if (bptTotalSupply > 0) {
+                uint256 bptBalanceInRamos = amoStaking.stakedBalance() + bptToken.balanceOf(address(amoStaking));
+                (, uint256 stableBalanceInLP) = poolHelper.getTempleStableBalances();
 
-            stableBalanceInRamos = stableBalanceInLP * bptBalanceInRamos / bptTotalSupply;
+                stableBalanceInRamos = stableBalanceInLP * bptBalanceInRamos / bptTotalSupply;
+            }
         }
 
         // get the RAMOS strategy assets
@@ -146,30 +140,29 @@ contract RamosStrategy  is AbstractStrategy {
      * @notice Borrow a fixed amount from the Treasury Reserves and add liquidity
      * These stables are sent to the RAMOS to add liquidity and stake BPT
      */
-    function borrowAndAddLiquidity(uint256 amount, uint256 slippageBps) external onlyOperator {
+    function borrowAndAddLiquidity(uint256 _amount, AMO__IBalancerVault.JoinPoolRequest memory _requestData) external onlyElevatedAccess {
         // Borrow the DAI and send it to RAMOS. This will also mint `dUSD` debt.
-        treasuryReservesVault.borrow(amount, address(ramos));
-        emit Borrow(amount);
+        treasuryReservesVault.borrow(_amount, address(ramos));
+        emit BorrowAndAddLiquidity(_amount);
 
         // Add liquidity
-        AMO__IPoolHelper poolHelper = AMO__IPoolHelper(ramos.poolHelper());
-        (,, uint256 minBptAmount, AMO__IBalancerVault.JoinPoolRequest memory requestData) = poolHelper.addLiquidityQuote(amount, slippageBps);
-        ramos.addLiquidity(requestData, minBptAmount);
+        ramos.addLiquidity(_requestData);
     }
 
     /**
      * @notice Remove liquidity and repay debt back to the Treasury Reserves
      * The stables from the removed liquidity are sent from RAMOS to this address to repay debt
      */
-    function removeLiquidityAndRepay(uint256 bptAmount, uint256 slippageBps) external onlyOperator {
+    function removeLiquidityAndRepay(AMO__IBalancerVault.ExitPoolRequest memory _requestData, uint256 _bptAmount) external onlyElevatedAccess {
         // Remove liquidity
-        AMO__IPoolHelper poolHelper = AMO__IPoolHelper(ramos.poolHelper());
-        (,,,, AMO__IBalancerVault.ExitPoolRequest memory requestData) = poolHelper.removeLiquidityQuote(bptAmount, slippageBps);
-        ramos.removeLiquidity(requestData, bptAmount);
+        ramos.removeLiquidity(_requestData, _bptAmount, address(this));
 
         // Repay debt back to the Treasury Reserves
-        IERC20 stableToken = treasuryReservesVault.stableToken();
-        treasuryReservesVault.repay(stableToken.balanceOf(address(this)), address(this));
+        IERC20 stable = treasuryReservesVault.stableToken();
+        uint256 stableBalance = stable.balanceOf(address(this));
+
+        treasuryReservesVault.repay(stableBalance, address(this));
+        emit RemoveLiquidityAndRepay(stableBalance);
     }
 
     /**
