@@ -20,6 +20,7 @@ import { IMakerDaoPotLike } from "contracts/interfaces/external/makerDao/IMakerD
 contract DsrBaseStrategyTestBase is TempleTest {
     DsrBaseStrategy public strategy;
 
+    FakeERC20 public temple = new FakeERC20("TEMPLE", "TEMPLE", address(0), 0);
     IERC20 public dai = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
     IMakerDaoDaiJoinLike public daiJoin = IMakerDaoDaiJoinLike(0x9759A6Ac90977b93B58547b4A71c78317f391A28);
     IMakerDaoPotLike public pot = IMakerDaoPotLike(0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7);
@@ -39,7 +40,7 @@ contract DsrBaseStrategyTestBase is TempleTest {
         fork("mainnet", 16675385);
 
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
-        trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD), 9700);
+        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), 9700);
         strategy = new DsrBaseStrategy(rescuer, executor, "DsrBaseStrategy", address(trv), address(daiJoin), address(pot));
 
         vm.startPrank(executor);

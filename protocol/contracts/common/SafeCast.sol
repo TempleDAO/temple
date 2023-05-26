@@ -10,11 +10,6 @@ library SafeCast {
         if (downcasted != amount) revert Overflow(amount);
     }
 
-    function encodeUInt216(uint256 amount) internal pure returns (uint216 downcasted) {
-        downcasted = uint216(amount);
-        if (downcasted != amount) revert Overflow(amount);
-    }
-
     function encodeUInt80(uint256 amount) internal pure returns (uint80 downcasted) {
         downcasted = uint80(amount);
         if (downcasted != amount) revert Overflow(amount);

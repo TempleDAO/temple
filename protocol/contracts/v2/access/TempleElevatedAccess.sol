@@ -74,20 +74,21 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
         explicitFunctionAccess[allowedCaller][fnSelector] = value;
     }
 
-    function validateElevatedAccess(address caller, bytes4 fnSelector) internal view {
+    function isElevatedAccess(address caller, bytes4 fnSelector) internal view returns (bool) {
         if (inRescueMode) {
             if (!rescuers[caller]) {
                 if (!explicitFunctionAccess[caller][fnSelector]) {
-                    revert CommonEventsAndErrors.InvalidAccess();
+                    return false;
                 }
             }
         } else {
             if (!executors[caller]) {
                 if (!explicitFunctionAccess[caller][fnSelector]) {
-                    revert CommonEventsAndErrors.InvalidAccess();
+                    return false;
                 }
             }
         }
+        return true;
     }
 
     /**
@@ -95,7 +96,7 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
      * If 'rescue mode' has been enabled, then only the rescuers are allowed to call.
      */
     modifier onlyElevatedAccess() {
-        validateElevatedAccess(msg.sender, msg.sig);
+        if (!isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
         _;
     }
 

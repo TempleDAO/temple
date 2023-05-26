@@ -120,7 +120,7 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
      * @dev It is up to the Strategy implementation to add these deltas to the `latestAssetBalances()`
      * and `checkpointAssetBalances()` functions.
      */
-    function setManualAssetBalanceDeltas(AssetBalanceDelta[] calldata assetDeltas) external onlyElevatedAccess {
+    function setManualAssetBalanceDeltas(AssetBalanceDelta[] calldata assetDeltas) external virtual onlyElevatedAccess {
         // This doesn't delete prior deltas. If no longer required then set to 0
         uint256 _length = assetDeltas.length;
         AssetBalanceDelta calldata abd;
@@ -136,7 +136,7 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     /**
      * @notice Get the set of manual asset balance deltas, set by the Strategy Executor.
      */
-    function getManualAssetBalanceDeltas() external view returns (AssetBalanceDelta[] memory assetDeltas) {
+    function getManualAssetBalanceDeltas() external virtual view returns (AssetBalanceDelta[] memory assetDeltas) {
         uint256 _length = manualAssetBalanceDeltasKeys.length();
         assetDeltas = new AssetBalanceDelta[](_length);
         address _asset;
@@ -149,7 +149,7 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     /**
      * @dev An internal helper to add any manual asset balance delta to the `lhs`
      */
-    function addManualAssetBalanceDelta(uint256 lhs, address asset) internal view returns (uint256) {
+    function addManualAssetBalanceDelta(uint256 lhs, address asset) internal virtual view returns (uint256) {
         int256 balance = int256(lhs) + manualAssetBalanceDeltas[asset];
         if (balance < 0) revert InvalidAssetBalanceDelta(asset, lhs, manualAssetBalanceDeltas[asset]);
         return uint256(balance);
@@ -179,7 +179,7 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     /**
      * @notice Governance can recover any token from the strategy.
      */
-    function recoverToken(address token, address to, uint256 amount) external override onlyElevatedAccess {
+    function recoverToken(address token, address to, uint256 amount) external virtual override onlyElevatedAccess {
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
         IERC20(token).safeTransfer(to, amount);
     }

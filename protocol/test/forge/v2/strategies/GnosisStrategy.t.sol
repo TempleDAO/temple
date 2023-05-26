@@ -15,6 +15,7 @@ contract GnosisStrategyTestBase is TempleTest {
     GnosisStrategy public strategy;
 
     address public gnosisSafeWallet = makeAddr("gnosis");
+    FakeERC20 public temple = new FakeERC20("TEMPLE", "TEMPLE", address(0), 0);
     FakeERC20 public dai = new FakeERC20("DAI", "DAI", address(0), 0);
     FakeERC20 public frax = new FakeERC20("FRAX", "FRAX", address(0), 0);
     FakeERC20 public usdc = new FakeERC20("USDC", "USDC", address(0), 0);
@@ -27,7 +28,7 @@ contract GnosisStrategyTestBase is TempleTest {
 
     function _setUp() public {
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
-        trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD), 9700);
+        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), 9700);
         strategy = new GnosisStrategy(rescuer, executor, "GnosisStrategy", address(trv), gnosisSafeWallet);
 
         vm.startPrank(executor);

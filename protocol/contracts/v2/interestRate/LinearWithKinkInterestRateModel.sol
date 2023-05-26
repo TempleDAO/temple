@@ -9,7 +9,7 @@ import { SafeCast } from "contracts/common/SafeCast.sol";
 // @todo consider making this a lib instead to save gas.
 // depends if we are likely to change it.
 
-// import "forge-std/console.sol";
+import "forge-std/console.sol";
 
 contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
     using SafeCast for uint256;
@@ -61,6 +61,7 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
     function computeInterestRateImpl(uint256 utilizationRatio) internal override view returns (int96) {
         RateParams memory _rateParams = rateParams;
 
+        console.log("linear compute:", utilizationRatio);
         uint256 interestRate;
         if (utilizationRatio <= _rateParams.kinkUtilizationRatio) {
             // Slope between base% -> kink%
@@ -86,6 +87,8 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
             );
         }
 
+        console.log("linear compute:", interestRate);
+        console.logInt(int96(uint96(interestRate)));
         return int96(uint96(interestRate));
     }
 }
