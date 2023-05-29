@@ -25,7 +25,10 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
 
     /** Position views */
     function accountPosition(address account) external view returns (AccountPosition memory position);
-    function totalPosition() external view returns (TotalPosition[2] memory positions);
+    function totalPosition() external view returns (
+        TotalPosition memory daiPosition,
+        TotalPosition memory oudPosition
+    );
 
     /** Liquidations */
     function computeLiquidity(

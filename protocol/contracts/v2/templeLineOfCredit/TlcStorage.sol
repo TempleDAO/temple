@@ -22,9 +22,6 @@ abstract contract TlcStorage is ITlcStorage {
 
     uint32 public override withdrawCollateralCooldownSecs;
 
-    // @todo add tests to check the sizes
-    uint256 public override constant NUM_TOKEN_TYPES = 2;
-
     // @todo check constants
     uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
     uint256 public override constant PRICE_PRECISION = 1e18;

@@ -185,15 +185,21 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         AccountDebtData storage _accountDebtData,
         bool _includePendingRequests,
         LiquidityStatus memory status
-    ) internal view {
-        if (_accountDebtData.debtCheckpoint == 0) return;
-        uint256 totalDebt = currentAccountDebtData(_debtTokenCache, _accountDebtData.debtCheckpoint, _accountDebtData.interestAccumulator);
+    ) internal view returns (uint256 currentDebt) {
+        if (_accountDebtData.debtCheckpoint == 0) return 0;
+
+        currentDebt = currentAccountDebtData(
+            _debtTokenCache, 
+            _accountDebtData.debtCheckpoint, 
+            _accountDebtData.interestAccumulator
+        );
+
         if (_includePendingRequests) {
-            totalDebt += _accountDebtData.borrowRequest.amount; 
+            currentDebt += _accountDebtData.borrowRequest.amount; 
         }
 
         if (!status.hasExceededMaxLtv) {
-            status.hasExceededMaxLtv = totalDebt > maxBorrowCapacity(
+            status.hasExceededMaxLtv = currentDebt > maxBorrowCapacity(
                 _debtTokenCache,
                 status.collateral
             );
@@ -202,7 +208,8 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
 
     function computeLiquidity(
         AccountData storage _accountData,
-        DebtTokenCache[NUM_TOKEN_TYPES] memory _debtTokenCaches,
+        DebtTokenCache memory _daiTokenCache,
+        DebtTokenCache memory _oudTokenCache,
         bool _includePendingRequests
     ) internal view returns (LiquidityStatus memory status) {
         status.collateral = _accountData.collateralPosted;
@@ -210,14 +217,14 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
             status.collateral -= _accountData.removeCollateralRequest.amount;
         }
 
-        computeLiquidityForToken(
-            _debtTokenCaches[uint256(TokenType.DAI)],
+        status.currentDaiDebt = computeLiquidityForToken(
+            _daiTokenCache,
             _accountData.debtData[uint256(TokenType.DAI)],
             _includePendingRequests,
             status
         );
-        computeLiquidityForToken(
-            _debtTokenCaches[uint256(TokenType.OUD)],
+        status.currentOudDebt = computeLiquidityForToken(
+            _oudTokenCache,
             _accountData.debtData[uint256(TokenType.OUD)],
             _includePendingRequests,
             status
@@ -225,14 +232,63 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
     }
 
     function checkLiquidity(AccountData storage _accountData) internal view {
-        DebtTokenCache[NUM_TOKEN_TYPES] memory debtTokenCaches = [
-            debtTokenCacheRO(debtTokenDetails [TokenType.DAI]),
-            debtTokenCacheRO(debtTokenDetails [TokenType.OUD])
-        ];
-        LiquidityStatus memory _status = computeLiquidity(_accountData, debtTokenCaches, true);
+        LiquidityStatus memory _status = computeLiquidity(
+            _accountData,
+            debtTokenCacheRO(debtTokenDetails[TokenType.DAI]),
+            debtTokenCacheRO(debtTokenDetails[TokenType.OUD]),
+            true
+        );
         if (_status.hasExceededMaxLtv) revert ExceededMaxLtv();
     }
 
+    function wipeDebt(
+        TokenType _tokenType,
+        DebtTokenCache memory _debtTokenCache,
+        uint256 _totalDebtWiped
+    ) internal {
+        DebtTokenDetails storage _debtToken = debtTokenDetails[_tokenType];
+
+        // Update the reserve token details, and then update the interest rates.            
+        // A decrease in amount, so this downcast is safe without a check
+        _debtToken.data.totalDebt = _debtTokenCache.totalDebt = uint128(
+            _debtTokenCache.totalDebt - _totalDebtWiped
+        );
+
+        updateInterestRates(_debtToken, _debtTokenCache);
+    }
+
+    function fillAccountPosition(
+        TokenType _tokenType, 
+        AccountDebtData storage _accountDebtData,
+        uint256 collateralPosted
+    ) internal view returns (AccountDebtPosition memory) {
+        DebtTokenCache memory _debtTokenCache = debtTokenCacheRO(debtTokenDetails[_tokenType]);
+        // _accountDebtData = _accountData.debtData[i];
+        uint256 _latestDebt = currentAccountDebtData(
+            _debtTokenCache, 
+            _accountDebtData.debtCheckpoint,
+            _accountDebtData.interestAccumulator
+        );
+        // position.debtPositions[i] = 
+        return AccountDebtPosition({
+            currentDebt: _latestDebt,
+            maxBorrow: maxBorrowCapacity(_debtTokenCache, collateralPosted),
+            healthFactor: healthFactor(_debtTokenCache, collateralPosted, _latestDebt),
+            loanToValueRatio: loanToValueRatio(_debtTokenCache, collateralPosted, _latestDebt)
+        });
+    }
+
+    function fillTotalPosition(
+        TokenType _tokenType
+    ) internal view returns (
+        TotalPosition memory position
+    ) {
+        DebtTokenCache memory _debtTokenCache = debtTokenCacheRO(debtTokenDetails[_tokenType]);
+        position.utilizationRatio = utilizationRatio(_debtTokenCache);
+        position.borrowRate = _debtTokenCache.interestRate;
+        position.totalDebt = _debtTokenCache.totalDebt;
+    }
+    
     function utilizationRatio(
         DebtTokenCache memory _debtTokenCache
     ) internal pure returns (uint256) {

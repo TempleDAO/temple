@@ -211,16 +211,16 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
 
         // The 'as of now' data
         assertEq(daiToken.balanceOf(account), expectedDaiBalance, "balanceOf");
-        assertApproxEqRel(actualAccountPosition.debtPositions[0].currentDebt, expectedAccountPosition.debtPositions[0].currentDebt, 1e10, "dai debt");
-        assertEq(actualAccountPosition.debtPositions[0].maxBorrow, expectedAccountPosition.debtPositions[0].maxBorrow, "dai max borrow");
-        assertApproxEqRel(actualAccountPosition.debtPositions[0].healthFactor, expectedAccountPosition.debtPositions[0].healthFactor, 1e10, "dai health");
-        assertApproxEqRel(actualAccountPosition.debtPositions[0].loanToValueRatio, expectedAccountPosition.debtPositions[0].loanToValueRatio, 1e10, "dai LTV");
+        assertApproxEqRel(actualAccountPosition.daiDebtPosition.currentDebt, expectedAccountPosition.daiDebtPosition.currentDebt, 1e10, "dai debt");
+        assertEq(actualAccountPosition.daiDebtPosition.maxBorrow, expectedAccountPosition.daiDebtPosition.maxBorrow, "dai max borrow");
+        assertApproxEqRel(actualAccountPosition.daiDebtPosition.healthFactor, expectedAccountPosition.daiDebtPosition.healthFactor, 1e10, "dai health");
+        assertApproxEqRel(actualAccountPosition.daiDebtPosition.loanToValueRatio, expectedAccountPosition.daiDebtPosition.loanToValueRatio, 1e10, "dai LTV");
 
         assertEq(oudToken.balanceOf(account), expectedOudBalance, "balanceOf");
-        assertApproxEqRel(actualAccountPosition.debtPositions[1].currentDebt, expectedAccountPosition.debtPositions[1].currentDebt, 1e10, "oud debt");
-        assertEq(actualAccountPosition.debtPositions[1].maxBorrow, expectedAccountPosition.debtPositions[1].maxBorrow, "oud max borrow");
-        assertApproxEqRel(actualAccountPosition.debtPositions[1].healthFactor, expectedAccountPosition.debtPositions[1].healthFactor, 1e10, "oud health");
-        assertApproxEqRel(actualAccountPosition.debtPositions[1].loanToValueRatio, expectedAccountPosition.debtPositions[1].loanToValueRatio, 1e10, "oud LTV");
+        assertApproxEqRel(actualAccountPosition.oudDebtPosition.currentDebt, expectedAccountPosition.oudDebtPosition.currentDebt, 1e10, "oud debt");
+        assertEq(actualAccountPosition.oudDebtPosition.maxBorrow, expectedAccountPosition.oudDebtPosition.maxBorrow, "oud max borrow");
+        assertApproxEqRel(actualAccountPosition.oudDebtPosition.healthFactor, expectedAccountPosition.oudDebtPosition.healthFactor, 1e10, "oud health");
+        assertApproxEqRel(actualAccountPosition.oudDebtPosition.loanToValueRatio, expectedAccountPosition.oudDebtPosition.loanToValueRatio, 1e10, "oud LTV");
 
         // The latest checkpoint data
         assertApproxEqRel(actualAccountData.debtData[0].debtCheckpoint, expectedDaiDebtCheckpoint, 1e10, "DAI debt checkpoint");
@@ -252,14 +252,14 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     }
 
     function checkTotalPosition(TotalPosition[] memory expectedPositions) internal returns (uint256, uint256) {
-        TotalPosition[2] memory actualPositions = tlc.totalPosition();
-        assertApproxEqRel(actualPositions[0].utilizationRatio, expectedPositions[0].utilizationRatio, 1e10, "daiUtilizationRatio");
-        assertApproxEqRel(actualPositions[0].borrowRate, expectedPositions[0].borrowRate, 1e10, "daiBorrowRate"); 
-        assertApproxEqRel(actualPositions[0].totalDebt, expectedPositions[0].totalDebt, 1e10, "daiTotalDebt");
-        assertEq(actualPositions[1].utilizationRatio, expectedPositions[1].utilizationRatio, "oudUtilizationRatio");
-        assertEq(actualPositions[1].borrowRate, expectedPositions[1].borrowRate, "oudBorrowRate");
-        assertApproxEqRel(actualPositions[1].totalDebt, expectedPositions[1].totalDebt, 1e10, "oudTotalDebt");
-        return (actualPositions[0].totalDebt, actualPositions[1].totalDebt);
+        (TotalPosition memory actualDaiPosition, TotalPosition memory actualOudPosition) = tlc.totalPosition();
+        assertApproxEqRel(actualDaiPosition.utilizationRatio, expectedPositions[0].utilizationRatio, 1e10, "daiUtilizationRatio");
+        assertApproxEqRel(actualDaiPosition.borrowRate, expectedPositions[0].borrowRate, 1e10, "daiBorrowRate"); 
+        assertApproxEqRel(actualDaiPosition.totalDebt, expectedPositions[0].totalDebt, 1e10, "daiTotalDebt");
+        assertEq(actualOudPosition.utilizationRatio, expectedPositions[1].utilizationRatio, "oudUtilizationRatio");
+        assertEq(actualOudPosition.borrowRate, expectedPositions[1].borrowRate, "oudBorrowRate");
+        assertApproxEqRel(actualOudPosition.totalDebt, expectedPositions[1].totalDebt, 1e10, "oudTotalDebt");
+        return (actualDaiPosition.totalDebt, actualOudPosition.totalDebt);
     }
 
     function addCollateral(address account, uint256 collateralAmount) internal {
@@ -344,24 +344,46 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         return collateralValue == 0 ? 0 : debtAmount * 1e18 / collateralValue;
     }
 
-    function getDebtPositions(
-        uint256 daiDebt,
-        uint256 oudDebt,
+    function createDebtPosition(
+        TokenType tokenType,
+        uint256 debt,
         MaxBorrowInfo memory maxBorrowInfo
-    ) internal view returns (AccountDebtPosition[2] memory) {
-        return [
-            AccountDebtPosition({
-                currentDebt: daiDebt, 
+    ) internal view returns (AccountDebtPosition memory) {
+        if (tokenType == TokenType.DAI) {
+            return AccountDebtPosition({
+                currentDebt: debt, 
                 maxBorrow: maxBorrowInfo.daiMaxBorrow, 
-                healthFactor: calcHealthFactor(maxBorrowInfo.daiCollateralValue, daiDebt, daiMaxLtvRatio), 
-                loanToValueRatio: calcLtv(maxBorrowInfo.daiCollateralValue, daiDebt)
-            }),
-            AccountDebtPosition({
-                currentDebt: oudDebt, 
+                healthFactor: calcHealthFactor(maxBorrowInfo.daiCollateralValue, debt, daiMaxLtvRatio), 
+                loanToValueRatio: calcLtv(maxBorrowInfo.daiCollateralValue, debt)
+            });
+        } else {
+            return AccountDebtPosition({
+                currentDebt: debt, 
                 maxBorrow: maxBorrowInfo.oudMaxBorrow, 
-                healthFactor: calcHealthFactor(maxBorrowInfo.oudCollateralValue, oudDebt, oudMaxLtvRatio),
-                loanToValueRatio: calcLtv(maxBorrowInfo.oudCollateralValue, oudDebt)
-            })
-        ];
+                healthFactor: calcHealthFactor(maxBorrowInfo.oudCollateralValue, debt, oudMaxLtvRatio),
+                loanToValueRatio: calcLtv(maxBorrowInfo.oudCollateralValue, debt)
+            });
+        }
     }
+
+    // function getDebtPositions(
+    //     uint256 daiDebt,
+    //     uint256 oudDebt,
+    //     MaxBorrowInfo memory maxBorrowInfo
+    // ) internal view returns (AccountDebtPosition[2] memory) {
+    //     return [
+    //         AccountDebtPosition({
+    //             currentDebt: daiDebt, 
+    //             maxBorrow: maxBorrowInfo.daiMaxBorrow, 
+    //             healthFactor: calcHealthFactor(maxBorrowInfo.daiCollateralValue, daiDebt, daiMaxLtvRatio), 
+    //             loanToValueRatio: calcLtv(maxBorrowInfo.daiCollateralValue, daiDebt)
+    //         }),
+    //         AccountDebtPosition({
+    //             currentDebt: oudDebt, 
+    //             maxBorrow: maxBorrowInfo.oudMaxBorrow, 
+    //             healthFactor: calcHealthFactor(maxBorrowInfo.oudCollateralValue, oudDebt, oudMaxLtvRatio),
+    //             loanToValueRatio: calcLtv(maxBorrowInfo.oudCollateralValue, oudDebt)
+    //         })
+    //     ];
+    // }
 }

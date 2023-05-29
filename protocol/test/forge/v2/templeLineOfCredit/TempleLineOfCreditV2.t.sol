@@ -49,12 +49,12 @@ contract TempleLineOfCreditTestAdmin is TlcBaseTest {
         assertEq(address(tlc.templeToken()), address(templeToken));
 
         // Check the enums line up
-        {
-            assertEq(tlc.NUM_TOKEN_TYPES(), uint256(type(TokenType).max) + 1);
+        // {
+            // assertEq(tlc.NUM_TOKEN_TYPES(), uint256(type(TokenType).max) + 1);
             // assertEq(positionHelper.NUM_TOKEN_TYPES(), tlc.NUM_TOKEN_TYPES());
             // assertEq(uint256(TokenType.DAI), uint256(FundsRequestType.BORROW_DAI));
             // assertEq(uint256(TokenType.OUD), uint256(FundsRequestType.BORROW_OUD));
-        }
+        // }
 
         // Reserve tokens are initialized
         checkDebtTokenDetails(TokenType.DAI, 0, 0, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
@@ -247,10 +247,8 @@ contract TempleLineOfCreditTestCollateral is TlcBaseTest {
             0, 0,
             AccountPosition({
                 collateralPosted: collateralAmount,
-                debtPositions: [
-                    AccountDebtPosition(0, maxBorrowInfo.daiMaxBorrow, type(uint256).max, 0),
-                    AccountDebtPosition(0, maxBorrowInfo.oudMaxBorrow, type(uint256).max, 0)
-                ]
+                daiDebtPosition: AccountDebtPosition(0, maxBorrowInfo.daiMaxBorrow, type(uint256).max, 0),
+                oudDebtPosition: AccountDebtPosition(0, maxBorrowInfo.oudMaxBorrow, type(uint256).max, 0)
             }),
             0, 0,
             0, 0
@@ -415,7 +413,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             borrowAmount, 0,
             AccountPosition({
                 collateralPosted: collateralAmount,
-                debtPositions: getDebtPositions(borrowAmount, 0, maxBorrowInfo)
+                daiDebtPosition: createDebtPosition(TokenType.DAI, borrowAmount, maxBorrowInfo),
+                oudDebtPosition: createDebtPosition(TokenType.OUD, 0, maxBorrowInfo)
             }),
             borrowAmount, INITIAL_INTEREST_ACCUMULATOR,
             0, 0
@@ -500,7 +499,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             0, borrowAmount,
             AccountPosition({
                 collateralPosted: collateralAmount,
-                debtPositions: getDebtPositions(0, borrowAmount, maxBorrowInfo)
+                daiDebtPosition: createDebtPosition(TokenType.DAI, 0, maxBorrowInfo),
+                oudDebtPosition: createDebtPosition(TokenType.OUD, borrowAmount, maxBorrowInfo)
             }),
             0, 0,
             borrowAmount, INITIAL_INTEREST_ACCUMULATOR
@@ -576,7 +576,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
                 borrowDaiAmount/2, borrowOudAmount/2,
                 AccountPosition({
                     collateralPosted: collateralAmount,
-                    debtPositions: getDebtPositions(borrowDaiAmount/2, borrowOudAmount/2, maxBorrowInfo)
+                    daiDebtPosition: createDebtPosition(TokenType.DAI, borrowDaiAmount/2, maxBorrowInfo),
+                    oudDebtPosition: createDebtPosition(TokenType.OUD, borrowOudAmount/2, maxBorrowInfo)
                 }),
                 borrowDaiAmount/2, INITIAL_INTEREST_ACCUMULATOR,
                 borrowOudAmount/2, INITIAL_INTEREST_ACCUMULATOR
@@ -626,7 +627,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         //         borrowDaiAmount, borrowOudAmount,
         //         AccountPosition({
         //             collateralPosted: collateralAmount,
-        //             debtPositions: getDebtPositions(borrowDaiAmount/2, borrowOudAmount/2, maxBorrowInfo)
+                    // daiDebtPosition: createDebtPosition(TokenType.DAI, borrowDaiAmount/2, maxBorrowInfo),
+                    // oudDebtPosition: createDebtPosition(TokenType.OUD, borrowOudAmount/2, maxBorrowInfo)
         //         }),
         //         borrowDaiAmount, INITIAL_INTEREST_ACCUMULATOR,
         //         borrowOudAmount, INITIAL_INTEREST_ACCUMULATOR

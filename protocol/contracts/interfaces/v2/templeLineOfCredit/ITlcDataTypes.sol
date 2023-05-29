@@ -59,6 +59,7 @@ interface ITlcDataTypes {
     struct AccountData {
         uint256 collateralPosted;
         WithdrawFundsRequest removeCollateralRequest;
+        /// @dev The same size as TokenType
         AccountDebtData[2] debtData;
     }
 
@@ -67,7 +68,8 @@ interface ITlcDataTypes {
         bool hasExceededMaxLtv;
 
         uint256 collateral;
-        uint256[2] currentDebt;
+        uint256 currentDaiDebt;
+        uint256 currentOudDebt;
     }
     
     struct AccountDebtPosition {
@@ -79,7 +81,8 @@ interface ITlcDataTypes {
 
     struct AccountPosition {
         uint256 collateralPosted;
-        AccountDebtPosition[2] debtPositions;
+        AccountDebtPosition daiDebtPosition;
+        AccountDebtPosition oudDebtPosition;
     }
 
     struct TotalPosition {

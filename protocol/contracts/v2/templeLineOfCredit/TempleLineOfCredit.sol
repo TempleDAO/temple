@@ -226,19 +226,22 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         address[] memory accounts,
         bool includePendingRequests
     ) external view returns (LiquidityStatus[] memory status) {
-        DebtTokenCache[NUM_TOKEN_TYPES] memory debtTokenCaches = [
-            debtTokenCacheRO(debtTokenDetails[TokenType.DAI]),
-            debtTokenCacheRO(debtTokenDetails[TokenType.OUD])
-        ];
-
         uint256 _numAccounts = accounts.length;
         for (uint256 i; i < _numAccounts; ++i) {
             status[i] = computeLiquidity(
                 allAccountsData[accounts[i]], 
-                debtTokenCaches, 
+                debtTokenCacheRO(debtTokenDetails[TokenType.DAI]),
+                debtTokenCacheRO(debtTokenDetails[TokenType.OUD]),
                 includePendingRequests
             );
         }
+    }
+
+    struct LiquidateParams {
+        DebtTokenCache daiTokenCache;
+        DebtTokenCache oudTokenCache;
+        uint256 daiDebtWiped;
+        uint256 oudDebtWiped;
     }
 
     function batchLiquidate(address[] memory accounts) external {
@@ -248,23 +251,26 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
 
         uint256 _numAccounts = accounts.length;
         uint256 totalCollateralClaimed;
-        DebtTokenCache[NUM_TOKEN_TYPES] memory debtTokenCaches = [
-            debtTokenCache(debtTokenDetails[TokenType.DAI]),
-            debtTokenCache(debtTokenDetails[TokenType.OUD])
-        ];
+        LiquidateParams memory _params;
+        _params.daiTokenCache = debtTokenCache(debtTokenDetails[TokenType.DAI]);
+        _params.oudTokenCache = debtTokenCache(debtTokenDetails[TokenType.OUD]);
 
-        uint256[NUM_TOKEN_TYPES] memory totalDebtWiped;
         uint256 i;
         address _account;
         for (; i < _numAccounts; ++i) {
             _account = accounts[i];
-            _status = computeLiquidity(allAccountsData[_account], debtTokenCaches, false);
+            _status = computeLiquidity(
+                allAccountsData[_account], 
+                _params.daiTokenCache, 
+                _params.oudTokenCache, 
+                false
+            );
 
             // Skip if this account is still under the maxLTV across all assets
             if (_status.hasExceededMaxLtv) {
                 totalCollateralClaimed += _status.collateral;
-                totalDebtWiped[_daiIndex] += _status.currentDebt[_daiIndex];
-                totalDebtWiped[_oudIndex] += _status.currentDebt[_oudIndex];
+                _params.daiDebtWiped += _status.currentDaiDebt;
+                _params.oudDebtWiped += _status.currentOudDebt;
                 delete allAccountsData[_account];    
             }
         }
@@ -272,20 +278,8 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         // burn the temple collateral by repaying to TRV. This will burn the equivalent dUSD debt too.
         treasuryReservesVault.repayTemple(totalCollateralClaimed, address(tlcStrategy));
 
-        // Update the reserve token total state and update interest rates.
-        for (i = 0; i < NUM_TOKEN_TYPES; ++i) {
-            DebtTokenDetails storage _debtToken = debtTokenDetails[TokenType(i)];
-            // LiquidationTokenParams memory _tokenParams = _liquidationParams.tokens[i];
-            DebtTokenCache memory _debtTokenCache = debtTokenCaches[i];
-
-            // Update the reserve token details, and then update the interest rates.            
-            // A decrease in amount, so this downcast is safe without a check
-            _debtToken.data.totalDebt = _debtTokenCache.totalDebt = uint128(
-                _debtTokenCache.totalDebt - totalDebtWiped[i]
-            );
-
-            updateInterestRates(_debtToken, _debtTokenCache);
-        }
+        wipeDebt(TokenType.DAI, _params.daiTokenCache, _params.daiDebtWiped);
+        wipeDebt(TokenType.OUD, _params.oudTokenCache, _params.oudDebtWiped);
     }
     
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -364,35 +358,24 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         AccountData storage _accountData = allAccountsData[account];
         position.collateralPosted = _accountData.collateralPosted;
 
-        DebtTokenCache memory _debtTokenCache;
-        AccountDebtData storage _accountDebtData;
-        uint256 _latestDebt;
-        for (uint256 i; i < NUM_TOKEN_TYPES; ++i) {
-            _debtTokenCache = debtTokenCacheRO(debtTokenDetails[TokenType(i)]);
-            _accountDebtData = _accountData.debtData[i];
-            _latestDebt = currentAccountDebtData(
-                _debtTokenCache, 
-                _accountDebtData.debtCheckpoint,
-                _accountDebtData.interestAccumulator
-            );
-            position.debtPositions[i] = AccountDebtPosition({
-                currentDebt: _latestDebt,
-                maxBorrow: maxBorrowCapacity(_debtTokenCache, position.collateralPosted),
-                healthFactor: healthFactor(_debtTokenCache, position.collateralPosted, _latestDebt),
-                loanToValueRatio: loanToValueRatio(_debtTokenCache, position.collateralPosted, _latestDebt)
-            });
-        }
+        position.daiDebtPosition = fillAccountPosition(
+            TokenType.DAI, 
+            _accountData.debtData[uint256(TokenType.DAI)], 
+            position.collateralPosted
+        );
+        position.oudDebtPosition = fillAccountPosition(
+            TokenType.OUD,
+            _accountData.debtData[uint256(TokenType.OUD)],
+            position.collateralPosted
+        );
     }
 
-    function totalPosition() external view returns (TotalPosition[2] memory positions) {
-        DebtTokenCache memory _debtTokenCache;
-        TotalPosition memory _position;
-        for (uint256 i; i < NUM_TOKEN_TYPES; ++i) {
-            _debtTokenCache = debtTokenCacheRO(debtTokenDetails[TokenType(i)]);
-            _position.utilizationRatio = utilizationRatio(_debtTokenCache);
-            _position.borrowRate = _debtTokenCache.interestRate;
-            _position.totalDebt = _debtTokenCache.totalDebt;
-            positions[i] = _position;
-        }
+    function totalPosition() external view returns (
+        TotalPosition memory daiPosition,
+        TotalPosition memory oudPosition
+    ) {
+        daiPosition = fillTotalPosition(TokenType.DAI);
+        oudPosition = fillTotalPosition(TokenType.OUD);
     }
+
 }
