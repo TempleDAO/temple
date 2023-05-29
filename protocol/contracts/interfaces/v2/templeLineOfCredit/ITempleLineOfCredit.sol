@@ -24,7 +24,7 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
     function repayAll(TokenType tokenType, address onBehalfOf) external;
 
     /** Position views */
-    function userPosition(address account) external view returns (UserPosition memory position);
+    function accountPosition(address account) external view returns (AccountPosition memory position);
     function totalPosition() external view returns (TotalPosition[2] memory positions);
 
     /** Liquidations */

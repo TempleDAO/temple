@@ -24,11 +24,8 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
     using CompoundedInterest for uint256;
 
     // @todo check if all of these are actually used
-    struct ReserveCache {
-        ReserveTokenConfig config;
-
-        /// @notice The last time the debt was updated for this token
-        // uint32 interestAccumulatorUpdatedAt;
+    struct DebtTokenCache {
+        DebtTokenConfig config;
 
         /// @notice Total amount that has already been borrowed, which increases as interest accrues
         uint128 totalDebt;
@@ -49,99 +46,94 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         TlcStorage(_templeToken)
     {}
 
-    function addReserveToken(
-        ReserveToken storage reserveToken,
-        ReserveTokenConfig memory config
+    function addDebtToken(
+        TokenType _tokenType,
+        DebtTokenConfig memory _config
     ) internal {
         // Do not allow an LTV > 100%
-        if (config.maxLtvRatio > 1e18) revert CommonEventsAndErrors.InvalidParam();
-        if (address(config.tokenAddress) == address(0)) revert CommonEventsAndErrors.ExpectedNonZero();
-        if (address(config.interestRateModel) == address(0)) revert CommonEventsAndErrors.ExpectedNonZero();
+        if (_config.maxLtvRatio > 1e18) revert CommonEventsAndErrors.InvalidParam();
+        if (address(_config.tokenAddress) == address(0)) revert CommonEventsAndErrors.ExpectedNonZero();
+        if (address(_config.interestRateModel) == address(0)) revert CommonEventsAndErrors.ExpectedNonZero();
+        if (_config.tokenType != _tokenType) revert CommonEventsAndErrors.InvalidParam();
 
-        reserveToken.config = config;
-        reserveToken.totals.interestAccumulator = INITIAL_INTEREST_ACCUMULATOR;
-        reserveToken.totals.interestAccumulatorUpdatedAt = uint32(block.timestamp);
+        DebtTokenDetails storage debtToken = debtTokenDetails[_tokenType];
+        debtToken.config = _config;
+        debtToken.data.interestAccumulator = INITIAL_INTEREST_ACCUMULATOR;
+        debtToken.data.interestAccumulatorUpdatedAt = uint32(block.timestamp);
     }
 
-    function initCache(
-        ReserveToken storage reserveToken,
-        ReserveCache memory reserveCache
+    function initDebtTokenCache(
+        DebtTokenDetails storage _debtToken,
+        DebtTokenCache memory _cache
     ) private view returns (bool dirty) {
-        reserveCache.config = reserveToken.config;
-        reserveCache.interestAccumulator = reserveToken.totals.interestAccumulator.encodeUInt128();
-        reserveCache.totalDebt = reserveToken.totals.totalDebt;
-        reserveCache.interestRate = reserveToken.totals.interestRate;
+        _cache.config = _debtToken.config;
+        _cache.interestAccumulator = _debtToken.data.interestAccumulator.encodeUInt128();
+        _cache.totalDebt = _debtToken.data.totalDebt;
+        _cache.interestRate = _debtToken.data.interestRate;
 
-        {
+        if (_cache.config.tokenType == TokenType.DAI) {
             ITreasuryReservesVault _trv = treasuryReservesVault;
-            if (reserveCache.config.interestRateModelType == InterestRateModelType.TRV_UTILIZATION_RATE) {
-                reserveCache.trvDebtCeiling = _trv.strategyDebtCeiling(address(tlcStrategy));
-            }
-
-            reserveCache.price = (reserveCache.config.tokenPriceType == TokenPriceType.STABLE)
-                ? _trv.treasuryPriceIndex()
-                : 1e18;
+            _cache.trvDebtCeiling = _trv.strategyDebtCeiling(address(tlcStrategy));
+            _cache.price = _trv.treasuryPriceIndex();
+        } else {
+            _cache.price = 1e18;
         }
-
-        uint256 interestAccumulatorUpdatedAt = reserveToken.totals.interestAccumulatorUpdatedAt;
+        
+        uint256 interestAccumulatorUpdatedAt = _debtToken.data.interestAccumulatorUpdatedAt;
         uint32 blockTs = uint32(block.timestamp);
         if (blockTs != interestAccumulatorUpdatedAt) {
             dirty = true;
 
             // @todo Euler also checks for overflows and ignores if it will take it over...?
-            uint256 newInterestAccumulator = uint256(reserveCache.interestAccumulator).continuouslyCompounded(
+            uint256 newInterestAccumulator = uint256(_cache.interestAccumulator).continuouslyCompounded(
                 blockTs - interestAccumulatorUpdatedAt,
-                reserveCache.interestRate
+                _cache.interestRate
             );
 
-            reserveCache.totalDebt = mulDiv(
+            _cache.totalDebt = mulDiv(
                 newInterestAccumulator,
-                reserveCache.totalDebt,
-                reserveCache.interestAccumulator
+                _cache.totalDebt,
+                _cache.interestAccumulator
             ).encodeUInt128();
-            reserveCache.interestAccumulator = newInterestAccumulator.encodeUInt128();
+            _cache.interestAccumulator = newInterestAccumulator.encodeUInt128();
         }
     }
 
-    function cache(
-        ReserveToken storage reserveToken
+    function debtTokenCache(
+        DebtTokenDetails storage _debtToken
     ) internal returns (
-        ReserveCache memory reserveCache
+        DebtTokenCache memory cache
     ) {
-        if (initCache(reserveToken, reserveCache)) {
-            reserveToken.totals.interestAccumulatorUpdatedAt = uint32(block.timestamp); //reserveCache.interestAccumulatorUpdatedAt;
-            reserveToken.totals.totalDebt = reserveCache.totalDebt;
-            reserveToken.totals.interestAccumulator = reserveCache.interestAccumulator;
+        if (initDebtTokenCache(_debtToken, cache)) {
+            _debtToken.data.interestAccumulatorUpdatedAt = uint32(block.timestamp);
+            _debtToken.data.totalDebt = cache.totalDebt;
+            _debtToken.data.interestAccumulator = cache.interestAccumulator;
         }
     }
 
     // @todo read only re-entrancy?
-    function cacheRO(
-        ReserveToken storage reserveToken
+    function debtTokenCacheRO(
+        DebtTokenDetails storage _debtToken
     ) internal view returns (
-        ReserveCache memory reserveCache
+        DebtTokenCache memory cache
     ) {
-        initCache(reserveToken, reserveCache);
+        initDebtTokenCache(_debtToken, cache);
     }
 
     function updateInterestRates(
-        ReserveToken storage reserveToken,
-        ReserveCache memory reserveCache
+        DebtTokenDetails storage _debtToken,
+        DebtTokenCache memory _debtTokenCache
     ) internal {
-        int96 newInterestRate = reserveCache.config.interestRateModel.calculateInterestRate(
-            utilizationRatio(reserveCache)
+        int96 newInterestRate = _debtTokenCache.config.interestRateModel.calculateInterestRate(
+            utilizationRatio(_debtTokenCache)
         );
 
         // Update storage if it differs to the existing one.
-        if (reserveCache.interestRate != newInterestRate) {
-            emit InterestRateUpdate(reserveCache.config.tokenAddress, newInterestRate);
-            reserveToken.totals.interestRate = reserveCache.interestRate = newInterestRate;
+        if (_debtTokenCache.interestRate != newInterestRate) {
+            emit InterestRateUpdate(_debtTokenCache.config.tokenAddress, newInterestRate);
+            _debtToken.data.interestRate = _debtTokenCache.interestRate = newInterestRate;
         }
     }
-
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                        INTERNALS                           */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
     function checkWithdrawalCooldown(
         uint32 _requestedAt, 
@@ -152,141 +144,151 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
     }
 
     function _doRepayToken(
-        ReserveToken storage _reserveToken,
-        ReserveCache memory _reserveCache,
+        DebtTokenDetails storage _debtToken,
+        DebtTokenCache memory _debtTokenCache,
         uint256 _repayAmount,
-        UserTokenDebt storage _userTokenDebt,
+        AccountDebtData storage _accountDebtData,
         TokenType _tokenType,
         address _fromAccount,
         address _onBehalfOf
     ) internal {
-        // Update the user's latest debt
-        uint256 _newDebt = currentUserTokenDebt(_reserveCache, _userTokenDebt.debt, _userTokenDebt.interestAccumulator);
+        // Update the account's latest debt
+        uint256 _newDebt = currentAccountDebtData(_debtTokenCache, _accountDebtData.debtCheckpoint, _accountDebtData.interestAccumulator);
 
         // They cannot repay more than this debt
-        // address tokenAddress = _reserveCache.config.tokenAddress;
-        if (_repayAmount > _newDebt) revert ExceededBorrowedAmount(_reserveCache.config.tokenAddress, _newDebt, _repayAmount);
+        // address tokenAddress = _debtTokenCache.config.tokenAddress;
+        if (_repayAmount > _newDebt) revert ExceededBorrowedAmount(_debtTokenCache.config.tokenAddress, _newDebt, _repayAmount);
 
         _newDebt -= _repayAmount;
-        _userTokenDebt.debt = _newDebt.encodeUInt128();
-        _userTokenDebt.interestAccumulator = _reserveCache.interestAccumulator;
-        _reserveToken.totals.totalDebt = _reserveCache.totalDebt = uint128(
-            _reserveCache.totalDebt - _repayAmount
+        _accountDebtData.debtCheckpoint = _newDebt.encodeUInt128();
+        _accountDebtData.interestAccumulator = _debtTokenCache.interestAccumulator;
+        _debtToken.data.totalDebt = _debtTokenCache.totalDebt = uint128(
+            _debtTokenCache.totalDebt - _repayAmount
         );
 
-        updateInterestRates(_reserveToken, _reserveCache);
+        updateInterestRates(_debtToken, _debtTokenCache);
 
         emit Repay(_fromAccount, _onBehalfOf, _tokenType, _repayAmount);
         
         if (_tokenType == TokenType.DAI) {
             // Pull the stables, and repay the TRV debt on behalf of the strategy.
-            IERC20(_reserveCache.config.tokenAddress).safeTransferFrom(_fromAccount, address(this), _repayAmount);
+            IERC20(_debtTokenCache.config.tokenAddress).safeTransferFrom(_fromAccount, address(this), _repayAmount);
             treasuryReservesVault.repay(_repayAmount, address(tlcStrategy));
         } else {
             // Burn the OUD
-            IMintableToken(_reserveCache.config.tokenAddress).burn(_fromAccount, _repayAmount);
+            IMintableToken(_debtTokenCache.config.tokenAddress).burn(_fromAccount, _repayAmount);
         }
     }
 
     function computeLiquidityForToken(
-        ReserveCache memory _reserveCache,
-        UserTokenDebt storage _userTokenDebt,
+        DebtTokenCache memory _debtTokenCache,
+        AccountDebtData storage _accountDebtData,
         bool _includePendingRequests,
         LiquidityStatus memory status
     ) internal view {
-        if (_userTokenDebt.debt == 0) return;
-        uint256 totalDebt = currentUserTokenDebt(_reserveCache, _userTokenDebt.debt, _userTokenDebt.interestAccumulator);
+        if (_accountDebtData.debtCheckpoint == 0) return;
+        uint256 totalDebt = currentAccountDebtData(_debtTokenCache, _accountDebtData.debtCheckpoint, _accountDebtData.interestAccumulator);
         if (_includePendingRequests) {
-            totalDebt += _userTokenDebt.borrowRequest.amount; 
+            totalDebt += _accountDebtData.borrowRequest.amount; 
         }
 
         if (!status.hasExceededMaxLtv) {
             status.hasExceededMaxLtv = totalDebt > maxBorrowCapacity(
-                _reserveCache,
+                _debtTokenCache,
                 status.collateral
             );
         }
     }
 
     function computeLiquidity(
-        UserData storage _userData,
-        ReserveCache[NUM_TOKEN_TYPES] memory _reserveCaches,
+        AccountData storage _accountData,
+        DebtTokenCache[NUM_TOKEN_TYPES] memory _debtTokenCaches,
         bool _includePendingRequests
     ) internal view returns (LiquidityStatus memory status) {
-        status.collateral = _userData.collateralPosted;
+        status.collateral = _accountData.collateralPosted;
         if (_includePendingRequests) {
-            status.collateral -= _userData.removeCollateralRequest.amount;
+            status.collateral -= _accountData.removeCollateralRequest.amount;
         }
 
-        computeLiquidityForToken(_reserveCaches[uint256(TokenType.DAI)], _userData.debtData[uint256(TokenType.DAI)], _includePendingRequests, status);
-        computeLiquidityForToken(_reserveCaches[uint256(TokenType.OUD)], _userData.debtData[uint256(TokenType.OUD)], _includePendingRequests, status);
+        computeLiquidityForToken(
+            _debtTokenCaches[uint256(TokenType.DAI)],
+            _accountData.debtData[uint256(TokenType.DAI)],
+            _includePendingRequests,
+            status
+        );
+        computeLiquidityForToken(
+            _debtTokenCaches[uint256(TokenType.OUD)],
+            _accountData.debtData[uint256(TokenType.OUD)],
+            _includePendingRequests,
+            status
+        );
     }
 
-    function checkLiquidity(UserData storage _userData) internal view {
-        ReserveCache[NUM_TOKEN_TYPES] memory reserveCaches = [
-            cacheRO(reserveTokens[TokenType.DAI]),
-            cacheRO(reserveTokens[TokenType.OUD])
+    function checkLiquidity(AccountData storage _accountData) internal view {
+        DebtTokenCache[NUM_TOKEN_TYPES] memory debtTokenCaches = [
+            debtTokenCacheRO(debtTokenDetails [TokenType.DAI]),
+            debtTokenCacheRO(debtTokenDetails [TokenType.OUD])
         ];
-        LiquidityStatus memory _status = computeLiquidity(_userData, reserveCaches, true);
+        LiquidityStatus memory _status = computeLiquidity(_accountData, debtTokenCaches, true);
         if (_status.hasExceededMaxLtv) revert ExceededMaxLtv();
     }
 
     function utilizationRatio(
-        ReserveCache memory reserveCache
+        DebtTokenCache memory _debtTokenCache
     ) internal pure returns (uint256) {
         // The UR parameter is used by the 'Fixed' interest rate model
-        return reserveCache.trvDebtCeiling == 0
+        return _debtTokenCache.trvDebtCeiling == 0
             ? 0
-            : uint256(reserveCache.totalDebt) * 1e18 / reserveCache.trvDebtCeiling;
+            : uint256(_debtTokenCache.totalDebt) * 1e18 / _debtTokenCache.trvDebtCeiling;
     }
     
-    function currentUserTokenDebt(
-        ReserveCache memory _reserveCache,
-        uint128 _userTokenDebt,
-        uint128 _userTokenInterestAccumulator
+    function currentAccountDebtData(
+        DebtTokenCache memory _debtTokenCache,
+        uint128 _accountDebtData,
+        uint128 _accountInterestAccumulator
     ) internal pure returns (uint256) {
-        uint256 prevDebt = _userTokenDebt;
+        uint256 prevDebt = _accountDebtData;
         return (prevDebt == 0) 
             ? 0
-            : prevDebt * _reserveCache.interestAccumulator / _userTokenInterestAccumulator;
+            : prevDebt * _debtTokenCache.interestAccumulator / _accountInterestAccumulator;
     }
 
     function maxBorrowCapacity(
-        ReserveCache memory _reserveCache,
-        uint256 collateralPosted
+        DebtTokenCache memory _debtTokenCache,
+        uint256 _collateralPosted
     ) internal pure returns (uint256) {
         return mulDiv(
-            collateralPosted * _reserveCache.price,
-            _reserveCache.config.maxLtvRatio,
+            _collateralPosted * _debtTokenCache.price,
+            _debtTokenCache.config.maxLtvRatio,
             1e36
         );
     }
 
     function healthFactor(
-        ReserveCache memory _reserveCache,
-        uint256 collateralPosted,
-        uint256 debt
+        DebtTokenCache memory _debtTokenCache,
+        uint256 _collateralPosted,
+        uint256 _debt
     ) internal pure returns (uint256) {
-        return debt == 0
+        return _debt == 0
             ? type(uint256).max
             : mulDiv(
-                collateralPosted * _reserveCache.price,
-                _reserveCache.config.maxLtvRatio,
-                debt * 1e18
+                _collateralPosted * _debtTokenCache.price,
+                _debtTokenCache.config.maxLtvRatio,
+                _debt * 1e18
             );
     }
 
     function loanToValueRatio(
-        ReserveCache memory _reserveCache,
-        uint256 collateralPosted,
-        uint256 debt
+        DebtTokenCache memory _debtTokenCache,
+        uint256 _collateralPosted,
+        uint256 _debt
     ) internal pure returns (uint256) {
-        return collateralPosted == 0
+        return _collateralPosted == 0
             ? type(uint256).max
             : mulDiv(
-                debt,
+                _debt,
                 1e36,
-                collateralPosted * _reserveCache.price
+                _collateralPosted * _debtTokenCache.price
             );
     }
 }

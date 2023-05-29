@@ -23,15 +23,15 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         address _initialRescuer,
         address _initialExecutor,
         address _templeToken,
-        ReserveTokenConfig memory _daiTokenConfig,
-        ReserveTokenConfig memory _oudTokenConfig
+        DebtTokenConfig memory _daiTokenConfig,
+        DebtTokenConfig memory _oudTokenConfig
     ) 
         TempleElevatedAccess(_initialRescuer, _initialExecutor)
         TlcBase(_templeToken)
     {
         // Initialize the Reserve Tokens
-        addReserveToken(reserveTokens[TokenType.DAI], _daiTokenConfig);
-        addReserveToken(reserveTokens[TokenType.OUD], _oudTokenConfig);
+        addDebtToken(TokenType.DAI, _daiTokenConfig);
+        addDebtToken(TokenType.OUD, _oudTokenConfig);
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -46,7 +46,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         if (collateralAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         emit CollateralAdded(msg.sender, onBehalfOf, collateralAmount);
 
-        allUserData[onBehalfOf].collateralPosted = (allUserData[onBehalfOf].collateralPosted + collateralAmount).encodeUInt128();
+        allAccountsData[onBehalfOf].collateralPosted = (allAccountsData[onBehalfOf].collateralPosted + collateralAmount).encodeUInt128();
 
         templeToken.safeTransferFrom(
             msg.sender,
@@ -57,12 +57,12 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
 
     function requestRemoveCollateral(uint256 amount) external {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        UserData storage _userData = allUserData[msg.sender];
+        AccountData storage _accountData = allAccountsData[msg.sender];
 
-        _userData.removeCollateralRequest = WithdrawFundsRequest(amount.encodeUInt128(), uint32(block.timestamp));
+        _accountData.removeCollateralRequest = WithdrawFundsRequest(amount.encodeUInt128(), uint32(block.timestamp));
 
-        if (_userData.removeCollateralRequest.amount > _userData.collateralPosted) revert ExceededMaxLtv();
-        checkLiquidity(_userData);
+        if (_accountData.removeCollateralRequest.amount > _accountData.collateralPosted) revert ExceededMaxLtv();
+        checkLiquidity(_accountData);
 
         emit RemoveCollateralRequested(msg.sender, amount);
     }
@@ -71,7 +71,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         // Either the account holder or the DAO elevated access is allowed to cancel individual requests
         if (msg.sender != account && !isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
         
-        delete allUserData[msg.sender].removeCollateralRequest;
+        delete allAccountsData[msg.sender].removeCollateralRequest;
         emit RemoveCollateralRequestCancelled(account);
     }
 
@@ -79,28 +79,28 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
      * @dev Allows borrower to deposit temple collateral
      */
     function removeCollateral(address recipient) external {
-        UserData storage _userData = allUserData[msg.sender];
+        AccountData storage _accountData = allAccountsData[msg.sender];
 
         uint256 _removeAmount;
         {
-            WithdrawFundsRequest storage _request = _userData.removeCollateralRequest;
+            WithdrawFundsRequest storage _request = _accountData.removeCollateralRequest;
             // @todo change the cooldown secs structure?
             checkWithdrawalCooldown(_request.requestedAt, withdrawCollateralCooldownSecs);
             _removeAmount = _request.amount;
             // uint256 _removeAmount = popRequest(msg.sender, FundsRequestType.WITHDRAW_COLLATERAL);
-            delete allUserData[msg.sender].removeCollateralRequest;
+            delete allAccountsData[msg.sender].removeCollateralRequest;
         }
 
-        uint256 _newCollateral = _userData.collateralPosted - _removeAmount;
+        uint256 _newCollateral = _accountData.collateralPosted - _removeAmount;
 
         // Update the collateral, and then verify that it doesn't make the debt unsafe.
-        _userData.collateralPosted = uint128(_newCollateral);
+        _accountData.collateralPosted = uint128(_newCollateral);
 
         // A subtraction in collateral - so the downcast is safe
-        _userData.collateralPosted = uint128(_newCollateral);
+        _accountData.collateralPosted = uint128(_newCollateral);
         emit CollateralRemoved(msg.sender, recipient, _removeAmount);
 
-        checkLiquidity(_userData);
+        checkLiquidity(_accountData);
 
         templeToken.safeTransfer(
             recipient,
@@ -114,10 +114,10 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
 
     function requestBorrow(TokenType tokenType, uint256 amount) external {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        UserData storage _userData = allUserData[msg.sender];
-        UserTokenDebt storage _userTokenDebt = _userData.debtData[uint256(tokenType)];
+        AccountData storage _accountData = allAccountsData[msg.sender];
+        AccountDebtData storage _accountDebtData = _accountData.debtData[uint256(tokenType)];
 
-        _userTokenDebt.borrowRequest = WithdrawFundsRequest(amount.encodeUInt128(), uint32(block.timestamp));
+        _accountDebtData.borrowRequest = WithdrawFundsRequest(amount.encodeUInt128(), uint32(block.timestamp));
         emit BorrowRequested(msg.sender, tokenType, amount);
 
         // @todo add a test case for this.
@@ -125,59 +125,63 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         // This is expected, because even though they may be borrowing DAI
         // they may have exceeded the max LTV in OUD. In that case
         // they shouldn't be allowed to borrow DAI until that OUD debt is paid down.
-        checkLiquidity(_userData);
+        checkLiquidity(_accountData);
     }
 
     function cancelBorrowRequest(address account, TokenType tokenType) external {
         // Either the account holder or the DAO elevated access is allowed to cancel individual requests
         if (msg.sender != account && !isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
         
-        delete allUserData[msg.sender].debtData[uint256(tokenType)].borrowRequest;
+        delete allAccountsData[msg.sender].debtData[uint256(tokenType)].borrowRequest;
         emit BorrowRequestCancelled(account, tokenType);
     }
 
     function borrow(TokenType tokenType, address recipient) external {
-        UserData storage _userData = allUserData[msg.sender];
-        UserTokenDebt storage _userTokenDebt = _userData.debtData[uint256(tokenType)];
-        ReserveToken storage _reserveToken = reserveTokens[tokenType];
-        ReserveCache memory _reserveCache = cache(_reserveToken);
+        AccountData storage _accountData = allAccountsData[msg.sender];
+        AccountDebtData storage _accountDebtData = _accountData.debtData[uint256(tokenType)];
+        DebtTokenDetails storage _debtToken = debtTokenDetails[tokenType];
+        DebtTokenCache memory _debtTokenCache = debtTokenCache(_debtToken);
 
         // Validate and pop the borrow request for this token
         uint256 _borrowAmount;
         {
-            WithdrawFundsRequest storage _request = _userTokenDebt.borrowRequest;
-            checkWithdrawalCooldown(_request.requestedAt, _reserveCache.config.borrowCooldownSecs);
+            WithdrawFundsRequest storage _request = _accountDebtData.borrowRequest;
+            checkWithdrawalCooldown(_request.requestedAt, _debtTokenCache.config.borrowCooldownSecs);
             _borrowAmount = _request.amount;
-            delete _userTokenDebt.borrowRequest;
+            delete _accountDebtData.borrowRequest;
         }
 
         // Apply the new borrow
         {
 
-            uint256 _totalDebt = currentUserTokenDebt(_reserveCache, _userTokenDebt.debt, _userTokenDebt.interestAccumulator) + _borrowAmount;
+            uint256 _totalDebt = currentAccountDebtData(
+                _debtTokenCache, 
+                _accountDebtData.debtCheckpoint, 
+                _accountDebtData.interestAccumulator
+            ) + _borrowAmount;
 
             // Update the state
-            _userTokenDebt.debt = _totalDebt.encodeUInt128();
-            _userTokenDebt.interestAccumulator = _reserveCache.interestAccumulator;
-            _reserveToken.totals.totalDebt = _reserveCache.totalDebt = (
-                _reserveCache.totalDebt + _borrowAmount
+            _accountDebtData.debtCheckpoint = _totalDebt.encodeUInt128();
+            _accountDebtData.interestAccumulator = _debtTokenCache.interestAccumulator;
+            _debtToken.data.totalDebt = _debtTokenCache.totalDebt = (
+                _debtTokenCache.totalDebt + _borrowAmount
             ).encodeUInt128();
 
             // Update the borrow interest rates based on the now increased utilization ratio
             // console.log("about to update interest rate");
-            updateInterestRates(_reserveToken, _reserveCache);
+            updateInterestRates(_debtToken, _debtTokenCache);
         }
 
         emit Borrow(msg.sender, recipient, tokenType, _borrowAmount);
-        checkLiquidity(_userData);
+        checkLiquidity(_accountData);
 
-        // Finally, send the tokens to the user.
+        // Finally, send the tokens to the recipient.
         if (tokenType == TokenType.DAI) {
             // Borrow the funds from the TRV and send to the recipient
             tlcStrategy.fundFromTrv(_borrowAmount, recipient);
         } else {
             // Mint the OUD and send to recipient
-            IMintableToken(_reserveCache.config.tokenAddress).mint(recipient, _borrowAmount );
+            IMintableToken(_debtTokenCache.config.tokenAddress).mint(recipient, _borrowAmount );
         }
     }
 
@@ -188,9 +192,9 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     function repay(TokenType tokenType, uint256 repayAmount, address onBehalfOf) external {
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
-        ReserveToken storage _reserveToken = reserveTokens[tokenType];
-        UserTokenDebt storage _userTokenDebt = allUserData[onBehalfOf].debtData[uint256(tokenType)];
-        _doRepayToken(_reserveToken, cache(_reserveToken), repayAmount, _userTokenDebt, tokenType, msg.sender, onBehalfOf);
+        DebtTokenDetails storage _debtToken = debtTokenDetails[tokenType];
+        AccountDebtData storage _accountDebtData = allAccountsData[onBehalfOf].debtData[uint256(tokenType)];
+        _doRepayToken(_debtToken, debtTokenCache(_debtToken), repayAmount, _accountDebtData, tokenType, msg.sender, onBehalfOf);
     }
 
     /**
@@ -198,14 +202,18 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
      * @dev leave no dust balance
      */
     function repayAll(TokenType tokenType, address onBehalfOf) external {
-        ReserveToken storage _reserveToken = reserveTokens[tokenType];
-        ReserveCache memory _reserveCache = cache(_reserveToken);
-        UserTokenDebt storage _userTokenDebt = allUserData[onBehalfOf].debtData[uint256(tokenType)];
+        DebtTokenDetails storage _debtToken = debtTokenDetails[tokenType];
+        DebtTokenCache memory _debtTokenCache = debtTokenCache(_debtToken);
+        AccountDebtData storage _accountDebtData = allAccountsData[onBehalfOf].debtData[uint256(tokenType)];
 
         // Get the outstanding debt for Stable
-        uint256 repayAmount = currentUserTokenDebt(_reserveCache, _userTokenDebt.debt, _userTokenDebt.interestAccumulator);
+        uint256 repayAmount = currentAccountDebtData(
+            _debtTokenCache,
+            _accountDebtData.debtCheckpoint,
+            _accountDebtData.interestAccumulator
+        );
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        _doRepayToken(_reserveToken, _reserveCache, repayAmount, _userTokenDebt, tokenType, msg.sender, onBehalfOf);
+        _doRepayToken(_debtToken, _debtTokenCache, repayAmount, _accountDebtData, tokenType, msg.sender, onBehalfOf);
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -213,21 +221,21 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
     // Given there are no dependencies on price, relying on off-chain lists of
-    // users (eg via subgraph) is enough for the bot to get the list of users
+    // accounts (eg via subgraph) is enough for the bot to get the list of accounts.
     function computeLiquidity(
         address[] memory accounts,
         bool includePendingRequests
     ) external view returns (LiquidityStatus[] memory status) {
-        ReserveCache[NUM_TOKEN_TYPES] memory reserveCaches = [
-            cacheRO(reserveTokens[TokenType.DAI]),
-            cacheRO(reserveTokens[TokenType.OUD])
+        DebtTokenCache[NUM_TOKEN_TYPES] memory debtTokenCaches = [
+            debtTokenCacheRO(debtTokenDetails[TokenType.DAI]),
+            debtTokenCacheRO(debtTokenDetails[TokenType.OUD])
         ];
 
         uint256 _numAccounts = accounts.length;
         for (uint256 i; i < _numAccounts; ++i) {
             status[i] = computeLiquidity(
-                allUserData[accounts[i]], 
-                reserveCaches, 
+                allAccountsData[accounts[i]], 
+                debtTokenCaches, 
                 includePendingRequests
             );
         }
@@ -240,9 +248,9 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
 
         uint256 _numAccounts = accounts.length;
         uint256 totalCollateralClaimed;
-        ReserveCache[NUM_TOKEN_TYPES] memory reserveCaches = [
-            cache(reserveTokens[TokenType.DAI]),
-            cache(reserveTokens[TokenType.OUD])
+        DebtTokenCache[NUM_TOKEN_TYPES] memory debtTokenCaches = [
+            debtTokenCache(debtTokenDetails[TokenType.DAI]),
+            debtTokenCache(debtTokenDetails[TokenType.OUD])
         ];
 
         uint256[NUM_TOKEN_TYPES] memory totalDebtWiped;
@@ -250,14 +258,14 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         address _account;
         for (; i < _numAccounts; ++i) {
             _account = accounts[i];
-            _status = computeLiquidity(allUserData[_account], reserveCaches, false);
+            _status = computeLiquidity(allAccountsData[_account], debtTokenCaches, false);
 
             // Skip if this account is still under the maxLTV across all assets
             if (_status.hasExceededMaxLtv) {
                 totalCollateralClaimed += _status.collateral;
-                totalDebtWiped[_daiIndex] += _status.debt[_daiIndex];
-                totalDebtWiped[_oudIndex] += _status.debt[_oudIndex];
-                delete allUserData[_account];    
+                totalDebtWiped[_daiIndex] += _status.currentDebt[_daiIndex];
+                totalDebtWiped[_oudIndex] += _status.currentDebt[_oudIndex];
+                delete allAccountsData[_account];    
             }
         }
 
@@ -266,17 +274,17 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
 
         // Update the reserve token total state and update interest rates.
         for (i = 0; i < NUM_TOKEN_TYPES; ++i) {
-            ReserveToken storage _reserveToken = reserveTokens[TokenType(i)];
+            DebtTokenDetails storage _debtToken = debtTokenDetails[TokenType(i)];
             // LiquidationTokenParams memory _tokenParams = _liquidationParams.tokens[i];
-            ReserveCache memory _reserveCache = reserveCaches[i];
+            DebtTokenCache memory _debtTokenCache = debtTokenCaches[i];
 
             // Update the reserve token details, and then update the interest rates.            
             // A decrease in amount, so this downcast is safe without a check
-            _reserveToken.totals.totalDebt = _reserveCache.totalDebt = uint128(
-                _reserveCache.totalDebt - totalDebtWiped[i]
+            _debtToken.data.totalDebt = _debtTokenCache.totalDebt = uint128(
+                _debtTokenCache.totalDebt - totalDebtWiped[i]
             );
 
-            updateInterestRates(_reserveToken, _reserveCache);
+            updateInterestRates(_debtToken, _debtTokenCache);
         }
     }
     
@@ -304,22 +312,22 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     }
 
     function setBorrowCooldownSecs(TokenType tokenType, uint256 cooldownSecs) external onlyElevatedAccess {
-        reserveTokens[tokenType].config.borrowCooldownSecs = uint32(cooldownSecs);
+        debtTokenDetails[tokenType].config.borrowCooldownSecs = uint32(cooldownSecs);
         emit BorrowCooldownSecsSet(tokenType, uint32(cooldownSecs));
     }
 
     function setInterestRateModel(TokenType tokenType, address interestRateModel) external onlyElevatedAccess {
-        ReserveToken storage reserveToken = reserveTokens[tokenType]; //_getReserveToken(tokenType);
-        ReserveCache memory reserveCache = cache(reserveToken);
+        DebtTokenDetails storage _debtToken = debtTokenDetails[tokenType];
+        DebtTokenCache memory _cache = debtTokenCache(_debtToken);
 
         // Update the cache entry and calculate the new interest rate based off this model.
-        reserveToken.config.interestRateModel = reserveCache.config.interestRateModel = IInterestRateModel(interestRateModel);
-        updateInterestRates(reserveToken, reserveCache);
+        _debtToken.config.interestRateModel = _cache.config.interestRateModel = IInterestRateModel(interestRateModel);
+        updateInterestRates(_debtToken, _cache);
     }
 
     function setMaxLtvRatio(TokenType tokenType, uint256 maxLtvRatio) external onlyElevatedAccess {
-        ReserveToken storage reserveToken = reserveTokens[tokenType]; //_getReserveToken(tokenType);
-        reserveToken.config.maxLtvRatio = maxLtvRatio.encodeUInt128();
+        DebtTokenDetails storage _debtToken = debtTokenDetails[tokenType];
+        _debtToken.config.maxLtvRatio = maxLtvRatio.encodeUInt128();
     }
 
     /**
@@ -336,50 +344,54 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
      * based on the updated utilisation ratio
      */
     function refreshInterestRates(TokenType tokenType) external {
-        ReserveToken storage reserveToken = reserveTokens[tokenType];
-        updateInterestRates(reserveToken, cache(reserveToken));
+        DebtTokenDetails storage _debtToken = debtTokenDetails[tokenType];
+        updateInterestRates(_debtToken, debtTokenCache(_debtToken));
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                           VIEWS                            */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-    function getUserData(address account) external view returns (UserData memory) {
-        return allUserData[account];
+    function accountData(address account) external view returns (AccountData memory) {
+        return allAccountsData[account];
     }
 
-    function getReserveCache(TokenType tokenType) external view returns (ReserveCache memory) {
-        return cacheRO(reserveTokens[tokenType]);
+    function getDebtTokenCache(TokenType tokenType) external view returns (DebtTokenCache memory) {
+        return debtTokenCacheRO(debtTokenDetails[tokenType]);
     }
 
-    function userPosition(address account) external view returns (UserPosition memory position) {
-        UserData storage _userData = allUserData[account];
-        position.collateralPosted = _userData.collateralPosted;
+    function accountPosition(address account) external view returns (AccountPosition memory position) {
+        AccountData storage _accountData = allAccountsData[account];
+        position.collateralPosted = _accountData.collateralPosted;
 
-        ReserveCache memory _reserveCache;
-        UserTokenDebt storage _userTokenDebt;
-        uint256 latestDebt;
+        DebtTokenCache memory _debtTokenCache;
+        AccountDebtData storage _accountDebtData;
+        uint256 _latestDebt;
         for (uint256 i; i < NUM_TOKEN_TYPES; ++i) {
-            _reserveCache = cacheRO(reserveTokens[TokenType(i)]);
-            _userTokenDebt = _userData.debtData[i];
-            latestDebt = currentUserTokenDebt(_reserveCache, _userTokenDebt.debt, _userTokenDebt.interestAccumulator);
-            position.debtPositions[i] = UserDebtPosition({
-                debt: latestDebt,
-                maxBorrow: maxBorrowCapacity(_reserveCache, position.collateralPosted), //_reserveToken.config.maxLtvRatio, price),
-                healthFactor: healthFactor(_reserveCache, position.collateralPosted, latestDebt), //_reserveToken.config.maxLtvRatio, price),
-                loanToValueRatio: loanToValueRatio(_reserveCache, position.collateralPosted, latestDebt) //, price)
+            _debtTokenCache = debtTokenCacheRO(debtTokenDetails[TokenType(i)]);
+            _accountDebtData = _accountData.debtData[i];
+            _latestDebt = currentAccountDebtData(
+                _debtTokenCache, 
+                _accountDebtData.debtCheckpoint,
+                _accountDebtData.interestAccumulator
+            );
+            position.debtPositions[i] = AccountDebtPosition({
+                currentDebt: _latestDebt,
+                maxBorrow: maxBorrowCapacity(_debtTokenCache, position.collateralPosted),
+                healthFactor: healthFactor(_debtTokenCache, position.collateralPosted, _latestDebt),
+                loanToValueRatio: loanToValueRatio(_debtTokenCache, position.collateralPosted, _latestDebt)
             });
         }
     }
 
     function totalPosition() external view returns (TotalPosition[2] memory positions) {
-        ReserveCache memory _reserveCache;
+        DebtTokenCache memory _debtTokenCache;
         TotalPosition memory _position;
         for (uint256 i; i < NUM_TOKEN_TYPES; ++i) {
-            _reserveCache = cacheRO(reserveTokens[TokenType(i)]);
-            _position.utilizationRatio = utilizationRatio(_reserveCache);
-            _position.borrowRate = _reserveCache.interestRate;
-            _position.totalDebt = _reserveCache.totalDebt;
+            _debtTokenCache = debtTokenCacheRO(debtTokenDetails[TokenType(i)]);
+            _position.utilizationRatio = utilizationRatio(_debtTokenCache);
+            _position.borrowRate = _debtTokenCache.interestRate;
+            _position.totalDebt = _debtTokenCache.totalDebt;
             positions[i] = _position;
         }
     }

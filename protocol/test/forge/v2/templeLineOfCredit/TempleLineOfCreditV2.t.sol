@@ -57,8 +57,8 @@ contract TempleLineOfCreditTestAdmin is TlcBaseTest {
         }
 
         // Reserve tokens are initialized
-        checkReserveToken(TokenType.DAI, 0, 0, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
-        checkReserveToken(TokenType.OUD, 0, 0, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
+        checkDebtTokenDetails(TokenType.DAI, 0, 0, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
+        checkDebtTokenDetails(TokenType.OUD, 0, 0, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
 
         assertEq(address(tlc.treasuryReservesVault()), address(trv));
         assertEq(tlc.withdrawCollateralCooldownSecs(), WITHDRAW_COLLATERAL_COOLDOWN_SECS);
@@ -72,10 +72,10 @@ contract TempleLineOfCreditTestAdmin is TlcBaseTest {
     function test_setInterestRateModel_NoDebt() public {
         // After a rate refresh, the 'next' period of interest is set.
         tlc.refreshInterestRates(TokenType.DAI);
-        checkReserveToken(TokenType.DAI, 0, 0.05e18, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
-        checkReserveToken(TokenType.OUD, 0, 0, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
+        checkDebtTokenDetails(TokenType.DAI, 0, 0.05e18, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
+        checkDebtTokenDetails(TokenType.OUD, 0, 0, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
         tlc.refreshInterestRates(TokenType.OUD);
-        checkReserveToken(TokenType.OUD, 0, oudInterestRate, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
+        checkDebtTokenDetails(TokenType.OUD, 0, oudInterestRate, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
 
         uint256 age = 10000;
         vm.warp(block.timestamp + age);
@@ -91,12 +91,12 @@ contract TempleLineOfCreditTestAdmin is TlcBaseTest {
         vm.prank(executor);
         tlc.setInterestRateModel(TokenType.DAI, address(updatedInterestRateModel));
 
-        (ReserveTokenConfig memory actualConfig, ReserveTokenTotals memory actualTotals) = tlc.reserveTokens(TokenType.DAI);
-        ReserveTokenConfig memory expectedConfig = defaultDaiConfig();
+        (DebtTokenConfig memory actualConfig, DebtTokenData memory actualTotals) = tlc.debtTokenDetails(TokenType.DAI);
+        DebtTokenConfig memory expectedConfig = defaultDaiConfig();
         expectedConfig.interestRateModel = LinearWithKinkInterestRateModel(updatedInterestRateModel);
-        checkReserveTokenConfig(actualConfig, expectedConfig);
+        checkDebtTokenConfig(actualConfig, expectedConfig);
 
-        checkReserveTotals(actualTotals, ReserveTokenTotals({
+        checkDebtTokenData(actualTotals, DebtTokenData({
             totalDebt: 0,
             interestRate: 10e18 / 100,
             interestAccumulator: approxInterest(INITIAL_INTEREST_ACCUMULATOR, 0.05e18, age),
@@ -113,8 +113,8 @@ contract TempleLineOfCreditTestAdmin is TlcBaseTest {
         borrow(alice, collateralAmount, borrowDaiAmount, 0, 30);
         
         int96 expectedInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
-        checkReserveToken(TokenType.DAI, borrowDaiAmount, expectedInterestRate, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
-        checkReserveToken(TokenType.OUD, 0, 0, INITIAL_INTEREST_ACCUMULATOR, ts);
+        checkDebtTokenDetails(TokenType.DAI, borrowDaiAmount, expectedInterestRate, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
+        checkDebtTokenDetails(TokenType.OUD, 0, 0, INITIAL_INTEREST_ACCUMULATOR, ts);
 
         uint256 age = 10000;
         vm.warp(block.timestamp + age);
@@ -130,12 +130,12 @@ contract TempleLineOfCreditTestAdmin is TlcBaseTest {
         vm.prank(executor);
         tlc.setInterestRateModel(TokenType.DAI, address(updatedInterestRateModel));
 
-        (ReserveTokenConfig memory actualConfig, ReserveTokenTotals memory actualTotals) = tlc.reserveTokens(TokenType.DAI);
-        ReserveTokenConfig memory expectedConfig = defaultDaiConfig();
+        (DebtTokenConfig memory actualConfig, DebtTokenData memory actualTotals) = tlc.debtTokenDetails(TokenType.DAI);
+        DebtTokenConfig memory expectedConfig = defaultDaiConfig();
         expectedConfig.interestRateModel = LinearWithKinkInterestRateModel(updatedInterestRateModel);
-        checkReserveTokenConfig(actualConfig, expectedConfig);
+        checkDebtTokenConfig(actualConfig, expectedConfig);
 
-        checkReserveTotals(actualTotals, ReserveTokenTotals({
+        checkDebtTokenData(actualTotals, DebtTokenData({
             totalDebt: uint128(borrowDaiAmount * actualTotals.interestAccumulator / INITIAL_INTEREST_ACCUMULATOR),
             interestRate: calculateInterestRate(updatedInterestRateModel, borrowDaiAmount, borrowCeiling),
             interestAccumulator: approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedInterestRate, age),
@@ -188,7 +188,7 @@ contract TempleLineOfCreditTestCollateral is TlcBaseTest {
     // event CollateralAdded(address indexed fundedBy, address indexed onBehalfOf, uint256 collateralAmount);
     // event CollateralRemoved(address indexed account, address indexed recipient, uint256 collateralAmount);
 
-// @todo add collateral on behalf of another user.
+// @todo add collateral on behalf of another account.
 // @todo remove collateral (with cooldown)
 
     function test_addCollateral_failsZeroBalance() external {
@@ -210,7 +210,7 @@ contract TempleLineOfCreditTestCollateral is TlcBaseTest {
 
             tlc.addCollateral(collateralAmount, alice);
             assertEq(templeToken.balanceOf(address(tlc)), collateralAmount);
-            checkUserData(
+            checkAccountData(
                 alice,
                 collateralAmount,
                 0, 0, 0, 0
@@ -229,7 +229,7 @@ contract TempleLineOfCreditTestCollateral is TlcBaseTest {
             tlc.addCollateral(newCollateralAmount, alice);
             assertEq(templeToken.balanceOf(address(tlc)), collateralAmount + newCollateralAmount);
 
-            checkUserData(
+            checkAccountData(
                 alice,
                 collateralAmount + newCollateralAmount,
                 0, 0, 0, 0
@@ -237,19 +237,19 @@ contract TempleLineOfCreditTestCollateral is TlcBaseTest {
         }
     }
 
-    function test_userPosition_afterAddCollateral() external {
+    function test_accountPosition_afterAddCollateral() external {
         uint256 collateralAmount = 100_000e18;
         addCollateral(alice, collateralAmount);
 
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        checkUserPosition(
+        checkAccountPosition(
             alice, 
             0, 0,
-            UserPosition({
+            AccountPosition({
                 collateralPosted: collateralAmount,
                 debtPositions: [
-                    UserDebtPosition(0, maxBorrowInfo.daiMaxBorrow, type(uint256).max, 0),
-                    UserDebtPosition(0, maxBorrowInfo.oudMaxBorrow, type(uint256).max, 0)
+                    AccountDebtPosition(0, maxBorrowInfo.daiMaxBorrow, type(uint256).max, 0),
+                    AccountDebtPosition(0, maxBorrowInfo.oudMaxBorrow, type(uint256).max, 0)
                 ]
             }),
             0, 0,
@@ -399,8 +399,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             tlc.borrow(TokenType.DAI, alice);
         }
 
-        checkReserveToken(TokenType.DAI, borrowAmount, 0.1e18, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
-        checkReserveToken(TokenType.OUD, 0, 0, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
+        checkDebtTokenDetails(TokenType.DAI, borrowAmount, 0.1e18, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
+        checkDebtTokenDetails(TokenType.OUD, 0, 0, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
 
         // // // Check the DAI amount was borrowed fom the TRV and recorded correctly
         // // {
@@ -410,10 +410,10 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         // //     assertEq(ceiling, borrowCeiling);
         // // }
 
-        checkUserPosition(
+        checkAccountPosition(
             alice, 
             borrowAmount, 0,
-            UserPosition({
+            AccountPosition({
                 collateralPosted: collateralAmount,
                 debtPositions: getDebtPositions(borrowAmount, 0, maxBorrowInfo)
             }),
@@ -484,8 +484,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             tlc.borrow(TokenType.OUD, alice);
         }
 
-        checkReserveToken(TokenType.DAI, 0, 0, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
-        checkReserveToken(TokenType.OUD, borrowAmount, oudInterestRate, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
+        checkDebtTokenDetails(TokenType.DAI, 0, 0, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
+        checkDebtTokenDetails(TokenType.OUD, borrowAmount, oudInterestRate, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
 
         // // Nothing changes in the TRV from borrowing OUD
         // {
@@ -495,10 +495,10 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         //     assertEq(ceiling, borrowCeiling);
         // }
 
-        checkUserPosition(
+        checkAccountPosition(
             alice, 
             0, borrowAmount,
-            UserPosition({
+            AccountPosition({
                 collateralPosted: collateralAmount,
                 debtPositions: getDebtPositions(0, borrowAmount, maxBorrowInfo)
             }),
@@ -567,14 +567,14 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
         // Verify
         {
-            checkReserveToken(TokenType.DAI, borrowDaiAmount/2, expectedDaiInterestRate, INITIAL_INTEREST_ACCUMULATOR, block.timestamp);
-            checkReserveToken(TokenType.OUD, borrowOudAmount/2, oudInterestRate, INITIAL_INTEREST_ACCUMULATOR, block.timestamp);
+            checkDebtTokenDetails(TokenType.DAI, borrowDaiAmount/2, expectedDaiInterestRate, INITIAL_INTEREST_ACCUMULATOR, block.timestamp);
+            checkDebtTokenDetails(TokenType.OUD, borrowOudAmount/2, oudInterestRate, INITIAL_INTEREST_ACCUMULATOR, block.timestamp);
 
 
-            checkUserPosition(
+            checkAccountPosition(
                 alice, 
                 borrowDaiAmount/2, borrowOudAmount/2,
-                UserPosition({
+                AccountPosition({
                     collateralPosted: collateralAmount,
                     debtPositions: getDebtPositions(borrowDaiAmount/2, borrowOudAmount/2, maxBorrowInfo)
                 }),
@@ -588,8 +588,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         // {
         //     // ## TEST
         //         console.log("approxInterest:", approxInterest(borrowDaiAmount / 2, expectedDaiInterestRate, BORROW_OUD_COOLDOWN_SECS));
-        //         UserPosition memory actualUserPosition = positionHelper.userPosition(alice);
-        //         console.log(actualUserPosition.debtPositions[0].debt);
+        //         AccountPosition memory actualAccountPosition = positionHelper.accountPosition(alice);
+        //         console.log(actualAccountPosition.debtPositions[0].debt);
         //     // ## TEST
 
         //     tlc.requestBorrow(TokenType.DAI, borrowDaiAmount / 2);
@@ -598,8 +598,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
         //     // ## TEST
         //         console.log("approxInterest:", approxInterest(borrowDaiAmount / 2, expectedDaiInterestRate, BORROW_OUD_COOLDOWN_SECS));
-        //         actualUserPosition = positionHelper.userPosition(alice);
-        //         console.log(actualUserPosition.debtPositions[0].debt);
+        //         actualAccountPosition = positionHelper.accountPosition(alice);
+        //         console.log(actualAccountPosition.debtPositions[0].debt);
         //     // ## TEST
 
         //     vm.expectEmit(address(tlc));
@@ -618,13 +618,13 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         // }
 
         // {
-        //     checkReserveToken(TokenType.DAI, borrowDaiAmount, expectedDaiInterestRate, INITIAL_INTEREST_ACCUMULATOR, block.timestamp);
-        //     checkReserveToken(TokenType.OUD, borrowOudAmount, oudInterestRate, INITIAL_INTEREST_ACCUMULATOR, block.timestamp);
+        //     checkDebtTokenDetails(TokenType.DAI, borrowDaiAmount, expectedDaiInterestRate, INITIAL_INTEREST_ACCUMULATOR, block.timestamp);
+        //     checkDebtTokenDetails(TokenType.OUD, borrowOudAmount, oudInterestRate, INITIAL_INTEREST_ACCUMULATOR, block.timestamp);
 
-        //     checkUserPosition(
+        //     checkAccountPosition(
         //         alice, 
         //         borrowDaiAmount, borrowOudAmount,
-        //         UserPosition({
+        //         AccountPosition({
         //             collateralPosted: collateralAmount,
         //             debtPositions: getDebtPositions(borrowDaiAmount/2, borrowOudAmount/2, maxBorrowInfo)
         //         }),
@@ -684,13 +684,13 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
 //         // Run checks after the initial borrow
 //         {
-//             checkReserveToken(daiToken, borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, block.timestamp);
-//             checkReserveToken(oudToken, borrowOudAmount, expectedOudRate, INITIAL_INTEREST_ACCUMULATOR, block.timestamp);
+//             checkDebtTokenDetails(daiToken, borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, block.timestamp);
+//             checkDebtTokenDetails(oudToken, borrowOudAmount, expectedOudRate, INITIAL_INTEREST_ACCUMULATOR, block.timestamp);
 
-//             checkUserPosition(
+//             checkAccountPosition(
 //                 alice, 
 //                 borrowDaiAmount, borrowOudAmount,
-//                 UserPosition({
+//                 AccountPosition({
 //                     collateralPosted: collateralAmount,
 //                     daiDebt: borrowDaiAmount,
 //                     daiMaxBorrow: maxBorrowInfo.daiMaxBorrow,
@@ -717,13 +717,13 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 //         // Now the total debt has increased and the health factors are updated.
 //         // But nothing has been 'checkpointed' in storage yet.
 //         {
-//             checkReserveToken(daiToken, borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
-//             checkReserveToken(oudToken, borrowOudAmount, expectedOudRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
+//             checkDebtTokenDetails(daiToken, borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
+//             checkDebtTokenDetails(oudToken, borrowOudAmount, expectedOudRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
 
-//             checkUserPosition(
+//             checkAccountPosition(
 //                 alice, 
 //                 borrowDaiAmount, borrowOudAmount,
-//                 UserPosition({
+//                 AccountPosition({
 //                     collateralPosted: collateralAmount,
 //                     daiDebt: expectedDaiDebt,
 //                     daiMaxBorrow: maxBorrowInfo.daiMaxBorrow,
@@ -746,17 +746,17 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 //             {
 //                 int96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, borrowCeiling);
 //                 uint256 expectedAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiRate, age);
-//                 checkReserveToken(daiToken, expectedDaiDebt, expectedDaiInterestRate, expectedAccumulator, block.timestamp);
+//                 checkDebtTokenDetails(daiToken, expectedDaiDebt, expectedDaiInterestRate, expectedAccumulator, block.timestamp);
 
 //                 expectedAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedOudRate, age);
-//                 checkReserveToken(oudToken, expectedOudDebt, expectedOudRate, expectedAccumulator, block.timestamp);
+//                 checkDebtTokenDetails(oudToken, expectedOudDebt, expectedOudRate, expectedAccumulator, block.timestamp);
 //             }
 
-//             // User balances remain the same
-//             checkUserPosition(
+//             // Account balances remain the same
+//             checkAccountPosition(
 //                 alice, 
 //                 borrowDaiAmount, borrowOudAmount,
-//                 UserPosition({
+//                 AccountPosition({
 //                     collateralPosted: collateralAmount,
 //                     daiDebt: expectedDaiDebt,
 //                     daiMaxBorrow: maxBorrowInfo.daiMaxBorrow,
@@ -772,7 +772,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 //             );
 //         }
 
-//         // Borrow just 1 wei more and the user checkpoint will update too
+//         // Borrow just 1 wei more and the account checkpoint will update too
 //         {
 //             maxBorrowInfo = expectedMaxBorrows(collateralAmount);
 //             vm.prank(alice);
@@ -782,15 +782,15 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 //             uint256 expectedOudAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedOudRate, age);
 //             {
 //                 int96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, borrowCeiling);
-//                 checkReserveToken(daiToken, expectedDaiDebt, expectedDaiInterestRate, expectedDaiAccumulator, block.timestamp);
-//                 checkReserveToken(oudToken, expectedOudDebt, expectedOudRate, expectedOudAccumulator, block.timestamp);
+//                 checkDebtTokenDetails(daiToken, expectedDaiDebt, expectedDaiInterestRate, expectedDaiAccumulator, block.timestamp);
+//                 checkDebtTokenDetails(oudToken, expectedOudDebt, expectedOudRate, expectedOudAccumulator, block.timestamp);
 //             }
 
-//             // User balances update
-//             checkUserPosition(
+//             // Account balances update
+//             checkAccountPosition(
 //                 alice, 
 //                 borrowDaiAmount+1, borrowOudAmount+1,
-//                 UserPosition({
+//                 AccountPosition({
 //                     collateralPosted: collateralAmount,
 //                     daiDebt: expectedDaiDebt,
 //                     daiMaxBorrow: maxBorrowInfo.daiMaxBorrow,
@@ -880,14 +880,14 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 //             // Check Reserve Token state
 //             daiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiInterestRate, age);
 //             oudAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, oudInterestRate, age);
-//             checkReserveToken(
+//             checkDebtTokenDetails(
 //                 daiToken, 
 //                 expectedDaiDebt, 
 //                 updatedDaiInterestRate,
 //                 daiAccumulator, 
 //                 block.timestamp
 //             );
-//             checkReserveToken(
+//             checkDebtTokenDetails(
 //                 oudToken, 
 //                 expectedOudDebt, 
 //                 oudInterestRate, 
@@ -896,14 +896,14 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 //             );
 //         }
 
-//         // Check user position
+//         // Check account position
 //         {
 //             MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
 
-//             checkUserPosition(
+//             checkAccountPosition(
 //                 alice, 
 //                 0, 0,
-//                 UserPosition({
+//                 AccountPosition({
 //                     collateralPosted: collateralAmount,
 //                     daiDebt: expectedDaiDebt,
 //                     daiMaxBorrow: maxBorrowInfo.daiMaxBorrow,
@@ -943,7 +943,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 //         uint256 age = 365 days;
 //         vm.warp(block.timestamp + age); // 1 year continuously compunding
 
-//         UserPosition memory position = tlc.userPosition(alice);
+//         AccountPosition memory position = tlc.accountPosition(alice);
 
 //         // Repay the whole debt amount
 //         {
@@ -969,14 +969,14 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
 //         // Check the Reserve Tokens
 //         {
-//             checkReserveToken(
+//             checkDebtTokenDetails(
 //                 daiToken, 
 //                 0, 
 //                 5e18 / 100, // back to the base interest rate
 //                 daiAccumulator, 
 //                 block.timestamp
 //             );
-//             checkReserveToken(
+//             checkDebtTokenDetails(
 //                 oudToken, 
 //                 0, 
 //                 oudInterestRate, 
@@ -985,12 +985,12 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 //             );
 //         }
 
-//         // Check the user position
+//         // Check the account position
 //         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-//         checkUserPosition(
+//         checkAccountPosition(
 //             alice, 
 //             0, 0,
-//             UserPosition({
+//             AccountPosition({
 //                 collateralPosted: collateralAmount,
 //                 daiDebt: 0,
 //                 daiMaxBorrow: maxBorrowInfo.daiMaxBorrow,
@@ -1015,7 +1015,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 //         uint256 age = 365 days;
 //         vm.warp(block.timestamp + age); // 1 year continuously compunding
 
-//         UserPosition memory position = tlc.userPosition(alice);
+//         AccountPosition memory position = tlc.accountPosition(alice);
 
 //         // RepayAll
 //         {
@@ -1041,14 +1041,14 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
 //         // Check the Reserve Tokens
 //         {
-//             checkReserveToken(
+//             checkDebtTokenDetails(
 //                 daiToken, 
 //                 0, 
 //                 5e18 / 100, // back to the base interest rate
 //                 daiAccumulator, 
 //                 block.timestamp
 //             );
-//             checkReserveToken(
+//             checkDebtTokenDetails(
 //                 oudToken, 
 //                 0, 
 //                 oudInterestRate, 
@@ -1057,12 +1057,12 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 //             );
 //         }
 
-//         // Check the user position
+//         // Check the account position
 //         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-//         checkUserPosition(
+//         checkAccountPosition(
 //             alice, 
 //             0, 0,
-//             UserPosition({
+//             AccountPosition({
 //                 collateralPosted: collateralAmount,
 //                 daiDebt: 0,
 //                 daiMaxBorrow: maxBorrowInfo.daiMaxBorrow,

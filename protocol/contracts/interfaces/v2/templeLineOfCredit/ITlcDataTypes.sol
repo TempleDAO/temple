@@ -11,30 +11,10 @@ interface ITlcDataTypes {
         OUD
     }
 
-    enum TokenPriceType {
-        /// @notice equal to 1 USD
-        STABLE,
+    struct DebtTokenConfig {
+        TokenType tokenType;
 
-        /// @notice Use the Treasury Price Index (TPI) from the Treasury Reserves Vault
-        TPI
-    }
-
-    enum InterestRateModelType {
-        /// @notice Use a single flat price
-        FLAT,
-
-        /// @notice Interest rate based off a 
-        TRV_UTILIZATION_RATE
-    }
-
-    struct ReserveTokenConfig {
         address tokenAddress;
-
-        /// @notice The type of how to lookup the price of the token
-        TokenPriceType tokenPriceType;
-
-        /// @notice The type of interest rate model used for this token
-        InterestRateModelType interestRateModelType;
 
         /// @notice The interest rate model contract
         IInterestRateModel interestRateModel;
@@ -45,7 +25,7 @@ interface ITlcDataTypes {
         uint32 borrowCooldownSecs;
     }
 
-    struct ReserveTokenTotals {
+    struct DebtTokenData {
         // Packed slot: 32 + 128 + 96 = 256
 
         /// @notice The last time the debt was updated for this token
@@ -60,9 +40,9 @@ interface ITlcDataTypes {
         uint256 interestAccumulator;
     }
 
-    struct ReserveToken {
-        ReserveTokenConfig config;
-        ReserveTokenTotals totals;
+    struct DebtTokenDetails {
+        DebtTokenConfig config;
+        DebtTokenData data;
     }
 
     struct WithdrawFundsRequest {
@@ -70,16 +50,16 @@ interface ITlcDataTypes {
         uint32 requestedAt;
     }
 
-    struct UserTokenDebt {
-        uint128 debt;
+    struct AccountDebtData {
+        uint128 debtCheckpoint;
         WithdrawFundsRequest borrowRequest;
         uint128 interestAccumulator;
     }
 
-    struct UserData {
+    struct AccountData {
         uint256 collateralPosted;
         WithdrawFundsRequest removeCollateralRequest;
-        UserTokenDebt[2] debtData;
+        AccountDebtData[2] debtData;
     }
 
     struct LiquidityStatus {
@@ -87,19 +67,19 @@ interface ITlcDataTypes {
         bool hasExceededMaxLtv;
 
         uint256 collateral;
-        uint256[2] debt;
+        uint256[2] currentDebt;
     }
     
-    struct UserDebtPosition {
-        uint256 debt;
+    struct AccountDebtPosition {
+        uint256 currentDebt;
         uint256 maxBorrow;
         uint256 healthFactor;
         uint256 loanToValueRatio;
     }
 
-    struct UserPosition {
+    struct AccountPosition {
         uint256 collateralPosted;
-        UserDebtPosition[2] debtPositions;
+        AccountDebtPosition[2] debtPositions;
     }
 
     struct TotalPosition {
@@ -109,7 +89,7 @@ interface ITlcDataTypes {
         // @notice The DAI borrow interest rate as of the last checkpoint
         int256 borrowRate;
 
-        // @notice The DAI total debt across all users as of this block
+        // @notice The DAI total debt across all accounts as of this block
         uint256 totalDebt;
     }
 }

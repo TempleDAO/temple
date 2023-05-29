@@ -11,12 +11,12 @@ abstract contract TlcStorage is ITlcStorage {
     ITlcStrategy public override tlcStrategy;
 
     /**
-     * @notice Collateral Token supplied by users
+     * @notice Collateral Token supplied by accounts
      */
     IERC20 public immutable override templeToken;
 
     /**
-     * @notice Collateral Token supplied by users
+     * @notice Collateral Token supplied by accounts
      */
     ITreasuryReservesVault public override treasuryReservesVault;
 
@@ -31,14 +31,14 @@ abstract contract TlcStorage is ITlcStorage {
     uint256 public override constant LTV_PRECISION = 1e18;
 
     /**
-     * @notice User collateral and current token debt information
+     * @notice Account collateral and current token debt information
      */
-    mapping(address => UserData) internal allUserData;
+    mapping(address => AccountData) internal allAccountsData;
 
     /**
      * @notice Configuration and current data for borrowed tokens
      */
-    mapping(TokenType => ReserveToken) public override reserveTokens;
+    mapping(TokenType => DebtTokenDetails) public override debtTokenDetails;
 
     constructor(address _templeToken)
     {
