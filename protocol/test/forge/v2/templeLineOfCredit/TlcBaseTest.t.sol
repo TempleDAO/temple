@@ -7,10 +7,11 @@ import { TempleTest } from "../../TempleTest.sol";
 import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
 import { ITlcEventsAndErrors } from "contracts/interfaces/v2/templeLineOfCredit/ITlcEventsAndErrors.sol";
 import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol";
-import { TlcPositionHelper, ITlcPositionHelper } from "contracts/v2/templeLineOfCredit/TlcPositionHelper.sol";
+// import { TlcPositionHelper, ITlcPositionHelper } from "contracts/v2/templeLineOfCredit/TlcPositionHelper.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
 import { TempleLineOfCredit, ITempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineOfCredit.sol";
+import { TlcStrategy } from "contracts/v2/templeLineOfCredit/TlcStrategy.sol";
 import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { LinearWithKinkInterestRateModel } from "contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol";
@@ -18,7 +19,8 @@ import { FlatInterestRateModel } from "contracts/v2/interestRate/FlatInterestRat
 
 contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     TempleLineOfCredit public tlc;
-    TlcPositionHelper public positionHelper;
+    TlcStrategy public tlcStrategy;
+    // TlcPositionHelper public positionHelper;
 
     FakeERC20 templeToken;
     using SafeCast for uint256;
@@ -42,15 +44,15 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     uint256 public constant trvStartingBalance = 1_000_000e18;
     uint256 public constant borrowCeiling = 100_000e18;
 
+    uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
     uint256 public constant PRICE_PRECISION = 1e18;
     uint256 public constant LTV_PRECISION = 1e18;
-    uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
-
+    
     uint32 public constant BORROW_DAI_COOLDOWN_SECS = 30;
     uint32 public constant BORROW_OUD_COOLDOWN_SECS = 60;
     uint32 public constant WITHDRAW_COLLATERAL_COOLDOWN_SECS = 60;
 
-    event InterestRateUpdate(address indexed token, int96 newInterestRate);
+    // event InterestRateUpdate(address indexed token, int96 newInterestRate);
 
     function setUp() public {
         // Default starts at 0 which can hide some issues
@@ -80,22 +82,30 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         tlc = new TempleLineOfCredit(
             rescuer, 
             executor, 
-            "TempleLineOfCredit",
-            address(trv),
             address(templeToken),
             defaultDaiConfig(),
             defaultOudConfig()
         );
 
-        positionHelper = new TlcPositionHelper(address(tlc));
+        tlcStrategy = new TlcStrategy(
+            rescuer, 
+            executor, 
+            "TempleLineOfCredit",
+            address(trv), 
+            address(tlc), 
+            address(templeToken)
+        );
+
+        // positionHelper = new TlcPositionHelper(address(tlc));
 
         vm.startPrank(executor);
         // tlc.setBorrowCooldownSecs(TokenType.DAI, BORROW_DAI_COOLDOWN_SECS);
         // tlc.setBorrowCooldownSecs(TokenType.OUD, BORROW_OUD_COOLDOWN_SECS);
+        tlc.setTlcStrategy(address(tlcStrategy));
         tlc.setWithdrawCollateralCooldownSecs(WITHDRAW_COLLATERAL_COOLDOWN_SECS);
 
         dUSD.addMinter(address(trv));
-        trv.addNewStrategy(address(tlc), borrowCeiling, 0);
+        trv.addNewStrategy(address(tlcStrategy), borrowCeiling, 0);
         vm.stopPrank();
         deal(address(daiToken), address(trv), trvStartingBalance, true);
     }
@@ -186,13 +196,13 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         address user, 
         uint256 expectedDaiBalance,
         uint256 expectedOudBalance,
-        ITlcPositionHelper.UserPosition memory expectedUserPosition,
+        UserPosition memory expectedUserPosition,
         uint256 expectedDaiDebtCheckpoint,
         uint256 expectedDaiAccumulatorCheckpoint,
         uint256 expectedOudDebtCheckpoint,
         uint256 expectedOudAccumulatorCheckpoint
     ) internal {
-        ITlcPositionHelper.UserPosition memory actualUserPosition = positionHelper.userPosition(user);
+        UserPosition memory actualUserPosition = tlc.userPosition(user);
         UserData memory actualUserData = tlc.getUserData(user);
         // (
         //     uint256 collateralPosted, 
@@ -249,8 +259,8 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         assertEq(actualUserData.debtData[1].interestAccumulator, expectedOudInterestAccumulator, "OUD interestAccumulator");
     }
 
-    function checkTotalPosition(ITlcPositionHelper.TotalPosition[] memory expectedPositions) internal returns (uint256, uint256) {
-        ITlcPositionHelper.TotalPosition[2] memory actualPositions = positionHelper.totalPosition();
+    function checkTotalPosition(TotalPosition[] memory expectedPositions) internal returns (uint256, uint256) {
+        TotalPosition[2] memory actualPositions = tlc.totalPosition();
         assertApproxEqRel(actualPositions[0].utilizationRatio, expectedPositions[0].utilizationRatio, 1e10, "daiUtilizationRatio");
         assertApproxEqRel(actualPositions[0].borrowRate, expectedPositions[0].borrowRate, 1e10, "daiBorrowRate"); 
         assertApproxEqRel(actualPositions[0].totalDebt, expectedPositions[0].totalDebt, 1e10, "daiTotalDebt");
@@ -346,15 +356,15 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         uint256 daiDebt,
         uint256 oudDebt,
         MaxBorrowInfo memory maxBorrowInfo
-    ) internal view returns (ITlcPositionHelper.UserDebtPosition[2] memory) {
+    ) internal view returns (UserDebtPosition[2] memory) {
         return [
-            ITlcPositionHelper.UserDebtPosition({
+            UserDebtPosition({
                 debt: daiDebt, 
                 maxBorrow: maxBorrowInfo.daiMaxBorrow, 
                 healthFactor: calcHealthFactor(maxBorrowInfo.daiCollateralValue, daiDebt, daiMaxLtvRatio), 
                 loanToValueRatio: calcLtv(maxBorrowInfo.daiCollateralValue, daiDebt)
             }),
-            ITlcPositionHelper.UserDebtPosition({
+            UserDebtPosition({
                 debt: oudDebt, 
                 maxBorrow: maxBorrowInfo.oudMaxBorrow, 
                 healthFactor: calcHealthFactor(maxBorrowInfo.oudCollateralValue, oudDebt, oudMaxLtvRatio),

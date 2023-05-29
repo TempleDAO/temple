@@ -9,7 +9,7 @@ import { ITempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineO
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { LinearWithKinkInterestRateModel } from "contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
-import { ITlcPositionHelper } from "contracts/interfaces/v2/templeLineOfCredit/ITlcPositionHelper.sol";
+// import { ITlcPositionHelper } from "contracts/interfaces/v2/templeLineOfCredit/ITlcPositionHelper.sol";
 import { ITlcEventsAndErrors } from "contracts/interfaces/v2/templeLineOfCredit/ITlcEventsAndErrors.sol";
 
 import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
@@ -45,13 +45,13 @@ import "forge-std/console.sol";
 
 contract TempleLineOfCreditTestAdmin is TlcBaseTest {
     function test_Initalization() public {
-        assertEq(tlc.VERSION(), "1.0.0");
+        // assertEq(tlc.VERSION(), "1.0.0");
         assertEq(address(tlc.templeToken()), address(templeToken));
 
         // Check the enums line up
         {
             assertEq(tlc.NUM_TOKEN_TYPES(), uint256(type(TokenType).max) + 1);
-            assertEq(positionHelper.NUM_TOKEN_TYPES(), tlc.NUM_TOKEN_TYPES());
+            // assertEq(positionHelper.NUM_TOKEN_TYPES(), tlc.NUM_TOKEN_TYPES());
             // assertEq(uint256(TokenType.DAI), uint256(FundsRequestType.BORROW_DAI));
             // assertEq(uint256(TokenType.OUD), uint256(FundsRequestType.BORROW_OUD));
         }
@@ -64,10 +64,10 @@ contract TempleLineOfCreditTestAdmin is TlcBaseTest {
         assertEq(tlc.withdrawCollateralCooldownSecs(), WITHDRAW_COLLATERAL_COOLDOWN_SECS);
     }
 
-    function test_automatedShutdown() public {
-        vm.expectRevert(abi.encodeWithSelector(ITempleStrategy.Unimplemented.selector));
-        tlc.automatedShutdown();
-    }
+    // function test_automatedShutdown() public {
+    //     vm.expectRevert(abi.encodeWithSelector(ITempleStrategy.Unimplemented.selector));
+    //     tlc.automatedShutdown();
+    // }
 
     function test_setInterestRateModel_NoDebt() public {
         // After a rate refresh, the 'next' period of interest is set.
@@ -245,11 +245,11 @@ contract TempleLineOfCreditTestCollateral is TlcBaseTest {
         checkUserPosition(
             alice, 
             0, 0,
-            ITlcPositionHelper.UserPosition({
+            UserPosition({
                 collateralPosted: collateralAmount,
                 debtPositions: [
-                    ITlcPositionHelper.UserDebtPosition(0, maxBorrowInfo.daiMaxBorrow, type(uint256).max, 0),
-                    ITlcPositionHelper.UserDebtPosition(0, maxBorrowInfo.oudMaxBorrow, type(uint256).max, 0)
+                    UserDebtPosition(0, maxBorrowInfo.daiMaxBorrow, type(uint256).max, 0),
+                    UserDebtPosition(0, maxBorrowInfo.oudMaxBorrow, type(uint256).max, 0)
                 ]
             }),
             0, 0,
@@ -367,12 +367,6 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
     }
 
     function test_borrowDaiOnly_success() external {
-        (bool success, bytes memory result) = address(daiInterestRateModel).delegatecall(
-            abi.encodeWithSelector(IInterestRateModel.calculateInterestRate.selector, 0)
-        );
-        assertEq(success, false);
-
-
         // For DAI, borrowing 90k / 100k available, so it's right at the kink - 10% interest rate
         uint256 borrowAmount = 90_000e18;
 
@@ -408,18 +402,18 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         checkReserveToken(TokenType.DAI, borrowAmount, 0.1e18, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
         checkReserveToken(TokenType.OUD, 0, 0, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
 
-        // Check the DAI amount was borrowed fom the TRV and recorded correctly
-        {
-            (uint256 debt, uint256 available, uint256 ceiling) = tlc.trvBorrowPosition();
-            assertEq(debt, borrowAmount);
-            assertEq(available, borrowCeiling-borrowAmount);  
-            assertEq(ceiling, borrowCeiling);
-        }
+        // // // Check the DAI amount was borrowed fom the TRV and recorded correctly
+        // // {
+        // //     (uint256 debt, uint256 available, uint256 ceiling) = tlc.trvBorrowPosition();
+        // //     assertEq(debt, borrowAmount);
+        // //     assertEq(available, borrowCeiling-borrowAmount);  
+        // //     assertEq(ceiling, borrowCeiling);
+        // // }
 
         checkUserPosition(
             alice, 
             borrowAmount, 0,
-            ITlcPositionHelper.UserPosition({
+            UserPosition({
                 collateralPosted: collateralAmount,
                 debtPositions: getDebtPositions(borrowAmount, 0, maxBorrowInfo)
             }),
@@ -427,21 +421,34 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             0, 0
         );
 
+        // vm.stopPrank();
         // addCollateral(alice, 10 ether);
         // vm.startPrank(alice);
-        // tlc.borrow(1 ether, 0, alice);
+        // tlc.requestBorrow(TokenType.DAI, 1 ether);
+        // vm.warp(block.timestamp+BORROW_DAI_COOLDOWN_SECS);
+        // tlc.borrow(TokenType.DAI, alice);
         // vm.stopPrank();
 
         // addCollateral(unauthorizedUser, 10 ether);
         // vm.startPrank(unauthorizedUser);
-        // tlc.borrow(1 ether, 0, unauthorizedUser);
+        // tlc.requestBorrow(TokenType.DAI, 1 ether);
+        // vm.warp(block.timestamp+BORROW_DAI_COOLDOWN_SECS);
+        // tlc.borrow(TokenType.DAI, unauthorizedUser);
         // vm.stopPrank();
 
         // addCollateral(rescuer, 10 ether);
         // vm.startPrank(rescuer);
-        // console.log(gasleft());
-        // tlc.borrow(1 ether, 0, rescuer);
-        // console.log(gasleft());
+        // tlc.requestBorrow(TokenType.DAI, 1 ether);
+        // vm.warp(block.timestamp+BORROW_DAI_COOLDOWN_SECS);
+        // uint256 gas = gasleft();
+        // tlc.borrow(TokenType.DAI, rescuer);
+        // console.log(gas-gasleft());
+
+        // tlc.requestBorrow(TokenType.DAI, 1 ether);
+        // vm.warp(block.timestamp+BORROW_DAI_COOLDOWN_SECS);
+        // gas = gasleft();
+        // tlc.borrow(TokenType.DAI, rescuer);
+        // console.log(gas-gasleft());
         // vm.stopPrank();
     }
 
@@ -480,18 +487,18 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         checkReserveToken(TokenType.DAI, 0, 0, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
         checkReserveToken(TokenType.OUD, borrowAmount, oudInterestRate, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
 
-        // Nothing changes in the TRV from borrowing OUD
-        {
-            (uint256 debt, uint256 available, uint256 ceiling) = tlc.trvBorrowPosition();
-            assertEq(debt, 0);
-            assertEq(available, borrowCeiling);  
-            assertEq(ceiling, borrowCeiling);
-        }
+        // // Nothing changes in the TRV from borrowing OUD
+        // {
+        //     (uint256 debt, uint256 available, uint256 ceiling) = tlc.trvBorrowPosition();
+        //     assertEq(debt, 0);
+        //     assertEq(available, borrowCeiling);  
+        //     assertEq(ceiling, borrowCeiling);
+        // }
 
         checkUserPosition(
             alice, 
             0, borrowAmount,
-            ITlcPositionHelper.UserPosition({
+            UserPosition({
                 collateralPosted: collateralAmount,
                 debtPositions: getDebtPositions(0, borrowAmount, maxBorrowInfo)
             }),
@@ -567,7 +574,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             checkUserPosition(
                 alice, 
                 borrowDaiAmount/2, borrowOudAmount/2,
-                ITlcPositionHelper.UserPosition({
+                UserPosition({
                     collateralPosted: collateralAmount,
                     debtPositions: getDebtPositions(borrowDaiAmount/2, borrowOudAmount/2, maxBorrowInfo)
                 }),
@@ -581,7 +588,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         // {
         //     // ## TEST
         //         console.log("approxInterest:", approxInterest(borrowDaiAmount / 2, expectedDaiInterestRate, BORROW_OUD_COOLDOWN_SECS));
-        //         ITlcPositionHelper.UserPosition memory actualUserPosition = positionHelper.userPosition(alice);
+        //         UserPosition memory actualUserPosition = positionHelper.userPosition(alice);
         //         console.log(actualUserPosition.debtPositions[0].debt);
         //     // ## TEST
 
@@ -617,7 +624,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         //     checkUserPosition(
         //         alice, 
         //         borrowDaiAmount, borrowOudAmount,
-        //         ITlcPositionHelper.UserPosition({
+        //         UserPosition({
         //             collateralPosted: collateralAmount,
         //             debtPositions: getDebtPositions(borrowDaiAmount/2, borrowOudAmount/2, maxBorrowInfo)
         //         }),

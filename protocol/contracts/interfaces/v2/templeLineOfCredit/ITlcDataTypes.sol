@@ -6,6 +6,39 @@ import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IIntere
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ITlcDataTypes {
+    struct UserDebtPosition {
+        uint256 debt;
+        uint256 maxBorrow;
+        uint256 healthFactor;
+        uint256 loanToValueRatio;
+    }
+
+    struct UserPosition {
+        uint256 collateralPosted;
+        UserDebtPosition[2] debtPositions;
+    }
+
+    struct TotalPosition {
+        /// @notice The DAI utilization rate as of the last checkpoint
+        uint256 utilizationRatio;
+
+        // @notice The DAI borrow interest rate as of the last checkpoint
+        int256 borrowRate;
+
+        // @notice The DAI total debt across all users as of this block
+        uint256 totalDebt;
+    }
+
+
+
+
+
+    
+    enum ModuleKind {
+        LIQUIDATION,
+        POSITION
+    }
+
     enum TokenType {
         DAI,
         OUD
@@ -101,7 +134,7 @@ interface ITlcDataTypes {
         ReserveTokenConfig config;
 
         /// @notice The last time the debt was updated for this token
-        uint32 interestAccumulatorUpdatedAt;
+        // uint32 interestAccumulatorUpdatedAt;
 
         /// @notice Total amount that has already been borrowed, which increases as interest accrues
         uint128 totalDebt;
@@ -112,5 +145,9 @@ interface ITlcDataTypes {
         uint128 interestAccumulator;
 
         uint256 price;
+        
+        /// @notice The max allowed to be borrowed from the TRV
+        /// @dev Used as the denominator in the Utilisation Ratio
+        uint256 trvDebtCeiling;
     }
 }

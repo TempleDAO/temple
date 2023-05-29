@@ -11,6 +11,10 @@ interface ITlcEventsAndErrors {
     error ExceededBorrowedAmount(address token, uint256 totalDebtAmount, uint256 repayAmount);
     error CooldownPeriodNotMet(uint32 requestedAt, uint32 cooldownSecs);
 
+    event TlcStrategySet(address indexed strategy);
+    event WithdrawCollateralCooldownSecsSet(uint256 cooldownSecs);
+    event BorrowCooldownSecsSet(ITlcDataTypes.TokenType tokenType, uint256 cooldownSecs);
+
     event CollateralAdded(address indexed fundedBy, address indexed onBehalfOf, uint256 collateralAmount);
     event CollateralRemoved(address indexed account, address indexed recipient, uint256 collateralAmount);
 
@@ -23,11 +27,8 @@ interface ITlcEventsAndErrors {
 
     event Repay(address indexed fundedBy, address indexed onBehalfOf, ITlcDataTypes.TokenType tokenType, uint256 repayAmount);
 
-
-    event WithdrawCollateralCooldownSecsSet(uint256 cooldownSecs);
-    event BorrowCooldownSecsSet(ITlcDataTypes.TokenType tokenType, uint256 cooldownSecs);
-
-
     event Liquidated(address indexed account, address indexed unhealthyDebtToken, uint256 healthFactor, uint256 debtAmount, uint256 collateralSeized);
+
+    event InterestRateUpdate(address indexed token, int96 newInterestRate);
 
 }
