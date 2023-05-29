@@ -203,13 +203,9 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         uint256 expectedOudAccumulatorCheckpoint
     ) internal {
         UserPosition memory actualUserPosition = tlc.userPosition(user);
+        
+        // @todo add checks for removeCollateralRequest?
         UserData memory actualUserData = tlc.getUserData(user);
-        // (
-        //     uint256 collateralPosted, 
-        //     ITempleLineOfCredit.UserTokenDebt[2] memory actualUserTokenDebts
-        //     // ITempleLineOfCredit.UserTokenDebt memory actualDaiUserTokenDebt,
-        //     // ITempleLineOfCredit.UserTokenDebt memory actualOudUserTokenDebt
-        // ) = tlc.getUserData(user);
 
         assertEq(actualUserPosition.collateralPosted, expectedUserPosition.collateralPosted, "collateral");
         assertEq(actualUserData.collateralPosted, actualUserPosition.collateralPosted, "collateral 2");
@@ -243,14 +239,11 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         uint256 expectedOudDebt,
         uint256 expectedOudInterestAccumulator
     ) internal {
+        // @todo is this a dup/similar to above?
+
         UserData memory actualUserData = tlc.getUserData(account);
 
-        // (
-        //     uint256 collateralPosted, 
-        //     ITempleLineOfCredit.UserTokenDebt[2] memory actualUserTokenDebts
-        //     // ITempleLineOfCredit.UserTokenDebt memory daiDebt,
-        //     // ITempleLineOfCredit.UserTokenDebt memory oudDebt
-        // ) = tlc.getUserData(account);
+        // @todo add check for removeCollateralRequest
 
         assertEq(actualUserData.collateralPosted, expectedCollateral, "collateral");
         assertEq(actualUserData.debtData[0].debt, expectedDaiDebt, "DAI debt");

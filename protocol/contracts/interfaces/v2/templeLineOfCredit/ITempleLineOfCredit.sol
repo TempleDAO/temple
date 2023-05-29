@@ -2,10 +2,10 @@ pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol)
 
-import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol";
+import { ITlcStorage } from "contracts/interfaces/v2/templeLineOfCredit/ITlcStorage.sol";
 import { ITlcEventsAndErrors } from "contracts/interfaces/v2/templeLineOfCredit/ITlcEventsAndErrors.sol";
 
-interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
+interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
     /** Add Collateral */
     function addCollateral(uint256 collateralAmount, address onBehalfOf) external;
 
@@ -26,10 +26,13 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
     /** Position views */
     function userPosition(address account) external view returns (UserPosition memory position);
     function totalPosition() external view returns (TotalPosition[2] memory positions);
-    function getUserData(address account) external view returns (UserData memory);
-    function getReserveToken(TokenType tokenType) external view returns (ReserveToken memory);
-    function getReserveCache(TokenType tokenType) external view returns (ReserveCache memory);
 
+    /** Liquidations */
+    function computeLiquidity(
+        address[] memory accounts,
+        bool includePendingRequests
+    ) external view returns (LiquidityStatus[] memory status);
+    function batchLiquidate(address[] memory accounts) external;
     /** Liquidations */
     function computeLiquidity(
         address[] memory accounts,
@@ -39,7 +42,16 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
 
     // Manually checkpoint debt to adjust interest rate based on latest utillization ratio
     function refreshInterestRates(TokenType tokenType) external;
+    // Manually checkpoint debt to adjust interest rate based on latest utillization ratio
+    function refreshInterestRates(TokenType tokenType) external;
 
+    /** EXECUTORS/RESCUERS ONLY */
+    function setTlcStrategy(address _tlcStrategy) external;
+    function setWithdrawCollateralCooldownSecs(uint256 cooldownSecs) external;
+    function setBorrowCooldownSecs(TokenType tokenType, uint256 cooldownSecs) external;
+    function setInterestRateModel(TokenType tokenType, address interestRateModel) external;
+    function setMaxLtvRatio(TokenType tokenType, uint256 maxLtvRatio) external;
+    function recoverToken(address token, address to, uint256 amount) external;
     /** EXECUTORS/RESCUERS ONLY */
     function setTlcStrategy(address _tlcStrategy) external;
     function setWithdrawCollateralCooldownSecs(uint256 cooldownSecs) external;
