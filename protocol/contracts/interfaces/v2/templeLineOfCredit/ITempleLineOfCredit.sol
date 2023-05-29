@@ -2,10 +2,10 @@ pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol)
 
-import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol";
+import { ITlcStorage } from "contracts/interfaces/v2/templeLineOfCredit/ITlcStorage.sol";
 import { ITlcEventsAndErrors } from "contracts/interfaces/v2/templeLineOfCredit/ITlcEventsAndErrors.sol";
 
-interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
+interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
     /** Add Collateral */
     function addCollateral(uint256 collateralAmount, address onBehalfOf) external;
 
@@ -26,9 +26,6 @@ interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
     /** Position views */
     function userPosition(address account) external view returns (UserPosition memory position);
     function totalPosition() external view returns (TotalPosition[2] memory positions);
-    function getUserData(address account) external view returns (UserData memory);
-    function getReserveToken(TokenType tokenType) external view returns (ReserveToken memory);
-    function getReserveCache(TokenType tokenType) external view returns (ReserveCache memory);
 
     /** Liquidations */
     function computeLiquidity(

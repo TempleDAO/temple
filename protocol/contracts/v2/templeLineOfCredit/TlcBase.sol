@@ -23,6 +23,28 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
     using SafeCast for uint256;
     using CompoundedInterest for uint256;
 
+    // @todo check if all of these are actually used
+    struct ReserveCache {
+        ReserveTokenConfig config;
+
+        /// @notice The last time the debt was updated for this token
+        // uint32 interestAccumulatorUpdatedAt;
+
+        /// @notice Total amount that has already been borrowed, which increases as interest accrues
+        uint128 totalDebt;
+
+        /// @notice The interest rate as of the last borrow/repay/
+        int96 interestRate;
+
+        uint128 interestAccumulator;
+
+        uint256 price;
+        
+        /// @notice The max allowed to be borrowed from the TRV
+        /// @dev Used as the denominator in the Utilisation Ratio
+        uint256 trvDebtCeiling;
+    }
+    
     constructor(address _templeToken) 
         TlcStorage(_templeToken)
     {}

@@ -348,10 +348,6 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         return allUserData[account];
     }
 
-    function getReserveToken(TokenType tokenType) external view returns (ReserveToken memory) {
-        return reserveTokens[tokenType];
-    }
-
     function getReserveCache(TokenType tokenType) external view returns (ReserveCache memory) {
         return cacheRO(reserveTokens[tokenType]);
     }

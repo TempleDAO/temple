@@ -6,53 +6,9 @@ import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IIntere
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ITlcDataTypes {
-    struct UserDebtPosition {
-        uint256 debt;
-        uint256 maxBorrow;
-        uint256 healthFactor;
-        uint256 loanToValueRatio;
-    }
-
-    struct UserPosition {
-        uint256 collateralPosted;
-        UserDebtPosition[2] debtPositions;
-    }
-
-    struct TotalPosition {
-        /// @notice The DAI utilization rate as of the last checkpoint
-        uint256 utilizationRatio;
-
-        // @notice The DAI borrow interest rate as of the last checkpoint
-        int256 borrowRate;
-
-        // @notice The DAI total debt across all users as of this block
-        uint256 totalDebt;
-    }
-
-
-
-
-
-    
-    enum ModuleKind {
-        LIQUIDATION,
-        POSITION
-    }
-
     enum TokenType {
         DAI,
         OUD
-    }
-
-    // enum FundsRequestType {
-    //     BORROW_DAI,
-    //     BORROW_OUD,
-    //     WITHDRAW_COLLATERAL
-    // }
-
-    struct WithdrawFundsRequest {
-        uint128 amount;
-        uint32 requestedAt;
     }
 
     enum TokenPriceType {
@@ -109,6 +65,11 @@ interface ITlcDataTypes {
         ReserveTokenTotals totals;
     }
 
+    struct WithdrawFundsRequest {
+        uint128 amount;
+        uint32 requestedAt;
+    }
+
     struct UserTokenDebt {
         uint128 debt;
         WithdrawFundsRequest borrowRequest;
@@ -128,26 +89,27 @@ interface ITlcDataTypes {
         uint256 collateral;
         uint256[2] debt;
     }
+    
+    struct UserDebtPosition {
+        uint256 debt;
+        uint256 maxBorrow;
+        uint256 healthFactor;
+        uint256 loanToValueRatio;
+    }
 
-    // @todo check if all of these are actually used
-    struct ReserveCache {
-        ReserveTokenConfig config;
+    struct UserPosition {
+        uint256 collateralPosted;
+        UserDebtPosition[2] debtPositions;
+    }
 
-        /// @notice The last time the debt was updated for this token
-        // uint32 interestAccumulatorUpdatedAt;
+    struct TotalPosition {
+        /// @notice The DAI utilization rate as of the last checkpoint
+        uint256 utilizationRatio;
 
-        /// @notice Total amount that has already been borrowed, which increases as interest accrues
-        uint128 totalDebt;
+        // @notice The DAI borrow interest rate as of the last checkpoint
+        int256 borrowRate;
 
-        /// @notice The interest rate as of the last borrow/repay/
-        int96 interestRate;
-
-        uint128 interestAccumulator;
-
-        uint256 price;
-        
-        /// @notice The max allowed to be borrowed from the TRV
-        /// @dev Used as the denominator in the Utilisation Ratio
-        uint256 trvDebtCeiling;
+        // @notice The DAI total debt across all users as of this block
+        uint256 totalDebt;
     }
 }
