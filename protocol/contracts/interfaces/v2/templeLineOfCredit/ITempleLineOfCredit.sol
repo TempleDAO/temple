@@ -33,25 +33,10 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
         bool includePendingRequests
     ) external view returns (LiquidityStatus[] memory status);
     function batchLiquidate(address[] memory accounts) external;
-    /** Liquidations */
-    function computeLiquidity(
-        address[] memory accounts,
-        bool includePendingRequests
-    ) external view returns (LiquidityStatus[] memory status);
-    function batchLiquidate(address[] memory accounts) external;
 
     // Manually checkpoint debt to adjust interest rate based on latest utillization ratio
     function refreshInterestRates(TokenType tokenType) external;
-    // Manually checkpoint debt to adjust interest rate based on latest utillization ratio
-    function refreshInterestRates(TokenType tokenType) external;
 
-    /** EXECUTORS/RESCUERS ONLY */
-    function setTlcStrategy(address _tlcStrategy) external;
-    function setWithdrawCollateralCooldownSecs(uint256 cooldownSecs) external;
-    function setBorrowCooldownSecs(TokenType tokenType, uint256 cooldownSecs) external;
-    function setInterestRateModel(TokenType tokenType, address interestRateModel) external;
-    function setMaxLtvRatio(TokenType tokenType, uint256 maxLtvRatio) external;
-    function recoverToken(address token, address to, uint256 amount) external;
     /** EXECUTORS/RESCUERS ONLY */
     function setTlcStrategy(address _tlcStrategy) external;
     function setWithdrawCollateralCooldownSecs(uint256 cooldownSecs) external;
