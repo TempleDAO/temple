@@ -3,14 +3,48 @@ pragma solidity ^0.8.17;
 // Temple (interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol)
 
 import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol";
+import { ITlcEventsAndErrors } from "contracts/interfaces/v2/templeLineOfCredit/ITlcEventsAndErrors.sol";
 
-interface ITempleLineOfCredit is ITlcDataTypes {
-    error InsufficentCollateral(uint256 maxCapacity, uint256 borrowAmount);
-    error ExceededBorrowedAmount(uint256 totalDebtAmount, uint256 repayAmount);
+interface ITempleLineOfCredit is ITlcDataTypes, ITlcEventsAndErrors {
+    /** Add Collateral */
+    function addCollateral(uint256 collateralAmount, address onBehalfOf) external;
 
-    event PostCollateral(address indexed fundedBy, address indexed onBehalfOf, uint256 collateralAmount);
-    event Borrow(address indexed account, address indexed recipient, address indexed token, uint256 amount);
-    event Repay(address indexed fundedBy, address indexed onBehalfOf, address indexed token, uint256 repayAmount);
+    /** Remove Collateral (requires a request with cooldown first) */
+    function requestRemoveCollateral(uint256 amount) external;
+    function cancelRemoveCollateralRequest(address account) external;
+    function removeCollateral(address recipient) external;
 
-    // @todo add all functions, then add override in TempleLineOfCredit
+    /** Borrow (requires a request with cooldown first) */
+    function requestBorrow(TokenType tokenType, uint256 amount) external;
+    function cancelBorrowRequest(address account, TokenType tokenType) external;
+    function borrow(TokenType tokenType, address recipient) external;
+
+    /** Repay */
+    function repay(TokenType tokenType, uint256 repayAmount, address onBehalfOf) external;
+    function repayAll(TokenType tokenType, address onBehalfOf) external;
+
+    /** Position views */
+    function userPosition(address account) external view returns (UserPosition memory position);
+    function totalPosition() external view returns (TotalPosition[2] memory positions);
+    function getUserData(address account) external view returns (UserData memory);
+    function getReserveToken(TokenType tokenType) external view returns (ReserveToken memory);
+    function getReserveCache(TokenType tokenType) external view returns (ReserveCache memory);
+
+    /** Liquidations */
+    function computeLiquidity(
+        address[] memory accounts,
+        bool includePendingRequests
+    ) external view returns (LiquidityStatus[] memory status);
+    function batchLiquidate(address[] memory accounts) external;
+
+    // Manually checkpoint debt to adjust interest rate based on latest utillization ratio
+    function refreshInterestRates(TokenType tokenType) external;
+
+    /** EXECUTORS/RESCUERS ONLY */
+    function setTlcStrategy(address _tlcStrategy) external;
+    function setWithdrawCollateralCooldownSecs(uint256 cooldownSecs) external;
+    function setBorrowCooldownSecs(TokenType tokenType, uint256 cooldownSecs) external;
+    function setInterestRateModel(TokenType tokenType, address interestRateModel) external;
+    function setMaxLtvRatio(TokenType tokenType, uint256 maxLtvRatio) external;
+    function recoverToken(address token, address to, uint256 amount) external;
 }

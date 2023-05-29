@@ -225,11 +225,12 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
             // Check the user isn't paying off more debt than they have
             uint256 _debtorBalance = _balanceOf(debtor, _totalPrincipalAndBase);
             if (_burnAmount > _debtorBalance) {
-                if (_capBurnAmount) {
+                // @todo this looks like it's always set to true? need to recheck this.
+                // if (_capBurnAmount) {
                     _burnAmount = _debtorBalance;
-                } else {
-                    revert BurnExceedsBalance(_balanceOf(debtor, _totalPrincipalAndBase), _burnAmount);
-                }
+                // } else {
+                    // revert BurnExceedsBalance(_balanceOf(debtor, _totalPrincipalAndBase), _burnAmount);
+                // }
             }
         }
 

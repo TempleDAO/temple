@@ -61,6 +61,7 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
     function computeInterestRateImpl(uint256 utilizationRatio) internal override view returns (int96) {
         RateParams memory _rateParams = rateParams;
 
+        // console.log("linear compute:", utilizationRatio);
         uint256 interestRate;
         if (utilizationRatio <= _rateParams.kinkUtilizationRatio) {
             // Slope between base% -> kink%
@@ -86,6 +87,8 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
             );
         }
 
+        // console.log("linear compute:", interestRate);
+        // console.logInt(int96(uint96(interestRate)));
         return int96(uint96(interestRate));
     }
 }

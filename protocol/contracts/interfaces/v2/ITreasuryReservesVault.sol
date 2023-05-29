@@ -6,6 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { ITempleStrategy, ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
 import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
+import { IMintableToken } from "contracts/interfaces/common/IMintableToken.sol";
 
 /**
  * @title Treasury Reserves Vault (TRV)
@@ -32,6 +33,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
 
     event Borrow(address indexed strategy, address indexed recipient, uint256 stablesAmount);
     event Repay(address indexed strategy, address indexed from, uint256 stablesAmount);
+    // event RepayTemple(address indexed strategy, address indexed from, uint256 templeBurned, uint256 debtBurned);
     event RealisedGain(address indexed strategy, uint256 amount);
     event RealisedLoss(address indexed strategy, uint256 amount);
     event TreasuryPriceIndexSet(uint256 oldTpi, uint256 newTpi);
@@ -134,6 +136,11 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
      * API version to help with future integrations/migrations
      */
     function apiVersion() external pure returns (string memory);
+
+    /**
+     * @notice The address of the Temple token.
+     */
+    function templeToken() external view returns (IMintableToken);
 
     /**
      * @notice The address of the stable token (eg DAI) used to value all strategy's assets and debt.
@@ -255,6 +262,8 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
      * This will pull the stables for the entire dUSD balance of the strategy, and burn the dUSD.
      */
     function repayAll(address strategy) external returns (uint256 amountRepaid);
+
+    function repayTemple(uint256 repayAmount, address strategy) external;
 
     /**
      * @notice The second step in a two-phase shutdown. A strategy (automated) or executor (manual) calls

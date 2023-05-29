@@ -6,6 +6,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
+import { IMintableToken } from "contracts/interfaces/common/IMintableToken.sol";
 import { ITempleStrategy, ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
@@ -44,6 +45,11 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     bool public override globalRepaysPaused;
 
     /**
+     * @notice The address of the Temple token.
+     */
+    IMintableToken public immutable override templeToken;
+
+    /**
      * @notice The address of the stable token (eg DAI) used to value all strategy's assets and debt.
      */
     IERC20 public immutable override stableToken;
@@ -76,11 +82,13 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     constructor(
         address _initialRescuer,
         address _initialExecutor,
+        address _templeToken,
         address _stableToken,
         address _internalDebtToken,
         uint256 _treasuryPriceIndex
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
+        templeToken = IMintableToken(_templeToken);
         stableToken = IERC20(_stableToken);
         internalDebtToken = ITempleDebtToken(_internalDebtToken);
         treasuryPriceIndex = _treasuryPriceIndex;
@@ -348,6 +356,30 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         stableToken.safeTransfer(to, amount);
     }
 
+    // @todo add a repay function where TRV/RAMOS can pay down some of the debt with Temple.
+    // This will burn the Temple, and burn the equivalent amount of dUSD
+    function repayTemple(uint256 repayAmount, address strategy) external override {
+        if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+        if (globalRepaysPaused) revert RepaysPaused();
+
+        Strategy storage strategyData = strategies[strategy];
+        if (!strategyData.isEnabled) revert NotEnabled();
+        if (strategyData.repaysPaused) revert RepaysPaused();
+
+        // dUSD price = Temple * TPI
+        uint256 debtToBurn = repayAmount * treasuryPriceIndex / 1e18; 
+
+        // @todo need an event like:?
+        // emit RepayTemple(strategy, msg.sender, repayAmount, debtToBurn);
+
+        emit Repay(strategy, msg.sender, debtToBurn);
+
+        templeToken.burn(msg.sender, repayAmount);
+
+        // Burn the dUSD tokens. This will fail if the repayment amount is greater than the balance.
+        uint256 burnedAmount = internalDebtToken.burn(strategy, debtToBurn, true);
+    }
+
     /**
      * @notice A strategy calls to paydown it's debt
      * This will pull the stables, and will burn the equivalent amount of dUSD from the strategy.
@@ -396,7 +428,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * All outstanding dUSD debt is burned, leaving a net gain/loss of equity for the shutdown strategy.
      */
     function shutdown(address strategyAddr, uint256 stablesRecovered) external override {
-        if (msg.sender != strategyAddr) validateElevatedAccess(msg.sender, msg.sig);
+        if (msg.sender != strategyAddr && !isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
 
         Strategy storage strategyData = strategies[strategyAddr];
         if (!strategyData.isEnabled) revert NotEnabled();
