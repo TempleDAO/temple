@@ -30,6 +30,8 @@ interface ITlcDataTypes {
     struct ReserveTokenConfig {
         address tokenAddress;
 
+        address tokenAddress;
+
         /// @notice The type of how to lookup the price of the token
         TokenPriceType tokenPriceType;
 
@@ -40,6 +42,9 @@ interface ITlcDataTypes {
         IInterestRateModel interestRateModel;
 
         /// @notice Maximum Loan To Value (LTV) ratio to prevent liquidation
+        uint128 maxLtvRatio;
+
+        uint32 borrowCooldownSecs;
         uint128 maxLtvRatio;
 
         uint32 borrowCooldownSecs;
@@ -72,6 +77,7 @@ interface ITlcDataTypes {
 
     struct UserTokenDebt {
         uint128 debt;
+        WithdrawFundsRequest borrowRequest;
         WithdrawFundsRequest borrowRequest;
         uint128 interestAccumulator;
     }
