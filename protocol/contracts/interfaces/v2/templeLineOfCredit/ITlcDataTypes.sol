@@ -21,8 +21,6 @@ interface ITlcDataTypes {
 
         /// @notice Maximum Loan To Value (LTV) ratio to prevent liquidation
         uint128 maxLtvRatio;
-
-        uint32 borrowCooldownSecs;
     }
 
     struct DebtTokenData {
@@ -43,6 +41,11 @@ interface ITlcDataTypes {
     struct DebtTokenDetails {
         DebtTokenConfig config;
         DebtTokenData data;
+    }
+
+    struct FundsRequestWindow {
+        uint32 minSecs;
+        uint32 maxSecs;
     }
 
     struct WithdrawFundsRequest {

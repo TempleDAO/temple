@@ -9,11 +9,10 @@ interface ITlcEventsAndErrors {
     error UnknownFailure();
 
     error ExceededBorrowedAmount(address token, uint256 totalDebtAmount, uint256 repayAmount);
-    error CooldownPeriodNotMet(uint32 requestedAt, uint32 cooldownSecs);
+    error NotInFundsRequestWindow(uint32 requestedAt, uint32 windowMinSecs, uint32 windowMaxSecs);
 
     event TlcStrategySet(address indexed strategy);
-    event WithdrawCollateralCooldownSecsSet(uint256 cooldownSecs);
-    event BorrowCooldownSecsSet(ITlcDataTypes.TokenType tokenType, uint256 cooldownSecs);
+    event FundsRequestWindowSet(uint256 minSecs, uint256 maxSecs);
 
     event CollateralAdded(address indexed fundedBy, address indexed onBehalfOf, uint256 collateralAmount);
     event CollateralRemoved(address indexed account, address indexed recipient, uint256 collateralAmount);

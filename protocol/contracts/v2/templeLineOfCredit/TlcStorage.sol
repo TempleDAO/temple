@@ -20,7 +20,12 @@ abstract contract TlcStorage is ITlcStorage {
      */
     ITreasuryReservesVault public override treasuryReservesVault;
 
-    uint32 public override withdrawCollateralCooldownSecs;
+    /**
+     * @notice When either a withdraw collateral or borrow request is made,
+     * the account has a window in which they can action the request.
+     * If a request expires, a new request will need to be made or the action will revert.
+     */
+    FundsRequestWindow public override fundsRequestWindow;
 
     // @todo check constants
     uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;

@@ -48,10 +48,9 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     uint256 public constant PRICE_PRECISION = 1e18;
     uint256 public constant LTV_PRECISION = 1e18;
     
-    uint32 public constant BORROW_DAI_COOLDOWN_SECS = 30;
-    uint32 public constant BORROW_OUD_COOLDOWN_SECS = 60;
-    uint32 public constant WITHDRAW_COLLATERAL_COOLDOWN_SECS = 60;
-
+    uint32 public constant FUNDS_REQUEST_MIN_SECS = 60;
+    uint32 public constant FUNDS_REQUEST_MAX_SECS = 120;
+    
     // event InterestRateUpdate(address indexed token, int96 newInterestRate);
 
     function setUp() public {
@@ -99,10 +98,8 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         // positionHelper = new TlcPositionHelper(address(tlc));
 
         vm.startPrank(executor);
-        // tlc.setBorrowCooldownSecs(TokenType.DAI, BORROW_DAI_COOLDOWN_SECS);
-        // tlc.setBorrowCooldownSecs(TokenType.OUD, BORROW_OUD_COOLDOWN_SECS);
         tlc.setTlcStrategy(address(tlcStrategy));
-        tlc.setWithdrawCollateralCooldownSecs(WITHDRAW_COLLATERAL_COOLDOWN_SECS);
+        tlc.setFundsRequestWindow(FUNDS_REQUEST_MIN_SECS, FUNDS_REQUEST_MAX_SECS);
 
         dUSD.addMinter(address(trv));
         trv.addNewStrategy(address(tlcStrategy), borrowCeiling, 0);
@@ -115,8 +112,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             tokenType: TokenType.DAI,
             tokenAddress: address(daiToken),
             interestRateModel: daiInterestRateModel,
-            maxLtvRatio: daiMaxLtvRatio,
-            borrowCooldownSecs: BORROW_DAI_COOLDOWN_SECS
+            maxLtvRatio: daiMaxLtvRatio
         });
     }
 
@@ -125,8 +121,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             tokenType: TokenType.OUD,
             tokenAddress: address(oudToken),
             interestRateModel: oudInterestRateModel,
-            maxLtvRatio: oudMaxLtvRatio.encodeUInt128(),
-            borrowCooldownSecs: BORROW_OUD_COOLDOWN_SECS
+            maxLtvRatio: oudMaxLtvRatio.encodeUInt128()
         });
     }
 
@@ -156,11 +151,8 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     ) internal {
         assertEq(actual.tokenAddress, expected.tokenAddress, "DebtTokenConfig__tokenAddress");
         assertEq(uint256(actual.tokenType), uint256(expected.tokenType), "DebtTokenConfig__tokenType");
-        // assertEq(uint256(actual.tokenPriceType), uint256(expected.tokenPriceType), "DebtTokenConfig__tokenPriceType");
-        // assertEq(uint256(actual.interestRateModelType), uint256(expected.interestRateModelType), "DebtTokenConfig__interestRateModelType");
         assertEq(address(actual.interestRateModel), address(expected.interestRateModel), "DebtTokenConfig__interestRateModel");
         assertEq(actual.maxLtvRatio, expected.maxLtvRatio, "DebtTokenConfig__maxLtvRatio");
-        assertEq(actual.borrowCooldownSecs, expected.borrowCooldownSecs, "DebtTokenConfig__borrowCooldownSecs");
     }
 
     function checkDebtTokenData(

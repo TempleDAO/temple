@@ -42,8 +42,7 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
 
     /** EXECUTORS/RESCUERS ONLY */
     function setTlcStrategy(address _tlcStrategy) external;
-    function setWithdrawCollateralCooldownSecs(uint256 cooldownSecs) external;
-    function setBorrowCooldownSecs(TokenType tokenType, uint256 cooldownSecs) external;
+    function setFundsRequestWindow(uint256 minSecs, uint256 maxSecs) external;
     function setInterestRateModel(TokenType tokenType, address interestRateModel) external;
     function setMaxLtvRatio(TokenType tokenType, uint256 maxLtvRatio) external;
     function recoverToken(address token, address to, uint256 amount) external;

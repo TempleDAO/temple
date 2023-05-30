@@ -84,10 +84,8 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         uint256 _removeAmount;
         {
             WithdrawFundsRequest storage _request = _accountData.removeCollateralRequest;
-            // @todo change the cooldown secs structure?
-            checkWithdrawalCooldown(_request.requestedAt, withdrawCollateralCooldownSecs);
+            checkWithdrawalCooldown(_request.requestedAt);
             _removeAmount = _request.amount;
-            // uint256 _removeAmount = popRequest(msg.sender, FundsRequestType.WITHDRAW_COLLATERAL);
             delete allAccountsData[msg.sender].removeCollateralRequest;
         }
 
@@ -146,7 +144,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         uint256 _borrowAmount;
         {
             WithdrawFundsRequest storage _request = _accountDebtData.borrowRequest;
-            checkWithdrawalCooldown(_request.requestedAt, _debtTokenCache.config.borrowCooldownSecs);
+            checkWithdrawalCooldown(_request.requestedAt);
             _borrowAmount = _request.amount;
             delete _accountDebtData.borrowRequest;
         }
@@ -246,8 +244,6 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
 
     function batchLiquidate(address[] memory accounts) external {
         LiquidityStatus memory _status;
-        uint256 _daiIndex = uint256(TokenType.DAI);
-        uint256 _oudIndex = uint256(TokenType.OUD);
 
         uint256 _numAccounts = accounts.length;
         uint256 totalCollateralClaimed;
@@ -300,14 +296,9 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         emit TlcStrategySet(_tlcStrategy);
     }
 
-    function setWithdrawCollateralCooldownSecs(uint256 cooldownSecs) external onlyElevatedAccess {
-        withdrawCollateralCooldownSecs = uint32(cooldownSecs);
-        emit WithdrawCollateralCooldownSecsSet(cooldownSecs);
-    }
-
-    function setBorrowCooldownSecs(TokenType tokenType, uint256 cooldownSecs) external onlyElevatedAccess {
-        debtTokenDetails[tokenType].config.borrowCooldownSecs = uint32(cooldownSecs);
-        emit BorrowCooldownSecsSet(tokenType, uint32(cooldownSecs));
+    function setFundsRequestWindow(uint256 minSecs, uint256 maxSecs) external onlyElevatedAccess {
+        fundsRequestWindow = FundsRequestWindow(uint32(minSecs), uint32(maxSecs));
+        emit FundsRequestWindowSet(minSecs, maxSecs);
     }
 
     function setInterestRateModel(TokenType tokenType, address interestRateModel) external onlyElevatedAccess {

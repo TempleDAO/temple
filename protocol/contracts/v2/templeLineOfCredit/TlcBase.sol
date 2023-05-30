@@ -136,11 +136,14 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
     }
 
     function checkWithdrawalCooldown(
-        uint32 _requestedAt, 
-        uint32 _cooldownSecs
+        uint32 _requestedAt
     ) internal view {
-        if (_requestedAt == 0 || block.timestamp < _requestedAt + _cooldownSecs)
-            revert CooldownPeriodNotMet(_requestedAt, _cooldownSecs);
+        unchecked {
+            if (block.timestamp < _requestedAt+fundsRequestWindow.minSecs)
+                revert NotInFundsRequestWindow(_requestedAt, fundsRequestWindow.minSecs, fundsRequestWindow.maxSecs);
+            if (block.timestamp > _requestedAt+fundsRequestWindow.maxSecs)
+                revert NotInFundsRequestWindow(_requestedAt, fundsRequestWindow.minSecs, fundsRequestWindow.maxSecs);
+        }
     }
 
     function _doRepayToken(

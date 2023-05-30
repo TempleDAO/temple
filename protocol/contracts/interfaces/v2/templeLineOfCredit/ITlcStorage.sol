@@ -11,7 +11,7 @@ interface ITlcStorage is ITlcDataTypes {
     function tlcStrategy() external returns (ITlcStrategy);
     function templeToken() external returns (IERC20);
     function treasuryReservesVault() external returns (ITreasuryReservesVault);
-    function withdrawCollateralCooldownSecs() external returns (uint32);
+    function fundsRequestWindow() external returns (uint32 minSecs, uint32 maxSecs);
 
     function accountData(address account) external returns (
         AccountData memory accountData
