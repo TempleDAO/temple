@@ -9,6 +9,11 @@ import { AMO__IRamos } from "contracts/amo/interfaces/AMO__IRamos.sol";
 import { AMO__IAuraStaking } from "contracts/amo/interfaces/AMO__IAuraStaking.sol";
 import { AMO__IPoolHelper, AMO__IBalancerVault } from "contracts/amo/interfaces/AMO__IPoolHelper.sol";
 
+
+interface IBPT {
+    function getActualSupply() external view returns (uint256);
+}
+
 contract RamosStrategy  is AbstractStrategy {
     using SafeERC20 for IERC20;
     string public constant VERSION = "1.0.0";
@@ -100,7 +105,10 @@ contract RamosStrategy  is AbstractStrategy {
 
         uint256 stableBalanceInRamos;
         {
-            uint256 bptTotalSupply = bptToken.totalSupply();
+            // Use `bpt.getActualSupply()` instead of `bpt.totalSupply()`
+            // https://docs.balancer.fi/reference/lp-tokens/underlying.html#overview
+            // https://docs.balancer.fi/concepts/advanced/valuing-bpt.html#on-chain
+            uint256 bptTotalSupply = IBPT(address(bptToken)).getActualSupply();
             if (bptTotalSupply > 0) {
                 uint256 bptBalanceInRamos = amoStaking.stakedBalance() + bptToken.balanceOf(address(amoStaking));
                 (, uint256 stableBalanceInLP) = poolHelper.getTempleStableBalances();

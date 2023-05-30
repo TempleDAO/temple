@@ -15,7 +15,9 @@ import { RAMOS } from "contracts/amo/Ramos.sol";
 import { PoolHelper, AMO__IBalancerVault } from "contracts/amo/helpers/PoolHelper.sol";
 import { AMO__IAuraStaking } from "contracts/amo/interfaces/AMO__IAuraStaking.sol";
 
-import "forge-std/console.sol";
+interface IBPT {
+    function getActualSupply() external view returns (uint256);
+}
 
 contract RamosStrategyTestBase is TempleTest {
     RamosStrategy public strategy;
@@ -40,7 +42,6 @@ contract RamosStrategyTestBase is TempleTest {
     address[] public reportedAssets = [address(dai), address(aura), address(bal)];
 
     function _setUp() public {
-        // fork("mainnet", 17090437);
         fork("mainnet", 17300437);
 
         RAMOS ramos = new RAMOS(balancerVault, temple, address(dai), address(bptToken), address(amoStaking), templeIndexPool, balancerPoolId);
@@ -108,7 +109,7 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
     }
 
     function getRamosBalances() internal view returns (uint256 bptTotalSupply, uint256 bptBalance, uint256 templeBalance, uint256 stableBalance) {
-        bptTotalSupply = bptToken.totalSupply();
+        bptTotalSupply = IBPT(address(bptToken)).getActualSupply();
 
         if (bptTotalSupply > 0) {
             bptBalance = amoStaking.stakedBalance() + bptToken.balanceOf(address(amoStaking));
@@ -314,6 +315,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         // Add the `executor` as an operator of RAMOS strategy
         vm.startPrank(executor);
         trv.addNewStrategy(address(strategy), borrowCeiling, 0);
+        strategy.setAssets(reportedAssets);
         deal(address(dai), address(trv), trvStartingBalance, true);
         dUSD.addMinter(address(trv));
 
@@ -328,7 +330,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
     }
 
     function getRamosBalances() internal view returns (uint256 bptTotalSupply, uint256 bptBalance, uint256 templeBalance, uint256 stableBalance) {
-        bptTotalSupply = bptToken.totalSupply();
+        bptTotalSupply = IBPT(address(bptToken)).getActualSupply();
 
         if (bptTotalSupply > 0) {
             bptBalance = amoStaking.stakedBalance() + bptToken.balanceOf(address(amoStaking));
@@ -343,7 +345,6 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         uint256 amount = 1e18;
         uint256 slippageBps = 100;  // 1%
         ITempleStrategy.AssetBalance[] memory assetBalances;
-        uint256 strategyDebt;
 
         assertEq(dai.balanceOf(address(trv)), trvStartingBalance);
 
@@ -353,6 +354,8 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         assertEq(ceiling, borrowCeiling);
 
         (, uint256 bptBalanceBefore, uint256 templeBalanceBefore, uint256 stableBalanceBefore) = getRamosBalances();
+        (assetBalances,) = strategy.latestAssetBalances();
+        uint256 daiBalanceBefore = assetBalances[0].balance;
 
         (, uint256 bptOut,, AMO__IBalancerVault.JoinPoolRequest memory requestData) = PoolHelper(POOL_HELPER_ADDRESS).proportionalAddLiquidityQuote(amount, 5000, slippageBps);
 
@@ -363,9 +366,17 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         strategy.borrowAndAddLiquidity(amount, requestData);
         vm.stopPrank();
 
+        (assetBalances,) = strategy.latestAssetBalances();
+        uint256 daiBalanceAfter = assetBalances[0].balance;
+
         assertEq(dai.balanceOf(address(strategy)), 0);
         assertEq(dai.balanceOf(address(trv)), trvStartingBalance-amount);
-        (assetBalances, strategyDebt) = strategy.latestAssetBalances();
+        // When adding liquidity into the weighted pool, BPTs more than the expected `bptOut' are minted as a protocol fee and transferred to the protocol fee collector address.
+        // https://docs.balancer.fi/concepts/pools/more/deployments.html
+        // https://etherscan.io/tx/0x1ac228b6582ae5774de4dd508de0ca21c4e0be31e1ae27428e50bcc43acabbe3
+        // Thus, the share is decreased and the token balances corresponding to the share are also decreased
+        // check the balance with delta. 1e18 = 100%
+        assertApproxEqRel(daiBalanceAfter-daiBalanceBefore, amount, 0.0001e18); // 0.001% 
 
         assertEq(dUSD.balanceOf(address(strategy)), amount);
         assertEq(dUSD.balanceOf(address(trv)), 0);
@@ -375,18 +386,73 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         assertEq(available, 0.01e18);
         assertEq(ceiling, borrowCeiling);
 
-        {
-            (, uint256 bptBalanceAfter, uint256 templeBalanceAfter, uint256 stableBalanceAfter) = getRamosBalances();
-            assertEq(bptToken.balanceOf(address(amoStaking)), 0);
-            assertEq(bptBalanceAfter, bptBalanceBefore+bptOut);
-            assertEq(IERC20(temple).balanceOf(address(amoStaking)), 0);
-            assertEq(dai.balanceOf(address(amoStaking)), 0);
-            assertEq(templeBalanceBefore*1e18/stableBalanceBefore, templeBalanceAfter*1e18/stableBalanceAfter); // pool balance ratio no change
-        }
+        (, uint256 bptBalanceAfter, uint256 templeBalanceAfter, uint256 stableBalanceAfter) = getRamosBalances();
+        assertEq(bptToken.balanceOf(address(amoStaking)), 0);
+        assertEq(bptBalanceAfter, bptBalanceBefore+bptOut);
+        assertEq(IERC20(temple).balanceOf(address(amoStaking)), 0);
+        assertEq(dai.balanceOf(address(amoStaking)), 0);
+        assertEq(templeBalanceBefore*1e18/stableBalanceBefore, templeBalanceAfter*1e18/stableBalanceAfter); // pool balance ratio no change
 
         vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.DebtCeilingBreached.selector, 0.01e18, 0.02e18));
         vm.startPrank(executor);
         strategy.borrowAndAddLiquidity(0.02e18, requestData);
         vm.stopPrank();
+    }
+
+    function test_removeLiquidityAndRepay() public {
+        uint256 borrowAmount = 1e18;
+        uint256 slippageBps = 100;  // 1%
+        ITempleStrategy.AssetBalance[] memory assetBalances;
+        uint256 bptOut;
+
+        // Add liquidity
+        {
+            (, uint256 expectedBptOut,, AMO__IBalancerVault.JoinPoolRequest memory requestDataForAddLiquidity) = PoolHelper(POOL_HELPER_ADDRESS).proportionalAddLiquidityQuote(borrowAmount, 5000, slippageBps);
+            bptOut = expectedBptOut;
+            vm.startPrank(executor);
+            strategy.borrowAndAddLiquidity(borrowAmount, requestDataForAddLiquidity);
+        }
+
+        (,, uint256 templeBalanceBefore, uint256 stableBalanceBefore) = getRamosBalances();
+        (assetBalances,) = strategy.latestAssetBalances();
+        uint256 daiBalanceBefore = assetBalances[0].balance;
+
+        // Remove liquidity and repay
+        (, uint256 repayAmount,,, AMO__IBalancerVault.ExitPoolRequest memory requestDataForRemoveLiquidity) = PoolHelper(POOL_HELPER_ADDRESS).proportionalRemoveLiquidityQuote(bptOut/2, slippageBps);
+
+        vm.expectEmit();
+        emit RemoveLiquidityAndRepay(repayAmount);
+
+        strategy.removeLiquidityAndRepay(requestDataForRemoveLiquidity, bptOut/2);
+
+        (assetBalances,) = strategy.latestAssetBalances();
+        uint256 daiBalanceAfter = assetBalances[0].balance;
+
+        assertEq(dai.balanceOf(address(strategy)), 0);
+        assertEq(dai.balanceOf(address(trv)), trvStartingBalance-borrowAmount+repayAmount);
+        // When removing liquidity, some tokens are transferred to the protocol fee collector address as a protocol fee.
+        // https://etherscan.io/tx/0xa8680834644a6fedfa72d6fd819fe605fe55577f9116a739ffce0f88c21539e9
+        // check the balance with delta. 1e18 = 100%
+        assertApproxEqRel(daiBalanceBefore-daiBalanceAfter, repayAmount, 0.0001e18); // 0.001% 
+
+        assertEq(dUSD.balanceOf(address(strategy)), borrowAmount-repayAmount);
+        assertEq(dUSD.balanceOf(address(trv)), 0);
+
+        (uint256 debt, uint256 available, uint256 ceiling) = strategy.trvBorrowPosition();
+        assertEq(debt, borrowAmount-repayAmount);
+        assertEq(available, borrowCeiling-borrowAmount+repayAmount);
+        assertEq(ceiling, borrowCeiling);
+
+        {
+            (,, uint256 templeBalanceAfter, uint256 stableBalanceAfter) = getRamosBalances();
+            assertEq(templeBalanceBefore*1e18/stableBalanceBefore, templeBalanceAfter*1e18/stableBalanceAfter); // pool balance ratio no change
+        }
+
+        // Only has `borrowAmount-repayAmount` dUSD and `bptOut/2` BPT left, but we can still repay more DAI.
+        // This generates a positive
+        deal(address(dai), address(strategy), 1e18, true);
+        (,,,, requestDataForRemoveLiquidity) = PoolHelper(POOL_HELPER_ADDRESS).proportionalRemoveLiquidityQuote(1, slippageBps);
+        strategy.removeLiquidityAndRepay(requestDataForRemoveLiquidity, 1);
+        assertEq(dUSD.balanceOf(address(strategy)), 0);
     }
 }
