@@ -82,7 +82,9 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             rescuer, 
             executor, 
             address(templeToken),
+            address(daiToken),
             defaultDaiConfig(),
+            address(oudToken),
             defaultOudConfig()
         );
 
@@ -109,8 +111,8 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
 
     function defaultDaiConfig() internal view returns (ITempleLineOfCredit.DebtTokenConfig memory) {
         return DebtTokenConfig({
-            tokenType: TokenType.DAI,
-            tokenAddress: address(daiToken),
+            // tokenType: daiToken,
+            // tokenAddress: address(daiToken),
             interestRateModel: daiInterestRateModel,
             maxLtvRatio: daiMaxLtvRatio
         });
@@ -118,15 +120,15 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
 
     function defaultOudConfig() internal view returns (ITempleLineOfCredit.DebtTokenConfig memory) {
         return DebtTokenConfig({
-            tokenType: TokenType.OUD,
-            tokenAddress: address(oudToken),
+            // tokenType: oudToken,
+            // tokenAddress: address(oudToken),
             interestRateModel: oudInterestRateModel,
             maxLtvRatio: oudMaxLtvRatio.encodeUInt128()
         });
     }
 
-    function getDefaultConfig(TokenType tokenType) internal view returns (ITempleLineOfCredit.DebtTokenConfig memory) {
-        return (tokenType == TokenType.DAI) ? defaultDaiConfig() : defaultOudConfig();
+    function getDefaultConfig(IERC20 token) internal view returns (ITempleLineOfCredit.DebtTokenConfig memory) {
+        return (token == daiToken) ? defaultDaiConfig() : defaultOudConfig();
     }
 
     struct MaxBorrowInfo {
@@ -149,8 +151,8 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         ITempleLineOfCredit.DebtTokenConfig memory actual,
         ITempleLineOfCredit.DebtTokenConfig memory expected
     ) internal {
-        assertEq(actual.tokenAddress, expected.tokenAddress, "DebtTokenConfig__tokenAddress");
-        assertEq(uint256(actual.tokenType), uint256(expected.tokenType), "DebtTokenConfig__tokenType");
+        // assertEq(actual.tokenAddress, expected.tokenAddress, "DebtTokenConfig__tokenAddress");
+        // assertEq(uint256(actual.tokenType), uint256(expected.tokenType), "DebtTokenConfig__tokenType");
         assertEq(address(actual.interestRateModel), address(expected.interestRateModel), "DebtTokenConfig__interestRateModel");
         assertEq(actual.maxLtvRatio, expected.maxLtvRatio, "DebtTokenConfig__maxLtvRatio");
     }
@@ -166,14 +168,14 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     }
 
     function checkDebtTokenDetails(
-        TokenType tokenType,
+        IERC20 token,
         uint256 borrowedAmount,
         int96 expectedInterestRate,
         uint256 expectedInterestAccumulator,
         uint256 expectedInterestAccumulatorUpdatedAt
     ) internal {
-        (DebtTokenConfig memory config, DebtTokenData memory totals) = tlc.debtTokenDetails(tokenType);
-        checkDebtTokenConfig(config, getDefaultConfig(tokenType));
+        (DebtTokenConfig memory config, DebtTokenData memory totals) = tlc.debtTokenDetails(token);
+        checkDebtTokenConfig(config, getDefaultConfig(token));
 
         checkDebtTokenData(totals, DebtTokenData({
             totalDebt: borrowedAmount.encodeUInt128(),
@@ -196,10 +198,16 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         AccountPosition memory actualAccountPosition = tlc.accountPosition(account);
         
         // @todo add checks for removeCollateralRequest?
-        AccountData memory actualAccountData = tlc.accountData(account);
+        // AccountData memory actualAccountData = tlc.accountData(account);
+        (
+            uint256 collateralPosted,
+            WithdrawFundsRequest memory removeCollateralRequest,
+            AccountDebtData memory daiDebtData,
+            AccountDebtData memory oudDebtData
+        ) =  tlc.accountData(account);
 
         assertEq(actualAccountPosition.collateralPosted, expectedAccountPosition.collateralPosted, "collateral");
-        assertEq(actualAccountData.collateralPosted, actualAccountPosition.collateralPosted, "collateral 2");
+        assertEq(collateralPosted, actualAccountPosition.collateralPosted, "collateral 2");
 
         // The 'as of now' data
         assertEq(daiToken.balanceOf(account), expectedDaiBalance, "balanceOf");
@@ -215,10 +223,10 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         assertApproxEqRel(actualAccountPosition.oudDebtPosition.loanToValueRatio, expectedAccountPosition.oudDebtPosition.loanToValueRatio, 1e10, "oud LTV");
 
         // The latest checkpoint data
-        assertApproxEqRel(actualAccountData.debtData[0].debtCheckpoint, expectedDaiDebtCheckpoint, 1e10, "DAI debt checkpoint");
-        assertApproxEqRel(actualAccountData.debtData[0].interestAccumulator, expectedDaiAccumulatorCheckpoint, 1e9, "DAI interestAccumulator checkpoint");
-        assertApproxEqRel(actualAccountData.debtData[1].debtCheckpoint, expectedOudDebtCheckpoint, 1e10, "OUD debt checkpoint");
-        assertApproxEqRel(actualAccountData.debtData[1].interestAccumulator, expectedOudAccumulatorCheckpoint, 1e9, "OUD interestAccumulator checkpoint");
+        assertApproxEqRel(daiDebtData.debtCheckpoint, expectedDaiDebtCheckpoint, 1e10, "DAI debt checkpoint");
+        assertApproxEqRel(daiDebtData.interestAccumulator, expectedDaiAccumulatorCheckpoint, 1e9, "DAI interestAccumulator checkpoint");
+        assertApproxEqRel(oudDebtData.debtCheckpoint, expectedOudDebtCheckpoint, 1e10, "OUD debt checkpoint");
+        assertApproxEqRel(oudDebtData.interestAccumulator, expectedOudAccumulatorCheckpoint, 1e9, "OUD interestAccumulator checkpoint");
     }
     
     // @todo change this to use checkAccountPosition instead
@@ -232,15 +240,21 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     ) internal {
         // @todo is this a dup/similar to above?
 
-        AccountData memory actualAccountData = tlc.accountData(account);
+        // AccountData memory actualAccountData = tlc.accountData(account);
+        (
+            uint256 collateralPosted,
+            WithdrawFundsRequest memory removeCollateralRequest,
+            AccountDebtData memory daiDebtData,
+            AccountDebtData memory oudDebtData
+        ) =  tlc.accountData(account);
 
         // @todo add check for removeCollateralRequest
 
-        assertEq(actualAccountData.collateralPosted, expectedCollateral, "collateral");
-        assertEq(actualAccountData.debtData[0].debtCheckpoint, expectedDaiDebt, "DAI debt");
-        assertEq(actualAccountData.debtData[0].interestAccumulator, expectedDaiInterestAccumulator, "DAI interestAccumulator");
-        assertEq(actualAccountData.debtData[1].debtCheckpoint, expectedOudDebt, "OUD debt");
-        assertEq(actualAccountData.debtData[1].interestAccumulator, expectedOudInterestAccumulator, "OUD interestAccumulator");
+        assertEq(collateralPosted, expectedCollateral, "collateral");
+        assertEq(daiDebtData.debtCheckpoint, expectedDaiDebt, "DAI debt");
+        assertEq(daiDebtData.interestAccumulator, expectedDaiInterestAccumulator, "DAI interestAccumulator");
+        assertEq(oudDebtData.debtCheckpoint, expectedOudDebt, "OUD debt");
+        assertEq(oudDebtData.interestAccumulator, expectedOudInterestAccumulator, "OUD interestAccumulator");
     }
 
     function checkTotalPosition(TotalPosition[] memory expectedPositions) internal returns (uint256, uint256) {
@@ -275,17 +289,17 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         vm.startPrank(_account);
         
         if (daiBorrowAmount != 0) {
-            tlc.requestBorrow(TokenType.DAI, daiBorrowAmount);
+            tlc.requestBorrow(daiToken, daiBorrowAmount);
         }
         if (oudBorrowAmount != 0) {
-            tlc.requestBorrow(TokenType.OUD, oudBorrowAmount);
+            tlc.requestBorrow(oudToken, oudBorrowAmount);
         }
         
         // Sleep it off...
         vm.warp(block.timestamp + cooldownSecs);
 
-        if (daiBorrowAmount != 0) tlc.borrow(TokenType.DAI, _account);
-        if (oudBorrowAmount != 0) tlc.borrow(TokenType.OUD, _account);
+        if (daiBorrowAmount != 0) tlc.borrow(daiToken, _account);
+        if (oudBorrowAmount != 0) tlc.borrow(oudToken, _account);
 
         vm.stopPrank();
     }
@@ -337,11 +351,11 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     }
 
     function createDebtPosition(
-        TokenType tokenType,
+        IERC20 token,
         uint256 debt,
         MaxBorrowInfo memory maxBorrowInfo
     ) internal view returns (AccountDebtPosition memory) {
-        if (tokenType == TokenType.DAI) {
+        if (token == daiToken) {
             return AccountDebtPosition({
                 currentDebt: debt, 
                 maxBorrow: maxBorrowInfo.daiMaxBorrow, 

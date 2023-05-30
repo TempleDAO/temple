@@ -16,6 +16,16 @@ abstract contract TlcStorage is ITlcStorage {
     IERC20 public immutable override templeToken;
 
     /**
+     * @notice DAI token 
+     */
+    IERC20 public immutable override daiToken;
+
+    /**
+     * @notice OUD token
+     */
+    IERC20 public immutable override oudToken;
+
+    /**
      * @notice Collateral Token supplied by accounts
      */
     ITreasuryReservesVault public override treasuryReservesVault;
@@ -40,11 +50,13 @@ abstract contract TlcStorage is ITlcStorage {
     /**
      * @notice Configuration and current data for borrowed tokens
      */
-    mapping(TokenType => DebtTokenDetails) public override debtTokenDetails;
+    mapping(IERC20 => DebtTokenDetails) public override debtTokenDetails;
 
-    constructor(address _templeToken)
+    constructor(address _templeToken, address _daiToken, address _oudToken)
     {
         templeToken = IERC20(_templeToken);
+        daiToken = IERC20(_daiToken);
+        oudToken = IERC20(_oudToken);
     }
 
 }

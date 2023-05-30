@@ -5,6 +5,7 @@ pragma solidity ^0.8.17;
 import { SafeERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { IMintableToken } from "contracts/interfaces/common/IMintableToken.sol";
+import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
 import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
 import { ITempleLineOfCredit } from "contracts/interfaces/v2/templeLineOfCredit/ITempleLineOfCredit.sol";
 import { ITlcStrategy } from "contracts/interfaces/v2/templeLineOfCredit/ITlcStrategy.sol";
@@ -23,15 +24,17 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         address _initialRescuer,
         address _initialExecutor,
         address _templeToken,
+        address _daiToken, 
         DebtTokenConfig memory _daiTokenConfig,
+        address _oudToken,
         DebtTokenConfig memory _oudTokenConfig
     ) 
         TempleElevatedAccess(_initialRescuer, _initialExecutor)
-        TlcBase(_templeToken)
+        TlcBase(_templeToken, _daiToken, _oudToken)
     {
         // Initialize the Reserve Tokens
-        addDebtToken(TokenType.DAI, _daiTokenConfig);
-        addDebtToken(TokenType.OUD, _oudTokenConfig);
+        addDebtToken(daiToken, _daiTokenConfig);
+        addDebtToken(oudToken, _oudTokenConfig);
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -42,7 +45,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
      * @dev Allows borrower to deposit temple collateral
      * @param collateralAmount is the amount to deposit
      */
-    function addCollateral(uint256 collateralAmount, address onBehalfOf) external {
+    function addCollateral(uint256 collateralAmount, address onBehalfOf) external override {
         if (collateralAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         emit CollateralAdded(msg.sender, onBehalfOf, collateralAmount);
 
@@ -55,7 +58,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         );
     }
 
-    function requestRemoveCollateral(uint256 amount) external {
+    function requestRemoveCollateral(uint256 amount) external override {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         AccountData storage _accountData = allAccountsData[msg.sender];
 
@@ -67,7 +70,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         emit RemoveCollateralRequested(msg.sender, amount);
     }
 
-    function cancelRemoveCollateralRequest(address account) external {
+    function cancelRemoveCollateralRequest(address account) external override {
         // Either the account holder or the DAO elevated access is allowed to cancel individual requests
         if (msg.sender != account && !isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
         
@@ -78,7 +81,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     /**
      * @dev Allows borrower to deposit temple collateral
      */
-    function removeCollateral(address recipient) external {
+    function removeCollateral(address recipient) external override {
         AccountData storage _accountData = allAccountsData[msg.sender];
 
         uint256 _removeAmount;
@@ -110,13 +113,13 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     /*                           BORROW                           */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-    function requestBorrow(TokenType tokenType, uint256 amount) external {
+    function requestBorrow(IERC20 token, uint256 amount) external override {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         AccountData storage _accountData = allAccountsData[msg.sender];
-        AccountDebtData storage _accountDebtData = _accountData.debtData[uint256(tokenType)];
+        AccountDebtData storage _accountDebtData = _accountData.debtData[token];
 
         _accountDebtData.borrowRequest = WithdrawFundsRequest(amount.encodeUInt128(), uint32(block.timestamp));
-        emit BorrowRequested(msg.sender, tokenType, amount);
+        emit BorrowRequested(msg.sender, address(token), amount);
 
         // @todo add a test case for this.
         // This will check both assets.
@@ -126,19 +129,18 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         checkLiquidity(_accountData);
     }
 
-    function cancelBorrowRequest(address account, TokenType tokenType) external {
+    function cancelBorrowRequest(address account, IERC20 token) external override {
         // Either the account holder or the DAO elevated access is allowed to cancel individual requests
         if (msg.sender != account && !isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
         
-        delete allAccountsData[msg.sender].debtData[uint256(tokenType)].borrowRequest;
-        emit BorrowRequestCancelled(account, tokenType);
+        delete allAccountsData[msg.sender].debtData[token].borrowRequest;
+        emit BorrowRequestCancelled(account, address(token));
     }
 
-    function borrow(TokenType tokenType, address recipient) external {
+    function borrow(IERC20 token, address recipient) external override {
         AccountData storage _accountData = allAccountsData[msg.sender];
-        AccountDebtData storage _accountDebtData = _accountData.debtData[uint256(tokenType)];
-        DebtTokenDetails storage _debtToken = debtTokenDetails[tokenType];
-        DebtTokenCache memory _debtTokenCache = debtTokenCache(_debtToken);
+        AccountDebtData storage _accountDebtData = _accountData.debtData[token];
+        DebtTokenCache memory _debtTokenCache = debtTokenCache(token);
 
         // Validate and pop the borrow request for this token
         uint256 _borrowAmount;
@@ -151,6 +153,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
 
         // Apply the new borrow
         {
+            DebtTokenDetails storage _debtTokenDetails = debtTokenDetails[token];
 
             uint256 _totalDebt = currentAccountDebtData(
                 _debtTokenCache, 
@@ -161,25 +164,25 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
             // Update the state
             _accountDebtData.debtCheckpoint = _totalDebt.encodeUInt128();
             _accountDebtData.interestAccumulator = _debtTokenCache.interestAccumulator;
-            _debtToken.data.totalDebt = _debtTokenCache.totalDebt = (
+            _debtTokenDetails.data.totalDebt = _debtTokenCache.totalDebt = (
                 _debtTokenCache.totalDebt + _borrowAmount
             ).encodeUInt128();
 
             // Update the borrow interest rates based on the now increased utilization ratio
             // console.log("about to update interest rate");
-            updateInterestRates(_debtToken, _debtTokenCache);
+            updateInterestRates(token, _debtTokenDetails, _debtTokenCache);
         }
 
-        emit Borrow(msg.sender, recipient, tokenType, _borrowAmount);
+        emit Borrow(msg.sender, recipient, address(token), _borrowAmount);
         checkLiquidity(_accountData);
 
         // Finally, send the tokens to the recipient.
-        if (tokenType == TokenType.DAI) {
+        if (token == daiToken) {
             // Borrow the funds from the TRV and send to the recipient
             tlcStrategy.fundFromTrv(_borrowAmount, recipient);
         } else {
             // Mint the OUD and send to recipient
-            IMintableToken(_debtTokenCache.config.tokenAddress).mint(recipient, _borrowAmount );
+            IMintableToken(address(token)).mint(recipient, _borrowAmount );
         }
     }
 
@@ -187,22 +190,20 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     /*                            REPAY                           */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-    function repay(TokenType tokenType, uint256 repayAmount, address onBehalfOf) external {
+    function repay(IERC20 token, uint256 repayAmount, address onBehalfOf) external override {
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
-        DebtTokenDetails storage _debtToken = debtTokenDetails[tokenType];
-        AccountDebtData storage _accountDebtData = allAccountsData[onBehalfOf].debtData[uint256(tokenType)];
-        _doRepayToken(_debtToken, debtTokenCache(_debtToken), repayAmount, _accountDebtData, tokenType, msg.sender, onBehalfOf);
+        AccountDebtData storage _accountDebtData = allAccountsData[onBehalfOf].debtData[token];
+        _doRepayToken(token, debtTokenCache(token), repayAmount, _accountDebtData, msg.sender, onBehalfOf);
     }
 
     /**
      * @notice Allows borrower to repay all outstanding balances
      * @dev leave no dust balance
      */
-    function repayAll(TokenType tokenType, address onBehalfOf) external {
-        DebtTokenDetails storage _debtToken = debtTokenDetails[tokenType];
-        DebtTokenCache memory _debtTokenCache = debtTokenCache(_debtToken);
-        AccountDebtData storage _accountDebtData = allAccountsData[onBehalfOf].debtData[uint256(tokenType)];
+    function repayAll(IERC20 token, address onBehalfOf) external override {
+        DebtTokenCache memory _debtTokenCache = debtTokenCache(token);
+        AccountDebtData storage _accountDebtData = allAccountsData[onBehalfOf].debtData[token];
 
         // Get the outstanding debt for Stable
         uint256 repayAmount = currentAccountDebtData(
@@ -211,7 +212,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
             _accountDebtData.interestAccumulator
         );
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        _doRepayToken(_debtToken, _debtTokenCache, repayAmount, _accountDebtData, tokenType, msg.sender, onBehalfOf);
+        _doRepayToken(token, _debtTokenCache, repayAmount, _accountDebtData, msg.sender, onBehalfOf);
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -223,13 +224,13 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     function computeLiquidity(
         address[] memory accounts,
         bool includePendingRequests
-    ) external view returns (LiquidityStatus[] memory status) {
+    ) external override view returns (LiquidityStatus[] memory status) {
         uint256 _numAccounts = accounts.length;
         for (uint256 i; i < _numAccounts; ++i) {
             status[i] = computeLiquidity(
                 allAccountsData[accounts[i]], 
-                debtTokenCacheRO(debtTokenDetails[TokenType.DAI]),
-                debtTokenCacheRO(debtTokenDetails[TokenType.OUD]),
+                debtTokenCacheRO(daiToken),
+                debtTokenCacheRO(oudToken),
                 includePendingRequests
             );
         }
@@ -242,14 +243,16 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         uint256 oudDebtWiped;
     }
 
-    function batchLiquidate(address[] memory accounts) external {
+    function batchLiquidate(
+        address[] memory accounts
+    ) external override {
         LiquidityStatus memory _status;
 
         uint256 _numAccounts = accounts.length;
         uint256 totalCollateralClaimed;
         LiquidateParams memory _params;
-        _params.daiTokenCache = debtTokenCache(debtTokenDetails[TokenType.DAI]);
-        _params.oudTokenCache = debtTokenCache(debtTokenDetails[TokenType.OUD]);
+        _params.daiTokenCache = debtTokenCache(daiToken);
+        _params.oudTokenCache = debtTokenCache(oudToken);
 
         uint256 i;
         address _account;
@@ -274,51 +277,60 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         // burn the temple collateral by repaying to TRV. This will burn the equivalent dUSD debt too.
         treasuryReservesVault.repayTemple(totalCollateralClaimed, address(tlcStrategy));
 
-        wipeDebt(TokenType.DAI, _params.daiTokenCache, _params.daiDebtWiped);
-        wipeDebt(TokenType.OUD, _params.oudTokenCache, _params.oudDebtWiped);
+        wipeDebt(daiToken, _params.daiTokenCache, _params.daiDebtWiped);
+        wipeDebt(oudToken, _params.oudTokenCache, _params.oudDebtWiped);
     }
     
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                            ADMIN                           */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-    // @todo Check we have setters and events for all the things
-
-    // @todo when the TRV cap changes, the UR will change. A checkpoint will need to be done then too, 
-    // so the rate is updated.
-    // add a test for this.
-
     function setTlcStrategy(
         address _tlcStrategy
-    ) external onlyElevatedAccess {
+    ) external override onlyElevatedAccess {
         tlcStrategy = ITlcStrategy(_tlcStrategy);
-        treasuryReservesVault = tlcStrategy.treasuryReservesVault();
-        emit TlcStrategySet(_tlcStrategy);
+        ITreasuryReservesVault _trv = tlcStrategy.treasuryReservesVault();
+        treasuryReservesVault = _trv;
+        emit TlcStrategySet(_tlcStrategy, address(_trv));
     }
 
-    function setFundsRequestWindow(uint256 minSecs, uint256 maxSecs) external onlyElevatedAccess {
-        fundsRequestWindow = FundsRequestWindow(uint32(minSecs), uint32(maxSecs));
+    function setFundsRequestWindow(
+        uint256 minSecs,
+        uint256 maxSecs
+    ) external override onlyElevatedAccess {
         emit FundsRequestWindowSet(minSecs, maxSecs);
+        fundsRequestWindow = FundsRequestWindow(uint32(minSecs), uint32(maxSecs));
     }
 
-    function setInterestRateModel(TokenType tokenType, address interestRateModel) external onlyElevatedAccess {
-        DebtTokenDetails storage _debtToken = debtTokenDetails[tokenType];
-        DebtTokenCache memory _cache = debtTokenCache(_debtToken);
+    function setInterestRateModel(
+        IERC20 token, 
+        address interestRateModel
+    ) external override onlyElevatedAccess {
+        emit InterestRateModelSet(address(token), interestRateModel);
+        DebtTokenCache memory _cache = debtTokenCache(token);
 
         // Update the cache entry and calculate the new interest rate based off this model.
-        _debtToken.config.interestRateModel = _cache.config.interestRateModel = IInterestRateModel(interestRateModel);
-        updateInterestRates(_debtToken, _cache);
+        DebtTokenDetails storage _debtTokenDetails = debtTokenDetails[token];
+        _debtTokenDetails.config.interestRateModel = _cache.config.interestRateModel = IInterestRateModel(interestRateModel);
+        updateInterestRates(token, _debtTokenDetails, _cache);
     }
 
-    function setMaxLtvRatio(TokenType tokenType, uint256 maxLtvRatio) external onlyElevatedAccess {
-        DebtTokenDetails storage _debtToken = debtTokenDetails[tokenType];
-        _debtToken.config.maxLtvRatio = maxLtvRatio.encodeUInt128();
+    function setMaxLtvRatio(
+        IERC20 token, 
+        uint256 maxLtvRatio
+    ) external override onlyElevatedAccess {
+        emit MaxLtvRatioSet(address(token), maxLtvRatio);
+        debtTokenDetails[token].config.maxLtvRatio = maxLtvRatio.encodeUInt128();
     }
 
     /**
      * @notice Governance can recover any token from the strategy.
      */
-    function recoverToken(address token, address to, uint256 amount) external /*override*/ onlyElevatedAccess {
+    function recoverToken(
+        address token, 
+        address to, 
+        uint256 amount
+    ) external override onlyElevatedAccess {
         // @todo need to change so collateral can't be pinched.
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
         IERC20(token).safeTransfer(to, amount);
@@ -328,45 +340,59 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
      * @notice Update the total debt up until now, then recalculate the interest rate
      * based on the updated utilisation ratio
      */
-    function refreshInterestRates(TokenType tokenType) external {
-        DebtTokenDetails storage _debtToken = debtTokenDetails[tokenType];
-        updateInterestRates(_debtToken, debtTokenCache(_debtToken));
+    function refreshInterestRates(
+        IERC20 token
+    ) external override {
+        updateInterestRates(token, debtTokenDetails[token], debtTokenCache(token));
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                           VIEWS                            */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-    function accountData(address account) external view returns (AccountData memory) {
-        return allAccountsData[account];
+    // @todo check all overrides are there
+
+    function accountData(
+        address account
+    ) external view override returns (
+        uint256 collateralPosted,
+        WithdrawFundsRequest memory removeCollateralRequest,
+        AccountDebtData memory daiDebtData,
+        AccountDebtData memory oudDebtData
+    ) {
+        AccountData storage _accountData = allAccountsData[account];
+        collateralPosted = _accountData.collateralPosted;
+        removeCollateralRequest = _accountData.removeCollateralRequest;
+        daiDebtData = _accountData.debtData[daiToken];
+        oudDebtData = _accountData.debtData[oudToken];
     }
 
-    function getDebtTokenCache(TokenType tokenType) external view returns (DebtTokenCache memory) {
-        return debtTokenCacheRO(debtTokenDetails[tokenType]);
+    function getDebtTokenCache(IERC20 token) external view returns (DebtTokenCache memory) {
+        return debtTokenCacheRO(token);
     }
 
-    function accountPosition(address account) external view returns (AccountPosition memory position) {
+    function accountPosition(address account) external override view returns (AccountPosition memory position) {
         AccountData storage _accountData = allAccountsData[account];
         position.collateralPosted = _accountData.collateralPosted;
 
         position.daiDebtPosition = fillAccountPosition(
-            TokenType.DAI, 
-            _accountData.debtData[uint256(TokenType.DAI)], 
+            daiToken, 
+            _accountData.debtData[daiToken], 
             position.collateralPosted
         );
         position.oudDebtPosition = fillAccountPosition(
-            TokenType.OUD,
-            _accountData.debtData[uint256(TokenType.OUD)],
+            oudToken,
+            _accountData.debtData[oudToken],
             position.collateralPosted
         );
     }
 
-    function totalPosition() external view returns (
+    function totalPosition() external override view returns (
         TotalPosition memory daiPosition,
         TotalPosition memory oudPosition
     ) {
-        daiPosition = fillTotalPosition(TokenType.DAI);
-        oudPosition = fillTotalPosition(TokenType.OUD);
+        daiPosition = fillTotalPosition(daiToken);
+        oudPosition = fillTotalPosition(oudToken);
     }
 
 }

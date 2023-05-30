@@ -10,14 +10,12 @@ import { ITlcStrategy } from "contracts/interfaces/v2/templeLineOfCredit/ITlcStr
 interface ITlcStorage is ITlcDataTypes {
     function tlcStrategy() external returns (ITlcStrategy);
     function templeToken() external returns (IERC20);
+    function daiToken() external returns (IERC20);
+    function oudToken() external returns (IERC20);
     function treasuryReservesVault() external returns (ITreasuryReservesVault);
     function fundsRequestWindow() external returns (uint32 minSecs, uint32 maxSecs);
 
-    function accountData(address account) external returns (
-        AccountData memory accountData
-    );
-
-    function debtTokenDetails(TokenType tokenType) external returns (
+    function debtTokenDetails(IERC20 token) external returns (
         DebtTokenConfig memory config,
         DebtTokenData memory data
     );

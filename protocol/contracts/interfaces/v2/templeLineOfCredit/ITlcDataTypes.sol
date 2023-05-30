@@ -6,16 +6,7 @@ import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IIntere
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ITlcDataTypes {
-    enum TokenType {
-        DAI,
-        OUD
-    }
-
     struct DebtTokenConfig {
-        TokenType tokenType;
-
-        address tokenAddress;
-
         /// @notice The interest rate model contract
         IInterestRateModel interestRateModel;
 
@@ -62,8 +53,7 @@ interface ITlcDataTypes {
     struct AccountData {
         uint256 collateralPosted;
         WithdrawFundsRequest removeCollateralRequest;
-        /// @dev The same size as TokenType
-        AccountDebtData[2] debtData;
+        mapping(IERC20 => AccountDebtData) debtData;
     }
 
     struct LiquidityStatus {
