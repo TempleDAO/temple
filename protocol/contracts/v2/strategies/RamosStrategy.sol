@@ -29,10 +29,7 @@ contract RamosStrategy  is AbstractStrategy {
      */
     address[] public assets;
 
-    address public operator;
-
     event AssetsSet(address[] _assets);
-    event SetOperator(address operator);
     event BorrowAndAddLiquidity(uint256 amount);
     event RemoveLiquidityAndRepay(uint256 amount);
 
@@ -72,16 +69,6 @@ contract RamosStrategy  is AbstractStrategy {
      */
     function getAssets() external view returns (address[] memory) {
         return assets;
-    }
-
-    /**
-     * @notice Set operator
-     * @param _operator New operator
-     */
-    function setOperator(address _operator) external onlyElevatedAccess {
-        operator = _operator;
-
-        emit SetOperator(_operator);
     }
 
     /**
@@ -166,8 +153,7 @@ contract RamosStrategy  is AbstractStrategy {
         ramos.removeLiquidity(_requestData, _bptAmount, address(this));
 
         // Repay debt back to the Treasury Reserves
-        IERC20 stable = treasuryReservesVault.stableToken();
-        uint256 stableBalance = stable.balanceOf(address(this));
+        uint256 stableBalance = stableToken.balanceOf(address(this));
 
         treasuryReservesVault.repay(stableBalance, address(this));
         emit RemoveLiquidityAndRepay(stableBalance);
