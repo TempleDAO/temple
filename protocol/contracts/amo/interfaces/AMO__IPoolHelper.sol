@@ -77,7 +77,7 @@ interface AMO__IPoolHelper {
         uint256 exitTokenIndex
     ) external view returns (AMO__IBalancerVault.ExitPoolRequest memory request);
 
-    function addLiquidityQuote(
+    function proportionalAddLiquidityQuote(
         uint256 stablesAmount,
         uint256 slippageBps
     ) external view returns (
@@ -87,7 +87,7 @@ interface AMO__IPoolHelper {
         AMO__IBalancerVault.JoinPoolRequest memory requestData
     );
 
-    function removeLiquidityQuote(
+    function proportionalRemoveLiquidityQuote(
         uint256 bptAmount,
         uint256 slippageBps
     ) external view returns (

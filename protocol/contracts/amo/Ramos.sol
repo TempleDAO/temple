@@ -77,7 +77,7 @@ contract RAMOS is Ownable, Pausable {
     event SetMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 stableMaxAmount, uint256 templeMaxAmount);
     event WithdrawStable(uint256 bptAmountIn, uint256 amountOut, address to);
     event LiquidityAdded(uint256 stableAdded, uint256 templeAdded, uint256 bptReceived);
-    event LiquidityRemoved(uint256 stableReceuved, uint256 templeReceived, uint256 bptRemoved);
+    event LiquidityRemoved(uint256 stableReceived, uint256 templeReceived, uint256 bptRemoved);
     event SetRebalancePercentageBounds(uint64 belowTpf, uint64 aboveTpf);
     event SetTemplePriceFloorNumerator(uint128 numerator);
     event SetAmoStaking(address indexed amoStaking);
@@ -269,7 +269,7 @@ contract RAMOS is Ownable, Pausable {
     function depositStable(
         uint256 amountIn,
         uint256 minBptOut
-    ) external onlyOperatorOrOwner whenNotPaused {
+    ) external onlyOwner whenNotPaused {
         _validateParams(minBptOut, amountIn, maxRebalanceAmounts.stable);
 
         stable.safeTransfer(address(poolHelper), amountIn);
@@ -300,7 +300,7 @@ contract RAMOS is Ownable, Pausable {
         uint256 bptAmountIn,
         uint256 minAmountOut,
         address to
-    ) external onlyOperatorOrOwner whenNotPaused {
+    ) external onlyOwner whenNotPaused {
         _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
 
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
@@ -326,7 +326,7 @@ contract RAMOS is Ownable, Pausable {
      */
     function addLiquidity(
         AMO__IBalancerVault.JoinPoolRequest memory request
-    ) external onlyOperatorOrOwner {
+    ) external onlyOwner {
         // validate request
         if (request.assets.length != request.maxAmountsIn.length || 
             request.assets.length != 2 || 
@@ -334,15 +334,17 @@ contract RAMOS is Ownable, Pausable {
                 revert AMOCommon.InvalidBalancerVaultRequest();
         }
 
-        uint256 templeAmount = request.maxAmountsIn[templeBalancerPoolIndex];
-        uint256 stableAmount = request.maxAmountsIn[1 - templeBalancerPoolIndex];
+        (uint256 templeAmount, uint256 stableAmount) = templeBalancerPoolIndex == 0
+            ? (request.maxAmountsIn[0], request.maxAmountsIn[1])
+            : (request.maxAmountsIn[1], request.maxAmountsIn[0]);
         AMO__ITempleERC20Token(address(temple)).mint(address(this), templeAmount);
         // safe allowance stable and TEMPLE
         temple.safeIncreaseAllowance(address(balancerVault), templeAmount);
-        if (stable.allowance(address(this), address(balancerVault)) < stableAmount) {
+        uint256 stableAllowance = stable.allowance(address(this), address(balancerVault));
+        if (stableAllowance < stableAmount) {
             // some tokens like bb-a-USD always set the max allowance for `balancerVault`
             // in this case, `safeIncreaseAllowance` will fail due to the arithmetic operation overflow issue
-            stable.safeDecreaseAllowance(address(balancerVault), stable.allowance(address(this), address(balancerVault)));
+            stable.safeDecreaseAllowance(address(balancerVault), stableAllowance);
             stable.safeIncreaseAllowance(address(balancerVault), stableAmount);
         }
 
@@ -374,7 +376,7 @@ contract RAMOS is Ownable, Pausable {
         AMO__IBalancerVault.ExitPoolRequest memory request,
         uint256 bptIn,
         address to
-    ) external onlyOperatorOrOwner {
+    ) external onlyOwner {
         // validate request
         if (request.assets.length != request.minAmountsOut.length || 
             request.assets.length != 2 || 
@@ -420,7 +422,7 @@ contract RAMOS is Ownable, Pausable {
     function depositAndStakeBptTokens(
         uint256 amount,
         bool useContractBalance
-    ) external onlyOperatorOrOwner {
+    ) external onlyOwner {
         if (!useContractBalance) {
             bptToken.safeTransferFrom(msg.sender, address(this), amount);
         }
