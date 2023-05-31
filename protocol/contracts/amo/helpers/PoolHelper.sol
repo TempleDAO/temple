@@ -347,7 +347,6 @@ contract PoolHelper {
     /// @dev Since this is not the view function, this should be called with `callStatic`
     function proportionalAddLiquidityQuote(
         uint256 stablesAmount,
-        // uint256 stableWeightBps,
         uint256 slippageBps
     ) external returns (
         uint256 templeAmount,
@@ -356,10 +355,15 @@ contract PoolHelper {
         AMO__IBalancerVault.JoinPoolRequest memory requestData
     ) {
         (uint256 templeBalanceInLP, uint256 stableBalanceInLP) = getTempleStableBalances();
+        // see Balancer SDK for the calculation
+        // https://github.com/balancer/balancer-sdk/blob/be692be5d6057f5e44362667e47bd7ecf9a83b37/balancer-js/src/modules/pools/proportional-amounts/index.ts#L24
         templeAmount = stableBalanceInLP == 0
             ? stablesAmount
             : (templeBalanceInLP * stablesAmount / stableBalanceInLP);
 
+        requestData.assets = new IERC20[](2);
+        requestData.maxAmountsIn = new uint256[](2);
+        
         (requestData.assets[0], requestData.assets[1]) = templeIndexInBalancerPool == 0 ? (temple, stable) : (stable, temple);
         (requestData.maxAmountsIn[0], requestData.maxAmountsIn[1]) = templeIndexInBalancerPool == 0 ? (templeAmount, stablesAmount) : (stablesAmount, templeAmount);
         //uint256 joinKind = 1; //EXACT_TOKENS_IN_FOR_BPT_OUT
@@ -387,6 +391,9 @@ contract PoolHelper {
         uint256 minStablesAmount,
         AMO__IBalancerVault.ExitPoolRequest memory requestData
     ) {
+        requestData.assets = new address[](2);
+        requestData.minAmountsOut = new uint256[](2);
+
         (requestData.assets[0], requestData.assets[1]) = templeIndexInBalancerPool == 0
             ? (address(temple), address(stable))
             : (address(stable), address(temple));
