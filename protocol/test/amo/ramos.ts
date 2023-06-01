@@ -348,11 +348,11 @@ describe("Temple Price Floor AMO", async () => {
             await expect(connectAMO.recoverToken(TEMPLE , alanAddress, 100)).to.be.revertedWith("Ownable: caller is not the owner");
             await expect(connectAMO.rebalanceDown(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
             await expect(connectAMO.rebalanceUp(ONE_ETH, 1)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
-            await expect(connectAMO.depositStable(100, 1)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
-            await expect(connectAMO.withdrawStable(100, 1, amo.address)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
-            await expect(connectAMO.addLiquidity(joinPoolRequest)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
-            await expect(connectAMO.removeLiquidity(exitPoolRequest, 100, amo.address)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
-            await expect(connectAMO.depositAndStakeBptTokens(100, true)).to.be.revertedWithCustomError(amo, "NotOperatorOrOwner");
+            await expect(connectAMO.depositStable(100, 1)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(connectAMO.withdrawStable(100, 1, amo.address)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(connectAMO.addLiquidity(joinPoolRequest)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(connectAMO.removeLiquidity(exitPoolRequest, 100, amo.address)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(connectAMO.depositAndStakeBptTokens(100, true)).to.be.revertedWith("Ownable: caller is not the owner");
 
             // passes
             await amo.setMaxRebalanceAmounts(100, 100, 100);
