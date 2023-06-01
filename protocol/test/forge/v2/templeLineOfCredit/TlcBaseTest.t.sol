@@ -50,32 +50,31 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     
     uint32 public constant FUNDS_REQUEST_MIN_SECS = 60;
     uint32 public constant FUNDS_REQUEST_MAX_SECS = 120;
-    
-    // event InterestRateUpdate(address indexed token, int96 newInterestRate);
 
     function setUp() public {
         // Default starts at 0 which can hide some issues
         vm.warp(1_000_000);
 
-        daiToken = new FakeERC20("DAI Token", "DAI", executor, 500_000e18);
-        vm.label(address(daiToken), "DAI");
-        templeToken = new FakeERC20("TempleToken", "Temple", executor, 500_000e18);
-        vm.label(address(templeToken), "TEMPLE");
-        dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
-        vm.label(address(dUSD), "dUSD");
+        // Create tokens
+        {
+            daiToken = new FakeERC20("DAI Token", "DAI", executor, 500_000e18);
+            vm.label(address(daiToken), "DAI");
+            templeToken = new FakeERC20("TempleToken", "Temple", executor, 500_000e18);
+            vm.label(address(templeToken), "TEMPLE");
+            dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
+            vm.label(address(dUSD), "dUSD");
+            oudToken = new FakeERC20("OUD Token", "OUD", executor, 500_000e18);
+            vm.label(address(oudToken), "OUD");
+        }
 
         trv = new TreasuryReservesVault(rescuer, executor, address(templeToken), address(daiToken), address(dUSD), templePrice);
         
-        // uint256 _baseInterestRate, uint256 _maxInterestRate, uint _kinkUtilization, uint _kinkInterestRateBps) {
         daiInterestRateModel = new LinearWithKinkInterestRateModel(
             5e18 / 100,  // 5% interest rate (rate% at 0% UR)
             20e18 / 100, // 20% percent interest rate (rate% at 100% UR)
             90e18 / 100, // 90% utilization (UR for when the kink starts)
             10e18 / 100  // 10% percent interest rate (rate% at kink% UR)
         );
-
-        oudToken = new FakeERC20("OUD Token", "OUD", executor, 500_000e18);
-        vm.label(address(oudToken), "OUD");
         oudInterestRateModel = new FlatInterestRateModel(uint256(int256(oudInterestRate)));
 
         tlc = new TempleLineOfCredit(
@@ -97,22 +96,24 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             address(templeToken)
         );
 
-        // positionHelper = new TlcPositionHelper(address(tlc));
+        // Post create steps
+        {
+            vm.startPrank(executor);
+            tlc.setTlcStrategy(address(tlcStrategy));
+            tlc.setFundsRequestWindow(FUNDS_REQUEST_MIN_SECS, FUNDS_REQUEST_MAX_SECS);
+        }
 
-        vm.startPrank(executor);
-        tlc.setTlcStrategy(address(tlcStrategy));
-        tlc.setFundsRequestWindow(FUNDS_REQUEST_MIN_SECS, FUNDS_REQUEST_MAX_SECS);
-
-        dUSD.addMinter(address(trv));
-        trv.addNewStrategy(address(tlcStrategy), borrowCeiling, 0);
-        vm.stopPrank();
-        deal(address(daiToken), address(trv), trvStartingBalance, true);
+        // Add the TLC Strategy into TRV so it can borrow DAI
+        {
+            dUSD.addMinter(address(trv));
+            trv.addNewStrategy(address(tlcStrategy), borrowCeiling, 0);
+            vm.stopPrank();
+            deal(address(daiToken), address(trv), trvStartingBalance, true);
+        }
     }
 
     function defaultDaiConfig() internal view returns (ITempleLineOfCredit.DebtTokenConfig memory) {
         return DebtTokenConfig({
-            // tokenType: daiToken,
-            // tokenAddress: address(daiToken),
             interestRateModel: daiInterestRateModel,
             maxLtvRatio: daiMaxLtvRatio
         });
@@ -141,18 +142,16 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     function expectedMaxBorrows(uint256 collateralAmount) internal view returns (
         MaxBorrowInfo memory info
     ) {
-        info.daiCollateralValue = collateralAmount * templePrice/PRICE_PRECISION;
-        info.daiMaxBorrow = info.daiCollateralValue * daiMaxLtvRatio/LTV_PRECISION;
+        info.daiCollateralValue = collateralAmount * templePrice / PRICE_PRECISION;
+        info.daiMaxBorrow = collateralAmount * templePrice * daiMaxLtvRatio / 1e36;
         info.oudCollateralValue = collateralAmount;
-        info.oudMaxBorrow = info.oudCollateralValue * oudMaxLtvRatio/LTV_PRECISION;
+        info.oudMaxBorrow = collateralAmount * oudMaxLtvRatio / 1e18;
     }
 
     function checkDebtTokenConfig(
         ITempleLineOfCredit.DebtTokenConfig memory actual,
         ITempleLineOfCredit.DebtTokenConfig memory expected
     ) internal {
-        // assertEq(actual.tokenAddress, expected.tokenAddress, "DebtTokenConfig__tokenAddress");
-        // assertEq(uint256(actual.tokenType), uint256(expected.tokenType), "DebtTokenConfig__tokenType");
         assertEq(address(actual.interestRateModel), address(expected.interestRateModel), "DebtTokenConfig__interestRateModel");
         assertEq(actual.maxLtvRatio, expected.maxLtvRatio, "DebtTokenConfig__maxLtvRatio");
     }
@@ -161,10 +160,10 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         ITempleLineOfCredit.DebtTokenData memory actual,
         ITempleLineOfCredit.DebtTokenData memory expected
     ) internal {
-        assertEq(actual.interestAccumulatorUpdatedAt, expected.interestAccumulatorUpdatedAt, "reserveTokenData__interestAccumulatorUpdatedAt");
-        assertApproxEqRel(actual.totalDebt, expected.totalDebt, 1e10, "reserveTokenData__totalDebt");
-        assertApproxEqRel(actual.interestRate, expected.interestRate, 1e9, "reserveTokenData__interestRate");
-        assertApproxEqRel(actual.interestAccumulator, expected.interestAccumulator, 1e9, "reserveTokenData__interestAccumulator");
+        assertEq(actual.interestAccumulatorUpdatedAt, expected.interestAccumulatorUpdatedAt, "DebtTokenData__interestAccumulatorUpdatedAt");
+        assertApproxEqRel(actual.totalDebt, expected.totalDebt, 1e10, "DebtTokenData__totalDebt");
+        assertApproxEqRel(actual.interestRate, expected.interestRate, 1e9, "DebtTokenData__interestRate");
+        assertApproxEqRel(actual.interestAccumulator, expected.interestAccumulator, 1e9, "DebtTokenData__interestAccumulator");
     }
 
     function checkDebtTokenDetails(
@@ -185,48 +184,52 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         }));
     }
 
-    function checkAccountPosition(
-        address account, 
-        uint256 expectedDaiBalance,
-        uint256 expectedOudBalance,
-        AccountPosition memory expectedAccountPosition,
-        uint256 expectedDaiDebtCheckpoint,
-        uint256 expectedDaiAccumulatorCheckpoint,
-        uint256 expectedOudDebtCheckpoint,
-        uint256 expectedOudAccumulatorCheckpoint
-    ) internal {
-        AccountPosition memory actualAccountPosition = tlc.accountPosition(account);
+    struct CheckAccountPositionParams {
+        address account;
+        uint256 expectedDaiBalance;
+        uint256 expectedOudBalance;
+        AccountPosition expectedAccountPosition;
+        uint256 expectedDaiDebtCheckpoint;
+        uint256 expectedDaiAccumulatorCheckpoint;
+        uint256 expectedOudDebtCheckpoint;
+        uint256 expectedOudAccumulatorCheckpoint;
+        uint256 expectedRemoveCollateralRequest;
+        uint256 expectedRemoveCollateralRequestAt;
+    }
+
+    function checkAccountPosition(CheckAccountPositionParams memory params, bool includePendingRequests) internal {
+        AccountPosition memory actualAccountPosition = tlc.accountPosition(params.account, includePendingRequests);
         
-        // @todo add checks for removeCollateralRequest?
-        // AccountData memory actualAccountData = tlc.accountData(account);
         (
             uint256 collateralPosted,
             WithdrawFundsRequest memory removeCollateralRequest,
             AccountDebtData memory daiDebtData,
             AccountDebtData memory oudDebtData
-        ) =  tlc.accountData(account);
+        ) =  tlc.accountData(params.account);
 
-        assertEq(actualAccountPosition.collateralPosted, expectedAccountPosition.collateralPosted, "collateral");
+        assertEq(actualAccountPosition.collateralPosted, params.expectedAccountPosition.collateralPosted, "collateral");
         assertEq(collateralPosted, actualAccountPosition.collateralPosted, "collateral 2");
+        assertEq(removeCollateralRequest.amount, params.expectedRemoveCollateralRequest, "removeCollateralRequest.amount");
+        assertEq(removeCollateralRequest.requestedAt, uint32(params.expectedRemoveCollateralRequestAt), "removeCollateralRequest.requestedAt");
 
         // The 'as of now' data
-        assertEq(daiToken.balanceOf(account), expectedDaiBalance, "balanceOf");
-        assertApproxEqRel(actualAccountPosition.daiDebtPosition.currentDebt, expectedAccountPosition.daiDebtPosition.currentDebt, 1e10, "dai debt");
-        assertEq(actualAccountPosition.daiDebtPosition.maxBorrow, expectedAccountPosition.daiDebtPosition.maxBorrow, "dai max borrow");
-        assertApproxEqRel(actualAccountPosition.daiDebtPosition.healthFactor, expectedAccountPosition.daiDebtPosition.healthFactor, 1e10, "dai health");
-        assertApproxEqRel(actualAccountPosition.daiDebtPosition.loanToValueRatio, expectedAccountPosition.daiDebtPosition.loanToValueRatio, 1e10, "dai LTV");
+        assertEq(daiToken.balanceOf(params.account), params.expectedDaiBalance, "balanceOf");
+        assertApproxEqRel(actualAccountPosition.daiDebtPosition.currentDebt, params.expectedAccountPosition.daiDebtPosition.currentDebt, 1e10, "dai debt");
+        assertEq(actualAccountPosition.daiDebtPosition.maxBorrow, params.expectedAccountPosition.daiDebtPosition.maxBorrow, "dai max borrow");
+        assertApproxEqRel(actualAccountPosition.daiDebtPosition.healthFactor, params.expectedAccountPosition.daiDebtPosition.healthFactor, 1e10, "dai health");
+        assertApproxEqRel(actualAccountPosition.daiDebtPosition.loanToValueRatio, params.expectedAccountPosition.daiDebtPosition.loanToValueRatio, 1e10, "dai LTV");
 
-        assertEq(oudToken.balanceOf(account), expectedOudBalance, "balanceOf");
-        assertApproxEqRel(actualAccountPosition.oudDebtPosition.currentDebt, expectedAccountPosition.oudDebtPosition.currentDebt, 1e10, "oud debt");
-        assertEq(actualAccountPosition.oudDebtPosition.maxBorrow, expectedAccountPosition.oudDebtPosition.maxBorrow, "oud max borrow");
-        assertApproxEqRel(actualAccountPosition.oudDebtPosition.healthFactor, expectedAccountPosition.oudDebtPosition.healthFactor, 1e10, "oud health");
-        assertApproxEqRel(actualAccountPosition.oudDebtPosition.loanToValueRatio, expectedAccountPosition.oudDebtPosition.loanToValueRatio, 1e10, "oud LTV");
+        assertEq(oudToken.balanceOf(params.account), params.expectedOudBalance, "balanceOf");
+        assertApproxEqRel(actualAccountPosition.oudDebtPosition.currentDebt, params.expectedAccountPosition.oudDebtPosition.currentDebt, 1e10, "oud debt");
+        assertEq(actualAccountPosition.oudDebtPosition.maxBorrow, params.expectedAccountPosition.oudDebtPosition.maxBorrow, "oud max borrow");
+        assertApproxEqRel(actualAccountPosition.oudDebtPosition.healthFactor, params.expectedAccountPosition.oudDebtPosition.healthFactor, 1e10, "oud health");
+        assertApproxEqRel(actualAccountPosition.oudDebtPosition.loanToValueRatio, params.expectedAccountPosition.oudDebtPosition.loanToValueRatio, 1e10, "oud LTV");
 
         // The latest checkpoint data
-        assertApproxEqRel(daiDebtData.debtCheckpoint, expectedDaiDebtCheckpoint, 1e10, "DAI debt checkpoint");
-        assertApproxEqRel(daiDebtData.interestAccumulator, expectedDaiAccumulatorCheckpoint, 1e9, "DAI interestAccumulator checkpoint");
-        assertApproxEqRel(oudDebtData.debtCheckpoint, expectedOudDebtCheckpoint, 1e10, "OUD debt checkpoint");
-        assertApproxEqRel(oudDebtData.interestAccumulator, expectedOudAccumulatorCheckpoint, 1e9, "OUD interestAccumulator checkpoint");
+        assertApproxEqRel(daiDebtData.debtCheckpoint, params.expectedDaiDebtCheckpoint, 1e10, "DAI debt checkpoint");
+        assertApproxEqRel(daiDebtData.interestAccumulator, params.expectedDaiAccumulatorCheckpoint, 1e9, "DAI interestAccumulator checkpoint");
+        assertApproxEqRel(oudDebtData.debtCheckpoint, params.expectedOudDebtCheckpoint, 1e10, "OUD debt checkpoint");
+        assertApproxEqRel(oudDebtData.interestAccumulator, params.expectedOudAccumulatorCheckpoint, 1e9, "OUD interestAccumulator checkpoint");
     }
     
     // @todo change this to use checkAccountPosition instead

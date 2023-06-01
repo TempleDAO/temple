@@ -42,6 +42,9 @@ abstract contract TlcStorage is ITlcStorage {
     uint256 public override constant PRICE_PRECISION = 1e18;
     uint256 public override constant LTV_PRECISION = 1e18;
 
+    
+    uint256 public totalCollateral;
+
     /**
      * @notice Account collateral and current token debt information
      */

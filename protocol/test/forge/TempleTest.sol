@@ -14,6 +14,7 @@ abstract contract TempleTest is Test {
 
     address public unauthorizedUser = makeAddr("unauthorizedUser");
     address public alice = makeAddr("alice");
+    address public bob = makeAddr("bob");
     address public operator = makeAddr("operator");
     address public executor = makeAddr("executor");
     address public rescuer = makeAddr("rescuer");

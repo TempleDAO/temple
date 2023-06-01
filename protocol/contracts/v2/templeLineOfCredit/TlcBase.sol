@@ -64,7 +64,8 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         DebtTokenCache memory _cache
     ) private view returns (bool dirty) {
         _cache.config = _debtTokenDetails.config;
-        _cache.interestAccumulator = _debtTokenDetails.data.interestAccumulator.encodeUInt128();
+        // `encodeUInt128()` not required here, as the storage is already guaranteed to fit.
+        _cache.interestAccumulator = uint128(_debtTokenDetails.data.interestAccumulator);
         _cache.totalDebt = _debtTokenDetails.data.totalDebt;
         _cache.interestRate = _debtTokenDetails.data.interestRate;
 
@@ -83,7 +84,6 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         if (blockTs != interestAccumulatorUpdatedAt) {
             dirty = true;
 
-            // @todo Euler also checks for overflows and ignores if it will take it over...?
             uint256 newInterestAccumulator = uint256(_cache.interestAccumulator).continuouslyCompounded(
                 blockTs - interestAccumulatorUpdatedAt,
                 _cache.interestRate
@@ -136,14 +136,16 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         }
     }
 
+    // @todo scan all places we can use unchecked
+
     function checkWithdrawalCooldown(
         uint32 _requestedAt
     ) internal view {
         unchecked {
             if (block.timestamp < _requestedAt+fundsRequestWindow.minSecs)
-                revert NotInFundsRequestWindow(_requestedAt, fundsRequestWindow.minSecs, fundsRequestWindow.maxSecs);
+                revert NotInFundsRequestWindow(block.timestamp, _requestedAt, fundsRequestWindow.minSecs, fundsRequestWindow.maxSecs);
             if (block.timestamp > _requestedAt+fundsRequestWindow.maxSecs)
-                revert NotInFundsRequestWindow(_requestedAt, fundsRequestWindow.minSecs, fundsRequestWindow.maxSecs);
+                revert NotInFundsRequestWindow(block.timestamp, _requestedAt, fundsRequestWindow.minSecs, fundsRequestWindow.maxSecs);
         }
     }
 
@@ -220,7 +222,9 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
     ) internal view returns (LiquidityStatus memory status) {
         status.collateral = _accountData.collateralPosted;
         if (_includePendingRequests) {
-            status.collateral -= _accountData.removeCollateralRequest.amount;
+            unchecked {
+                status.collateral -= _accountData.removeCollateralRequest.amount;
+            }
         }
 
         status.currentDaiDebt = computeLiquidityForToken(
@@ -265,17 +269,23 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
 
     function fillAccountPosition(
         IERC20 _token, 
-        AccountDebtData storage _accountDebtData,
-        uint256 collateralPosted
+        AccountData storage _accountData,
+        uint256 collateralPosted,
+        bool _includePendingRequests
     ) internal view returns (AccountDebtPosition memory) {
         DebtTokenCache memory _debtTokenCache = debtTokenCacheRO(_token);
-        // _accountDebtData = _accountData.debtData[i];
+        AccountDebtData storage _accountDebtData = _accountData.debtData[_token];
+
         uint256 _latestDebt = currentAccountDebtData(
             _debtTokenCache, 
             _accountDebtData.debtCheckpoint,
             _accountDebtData.interestAccumulator
         );
-        // position.debtPositions[i] = 
+
+        if (_includePendingRequests) {
+            _latestDebt += _accountDebtData.borrowRequest.amount; 
+        }
+
         return AccountDebtPosition({
             currentDebt: _latestDebt,
             maxBorrow: maxBorrowCapacity(_debtTokenCache, collateralPosted),

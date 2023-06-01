@@ -9,7 +9,7 @@ interface ITlcEventsAndErrors {
     error UnknownFailure();
 
     error ExceededBorrowedAmount(address token, uint256 totalDebtAmount, uint256 repayAmount);
-    error NotInFundsRequestWindow(uint32 requestedAt, uint32 windowMinSecs, uint32 windowMaxSecs);
+    error NotInFundsRequestWindow(uint256 currentTimestamp, uint32 requestedAt, uint32 windowMinSecs, uint32 windowMaxSecs);
 
     event TlcStrategySet(address indexed strategy, address indexed treasuryReservesVault);
     event FundsRequestWindowSet(uint256 minSecs, uint256 maxSecs);

@@ -12,7 +12,6 @@ contract TempleDebtTokenTestBase is TempleTest {
     bool public constant LOG = false;
 
     TempleDebtToken public dUSD;
-    address public bob = makeAddr("bob");
     uint256 public constant defaultBaseInterest = 0.01e18;
 
     // Continuously compounding rates based on 100e18;

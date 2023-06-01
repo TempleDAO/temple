@@ -15,6 +15,8 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { TlcBase } from "contracts/v2/templeLineOfCredit/TlcBase.sol";
 
+// import "forge-std/console.sol";
+
 contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
@@ -49,8 +51,17 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         if (collateralAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         emit CollateralAdded(msg.sender, onBehalfOf, collateralAmount);
 
-        allAccountsData[onBehalfOf].collateralPosted = (allAccountsData[onBehalfOf].collateralPosted + collateralAmount).encodeUInt128();
+        allAccountsData[onBehalfOf].collateralPosted = (
+            allAccountsData[onBehalfOf].collateralPosted + 
+            collateralAmount
+        ).encodeUInt128();
 
+        unchecked {
+            // Cannot overflow - already know it's less than 2^128
+            totalCollateral += collateralAmount;
+        }
+
+        // Note: No need to check liquidity when adding collateral.
         templeToken.safeTransferFrom(
             msg.sender,
             address(this),
@@ -61,10 +72,9 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     function requestRemoveCollateral(uint256 amount) external override {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         AccountData storage _accountData = allAccountsData[msg.sender];
+        if (amount > _accountData.collateralPosted) revert CommonEventsAndErrors.InvalidAmount(address(templeToken), amount);
 
         _accountData.removeCollateralRequest = WithdrawFundsRequest(amount.encodeUInt128(), uint32(block.timestamp));
-
-        if (_accountData.removeCollateralRequest.amount > _accountData.collateralPosted) revert ExceededMaxLtv();
         checkLiquidity(_accountData);
 
         emit RemoveCollateralRequested(msg.sender, amount);
@@ -73,8 +83,10 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     function cancelRemoveCollateralRequest(address account) external override {
         // Either the account holder or the DAO elevated access is allowed to cancel individual requests
         if (msg.sender != account && !isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
-        
-        delete allAccountsData[msg.sender].removeCollateralRequest;
+        AccountData storage _accountData = allAccountsData[account];
+        if (_accountData.removeCollateralRequest.requestedAt == 0) revert CommonEventsAndErrors.InvalidParam();
+
+        delete _accountData.removeCollateralRequest;
         emit RemoveCollateralRequestCancelled(account);
     }
 
@@ -92,13 +104,13 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
             delete allAccountsData[msg.sender].removeCollateralRequest;
         }
 
-        uint256 _newCollateral = _accountData.collateralPosted - _removeAmount;
-
         // Update the collateral, and then verify that it doesn't make the debt unsafe.
-        _accountData.collateralPosted = uint128(_newCollateral);
-
-        // A subtraction in collateral - so the downcast is safe
-        _accountData.collateralPosted = uint128(_newCollateral);
+        // A subtraction in collateral (where the removeAmount is always <= existing collateral
+        // - so the downcast here is safe
+        unchecked {
+            _accountData.collateralPosted = uint128(_accountData.collateralPosted - _removeAmount);
+            totalCollateral -= _removeAmount;
+        }
         emit CollateralRemoved(msg.sender, recipient, _removeAmount);
 
         checkLiquidity(_accountData);
@@ -132,10 +144,14 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     function cancelBorrowRequest(address account, IERC20 token) external override {
         // Either the account holder or the DAO elevated access is allowed to cancel individual requests
         if (msg.sender != account && !isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
-        
-        delete allAccountsData[msg.sender].debtData[token].borrowRequest;
+        AccountDebtData storage _debtData = allAccountsData[msg.sender].debtData[token];
+        if (_debtData.borrowRequest.requestedAt == 0) revert CommonEventsAndErrors.InvalidParam();
+
+        delete _debtData.borrowRequest;
         emit BorrowRequestCancelled(account, address(token));
     }
+
+    // @todo check for 0 amount borrow requests
 
     function borrow(IERC20 token, address recipient) external override {
         AccountData storage _accountData = allAccountsData[msg.sender];
@@ -218,23 +234,6 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                       LIQUIDATIONS                         */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-
-    // Given there are no dependencies on price, relying on off-chain lists of
-    // accounts (eg via subgraph) is enough for the bot to get the list of accounts.
-    function computeLiquidity(
-        address[] memory accounts,
-        bool includePendingRequests
-    ) external override view returns (LiquidityStatus[] memory status) {
-        uint256 _numAccounts = accounts.length;
-        for (uint256 i; i < _numAccounts; ++i) {
-            status[i] = computeLiquidity(
-                allAccountsData[accounts[i]], 
-                debtTokenCacheRO(daiToken),
-                debtTokenCacheRO(oudToken),
-                includePendingRequests
-            );
-        }
-    }
 
     struct LiquidateParams {
         DebtTokenCache daiTokenCache;
@@ -331,7 +330,12 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         address to, 
         uint256 amount
     ) external override onlyElevatedAccess {
-        // @todo need to change so collateral can't be pinched.
+        // Can't pull any of the user collateral.
+        if (token == address(templeToken)) {
+            uint256 bal = templeToken.balanceOf(address(this));
+            if (amount > (bal - totalCollateral)) revert CommonEventsAndErrors.InvalidAmount(token, amount);
+        }
+
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
         IERC20(token).safeTransfer(to, amount);
     }
@@ -343,7 +347,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     function refreshInterestRates(
         IERC20 token
     ) external override {
-        updateInterestRates(token, debtTokenDetails[token], debtTokenCache(token));
+        updateInterestRates(daiToken, debtTokenDetails[token], debtTokenCache(token));
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -371,19 +375,32 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         return debtTokenCacheRO(token);
     }
 
-    function accountPosition(address account) external override view returns (AccountPosition memory position) {
+    function accountPosition(
+        address account,
+        bool includePendingRequests
+    ) external override view returns (
+        AccountPosition memory position
+    ) {
         AccountData storage _accountData = allAccountsData[account];
         position.collateralPosted = _accountData.collateralPosted;
 
+        if (includePendingRequests) {
+            unchecked {
+                position.collateralPosted -= _accountData.removeCollateralRequest.amount;
+            }
+        }
+
         position.daiDebtPosition = fillAccountPosition(
             daiToken, 
-            _accountData.debtData[daiToken], 
-            position.collateralPosted
+            _accountData,
+            position.collateralPosted,
+            includePendingRequests
         );
         position.oudDebtPosition = fillAccountPosition(
             oudToken,
-            _accountData.debtData[oudToken],
-            position.collateralPosted
+            _accountData,
+            position.collateralPosted,
+            includePendingRequests
         );
     }
 
@@ -395,4 +412,20 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         oudPosition = fillTotalPosition(oudToken);
     }
 
+    // Given there are no dependencies on price, relying on off-chain lists of
+    // accounts (eg via subgraph) is enough for the bot to get the list of accounts.
+    function computeLiquidity(
+        address[] memory accounts,
+        bool includePendingRequests
+    ) external override view returns (LiquidityStatus[] memory status) {
+        uint256 _numAccounts = accounts.length;
+        for (uint256 i; i < _numAccounts; ++i) {
+            status[i] = computeLiquidity(
+                allAccountsData[accounts[i]], 
+                debtTokenCacheRO(daiToken),
+                debtTokenCacheRO(oudToken),
+                includePendingRequests
+            );
+        }
+    }
 }

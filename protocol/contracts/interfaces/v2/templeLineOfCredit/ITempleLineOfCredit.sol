@@ -34,7 +34,13 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
         AccountDebtData memory _oudDebtData
     );
 
-    function accountPosition(address account) external view returns (AccountPosition memory position);
+    function accountPosition(
+        address account,
+        bool includePendingRequests
+    ) external view returns (
+        AccountPosition memory position
+    );
+
     function totalPosition() external view returns (
         TotalPosition memory daiPosition,
         TotalPosition memory oudPosition
