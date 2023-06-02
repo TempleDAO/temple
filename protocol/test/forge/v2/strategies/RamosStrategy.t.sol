@@ -73,7 +73,6 @@ contract RamosStrategyTestBase is TempleTest {
         trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD), 9700);
         strategy = new RamosStrategy(rescuer, executor, "RamosStrategy", address(trv), address(ramos));
         vm.startPrank(executor);
-        ramos.setExecutor(address(strategy), true);
         dUSD.addMinter(executor);
         vm.stopPrank();
     }
@@ -346,12 +345,15 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
     function setUp() public {
         _setUp();
 
-        // Add the new strategy, and setup TRV such that it has stables to lend and issue dUSD.
         vm.startPrank(executor);
+        // Add the new strategy, and setup TRV such that it has stables to lend and issue dUSD.
         trv.addNewStrategy(address(strategy), borrowCeiling, 0);
         strategy.setAssets(reportedAssets);
         deal(address(dai), address(trv), trvStartingBalance, true);
         dUSD.addMinter(address(trv));
+        // Set the explicit access to RAMOS functions
+        ramos.setExplicitAccess(address(strategy), ramos.addLiquidity.selector, true);
+        ramos.setExplicitAccess(address(strategy), ramos.removeLiquidity.selector, true);
         vm.stopPrank();
     }
 
