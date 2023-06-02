@@ -13,7 +13,8 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { RAMOS } from "contracts/amo/Ramos.sol";
 import { PoolHelper, AMO__IBalancerVault } from "contracts/amo/helpers/PoolHelper.sol";
-import { AMO__IAuraStaking } from "contracts/amo/interfaces/AMO__IAuraStaking.sol";
+import { AuraStaking } from "contracts/amo/AuraStaking.sol";
+import { TempleERC20Token } from "contracts/core/TempleERC20Token.sol";
 
 interface IBPT {
     function getActualSupply() external view returns (uint256);
@@ -22,14 +23,14 @@ interface IBPT {
 contract RamosStrategyTestBase is TempleTest {
     RamosStrategy public strategy;
 
-    address public constant RAMOS_ADDRESS = 0xC3133cB9e685ccc82C73FbE580eCeDC667B41917;
+    RAMOS public ramos;
     address balancerVault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     address balancerHelpers = 0x5aDDCCa35b7A0D07C74063c48700C8590E87864E;
     address temple = 0x470EBf5f030Ed85Fc1ed4C2d36B9DD02e77CF1b7;
     uint64 templeIndexPool = 0;
     bytes32 balancerPoolId = 0x8bd4a1e74a27182d23b98c10fd21d4fbb0ed4ba00002000000000000000004ed;
     address public constant POOL_HELPER_ADDRESS = 0x4A02CbdBcd97BC639a13b864710550A7c39A3416;
-    AMO__IAuraStaking public amoStaking = AMO__IAuraStaking(0x70989E7D20C065ce7628C8DdAA240853437953d7);
+    AuraStaking public amoStaking = AuraStaking(0x70989E7D20C065ce7628C8DdAA240853437953d7);
     IERC20 public bptToken = IERC20(0x8Bd4A1E74A27182D23B98c10Fd21D4FbB0eD4BA0);
     IERC20 public dai = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
     IERC20 public aura = IERC20(0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF);
@@ -44,17 +45,35 @@ contract RamosStrategyTestBase is TempleTest {
     function _setUp() public {
         fork("mainnet", 17300437);
 
-        RAMOS ramos = new RAMOS(balancerVault, temple, address(dai), address(bptToken), address(amoStaking), templeIndexPool, balancerPoolId);
-        vm.etch(RAMOS_ADDRESS, address(ramos).code);
-
         PoolHelper poolHelper = new PoolHelper(balancerVault, balancerHelpers, temple, address(dai), address(bptToken), address(amoStaking), templeIndexPool, balancerPoolId);
         vm.etch(POOL_HELPER_ADDRESS, address(poolHelper).code);
 
+        ramos = new RAMOS(rescuer, executor, balancerVault, temple, address(dai), address(bptToken), address(amoStaking), templeIndexPool, balancerPoolId);
+        // RAMOS settings
+        vm.startPrank(executor);
+        ramos.setPoolHelper(POOL_HELPER_ADDRESS);
+        ramos.setCoolDown(1800);    // 30 mins
+        ramos.setTemplePriceFloorNumerator(9700);
+        ramos.setRebalancePercentageBounds(200, 500);
+        ramos.setMaxRebalanceAmounts(1e28, 1e28, 1e28); // bpt, temple, stable
+        vm.stopPrank();
+        // `amoStaking` settings
+        address amoStakingOwner = amoStaking.owner();
+        startHoax(amoStakingOwner);
+        amoStaking.setOperator(address(ramos));
+        amoStaking.setRewardsRecipient(executor);
+        vm.stopPrank();
+        // `templeToken` settings
+        address templeTokenOwner = TempleERC20Token(temple).owner();
+        startHoax(templeTokenOwner);
+        TempleERC20Token(temple).addMinter(address(ramos));
+        vm.stopPrank();
+
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
         trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD), 9700);
-        strategy = new RamosStrategy(rescuer, executor, "RamosStrategy", address(trv), RAMOS_ADDRESS);
-
+        strategy = new RamosStrategy(rescuer, executor, "RamosStrategy", address(trv), address(ramos));
         vm.startPrank(executor);
+        ramos.setExecutor(address(strategy), true);
         dUSD.addMinter(executor);
         vm.stopPrank();
     }
@@ -90,7 +109,7 @@ contract RamosStrategyTestAdmin is RamosStrategyTestBase {
         assertEq(strategy.manualAssetBalanceDeltas(address(dai)), 0);
         assertEq(strategy.currentDebt(), 0);
 
-        assertEq(address(strategy.ramos()), RAMOS_ADDRESS);
+        assertEq(address(strategy.ramos()), address(ramos));
         address[] memory assets = new address[](0);
         assertEq(strategy.getAssets(), assets);
     }
@@ -333,13 +352,6 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         strategy.setAssets(reportedAssets);
         deal(address(dai), address(trv), trvStartingBalance, true);
         dUSD.addMinter(address(trv));
-        vm.stopPrank();
-
-        // Add Transfer the RAMOS ownership to the startegy
-        address ramosOwner = RAMOS(RAMOS_ADDRESS).owner();
-        startHoax(ramosOwner);
-
-        RAMOS(RAMOS_ADDRESS).transferOwnership(address(strategy));
         vm.stopPrank();
     }
 

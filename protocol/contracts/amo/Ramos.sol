@@ -1,10 +1,10 @@
 pragma solidity ^0.8.4;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "../v2/access/TempleElevatedAccess.sol";
 import "./interfaces/AMO__IPoolHelper.sol";
 import "./interfaces/AMO__ITempleERC20Token.sol";
 import "./helpers/AMOCommon.sol";
@@ -18,7 +18,7 @@ import "./interfaces/AMO__IAuraStaking.sol";
  * BPTs into TEMPLE and burn them and if the price is above the TPF it will 
  * single side deposit TEMPLE into the pool to drop the spot price.
  */
-contract RAMOS is Ownable, Pausable {
+contract RAMOS is TempleElevatedAccess, Pausable {
     using SafeERC20 for IERC20;
 
     AMO__IBalancerVault public immutable balancerVault;
@@ -30,7 +30,6 @@ contract RAMOS is Ownable, Pausable {
     // @notice AMO contract for staking into aura 
     AMO__IAuraStaking public amoStaking;
 
-    address public operator;
     IERC20 public immutable temple;
     IERC20 public immutable stable;
 
@@ -66,7 +65,6 @@ contract RAMOS is Ownable, Pausable {
     }
 
     event RecoveredToken(address token, address to, uint256 amount);
-    event SetOperator(address operator);
     event SetPostRebalanceSlippage(uint64 slippageBps);
     event SetCooldown(uint64 cooldownSecs);
     event SetPauseState(bool paused);
@@ -83,6 +81,8 @@ contract RAMOS is Ownable, Pausable {
     event SetAmoStaking(address indexed amoStaking);
 
     constructor(
+        address _initialRescuer,
+        address _initialExecutor,
         address _balancerVault,
         address _temple,
         address _stable,
@@ -90,7 +90,7 @@ contract RAMOS is Ownable, Pausable {
         address _amoStaking,
         uint64 _templeIndexInPool,
         bytes32 _balancerPoolId
-    ) {
+    ) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
         balancerVault = AMO__IBalancerVault(_balancerVault);
         temple = IERC20(_temple);
         stable = IERC20(_stable);
@@ -100,19 +100,19 @@ contract RAMOS is Ownable, Pausable {
         balancerPoolId = _balancerPoolId;
     }
 
-    function setPoolHelper(address _poolHelper) external onlyOwner {
+    function setPoolHelper(address _poolHelper) external onlyElevatedAccess {
         poolHelper = AMO__IPoolHelper(_poolHelper);
 
         emit SetPoolHelper(_poolHelper);
     }
 
-    function setAmoStaking(address _amoStaking) external onlyOwner {
+    function setAmoStaking(address _amoStaking) external onlyElevatedAccess {
         amoStaking = AMO__IAuraStaking(_amoStaking);
 
         emit SetAmoStaking(_amoStaking);
     }
 
-    function setPostRebalanceSlippage(uint64 slippage) external onlyOwner {
+    function setPostRebalanceSlippage(uint64 slippage) external onlyElevatedAccess {
         if (slippage > BPS_PRECISION || slippage == 0) {
             revert AMOCommon.InvalidBPSValue(slippage);
         }
@@ -126,7 +126,7 @@ contract RAMOS is Ownable, Pausable {
      * @param stableMaxAmount Maximum stable amount per rebalance
      * @param templeMaxAmount Maximum temple amount per rebalance
      */
-    function setMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 stableMaxAmount, uint256 templeMaxAmount) external onlyOwner {
+    function setMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 stableMaxAmount, uint256 templeMaxAmount) external onlyElevatedAccess {
         if (bptMaxAmount == 0 || stableMaxAmount == 0 || templeMaxAmount == 0) {
             revert AMOCommon.InvalidMaxAmounts(bptMaxAmount, stableMaxAmount, templeMaxAmount);
         }
@@ -137,7 +137,7 @@ contract RAMOS is Ownable, Pausable {
     }
 
     // @notice percentage bounds (in bps) beyond which to rebalance up or down
-    function setRebalancePercentageBounds(uint64 belowTPF, uint64 aboveTPF) external onlyOwner {
+    function setRebalancePercentageBounds(uint64 belowTPF, uint64 aboveTPF) external onlyElevatedAccess {
         if (belowTPF > BPS_PRECISION || aboveTPF > BPS_PRECISION) {
             revert AMOCommon.InvalidBPSValue(belowTPF);
         }
@@ -147,27 +147,17 @@ contract RAMOS is Ownable, Pausable {
         emit SetRebalancePercentageBounds(belowTPF, aboveTPF);
     }
 
-    function setTemplePriceFloorNumerator(uint128 _numerator) external onlyOwner {
+    function setTemplePriceFloorNumerator(uint128 _numerator) external onlyElevatedAccess {
         templePriceFloorNumerator = _numerator;
 
         emit SetTemplePriceFloorNumerator(_numerator);
     }
 
     /**
-     * @notice Set operator
-     * @param _operator New operator
-     */
-    function setOperator(address _operator) external onlyOwner {
-        operator = _operator;
-
-        emit SetOperator(_operator);
-    }
-
-    /**
      * @notice Set cooldown time to throttle operator bot
      * @param _seconds Time in seconds between operator calls
      * */
-    function setCoolDown(uint64 _seconds) external onlyOwner {
+    function setCoolDown(uint64 _seconds) external onlyElevatedAccess {
         cooldownSecs = _seconds;
 
         emit SetCooldown(_seconds);
@@ -176,14 +166,14 @@ contract RAMOS is Ownable, Pausable {
     /**
      * @notice Pause AMO
      * */
-    function pause() external onlyOwner {
+    function pause() external onlyElevatedAccess {
         _pause();
     }
 
     /**
      * @notice Unpause AMO
      * */
-    function unpause() external onlyOwner {
+    function unpause() external onlyElevatedAccess {
         _unpause();
     }
 
@@ -193,7 +183,7 @@ contract RAMOS is Ownable, Pausable {
      * @param to Recipient address
      * @param amount Amount to recover
      */
-    function recoverToken(address token, address to, uint256 amount) external onlyOwner {
+    function recoverToken(address token, address to, uint256 amount) external onlyElevatedAccess {
         IERC20(token).safeTransfer(to, amount);
 
         emit RecoveredToken(token, to, amount);
@@ -210,7 +200,7 @@ contract RAMOS is Ownable, Pausable {
     function rebalanceUp(
         uint256 bptAmountIn,
         uint256 minAmountOut
-    ) external onlyOperatorOrOwner whenNotPaused enoughCooldown {
+    ) external onlyElevatedAccess whenNotPaused enoughCooldown {
         _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
 
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
@@ -239,7 +229,7 @@ contract RAMOS is Ownable, Pausable {
     function rebalanceDown(
         uint256 templeAmountIn,
         uint256 minBptOut
-    ) external onlyOperatorOrOwner whenNotPaused enoughCooldown {
+    ) external onlyElevatedAccess whenNotPaused enoughCooldown {
         _validateParams(minBptOut, templeAmountIn, maxRebalanceAmounts.temple);
 
         AMO__ITempleERC20Token(address(temple)).mint(address(this), templeAmountIn);
@@ -269,7 +259,7 @@ contract RAMOS is Ownable, Pausable {
     function depositStable(
         uint256 amountIn,
         uint256 minBptOut
-    ) external onlyOwner whenNotPaused {
+    ) external onlyElevatedAccess whenNotPaused {
         _validateParams(minBptOut, amountIn, maxRebalanceAmounts.stable);
 
         stable.safeTransfer(address(poolHelper), amountIn);
@@ -300,7 +290,7 @@ contract RAMOS is Ownable, Pausable {
         uint256 bptAmountIn,
         uint256 minAmountOut,
         address to
-    ) external onlyOwner whenNotPaused {
+    ) external onlyElevatedAccess whenNotPaused {
         _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
 
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
@@ -326,7 +316,7 @@ contract RAMOS is Ownable, Pausable {
      */
     function addLiquidity(
         AMO__IBalancerVault.JoinPoolRequest memory request
-    ) external onlyOwner {
+    ) external onlyElevatedAccess {
         // validate request
         if (request.assets.length != request.maxAmountsIn.length || 
             request.assets.length != 2 || 
@@ -376,7 +366,7 @@ contract RAMOS is Ownable, Pausable {
         AMO__IBalancerVault.ExitPoolRequest memory request,
         uint256 bptIn,
         address to
-    ) external onlyOwner {
+    ) external onlyElevatedAccess {
         // validate request
         if (request.assets.length != request.minAmountsOut.length || 
             request.assets.length != 2 || 
@@ -422,7 +412,7 @@ contract RAMOS is Ownable, Pausable {
     function depositAndStakeBptTokens(
         uint256 amount,
         bool useContractBalance
-    ) external onlyOwner {
+    ) external onlyElevatedAccess {
         if (!useContractBalance) {
             bptToken.safeTransferFrom(msg.sender, address(this), amount);
         }
@@ -446,13 +436,6 @@ contract RAMOS is Ownable, Pausable {
     modifier enoughCooldown() {
         if (lastRebalanceTimeSecs != 0 && lastRebalanceTimeSecs + cooldownSecs > block.timestamp) {
             revert AMOCommon.NotEnoughCooldown();
-        }
-        _;
-    }
-
-    modifier onlyOperatorOrOwner() {
-        if (msg.sender != operator && msg.sender != owner()) {
-            revert AMOCommon.NotOperatorOrOwner();
         }
         _;
     }
