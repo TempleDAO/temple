@@ -452,7 +452,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      */
     function _compoundedBaseInterest() internal view returns (uint256) {
         uint256 _timeElapsed = block.timestamp - baseCheckpointTime;
-        return baseCheckpoint.continuouslyCompounded(_timeElapsed, int96(int256(baseRate)));
+        return baseCheckpoint.continuouslyCompounded(_timeElapsed, uint96(baseRate));
     }
 
     /**
@@ -465,7 +465,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         uint256 _timeElapsed = block.timestamp - debtor.checkpointTime;
         uint256 _principal = debtor.principal;
         uint256 _principalAndInterest = _principal + debtor.checkpoint;
-        return _principalAndInterest.continuouslyCompounded(_timeElapsed, int96(int256(_rate))) - _principal;
+        return _principalAndInterest.continuouslyCompounded(_timeElapsed, uint96(_rate)) - _principal;
     }
 
     /**

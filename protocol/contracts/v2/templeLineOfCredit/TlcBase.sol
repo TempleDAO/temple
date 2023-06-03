@@ -28,7 +28,7 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         uint128 totalDebt;
 
         /// @notice The interest rate as of the last borrow/repay/
-        int96 interestRate;
+        uint96 interestRate;
 
         uint128 interestAccumulator;
 
@@ -130,7 +130,7 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         DebtTokenDetails storage _debtTokenDetails,
         DebtTokenCache memory _debtTokenCache
     ) internal {
-        int96 newInterestRate = _debtTokenCache.config.interestRateModel.calculateInterestRate(
+        uint96 newInterestRate = _debtTokenCache.config.interestRateModel.calculateInterestRate(
             utilizationRatio(_debtTokenCache)
         );
 

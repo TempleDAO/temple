@@ -70,7 +70,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
 
         vm.startPrank(alice);
 
-        int96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling); // 7.77 %
+        uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling); // 7.77 %
         uint256 expectedDaiDebt = approxInterest(borrowDaiAmount, expectedDaiInterestRate, 365 days); // ~54k
         uint256 expectedOudDebt = approxInterest(borrowOudAmount, oudInterestRate, 365 days);
 
@@ -91,7 +91,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
             checkDebtTokenDetails(daiToken, borrowDaiAmount, expectedDaiInterestRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
             checkDebtTokenDetails(oudToken, borrowOudAmount, oudInterestRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
 
-            int96 updatedDaiInterestRate = calculateInterestRate(daiInterestRateModel, daiTotalDebt-borrowDaiAmount, borrowCeiling);
+            uint96 updatedDaiInterestRate = calculateInterestRate(daiInterestRateModel, daiTotalDebt-borrowDaiAmount, borrowCeiling);
             expectedDaiDebt -= borrowDaiAmount;
             expectedOudDebt -= borrowOudAmount;
 
@@ -183,7 +183,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
                 uint256 debt
             ) = tlcStrategy.latestAssetBalances();
             // dusd == any interest accrued
-            assertApproxEqRel(debt, approxInterest(borrowDaiAmount, int96(uint96(defaultBaseInterest)), 365 days) - borrowDaiAmount, 1e10);
+            assertApproxEqRel(debt, approxInterest(borrowDaiAmount, uint96(defaultBaseInterest), 365 days) - borrowDaiAmount, 1e10);
             assertEq(assetBalances.length, 2);
             assertEq(assetBalances[0].asset, address(daiToken));
             assertApproxEqRel(assetBalances[0].balance, expectedDaiDebt, 1e10);
@@ -259,7 +259,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
             tlc.repay(oudToken, position.oudDebtPosition.currentDebt, alice);
         }
 
-        int96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
+        uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
         uint256 daiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiInterestRate, 365 days);
         uint256 oudAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, oudInterestRate, 365 days);
 
@@ -348,7 +348,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
             tlc.repayAll(oudToken, alice);
         }
 
-        int96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
+        uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
         uint256 daiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiInterestRate, 365 days);
         uint256 oudAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, oudInterestRate, 365 days);
 

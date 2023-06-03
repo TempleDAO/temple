@@ -439,7 +439,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
         vm.startPrank(alice);
 
-        int96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount / 2, borrowCeiling);
+        uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount / 2, borrowCeiling);
 
         // Borrow half the max amount of each
         // uint32 tsBefore = uint32(block.timestamp);
@@ -492,7 +492,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         }
 
         // Borrow the other half
-        int96 updatedDaiInterestRate;
+        uint96 updatedDaiInterestRate;
         {
             // Can almost get the full other half, but since there's some elapsed time, we can't borrow the exact
             // amount due to accrued interest. So take off 1e16
@@ -502,8 +502,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
             updatedDaiInterestRate = 95805553176705164;
             assertApproxEqRel(
-                uint256(int256(calculateInterestRate(daiInterestRateModel, borrowDaiAmount-1e16, borrowCeiling))), 
-                uint256(int256(updatedDaiInterestRate)),
+                calculateInterestRate(daiInterestRateModel, borrowDaiAmount-1e16, borrowCeiling), 
+                updatedDaiInterestRate,
                 0.0001e18
             );
 

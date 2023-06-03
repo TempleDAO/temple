@@ -35,8 +35,8 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
 
     TreasuryReservesVault public trv;
     TempleDebtToken public dUSD;
-    uint256 public constant defaultBaseInterest = 0.01e18; // 1%
-    int96 public constant oudInterestRate = 0.05e18; // 5%
+    uint96 public constant defaultBaseInterest = 0.01e18; // 1%
+    uint96 public constant oudInterestRate = 0.05e18; // 5%
 
     uint256 public constant trvStartingBalance = 1_000_000e18;
     uint256 public constant borrowCeiling = 100_000e18;
@@ -72,7 +72,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             90e18 / 100, // 90% utilization (UR for when the kink starts)
             10e18 / 100  // 10% percent interest rate (rate% at kink% UR)
         );
-        oudInterestRateModel = new FlatInterestRateModel(uint256(int256(oudInterestRate)));
+        oudInterestRateModel = new FlatInterestRateModel(oudInterestRate);
 
         tlc = new TempleLineOfCredit(
             rescuer, 
@@ -170,7 +170,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     function checkDebtTokenDetails(
         IERC20 token,
         uint256 borrowedAmount,
-        int96 expectedInterestRate,
+        uint96 expectedInterestRate,
         uint256 expectedInterestAccumulator,
         uint256 expectedInterestAccumulatorUpdatedAt
     ) internal {
@@ -247,9 +247,9 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     
     function checkTotalPosition(
         uint256 expectedOudUR,
-        int256 expectedDaiIR,
+        uint256 expectedDaiIR,
         uint256 expectedDaiDebt,
-        int256 expectedOudIR,
+        uint256 expectedOudIR,
         uint256 expectedOudDebt
     ) internal returns (uint256, uint256) {
         (TotalPosition memory actualDaiPosition, TotalPosition memory actualOudPosition) = tlc.totalPosition();
@@ -298,10 +298,10 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         vm.stopPrank();
     }
 
-    function approxInterest(uint256 principal, int96 rate, uint256 age) internal pure returns (uint256) {
+    function approxInterest(uint256 principal, uint96 rate, uint256 age) internal pure returns (uint256) {
         // Approxmiate as P * (1 + r/365 days)^(age)
         // ie compounding every 1 second (almost but not quite continuous)
-        uint256 onePlusRate = uint256(int256(rate / 365 days + 1e18));
+        uint256 onePlusRate = uint256(rate / 365 days + 1e18);
 
         return ud(principal).mul(ud(onePlusRate).powu(age)).unwrap();
     }
@@ -310,7 +310,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         return borrowed * 1e18 / cap;
     }
 
-    function calculateInterestRate(IInterestRateModel model, uint256 borrowed, uint256 cap) internal view returns (int96) {
+    function calculateInterestRate(IInterestRateModel model, uint256 borrowed, uint256 cap) internal view returns (uint96) {
         return model.calculateInterestRate(utilizationRatio(borrowed, cap));
     }
 

@@ -26,7 +26,7 @@ interface ITlcDataTypes {
         uint128 totalDebt;
 
         /// @notice The interest rate as of the last borrow/repay/
-        int96 interestRate;
+        uint96 interestRate;
 
         uint256 interestAccumulator;
     }
@@ -85,7 +85,7 @@ interface ITlcDataTypes {
         uint256 utilizationRatio;
 
         // @notice The DAI borrow interest rate as of the last checkpoint
-        int256 borrowRate;
+        uint256 borrowRate;
 
         // @notice The DAI total debt across all accounts as of this block
         uint256 totalDebt;

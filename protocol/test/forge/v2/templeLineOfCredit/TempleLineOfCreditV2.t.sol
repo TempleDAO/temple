@@ -285,7 +285,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         uint32 ts = uint32(block.timestamp);
         borrow(alice, collateralAmount, borrowDaiAmount, 0, BORROW_REQUEST_MIN_SECS);
         
-        int96 expectedInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
+        uint96 expectedInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
         checkDebtTokenDetails(daiToken, borrowDaiAmount, expectedInterestRate, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
         checkDebtTokenDetails(oudToken, 0, 0, INITIAL_INTEREST_ACCUMULATOR, ts);
 
@@ -326,7 +326,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         uint256 age = 10000;
         vm.warp(block.timestamp + age);
 
-        int96 expectedDaiRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
+        uint96 expectedDaiRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
 
         checkDebtTokenDetails(daiToken, borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, ts2);
         checkDebtTokenDetails(oudToken, 0, 0, INITIAL_INTEREST_ACCUMULATOR, ts);
@@ -524,10 +524,10 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
         });
 
         // For DAI, borrowing 90k / 100k available, so it's right at the kink - 10% interest rate
-        int96 expectedDaiRate = 0.1e18;
+        uint96 expectedDaiRate = 0.1e18;
 
         // Flat interest rate of 5%
-        int96 expectedOudRate = 0.05e18;
+        uint96 expectedOudRate = 0.05e18;
         
         borrow(alice, params.collateralAmount, params.borrowDaiAmount, params.borrowOudAmount, BORROW_REQUEST_MIN_SECS);
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(params.collateralAmount);

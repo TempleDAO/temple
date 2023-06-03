@@ -10,5 +10,5 @@ interface IInterestRateModel {
      */
     function calculateInterestRate(
         uint256 utilizationRatio
-    ) external view returns (int96 interestRate);
+    ) external view returns (uint96 interestRate);
 }

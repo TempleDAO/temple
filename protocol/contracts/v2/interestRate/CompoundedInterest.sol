@@ -1,11 +1,11 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { sd } from "@prb/math/src/SD59x18.sol";
+import { ud } from "@prb/math/src/UD60x18.sol";
 import { mulDivSigned } from "@prb/math/src/Common.sol";
 
 library CompoundedInterest {
-    int256 public constant ONE_YEAR = 365 days;
+    uint256 public constant ONE_YEAR = 365 days;
 
     // @todo handle negative interest rates.
 
@@ -16,13 +16,11 @@ library CompoundedInterest {
     function continuouslyCompounded(
         uint256 principal, 
         uint256 elapsed, 
-        int96 interestRate
+        uint96 interestRate
     ) internal pure returns (uint256) {
-        int256 exponent = int256(elapsed) * interestRate / ONE_YEAR;
-        return uint256(
-            sd(int256(principal)).mul(
-                sd(exponent).exp()
-            ).unwrap()
-        );
+        uint256 exponent = elapsed * interestRate / ONE_YEAR;
+        return ud(principal).mul(
+            ud(exponent).exp()
+        ).unwrap();
     }
 }

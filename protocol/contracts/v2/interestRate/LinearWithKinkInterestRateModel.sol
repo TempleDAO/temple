@@ -9,8 +9,6 @@ import { SafeCast } from "contracts/common/SafeCast.sol";
 contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
     using SafeCast for uint256;
 
-    // @todo change back to uint96
-
     struct RateParams {
         /// @notice The base interest rate which is the y-intercept when utilization rate is 0
         uint80 baseInterestRate;
@@ -54,7 +52,7 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
      * @notice Calculates the current interest rate based on a utilization ratio
      * @param utilizationRatio The utilization ratio scaled to `PRECISION`
      */
-    function computeInterestRateImpl(uint256 utilizationRatio) internal override view returns (int96) {
+    function computeInterestRateImpl(uint256 utilizationRatio) internal override view returns (uint96) {
         RateParams memory _rateParams = rateParams;
 
         // console.log("linear compute:", utilizationRatio);
@@ -83,7 +81,7 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
             );
         }
 
-        return int96(uint96(interestRate));
+        return uint96(interestRate);
     }
 }
 

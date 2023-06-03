@@ -31,6 +31,6 @@ interface ITlcEventsAndErrors {
 
     event Liquidated(address indexed account, uint256 collateralSeized, uint256 daiDebtWiped, uint256 oudDebtWiped);
 
-    event InterestRateUpdate(address indexed token, int96 newInterestRate);
+    event InterestRateUpdate(address indexed token, uint96 newInterestRate);
 
 }
