@@ -32,6 +32,7 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
 
         uint128 interestAccumulator;
 
+        // 18 decimals
         uint256 price;
         
         /// @notice The max allowed to be borrowed from the TRV
@@ -62,7 +63,7 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         DebtTokenCache memory _cache
     ) private view returns (bool dirty) {
         _cache.config = _debtTokenDetails.config;
-        // `encodeUInt128()` not required here, as the storage is already guaranteed to fit.
+        // No need to use `encodeUInt128()` here - straight from storage of the same dimension
         _cache.interestAccumulator = uint128(_debtTokenDetails.data.interestAccumulator);
         _cache.totalDebt = _debtTokenDetails.data.totalDebt;
         _cache.interestRate = _debtTokenDetails.data.interestRate;
@@ -72,6 +73,7 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
             _cache.trvDebtCeiling = _trv.strategyDebtCeiling(address(tlcStrategy));
             _cache.price = _trv.treasuryPriceIndex();
         } else if (_token == oudToken) {
+            // _cache.trvDebtCeiling remains as 0
             _cache.price = 1e18;
         } else {
             revert CommonEventsAndErrors.InvalidToken(address(_token));
@@ -132,23 +134,23 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
             utilizationRatio(_debtTokenCache)
         );
 
-        // Update storage if it differs to the existing one.
+        // Update storage if the new rate differs from the old rate.
         if (_debtTokenCache.interestRate != newInterestRate) {
             emit InterestRateUpdate(address(_token), newInterestRate);
             _debtTokenDetails.data.interestRate = _debtTokenCache.interestRate = newInterestRate;
         }
     }
 
-    // @todo scan all places we can use unchecked
-
     function checkWithdrawalCooldown(
+        uint32 _minSecs,
+        uint32 _maxSecs,
         uint32 _requestedAt
     ) internal view {
         unchecked {
-            if (block.timestamp < _requestedAt+fundsRequestWindow.minSecs)
-                revert NotInFundsRequestWindow(block.timestamp, _requestedAt, fundsRequestWindow.minSecs, fundsRequestWindow.maxSecs);
-            if (block.timestamp > _requestedAt+fundsRequestWindow.maxSecs)
-                revert NotInFundsRequestWindow(block.timestamp, _requestedAt, fundsRequestWindow.minSecs, fundsRequestWindow.maxSecs);
+            if (block.timestamp < _requestedAt+_minSecs)
+                revert NotInFundsRequestWindow(block.timestamp, _requestedAt, _minSecs, _maxSecs);
+            if (block.timestamp > _requestedAt+_maxSecs)
+                revert NotInFundsRequestWindow(block.timestamp, _requestedAt, _minSecs, _maxSecs);
         }
     }
 
@@ -168,18 +170,21 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
             revert ExceededBorrowedAmount(address(_token), _newDebt, _repayAmount);
         }
 
-        _newDebt -= _repayAmount;
+        // Update storage
+        DebtTokenDetails storage _debtTokenDetails = debtTokenDetails[_token];
+        unchecked {
+            _newDebt -= _repayAmount;
+            _debtTokenDetails.data.totalDebt = _debtTokenCache.totalDebt = uint128(
+                _debtTokenCache.totalDebt - _repayAmount
+            );
+        }
         _accountDebtData.debtCheckpoint = _newDebt.encodeUInt128();
         _accountDebtData.interestAccumulator = _debtTokenCache.interestAccumulator;
-        DebtTokenDetails storage _debtTokenDetails = debtTokenDetails[_token];
-        _debtTokenDetails.data.totalDebt = _debtTokenCache.totalDebt = uint128(
-            _debtTokenCache.totalDebt - _repayAmount
-        );
 
         updateInterestRates(_token, _debtTokenDetails, _debtTokenCache);
 
         emit Repay(_fromAccount, _onBehalfOf, address(_token), _repayAmount);
-        // NB: Liquidity doesn't need to be checked after a repay, it can only improve the health.
+        // NB: Liquidity doesn't need to be checked after a repay, as that only improves the health.
 
         if (_token == daiToken) {
             // Pull the stables, and repay the TRV debt on behalf of the strategy.
@@ -265,9 +270,11 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
 
         // Update the reserve token details, and then update the interest rates.            
         // A decrease in amount, so this downcast is safe without a check
-        _debtTokenDetails.data.totalDebt = _debtTokenCache.totalDebt = uint128(
-            _debtTokenCache.totalDebt - _totalDebtWiped
-        );
+        unchecked {
+            _debtTokenDetails.data.totalDebt = _debtTokenCache.totalDebt = uint128(
+                _debtTokenCache.totalDebt - _totalDebtWiped
+            );
+        }
 
         updateInterestRates(_token, _debtTokenDetails, _debtTokenCache);
     }

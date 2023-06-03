@@ -78,7 +78,7 @@ contract TempleLineOfCreditTestCheckLiquidityDai is TlcBaseTest {
     function test_computeLiquidity_withBorrowUnderMaxLTV() external {
         uint256 collateralAmount = 10 ether;
         uint256 daiBorrowAmount = 1 ether;
-        borrow(alice, collateralAmount, daiBorrowAmount, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, daiBorrowAmount, 0, BORROW_REQUEST_MIN_SECS);
 
         checkLiquidityStatus(alice, true, false, collateralAmount, daiBorrowAmount, 0);
         checkLiquidityStatus(alice, false, false, collateralAmount, daiBorrowAmount, 0);
@@ -88,7 +88,7 @@ contract TempleLineOfCreditTestCheckLiquidityDai is TlcBaseTest {
         uint256 collateralAmount = 10 ether;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
         uint256 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
-        borrow(alice, collateralAmount, daiBorrowAmount, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, daiBorrowAmount, 0, BORROW_REQUEST_MIN_SECS);
 
         checkLiquidityStatus(alice, true, false, collateralAmount, daiBorrowAmount, 0);
         checkLiquidityStatus(alice, false, false, collateralAmount, daiBorrowAmount, 0);
@@ -98,7 +98,7 @@ contract TempleLineOfCreditTestCheckLiquidityDai is TlcBaseTest {
         uint256 collateralAmount = 10 ether;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
         uint256 daiBorrowAmount = maxBorrowInfo.daiMaxBorrow;
-        borrow(alice, collateralAmount, daiBorrowAmount, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, daiBorrowAmount, 0, BORROW_REQUEST_MIN_SECS);
 
         vm.prank(executor);
         tlc.setMaxLtvRatio(daiToken, 0.8e18);
@@ -110,7 +110,7 @@ contract TempleLineOfCreditTestCheckLiquidityDai is TlcBaseTest {
     function test_computeLiquidity_withBorrowAndRequestUnderMaxLTV() external {
         uint256 collateralAmount = 10 ether;
         uint256 daiBorrowAmount = 1 ether;
-        borrow(alice, collateralAmount, daiBorrowAmount, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, daiBorrowAmount, 0, BORROW_REQUEST_MIN_SECS);
         vm.prank(alice);
         tlc.requestBorrow(daiToken, 0.5e18);
 
@@ -122,7 +122,7 @@ contract TempleLineOfCreditTestCheckLiquidityDai is TlcBaseTest {
     function test_computeLiquidity_withBorrowAndRequestAtMaxLTV() external {
         uint256 collateralAmount = 10 ether;
         uint256 daiBorrowAmount = 1 ether;
-        borrow(alice, collateralAmount, daiBorrowAmount, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, daiBorrowAmount, 0, BORROW_REQUEST_MIN_SECS);
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
         vm.prank(alice);
         tlc.requestBorrow(daiToken, maxBorrowInfo.daiMaxBorrow-daiBorrowAmount);
@@ -139,7 +139,7 @@ contract TempleLineOfCreditTestCheckLiquidityDai is TlcBaseTest {
     function test_computeLiquidity_withBorrowAndRequestOverMaxLTV() external {
         uint256 collateralAmount = 10 ether;
         uint256 daiBorrowAmount = 1 ether;
-        borrow(alice, collateralAmount, daiBorrowAmount, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, daiBorrowAmount, 0, BORROW_REQUEST_MIN_SECS);
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
         vm.prank(alice);
         tlc.requestBorrow(daiToken, maxBorrowInfo.daiMaxBorrow-daiBorrowAmount);
@@ -154,7 +154,7 @@ contract TempleLineOfCreditTestCheckLiquidityDai is TlcBaseTest {
     function test_computeLiquidity_withBorrowAndRequestOverMaxLTV_afterRepayOK() external {
         uint256 collateralAmount = 10 ether;
         uint256 daiBorrowAmount = 8 ether;
-        borrow(alice, collateralAmount, daiBorrowAmount, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, daiBorrowAmount, 0, BORROW_REQUEST_MIN_SECS);
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
         vm.prank(alice);
         tlc.requestBorrow(daiToken, maxBorrowInfo.daiMaxBorrow-daiBorrowAmount);
@@ -173,7 +173,7 @@ contract TempleLineOfCreditTestCheckLiquidityDai is TlcBaseTest {
     function test_computeLiquidity_afterRepayAll() external {
         uint256 collateralAmount = 10 ether;
         uint256 daiBorrowAmount = 8 ether;
-        borrow(alice, collateralAmount, daiBorrowAmount, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, daiBorrowAmount, 0, BORROW_REQUEST_MIN_SECS);
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
         vm.prank(alice);
         tlc.requestBorrow(daiToken, maxBorrowInfo.daiMaxBorrow-daiBorrowAmount);
@@ -196,7 +196,7 @@ contract TempleLineOfCreditTestCheckLiquidityDai is TlcBaseTest {
         checkLiquidityStatus(alice, true, false, 0, 0, 0);
         checkLiquidityStatus(alice, false, false, collateralAmount, 0, 0);
 
-        vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+        vm.warp(block.timestamp + COLLATERAL_REQUEST_MIN_SECS);
         tlc.removeCollateral(alice);
         checkLiquidityStatus(alice, true, false, 0, 0, 0);
         checkLiquidityStatus(alice, false, false, 0, 0, 0);
@@ -272,7 +272,7 @@ contract TempleLineOfCreditTestCheckLiquidityOud is TlcBaseTest {
     function test_computeLiquidity_withBorrowUnderMaxLTV() external {
         uint256 collateralAmount = 10 ether;
         uint256 oudBorrowAmount = 1 ether;
-        borrow(alice, collateralAmount, 0, oudBorrowAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, 0, oudBorrowAmount, BORROW_REQUEST_MIN_SECS);
 
         checkLiquidityStatus(alice, true, false, collateralAmount, 0, oudBorrowAmount);
         checkLiquidityStatus(alice, false, false, collateralAmount, 0, oudBorrowAmount);
@@ -282,7 +282,7 @@ contract TempleLineOfCreditTestCheckLiquidityOud is TlcBaseTest {
         uint256 collateralAmount = 10 ether;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
         uint256 oudBorrowAmount = maxBorrowInfo.oudMaxBorrow;
-        borrow(alice, collateralAmount, 0, oudBorrowAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, 0, oudBorrowAmount, BORROW_REQUEST_MIN_SECS);
 
         checkLiquidityStatus(alice, true, false, collateralAmount, 0, oudBorrowAmount);
         checkLiquidityStatus(alice, false, false, collateralAmount, 0, oudBorrowAmount);
@@ -292,7 +292,7 @@ contract TempleLineOfCreditTestCheckLiquidityOud is TlcBaseTest {
         uint256 collateralAmount = 10 ether;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
         uint256 oudBorrowAmount = maxBorrowInfo.oudMaxBorrow;
-        borrow(alice, collateralAmount, 0, oudBorrowAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, 0, oudBorrowAmount, BORROW_REQUEST_MIN_SECS);
 
         vm.prank(executor);
         tlc.setMaxLtvRatio(oudToken, 0.8e18);
@@ -304,7 +304,7 @@ contract TempleLineOfCreditTestCheckLiquidityOud is TlcBaseTest {
     function test_computeLiquidity_withBorrowAndRequestUnderMaxLTV() external {
         uint256 collateralAmount = 10 ether;
         uint256 oudBorrowAmount = 1 ether;
-        borrow(alice, collateralAmount, 0, oudBorrowAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, 0, oudBorrowAmount, BORROW_REQUEST_MIN_SECS);
         vm.prank(alice);
         tlc.requestBorrow(oudToken, 0.5e18);
 
@@ -316,7 +316,7 @@ contract TempleLineOfCreditTestCheckLiquidityOud is TlcBaseTest {
     function test_computeLiquidity_withBorrowAndRequestAtMaxLTV() external {
         uint256 collateralAmount = 10 ether;
         uint256 oudBorrowAmount = 1 ether;
-        borrow(alice, collateralAmount, 0, oudBorrowAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, 0, oudBorrowAmount, BORROW_REQUEST_MIN_SECS);
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
         vm.prank(alice);
         tlc.requestBorrow(oudToken, maxBorrowInfo.oudMaxBorrow-oudBorrowAmount);
@@ -333,7 +333,7 @@ contract TempleLineOfCreditTestCheckLiquidityOud is TlcBaseTest {
     function test_computeLiquidity_withBorrowAndRequestOverMaxLTV() external {
         uint256 collateralAmount = 10 ether;
         uint256 oudBorrowAmount = 1 ether;
-        borrow(alice, collateralAmount, 0, oudBorrowAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, 0, oudBorrowAmount, BORROW_REQUEST_MIN_SECS);
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
         vm.prank(alice);
         tlc.requestBorrow(oudToken, maxBorrowInfo.oudMaxBorrow-oudBorrowAmount);
@@ -348,7 +348,7 @@ contract TempleLineOfCreditTestCheckLiquidityOud is TlcBaseTest {
     function test_computeLiquidity_withBorrowAndRequestOverMaxLTV_afterRepayOK() external {
         uint256 collateralAmount = 10 ether;
         uint256 oudBorrowAmount = 8 ether;
-        borrow(alice, collateralAmount, 0, oudBorrowAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, 0, oudBorrowAmount, BORROW_REQUEST_MIN_SECS);
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
         vm.prank(alice);
         tlc.requestBorrow(oudToken, maxBorrowInfo.oudMaxBorrow-oudBorrowAmount);
@@ -367,7 +367,7 @@ contract TempleLineOfCreditTestCheckLiquidityOud is TlcBaseTest {
     function test_computeLiquidity_afterRepayAll() external {
         uint256 collateralAmount = 10 ether;
         uint256 oudBorrowAmount = 8 ether;
-        borrow(alice, collateralAmount, 0, oudBorrowAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, 0, oudBorrowAmount, BORROW_REQUEST_MIN_SECS);
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
         vm.prank(alice);
         tlc.requestBorrow(oudToken, maxBorrowInfo.oudMaxBorrow-oudBorrowAmount);
@@ -390,7 +390,7 @@ contract TempleLineOfCreditTestCheckLiquidityOud is TlcBaseTest {
         checkLiquidityStatus(alice, true, false, 0, 0, 0);
         checkLiquidityStatus(alice, false, false, collateralAmount, 0, 0);
 
-        vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+        vm.warp(block.timestamp + COLLATERAL_REQUEST_MIN_SECS);
         tlc.removeCollateral(alice);
         checkLiquidityStatus(alice, true, false, 0, 0, 0);
         checkLiquidityStatus(alice, false, false, 0, 0, 0);
@@ -403,12 +403,12 @@ contract TempleLineOfCreditTestCheckLiquidityBoth is TlcBaseTest {
     function test_computeLiquidity_eitherOver_thenCanLiquidate() external {
         uint256 collateralAmount = 10 ether;
         uint256 daiBorrowAmount = 7 ether;
-        borrow(alice, collateralAmount, daiBorrowAmount, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, daiBorrowAmount, 0, BORROW_REQUEST_MIN_SECS);
 
         uint256 oudBorrowAmount = 7 ether;
         vm.startPrank(alice);
         tlc.requestBorrow(oudToken, oudBorrowAmount);
-        vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+        vm.warp(block.timestamp + BORROW_REQUEST_MIN_SECS);
         tlc.borrow(oudToken, alice);
 
         // A few seconds of interest on DAI as time was warped in the OUD borrow request.

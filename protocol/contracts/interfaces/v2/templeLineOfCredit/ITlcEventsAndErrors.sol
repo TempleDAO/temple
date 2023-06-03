@@ -12,7 +12,8 @@ interface ITlcEventsAndErrors {
     error NotInFundsRequestWindow(uint256 currentTimestamp, uint32 requestedAt, uint32 windowMinSecs, uint32 windowMaxSecs);
 
     event TlcStrategySet(address indexed strategy, address indexed treasuryReservesVault);
-    event FundsRequestWindowSet(uint256 minSecs, uint256 maxSecs);
+    event RemoveCollateralRequestWindowSet(uint256 minSecs, uint256 maxSecs);
+    event BorrowRequestWindowSet(address indexed token, uint256 minSecs, uint256 maxSecs);
     event InterestRateModelSet(address indexed token, address indexed interestRateModel);
     event MaxLtvRatioSet(address indexed token, uint256 maxLtvRatio);
 

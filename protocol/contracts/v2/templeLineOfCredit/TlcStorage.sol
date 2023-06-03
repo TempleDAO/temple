@@ -30,19 +30,12 @@ abstract contract TlcStorage is ITlcStorage {
      */
     ITreasuryReservesVault public override treasuryReservesVault;
 
-    // @todo change so this is separated for collateral vs borrows.
-    // We can pause borrows, but collateral withdrawals are allowed.
     /**
      * @notice When either a withdraw collateral or borrow request is made,
      * the account has a window in which they can action the request.
      * If a request expires, a new request will need to be made or the action will revert.
      */
-    FundsRequestWindow public override fundsRequestWindow;
-
-    // @todo check constants
-    uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
-    uint256 public override constant PRICE_PRECISION = 1e18;
-    uint256 public override constant LTV_PRECISION = 1e18;
+    FundsRequestWindow public override removeCollateralRequestWindow;
 
     
     uint256 public totalCollateral;
@@ -57,6 +50,8 @@ abstract contract TlcStorage is ITlcStorage {
      */
     mapping(IERC20 => DebtTokenDetails) public override debtTokenDetails;
 
+    uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
+    
     constructor(address _templeToken, address _daiToken, address _oudToken)
     {
         templeToken = IERC20(_templeToken);

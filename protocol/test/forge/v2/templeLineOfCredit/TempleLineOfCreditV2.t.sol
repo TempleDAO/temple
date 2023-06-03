@@ -64,9 +64,19 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         assertEq(newTlc.totalCollateral(), 0);
 
         assertEq(address(newTlc.treasuryReservesVault()), address(0));
-        (uint32 minSecs, uint32 maxSecs) = newTlc.fundsRequestWindow();
-        assertEq(minSecs, 0);
-        assertEq(maxSecs, 0);
+        {
+            (uint32 minSecs, uint32 maxSecs) = newTlc.removeCollateralRequestWindow();
+            assertEq(minSecs, 0);
+            assertEq(maxSecs, 0);
+
+            (DebtTokenConfig memory cfg,) = newTlc.debtTokenDetails(daiToken);
+            assertEq(cfg.borrowRequestWindow.minSecs, BORROW_REQUEST_MIN_SECS);
+            assertEq(cfg.borrowRequestWindow.maxSecs, BORROW_REQUEST_MAX_SECS);
+
+            (cfg,) = newTlc.debtTokenDetails(oudToken);
+            assertEq(cfg.borrowRequestWindow.minSecs, BORROW_REQUEST_MIN_SECS);
+            assertEq(cfg.borrowRequestWindow.maxSecs, BORROW_REQUEST_MAX_SECS);
+        }
 
         (DebtTokenConfig memory config, DebtTokenData memory totals) = newTlc.debtTokenDetails(daiToken);
         checkDebtTokenConfig(config, getDefaultConfig(daiToken));
@@ -103,9 +113,17 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
             assertEq(address(tlc.treasuryReservesVault()), address(trv));
             assertEq(daiToken.allowance(address(tlc), address(trv)), type(uint256).max);
 
-            (uint32 minSecs, uint32 maxSecs) = tlc.fundsRequestWindow();
-            assertEq(minSecs, FUNDS_REQUEST_MIN_SECS);
-            assertEq(maxSecs, FUNDS_REQUEST_MAX_SECS);
+            (uint32 minSecs, uint32 maxSecs) = tlc.removeCollateralRequestWindow();
+            assertEq(minSecs, COLLATERAL_REQUEST_MIN_SECS);
+            assertEq(maxSecs, COLLATERAL_REQUEST_MAX_SECS);
+
+            (DebtTokenConfig memory cfg,) = tlc.debtTokenDetails(daiToken);
+            assertEq(cfg.borrowRequestWindow.minSecs, BORROW_REQUEST_MIN_SECS);
+            assertEq(cfg.borrowRequestWindow.maxSecs, BORROW_REQUEST_MAX_SECS);
+
+            (cfg,) = tlc.debtTokenDetails(oudToken);
+            assertEq(cfg.borrowRequestWindow.minSecs, BORROW_REQUEST_MIN_SECS);
+            assertEq(cfg.borrowRequestWindow.maxSecs, BORROW_REQUEST_MAX_SECS);
         }
     }
 
@@ -118,7 +136,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
             address(daiToken),
             DebtTokenConfig({
                 interestRateModel: IInterestRateModel(address(0)),
-                maxLtvRatio: daiMaxLtvRatio
+                maxLtvRatio: daiMaxLtvRatio,
+                borrowRequestWindow: FundsRequestWindow(0, 0)
             }),
             address(oudToken),
             defaultOudConfig()
@@ -132,7 +151,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
             address(daiToken),
             DebtTokenConfig({
                 interestRateModel: daiInterestRateModel,
-                maxLtvRatio: 1.01e18
+                maxLtvRatio: 1.01e18,
+                borrowRequestWindow: FundsRequestWindow(0, 0)
             }),
             address(oudToken),
             defaultOudConfig()
@@ -176,33 +196,57 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         tlc.setTlcStrategy(alice);
     }
 
-    function test_setFundsRequestWindow() public {
+    function test_setWithdrawCollateralRequestWindow() public {
         vm.startPrank(executor);
-        (uint32 minSecs, uint32 maxSecs) = tlc.fundsRequestWindow();
-        assertEq(minSecs, FUNDS_REQUEST_MIN_SECS);
-        assertEq(maxSecs, FUNDS_REQUEST_MAX_SECS);
+        (uint32 minSecs, uint32 maxSecs) = tlc.removeCollateralRequestWindow();
+        assertEq(minSecs, COLLATERAL_REQUEST_MIN_SECS);
+        assertEq(maxSecs, COLLATERAL_REQUEST_MAX_SECS);
         
         vm.expectEmit(address(tlc));
-        emit FundsRequestWindowSet(2 days, 4 days);
+        emit RemoveCollateralRequestWindowSet(2 days, 4 days);
 
-        tlc.setFundsRequestWindow(2 days, 4 days);
-        (minSecs, maxSecs) = tlc.fundsRequestWindow();
+        tlc.setWithdrawCollateralRequestWindow(2 days, 4 days);
+        (minSecs, maxSecs) = tlc.removeCollateralRequestWindow();
         assertEq(minSecs, 2 days);
         assertEq(maxSecs, 4 days);
 
         // Intentionally no restrictions if the max < min (effectively pausing withdrawals in emergency)
-        tlc.setFundsRequestWindow(3 days, 1 days);
-        (minSecs, maxSecs) = tlc.fundsRequestWindow();
+        tlc.setWithdrawCollateralRequestWindow(3 days, 1 days);
+        (minSecs, maxSecs) = tlc.removeCollateralRequestWindow();
         assertEq(minSecs, 3 days);
         assertEq(maxSecs, 1 days);
     }
 
+    function test_setBorrowRequestWindow() public {
+        vm.startPrank(executor);
+
+        (DebtTokenConfig memory cfg,) = tlc.debtTokenDetails(daiToken);
+        assertEq(cfg.borrowRequestWindow.minSecs, BORROW_REQUEST_MIN_SECS);
+        assertEq(cfg.borrowRequestWindow.maxSecs, BORROW_REQUEST_MAX_SECS);
+        
+        vm.expectEmit(address(tlc));
+        emit BorrowRequestWindowSet(address(daiToken), 2 days, 4 days);
+
+        tlc.setBorrowRequestWindow(daiToken, 2 days, 4 days);
+        (cfg,) = tlc.debtTokenDetails(daiToken);
+        assertEq(cfg.borrowRequestWindow.minSecs, 2 days);
+        assertEq(cfg.borrowRequestWindow.maxSecs, 4 days);
+
+        // Intentionally no restrictions if the max < min (effectively pausing withdrawals in emergency)
+        tlc.setBorrowRequestWindow(daiToken, 3 days, 1 days);
+        (cfg,) = tlc.debtTokenDetails(daiToken);
+        assertEq(cfg.borrowRequestWindow.minSecs, 3 days);
+        assertEq(cfg.borrowRequestWindow.maxSecs, 1 days);
+
+        // A bad token
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidToken.selector, templeToken));
+        tlc.setBorrowRequestWindow(templeToken, 3 days, 1 days);
+    }
+
     function test_setInterestRateModel_noDebt() public {
         // After a rate refresh, the 'next' period of interest is set.
-        tlc.refreshInterestRates(daiToken);
+        tlc.refreshInterestRates();
         checkDebtTokenDetails(daiToken, 0, 0.05e18, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
-        checkDebtTokenDetails(oudToken, 0, 0, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
-        tlc.refreshInterestRates(oudToken);
         checkDebtTokenDetails(oudToken, 0, oudInterestRate, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
 
         uint256 age = 10000;
@@ -239,7 +283,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         uint256 collateralAmount = 10 ether;
         uint256 borrowDaiAmount = 1 ether;
         uint32 ts = uint32(block.timestamp);
-        borrow(alice, collateralAmount, borrowDaiAmount, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowDaiAmount, 0, BORROW_REQUEST_MIN_SECS);
         
         int96 expectedInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
         checkDebtTokenDetails(daiToken, borrowDaiAmount, expectedInterestRate, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
@@ -276,7 +320,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         uint256 collateralAmount = 10 ether;
         uint256 borrowDaiAmount = 1 ether;
         uint32 ts = uint32(block.timestamp);
-        borrow(alice, collateralAmount, borrowDaiAmount, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowDaiAmount, 0, BORROW_REQUEST_MIN_SECS);
 
         uint32 ts2 = uint32(block.timestamp);
         uint256 age = 10000;
@@ -287,14 +331,11 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         checkDebtTokenDetails(daiToken, borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, ts2);
         checkDebtTokenDetails(oudToken, 0, 0, INITIAL_INTEREST_ACCUMULATOR, ts);
 
-        tlc.refreshInterestRates(daiToken);
+        tlc.refreshInterestRates();
 
         uint256 expectedAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiRate, age);
         uint256 expectedDaiDebt = approxInterest(borrowDaiAmount, expectedDaiRate, age);
         checkDebtTokenDetails(daiToken, expectedDaiDebt, expectedDaiRate, expectedAccumulator, uint32(block.timestamp));
-        checkDebtTokenDetails(oudToken, 0, 0, INITIAL_INTEREST_ACCUMULATOR, ts);
-
-        tlc.refreshInterestRates(oudToken);
         checkDebtTokenDetails(oudToken, 0, oudInterestRate, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
     }
 
@@ -308,7 +349,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         (DebtTokenConfig memory config, DebtTokenData memory totals) = tlc.debtTokenDetails(daiToken);
         checkDebtTokenConfig(config, DebtTokenConfig({
             interestRateModel: daiInterestRateModel,
-            maxLtvRatio: uint128(maxLtvRatio)
+            maxLtvRatio: uint128(maxLtvRatio),
+            borrowRequestWindow: FundsRequestWindow(BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS)
         }));
 
         checkDebtTokenData(totals, DebtTokenData({
@@ -370,9 +412,14 @@ contract TempleLineOfCreditTest_Access is TlcBaseTest {
         tlc.setTlcStrategy(alice);
     }
 
-    function test_access_setFundsRequestWindow() public {
+    function test_access_setWithdrawCollateralRequestWindow() public {
         expectElevatedAccess();
-        tlc.setFundsRequestWindow(0, 0);
+        tlc.setWithdrawCollateralRequestWindow(0, 0);
+    }
+
+    function test_access_setBorrowRequestWindow() public {
+        expectElevatedAccess();
+        tlc.setBorrowRequestWindow(daiToken, 0, 0);
     }
 
     function test_access_setInterestRateModel() public {
@@ -482,7 +529,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
         // Flat interest rate of 5%
         int96 expectedOudRate = 0.05e18;
         
-        borrow(alice, params.collateralAmount, params.borrowDaiAmount, params.borrowOudAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, params.collateralAmount, params.borrowDaiAmount, params.borrowOudAmount, BORROW_REQUEST_MIN_SECS);
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(params.collateralAmount);
 
         // Run checks after the initial borrow
@@ -550,8 +597,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
         uint256 expectedOudAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedOudRate, 365 days);
         expectedDaiRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, borrowCeiling);
         {
-            tlc.refreshInterestRates(daiToken);
-            tlc.refreshInterestRates(oudToken);
+            tlc.refreshInterestRates();
 
             checkDebtTokenDetails(daiToken, expectedDaiDebt, expectedDaiRate, expectedDaiAccumulator, block.timestamp);
             checkDebtTokenDetails(oudToken, expectedOudDebt, expectedOudRate, expectedOudAccumulator, block.timestamp);
@@ -583,19 +629,19 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
             {
                 tlc.requestBorrow(daiToken, 1);
                 tlc.requestBorrow(oudToken, 1);
-                vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+                vm.warp(block.timestamp + BORROW_REQUEST_MIN_SECS);
                 tlc.borrow(daiToken, alice);
                 tlc.borrow(oudToken, alice);
             }
 
             // Update the expected amounts/rates - 30 seconds more of interest.
             {
-                expectedDaiDebt = approxInterest(expectedDaiDebt, expectedDaiRate, FUNDS_REQUEST_MIN_SECS) + 1;
-                expectedDaiAccumulator = approxInterest(expectedDaiAccumulator, expectedDaiRate, FUNDS_REQUEST_MIN_SECS);
+                expectedDaiDebt = approxInterest(expectedDaiDebt, expectedDaiRate, BORROW_REQUEST_MIN_SECS) + 1;
+                expectedDaiAccumulator = approxInterest(expectedDaiAccumulator, expectedDaiRate, BORROW_REQUEST_MIN_SECS);
                 expectedDaiRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, borrowCeiling);
 
-                expectedOudDebt = approxInterest(expectedOudDebt, expectedOudRate, FUNDS_REQUEST_MIN_SECS) + 1;
-                expectedOudAccumulator = approxInterest(expectedOudAccumulator, expectedOudRate, FUNDS_REQUEST_MIN_SECS);
+                expectedOudDebt = approxInterest(expectedOudDebt, expectedOudRate, BORROW_REQUEST_MIN_SECS) + 1;
+                expectedOudAccumulator = approxInterest(expectedOudAccumulator, expectedOudRate, BORROW_REQUEST_MIN_SECS);
             }
 
             checkDebtTokenDetails(daiToken, expectedDaiDebt, expectedDaiRate, expectedDaiAccumulator, block.timestamp);

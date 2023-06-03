@@ -25,7 +25,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
     }
     
     function test_repay_failsTooMuch() external {
-        borrow(alice, 10 ether, 1 ether, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, 10 ether, 1 ether, 0, BORROW_REQUEST_MIN_SECS);
         vm.expectRevert(abi.encodeWithSelector(ExceededBorrowedAmount.selector, address(daiToken), 1e18, 1.01e18));
         vm.prank(alice);
         tlc.repay(daiToken, 1.01e18, alice);
@@ -63,7 +63,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         uint256 collateralAmount = 200_000e18;
 
         Balances memory balancesBefore = getBalances();
-        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, BORROW_REQUEST_MIN_SECS);
 
         uint32 tsBefore = uint32(block.timestamp);
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
@@ -196,7 +196,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         uint256 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
         uint256 borrowOudAmount = 20_000e18; // Flat interest rate of 5%
         uint256 collateralAmount = 200_000e18;
-        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, BORROW_REQUEST_MIN_SECS);
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
         AccountPosition memory position = tlc.accountPosition(alice, true);
         
@@ -233,7 +233,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         uint256 borrowOudAmount = 20_000e18; // Flat interest rate of 5%
 
         uint256 collateralAmount = 200_000e18;
-        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, BORROW_REQUEST_MIN_SECS);
 
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
 
@@ -323,7 +323,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         uint256 borrowOudAmount = 20_000e18; // Flat interest rate of 5%
         
         uint256 collateralAmount = 200_000e18;
-        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, BORROW_REQUEST_MIN_SECS);
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
 
         AccountPosition memory position = tlc.accountPosition(alice, true);
@@ -399,7 +399,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         uint256 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
         uint256 borrowOudAmount = 20_000e18; // Flat interest rate of 5%
         uint256 collateralAmount = 200_000e18;
-        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, BORROW_REQUEST_MIN_SECS);
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
         AccountPosition memory position = tlc.accountPosition(alice, true);
         

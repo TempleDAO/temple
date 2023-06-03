@@ -61,11 +61,12 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
     );
 
     // Manually checkpoint debt to adjust interest rate based on latest utillization ratio
-    function refreshInterestRates(IERC20 token) external;
+    function refreshInterestRates() external;
 
     /** EXECUTORS/RESCUERS ONLY */
     function setTlcStrategy(address _tlcStrategy) external;
-    function setFundsRequestWindow(uint256 minSecs, uint256 maxSecs) external;
+    function setWithdrawCollateralRequestWindow(uint256 minSecs, uint256 maxSecs) external;
+    function setBorrowRequestWindow(IERC20 token, uint256 minSecs, uint256 maxSecs) external;
     function setInterestRateModel(IERC20 token, address interestRateModel) external;
     function setMaxLtvRatio(IERC20 token, uint256 maxLtvRatio) external;
     function recoverToken(address token, address to, uint256 amount) external;

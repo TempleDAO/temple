@@ -42,11 +42,11 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     uint256 public constant borrowCeiling = 100_000e18;
 
     uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
-    uint256 public constant PRICE_PRECISION = 1e18;
-    uint256 public constant LTV_PRECISION = 1e18;
     
-    uint32 public constant FUNDS_REQUEST_MIN_SECS = 60;
-    uint32 public constant FUNDS_REQUEST_MAX_SECS = 120;
+    uint32 public constant COLLATERAL_REQUEST_MIN_SECS = 30;
+    uint32 public constant COLLATERAL_REQUEST_MAX_SECS = 45;
+    uint32 public constant BORROW_REQUEST_MIN_SECS = 60;
+    uint32 public constant BORROW_REQUEST_MAX_SECS = 120;
 
     function setUp() public {
         // Default starts at 0 which can hide some issues
@@ -97,7 +97,9 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         {
             vm.startPrank(executor);
             tlc.setTlcStrategy(address(tlcStrategy));
-            tlc.setFundsRequestWindow(FUNDS_REQUEST_MIN_SECS, FUNDS_REQUEST_MAX_SECS);
+            tlc.setWithdrawCollateralRequestWindow(COLLATERAL_REQUEST_MIN_SECS, COLLATERAL_REQUEST_MAX_SECS);
+            tlc.setBorrowRequestWindow(daiToken, BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS);
+            tlc.setBorrowRequestWindow(oudToken, BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS);
         }
 
         // Add the TLC Strategy into TRV so it can borrow DAI
@@ -112,14 +114,16 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     function defaultDaiConfig() internal view returns (ITempleLineOfCredit.DebtTokenConfig memory) {
         return DebtTokenConfig({
             interestRateModel: daiInterestRateModel,
-            maxLtvRatio: daiMaxLtvRatio
+            maxLtvRatio: daiMaxLtvRatio,
+            borrowRequestWindow: FundsRequestWindow(BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS)
         });
     }
 
     function defaultOudConfig() internal view returns (ITempleLineOfCredit.DebtTokenConfig memory) {
         return DebtTokenConfig({
             interestRateModel: oudInterestRateModel,
-            maxLtvRatio: oudMaxLtvRatio.encodeUInt128()
+            maxLtvRatio: oudMaxLtvRatio.encodeUInt128(),
+            borrowRequestWindow: FundsRequestWindow(BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS)
         });
     }
 
@@ -137,7 +141,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     function expectedMaxBorrows(uint256 collateralAmount) internal view returns (
         MaxBorrowInfo memory info
     ) {
-        info.daiCollateralValue = collateralAmount * templePrice / PRICE_PRECISION;
+        info.daiCollateralValue = collateralAmount * templePrice / 1e18;
         info.daiMaxBorrow = collateralAmount * templePrice * daiMaxLtvRatio / 1e36;
         info.oudCollateralValue = collateralAmount;
         info.oudMaxBorrow = collateralAmount * oudMaxLtvRatio / 1e18;
@@ -149,6 +153,8 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     ) internal {
         assertEq(address(actual.interestRateModel), address(expected.interestRateModel), "DebtTokenConfig__interestRateModel");
         assertEq(actual.maxLtvRatio, expected.maxLtvRatio, "DebtTokenConfig__maxLtvRatio");
+        assertEq(actual.borrowRequestWindow.minSecs, expected.borrowRequestWindow.minSecs, "DebtTokenConfig__borrowRequestWindow.minSecs");
+        assertEq(actual.borrowRequestWindow.maxSecs, expected.borrowRequestWindow.maxSecs, "DebtTokenConfig__borrowRequestWindow.maxSecs");
     }
 
     function checkDebtTokenData(

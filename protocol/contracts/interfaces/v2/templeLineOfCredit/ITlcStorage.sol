@@ -13,13 +13,11 @@ interface ITlcStorage is ITlcDataTypes {
     function daiToken() external view returns (IERC20);
     function oudToken() external view returns (IERC20);
     function treasuryReservesVault() external view returns (ITreasuryReservesVault);
-    function fundsRequestWindow() external view returns (uint32 minSecs, uint32 maxSecs);
+    function removeCollateralRequestWindow() external view returns (uint32 minSecs, uint32 maxSecs);
 
     function debtTokenDetails(IERC20 token) external view returns (
         DebtTokenConfig memory config,
         DebtTokenData memory data
     );
     
-    function PRICE_PRECISION() external view returns (uint256);
-    function LTV_PRECISION() external view returns (uint256);
 }

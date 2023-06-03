@@ -145,7 +145,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
     function test_requestRemoveCollateral_failsCheckLiquidity() public {
         uint256 collateralAmount = 100_000e18;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        borrow(alice, collateralAmount, maxBorrowInfo.daiMaxBorrow, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, maxBorrowInfo.daiMaxBorrow, 0, BORROW_REQUEST_MIN_SECS);
 
         // Can't remove any collateral now
         vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, collateralAmount-1, maxBorrowInfo.daiMaxBorrow, 0));
@@ -251,7 +251,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         addCollateral(alice, collateralAmount);
 
         vm.startPrank(alice);
-        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, 0, FUNDS_REQUEST_MIN_SECS, FUNDS_REQUEST_MAX_SECS));
+        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, 0, COLLATERAL_REQUEST_MIN_SECS, COLLATERAL_REQUEST_MAX_SECS));
 
         tlc.removeCollateral(alice);
     }
@@ -264,8 +264,8 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         tlc.requestRemoveCollateral(50);
 
         uint32 ts = uint32(block.timestamp);
-        vm.warp(block.timestamp + 30);
-        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, ts, FUNDS_REQUEST_MIN_SECS, FUNDS_REQUEST_MAX_SECS));
+        vm.warp(block.timestamp + 29);
+        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, ts, COLLATERAL_REQUEST_MIN_SECS, COLLATERAL_REQUEST_MAX_SECS));
         tlc.removeCollateral(alice);
     }
 
@@ -276,7 +276,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         vm.startPrank(alice);
         tlc.requestRemoveCollateral(50);
 
-        vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+        vm.warp(block.timestamp + COLLATERAL_REQUEST_MIN_SECS);
 
         vm.expectEmit(address(tlc));
         emit CollateralRemoved(alice, alice, 50);
@@ -291,8 +291,8 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         tlc.requestRemoveCollateral(50);
 
         uint32 ts = uint32(block.timestamp);
-        vm.warp(block.timestamp + 121);
-        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, ts, FUNDS_REQUEST_MIN_SECS, FUNDS_REQUEST_MAX_SECS));
+        vm.warp(block.timestamp + 46);
+        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, ts, COLLATERAL_REQUEST_MIN_SECS, COLLATERAL_REQUEST_MAX_SECS));
         tlc.removeCollateral(alice);
     }
 
@@ -303,7 +303,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         vm.startPrank(alice);
         tlc.requestRemoveCollateral(50);
 
-        vm.warp(block.timestamp + FUNDS_REQUEST_MAX_SECS);
+        vm.warp(block.timestamp + COLLATERAL_REQUEST_MAX_SECS);
 
         vm.expectEmit(address(tlc));
         emit CollateralRemoved(alice, alice, 50);
@@ -317,7 +317,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
 
         // Borrow half
         uint256 borrowAmount = maxBorrowInfo.daiMaxBorrow / 2;
-        borrow(alice, collateralAmount, borrowAmount, 0, FUNDS_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowAmount, 0, BORROW_REQUEST_MIN_SECS);
 
         AccountPosition memory position = tlc.accountPosition(alice, true);
         assertEq(position.daiDebtPosition.maxBorrow, borrowAmount*2);
@@ -345,9 +345,9 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         assertEq(position.daiDebtPosition.loanToValueRatio, 0.85e18);
 
         // Now alice can't execute on the collateral remove request
-        vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+        vm.warp(block.timestamp + COLLATERAL_REQUEST_MIN_SECS);
         changePrank(alice);
-        vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, collateralAmount/2, borrowAmount+392188834612, 0));
+        vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, collateralAmount/2, borrowAmount+196094412637, 0));
         tlc.removeCollateral(alice);
 
         // But she can still cancel the request, and re-go for a smaller amount
@@ -361,7 +361,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
 
         // And can now remove 1/3 of the collateral and still be healthy
         tlc.requestRemoveCollateral(collateralAmount/3);
-        vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+        vm.warp(block.timestamp + COLLATERAL_REQUEST_MIN_SECS);
         tlc.removeCollateral(alice);
         position = tlc.accountPosition(alice, true);
         assertGt(position.daiDebtPosition.healthFactor, 1e18);
@@ -374,7 +374,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         vm.startPrank(alice);
         tlc.requestRemoveCollateral(50);
 
-        vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+        vm.warp(block.timestamp + COLLATERAL_REQUEST_MIN_SECS);
 
         assertEq(templeToken.balanceOf(alice), 0);
 
@@ -407,7 +407,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
 
         // Pull the rest
         tlc.requestRemoveCollateral(collateralAmount-50);
-        vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+        vm.warp(block.timestamp + COLLATERAL_REQUEST_MIN_SECS);
         tlc.removeCollateral(alice);
         maxBorrowInfo = expectedMaxBorrows(0);
         params.expectedAccountPosition = AccountPosition({
@@ -428,7 +428,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         vm.startPrank(alice);
         tlc.requestRemoveCollateral(50);
 
-        vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+        vm.warp(block.timestamp + COLLATERAL_REQUEST_MIN_SECS);
         assertEq(templeToken.balanceOf(alice), 0);
 
         vm.expectEmit(address(tlc));
@@ -440,4 +440,36 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         assertEq(templeToken.balanceOf(address(tlc)), collateralAmount-50);
     }
 
+    function test_removeCollateral_noWait() public {
+        vm.prank(executor);
+        tlc.setWithdrawCollateralRequestWindow(0, 0);
+
+        uint256 collateralAmount = 100_000e18;
+        addCollateral(alice, collateralAmount);
+
+        vm.startPrank(alice);
+        tlc.requestRemoveCollateral(50);
+
+        vm.expectEmit(address(tlc));
+        emit CollateralRemoved(alice, alice, 50);
+        tlc.removeCollateral(alice);
+    }
+
+    function test_pause_removeCollateral() public {
+        vm.prank(executor);
+        tlc.setWithdrawCollateralRequestWindow(1, 0);
+
+        uint256 collateralAmount = 100_000e18;
+        addCollateral(alice, collateralAmount);
+
+        vm.startPrank(alice);
+        tlc.requestRemoveCollateral(50);
+
+        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, block.timestamp, 1, 0));
+        tlc.removeCollateral(alice);
+
+        vm.warp(block.timestamp + 1);
+        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, block.timestamp-1, 1, 0));
+        tlc.removeCollateral(alice);
+    }
 }

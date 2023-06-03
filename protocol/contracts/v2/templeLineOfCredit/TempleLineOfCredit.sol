@@ -54,11 +54,10 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         ).encodeUInt128();
 
         unchecked {
-            // Cannot overflow - already know it's less than 2^128
             totalCollateral += collateralAmount;
         }
 
-        // Note: No need to check liquidity when adding collateral.
+        // No need to check liquidity when adding collateral.
         templeToken.safeTransferFrom(
             msg.sender,
             address(this),
@@ -80,6 +79,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     function cancelRemoveCollateralRequest(address account) external override {
         // Either the account holder or the DAO elevated access is allowed to cancel individual requests
         if (msg.sender != account && !isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
+        
         AccountData storage _accountData = allAccountsData[account];
         if (_accountData.removeCollateralRequest.requestedAt == 0) revert CommonEventsAndErrors.InvalidParam();
 
@@ -96,7 +96,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         uint256 _removeAmount;
         {
             WithdrawFundsRequest storage _request = _accountData.removeCollateralRequest;
-            checkWithdrawalCooldown(_request.requestedAt);
+            checkWithdrawalCooldown(removeCollateralRequestWindow.minSecs, removeCollateralRequestWindow.maxSecs, _request.requestedAt);
             _removeAmount = _request.amount;
             delete allAccountsData[msg.sender].removeCollateralRequest;
         }
@@ -159,7 +159,11 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         uint256 _borrowAmount;
         {
             WithdrawFundsRequest storage _request = _accountDebtData.borrowRequest;
-            checkWithdrawalCooldown(_request.requestedAt);
+            checkWithdrawalCooldown(
+                _debtTokenCache.config.borrowRequestWindow.minSecs, 
+                _debtTokenCache.config.borrowRequestWindow.maxSecs, 
+                _request.requestedAt
+            );
             _borrowAmount = _request.amount;
             delete _accountDebtData.borrowRequest;
         }
@@ -305,12 +309,22 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         emit TlcStrategySet(_tlcStrategy, _trv);
     }
 
-    function setFundsRequestWindow(
+    function setWithdrawCollateralRequestWindow(
         uint256 minSecs,
         uint256 maxSecs
     ) external override onlyElevatedAccess {
-        emit FundsRequestWindowSet(minSecs, maxSecs);
-        fundsRequestWindow = FundsRequestWindow(uint32(minSecs), uint32(maxSecs));
+        emit RemoveCollateralRequestWindowSet(minSecs, maxSecs);
+        removeCollateralRequestWindow = FundsRequestWindow(uint32(minSecs), uint32(maxSecs));
+    }
+
+    function setBorrowRequestWindow(
+        IERC20 token,
+        uint256 minSecs,
+        uint256 maxSecs
+    ) external override onlyElevatedAccess {
+        checkValidDebtToken(token);
+        emit BorrowRequestWindowSet(address(token), minSecs, maxSecs);
+        debtTokenDetails[token].config.borrowRequestWindow = FundsRequestWindow(uint32(minSecs), uint32(maxSecs));
     }
 
     function setInterestRateModel(
@@ -330,6 +344,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         IERC20 token, 
         uint256 maxLtvRatio
     ) external override onlyElevatedAccess {
+        checkValidDebtToken(token);
         if (maxLtvRatio > 1e18) revert CommonEventsAndErrors.InvalidParam();
 
         emit MaxLtvRatioSet(address(token), maxLtvRatio);
@@ -359,9 +374,9 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
      * based on the updated utilisation ratio
      */
     function refreshInterestRates(
-        IERC20 token
     ) external override {
-        updateInterestRates(daiToken, debtTokenDetails[token], debtTokenCache(token));
+        updateInterestRates(daiToken, debtTokenDetails[daiToken], debtTokenCache(daiToken));
+        updateInterestRates(oudToken, debtTokenDetails[oudToken], debtTokenCache(oudToken));
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/

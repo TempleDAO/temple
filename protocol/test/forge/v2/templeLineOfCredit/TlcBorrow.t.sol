@@ -145,7 +145,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
         uint32 ts = uint32(block.timestamp);
         vm.warp(block.timestamp + 30);
-        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, ts, FUNDS_REQUEST_MIN_SECS, FUNDS_REQUEST_MAX_SECS));
+        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, ts, BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS));
         tlc.borrow(daiToken, alice);
     }
 
@@ -156,7 +156,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         vm.startPrank(alice);
         tlc.requestBorrow(daiToken, 1e18);
 
-        vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+        vm.warp(block.timestamp + BORROW_REQUEST_MIN_SECS);
 
         vm.expectEmit(address(tlc));
         emit Borrow(alice, alice, address(daiToken), 1e18);
@@ -177,7 +177,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
         uint32 ts = uint32(block.timestamp);
         vm.warp(block.timestamp + 121);
-        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, ts, FUNDS_REQUEST_MIN_SECS, FUNDS_REQUEST_MAX_SECS));
+        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, ts, BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS));
         tlc.borrow(daiToken, alice);
     }
 
@@ -188,7 +188,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         vm.startPrank(alice);
         tlc.requestBorrow(daiToken, 1e18);
 
-        vm.warp(block.timestamp + FUNDS_REQUEST_MAX_SECS);
+        vm.warp(block.timestamp + BORROW_REQUEST_MAX_SECS);
 
         vm.expectEmit(address(tlc));
         emit Borrow(alice, alice, address(daiToken), 1e18);
@@ -198,7 +198,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
     function test_borrow_failsNoRequest() external {
         addCollateral(alice, 10e18);
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, 0, FUNDS_REQUEST_MIN_SECS, FUNDS_REQUEST_MAX_SECS));
+        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, 0, BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS));
         tlc.borrow(daiToken, alice);
     }
 
@@ -224,7 +224,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         assertEq(position.daiDebtPosition.loanToValueRatio, 0.68e18);
 
         // Now alice can't execute on the borrow
-        vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+        vm.warp(block.timestamp + BORROW_REQUEST_MIN_SECS);
         changePrank(alice);
         vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, collateralAmount, borrowAmount, 0));
         tlc.borrow(daiToken, alice);
@@ -241,7 +241,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         // Can now borrow a smaller amount and still be healthy.
         borrowAmount = maxBorrowInfo.daiMaxBorrow * 4/10;
         tlc.requestBorrow(daiToken, borrowAmount);
-        vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+        vm.warp(block.timestamp + BORROW_REQUEST_MIN_SECS);
         tlc.borrow(daiToken, alice);
         position = tlc.accountPosition(alice, true);
         assertGt(position.daiDebtPosition.healthFactor, 1e18);
@@ -264,7 +264,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         {
             vm.startPrank(alice);
             tlc.requestBorrow(daiToken, borrowAmount);
-            vm.warp(block.timestamp+FUNDS_REQUEST_MIN_SECS);
+            vm.warp(block.timestamp+BORROW_REQUEST_MIN_SECS);
 
             // An IR update is logged for DAI
             vm.expectEmit(address(tlc));
@@ -280,8 +280,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
                 ITlcEventsAndErrors.NotInFundsRequestWindow.selector,
                 block.timestamp,
                 0,
-                FUNDS_REQUEST_MIN_SECS,
-                FUNDS_REQUEST_MAX_SECS
+                BORROW_REQUEST_MIN_SECS,
+                BORROW_REQUEST_MAX_SECS
             ));
             tlc.borrow(daiToken, alice);
             vm.stopPrank();
@@ -334,10 +334,10 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             assertEq(assetBalances[1].balance, 0);   
         }
 
-        // borrow(alice, 10 ether, 1 ether, 0, FUNDS_REQUEST_MIN_SECS);
-        // borrow(unauthorizedUser, 10 ether, 1 ether, 0, FUNDS_REQUEST_MIN_SECS);
-        // borrow(rescuer, 10 ether, 1 ether, 0, FUNDS_REQUEST_MIN_SECS);
-        // borrow(rescuer, 0.1e18, 1 ether, 0, FUNDS_REQUEST_MIN_SECS);
+        // borrow(alice, 10 ether, 1 ether, 0, BORROW_REQUEST_MIN_SECS);
+        // borrow(unauthorizedUser, 10 ether, 1 ether, 0, BORROW_REQUEST_MIN_SECS);
+        // borrow(rescuer, 10 ether, 1 ether, 0, BORROW_REQUEST_MIN_SECS);
+        // borrow(rescuer, 0.1e18, 1 ether, 0, BORROW_REQUEST_MIN_SECS);
     }
 
     function test_borrowOudOnly_success() external {
@@ -356,7 +356,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         {
             vm.startPrank(alice);
             tlc.requestBorrow(oudToken, borrowAmount);
-            vm.warp(block.timestamp+FUNDS_REQUEST_MIN_SECS);
+            vm.warp(block.timestamp+BORROW_REQUEST_MIN_SECS);
 
             vm.expectEmit(address(tlc));
             emit InterestRateUpdate(address(oudToken), oudInterestRate);
@@ -371,8 +371,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
                 ITlcEventsAndErrors.NotInFundsRequestWindow.selector,
                 block.timestamp,
                 0,
-                FUNDS_REQUEST_MIN_SECS,
-                FUNDS_REQUEST_MAX_SECS
+                BORROW_REQUEST_MIN_SECS,
+                BORROW_REQUEST_MAX_SECS
             ));
             tlc.borrow(oudToken, alice);
             vm.stopPrank();
@@ -423,10 +423,10 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             assertEq(assetBalances[1].balance, borrowAmount);   
         }
 
-        // borrow(alice, 10 ether, 0, 1 ether, FUNDS_REQUEST_MIN_SECS);
-        // borrow(unauthorizedUser, 10 ether, 0, 1 ether, FUNDS_REQUEST_MIN_SECS);
-        // borrow(rescuer, 10 ether, 0, 1 ether, FUNDS_REQUEST_MIN_SECS);
-        // borrow(rescuer, 0.1e18, 0, 1 ether, FUNDS_REQUEST_MIN_SECS);
+        // borrow(alice, 10 ether, 0, 1 ether, BORROW_REQUEST_MIN_SECS);
+        // borrow(unauthorizedUser, 10 ether, 0, 1 ether, BORROW_REQUEST_MIN_SECS);
+        // borrow(rescuer, 10 ether, 0, 1 ether, BORROW_REQUEST_MIN_SECS);
+        // borrow(rescuer, 0.1e18, 0, 1 ether, BORROW_REQUEST_MIN_SECS);
     }
 
     function test_borrowDaiAndOudInParallel() external {
@@ -446,7 +446,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         {
             tlc.requestBorrow(daiToken, borrowDaiAmount/2);
             tlc.requestBorrow(oudToken, borrowOudAmount/2);
-            vm.warp(block.timestamp+FUNDS_REQUEST_MIN_SECS);
+            vm.warp(block.timestamp+BORROW_REQUEST_MIN_SECS);
 
             vm.expectEmit(address(tlc));
             emit InterestRateUpdate(address(daiToken), expectedDaiInterestRate);
@@ -498,7 +498,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             // amount due to accrued interest. So take off 1e16
             tlc.requestBorrow(daiToken, (borrowDaiAmount / 2) - 1e16);
             tlc.requestBorrow(oudToken, (borrowOudAmount / 2) - 1e16);
-            vm.warp(block.timestamp+FUNDS_REQUEST_MIN_SECS);
+            vm.warp(block.timestamp+BORROW_REQUEST_MIN_SECS);
 
             updatedDaiInterestRate = 95805553176705164;
             assertApproxEqRel(
@@ -524,8 +524,8 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
         // Check positions
         {
-            uint256 daiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiInterestRate, FUNDS_REQUEST_MIN_SECS);
-            uint256 oudAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, oudInterestRate, FUNDS_REQUEST_MIN_SECS);
+            uint256 daiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiInterestRate, BORROW_REQUEST_MIN_SECS);
+            uint256 oudAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, oudInterestRate, BORROW_REQUEST_MIN_SECS);
 
             checkDebtTokenDetails(daiToken, borrowDaiAmount, updatedDaiInterestRate, daiAccumulator, block.timestamp);
             checkDebtTokenDetails(oudToken, borrowOudAmount, oudInterestRate, oudAccumulator, block.timestamp);
@@ -567,7 +567,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         vm.startPrank(alice);
         tlc.requestBorrow(daiToken, borrowAmount);
         tlc.requestBorrow(oudToken, borrowAmount);
-        vm.warp(block.timestamp + FUNDS_REQUEST_MIN_SECS);
+        vm.warp(block.timestamp + BORROW_REQUEST_MIN_SECS);
 
         vm.expectEmit(address(tlc));
         emit Borrow(alice, bob, address(daiToken), borrowAmount);
@@ -584,4 +584,45 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         assertEq(oudToken.balanceOf(bob), borrowAmount);
     }
 
+    function test_borrow_noWait() public {
+        uint256 collateralAmount = 100_000e18;
+        addCollateral(alice, collateralAmount);
+
+        vm.prank(executor);
+        tlc.setBorrowRequestWindow(daiToken, 0, 0);
+
+        uint256 borrowAmount = 50_000e18;
+        vm.startPrank(alice);
+        tlc.requestBorrow(daiToken, borrowAmount);
+
+        vm.expectEmit(address(tlc));
+        emit Borrow(alice, alice, address(daiToken), borrowAmount);
+        tlc.borrow(daiToken, alice);
+    }
+
+    function test_pause_borrow() public {
+        uint256 collateralAmount = 100_000e18;
+        addCollateral(alice, collateralAmount);
+
+        vm.prank(executor);
+        tlc.setBorrowRequestWindow(daiToken, 1, 0);
+
+        uint256 borrowAmount = 50_000e18;
+        vm.startPrank(alice);
+        tlc.requestBorrow(daiToken, borrowAmount);
+
+        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, block.timestamp, 1, 0));
+        tlc.borrow(daiToken, alice);
+
+        vm.warp(block.timestamp + 1);
+        vm.expectRevert(abi.encodeWithSelector(NotInFundsRequestWindow.selector, block.timestamp, block.timestamp-1, 1, 0));
+        tlc.borrow(daiToken, alice);
+
+        // OUD is unaffected
+        tlc.requestBorrow(oudToken, borrowAmount);
+        vm.warp(block.timestamp + BORROW_REQUEST_MIN_SECS);
+        vm.expectEmit(address(tlc));
+        emit Borrow(alice, alice, address(oudToken), borrowAmount);
+        tlc.borrow(oudToken, alice);
+    }
 }
