@@ -5,7 +5,7 @@ pragma solidity ^0.8.17;
 import { ITlcDataTypes } from "contracts/interfaces/v2/templeLineOfCredit/ITlcDataTypes.sol";
 
 interface ITlcEventsAndErrors {
-    error ExceededMaxLtv();
+    error ExceededMaxLtv(uint256 collateral, uint256 currentDaiDebt, uint256 currentOudDebt);
     error UnknownFailure();
 
     error ExceededBorrowedAmount(address token, uint256 totalDebtAmount, uint256 repayAmount);
@@ -28,7 +28,7 @@ interface ITlcEventsAndErrors {
 
     event Repay(address indexed fundedBy, address indexed onBehalfOf, address indexed token, uint256 repayAmount);
 
-    event Liquidated(address indexed account, address indexed unhealthyDebtToken, uint256 healthFactor, uint256 debtAmount, uint256 collateralSeized);
+    event Liquidated(address indexed account, uint256 collateralSeized, uint256 daiDebtWiped, uint256 oudDebtWiped);
 
     event InterestRateUpdate(address indexed token, int96 newInterestRate);
 

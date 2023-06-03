@@ -6,13 +6,10 @@ pragma solidity ^0.8.17;
 import { BaseInterestRateModel } from "contracts/v2/interestRate/BaseInterestRateModel.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
 
-// @todo consider making this a lib instead to save gas.
-// depends if we are likely to change it.
-
-// import "forge-std/console.sol";
-
 contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
     using SafeCast for uint256;
+
+    // @todo change back to uint96
 
     struct RateParams {
         /// @notice The base interest rate which is the y-intercept when utilization rate is 0
@@ -43,7 +40,6 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
         uint256 _kinkUtilizationRatio, 
         uint256 _kinkInterestRate
     ) {
-        // @todo : assert the validity of this information
         rateParams = RateParams({
             baseInterestRate: _baseInterestRate.encodeUInt80(),
             maxInterestRate: _maxInterestRate.encodeUInt80(),
@@ -87,8 +83,6 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
             );
         }
 
-        // console.log("linear compute:", interestRate);
-        // console.logInt(int96(uint96(interestRate)));
         return int96(uint96(interestRate));
     }
 }

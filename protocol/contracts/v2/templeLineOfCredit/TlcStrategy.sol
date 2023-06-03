@@ -49,15 +49,27 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
         AssetBalance[] memory assetBalances, 
         uint256 debt
     ) {
-        // The only asset which TLC has is the Temple collateral given by users.
-        // In the case of a user liquidation, that user Temple is burned, and
-        // the equivalent dUSD debt is also reduced by `Temple x TPI`
-        assetBalances = new AssetBalance[](1);
+        (
+            ITempleLineOfCredit.TotalPosition memory daiPosition,
+            ITempleLineOfCredit.TotalPosition memory oudPosition
+        ) = tlc.totalPosition();
+
+        // The assets are the total accrued debt of DAI and OUD in TLC.
+        assetBalances = new AssetBalance[](2);
         assetBalances[0] = AssetBalance({
-            asset: templeToken,
+            asset: address(stableToken),
             balance: addManualAssetBalanceDelta(
-                IERC20(templeToken).balanceOf(address(tlc)), 
-                templeToken
+                daiPosition.totalDebt,
+                address(stableToken)
+            )
+        });
+
+        IERC20 oudToken = tlc.oudToken();
+        assetBalances[1] = AssetBalance({
+            asset: address(oudToken),
+            balance: addManualAssetBalanceDelta(
+                oudPosition.totalDebt,
+                address(oudToken)
             )
         });
 

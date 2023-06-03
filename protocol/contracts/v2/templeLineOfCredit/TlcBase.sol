@@ -16,8 +16,6 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
 import { TlcStorage } from "contracts/v2/templeLineOfCredit/TlcStorage.sol";
 
-// import "forge-std/console.sol";
-
 abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors { 
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
@@ -111,13 +109,18 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         }
     }
 
-    // @todo read only re-entrancy?
     function debtTokenCacheRO(
         IERC20 _token
     ) internal view returns (
         DebtTokenCache memory cache
     ) {
         initDebtTokenCache(_token, debtTokenDetails[_token], cache);
+    }
+
+    function checkValidDebtToken(IERC20 _token) internal view {
+        if (_token != daiToken && _token != oudToken) {
+            revert CommonEventsAndErrors.InvalidToken(address(_token));
+        }
     }
 
     function updateInterestRates(
@@ -149,7 +152,7 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         }
     }
 
-    function _doRepayToken(
+    function repayToken(
         IERC20 _token,
         DebtTokenCache memory _debtTokenCache,
         uint256 _repayAmount,
@@ -161,7 +164,6 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         uint256 _newDebt = currentAccountDebtData(_debtTokenCache, _accountDebtData.debtCheckpoint, _accountDebtData.interestAccumulator);
 
         // They cannot repay more than this debt
-        // address tokenAddress = _debtTokenCache.config.tokenAddress;
         if (_repayAmount > _newDebt) {
             revert ExceededBorrowedAmount(address(_token), _newDebt, _repayAmount);
         }
@@ -177,7 +179,8 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         updateInterestRates(_token, _debtTokenDetails, _debtTokenCache);
 
         emit Repay(_fromAccount, _onBehalfOf, address(_token), _repayAmount);
-        
+        // NB: Liquidity doesn't need to be checked after a repay, it can only improve the health.
+
         if (_token == daiToken) {
             // Pull the stables, and repay the TRV debt on behalf of the strategy.
             _token.safeTransferFrom(_fromAccount, address(this), _repayAmount);
@@ -194,8 +197,6 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         bool _includePendingRequests,
         LiquidityStatus memory status
     ) internal view returns (uint256 currentDebt) {
-        if (_accountDebtData.debtCheckpoint == 0) return 0;
-
         currentDebt = currentAccountDebtData(
             _debtTokenCache, 
             _accountDebtData.debtCheckpoint, 
@@ -248,7 +249,9 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
             debtTokenCacheRO(oudToken),
             true
         );
-        if (_status.hasExceededMaxLtv) revert ExceededMaxLtv();
+        if (_status.hasExceededMaxLtv) {
+            revert ExceededMaxLtv(_status.collateral, _status.currentDaiDebt, _status.currentOudDebt);
+        }
     }
 
     function wipeDebt(
@@ -256,6 +259,8 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         DebtTokenCache memory _debtTokenCache,
         uint256 _totalDebtWiped
     ) internal {
+        if (_totalDebtWiped == 0) return;
+
         DebtTokenDetails storage _debtTokenDetails = debtTokenDetails[_token];
 
         // Update the reserve token details, and then update the interest rates.            

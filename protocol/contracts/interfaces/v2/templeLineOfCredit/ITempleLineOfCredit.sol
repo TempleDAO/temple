@@ -51,7 +51,14 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
         address[] memory accounts,
         bool includePendingRequests
     ) external view returns (LiquidityStatus[] memory status);
-    function batchLiquidate(address[] memory accounts) external;
+
+    function batchLiquidate(
+        address[] memory accounts
+    ) external returns (
+        uint256 totalCollateralClaimed,
+        uint256 totalDaiDebtWiped,
+        uint256 totalOudDebtWiped
+    );
 
     // Manually checkpoint debt to adjust interest rate based on latest utillization ratio
     function refreshInterestRates(IERC20 token) external;

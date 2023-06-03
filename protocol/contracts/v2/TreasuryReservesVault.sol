@@ -108,6 +108,8 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         emit BaseStrategySet(_baseStrategy);
     }
 
+    // @todo put a 'max change' over this, and perhaps a timelock too
+    // https://discord.com/channels/847178511604252741/1063520475659120750/1113883230379196486
     /**
      * @notice Set the Treasury Price Index (TPI)
      * @dev 4dp, so 9800 = 0.98

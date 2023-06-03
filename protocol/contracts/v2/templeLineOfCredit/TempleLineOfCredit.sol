@@ -15,13 +15,10 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { TlcBase } from "contracts/v2/templeLineOfCredit/TlcBase.sol";
 
-// import "forge-std/console.sol";
-
 contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAccess {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
 
-    // @dev Once constructed, setTlcStrategy() needs to be called
     constructor(
         address _initialRescuer,
         address _initialExecutor,
@@ -127,13 +124,13 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
 
     function requestBorrow(IERC20 token, uint256 amount) external override {
         if (amount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+        checkValidDebtToken(token);
+
         AccountData storage _accountData = allAccountsData[msg.sender];
         AccountDebtData storage _accountDebtData = _accountData.debtData[token];
-
         _accountDebtData.borrowRequest = WithdrawFundsRequest(amount.encodeUInt128(), uint32(block.timestamp));
         emit BorrowRequested(msg.sender, address(token), amount);
 
-        // @todo add a test case for this.
         // This will check both assets.
         // This is expected, because even though they may be borrowing DAI
         // they may have exceeded the max LTV in OUD. In that case
@@ -144,14 +141,14 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     function cancelBorrowRequest(address account, IERC20 token) external override {
         // Either the account holder or the DAO elevated access is allowed to cancel individual requests
         if (msg.sender != account && !isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
-        AccountDebtData storage _debtData = allAccountsData[msg.sender].debtData[token];
+        checkValidDebtToken(token);
+
+        AccountDebtData storage _debtData = allAccountsData[account].debtData[token];
         if (_debtData.borrowRequest.requestedAt == 0) revert CommonEventsAndErrors.InvalidParam();
 
         delete _debtData.borrowRequest;
         emit BorrowRequestCancelled(account, address(token));
     }
-
-    // @todo check for 0 amount borrow requests
 
     function borrow(IERC20 token, address recipient) external override {
         AccountData storage _accountData = allAccountsData[msg.sender];
@@ -185,7 +182,6 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
             ).encodeUInt128();
 
             // Update the borrow interest rates based on the now increased utilization ratio
-            // console.log("about to update interest rate");
             updateInterestRates(token, _debtTokenDetails, _debtTokenCache);
         }
 
@@ -210,7 +206,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         AccountDebtData storage _accountDebtData = allAccountsData[onBehalfOf].debtData[token];
-        _doRepayToken(token, debtTokenCache(token), repayAmount, _accountDebtData, msg.sender, onBehalfOf);
+        repayToken(token, debtTokenCache(token), repayAmount, _accountDebtData, msg.sender, onBehalfOf);
     }
 
     /**
@@ -228,56 +224,58 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
             _accountDebtData.interestAccumulator
         );
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        _doRepayToken(token, _debtTokenCache, repayAmount, _accountDebtData, msg.sender, onBehalfOf);
+        repayToken(token, _debtTokenCache, repayAmount, _accountDebtData, msg.sender, onBehalfOf);
     }
 
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                       LIQUIDATIONS                         */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-    struct LiquidateParams {
-        DebtTokenCache daiTokenCache;
-        DebtTokenCache oudTokenCache;
-        uint256 daiDebtWiped;
-        uint256 oudDebtWiped;
-    }
-
     function batchLiquidate(
         address[] memory accounts
-    ) external override {
+    ) external override returns (
+        uint256 totalCollateralClaimed,
+        uint256 totalDaiDebtWiped,
+        uint256 totalOudDebtWiped
+    ) {
         LiquidityStatus memory _status;
-
-        uint256 _numAccounts = accounts.length;
-        uint256 totalCollateralClaimed;
-        LiquidateParams memory _params;
-        _params.daiTokenCache = debtTokenCache(daiToken);
-        _params.oudTokenCache = debtTokenCache(oudToken);
-
-        uint256 i;
+        DebtTokenCache memory daiTokenCache = debtTokenCache(daiToken);
+        DebtTokenCache memory oudTokenCache = debtTokenCache(oudToken);
         address _account;
-        for (; i < _numAccounts; ++i) {
+        uint256 _numAccounts = accounts.length;
+        for (uint256 i; i < _numAccounts; ++i) {
             _account = accounts[i];
             _status = computeLiquidity(
                 allAccountsData[_account], 
-                _params.daiTokenCache, 
-                _params.oudTokenCache, 
+                daiTokenCache, 
+                oudTokenCache, 
                 false
             );
 
-            // Skip if this account is still under the maxLTV across all assets
+            // Skip if this account is still under the maxLTV across both DAI and OUD
             if (_status.hasExceededMaxLtv) {
-                totalCollateralClaimed += _status.collateral;
-                _params.daiDebtWiped += _status.currentDaiDebt;
-                _params.oudDebtWiped += _status.currentOudDebt;
-                delete allAccountsData[_account];    
+                emit Liquidated(_account, _status.collateral, _status.currentDaiDebt,  _status.currentOudDebt);
+                unchecked {
+                    totalCollateralClaimed += _status.collateral;
+                    totalDaiDebtWiped += _status.currentDaiDebt;
+                    totalOudDebtWiped += _status.currentOudDebt;
+                }
+
+                // Clear the account data
+                delete allAccountsData[_account].debtData[daiToken];
+                delete allAccountsData[_account].debtData[oudToken];
+                delete allAccountsData[_account];
             }
         }
 
         // burn the temple collateral by repaying to TRV. This will burn the equivalent dUSD debt too.
-        treasuryReservesVault.repayTemple(totalCollateralClaimed, address(tlcStrategy));
+        if (totalCollateralClaimed != 0) {
+            treasuryReservesVault.repayTemple(totalCollateralClaimed, address(tlcStrategy));
+        }
 
-        wipeDebt(daiToken, _params.daiTokenCache, _params.daiDebtWiped);
-        wipeDebt(oudToken, _params.oudTokenCache, _params.oudDebtWiped);
+        // Remove debt from the totals
+        wipeDebt(daiToken, daiTokenCache, totalDaiDebtWiped);
+        wipeDebt(oudToken, oudTokenCache, totalOudDebtWiped);
     }
     
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -288,9 +286,23 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         address _tlcStrategy
     ) external override onlyElevatedAccess {
         tlcStrategy = ITlcStrategy(_tlcStrategy);
-        ITreasuryReservesVault _trv = tlcStrategy.treasuryReservesVault();
-        treasuryReservesVault = _trv;
-        emit TlcStrategySet(_tlcStrategy, address(_trv));
+
+        // Remove allowance from the old TRV
+        address previousTrv = address(treasuryReservesVault);
+        if (previousTrv != address(0)) {
+            daiToken.safeApprove(previousTrv, 0);
+        }
+
+        address _trv = address(tlcStrategy.treasuryReservesVault());
+        treasuryReservesVault = ITreasuryReservesVault(_trv);
+
+        // Set max allowance on the new TRV
+        {
+            daiToken.safeApprove(_trv, 0);
+            daiToken.safeIncreaseAllowance(_trv, type(uint256).max);
+        }
+
+        emit TlcStrategySet(_tlcStrategy, _trv);
     }
 
     function setFundsRequestWindow(
@@ -318,8 +330,10 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         IERC20 token, 
         uint256 maxLtvRatio
     ) external override onlyElevatedAccess {
+        if (maxLtvRatio > 1e18) revert CommonEventsAndErrors.InvalidParam();
+
         emit MaxLtvRatioSet(address(token), maxLtvRatio);
-        debtTokenDetails[token].config.maxLtvRatio = maxLtvRatio.encodeUInt128();
+        debtTokenDetails[token].config.maxLtvRatio = uint128(maxLtvRatio);
     }
 
     /**
@@ -353,8 +367,6 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                           VIEWS                            */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-
-    // @todo check all overrides are there
 
     function accountData(
         address account
@@ -419,6 +431,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         bool includePendingRequests
     ) external override view returns (LiquidityStatus[] memory status) {
         uint256 _numAccounts = accounts.length;
+        status = new LiquidityStatus[](_numAccounts);
         for (uint256 i; i < _numAccounts; ++i) {
             status[i] = computeLiquidity(
                 allAccountsData[accounts[i]], 
