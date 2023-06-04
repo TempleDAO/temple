@@ -67,12 +67,18 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         trv = new TreasuryReservesVault(rescuer, executor, address(templeToken), address(daiToken), address(dUSD), templePrice);
         
         daiInterestRateModel = new LinearWithKinkInterestRateModel(
+            rescuer,
+            executor,
             5e18 / 100,  // 5% interest rate (rate% at 0% UR)
             20e18 / 100, // 20% percent interest rate (rate% at 100% UR)
             90e18 / 100, // 90% utilization (UR for when the kink starts)
             10e18 / 100  // 10% percent interest rate (rate% at kink% UR)
         );
-        oudInterestRateModel = new FlatInterestRateModel(oudInterestRate);
+        oudInterestRateModel = new FlatInterestRateModel(
+            rescuer,
+            executor,
+            oudInterestRate
+            );
 
         tlc = new TempleLineOfCredit(
             rescuer, 
@@ -245,14 +251,14 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         assertApproxEqRel(oudDebtData.interestAccumulator, params.expectedOudAccumulatorCheckpoint, 1e9, "OUD interestAccumulator checkpoint");
     }
     
-    function checkTotalPosition(
+    function checkTotalDebtPosition(
         uint256 expectedOudUR,
         uint256 expectedDaiIR,
         uint256 expectedDaiDebt,
         uint256 expectedOudIR,
         uint256 expectedOudDebt
     ) internal returns (uint256, uint256) {
-        (TotalPosition memory actualDaiPosition, TotalPosition memory actualOudPosition) = tlc.totalPosition();
+        (TotalDebtPosition memory actualDaiPosition, TotalDebtPosition memory actualOudPosition) = tlc.totalDebtPosition();
         assertApproxEqRel(actualDaiPosition.utilizationRatio, expectedOudUR, 1e10, "daiUtilizationRatio");
         assertApproxEqRel(actualDaiPosition.borrowRate, expectedDaiIR, 1e10, "daiBorrowRate"); 
         assertApproxEqRel(actualDaiPosition.totalDebt, expectedDaiDebt, 1e10, "daiTotalDebt");
@@ -343,7 +349,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         }
     }
 
-    function checkLiquidityStatus(
+    function checkLiquidationStatus(
         address account,
         bool includePendingRequests,
         bool expectedHasExceededMaxLtv,
@@ -353,7 +359,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     ) internal {
         address[] memory accounts = new address[](1);
         accounts[0] = account;
-        LiquidityStatus[] memory status = tlc.computeLiquidity(accounts, includePendingRequests);
+        LiquidationStatus[] memory status = tlc.computeLiquidity(accounts, includePendingRequests);
 
         assertEq(status[0].hasExceededMaxLtv, expectedHasExceededMaxLtv, "hasExceededMaxLtv");
         assertEq(status[0].collateral, expectedCollateral, "collateral");

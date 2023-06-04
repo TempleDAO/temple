@@ -13,33 +13,17 @@ import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { TlcStrategy } from "contracts/v2/templeLineOfCredit/TlcStrategy.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
 
+// @todo when the TRV cap changes, the UR will change. A checkpoint will need to be done then too, 
+// so the rate is updated.
+// add a test for this.
 
-// @todo how to freeze new loans but allow repay and remove collateral?
-// If tlc was live we would freeze all new loans but interest would continue to accrue (you can still be liquidated if you go over the LTV).
-
-
-// // // @todo The debt ceiling might be higher than the amount of $$ the TRV actually has on hand.
-// // // add a test to ensure that the denominator on the UR is using the max available, not the ceiling.
-
-    // @todo Most of these tests are for DAI -- ensure OUD is sufficiently tested too.
-
-    // @todo when the TRV cap changes, the UR will change. A checkpoint will need to be done then too, 
-    // so the rate is updated.
-    // add a test for this.
-
-    // @todo check all the encoding
-
-    // @todo add test to check cooldown
+// @todo check all the encoding
 
 // @todo check that if LTV is zero, then borrows are disabled.
 
-
-//     // @todo when the TRV cap changes, the UR will change. A checkpoint will need to be done then too, 
-//     // so the rate is updated.
-//     // add a test for this.
-
-
-
+// @todo when the TRV cap changes, the UR will change. A checkpoint will need to be done then too, 
+// so the rate is updated.
+// add a test for this.
 
 
 contract TempleLineOfCreditTest_Admin is TlcBaseTest {
@@ -254,6 +238,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
 
         // 10% flat
         LinearWithKinkInterestRateModel updatedInterestRateModel = new LinearWithKinkInterestRateModel(
+            rescuer,
+            executor,
             10e18 / 100,
             10e18 / 100,
             100e18 / 100,
@@ -294,6 +280,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
 
         // 10% flat
         LinearWithKinkInterestRateModel updatedInterestRateModel = new LinearWithKinkInterestRateModel(
+            rescuer,
+            executor,
             10e18 / 100,
             10e18 / 100,
             100e18 / 100,

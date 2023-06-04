@@ -5,8 +5,9 @@ pragma solidity ^0.8.17;
 
 import { BaseInterestRateModel } from "contracts/v2/interestRate/BaseInterestRateModel.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
+import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 
-contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
+contract LinearWithKinkInterestRateModel is BaseInterestRateModel, TempleElevatedAccess {
     using SafeCast for uint256;
 
     struct RateParams {
@@ -25,6 +26,13 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
 
     RateParams public rateParams;
 
+    event InterestRateParamsSet(
+        uint256 _baseInterestRate, 
+        uint256 _maxInterestRate, 
+        uint256 _kinkUtilizationRatio, 
+        uint256 _kinkInterestRate
+    );
+
     /**
      * @notice Construct an interest rate model
      * @param _baseInterestRate base interest rate which is the y-intercept when utilization rate is 0
@@ -33,11 +41,14 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
      * @param _kinkInterestRate Interest rate at the `kinkUtiliszation`;
      */
     constructor(
+        address _initialRescuer, 
+        address _initialExecutor,
         uint256 _baseInterestRate, 
         uint256 _maxInterestRate, 
         uint256 _kinkUtilizationRatio, 
         uint256 _kinkInterestRate
-    ) {
+    ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
+    {
         rateParams = RateParams({
             baseInterestRate: _baseInterestRate.encodeUInt80(),
             maxInterestRate: _maxInterestRate.encodeUInt80(),
@@ -46,7 +57,25 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel {
         });
     }
     
-    // @todo add setters
+    function setRateParams(
+        uint256 _baseInterestRate, 
+        uint256 _maxInterestRate, 
+        uint256 _kinkUtilizationRatio, 
+        uint256 _kinkInterestRate
+    ) external onlyElevatedAccess {
+        rateParams = RateParams({
+            baseInterestRate: _baseInterestRate.encodeUInt80(),
+            maxInterestRate: _maxInterestRate.encodeUInt80(),
+            kinkInterestRate: _kinkInterestRate.encodeUInt80(),
+            kinkUtilizationRatio: _kinkUtilizationRatio
+        });
+        emit InterestRateParamsSet(
+            _baseInterestRate, 
+            _maxInterestRate, 
+            _kinkUtilizationRatio, 
+            _kinkInterestRate
+        );
+    }
 
     /**
      * @notice Calculates the current interest rate based on a utilization ratio

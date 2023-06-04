@@ -80,7 +80,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         uint256 daiAccumulator;
         uint256 oudAccumulator;
         {
-            (uint256 daiTotalDebt,) = checkTotalPosition(
+            (uint256 daiTotalDebt,) = checkTotalDebtPosition(
                 utilizationRatio(expectedDaiDebt, borrowCeiling),
                 expectedDaiInterestRate,
                 expectedDaiDebt,
@@ -154,7 +154,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         // And the total debt position
         {
             expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, borrowCeiling);
-            checkTotalPosition(
+            checkTotalDebtPosition(
                 utilizationRatio(expectedDaiDebt, borrowCeiling),
                 expectedDaiInterestRate,
                 expectedDaiDebt,

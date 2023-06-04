@@ -7,8 +7,6 @@ import { mulDivSigned } from "@prb/math/src/Common.sol";
 library CompoundedInterest {
     uint256 public constant ONE_YEAR = 365 days;
 
-    // @todo handle negative interest rates.
-
     /// @notice FV = P*e^(r*t)
     /// @param principal Initial principal amount, 1e18 precision
     /// @param elapsed Number of seconds elapsed

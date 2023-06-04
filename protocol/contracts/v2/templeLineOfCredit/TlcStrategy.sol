@@ -50,9 +50,9 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
         uint256 debt
     ) {
         (
-            ITempleLineOfCredit.TotalPosition memory daiPosition,
-            ITempleLineOfCredit.TotalPosition memory oudPosition
-        ) = tlc.totalPosition();
+            ITempleLineOfCredit.TotalDebtPosition memory daiPosition,
+            ITempleLineOfCredit.TotalDebtPosition memory oudPosition
+        ) = tlc.totalDebtPosition();
 
         // The assets are the total accrued debt of DAI and OUD in TLC.
         assetBalances = new AssetBalance[](2);

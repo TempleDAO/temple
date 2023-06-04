@@ -8,48 +8,63 @@ import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReserve
 import { ITlcStrategy } from "contracts/interfaces/v2/templeLineOfCredit/ITlcStrategy.sol";
 
 abstract contract TlcStorage is ITlcStorage {
-    ITlcStrategy public override tlcStrategy;
-
     /**
-     * @notice Collateral Token supplied by accounts
+     * @notice The collateral token supplied by users/accounts
      */
     IERC20 public immutable override templeToken;
 
     /**
-     * @notice DAI token 
+     * @notice DAI is one of the debt tokens which can be borrowed
      */
     IERC20 public immutable override daiToken;
 
     /**
-     * @notice OUD token
+     * @notice Oud is one of the debt tokens which can be borrowed
      */
     IERC20 public immutable override oudToken;
 
     /**
-     * @notice Collateral Token supplied by accounts
+     * @notice The Treasury Reserve Vault (TRV) which funds the DAI borrows to users/accounts.
+     * - When users borrow, the DAI is pulled from the TRV
+     *      (via the TlcStrategy, increasing the dUSD debt)
+     * - When users repay, the DAI is repaid to the TRV 
+     *      (reducing the dUSD debt of the TlcStrategy)
+     * - When there is a liquidation, the seized Temple collateral is paid to the TRV
+     *      (reducing the dUSD debt of the TlcStrategy)
      */
     ITreasuryReservesVault public override treasuryReservesVault;
 
     /**
-     * @notice When either a withdraw collateral or borrow request is made,
-     * the account has a window in which they can action the request.
-     * If a request expires, a new request will need to be made or the action will revert.
+     * @notice The Strategy contract managing the TRV borrows and equity positions of TLC.
      */
-    FundsRequestWindow public override removeCollateralRequestWindow;
-
-    
-    uint256 public totalCollateral;
+    ITlcStrategy public override tlcStrategy;
 
     /**
-     * @notice Account collateral and current token debt information
+     * @notice Users/accounts must first request to remove collateral. 
+     * The user must wait a period of time after the request before they can action the withdraw.
+     * The request also has an expiry time.
+     * If a request expires, a new request will need to be made or the actual withdraw will then revert.
+     */
+    FundsRequestWindow public override removeCollateralRequestWindow;
+    
+    /**
+     * @notice A record of the total amount of collateral deposited by users/accounts.
+     */
+    uint256 public override totalCollateral;
+
+    /**
+     * @notice A per user/account mapping to the data to track active collateral/debt positions.
      */
     mapping(address => AccountData) internal allAccountsData;
 
     /**
-     * @notice Configuration and current data for borrowed tokens
+     * @notice Configuration and latest data snapshot of the debt tokens
      */
     mapping(IERC20 => DebtTokenDetails) public override debtTokenDetails;
 
+    /**
+     * @notice An internal state tracking how interest has accumulated.
+     */
     uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
     
     constructor(address _templeToken, address _daiToken, address _oudToken)
