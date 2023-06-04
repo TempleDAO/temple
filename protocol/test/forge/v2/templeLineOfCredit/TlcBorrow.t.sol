@@ -44,6 +44,17 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
         tlc.requestBorrow(daiToken, 2**128 + 1);
     }
 
+    function test_requestBorrow_failsZeroLtv() external {
+        addCollateral(alice, 10e18);
+        
+        vm.prank(executor);
+        tlc.setMaxLtvRatio(oudToken, 0);
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, 10e18, 0, 1));
+        tlc.requestBorrow(oudToken, 1);
+    }
+
     function test_requestBorrow_success() external {
         addCollateral(alice, 10e18);
         vm.prank(alice);
@@ -334,6 +345,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             assertEq(assetBalances[1].balance, 0);   
         }
 
+        // Gas tests
         // borrow(alice, 10 ether, 1 ether, 0, BORROW_REQUEST_MIN_SECS);
         // borrow(unauthorizedUser, 10 ether, 1 ether, 0, BORROW_REQUEST_MIN_SECS);
         // borrow(rescuer, 10 ether, 1 ether, 0, BORROW_REQUEST_MIN_SECS);
@@ -423,6 +435,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             assertEq(assetBalances[1].balance, borrowAmount);   
         }
 
+        // Gas tests
         // borrow(alice, 10 ether, 0, 1 ether, BORROW_REQUEST_MIN_SECS);
         // borrow(unauthorizedUser, 10 ether, 0, 1 ether, BORROW_REQUEST_MIN_SECS);
         // borrow(rescuer, 10 ether, 0, 1 ether, BORROW_REQUEST_MIN_SECS);

@@ -19,4 +19,9 @@ library SafeCast {
         downcasted = uint96(amount);
         if (downcasted != amount) revert Overflow(amount);
     }
+
+    function encodeUInt64(uint256 amount) internal pure returns (uint64 downcasted) {
+        downcasted = uint64(amount);
+        if (downcasted != amount) revert Overflow(amount);
+    }
 }

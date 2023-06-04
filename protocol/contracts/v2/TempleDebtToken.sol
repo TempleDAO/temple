@@ -10,6 +10,7 @@ import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
+import { SafeCast } from "contracts/common/SafeCast.sol";
 
 /**
  * @title Temple Debt Token
@@ -36,6 +37,7 @@ import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.s
 contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     using CompoundedInterest for uint256;
     using SafeERC20 for IERC20;
+    using SafeCast for uint256;
 
     string public constant VERSION = "1.0.0";
 
@@ -58,7 +60,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      * @notice The current (base rate) interest common for all users. This can be updated by the DAO
      * @dev 1e18 format, where 0.01e18 = 1%
      */
-    uint256 public override baseRate;
+    uint96 public override baseRate;
 
     /**
      * @notice The (base rate) total number of shares allocated out to users for internal book keeping
@@ -107,7 +109,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     {
         name = _name;
         symbol = _symbol;
-        baseRate = _baseInterestRate;
+        baseRate = _baseInterestRate.encodeUInt96();
         baseCheckpointTime = block.timestamp;
     }
 
@@ -141,7 +143,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      */
     function setBaseInterestRate(uint256 _rate) external override onlyElevatedAccess {
         _checkpointBase(_compoundedBaseInterest());
-        baseRate = _rate;
+        baseRate = _rate.encodeUInt96();
         emit BaseInterestRateSet(_rate);
     }
 
@@ -151,7 +153,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     function setRiskPremiumInterestRate(address _debtor, uint256 _rate) external override onlyElevatedAccess {
         Debtor storage debtor = debtors[_debtor];
         _checkpointDebtor(debtor);
-        debtor.rate = uint64(_rate);
+        debtor.rate = _rate.encodeUInt64();
         emit RiskPremiumInterestRateSet(_debtor, _rate);
     }
 
@@ -177,15 +179,14 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         uint256 sharesAmount = _debtToShares(_mintAmount, _totalPrincipalAndBase, _totalBaseShares, false);
 
         // Update the contract state
-        // @todo need to safe cast these
         {
             // Add the shares to the debtor and total
-            debtor.baseShares += uint128(sharesAmount);
+            debtor.baseShares += sharesAmount.encodeUInt128();
             baseShares = _totalBaseShares + sharesAmount;
 
             // The principal borrowed now increases (which affects the risk premium interest accrual)
             // and also the (base rate) checkpoint representing the principal+base interest
-            debtor.principal += uint128(_mintAmount);
+            debtor.principal += _mintAmount.encodeUInt128();
             totalPrincipal += _mintAmount;
             baseCheckpoint += _mintAmount;
         }
@@ -239,6 +240,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     function burnAll(address _debtor) external override returns (uint256 burnedAmount) {
         if (!minters[msg.sender]) revert CannotMintOrBurn(msg.sender);
         if (_debtor == address(0)) revert CommonEventsAndErrors.InvalidAddress(_debtor);
+
         Debtor storage debtor = debtors[_debtor];
         uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
         burnedAmount = _balanceOf(debtor, _totalPrincipalAndBase);
@@ -445,7 +447,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      */
     function _compoundedBaseInterest() internal view returns (uint256) {
         uint256 _timeElapsed = block.timestamp - baseCheckpointTime;
-        return baseCheckpoint.continuouslyCompounded(_timeElapsed, uint96(baseRate));
+        return baseCheckpoint.continuouslyCompounded(_timeElapsed, baseRate);
     }
 
     /**

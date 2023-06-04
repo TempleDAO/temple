@@ -23,7 +23,7 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
      * @notice The current (base rate) interest common for all users. This can be updated by governance
      * @dev 1e18 format, where 0.01e18 = 1%
      */
-    function baseRate() external view returns (uint256);
+    function baseRate() external view returns (uint96);
 
     /**
      * @notice The (base rate) total number of shares allocated out to users for internal book keeping

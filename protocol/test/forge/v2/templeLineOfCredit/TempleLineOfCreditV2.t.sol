@@ -13,19 +13,6 @@ import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { TlcStrategy } from "contracts/v2/templeLineOfCredit/TlcStrategy.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
 
-// @todo when the TRV cap changes, the UR will change. A checkpoint will need to be done then too, 
-// so the rate is updated.
-// add a test for this.
-
-// @todo check all the encoding
-
-// @todo check that if LTV is zero, then borrows are disabled.
-
-// @todo when the TRV cap changes, the UR will change. A checkpoint will need to be done then too, 
-// so the rate is updated.
-// add a test for this.
-
-
 contract TempleLineOfCreditTest_Admin is TlcBaseTest {
     // @dev On a fresh TLC without the expected post creation setup
     function test_creation() public {
@@ -151,7 +138,6 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         cache = tlc.getDebtTokenCache(templeToken);
     }
 
-    // @todo add checks around TRV approvals
     function test_setTlcStrategy() public {
         vm.startPrank(executor);
         assertEq(address(tlc.tlcStrategy()), address(tlcStrategy));
@@ -502,6 +488,121 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
         uint256 borrowDaiAmount;
         uint256 borrowOudAmount;
         uint256 collateralAmount;
+    }
+
+    function test_trvCapChange() external {
+        Params memory params = Params({
+            borrowDaiAmount: 90_000e18,
+            borrowOudAmount: 20_000e18,
+            collateralAmount: 200_000e18
+        });
+
+        // For DAI, borrowing 90k / 100k available, so it's right at the kink - 10% interest rate
+        uint96 expectedDaiRate = 0.1e18;
+
+        // Flat interest rate of 5%
+        uint96 expectedOudRate = 0.05e18;
+
+        MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(params.collateralAmount);
+        borrow(alice, params.collateralAmount, params.borrowDaiAmount, params.borrowOudAmount, BORROW_REQUEST_MIN_SECS);
+
+        uint256 tsBefore = block.timestamp;
+        vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
+
+        uint256 expectedDaiDebt = approxInterest(params.borrowDaiAmount, expectedDaiRate, 365 days);
+        uint256 expectedOudDebt = approxInterest(params.borrowOudAmount, expectedOudRate, 365 days);
+
+        // Run checks after a year.
+        // Now the total debt has increased and the health factors are updated.
+        // But nothing has been 'checkpointed' in storage yet.
+        {
+            checkDebtTokenDetails(daiToken, params.borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
+            checkDebtTokenDetails(oudToken, params.borrowOudAmount, expectedOudRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
+
+            checkAccountPosition(
+                CheckAccountPositionParams({
+                    account: alice,
+                    expectedDaiBalance: params.borrowDaiAmount,
+                    expectedOudBalance: params.borrowOudAmount,
+                    expectedAccountPosition: AccountPosition({
+                        collateralPosted: params.collateralAmount,
+                        daiDebtPosition: createDebtPosition(daiToken, expectedDaiDebt, maxBorrowInfo),
+                        oudDebtPosition: createDebtPosition(oudToken, expectedOudDebt, maxBorrowInfo)
+                    }),
+                    expectedDaiDebtCheckpoint: params.borrowDaiAmount,
+                    expectedDaiAccumulatorCheckpoint: INITIAL_INTEREST_ACCUMULATOR,
+                    expectedOudDebtCheckpoint: params.borrowOudAmount,
+                    expectedOudAccumulatorCheckpoint: INITIAL_INTEREST_ACCUMULATOR,
+                    expectedRemoveCollateralRequest: 0,
+                    expectedRemoveCollateralRequestAt: 0
+                }),
+                true
+            );
+        }
+
+        vm.prank(executor);
+        trv.setStrategyDebtCeiling(address(tlcStrategy), 50_000e18);
+
+        // Still the same after the TRV cap was halved
+        {
+            checkDebtTokenDetails(daiToken, params.borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
+            checkDebtTokenDetails(oudToken, params.borrowOudAmount, expectedOudRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
+
+            checkAccountPosition(
+                CheckAccountPositionParams({
+                    account: alice,
+                    expectedDaiBalance: params.borrowDaiAmount,
+                    expectedOudBalance: params.borrowOudAmount,
+                    expectedAccountPosition: AccountPosition({
+                        collateralPosted: params.collateralAmount,
+                        daiDebtPosition: createDebtPosition(daiToken, expectedDaiDebt, maxBorrowInfo),
+                        oudDebtPosition: createDebtPosition(oudToken, expectedOudDebt, maxBorrowInfo)
+                    }),
+                    expectedDaiDebtCheckpoint: params.borrowDaiAmount,
+                    expectedDaiAccumulatorCheckpoint: INITIAL_INTEREST_ACCUMULATOR,
+                    expectedOudDebtCheckpoint: params.borrowOudAmount,
+                    expectedOudAccumulatorCheckpoint: INITIAL_INTEREST_ACCUMULATOR,
+                    expectedRemoveCollateralRequest: 0,
+                    expectedRemoveCollateralRequestAt: 0
+                }),
+                true
+            );
+        }
+
+        // It is checkpoint and rates updated only after a forced refresh (or a new user borrow)
+        tlc.refreshInterestRates();
+        {
+            uint256 daiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiRate, 365 days);
+            expectedDaiDebt = approxInterest(params.borrowDaiAmount, expectedDaiRate, 365 days);
+            // The rate is now updated for the next period
+            expectedDaiRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, 50_000e18);
+
+            uint256 oudAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedOudRate, 365 days);
+            expectedOudDebt = approxInterest(params.borrowOudAmount, expectedOudRate, 365 days);
+
+            checkDebtTokenDetails(daiToken, expectedDaiDebt, expectedDaiRate, daiAccumulator, block.timestamp);
+            checkDebtTokenDetails(oudToken, expectedOudDebt, expectedOudRate, oudAccumulator, block.timestamp);
+
+            checkAccountPosition(
+                CheckAccountPositionParams({
+                    account: alice,
+                    expectedDaiBalance: params.borrowDaiAmount,
+                    expectedOudBalance: params.borrowOudAmount,
+                    expectedAccountPosition: AccountPosition({
+                        collateralPosted: params.collateralAmount,
+                        daiDebtPosition: createDebtPosition(daiToken, expectedDaiDebt, maxBorrowInfo),
+                        oudDebtPosition: createDebtPosition(oudToken, expectedOudDebt, maxBorrowInfo)
+                    }),
+                    expectedDaiDebtCheckpoint: params.borrowDaiAmount,
+                    expectedDaiAccumulatorCheckpoint: INITIAL_INTEREST_ACCUMULATOR,
+                    expectedOudDebtCheckpoint: params.borrowOudAmount,
+                    expectedOudAccumulatorCheckpoint: INITIAL_INTEREST_ACCUMULATOR,
+                    expectedRemoveCollateralRequest: 0,
+                    expectedRemoveCollateralRequestAt: 0
+                }),
+                true
+            );
+        }
     }
 
     function test_borrow_accruesInterestRate() external {
