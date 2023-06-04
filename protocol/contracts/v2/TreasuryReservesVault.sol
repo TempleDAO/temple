@@ -63,10 +63,12 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * @notice When strategies are shutdown, all remaining stables are recovered
      * and outstanding debt is burned.
      * This leaves a net balance of positive or negative equity, which is tracked.
-     * @dev Total current equity == shutdownStrategyNetEquity + 
+     * @dev Total current equity == totalRealisedGainOrLoss + 
                                     SUM(strategy.equity() for strategy in active strategies)
      */
-    int256 public override shutdownStrategyNetEquity;
+    int256 public override totalRealisedGainOrLoss;
+
+    // @todo should we keep a map of realised gain/loss per strategy on chain? Currently just off-chain
 
     /**
      * @notice The Treasury Price Index, used within strategies.
@@ -350,7 +352,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
                 uint256 _withdrawnAmount = _baseStrategy.trvWithdraw(_stablesToWithdraw);
 
                 // Burn that amount of dUSD from the base strategy.
-                internalDebtToken.burn(address(_baseStrategy), _withdrawnAmount, true);
+                internalDebtToken.burn(address(_baseStrategy), _withdrawnAmount);
             }
         }
 
@@ -379,7 +381,14 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         templeToken.burn(msg.sender, repayAmount);
 
         // Burn the dUSD tokens. This will fail if the repayment amount is greater than the balance.
-        uint256 burnedAmount = internalDebtToken.burn(strategy, debtToBurn, true);
+        uint256 burnedAmount = internalDebtToken.burn(strategy, debtToBurn);
+
+        // If more stables are repaid than the total debt left, then that difference is a realised gain.
+        if (debtToBurn > burnedAmount) {
+            uint256 gain = debtToBurn-burnedAmount;
+            emit RealisedGain(strategy, gain);
+            totalRealisedGainOrLoss += int256(gain);
+        }
     }
 
     /**
@@ -410,16 +419,16 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         emit Repay(_strategyAddr, _from, _repayAmount);
 
         // Burn the dUSD tokens. This will fail if the repayment amount is greater than the balance.
-        uint256 burnedAmount = internalDebtToken.burn(_strategyAddr, _repayAmount, true);
+        uint256 burnedAmount = internalDebtToken.burn(_strategyAddr, _repayAmount);
 
         // Pull the stables from the strategy.
         stableToken.safeTransferFrom(_from, address(this), _repayAmount);
 
-        // If more stables are repaid than their total debt, then that difference is a realised gain.
+        // If more stables are repaid than the total debt left, then that difference is a realised gain.
         if (_repayAmount > burnedAmount) {
             uint256 gain = _repayAmount-burnedAmount;
             emit RealisedGain(_strategyAddr, gain);
-            shutdownStrategyNetEquity += int256(gain);
+            totalRealisedGainOrLoss += int256(gain);
         }
     }
 
@@ -440,7 +449,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         uint256 _remainingDebt = internalDebtToken.burnAll(strategyAddr);
 
         int256 _realisedGainOrLoss = int256(stablesRecovered) - int256(_remainingDebt);
-        shutdownStrategyNetEquity += _realisedGainOrLoss;
+        totalRealisedGainOrLoss += _realisedGainOrLoss;
 
         if (_realisedGainOrLoss > 0) {
             emit RealisedGain(strategyAddr, uint256(_realisedGainOrLoss));

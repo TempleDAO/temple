@@ -172,10 +172,11 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         {
             DebtTokenDetails storage _debtTokenDetails = debtTokenDetails[token];
 
-            uint256 _totalDebt = currentAccountDebtData(
+            uint256 _totalDebt = currentAccountDebt(
                 _debtTokenCache, 
                 _accountDebtData.debtCheckpoint, 
-                _accountDebtData.interestAccumulator
+                _accountDebtData.interestAccumulator,
+                false // don't round on the way in
             ) + _borrowAmount;
 
             // Update the state
@@ -210,7 +211,7 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
 
         AccountDebtData storage _accountDebtData = allAccountsData[onBehalfOf].debtData[token];
-        repayToken(token, debtTokenCache(token), repayAmount, _accountDebtData, msg.sender, onBehalfOf);
+        repayToken(token, debtTokenCache(token), repayAmount.encodeUInt128(), _accountDebtData, msg.sender, onBehalfOf);
     }
 
     /**
@@ -222,10 +223,11 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         AccountDebtData storage _accountDebtData = allAccountsData[onBehalfOf].debtData[token];
 
         // Get the outstanding debt for Stable
-        uint256 repayAmount = currentAccountDebtData(
+        uint128 repayAmount = currentAccountDebt(
             _debtTokenCache,
             _accountDebtData.debtCheckpoint,
-            _accountDebtData.interestAccumulator
+            _accountDebtData.interestAccumulator,
+            true // use the rounded up amount
         );
         if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
         repayToken(token, _debtTokenCache, repayAmount, _accountDebtData, msg.sender, onBehalfOf);
@@ -239,8 +241,8 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         address[] memory accounts
     ) external override returns (
         uint256 totalCollateralClaimed,
-        uint256 totalDaiDebtWiped,
-        uint256 totalOudDebtWiped
+        uint128 totalDaiDebtWiped,
+        uint128 totalOudDebtWiped
     ) {
         LiquidityStatus memory _status;
         DebtTokenCache memory daiTokenCache = debtTokenCache(daiToken);
@@ -275,11 +277,12 @@ contract TempleLineOfCredit is TlcBase, ITempleLineOfCredit, TempleElevatedAcces
         // burn the temple collateral by repaying to TRV. This will burn the equivalent dUSD debt too.
         if (totalCollateralClaimed != 0) {
             treasuryReservesVault.repayTemple(totalCollateralClaimed, address(tlcStrategy));
+            totalCollateral -= totalCollateralClaimed;
         }
 
         // Remove debt from the totals
-        wipeDebt(daiToken, daiTokenCache, totalDaiDebtWiped);
-        wipeDebt(oudToken, oudTokenCache, totalOudDebtWiped);
+        repayTotalDebt(daiToken, daiTokenCache, totalDaiDebtWiped);
+        repayTotalDebt(oudToken, oudTokenCache, totalOudDebtWiped);
     }
     
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/

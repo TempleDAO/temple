@@ -217,7 +217,7 @@ contract AbstractStrategyTestBalances is AbstractStrategyTestBase {
         assertEq(available, 75e18);
         assertEq(ceiling, borrowCeiling);
 
-        dUSD.burn(address(strategy), 10e18, false);
+        dUSD.burn(address(strategy), 10e18);
         (debt, available, ceiling) = strategy.trvBorrowPosition();
         assertEq(debt, 15e18);
         assertEq(available, 85e18);
@@ -228,7 +228,7 @@ contract AbstractStrategyTestBalances is AbstractStrategyTestBase {
         vm.startPrank(executor);
         dUSD.mint(address(strategy), 100e18);
         assertEq(strategy.currentDebt(), 100e18);
-        dUSD.burn(address(strategy), 100e18, false);
+        dUSD.burn(address(strategy), 100e18);
         assertEq(strategy.currentDebt(), 0);
     }
 

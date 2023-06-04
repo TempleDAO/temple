@@ -56,8 +56,8 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
         address[] memory accounts
     ) external returns (
         uint256 totalCollateralClaimed,
-        uint256 totalDaiDebtWiped,
-        uint256 totalOudDebtWiped
+        uint128 totalDaiDebtWiped,
+        uint128 totalOudDebtWiped
     );
 
     // Manually checkpoint debt to adjust interest rate based on latest utillization ratio

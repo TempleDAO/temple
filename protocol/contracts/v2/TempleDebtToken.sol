@@ -75,7 +75,6 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      */
     uint256 public override baseCheckpointTime;
 
-
     /**
      * @notice Per address status of debt
      */
@@ -202,15 +201,13 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
      *   3/ Finally if there is still some repayment amount unallocated, 
      *      then the principal will be paid down. This is like a new debt is issued for the lower balance,
      *      where interest accrual starts fresh.
+     * More debt than the user has cannot be burned - it is capped. The actual amount burned is returned
      * @param _debtor The address of the debtor
      * @param _burnAmount The notional amount of debt tokens to repay.
-     * @param _capBurnAmount Cap the amount burned, up to the debtor's current balance. 
-     *        If false and `_burnAmount` is greater than their balance then this will revert.
      */
     function burn(
         address _debtor, 
-        uint256 _burnAmount, 
-        bool _capBurnAmount
+        uint256 _burnAmount
     ) external override returns (
         uint256 burnedAmount
     ) {
@@ -222,15 +219,11 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
         
         {
-            // Check the user isn't paying off more debt than they have
+            // The user can't pay off more debt than they have.
+            // It is capped, and the actual amount burned returned as a value
             uint256 _debtorBalance = _balanceOf(debtor, _totalPrincipalAndBase);
             if (_burnAmount > _debtorBalance) {
-                // @todo this looks like it's always set to true? need to recheck this.
-                // if (_capBurnAmount) {
-                    _burnAmount = _debtorBalance;
-                // } else {
-                    // revert BurnExceedsBalance(_balanceOf(debtor, _totalPrincipalAndBase), _burnAmount);
-                // }
+                _burnAmount = _debtorBalance;
             }
         }
 

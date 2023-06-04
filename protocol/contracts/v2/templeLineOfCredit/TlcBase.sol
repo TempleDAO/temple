@@ -157,31 +157,31 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
     function repayToken(
         IERC20 _token,
         DebtTokenCache memory _debtTokenCache,
-        uint256 _repayAmount,
+        uint128 _repayAmount,
         AccountDebtData storage _accountDebtData,
         address _fromAccount,
         address _onBehalfOf
     ) internal {
         // Update the account's latest debt
-        uint256 _newDebt = currentAccountDebtData(_debtTokenCache, _accountDebtData.debtCheckpoint, _accountDebtData.interestAccumulator);
+        uint128 _newDebt = currentAccountDebt(
+            _debtTokenCache, 
+            _accountDebtData.debtCheckpoint,
+            _accountDebtData.interestAccumulator,
+            true // round up for repay balance
+        );
 
         // They cannot repay more than this debt
         if (_repayAmount > _newDebt) {
             revert ExceededBorrowedAmount(address(_token), _newDebt, _repayAmount);
         }
-
-        // Update storage
-        DebtTokenDetails storage _debtTokenDetails = debtTokenDetails[_token];
         unchecked {
             _newDebt -= _repayAmount;
-            _debtTokenDetails.data.totalDebt = _debtTokenCache.totalDebt = uint128(
-                _debtTokenCache.totalDebt - _repayAmount
-            );
         }
-        _accountDebtData.debtCheckpoint = _newDebt.encodeUInt128();
-        _accountDebtData.interestAccumulator = _debtTokenCache.interestAccumulator;
 
-        updateInterestRates(_token, _debtTokenDetails, _debtTokenCache);
+        // Update storage
+        _accountDebtData.debtCheckpoint = _newDebt;
+        _accountDebtData.interestAccumulator = _debtTokenCache.interestAccumulator;
+        repayTotalDebt(_token, _debtTokenCache, _repayAmount);
 
         emit Repay(_fromAccount, _onBehalfOf, address(_token), _repayAmount);
         // NB: Liquidity doesn't need to be checked after a repay, as that only improves the health.
@@ -201,11 +201,12 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         AccountDebtData storage _accountDebtData,
         bool _includePendingRequests,
         LiquidityStatus memory status
-    ) internal view returns (uint256 currentDebt) {
-        currentDebt = currentAccountDebtData(
+    ) internal view returns (uint128 currentDebt) {
+        currentDebt = currentAccountDebt(
             _debtTokenCache, 
             _accountDebtData.debtCheckpoint, 
-            _accountDebtData.interestAccumulator
+            _accountDebtData.interestAccumulator,
+            true // round up for user reported debt
         );
 
         if (_includePendingRequests) {
@@ -259,23 +260,24 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         }
     }
 
-    function wipeDebt(
+    // The sum each users debt may be slightly more than the recorded total debt
+    // because users debt is rounded up for dust.
+    // This floors the total debt to 0 and updates storage
+    function repayTotalDebt(
         IERC20 _token,
         DebtTokenCache memory _debtTokenCache,
-        uint256 _totalDebtWiped
+        uint128 _repayAmount
     ) internal {
-        if (_totalDebtWiped == 0) return;
-
+        if (_repayAmount == 0) return;
         DebtTokenDetails storage _debtTokenDetails = debtTokenDetails[_token];
 
-        // Update the reserve token details, and then update the interest rates.            
-        // A decrease in amount, so this downcast is safe without a check
-        unchecked {
-            _debtTokenDetails.data.totalDebt = _debtTokenCache.totalDebt = uint128(
-                _debtTokenCache.totalDebt - _totalDebtWiped
-            );
-        }
+        uint128 _newDebt = (_repayAmount > _debtTokenCache.totalDebt)
+            ? 0
+            : _debtTokenCache.totalDebt - _repayAmount;
 
+        _debtTokenDetails.data.totalDebt = _debtTokenCache.totalDebt = _newDebt;
+
+        // Update interest rates now the total debt has been updated.
         updateInterestRates(_token, _debtTokenDetails, _debtTokenCache);
     }
 
@@ -288,10 +290,11 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         DebtTokenCache memory _debtTokenCache = debtTokenCacheRO(_token);
         AccountDebtData storage _accountDebtData = _accountData.debtData[_token];
 
-        uint256 _latestDebt = currentAccountDebtData(
+        uint256 _latestDebt = currentAccountDebt(
             _debtTokenCache, 
             _accountDebtData.debtCheckpoint,
-            _accountDebtData.interestAccumulator
+            _accountDebtData.interestAccumulator,
+            true
         );
 
         if (_includePendingRequests) {
@@ -323,18 +326,32 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
         // The UR parameter is used by the 'Fixed' interest rate model
         return _debtTokenCache.trvDebtCeiling == 0
             ? 0
-            : uint256(_debtTokenCache.totalDebt) * 1e18 / _debtTokenCache.trvDebtCeiling;
+            : mulDiv(_debtTokenCache.totalDebt, 1e18, _debtTokenCache.trvDebtCeiling);
     }
     
-    function currentAccountDebtData(
+    /// @notice mulDiv with an option to round the result up or down to the nearest wei
+    function mulDivRound(uint256 x, uint256 y, uint256 denominator, bool roundUp) internal pure returns (uint256 result) {
+        result = mulDiv(x, y, denominator);
+        // See OZ Math.sol for the equivalent mulDiv() with rounding.
+        if (roundUp && mulmod(x, y, denominator) > 0) {
+            result += 1;
+        }
+    }
+
+    function currentAccountDebt(
         DebtTokenCache memory _debtTokenCache,
-        uint128 _accountDebtData,
-        uint128 _accountInterestAccumulator
-    ) internal pure returns (uint256) {
-        uint256 prevDebt = _accountDebtData;
-        return (prevDebt == 0) 
+        uint128 _accountDebtCheckpoint,
+        uint128 _accountInterestAccumulator,
+        bool roundUp
+    ) internal pure returns (uint128 result) {
+        return (_accountDebtCheckpoint == 0) 
             ? 0
-            : prevDebt * _debtTokenCache.interestAccumulator / _accountInterestAccumulator;
+            : mulDivRound(
+                _accountDebtCheckpoint, 
+                _debtTokenCache.interestAccumulator, 
+                _accountInterestAccumulator, 
+                roundUp
+            ).encodeUInt128();
     }
 
     function maxBorrowCapacity(

@@ -63,8 +63,8 @@ interface ITlcDataTypes {
         bool hasExceededMaxLtv;
 
         uint256 collateral;
-        uint256 currentDaiDebt;
-        uint256 currentOudDebt;
+        uint128 currentDaiDebt;
+        uint128 currentOudDebt;
     }
     
     struct AccountDebtPosition {

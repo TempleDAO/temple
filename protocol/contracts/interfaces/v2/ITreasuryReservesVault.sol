@@ -156,10 +156,10 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
      * @notice When strategies are shutdown, all remaining stables are recovered
      * and outstanding debt is burned.
      * This leaves a net balance of positive or negative equity, which is tracked.
-     * @dev Total current equity == shutdownStrategyNetEquity + 
+     * @dev Total current equity == totalRealisedGainOrLoss + 
                                     SUM(strategy.equity() for strategy in active strategies)
      */
-    function shutdownStrategyNetEquity() external view returns (int256);
+    function totalRealisedGainOrLoss() external view returns (int256);
 
     /**
      * @notice A helper to collate information about a given strategy for reporting purposes.

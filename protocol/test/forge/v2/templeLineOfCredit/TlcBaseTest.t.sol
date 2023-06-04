@@ -357,7 +357,23 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
 
         assertEq(status[0].hasExceededMaxLtv, expectedHasExceededMaxLtv, "hasExceededMaxLtv");
         assertEq(status[0].collateral, expectedCollateral, "collateral");
-        assertEq(status[0].currentDaiDebt, expectedCurrentDaiDebt, "currentDaiDebt");
-        assertEq(status[0].currentOudDebt, expectedCurrentOudDebt, "currentOudDebt");
+        assertApproxEqRel(status[0].currentDaiDebt, expectedCurrentDaiDebt, 1e8, "currentDaiDebt");
+        assertApproxEqRel(status[0].currentOudDebt, expectedCurrentOudDebt, 1e8, "currentOudDebt");
+    }
+
+    function checkBatchLiquidate(
+        address[] memory accounts,
+        uint256 expectedCollateralClaimed,
+        uint256 expectedDaiDebtWiped,
+        uint256 expectedOudDebtWiped
+    ) internal {
+        (
+            uint256 totalCollateralClaimed,
+            uint256 totalDaiDebtWiped,
+            uint256 totalOudDebtWiped
+        ) = tlc.batchLiquidate(accounts);
+        assertEq(totalCollateralClaimed, expectedCollateralClaimed, "liquidate_collateral");
+        assertApproxEqRel(totalDaiDebtWiped, expectedDaiDebtWiped, 1e10, "liquidate_dai");
+        assertApproxEqRel(totalOudDebtWiped, expectedOudDebtWiped, 1e10, "liquidate_oud");
     }
 }

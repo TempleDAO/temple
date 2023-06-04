@@ -127,7 +127,7 @@ contract GnosisStrategyTestBalances is GnosisStrategyTestBase {
         vm.startPrank(executor);
         dUSD.mint(address(strategy), 100e18);
         assertEq(strategy.currentDebt(), 100e18);
-        dUSD.burn(address(strategy), 100e18, false);
+        dUSD.burn(address(strategy), 100e18);
         assertEq(strategy.currentDebt(), 0);
     }
 

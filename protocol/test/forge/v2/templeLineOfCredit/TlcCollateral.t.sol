@@ -347,7 +347,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         // Now alice can't execute on the collateral remove request
         vm.warp(block.timestamp + COLLATERAL_REQUEST_MIN_SECS);
         changePrank(alice);
-        vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, collateralAmount/2, borrowAmount+196094412637, 0));
+        vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, collateralAmount/2, borrowAmount+196094412638, 0));
         tlc.removeCollateral(alice);
 
         // But she can still cancel the request, and re-go for a smaller amount
