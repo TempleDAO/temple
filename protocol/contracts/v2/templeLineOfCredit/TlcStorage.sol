@@ -14,14 +14,9 @@ abstract contract TlcStorage is ITlcStorage {
     IERC20 public immutable override templeToken;
 
     /**
-     * @notice DAI is one of the debt tokens which can be borrowed
+     * @notice DAI token -- the debt token which can be borrowed
      */
     IERC20 public immutable override daiToken;
-
-    /**
-     * @notice Oud is one of the debt tokens which can be borrowed
-     */
-    IERC20 public immutable override oudToken;
 
     /**
      * @notice The Treasury Reserve Vault (TRV) which funds the DAI borrows to users/accounts.
@@ -45,7 +40,7 @@ abstract contract TlcStorage is ITlcStorage {
      * The request also has an expiry time.
      * If a request expires, a new request will need to be made or the actual withdraw will then revert.
      */
-    FundsRequestWindow public override removeCollateralRequestWindow;
+    FundsRequestConfig public override removeCollateralRequestConfig;
     
     /**
      * @notice A record of the total amount of collateral deposited by users/accounts.
@@ -60,18 +55,24 @@ abstract contract TlcStorage is ITlcStorage {
     /**
      * @notice Configuration and latest data snapshot of the debt tokens
      */
-    mapping(IERC20 => DebtTokenDetails) public override debtTokenDetails;
+    DebtTokenConfig internal debtTokenConfig;
+    DebtTokenData internal debtTokenData;
 
     /**
      * @notice An internal state tracking how interest has accumulated.
      */
     uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
+
+    /**
+     * @notice The minimum borrow amount per transaction
+     * @dev It costs gas to liquidate users, so we don't want dust amounts.
+     */
+    uint256 public constant MIN_BORROW_AMOUNT = 1000e18;
     
-    constructor(address _templeToken, address _daiToken, address _oudToken)
+    constructor(address _templeToken, address _daiToken)
     {
         templeToken = IERC20(_templeToken);
         daiToken = IERC20(_daiToken);
-        oudToken = IERC20(_oudToken);
     }
 
 }

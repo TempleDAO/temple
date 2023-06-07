@@ -23,8 +23,8 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
     using SafeCast for uint256;
     using CompoundedInterest for uint256;
 
-    constructor(address _templeToken, address _daiToken, address _oudToken) 
-        TlcStorage(_templeToken, _daiToken, _oudToken)
+    constructor(address _templeToken, address _daiToken) 
+        TlcStorage(_templeToken, _daiToken)
     {}
 
     /**
@@ -75,50 +75,27 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
     }
     
     /**
-     * @dev Initialize a new debt token (DAI/OUD) into storage
-     */
-    function addDebtToken(
-        IERC20 _token,
-        DebtTokenConfig memory _config
-    ) internal {
-        if (_config.maxLtvRatio > 1e18) revert CommonEventsAndErrors.InvalidParam();
-        if (address(_config.interestRateModel) == address(0)) revert CommonEventsAndErrors.ExpectedNonZero();
-
-        DebtTokenDetails storage _debtTokenDetails = debtTokenDetails[_token];
-        _debtTokenDetails.config = _config;
-        _debtTokenDetails.data.interestAccumulator = INITIAL_INTEREST_ACCUMULATOR;
-        _debtTokenDetails.data.interestAccumulatorUpdatedAt = uint32(block.timestamp);
-    }
-
-    /**
      * @dev Initialize the DebtTokenCache from storage to this block, for a given token.
      */
-    function initDebtTokenCache(
-        IERC20 _token,
-        DebtTokenDetails storage _debtTokenDetails,
-        DebtTokenCache memory _cache
-    ) private view returns (bool dirty) {
+    function initDebtTokenCache(DebtTokenCache memory _cache) private view returns (bool dirty) {
+
         // Copies from storage (once)
-        _cache.config = _debtTokenDetails.config;
+        _cache.config = debtTokenConfig;
+
         // No need to use `encodeUInt128()` here - straight from storage of the same dimension
-        _cache.interestAccumulator = uint128(_debtTokenDetails.data.interestAccumulator);
-        _cache.totalDebt = _debtTokenDetails.data.totalDebt;
-        _cache.interestRate = _debtTokenDetails.data.interestRate;
+        _cache.interestAccumulator = uint128(debtTokenData.interestAccumulator);
+        _cache.totalDebt = debtTokenData.totalDebt;
+        _cache.interestRate = debtTokenData.interestRate;
 
         // Set the debt ceiling and price.
-        if (_token == daiToken) {
+        {
             ITreasuryReservesVault _trv = treasuryReservesVault;
             _cache.trvDebtCeiling = _trv.strategyDebtCeiling(address(tlcStrategy));
             _cache.price = _trv.treasuryPriceIndex();
-        } else if (_token == oudToken) {
-            // _cache.trvDebtCeiling remains as 0
-            _cache.price = 1e18;
-        } else {
-            revert CommonEventsAndErrors.InvalidToken(address(_token));
         }
         
         // Only compound if we're on a new block
-        uint256 interestAccumulatorUpdatedAt = _debtTokenDetails.data.interestAccumulatorUpdatedAt;
+        uint256 interestAccumulatorUpdatedAt = debtTokenData.interestAccumulatorUpdatedAt;
         uint32 blockTs = uint32(block.timestamp);
         if (blockTs != interestAccumulatorUpdatedAt) {
             dirty = true;
@@ -143,16 +120,13 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
      * @dev Setup the DebtTokenCache for a given token
      * Update storage if and only if the state has changed.
      */
-    function debtTokenCache(
-        IERC20 _token
-    ) internal returns (
+    function debtTokenCache() internal returns (
         DebtTokenCache memory cache
     ) {
-        DebtTokenDetails storage _debtTokenDetails = debtTokenDetails[_token];
-        if (initDebtTokenCache(_token, _debtTokenDetails, cache)) {
-            _debtTokenDetails.data.interestAccumulatorUpdatedAt = uint32(block.timestamp);
-            _debtTokenDetails.data.totalDebt = cache.totalDebt;
-            _debtTokenDetails.data.interestAccumulator = cache.interestAccumulator;
+        if (initDebtTokenCache(cache)) {
+            debtTokenData.interestAccumulatorUpdatedAt = uint32(block.timestamp);
+            debtTokenData.totalDebt = cache.totalDebt;
+            debtTokenData.interestAccumulator = cache.interestAccumulator;
         }
     }
 
@@ -160,21 +134,10 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
      * @dev Setup the DebtTokenCache for a given token
      * read only -- storage isn't updated.
      */
-    function debtTokenCacheRO(
-        IERC20 _token
-    ) internal view returns (
+    function debtTokenCacheRO() internal view returns (
         DebtTokenCache memory cache
     ) {
-        initDebtTokenCache(_token, debtTokenDetails[_token], cache);
-    }
-
-    /**
-     * @dev Ensure the user supplied token is valid in TLC
-     */
-    function checkValidDebtToken(IERC20 _token) internal view {
-        if (_token != daiToken && _token != oudToken) {
-            revert CommonEventsAndErrors.InvalidToken(address(_token));
-        }
+        initDebtTokenCache(cache);
     }
 
     /**
@@ -182,8 +145,6 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
      * If the rate has changed, then update storage and emit an event.
      */
     function updateInterestRates(
-        IERC20 _token,
-        DebtTokenDetails storage _debtTokenDetails,
         DebtTokenCache memory _debtTokenCache
     ) internal {
         uint96 newInterestRate = _debtTokenCache.config.interestRateModel.calculateInterestRate(
@@ -192,8 +153,8 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
 
         // Update storage if the new rate differs from the old rate.
         if (_debtTokenCache.interestRate != newInterestRate) {
-            emit InterestRateUpdate(address(_token), newInterestRate);
-            _debtTokenDetails.data.interestRate = _debtTokenCache.interestRate = newInterestRate;
+            emit InterestRateUpdate(newInterestRate);
+            debtTokenData.interestRate = _debtTokenCache.interestRate = newInterestRate;
         }
     }
 
@@ -203,7 +164,7 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
     function checkWithdrawalCooldown(
         uint32 _minSecs,
         uint32 _maxSecs,
-        uint32 _requestedAt
+        uint64 _requestedAt
     ) internal view {
         unchecked {
             if (block.timestamp < _requestedAt+_minSecs)
@@ -217,127 +178,89 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
      * @dev The implementation of the debt token repayment, used by repay() and repayAll()
      */
     function repayToken(
-        IERC20 _token,
         DebtTokenCache memory _debtTokenCache,
         uint128 _repayAmount,
-        AccountDebtData storage _accountDebtData,
+        AccountData storage _accountData,
         address _fromAccount,
         address _onBehalfOf
     ) internal {
         // Update the account's latest debt
         uint128 _newDebt = currentAccountDebt(
             _debtTokenCache, 
-            _accountDebtData.debtCheckpoint,
-            _accountDebtData.interestAccumulator,
+            _accountData.debtCheckpoint,
+            _accountData.interestAccumulator,
             true // round up for repay balance
         );
 
         // They cannot repay more than this debt
         if (_repayAmount > _newDebt) {
-            revert ExceededBorrowedAmount(address(_token), _newDebt, _repayAmount);
+            revert ExceededBorrowedAmount(_newDebt, _repayAmount);
         }
         unchecked {
             _newDebt -= _repayAmount;
         }
 
         // Update storage
-        _accountDebtData.debtCheckpoint = _newDebt;
-        _accountDebtData.interestAccumulator = _debtTokenCache.interestAccumulator;
-        repayTotalDebt(_token, _debtTokenCache, _repayAmount);
+        _accountData.debtCheckpoint = _newDebt;
+        _accountData.interestAccumulator = _debtTokenCache.interestAccumulator;
+        repayTotalDebt(_debtTokenCache, _repayAmount);
 
-        emit Repay(_fromAccount, _onBehalfOf, address(_token), _repayAmount);
+        emit Repay(_fromAccount, _onBehalfOf, _repayAmount);
         // NB: Liquidity doesn't need to be checked after a repay, as that only improves the health.
 
-        if (_token == daiToken) {
-            // Pull the stables, and repay the TRV debt on behalf of the strategy.
-            _token.safeTransferFrom(_fromAccount, address(this), _repayAmount);
+        // Pull the stables, and repay the TRV debt on behalf of the strategy.
+        {
+            daiToken.safeTransferFrom(_fromAccount, address(this), _repayAmount);
             treasuryReservesVault.repay(_repayAmount, address(tlcStrategy));
-        } else {
-            // Burn the OUD
-            IMintableToken(address(_token)).burn(_fromAccount, _repayAmount);
-        }
-    }
-
-    /**
-     * @dev Fill the LiquidationStatus struct (by reference) with current details 
-     * for this account & token.
-     * Optionally include pendig collateral withdraw / borrow requests
-     * depending on the use case
-     * The position can be liquidated if the current debt is greater
-     * than the max borrow capacity allowed
-     */
-    function computeLiquidityForToken(
-        DebtTokenCache memory _debtTokenCache,
-        AccountDebtData storage _accountDebtData,
-        bool _includePendingRequests,
-        LiquidationStatus memory status
-    ) internal view returns (uint128 currentDebt) {
-        currentDebt = currentAccountDebt(
-            _debtTokenCache, 
-            _accountDebtData.debtCheckpoint, 
-            _accountDebtData.interestAccumulator,
-            true // round up for user reported debt
-        );
-
-        if (_includePendingRequests) {
-            currentDebt += _accountDebtData.borrowRequest.amount; 
-        }
-
-        if (!status.hasExceededMaxLtv) {
-            status.hasExceededMaxLtv = currentDebt > maxBorrowLimit(
-                _debtTokenCache,
-                status.collateral
-            );
         }
     }
 
     /**
      * @dev Generate the LiquidationStatus struct with current details 
-     * for this account for both DAI and OUD.
-     * Optionally include pendig collateral withdraw / borrow requests
-     * depending on the use case
+     * for this account.
+     * Optionally include pending collateral withdraw / borrow requests
      */
     function computeLiquidity(
         AccountData storage _accountData,
-        DebtTokenCache memory _daiTokenCache,
-        DebtTokenCache memory _oudTokenCache,
+        DebtTokenCache memory _debtTokenCache,
         bool _includePendingRequests
     ) internal view returns (LiquidationStatus memory status) {
-        status.collateral = _accountData.collateralPosted;
+        status.collateral = _accountData.collateral;
+
+        status.currentDebt = currentAccountDebt(
+            _debtTokenCache, 
+            _accountData.debtCheckpoint, 
+            _accountData.interestAccumulator,
+            true // round up for user reported debt
+        );
+
         if (_includePendingRequests) {
-            unchecked {
-                status.collateral -= _accountData.removeCollateralRequest.amount;
-            }
+            status.collateral -= _accountData.removeCollateralRequestAmount;
+            status.currentDebt += _accountData.borrowRequestAmount; 
         }
 
-        status.currentDaiDebt = computeLiquidityForToken(
-            _daiTokenCache,
-            _accountData.debtData[daiToken],
-            _includePendingRequests,
-            status
-        );
-        status.currentOudDebt = computeLiquidityForToken(
-            _oudTokenCache,
-            _accountData.debtData[oudToken],
-            _includePendingRequests,
-            status
+        status.collateralValue = status.collateral * _debtTokenCache.price / 1e18;
+
+        status.hasExceededMaxLtv = status.currentDebt > maxBorrowLimit(
+            _debtTokenCache,
+            status.collateral
         );
     }
 
     /**
      * @dev Check if this account is to be liquidated given the current
      * account, debt token and market conditions.
-     * Revert if the account has exceeded the maximum LTV allowed for either DAI or OUD
+     * Revert if the account has exceeded the maximum LTV
      */
     function checkLiquidity(AccountData storage _accountData) internal view {
+        DebtTokenCache memory _cache = debtTokenCacheRO();
         LiquidationStatus memory _status = computeLiquidity(
             _accountData,
-            debtTokenCacheRO(daiToken),
-            debtTokenCacheRO(oudToken),
+            _cache,
             true
         );
         if (_status.hasExceededMaxLtv) {
-            revert ExceededMaxLtv(_status.collateral, _status.currentDaiDebt, _status.currentOudDebt);
+            revert ExceededMaxLtv(_status.collateral, _status.collateralValue, _status.currentDebt);
         }
     }
 
@@ -348,70 +271,21 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
      * The Total debt is floored at 0.
      */
     function repayTotalDebt(
-        IERC20 _token,
         DebtTokenCache memory _debtTokenCache,
         uint128 _repayAmount
     ) internal {
         if (_repayAmount == 0) return;
-        DebtTokenDetails storage _debtTokenDetails = debtTokenDetails[_token];
 
         uint128 _newDebt = (_repayAmount > _debtTokenCache.totalDebt)
             ? 0
             : _debtTokenCache.totalDebt - _repayAmount;
 
-        _debtTokenDetails.data.totalDebt = _debtTokenCache.totalDebt = _newDebt;
+        debtTokenData.totalDebt = _debtTokenCache.totalDebt = _newDebt;
 
         // Update interest rates now the total debt has been updated.
-        updateInterestRates(_token, _debtTokenDetails, _debtTokenCache);
+        updateInterestRates(_debtTokenCache);
     }
 
-    /**
-     * @dev Fill the AcountDebtPosition struct when reporting the overall user
-     * position in views.
-     */
-    function fillAccountPosition(
-        IERC20 _token, 
-        AccountData storage _accountData,
-        uint256 collateralPosted,
-        bool _includePendingRequests
-    ) internal view returns (AccountDebtPosition memory) {
-        DebtTokenCache memory _debtTokenCache = debtTokenCacheRO(_token);
-        AccountDebtData storage _accountDebtData = _accountData.debtData[_token];
-
-        uint256 _latestDebt = currentAccountDebt(
-            _debtTokenCache, 
-            _accountDebtData.debtCheckpoint,
-            _accountDebtData.interestAccumulator,
-            true
-        );
-
-        if (_includePendingRequests) {
-            _latestDebt += _accountDebtData.borrowRequest.amount; 
-        }
-
-        return AccountDebtPosition({
-            currentDebt: _latestDebt,
-            maxBorrow: maxBorrowLimit(_debtTokenCache, collateralPosted),
-            healthFactor: healthFactor(_debtTokenCache, collateralPosted, _latestDebt),
-            loanToValueRatio: loanToValueRatio(_debtTokenCache, collateralPosted, _latestDebt)
-        });
-    }
-
-    /**
-     * @dev Fill the totalDebtPosition struct when reporting the
-     * debt token positions in views.
-     */
-    function fillTotalDebtPosition(
-        IERC20 _token
-    ) internal view returns (
-        TotalDebtPosition memory position
-    ) {
-        DebtTokenCache memory _debtTokenCache = debtTokenCacheRO(_token);
-        position.utilizationRatio = utilizationRatio(_debtTokenCache);
-        position.borrowRate = _debtTokenCache.interestRate;
-        position.totalDebt = _debtTokenCache.totalDebt;
-    }
-    
     /**
      * @dev Calculate the Utilization Ratio. 
      * It is only relevant for DAI, where there is a debt ceiling set in the cache.
@@ -444,7 +318,7 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
     function currentAccountDebt(
         DebtTokenCache memory _debtTokenCache,
         uint128 _accountDebtCheckpoint,
-        uint128 _accountInterestAccumulator,
+        uint256 _accountInterestAccumulator,
         bool roundUp
     ) internal pure returns (uint128 result) {
         return (_accountDebtCheckpoint == 0) 
@@ -463,10 +337,10 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
      */
     function maxBorrowLimit(
         DebtTokenCache memory _debtTokenCache,
-        uint256 _collateralPosted
+        uint256 _collateral
     ) internal pure returns (uint256) {
         return mulDiv(
-            _collateralPosted * _debtTokenCache.price,
+            _collateral * _debtTokenCache.price,
             _debtTokenCache.config.maxLtvRatio,
             1e36
         );
@@ -479,13 +353,13 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
      */
     function healthFactor(
         DebtTokenCache memory _debtTokenCache,
-        uint256 _collateralPosted,
+        uint256 _collateral,
         uint256 _debt
     ) internal pure returns (uint256) {
         return _debt == 0
             ? type(uint256).max
             : mulDiv(
-                _collateralPosted * _debtTokenCache.price,
+                _collateral * _debtTokenCache.price,
                 _debtTokenCache.config.maxLtvRatio,
                 _debt * 1e18
             );
@@ -498,15 +372,15 @@ abstract contract TlcBase is TlcStorage, ITlcEventsAndErrors {
      */
     function loanToValueRatio(
         DebtTokenCache memory _debtTokenCache,
-        uint256 _collateralPosted,
+        uint256 _collateral,
         uint256 _debt
     ) internal pure returns (uint256) {
-        return _collateralPosted == 0
+        return _collateral == 0
             ? type(uint256).max
             : mulDiv(
                 _debt,
                 1e36,
-                _collateralPosted * _debtTokenCache.price
+                _collateral * _debtTokenCache.price
             );
     }
 }

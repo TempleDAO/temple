@@ -14,7 +14,6 @@ import { TlcStrategy } from "contracts/v2/templeLineOfCredit/TlcStrategy.sol";
 import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { LinearWithKinkInterestRateModel } from "contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol";
-import { FlatInterestRateModel } from "contracts/v2/interestRate/FlatInterestRateModel.sol";
 
 contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     TempleLineOfCredit public tlc;
@@ -25,18 +24,13 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     
     FakeERC20 daiToken;
     IInterestRateModel daiInterestRateModel;
-    uint128 daiMaxLtvRatio = 0.85e18; // 85%
+    uint96 daiMaxLtvRatio = 0.85e18; // 85%
 
     uint256 templePrice = 0.97e18; // $0.97
-
-    FakeERC20 oudToken;
-    IInterestRateModel oudInterestRateModel;
-    uint256 oudMaxLtvRatio = 0.9e18; // 90%
 
     TreasuryReservesVault public trv;
     TempleDebtToken public dUSD;
     uint96 public constant defaultBaseInterest = 0.01e18; // 1%
-    uint96 public constant oudInterestRate = 0.05e18; // 5%
 
     uint256 public constant trvStartingBalance = 1_000_000e18;
     uint256 public constant borrowCeiling = 100_000e18;
@@ -60,8 +54,6 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             vm.label(address(templeToken), "TEMPLE");
             dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
             vm.label(address(dUSD), "dUSD");
-            oudToken = new FakeERC20("OUD Token", "OUD", executor, 500_000e18);
-            vm.label(address(oudToken), "OUD");
         }
 
         trv = new TreasuryReservesVault(rescuer, executor, address(templeToken), address(daiToken), address(dUSD), templePrice);
@@ -74,20 +66,13 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             90e18 / 100, // 90% utilization (UR for when the kink starts)
             10e18 / 100  // 10% percent interest rate (rate% at kink% UR)
         );
-        oudInterestRateModel = new FlatInterestRateModel(
-            rescuer,
-            executor,
-            oudInterestRate
-            );
 
         tlc = new TempleLineOfCredit(
             rescuer, 
             executor, 
             address(templeToken),
             address(daiToken),
-            defaultDaiConfig(),
-            address(oudToken),
-            defaultOudConfig()
+            defaultDaiConfig()
         );
 
         tlcStrategy = new TlcStrategy(
@@ -103,9 +88,8 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         {
             vm.startPrank(executor);
             tlc.setTlcStrategy(address(tlcStrategy));
-            tlc.setWithdrawCollateralRequestWindow(COLLATERAL_REQUEST_MIN_SECS, COLLATERAL_REQUEST_MAX_SECS);
-            tlc.setBorrowRequestWindow(daiToken, BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS);
-            tlc.setBorrowRequestWindow(oudToken, BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS);
+            tlc.setWithdrawCollateralRequestConfig(COLLATERAL_REQUEST_MIN_SECS, COLLATERAL_REQUEST_MAX_SECS);
+            tlc.setBorrowRequestConfig(BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS);
         }
 
         // Add the TLC Strategy into TRV so it can borrow DAI
@@ -121,27 +105,17 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         return DebtTokenConfig({
             interestRateModel: daiInterestRateModel,
             maxLtvRatio: daiMaxLtvRatio,
-            borrowRequestWindow: FundsRequestWindow(BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS)
+            borrowRequestConfig: FundsRequestConfig(BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS)
         });
     }
 
-    function defaultOudConfig() internal view returns (ITempleLineOfCredit.DebtTokenConfig memory) {
-        return DebtTokenConfig({
-            interestRateModel: oudInterestRateModel,
-            maxLtvRatio: oudMaxLtvRatio.encodeUInt128(),
-            borrowRequestWindow: FundsRequestWindow(BORROW_REQUEST_MIN_SECS, BORROW_REQUEST_MAX_SECS)
-        });
-    }
-
-    function getDefaultConfig(IERC20 token) internal view returns (ITempleLineOfCredit.DebtTokenConfig memory) {
-        return (token == daiToken) ? defaultDaiConfig() : defaultOudConfig();
+    function getDefaultConfig() internal view returns (ITempleLineOfCredit.DebtTokenConfig memory) {
+        return defaultDaiConfig();
     }
 
     struct MaxBorrowInfo {
         uint256 daiCollateralValue;
         uint256 daiMaxBorrow;
-        uint256 oudCollateralValue;
-        uint256 oudMaxBorrow;
     }
 
     function expectedMaxBorrows(uint256 collateralAmount) internal view returns (
@@ -149,8 +123,6 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     ) {
         info.daiCollateralValue = collateralAmount * templePrice / 1e18;
         info.daiMaxBorrow = collateralAmount * templePrice * daiMaxLtvRatio / 1e36;
-        info.oudCollateralValue = collateralAmount;
-        info.oudMaxBorrow = collateralAmount * oudMaxLtvRatio / 1e18;
     }
 
     function checkDebtTokenConfig(
@@ -159,8 +131,8 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     ) internal {
         assertEq(address(actual.interestRateModel), address(expected.interestRateModel), "DebtTokenConfig__interestRateModel");
         assertEq(actual.maxLtvRatio, expected.maxLtvRatio, "DebtTokenConfig__maxLtvRatio");
-        assertEq(actual.borrowRequestWindow.minSecs, expected.borrowRequestWindow.minSecs, "DebtTokenConfig__borrowRequestWindow.minSecs");
-        assertEq(actual.borrowRequestWindow.maxSecs, expected.borrowRequestWindow.maxSecs, "DebtTokenConfig__borrowRequestWindow.maxSecs");
+        assertEq(actual.borrowRequestConfig.minSecs, expected.borrowRequestConfig.minSecs, "DebtTokenConfig__borrowRequestConfig.minSecs");
+        assertEq(actual.borrowRequestConfig.maxSecs, expected.borrowRequestConfig.maxSecs, "DebtTokenConfig__borrowRequestConfig.maxSecs");
     }
 
     function checkDebtTokenData(
@@ -174,14 +146,13 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     }
 
     function checkDebtTokenDetails(
-        IERC20 token,
         uint256 borrowedAmount,
         uint96 expectedInterestRate,
         uint256 expectedInterestAccumulator,
         uint256 expectedInterestAccumulatorUpdatedAt
     ) internal {
-        (DebtTokenConfig memory config, DebtTokenData memory totals) = tlc.debtTokenDetails(token);
-        checkDebtTokenConfig(config, getDefaultConfig(token));
+        (DebtTokenConfig memory config, DebtTokenData memory totals) = tlc.debtTokenDetails();
+        checkDebtTokenConfig(config, getDefaultConfig());
 
         checkDebtTokenData(totals, DebtTokenData({
             totalDebt: borrowedAmount.encodeUInt128(),
@@ -207,65 +178,44 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     struct CheckAccountPositionParams {
         address account;
         uint256 expectedDaiBalance;
-        uint256 expectedOudBalance;
         AccountPosition expectedAccountPosition;
         uint256 expectedDaiDebtCheckpoint;
         uint256 expectedDaiAccumulatorCheckpoint;
-        uint256 expectedOudDebtCheckpoint;
-        uint256 expectedOudAccumulatorCheckpoint;
         uint256 expectedRemoveCollateralRequest;
         uint256 expectedRemoveCollateralRequestAt;
     }
 
     function checkAccountPosition(CheckAccountPositionParams memory params, bool includePendingRequests) internal {
-        AccountPosition memory actualAccountPosition = tlc.accountPosition(params.account, includePendingRequests);
-        
-        (
-            uint256 collateralPosted,
-            WithdrawFundsRequest memory removeCollateralRequest,
-            AccountDebtData memory daiDebtData,
-            AccountDebtData memory oudDebtData
-        ) =  tlc.accountData(params.account);
+        AccountPosition memory actualAccountPosition = tlc.accountPosition(params.account, includePendingRequests);        
+        AccountData memory accountData = tlc.accountData(params.account);
 
-        assertEq(actualAccountPosition.collateralPosted, params.expectedAccountPosition.collateralPosted, "collateral");
-        assertEq(collateralPosted, actualAccountPosition.collateralPosted+params.expectedRemoveCollateralRequest, "collateral 2");
-        assertEq(removeCollateralRequest.amount, params.expectedRemoveCollateralRequest, "removeCollateralRequest.amount");
-        assertEq(removeCollateralRequest.requestedAt, uint32(params.expectedRemoveCollateralRequestAt), "removeCollateralRequest.requestedAt");
+        assertEq(actualAccountPosition.collateral, params.expectedAccountPosition.collateral, "collateral");
+        assertEq(accountData.collateral, actualAccountPosition.collateral + params.expectedRemoveCollateralRequest, "collateral with request");
+        assertEq(accountData.removeCollateralRequestAmount, params.expectedRemoveCollateralRequest, "removeCollateralRequest.amount");
+        assertEq(accountData.removeCollateralRequestAt, uint32(params.expectedRemoveCollateralRequestAt), "removeCollateralRequest.requestedAt");
 
         // The 'as of now' data
         assertEq(daiToken.balanceOf(params.account), params.expectedDaiBalance, "expectedDaiBalance");
-        assertApproxEqRel(actualAccountPosition.daiDebtPosition.currentDebt, params.expectedAccountPosition.daiDebtPosition.currentDebt, 1e11, "dai debt");
-        assertEq(actualAccountPosition.daiDebtPosition.maxBorrow, params.expectedAccountPosition.daiDebtPosition.maxBorrow, "dai max borrow");
-        assertApproxRelOrMax(actualAccountPosition.daiDebtPosition.healthFactor, params.expectedAccountPosition.daiDebtPosition.healthFactor, 1e11, "dai health");
-        assertApproxRelOrMax(actualAccountPosition.daiDebtPosition.loanToValueRatio, params.expectedAccountPosition.daiDebtPosition.loanToValueRatio, 1e11, "dai LTV");
-        assertEq(oudToken.balanceOf(params.account), params.expectedOudBalance, "expectedOudBalance");
-        assertApproxEqRel(actualAccountPosition.oudDebtPosition.currentDebt, params.expectedAccountPosition.oudDebtPosition.currentDebt, 1e11, "oud debt");
-        assertEq(actualAccountPosition.oudDebtPosition.maxBorrow, params.expectedAccountPosition.oudDebtPosition.maxBorrow, "oud max borrow");
-        assertApproxRelOrMax(actualAccountPosition.oudDebtPosition.healthFactor, params.expectedAccountPosition.oudDebtPosition.healthFactor, 1e11, "oud health");
-        assertApproxRelOrMax(actualAccountPosition.oudDebtPosition.loanToValueRatio, params.expectedAccountPosition.oudDebtPosition.loanToValueRatio, 1e11, "oud LTV");
+        assertApproxEqRel(actualAccountPosition.currentDebt, params.expectedAccountPosition.currentDebt, 1e11, "dai debt");
+        assertEq(actualAccountPosition.maxBorrow, params.expectedAccountPosition.maxBorrow, "dai max borrow");
+        assertApproxRelOrMax(actualAccountPosition.healthFactor, params.expectedAccountPosition.healthFactor, 1e11, "dai health");
+        assertApproxRelOrMax(actualAccountPosition.loanToValueRatio, params.expectedAccountPosition.loanToValueRatio, 1e11, "dai LTV");
 
         // The latest checkpoint data
-        assertApproxEqRel(daiDebtData.debtCheckpoint, params.expectedDaiDebtCheckpoint, 1e11, "DAI debt checkpoint");
-        assertApproxEqRel(daiDebtData.interestAccumulator, params.expectedDaiAccumulatorCheckpoint, 1e9, "DAI interestAccumulator checkpoint");
-        assertApproxEqRel(oudDebtData.debtCheckpoint, params.expectedOudDebtCheckpoint, 1e11, "OUD debt checkpoint");
-        assertApproxEqRel(oudDebtData.interestAccumulator, params.expectedOudAccumulatorCheckpoint, 1e9, "OUD interestAccumulator checkpoint");
+        assertApproxEqRel(accountData.debtCheckpoint, params.expectedDaiDebtCheckpoint, 1e11, "DAI debt checkpoint");
+        assertApproxEqRel(accountData.interestAccumulator, params.expectedDaiAccumulatorCheckpoint, 1e9, "DAI interestAccumulator checkpoint");
     }
     
     function checkTotalDebtPosition(
-        uint256 expectedOudUR,
+        uint256 expectedDaiUR,
         uint256 expectedDaiIR,
-        uint256 expectedDaiDebt,
-        uint256 expectedOudIR,
-        uint256 expectedOudDebt
-    ) internal returns (uint256, uint256) {
-        (TotalDebtPosition memory actualDaiPosition, TotalDebtPosition memory actualOudPosition) = tlc.totalDebtPosition();
-        assertApproxEqRel(actualDaiPosition.utilizationRatio, expectedOudUR, 1e10, "daiUtilizationRatio");
+        uint256 expectedDaiDebt
+    ) internal returns (uint256) {
+        TotalDebtPosition memory actualDaiPosition = tlc.totalDebtPosition();
+        assertApproxEqRel(actualDaiPosition.utilizationRatio, expectedDaiUR, 1e10, "daiUtilizationRatio");
         assertApproxEqRel(actualDaiPosition.borrowRate, expectedDaiIR, 1e10, "daiBorrowRate"); 
         assertApproxEqRel(actualDaiPosition.totalDebt, expectedDaiDebt, 1e10, "daiTotalDebt");
-        assertEq(actualOudPosition.utilizationRatio, 0, "oudUtilizationRatio");
-        assertEq(actualOudPosition.borrowRate, expectedOudIR, "oudBorrowRate");
-        assertApproxEqRel(actualOudPosition.totalDebt, expectedOudDebt, 1e10, "oudTotalDebt");
-        return (actualDaiPosition.totalDebt, actualOudPosition.totalDebt);
+    return actualDaiPosition.totalDebt;
     }
 
     function addCollateral(address account, uint256 collateralAmount) internal {
@@ -279,8 +229,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     function borrow(
         address _account, 
         uint256 collateralAmount, 
-        uint256 daiBorrowAmount, 
-        uint256 oudBorrowAmount,
+        uint256 daiBorrowAmount,
         uint256 cooldownSecs
     ) internal {
         if (collateralAmount != 0) {
@@ -289,17 +238,13 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         vm.startPrank(_account);
         
         if (daiBorrowAmount != 0) {
-            tlc.requestBorrow(daiToken, daiBorrowAmount);
-        }
-        if (oudBorrowAmount != 0) {
-            tlc.requestBorrow(oudToken, oudBorrowAmount);
+            tlc.requestBorrow(daiBorrowAmount);
         }
         
         // Sleep it off...
         vm.warp(block.timestamp + cooldownSecs);
 
-        if (daiBorrowAmount != 0) tlc.borrow(daiToken, _account);
-        if (oudBorrowAmount != 0) tlc.borrow(oudToken, _account);
+        if (daiBorrowAmount != 0) tlc.borrow(_account);
 
         vm.stopPrank();
     }
@@ -320,33 +265,30 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         return model.calculateInterestRate(utilizationRatio(borrowed, cap));
     }
 
-    function calcHealthFactor(uint256 collateralValue, uint256 debtAmount, uint256 maxLtvRatio) internal pure returns (uint256) {
-        return debtAmount == 0 ? type(uint256).max : collateralValue * maxLtvRatio / debtAmount;
-    }
-    function calcLtv(uint256 collateralValue, uint256 debtAmount) internal pure returns (uint256) {
-        return collateralValue == 0 ? type(uint256).max : debtAmount * 1e18 / collateralValue;
+    function calcHealthFactor(uint256 _collateralValue, uint256 _debtAmount, uint256 _maxLtvRatio) internal pure returns (uint256) {
+        return _debtAmount == 0 ? type(uint256).max : _collateralValue * _maxLtvRatio / _debtAmount;
     }
 
-    function createDebtPosition(
-        IERC20 token,
+    function calcLtv(uint256 _collateralValue, uint256 _debtAmount) internal pure returns (uint256) {
+        return _collateralValue == 0 ? type(uint256).max : _debtAmount * 1e18 / _collateralValue;
+    }
+
+    function collateralValue(uint256 _collateralAmount) internal view returns (uint256) {
+        return _collateralAmount * templePrice / 1e18;
+    }
+
+    function createAccountPosition(
+        uint256 collateral,
         uint256 debt,
         MaxBorrowInfo memory maxBorrowInfo
-    ) internal view returns (AccountDebtPosition memory) {
-        if (token == daiToken) {
-            return AccountDebtPosition({
-                currentDebt: debt, 
-                maxBorrow: maxBorrowInfo.daiMaxBorrow, 
-                healthFactor: calcHealthFactor(maxBorrowInfo.daiCollateralValue, debt, daiMaxLtvRatio), 
-                loanToValueRatio: calcLtv(maxBorrowInfo.daiCollateralValue, debt)
-            });
-        } else {
-            return AccountDebtPosition({
-                currentDebt: debt, 
-                maxBorrow: maxBorrowInfo.oudMaxBorrow, 
-                healthFactor: calcHealthFactor(maxBorrowInfo.oudCollateralValue, debt, oudMaxLtvRatio),
-                loanToValueRatio: calcLtv(maxBorrowInfo.oudCollateralValue, debt)
-            });
-        }
+    ) internal view returns (AccountPosition memory) {
+        return AccountPosition({
+            collateral: collateral,
+            currentDebt: debt, 
+            maxBorrow: maxBorrowInfo.daiMaxBorrow, 
+            healthFactor: calcHealthFactor(maxBorrowInfo.daiCollateralValue, debt, daiMaxLtvRatio), 
+            loanToValueRatio: calcLtv(maxBorrowInfo.daiCollateralValue, debt)
+        });
     }
 
     function checkLiquidationStatus(
@@ -354,8 +296,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         bool includePendingRequests,
         bool expectedHasExceededMaxLtv,
         uint256 expectedCollateral,
-        uint256 expectedCurrentDaiDebt,
-        uint256 expectedCurrentOudDebt
+        uint256 expectedCurrentDaiDebt
     ) internal {
         address[] memory accounts = new address[](1);
         accounts[0] = account;
@@ -363,23 +304,20 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
 
         assertEq(status[0].hasExceededMaxLtv, expectedHasExceededMaxLtv, "hasExceededMaxLtv");
         assertEq(status[0].collateral, expectedCollateral, "collateral");
-        assertApproxEqRel(status[0].currentDaiDebt, expectedCurrentDaiDebt, 1e8, "currentDaiDebt");
-        assertApproxEqRel(status[0].currentOudDebt, expectedCurrentOudDebt, 1e8, "currentOudDebt");
+        assertEq(status[0].collateralValue, collateralValue(expectedCollateral), "collateralValue");
+        assertApproxEqRel(status[0].currentDebt, expectedCurrentDaiDebt, 1e8, "currentDaiDebt");
     }
 
     function checkBatchLiquidate(
         address[] memory accounts,
         uint256 expectedCollateralClaimed,
-        uint256 expectedDaiDebtWiped,
-        uint256 expectedOudDebtWiped
+        uint256 expectedDaiDebtWiped
     ) internal {
         (
             uint256 totalCollateralClaimed,
-            uint256 totalDaiDebtWiped,
-            uint256 totalOudDebtWiped
+            uint256 totalDaiDebtWiped
         ) = tlc.batchLiquidate(accounts);
         assertEq(totalCollateralClaimed, expectedCollateralClaimed, "liquidate_collateral");
         assertApproxEqRel(totalDaiDebtWiped, expectedDaiDebtWiped, 1e10, "liquidate_dai");
-        assertApproxEqRel(totalOudDebtWiped, expectedOudDebtWiped, 1e10, "liquidate_oud");
     }
 }

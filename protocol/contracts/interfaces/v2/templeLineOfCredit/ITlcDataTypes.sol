@@ -6,17 +6,17 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
 
 interface ITlcDataTypes {
-    /// @notice Configuration of the Debt Tokens (DAI | OUD)
+    /// @notice Configuration of the DAI Debt Token
     struct DebtTokenConfig {
-        /// @notice Maximum Loan To Value (LTV) ratio to prevent liquidation
-        uint128 maxLtvRatio;
+        /// @notice Maximum Loan To Value (LTV) ratio an account can have before being liquidated
+        uint96 maxLtvRatio;
 
         /// @notice The borrow interest rate model contract
         IInterestRateModel interestRateModel;
 
         /// @notice The min/max seconds after a borrow request in which the borrow action 
         /// can then be performed
-        FundsRequestWindow borrowRequestWindow;
+        FundsRequestConfig borrowRequestConfig;
     }
 
     /// @notice The latest checkpoint of Debt Token data
@@ -35,15 +35,9 @@ interface ITlcDataTypes {
         uint256 interestAccumulator;
     }
 
-    /// @notice The Debt Token config and latest checkpoint data.
-    struct DebtTokenDetails {
-        DebtTokenConfig config;
-        DebtTokenData data;
-    }
-
     /// @notice The min/max seconds after a borrow or collateral removal request
     /// in which the borrow action can then be performed
-    struct FundsRequestWindow {
+    struct FundsRequestConfig {
         /// @notice The minimum numer of seconds after a request has been made before the action can be done
         uint32 minSecs;
 
@@ -51,60 +45,76 @@ interface ITlcDataTypes {
         uint32 maxSecs;
     }
 
-    /// @notice The amount and time when a borrow or collateral withdrawal
-    /// request was made.
-    struct WithdrawFundsRequest {
-        uint128 amount;
-        uint32 requestedAt;
-    }
-
-    /// @notice The latest checkopint of debt, the users interest accumulator
-    /// and borrow requests.
-    struct AccountDebtData {
-        uint128 debtCheckpoint;
-        uint128 interestAccumulator;
-        WithdrawFundsRequest borrowRequest;
-    }
-
-    /// @notice An account's record of collateral posted, requests
-    /// and debt data for DAI and OUD
+    /// @notice The record of an account's collateral, requests
+    /// and DAI debt data
+    /// @dev Packed slots: (128 + 128), (128 + 128), (128 +  64 + 64)
     struct AccountData {
-        uint256 collateralPosted;
-        WithdrawFundsRequest removeCollateralRequest;
-        mapping(IERC20 => AccountDebtData) debtData;
+        /// @notice The amount of collateral the account has posted
+        uint128 collateral;
+        
+        /** 
+         * @notice A checkpoint of user debt, updated after a borrow/repay/liquidation
+         * @dev Debt as of now =  (
+         *    `account.debtCheckpoint` *
+         *    `debtTokenData.interestAccumulator` / 
+         *    `account.interestAccumulator`
+         * )
+         */
+        uint128 debtCheckpoint;
+
+        /// @notice The account's last interest accumulator checkpoint
+        uint128 interestAccumulator;
+
+        /// @notice A remove collateral requested amount
+        uint128 removeCollateralRequestAmount;
+
+        /// @notice A new borrow requested amount
+        uint128 borrowRequestAmount;
+
+        /// @notice The block time when a remove collateral was requested
+        uint64 removeCollateralRequestAt;
+
+        /// @notice The block time when a borrow was requested
+        uint64 borrowRequestAt;
     }
 
-    /// @notice The status for an account whether it can be liquidated or not
+    /// @notice The status for whether an account can be liquidated or not
     struct LiquidationStatus {
-        /// @notice True if either DAI or OUD has exceeded the max LTV
+        /// @notice True if the DAI borrow position has exceeded the max LTV
+        /// in which case it can be liquidated
         bool hasExceededMaxLtv;
 
+        /// @notice The amount of collateral which has been provided by the user
+        uint256 collateral;
+
+        /// @notice The value of collateral (amount * TPI) which has been provided by the user
+        uint256 collateralValue;
+
+        /// @notice The amount of DAI debt as of this block
+        uint256 currentDebt;
+    }
+    
+    /// @notice An account's collateral and DAI debt position
+    struct AccountPosition {
         /// @notice The amount (not the value) of collateral which has been provided by the user
         uint256 collateral;
 
         /// @notice The amount of DAI debt as of this block
-        uint128 currentDaiDebt;
-
-        /// @notice The amount of OUD debt as of this block
-        uint128 currentOudDebt;
-    }
-    
-    /// @notice An account's debt position for either DAI or OUD
-    struct AccountDebtPosition {
         uint256 currentDebt;
+
+        /// @notice The maximum amount this account can borrow given the collateral posted.
+        /// @dev Note if this max is actually borrowed then it will immediately be liquidated as 1 block
+        /// of interest will tip it over the max allowed LTV
         uint256 maxBorrow;
+
+        /// @notice The health factor of this accounts position. Anything less than 1 can be liquidated.
         uint256 healthFactor;
+
+        /// @notice The current LTV ratio of this account
         uint256 loanToValueRatio;
     }
 
-    /// @notice An account's collateral and debt for both DAI and OUD
-    struct AccountPosition {
-        uint256 collateralPosted;
-        AccountDebtPosition daiDebtPosition;
-        AccountDebtPosition oudDebtPosition;
-    }
-
-    /// @noice The total debt position metrics for either DAI or OUD
+    /// @notice The total DAI debt position metrics across all accounts
     struct TotalDebtPosition {
         /// @notice The utilization rate as of the last checkpoint
         uint256 utilizationRatio;

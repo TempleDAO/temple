@@ -6,6 +6,21 @@ import { ITlcStorage } from "contracts/interfaces/v2/templeLineOfCredit/ITlcStor
 import { ITlcEventsAndErrors } from "contracts/interfaces/v2/templeLineOfCredit/ITlcEventsAndErrors.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/**
+ * @title Temple Line of Credit (TLC)
+ * @notice Users supply Temple as collateral, and can then borrow DAI.
+ * 
+ * Both borrows and collateral withdraws require two transactions:
+ *   1/ Request the borrow | collateral withdrawal
+ *   2/ Wait until the min request time has passed (and before the max time)
+ *      and then do the borrow | collateral withdrawal.
+ * This is in order to further mitigate money market attack vectors. Requests 
+ * can be cancelled by the user or with elevated access on behalf of users.
+ * 
+ * Temple is valued at the Temple Treasury Price Index (TPI)
+ * User debt increases at a continuously compounding rate.
+ * Liquidations occur when users LTV exceeds the maximum allowed.
+ */
 interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
     /**
      * @notice Deposit Temple as collateral
@@ -17,7 +32,7 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
     /**
      * @notice An account requests to remove Temple collateral.
      * @dev After this request is issued, the account must then execute the `removeCollateral()`
-     * within the `removeCollateralRequestWindow`
+     * within the `removeCollateralRequestConfig`
      * Subsequent requests override previous requests.
      * @param amount The amount of collateral to remove
      */
@@ -36,44 +51,39 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
     function removeCollateral(address recipient) external;
 
     /**
-     * @notice An account requests to borrow either Dai or Oud
+     * @notice An account requests to borrow DAI
      * @dev After this request is issued, the account must then execute the `borrow()`
-     * within the `borrowRequestWindow`
+     * within the valid borrow request window
      * Subsequent requests override previous requests.
-     * @param token The token to borrow - either Dai or Oud
      * @param amount The amount to borrow
      */
-    function requestBorrow(IERC20 token, uint256 amount) external;
+    function requestBorrow(uint256 amount) external;
     
     /**
      * @notice An account (or elevated access) cancels an existing Borrow request
      * @param account The account to cancel the request for.
-     * @param token The token to cancel the request for.
      */
-    function cancelBorrowRequest(address account, IERC20 token) external;
+    function cancelBorrowRequest(address account) external;
     
     /**
      * @notice Execute the borrow request, within the window of the prior issued request
-     * @param token The token to borrow
      * @param recipient Send the borrowed token to a specified recipient address.
      */
-    function borrow(IERC20 token, address recipient) external;
+    function borrow(address recipient) external;
 
     /**
-     * @notice An account repays some of its DAI or OUD debt
-     * @param token The debt token to repay
+     * @notice An account repays some of its borrowed DAI debt
      * @param repayAmount The amount to repay. Cannot be more than the current debt.
      * @param onBehalfOf Another address can repay the debt on behalf of someone else
      */
-    function repay(IERC20 token, uint256 repayAmount, address onBehalfOf) external;
+    function repay(uint256 repayAmount, address onBehalfOf) external;
     
     /**
-     * @notice An account repays all of its DAI or OUD debt
+     * @notice An account repays all of its DAI debt
      * @dev The amount of debt is calculated as of this block.
-     * @param token The debt token to repay
      * @param onBehalfOf Another address can repay the debt on behalf of someone else
      */
-    function repayAll(IERC20 token, address onBehalfOf) external;
+    function repayAll(address onBehalfOf) external;
 
     /**
      * @notice Liquidate one or more accounts which have exceeded the 
@@ -86,8 +96,7 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
         address[] memory accounts
     ) external returns (
         uint256 totalCollateralClaimed,
-        uint128 totalDaiDebtWiped,
-        uint128 totalOudDebtWiped
+        uint256 totalDaiDebtWiped
     );
 
     /**
@@ -97,32 +106,30 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
     function setTlcStrategy(address _tlcStrategy) external;
     
     /**
-     * @notice Set the Withdrawal Collateral Request Window parameters
+     * @notice Set the Withdrawal Collateral Request window parameters
      * @param minSecs The number of seconds which must elapse between a request and the action
      * @param maxSecs The number of seconds until a request expires
      */
-    function setWithdrawCollateralRequestWindow(uint256 minSecs, uint256 maxSecs) external;
+    function setWithdrawCollateralRequestConfig(uint256 minSecs, uint256 maxSecs) external;
     
     /**
-     * @notice Set the Borrow Request Window parameters
+     * @notice Set the Borrow Request window parameters
      * @param minSecs The number of seconds which must elapse between a request and the action
      * @param maxSecs The number of seconds until a request expires
      */
-    function setBorrowRequestWindow(IERC20 token, uint256 minSecs, uint256 maxSecs) external;
+    function setBorrowRequestConfig(uint256 minSecs, uint256 maxSecs) external;
     
     /**
-     * @notice Update the interest rate model for either DAI or OUD
-     * @param token The token to update the model for
+     * @notice Update the interest rate model contract for DAI borrows
      * @param interestRateModel The contract address of the new model
      */
-    function setInterestRateModel(IERC20 token, address interestRateModel) external;
+    function setInterestRateModel(address interestRateModel) external;
     
     /**
-     * @notice Set the maximum Loan To Value Ratio for either DAI or OUD
-     * @param token The token to update the max LTV for
+     * @notice Set the maximum Loan To Value Ratio allowed for DAI borrows before the position is liquidated
      * @param maxLtvRatio The max LTV ratio (18 decimal places)
      */
-    function setMaxLtvRatio(IERC20 token, uint256 maxLtvRatio) external;
+    function setMaxLtvRatio(uint256 maxLtvRatio) external;
     
     /**
      * @notice Elevated access can recover tokens accidentally sent to this contract
@@ -150,12 +157,11 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
     );
 
     /**
-     * @notice Get the current total debt positions for both DAI and OUD
+     * @notice Get the current total DAI debt position across all accounts
      * as of this block.
      */
     function totalDebtPosition() external view returns (
-        TotalDebtPosition memory daiPosition,
-        TotalDebtPosition memory oudPosition
+        TotalDebtPosition memory daiPosition
     );
 
     /**
@@ -175,12 +181,13 @@ interface ITempleLineOfCredit is ITlcStorage, ITlcEventsAndErrors {
      */
     function accountData(
         address account
-    ) external view returns (
-        uint256 collateralPosted,
-        WithdrawFundsRequest memory removeCollateralRequest,
-        AccountDebtData memory _daiDebtData,
-        AccountDebtData memory _oudDebtData
-    );
-    
+    ) external view returns (AccountData memory data);
 
+    /**
+     * @notice Configuration and latest data snapshot of the DAI debt token
+     */
+    function debtTokenDetails() external view returns (
+        DebtTokenConfig memory config, 
+        DebtTokenData memory data
+    );
 }

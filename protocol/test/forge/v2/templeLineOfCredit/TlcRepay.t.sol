@@ -9,26 +9,20 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
     function test_repay_failsZeroAmount() public {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         vm.prank(alice);
-        tlc.repay(daiToken, 0, alice);
-    }
-    
-    function test_repay_failsBadToken() external {
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidToken.selector, address(templeToken)));
-        vm.prank(alice);
-        tlc.repay(templeToken, 100, alice);
+        tlc.repay(0, alice);
     }
     
     function test_repay_failsNoBorrows() external {
-        vm.expectRevert(abi.encodeWithSelector(ExceededBorrowedAmount.selector, address(daiToken), 0, 100));
+        vm.expectRevert(abi.encodeWithSelector(ExceededBorrowedAmount.selector, 0, 100));
         vm.prank(alice);
-        tlc.repay(daiToken, 100, alice);
+        tlc.repay(100, alice);
     }
     
     function test_repay_failsTooMuch() external {
-        borrow(alice, 10 ether, 1 ether, 0, BORROW_REQUEST_MIN_SECS);
-        vm.expectRevert(abi.encodeWithSelector(ExceededBorrowedAmount.selector, address(daiToken), 1e18, 1.01e18));
+        borrow(alice, 10_000e18, 1_000e18, BORROW_REQUEST_MIN_SECS);
+        vm.expectRevert(abi.encodeWithSelector(ExceededBorrowedAmount.selector, 1_000e18, 1_001e18));
         vm.prank(alice);
-        tlc.repay(daiToken, 1.01e18, alice);
+        tlc.repay(1_001e18, alice);
     }
 
     struct Balances {
@@ -37,10 +31,6 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         uint256 daiTlcStrategy;
         uint256 daiAlice;
         uint256 daiBob;
-        uint256 oudSupply;
-        uint256 oudTlc;
-        uint256 oudAlice;
-        uint256 oudBob;
     }
 
     function getBalances() internal view returns (Balances memory) {
@@ -49,21 +39,16 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
             daiToken.balanceOf(address(tlc)),
             daiToken.balanceOf(address(tlcStrategy)),
             daiToken.balanceOf(address(alice)),
-            daiToken.balanceOf(address(bob)),
-            oudToken.totalSupply(),
-            oudToken.balanceOf(address(tlc)),
-            oudToken.balanceOf(address(alice)),
-            oudToken.balanceOf(address(bob))
+            daiToken.balanceOf(address(bob))
         );
     }
 
     function test_repay_success() external {
         uint256 borrowDaiAmount = 50_000e18; // 50% UR, ... At kink approximately 10% interest rate
-        uint256 borrowOudAmount = 20_000e18; // Flat interest rate of 5%
         uint256 collateralAmount = 200_000e18;
 
         Balances memory balancesBefore = getBalances();
-        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, BORROW_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
 
         uint32 tsBefore = uint32(block.timestamp);
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
@@ -72,56 +57,35 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
 
         uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling); // 7.77 %
         uint256 expectedDaiDebt = approxInterest(borrowDaiAmount, expectedDaiInterestRate, 365 days); // ~54k
-        uint256 expectedOudDebt = approxInterest(borrowOudAmount, oudInterestRate, 365 days);
 
         daiToken.approve(address(tlc), borrowDaiAmount);
 
         // Repay and check state
         uint256 daiAccumulator;
-        uint256 oudAccumulator;
         {
-            (uint256 daiTotalDebt,) = checkTotalDebtPosition(
+            uint256 daiTotalDebt = checkTotalDebtPosition(
                 utilizationRatio(expectedDaiDebt, borrowCeiling),
                 expectedDaiInterestRate,
-                expectedDaiDebt,
-                oudInterestRate,
-                expectedOudDebt
+                expectedDaiDebt
             );
 
-            checkDebtTokenDetails(daiToken, borrowDaiAmount, expectedDaiInterestRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
-            checkDebtTokenDetails(oudToken, borrowOudAmount, oudInterestRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
+            checkDebtTokenDetails(borrowDaiAmount, expectedDaiInterestRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
 
             uint96 updatedDaiInterestRate = calculateInterestRate(daiInterestRateModel, daiTotalDebt-borrowDaiAmount, borrowCeiling);
             expectedDaiDebt -= borrowDaiAmount;
-            expectedOudDebt -= borrowOudAmount;
 
             vm.expectEmit(address(tlc));
-            emit InterestRateUpdate(address(daiToken), updatedDaiInterestRate);
+            emit InterestRateUpdate(updatedDaiInterestRate);
             vm.expectEmit(address(tlc));
-            emit Repay(alice, alice, address(daiToken), borrowDaiAmount);
-            tlc.repay(daiToken, borrowDaiAmount, alice);
-
-           
-            vm.expectEmit(address(tlc));
-            emit Repay(alice, alice, address(oudToken), borrowOudAmount);
-            // No InterestRateUpdate for OUD as the rate didn't change
-            tlc.repay(oudToken, borrowOudAmount, alice);
+            emit Repay(alice, alice, borrowDaiAmount);
+            tlc.repay(borrowDaiAmount, alice);
 
             // Check Reserve Token state
             daiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiInterestRate, 365 days);
-            oudAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, oudInterestRate, 365 days);
             checkDebtTokenDetails(
-                daiToken, 
                 expectedDaiDebt, 
                 updatedDaiInterestRate,
                 daiAccumulator, 
-                block.timestamp
-            );
-            checkDebtTokenDetails(
-                oudToken, 
-                expectedOudDebt, 
-                oudInterestRate, 
-                oudAccumulator, 
                 block.timestamp
             );
         }
@@ -134,16 +98,11 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
                 CheckAccountPositionParams({
                     account: alice,
                     expectedDaiBalance: 0,
-                    expectedOudBalance: 0,
-                    expectedAccountPosition: AccountPosition({
-                        collateralPosted: collateralAmount,
-                        daiDebtPosition: createDebtPosition(daiToken, expectedDaiDebt, maxBorrowInfo),
-                        oudDebtPosition: createDebtPosition(oudToken, expectedOudDebt, maxBorrowInfo)
-                    }),
+                    expectedAccountPosition: createAccountPosition(
+                        collateralAmount, expectedDaiDebt, maxBorrowInfo
+                    ),
                     expectedDaiDebtCheckpoint: expectedDaiDebt,
                     expectedDaiAccumulatorCheckpoint: daiAccumulator,
-                    expectedOudDebtCheckpoint: expectedOudDebt,
-                    expectedOudAccumulatorCheckpoint: oudAccumulator,
                     expectedRemoveCollateralRequest: 0,
                     expectedRemoveCollateralRequestAt: 0
                 }),
@@ -157,9 +116,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
             checkTotalDebtPosition(
                 utilizationRatio(expectedDaiDebt, borrowCeiling),
                 expectedDaiInterestRate,
-                expectedDaiDebt,
-                oudInterestRate,
-                expectedOudDebt
+                expectedDaiDebt
             );
         }
 
@@ -171,9 +128,6 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
             assertEq(balancesAfter.daiTlc, balancesBefore.daiTlc);
             assertEq(balancesAfter.daiTlcStrategy, balancesBefore.daiTlcStrategy);
             assertEq(balancesAfter.daiAlice, balancesBefore.daiAlice);
-            assertEq(balancesAfter.oudSupply, balancesBefore.oudSupply);
-            assertEq(balancesAfter.oudTlc, balancesBefore.oudTlc);
-            assertEq(balancesAfter.oudAlice, balancesBefore.oudAlice);
         }
         
         // Check the DAI amount was repaid to the TRV and recorded correctly
@@ -184,56 +138,43 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
             ) = tlcStrategy.latestAssetBalances();
             // dusd == any interest accrued
             assertApproxEqRel(debt, approxInterest(borrowDaiAmount, uint96(defaultBaseInterest), 365 days) - borrowDaiAmount, 1e10);
-            assertEq(assetBalances.length, 2);
+            assertEq(assetBalances.length, 1);
             assertEq(assetBalances[0].asset, address(daiToken));
             assertApproxEqRel(assetBalances[0].balance, expectedDaiDebt, 1e10);
-            assertEq(assetBalances[1].asset, address(oudToken));
-            assertApproxEqRel(assetBalances[1].balance, expectedOudDebt, 1e10);
         }
     }
 
     function test_repayOnBehalfOf_success() external {
         uint256 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
-        uint256 borrowOudAmount = 20_000e18; // Flat interest rate of 5%
         uint256 collateralAmount = 200_000e18;
-        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, BORROW_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
         AccountPosition memory position = tlc.accountPosition(alice, true);
         
-        dealAdditional(daiToken, bob, position.daiDebtPosition.currentDebt);
-        dealAdditional(oudToken, bob, position.oudDebtPosition.currentDebt);
+        dealAdditional(daiToken, bob, position.currentDebt);
 
         vm.startPrank(bob);
-        daiToken.approve(address(tlc), position.daiDebtPosition.currentDebt);
+        daiToken.approve(address(tlc), position.currentDebt);
 
         vm.expectEmit(address(tlc));
-        emit InterestRateUpdate(address(daiToken), 0.05e18);
+        emit InterestRateUpdate(0.05e18);
         vm.expectEmit(address(tlc));
-        emit Repay(bob, alice, address(daiToken), position.daiDebtPosition.currentDebt);
-        tlc.repay(daiToken, position.daiDebtPosition.currentDebt, alice);
-
-        vm.expectEmit(address(tlc));
-        emit Repay(bob, alice, address(oudToken), position.oudDebtPosition.currentDebt);
-        tlc.repay(oudToken, position.oudDebtPosition.currentDebt, alice);
+        emit Repay(bob, alice, position.currentDebt);
+        tlc.repay(position.currentDebt, alice);
 
         Balances memory balancesAfter = getBalances();
-        assertEq(balancesAfter.daiTrv, trvStartingBalance+position.daiDebtPosition.currentDebt-borrowDaiAmount);
+        assertEq(balancesAfter.daiTrv, trvStartingBalance+position.currentDebt-borrowDaiAmount);
         assertEq(balancesAfter.daiTlc, 0);
         assertEq(balancesAfter.daiTlcStrategy, 0);
         assertEq(balancesAfter.daiAlice, borrowDaiAmount);
         assertEq(balancesAfter.daiBob, 0);
-        assertEq(balancesAfter.oudSupply, 500_000e18 + borrowOudAmount); // 500k initial supply at construction
-        assertEq(balancesAfter.oudTlc, 0);
-        assertEq(balancesAfter.oudAlice, borrowOudAmount);
-        assertEq(balancesAfter.oudBob, 0);
     }
 
     function test_repayEverything_success() external {
         uint256 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
-        uint256 borrowOudAmount = 20_000e18; // Flat interest rate of 5%
 
         uint256 collateralAmount = 200_000e18;
-        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, BORROW_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
 
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
 
@@ -242,41 +183,27 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         // Repay the whole debt amount
         {
             // Deal extra for the accrued interest
-            dealAdditional(daiToken, alice, position.daiDebtPosition.currentDebt - borrowDaiAmount);
-            dealAdditional(oudToken, alice, position.oudDebtPosition.currentDebt - borrowOudAmount);
+            dealAdditional(daiToken, alice, position.currentDebt - borrowDaiAmount);
 
             vm.startPrank(alice);
-            daiToken.approve(address(tlc), position.daiDebtPosition.currentDebt);
+            daiToken.approve(address(tlc), position.currentDebt);
 
             vm.expectEmit(address(tlc));
-            emit InterestRateUpdate(address(daiToken), 0.05e18);
+            emit InterestRateUpdate(0.05e18);
             vm.expectEmit(address(tlc));
-            emit Repay(alice, alice, address(daiToken), position.daiDebtPosition.currentDebt);
-            tlc.repay(daiToken, position.daiDebtPosition.currentDebt, alice);
-
-            vm.expectEmit(address(tlc));
-            emit Repay(alice, alice, address(oudToken), position.oudDebtPosition.currentDebt);
-            tlc.repay(oudToken, position.oudDebtPosition.currentDebt, alice);
+            emit Repay(alice, alice, position.currentDebt);
+            tlc.repay(position.currentDebt, alice);
         }
 
         uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
         uint256 daiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiInterestRate, 365 days);
-        uint256 oudAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, oudInterestRate, 365 days);
 
         // Check the Reserve Tokens
         {
             checkDebtTokenDetails(
-                daiToken, 
                 0, 
                 5e18 / 100, // back to the base interest rate
                 daiAccumulator, 
-                block.timestamp
-            );
-            checkDebtTokenDetails(
-                oudToken, 
-                0, 
-                oudInterestRate, 
-                oudAccumulator, 
                 block.timestamp
             );
         }
@@ -288,16 +215,11 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
                 CheckAccountPositionParams({
                     account: alice,
                     expectedDaiBalance: 0,
-                    expectedOudBalance: 0,
-                    expectedAccountPosition: AccountPosition({
-                        collateralPosted: collateralAmount,
-                        daiDebtPosition: createDebtPosition(daiToken, 0, maxBorrowInfo),
-                        oudDebtPosition: createDebtPosition(oudToken, 0, maxBorrowInfo)
-                    }),
+                    expectedAccountPosition: createAccountPosition(
+                        collateralAmount, 0, maxBorrowInfo
+                    ),
                     expectedDaiDebtCheckpoint: 0,
                     expectedDaiAccumulatorCheckpoint: daiAccumulator,
-                    expectedOudDebtCheckpoint: 0,
-                    expectedOudAccumulatorCheckpoint: oudAccumulator,
                     expectedRemoveCollateralRequest: 0,
                     expectedRemoveCollateralRequestAt: 0
                 }),
@@ -309,21 +231,14 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
     function test_repayAll_failsZeroAmount() public {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
         vm.prank(alice);
-        tlc.repayAll(daiToken, alice);
-    }
-    
-    function test_repayAll_failsBadToken() external {
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidToken.selector, address(templeToken)));
-        vm.prank(alice);
-        tlc.repayAll(templeToken, alice);
+        tlc.repayAll(alice);
     }
 
     function test_repayAll_success() external {
         uint256 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
-        uint256 borrowOudAmount = 20_000e18; // Flat interest rate of 5%
         
         uint256 collateralAmount = 200_000e18;
-        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, BORROW_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
 
         AccountPosition memory position = tlc.accountPosition(alice, true);
@@ -331,41 +246,27 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         // RepayAll
         {
             // Deal extra for the accrued interest
-            dealAdditional(daiToken, alice, position.daiDebtPosition.currentDebt - borrowDaiAmount);
-            dealAdditional(oudToken, alice, position.oudDebtPosition.currentDebt - borrowOudAmount);
+            dealAdditional(daiToken, alice, position.currentDebt - borrowDaiAmount);
 
             vm.startPrank(alice);
-            daiToken.approve(address(tlc), position.daiDebtPosition.currentDebt);
+            daiToken.approve(address(tlc), position.currentDebt);
 
             vm.expectEmit(address(tlc));
-            emit InterestRateUpdate(address(daiToken), 0.05e18);
+            emit InterestRateUpdate(0.05e18);
             vm.expectEmit(address(tlc));
-            emit Repay(alice, alice, address(daiToken), position.daiDebtPosition.currentDebt);
-            tlc.repayAll(daiToken, alice);
-
-            vm.expectEmit(address(tlc));
-            emit Repay(alice, alice, address(oudToken), position.oudDebtPosition.currentDebt);
-            tlc.repayAll(oudToken, alice);
+            emit Repay(alice, alice, position.currentDebt);
+            tlc.repayAll(alice);
         }
 
         uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
         uint256 daiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiInterestRate, 365 days);
-        uint256 oudAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, oudInterestRate, 365 days);
 
         // Check the Reserve Tokens
         {
             checkDebtTokenDetails(
-                daiToken, 
                 0, 
                 5e18 / 100, // back to the base interest rate
                 daiAccumulator, 
-                block.timestamp
-            );
-            checkDebtTokenDetails(
-                oudToken, 
-                0, 
-                oudInterestRate, 
-                oudAccumulator, 
                 block.timestamp
             );
         }
@@ -377,16 +278,11 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
                 CheckAccountPositionParams({
                     account: alice,
                     expectedDaiBalance: 0,
-                    expectedOudBalance: 0,
-                    expectedAccountPosition: AccountPosition({
-                        collateralPosted: collateralAmount,
-                        daiDebtPosition: createDebtPosition(daiToken, 0, maxBorrowInfo),
-                        oudDebtPosition: createDebtPosition(oudToken, 0, maxBorrowInfo)
-                    }),
+                    expectedAccountPosition: createAccountPosition(
+                        collateralAmount, 0, maxBorrowInfo
+                    ),
                     expectedDaiDebtCheckpoint: 0,
                     expectedDaiAccumulatorCheckpoint: daiAccumulator,
-                    expectedOudDebtCheckpoint: 0,
-                    expectedOudAccumulatorCheckpoint: oudAccumulator,
                     expectedRemoveCollateralRequest: 0,
                     expectedRemoveCollateralRequestAt: 0
                 }),
@@ -397,38 +293,28 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
 
     function test_repayAllOnBehalfOf_success() external {
         uint256 borrowDaiAmount = 50_000e18; // At kink approximately 10% interest rate
-        uint256 borrowOudAmount = 20_000e18; // Flat interest rate of 5%
         uint256 collateralAmount = 200_000e18;
-        borrow(alice, collateralAmount, borrowDaiAmount, borrowOudAmount, BORROW_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
         AccountPosition memory position = tlc.accountPosition(alice, true);
         
-        dealAdditional(daiToken, bob, position.daiDebtPosition.currentDebt);
-        dealAdditional(oudToken, bob, position.oudDebtPosition.currentDebt);
+        dealAdditional(daiToken, bob, position.currentDebt);
 
         vm.startPrank(bob);
-        daiToken.approve(address(tlc), position.daiDebtPosition.currentDebt);
+        daiToken.approve(address(tlc), position.currentDebt);
 
         vm.expectEmit(address(tlc));
-        emit InterestRateUpdate(address(daiToken), 0.05e18);
+        emit InterestRateUpdate(0.05e18);
         vm.expectEmit(address(tlc));
-        emit Repay(bob, alice, address(daiToken), position.daiDebtPosition.currentDebt);
-        tlc.repayAll(daiToken, alice);
-
-        vm.expectEmit(address(tlc));
-        emit Repay(bob, alice, address(oudToken), position.oudDebtPosition.currentDebt);
-        tlc.repayAll(oudToken, alice);
+        emit Repay(bob, alice, position.currentDebt);
+        tlc.repayAll(alice);
 
         Balances memory balancesAfter = getBalances();
-        assertEq(balancesAfter.daiTrv, trvStartingBalance+position.daiDebtPosition.currentDebt-borrowDaiAmount);
+        assertEq(balancesAfter.daiTrv, trvStartingBalance+position.currentDebt-borrowDaiAmount);
         assertEq(balancesAfter.daiTlc, 0);
         assertEq(balancesAfter.daiTlcStrategy, 0);
         assertEq(balancesAfter.daiAlice, borrowDaiAmount);
         assertEq(balancesAfter.daiBob, 0);
-        assertEq(balancesAfter.oudSupply, 500_000e18 + borrowOudAmount); // 500k initial supply at construction
-        assertEq(balancesAfter.oudTlc, 0);
-        assertEq(balancesAfter.oudAlice, borrowOudAmount);
-        assertEq(balancesAfter.oudBob, 0);
     }
 
 }

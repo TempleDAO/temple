@@ -1,8 +1,12 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.17;
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (v2/interestRate/BaseInterestRateModel.sol)
 
 import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
 
+/**
+ * @notice An abstract base contract to calculate the interest rate derived from the current utilization ratio (UR) of debt.
+ */
 abstract contract BaseInterestRateModel is IInterestRateModel {
     
     uint256 internal constant PRECISION = 1e18;
@@ -10,6 +14,9 @@ abstract contract BaseInterestRateModel is IInterestRateModel {
     uint96 internal constant MAX_ALLOWED_INTEREST_RATE = 5e18; // 500% APR
     uint96 internal constant MIN_ALLOWED_INTEREST_RATE = 0;
 
+    /**
+     * @notice Derived interest rate model contracts need to implement.
+     */
     function computeInterestRateImpl(uint256) internal virtual view returns (uint96);
 
     /**

@@ -1,12 +1,16 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.17;
-
-// import "forge-std/console.sol";
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (v2/interestRate/LinearWithKinkInterestRateModel.sol)
 
 import { BaseInterestRateModel } from "contracts/v2/interestRate/BaseInterestRateModel.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 
+/**
+ * @title 'Linear With Kink' Interest Rate Model
+ * @notice An interest rate curve derived from the current utilization ratio (UR) of debt.
+ * This is represented as two seperate linear slopes, joined at a 'kink' - a particular UR.
+ */
 contract LinearWithKinkInterestRateModel is BaseInterestRateModel, TempleElevatedAccess {
     using SafeCast for uint256;
 
@@ -24,6 +28,9 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel, TempleElevate
         uint256 kinkUtilizationRatio;
     }
 
+    /**
+     * @notice The interest rate parameters to derive the two curves with a kink.
+     */
     RateParams public rateParams;
 
     event InterestRateParamsSet(
@@ -57,6 +64,9 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel, TempleElevate
         });
     }
     
+    /**
+     * @notice Update the interest rate parameters.
+     */
     function setRateParams(
         uint256 _baseInterestRate, 
         uint256 _maxInterestRate, 
@@ -84,7 +94,6 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel, TempleElevate
     function computeInterestRateImpl(uint256 utilizationRatio) internal override view returns (uint96) {
         RateParams memory _rateParams = rateParams;
 
-        // console.log("linear compute:", utilizationRatio);
         uint256 interestRate;
         if (utilizationRatio <= _rateParams.kinkUtilizationRatio) {
             // Slope between base% -> kink%
@@ -113,30 +122,3 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel, TempleElevate
         return uint96(interestRate);
     }
 }
-
-
-/**
-Can graph the borrow curve at:
-https://www.mathworks.com/help/matlab/ref/plot.html
-
-
-kinkUtilization = 90;
-baseRate = 5;
-kinkRate = 10;
-maxRate = 20;
-
-x1 = linspace(0, kinkUtilization);
-slope1 = (kinkRate - baseRate) * 100 / kinkUtilization;
-y1 = baseRate + (slope1 * x1 / 100);
-
-x2 = linspace(kinkUtilization, 100);
-slope2 = (maxRate - kinkRate) * 100 / (100 - kinkUtilization);
-y2 = kinkRate + (slope2 * (x2-kinkUtilization) / 100);
-
-figure
-plot(x1,y1,"-x",x2,y2,"-x","MarkerIndices",1:10:100)
-
-title('Borrow Rate Curve')
-xlabel('Utilization Ratio')
-ylabel('Interest Rate')
-*/

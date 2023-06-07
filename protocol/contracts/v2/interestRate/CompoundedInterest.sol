@@ -1,9 +1,13 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (v2/interestRate/CompoundedInterest.sol)
 
 import { ud } from "@prb/math/src/UD60x18.sol";
 import { mulDivSigned } from "@prb/math/src/Common.sol";
 
+/**
+ * @notice A maths library to calculate compounded interest
+ */
 library CompoundedInterest {
     uint256 public constant ONE_YEAR = 365 days;
 

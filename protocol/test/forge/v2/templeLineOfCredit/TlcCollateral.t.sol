@@ -40,16 +40,11 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
                 CheckAccountPositionParams({
                     account: alice,
                     expectedDaiBalance: 0,
-                    expectedOudBalance: 0,
-                    expectedAccountPosition: AccountPosition({
-                        collateralPosted: collateralAmount,
-                        daiDebtPosition: createDebtPosition(daiToken, 0, maxBorrowInfo),
-                        oudDebtPosition: createDebtPosition(oudToken, 0, maxBorrowInfo)
-                    }),
+                    expectedAccountPosition: createAccountPosition(
+                        collateralAmount, 0, maxBorrowInfo
+                    ),
                     expectedDaiDebtCheckpoint: 0,
                     expectedDaiAccumulatorCheckpoint: 0,
-                    expectedOudDebtCheckpoint: 0,
-                    expectedOudAccumulatorCheckpoint: 0,
                     expectedRemoveCollateralRequest: 0,
                     expectedRemoveCollateralRequestAt: 0
                 }),
@@ -78,16 +73,11 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
                 CheckAccountPositionParams({
                     account: bob,
                     expectedDaiBalance: 0,
-                    expectedOudBalance: 0,
-                    expectedAccountPosition: AccountPosition({
-                        collateralPosted: newCollateralAmount,
-                        daiDebtPosition: createDebtPosition(daiToken, 0, maxBorrowInfo),
-                        oudDebtPosition: createDebtPosition(oudToken, 0, maxBorrowInfo)
-                    }),
+                    expectedAccountPosition: createAccountPosition(
+                        newCollateralAmount, 0, maxBorrowInfo
+                    ),
                     expectedDaiDebtCheckpoint: 0,
                     expectedDaiAccumulatorCheckpoint: 0,
-                    expectedOudDebtCheckpoint: 0,
-                    expectedOudAccumulatorCheckpoint: 0,
                     expectedRemoveCollateralRequest: 0,
                     expectedRemoveCollateralRequestAt: 0
                 }),
@@ -125,16 +115,11 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
             CheckAccountPositionParams({
                 account: alice,
                 expectedDaiBalance: 0,
-                expectedOudBalance: 0,
-                expectedAccountPosition: AccountPosition({
-                    collateralPosted: collateralAmount-5e18,
-                    daiDebtPosition: createDebtPosition(daiToken, 0, maxBorrowInfo),
-                    oudDebtPosition: createDebtPosition(oudToken, 0, maxBorrowInfo)
-                }),
+                expectedAccountPosition: createAccountPosition(
+                    collateralAmount-5e18, 0, maxBorrowInfo
+                ),
                 expectedDaiDebtCheckpoint: 0,
                 expectedDaiAccumulatorCheckpoint: 0,
-                expectedOudDebtCheckpoint: 0,
-                expectedOudAccumulatorCheckpoint: 0,
                 expectedRemoveCollateralRequest: 5e18,
                 expectedRemoveCollateralRequestAt: block.timestamp
             }),
@@ -145,10 +130,10 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
     function test_requestRemoveCollateral_failsCheckLiquidity() public {
         uint256 collateralAmount = 100_000e18;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        borrow(alice, collateralAmount, maxBorrowInfo.daiMaxBorrow, 0, BORROW_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, maxBorrowInfo.daiMaxBorrow, BORROW_REQUEST_MIN_SECS);
 
         // Can't remove any collateral now
-        vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, collateralAmount-1, maxBorrowInfo.daiMaxBorrow, 0));
+        vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, collateralAmount-1, collateralValue(collateralAmount-1), maxBorrowInfo.daiMaxBorrow));
         vm.prank(alice);
         tlc.requestRemoveCollateral(1);
     }
@@ -216,16 +201,11 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         CheckAccountPositionParams memory params = CheckAccountPositionParams({
             account: alice,
             expectedDaiBalance: 0,
-            expectedOudBalance: 0,
-            expectedAccountPosition: AccountPosition({
-                collateralPosted: collateralAmount-50,
-                daiDebtPosition: createDebtPosition(daiToken, 0, maxBorrowInfo),
-                oudDebtPosition: createDebtPosition(oudToken, 0, maxBorrowInfo)
-            }),
+            expectedAccountPosition: createAccountPosition(
+                collateralAmount-50, 0, maxBorrowInfo
+            ),
             expectedDaiDebtCheckpoint: 0,
             expectedDaiAccumulatorCheckpoint: 0,
-            expectedOudDebtCheckpoint: 0,
-            expectedOudAccumulatorCheckpoint: 0,
             expectedRemoveCollateralRequest: 50,
             expectedRemoveCollateralRequestAt: block.timestamp
         });
@@ -236,11 +216,9 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         tlc.cancelRemoveCollateralRequest(alice);
 
         maxBorrowInfo = expectedMaxBorrows(collateralAmount);
-        params.expectedAccountPosition = AccountPosition({
-            collateralPosted: collateralAmount,
-            daiDebtPosition: createDebtPosition(daiToken, 0, maxBorrowInfo),
-            oudDebtPosition: createDebtPosition(oudToken, 0, maxBorrowInfo)
-        });
+        params.expectedAccountPosition = createAccountPosition(
+            collateralAmount, 0, maxBorrowInfo
+        );
         params.expectedRemoveCollateralRequest = 0;
         params.expectedRemoveCollateralRequestAt = 0;
         checkAccountPosition(params, true);
@@ -312,17 +290,17 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
 
     function test_removeCollateral_failCheckLiquidity() public {
         // Lower the max LTV between doing the request and actually removing collateral.
-        uint256 collateralAmount = 10 ether;
+        uint256 collateralAmount = 10_000 ether;
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(collateralAmount);
 
         // Borrow half
         uint256 borrowAmount = maxBorrowInfo.daiMaxBorrow / 2;
-        borrow(alice, collateralAmount, borrowAmount, 0, BORROW_REQUEST_MIN_SECS);
+        borrow(alice, collateralAmount, borrowAmount, BORROW_REQUEST_MIN_SECS);
 
         AccountPosition memory position = tlc.accountPosition(alice, true);
-        assertEq(position.daiDebtPosition.maxBorrow, borrowAmount*2);
-        assertEq(position.daiDebtPosition.healthFactor, 2e18);
-        assertEq(position.daiDebtPosition.loanToValueRatio, 0.425e18);
+        assertEq(position.maxBorrow, borrowAmount*2);
+        assertEq(position.healthFactor, 2e18);
+        assertEq(position.loanToValueRatio, 0.425e18);
 
         // Request the remaining half of the collateral back
         // Health = 1 (right at the limit)
@@ -330,24 +308,24 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         tlc.requestRemoveCollateral(collateralAmount/2);
         
         position = tlc.accountPosition(alice, true);
-        assertEq(position.daiDebtPosition.maxBorrow, borrowAmount);
-        assertEq(position.daiDebtPosition.healthFactor, 1e18);
-        assertEq(position.daiDebtPosition.loanToValueRatio, 0.85e18);
+        assertEq(position.maxBorrow, borrowAmount);
+        assertEq(position.healthFactor, 1e18);
+        assertEq(position.loanToValueRatio, 0.85e18);
 
         // Lower the maxLTV       
         changePrank(executor);
-        tlc.setMaxLtvRatio(daiToken, 0.65e18);
+        tlc.setMaxLtvRatio(0.65e18);
 
         // Alice is now underwater...
         position = tlc.accountPosition(alice, true);
-        assertEq(position.daiDebtPosition.maxBorrow, 3.1525e18);
-        assertApproxEqRel(position.daiDebtPosition.healthFactor, 0.7647e18, 0.0001e18);
-        assertEq(position.daiDebtPosition.loanToValueRatio, 0.85e18);
+        assertEq(position.maxBorrow, 3_152.5e18);
+        assertApproxEqRel(position.healthFactor, 0.7647e18, 0.0001e18);
+        assertEq(position.loanToValueRatio, 0.85e18);
 
         // Now alice can't execute on the collateral remove request
         vm.warp(block.timestamp + COLLATERAL_REQUEST_MIN_SECS);
         changePrank(alice);
-        vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, collateralAmount/2, borrowAmount+196094412638, 0));
+        vm.expectRevert(abi.encodeWithSelector(ExceededMaxLtv.selector, collateralAmount/2, collateralValue(collateralAmount/2), borrowAmount+205067233156703));
         tlc.removeCollateral(alice);
 
         // But she can still cancel the request, and re-go for a smaller amount
@@ -355,16 +333,16 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
 
         // Position now drops
         position = tlc.accountPosition(alice, true);
-        assertEq(position.daiDebtPosition.maxBorrow, 6.305e18);
-        assertApproxEqRel(position.daiDebtPosition.healthFactor, 1.5294e18, 0.0001e18);
-        assertApproxEqRel(position.daiDebtPosition.loanToValueRatio, 0.425e18, 0.0001e18);
+        assertEq(position.maxBorrow, 6_305e18);
+        assertApproxEqRel(position.healthFactor, 1.5294e18, 0.0001e18);
+        assertApproxEqRel(position.loanToValueRatio, 0.425e18, 0.0001e18);
 
         // And can now remove 1/3 of the collateral and still be healthy
         tlc.requestRemoveCollateral(collateralAmount/3);
         vm.warp(block.timestamp + COLLATERAL_REQUEST_MIN_SECS);
         tlc.removeCollateral(alice);
         position = tlc.accountPosition(alice, true);
-        assertGt(position.daiDebtPosition.healthFactor, 1e18);
+        assertGt(position.healthFactor, 1e18);
     }
     
     function test_removeCollateral_successWithChecks() public {
@@ -387,16 +365,11 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         CheckAccountPositionParams memory params = CheckAccountPositionParams({
             account: alice,
             expectedDaiBalance: 0,
-            expectedOudBalance: 0,
-            expectedAccountPosition: AccountPosition({
-                collateralPosted: collateralAmount-50,
-                daiDebtPosition: createDebtPosition(daiToken, 0, maxBorrowInfo),
-                oudDebtPosition: createDebtPosition(oudToken, 0, maxBorrowInfo)
-            }),
+            expectedAccountPosition: createAccountPosition(
+                collateralAmount-50, 0, maxBorrowInfo
+            ),
             expectedDaiDebtCheckpoint: 0,
             expectedDaiAccumulatorCheckpoint: 0,
-            expectedOudDebtCheckpoint: 0,
-            expectedOudAccumulatorCheckpoint: 0,
             expectedRemoveCollateralRequest: 0,
             expectedRemoveCollateralRequestAt: 0
         });
@@ -410,11 +383,9 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
         vm.warp(block.timestamp + COLLATERAL_REQUEST_MIN_SECS);
         tlc.removeCollateral(alice);
         maxBorrowInfo = expectedMaxBorrows(0);
-        params.expectedAccountPosition = AccountPosition({
-            collateralPosted: 0,
-            daiDebtPosition: createDebtPosition(daiToken, 0, maxBorrowInfo),
-            oudDebtPosition: createDebtPosition(oudToken, 0, maxBorrowInfo)
-        });
+        params.expectedAccountPosition = createAccountPosition(
+            0, 0, maxBorrowInfo
+        );
         checkAccountPosition(params, true);
         assertEq(tlc.totalCollateral(), 0);
         assertEq(templeToken.balanceOf(address(tlc)), 0);
@@ -442,7 +413,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
 
     function test_removeCollateral_noWait() public {
         vm.prank(executor);
-        tlc.setWithdrawCollateralRequestWindow(0, 0);
+        tlc.setWithdrawCollateralRequestConfig(0, 0);
 
         uint256 collateralAmount = 100_000e18;
         addCollateral(alice, collateralAmount);
@@ -457,7 +428,7 @@ contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
 
     function test_pause_removeCollateral() public {
         vm.prank(executor);
-        tlc.setWithdrawCollateralRequestWindow(1, 0);
+        tlc.setWithdrawCollateralRequestConfig(1, 0);
 
         uint256 collateralAmount = 100_000e18;
         addCollateral(alice, collateralAmount);

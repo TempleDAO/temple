@@ -50,26 +50,16 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
         uint256 debt
     ) {
         (
-            ITempleLineOfCredit.TotalDebtPosition memory daiPosition,
-            ITempleLineOfCredit.TotalDebtPosition memory oudPosition
+            ITempleLineOfCredit.TotalDebtPosition memory daiPosition
         ) = tlc.totalDebtPosition();
 
-        // The assets are the total accrued debt of DAI and OUD in TLC.
-        assetBalances = new AssetBalance[](2);
+        // The total accrued debt of DAI in TLC
+        assetBalances = new AssetBalance[](1);
         assetBalances[0] = AssetBalance({
             asset: address(stableToken),
             balance: addManualAssetBalanceDelta(
                 daiPosition.totalDebt,
                 address(stableToken)
-            )
-        });
-
-        IERC20 oudToken = tlc.oudToken();
-        assetBalances[1] = AssetBalance({
-            asset: address(oudToken),
-            balance: addManualAssetBalanceDelta(
-                oudPosition.totalDebt,
-                address(oudToken)
             )
         });
 
