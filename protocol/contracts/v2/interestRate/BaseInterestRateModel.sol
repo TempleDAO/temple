@@ -25,6 +25,11 @@ abstract contract BaseInterestRateModel is IInterestRateModel {
      * @return interestRate The interest rate (scaled by PRECISION). 0.05e18 == 5%
      */
     function calculateInterestRate(uint256 utilizationRatio) public view returns (uint96 interestRate) {
+        // Cap the UR at 100%
+        if (utilizationRatio > PRECISION) {
+            utilizationRatio = PRECISION;
+        }
+
         interestRate = computeInterestRateImpl(utilizationRatio);
 
         if (interestRate > MAX_ALLOWED_INTEREST_RATE) {

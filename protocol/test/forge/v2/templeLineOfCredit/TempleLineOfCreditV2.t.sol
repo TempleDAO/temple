@@ -190,7 +190,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
             executor,
             10e18 / 100,
             10e18 / 100,
-            100e18 / 100,
+            1, // Doesn't matter where the kink is
             10e18 / 100
         );
 
@@ -230,7 +230,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
             executor,
             10e18 / 100,
             10e18 / 100,
-            100e18 / 100,
+            1, // Doesn't matter where the kink is
             10e18 / 100
         );
 

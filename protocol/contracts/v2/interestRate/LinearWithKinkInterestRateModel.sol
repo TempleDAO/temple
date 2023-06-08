@@ -5,6 +5,7 @@ pragma solidity ^0.8.17;
 import { BaseInterestRateModel } from "contracts/v2/interestRate/BaseInterestRateModel.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 /**
  * @title 'Linear With Kink' Interest Rate Model
@@ -56,12 +57,12 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel, TempleElevate
         uint256 _kinkInterestRate
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
-        rateParams = RateParams({
-            baseInterestRate: _baseInterestRate.encodeUInt80(),
-            maxInterestRate: _maxInterestRate.encodeUInt80(),
-            kinkInterestRate: _kinkInterestRate.encodeUInt80(),
-            kinkUtilizationRatio: _kinkUtilizationRatio
-        });
+        _setRateParams(
+            _baseInterestRate, 
+            _maxInterestRate, 
+            _kinkUtilizationRatio, 
+            _kinkInterestRate
+        );
     }
     
     /**
@@ -73,6 +74,23 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel, TempleElevate
         uint256 _kinkUtilizationRatio, 
         uint256 _kinkInterestRate
     ) external onlyElevatedAccess {
+        _setRateParams(
+            _baseInterestRate, 
+            _maxInterestRate, 
+            _kinkUtilizationRatio, 
+            _kinkInterestRate
+        );
+    }
+
+    function _setRateParams(
+        uint256 _baseInterestRate, 
+        uint256 _maxInterestRate, 
+        uint256 _kinkUtilizationRatio, 
+        uint256 _kinkInterestRate
+    ) internal {
+        if (_kinkUtilizationRatio == 0) revert CommonEventsAndErrors.InvalidParam();
+        if (_kinkUtilizationRatio >= PRECISION) revert CommonEventsAndErrors.InvalidParam();
+
         rateParams = RateParams({
             baseInterestRate: _baseInterestRate.encodeUInt80(),
             maxInterestRate: _maxInterestRate.encodeUInt80(),
@@ -95,17 +113,7 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel, TempleElevate
         RateParams memory _rateParams = rateParams;
 
         uint256 interestRate;
-        if (utilizationRatio <= _rateParams.kinkUtilizationRatio) {
-            // Slope between base% -> kink%
-            uint256 slope = (
-                (PRECISION * (_rateParams.kinkInterestRate - _rateParams.baseInterestRate))
-                 / _rateParams.kinkUtilizationRatio
-            );
-            interestRate = (
-                (utilizationRatio * slope / PRECISION) 
-                + _rateParams.baseInterestRate
-            );
-        } else {
+        if (utilizationRatio > _rateParams.kinkUtilizationRatio) {
             // Slope between kink% -> max%
             uint256 slope = (
                 (PRECISION * (_rateParams.maxInterestRate - _rateParams.kinkInterestRate))
@@ -116,6 +124,16 @@ contract LinearWithKinkInterestRateModel is BaseInterestRateModel, TempleElevate
                     (slope * (utilizationRatio - _rateParams.kinkUtilizationRatio)) 
                     / PRECISION
                 ) + _rateParams.kinkInterestRate
+            );
+        } else {
+            // Slope between base% -> kink%
+            uint256 slope = (
+                (PRECISION * (_rateParams.kinkInterestRate - _rateParams.baseInterestRate))
+                 / _rateParams.kinkUtilizationRatio
+            );
+            interestRate = (
+                (utilizationRatio * slope / PRECISION) 
+                + _rateParams.baseInterestRate
             );
         }
 
