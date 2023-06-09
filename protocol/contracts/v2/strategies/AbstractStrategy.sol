@@ -45,8 +45,7 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
      * @notice The Strategy Executor may set manual updates to asset balances
      * if they cannot be reported automatically - eg a staked position with no receipt token.
      */
-    mapping(address => int256) public override manualAssetBalanceDeltas;
-    EnumerableSet.AddressSet private manualAssetBalanceDeltasKeys;
+    AssetBalanceDelta[] internal _manualAdjustments;
 
     constructor(
         address _initialRescuer,
@@ -83,13 +82,6 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     }
 
     /**
-     * @notice The current dUSD debt of a strategy
-     */
-    function currentDebt() public override view returns (uint256) {
-        return internalDebtToken.balanceOf(address(this));
-    }
-
-    /**
      * @notice A strategy's current amount borrowed from the TRV, and how much remaining is free to borrow
      * @dev The remaining amount free to borrow is bound by:
      *   1/ How much stables is globally available (in this contract + in the base strategy)
@@ -114,74 +106,114 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
     }
 
     /**
-     * @notice The Strategy Executor may set manual updates to asset balances
+     * @notice The Strategy Executor may set manual adjustments to asset balances
      * if they cannot be reported automatically - eg a staked position with no receipt token.
+     */
+    function setManualAdjustments(
+        AssetBalanceDelta[] memory adjustments
+    ) external virtual onlyElevatedAccess {
+        delete _manualAdjustments;
+        uint256 _length = adjustments.length;
+        for (uint256 i; i < _length; ++i) {
+            _manualAdjustments.push(adjustments[i]);
+        }
+        emit ManualAdjustmentsSet(adjustments);
+    }
+
+    /**
+     * @notice Get the set of manual adjustment deltas, set by the Strategy Executor.
+     */
+    function manualAdjustments() public virtual view returns (
+        AssetBalanceDelta[] memory adjustments
+    ) {
+        return _manualAdjustments;
+    }
+
+    /**
+     * @notice The strategy's current asset balances, any manual adjustments and the current debt
+     * of the strategy.
      * 
-     * @dev It is up to the Strategy implementation to add these deltas to the `latestAssetBalances()`
-     * and `checkpointAssetBalances()` functions.
-     */
-    function setManualAssetBalanceDeltas(AssetBalanceDelta[] calldata assetDeltas) external virtual onlyElevatedAccess {
-        // This doesn't delete prior deltas. If no longer required then set to 0
-        uint256 _length = assetDeltas.length;
-        AssetBalanceDelta calldata abd;
-        for (uint256 i; i < _length; ++i) {
-            abd = assetDeltas[i];
-            manualAssetBalanceDeltasKeys.add(abd.asset);
-            manualAssetBalanceDeltas[abd.asset] = abd.delta;
-        }
-
-        emit ManualAssetBalanceDeltasSet(assetDeltas);
-    }
-
-    /**
-     * @notice Get the set of manual asset balance deltas, set by the Strategy Executor.
-     */
-    function getManualAssetBalanceDeltas() external virtual view returns (AssetBalanceDelta[] memory assetDeltas) {
-        uint256 _length = manualAssetBalanceDeltasKeys.length();
-        assetDeltas = new AssetBalanceDelta[](_length);
-        address _asset;
-        for (uint256 i; i < _length; ++i) {
-            _asset = manualAssetBalanceDeltasKeys.at(i);
-            assetDeltas[i] = AssetBalanceDelta(_asset, manualAssetBalanceDeltas[_asset]);
-        }
-    }
-
-    /**
-     * @dev An internal helper to add any manual asset balance delta to the `lhs`
-     */
-    function addManualAssetBalanceDelta(uint256 lhs, address asset) internal virtual view returns (uint256) {
-        int256 balance = int256(lhs) + manualAssetBalanceDeltas[asset];
-        if (balance < 0) revert InvalidAssetBalanceDelta(asset, lhs, manualAssetBalanceDeltas[asset]);
-        return uint256(balance);
-    }
-
-    /**
-     * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
-     * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
+     * This will be used to report equity performance: `sum($assetValue +- $manualAdj) - debt`
      * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
+     * along with formulating the union of asset balances and manual adjustments
+     */
+    function balanceSheet() public virtual override view returns (
+        AssetBalance[] memory assetBalances, 
+        AssetBalanceDelta[] memory manAdjustments, 
+        uint256 debt
+    ) {
+        return (
+            latestAssetBalances(), 
+            _manualAdjustments,
+            internalDebtToken.balanceOf(address(this))
+        );
+    }
+
+    /**
+     * @notice The latest checkpoint of each asset balance this stratgy holds.
      *
      * @dev The asset value may be stale at any point in time, depending onthe strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
-    function latestAssetBalances() public virtual override view returns (AssetBalance[] memory assetBalances, uint256 debt);
+    function latestAssetBalances() public virtual override view returns (
+        AssetBalance[] memory assetBalances
+    );
 
     /**
      * @notice By default, we assume there is no checkpoint required for a strategy
-     * So just return the `latestAssetBalances()`
+     * In which case it would be identical to just calling `latestAssetBalances()`
+     *
      * A strategy can override this if on-chain functions are required to run to force balance
-     * updates first.
+     * updates first - eg checkpoint DSR
      */
-    function checkpointAssetBalances() external virtual override returns (AssetBalance[] memory assetBalances, uint256 debt) {
-        (assetBalances, debt) = latestAssetBalances();
-        emit AssetBalancesCheckpoint(assetBalances, debt);
+    function checkpointAssetBalances() external virtual override returns (
+        AssetBalance[] memory
+    ) {
+        return latestAssetBalances();
     }
+
+    /**
+     * @notice populate data required for shutdown - for example quote data.
+     * This may/may not be required in order to do a shutdown. For example to avoid frontrunning/MEV
+     * quotes to exit an LP position may need to be obtained off-chain prior to the actual shutdown.
+     * Each strategy can abi encode params that it requires.
+     * @dev Intentionally not a view - as some quotes require a non-view (eg Balancer)
+     * The intention is for clients to call as 'static', like a view
+     */
+    // solhint-disable-next-line no-empty-blocks
+    function populateShutdownData(bytes memory populateParams) external virtual override returns (bytes memory shutdownParams) {}
+
+    function automatedShutdown(
+        bytes memory shutdownParams
+    ) external override onlyElevatedAccess returns (
+        uint256 stablesReturned
+    ) {
+        stablesReturned = doShutdown(shutdownParams);
+ 
+        // NB: solc warns that this is unreachable - but that's a bug and not true
+        // It's a a virtual function where not all implementations revert (eg DsrBaseStrategy)
+        emit Shutdown(stablesReturned);
+
+        // Now mark as shutdown in the TRV.
+        // This will only succeed if governance has first set the strategy to `isShuttingDown`
+        treasuryReservesVault.shutdown(address(this), stablesReturned);
+    }  
+
+    function doShutdown(
+        bytes memory shutdownParams
+    ) internal virtual returns (
+        uint256 stablesReturned
+    );
 
     /**
      * @notice Governance can recover any token from the strategy.
      */
-    function recoverToken(address token, address to, uint256 amount) external virtual override onlyElevatedAccess {
+    function recoverToken(
+        address token, 
+        address to, 
+        uint256 amount
+    ) external virtual override onlyElevatedAccess {
         emit CommonEventsAndErrors.TokenRecovered(to, token, amount);
         IERC20(token).safeTransfer(to, amount);
     }
-
 }

@@ -8,6 +8,7 @@ import { TempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineOf
 import { SafeCast } from "contracts/common/SafeCast.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 
+/* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
     function test_requestBorrow_failsZeroBalance() external {
@@ -314,11 +315,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
 
         // Check the DAI amount was borrowed fom the TRV and recorded correctly
         {
-            (
-                ITempleStrategy.AssetBalance[] memory assetBalances, 
-                uint256 debt
-            ) = tlcStrategy.latestAssetBalances();
-            assertEq(debt, borrowAmount);
+            ITempleStrategy.AssetBalance[] memory assetBalances = tlcStrategy.latestAssetBalances();
             assertEq(assetBalances.length, 1);
             assertEq(assetBalances[0].asset, address(daiToken));
             assertEq(assetBalances[0].balance, borrowAmount);

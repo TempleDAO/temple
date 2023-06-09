@@ -138,13 +138,14 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         string memory version,
         Strategy memory strategyData,
         ITempleStrategy.AssetBalance[] memory assetBalances,
+        ITempleStrategy.AssetBalanceDelta[] memory manualAdjustments, 
         uint256 debtBalance
     ) {
         ITempleStrategy _strategy = ITempleStrategy(strategyAddr);
         strategyData = strategies[strategyAddr];
         name = _strategy.strategyName();
         version = _strategy.strategyVersion();
-        (assetBalances, debtBalance) = _strategy.latestAssetBalances();
+        (assetBalances, manualAdjustments, debtBalance) = _strategy.balanceSheet();
     }
 
     function strategyDebtCeiling(address strategy) external override view returns (uint256) {
@@ -161,9 +162,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
 
         // Pull the available from the baseStrategy if it's set.
         if (address(_baseStrategy) != address(0)) {
-            (ITempleStrategy.AssetBalance[] memory assetBalances, ) = _baseStrategy.latestAssetBalances();
+            ITempleStrategy.AssetBalance[] memory assetBalances = _baseStrategy.latestAssetBalances();
 
-            // The base strategy should only have one Asset balance, which should be the stable.
+            // The base strategy will only have one Asset balance, which should be the stable.
             if (assetBalances.length != 1 || assetBalances[0].asset != address(stableToken)) revert CommonEventsAndErrors.InvalidParam();
 
             baseStrategyAvailable = assetBalances[0].balance;
@@ -273,17 +274,6 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         for (uint256 i; i < length; ++i) {
             ITempleStrategy(strategyAddrs[i]).checkpointAssetBalances();
         }
-    }
-
-    /**
-     * @notice The first step in a two-phase shutdown. Executor first sets whether a strategy is slated for shutdown.
-     * The strategy then needs to call shutdown as a separate call once ready.
-     */
-    function setStrategyIsShuttingDown(address strategy, bool isShuttingDown) external override onlyElevatedAccess {
-        Strategy storage strategyData = strategies[strategy];
-        if (!strategyData.isEnabled) revert NotEnabled();
-        emit StrategyIsShuttingDownSet(strategy, isShuttingDown);
-        strategyData.isShuttingDown = isShuttingDown;
     }
 
     /**
@@ -430,6 +420,17 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
             emit RealisedGain(_strategyAddr, gain);
             totalRealisedGainOrLoss += int256(gain);
         }
+    }
+
+    /**
+     * @notice The first step in a two-phase shutdown. Executor first sets whether a strategy is slated for shutdown.
+     * The strategy then needs to call shutdown as a separate call once ready.
+     */
+    function setStrategyIsShuttingDown(address strategy, bool isShuttingDown) external override onlyElevatedAccess {
+        Strategy storage strategyData = strategies[strategy];
+        if (!strategyData.isEnabled) revert NotEnabled();
+        emit StrategyIsShuttingDownSet(strategy, isShuttingDown);
+        strategyData.isShuttingDown = isShuttingDown;
     }
 
     /**

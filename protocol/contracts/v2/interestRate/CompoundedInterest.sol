@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 // Temple (v2/interestRate/CompoundedInterest.sol)
 
 import { ud } from "@prb/math/src/UD60x18.sol";
-import { mulDivSigned } from "@prb/math/src/Common.sol";
 
 /**
  * @notice A maths library to calculate compounded interest

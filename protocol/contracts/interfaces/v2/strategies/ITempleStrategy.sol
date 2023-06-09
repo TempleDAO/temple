@@ -39,13 +39,12 @@ interface ITempleStrategy is ITempleElevatedAccess {
 
     event TreasuryReservesVaultSet(address indexed trv);
     event Shutdown(uint256 stablesRecovered);
-    event AssetBalancesCheckpoint(AssetBalance[] assetBalances, uint256 debt);
-    event ManualAssetBalanceDeltasSet(AssetBalanceDelta[] assetDeltas);
+    event AssetBalancesCheckpoint(AssetBalance[] assetBalances);
+    event ManualAdjustmentsSet(AssetBalanceDelta[] adjustments);
     
     error InvalidVersion(string expected, string actual);
     error OnlyTreasuryReserveVault(address caller);
     error Unimplemented();
-    error InvalidAssetBalanceDelta(address asset, uint256 balance, int256 manualAssetBalanceDelta);
 
     /**
      * @notice API version to help with future integrations/migrations
@@ -83,17 +82,6 @@ interface ITempleStrategy is ITempleElevatedAccess {
     function internalDebtToken() external view returns (ITempleDebtToken);
 
     /**
-     * @notice The Strategy Executor may set manual updates to asset balances
-     * if they cannot be reported automatically - eg a staked position with no receipt token.
-     */
-    function manualAssetBalanceDeltas(address asset) external view returns (int256);
-
-    /**
-     * @notice The current dUSD debt of this strategy
-     */
-    function currentDebt() external view returns (uint256);
-
-    /**
      * @notice A strategy's current amount borrowed from the TRV, and how much remaining is free to borrow
      * @dev The remaining amount free to borrow is bound by:
      *   1/ How much stables is globally available (in this contract + in the base strategy)
@@ -109,47 +97,66 @@ interface ITempleStrategy is ITempleElevatedAccess {
     );
 
     /**
-     * @notice The Strategy Executor may set manual updates to asset balances
+     * @notice The Strategy Executor may set manual adjustments to asset balances
      * if they cannot be reported automatically - eg a staked position with no receipt token.
-     * 
-     * @dev It is up to the Strategy implementation to add these deltas to the `latestAssetBalances()`
-     * and `checkpointAssetBalances()` functions.
      */
-    function setManualAssetBalanceDeltas(AssetBalanceDelta[] calldata assetDeltas) external;
+    function setManualAdjustments(AssetBalanceDelta[] memory adjustments) external;
 
     /**
      * @notice Get the set of manual asset balance deltas, set by the Strategy Executor.
      */
-    function getManualAssetBalanceDeltas() external view returns (AssetBalanceDelta[] memory assetDeltas);
+    function manualAdjustments() external view returns (AssetBalanceDelta[] memory adjustments);
 
     /**
-     * @notice The latest checkpoint of each asset balance this stratgy holds, and the current debt.
-     * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
+     * @notice The strategy's current asset balances, any manual adjustments and the current debt
+     * of the strategy.
+     * 
+     * This will be used to report equity performance: `sum($assetValue +- $manualAdj) - debt`
      * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
+     * along with formulating the union of asset balances and manual adjustments
+     */
+    function balanceSheet() external view returns (
+        AssetBalance[] memory assetBalances, 
+        AssetBalanceDelta[] memory manAdjustments,
+        uint256 debt
+    );
+
+    /**
+     * @notice The latest checkpoint of each asset balance this stratgy holds.
      *
      * @dev The asset value may be stale at any point in time, depending onthe strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
-    function latestAssetBalances() external view returns (AssetBalance[] memory assetBalances, uint256 debt);
+    function latestAssetBalances() external view returns (AssetBalance[] memory assetBalances);
 
     /**
-     * @notice Update each asset balance this stratgy holds, prior to returning those balances 
-     * and the current debt.
-     * This will be used to report equity performance: `sum(asset value in STABLE) - debt`
-     * The conversion of each asset price into the stable token (eg DAI) will be done off-chain
+     * @notice By default, we assume there is no checkpoint required for a strategy
+     * In which case it would be identical to just calling `latestAssetBalances()`
      *
-     * @dev If the strategy's balances are always 'current', and no checkpoint is required
-     * this just returns `latestAssetBalances()`.
+     * A strategy can override this if on-chain functions are required to run to force balance
+     * updates first - eg checkpoint DSR
      */
-    function checkpointAssetBalances() external returns (AssetBalance[] memory assetBalances, uint256 debt);
+    function checkpointAssetBalances() external returns (AssetBalance[] memory assetBalances);
+
+    /**
+     * @notice populate data required for shutdown - for example quote data.
+     * This may/may not be required in order to do a shutdown. For example to avoid frontrunning/MEV
+     * quotes to exit an LP position may need to be obtained off-chain prior to the actual shutdown.
+     * Each strategy can abi encode params that it requires.
+     * @dev Intentionally not a view - as some quotes require a non-view (eg Balancer)
+     * The intention is for clients to call as 'static', like a view
+     */
+    function populateShutdownData(bytes memory populateParams) external returns (bytes memory shutdownParams);
 
     /**
      * @notice The strategy executor can shutdown this strategy, only after Governance has 
      * marked the strategy as `isShuttingDown` in the TRV.
      * This should handle all liquidations and send all funds back to the TRV, and will then call `TRV.shutdown()`
      * to apply the shutdown.
+     * @dev Each strategy may require a different set of params to do the shutdown. It can abi encode/decode
+     * that data off chain, or by first calling populateShutdownData()
      */
-    function automatedShutdown() external returns (uint256 stablesReturned);
+    function automatedShutdown(bytes memory shutdownParams) external returns (uint256 stablesReturned);
 
     /**
      * @notice Governance can recover any token from the strategy.

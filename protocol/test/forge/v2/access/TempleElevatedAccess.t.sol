@@ -5,15 +5,20 @@ import { TempleTest } from "../../TempleTest.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
+/* solhint-disable func-name-mixedcase */
 contract Mock is TempleElevatedAccess {
     constructor(
         address _initialRescuer,
         address _initialExecutor
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
+    // solhint-disable-next-line no-empty-blocks
     {}
 
+    // solhint-disable-next-line no-empty-blocks
     function validateOnlyElevatedAccess() public view onlyElevatedAccess {}
-    function validateOnlyExecutorsOrResucers() public view onlyExecutorsOrResucers {}
+
+    // solhint-disable-next-line no-empty-blocks
+    function validateOnlyInRescueMode() public view onlyInRescueMode {}
 
     function checkSig() public view {
         validateOnlyElevatedAccess();
@@ -45,8 +50,9 @@ contract TempleElevatedAccessTest is TempleElevatedAccessTestBase {
         expectElevatedAccess();
         mock.setRescueMode(true);
 
-        // Works for either executor or rescuer
+        // Still not for the executor
         vm.prank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         mock.setRescueMode(true);
 
         vm.prank(rescuer);
@@ -78,7 +84,7 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
 
     function test_setRescueMode() public {
         assertEq(mock.inRescueMode(), false);
-        vm.startPrank(executor);
+        vm.startPrank(rescuer);
 
         vm.expectEmit();
         emit RescueModeSet(true);
@@ -154,16 +160,38 @@ contract TempleElevatedAccessTestSetters is TempleElevatedAccessTestBase {
 }
 
 contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
-    function test_onlyExecutorsOrResucers() public {
-        vm.startPrank(alice);
-        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
-        mock.validateOnlyExecutorsOrResucers();
+    function test_onlyInRescueMode() public {
+        // No access for alice or executor
+        {
+            vm.startPrank(alice);
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+            mock.validateOnlyInRescueMode();
 
-        changePrank(executor);
-        mock.validateOnlyExecutorsOrResucers();
+            changePrank(executor);
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+            mock.validateOnlyInRescueMode();
+        }
 
-        changePrank(rescuer);
-        mock.validateOnlyExecutorsOrResucers();
+        // No access for rescuer until they first set rescue mode.
+        {
+            changePrank(rescuer);
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+            mock.validateOnlyInRescueMode();
+
+            mock.setRescueMode(true);
+            mock.validateOnlyInRescueMode();
+        }
+
+        // Still no access for alice or executor
+        {
+            changePrank(alice);
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+            mock.validateOnlyInRescueMode();
+
+            changePrank(executor);
+            vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+            mock.validateOnlyInRescueMode();
+        }
     }
 
     function test_onlyElevatedAccess_notInRescueMode() public {
@@ -190,7 +218,7 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
 
     function test_onlyElevatedAccess_inRescueMode() public {
         // When IN rescue mode, only the rescuer can call.
-        vm.startPrank(executor);
+        vm.startPrank(rescuer);
         mock.setRescueMode(true);
         assertEq(mock.inRescueMode(), true);
 
@@ -206,9 +234,10 @@ contract TempleElevatedAccessTestModifiers is TempleElevatedAccessTestBase {
         changePrank(rescuer);
         mock.validateOnlyElevatedAccess();
 
-        // Set alice to now have explicit access too
+        // Set alice to now have explicit access too -- but still no access
         mock.setExplicitAccess(alice, Mock.validateOnlyElevatedAccess.selector, true);
         changePrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         mock.validateOnlyElevatedAccess();
     }
 

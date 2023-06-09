@@ -6,6 +6,7 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { SafeCast } from "contracts/common/SafeCast.sol";
 import { TempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineOfCredit.sol";
 
+/* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleLineOfCreditTest_Collateral is TlcBaseTest {
     function test_addCollateral_failsZeroBalance() external {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));

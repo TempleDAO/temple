@@ -46,8 +46,7 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
     function latestAssetBalances() public override(AbstractStrategy, ITempleStrategy) view returns (
-        AssetBalance[] memory assetBalances, 
-        uint256 debt
+        AssetBalance[] memory assetBalances
     ) {
         (
             ITempleLineOfCredit.TotalDebtPosition memory daiPosition
@@ -57,23 +56,18 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
         assetBalances = new AssetBalance[](1);
         assetBalances[0] = AssetBalance({
             asset: address(stableToken),
-            balance: addManualAssetBalanceDelta(
-                daiPosition.totalDebt,
-                address(stableToken)
-            )
+            balance: daiPosition.totalDebt
         });
-
-        debt = currentDebt();
     }
 
     /**
-     * @notice An automated shutdown is not possible for a Gnosis strategy. The
-     * strategy manager (the msig signers) will need to manually liquidate.
+     * @notice An automated shutdown is not possible for a TLC strategy. The
+     * executor will need to set TLC parameters to encourage users to exit first.
      *
      * Once done, they can give the all clear for governance to then shutdown the strategy
      * by calling TRV.shutdown(strategy, stables recovered)
      */
-    function automatedShutdown() external virtual override returns (uint256) {
+    function doShutdown(bytes memory /*data*/) internal virtual override returns (uint256) {
         revert Unimplemented();
     }
 

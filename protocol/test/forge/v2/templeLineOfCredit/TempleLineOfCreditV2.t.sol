@@ -4,15 +4,12 @@ pragma solidity ^0.8.17;
 import { TlcBaseTest } from "./TlcBaseTest.t.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { LinearWithKinkInterestRateModel } from "contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol";
-import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
-import { ITlcEventsAndErrors } from "contracts/interfaces/v2/templeLineOfCredit/ITlcEventsAndErrors.sol";
 import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
 import { TempleLineOfCredit } from "contracts/v2/templeLineOfCredit/TempleLineOfCredit.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { TlcStrategy } from "contracts/v2/templeLineOfCredit/TlcStrategy.sol";
-import { SafeCast } from "contracts/common/SafeCast.sol";
 
+/* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleLineOfCreditTest_Admin is TlcBaseTest {
     // @dev On a fresh TLC without the expected post creation setup
     function test_creation() public {
@@ -218,7 +215,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         uint256 borrowDaiAmount = 1_000 ether;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         
-        uint96 expectedInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
+        uint96 expectedInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, BORROW_CEILING);
         checkDebtTokenDetails(borrowDaiAmount, expectedInterestRate, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
 
         uint256 age = 10000;
@@ -244,7 +241,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
 
         checkDebtTokenData(actualTotals, DebtTokenData({
             totalDebt: uint128(borrowDaiAmount * actualTotals.interestAccumulator / INITIAL_INTEREST_ACCUMULATOR),
-            interestRate: calculateInterestRate(updatedInterestRateModel, borrowDaiAmount, borrowCeiling),
+            interestRate: calculateInterestRate(updatedInterestRateModel, borrowDaiAmount, BORROW_CEILING),
             interestAccumulator: approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedInterestRate, age),
             interestAccumulatorUpdatedAt: uint32(block.timestamp)
         }));
@@ -259,7 +256,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         uint256 age = 10000;
         vm.warp(block.timestamp + age);
 
-        uint96 expectedDaiRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
+        uint96 expectedDaiRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, BORROW_CEILING);
 
         checkDebtTokenDetails(borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, ts2);
 
@@ -267,7 +264,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
 
         uint256 expectedAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiRate, age);
         uint256 expectedDaiDebt = approxInterest(borrowDaiAmount, expectedDaiRate, age);
-        expectedDaiRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, borrowCeiling);
+        expectedDaiRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, BORROW_CEILING);
         checkDebtTokenDetails(expectedDaiDebt, expectedDaiRate, expectedAccumulator, uint32(block.timestamp));
     }
 
@@ -583,7 +580,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
 
         // Refresh the token rates rates based on the new UR (after debt increased)
         uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiRate, 365 days);
-        expectedDaiRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, borrowCeiling);
+        expectedDaiRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, BORROW_CEILING);
         {
             tlc.refreshInterestRates();
 
@@ -618,7 +615,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
             {
                 expectedDaiDebt = approxInterest(expectedDaiDebt, expectedDaiRate, BORROW_REQUEST_MIN_SECS) + 1000e18;
                 expectedDaiAccumulator = approxInterest(expectedDaiAccumulator, expectedDaiRate, BORROW_REQUEST_MIN_SECS);
-                expectedDaiRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, borrowCeiling);
+                expectedDaiRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, BORROW_CEILING);
             }
 
             checkDebtTokenDetails(expectedDaiDebt, expectedDaiRate, expectedDaiAccumulator, block.timestamp);

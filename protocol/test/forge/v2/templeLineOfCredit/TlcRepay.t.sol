@@ -5,6 +5,7 @@ import { TlcBaseTest } from "./TlcBaseTest.t.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 
+/* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleLineOfCreditTestRepay is TlcBaseTest {
     function test_repay_failsZeroAmount() public {
         vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.ExpectedNonZero.selector));
@@ -55,7 +56,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
 
         vm.startPrank(alice);
 
-        uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling); // 7.77 %
+        uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, BORROW_CEILING); // 7.77 %
         uint256 expectedDaiDebt = approxInterest(borrowDaiAmount, expectedDaiInterestRate, 365 days); // ~54k
 
         daiToken.approve(address(tlc), borrowDaiAmount);
@@ -64,14 +65,14 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         uint256 daiAccumulator;
         {
             uint256 daiTotalDebt = checkTotalDebtPosition(
-                utilizationRatio(expectedDaiDebt, borrowCeiling),
+                utilizationRatio(expectedDaiDebt, BORROW_CEILING),
                 expectedDaiInterestRate,
                 expectedDaiDebt
             );
 
             checkDebtTokenDetails(borrowDaiAmount, expectedDaiInterestRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
 
-            uint96 updatedDaiInterestRate = calculateInterestRate(daiInterestRateModel, daiTotalDebt-borrowDaiAmount, borrowCeiling);
+            uint96 updatedDaiInterestRate = calculateInterestRate(daiInterestRateModel, daiTotalDebt-borrowDaiAmount, BORROW_CEILING);
             expectedDaiDebt -= borrowDaiAmount;
 
             vm.expectEmit(address(tlc));
@@ -112,9 +113,9 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
 
         // And the total debt position
         {
-            expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, borrowCeiling);
+            expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, BORROW_CEILING);
             checkTotalDebtPosition(
-                utilizationRatio(expectedDaiDebt, borrowCeiling),
+                utilizationRatio(expectedDaiDebt, BORROW_CEILING),
                 expectedDaiInterestRate,
                 expectedDaiDebt
             );
@@ -132,12 +133,9 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         
         // Check the DAI amount was repaid to the TRV and recorded correctly
         {
-            (
-                ITempleStrategy.AssetBalance[] memory assetBalances, 
-                uint256 debt
-            ) = tlcStrategy.latestAssetBalances();
+            ITempleStrategy.AssetBalance[] memory assetBalances = tlcStrategy.latestAssetBalances();
             // dusd == any interest accrued
-            assertApproxEqRel(debt, approxInterest(borrowDaiAmount, uint96(defaultBaseInterest), 365 days) - borrowDaiAmount, 1e10);
+            // assertApproxEqRel(debt, approxInterest(borrowDaiAmount, uint96(DEFAULT_BASE_INTEREST), 365 days) - borrowDaiAmount, 1e10);
             assertEq(assetBalances.length, 1);
             assertEq(assetBalances[0].asset, address(daiToken));
             assertApproxEqRel(assetBalances[0].balance, expectedDaiDebt, 1e10);
@@ -163,7 +161,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         tlc.repay(position.currentDebt, alice);
 
         Balances memory balancesAfter = getBalances();
-        assertEq(balancesAfter.daiTrv, trvStartingBalance+position.currentDebt-borrowDaiAmount);
+        assertEq(balancesAfter.daiTrv, TRV_STARTING_BALANCE+position.currentDebt-borrowDaiAmount);
         assertEq(balancesAfter.daiTlc, 0);
         assertEq(balancesAfter.daiTlcStrategy, 0);
         assertEq(balancesAfter.daiAlice, borrowDaiAmount);
@@ -195,7 +193,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
             tlc.repay(position.currentDebt, alice);
         }
 
-        uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
+        uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, BORROW_CEILING);
         uint256 daiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiInterestRate, 365 days);
 
         // Check the Reserve Tokens
@@ -258,7 +256,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
             tlc.repayAll(alice);
         }
 
-        uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, borrowCeiling);
+        uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, BORROW_CEILING);
         uint256 daiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiInterestRate, 365 days);
 
         // Check the Reserve Tokens
@@ -310,7 +308,7 @@ contract TempleLineOfCreditTestRepay is TlcBaseTest {
         tlc.repayAll(alice);
 
         Balances memory balancesAfter = getBalances();
-        assertEq(balancesAfter.daiTrv, trvStartingBalance+position.currentDebt-borrowDaiAmount);
+        assertEq(balancesAfter.daiTrv, TRV_STARTING_BALANCE+position.currentDebt-borrowDaiAmount);
         assertEq(balancesAfter.daiTlc, 0);
         assertEq(balancesAfter.daiTlcStrategy, 0);
         assertEq(balancesAfter.daiAlice, borrowDaiAmount);

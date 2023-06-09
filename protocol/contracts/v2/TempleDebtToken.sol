@@ -57,13 +57,13 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     uint8 public constant override decimals = 18;
 
     /**
-     * @notice The current (base rate) interest common for all users. This can be updated by the DAO
+     * @notice The current (base rate) interest common for all strategies. This can be updated by the DAO
      * @dev 1e18 format, where 0.01e18 = 1%
      */
     uint96 public override baseRate;
 
     /**
-     * @notice The (base rate) total number of shares allocated out to users for internal book keeping
+     * @notice The (base rate) total number of shares allocated out to strategies for internal book keeping
      */
     uint256 public override baseShares;
 
@@ -83,7 +83,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     mapping(address => Debtor) public override debtors;
 
     /**
-     * @notice The net amount of principal amount of debt minted across all users.
+     * @notice The net amount of principal amount of debt minted across all strategies.
      */
     uint256 public override totalPrincipal;
 
@@ -245,9 +245,10 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
         uint256 _totalPrincipalAndBase = _compoundedBaseInterest();
         burnedAmount = _balanceOf(debtor, _totalPrincipalAndBase);
 
-        if (burnedAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
-        emit Transfer(_debtor, address(0), burnedAmount);
-        _burn(debtor, burnedAmount, _totalPrincipalAndBase);
+        if (burnedAmount != 0) {
+            emit Transfer(_debtor, address(0), burnedAmount);
+            _burn(debtor, burnedAmount, _totalPrincipalAndBase);
+        }
     }
 
     function _burn(Debtor storage debtor, uint256 _burnAmount, uint256 _totalPrincipalAndBase) internal {

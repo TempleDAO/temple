@@ -1,7 +1,6 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ud } from "@prb/math/src/UD60x18.sol";
 import { TempleTest } from "../../TempleTest.sol";
 import { IInterestRateModel } from "contracts/interfaces/v2/interestRate/IInterestRateModel.sol";
@@ -15,25 +14,26 @@ import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { LinearWithKinkInterestRateModel } from "contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol";
 
+/* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     TempleLineOfCredit public tlc;
     TlcStrategy public tlcStrategy;
 
-    FakeERC20 templeToken;
+    FakeERC20 public templeToken;
     using SafeCast for uint256;
     
-    FakeERC20 daiToken;
-    IInterestRateModel daiInterestRateModel;
-    uint96 daiMaxLtvRatio = 0.85e18; // 85%
+    FakeERC20 public daiToken;
+    IInterestRateModel public daiInterestRateModel;
+    uint96 public daiMaxLtvRatio = 0.85e18; // 85%
 
-    uint256 templePrice = 0.97e18; // $0.97
+    uint256 public templePrice = 0.97e18; // $0.97
 
     TreasuryReservesVault public trv;
     TempleDebtToken public dUSD;
-    uint96 public constant defaultBaseInterest = 0.01e18; // 1%
+    uint96 public constant DEFAULT_BASE_INTEREST = 0.01e18; // 1%
 
-    uint256 public constant trvStartingBalance = 1_000_000e18;
-    uint256 public constant borrowCeiling = 100_000e18;
+    uint256 public constant TRV_STARTING_BALANCE = 1_000_000e18;
+    uint256 public constant BORROW_CEILING = 100_000e18;
 
     uint256 internal constant INITIAL_INTEREST_ACCUMULATOR = 1e27;
     
@@ -52,7 +52,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             vm.label(address(daiToken), "DAI");
             templeToken = new FakeERC20("TempleToken", "Temple", executor, 500_000e18);
             vm.label(address(templeToken), "TEMPLE");
-            dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
+            dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
             vm.label(address(dUSD), "dUSD");
         }
 
@@ -95,9 +95,9 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         // Add the TLC Strategy into TRV so it can borrow DAI
         {
             dUSD.addMinter(address(trv));
-            trv.addNewStrategy(address(tlcStrategy), borrowCeiling, 0);
+            trv.addNewStrategy(address(tlcStrategy), BORROW_CEILING, 0);
             vm.stopPrank();
-            deal(address(daiToken), address(trv), trvStartingBalance, true);
+            deal(address(daiToken), address(trv), TRV_STARTING_BALANCE, true);
         }
     }
 

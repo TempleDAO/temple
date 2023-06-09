@@ -2,12 +2,12 @@
 pragma solidity ^0.8.17;
 // Temple (v2/SafeGuards/SafeForked.sol)
 
-import { GnosisSafe } from '@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol';
+import { GnosisSafe } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
 import { ISignatureValidator } from "@gnosis.pm/safe-contracts/contracts/interfaces/ISignatureValidator.sol";
-import { IThresholdSafeGuard } from "contracts/interfaces/v2/safeGuards/IThresholdSafeGuard.sol";
 
 // Ideally this isn't required. 
 // See: https://github.com/safe-global/safe-contracts/pull/557
+//      https://forum.safe.global/t/safe-contract-v1-5-0/3383
 library SafeForked {
 
     // Cloned from ISignatureValidatorConstants
@@ -36,7 +36,7 @@ library SafeForked {
     function checkNSignatures(address executor, GnosisSafe safe, bytes32 dataHash, bytes memory data, bytes memory signatures, uint256 requiredSignatures) internal view {
         // Check that the provided signature data is not too short
         // Left as a revert string so it shows in the Safe UI, and made more descriptive.
-        require(signatures.length >= requiredSignatures * 65, "Dynamic Signature Threshold Not Met");
+        require(signatures.length >= requiredSignatures * 65, "!Dynamic Signature Threshold");
 
         // There cannot be an owner with address 0.
         address lastOwner = address(0);

@@ -171,6 +171,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
         string memory version,
         Strategy memory strategyData,
         ITempleStrategy.AssetBalance[] memory assetBalances,
+        ITempleStrategy.AssetBalanceDelta[] memory manualAdjustments, 
         uint256 debtBalance
     );
 

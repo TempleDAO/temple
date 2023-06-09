@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 // Temple (interfaces/makerDao/IMakerDaoPotLike.sol)
 
 interface IMakerDaoPotLike {
+    function dsr() external view returns (uint256);
     function chi() external view returns (uint256);
     function rho() external view returns (uint256);
     function pie(address) external view returns (uint256);

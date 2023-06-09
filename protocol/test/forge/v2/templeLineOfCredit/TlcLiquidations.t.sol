@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import { TlcBaseTest } from "./TlcBaseTest.t.sol";
 
+/* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TempleLineOfCreditTestCheckLiquidity is TlcBaseTest {
     function test_computeLiquidity_noBorrowsNoCollateral() external {
         checkLiquidationStatus(alice, true, false, 0, 0);
@@ -423,9 +424,9 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
         uint256 expectedDaiDebtBob;
         uint256 expectedAccumulator;
         {
-            uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, daiBorrowAmount, borrowCeiling);
+            uint96 expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, daiBorrowAmount, BORROW_CEILING);
             expectedDaiDebtAlice = approxInterest(daiBorrowAmount, expectedDaiInterestRate, BORROW_REQUEST_MIN_SECS+1);
-            expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebtAlice+daiBorrowAmount, borrowCeiling);
+            expectedDaiInterestRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebtAlice+daiBorrowAmount, BORROW_CEILING);
             expectedDaiDebtBob = approxInterest(daiBorrowAmount, expectedDaiInterestRate, 1);
             expectedAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiInterestRate, BORROW_REQUEST_MIN_SECS+1);
             checkDebtTokenDetails(expectedDaiDebtAlice+expectedDaiDebtBob, expectedDaiInterestRate, expectedAccumulator, block.timestamp-1);
@@ -448,8 +449,8 @@ contract TempleLineOfCreditTestBatchLiquidate is TlcBaseTest {
 
             // 10 Temple was repaid to TRV, which is more DAI worth than the dUSD debt.
             // Gain = (20 Temple burned * 0.97 TPI) - (total dai borrowed + interest);
-            uint256 expectedDusdDebt = approxInterest(daiBorrowAmount, defaultBaseInterest, BORROW_REQUEST_MIN_SECS);
-            expectedDusdDebt = approxInterest(expectedDusdDebt+daiBorrowAmount, defaultBaseInterest, 1);
+            uint256 expectedDusdDebt = approxInterest(daiBorrowAmount, DEFAULT_BASE_INTEREST, BORROW_REQUEST_MIN_SECS);
+            expectedDusdDebt = approxInterest(expectedDusdDebt+daiBorrowAmount, DEFAULT_BASE_INTEREST, 1);
             uint256 expectedGain = (collateralValue(2*collateralAmount) - expectedDusdDebt);
             assertApproxEqRel(expectedGain, 2909999837902712856788, 1e10, "realised gain");
             vm.expectEmit(address(trv));
