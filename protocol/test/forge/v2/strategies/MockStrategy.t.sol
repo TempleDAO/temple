@@ -76,7 +76,7 @@ contract MockStrategy is AbstractStrategy {
         uint256 c;
     }
 
-    function populateShutdownData(bytes memory data) external override view returns (bytes memory) {
+    function populateShutdownData(bytes memory data) external override pure returns (bytes memory) {
         PopulateShutdownInputData memory inputData = abi.decode(data, (PopulateShutdownInputData));
         return abi.encode(ShutdownInputData({
             x: inputData.p1,

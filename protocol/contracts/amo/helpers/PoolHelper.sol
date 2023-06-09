@@ -5,6 +5,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/AMO__IBalancerVault.sol";
+import "../interfaces/AMO__IBalancerHelpers.sol";
 import "../helpers/AMOCommon.sol";
 
 
@@ -16,12 +17,13 @@ contract PoolHelper {
     using SafeERC20 for IERC20;
 
     AMO__IBalancerVault public immutable balancerVault;
+    AMO__IBalancerHelpers public immutable balancerHelpers;
     IERC20 public immutable bptToken;
     IERC20 public immutable temple;
     IERC20 public immutable stable;
     address public immutable amo;
     // @notice Temple price floor denominator
-    uint256 public constant TPF_PRECISION = 10_000;
+    uint256 public constant BPS_PRECISION = 10_000;
 
     // @notice temple index in balancer pool
     uint64 public immutable templeIndexInBalancerPool;
@@ -30,6 +32,7 @@ contract PoolHelper {
 
     constructor(
       address _balancerVault,
+      address _balancerHelpers,
       address _temple,
       address _stable,
       address _bptToken,
@@ -39,6 +42,7 @@ contract PoolHelper {
     ) {
       balancerPoolId = _balancerPoolId;
       balancerVault = AMO__IBalancerVault(_balancerVault);
+      balancerHelpers = AMO__IBalancerHelpers(_balancerHelpers);
       temple = IERC20(_temple);
       stable = IERC20(_stable);
       bptToken = IERC20(_bptToken);
@@ -59,7 +63,7 @@ contract PoolHelper {
 
     function getSpotPriceScaled() public view returns (uint256 spotPriceScaled) {
         (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
-        spotPriceScaled = (TPF_PRECISION * stableBalance) / templeBalance;
+        spotPriceScaled = (BPS_PRECISION * stableBalance) / templeBalance;
     }
 
     function isSpotPriceBelowTPF(uint256 templePriceFloorNumerator) external view returns (bool) {
@@ -68,7 +72,7 @@ contract PoolHelper {
 
     // below TPF by a given slippage percentage
     function isSpotPriceBelowTPF(uint256 slippage, uint256 templePriceFloorNumerator) public view returns (bool) {
-        uint256 slippageTPF = (slippage * templePriceFloorNumerator) / TPF_PRECISION;
+        uint256 slippageTPF = (slippage * templePriceFloorNumerator) / BPS_PRECISION;
         return getSpotPriceScaled() < (templePriceFloorNumerator - slippageTPF);
     }
 
@@ -83,7 +87,7 @@ contract PoolHelper {
     // slippage in bps
     // above TPF by a given slippage percentage
     function isSpotPriceAboveTPF(uint256 slippage, uint256 templePriceFloorNumerator) public view returns (bool) {
-      uint256 slippageTPF = (slippage * templePriceFloorNumerator) / TPF_PRECISION;
+      uint256 slippageTPF = (slippage * templePriceFloorNumerator) / BPS_PRECISION;
       return getSpotPriceScaled() > (templePriceFloorNumerator + slippageTPF);
     }
 
@@ -99,13 +103,13 @@ contract PoolHelper {
         uint256 rebalancePercentageBoundUp,
         uint256 templePriceFloorNumerator
     ) public view returns (bool) {
-        uint256 percentageIncrease = (templePriceFloorNumerator * rebalancePercentageBoundUp) / TPF_PRECISION;
+        uint256 percentageIncrease = (templePriceFloorNumerator * rebalancePercentageBoundUp) / BPS_PRECISION;
         uint256 maxNewTpf = percentageIncrease + templePriceFloorNumerator;
         (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
 
         // a ratio of stable balances aginst temple balances
         uint256 newTempleBalance = templeBalance - tokensOut;
-        uint256 spot = (stableBalance * TPF_PRECISION ) / newTempleBalance;
+        uint256 spot = (stableBalance * BPS_PRECISION ) / newTempleBalance;
         return spot > maxNewTpf;
     }
 
@@ -114,12 +118,12 @@ contract PoolHelper {
         uint256 rebalancePercentageBoundUp,
         uint256 templePriceFloorNumerator
     ) public view returns (bool) {
-        uint256 percentageIncrease = (templePriceFloorNumerator * rebalancePercentageBoundUp) / TPF_PRECISION;
+        uint256 percentageIncrease = (templePriceFloorNumerator * rebalancePercentageBoundUp) / BPS_PRECISION;
         uint256 maxNewTpf = percentageIncrease + templePriceFloorNumerator;
         (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
 
         uint256 newStableBalance = stableBalance + tokensIn;
-        uint256 spot = (newStableBalance * TPF_PRECISION ) / templeBalance;
+        uint256 spot = (newStableBalance * BPS_PRECISION ) / templeBalance;
         return spot > maxNewTpf;
     }
 
@@ -128,12 +132,12 @@ contract PoolHelper {
         uint256 rebalancePercentageBoundLow,
         uint256 templePriceFloorNumerator
     ) public view returns (bool) {
-        uint256 percentageDecrease = (templePriceFloorNumerator * rebalancePercentageBoundLow) / TPF_PRECISION;
+        uint256 percentageDecrease = (templePriceFloorNumerator * rebalancePercentageBoundLow) / BPS_PRECISION;
         uint256 minNewTpf = templePriceFloorNumerator - percentageDecrease;
         (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
 
         uint256 newStableBalance = stableBalance - tokensOut;
-        uint256 spot = (newStableBalance * TPF_PRECISION) / templeBalance;
+        uint256 spot = (newStableBalance * BPS_PRECISION) / templeBalance;
         return spot < minNewTpf;
     }
 
@@ -142,13 +146,13 @@ contract PoolHelper {
         uint256 rebalancePercentageBoundLow,
         uint256 templePriceFloorNumerator
     ) public view returns (bool) {
-        uint256 percentageDecrease = (templePriceFloorNumerator * rebalancePercentageBoundLow) / TPF_PRECISION;
+        uint256 percentageDecrease = (templePriceFloorNumerator * rebalancePercentageBoundLow) / BPS_PRECISION;
         uint256 minNewTpf = templePriceFloorNumerator - percentageDecrease;
         (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
 
         // a ratio of stable balances against temple balances
         uint256 newTempleBalance = templeBalance + tokensIn;
-        uint256 spot = (stableBalance * TPF_PRECISION) / newTempleBalance;
+        uint256 spot = (stableBalance * BPS_PRECISION) / newTempleBalance;
         return spot < minNewTpf;
     }
 
@@ -162,7 +166,7 @@ contract PoolHelper {
                 ? spotPriceNowScaled - spotPriceBeforeScaled
                 : spotPriceBeforeScaled - spotPriceNowScaled;
         }
-        return (slippageDifference * TPF_PRECISION) / spotPriceBeforeScaled;
+        return (slippageDifference * BPS_PRECISION) / spotPriceBeforeScaled;
     }
 
     function createPoolExitRequest(
@@ -252,7 +256,11 @@ contract PoolHelper {
         AMO__IBalancerVault.JoinPoolRequest memory joinPoolRequest = createPoolJoinRequest(amountIn, joinTokenIndex, minBptOut);
 
         // approve
-        if (joinPoolToken == temple) {
+        uint256 joinPoolTokenAllowance = joinPoolToken.allowance(address(this), address(balancerVault));
+        if (joinPoolTokenAllowance < amountIn) {
+            // some tokens like bb-a-USD always set the max allowance for `balancerVault`
+            // in this case, `safeIncreaseAllowance` will fail due to the arithmetic operation overflow issue
+            joinPoolToken.safeDecreaseAllowance(address(balancerVault), joinPoolTokenAllowance);
             joinPoolToken.safeIncreaseAllowance(address(balancerVault), amountIn);
         }
 
@@ -333,6 +341,82 @@ contract PoolHelper {
         if (willStableExitTakePriceBelowTPFLowerBound(amountOut, rebalancePercentageBoundLow, templePriceFloorNumerator)) {
             revert AMOCommon.HighSlippage();
         }
+    }
+
+    /// @notice Get the quote used to add liquidity proportionally
+    /// @dev Since this is not the view function, this should be called with `callStatic`
+    function proportionalAddLiquidityQuote(
+        uint256 stablesAmount,
+        uint256 slippageBps
+    ) external returns (
+        uint256 templeAmount,
+        uint256 expectedBptAmount,
+        uint256 minBptAmount,
+        AMO__IBalancerVault.JoinPoolRequest memory requestData
+    ) {
+        (uint256 templeBalanceInLP, uint256 stableBalanceInLP) = getTempleStableBalances();
+        // see Balancer SDK for the calculation
+        // https://github.com/balancer/balancer-sdk/blob/be692be5d6057f5e44362667e47bd7ecf9a83b37/balancer-js/src/modules/pools/proportional-amounts/index.ts#L24
+        templeAmount = stableBalanceInLP == 0
+            ? stablesAmount
+            : (templeBalanceInLP * stablesAmount / stableBalanceInLP);
+
+        requestData.assets = new IERC20[](2);
+        requestData.maxAmountsIn = new uint256[](2);
+        
+        (requestData.assets[0], requestData.assets[1]) = templeIndexInBalancerPool == 0 ? (temple, stable) : (stable, temple);
+        (requestData.maxAmountsIn[0], requestData.maxAmountsIn[1]) = templeIndexInBalancerPool == 0 ? (templeAmount, stablesAmount) : (stablesAmount, templeAmount);
+        //uint256 joinKind = 1; //EXACT_TOKENS_IN_FOR_BPT_OUT
+        bytes memory encodedUserdata = abi.encode(uint256(1), requestData.maxAmountsIn, 0);
+        requestData.userData = encodedUserdata;
+        requestData.fromInternalBalance = false;
+
+        (expectedBptAmount, ) = balancerHelpers.queryJoin(balancerPoolId, amo, amo, requestData);
+        minBptAmount = applySlippage(expectedBptAmount, slippageBps);
+
+        // update `requestData` with the `minBptAmount` to which the slippage was applied
+        encodedUserdata = abi.encode(uint256(1), requestData.maxAmountsIn, minBptAmount);
+        requestData.userData = encodedUserdata;
+    }
+
+    /// @notice Get the quote used to remove liquidity
+    /// @dev Since this is not the view function, this should be called with `callStatic`
+    function proportionalRemoveLiquidityQuote(
+        uint256 bptAmount,
+        uint256 slippageBps
+    ) external returns (
+        uint256 expectedTempleAmount,
+        uint256 expectedStablesAmount,
+        uint256 minTempleAmount,
+        uint256 minStablesAmount,
+        AMO__IBalancerVault.ExitPoolRequest memory requestData
+    ) {
+        requestData.assets = new address[](2);
+        requestData.minAmountsOut = new uint256[](2);
+
+        (requestData.assets[0], requestData.assets[1]) = templeIndexInBalancerPool == 0
+            ? (address(temple), address(stable))
+            : (address(stable), address(temple));
+        // EXACT_BPT_IN_FOR_TOKENS_OUT index is 1 for exitKind
+        bytes memory encodedUserdata = abi.encode(uint256(1), bptAmount);
+        requestData.userData = encodedUserdata;
+        requestData.toInternalBalance = false;
+
+        (, requestData.minAmountsOut) = balancerHelpers.queryExit(balancerPoolId, amo, amo, requestData);
+        (expectedTempleAmount, expectedStablesAmount) = templeIndexInBalancerPool == 0
+            ? (requestData.minAmountsOut[0], requestData.minAmountsOut[1])
+            : (requestData.minAmountsOut[1], requestData.minAmountsOut[0]);
+        minTempleAmount = applySlippage(expectedTempleAmount, slippageBps);
+        minStablesAmount = applySlippage(expectedStablesAmount, slippageBps);
+
+        // update `requestData` with the `minAmountsOut` to which the slippage was applied
+        (requestData.minAmountsOut[0], requestData.minAmountsOut[1]) = templeIndexInBalancerPool == 0
+            ? (minTempleAmount, minStablesAmount)
+            : (minStablesAmount, minTempleAmount);
+    }
+
+    function applySlippage(uint256 amountIn, uint256 slippageBps) public pure returns (uint256 amountOut) {
+        amountOut = amountIn * (BPS_PRECISION - slippageBps) / BPS_PRECISION;
     }
 
     modifier onlyAmo() {

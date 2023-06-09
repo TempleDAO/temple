@@ -9,6 +9,7 @@ import { mulDiv } from "@prb/math/src/Common.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
+import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
 
