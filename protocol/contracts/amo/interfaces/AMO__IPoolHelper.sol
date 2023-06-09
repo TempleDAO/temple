@@ -8,6 +8,8 @@ interface AMO__IPoolHelper {
 
     function getBalances() external view returns (uint256[] memory balances);
 
+    function getTempleStableBalances() external view returns (uint256 templeBalance, uint256 stableBalance);
+
     function spotPriceUsingLPRatio() external view returns (uint256 templeBalance, uint256 stableBalance);
 
     function getSpotPriceScaled() external view returns (uint256 spotPriceScaled);
@@ -74,4 +76,25 @@ interface AMO__IPoolHelper {
         uint256 minAmountOut,
         uint256 exitTokenIndex
     ) external view returns (AMO__IBalancerVault.ExitPoolRequest memory request);
+
+    function proportionalAddLiquidityQuote(
+        uint256 stablesAmount,
+        uint256 slippageBps
+    ) external view returns (
+        uint256 templeAmount,
+        uint256 expectedBptAmount,
+        uint256 minBptAmount,
+        AMO__IBalancerVault.JoinPoolRequest memory requestData
+    );
+
+    function proportionalRemoveLiquidityQuote(
+        uint256 bptAmount,
+        uint256 slippageBps
+    ) external view returns (
+        uint256 expectedTempleAmount,
+        uint256 expectedStablesAmount,
+        uint256 minTempleAmount,
+        uint256 minStablesAmount,
+        AMO__IBalancerVault.ExitPoolRequest memory requestData
+    );
 }

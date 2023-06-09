@@ -77,6 +77,7 @@ describe("Pool Helper", async () => {
 
         poolHelper = await new PoolHelper__factory(owner).deploy(
             BALANCER_VAULT,
+            BALANCER_HELPERS,
             TEMPLE,
             BBA_USD_TOKEN,
             bptToken.address,

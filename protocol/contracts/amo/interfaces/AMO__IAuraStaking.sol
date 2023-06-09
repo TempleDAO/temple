@@ -3,6 +3,8 @@ pragma solidity ^0.8.4;
 
 
 interface AMO__IAuraStaking {
+    function rewardsRecipient() external view returns (address);
+    
     function setAuraPoolInfo(uint32 _pId, address _token, address _rewards) external;
 
     function setOperator(address _operator) external;
