@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 // Temple (interfaces/v2/SafeGuards/IThresholdSafeGuard.sol)
 
-import { Guard } from '@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol';
+import { Guard } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
 
 interface IThresholdSafeGuard is Guard {
     event DisableGuardChecksSet(bool value);

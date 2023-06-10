@@ -8,6 +8,7 @@ library CommonEventsAndErrors {
     error InvalidParam();
     error InvalidAddress(address addr);
     error InvalidAccess();
+    error InvalidAmount(address token, uint256 amount);
     error ExpectedNonZero();
     event TokenRecovered(address indexed to, address indexed token, uint256 amount);
 }

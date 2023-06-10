@@ -79,7 +79,9 @@ contract RamosStrategy  is AbstractStrategy {
      * @dev The asset value may be stale at any point in time, depending onthe strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
-    function latestAssetBalances() public override view returns (AssetBalance[] memory assetBalances, uint256 debt) {
+    function latestAssetBalances() public override view returns (
+        AssetBalance[] memory assetBalances
+    ) {
         // RAMOS strategy assets = RAMOS's DAI balance + claimed AURA & BPT rewards =
         // (bpt.balanceOf(RAMOS) / bpt.totalSupply() * Total_DAI_Balance in the LP) + 
         // claimed AURA & BAL rewards
@@ -124,11 +126,9 @@ contract RamosStrategy  is AbstractStrategy {
 
             assetBalances[i] = AssetBalance({
                 asset: asset,
-                balance: addManualAssetBalanceDelta(ramosStrategyBalance, asset)
+                balance: ramosStrategyBalance
             });
         }
-
-        debt = currentDebt();
     }
 
     /**
@@ -159,14 +159,15 @@ contract RamosStrategy  is AbstractStrategy {
         emit RemoveLiquidityAndRepay(stableBalance);
     }
 
+    // @todo add passthrough for quotes
+
     /**
-     * @notice An automated shutdown is not possible for a RAMOS strategy. The
-     * strategy manager (the msig signers) will need to manually liquidate.
+     * @notice @todo 
      *
      * Once done, they can give the all clear for governance to then shutdown the strategy
      * by calling TRV.shutdown(strategy, stables recovered)
      */
-    function automatedShutdown() external virtual override returns (uint256) {
+    function doShutdown(bytes memory /*data*/) internal virtual override returns (uint256) {
         revert Unimplemented();
     }
 }

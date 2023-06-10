@@ -64,6 +64,7 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     /**
      * @notice Match DAI DSR's maths.
      * @dev See DsrManager: 0x373238337Bfe1146fb49989fc222523f83081dDb
+     *      And Pot: 0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7
      */
     function _rmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
         // always rounds down
@@ -80,17 +81,48 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
         z = ((x * RAY) + (y - 1)) / y;
     }
     
+    function _rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            switch x case 0 {switch n case 0 {z := RAY} default {z := 0}}
+            default {
+                switch mod(n, 2) case 0 { z := RAY } default { z := x }
+                let half := div(RAY, 2)  // for rounding.
+                for { n := div(n, 2) } n { n := div(n,2) } {
+                    let xx := mul(x, x)
+                    if iszero(eq(div(xx, x), x)) { revert(0,0) }
+                    let xxRound := add(xx, half)
+                    if lt(xxRound, xx) { revert(0,0) }
+                    x := div(xxRound, RAY)
+                    if mod(n,2) {
+                        let zx := mul(z, x)
+                        if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0,0) }
+                        let zxRound := add(zx, half)
+                        if lt(zxRound, zx) { revert(0,0) }
+                        z := div(zxRound, RAY)
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * @notice The latest balance available in DSR. 
      * This may be stale if the DSR rate hasn't been updated for a while.
      */
     function latestDsrBalance() public view returns (uint256) {
         // pot.chi() == DAI/share (accurate to the last checkpoint)
-        // pot.pie() == number of shares this contract holds.
-        return _rmul(pot.chi(), pot.pie(address(this)));
+        // pot.pie() == number of dsr shares this strategy holds.
+        // pot.rho() == Timestamp of last checkpoint
+
+        uint256 rho = pot.rho();
+        // solhint-disable-next-line not-rely-on-time
+        uint256 chi = (block.timestamp > rho) ? _rpow(pot.dsr(), block.timestamp - rho) * pot.chi() / RAY : pot.chi();
+        return _rmul(chi, pot.pie(address(this)));
     }
 
     function _checkpointChi() internal returns (uint256 chi) {
+        // solhint-disable-next-line not-rely-on-time
         chi = (block.timestamp > pot.rho()) ? pot.drip() : pot.chi();
     }
 
@@ -108,28 +140,30 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * @dev The asset value may be stale at any point in time, depending onthe strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
-    function latestAssetBalances() public override(AbstractStrategy, ITempleStrategy) view returns (AssetBalance[] memory assetBalances, uint256 debt) {
+    function latestAssetBalances() public override(AbstractStrategy, ITempleStrategy) view returns (
+        AssetBalance[] memory assetBalances
+    ) {
         assetBalances = new AssetBalance[](1);
         assetBalances[0] = AssetBalance({
             asset: address(stableToken), 
-            balance: addManualAssetBalanceDelta(latestDsrBalance(), address(stableToken))
+            balance: latestDsrBalance()
         });
-        debt = currentDebt();
     }
 
     /**
      * @notice Calculate the latest assets and liabilities and checkpoint
      * For DAI's Savings Rate contract, we need to call a writable function to get the latest total.
      */
-    function checkpointAssetBalances() external override(AbstractStrategy, ITempleStrategy) returns (AssetBalance[] memory assetBalances, uint256 debt) {
+    function checkpointAssetBalances() external override(AbstractStrategy, ITempleStrategy) returns (
+        AssetBalance[] memory assetBalances
+    ) {
         (uint256 daiBalance,,) = _checkpointDaiBalance();
         assetBalances = new AssetBalance[](1);
         assetBalances[0] = AssetBalance({
             asset: address(stableToken), 
-            balance: addManualAssetBalanceDelta(daiBalance, address(stableToken))
+            balance: daiBalance
         });
-        debt = currentDebt();
-        emit AssetBalancesCheckpoint(assetBalances, debt);
+        emit AssetBalancesCheckpoint(assetBalances);
     }
 
     /**
@@ -232,25 +266,21 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
     }
     
     /**
-     * @notice Shutdown this strategy, only after it has first been
-     * marked the in the Treasury Reserve Vault as `isShuttingDown` in the TRV.
-     *
-     * @dev This first withdraws all DAI from the DSR and sends all funds to the TRV, and then 
-     * applies the shutdown in the TRV.
+     * @notice The strategy executor can shutdown this strategy, only after Governance has 
+     * marked the strategy as `isShuttingDown` in the TRV.
+     * This should handle all liquidations and send all funds back to the TRV, and will then call `TRV.shutdown()`
+     * to apply the shutdown.
+     * @dev Each strategy may require a different set of params to do the shutdown. It can abi encode/decode
+     * that data off chain, or by first calling populateShutdownData()
+     * Shutdown data isn't required for a DSR automated shutdown.
      */
-    function automatedShutdown() external override onlyElevatedAccess returns (uint256) {
+    function doShutdown(bytes memory /*data*/) internal override returns (uint256) {
         // Withdraw all from DSR and send everything back to the Treasury Reserves Vault.
         (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
         _dsrWithdrawal(sharesAvailable, daiAvailable);
-
-        emit Shutdown(daiAvailable);
         
         // Transfer the stables to TRV
         stableToken.safeTransfer(address(treasuryReservesVault), daiAvailable);
-
-        // Now mark as shutdown in the TRV.
-        // This will only succeed if governance has first set the strategy to `isShuttingDown`
-        treasuryReservesVault.shutdown(address(this), daiAvailable);
         return daiAvailable;
     }
 

@@ -6,6 +6,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
+import { IMintableToken } from "contracts/interfaces/common/IMintableToken.sol";
 import { ITempleStrategy, ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
@@ -44,6 +45,11 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     bool public override globalRepaysPaused;
 
     /**
+     * @notice The address of the Temple token.
+     */
+    IMintableToken public immutable override templeToken;
+
+    /**
      * @notice The address of the stable token (eg DAI) used to value all strategy's assets and debt.
      */
     IERC20 public immutable override stableToken;
@@ -57,10 +63,12 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * @notice When strategies are shutdown, all remaining stables are recovered
      * and outstanding debt is burned.
      * This leaves a net balance of positive or negative equity, which is tracked.
-     * @dev Total current equity == shutdownStrategyNetEquity + 
+     * @dev Total current equity == totalRealisedGainOrLoss + 
                                     SUM(strategy.equity() for strategy in active strategies)
      */
-    int256 public override shutdownStrategyNetEquity;
+    int256 public override totalRealisedGainOrLoss;
+
+    // @todo should we keep a map of realised gain/loss per strategy on chain? Currently just off-chain
 
     /**
      * @notice The Treasury Price Index, used within strategies.
@@ -76,11 +84,13 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     constructor(
         address _initialRescuer,
         address _initialExecutor,
+        address _templeToken,
         address _stableToken,
         address _internalDebtToken,
         uint256 _treasuryPriceIndex
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
+        templeToken = IMintableToken(_templeToken);
         stableToken = IERC20(_stableToken);
         internalDebtToken = ITempleDebtToken(_internalDebtToken);
         treasuryPriceIndex = _treasuryPriceIndex;
@@ -100,6 +110,8 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         emit BaseStrategySet(_baseStrategy);
     }
 
+    // @todo put a 'max change' over this, and perhaps a timelock too
+    // https://discord.com/channels/847178511604252741/1063520475659120750/1113883230379196486
     /**
      * @notice Set the Treasury Price Index (TPI)
      * @dev 4dp, so 9800 = 0.98
@@ -126,13 +138,14 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         string memory version,
         Strategy memory strategyData,
         ITempleStrategy.AssetBalance[] memory assetBalances,
+        ITempleStrategy.AssetBalanceDelta[] memory manualAdjustments, 
         uint256 debtBalance
     ) {
         ITempleStrategy _strategy = ITempleStrategy(strategyAddr);
         strategyData = strategies[strategyAddr];
         name = _strategy.strategyName();
         version = _strategy.strategyVersion();
-        (assetBalances, debtBalance) = _strategy.latestAssetBalances();
+        (assetBalances, manualAdjustments, debtBalance) = _strategy.balanceSheet();
     }
 
     function strategyDebtCeiling(address strategy) external override view returns (uint256) {
@@ -149,9 +162,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
 
         // Pull the available from the baseStrategy if it's set.
         if (address(_baseStrategy) != address(0)) {
-            (ITempleStrategy.AssetBalance[] memory assetBalances, ) = _baseStrategy.latestAssetBalances();
+            ITempleStrategy.AssetBalance[] memory assetBalances = _baseStrategy.latestAssetBalances();
 
-            // The base strategy should only have one Asset balance, which should be the stable.
+            // The base strategy will only have one Asset balance, which should be the stable.
             if (assetBalances.length != 1 || assetBalances[0].asset != address(stableToken)) revert CommonEventsAndErrors.InvalidParam();
 
             baseStrategyAvailable = assetBalances[0].balance;
@@ -264,17 +277,6 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     }
 
     /**
-     * @notice The first step in a two-phase shutdown. Executor first sets whether a strategy is slated for shutdown.
-     * The strategy then needs to call shutdown as a separate call once ready.
-     */
-    function setStrategyIsShuttingDown(address strategy, bool isShuttingDown) external override onlyElevatedAccess {
-        Strategy storage strategyData = strategies[strategy];
-        if (!strategyData.isEnabled) revert NotEnabled();
-        emit StrategyIsShuttingDownSet(strategy, isShuttingDown);
-        strategyData.isShuttingDown = isShuttingDown;
-    }
-
-    /**
      * @notice A strategy calls to request more funding.
      * @dev This will revert if the strategy requests more stables than it's able to borrow.
      * `dUSD` will be minted 1:1 for the amount of stables borrowed
@@ -340,12 +342,43 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
                 uint256 _withdrawnAmount = _baseStrategy.trvWithdraw(_stablesToWithdraw);
 
                 // Burn that amount of dUSD from the base strategy.
-                internalDebtToken.burn(address(_baseStrategy), _withdrawnAmount, true);
+                internalDebtToken.burn(address(_baseStrategy), _withdrawnAmount);
             }
         }
 
         // Finally send the stables.
         stableToken.safeTransfer(to, amount);
+    }
+
+    // @todo add a repay function where TRV/RAMOS can pay down some of the debt with Temple.
+    // This will burn the Temple, and burn the equivalent amount of dUSD
+    function repayTemple(uint256 repayAmount, address strategy) external override {
+        if (repayAmount == 0) revert CommonEventsAndErrors.ExpectedNonZero();
+        if (globalRepaysPaused) revert RepaysPaused();
+
+        Strategy storage strategyData = strategies[strategy];
+        if (!strategyData.isEnabled) revert NotEnabled();
+        if (strategyData.repaysPaused) revert RepaysPaused();
+
+        // dUSD price = Temple * TPI
+        uint256 debtToBurn = repayAmount * treasuryPriceIndex / 1e18; 
+
+        // @todo need an event like:?
+        // emit RepayTemple(strategy, msg.sender, repayAmount, debtToBurn);
+
+        emit Repay(strategy, msg.sender, debtToBurn);
+
+        templeToken.burn(msg.sender, repayAmount);
+
+        // Burn the dUSD tokens. This will fail if the repayment amount is greater than the balance.
+        uint256 burnedAmount = internalDebtToken.burn(strategy, debtToBurn);
+
+        // If more stables are repaid than the total debt left, then that difference is a realised gain.
+        if (debtToBurn > burnedAmount) {
+            uint256 gain = debtToBurn-burnedAmount;
+            emit RealisedGain(strategy, gain);
+            totalRealisedGainOrLoss += int256(gain);
+        }
     }
 
     /**
@@ -376,17 +409,28 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         emit Repay(_strategyAddr, _from, _repayAmount);
 
         // Burn the dUSD tokens. This will fail if the repayment amount is greater than the balance.
-        uint256 burnedAmount = internalDebtToken.burn(_strategyAddr, _repayAmount, true);
+        uint256 burnedAmount = internalDebtToken.burn(_strategyAddr, _repayAmount);
 
         // Pull the stables from the strategy.
         stableToken.safeTransferFrom(_from, address(this), _repayAmount);
 
-        // If more stables are repaid than their total debt, then that difference is a realised gain.
+        // If more stables are repaid than the total debt left, then that difference is a realised gain.
         if (_repayAmount > burnedAmount) {
             uint256 gain = _repayAmount-burnedAmount;
             emit RealisedGain(_strategyAddr, gain);
-            shutdownStrategyNetEquity += int256(gain);
+            totalRealisedGainOrLoss += int256(gain);
         }
+    }
+
+    /**
+     * @notice The first step in a two-phase shutdown. Executor first sets whether a strategy is slated for shutdown.
+     * The strategy then needs to call shutdown as a separate call once ready.
+     */
+    function setStrategyIsShuttingDown(address strategy, bool isShuttingDown) external override onlyElevatedAccess {
+        Strategy storage strategyData = strategies[strategy];
+        if (!strategyData.isEnabled) revert NotEnabled();
+        emit StrategyIsShuttingDownSet(strategy, isShuttingDown);
+        strategyData.isShuttingDown = isShuttingDown;
     }
 
     /**
@@ -396,7 +440,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * All outstanding dUSD debt is burned, leaving a net gain/loss of equity for the shutdown strategy.
      */
     function shutdown(address strategyAddr, uint256 stablesRecovered) external override {
-        if (msg.sender != strategyAddr) validateElevatedAccess(msg.sender, msg.sig);
+        if (msg.sender != strategyAddr && !isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
 
         Strategy storage strategyData = strategies[strategyAddr];
         if (!strategyData.isEnabled) revert NotEnabled();
@@ -406,7 +450,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         uint256 _remainingDebt = internalDebtToken.burnAll(strategyAddr);
 
         int256 _realisedGainOrLoss = int256(stablesRecovered) - int256(_remainingDebt);
-        shutdownStrategyNetEquity += _realisedGainOrLoss;
+        totalRealisedGainOrLoss += _realisedGainOrLoss;
 
         if (_realisedGainOrLoss > 0) {
             emit RealisedGain(strategyAddr, uint256(_realisedGainOrLoss));

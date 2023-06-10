@@ -2,6 +2,7 @@ pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Test, StdChains } from "forge-std/Test.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
@@ -13,6 +14,7 @@ abstract contract TempleTest is Test {
 
     address public unauthorizedUser = makeAddr("unauthorizedUser");
     address public alice = makeAddr("alice");
+    address public bob = makeAddr("bob");
     address public operator = makeAddr("operator");
     address public executor = makeAddr("executor");
     address public rescuer = makeAddr("rescuer");
@@ -22,6 +24,10 @@ abstract contract TempleTest is Test {
         blockNumber = _blockNumber;
         chain = getChain(chainAlias);
         forkId = vm.createSelectFork(chain.rpcUrl, _blockNumber);
+    }
+
+    function dealAdditional(IERC20 token, address to, uint256 additionalAmount) internal {
+        deal(address(token), to, token.balanceOf(to) + additionalAmount, true);
     }
 
     /// @dev Deploy a new UUPS Proxy, given an implementation.

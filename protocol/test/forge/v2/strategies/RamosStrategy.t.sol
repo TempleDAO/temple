@@ -7,7 +7,6 @@ import { RamosStrategy } from "contracts/v2/strategies/RamosStrategy.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
-import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { ITreasuryReservesVault, TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
@@ -57,12 +56,14 @@ contract RamosStrategyTestBase is TempleTest {
         ramos.setRebalancePercentageBounds(200, 500);
         ramos.setMaxRebalanceAmounts(1e28, 1e28, 1e28); // bpt, temple, stable
         vm.stopPrank();
+        
         // `amoStaking` settings
         address amoStakingOwner = amoStaking.owner();
         startHoax(amoStakingOwner);
         amoStaking.setOperator(address(ramos));
         amoStaking.setRewardsRecipient(executor);
         vm.stopPrank();
+        
         // `templeToken` settings
         address templeTokenOwner = TempleERC20Token(temple).owner();
         startHoax(templeTokenOwner);
@@ -70,14 +71,19 @@ contract RamosStrategyTestBase is TempleTest {
         vm.stopPrank();
 
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, defaultBaseInterest);
-        trv = new TreasuryReservesVault(rescuer, executor, address(dai), address(dUSD), 9700);
+        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), 9700);
         strategy = new RamosStrategy(rescuer, executor, "RamosStrategy", address(trv), address(ramos));
         vm.startPrank(executor);
         dUSD.addMinter(executor);
         vm.stopPrank();
     }
 
-    function getRamosBalances() internal view returns (uint256 bptTotalSupply, uint256 bptBalance, uint256 templeBalance, uint256 stableBalance) {
+    function getRamosBalances() internal view returns (
+        uint256 bptTotalSupply, 
+        uint256 bptBalance, 
+        uint256 templeBalance, 
+        uint256 stableBalance
+    ) {
         bptTotalSupply = IBPT(address(bptToken)).getActualSupply();
 
         if (bptTotalSupply > 0) {
@@ -105,8 +111,8 @@ contract RamosStrategyTestAdmin is RamosStrategyTestBase {
         assertEq(address(strategy.treasuryReservesVault()), address(trv));
         assertEq(address(strategy.stableToken()), address(dai));
         assertEq(address(strategy.internalDebtToken()), address(dUSD));
-        assertEq(strategy.manualAssetBalanceDeltas(address(dai)), 0);
-        assertEq(strategy.currentDebt(), 0);
+        ITempleStrategy.AssetBalanceDelta[] memory adjs = strategy.manualAdjustments();
+        assertEq(adjs.length, 0);
 
         assertEq(address(strategy.ramos()), address(ramos));
         address[] memory assets = new address[](0);
@@ -114,8 +120,9 @@ contract RamosStrategyTestAdmin is RamosStrategyTestBase {
     }
 
     function test_automatedShutdown() public {
+        vm.startPrank(executor);
         vm.expectRevert(abi.encodeWithSelector(ITempleStrategy.Unimplemented.selector));
-        strategy.automatedShutdown();
+        strategy.automatedShutdown("");
     }
 }
 
@@ -154,14 +161,6 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
         _setUp();
     }
 
-    function test_currentDebt() public {
-        vm.startPrank(executor);
-        dUSD.mint(address(strategy), 100e18);
-        assertEq(strategy.currentDebt(), 100e18);
-        dUSD.burn(address(strategy), 100e18, false);
-        assertEq(strategy.currentDebt(), 0);
-    }
-
     function test_setAssets() public {
         vm.startPrank(executor);
         
@@ -191,32 +190,28 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
 
     function test_latestAssetBalances_default() public {
         vm.startPrank(executor);
-        (ITempleStrategy.AssetBalance[] memory assetBalances, uint256 debt) = strategy.latestAssetBalances();
+        ITempleStrategy.AssetBalance[] memory assetBalances = strategy.latestAssetBalances();
         assertEq(assetBalances.length, 0);
-        assertEq(debt, 0);
 
         // Deal some assets
         deal(address(dai), address(strategy), 50, true);
         deal(address(aura), address(strategy), 100, true);
         deal(address(bal), address(strategy), 200, true);
-        dUSD.mint(address(strategy), 100e18);
 
-        (assetBalances, debt) = strategy.latestAssetBalances();
+        assetBalances = strategy.latestAssetBalances();
         assertEq(assetBalances.length, 0);
-        assertEq(debt, 100e18);
     }
 
     function test_latestAssetBalances() public {
         vm.prank(executor);
         strategy.setAssets(reportedAssets);
         ITempleStrategy.AssetBalance[] memory assetBalances;
-        uint256 debt;
 
         (uint256 initialBptTotalSupply,,, uint256 initialDaiBalance) = getRamosBalances();
 
         // Assets set, no balances
         {
-            (assetBalances, debt) = strategy.latestAssetBalances();
+            assetBalances = strategy.latestAssetBalances();
             assertEq(assetBalances.length, 3);
             for (uint256 i; i < assetBalances.length; ++i) {
                 assertEq(assetBalances[i].asset, reportedAssets[i]);
@@ -226,7 +221,6 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
                     assertEq(assetBalances[i].balance, 0);
                 }
             }
-            assertEq(debt, 0);
         }
 
         // Deal some assets to the strategy
@@ -237,7 +231,7 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             vm.prank(executor);
             dUSD.mint(address(strategy), 100e18);
 
-            (assetBalances, debt) = strategy.latestAssetBalances();
+            assetBalances = strategy.latestAssetBalances();
             assertEq(assetBalances.length, 3);
             assertEq(assetBalances[0].asset, reportedAssets[0]);
             assertEq(assetBalances[0].balance, initialDaiBalance+50);
@@ -245,14 +239,13 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             assertEq(assetBalances[1].balance, 100);
             assertEq(assetBalances[2].asset, reportedAssets[2]);
             assertEq(assetBalances[2].balance, 200);
-            assertEq(debt, 100e18);
         }
 
         // Deal some BPTs to the `amoStaking`, no balance changes
         {
             deal(address(bptToken), address(amoStaking), 100, true);
 
-            (assetBalances, debt) = strategy.latestAssetBalances();
+            assetBalances = strategy.latestAssetBalances();
             assertEq(assetBalances.length, 3);
             assertEq(assetBalances[0].asset, reportedAssets[0]);
             assertEq(assetBalances[0].balance, initialDaiBalance+50);
@@ -260,13 +253,12 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             assertEq(assetBalances[1].balance, 100);
             assertEq(assetBalances[2].asset, reportedAssets[2]);
             assertEq(assetBalances[2].balance, 200);
-            assertEq(debt, 100e18);
         }
 
         // Add some BPTs to the user, balance changes
         {
             deal(address(bptToken), alice, 100, true);
-            (assetBalances, debt) = strategy.latestAssetBalances();
+            assetBalances = strategy.latestAssetBalances();
 
             assertEq(assetBalances.length, 3);
             assertEq(assetBalances[0].asset, reportedAssets[0]);
@@ -275,7 +267,6 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             assertEq(assetBalances[1].balance, 100);
             assertEq(assetBalances[2].asset, reportedAssets[2]);
             assertEq(assetBalances[2].balance, 200);
-            assertEq(debt, 100e18);
         }
 
         // Deal some rewards to the `amoStaking`
@@ -283,7 +274,7 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             deal(address(aura), address(amoStaking), 100, true);
             deal(address(bal), address(amoStaking), 200, true);
 
-            (assetBalances, debt) = strategy.latestAssetBalances();
+            assetBalances = strategy.latestAssetBalances();
             assertEq(assetBalances.length, 3);
             assertEq(assetBalances[0].asset, reportedAssets[0]);
             assertApproxEqAbs(assetBalances[0].balance, (initialDaiBalance+50) * initialBptTotalSupply / (initialBptTotalSupply+100), 1);  // delta by the rounding
@@ -291,7 +282,6 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             assertEq(assetBalances[1].balance, 2*100);
             assertEq(assetBalances[2].asset, reportedAssets[2]);
             assertEq(assetBalances[2].balance, 2*200);
-            assertEq(debt, 100e18);
         }
 
         // Deal some rewards to the `rewardsRecipient` of `amoStaking`, no balance changes
@@ -302,7 +292,7 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             deal(address(aura), address(rewardsRecipient), 100, true);
             deal(address(bal), address(rewardsRecipient), 200, true);
 
-            (assetBalances, debt) = strategy.latestAssetBalances();
+            assetBalances = strategy.latestAssetBalances();
             assertEq(assetBalances.length, 3);
             assertEq(assetBalances[0].asset, reportedAssets[0]);
             assertApproxEqAbs(assetBalances[0].balance, (initialDaiBalance+50) * initialBptTotalSupply / (initialBptTotalSupply+100), 1);  // delta by the rounding
@@ -310,27 +300,6 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
             assertEq(assetBalances[1].balance, 2*100);
             assertEq(assetBalances[2].asset, reportedAssets[2]);
             assertEq(assetBalances[2].balance, 2*200);
-            assertEq(debt, 100e18);
-        }
-
-        // Add some manual balance deltas
-        {
-            ITempleStrategy.AssetBalanceDelta[] memory deltas = new ITempleStrategy.AssetBalanceDelta[](4);
-            deltas[0] = ITempleStrategy.AssetBalanceDelta(address(dai), -50);
-            deltas[1] = ITempleStrategy.AssetBalanceDelta(address(aura), 50);
-            deltas[2] = ITempleStrategy.AssetBalanceDelta(address(bal), -50);
-            vm.prank(executor);
-            strategy.setManualAssetBalanceDeltas(deltas);
-
-            (assetBalances, debt) = strategy.latestAssetBalances();
-            assertEq(assetBalances.length, 3);
-            assertEq(assetBalances[0].asset, reportedAssets[0]);
-            assertApproxEqAbs(assetBalances[0].balance, (initialDaiBalance+50) * initialBptTotalSupply / (initialBptTotalSupply+100) - 50, 1);
-            assertEq(assetBalances[1].asset, reportedAssets[1]);
-            assertEq(assetBalances[1].balance, 2*100+50);
-            assertEq(assetBalances[2].asset, reportedAssets[2]);
-            assertEq(assetBalances[2].balance, 2*200-50);
-            assertEq(debt, 100e18);
         }
     }
 }
@@ -370,7 +339,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         assertEq(ceiling, borrowCeiling);
 
         (, uint256 bptBalanceBefore, uint256 templeBalanceBefore, uint256 stableBalanceBefore) = getRamosBalances();
-        (assetBalances,) = strategy.latestAssetBalances();
+        assetBalances = strategy.latestAssetBalances();
         uint256 daiBalanceBefore = assetBalances[0].balance;
 
         (, uint256 bptOut,, AMO__IBalancerVault.JoinPoolRequest memory requestData) = PoolHelper(POOL_HELPER_ADDRESS).proportionalAddLiquidityQuote(amount, slippageBps);
@@ -382,7 +351,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         strategy.borrowAndAddLiquidity(amount, requestData);
         vm.stopPrank();
 
-        (assetBalances,) = strategy.latestAssetBalances();
+        assetBalances = strategy.latestAssetBalances();
         uint256 daiBalanceAfter = assetBalances[0].balance;
 
         assertEq(dai.balanceOf(address(strategy)), 0);
@@ -430,7 +399,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
         }
 
         (,, uint256 templeBalanceBefore, uint256 stableBalanceBefore) = getRamosBalances();
-        (assetBalances,) = strategy.latestAssetBalances();
+        assetBalances = strategy.latestAssetBalances();
         uint256 daiBalanceBefore = assetBalances[0].balance;
 
         // Remove liquidity and repay
@@ -441,7 +410,7 @@ contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
 
         strategy.removeLiquidityAndRepay(requestDataForRemoveLiquidity, bptOut/2);
 
-        (assetBalances,) = strategy.latestAssetBalances();
+        assetBalances = strategy.latestAssetBalances();
         uint256 daiBalanceAfter = assetBalances[0].balance;
 
         assertEq(dai.balanceOf(address(strategy)), 0);

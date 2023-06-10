@@ -1,14 +1,15 @@
 pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { GnosisSafe } from '@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol';
-import { Enum } from '@gnosis.pm/safe-contracts/contracts/common/Enum.sol';
+import { GnosisSafe } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
+import { Enum } from "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 import { TempleTest } from "../../TempleTest.sol";
 import { ThresholdSafeGuard, IThresholdSafeGuard } from "contracts/v2/safeGuards/ThresholdSafeGuard.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
+/* solhint-disable func-name-mixedcase */
 contract MockContract {
     bool public someState;
 
@@ -34,7 +35,7 @@ contract ThresholdSafeGuardTestBase is TempleTest {
     ThresholdSafeGuard public guard;
     MockContract public mock;
     FakeERC20 public dai;
-    uint256 public constant defaultSignaturesThreshold = 2;
+    uint256 public constant DEFAULT_SIGNATURES_THRESHOLD = 2;
 
     GnosisSafe public safe;
     address[] public safeOwners;
@@ -42,7 +43,7 @@ contract ThresholdSafeGuardTestBase is TempleTest {
     function setUp() public {
         fork("mainnet", 16675385);
 
-        guard = new ThresholdSafeGuard(rescuer, executor, defaultSignaturesThreshold);
+        guard = new ThresholdSafeGuard(rescuer, executor, DEFAULT_SIGNATURES_THRESHOLD);
         mock = new MockContract();
         safe = GnosisSafe(payable(0x4D6175d58C5AceEf30F546C0d5A557efFa53A950));
         safeOwners = safe.getOwners();
@@ -83,14 +84,15 @@ contract ThresholdSafeGuardTestAdmin is ThresholdSafeGuardTestBase {
         assertEq(guard.rescuers(rescuer), true);
         assertEq(guard.VERSION(), "1.0.0");
         assertEq(guard.disableGuardChecks(), false);
-        assertEq(guard.defaultSignaturesThreshold(), defaultSignaturesThreshold);
+        assertEq(guard.defaultSignaturesThreshold(), DEFAULT_SIGNATURES_THRESHOLD);
 
         address[] memory executors = guard.safeTxExecutors();
         assertEq(executors.length, 0);
     }
 
     function test_setDisableGuardChecks(bool answer) public {
-        vm.startPrank(executor);
+        vm.startPrank(rescuer);
+        guard.setRescueMode(true);
 
         vm.expectEmit();
         emit DisableGuardChecksSet(answer);
@@ -157,12 +159,25 @@ contract ThresholdSafeGuardTestAccess is ThresholdSafeGuardTestBase {
         expectElevatedAccess();
         guard.setDisableGuardChecks(true);
 
-        // Works for either executor or rescuer
+        // Doesn't work for the executor
         vm.prank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         guard.setDisableGuardChecks(true);
 
-        vm.prank(rescuer);
+        // Doesn't work for the rescuer unless in rescue mode
+        vm.startPrank(rescuer);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
         guard.setDisableGuardChecks(true);
+
+        // Works in rescue mode
+        guard.setRescueMode(true);
+        guard.setDisableGuardChecks(true);
+
+        // Still not for the executor
+        changePrank(executor);
+        vm.expectRevert(abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector));
+        guard.setDisableGuardChecks(true);
+
     }
 
     function test_access_addSafeTxExecutor() public {
@@ -221,7 +236,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
             // Check the derived getThreshold
             if (threshold == 0) {
-                assertEq(guard.getThreshold(contractAddr, functionSignature), defaultSignaturesThreshold);
+                assertEq(guard.getThreshold(contractAddr, functionSignature), DEFAULT_SIGNATURES_THRESHOLD);
             } else {
                 assertEq(guard.getThreshold(contractAddr, functionSignature), threshold);
             }
@@ -252,8 +267,8 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
             // Check the derived getThreshold
             if (threshold == 0) {
-                assertEq(guard.getThreshold(contractAddr, functionSignature1), defaultSignaturesThreshold);
-                assertEq(guard.getThreshold(contractAddr, functionSignature2), defaultSignaturesThreshold);
+                assertEq(guard.getThreshold(contractAddr, functionSignature1), DEFAULT_SIGNATURES_THRESHOLD);
+                assertEq(guard.getThreshold(contractAddr, functionSignature2), DEFAULT_SIGNATURES_THRESHOLD);
             } else {
                 assertEq(guard.getThreshold(contractAddr, functionSignature1), threshold);
                 assertEq(guard.getThreshold(contractAddr, functionSignature2), threshold);
@@ -329,7 +344,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
 
         changePrank(address(safe));
         
-        vm.expectRevert("Dynamic Signature Threshold Not Met");
+        vm.expectRevert("!Dynamic Signature Threshold");
         doCheck("", safeOwners[0], "");
     }
 
@@ -338,7 +353,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         guard.setDefaultSignaturesThreshold(3);
         changePrank(address(safe));
 
-        vm.expectRevert("Dynamic Signature Threshold Not Met");
+        vm.expectRevert("!Dynamic Signature Threshold");
         doCheck("", safeOwners[0], signexecutor(safeOwners[0]));
     }
 
@@ -353,7 +368,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
             signEOA(dataHash, pk2)
         );
 
-        vm.expectRevert("Dynamic Signature Threshold Not Met");
+        vm.expectRevert("!Dynamic Signature Threshold");
         doCheck("", safeOwners[0], signature);
     }
 
@@ -421,7 +436,7 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
                 signEOA(dataHash, pk2),
                 signEOA(dataHash, pk3)
             );
-            vm.expectRevert("Dynamic Signature Threshold Not Met");
+            vm.expectRevert("!Dynamic Signature Threshold");
             doCheck(fnCall, safeOwners[0], signature);
         }
     }
@@ -436,23 +451,27 @@ contract ThresholdSafeGuardTest is ThresholdSafeGuardTestBase {
         // Not enough signers
         {
             changePrank(address(safe));
-            vm.expectRevert("Dynamic Signature Threshold Not Met");
+            vm.expectRevert("!Dynamic Signature Threshold");
             doCheck(fnCall, safeOwners[0], signature);
         }
 
         // Not enough signers - disabled, so passes
         {
-            changePrank(executor);
+            changePrank(rescuer);
+            guard.setRescueMode(true);
             guard.setDisableGuardChecks(true);
+            changePrank(bob);
             doCheck(fnCall, safeOwners[0], signature);
         }
 
         // Re-enabled -- Not enough signers again
         {
-            changePrank(executor);
+            changePrank(rescuer);
             guard.setDisableGuardChecks(false);
+            guard.setRescueMode(false);
+
             changePrank(address(safe));
-            vm.expectRevert("Dynamic Signature Threshold Not Met");
+            vm.expectRevert("!Dynamic Signature Threshold");
             doCheck(fnCall, safeOwners[0], signature);
         }
     }

@@ -38,9 +38,10 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
 
     /**
      * @notice Set the contract into or out of rescue mode.
-     * Only the rescuers or executors are allowed to set.
+     * Only the rescuers are allowed to set.
      */
-    function setRescueMode(bool value) external override onlyExecutorsOrResucers {
+    function setRescueMode(bool value) external override {
+        if (!rescuers[msg.sender]) revert CommonEventsAndErrors.InvalidAccess();
         emit RescueModeSet(value);
         inRescueMode = value;
     }
@@ -74,20 +75,16 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
         explicitFunctionAccess[allowedCaller][fnSelector] = value;
     }
 
-    function validateElevatedAccess(address caller, bytes4 fnSelector) internal view {
+    function isElevatedAccess(address caller, bytes4 fnSelector) internal view returns (bool) {
         if (inRescueMode) {
-            if (!rescuers[caller]) {
-                if (!explicitFunctionAccess[caller][fnSelector]) {
-                    revert CommonEventsAndErrors.InvalidAccess();
-                }
-            }
-        } else {
-            if (!executors[caller]) {
-                if (!explicitFunctionAccess[caller][fnSelector]) {
-                    revert CommonEventsAndErrors.InvalidAccess();
-                }
-            }
+            // If we're in rescue mode, then only the rescuers can call
+            return rescuers[caller];
+        } else if (executors[caller] || explicitFunctionAccess[caller][fnSelector]) {
+            // If we're not in rescue mode, the executors can call all functions
+            // or the caller has been given explicit access on this function
+            return true;
         }
+        return false;
     }
 
     /**
@@ -95,15 +92,16 @@ abstract contract TempleElevatedAccess is ITempleElevatedAccess {
      * If 'rescue mode' has been enabled, then only the rescuers are allowed to call.
      */
     modifier onlyElevatedAccess() {
-        validateElevatedAccess(msg.sender, msg.sig);
+        // @todo AUDITORS -- are there any security concerns with using `msg.sig` in this way?
+        if (!isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
         _;
     }
 
     /**
      * @notice Only the executors or rescuers can call.
      */
-    modifier onlyExecutorsOrResucers() {
-        if (!rescuers[msg.sender] && !executors[msg.sender]) revert CommonEventsAndErrors.InvalidAccess();
+    modifier onlyInRescueMode() {
+        if (!(inRescueMode && rescuers[msg.sender])) revert CommonEventsAndErrors.InvalidAccess();
         _;
     }
 }

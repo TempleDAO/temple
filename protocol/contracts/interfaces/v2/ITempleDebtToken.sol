@@ -7,7 +7,6 @@ import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleEle
 
 interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
     error NonTransferrable();
-    error BurnExceedsBalance(uint256 availableToBurn, uint256 amount);
     error CannotMintOrBurn(address caller);
 
     event BaseInterestRateSet(uint256 rate);
@@ -24,7 +23,7 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
      * @notice The current (base rate) interest common for all users. This can be updated by governance
      * @dev 1e18 format, where 0.01e18 = 1%
      */
-    function baseRate() external view returns (uint256);
+    function baseRate() external view returns (uint96);
 
     /**
      * @notice The (base rate) total number of shares allocated out to users for internal book keeping
@@ -137,12 +136,11 @@ interface ITempleDebtToken is IERC20, IERC20Metadata, ITempleElevatedAccess {
      *   3/ Finally if there is still some repayment amount unallocated, 
      *      then the principal will be paid down. This is like a new debt is issued for the lower balance,
      *      where interest accrual starts fresh.
+     * More debt than the user has cannot be burned - it is capped. The actual amount burned is returned
      * @param _debtor The address of the debtor
      * @param _burnAmount The notional amount of debt tokens to repay.
-     * @param _capBurnAmount Cap the amount burned, up to the debtor's current balance.
-     *        If false and `_burnAmount` is greater than their balance then this will revert.
      */
-    function burn(address _debtor, uint256 _burnAmount, bool _capBurnAmount) external returns (uint256 burnedAmount);
+    function burn(address _debtor, uint256 _burnAmount) external returns (uint256 burnedAmount);
 
     /**
      * @notice Approved Minters can burn the entire debt on behalf of a user.

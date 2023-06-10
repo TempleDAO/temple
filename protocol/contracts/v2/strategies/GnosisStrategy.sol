@@ -6,7 +6,7 @@ import { SafeERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/Saf
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
-contract GnosisStrategy  is AbstractStrategy {
+contract GnosisStrategy is AbstractStrategy {
     using SafeERC20 for IERC20;
     string public constant VERSION = "1.0.0";
 
@@ -111,7 +111,9 @@ contract GnosisStrategy  is AbstractStrategy {
      * @dev The asset value may be stale at any point in time, depending onthe strategy. 
      * It may optionally implement `checkpointAssetBalances()` in order to update those balances.
      */
-    function latestAssetBalances() public override view returns (AssetBalance[] memory assetBalances, uint256 debt) {
+    function latestAssetBalances() public override view returns (
+        AssetBalance[] memory assetBalances
+    ) {
         uint256 _length = assets.length;
         assetBalances = new AssetBalance[](_length);
 
@@ -119,35 +121,28 @@ contract GnosisStrategy  is AbstractStrategy {
         uint256 _gnosisBalance;
         for (uint256 i; i < _length; ++i) {
             _asset = assets[i];
-
-            if (_asset == address(0)) {
-                // 0x00 == ETH
-                _gnosisBalance = gnosisSafeWallet.balance;
-            } else {
-                // Sum the gnosis balance and this contract's balance of the ERC20.
-                _gnosisBalance = (
+            _gnosisBalance = _asset == address(0)
+                ? gnosisSafeWallet.balance // ETH
+                : (
                     IERC20(_asset).balanceOf(gnosisSafeWallet) +
                     IERC20(_asset).balanceOf(address(this))
                 );
-            }
 
             assetBalances[i] = AssetBalance({
                 asset: _asset,
-                balance: addManualAssetBalanceDelta(_gnosisBalance, _asset)
+                balance: _gnosisBalance
             });
         }
-
-        debt = currentDebt();
     }
 
     /**
      * @notice An automated shutdown is not possible for a Gnosis strategy. The
-     * strategy manager (the msig signers) will need to manually liquidate.
+     * executor will need to manually liquidate.
      *
      * Once done, they can give the all clear for governance to then shutdown the strategy
      * by calling TRV.shutdown(strategy, stables recovered)
      */
-    function automatedShutdown() external virtual override returns (uint256) {
+    function doShutdown(bytes memory /*data*/) internal virtual override returns (uint256) {
         revert Unimplemented();
     }
 

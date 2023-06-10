@@ -4,9 +4,9 @@ pragma solidity ^0.8.17;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { EnumerableSet } from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-import { GnosisSafe } from '@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol';
-import { Enum } from '@gnosis.pm/safe-contracts/contracts/common/Enum.sol';
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { GnosisSafe } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
+import { Enum } from "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 import { IThresholdSafeGuard } from "contracts/interfaces/v2/safeGuards/IThresholdSafeGuard.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
@@ -58,8 +58,13 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
         defaultSignaturesThreshold = _defaultSignaturesThreshold;
     }
 
-    // Who should have access to do this? Rescue mode disables the guard
-    function setDisableGuardChecks(bool value) external onlyExecutorsOrResucers {
+    /**
+     * @notice Disable the Safe Guard, so all transactions pass if the Gnosis threshold of signers is met.
+     *   1. Rescuers setRescueMode(true)
+     *   2. Rescuers setDisableGuardChecks(true)
+     * Note: Rescuers won't have a Guard on their multisig, so this can't be bricked.
+     */
+    function setDisableGuardChecks(bool value) external onlyInRescueMode {
         disableGuardChecks = value;
         emit DisableGuardChecksSet(value);
     }
@@ -212,6 +217,7 @@ contract ThresholdSafeGuard is IThresholdSafeGuard, TempleElevatedAccess {
     }
 
     /// @notice unused
+    // solhint-disable-next-line no-empty-blocks
     function checkAfterExecution(bytes32, bool) external view {}
 
     // solhint-disable-next-line payable-fallback
