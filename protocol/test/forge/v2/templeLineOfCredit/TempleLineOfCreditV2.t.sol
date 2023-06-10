@@ -52,7 +52,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
     // @dev After the trv/etc has been set
     function test_initalization() public {
         // Reserve tokens are initialized
-        checkDebtTokenDetails(0, 0, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
+        checkDebtTokenDetails(0, MIN_BORROW_RATE, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
 
         // After the expected init functions
         {
@@ -103,6 +103,8 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
     }
 
     function test_setTlcStrategy() public {
+        borrow(alice, 20_000e18, 15_000e18, BORROW_REQUEST_MIN_SECS);
+
         vm.startPrank(executor);
         assertEq(address(tlc.tlcStrategy()), address(tlcStrategy));
         assertEq(address(tlc.treasuryReservesVault()), address(trv));
@@ -117,10 +119,20 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
             address(templeToken)
         );
 
-        vm.expectEmit(address(tlc));
-        emit TlcStrategySet(address(newTlcStrategy), address(newTrv));
+        // Add the new strategy with the ceiling at 100%
+        // so the interest rate needs updating.
+        newTrv.addNewStrategy(address(newTlcStrategy), 15_000e18, 0);
 
-        tlc.setTlcStrategy(address(newTlcStrategy));
+        {
+            vm.expectEmit(address(tlc));
+            emit TlcStrategySet(address(newTlcStrategy), address(newTrv));
+
+            vm.expectEmit(address(tlc));
+            emit InterestRateUpdate(0.2e18); // 100% UR
+
+            tlc.setTlcStrategy(address(newTlcStrategy));
+        }
+        
         assertEq(address(tlc.tlcStrategy()), address(newTlcStrategy));
         assertEq(address(tlc.treasuryReservesVault()), address(newTrv));
         assertEq(daiToken.allowance(address(tlc), address(trv)), 0);
@@ -176,7 +188,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
     function test_setInterestRateModel_noDebt() public {
         // After a rate refresh, the 'next' period of interest is set.
         tlc.refreshInterestRates();
-        checkDebtTokenDetails(0, 0.05e18, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
+        checkDebtTokenDetails(0, MIN_BORROW_RATE, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
 
         uint256 age = 10000;
         vm.warp(block.timestamp + age);
@@ -205,7 +217,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         checkDebtTokenData(actualTotals, DebtTokenData({
             totalDebt: 0,
             interestRate: 10e18 / 100,
-            interestAccumulator: approxInterest(INITIAL_INTEREST_ACCUMULATOR, 0.05e18, age),
+            interestAccumulator: approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, age),
             interestAccumulatorUpdatedAt: uint32(block.timestamp)
         }));
     }
@@ -214,9 +226,10 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         uint256 collateralAmount = 10_000 ether;
         uint256 borrowDaiAmount = 1_000 ether;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
-        
+        uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
+
         uint96 expectedInterestRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, BORROW_CEILING);
-        checkDebtTokenDetails(borrowDaiAmount, expectedInterestRate, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
+        checkDebtTokenDetails(borrowDaiAmount, expectedInterestRate, expectedDaiAccumulator, uint32(block.timestamp));
 
         uint256 age = 10000;
         vm.warp(block.timestamp + age);
@@ -240,9 +253,9 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         checkDebtTokenConfig(actualConfig, expectedConfig);
 
         checkDebtTokenData(actualTotals, DebtTokenData({
-            totalDebt: uint128(borrowDaiAmount * actualTotals.interestAccumulator / INITIAL_INTEREST_ACCUMULATOR),
+            totalDebt: uint128(borrowDaiAmount * actualTotals.interestAccumulator / expectedDaiAccumulator),
             interestRate: calculateInterestRate(updatedInterestRateModel, borrowDaiAmount, BORROW_CEILING),
-            interestAccumulator: approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedInterestRate, age),
+            interestAccumulator: approxInterest(expectedDaiAccumulator, expectedInterestRate, age),
             interestAccumulatorUpdatedAt: uint32(block.timestamp)
         }));
     }
@@ -251,6 +264,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         uint256 collateralAmount = 10_000 ether;
         uint256 borrowDaiAmount = 1_000 ether;
         borrow(alice, collateralAmount, borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
+        uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
 
         uint32 ts2 = uint32(block.timestamp);
         uint256 age = 10000;
@@ -258,14 +272,14 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
 
         uint96 expectedDaiRate = calculateInterestRate(daiInterestRateModel, borrowDaiAmount, BORROW_CEILING);
 
-        checkDebtTokenDetails(borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, ts2);
+        checkDebtTokenDetails(borrowDaiAmount, expectedDaiRate, expectedDaiAccumulator, ts2);
 
         tlc.refreshInterestRates();
 
-        uint256 expectedAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiRate, age);
+        expectedDaiAccumulator = approxInterest(expectedDaiAccumulator, expectedDaiRate, age);
         uint256 expectedDaiDebt = approxInterest(borrowDaiAmount, expectedDaiRate, age);
         expectedDaiRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, BORROW_CEILING);
-        checkDebtTokenDetails(expectedDaiDebt, expectedDaiRate, expectedAccumulator, uint32(block.timestamp));
+        checkDebtTokenDetails(expectedDaiDebt, expectedDaiRate, expectedDaiAccumulator, uint32(block.timestamp));
     }
 
     function test_setMaxLtvRatio() public {
@@ -284,7 +298,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
 
         checkDebtTokenData(totals, DebtTokenData({
             totalDebt: 0,
-            interestRate: 0,
+            interestRate: MIN_BORROW_RATE,
             interestAccumulator: INITIAL_INTEREST_ACCUMULATOR,
             interestAccumulatorUpdatedAt: uint32(block.timestamp)
         }));
@@ -441,6 +455,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
 
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(params.collateralAmount);
         borrow(alice, params.collateralAmount, params.borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
+        uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
 
         uint256 tsBefore = block.timestamp;
         vm.warp(block.timestamp + 365 days); // 1 year continuously compunding
@@ -451,7 +466,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
         // Now the total debt has increased and the health factors are updated.
         // But nothing has been 'checkpointed' in storage yet.
         {
-            checkDebtTokenDetails(params.borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
+            checkDebtTokenDetails(params.borrowDaiAmount, expectedDaiRate, expectedDaiAccumulator, tsBefore);
 
             checkAccountPosition(
                 CheckAccountPositionParams({
@@ -461,7 +476,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                         params.collateralAmount, expectedDaiDebt, maxBorrowInfo
                     ),
                     expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                    expectedDaiAccumulatorCheckpoint: INITIAL_INTEREST_ACCUMULATOR,
+                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
                     expectedRemoveCollateralRequest: 0,
                     expectedRemoveCollateralRequestAt: 0
                 }),
@@ -474,7 +489,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
 
         // Still the same after the TRV cap was halved
         {
-            checkDebtTokenDetails(params.borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
+            checkDebtTokenDetails(params.borrowDaiAmount, expectedDaiRate, expectedDaiAccumulator, tsBefore);
 
             checkAccountPosition(
                 CheckAccountPositionParams({
@@ -484,7 +499,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                         params.collateralAmount, expectedDaiDebt, maxBorrowInfo
                     ),
                     expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                    expectedDaiAccumulatorCheckpoint: INITIAL_INTEREST_ACCUMULATOR,
+                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
                     expectedRemoveCollateralRequest: 0,
                     expectedRemoveCollateralRequestAt: 0
                 }),
@@ -495,12 +510,12 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
         // It is checkpoint and rates updated only after a forced refresh (or a new user borrow)
         tlc.refreshInterestRates();
         {
-            uint256 daiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiRate, 365 days);
+            uint256 expectedDaiAccumulator2 = approxInterest(expectedDaiAccumulator, expectedDaiRate, 365 days);
             expectedDaiDebt = approxInterest(params.borrowDaiAmount, expectedDaiRate, 365 days);
             // The rate is now updated for the next period
             expectedDaiRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, 50_000e18);
 
-            checkDebtTokenDetails(expectedDaiDebt, expectedDaiRate, daiAccumulator, block.timestamp);
+            checkDebtTokenDetails(expectedDaiDebt, expectedDaiRate, expectedDaiAccumulator2, block.timestamp);
 
             checkAccountPosition(
                 CheckAccountPositionParams({
@@ -510,7 +525,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                         params.collateralAmount, expectedDaiDebt, maxBorrowInfo
                     ),
                     expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                    expectedDaiAccumulatorCheckpoint: INITIAL_INTEREST_ACCUMULATOR,
+                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
                     expectedRemoveCollateralRequest: 0,
                     expectedRemoveCollateralRequestAt: 0
                 }),
@@ -531,10 +546,11 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
         borrow(alice, params.collateralAmount, params.borrowDaiAmount, BORROW_REQUEST_MIN_SECS);
         MaxBorrowInfo memory maxBorrowInfo = expectedMaxBorrows(params.collateralAmount);
 
+        uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
+
         // Run checks after the initial borrow
         {
-            checkDebtTokenDetails(params.borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, block.timestamp);
-
+            checkDebtTokenDetails(params.borrowDaiAmount, expectedDaiRate, expectedDaiAccumulator, block.timestamp);
             checkAccountPosition(
                 CheckAccountPositionParams({
                     account: alice,
@@ -543,7 +559,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                         params.collateralAmount, params.borrowDaiAmount, maxBorrowInfo
                     ),
                     expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                    expectedDaiAccumulatorCheckpoint: INITIAL_INTEREST_ACCUMULATOR,
+                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
                     expectedRemoveCollateralRequest: 0,
                     expectedRemoveCollateralRequestAt: 0
                 }),
@@ -560,7 +576,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
         // Now the total debt has increased and the health factors are updated.
         // But nothing has been 'checkpointed' in storage yet.
         {
-            checkDebtTokenDetails(params.borrowDaiAmount, expectedDaiRate, INITIAL_INTEREST_ACCUMULATOR, tsBefore);
+            checkDebtTokenDetails(params.borrowDaiAmount, expectedDaiRate, expectedDaiAccumulator, tsBefore);
 
             checkAccountPosition(
                 CheckAccountPositionParams({
@@ -570,7 +586,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                         params.collateralAmount, expectedDaiDebt, maxBorrowInfo
                     ),
                     expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                    expectedDaiAccumulatorCheckpoint: INITIAL_INTEREST_ACCUMULATOR,
+                    expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
                     expectedRemoveCollateralRequest: 0,
                     expectedRemoveCollateralRequestAt: 0
                 }),
@@ -579,12 +595,12 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
         }
 
         // Refresh the token rates rates based on the new UR (after debt increased)
-        uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, expectedDaiRate, 365 days);
+        uint256 expectedDaiAccumulator2 = approxInterest(expectedDaiAccumulator, expectedDaiRate, 365 days);
         expectedDaiRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, BORROW_CEILING);
         {
             tlc.refreshInterestRates();
 
-            checkDebtTokenDetails(expectedDaiDebt, expectedDaiRate, expectedDaiAccumulator, block.timestamp);
+            checkDebtTokenDetails(expectedDaiDebt, expectedDaiRate, expectedDaiAccumulator2, block.timestamp);
 
             // Account balances remain the same
             CheckAccountPositionParams memory posiParams = CheckAccountPositionParams({
@@ -594,7 +610,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                     params.collateralAmount, expectedDaiDebt, maxBorrowInfo
                 ),
                 expectedDaiDebtCheckpoint: params.borrowDaiAmount,
-                expectedDaiAccumulatorCheckpoint: INITIAL_INTEREST_ACCUMULATOR,
+                expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
                 expectedRemoveCollateralRequest: 0,
                 expectedRemoveCollateralRequestAt: 0
             });
@@ -614,11 +630,11 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
             // Update the expected amounts/rates - 30 seconds more of interest.
             {
                 expectedDaiDebt = approxInterest(expectedDaiDebt, expectedDaiRate, BORROW_REQUEST_MIN_SECS) + 1000e18;
-                expectedDaiAccumulator = approxInterest(expectedDaiAccumulator, expectedDaiRate, BORROW_REQUEST_MIN_SECS);
+                expectedDaiAccumulator2 = approxInterest(expectedDaiAccumulator2, expectedDaiRate, BORROW_REQUEST_MIN_SECS);
                 expectedDaiRate = calculateInterestRate(daiInterestRateModel, expectedDaiDebt, BORROW_CEILING);
             }
 
-            checkDebtTokenDetails(expectedDaiDebt, expectedDaiRate, expectedDaiAccumulator, block.timestamp);
+            checkDebtTokenDetails(expectedDaiDebt, expectedDaiRate, expectedDaiAccumulator2, block.timestamp);
 
             // Account balances update
             CheckAccountPositionParams memory posiParams = CheckAccountPositionParams({
@@ -628,7 +644,7 @@ contract TempleLineOfCreditTestInterestAccrual is TlcBaseTest {
                     params.collateralAmount, expectedDaiDebt, maxBorrowInfo
                 ),
                 expectedDaiDebtCheckpoint: expectedDaiDebt,
-                expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
+                expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator2,
                 expectedRemoveCollateralRequest: 0,
                 expectedRemoveCollateralRequestAt: 0
             });

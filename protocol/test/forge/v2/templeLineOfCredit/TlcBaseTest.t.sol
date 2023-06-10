@@ -31,6 +31,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     TreasuryReservesVault public trv;
     TempleDebtToken public dUSD;
     uint96 public constant DEFAULT_BASE_INTEREST = 0.01e18; // 1%
+    uint96 public constant MIN_BORROW_RATE = 0.05e18;  // 5% interest rate (rate% at 0% UR)
 
     uint256 public constant TRV_STARTING_BALANCE = 1_000_000e18;
     uint256 public constant BORROW_CEILING = 100_000e18;
@@ -61,7 +62,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         daiInterestRateModel = new LinearWithKinkInterestRateModel(
             rescuer,
             executor,
-            5e18 / 100,  // 5% interest rate (rate% at 0% UR)
+            MIN_BORROW_RATE,  // 5% interest rate (rate% at 0% UR)
             20e18 / 100, // 20% percent interest rate (rate% at 100% UR)
             90e18 / 100, // 90% utilization (UR for when the kink starts)
             10e18 / 100  // 10% percent interest rate (rate% at kink% UR)
@@ -140,9 +141,9 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         ITempleLineOfCredit.DebtTokenData memory expected
     ) internal {
         assertEq(actual.interestAccumulatorUpdatedAt, expected.interestAccumulatorUpdatedAt, "DebtTokenData__interestAccumulatorUpdatedAt");
-        assertApproxEqRel(actual.totalDebt, expected.totalDebt, 1e11, "DebtTokenData__totalDebt");
+        assertApproxEqRel(actual.totalDebt, expected.totalDebt, 1e10, "DebtTokenData__totalDebt");
         assertApproxEqRel(actual.interestRate, expected.interestRate, 1e11, "DebtTokenData__interestRate");
-        assertApproxEqRel(actual.interestAccumulator, expected.interestAccumulator, 1e11, "DebtTokenData__interestAccumulator");
+        assertApproxEqRel(actual.interestAccumulator, expected.interestAccumulator, 1e10, "DebtTokenData__interestAccumulator");
     }
 
     function checkDebtTokenDetails(

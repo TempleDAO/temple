@@ -15,6 +15,8 @@ import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.so
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest.sol";
 
+/* solhint-disable not-rely-on-time */
+
 /**
  * @title Temple Line of Credit (TLC)
  * @notice Users supply Temple as collateral, and can then borrow DAI.
@@ -415,6 +417,9 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
         }
 
         emit TlcStrategySet(newTlcStrategy, _trv);
+
+        // The new TRV may have a different debt ceiling. Force an update to the interest rates.
+        updateInterestRates(debtTokenCache());
     }
 
     /**

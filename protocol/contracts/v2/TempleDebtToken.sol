@@ -13,6 +13,8 @@ import { CompoundedInterest } from "contracts/v2/interestRate/CompoundedInterest
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { SafeCast } from "contracts/common/SafeCast.sol";
 
+/* solhint-disable not-rely-on-time */
+
 /**
  * @title Temple Debt Token
  * @notice A rebasing ERC20 representing principal accruing at a `base + risk premium` continuously compounding interest rate.
@@ -55,6 +57,7 @@ contract TempleDebtToken is ITempleDebtToken, TempleElevatedAccess {
     /**
      * @dev Returns the decimals places of the token.
      */
+    // solhint-disable-next-line const-name-snakecase
     uint8 public constant override decimals = 18;
 
     /**

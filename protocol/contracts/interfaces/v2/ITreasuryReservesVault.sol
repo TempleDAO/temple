@@ -125,6 +125,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
      * @notice The decimal precision of 'tpi'/Temple Price index
      * @dev Decimal precision for 'tpi', 9880 == $0.988, precision = 4
      */
+    // solhint-disable-next-line func-name-mixedcase
     function TPI_DECIMALS() external view returns (uint256);
 
     /**

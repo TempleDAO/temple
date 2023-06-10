@@ -286,7 +286,9 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
             vm.stopPrank();
         }
 
-        checkDebtTokenDetails(borrowAmount, 0.1e18, INITIAL_INTEREST_ACCUMULATOR, uint32(block.timestamp));
+        uint256 expectedDaiAccumulator = approxInterest(INITIAL_INTEREST_ACCUMULATOR, MIN_BORROW_RATE, BORROW_REQUEST_MIN_SECS);
+
+        checkDebtTokenDetails(borrowAmount, 0.1e18, expectedDaiAccumulator, uint32(block.timestamp));
 
         checkAccountPosition(
             CheckAccountPositionParams({
@@ -296,7 +298,7 @@ contract TempleLineOfCreditTestBorrow is TlcBaseTest {
                     collateralAmount, borrowAmount, maxBorrowInfo
                 ),
                 expectedDaiDebtCheckpoint: borrowAmount,
-                expectedDaiAccumulatorCheckpoint: INITIAL_INTEREST_ACCUMULATOR,
+                expectedDaiAccumulatorCheckpoint: expectedDaiAccumulator,
                 expectedRemoveCollateralRequest: 0,
                 expectedRemoveCollateralRequestAt: 0
             }),
