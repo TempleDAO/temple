@@ -1,40 +1,57 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (amo/Ramos.sol)
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "../v2/access/TempleElevatedAccess.sol";
-import "./interfaces/AMO__IPoolHelper.sol";
-import "./interfaces/AMO__ITempleERC20Token.sol";
-import "./helpers/AMOCommon.sol";
-import "./interfaces/AMO__IAuraStaking.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
+import { mulDiv } from "@prb/math/src/Common.sol";
+
+import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerPoolHelper.sol";
+import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
+import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
+import { IAuraStaking } from "contracts/interfaces/external/aura/IAuraStaking.sol";
+import { IBalancerBptToken } from "contracts/interfaces/external/balancer/IBalancerBptToken.sol";
+
+import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
+import { AMOCommon } from "contracts/amo/helpers/AMOCommon.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+
+// @todo add comments to all functions + interface
+
+/* solhint-disable not-rely-on-time */
+
+interface ITreasuryReservesVault {
+    function treasuryPriceIndex() external view returns (uint256);
+}
 
 /**
- * @title AMO built for 50TEMPLE-50BB-A-USD balancer pool
+ * @title AMO built for 50/50 balancer pool
  *
  * @dev It has a  convergent price to which it trends called the TPF (Treasury Price Floor).
  * In order to accomplish this when the price is below the TPF it will single side withdraw 
  * BPTs into TEMPLE and burn them and if the price is above the TPF it will 
  * single side deposit TEMPLE into the pool to drop the spot price.
  */
-contract RAMOS is TempleElevatedAccess, Pausable {
+contract Ramos is TempleElevatedAccess, Pausable {
     using SafeERC20 for IERC20;
+    using SafeERC20 for IBalancerBptToken;
+    using SafeERC20 for ITempleERC20Token;
 
-    AMO__IBalancerVault public immutable balancerVault;
+    IBalancerVault public immutable balancerVault;
     // @notice BPT token address
-    IERC20 public immutable bptToken;
+    IBalancerBptToken public immutable bptToken;
     // @notice pool helper contract
-    AMO__IPoolHelper public poolHelper;
+    IBalancerPoolHelper public poolHelper;
     
     // @notice AMO contract for staking into aura 
-    AMO__IAuraStaking public amoStaking;
+    IAuraStaking public amoStaking;
 
-    IERC20 public immutable temple;
+    ITempleERC20Token public immutable temple;
     IERC20 public immutable stable;
 
     // @notice lastRebalanceTimeSecs and cooldown used to control call rate 
-    // for operator
+    // of rebalances
     uint64 public lastRebalanceTimeSecs;
     uint64 public cooldownSecs;
 
@@ -43,7 +60,10 @@ contract RAMOS is TempleElevatedAccess, Pausable {
 
     // @notice Precision for BPS calculations
     uint256 public constant BPS_PRECISION = 10_000;
-    uint256 public templePriceFloorNumerator;
+
+    // @notice The Treasury Reserves Vault is the source of truth for the Treasury Price Index (TPI)
+    // which is the target price for RAMOS rebalances
+    ITreasuryReservesVault public treasuryReservesVault;
 
     // @notice percentage bounds (in bps) beyond which to rebalance up or down
     uint64 public rebalancePercentageBoundLow;
@@ -77,8 +97,9 @@ contract RAMOS is TempleElevatedAccess, Pausable {
     event LiquidityAdded(uint256 stableAdded, uint256 templeAdded, uint256 bptReceived);
     event LiquidityRemoved(uint256 stableReceived, uint256 templeReceived, uint256 bptRemoved);
     event SetRebalancePercentageBounds(uint64 belowTpf, uint64 aboveTpf);
-    event SetTemplePriceFloorNumerator(uint128 numerator);
+    event TreasuryReservesVaultSet(address indexed trv);
     event SetAmoStaking(address indexed amoStaking);
+    event DepositAndStakeBptTokens(uint256 bptAmount);
 
     constructor(
         address _initialRescuer,
@@ -91,23 +112,23 @@ contract RAMOS is TempleElevatedAccess, Pausable {
         uint64 _templeIndexInPool,
         bytes32 _balancerPoolId
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
-        balancerVault = AMO__IBalancerVault(_balancerVault);
-        temple = IERC20(_temple);
+        balancerVault = IBalancerVault(_balancerVault);
+        temple = ITempleERC20Token(_temple);
         stable = IERC20(_stable);
-        bptToken = IERC20(_bptToken);
-        amoStaking = AMO__IAuraStaking(_amoStaking);
+        bptToken = IBalancerBptToken(_bptToken);
+        amoStaking = IAuraStaking(_amoStaking);
         templeBalancerPoolIndex = _templeIndexInPool;
         balancerPoolId = _balancerPoolId;
     }
 
     function setPoolHelper(address _poolHelper) external onlyElevatedAccess {
-        poolHelper = AMO__IPoolHelper(_poolHelper);
+        poolHelper = IBalancerPoolHelper(_poolHelper);
 
         emit SetPoolHelper(_poolHelper);
     }
 
     function setAmoStaking(address _amoStaking) external onlyElevatedAccess {
-        amoStaking = AMO__IAuraStaking(_amoStaking);
+        amoStaking = IAuraStaking(_amoStaking);
 
         emit SetAmoStaking(_amoStaking);
     }
@@ -121,7 +142,7 @@ contract RAMOS is TempleElevatedAccess, Pausable {
     }
 
     /**
-     * @notice Set maximum amount used by operator to rebalance
+     * @notice Set maximum amount used by bot to rebalance
      * @param bptMaxAmount Maximum bpt amount per rebalance
      * @param stableMaxAmount Maximum stable amount per rebalance
      * @param templeMaxAmount Maximum temple amount per rebalance
@@ -147,16 +168,20 @@ contract RAMOS is TempleElevatedAccess, Pausable {
         emit SetRebalancePercentageBounds(belowTPF, aboveTPF);
     }
 
-    function setTemplePriceFloorNumerator(uint128 _numerator) external onlyElevatedAccess {
-        templePriceFloorNumerator = _numerator;
+    /**
+     * @notice Governance can set the address of the treasury reserves vault.
+     */
+    function setTreasuryReservesVault(address _trv) external onlyElevatedAccess {
+        if (_trv == address(0)) revert CommonEventsAndErrors.InvalidAddress(_trv);
 
-        emit SetTemplePriceFloorNumerator(_numerator);
+        treasuryReservesVault = ITreasuryReservesVault(_trv);
+        emit TreasuryReservesVaultSet(_trv);
     }
 
     /**
-     * @notice Set cooldown time to throttle operator bot
-     * @param _seconds Time in seconds between operator calls
-     * */
+     * @notice Set cooldown time to throttle rebalances
+     * @param _seconds Time in seconds between calls
+     */
     function setCoolDown(uint64 _seconds) external onlyElevatedAccess {
         cooldownSecs = _seconds;
 
@@ -209,10 +234,10 @@ contract RAMOS is TempleElevatedAccess, Pausable {
         uint256 burnAmount = poolHelper.exitPool(
             bptAmountIn, minAmountOut, rebalancePercentageBoundLow,
             rebalancePercentageBoundUp, postRebalanceSlippage,
-            templeBalancerPoolIndex, templePriceFloorNumerator, temple
+            templeBalancerPoolIndex, treasuryReservesVault.treasuryPriceIndex(), temple
         );
 
-        AMO__ITempleERC20Token(address(temple)).burn(burnAmount);
+        temple.burn(burnAmount);
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
         emit RebalanceUp(bptAmountIn, burnAmount);
@@ -232,13 +257,13 @@ contract RAMOS is TempleElevatedAccess, Pausable {
     ) external onlyElevatedAccess whenNotPaused enoughCooldown {
         _validateParams(minBptOut, templeAmountIn, maxRebalanceAmounts.temple);
 
-        AMO__ITempleERC20Token(address(temple)).mint(address(this), templeAmountIn);
+        temple.mint(address(this), templeAmountIn);
         temple.safeTransfer(address(poolHelper), templeAmountIn);
 
         // joinTokenIndex = templeBalancerPoolIndex;
         uint256 bptIn = poolHelper.joinPool(
             templeAmountIn, minBptOut, rebalancePercentageBoundUp,
-            rebalancePercentageBoundLow, templePriceFloorNumerator, 
+            rebalancePercentageBoundLow, treasuryReservesVault.treasuryPriceIndex(), 
             postRebalanceSlippage, templeBalancerPoolIndex, temple
         );
 
@@ -267,7 +292,7 @@ contract RAMOS is TempleElevatedAccess, Pausable {
         uint256 joinTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
         uint256 bptOut = poolHelper.joinPool(
             amountIn, minBptOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow,
-            templePriceFloorNumerator, postRebalanceSlippage, joinTokenIndex, stable
+            treasuryReservesVault.treasuryPriceIndex(), postRebalanceSlippage, joinTokenIndex, stable
         );
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
@@ -298,13 +323,29 @@ contract RAMOS is TempleElevatedAccess, Pausable {
         uint256 stableTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
         uint256 amountOut = poolHelper.exitPool(
             bptAmountIn, minAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
-            postRebalanceSlippage, stableTokenIndex, templePriceFloorNumerator, stable
+            postRebalanceSlippage, stableTokenIndex, treasuryReservesVault.treasuryPriceIndex(), stable
         );
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
-        stable.safeTransfer(to, stable.balanceOf(address(this)));
+
+        uint256 stableBalance = stable.balanceOf(address(this));
+        if (stableBalance != 0) stable.safeTransfer(to, stableBalance);
 
         emit WithdrawStable(bptAmountIn, amountOut, to);
+    }
+
+    /// @notice Get the quote used to add liquidity proportionally
+    /// @dev Since this is not the view function, this should be called with `callStatic`
+    function proportionalAddLiquidityQuote(
+        uint256 stablesAmount,
+        uint256 slippageBps
+    ) external returns (
+        uint256 templeAmount,
+        uint256 expectedBptAmount,
+        uint256 minBptAmount,
+        IBalancerVault.JoinPoolRequest memory requestData
+    ) {
+        return poolHelper.proportionalAddLiquidityQuote(stablesAmount, slippageBps);
     }
 
     /**
@@ -315,7 +356,7 @@ contract RAMOS is TempleElevatedAccess, Pausable {
      * encoded with EXACT_TOKENS_IN_FOR_BPT_OUT type
      */
     function addLiquidity(
-        AMO__IBalancerVault.JoinPoolRequest memory request
+        IBalancerVault.JoinPoolRequest memory request
     ) external onlyElevatedAccess {
         // validate request
         if (request.assets.length != request.maxAmountsIn.length || 
@@ -327,24 +368,27 @@ contract RAMOS is TempleElevatedAccess, Pausable {
         (uint256 templeAmount, uint256 stableAmount) = templeBalancerPoolIndex == 0
             ? (request.maxAmountsIn[0], request.maxAmountsIn[1])
             : (request.maxAmountsIn[1], request.maxAmountsIn[0]);
-        AMO__ITempleERC20Token(address(temple)).mint(address(this), templeAmount);
+        temple.mint(address(this), templeAmount);
+
         // safe allowance stable and TEMPLE
-        temple.safeIncreaseAllowance(address(balancerVault), templeAmount);
-        uint256 stableAllowance = stable.allowance(address(this), address(balancerVault));
-        if (stableAllowance < stableAmount) {
-            // some tokens like bb-a-USD always set the max allowance for `balancerVault`
-            // in this case, `safeIncreaseAllowance` will fail due to the arithmetic operation overflow issue
-            stable.safeDecreaseAllowance(address(balancerVault), stableAllowance);
-            stable.safeIncreaseAllowance(address(balancerVault), stableAmount);
+        {
+            temple.safeIncreaseAllowance(address(balancerVault), templeAmount);
+            uint256 stableAllowance = stable.allowance(address(this), address(balancerVault));
+            if (stableAllowance < stableAmount) {
+                stable.safeApprove(address(balancerVault), 0);
+                stable.safeIncreaseAllowance(address(balancerVault), stableAmount);
+            }
         }
 
         // join pool
-        uint256 bptAmountBefore = bptToken.balanceOf(address(this));
-        balancerVault.joinPool(balancerPoolId, address(this), address(this), request);
-        uint256 bptAmountAfter = bptToken.balanceOf(address(this));
         uint256 bptIn;
-        unchecked {
-            bptIn = bptAmountAfter - bptAmountBefore;
+        {
+            uint256 bptAmountBefore = bptToken.balanceOf(address(this));
+            balancerVault.joinPool(balancerPoolId, address(this), address(this), request);
+            uint256 bptAmountAfter = bptToken.balanceOf(address(this));
+            unchecked {
+                bptIn = bptAmountAfter - bptAmountBefore;
+            }
         }
 
         // stake BPT
@@ -352,6 +396,21 @@ contract RAMOS is TempleElevatedAccess, Pausable {
         amoStaking.depositAndStake(bptIn);
 
         emit LiquidityAdded(stableAmount, templeAmount, bptIn);
+    }
+
+    /// @notice Get the quote used to remove liquidity
+    /// @dev Since this is not the view function, this should be called with `callStatic`
+    function proportionalRemoveLiquidityQuote(
+        uint256 bptAmount,
+        uint256 slippageBps
+    ) external returns (
+        uint256 expectedTempleAmount,
+        uint256 expectedStablesAmount,
+        uint256 minTempleAmount,
+        uint256 minStablesAmount,
+        IBalancerVault.ExitPoolRequest memory requestData
+    ) {
+        return poolHelper.proportionalRemoveLiquidityQuote(bptAmount, slippageBps);
     }
 
     /**
@@ -363,7 +422,7 @@ contract RAMOS is TempleElevatedAccess, Pausable {
      * @param to Address to which the stable tokens received from balancer pool are transferred
      */
     function removeLiquidity(
-        AMO__IBalancerVault.ExitPoolRequest memory request,
+        IBalancerVault.ExitPoolRequest memory request,
         uint256 bptIn,
         address to
     ) external onlyElevatedAccess {
@@ -389,7 +448,7 @@ contract RAMOS is TempleElevatedAccess, Pausable {
                     templeReceivedAmount = temple.balanceOf(address(this)) - templeAmountBefore;
                 }
                 if (templeReceivedAmount > 0) {
-                    AMO__ITempleERC20Token(address(temple)).burn(templeReceivedAmount);
+                    temple.burn(templeReceivedAmount);
                 }
             } else if (request.assets[i] == address(stable)) {
                 unchecked {
@@ -418,6 +477,30 @@ contract RAMOS is TempleElevatedAccess, Pausable {
         }
         bptToken.safeTransfer(address(amoStaking), amount);
         amoStaking.depositAndStake(amount);
+        emit DepositAndStakeBptTokens(amount);
+    }
+
+    /**
+     * @notice The total amount of Temple and Stables that Ramos holds via it's 
+     * staked and unstaked BPT.
+     * @dev Calculated by pulling the total balances of each token in the pool
+     * and getting RAMOS proportion of the owned BPT's
+     */
+    function positions() external view returns (
+        uint256 bptBalance, 
+        uint256 templeBalance, 
+        uint256 stableBalance
+    ) {
+        // Use `bpt.getActualSupply()` instead of `bpt.totalSupply()`
+        // https://docs.balancer.fi/reference/lp-tokens/underlying.html#overview
+        // https://docs.balancer.fi/concepts/advanced/valuing-bpt.html#on-chain
+        uint256 bptTotalSupply = bptToken.getActualSupply();
+        if (bptTotalSupply != 0) {
+            bptBalance = amoStaking.totalBalance();
+            (uint256 totalTempleInLp, uint256 totalStableInLp) = poolHelper.getTempleStableBalances();
+            templeBalance = mulDiv(totalTempleInLp, bptBalance, bptTotalSupply);
+            stableBalance = mulDiv(totalStableInLp, bptBalance, bptTotalSupply);
+        }
     }
 
     function _validateParams(

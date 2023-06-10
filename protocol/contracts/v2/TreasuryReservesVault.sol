@@ -6,7 +6,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
-import { IMintableToken } from "contracts/interfaces/common/IMintableToken.sol";
+import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 import { ITempleStrategy, ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
@@ -47,7 +47,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     /**
      * @notice The address of the Temple token.
      */
-    IMintableToken public immutable override templeToken;
+    ITempleERC20Token public immutable override templeToken;
 
     /**
      * @notice The address of the stable token (eg DAI) used to value all strategy's assets and debt.
@@ -90,7 +90,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         uint256 _treasuryPriceIndex
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
-        templeToken = IMintableToken(_templeToken);
+        templeToken = ITempleERC20Token(_templeToken);
         stableToken = IERC20(_stableToken);
         internalDebtToken = ITempleDebtToken(_internalDebtToken);
         treasuryPriceIndex = _treasuryPriceIndex;
@@ -368,7 +368,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
 
         emit Repay(strategy, msg.sender, debtToBurn);
 
-        templeToken.burn(msg.sender, repayAmount);
+        templeToken.burnFrom(msg.sender, repayAmount);
 
         // Burn the dUSD tokens. This will fail if the repayment amount is greater than the balance.
         uint256 burnedAmount = internalDebtToken.burn(strategy, debtToBurn);

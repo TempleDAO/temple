@@ -1,7 +1,8 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (interfaces/external/aura/IAuraBooster.sol)
 
-interface AMO__IAuraBooster {
+interface IAuraBooster {
 
     struct PoolInfo {
         address lptoken;

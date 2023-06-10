@@ -1,20 +1,21 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (interfaces/external/balancer/IBalancerHelpers.sol)
 
-import "./AMO__IBalancerVault.sol";
+import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
 
-interface AMO__IBalancerHelpers {
+interface IBalancerHelpers {
     function queryJoin(
         bytes32 poolId,
         address sender,
         address recipient,
-        AMO__IBalancerVault.JoinPoolRequest memory request
+        IBalancerVault.JoinPoolRequest memory request
     ) external returns (uint256 bptOut, uint256[] memory amountsIn);
 
     function queryExit(
         bytes32 poolId,
         address sender,
         address recipient,
-        AMO__IBalancerVault.ExitPoolRequest memory request
+        IBalancerVault.ExitPoolRequest memory request
     ) external returns (uint256 bptIn, uint256[] memory amountsOut);
 }

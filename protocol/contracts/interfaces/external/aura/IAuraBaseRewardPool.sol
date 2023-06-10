@@ -1,7 +1,8 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (interfaces/external/aura/IAuraBaseRewardPool.sol)
 
-interface AMO__IBaseRewardPool {
+interface IAuraBaseRewardPool {
     function withdrawAndUnwrap(uint256 amount, bool claim) external returns(bool);
     function withdrawAll(bool claim) external;
     function withdrawAllAndUnwrap(bool claim) external;

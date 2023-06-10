@@ -1,39 +1,51 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (amo/test/RamosTestnet.sol)
 
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
+import { mulDiv } from "@prb/math/src/Common.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "../../interfaces/AMO__IPoolHelper.sol";
-import "../../interfaces/AMO__ITempleERC20Token.sol";
-import "../../helpers/AMOCommon.sol";
-import "../../interfaces/AMO__IAuraStaking.sol";
+import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerPoolHelper.sol";
+import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
+import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
+import { IBalancerBptToken } from "contracts/interfaces/external/balancer/IBalancerBptToken.sol";
 
+import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
+import { AMOCommon } from "contracts/amo/helpers/AMOCommon.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
+
+/* solhint-disable not-rely-on-time */
+
+interface ITreasuryReservesVault {
+    function treasuryPriceIndex() external view returns (uint256);
+}
 
 /**
- * @title AMO built for 50TEMPLE-50BB-A-USD balancer pool
+ * @title AMO built for 50/50 balancer pool
  *
  * @dev It has a  convergent price to which it trends called the TPF (Treasury Price Floor).
  * In order to accomplish this when the price is below the TPF it will single side withdraw 
  * BPTs into TEMPLE and burn them and if the price is above the TPF it will 
  * single side deposit TEMPLE into the pool to drop the spot price.
  */
-contract RAMOSGoerli is Ownable, Pausable {
+contract RamosTestnet is TempleElevatedAccess, Pausable {
     using SafeERC20 for IERC20;
+    using SafeERC20 for IBalancerBptToken;
+    using SafeERC20 for ITempleERC20Token;
 
-    AMO__IBalancerVault public immutable balancerVault;
+    IBalancerVault public immutable balancerVault;
     // @notice BPT token address
-    IERC20 public immutable bptToken;
+    IBalancerBptToken public immutable bptToken;
     // @notice pool helper contract
-    AMO__IPoolHelper public poolHelper;
+    IBalancerPoolHelper public poolHelper;
 
-    address public operator;
-    IERC20 public immutable temple;
+    ITempleERC20Token public immutable temple;
     IERC20 public immutable stable;
 
     // @notice lastRebalanceTimeSecs and cooldown used to control call rate 
-    // for operator
+    // of rebalances
     uint64 public lastRebalanceTimeSecs;
     uint64 public cooldownSecs;
 
@@ -42,7 +54,10 @@ contract RAMOSGoerli is Ownable, Pausable {
 
     // @notice Precision for BPS calculations
     uint256 public constant BPS_PRECISION = 10_000;
-    uint256 public templePriceFloorNumerator;
+
+    // @notice The Treasury Reserves Vault is the source of truth for the Treasury Price Index (TPI)
+    // which is the target price for RAMOS rebalances
+    ITreasuryReservesVault public treasuryReservesVault;
 
     // @notice percentage bounds (in bps) beyond which to rebalance up or down
     uint64 public rebalancePercentageBoundLow;
@@ -55,7 +70,7 @@ contract RAMOSGoerli is Ownable, Pausable {
     uint64 public postRebalanceSlippage;
 
     // @notice temple index in balancer pool. to avoid recalculation or external calls
-    uint64 public templeBalancerPoolIndex;
+    uint64 public immutable templeBalancerPoolIndex;
 
     struct MaxRebalanceAmounts {
         uint256 bpt;
@@ -64,43 +79,47 @@ contract RAMOSGoerli is Ownable, Pausable {
     }
 
     event RecoveredToken(address token, address to, uint256 amount);
-    event SetOperator(address operator);
     event SetPostRebalanceSlippage(uint64 slippageBps);
     event SetCooldown(uint64 cooldownSecs);
     event SetPauseState(bool paused);
     event StableDeposited(uint256 amountIn, uint256 bptOut);
     event RebalanceUp(uint256 bptAmountIn, uint256 templeAmountOut);
-    event RebalanceDown(uint256 templeAmountIn, uint256 bptIn);
+    event RebalanceDown(uint256 templeAmountIn, uint256 bptOut);
     event SetPoolHelper(address poolHelper);
     event SetMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 stableMaxAmount, uint256 templeMaxAmount);
-    event WithdrawStable(uint256 bptAmountIn, uint256 amountOut);
+    event WithdrawStable(uint256 bptAmountIn, uint256 amountOut, address to);
+    event LiquidityAdded(uint256 stableAdded, uint256 templeAdded, uint256 bptReceived);
+    event LiquidityRemoved(uint256 stableReceived, uint256 templeReceived, uint256 bptRemoved);
     event SetRebalancePercentageBounds(uint64 belowTpf, uint64 aboveTpf);
-    event SetTemplePriceFloorNumerator(uint128 numerator);
-    event AddedLiquidity(uint256 amountTemple, uint256 amountStable, uint256 bptOut);
+    event TreasuryReservesVaultSet(address indexed trv);
+    event SetAmoStaking(address indexed amoStaking);
+    event DepositAndStakeBptTokens(uint256 bptAmount);
 
     constructor(
+        address _initialRescuer,
+        address _initialExecutor,
         address _balancerVault,
         address _temple,
         address _stable,
         address _bptToken,
         uint64 _templeIndexInPool,
         bytes32 _balancerPoolId
-    ) {
-        balancerVault = AMO__IBalancerVault(_balancerVault);
-        temple = IERC20(_temple);
+    ) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
+        balancerVault = IBalancerVault(_balancerVault);
+        temple = ITempleERC20Token(_temple);
         stable = IERC20(_stable);
-        bptToken = IERC20(_bptToken);
+        bptToken = IBalancerBptToken(_bptToken);
         templeBalancerPoolIndex = _templeIndexInPool;
         balancerPoolId = _balancerPoolId;
     }
 
-    function setPoolHelper(address _poolHelper) external onlyOwner {
-        poolHelper = AMO__IPoolHelper(_poolHelper);
+    function setPoolHelper(address _poolHelper) external onlyElevatedAccess {
+        poolHelper = IBalancerPoolHelper(_poolHelper);
 
         emit SetPoolHelper(_poolHelper);
     }
 
-    function setPostRebalanceSlippage(uint64 slippage) external onlyOwner {
+    function setPostRebalanceSlippage(uint64 slippage) external onlyElevatedAccess {
         if (slippage > BPS_PRECISION || slippage == 0) {
             revert AMOCommon.InvalidBPSValue(slippage);
         }
@@ -109,12 +128,12 @@ contract RAMOSGoerli is Ownable, Pausable {
     }
 
     /**
-     * @notice Set maximum amount used by operator to rebalance
+     * @notice Set maximum amount used by bot to rebalance
      * @param bptMaxAmount Maximum bpt amount per rebalance
      * @param stableMaxAmount Maximum stable amount per rebalance
      * @param templeMaxAmount Maximum temple amount per rebalance
      */
-    function setMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 stableMaxAmount, uint256 templeMaxAmount) external onlyOwner {
+    function setMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 stableMaxAmount, uint256 templeMaxAmount) external onlyElevatedAccess {
         if (bptMaxAmount == 0 || stableMaxAmount == 0 || templeMaxAmount == 0) {
             revert AMOCommon.InvalidMaxAmounts(bptMaxAmount, stableMaxAmount, templeMaxAmount);
         }
@@ -125,7 +144,7 @@ contract RAMOSGoerli is Ownable, Pausable {
     }
 
     // @notice percentage bounds (in bps) beyond which to rebalance up or down
-    function setRebalancePercentageBounds(uint64 belowTPF, uint64 aboveTPF) external onlyOwner {
+    function setRebalancePercentageBounds(uint64 belowTPF, uint64 aboveTPF) external onlyElevatedAccess {
         if (belowTPF > BPS_PRECISION || aboveTPF > BPS_PRECISION) {
             revert AMOCommon.InvalidBPSValue(belowTPF);
         }
@@ -135,27 +154,21 @@ contract RAMOSGoerli is Ownable, Pausable {
         emit SetRebalancePercentageBounds(belowTPF, aboveTPF);
     }
 
-    function setTemplePriceFloorNumerator(uint128 _numerator) external onlyOwner {
-        templePriceFloorNumerator = _numerator;
-
-        emit SetTemplePriceFloorNumerator(_numerator);
-    }
-
     /**
-     * @notice Set operator
-     * @param _operator New operator
+     * @notice Governance can set the address of the treasury reserves vault.
      */
-    function setOperator(address _operator) external onlyOwner {
-        operator = _operator;
+    function setTreasuryReservesVault(address _trv) external onlyElevatedAccess {
+        if (_trv == address(0)) revert CommonEventsAndErrors.InvalidAddress(_trv);
 
-        emit SetOperator(_operator);
+        treasuryReservesVault = ITreasuryReservesVault(_trv);
+        emit TreasuryReservesVaultSet(_trv);
     }
 
     /**
-     * @notice Set cooldown time to throttle operator bot
-     * @param _seconds Time in seconds between operator calls
-     * */
-    function setCoolDown(uint64 _seconds) external onlyOwner {
+     * @notice Set cooldown time to throttle rebalances
+     * @param _seconds Time in seconds between calls
+     */
+    function setCoolDown(uint64 _seconds) external onlyElevatedAccess {
         cooldownSecs = _seconds;
 
         emit SetCooldown(_seconds);
@@ -164,14 +177,14 @@ contract RAMOSGoerli is Ownable, Pausable {
     /**
      * @notice Pause AMO
      * */
-    function pause() external onlyOwner {
+    function pause() external onlyElevatedAccess {
         _pause();
     }
 
     /**
      * @notice Unpause AMO
      * */
-    function unpause() external onlyOwner {
+    function unpause() external onlyElevatedAccess {
         _unpause();
     }
 
@@ -181,7 +194,7 @@ contract RAMOSGoerli is Ownable, Pausable {
      * @param to Recipient address
      * @param amount Amount to recover
      */
-    function recoverToken(address token, address to, uint256 amount) external onlyOwner {
+    function recoverToken(address token, address to, uint256 amount) external onlyElevatedAccess {
         IERC20(token).safeTransfer(to, amount);
 
         emit RecoveredToken(token, to, amount);
@@ -198,7 +211,7 @@ contract RAMOSGoerli is Ownable, Pausable {
     function rebalanceUp(
         uint256 bptAmountIn,
         uint256 minAmountOut
-    ) external onlyOperatorOrOwner whenNotPaused enoughCooldown {
+    ) external onlyElevatedAccess whenNotPaused enoughCooldown {
         _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
 
         // use contract bpt. requires contract has enough bpt
@@ -208,10 +221,10 @@ contract RAMOSGoerli is Ownable, Pausable {
         uint256 burnAmount = poolHelper.exitPool(
             bptAmountIn, minAmountOut, rebalancePercentageBoundLow,
             rebalancePercentageBoundUp, postRebalanceSlippage,
-            templeBalancerPoolIndex, templePriceFloorNumerator, temple
+            templeBalancerPoolIndex, treasuryReservesVault.treasuryPriceIndex(), temple
         );
 
-        AMO__ITempleERC20Token(address(temple)).burn(burnAmount);
+        temple.burn(burnAmount);
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
         emit RebalanceUp(bptAmountIn, burnAmount);
@@ -228,16 +241,16 @@ contract RAMOSGoerli is Ownable, Pausable {
     function rebalanceDown(
         uint256 templeAmountIn,
         uint256 minBptOut
-    ) external onlyOperatorOrOwner whenNotPaused enoughCooldown {
+    ) external onlyElevatedAccess whenNotPaused enoughCooldown {
         _validateParams(minBptOut, templeAmountIn, maxRebalanceAmounts.temple);
 
-        AMO__ITempleERC20Token(address(temple)).mint(address(this), templeAmountIn);
+        temple.mint(address(this), templeAmountIn);
         temple.safeTransfer(address(poolHelper), templeAmountIn);
 
         // joinTokenIndex = templeBalancerPoolIndex;
         uint256 bptIn = poolHelper.joinPool(
             templeAmountIn, minBptOut, rebalancePercentageBoundUp,
-            rebalancePercentageBoundLow, templePriceFloorNumerator, 
+            rebalancePercentageBoundLow, treasuryReservesVault.treasuryPriceIndex(), 
             postRebalanceSlippage, templeBalancerPoolIndex, temple
         );
 
@@ -254,7 +267,7 @@ contract RAMOSGoerli is Ownable, Pausable {
     function depositStable(
         uint256 amountIn,
         uint256 minBptOut
-    ) external onlyOwner whenNotPaused {
+    ) external onlyElevatedAccess whenNotPaused {
         _validateParams(minBptOut, amountIn, maxRebalanceAmounts.stable);
 
         stable.safeTransfer(address(poolHelper), amountIn);
@@ -262,7 +275,7 @@ contract RAMOSGoerli is Ownable, Pausable {
         uint256 joinTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
         uint256 bptOut = poolHelper.joinPool(
             amountIn, minBptOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow,
-            templePriceFloorNumerator, postRebalanceSlippage, joinTokenIndex, stable
+            treasuryReservesVault.treasuryPriceIndex(), postRebalanceSlippage, joinTokenIndex, stable
         );
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
@@ -276,11 +289,13 @@ contract RAMOSGoerli is Ownable, Pausable {
      * BPT tokens are then sent into balancer pool for stable tokens in return.
      * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
      * @param minAmountOut Minimum amount of stable tokens expected to receive
+     * @param to Address to which the stable tokens withdrawn are transferred
      */
     function withdrawStable(
         uint256 bptAmountIn,
-        uint256 minAmountOut
-    ) external onlyOwner whenNotPaused {
+        uint256 minAmountOut,
+        address to
+    ) external onlyElevatedAccess whenNotPaused {
         _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
 
         // use contract bpt
@@ -289,11 +304,29 @@ contract RAMOSGoerli is Ownable, Pausable {
         uint256 stableTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
         uint256 amountOut = poolHelper.exitPool(
             bptAmountIn, minAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
-            postRebalanceSlippage, stableTokenIndex, templePriceFloorNumerator, stable
+            postRebalanceSlippage, stableTokenIndex, treasuryReservesVault.treasuryPriceIndex(), stable
         );
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
-        emit WithdrawStable(bptAmountIn, amountOut);
+
+        uint256 stableBalance = stable.balanceOf(address(this));
+        if (stableBalance != 0) stable.safeTransfer(to, stableBalance);
+
+        emit WithdrawStable(bptAmountIn, amountOut, to);
+    }
+
+    /// @notice Get the quote used to add liquidity proportionally
+    /// @dev Since this is not the view function, this should be called with `callStatic`
+    function proportionalAddLiquidityQuote(
+        uint256 stablesAmount,
+        uint256 slippageBps
+    ) external returns (
+        uint256 templeAmount,
+        uint256 expectedBptAmount,
+        uint256 minBptAmount,
+        IBalancerVault.JoinPoolRequest memory requestData
+    ) {
+        return poolHelper.proportionalAddLiquidityQuote(stablesAmount, slippageBps);
     }
 
     /**
@@ -304,8 +337,8 @@ contract RAMOSGoerli is Ownable, Pausable {
      * encoded with EXACT_TOKENS_IN_FOR_BPT_OUT type
      */
     function addLiquidity(
-        AMO__IBalancerVault.JoinPoolRequest memory request
-    ) external onlyOwner {
+        IBalancerVault.JoinPoolRequest memory request
+    ) external onlyElevatedAccess {
         // validate request
         if (request.assets.length != request.maxAmountsIn.length || 
             request.assets.length != 2 || 
@@ -313,21 +346,48 @@ contract RAMOSGoerli is Ownable, Pausable {
                 revert AMOCommon.InvalidBalancerVaultRequest();
         }
 
-        uint256 templeAmount = request.maxAmountsIn[templeBalancerPoolIndex];
-        AMO__ITempleERC20Token(address(temple)).mint(address(this), templeAmount);
-        // safe allowance stable and TEMPLE
-        temple.safeIncreaseAllowance(address(balancerVault), templeAmount);
+        (uint256 templeAmount, uint256 stableAmount) = templeBalancerPoolIndex == 0
+            ? (request.maxAmountsIn[0], request.maxAmountsIn[1])
+            : (request.maxAmountsIn[1], request.maxAmountsIn[0]);
+        temple.mint(address(this), templeAmount);
 
-        // join pool
-        uint256 bptAmountBefore = bptToken.balanceOf(address(this));
-        balancerVault.joinPool(balancerPoolId, address(this), address(this), request);
-        uint256 bptAmountAfter = bptToken.balanceOf(address(this));
-        uint256 bptIn;
-        unchecked {
-            bptIn = bptAmountAfter - bptAmountBefore;
+        // safe allowance stable and TEMPLE
+        {
+            temple.safeIncreaseAllowance(address(balancerVault), templeAmount);
+            uint256 stableAllowance = stable.allowance(address(this), address(balancerVault));
+            if (stableAllowance < stableAmount) {
+                stable.safeApprove(address(balancerVault), 0);
+                stable.safeIncreaseAllowance(address(balancerVault), stableAmount);
+            }
         }
 
-        emit AddedLiquidity(request.maxAmountsIn[0], request.maxAmountsIn[1], bptIn);
+        // join pool
+        uint256 bptIn;
+        {
+            uint256 bptAmountBefore = bptToken.balanceOf(address(this));
+            balancerVault.joinPool(balancerPoolId, address(this), address(this), request);
+            uint256 bptAmountAfter = bptToken.balanceOf(address(this));
+            unchecked {
+                bptIn = bptAmountAfter - bptAmountBefore;
+            }
+        }
+
+        emit LiquidityAdded(stableAmount, templeAmount, bptIn);
+    }
+
+    /// @notice Get the quote used to remove liquidity
+    /// @dev Since this is not the view function, this should be called with `callStatic`
+    function proportionalRemoveLiquidityQuote(
+        uint256 bptAmount,
+        uint256 slippageBps
+    ) external returns (
+        uint256 expectedTempleAmount,
+        uint256 expectedStablesAmount,
+        uint256 minTempleAmount,
+        uint256 minStablesAmount,
+        IBalancerVault.ExitPoolRequest memory requestData
+    ) {
+        return poolHelper.proportionalRemoveLiquidityQuote(bptAmount, slippageBps);
     }
 
     /**
@@ -335,10 +395,14 @@ contract RAMOSGoerli is Ownable, Pausable {
      * Treasury Price Floor is expected to be within bounds of multisig set range.
      * Withdraw and unwrap BPT tokens from Aura staking and send to balancer pool to receive both tokens.
      * @param request Request for use in balancer pool exit
+     * @param bptIn Amount of BPT tokens to send into balancer pool
+     * @param to Address to which the stable tokens received from balancer pool are transferred
      */
     function removeLiquidity(
-        AMO__IBalancerVault.ExitPoolRequest memory request
-    ) external onlyOwner {
+        IBalancerVault.ExitPoolRequest memory request,
+        uint256 bptIn,
+        address to
+    ) external onlyElevatedAccess {
         // validate request
         if (request.assets.length != request.minAmountsOut.length || 
             request.assets.length != 2 || 
@@ -352,22 +416,50 @@ contract RAMOSGoerli is Ownable, Pausable {
         // use contract bpt. requires contract has enough bpt tokens
 
         balancerVault.exitPool(balancerPoolId, address(this), address(this), request);
-
         // validate amounts received
-        uint256 receivedAmount;
+        uint256 templeReceivedAmount;
+        uint256 stableReceivedAmount;
         for (uint i=0; i<request.assets.length; ++i) {
             if (request.assets[i] == address(temple)) {
                 unchecked {
-                    receivedAmount = temple.balanceOf(address(this)) - templeAmountBefore;
+                    templeReceivedAmount = temple.balanceOf(address(this)) - templeAmountBefore;
                 }
-                if (receivedAmount > 0) {
-                    AMO__ITempleERC20Token(address(temple)).burn(receivedAmount);
+                if (templeReceivedAmount > 0) {
+                    temple.burn(templeReceivedAmount);
                 }
             } else if (request.assets[i] == address(stable)) {
                 unchecked {
-                    receivedAmount = stable.balanceOf(address(this)) - stableAmountBefore;
+                    stableReceivedAmount = stable.balanceOf(address(this)) - stableAmountBefore;
+                }
+                if (stableReceivedAmount > 0) {
+                    stable.safeTransfer(to, stableReceivedAmount);
                 }
             }
+        }
+
+        emit LiquidityRemoved(stableReceivedAmount, templeReceivedAmount, bptIn);
+    }
+
+    /**
+     * @notice The total amount of Temple and Stables that Ramos holds via it's 
+     * staked and unstaked BPT.
+     * @dev Calculated by pulling the total balances of each token in the pool
+     * and getting RAMOS proportion of the owned BPT's
+     */
+    function positions() external view returns (
+        uint256 bptBalance, 
+        uint256 templeBalance, 
+        uint256 stableBalance
+    ) {
+        // Use `bpt.getActualSupply()` instead of `bpt.totalSupply()`
+        // https://docs.balancer.fi/reference/lp-tokens/underlying.html#overview
+        // https://docs.balancer.fi/concepts/advanced/valuing-bpt.html#on-chain
+        uint256 bptTotalSupply = bptToken.getActualSupply();
+        if (bptTotalSupply != 0) {
+            bptBalance = bptToken.balanceOf(address(this));
+            (uint256 totalTempleInLp, uint256 totalStableInLp) = poolHelper.getTempleStableBalances();
+            templeBalance = mulDiv(totalTempleInLp, bptBalance, bptTotalSupply);
+            stableBalance = mulDiv(totalStableInLp, bptBalance, bptTotalSupply);
         }
     }
 
@@ -387,13 +479,6 @@ contract RAMOSGoerli is Ownable, Pausable {
     modifier enoughCooldown() {
         if (lastRebalanceTimeSecs != 0 && lastRebalanceTimeSecs + cooldownSecs > block.timestamp) {
             revert AMOCommon.NotEnoughCooldown();
-        }
-        _;
-    }
-
-    modifier onlyOperatorOrOwner() {
-        if (msg.sender != operator && msg.sender != owner()) {
-            revert AMOCommon.NotOperatorOrOwner();
         }
         _;
     }

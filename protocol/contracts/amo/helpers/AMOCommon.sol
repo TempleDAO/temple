@@ -1,6 +1,6 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
-
+// Temple (amo/helpers/AMOCommon.sol)
 
 library AMOCommon {
     error NotOperator();

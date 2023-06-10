@@ -1,10 +1,11 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (interfaces/amo/helpers/IBalancerPoolHelper.sol)
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
 
-import "./AMO__IBalancerVault.sol";
-
-interface AMO__IPoolHelper {
+interface IBalancerPoolHelper {
 
     function getBalances() external view returns (uint256[] memory balances);
 
@@ -66,7 +67,7 @@ interface AMO__IPoolHelper {
         uint256 amountIn,
         uint256 tokenIndex,
         uint256 minTokenOut
-    ) external view returns (AMO__IBalancerVault.JoinPoolRequest memory request);
+    ) external view returns (IBalancerVault.JoinPoolRequest memory request);
 
     function createPoolExitRequest(
         address temple,
@@ -75,26 +76,30 @@ interface AMO__IPoolHelper {
         uint256 tokenIndex,
         uint256 minAmountOut,
         uint256 exitTokenIndex
-    ) external view returns (AMO__IBalancerVault.ExitPoolRequest memory request);
+    ) external view returns (IBalancerVault.ExitPoolRequest memory request);
 
+    /// @notice Get the quote used to add liquidity proportionally
+    /// @dev Since this is not the view function, this should be called with `callStatic`
     function proportionalAddLiquidityQuote(
         uint256 stablesAmount,
         uint256 slippageBps
-    ) external view returns (
+    ) external returns (
         uint256 templeAmount,
         uint256 expectedBptAmount,
         uint256 minBptAmount,
-        AMO__IBalancerVault.JoinPoolRequest memory requestData
+        IBalancerVault.JoinPoolRequest memory requestData
     );
 
+    /// @notice Get the quote used to remove liquidity
+    /// @dev Since this is not the view function, this should be called with `callStatic`
     function proportionalRemoveLiquidityQuote(
         uint256 bptAmount,
         uint256 slippageBps
-    ) external view returns (
+    ) external returns (
         uint256 expectedTempleAmount,
         uint256 expectedStablesAmount,
         uint256 minTempleAmount,
         uint256 minStablesAmount,
-        AMO__IBalancerVault.ExitPoolRequest memory requestData
+        IBalancerVault.ExitPoolRequest memory requestData
     );
 }

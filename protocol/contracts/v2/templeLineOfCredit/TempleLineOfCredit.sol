@@ -380,6 +380,7 @@ contract TempleLineOfCredit is ITempleLineOfCredit, TempleElevatedAccess {
 
         // burn the temple collateral by repaying to TRV. This will burn the equivalent dUSD debt too.
         if (totalCollateralClaimed != 0) {
+            templeToken.safeIncreaseAllowance(address(treasuryReservesVault), totalCollateralClaimed);
             treasuryReservesVault.repayTemple(totalCollateralClaimed, address(tlcStrategy));
             totalCollateral -= totalCollateralClaimed;
         }

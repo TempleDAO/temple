@@ -181,7 +181,13 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
      * The intention is for clients to call as 'static', like a view
      */
     // solhint-disable-next-line no-empty-blocks
-    function populateShutdownData(bytes memory populateParams) external virtual override returns (bytes memory shutdownParams) {}
+    function populateShutdownData(
+        bytes memory populateParams
+    ) external virtual override returns (
+        bytes memory shutdownParams
+    ) {
+        // Not implemented by default.
+    }
 
     function automatedShutdown(
         bytes memory shutdownParams

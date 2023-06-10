@@ -6,7 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { ITempleStrategy, ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
 import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
-import { IMintableToken } from "contracts/interfaces/common/IMintableToken.sol";
+import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 
 /**
  * @title Treasury Reserves Vault (TRV)
@@ -141,7 +141,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     /**
      * @notice The address of the Temple token.
      */
-    function templeToken() external view returns (IMintableToken);
+    function templeToken() external view returns (ITempleERC20Token);
 
     /**
      * @notice The address of the stable token (eg DAI) used to value all strategy's assets and debt.

@@ -1,29 +1,30 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (amo/helpers/BalancerPoolHelper.sol)
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../interfaces/AMO__IBalancerVault.sol";
-import "../interfaces/AMO__IBalancerHelpers.sol";
-import "../helpers/AMOCommon.sol";
-
+import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
+import { IBalancerHelpers } from "contracts/interfaces/external/balancer/IBalancerHelpers.sol";
+import { AMOCommon } from "contracts/amo/helpers/AMOCommon.sol";
 
 interface IWeightPool2Tokens {
     function getNormalizedWeights() external view returns (uint256[] memory);
 }
 
-contract PoolHelper {
+contract BalancerPoolHelper {
     using SafeERC20 for IERC20;
 
-    AMO__IBalancerVault public immutable balancerVault;
-    AMO__IBalancerHelpers public immutable balancerHelpers;
+    IBalancerVault public immutable balancerVault;
+    IBalancerHelpers public immutable balancerHelpers;
     IERC20 public immutable bptToken;
     IERC20 public immutable temple;
     IERC20 public immutable stable;
     address public immutable amo;
-    // @notice Temple price floor denominator
+    
     uint256 public constant BPS_PRECISION = 10_000;
+    uint256 public constant PRICE_PRECISION = 1e18;
 
     // @notice temple index in balancer pool
     uint64 public immutable templeIndexInBalancerPool;
@@ -41,8 +42,8 @@ contract PoolHelper {
       bytes32 _balancerPoolId
     ) {
       balancerPoolId = _balancerPoolId;
-      balancerVault = AMO__IBalancerVault(_balancerVault);
-      balancerHelpers = AMO__IBalancerHelpers(_balancerHelpers);
+      balancerVault = IBalancerVault(_balancerVault);
+      balancerHelpers = IBalancerHelpers(_balancerHelpers);
       temple = IERC20(_temple);
       stable = IERC20(_stable);
       bptToken = IERC20(_bptToken);
@@ -61,38 +62,39 @@ contract PoolHelper {
         : (balances[1], balances[0]);
     }
 
-    function getSpotPriceScaled() public view returns (uint256 spotPriceScaled) {
+    /// @notice Return the spot price scaled to 1e18 
+    function getSpotPrice() public view returns (uint256) {
         (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
-        spotPriceScaled = (BPS_PRECISION * stableBalance) / templeBalance;
+        return (PRICE_PRECISION * stableBalance) / templeBalance;
     }
 
-    function isSpotPriceBelowTPF(uint256 templePriceFloorNumerator) external view returns (bool) {
-        return getSpotPriceScaled() < templePriceFloorNumerator;
+    function isSpotPriceBelowTPF(uint256 treasuryPriceIndex) external view returns (bool) {
+        return getSpotPrice() < treasuryPriceIndex;
     }
 
     // below TPF by a given slippage percentage
-    function isSpotPriceBelowTPF(uint256 slippage, uint256 templePriceFloorNumerator) public view returns (bool) {
-        uint256 slippageTPF = (slippage * templePriceFloorNumerator) / BPS_PRECISION;
-        return getSpotPriceScaled() < (templePriceFloorNumerator - slippageTPF);
+    function isSpotPriceBelowTPF(uint256 slippage, uint256 treasuryPriceIndex) public view returns (bool) {
+        uint256 slippageTPF = (slippage * treasuryPriceIndex) / BPS_PRECISION;
+        return getSpotPrice() < (treasuryPriceIndex - slippageTPF);
     }
 
-    function isSpotPriceBelowTPFLowerBound(uint256 rebalancePercentageBoundLow, uint256 templePriceFloorNumerator) public view returns (bool) {
-        return isSpotPriceBelowTPF(rebalancePercentageBoundLow, templePriceFloorNumerator);
+    function isSpotPriceBelowTPFLowerBound(uint256 rebalancePercentageBoundLow, uint256 treasuryPriceIndex) public view returns (bool) {
+        return isSpotPriceBelowTPF(rebalancePercentageBoundLow, treasuryPriceIndex);
     }
 
-    function isSpotPriceAboveTPFUpperBound(uint256 rebalancePercentageBoundUp, uint256 templePriceFloorNumerator) public view returns (bool) {
-        return isSpotPriceAboveTPF(rebalancePercentageBoundUp, templePriceFloorNumerator);
+    function isSpotPriceAboveTPFUpperBound(uint256 rebalancePercentageBoundUp, uint256 treasuryPriceIndex) public view returns (bool) {
+        return isSpotPriceAboveTPF(rebalancePercentageBoundUp, treasuryPriceIndex);
     }
 
     // slippage in bps
     // above TPF by a given slippage percentage
-    function isSpotPriceAboveTPF(uint256 slippage, uint256 templePriceFloorNumerator) public view returns (bool) {
-      uint256 slippageTPF = (slippage * templePriceFloorNumerator) / BPS_PRECISION;
-      return getSpotPriceScaled() > (templePriceFloorNumerator + slippageTPF);
+    function isSpotPriceAboveTPF(uint256 slippage, uint256 treasuryPriceIndex) public view returns (bool) {
+      uint256 slippageTPF = (slippage * treasuryPriceIndex) / BPS_PRECISION;
+      return getSpotPrice() > (treasuryPriceIndex + slippageTPF);
     }
 
-    function isSpotPriceAboveTPF(uint256 templePriceFloorNumerator) external view returns (bool) {
-        return getSpotPriceScaled() > templePriceFloorNumerator;
+    function isSpotPriceAboveTPF(uint256 treasuryPriceIndex) external view returns (bool) {
+        return getSpotPrice() > treasuryPriceIndex;
     }
 
     // @notice will exit take price above tpf by a percentage
@@ -101,79 +103,75 @@ contract PoolHelper {
     function willExitTakePriceAboveTPFUpperBound(
         uint256 tokensOut,
         uint256 rebalancePercentageBoundUp,
-        uint256 templePriceFloorNumerator
+        uint256 treasuryPriceIndex
     ) public view returns (bool) {
-        uint256 percentageIncrease = (templePriceFloorNumerator * rebalancePercentageBoundUp) / BPS_PRECISION;
-        uint256 maxNewTpf = percentageIncrease + templePriceFloorNumerator;
+        uint256 maxNewTpi = (BPS_PRECISION + rebalancePercentageBoundUp) * treasuryPriceIndex / BPS_PRECISION;
         (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
 
-        // a ratio of stable balances aginst temple balances
+        // a ratio of stable balances vs temple balances
         uint256 newTempleBalance = templeBalance - tokensOut;
-        uint256 spot = (stableBalance * BPS_PRECISION ) / newTempleBalance;
-        return spot > maxNewTpf;
+        uint256 spot = (stableBalance * PRICE_PRECISION ) / newTempleBalance;
+        return spot > maxNewTpi;
     }
 
     function willStableJoinTakePriceAboveTPFUpperBound(
         uint256 tokensIn,
         uint256 rebalancePercentageBoundUp,
-        uint256 templePriceFloorNumerator
+        uint256 treasuryPriceIndex
     ) public view returns (bool) {
-        uint256 percentageIncrease = (templePriceFloorNumerator * rebalancePercentageBoundUp) / BPS_PRECISION;
-        uint256 maxNewTpf = percentageIncrease + templePriceFloorNumerator;
+        uint256 maxNewTpi = (BPS_PRECISION + rebalancePercentageBoundUp) * treasuryPriceIndex / BPS_PRECISION;
         (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
 
         uint256 newStableBalance = stableBalance + tokensIn;
-        uint256 spot = (newStableBalance * BPS_PRECISION ) / templeBalance;
-        return spot > maxNewTpf;
+        uint256 spot = (newStableBalance * PRICE_PRECISION ) / templeBalance;
+        return spot > maxNewTpi;
     }
 
     function willStableExitTakePriceBelowTPFLowerBound(
         uint256 tokensOut,
         uint256 rebalancePercentageBoundLow,
-        uint256 templePriceFloorNumerator
+        uint256 treasuryPriceIndex
     ) public view returns (bool) {
-        uint256 percentageDecrease = (templePriceFloorNumerator * rebalancePercentageBoundLow) / BPS_PRECISION;
-        uint256 minNewTpf = templePriceFloorNumerator - percentageDecrease;
+        uint256 minNewTpi = (BPS_PRECISION - rebalancePercentageBoundLow) * treasuryPriceIndex / BPS_PRECISION;
         (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
 
         uint256 newStableBalance = stableBalance - tokensOut;
-        uint256 spot = (newStableBalance * BPS_PRECISION) / templeBalance;
-        return spot < minNewTpf;
+        uint256 spot = (newStableBalance * PRICE_PRECISION) / templeBalance;
+        return spot < minNewTpi;
     }
 
     function willJoinTakePriceBelowTPFLowerBound(
         uint256 tokensIn,
         uint256 rebalancePercentageBoundLow,
-        uint256 templePriceFloorNumerator
+        uint256 treasuryPriceIndex
     ) public view returns (bool) {
-        uint256 percentageDecrease = (templePriceFloorNumerator * rebalancePercentageBoundLow) / BPS_PRECISION;
-        uint256 minNewTpf = templePriceFloorNumerator - percentageDecrease;
+        uint256 minNewTpi = (BPS_PRECISION - rebalancePercentageBoundLow) * treasuryPriceIndex / BPS_PRECISION;
         (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
 
         // a ratio of stable balances against temple balances
         uint256 newTempleBalance = templeBalance + tokensIn;
-        uint256 spot = (stableBalance * BPS_PRECISION) / newTempleBalance;
-        return spot < minNewTpf;
+        uint256 spot = (stableBalance * PRICE_PRECISION) / newTempleBalance;
+        return spot < minNewTpi;
     }
 
     // get slippage between spot price before and spot price now
-    function getSlippage(uint256 spotPriceBeforeScaled) public view returns (uint256) {
-        uint256 spotPriceNowScaled = getSpotPriceScaled();
+    function getSlippage(uint256 spotPriceBefore) public view returns (uint256) {
+        uint256 spotPriceNow = getSpotPrice();
         // taking into account both rebalance up or down
-        uint256 slippageDifference;
+        uint256 priceDifference;
         unchecked {
-            slippageDifference = (spotPriceNowScaled > spotPriceBeforeScaled)
-                ? spotPriceNowScaled - spotPriceBeforeScaled
-                : spotPriceBeforeScaled - spotPriceNowScaled;
+            priceDifference = (spotPriceNow > spotPriceBefore)
+                ? spotPriceNow - spotPriceBefore
+                : spotPriceBefore - spotPriceNow;
         }
-        return (slippageDifference * BPS_PRECISION) / spotPriceBeforeScaled;
+        return (priceDifference * BPS_PRECISION) / spotPriceBefore;
     }
 
     function createPoolExitRequest(
         uint256 bptAmountIn,
         uint256 minAmountOut,
         uint256 exitTokenIndex
-    ) internal view returns (AMO__IBalancerVault.ExitPoolRequest memory request) {
+    ) internal view returns (IBalancerVault.ExitPoolRequest memory request) {
         address[] memory assets = new address[](2);
         uint256[] memory minAmountsOut = new uint256[](2);
 
@@ -191,7 +189,7 @@ contract PoolHelper {
         uint256 amountIn,
         uint256 tokenIndex,
         uint256 minTokenOut
-    ) internal view returns (AMO__IBalancerVault.JoinPoolRequest memory request) {
+    ) internal view returns (IBalancerVault.JoinPoolRequest memory request) {
         IERC20[] memory assets = new IERC20[](2);
         uint256[] memory maxAmountsIn = new uint256[](2);
     
@@ -212,20 +210,20 @@ contract PoolHelper {
         uint256 rebalancePercentageBoundUp,
         uint256 postRebalanceSlippage,
         uint256 exitTokenIndex,
-        uint256 templePriceFloorNumerator,
+        uint256 treasuryPriceIndex,
         IERC20 exitPoolToken
     ) external onlyAmo returns (uint256 amountOut) {
         exitPoolToken == temple ? 
-            validateTempleExit(minAmountOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow, templePriceFloorNumerator) :
-            validateStableExit(minAmountOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow, templePriceFloorNumerator);
+            validateTempleExit(minAmountOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow, treasuryPriceIndex) :
+            validateStableExit(minAmountOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow, treasuryPriceIndex);
 
         // create request
-        AMO__IBalancerVault.ExitPoolRequest memory exitPoolRequest = createPoolExitRequest(bptAmountIn,
+        IBalancerVault.ExitPoolRequest memory exitPoolRequest = createPoolExitRequest(bptAmountIn,
             minAmountOut, exitTokenIndex);
 
         // execute call and check for sanity
         uint256 exitTokenBalanceBefore = exitPoolToken.balanceOf(msg.sender);
-        uint256 spotPriceScaledBefore = getSpotPriceScaled();
+        uint256 spotPriceBefore = getSpotPrice();
         balancerVault.exitPool(balancerPoolId, address(this), msg.sender, exitPoolRequest);
         uint256 exitTokenBalanceAfter = exitPoolToken.balanceOf(msg.sender);
 
@@ -233,7 +231,7 @@ contract PoolHelper {
             amountOut = exitTokenBalanceAfter - exitTokenBalanceBefore;
         }
 
-        if (uint64(getSlippage(spotPriceScaledBefore)) > postRebalanceSlippage) {
+        if (uint64(getSlippage(spotPriceBefore)) > postRebalanceSlippage) {
             revert AMOCommon.HighSlippage();
         }
     }
@@ -243,17 +241,17 @@ contract PoolHelper {
         uint256 minBptOut,
         uint256 rebalancePercentageBoundUp,
         uint256 rebalancePercentageBoundLow,
-        uint256 templePriceFloorNumerator,
+        uint256 treasuryPriceIndex,
         uint256 postRebalanceSlippage,
         uint256 joinTokenIndex,
         IERC20 joinPoolToken
     ) external onlyAmo returns (uint256 bptOut) {
         joinPoolToken == temple ? 
-            validateTempleJoin(amountIn, rebalancePercentageBoundUp, rebalancePercentageBoundLow, templePriceFloorNumerator) :
-            validateStableJoin(amountIn, rebalancePercentageBoundUp, rebalancePercentageBoundLow, templePriceFloorNumerator);
+            validateTempleJoin(amountIn, rebalancePercentageBoundUp, rebalancePercentageBoundLow, treasuryPriceIndex) :
+            validateStableJoin(amountIn, rebalancePercentageBoundUp, rebalancePercentageBoundLow, treasuryPriceIndex);
 
         // create request
-        AMO__IBalancerVault.JoinPoolRequest memory joinPoolRequest = createPoolJoinRequest(amountIn, joinTokenIndex, minBptOut);
+        IBalancerVault.JoinPoolRequest memory joinPoolRequest = createPoolJoinRequest(amountIn, joinTokenIndex, minBptOut);
 
         // approve
         uint256 joinPoolTokenAllowance = joinPoolToken.allowance(address(this), address(balancerVault));
@@ -266,7 +264,7 @@ contract PoolHelper {
 
         // execute and sanity check
         uint256 bptAmountBefore = bptToken.balanceOf(msg.sender);
-        uint256 spotPriceScaledBefore = getSpotPriceScaled();
+        uint256 spotPriceBefore = getSpotPrice();
         balancerVault.joinPool(balancerPoolId, address(this), msg.sender, joinPoolRequest);
         uint256 bptAmountAfter = bptToken.balanceOf(msg.sender);
 
@@ -275,7 +273,7 @@ contract PoolHelper {
         }
 
         // revert if high slippage after pool join
-        if (uint64(getSlippage(spotPriceScaledBefore)) > postRebalanceSlippage) {
+        if (uint64(getSlippage(spotPriceBefore)) > postRebalanceSlippage) {
             revert AMOCommon.HighSlippage();
         }
     }
@@ -284,13 +282,13 @@ contract PoolHelper {
         uint256 amountIn,
         uint256 rebalancePercentageBoundUp,
         uint256 rebalancePercentageBoundLow,
-        uint256 templePriceFloorNumerator
+        uint256 treasuryPriceIndex
     ) internal view {
-        if (!isSpotPriceAboveTPFUpperBound(rebalancePercentageBoundUp, templePriceFloorNumerator)) {
+        if (!isSpotPriceAboveTPFUpperBound(rebalancePercentageBoundUp, treasuryPriceIndex)) {
             revert AMOCommon.NoRebalanceDown();
         }
         // should rarely be the case, but a sanity check nonetheless
-        if (willJoinTakePriceBelowTPFLowerBound(amountIn, rebalancePercentageBoundLow, templePriceFloorNumerator)) {
+        if (willJoinTakePriceBelowTPFLowerBound(amountIn, rebalancePercentageBoundLow, treasuryPriceIndex)) {
             revert AMOCommon.HighSlippage();
         }
     }
@@ -299,16 +297,16 @@ contract PoolHelper {
         uint256 amountOut,
         uint256 rebalancePercentageBoundUp,
         uint256 rebalancePercentageBoundLow,
-        uint256 templePriceFloorNumerator
+        uint256 treasuryPriceIndex
     ) internal view {
         // check spot price is below TPF by lower bound
-        if (!isSpotPriceBelowTPFLowerBound(rebalancePercentageBoundLow, templePriceFloorNumerator)) {
+        if (!isSpotPriceBelowTPFLowerBound(rebalancePercentageBoundLow, treasuryPriceIndex)) {
             revert AMOCommon.NoRebalanceUp();
         }
 
         // will exit take price above tpf + upper bound
         // should rarely be the case, but a sanity check nonetheless
-        if (willExitTakePriceAboveTPFUpperBound(amountOut, rebalancePercentageBoundUp, templePriceFloorNumerator)) {
+        if (willExitTakePriceAboveTPFUpperBound(amountOut, rebalancePercentageBoundUp, treasuryPriceIndex)) {
             revert AMOCommon.HighSlippage();
         }
     }
@@ -317,13 +315,13 @@ contract PoolHelper {
         uint256 amountIn,
         uint256 rebalancePercentageBoundUp,
         uint256 rebalancePercentageBoundLow,
-        uint256 templePriceFloorNumerator
+        uint256 treasuryPriceIndex
     ) internal view {
-        if (!isSpotPriceBelowTPFLowerBound(rebalancePercentageBoundLow, templePriceFloorNumerator)) {
+        if (!isSpotPriceBelowTPFLowerBound(rebalancePercentageBoundLow, treasuryPriceIndex)) {
             revert AMOCommon.NoRebalanceUp();
         }
         // should rarely be the case, but a sanity check nonetheless
-        if (willStableJoinTakePriceAboveTPFUpperBound(amountIn, rebalancePercentageBoundUp, templePriceFloorNumerator)) {
+        if (willStableJoinTakePriceAboveTPFUpperBound(amountIn, rebalancePercentageBoundUp, treasuryPriceIndex)) {
             revert AMOCommon.HighSlippage();
         }
     }
@@ -332,13 +330,13 @@ contract PoolHelper {
         uint256 amountOut,
         uint256 rebalancePercentageBoundUp,
         uint256 rebalancePercentageBoundLow,
-        uint256 templePriceFloorNumerator
+        uint256 treasuryPriceIndex
     ) internal view {
-        if (!isSpotPriceAboveTPFUpperBound(rebalancePercentageBoundUp, templePriceFloorNumerator)) {
+        if (!isSpotPriceAboveTPFUpperBound(rebalancePercentageBoundUp, treasuryPriceIndex)) {
             revert AMOCommon.NoRebalanceDown();
         }
         // should rarely be the case, but a sanity check nonetheless
-        if (willStableExitTakePriceBelowTPFLowerBound(amountOut, rebalancePercentageBoundLow, templePriceFloorNumerator)) {
+        if (willStableExitTakePriceBelowTPFLowerBound(amountOut, rebalancePercentageBoundLow, treasuryPriceIndex)) {
             revert AMOCommon.HighSlippage();
         }
     }
@@ -352,7 +350,7 @@ contract PoolHelper {
         uint256 templeAmount,
         uint256 expectedBptAmount,
         uint256 minBptAmount,
-        AMO__IBalancerVault.JoinPoolRequest memory requestData
+        IBalancerVault.JoinPoolRequest memory requestData
     ) {
         (uint256 templeBalanceInLP, uint256 stableBalanceInLP) = getTempleStableBalances();
         // see Balancer SDK for the calculation
@@ -389,7 +387,7 @@ contract PoolHelper {
         uint256 expectedStablesAmount,
         uint256 minTempleAmount,
         uint256 minStablesAmount,
-        AMO__IBalancerVault.ExitPoolRequest memory requestData
+        IBalancerVault.ExitPoolRequest memory requestData
     ) {
         requestData.assets = new address[](2);
         requestData.minAmountsOut = new uint256[](2);

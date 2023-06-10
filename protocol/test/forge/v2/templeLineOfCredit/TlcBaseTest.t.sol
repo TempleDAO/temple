@@ -13,13 +13,14 @@ import { TlcStrategy } from "contracts/v2/templeLineOfCredit/TlcStrategy.sol";
 import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { LinearWithKinkInterestRateModel } from "contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol";
+import { TempleERC20Token } from "contracts/core/TempleERC20Token.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
     TempleLineOfCredit public tlc;
     TlcStrategy public tlcStrategy;
 
-    FakeERC20 public templeToken;
+    TempleERC20Token public templeToken;
     using SafeCast for uint256;
     
     FakeERC20 public daiToken;
@@ -51,7 +52,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
         {
             daiToken = new FakeERC20("DAI Token", "DAI", executor, 500_000e18);
             vm.label(address(daiToken), "DAI");
-            templeToken = new FakeERC20("TempleToken", "Temple", executor, 500_000e18);
+            templeToken = new TempleERC20Token();
             vm.label(address(templeToken), "TEMPLE");
             dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
             vm.label(address(dUSD), "dUSD");

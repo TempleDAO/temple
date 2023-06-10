@@ -1,8 +1,8 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (interfaces/external/aura/IAuraStaking.sol)
 
-
-interface AMO__IAuraStaking {
+interface IAuraStaking {
     function rewardsRecipient() external view returns (address);
     
     function setAuraPoolInfo(uint32 _pId, address _token, address _rewards) external;
@@ -28,4 +28,10 @@ interface AMO__IAuraStaking {
     function stakedBalance() external view returns (uint256);
 
     function earned() external view returns (uint256);
+
+    /**
+     * @notice The total balance of BPT owned by this contract - either staked in Aura 
+     * or unstaked
+     */
+    function totalBalance() external view returns (uint256);
 }
