@@ -51,6 +51,9 @@ contract RamosStrategyTestBase is TempleTest {
     function _setUp() public {
         fork("mainnet", 17300437);
 
+        dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
+        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), 9700);
+
         poolHelper = new BalancerPoolHelper(
             balancerVault, balancerHelpers, address(temple), 
             address(dai), address(bptToken), 
@@ -68,7 +71,7 @@ contract RamosStrategyTestBase is TempleTest {
                 rescuer, executor, balancerVault, 
                 address(temple), address(dai), address(bptToken), 
                 address(amoStaking), 
-                templeIndexPool, balancerPoolId
+                templeIndexPool, balancerPoolId, address(trv)
             );
         }
 
@@ -104,8 +107,6 @@ contract RamosStrategyTestBase is TempleTest {
             vm.stopPrank();
         }
 
-        dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
-        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), 9700);
         strategy = new RamosStrategy(rescuer, executor, "RamosStrategy", address(trv), address(ramos));
 
         vm.prank(executor);

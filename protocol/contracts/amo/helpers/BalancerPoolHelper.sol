@@ -68,39 +68,39 @@ contract BalancerPoolHelper {
         return (PRICE_PRECISION * stableBalance) / templeBalance;
     }
 
-    function isSpotPriceBelowTPF(uint256 treasuryPriceIndex) external view returns (bool) {
+    function isSpotPriceBelowTpi(uint256 treasuryPriceIndex) external view returns (bool) {
         return getSpotPrice() < treasuryPriceIndex;
     }
 
-    // below TPF by a given slippage percentage
-    function isSpotPriceBelowTPF(uint256 slippage, uint256 treasuryPriceIndex) public view returns (bool) {
-        uint256 slippageTPF = (slippage * treasuryPriceIndex) / BPS_PRECISION;
-        return getSpotPrice() < (treasuryPriceIndex - slippageTPF);
+    // below TPI by a given slippage percentage
+    function isSpotPriceBelowTpi(uint256 slippage, uint256 treasuryPriceIndex) public view returns (bool) {
+        uint256 slippageTpi = (slippage * treasuryPriceIndex) / BPS_PRECISION;
+        return getSpotPrice() < (treasuryPriceIndex - slippageTpi);
     }
 
-    function isSpotPriceBelowTPFLowerBound(uint256 rebalancePercentageBoundLow, uint256 treasuryPriceIndex) public view returns (bool) {
-        return isSpotPriceBelowTPF(rebalancePercentageBoundLow, treasuryPriceIndex);
+    function isSpotPriceBelowTpiLowerBound(uint256 rebalancePercentageBoundLow, uint256 treasuryPriceIndex) public view returns (bool) {
+        return isSpotPriceBelowTpi(rebalancePercentageBoundLow, treasuryPriceIndex);
     }
 
-    function isSpotPriceAboveTPFUpperBound(uint256 rebalancePercentageBoundUp, uint256 treasuryPriceIndex) public view returns (bool) {
-        return isSpotPriceAboveTPF(rebalancePercentageBoundUp, treasuryPriceIndex);
+    function isSpotPriceAboveTpiUpperBound(uint256 rebalancePercentageBoundUp, uint256 treasuryPriceIndex) public view returns (bool) {
+        return isSpotPriceAboveTpi(rebalancePercentageBoundUp, treasuryPriceIndex);
     }
 
     // slippage in bps
-    // above TPF by a given slippage percentage
-    function isSpotPriceAboveTPF(uint256 slippage, uint256 treasuryPriceIndex) public view returns (bool) {
-      uint256 slippageTPF = (slippage * treasuryPriceIndex) / BPS_PRECISION;
-      return getSpotPrice() > (treasuryPriceIndex + slippageTPF);
+    // above TPI by a given slippage percentage
+    function isSpotPriceAboveTpi(uint256 slippage, uint256 treasuryPriceIndex) public view returns (bool) {
+      uint256 slippageTpi = (slippage * treasuryPriceIndex) / BPS_PRECISION;
+      return getSpotPrice() > (treasuryPriceIndex + slippageTpi);
     }
 
-    function isSpotPriceAboveTPF(uint256 treasuryPriceIndex) external view returns (bool) {
+    function isSpotPriceAboveTpi(uint256 treasuryPriceIndex) external view returns (bool) {
         return getSpotPrice() > treasuryPriceIndex;
     }
 
-    // @notice will exit take price above tpf by a percentage
+    // @notice will exit take price above TPI by a percentage
     // percentage in bps
     // tokensOut: expected min amounts out. for rebalance this is expected Temple tokens out
-    function willExitTakePriceAboveTPFUpperBound(
+    function willExitTakePriceAboveTpiUpperBound(
         uint256 tokensOut,
         uint256 rebalancePercentageBoundUp,
         uint256 treasuryPriceIndex
@@ -114,7 +114,7 @@ contract BalancerPoolHelper {
         return spot > maxNewTpi;
     }
 
-    function willStableJoinTakePriceAboveTPFUpperBound(
+    function willStableJoinTakePriceAboveTpiUpperBound(
         uint256 tokensIn,
         uint256 rebalancePercentageBoundUp,
         uint256 treasuryPriceIndex
@@ -127,7 +127,7 @@ contract BalancerPoolHelper {
         return spot > maxNewTpi;
     }
 
-    function willStableExitTakePriceBelowTPFLowerBound(
+    function willStableExitTakePriceBelowTpiLowerBound(
         uint256 tokensOut,
         uint256 rebalancePercentageBoundLow,
         uint256 treasuryPriceIndex
@@ -140,7 +140,7 @@ contract BalancerPoolHelper {
         return spot < minNewTpi;
     }
 
-    function willJoinTakePriceBelowTPFLowerBound(
+    function willJoinTakePriceBelowTpiLowerBound(
         uint256 tokensIn,
         uint256 rebalancePercentageBoundLow,
         uint256 treasuryPriceIndex
@@ -157,6 +157,7 @@ contract BalancerPoolHelper {
     // get slippage between spot price before and spot price now
     function getSlippage(uint256 spotPriceBefore) public view returns (uint256) {
         uint256 spotPriceNow = getSpotPrice();
+
         // taking into account both rebalance up or down
         uint256 priceDifference;
         unchecked {
@@ -284,11 +285,11 @@ contract BalancerPoolHelper {
         uint256 rebalancePercentageBoundLow,
         uint256 treasuryPriceIndex
     ) internal view {
-        if (!isSpotPriceAboveTPFUpperBound(rebalancePercentageBoundUp, treasuryPriceIndex)) {
+        if (!isSpotPriceAboveTpiUpperBound(rebalancePercentageBoundUp, treasuryPriceIndex)) {
             revert AMOCommon.NoRebalanceDown();
         }
         // should rarely be the case, but a sanity check nonetheless
-        if (willJoinTakePriceBelowTPFLowerBound(amountIn, rebalancePercentageBoundLow, treasuryPriceIndex)) {
+        if (willJoinTakePriceBelowTpiLowerBound(amountIn, rebalancePercentageBoundLow, treasuryPriceIndex)) {
             revert AMOCommon.HighSlippage();
         }
     }
@@ -299,14 +300,14 @@ contract BalancerPoolHelper {
         uint256 rebalancePercentageBoundLow,
         uint256 treasuryPriceIndex
     ) internal view {
-        // check spot price is below TPF by lower bound
-        if (!isSpotPriceBelowTPFLowerBound(rebalancePercentageBoundLow, treasuryPriceIndex)) {
+        // check spot price is below Tpi by lower bound
+        if (!isSpotPriceBelowTpiLowerBound(rebalancePercentageBoundLow, treasuryPriceIndex)) {
             revert AMOCommon.NoRebalanceUp();
         }
 
-        // will exit take price above tpf + upper bound
+        // will exit take price above TPI + upper bound
         // should rarely be the case, but a sanity check nonetheless
-        if (willExitTakePriceAboveTPFUpperBound(amountOut, rebalancePercentageBoundUp, treasuryPriceIndex)) {
+        if (willExitTakePriceAboveTpiUpperBound(amountOut, rebalancePercentageBoundUp, treasuryPriceIndex)) {
             revert AMOCommon.HighSlippage();
         }
     }
@@ -317,11 +318,11 @@ contract BalancerPoolHelper {
         uint256 rebalancePercentageBoundLow,
         uint256 treasuryPriceIndex
     ) internal view {
-        if (!isSpotPriceBelowTPFLowerBound(rebalancePercentageBoundLow, treasuryPriceIndex)) {
+        if (!isSpotPriceBelowTpiLowerBound(rebalancePercentageBoundLow, treasuryPriceIndex)) {
             revert AMOCommon.NoRebalanceUp();
         }
         // should rarely be the case, but a sanity check nonetheless
-        if (willStableJoinTakePriceAboveTPFUpperBound(amountIn, rebalancePercentageBoundUp, treasuryPriceIndex)) {
+        if (willStableJoinTakePriceAboveTpiUpperBound(amountIn, rebalancePercentageBoundUp, treasuryPriceIndex)) {
             revert AMOCommon.HighSlippage();
         }
     }
@@ -332,11 +333,11 @@ contract BalancerPoolHelper {
         uint256 rebalancePercentageBoundLow,
         uint256 treasuryPriceIndex
     ) internal view {
-        if (!isSpotPriceAboveTPFUpperBound(rebalancePercentageBoundUp, treasuryPriceIndex)) {
+        if (!isSpotPriceAboveTpiUpperBound(rebalancePercentageBoundUp, treasuryPriceIndex)) {
             revert AMOCommon.NoRebalanceDown();
         }
         // should rarely be the case, but a sanity check nonetheless
-        if (willStableExitTakePriceBelowTPFLowerBound(amountOut, rebalancePercentageBoundLow, treasuryPriceIndex)) {
+        if (willStableExitTakePriceBelowTpiLowerBound(amountOut, rebalancePercentageBoundLow, treasuryPriceIndex)) {
             revert AMOCommon.HighSlippage();
         }
     }

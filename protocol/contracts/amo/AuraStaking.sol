@@ -104,11 +104,11 @@ contract AuraStaking is TempleElevatedAccess {
         }
     }
 
-    function withdrawAllAndUnwrap(bool claim, address recipient) external onlyElevatedAccess {
+    function withdrawAllAndUnwrap(bool claim, address to) external onlyElevatedAccess {
         IAuraBaseRewardPool(auraPoolInfo.rewards).withdrawAllAndUnwrap(claim);
-        if (recipient != address(0)) {
+        if (to != address(0)) {
             uint256 bptBalance = bptToken.balanceOf(address(this));
-            bptToken.safeTransfer(recipient, bptBalance);
+            bptToken.safeTransfer(to, bptBalance);
         }
     }
 

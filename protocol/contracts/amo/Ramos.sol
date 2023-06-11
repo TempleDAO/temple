@@ -28,9 +28,9 @@ interface ITreasuryReservesVault {
 /**
  * @title AMO built for 50/50 balancer pool
  *
- * @dev It has a  convergent price to which it trends called the TPF (Treasury Price Floor).
- * In order to accomplish this when the price is below the TPF it will single side withdraw 
- * BPTs into TEMPLE and burn them and if the price is above the TPF it will 
+ * @dev It has a  convergent price to which it trends called the TPI (Treasury Price Index).
+ * In order to accomplish this when the price is below the TPI it will single side withdraw 
+ * BPTs into TEMPLE and burn them and if the price is above the TPI it will 
  * single side deposit TEMPLE into the pool to drop the spot price.
  */
 contract Ramos is TempleElevatedAccess, Pausable {
@@ -72,7 +72,7 @@ contract Ramos is TempleElevatedAccess, Pausable {
     // @notice Maximum amount of tokens that can be rebalanced
     MaxRebalanceAmounts public maxRebalanceAmounts;
 
-    // @notice by how much TPF slips up or down after rebalancing. In basis points
+    // @notice by how much TPI slips up or down after rebalancing. In basis points
     uint64 public postRebalanceSlippage;
 
     // @notice temple index in balancer pool. to avoid recalculation or external calls
@@ -96,8 +96,8 @@ contract Ramos is TempleElevatedAccess, Pausable {
     event WithdrawStable(uint256 bptAmountIn, uint256 amountOut, address to);
     event LiquidityAdded(uint256 stableAdded, uint256 templeAdded, uint256 bptReceived);
     event LiquidityRemoved(uint256 stableReceived, uint256 templeReceived, uint256 bptRemoved);
-    event SetRebalancePercentageBounds(uint64 belowTpf, uint64 aboveTpf);
-    event TreasuryReservesVaultSet(address indexed trv);
+    event SetRebalancePercentageBounds(uint64 belowTpi, uint64 aboveTpi);
+    event SetTreasuryReservesVault(address indexed trv);
     event SetAmoStaking(address indexed amoStaking);
     event DepositAndStakeBptTokens(uint256 bptAmount);
 
@@ -110,7 +110,8 @@ contract Ramos is TempleElevatedAccess, Pausable {
         address _bptToken,
         address _amoStaking,
         uint64 _templeIndexInPool,
-        bytes32 _balancerPoolId
+        bytes32 _balancerPoolId,
+        address _treasuryReservesVault
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
         balancerVault = IBalancerVault(_balancerVault);
         temple = ITempleERC20Token(_temple);
@@ -119,6 +120,7 @@ contract Ramos is TempleElevatedAccess, Pausable {
         amoStaking = IAuraStaking(_amoStaking);
         templeBalancerPoolIndex = _templeIndexInPool;
         balancerPoolId = _balancerPoolId;
+        treasuryReservesVault = ITreasuryReservesVault(_treasuryReservesVault);
     }
 
     function setPoolHelper(address _poolHelper) external onlyElevatedAccess {
@@ -158,14 +160,14 @@ contract Ramos is TempleElevatedAccess, Pausable {
     }
 
     // @notice percentage bounds (in bps) beyond which to rebalance up or down
-    function setRebalancePercentageBounds(uint64 belowTPF, uint64 aboveTPF) external onlyElevatedAccess {
-        if (belowTPF > BPS_PRECISION || aboveTPF > BPS_PRECISION) {
-            revert AMOCommon.InvalidBPSValue(belowTPF);
+    function setRebalancePercentageBounds(uint64 belowTpi, uint64 aboveTpi) external onlyElevatedAccess {
+        if (belowTpi > BPS_PRECISION || aboveTpi > BPS_PRECISION) {
+            revert AMOCommon.InvalidBPSValue(belowTpi);
         }
-        rebalancePercentageBoundLow = belowTPF;
-        rebalancePercentageBoundUp = aboveTPF;
+        rebalancePercentageBoundLow = belowTpi;
+        rebalancePercentageBoundUp = aboveTpi;
 
-        emit SetRebalancePercentageBounds(belowTPF, aboveTPF);
+        emit SetRebalancePercentageBounds(belowTpi, aboveTpi);
     }
 
     /**
@@ -175,7 +177,14 @@ contract Ramos is TempleElevatedAccess, Pausable {
         if (_trv == address(0)) revert CommonEventsAndErrors.InvalidAddress(_trv);
 
         treasuryReservesVault = ITreasuryReservesVault(_trv);
-        emit TreasuryReservesVaultSet(_trv);
+        emit SetTreasuryReservesVault(_trv);
+    }
+
+    /**
+     * @notice The treasury price index target via the TRV
+     */
+    function treasuryPriceIndex() external view returns (uint256) {
+        return treasuryReservesVault.treasuryPriceIndex();
     }
 
     /**

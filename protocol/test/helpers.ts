@@ -1,5 +1,5 @@
 import { ethers, network } from "hardhat";
-import { BaseContract, BigNumber, BigNumberish, Signer } from "ethers";
+import { BaseContract, BigNumber, BigNumberish, Contract, Signer } from "ethers";
 import { assert, expect } from "chai";
 import { TempleERC20Token, TempleERC20Token__factory } from "../typechain";
 import { impersonateAccount, time as timeHelpers } from "@nomicfoundation/hardhat-network-helpers";
@@ -28,6 +28,11 @@ export async function resetFork(
 export async function impersonateSigner(address: string): Promise<Signer> {
   await impersonateAccount(address);
   return await ethers.getSigner(address);
+}
+
+export async function setExplicitAccess(contract: Contract, fnName: string, allowedCaller: string, value: boolean) {
+    const fnSelector = contract.interface.getSighash(contract.interface.getFunction(fnName));
+    await contract.setExplicitAccess(allowedCaller, fnSelector, value);
 }
 
 /// deprecated, use pattern
