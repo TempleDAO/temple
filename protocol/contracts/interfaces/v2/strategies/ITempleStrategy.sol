@@ -146,7 +146,7 @@ interface ITempleStrategy is ITempleElevatedAccess {
      * @dev Intentionally not a view - as some quotes require a non-view (eg Balancer)
      * The intention is for clients to call as 'static', like a view
      */
-    function populateShutdownData(bytes memory populateParams) external returns (bytes memory shutdownParams);
+    function populateShutdownData(bytes memory populateParamsData) external returns (bytes memory shutdownParamsData);
 
     /**
      * @notice The strategy executor can shutdown this strategy, only after Governance has 
@@ -156,7 +156,7 @@ interface ITempleStrategy is ITempleElevatedAccess {
      * @dev Each strategy may require a different set of params to do the shutdown. It can abi encode/decode
      * that data off chain, or by first calling populateShutdownData()
      */
-    function automatedShutdown(bytes memory shutdownParams) external returns (uint256 stablesReturned);
+    function automatedShutdown(bytes memory shutdownParamsData) external returns (uint256 stablesReturned);
 
     /**
      * @notice Governance can recover any token from the strategy.

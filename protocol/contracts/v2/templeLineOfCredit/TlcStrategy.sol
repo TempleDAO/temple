@@ -2,7 +2,6 @@ pragma solidity ^0.8.17;
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (v2/templeLineOfCredit/TlcStrategy.sol)
 
-
 // solhint-disable-next-line no-unused-import
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 import { ITlcStrategy } from "contracts/interfaces/v2/templeLineOfCredit/ITlcStrategy.sol";
@@ -69,7 +68,7 @@ contract TlcStrategy is ITlcStrategy, AbstractStrategy {
      * Once done, they can give the all clear for governance to then shutdown the strategy
      * by calling TRV.shutdown(strategy, stables recovered)
      */
-    function doShutdown(bytes memory /*data*/) internal virtual override returns (uint256) {
+    function doShutdown(bytes memory /*data*/) internal virtual override {
         revert Unimplemented();
     }
 

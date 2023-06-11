@@ -142,7 +142,7 @@ contract GnosisStrategy is AbstractStrategy {
      * Once done, they can give the all clear for governance to then shutdown the strategy
      * by calling TRV.shutdown(strategy, stables recovered)
      */
-    function doShutdown(bytes memory /*data*/) internal virtual override returns (uint256) {
+    function doShutdown(bytes memory /*data*/) internal virtual override {
         revert Unimplemented();
     }
 

@@ -180,36 +180,42 @@ abstract contract AbstractStrategy is ITempleStrategy, TempleElevatedAccess {
      * @dev Intentionally not a view - as some quotes require a non-view (eg Balancer)
      * The intention is for clients to call as 'static', like a view
      */
-    // solhint-disable-next-line no-empty-blocks
     function populateShutdownData(
-        bytes memory populateParams
+        bytes memory populateParamsData
     ) external virtual override returns (
-        bytes memory shutdownParams
+        bytes memory shutdownParamsData
+    // solhint-disable-next-line no-empty-blocks
     ) {
         // Not implemented by default.
     }
 
     function automatedShutdown(
-        bytes memory shutdownParams
-    ) external override onlyElevatedAccess returns (
-        uint256 stablesReturned
+        bytes memory shutdownParamsData
+    ) external virtual override onlyElevatedAccess returns (
+        uint256 stablesRepaid
     ) {
-        stablesReturned = doShutdown(shutdownParams);
- 
+        // Instruct the underlying strategy to liquidate
+        doShutdown(shutdownParamsData);
+
         // NB: solc warns that this is unreachable - but that's a bug and not true
         // It's a a virtual function where not all implementations revert (eg DsrBaseStrategy)
-        emit Shutdown(stablesReturned);
+        
+        // Repay any stables back to the TRV
+        stablesRepaid = stableToken.balanceOf(address(this));
+        if (stablesRepaid != 0) {
+            treasuryReservesVault.repay(stablesRepaid, address(this));
+        }
+ 
+        emit Shutdown(stablesRepaid);
 
         // Now mark as shutdown in the TRV.
         // This will only succeed if governance has first set the strategy to `isShuttingDown`
-        treasuryReservesVault.shutdown(address(this), stablesReturned);
+        treasuryReservesVault.shutdown(address(this));
     }  
 
     function doShutdown(
         bytes memory shutdownParams
-    ) internal virtual returns (
-        uint256 stablesReturned
-    );
+    ) internal virtual;
 
     /**
      * @notice Governance can recover any token from the strategy.

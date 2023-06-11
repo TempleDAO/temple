@@ -439,7 +439,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
      * The strategy executor is responsible for unwinding all it's positions first and sending stables to the TRV.
      * All outstanding dUSD debt is burned, leaving a net gain/loss of equity for the shutdown strategy.
      */
-    function shutdown(address strategyAddr, uint256 stablesRecovered) external override {
+    function shutdown(address strategyAddr) external override {
         if (msg.sender != strategyAddr && !isElevatedAccess(msg.sender, msg.sig)) revert CommonEventsAndErrors.InvalidAccess();
 
         Strategy storage strategyData = strategies[strategyAddr];
@@ -449,15 +449,12 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         // Burn any remaining dUSD debt.
         uint256 _remainingDebt = internalDebtToken.burnAll(strategyAddr);
 
-        int256 _realisedGainOrLoss = int256(stablesRecovered) - int256(_remainingDebt);
-        totalRealisedGainOrLoss += _realisedGainOrLoss;
+        totalRealisedGainOrLoss -= int256(_remainingDebt);
 
-        if (_realisedGainOrLoss > 0) {
-            emit RealisedGain(strategyAddr, uint256(_realisedGainOrLoss));
-        } else {
-            emit RealisedLoss(strategyAddr, uint256(-_realisedGainOrLoss));
+        if (_remainingDebt != 0) {
+            emit RealisedLoss(strategyAddr, _remainingDebt);
         }
-        emit StrategyShutdown(strategyAddr, stablesRecovered, _remainingDebt);
+        emit StrategyShutdown(strategyAddr, _remainingDebt);
 
         // Clears all config, and sets isEnabled = false
         delete strategies[strategyAddr];

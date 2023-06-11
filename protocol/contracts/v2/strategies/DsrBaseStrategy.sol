@@ -278,14 +278,10 @@ contract DsrBaseStrategy is AbstractStrategy, ITempleBaseStrategy {
      * that data off chain, or by first calling populateShutdownData()
      * Shutdown data isn't required for a DSR automated shutdown.
      */
-    function doShutdown(bytes memory /*data*/) internal override returns (uint256) {
-        // Withdraw all from DSR and send everything back to the Treasury Reserves Vault.
+    function doShutdown(bytes memory /*data*/) internal override {
+        // Withdraw all from DSR and repay back to the Treasury Reserves Vault.
         (uint256 daiAvailable,, uint256 sharesAvailable) = _checkpointDaiBalance();
         _dsrWithdrawal(sharesAvailable, daiAvailable);
-        
-        // Transfer the stables to TRV
-        stableToken.safeTransfer(address(treasuryReservesVault), daiAvailable);
-        return daiAvailable;
     }
 
 }

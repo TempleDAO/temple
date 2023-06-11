@@ -9,6 +9,7 @@ import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { TreasuryReservesVault, ITreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /* solhint-disable func-name-mixedcase */
 contract AbstractStrategyTestBase is TempleTest {
@@ -37,11 +38,15 @@ contract AbstractStrategyTestBase is TempleTest {
 }
 
 contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
+    using SafeERC20 for FakeERC20;
+
     event TreasuryReservesVaultSet(address indexed trv);
     event StrategyIsShuttingDownSet(address indexed strategy, bool isShuttingDown);
     event Shutdown(uint256 stablesRecovered);
-    event StrategyShutdown(address indexed strategy, uint256 stablesRecovered, uint256 debtBurned);
+    event StrategyShutdown(address indexed strategy, uint256 debtBurned);
     event RealisedGain(address indexed strategy, uint256 amount);
+    event RealisedLoss(address indexed strategy, uint256 amount);
+    event Repay(address indexed strategy, address indexed from, uint256 stablesAmount);
 
     function setUp() public {
         _setUp();
@@ -106,9 +111,15 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
     }
 
     function test_automatedShutdown() public {
-        vm.startPrank(executor);
-        dUSD.mint(address(strategy), 10);
-        bytes memory params = abi.encode(2, 10);
+        // The strategy pulls tokens from alice to repay
+        vm.startPrank(alice);
+        dai.approve(address(strategy), 25);
+        dai.mint(alice, 25);
+
+        changePrank(executor);
+        dUSD.mint(address(strategy), 60);
+ 
+        bytes memory params = abi.encode(2, 10, alice);
         bytes memory shutdownData = strategy.populateShutdownData(params);
 
         vm.expectRevert(abi.encodeWithSelector(ITreasuryReservesVault.NotEnabled.selector));
@@ -123,17 +134,25 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
         emit StrategyIsShuttingDownSet(address(strategy), true);
         trv.setStrategyIsShuttingDown(address(strategy), true);
 
+        // The strategy first repays any remaining stables (the mock does 2 * 10 + 5)
+        vm.expectEmit(address(trv));
+        emit Repay(address(strategy), address(strategy), 25);
+
+        // The strategy shuts down
         vm.expectEmit(address(strategy));
         emit Shutdown(25);
 
+        // TRV adds a realised loss for 60 - 25
         vm.expectEmit(address(trv));
-        emit RealisedGain(address(strategy), 15);
+        emit RealisedLoss(address(strategy), 35);
 
+        // TRV burns the dUSD 
         vm.expectEmit(address(trv));
-        emit StrategyShutdown(address(strategy), 25, 10);
+        emit StrategyShutdown(address(strategy), 35);
 
         uint256 stables = strategy.automatedShutdown(shutdownData);
         assertEq(stables, 25);
+        assertEq(dUSD.balanceOf(address(strategy)), 0);
     }
 
 }

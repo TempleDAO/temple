@@ -65,6 +65,22 @@ contract RamosStrategy  is AbstractStrategy {
     }
 
     /**
+     * @notice Get the quote used to add liquidity proportionally
+     * @dev Since this is not the view function, this should be called with `callStatic`
+     */
+    function proportionalAddLiquidityQuote(
+        uint256 _stablesAmount,
+        uint256 _slippageBps
+    ) external returns (
+        uint256 templeAmount,
+        uint256 expectedBptAmount,
+        uint256 minBptAmount,
+        IBalancerVault.JoinPoolRequest memory requestData
+    ) {
+        return ramos.proportionalAddLiquidityQuote(_stablesAmount, _slippageBps);
+    }
+
+    /**
      * @notice Borrow a fixed amount from the Treasury Reserves and add liquidity
      * These stables are sent to the RAMOS to add liquidity and stake BPT
      */
@@ -75,6 +91,21 @@ contract RamosStrategy  is AbstractStrategy {
 
         // Add liquidity
         ramos.addLiquidity(_requestData);
+    }
+
+    /// @notice Get the quote used to remove liquidity
+    /// @dev Since this is not the view function, this should be called with `callStatic`
+    function proportionalRemoveLiquidityQuote(
+        uint256 _bptAmount,
+        uint256 _slippageBps
+    ) public returns (
+        uint256 expectedTempleAmount,
+        uint256 expectedStablesAmount,
+        uint256 minTempleAmount,
+        uint256 minStablesAmount,
+        IBalancerVault.ExitPoolRequest memory requestData
+    ) {
+        return ramos.proportionalRemoveLiquidityQuote(_bptAmount, _slippageBps);
     }
 
     /**
@@ -92,22 +123,41 @@ contract RamosStrategy  is AbstractStrategy {
         emit RemoveLiquidityAndRepay(stableBalance);
     }
 
-    function populateShutdownData(
-        bytes memory populateParams
-    ) external virtual override returns (
-        bytes memory shutdownParams
-    ) {
-        // Get a quote to remove all liquidity.
-        // @todo
+    struct PopulateShutdownParams {
+        uint256 slippageBps;
+    }
+
+    struct ShutdownParams {
+        IBalancerVault.ExitPoolRequest requestData;
+        uint256 bptAmount;
     }
 
     /**
-     * @notice @todo 
-     *
-     * Once done, they can give the all clear for governance to then shutdown the strategy
-     * by calling TRV.shutdown(strategy, stables recovered)
+     * @notice Populate data to automatically shutdown.
+     * This gets a quote to unstake all BPT and liquidate into stables.
+     * @param populateParamsData abi encoded data of struct `PopulateShutdownParams`
+     * @return shutdownData abi encoded data of struct `ShutdownParams`
      */
-    function doShutdown(bytes memory /*data*/) internal virtual override returns (uint256) {
-        revert Unimplemented();
+    function populateShutdownData(
+        bytes memory populateParamsData
+    ) external virtual override returns (
+        bytes memory shutdownData
+    ) {
+        (PopulateShutdownParams memory populateParams) = abi.decode(populateParamsData, (PopulateShutdownParams));
+        ShutdownParams memory shutdownParams;
+
+        (shutdownParams.bptAmount,,) = ramos.positions();
+        (,,,,shutdownParams.requestData) = proportionalRemoveLiquidityQuote(shutdownParams.bptAmount, populateParams.slippageBps);
+        shutdownData = abi.encode(shutdownParams);
+    }
+
+    /**
+     * @notice Shutdown the strategy.
+     * First unstake all BPT and liquidate into stables, and then repay the stables to the TRV.
+     * @param shutdownData abi encoded data of struct `PopulateShutdownParams`
+     */
+    function doShutdown(bytes memory shutdownData) internal virtual override {
+        (ShutdownParams memory params) = abi.decode(shutdownData, (ShutdownParams));
+        ramos.removeLiquidity(params.requestData, params.bptAmount, address(this));
     }
 }

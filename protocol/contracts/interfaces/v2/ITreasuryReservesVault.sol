@@ -28,7 +28,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     event DebtCeilingUpdated(address indexed strategy, uint256 oldDebtCeiling, uint256 newDebtCeiling);
     event UnderperformingEquityThresholdUpdated(address indexed strategy, int256 oldThreshold, int256 newThreshold);
     event StrategyIsShuttingDownSet(address indexed strategy, bool isShuttingDown);
-    event StrategyShutdown(address indexed strategy, uint256 stablesRecovered, uint256 debtBurned);
+    event StrategyShutdown(address indexed strategy, uint256 debtBurned);
     event BaseStrategySet(address indexed baseStrategy);
 
     event Borrow(address indexed strategy, address indexed recipient, uint256 stablesAmount);
@@ -270,8 +270,8 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     /**
      * @notice The second step in a two-phase shutdown. A strategy (automated) or executor (manual) calls
      * to effect the shutdown. isShuttingDown must be true for the strategy first.
-     * The strategy executor is responsible for unwinding all it's positions first and sending stables to the TRV.
+     * The strategy executor is responsible for unwinding all it's positions first and repaying the debt to the TRV.
      * All outstanding dUSD debt is burned, leaving a net gain/loss of equity for the shutdown strategy.
      */
-    function shutdown(address strategy, uint256 stablesRecovered) external;   
+    function shutdown(address strategy) external;   
 }

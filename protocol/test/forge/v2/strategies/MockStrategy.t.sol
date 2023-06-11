@@ -3,8 +3,11 @@ pragma solidity ^0.8.17;
 
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract MockStrategy is AbstractStrategy {
+    using SafeERC20 for IERC20;
 
     string public constant VERSION = "X.0.0";
 
@@ -68,12 +71,14 @@ contract MockStrategy is AbstractStrategy {
     struct PopulateShutdownInputData {
         uint256 p1;
         uint256 p2;
+        address pullTokenFrom;
     }
 
     struct ShutdownInputData {
         uint256 x;
         uint256 y;
         uint256 c;
+        address pullTokenFrom;
     }
 
     function populateShutdownData(bytes memory data) external override pure returns (bytes memory) {
@@ -81,12 +86,14 @@ contract MockStrategy is AbstractStrategy {
         return abi.encode(ShutdownInputData({
             x: inputData.p1,
             y: inputData.p2,
-            c: 5
+            c: 5,
+            pullTokenFrom: inputData.pullTokenFrom
         }));
     }
 
-    function doShutdown(bytes memory data) internal virtual override view returns (uint256) {
+    function doShutdown(bytes memory data) internal virtual override {
         ShutdownInputData memory inputData = abi.decode(data, (ShutdownInputData));
-        return inputData.x * inputData.y + inputData.c;
+        uint256 amount = inputData.x * inputData.y + inputData.c;
+        stableToken.safeTransferFrom(inputData.pullTokenFrom, address(this), amount);
     }
 }

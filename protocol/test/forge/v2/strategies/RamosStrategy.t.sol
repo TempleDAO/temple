@@ -45,6 +45,7 @@ contract RamosStrategyTestBase is TempleTest {
     address public auraRewardsToken = 0x13544617b10E1923363c89D902b749bea331AC4E;
 
     uint256 public constant DEFAULT_BASE_INTEREST = 0.01e18;
+    uint256 public constant BORROW_CEILING = 1.01e25;
     TempleDebtToken public dUSD;
     TreasuryReservesVault public trv;
 
@@ -104,13 +105,14 @@ contract RamosStrategyTestBase is TempleTest {
             address templeTokenOwner = temple.owner();
             startHoax(templeTokenOwner);
             temple.addMinter(address(ramos));
-            vm.stopPrank();
         }
 
+        // solhint-disable-next-line reentrancy
         strategy = new RamosStrategy(rescuer, executor, "RamosStrategy", address(trv), address(ramos));
 
-        vm.prank(executor);
+        changePrank(executor);
         dUSD.addMinter(executor);
+        dUSD.addMinter(address(trv));
     }
 
     struct Balances {
@@ -138,6 +140,10 @@ contract RamosStrategyTestBase is TempleTest {
 }
 
 contract RamosStrategyTestAdmin is RamosStrategyTestBase {
+    event Shutdown(uint256 stablesRecovered);
+    event StrategyShutdown(address indexed strategy, uint256 debtBurned);
+    event RealisedGain(address indexed strategy, uint256 amount);
+    event Repay(address indexed strategy, address indexed from, uint256 stablesAmount);
 
     function setUp() public {
         _setUp();
@@ -159,9 +165,58 @@ contract RamosStrategyTestAdmin is RamosStrategyTestBase {
     }
 
     function test_automatedShutdown() public {
+        // Setup the strategy, mint it some dUSD, start the shutdown process
         vm.startPrank(executor);
-        vm.expectRevert(abi.encodeWithSelector(ITempleStrategy.Unimplemented.selector));
-        strategy.automatedShutdown("");
+        {
+            ramos.setExplicitAccess(address(strategy), ramos.removeLiquidity.selector, true);
+            trv.addNewStrategy(address(strategy), BORROW_CEILING, 0);
+            dUSD.mint(address(strategy), 1_000_000e18);
+            trv.setStrategyIsShuttingDown(address(strategy), true);
+        }
+
+        // Get the current positions.
+        (
+            uint256 bptAmountBefore,
+            uint256 templeAmountBefore,
+            uint256 stableAmountBefore
+        ) = ramos.positions();
+        assertGt(bptAmountBefore, 1_000_000e18);
+        assertGt(templeAmountBefore, 1_000_000e18);
+        assertGt(stableAmountBefore, 1_000_000e18);
+
+        bytes memory params = abi.encode(100); // 1% slippage, but it will all be removed in test
+        bytes memory shutdownData = strategy.populateShutdownData(params);
+
+        uint256 _stablesRepaid = 5872605221247683473796320;
+
+        // The strategy first repays any remaining stables
+        vm.expectEmit(address(trv));
+        emit Repay(address(strategy), address(strategy), _stablesRepaid);
+
+        // There's a realised Gain (1mm dUSD)
+        vm.expectEmit(address(trv));
+        emit RealisedGain(address(strategy), _stablesRepaid - 1_000_000e18);
+
+        // The strategy shuts down
+        vm.expectEmit(address(strategy));
+        emit Shutdown(_stablesRepaid);
+
+        // TRV burns the dUSD 
+        vm.expectEmit(address(trv));
+        emit StrategyShutdown(address(strategy), 0);
+
+        uint256 stables = strategy.automatedShutdown(shutdownData);
+        assertEq(stables, _stablesRepaid);
+        assertApproxEqRel(stables, stableAmountBefore, 1e8);
+
+        (
+            uint256 bptAmountAfter,
+            uint256 templeAmountAfter,
+            uint256 stableAmountAfter
+        ) = ramos.positions();
+        assertEq(bptAmountAfter, 0);
+        assertEq(templeAmountAfter, 0);
+        assertEq(stableAmountAfter, 0);
     }
 }
 
@@ -173,7 +228,7 @@ contract RamosStrategyTestAccess is RamosStrategyTestBase {
     function test_access_borrowAndAddLiquidity() public {
         uint256 amount = 1e18;
         uint256 slippageBps = 100;  // 1%
-        (,,, IBalancerVault.JoinPoolRequest memory requestData) = ramos.proportionalAddLiquidityQuote(amount, slippageBps);
+        (,,, IBalancerVault.JoinPoolRequest memory requestData) = strategy.proportionalAddLiquidityQuote(amount, slippageBps);
         expectElevatedAccess();
         strategy.borrowAndAddLiquidity(amount, requestData);
     }
@@ -181,7 +236,7 @@ contract RamosStrategyTestAccess is RamosStrategyTestBase {
     function test_access_removeLiquidityAndRepay() public {
         uint256 bptOut = 1e18;
         uint256 slippageBps = 100;  // 1%
-        (,,,, IBalancerVault.ExitPoolRequest memory requestDataForRemoveLiquidity) = ramos.proportionalRemoveLiquidityQuote(bptOut, slippageBps);
+        (,,,, IBalancerVault.ExitPoolRequest memory requestDataForRemoveLiquidity) = strategy.proportionalRemoveLiquidityQuote(bptOut, slippageBps);
         expectElevatedAccess();
         strategy.removeLiquidityAndRepay(requestDataForRemoveLiquidity, bptOut);
     }
@@ -250,7 +305,6 @@ contract RamosStrategyTestBalances is RamosStrategyTestBase {
 
 contract RamosStrategyTestBorrowAndRepay is RamosStrategyTestBase {
     uint256 public constant TRV_STARTING_BALANCE = 10e25;
-    uint256 public constant BORROW_CEILING = 1.01e25;
 
     // TRV
     event Borrow(address indexed strategy, address indexed recipient, uint256 stablesAmount);

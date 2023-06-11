@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Temple (interfaces/v2/SafeGuards/IThresholdSafeGuard.sol)
 
 import { Guard } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
