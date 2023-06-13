@@ -6,9 +6,11 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { ITreasuryReservesVault } from "contracts/interfaces/v2/ITreasuryReservesVault.sol";
+import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 import { ITempleStrategy, ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
 import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
+
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 
@@ -71,15 +73,9 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
     // @todo should we keep a map of realised gain/loss per strategy on chain? Currently just off-chain
 
     /**
-     * @notice The Treasury Price Index, used within strategies.
+     * @notice The Treasury Price Index Oracle
      */
-    uint256 public override treasuryPriceIndex;
-
-    /**
-     * @notice The decimal precision of 'tpi'/Temple Price index
-     * @dev Decimal precision for 'tpi', 9880 == $0.988, precision = 4
-     */
-    uint256 public constant override TPI_DECIMALS = 4;
+    ITreasuryPriceIndexOracle public override tpiOracle;
 
     constructor(
         address _initialRescuer,
@@ -87,13 +83,13 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         address _templeToken,
         address _stableToken,
         address _internalDebtToken,
-        uint256 _treasuryPriceIndex
+        address _tpiOracle
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor)
     {
         templeToken = ITempleERC20Token(_templeToken);
         stableToken = IERC20(_stableToken);
         internalDebtToken = ITempleDebtToken(_internalDebtToken);
-        treasuryPriceIndex = _treasuryPriceIndex;
+        tpiOracle = ITreasuryPriceIndexOracle(_tpiOracle);
     }
 
     function setBaseStrategy(address _baseStrategy) external override onlyElevatedAccess {
@@ -110,15 +106,19 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         emit BaseStrategySet(_baseStrategy);
     }
 
-    // @todo put a 'max change' over this, and perhaps a timelock too
-    // https://discord.com/channels/847178511604252741/1063520475659120750/1113883230379196486
     /**
-     * @notice Set the Treasury Price Index (TPI)
-     * @dev 4dp, so 9800 = 0.98
+     * @notice Set the Treasury Price Index (TPI) Oracle
      */
-    function setTreasuryPriceIndex(uint256 value) external override onlyElevatedAccess {
-        emit TreasuryPriceIndexSet(treasuryPriceIndex, value);
-        treasuryPriceIndex = value;
+    function setTpiOracle(address newTpiOracle) external override onlyElevatedAccess {
+        emit TpiOracleSet(newTpiOracle);
+        tpiOracle = ITreasuryPriceIndexOracle(newTpiOracle);
+    }
+
+    /**
+     * @notice The Treasury Price Index - the target price of the Treasury, in `stableToken` terms.
+     */
+    function treasuryPriceIndex() public view override returns (uint256) {
+        return tpiOracle.treasuryPriceIndex();
     }
 
     /**
@@ -361,7 +361,7 @@ contract TreasuryReservesVault is ITreasuryReservesVault, TempleElevatedAccess {
         if (strategyData.repaysPaused) revert RepaysPaused();
 
         // dUSD price = Temple * TPI
-        uint256 debtToBurn = repayAmount * treasuryPriceIndex / 1e18; 
+        uint256 debtToBurn = repayAmount * treasuryPriceIndex() / 1e18;
 
         // @todo need an event like:?
         // emit RepayTemple(strategy, msg.sender, repayAmount, debtToBurn);

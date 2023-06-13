@@ -18,6 +18,7 @@ import { BalancerPoolHelper } from "contracts/amo/helpers/BalancerPoolHelper.sol
 import { AuraStaking } from "contracts/amo/AuraStaking.sol";
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { ITreasuryReservesVault, TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
+import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
 
 /* solhint-disable func-name-mixedcase, max-states-count */
 
@@ -47,13 +48,15 @@ contract RamosStrategyTestBase is TempleTest {
     uint256 public constant DEFAULT_BASE_INTEREST = 0.01e18;
     uint256 public constant BORROW_CEILING = 1.01e25;
     TempleDebtToken public dUSD;
+    TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
 
     function _setUp() public {
         fork("mainnet", 17300437);
 
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
-        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), 9700);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0);
+        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), address(tpiOracle));
 
         poolHelper = new BalancerPoolHelper(
             balancerVault, balancerHelpers, address(temple), 

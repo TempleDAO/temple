@@ -12,6 +12,7 @@ import { ITreasuryReservesVault, TreasuryReservesVault } from "contracts/v2/Trea
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
+import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
 
 import { IMakerDaoDaiJoinLike } from "contracts/interfaces/external/makerDao/IMakerDaoDaiJoinLike.sol";
 import { IMakerDaoPotLike } from "contracts/interfaces/external/makerDao/IMakerDaoPotLike.sol";
@@ -32,6 +33,7 @@ contract DsrBaseStrategyTestBase is TempleTest {
     // Nb this is ln(1.01)
     uint256 public constant DEFAULT_BASE_INTEREST = 9950330853168083;
     TempleDebtToken public dUSD;
+    TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
 
     address[] public reportedAssets = [address(dai), address(frax), address(0)];
@@ -40,7 +42,8 @@ contract DsrBaseStrategyTestBase is TempleTest {
         fork("mainnet", 16675385);
 
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
-        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), 9700);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0);
+        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), address(tpiOracle));
         strategy = new DsrBaseStrategy(rescuer, executor, "DsrBaseStrategy", address(trv), address(daiJoin), address(pot));
 
         vm.startPrank(executor);

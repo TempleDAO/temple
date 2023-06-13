@@ -6,6 +6,7 @@ import { MockStrategy } from "./MockStrategy.t.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
 
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
+import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
 import { TreasuryReservesVault, ITreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
@@ -20,6 +21,7 @@ contract AbstractStrategyTestBase is TempleTest {
     FakeERC20 public usdc = new FakeERC20("USDC", "USDC", address(0), 0);
 
     TempleDebtToken public dUSD;
+    TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
     uint256 public constant DEFAULT_BASE_INTEREST = 0.01e18;
 
@@ -27,7 +29,8 @@ contract AbstractStrategyTestBase is TempleTest {
 
     function _setUp() public {
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
-        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), 9700);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0);
+        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), address(tpiOracle));
         strategy = new MockStrategy(rescuer, executor, "MockStrategy", address(trv), reportedAssets);
 
         vm.startPrank(executor);
@@ -95,7 +98,7 @@ contract AbstractStrategyTestAdmin is AbstractStrategyTestBase {
         vm.expectRevert();
         strategy.setTreasuryReservesVault(alice);
 
-        TreasuryReservesVault trv2 = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), 9700);
+        TreasuryReservesVault trv2 = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), address(tpiOracle));
 
         vm.expectEmit();
         emit TreasuryReservesVaultSet(address(trv2));

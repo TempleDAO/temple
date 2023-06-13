@@ -7,7 +7,8 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { mulDiv } from "@prb/math/src/Common.sol";
 
-import { IRamos, ITreasuryReservesVault } from "contracts/interfaces/amo/IRamos.sol";
+import { IRamos } from "contracts/interfaces/amo/IRamos.sol";
+import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
 import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerPoolHelper.sol";
 import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
@@ -16,7 +17,6 @@ import { IBalancerBptToken } from "contracts/interfaces/external/balancer/IBalan
 
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { AMOCommon } from "contracts/amo/helpers/AMOCommon.sol";
-import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 /* solhint-disable not-rely-on-time */
 
@@ -65,9 +65,8 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     /// @notice Precision for BPS calculations. 1% == 100
     uint256 public constant override BPS_PRECISION = 10_000;
 
-    /// @notice The Treasury Reserves Vault is the source of truth for the Treasury Price Index (TPI)
-    /// which is the target price for RAMOS rebalances
-    ITreasuryReservesVault public override treasuryReservesVault;
+    /// @notice The Treasury Price Index (TPI) Oracle
+    ITreasuryPriceIndexOracle public override tpiOracle;
 
     /// @notice The percentage bounds (in bps) beyond which to rebalance up or down
     uint64 public override rebalancePercentageBoundLow;
@@ -93,7 +92,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         address _amoStaking,
         uint64 _templeIndexInPool,
         bytes32 _balancerPoolId,
-        address _treasuryReservesVault
+        address _tpiOracle
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
         balancerVault = IBalancerVault(_balancerVault);
         temple = ITempleERC20Token(_temple);
@@ -102,7 +101,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         amoStaking = IAuraStaking(_amoStaking);
         templeBalancerPoolIndex = _templeIndexInPool;
         balancerPoolId = _balancerPoolId;
-        treasuryReservesVault = ITreasuryReservesVault(_treasuryReservesVault);
+        tpiOracle = ITreasuryPriceIndexOracle(_tpiOracle);
     }
 
     /**
@@ -162,20 +161,18 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     }
 
     /**
-     * @notice Governance can set the address of the treasury reserves vault.
+     * @notice Set the Treasury Price Index (TPI) Oracle
      */
-    function setTreasuryReservesVault(address _trv) external onlyElevatedAccess {
-        if (_trv == address(0)) revert CommonEventsAndErrors.InvalidAddress(_trv);
-
-        treasuryReservesVault = ITreasuryReservesVault(_trv);
-        emit SetTreasuryReservesVault(_trv);
+    function setTpiOracle(address newTpiOracle) external override onlyElevatedAccess {
+        emit TpiOracleSet(newTpiOracle);
+        tpiOracle = ITreasuryPriceIndexOracle(newTpiOracle);
     }
 
     /**
-     * @notice The treasury price index target via the TRV
+     * @notice The Treasury Price Index - the target price of the Treasury, in `stableToken` terms.
      */
-    function treasuryPriceIndex() external override view returns (uint256) {
-        return treasuryReservesVault.treasuryPriceIndex();
+    function treasuryPriceIndex() public view override returns (uint256) {
+        return tpiOracle.treasuryPriceIndex();
     }
 
     /**
@@ -234,7 +231,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         uint256 burnAmount = poolHelper.exitPool(
             bptAmountIn, minAmountOut, rebalancePercentageBoundLow,
             rebalancePercentageBoundUp, postRebalanceSlippage,
-            templeBalancerPoolIndex, treasuryReservesVault.treasuryPriceIndex(), temple
+            templeBalancerPoolIndex, treasuryPriceIndex(), temple
         );
 
         temple.burn(burnAmount);
@@ -263,7 +260,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         // joinTokenIndex = templeBalancerPoolIndex;
         uint256 bptIn = poolHelper.joinPool(
             templeAmountIn, minBptOut, rebalancePercentageBoundUp,
-            rebalancePercentageBoundLow, treasuryReservesVault.treasuryPriceIndex(), 
+            rebalancePercentageBoundLow, treasuryPriceIndex(), 
             postRebalanceSlippage, templeBalancerPoolIndex, temple
         );
 
@@ -292,7 +289,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         uint256 joinTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
         uint256 bptOut = poolHelper.joinPool(
             amountIn, minBptOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow,
-            treasuryReservesVault.treasuryPriceIndex(), postRebalanceSlippage, joinTokenIndex, stable
+            treasuryPriceIndex(), postRebalanceSlippage, joinTokenIndex, stable
         );
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
@@ -323,7 +320,7 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         uint256 stableTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
         uint256 amountOut = poolHelper.exitPool(
             bptAmountIn, minAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
-            postRebalanceSlippage, stableTokenIndex, treasuryReservesVault.treasuryPriceIndex(), stable
+            postRebalanceSlippage, stableTokenIndex, treasuryPriceIndex(), stable
         );
 
         lastRebalanceTimeSecs = uint64(block.timestamp);

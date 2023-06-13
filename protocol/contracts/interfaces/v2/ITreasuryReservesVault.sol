@@ -7,6 +7,7 @@ import { ITempleDebtToken } from "contracts/interfaces/v2/ITempleDebtToken.sol";
 import { ITempleStrategy, ITempleBaseStrategy } from "contracts/interfaces/v2/strategies/ITempleBaseStrategy.sol";
 import { ITempleElevatedAccess } from "contracts/interfaces/v2/access/ITempleElevatedAccess.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
+import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
 
 /**
  * @title Treasury Reserves Vault (TRV)
@@ -36,7 +37,7 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     // event RepayTemple(address indexed strategy, address indexed from, uint256 templeBurned, uint256 debtBurned);
     event RealisedGain(address indexed strategy, uint256 amount);
     event RealisedLoss(address indexed strategy, uint256 amount);
-    event TreasuryPriceIndexSet(uint256 oldTpi, uint256 newTpi);
+    event TpiOracleSet(address indexed tpiOracle);
 
     error NotEnabled();
     error AlreadyEnabled();
@@ -117,21 +118,19 @@ interface ITreasuryReservesVault is ITempleElevatedAccess {
     function setBaseStrategy(address _baseStrategy) external;
 
     /**
-     * @notice The Treasury Price Index, used within strategies.
+     * @notice The Treasury Price Index Oracle
+     */
+    function tpiOracle() external view returns (ITreasuryPriceIndexOracle);
+
+    /**
+     * @notice Set the Treasury Price Index (TPI) Oracle
+     */
+    function setTpiOracle(address tpiOracleAddress) external;
+
+    /**
+     * @notice The Treasury Price Index - the target price of the Treasury, in `stableToken` terms.
      */
     function treasuryPriceIndex() external view returns (uint256);
-
-    /**
-     * @notice The decimal precision of 'tpi'/Temple Price index
-     * @dev Decimal precision for 'tpi', 9880 == $0.988, precision = 4
-     */
-    // solhint-disable-next-line func-name-mixedcase
-    function TPI_DECIMALS() external view returns (uint256);
-
-    /**
-     * @notice Set the Treasury Price Index (TPI)
-     */
-    function setTreasuryPriceIndex(uint256 value) external;
 
     /**
      * API version to help with future integrations/migrations

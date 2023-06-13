@@ -109,7 +109,7 @@ contract TempleLineOfCreditTest_Admin is TlcBaseTest {
         assertEq(address(tlc.tlcStrategy()), address(tlcStrategy));
         assertEq(address(tlc.treasuryReservesVault()), address(trv));
 
-        TreasuryReservesVault newTrv = new TreasuryReservesVault(rescuer, executor, address(templeToken), address(daiToken), address(dUSD), templePrice);
+        TreasuryReservesVault newTrv = new TreasuryReservesVault(rescuer, executor, address(templeToken), address(daiToken), address(dUSD), address(tpiOracle));
         TlcStrategy newTlcStrategy = new TlcStrategy(
             rescuer, 
             executor, 

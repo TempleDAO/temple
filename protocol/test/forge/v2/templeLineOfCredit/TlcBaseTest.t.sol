@@ -14,6 +14,7 @@ import { TreasuryReservesVault } from "contracts/v2/TreasuryReservesVault.sol";
 import { TempleDebtToken } from "contracts/v2/TempleDebtToken.sol";
 import { LinearWithKinkInterestRateModel } from "contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol";
 import { TempleERC20Token } from "contracts/core/TempleERC20Token.sol";
+import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
 
 /* solhint-disable func-name-mixedcase, contract-name-camelcase, not-rely-on-time */
 contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
@@ -29,6 +30,7 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
 
     uint256 public templePrice = 0.97e18; // $0.97
 
+    TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
     TempleDebtToken public dUSD;
     uint96 public constant DEFAULT_BASE_INTEREST = 0.01e18; // 1%
@@ -58,7 +60,8 @@ contract TlcBaseTest is TempleTest, ITlcDataTypes, ITlcEventsAndErrors {
             vm.label(address(dUSD), "dUSD");
         }
 
-        trv = new TreasuryReservesVault(rescuer, executor, address(templeToken), address(daiToken), address(dUSD), templePrice);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, templePrice, 0.1e18, 0);
+        trv = new TreasuryReservesVault(rescuer, executor, address(templeToken), address(daiToken), address(dUSD), address(tpiOracle));
         
         daiInterestRateModel = new LinearWithKinkInterestRateModel(
             rescuer,

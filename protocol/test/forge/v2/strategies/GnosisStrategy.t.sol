@@ -9,6 +9,7 @@ import { ITreasuryReservesVault, TreasuryReservesVault } from "contracts/v2/Trea
 import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 import { FakeERC20 } from "contracts/fakes/FakeERC20.sol";
 import { ITempleStrategy } from "contracts/interfaces/v2/strategies/ITempleStrategy.sol";
+import { TreasuryPriceIndexOracle } from "contracts/v2/TreasuryPriceIndexOracle.sol";
 
 /* solhint-disable func-name-mixedcase */
 contract GnosisStrategyTestBase is TempleTest {
@@ -22,13 +23,15 @@ contract GnosisStrategyTestBase is TempleTest {
 
     uint256 public constant DEFAULT_BASE_INTEREST = 0.01e18;
     TempleDebtToken public dUSD;
+    TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
 
     address[] public reportedAssets = [address(dai), address(frax), address(0)];
 
     function _setUp() public {
         dUSD = new TempleDebtToken("Temple Debt", "dUSD", rescuer, executor, DEFAULT_BASE_INTEREST);
-        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), 9700);
+        tpiOracle = new TreasuryPriceIndexOracle(rescuer, executor, 0.97e18, 0.1e18, 0);
+        trv = new TreasuryReservesVault(rescuer, executor, address(temple), address(dai), address(dUSD), address(tpiOracle));
         strategy = new GnosisStrategy(rescuer, executor, "GnosisStrategy", address(trv), gnosisSafeWallet);
 
         vm.startPrank(executor);

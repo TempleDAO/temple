@@ -5,8 +5,13 @@ pragma solidity ^0.8.17;
 library SafeCast {
     error Overflow(uint256 amount);
 
-    function encodeUInt128(uint256 amount) internal pure returns (uint128 downcasted) {
-        downcasted = uint128(amount);
+    function encodeUInt32(uint256 amount) internal pure returns (uint32 downcasted) {
+        downcasted = uint32(amount);
+        if (downcasted != amount) revert Overflow(amount);
+    }
+
+    function encodeUInt64(uint256 amount) internal pure returns (uint64 downcasted) {
+        downcasted = uint64(amount);
         if (downcasted != amount) revert Overflow(amount);
     }
 
@@ -19,9 +24,9 @@ library SafeCast {
         downcasted = uint96(amount);
         if (downcasted != amount) revert Overflow(amount);
     }
-
-    function encodeUInt64(uint256 amount) internal pure returns (uint64 downcasted) {
-        downcasted = uint64(amount);
+    
+    function encodeUInt128(uint256 amount) internal pure returns (uint128 downcasted) {
+        downcasted = uint128(amount);
         if (downcasted != amount) revert Overflow(amount);
     }
 }

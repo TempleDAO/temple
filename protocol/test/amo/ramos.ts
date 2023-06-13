@@ -50,10 +50,8 @@ import {
   BalancerPoolHelper,
   Ramos__factory,
   Ramos,
-  TempleDebtToken__factory,
-  TreasuryReservesVault__factory,
-  TempleDebtToken,
-  TreasuryReservesVault
+  TreasuryPriceIndexOracle,
+  TreasuryPriceIndexOracle__factory
 } from "../../typechain";
 import { DEPLOYED_CONTRACTS } from '../../scripts/deploys/helpers';
 
@@ -116,8 +114,7 @@ let auraBooster: IAuraBooster;
 let auraToken: ERC20;
 let balToken: ERC20;
 let poolHelper: BalancerPoolHelper;
-let dUSD: TempleDebtToken;
-let trv: TreasuryReservesVault;
+let tpiOracle: TreasuryPriceIndexOracle;
 
 describe("Temple Price Floor AMO", async () => {
 
@@ -179,8 +176,7 @@ describe("Temple Price Floor AMO", async () => {
         await executor.sendTransaction({value: ONE_ETH, to: BAL_MULTISIG });
         await executor.sendTransaction({value: ONE_ETH, to: await auraMultisig.getAddress()});
 
-        dUSD = await new TempleDebtToken__factory(executor).deploy("Temple Debt", "dUSD", rescuerAddress, executorAddress, ethers.utils.parseEther("0.01"));
-        trv = await new TreasuryReservesVault__factory(executor).deploy(rescuerAddress, executorAddress, TEMPLE, BBA_USD_TOKEN, dUSD.address, ethers.utils.parseEther("0.97"));
+        tpiOracle = await new TreasuryPriceIndexOracle__factory(executor).deploy(rescuerAddress, executorAddress, ethers.utils.parseEther("0.97"), ethers.utils.parseEther("0.1"), 0);
 
          // create gauge and add pool on Aura
         let token, rewards: string;
@@ -204,7 +200,7 @@ describe("Temple Price Floor AMO", async () => {
             amoStaking.address,
             0,
             TEMPLE_BB_A_USD_BALANCER_POOL_ID,
-            trv.address
+            tpiOracle.address
         );
 
         poolHelper = await new BalancerPoolHelper__factory(executor).deploy(
@@ -348,7 +344,7 @@ describe("Temple Price Floor AMO", async () => {
             await expect(connectAMO.setCoolDown(1800)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setPoolHelper(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setAmoStaking(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
-            await expect(connectAMO.setTreasuryReservesVault(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
+            await expect(connectAMO.setTpiOracle(alanAddress)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setRebalancePercentageBounds(100,100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setMaxRebalanceAmounts(100, 100, 100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
             await expect(connectAMO.setPostRebalanceSlippage(100)).to.be.revertedWithCustomError(amo, "InvalidAccess");
@@ -369,7 +365,7 @@ describe("Temple Price Floor AMO", async () => {
             await amo.pause();
             await amo.unpause();
             await amo.setCoolDown(1800);
-            await amo.setTreasuryReservesVault(trv.address);
+            await amo.setTpiOracle(tpiOracle.address);
         });
 
         it("sets pool helper", async () => {
@@ -403,15 +399,12 @@ describe("Temple Price Floor AMO", async () => {
             expect(await amo.rebalancePercentageBoundUp()).to.eq(400);
         });
     
-        it("sets treasury reserves vault", async () => {
-            const newTrv = await new TreasuryReservesVault__factory(executor).deploy(rescuerAddress, executorAddress, TEMPLE, BBA_USD_TOKEN, dUSD.address, ethers.utils.parseEther("0.97"));
-            await expect(amo.setTreasuryReservesVault(newTrv.address))
-                .to.emit(amo, "SetTreasuryReservesVault")
-                .withArgs(newTrv.address);
-            expect(await amo.treasuryReservesVault()).to.eq(newTrv.address);
-
-            await expect(amo.setTreasuryReservesVault(ZERO_ADDRESS))
-                .to.revertedWithCustomError(amo, "InvalidAddress");
+        it("sets treasury price index oracle", async () => {
+            const newOracle = await new TreasuryPriceIndexOracle__factory(executor).deploy(rescuerAddress, executorAddress, ethers.utils.parseEther("0.97"), ethers.utils.parseEther("0.1"), 0);
+            await expect(amo.setTpiOracle(newOracle.address))
+                .to.emit(amo, "TpiOracleSet")
+                .withArgs(newOracle.address);
+            expect(await amo.tpiOracle()).to.eq(newOracle.address);
         });
 
         it("sets cooldown", async () => {
@@ -632,7 +625,8 @@ describe("Temple Price Floor AMO", async () => {
             
             // skew price below TPI
             await singleSideDepositTemple(toAtto(50_000));
-            await trv.setTreasuryPriceIndex(ethers.utils.parseEther("0.97"));
+            await tpiOracle.setTreasuryPriceIndex(ethers.utils.parseEther("0.97"));
+            expect(await amo.treasuryPriceIndex()).to.equal(ethers.utils.parseEther("0.97"));
             await expect(amo.withdrawStable(ONE_ETH, 1, amo.address)).to.be.revertedWithCustomError(poolHelper, "NoRebalanceDown");
             await amo.pause();
             await expect(amo.withdrawStable(1, 1, amo.address)).to.be.revertedWith("Pausable: paused");

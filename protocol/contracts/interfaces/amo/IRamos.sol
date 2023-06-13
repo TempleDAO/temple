@@ -8,13 +8,7 @@ import { IBalancerBptToken } from "contracts/interfaces/external/balancer/IBalan
 import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerPoolHelper.sol";
 import { IAuraStaking } from "contracts/interfaces/external/aura/IAuraStaking.sol";
 import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
-
-interface ITreasuryReservesVault {
-    /**
-     * @notice The treasury price index target
-     */
-    function treasuryPriceIndex() external view returns (uint256);
-}
+import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
 
 /**
  * @title AMO built for 50/50 balancer pool
@@ -47,6 +41,7 @@ interface IRamos {
     event SetTreasuryReservesVault(address indexed trv);
     event SetAmoStaking(address indexed amoStaking);
     event DepositAndStakeBptTokens(uint256 bptAmount);
+    event TpiOracleSet(address indexed tpiOracle);
 
     /// @notice The Balancer vault singleton
     function balancerVault() external view returns (IBalancerVault);
@@ -81,10 +76,6 @@ interface IRamos {
     // solhint-disable-next-line func-name-mixedcase
     function BPS_PRECISION() external view returns (uint256);
 
-    /// @notice The Treasury Reserves Vault is the source of truth for the Treasury Price Index (TPI)
-    /// which is the target price for RAMOS rebalances
-    function treasuryReservesVault() external view returns (ITreasuryReservesVault);
-
     /// @notice The percentage bounds (in bps) beyond which to rebalance up or down
     function rebalancePercentageBoundLow() external view returns (uint64);
     function rebalancePercentageBoundUp() external view returns (uint64);
@@ -104,7 +95,17 @@ interface IRamos {
     function templeBalancerPoolIndex() external view returns (uint64);
 
     /**
-     * @notice The treasury price index target via the TRV
+     * @notice The Treasury Price Index (TPI) Oracle
+     */
+    function tpiOracle() external view returns (ITreasuryPriceIndexOracle);
+
+    /**
+     * @notice Set the Treasury Price Index (TPI) Oracle
+     */
+    function setTpiOracle(address tpiOracleAddress) external;
+
+    /**
+     * @notice The Treasury Price Index - the target price of the Treasury, in `stableToken` terms.
      */
     function treasuryPriceIndex() external view returns (uint256);
 
