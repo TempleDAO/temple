@@ -12,7 +12,7 @@ import { IRamosProtocolTokenVault } from "contracts/interfaces/amo/helpers/IRamo
 import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
 import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerPoolHelper.sol";
 import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
-import { IAuraStaking } from "contracts/interfaces/external/aura/IAuraStaking.sol";
+import { IAuraStaking } from "contracts/interfaces/amo/IAuraStaking.sol";
 import { IBalancerBptToken } from "contracts/interfaces/external/balancer/IBalancerBptToken.sol";
 
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
@@ -242,123 +242,135 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     }
 
     /**
-     * @notice Rebalance when `protocolToken` spot price is below TPI.
-     * Single-side withdraw `protocolToken` from balancer liquidity pool to raise price.
+     * @notice Rebalance up when `protocolToken` spot price is below TPI.
+     * Single-side WITHDRAW `protocolToken` from balancer liquidity pool to raise price.
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
-     * pool exit. `protocolToken` returned from balancer pool are burned
+     * pool exit. 
+     * @dev `protocolToken`returned from balancer pool are repaid to the `protocolTokenVault`
      * @param bptAmountIn amount of BPT tokens going in balancer pool for exit
-     * @param minAmountOut amount of `protocolToken` expected out of balancer pool
+     * @param minProtocolTokenOut amount of `protocolToken` expected out of balancer pool
      */
-    function rebalanceUp(
+    function rebalanceUpExit(
         uint256 bptAmountIn,
-        uint256 minAmountOut
+        uint256 minProtocolTokenOut
     ) external override onlyElevatedAccess whenNotPaused enoughCooldown {
-        _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
+        _validateParams(minProtocolTokenOut, bptAmountIn, maxRebalanceAmounts.bpt);
+        lastRebalanceTimeSecs = uint64(block.timestamp);
 
+        // Unstake and send the BPT to the poolHelper
         amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
     
-        uint256 burnAmount = poolHelper.exitPool(
-            bptAmountIn, minAmountOut, rebalancePercentageBoundLow,
+        // protocolToken single side exit
+        uint256 protocolTokenAmountOut = poolHelper.exitPool(
+            bptAmountIn, minProtocolTokenOut, rebalancePercentageBoundLow,
             rebalancePercentageBoundUp, postRebalanceSlippage,
             protocolTokenBalancerPoolIndex, treasuryPriceIndex(), protocolToken
         );
+        emit RebalanceUpExit(bptAmountIn, protocolTokenAmountOut);
 
-        protocolTokenVault.repayProtocolToken(burnAmount);
-
-        lastRebalanceTimeSecs = uint64(block.timestamp);
-        emit RebalanceUp(bptAmountIn, burnAmount);
+        // Dispose of the protocol tokens withdrawn from the pool
+        protocolTokenVault.repayProtocolToken(protocolTokenAmountOut);
     }
 
     /**
-     * @notice Rebalance when `protocolToken` spot price is above TPI
-     * Mints `protocolToken` and single-side deposits into balancer pool
+     * @notice Rebalance down when `protocolToken` spot price is above TPI.
+     * Single-side WITHDRAW `quoteToken` from balancer liquidity pool to lower price.
+     * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
+     * pool exit. 
+     * @dev `quoteToken`returned from balancer pool are repaid to the recipient
+     * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
+     * @param minQuoteTokenAmountOut Minimum amount of `quoteToken` expected to receive
+     * @param recipient Address to which the `quoteToken` withdrawn are transferred
+     */
+    function rebalanceDownExit(
+        uint256 bptAmountIn,
+        uint256 minQuoteTokenAmountOut,
+        address recipient
+    ) external override onlyElevatedAccess whenNotPaused enoughCooldown {
+        _validateParams(minQuoteTokenAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
+        lastRebalanceTimeSecs = uint64(block.timestamp);
+
+        // Unstake and send the BPT to the poolHelper
+        amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
+
+        // QuoteToken single side exit
+        uint256 quoteTokenAmountOut = poolHelper.exitPool(
+            bptAmountIn, minQuoteTokenAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
+            postRebalanceSlippage, 1-protocolTokenBalancerPoolIndex, treasuryPriceIndex(), quoteToken
+        );
+        emit RebalanceDownExit(bptAmountIn, quoteTokenAmountOut, recipient);
+
+        if (recipient != address(this) && recipient != address(0)) {
+            uint256 quoteTokenBalance = quoteToken.balanceOf(address(this));
+            quoteToken.safeTransfer(recipient, quoteTokenBalance);
+        }
+    }
+
+    /**
+     * @notice Rebalance up when `protocolToken` spot price is below TPI.
+     * Single-side ADD `quoteToken` into the balancer liquidity pool to raise price.
      * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
-     * @param protocolTokenAmountIn Amount of `protocolToken` tokens to deposit into balancer pool
+     * @dev The `quoteToken` amount must be deposited into this contract first
+     * @param quoteTokenAmountIn Amount of `quoteToken` to deposit into balancer pool
      * @param minBptOut Minimum amount of BPT tokens expected to receive
      */
-    function rebalanceDown(
-        uint256 protocolTokenAmountIn,
+    function rebalanceUpJoin(
+        uint256 quoteTokenAmountIn,
         uint256 minBptOut
     ) external override onlyElevatedAccess whenNotPaused enoughCooldown {
-        _validateParams(minBptOut, protocolTokenAmountIn, maxRebalanceAmounts.protocolToken);
-
-        protocolTokenVault.borrowProtocolToken(protocolTokenAmountIn, address(poolHelper));
-
-        uint256 bptIn = poolHelper.joinPool(
-            protocolTokenAmountIn, minBptOut, rebalancePercentageBoundUp,
-            rebalancePercentageBoundLow, treasuryPriceIndex(), 
-            postRebalanceSlippage, protocolTokenBalancerPoolIndex, protocolToken
-        );
-
+        _validateParams(minBptOut, quoteTokenAmountIn, maxRebalanceAmounts.quoteToken);
         lastRebalanceTimeSecs = uint64(block.timestamp);
-        emit RebalanceDown(protocolTokenAmountIn, bptIn);
+
+        // Send the quote token to the poolHelper
+        quoteToken.safeTransfer(address(poolHelper), quoteTokenAmountIn);
+
+        // quoteToken single side join
+        uint256 bptOut = poolHelper.joinPool(
+            quoteTokenAmountIn, minBptOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow,
+            treasuryPriceIndex(), postRebalanceSlippage, 1-protocolTokenBalancerPoolIndex, quoteToken
+        );
+        emit RebalanceUpJoin(quoteTokenAmountIn, bptOut);
 
         // deposit and stake BPT
-        bptToken.safeTransfer(address(amoStaking), bptIn);
-        amoStaking.depositAndStake(bptIn);
-    }
-
-    /**
-     * @notice Single-side deposit quoteToken tokens into balancer pool when `protocolToken` price 
-     * is below Treasury Price Index.
-     * @param amountIn Amount of `quoteToken` to deposit into balancer pool
-     * @param minBptOut Minimum amount of BPT tokens expected to receive
-     */
-    function depositQuoteToken(
-        uint256 amountIn,
-        uint256 minBptOut
-    ) external override onlyElevatedAccess whenNotPaused {
-        _validateParams(minBptOut, amountIn, maxRebalanceAmounts.quoteToken);
-
-        quoteToken.safeTransfer(address(poolHelper), amountIn);
-        // quoteToken join
-        uint256 joinTokenIndex = protocolTokenBalancerPoolIndex == 0 ? 1 : 0;
-        uint256 bptOut = poolHelper.joinPool(
-            amountIn, minBptOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow,
-            treasuryPriceIndex(), postRebalanceSlippage, joinTokenIndex, quoteToken
-        );
-
-        lastRebalanceTimeSecs = uint64(block.timestamp);
-
-        emit QuoteTokenDeposited(amountIn, bptOut);
-
         bptToken.safeTransfer(address(amoStaking), bptOut);
         amoStaking.depositAndStake(bptOut);
     }
 
     /**
-     * @notice Single-side withdraw `quoteToken` from balancer pool when `protocolToken` price 
-     * is above TPI. Withdraw and unwrap BPT tokens from Aura staking.
-     * BPT tokens are then sent into balancer pool for `quoteToken` in return.
-     * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
-     * @param minAmountOut Minimum amount of `quoteToken` expected to receive
-     * @param to Address to which the `quoteToken` withdrawn are transferred
+     * @notice Rebalance down when `protocolToken` spot price is above TPI.
+     * Single-side ADD `protocolToken` into the balancer liquidity pool to lower price.
+     * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
+     * @dev The `protocolToken` are borrowed from the `protocolTokenVault`
+     * @param protocolTokenAmountIn Amount of `protocolToken` tokens to deposit into balancer pool
+     * @param minBptOut Minimum amount of BPT tokens expected to receive
      */
-    function withdrawQuoteToken(
-        uint256 bptAmountIn,
-        uint256 minAmountOut,
-        address to
-    ) external override onlyElevatedAccess whenNotPaused {
-        _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
-
-        amoStaking.withdrawAndUnwrap(bptAmountIn, false, address(poolHelper));
-
-        uint256 quoteTokenIndex = protocolTokenBalancerPoolIndex == 0 ? 1 : 0;
-        uint256 amountOut = poolHelper.exitPool(
-            bptAmountIn, minAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
-            postRebalanceSlippage, quoteTokenIndex, treasuryPriceIndex(), quoteToken
-        );
-
+    function rebalanceDownJoin(
+        uint256 protocolTokenAmountIn,
+        uint256 minBptOut
+    ) external override onlyElevatedAccess whenNotPaused enoughCooldown {
+        _validateParams(minBptOut, protocolTokenAmountIn, maxRebalanceAmounts.protocolToken);
         lastRebalanceTimeSecs = uint64(block.timestamp);
 
-        uint256 quoteTokenBalance = quoteToken.balanceOf(address(this));
-        if (quoteTokenBalance != 0) quoteToken.safeTransfer(to, quoteTokenBalance);
+        // Pull the protocol token and send to the poolHelper
+        protocolTokenVault.borrowProtocolToken(protocolTokenAmountIn, address(poolHelper));
 
-        emit WithdrawQuoteToken(bptAmountIn, amountOut, to);
+        // protocolToken single side join
+        uint256 bptOut = poolHelper.joinPool(
+            protocolTokenAmountIn, minBptOut, rebalancePercentageBoundUp,
+            rebalancePercentageBoundLow, treasuryPriceIndex(), 
+            postRebalanceSlippage, protocolTokenBalancerPoolIndex, protocolToken
+        );
+        emit RebalanceDownJoin(protocolTokenAmountIn, bptOut);
+
+        // deposit and stake BPT
+        bptToken.safeTransfer(address(amoStaking), bptOut);
+        amoStaking.depositAndStake(bptOut);
     }
 
-    /// @notice Get the quote used to add liquidity proportionally
-    /// @dev Since this is not the view function, this should be called with `callStatic`
+    /**
+     * @notice Get the quote used to add liquidity proportionally
+     * @dev Since this is not the view function, this should be called with `callStatic`
+     */
     function proportionalAddLiquidityQuote(
         uint256 quoteTokenAmount,
         uint256 slippageBps
@@ -421,8 +433,10 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         emit LiquidityAdded(quoteTokenAmount, protocolTokenAmount, bptIn);
     }
 
-    /// @notice Get the quote used to remove liquidity
-    /// @dev Since this is not the view function, this should be called with `callStatic`
+    /**
+     * @notice Get the quote used to remove liquidity
+     * @dev Since this is not the view function, this should be called with `callStatic`
+     */
     function proportionalRemoveLiquidityQuote(
         uint256 bptAmount,
         uint256 slippageBps

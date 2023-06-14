@@ -6,7 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
 import { IBalancerBptToken } from "contracts/interfaces/external/balancer/IBalancerBptToken.sol";
 import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerPoolHelper.sol";
-import { IAuraStaking } from "contracts/interfaces/external/aura/IAuraStaking.sol";
+import { IAuraStaking } from "contracts/interfaces/amo/IAuraStaking.sol";
 import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
 import { IRamosProtocolTokenVault } from "contracts/interfaces/amo/helpers/IRamosProtocolTokenVault.sol";
 
@@ -32,25 +32,28 @@ interface IRamos {
         uint256 protocolToken;
     }
 
+    // Admin events
     event RecoveredToken(address token, address to, uint256 amount);
     event SetPostRebalanceSlippage(uint64 slippageBps);
     event SetCooldown(uint64 cooldownSecs);
-    event SetPauseState(bool paused);
-    event QuoteTokenDeposited(uint256 amountIn, uint256 bptOut);
-    event RebalanceUp(uint256 bptAmountIn, uint256 protocolTokenAmountOut);
-    event RebalanceDown(uint256 protocolTokenAmountIn, uint256 bptOut);
-    event SetPoolHelper(address poolHelper);
-    event SetMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 quoteTokenMaxAmount, uint256 protocolTokenMaxAmount);
-    event WithdrawQuoteToken(uint256 bptAmountIn, uint256 amountOut, address to);
-    event LiquidityAdded(uint256 quoteTokenAdded, uint256 protocolTokenAdded, uint256 bptReceived);
-    event LiquidityRemoved(uint256 quoteTokenReceived, uint256 protocolTokenReceived, uint256 bptRemoved);
     event SetRebalancePercentageBounds(uint64 belowTpi, uint64 aboveTpi);
-    event SetTreasuryReservesVault(address indexed trv);
     event SetAmoStaking(address indexed amoStaking);
-    event DepositAndStakeBptTokens(uint256 bptAmount);
     event TpiOracleSet(address indexed tpiOracle);
     event ProtocolTokenVaultSet(address indexed vault);
+    event SetPoolHelper(address poolHelper);
+    event SetMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 quoteTokenMaxAmount, uint256 protocolTokenMaxAmount);
 
+    // Rebalance events
+    event RebalanceUpExit(uint256 bptAmountIn, uint256 protocolTokenAmountOut);
+    event RebalanceDownExit(uint256 bptAmountIn, uint256 quoteTokenAmountOut, address recipient);
+    event RebalanceUpJoin(uint256 quoteTokenAmountIn, uint256 bptOut);
+    event RebalanceDownJoin(uint256 protocolTokenAmountIn, uint256 bptOut);
+
+    // Add/remove liquidity events
+    event LiquidityAdded(uint256 quoteTokenAdded, uint256 protocolTokenAdded, uint256 bptReceived);
+    event LiquidityRemoved(uint256 quoteTokenReceived, uint256 protocolTokenReceived, uint256 bptRemoved);
+    event DepositAndStakeBptTokens(uint256 bptAmount);
+    
     /// @notice The Balancer vault singleton
     function balancerVault() external view returns (IBalancerVault);
 
@@ -128,57 +131,65 @@ interface IRamos {
     function treasuryPriceIndex() external view returns (uint256);
 
     /**
-     * @notice Rebalance when `protocolToken` spot price is below TPI.
-     * Single-side withdraw `protocolToken` from balancer liquidity pool to raise price.
+     * @notice Rebalance up when `protocolToken` spot price is below TPI.
+     * Single-side WITHDRAW `protocolToken` from balancer liquidity pool to raise price.
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
-     * pool exit. `protocolToken` returned from balancer pool are burned
+     * pool exit. 
+     * @dev `protocolToken`returned from balancer pool are repaid to the `protocolTokenVault`
      * @param bptAmountIn amount of BPT tokens going in balancer pool for exit
-     * @param minAmountOut amount of `protocolToken` expected out of balancer pool
+     * @param minProtocolTokenOut amount of `protocolToken` expected out of balancer pool
      */
-    function rebalanceUp(
+    function rebalanceUpExit(
         uint256 bptAmountIn,
-        uint256 minAmountOut
+        uint256 minProtocolTokenOut
     ) external;
 
     /**
-     * @notice Rebalance when `protocolToken` spot price is above TPI
-     * Mints `protocolToken` and single-side deposits into balancer pool
+     * @notice Rebalance down when `protocolToken` spot price is above TPI.
+     * Single-side WITHDRAW `quoteToken` from balancer liquidity pool to lower price.
+     * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
+     * pool exit. 
+     * @dev `quoteToken`returned from balancer pool are repaid to the recipient
+     * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
+     * @param minQuoteTokenAmountOut Minimum amount of `quoteToken` expected to receive
+     * @param recipient Address to which the `quoteToken` withdrawn are transferred
+     */
+    function rebalanceDownExit(
+        uint256 bptAmountIn,
+        uint256 minQuoteTokenAmountOut,
+        address recipient
+    ) external;
+
+    /**
+     * @notice Rebalance up when `protocolToken` spot price is below TPI.
+     * Single-side ADD `quoteToken` into the balancer liquidity pool to raise price.
      * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
+     * @dev The `quoteToken` amount must be deposited into this contract first
+     * @param quoteTokenAmountIn Amount of `quoteToken` to deposit into balancer pool
+     * @param minBptOut Minimum amount of BPT tokens expected to receive
+     */
+    function rebalanceUpJoin(
+        uint256 quoteTokenAmountIn,
+        uint256 minBptOut
+    ) external;
+
+    /**
+     * @notice Rebalance down when `protocolToken` spot price is above TPI.
+     * Single-side ADD `protocolToken` into the balancer liquidity pool to lower price.
+     * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
+     * @dev The `protocolToken` are borrowed from the `protocolTokenVault`
      * @param protocolTokenAmountIn Amount of `protocolToken` tokens to deposit into balancer pool
      * @param minBptOut Minimum amount of BPT tokens expected to receive
      */
-    function rebalanceDown(
+    function rebalanceDownJoin(
         uint256 protocolTokenAmountIn,
         uint256 minBptOut
     ) external;
 
     /**
-     * @notice Single-side deposit `quoteToken` into balancer pool when `protocolToken` price 
-     * is below Treasury Price Index.
-     * @param amountIn Amount of `quoteToken` to deposit into balancer pool
-     * @param minBptOut Minimum amount of BPT tokens expected to receive
+     * @notice Get the quote used to add liquidity proportionally
+     * @dev Since this is not the view function, this should be called with `callStatic`
      */
-    function depositQuoteToken(
-        uint256 amountIn,
-        uint256 minBptOut
-    ) external;
-
-    /**
-     * @notice Single-side withdraw `quoteToken` from balancer pool when `protocolToken` price 
-     * is above TPI. Withdraw and unwrap BPT tokens from Aura staking.
-     * BPT tokens are then sent into balancer pool for `quoteToken` in return.
-     * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
-     * @param minAmountOut Minimum amount of `quoteToken` expected to receive
-     * @param to Address to which the `quoteToken` withdrawn are transferred
-     */
-    function withdrawQuoteToken(
-        uint256 bptAmountIn,
-        uint256 minAmountOut,
-        address to
-    ) external;
-
-    /// @notice Get the quote used to add liquidity proportionally
-    /// @dev Since this is not the view function, this should be called with `callStatic`
     function proportionalAddLiquidityQuote(
         uint256 quoteTokenAmount,
         uint256 slippageBps
@@ -200,8 +211,10 @@ interface IRamos {
         IBalancerVault.JoinPoolRequest memory request
     ) external;
 
-    /// @notice Get the quote used to remove liquidity
-    /// @dev Since this is not the view function, this should be called with `callStatic`
+    /**
+     * @notice Get the quote used to remove liquidity
+     * @dev Since this is not the view function, this should be called with `callStatic`
+     */
     function proportionalRemoveLiquidityQuote(
         uint256 bptAmount,
         uint256 slippageBps

@@ -6,35 +6,23 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
+import { IAuraStaking } from "contracts/interfaces/amo/IAuraStaking.sol";
 import { IAuraBaseRewardPool } from "contracts/interfaces/external/aura/IAuraBaseRewardPool.sol";
 import { IAuraBooster } from "contracts/interfaces/external/aura/IAuraBooster.sol";
 
-contract AuraStaking is TempleElevatedAccess {
+contract AuraStaking is IAuraStaking, TempleElevatedAccess {
     using SafeERC20 for IERC20;
 
     // @notice BPT tokens for balancer pool
-    IERC20 public immutable bptToken;
-    AuraPoolInfo public auraPoolInfo;
+    IERC20 public immutable override bptToken;
+
+    AuraPoolInfo public override auraPoolInfo;
+
     // @notice Aura booster
-    IAuraBooster public immutable booster;
+    IAuraBooster public immutable override booster;
 
-    address public rewardsRecipient;
-    address[] public rewardTokens;
-
-    struct AuraPoolInfo {
-        address token;
-        address rewards;
-        uint32 pId;
-    }
-
-    struct Position {
-        uint256 staked;
-        uint256 earned;
-    }
-
-    event SetAuraPoolInfo(uint32 indexed pId, address token, address rewards);
-    event RecoveredToken(address token, address to, uint256 amount);
-    event SetRewardsRecipient(address recipient);
+    address public override rewardsRecipient;
+    address[] public override rewardTokens;
 
     constructor(
         address _initialRescuer,
@@ -49,7 +37,7 @@ contract AuraStaking is TempleElevatedAccess {
         rewardTokens = _rewardTokens;
     }
 
-    function setAuraPoolInfo(uint32 _pId, address _token, address _rewards) external onlyElevatedAccess {
+    function setAuraPoolInfo(uint32 _pId, address _token, address _rewards) external override onlyElevatedAccess {
         auraPoolInfo.pId = _pId;
         auraPoolInfo.token = _token;
         auraPoolInfo.rewards = _rewards;
@@ -57,7 +45,7 @@ contract AuraStaking is TempleElevatedAccess {
         emit SetAuraPoolInfo(_pId, _token, _rewards);
     }
 
-    function setRewardsRecipient(address _recipeint) external onlyElevatedAccess {
+    function setRewardsRecipient(address _recipeint) external override onlyElevatedAccess {
         rewardsRecipient = _recipeint;
 
         emit SetRewardsRecipient(_recipeint);
@@ -69,19 +57,19 @@ contract AuraStaking is TempleElevatedAccess {
      * @param to Recipient address
      * @param amount Amount to recover
      */
-    function recoverToken(address token, address to, uint256 amount) external onlyElevatedAccess {
+    function recoverToken(address token, address to, uint256 amount) external override onlyElevatedAccess {
         IERC20(token).safeTransfer(to, amount);
 
         emit RecoveredToken(token, to, amount);
     }
     
-    function isAuraShutdown() public view returns (bool) {
+    function isAuraShutdown() public override view returns (bool) {
         // It's not necessary to check that the booster itself is shutdown, as that can only
         // be shutdown once all the pools are shutdown - see Aura BoosterOwner.shutdownSystem()
         return booster.poolInfo(auraPoolInfo.pId).shutdown;
     }
 
-    function depositAndStake(uint256 amount) external onlyElevatedAccess {
+    function depositAndStake(uint256 amount) external override onlyElevatedAccess {
         // Only deposit if the aura pool is open. Otherwise leave the BPT in this contract.
         if (!isAuraShutdown()) {
             bptToken.safeIncreaseAllowance(address(booster), amount);
@@ -90,7 +78,7 @@ contract AuraStaking is TempleElevatedAccess {
     }
 
     // withdraw deposit token and unwrap to bpt tokens
-    function withdrawAndUnwrap(uint256 amount, bool claim, address to) external onlyElevatedAccess {
+    function withdrawAndUnwrap(uint256 amount, bool claim, address recipient) external override onlyElevatedAccess {
         // Optimistically use BPT balance in this contract, and then try and unstake any remaining
         uint256 bptBalance = bptToken.balanceOf(address(this));
         uint256 toUnstake = (amount < bptBalance) ? 0 : amount - bptBalance;
@@ -98,21 +86,21 @@ contract AuraStaking is TempleElevatedAccess {
             IAuraBaseRewardPool(auraPoolInfo.rewards).withdrawAndUnwrap(toUnstake, claim);
         }
 
-        if (to != address(0)) {
+        if (recipient != address(0)) {
             // unwrapped amount is 1 to 1
-            bptToken.safeTransfer(to, amount);
+            bptToken.safeTransfer(recipient, amount);
         }
     }
 
-    function withdrawAllAndUnwrap(bool claim, address to) external onlyElevatedAccess {
+    function withdrawAllAndUnwrap(bool claim, address recipient) external override onlyElevatedAccess {
         IAuraBaseRewardPool(auraPoolInfo.rewards).withdrawAllAndUnwrap(claim);
-        if (to != address(0)) {
+        if (recipient != address(0)) {
             uint256 bptBalance = bptToken.balanceOf(address(this));
-            bptToken.safeTransfer(to, bptBalance);
+            bptToken.safeTransfer(recipient, bptBalance);
         }
     }
 
-    function getReward(bool claimExtras) external {
+    function getReward(bool claimExtras) external override {
         IAuraBaseRewardPool(auraPoolInfo.rewards).getReward(address(this), claimExtras);
         if (rewardsRecipient != address(0)) {
             for (uint i=0; i<rewardTokens.length; i++) {
@@ -122,7 +110,7 @@ contract AuraStaking is TempleElevatedAccess {
         }
     }
 
-    function stakedBalance() public view returns (uint256 balance) {
+    function stakedBalance() public override view returns (uint256 balance) {
         balance = IAuraBaseRewardPool(auraPoolInfo.rewards).balanceOf(address(this));
     }
 
@@ -130,18 +118,18 @@ contract AuraStaking is TempleElevatedAccess {
      * @notice The total balance of BPT owned by this contract - either staked in Aura 
      * or unstaked
      */
-    function totalBalance() external view returns (uint256) {
+    function totalBalance() external override view returns (uint256) {
         return stakedBalance() + bptToken.balanceOf(address(this));
     }
 
-    function earned() public view returns (uint256 earnedRewards) {
+    function earned() public override view returns (uint256 earnedRewards) {
         earnedRewards = IAuraBaseRewardPool(auraPoolInfo.rewards).earned(address(this));
     }
 
     /**
      * @notice show staked position and earned rewards
      */
-    function showPositions() external view returns (Position memory position){
+    function showPositions() external override view returns (Position memory position){
         position.staked = stakedBalance();
         position.earned = earned();
     }
