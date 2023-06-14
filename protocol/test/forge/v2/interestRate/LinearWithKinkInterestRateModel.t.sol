@@ -6,56 +6,27 @@ import {TempleTest} from '../../TempleTest.sol';
 import {LinearWithKinkInterestRateModel} from 'contracts/v2/interestRate/LinearWithKinkInterestRateModel.sol';
 import {CommonEventsAndErrors} from 'contracts/common/CommonEventsAndErrors.sol';
 import {IInterestRateModel} from 'contracts/interfaces/v2/interestRate/IInterestRateModel.sol';
-import {FakeERC20} from 'contracts/fakes/FakeERC20.sol';
 import { SafeCast } from "contracts/common/SafeCast.sol";
 
-contract Mock is LinearWithKinkInterestRateModel {
-  constructor(
-    address _initialRescuer,
-    address _initialExecutor,
-    uint256 _baseInterestRate,
-    uint256 _maxInterestRate,
-    uint256 _kinkUtilizationRatio,
-    uint256 _kinkInterestRate
-  )
-    LinearWithKinkInterestRateModel(
-      _initialRescuer,
-      _initialExecutor,
-      _baseInterestRate,
-      _maxInterestRate,
-      _kinkUtilizationRatio,
-      _kinkInterestRate
-    )
-  {}
-}
-
 contract LinearWithKinkInterestRateModelTestBase is TempleTest {
-  Mock public mock;
-  FakeERC20 public daiToken;
-  IInterestRateModel public daiInterestRateModel;
+  LinearWithKinkInterestRateModel public daiInterestRateModel;
+  uint256 public utilizationRatioPct;
   uint256 public expectedDaiDebt;
   uint96 public expectedDaiInterestRate;
-  uint256 public expectedUtilizationRation;
-
-  uint96 public constant DEFAULT_BASE_INTEREST = 0.01e18; // 1%
+  uint256 public expectedUtilizationRatio;
   uint256 public constant BORROW_CEILING = 100_000e18;
 
   function setUp() public {
-    mock = new Mock(rescuer, executor, 0.02e18, 0.80e18, 0.50e18, 0.81e18);
-
     uint256 borrowDaiAmount = 50_000e18; // 50% UR, ... At kink approximately 10% interest rate
-
-    // Create dai token
-    daiToken = new FakeERC20('DAI Token', 'DAI', executor, 500_000e18);
-    vm.label(address(daiToken), 'DAI');
+    utilizationRatioPct = ud(borrowDaiAmount).div(ud(BORROW_CEILING)).unwrap();
 
     daiInterestRateModel = new LinearWithKinkInterestRateModel(
       rescuer,
       executor,
-      5e18 / 100, // 5% interest rate (rate% at 0% UR)
-      20e18 / 100, // 20% percent interest rate (rate% at 100% UR)
-      90e18 / 100, // 90% utilization (UR for when the kink starts)
-      10e18 / 100 // 10% percent interest rate (rate% at kink% UR)
+      0.05e18, // 5% interest rate (rate% at 0% UR)
+      0.2e18, // 20% percent interest rate (rate% at 100% UR)
+      0.9e18, // 90% utilization (UR for when the kink starts)
+      0.1e18 // 10% percent interest rate (rate% at kink% UR)
     );
 
     expectedDaiInterestRate = calculateInterestRate(
@@ -70,7 +41,7 @@ contract LinearWithKinkInterestRateModelTestBase is TempleTest {
       365 days
     ); // ~54k
 
-    expectedUtilizationRation = utilizationRatio(
+    expectedUtilizationRatio = utilizationRatio(
       expectedDaiDebt,
       BORROW_CEILING
     ); // ~54%
@@ -123,7 +94,7 @@ contract LinearWithKinkInterestRateModelTestModifiers is
       vm.expectRevert(
         abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector)
       );
-      mock.setRateParams(2e18 / 100, 75e18 / 100, 50e18 / 100, 10e18 / 100);
+      daiInterestRateModel.setRateParams(0.02e18, 0.75e18, 0.5e18, 0.1e18);
       vm.stopPrank();
     }
 
@@ -131,16 +102,32 @@ contract LinearWithKinkInterestRateModelTestModifiers is
     {
       vm.startPrank(executor);
       vm.expectEmit();
-      emit InterestRateParamsSet(2e18 / 100, 75e18 / 100, 50e18 / 100, 10e18 / 100);
-      mock.setRateParams(2e18 / 100, 75e18 / 100, 50e18 / 100, 10e18 / 100);
+      emit InterestRateParamsSet(0.02e18, 0.75e18, 0.5e18, 0.1e18);
+      daiInterestRateModel.setRateParams(0.02e18, 0.75e18, 0.5e18, 0.1e18);
+      vm.stopPrank();
+    }
+
+    // access for rescuer
+    {
+      vm.startPrank(rescuer);
+      vm.expectRevert(
+        abi.encodeWithSelector(CommonEventsAndErrors.InvalidAccess.selector)
+      );
+      daiInterestRateModel.setRateParams(0.02e18, 0.75e18, 0.5e18, 0.1e18);
+
+      daiInterestRateModel.setRescueMode(true);
+      vm.expectEmit();
+      emit InterestRateParamsSet(0.02e18, 0.75e18, 0.5e18, 0.1e18);
+      daiInterestRateModel.setRateParams(0.02e18, 0.75e18, 0.5e18, 0.1e18);
+      vm.stopPrank();
     }
   }
 
   function test_getRateParams() public {    
-    uint80 testBaseInterestRate = uint256(2e18 / 100).encodeUInt80();
-    uint80 testMaxInterestRate = uint256(80e18 / 100).encodeUInt80();
-    uint80 testKinkInterestRate = uint256(81e18 / 100).encodeUInt80();
-    uint256 testKinkUtilizationRatio = uint256(50e18 / 100);
+    uint80 testBaseInterestRate = uint256(0.05e18).encodeUInt80(); // 5%
+    uint80 testMaxInterestRate = uint256(0.2e18).encodeUInt80(); // 20%
+    uint80 testKinkInterestRate = uint256(0.1e18).encodeUInt80(); // 10%
+    uint256 testKinkUtilizationRatio = uint256(0.9e18); // %90%
     
     // get initial params
     (
@@ -148,7 +135,7 @@ contract LinearWithKinkInterestRateModelTestModifiers is
       uint256 maxInterestRate,
       uint256 kinkInterestRate,
       uint256 kinkUtilizationRatio
-    ) = mock.rateParams();
+    ) = daiInterestRateModel.rateParams();
     
     assertEq(baseInterestRate, testBaseInterestRate);
     assertEq(maxInterestRate, testMaxInterestRate);
@@ -156,10 +143,16 @@ contract LinearWithKinkInterestRateModelTestModifiers is
     assertEq(kinkUtilizationRatio, testKinkUtilizationRatio);
   }
 
-  function test_computeInterestRateImpl() public {
-    uint256 utilizationRation = mock.computeInterestRateImpl(expectedUtilizationRation);
-
-    assertEq(utilizationRation, expectedDaiInterestRate);
-
+  function test_utilizationRation() public {
+    assertEq(utilizationRatioPct, 0.5e18); // 50%
+  }
+  function test_expectedInterestRate() public {
+    assertEq(expectedDaiInterestRate, 0.077777777777777777e18); // ~7%
+  }
+  function test_expectedDebtAmount() public {
+    assertEq(expectedDaiDebt, 54_044.121788100384500000e18); // ~54k
+  }
+  function test_expectedUtilizationRatio() public {
+    assertEq(expectedUtilizationRatio, 0.540441217881003845e18); // ~54%
   }
 }
