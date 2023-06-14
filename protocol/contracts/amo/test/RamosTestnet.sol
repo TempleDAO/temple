@@ -7,118 +7,124 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { mulDiv } from "@prb/math/src/Common.sol";
 
+import { IRamos } from "contracts/interfaces/amo/IRamos.sol";
+import { IRamosProtocolTokenVault } from "contracts/interfaces/amo/helpers/IRamosProtocolTokenVault.sol";
+import { ITreasuryPriceIndexOracle } from "contracts/interfaces/v2/ITreasuryPriceIndexOracle.sol";
 import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerPoolHelper.sol";
 import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
-import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
+import { IAuraStaking } from "contracts/interfaces/external/aura/IAuraStaking.sol";
 import { IBalancerBptToken } from "contracts/interfaces/external/balancer/IBalancerBptToken.sol";
 
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { AMOCommon } from "contracts/amo/helpers/AMOCommon.sol";
-import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 /* solhint-disable not-rely-on-time */
 
-interface ITreasuryReservesVault {
-    function treasuryPriceIndex() external view returns (uint256);
-}
-
 /**
- * @title AMO built for 50/50 balancer pool
+ * @title AMO built for a 50/50 balancer pool
  *
- * @dev It has a  convergent price to which it trends called the TPF (Treasury Price Floor).
- * In order to accomplish this when the price is below the TPF it will single side withdraw 
- * BPTs into TEMPLE and burn them and if the price is above the TPF it will 
- * single side deposit TEMPLE into the pool to drop the spot price.
+ * @notice RAMOS rebalances the pool to trend towards the Treasury Price Index (TPI).
+ * In order to accomplish this:
+ *   1. When the price is BELOW the TPI it will either:
+ *      - Single side withdraw `protocolToken`
+ *      - Single side add `quoteToken`
+ *   2. When the price is ABOVE the TPI it will either:
+ *      - Single side add `protocolToken`
+ *      - Single side withdraw `quoteToken`
+ * Any idle BPTs (Balancer LP tokens) are deposited into Aura to earn yield.
+ * `protocolToken` can be sourced/disposed of by either having direct mint & burn rights or by
+ * pulling and sending tokens to an address.
  */
-contract RamosTestnet is TempleElevatedAccess, Pausable {
+contract RamosTestnet is IRamos, TempleElevatedAccess, Pausable {
     using SafeERC20 for IERC20;
     using SafeERC20 for IBalancerBptToken;
-    using SafeERC20 for ITempleERC20Token;
 
-    IBalancerVault public immutable balancerVault;
-    // @notice BPT token address
-    IBalancerBptToken public immutable bptToken;
-    // @notice pool helper contract
-    IBalancerPoolHelper public poolHelper;
+    /// @notice The Balancer vault singleton
+    IBalancerVault public immutable override balancerVault;
 
-    ITempleERC20Token public immutable temple;
-    IERC20 public immutable stable;
+    /// @notice BPT token address for this LP
+    IBalancerBptToken public immutable override bptToken;
 
-    // @notice lastRebalanceTimeSecs and cooldown used to control call rate 
-    // of rebalances
-    uint64 public lastRebalanceTimeSecs;
-    uint64 public cooldownSecs;
+    /// @notice Balancer pool helper contract
+    IBalancerPoolHelper public override poolHelper;
 
-    // @notice balancer 50/50 pool ID.
-    bytes32 public immutable balancerPoolId;
+    /// @notice The Protocol token
+    IERC20 public immutable override protocolToken;
 
-    // @notice Precision for BPS calculations
-    uint256 public constant BPS_PRECISION = 10_000;
+    /// @notice The Quoted token this is paired with in the LP. It may be a stable, 
+    /// or another Balancer linear token like BB-A-USD
+    IERC20 public immutable override quoteToken;
 
-    // @notice The Treasury Reserves Vault is the source of truth for the Treasury Price Index (TPI)
-    // which is the target price for RAMOS rebalances
-    ITreasuryReservesVault public treasuryReservesVault;
+    /// @notice The time when the last rebalance occured
+    uint64 public override lastRebalanceTimeSecs;
 
-    // @notice percentage bounds (in bps) beyond which to rebalance up or down
-    uint64 public rebalancePercentageBoundLow;
-    uint64 public rebalancePercentageBoundUp;
+    /// @notice The minimum amount of time which must pass since `lastRebalanceTimeSecs` before another rebalance
+    /// can occur
+    uint64 public override cooldownSecs;
 
-    // @notice Maximum amount of tokens that can be rebalanced
-    MaxRebalanceAmounts public maxRebalanceAmounts;
+    /// @notice The balancer 50/50 pool ID.
+    bytes32 public immutable override balancerPoolId;
 
-    // @notice by how much TPF slips up or down after rebalancing. In basis points
-    uint64 public postRebalanceSlippage;
+    /// @notice Precision for BPS calculations. 1% == 100
+    uint256 public constant override BPS_PRECISION = 10_000;
 
-    // @notice temple index in balancer pool. to avoid recalculation or external calls
-    uint64 public immutable templeBalancerPoolIndex;
+    /// @notice The Treasury Price Index (TPI) Oracle
+    ITreasuryPriceIndexOracle public override tpiOracle;
 
-    struct MaxRebalanceAmounts {
-        uint256 bpt;
-        uint256 stable;
-        uint256 temple;
-    }
+    /// @notice The vault from where to borrow and repay the Protocol Token
+    IRamosProtocolTokenVault public override protocolTokenVault;
 
-    event RecoveredToken(address token, address to, uint256 amount);
-    event SetPostRebalanceSlippage(uint64 slippageBps);
-    event SetCooldown(uint64 cooldownSecs);
-    event SetPauseState(bool paused);
-    event StableDeposited(uint256 amountIn, uint256 bptOut);
-    event RebalanceUp(uint256 bptAmountIn, uint256 templeAmountOut);
-    event RebalanceDown(uint256 templeAmountIn, uint256 bptOut);
-    event SetPoolHelper(address poolHelper);
-    event SetMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 stableMaxAmount, uint256 templeMaxAmount);
-    event WithdrawStable(uint256 bptAmountIn, uint256 amountOut, address to);
-    event LiquidityAdded(uint256 stableAdded, uint256 templeAdded, uint256 bptReceived);
-    event LiquidityRemoved(uint256 stableReceived, uint256 templeReceived, uint256 bptRemoved);
-    event SetRebalancePercentageBounds(uint64 belowTpf, uint64 aboveTpf);
-    event TreasuryReservesVaultSet(address indexed trv);
-    event SetAmoStaking(address indexed amoStaking);
-    event DepositAndStakeBptTokens(uint256 bptAmount);
+    /// @notice The percentage bounds (in bps) beyond which to rebalance up or down
+    uint64 public override rebalancePercentageBoundLow;
+    uint64 public override rebalancePercentageBoundUp;
+
+    /// @notice Maximum amount of tokens that can be rebalanced on each run
+    MaxRebalanceAmounts public override maxRebalanceAmounts;
+
+    /// @notice A limit on how much the price can be impacted by a rebalance. 
+    /// A price change over this limit will revert. Specified in bps
+    uint64 public override postRebalanceSlippage;
+
+    /// @notice `protocolToken` index in balancer pool. to avoid recalculation or external calls
+    uint64 public immutable override protocolTokenBalancerPoolIndex;
 
     constructor(
         address _initialRescuer,
         address _initialExecutor,
         address _balancerVault,
-        address _temple,
-        address _stable,
+        address _protocolToken,
+        address _quoteToken,
         address _bptToken,
-        uint64 _templeIndexInPool,
-        bytes32 _balancerPoolId
+        uint64 _protocolTokenIndexInPool,
+        bytes32 _balancerPoolId,
+        address _tpiOracle
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
         balancerVault = IBalancerVault(_balancerVault);
-        temple = ITempleERC20Token(_temple);
-        stable = IERC20(_stable);
+        protocolToken = IERC20(_protocolToken);
+        quoteToken = IERC20(_quoteToken);
         bptToken = IBalancerBptToken(_bptToken);
-        templeBalancerPoolIndex = _templeIndexInPool;
+        protocolTokenBalancerPoolIndex = _protocolTokenIndexInPool;
         balancerPoolId = _balancerPoolId;
+        tpiOracle = ITreasuryPriceIndexOracle(_tpiOracle);
     }
 
+    /**
+     * @notice Set the pool helper contract
+     */
     function setPoolHelper(address _poolHelper) external onlyElevatedAccess {
         poolHelper = IBalancerPoolHelper(_poolHelper);
 
         emit SetPoolHelper(_poolHelper);
     }
 
+
+    function amoStaking() external pure returns (IAuraStaking) {
+        revert("Unsupported");
+    }
+
+    /**
+     * @notice Set the acceptable amount of price impact allowed due to a rebalance
+     */
     function setPostRebalanceSlippage(uint64 slippage) external onlyElevatedAccess {
         if (slippage > BPS_PRECISION || slippage == 0) {
             revert AMOCommon.InvalidBPSValue(slippage);
@@ -130,38 +136,64 @@ contract RamosTestnet is TempleElevatedAccess, Pausable {
     /**
      * @notice Set maximum amount used by bot to rebalance
      * @param bptMaxAmount Maximum bpt amount per rebalance
-     * @param stableMaxAmount Maximum stable amount per rebalance
-     * @param templeMaxAmount Maximum temple amount per rebalance
+     * @param quoteTokenMaxAmount Maximum `quoteToken` amount per rebalance
+     * @param protocolTokenMaxAmount Maximum protocolToken amount per rebalance
      */
-    function setMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 stableMaxAmount, uint256 templeMaxAmount) external onlyElevatedAccess {
-        if (bptMaxAmount == 0 || stableMaxAmount == 0 || templeMaxAmount == 0) {
-            revert AMOCommon.InvalidMaxAmounts(bptMaxAmount, stableMaxAmount, templeMaxAmount);
+    function setMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 quoteTokenMaxAmount, uint256 protocolTokenMaxAmount) external onlyElevatedAccess {
+        if (bptMaxAmount == 0 || quoteTokenMaxAmount == 0 || protocolTokenMaxAmount == 0) {
+            revert AMOCommon.InvalidMaxAmounts(bptMaxAmount, quoteTokenMaxAmount, protocolTokenMaxAmount);
         }
         maxRebalanceAmounts.bpt = bptMaxAmount;
-        maxRebalanceAmounts.stable = stableMaxAmount;
-        maxRebalanceAmounts.temple = templeMaxAmount;
-        emit SetMaxRebalanceAmounts(bptMaxAmount, stableMaxAmount, templeMaxAmount);
+        maxRebalanceAmounts.quoteToken = quoteTokenMaxAmount;
+        maxRebalanceAmounts.protocolToken = protocolTokenMaxAmount;
+        emit SetMaxRebalanceAmounts(bptMaxAmount, quoteTokenMaxAmount, protocolTokenMaxAmount);
     }
 
-    // @notice percentage bounds (in bps) beyond which to rebalance up or down
-    function setRebalancePercentageBounds(uint64 belowTPF, uint64 aboveTPF) external onlyElevatedAccess {
-        if (belowTPF > BPS_PRECISION || aboveTPF > BPS_PRECISION) {
-            revert AMOCommon.InvalidBPSValue(belowTPF);
+    /// @notice Set maximum percentage bounds (in bps) beyond which to rebalance up or down
+    function setRebalancePercentageBounds(uint64 belowTpi, uint64 aboveTpi) external onlyElevatedAccess {
+        if (belowTpi > BPS_PRECISION || aboveTpi > BPS_PRECISION) {
+            revert AMOCommon.InvalidBPSValue(belowTpi);
         }
-        rebalancePercentageBoundLow = belowTPF;
-        rebalancePercentageBoundUp = aboveTPF;
+        rebalancePercentageBoundLow = belowTpi;
+        rebalancePercentageBoundUp = aboveTpi;
 
-        emit SetRebalancePercentageBounds(belowTPF, aboveTPF);
+        emit SetRebalancePercentageBounds(belowTpi, aboveTpi);
     }
 
     /**
-     * @notice Governance can set the address of the treasury reserves vault.
+     * @notice Set the Treasury Price Index (TPI) Oracle
      */
-    function setTreasuryReservesVault(address _trv) external onlyElevatedAccess {
-        if (_trv == address(0)) revert CommonEventsAndErrors.InvalidAddress(_trv);
+    function setTpiOracle(address newTpiOracle) external override onlyElevatedAccess {
+        emit TpiOracleSet(newTpiOracle);
+        tpiOracle = ITreasuryPriceIndexOracle(newTpiOracle);
+    }
 
-        treasuryReservesVault = ITreasuryReservesVault(_trv);
-        emit TreasuryReservesVaultSet(_trv);
+    /**
+     * @notice Set the Treasury Price Index (TPI) Oracle
+     */
+    function setProtocolTokenVault(address vault) external override onlyElevatedAccess {
+        emit ProtocolTokenVaultSet(vault);
+
+        // Remove allowance from the old vault
+        address previousVault = address(protocolTokenVault);
+        if (previousVault != address(0)) {
+            protocolToken.safeApprove(previousVault, 0);
+        }
+
+        protocolTokenVault = IRamosProtocolTokenVault(vault);
+
+        // Set max allowance on the new TRV
+        {
+            protocolToken.safeApprove(vault, 0);
+            protocolToken.safeIncreaseAllowance(vault, type(uint256).max);
+        }
+    }
+
+    /**
+     * @notice The Treasury Price Index - the target price of the Treasury, in `quoteToken` terms.
+     */
+    function treasuryPriceIndex() public view override returns (uint256) {
+        return tpiOracle.treasuryPriceIndex();
     }
 
     /**
@@ -201,144 +233,140 @@ contract RamosTestnet is TempleElevatedAccess, Pausable {
     }
 
     /**
-     * @notice Rebalance when $TEMPLE spot price is below Treasury Price Floor.
-     * Single-side withdraw $TEMPLE tokens from balancer liquidity pool to raise price.
+     * @notice Rebalance when `protocolToken` spot price is below TPI.
+     * Single-side withdraw `protocolToken` from balancer liquidity pool to raise price.
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
-     * pool exit. TEMPLE tokens returned from balancer pool are burned
+     * pool exit. `protocolToken` returned from balancer pool are burned
      * @param bptAmountIn amount of BPT tokens going in balancer pool for exit
-     * @param minAmountOut amount of TEMPLE tokens expected out of balancer pool
+     * @param minAmountOut amount of `protocolToken` expected out of balancer pool
      */
     function rebalanceUp(
         uint256 bptAmountIn,
         uint256 minAmountOut
-    ) external onlyElevatedAccess whenNotPaused enoughCooldown {
+    ) external override onlyElevatedAccess whenNotPaused enoughCooldown {
         _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
 
         // use contract bpt. requires contract has enough bpt
         bptToken.safeTransfer(address(poolHelper), bptAmountIn);
         
-        // exitTokenIndex = templeBalancerPoolIndex;
         uint256 burnAmount = poolHelper.exitPool(
             bptAmountIn, minAmountOut, rebalancePercentageBoundLow,
             rebalancePercentageBoundUp, postRebalanceSlippage,
-            templeBalancerPoolIndex, treasuryReservesVault.treasuryPriceIndex(), temple
+            protocolTokenBalancerPoolIndex, treasuryPriceIndex(), protocolToken
         );
 
-        temple.burn(burnAmount);
+        protocolTokenVault.repayProtocolToken(burnAmount);
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
         emit RebalanceUp(bptAmountIn, burnAmount);
     }
 
-     /**
-     * @notice Rebalance when $TEMPLE spot price is above Treasury Price Floor
-     * Mints TEMPLE tokens and single-side deposits into balancer pool
+    /**
+     * @notice Rebalance when `protocolToken` spot price is above TPI
+     * Mints `protocolToken` and single-side deposits into balancer pool
      * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
-     * @param templeAmountIn Amount of TEMPLE tokens to deposit into balancer pool
+     * @param protocolTokenAmountIn Amount of `protocolToken` tokens to deposit into balancer pool
      * @param minBptOut Minimum amount of BPT tokens expected to receive
-     * 
      */
     function rebalanceDown(
-        uint256 templeAmountIn,
+        uint256 protocolTokenAmountIn,
         uint256 minBptOut
-    ) external onlyElevatedAccess whenNotPaused enoughCooldown {
-        _validateParams(minBptOut, templeAmountIn, maxRebalanceAmounts.temple);
+    ) external override onlyElevatedAccess whenNotPaused enoughCooldown {
+        _validateParams(minBptOut, protocolTokenAmountIn, maxRebalanceAmounts.protocolToken);
 
-        temple.mint(address(this), templeAmountIn);
-        temple.safeTransfer(address(poolHelper), templeAmountIn);
+        protocolTokenVault.borrowProtocolToken(protocolTokenAmountIn, address(poolHelper));
 
-        // joinTokenIndex = templeBalancerPoolIndex;
         uint256 bptIn = poolHelper.joinPool(
-            templeAmountIn, minBptOut, rebalancePercentageBoundUp,
-            rebalancePercentageBoundLow, treasuryReservesVault.treasuryPriceIndex(), 
-            postRebalanceSlippage, templeBalancerPoolIndex, temple
+            protocolTokenAmountIn, minBptOut, rebalancePercentageBoundUp,
+            rebalancePercentageBoundLow, treasuryPriceIndex(), 
+            postRebalanceSlippage, protocolTokenBalancerPoolIndex, protocolToken
         );
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
-        emit RebalanceDown(templeAmountIn, bptIn);
+        emit RebalanceDown(protocolTokenAmountIn, bptIn);
     }
 
     /**
-     * @notice Single-side deposit stable tokens into balancer pool when TEMPLE price 
-     * is below Treasury Price Floor.
-     * @param amountIn Amount of stable tokens to deposit into balancer pool
+     * @notice Single-side deposit quoteToken tokens into balancer pool when `protocolToken` price 
+     * is below Treasury Price Index.
+     * @param amountIn Amount of `quoteToken` to deposit into balancer pool
      * @param minBptOut Minimum amount of BPT tokens expected to receive
      */
-    function depositStable(
+    function depositQuoteToken(
         uint256 amountIn,
         uint256 minBptOut
-    ) external onlyElevatedAccess whenNotPaused {
-        _validateParams(minBptOut, amountIn, maxRebalanceAmounts.stable);
+    ) external override onlyElevatedAccess whenNotPaused {
+        _validateParams(minBptOut, amountIn, maxRebalanceAmounts.quoteToken);
 
-        stable.safeTransfer(address(poolHelper), amountIn);
-        // stable join
-        uint256 joinTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
+        quoteToken.safeTransfer(address(poolHelper), amountIn);
+        // quoteToken join
+        uint256 joinTokenIndex = protocolTokenBalancerPoolIndex == 0 ? 1 : 0;
         uint256 bptOut = poolHelper.joinPool(
             amountIn, minBptOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow,
-            treasuryReservesVault.treasuryPriceIndex(), postRebalanceSlippage, joinTokenIndex, stable
+            treasuryPriceIndex(), postRebalanceSlippage, joinTokenIndex, quoteToken
         );
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
 
-        emit StableDeposited(amountIn, bptOut);
+        emit QuoteTokenDeposited(amountIn, bptOut);
     }
 
-     /**
-     * @notice Single-side withdraw stable tokens from balancer pool when TEMPLE price 
-     * is above Treasury Price Floor. Withdraw and unwrap BPT tokens from Aura staking.
-     * BPT tokens are then sent into balancer pool for stable tokens in return.
+    /**
+     * @notice Single-side withdraw `quoteToken` from balancer pool when `protocolToken` price 
+     * is above TPI. Withdraw and unwrap BPT tokens from Aura staking.
+     * BPT tokens are then sent into balancer pool for `quoteToken` in return.
      * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
-     * @param minAmountOut Minimum amount of stable tokens expected to receive
-     * @param to Address to which the stable tokens withdrawn are transferred
+     * @param minAmountOut Minimum amount of `quoteToken` expected to receive
+     * @param to Address to which the `quoteToken` withdrawn are transferred
      */
-    function withdrawStable(
+    function withdrawQuoteToken(
         uint256 bptAmountIn,
         uint256 minAmountOut,
         address to
-    ) external onlyElevatedAccess whenNotPaused {
+    ) external override onlyElevatedAccess whenNotPaused {
         _validateParams(minAmountOut, bptAmountIn, maxRebalanceAmounts.bpt);
 
         // use contract bpt
         bptToken.safeTransfer(address(poolHelper), bptAmountIn);
 
-        uint256 stableTokenIndex = templeBalancerPoolIndex == 0 ? 1 : 0;
+        uint256 quoteTokenIndex = protocolTokenBalancerPoolIndex == 0 ? 1 : 0;
         uint256 amountOut = poolHelper.exitPool(
             bptAmountIn, minAmountOut, rebalancePercentageBoundLow, rebalancePercentageBoundUp,
-            postRebalanceSlippage, stableTokenIndex, treasuryReservesVault.treasuryPriceIndex(), stable
+            postRebalanceSlippage, quoteTokenIndex, treasuryPriceIndex(), quoteToken
         );
 
         lastRebalanceTimeSecs = uint64(block.timestamp);
 
-        uint256 stableBalance = stable.balanceOf(address(this));
-        if (stableBalance != 0) stable.safeTransfer(to, stableBalance);
+        uint256 quoteTokenBalance = quoteToken.balanceOf(address(this));
+        if (quoteTokenBalance != 0) quoteToken.safeTransfer(to, quoteTokenBalance);
 
-        emit WithdrawStable(bptAmountIn, amountOut, to);
+        emit WithdrawQuoteToken(bptAmountIn, amountOut, to);
     }
 
     /// @notice Get the quote used to add liquidity proportionally
     /// @dev Since this is not the view function, this should be called with `callStatic`
     function proportionalAddLiquidityQuote(
-        uint256 stablesAmount,
+        uint256 quoteTokenAmount,
         uint256 slippageBps
-    ) external returns (
-        uint256 templeAmount,
+    ) external override returns (
+        uint256 protocolTokenAmount,
         uint256 expectedBptAmount,
         uint256 minBptAmount,
         IBalancerVault.JoinPoolRequest memory requestData
     ) {
-        return poolHelper.proportionalAddLiquidityQuote(stablesAmount, slippageBps);
+        return poolHelper.proportionalAddLiquidityQuote(quoteTokenAmount, slippageBps);
     }
 
     /**
-     * @notice Add liquidity with both TEMPLE and stable tokens into balancer pool. 
-     * Treasury Price Floor is expected to be within bounds of multisig set range.
+     * @notice Add liquidity with both `protocolToken` and `quoteToken` into balancer pool. 
+     * TPI is expected to be within bounds of multisig set range.
      * BPT tokens are then deposited and staked in Aura.
      * @param request Request data for joining balancer pool. Assumes userdata of request is
      * encoded with EXACT_TOKENS_IN_FOR_BPT_OUT type
      */
     function addLiquidity(
         IBalancerVault.JoinPoolRequest memory request
-    ) external onlyElevatedAccess {
+    ) external override onlyElevatedAccess {
         // validate request
         if (request.assets.length != request.maxAmountsIn.length || 
             request.assets.length != 2 || 
@@ -346,18 +374,18 @@ contract RamosTestnet is TempleElevatedAccess, Pausable {
                 revert AMOCommon.InvalidBalancerVaultRequest();
         }
 
-        (uint256 templeAmount, uint256 stableAmount) = templeBalancerPoolIndex == 0
+        (uint256 protocolTokenAmount, uint256 quoteTokenAmount) = protocolTokenBalancerPoolIndex == 0
             ? (request.maxAmountsIn[0], request.maxAmountsIn[1])
             : (request.maxAmountsIn[1], request.maxAmountsIn[0]);
-        temple.mint(address(this), templeAmount);
+        protocolTokenVault.borrowProtocolToken(protocolTokenAmount, address(this));
 
-        // safe allowance stable and TEMPLE
+        // safe allowance quoteToken and protocolToken
         {
-            temple.safeIncreaseAllowance(address(balancerVault), templeAmount);
-            uint256 stableAllowance = stable.allowance(address(this), address(balancerVault));
-            if (stableAllowance < stableAmount) {
-                stable.safeApprove(address(balancerVault), 0);
-                stable.safeIncreaseAllowance(address(balancerVault), stableAmount);
+            protocolToken.safeIncreaseAllowance(address(balancerVault), protocolTokenAmount);
+            uint256 quoteTokenAllowance = quoteToken.allowance(address(this), address(balancerVault));
+            if (quoteTokenAllowance < quoteTokenAmount) {
+                quoteToken.safeApprove(address(balancerVault), 0);
+                quoteToken.safeIncreaseAllowance(address(balancerVault), quoteTokenAmount);
             }
         }
 
@@ -372,7 +400,8 @@ contract RamosTestnet is TempleElevatedAccess, Pausable {
             }
         }
 
-        emit LiquidityAdded(stableAmount, templeAmount, bptIn);
+
+        emit LiquidityAdded(quoteTokenAmount, protocolTokenAmount, bptIn);
     }
 
     /// @notice Get the quote used to remove liquidity
@@ -380,29 +409,29 @@ contract RamosTestnet is TempleElevatedAccess, Pausable {
     function proportionalRemoveLiquidityQuote(
         uint256 bptAmount,
         uint256 slippageBps
-    ) external returns (
-        uint256 expectedTempleAmount,
-        uint256 expectedStablesAmount,
-        uint256 minTempleAmount,
-        uint256 minStablesAmount,
+    ) external override returns (
+        uint256 expectedProtocolTokenAmount,
+        uint256 expectedQuoteTokenAmount,
+        uint256 minProtocolTokenAmount,
+        uint256 minQuoteTokenAmount,
         IBalancerVault.ExitPoolRequest memory requestData
     ) {
         return poolHelper.proportionalRemoveLiquidityQuote(bptAmount, slippageBps);
     }
 
     /**
-     * @notice Remove liquidity from balancer pool receiving both TEMPLE and stable tokens from balancer pool. 
-     * Treasury Price Floor is expected to be within bounds of multisig set range.
+     * @notice Remove liquidity from balancer pool receiving both `protocolToken` and `quoteToken` from balancer pool. 
+     * TPI is expected to be within bounds of multisig set range.
      * Withdraw and unwrap BPT tokens from Aura staking and send to balancer pool to receive both tokens.
      * @param request Request for use in balancer pool exit
      * @param bptIn Amount of BPT tokens to send into balancer pool
-     * @param to Address to which the stable tokens received from balancer pool are transferred
+     * @param to Address to which the `quoteToken` received from balancer pool are transferred
      */
     function removeLiquidity(
         IBalancerVault.ExitPoolRequest memory request,
         uint256 bptIn,
         address to
-    ) external onlyElevatedAccess {
+    ) external override onlyElevatedAccess {
         // validate request
         if (request.assets.length != request.minAmountsOut.length || 
             request.assets.length != 2 || 
@@ -410,46 +439,53 @@ contract RamosTestnet is TempleElevatedAccess, Pausable {
                 revert AMOCommon.InvalidBalancerVaultRequest();
         }
 
-        uint256 templeAmountBefore = temple.balanceOf(address(this));
-        uint256 stableAmountBefore = stable.balanceOf(address(this));
+        uint256 protocolTokenAmountBefore = protocolToken.balanceOf(address(this));
+        uint256 quoteTokenAmountBefore = quoteToken.balanceOf(address(this));
 
         // use contract bpt. requires contract has enough bpt tokens
 
         balancerVault.exitPool(balancerPoolId, address(this), address(this), request);
         // validate amounts received
-        uint256 templeReceivedAmount;
-        uint256 stableReceivedAmount;
+        uint256 protocolTokenReceivedAmount;
+        uint256 quoteTokenReceivedAmount;
         for (uint i=0; i<request.assets.length; ++i) {
-            if (request.assets[i] == address(temple)) {
+            if (request.assets[i] == address(protocolToken)) {
                 unchecked {
-                    templeReceivedAmount = temple.balanceOf(address(this)) - templeAmountBefore;
+                    protocolTokenReceivedAmount = protocolToken.balanceOf(address(this)) - protocolTokenAmountBefore;
                 }
-                if (templeReceivedAmount > 0) {
-                    temple.burn(templeReceivedAmount);
+                if (protocolTokenReceivedAmount != 0) {
+                    protocolTokenVault.repayProtocolToken(protocolTokenReceivedAmount);
                 }
-            } else if (request.assets[i] == address(stable)) {
+            } else if (request.assets[i] == address(quoteToken)) {
                 unchecked {
-                    stableReceivedAmount = stable.balanceOf(address(this)) - stableAmountBefore;
+                    quoteTokenReceivedAmount = quoteToken.balanceOf(address(this)) - quoteTokenAmountBefore;
                 }
-                if (stableReceivedAmount > 0) {
-                    stable.safeTransfer(to, stableReceivedAmount);
+                if (quoteTokenReceivedAmount != 0) {
+                    quoteToken.safeTransfer(to, quoteTokenReceivedAmount);
                 }
             }
         }
 
-        emit LiquidityRemoved(stableReceivedAmount, templeReceivedAmount, bptIn);
+        emit LiquidityRemoved(quoteTokenReceivedAmount, protocolTokenReceivedAmount, bptIn);
+    }
+
+    function depositAndStakeBptTokens(
+        uint256,
+        bool
+    ) external pure override {
+        revert("Unsupported");
     }
 
     /**
-     * @notice The total amount of Temple and Stables that Ramos holds via it's 
+     * @notice The total amount of `protocolToken` and `quoteToken` that Ramos holds via it's 
      * staked and unstaked BPT.
      * @dev Calculated by pulling the total balances of each token in the pool
      * and getting RAMOS proportion of the owned BPT's
      */
-    function positions() external view returns (
+    function positions() external override view returns (
         uint256 bptBalance, 
-        uint256 templeBalance, 
-        uint256 stableBalance
+        uint256 protocolTokenBalance, 
+        uint256 quoteTokenBalance
     ) {
         // Use `bpt.getActualSupply()` instead of `bpt.totalSupply()`
         // https://docs.balancer.fi/reference/lp-tokens/underlying.html#overview
@@ -457,9 +493,9 @@ contract RamosTestnet is TempleElevatedAccess, Pausable {
         uint256 bptTotalSupply = bptToken.getActualSupply();
         if (bptTotalSupply != 0) {
             bptBalance = bptToken.balanceOf(address(this));
-            (uint256 totalTempleInLp, uint256 totalStableInLp) = poolHelper.getTempleStableBalances();
-            templeBalance = mulDiv(totalTempleInLp, bptBalance, bptTotalSupply);
-            stableBalance = mulDiv(totalStableInLp, bptBalance, bptTotalSupply);
+            (uint256 totalProtocolTokenInLp, uint256 totalQuoteTokenInLp) = poolHelper.getPairBalances();
+            protocolTokenBalance = mulDiv(totalProtocolTokenInLp, bptBalance, bptTotalSupply);
+            quoteTokenBalance = mulDiv(totalQuoteTokenInLp, bptBalance, bptTotalSupply);
         }
     }
 

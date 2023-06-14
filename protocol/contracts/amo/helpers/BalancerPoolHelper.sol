@@ -5,6 +5,7 @@ pragma solidity ^0.8.17;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerPoolHelper.sol";
 import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
 import { IBalancerHelpers } from "contracts/interfaces/external/balancer/IBalancerHelpers.sol";
 import { AMOCommon } from "contracts/amo/helpers/AMOCommon.sol";
@@ -13,130 +14,130 @@ interface IWeightPool2Tokens {
     function getNormalizedWeights() external view returns (uint256[] memory);
 }
 
-contract BalancerPoolHelper {
+contract BalancerPoolHelper is IBalancerPoolHelper {
     using SafeERC20 for IERC20;
 
-    IBalancerVault public immutable balancerVault;
-    IBalancerHelpers public immutable balancerHelpers;
-    IERC20 public immutable bptToken;
-    IERC20 public immutable temple;
-    IERC20 public immutable stable;
-    address public immutable amo;
+    IBalancerVault public immutable override balancerVault;
+    IBalancerHelpers public immutable override balancerHelpers;
+    IERC20 public immutable override bptToken;
+    IERC20 public immutable override protocolToken;
+    IERC20 public immutable override quoteToken;
+    address public immutable override amo;
     
-    uint256 public constant BPS_PRECISION = 10_000;
-    uint256 public constant PRICE_PRECISION = 1e18;
+    uint256 public constant override BPS_PRECISION = 10_000;
+    uint256 public constant override PRICE_PRECISION = 1e18;
 
-    // @notice temple index in balancer pool
-    uint64 public immutable templeIndexInBalancerPool;
+    // @notice protocolToken index in balancer pool
+    uint64 public immutable override protocolTokenIndexInBalancerPool;
 
-    bytes32 public immutable balancerPoolId;
+    bytes32 public immutable override balancerPoolId;
 
     constructor(
       address _balancerVault,
       address _balancerHelpers,
-      address _temple,
-      address _stable,
+      address _protocolToken,
+      address _quoteToken,
       address _bptToken,
       address _amo,
-      uint64 _templeIndexInPool,
+      uint64 _protocolTokenIndexInPool,
       bytes32 _balancerPoolId
     ) {
       balancerPoolId = _balancerPoolId;
       balancerVault = IBalancerVault(_balancerVault);
       balancerHelpers = IBalancerHelpers(_balancerHelpers);
-      temple = IERC20(_temple);
-      stable = IERC20(_stable);
+      protocolToken = IERC20(_protocolToken);
+      quoteToken = IERC20(_quoteToken);
       bptToken = IERC20(_bptToken);
       amo = _amo;
-      templeIndexInBalancerPool = _templeIndexInPool;
+      protocolTokenIndexInBalancerPool = _protocolTokenIndexInPool;
     }
 
-    function getBalances() public view returns (uint256[] memory balances) {
+    function getBalances() public override view returns (uint256[] memory balances) {
       (, balances,) = balancerVault.getPoolTokens(balancerPoolId);
     }
 
-    function getTempleStableBalances() public view returns (uint256 templeBalance, uint256 stableBalance) {
+    function getPairBalances() public override view returns (uint256 protocolTokenBalance, uint256 quoteTokenBalance) {
       uint256[] memory balances = getBalances();
-      (templeBalance, stableBalance) = (templeIndexInBalancerPool == 0) 
+      (protocolTokenBalance, quoteTokenBalance) = (protocolTokenIndexInBalancerPool == 0) 
         ? (balances[0], balances[1]) 
         : (balances[1], balances[0]);
     }
 
     /// @notice Return the spot price scaled to 1e18 
-    function getSpotPrice() public view returns (uint256) {
-        (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
-        return (PRICE_PRECISION * stableBalance) / templeBalance;
+    function getSpotPrice() public override view returns (uint256) {
+        (uint256 protocolTokenBalance, uint256 quoteTokenBalance) = getPairBalances();
+        return (PRICE_PRECISION * quoteTokenBalance) / protocolTokenBalance;
     }
 
-    function isSpotPriceBelowTpi(uint256 treasuryPriceIndex) external view returns (bool) {
+    function isSpotPriceBelowTpi(uint256 treasuryPriceIndex) external override view returns (bool) {
         return getSpotPrice() < treasuryPriceIndex;
     }
 
     // below TPI by a given slippage percentage
-    function isSpotPriceBelowTpi(uint256 slippage, uint256 treasuryPriceIndex) public view returns (bool) {
+    function isSpotPriceBelowTpi(uint256 slippage, uint256 treasuryPriceIndex) public override view returns (bool) {
         uint256 slippageTpi = (slippage * treasuryPriceIndex) / BPS_PRECISION;
         return getSpotPrice() < (treasuryPriceIndex - slippageTpi);
     }
 
-    function isSpotPriceBelowTpiLowerBound(uint256 rebalancePercentageBoundLow, uint256 treasuryPriceIndex) public view returns (bool) {
+    function isSpotPriceBelowTpiLowerBound(uint256 rebalancePercentageBoundLow, uint256 treasuryPriceIndex) public override view returns (bool) {
         return isSpotPriceBelowTpi(rebalancePercentageBoundLow, treasuryPriceIndex);
     }
 
-    function isSpotPriceAboveTpiUpperBound(uint256 rebalancePercentageBoundUp, uint256 treasuryPriceIndex) public view returns (bool) {
+    function isSpotPriceAboveTpiUpperBound(uint256 rebalancePercentageBoundUp, uint256 treasuryPriceIndex) public override view returns (bool) {
         return isSpotPriceAboveTpi(rebalancePercentageBoundUp, treasuryPriceIndex);
     }
 
     // slippage in bps
     // above TPI by a given slippage percentage
-    function isSpotPriceAboveTpi(uint256 slippage, uint256 treasuryPriceIndex) public view returns (bool) {
+    function isSpotPriceAboveTpi(uint256 slippage, uint256 treasuryPriceIndex) public override view returns (bool) {
       uint256 slippageTpi = (slippage * treasuryPriceIndex) / BPS_PRECISION;
       return getSpotPrice() > (treasuryPriceIndex + slippageTpi);
     }
 
-    function isSpotPriceAboveTpi(uint256 treasuryPriceIndex) external view returns (bool) {
+    function isSpotPriceAboveTpi(uint256 treasuryPriceIndex) external override view returns (bool) {
         return getSpotPrice() > treasuryPriceIndex;
     }
 
     // @notice will exit take price above TPI by a percentage
     // percentage in bps
-    // tokensOut: expected min amounts out. for rebalance this is expected Temple tokens out
+    // tokensOut: expected min amounts out. for rebalance this is expected `ProtocolToken` tokens out
     function willExitTakePriceAboveTpiUpperBound(
         uint256 tokensOut,
         uint256 rebalancePercentageBoundUp,
         uint256 treasuryPriceIndex
-    ) public view returns (bool) {
+    ) public override view returns (bool) {
         uint256 maxNewTpi = (BPS_PRECISION + rebalancePercentageBoundUp) * treasuryPriceIndex / BPS_PRECISION;
-        (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
+        (uint256 protocolTokenBalance, uint256 quoteTokenBalance) = getPairBalances();
 
-        // a ratio of stable balances vs temple balances
-        uint256 newTempleBalance = templeBalance - tokensOut;
-        uint256 spot = (stableBalance * PRICE_PRECISION ) / newTempleBalance;
+        // a ratio of quoteToken balances vs protocolToken balances
+        uint256 newProtocolTokenBalance = protocolTokenBalance - tokensOut;
+        uint256 spot = (quoteTokenBalance * PRICE_PRECISION ) / newProtocolTokenBalance;
         return spot > maxNewTpi;
     }
 
-    function willStableJoinTakePriceAboveTpiUpperBound(
+    function willQuoteTokenJoinTakePriceAboveTpiUpperBound(
         uint256 tokensIn,
         uint256 rebalancePercentageBoundUp,
         uint256 treasuryPriceIndex
-    ) public view returns (bool) {
+    ) public override view returns (bool) {
         uint256 maxNewTpi = (BPS_PRECISION + rebalancePercentageBoundUp) * treasuryPriceIndex / BPS_PRECISION;
-        (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
+        (uint256 protocolTokenBalance, uint256 quoteTokenBalance) = getPairBalances();
 
-        uint256 newStableBalance = stableBalance + tokensIn;
-        uint256 spot = (newStableBalance * PRICE_PRECISION ) / templeBalance;
+        uint256 newQuoteTokenBalance = quoteTokenBalance + tokensIn;
+        uint256 spot = (newQuoteTokenBalance * PRICE_PRECISION ) / protocolTokenBalance;
         return spot > maxNewTpi;
     }
 
-    function willStableExitTakePriceBelowTpiLowerBound(
+    function willQuoteTokenExitTakePriceBelowTpiLowerBound(
         uint256 tokensOut,
         uint256 rebalancePercentageBoundLow,
         uint256 treasuryPriceIndex
-    ) public view returns (bool) {
+    ) public override view returns (bool) {
         uint256 minNewTpi = (BPS_PRECISION - rebalancePercentageBoundLow) * treasuryPriceIndex / BPS_PRECISION;
-        (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
+        (uint256 protocolTokenBalance, uint256 quoteTokenBalance) = getPairBalances();
 
-        uint256 newStableBalance = stableBalance - tokensOut;
-        uint256 spot = (newStableBalance * PRICE_PRECISION) / templeBalance;
+        uint256 newQuoteTokenBalance = quoteTokenBalance - tokensOut;
+        uint256 spot = (newQuoteTokenBalance * PRICE_PRECISION) / protocolTokenBalance;
         return spot < minNewTpi;
     }
 
@@ -144,18 +145,18 @@ contract BalancerPoolHelper {
         uint256 tokensIn,
         uint256 rebalancePercentageBoundLow,
         uint256 treasuryPriceIndex
-    ) public view returns (bool) {
+    ) public override view returns (bool) {
         uint256 minNewTpi = (BPS_PRECISION - rebalancePercentageBoundLow) * treasuryPriceIndex / BPS_PRECISION;
-        (uint256 templeBalance, uint256 stableBalance) = getTempleStableBalances();
+        (uint256 protocolTokenBalance, uint256 quoteTokenBalance) = getPairBalances();
 
-        // a ratio of stable balances against temple balances
-        uint256 newTempleBalance = templeBalance + tokensIn;
-        uint256 spot = (stableBalance * PRICE_PRECISION) / newTempleBalance;
+        // a ratio of quoteToken balances vs ProtocolToken balances
+        uint256 newProtocolTokenBalance = protocolTokenBalance + tokensIn;
+        uint256 spot = (quoteTokenBalance * PRICE_PRECISION) / newProtocolTokenBalance;
         return spot < minNewTpi;
     }
 
     // get slippage between spot price before and spot price now
-    function getSlippage(uint256 spotPriceBefore) public view returns (uint256) {
+    function getSlippage(uint256 spotPriceBefore) public override view returns (uint256) {
         uint256 spotPriceNow = getSpotPrice();
 
         // taking into account both rebalance up or down
@@ -176,7 +177,7 @@ contract BalancerPoolHelper {
         address[] memory assets = new address[](2);
         uint256[] memory minAmountsOut = new uint256[](2);
 
-        (assets[0], assets[1]) = templeIndexInBalancerPool == 0 ? (address(temple), address(stable)) : (address(stable), address(temple));
+        (assets[0], assets[1]) = protocolTokenIndexInBalancerPool == 0 ? (address(protocolToken), address(quoteToken)) : (address(quoteToken), address(protocolToken));
         (minAmountsOut[0], minAmountsOut[1]) = exitTokenIndex == uint256(0) ? (minAmountOut, uint256(0)) : (uint256(0), minAmountOut); 
         // EXACT_BPT_IN_FOR_ONE_TOKEN_OUT index is 0 for exitKind
         bytes memory encodedUserdata = abi.encode(uint256(0), bptAmountIn, exitTokenIndex);
@@ -194,7 +195,7 @@ contract BalancerPoolHelper {
         IERC20[] memory assets = new IERC20[](2);
         uint256[] memory maxAmountsIn = new uint256[](2);
     
-        (assets[0], assets[1]) = templeIndexInBalancerPool == 0 ? (temple, stable) : (stable, temple);
+        (assets[0], assets[1]) = protocolTokenIndexInBalancerPool == 0 ? (protocolToken, quoteToken) : (quoteToken, protocolToken);
         (maxAmountsIn[0], maxAmountsIn[1]) = tokenIndex == uint256(0) ? (amountIn, uint256(0)) : (uint256(0), amountIn);
         //uint256 joinKind = 1; //EXACT_TOKENS_IN_FOR_BPT_OUT
         bytes memory encodedUserdata = abi.encode(uint256(1), maxAmountsIn, minTokenOut);
@@ -213,10 +214,10 @@ contract BalancerPoolHelper {
         uint256 exitTokenIndex,
         uint256 treasuryPriceIndex,
         IERC20 exitPoolToken
-    ) external onlyAmo returns (uint256 amountOut) {
-        exitPoolToken == temple ? 
-            validateTempleExit(minAmountOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow, treasuryPriceIndex) :
-            validateStableExit(minAmountOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow, treasuryPriceIndex);
+    ) external override onlyAmo returns (uint256 amountOut) {
+        exitPoolToken == protocolToken ? 
+            validateProtocolTokenExit(minAmountOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow, treasuryPriceIndex) :
+            validateQuoteTokenExit(minAmountOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow, treasuryPriceIndex);
 
         // create request
         IBalancerVault.ExitPoolRequest memory exitPoolRequest = createPoolExitRequest(bptAmountIn,
@@ -246,10 +247,10 @@ contract BalancerPoolHelper {
         uint256 postRebalanceSlippage,
         uint256 joinTokenIndex,
         IERC20 joinPoolToken
-    ) external onlyAmo returns (uint256 bptOut) {
-        joinPoolToken == temple ? 
-            validateTempleJoin(amountIn, rebalancePercentageBoundUp, rebalancePercentageBoundLow, treasuryPriceIndex) :
-            validateStableJoin(amountIn, rebalancePercentageBoundUp, rebalancePercentageBoundLow, treasuryPriceIndex);
+    ) external override onlyAmo returns (uint256 bptOut) {
+        joinPoolToken == protocolToken ? 
+            validateProtocolTokenJoin(amountIn, rebalancePercentageBoundUp, rebalancePercentageBoundLow, treasuryPriceIndex) :
+            validateQuoteTokenJoin(amountIn, rebalancePercentageBoundUp, rebalancePercentageBoundLow, treasuryPriceIndex);
 
         // create request
         IBalancerVault.JoinPoolRequest memory joinPoolRequest = createPoolJoinRequest(amountIn, joinTokenIndex, minBptOut);
@@ -279,7 +280,7 @@ contract BalancerPoolHelper {
         }
     }
 
-    function validateTempleJoin(
+    function validateProtocolTokenJoin(
         uint256 amountIn,
         uint256 rebalancePercentageBoundUp,
         uint256 rebalancePercentageBoundLow,
@@ -294,7 +295,7 @@ contract BalancerPoolHelper {
         }
     }
 
-    function validateTempleExit(
+    function validateProtocolTokenExit(
         uint256 amountOut,
         uint256 rebalancePercentageBoundUp,
         uint256 rebalancePercentageBoundLow,
@@ -312,7 +313,7 @@ contract BalancerPoolHelper {
         }
     }
 
-    function validateStableJoin(
+    function validateQuoteTokenJoin(
         uint256 amountIn,
         uint256 rebalancePercentageBoundUp,
         uint256 rebalancePercentageBoundLow,
@@ -322,12 +323,12 @@ contract BalancerPoolHelper {
             revert AMOCommon.NoRebalanceUp();
         }
         // should rarely be the case, but a sanity check nonetheless
-        if (willStableJoinTakePriceAboveTpiUpperBound(amountIn, rebalancePercentageBoundUp, treasuryPriceIndex)) {
+        if (willQuoteTokenJoinTakePriceAboveTpiUpperBound(amountIn, rebalancePercentageBoundUp, treasuryPriceIndex)) {
             revert AMOCommon.HighSlippage();
         }
     }
 
-    function validateStableExit(
+    function validateQuoteTokenExit(
         uint256 amountOut,
         uint256 rebalancePercentageBoundUp,
         uint256 rebalancePercentageBoundLow,
@@ -337,7 +338,7 @@ contract BalancerPoolHelper {
             revert AMOCommon.NoRebalanceDown();
         }
         // should rarely be the case, but a sanity check nonetheless
-        if (willStableExitTakePriceBelowTpiLowerBound(amountOut, rebalancePercentageBoundLow, treasuryPriceIndex)) {
+        if (willQuoteTokenExitTakePriceBelowTpiLowerBound(amountOut, rebalancePercentageBoundLow, treasuryPriceIndex)) {
             revert AMOCommon.HighSlippage();
         }
     }
@@ -345,26 +346,26 @@ contract BalancerPoolHelper {
     /// @notice Get the quote used to add liquidity proportionally
     /// @dev Since this is not the view function, this should be called with `callStatic`
     function proportionalAddLiquidityQuote(
-        uint256 stablesAmount,
+        uint256 quoteTokenAmount,
         uint256 slippageBps
-    ) external returns (
-        uint256 templeAmount,
+    ) external override returns (
+        uint256 protocolTokenAmount,
         uint256 expectedBptAmount,
         uint256 minBptAmount,
         IBalancerVault.JoinPoolRequest memory requestData
     ) {
-        (uint256 templeBalanceInLP, uint256 stableBalanceInLP) = getTempleStableBalances();
+        (uint256 protocolTokenBalanceInLP, uint256 quoteTokenBalanceInLP) = getPairBalances();
         // see Balancer SDK for the calculation
         // https://github.com/balancer/balancer-sdk/blob/be692be5d6057f5e44362667e47bd7ecf9a83b37/balancer-js/src/modules/pools/proportional-amounts/index.ts#L24
-        templeAmount = stableBalanceInLP == 0
-            ? stablesAmount
-            : (templeBalanceInLP * stablesAmount / stableBalanceInLP);
+        protocolTokenAmount = quoteTokenBalanceInLP == 0
+            ? quoteTokenAmount
+            : (protocolTokenBalanceInLP * quoteTokenAmount / quoteTokenBalanceInLP);
 
         requestData.assets = new IERC20[](2);
         requestData.maxAmountsIn = new uint256[](2);
         
-        (requestData.assets[0], requestData.assets[1]) = templeIndexInBalancerPool == 0 ? (temple, stable) : (stable, temple);
-        (requestData.maxAmountsIn[0], requestData.maxAmountsIn[1]) = templeIndexInBalancerPool == 0 ? (templeAmount, stablesAmount) : (stablesAmount, templeAmount);
+        (requestData.assets[0], requestData.assets[1]) = protocolTokenIndexInBalancerPool == 0 ? (protocolToken, quoteToken) : (quoteToken, protocolToken);
+        (requestData.maxAmountsIn[0], requestData.maxAmountsIn[1]) = protocolTokenIndexInBalancerPool == 0 ? (protocolTokenAmount, quoteTokenAmount) : (quoteTokenAmount, protocolTokenAmount);
         //uint256 joinKind = 1; //EXACT_TOKENS_IN_FOR_BPT_OUT
         bytes memory encodedUserdata = abi.encode(uint256(1), requestData.maxAmountsIn, 0);
         requestData.userData = encodedUserdata;
@@ -383,38 +384,38 @@ contract BalancerPoolHelper {
     function proportionalRemoveLiquidityQuote(
         uint256 bptAmount,
         uint256 slippageBps
-    ) external returns (
-        uint256 expectedTempleAmount,
-        uint256 expectedStablesAmount,
-        uint256 minTempleAmount,
-        uint256 minStablesAmount,
+    ) external override returns (
+        uint256 expectedProtocolTokenAmount,
+        uint256 expectedQuoteTokensAmount,
+        uint256 minProtocolTokenAmount,
+        uint256 minQuoteTokensAmount,
         IBalancerVault.ExitPoolRequest memory requestData
     ) {
         requestData.assets = new address[](2);
         requestData.minAmountsOut = new uint256[](2);
 
-        (requestData.assets[0], requestData.assets[1]) = templeIndexInBalancerPool == 0
-            ? (address(temple), address(stable))
-            : (address(stable), address(temple));
+        (requestData.assets[0], requestData.assets[1]) = protocolTokenIndexInBalancerPool == 0
+            ? (address(protocolToken), address(quoteToken))
+            : (address(quoteToken), address(protocolToken));
         // EXACT_BPT_IN_FOR_TOKENS_OUT index is 1 for exitKind
         bytes memory encodedUserdata = abi.encode(uint256(1), bptAmount);
         requestData.userData = encodedUserdata;
         requestData.toInternalBalance = false;
 
         (, requestData.minAmountsOut) = balancerHelpers.queryExit(balancerPoolId, amo, amo, requestData);
-        (expectedTempleAmount, expectedStablesAmount) = templeIndexInBalancerPool == 0
+        (expectedProtocolTokenAmount, expectedQuoteTokensAmount) = protocolTokenIndexInBalancerPool == 0
             ? (requestData.minAmountsOut[0], requestData.minAmountsOut[1])
             : (requestData.minAmountsOut[1], requestData.minAmountsOut[0]);
-        minTempleAmount = applySlippage(expectedTempleAmount, slippageBps);
-        minStablesAmount = applySlippage(expectedStablesAmount, slippageBps);
+        minProtocolTokenAmount = applySlippage(expectedProtocolTokenAmount, slippageBps);
+        minQuoteTokensAmount = applySlippage(expectedQuoteTokensAmount, slippageBps);
 
         // update `requestData` with the `minAmountsOut` to which the slippage was applied
-        (requestData.minAmountsOut[0], requestData.minAmountsOut[1]) = templeIndexInBalancerPool == 0
-            ? (minTempleAmount, minStablesAmount)
-            : (minStablesAmount, minTempleAmount);
+        (requestData.minAmountsOut[0], requestData.minAmountsOut[1]) = protocolTokenIndexInBalancerPool == 0
+            ? (minProtocolTokenAmount, minQuoteTokensAmount)
+            : (minQuoteTokensAmount, minProtocolTokenAmount);
     }
 
-    function applySlippage(uint256 amountIn, uint256 slippageBps) public pure returns (uint256 amountOut) {
+    function applySlippage(uint256 amountIn, uint256 slippageBps) public override pure returns (uint256 amountOut) {
         amountOut = amountIn * (BPS_PRECISION - slippageBps) / BPS_PRECISION;
     }
 

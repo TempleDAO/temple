@@ -1,0 +1,26 @@
+pragma solidity ^0.8.17;
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Temple (amo/test/RamosTestnetTempleTokenVault.sol)
+
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IRamosProtocolTokenVault } from "contracts/interfaces/amo/helpers/IRamosProtocolTokenVault.sol";
+import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
+
+contract RamosTestnetTempleTokenVault is IRamosProtocolTokenVault {
+    using SafeERC20 for ITempleERC20Token;
+
+    ITempleERC20Token public immutable templeToken;
+
+    constructor (address _templeToken) {
+        templeToken = ITempleERC20Token(_templeToken);
+    }
+
+    function borrowProtocolToken(uint256 amount, address recipient) external {
+        templeToken.mint(recipient, amount);
+    }
+
+    function repayProtocolToken(uint256 amount) external {
+        templeToken.safeTransferFrom(msg.sender, address(this), amount);
+        templeToken.burn(amount);
+    }
+}

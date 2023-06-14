@@ -103,15 +103,20 @@ contract RamosStrategyTestBase is TempleTest {
             ramos.depositAndStakeBptTokens(bptBalance, true);
         }
 
+        // solhint-disable-next-line reentrancy
+        strategy = new RamosStrategy(rescuer, executor, "RamosStrategy", address(trv), address(ramos), address(temple));
+        // @todo Should allow set batch?
+        strategy.setExplicitAccess(address(ramos), RamosStrategy.borrowProtocolToken.selector, true);
+        strategy.setExplicitAccess(address(ramos), RamosStrategy.repayProtocolToken.selector, true);
+
+        ramos.setProtocolTokenVault(address(strategy));
+
         // `templeToken` settings
         {
             address templeTokenOwner = temple.owner();
             startHoax(templeTokenOwner);
-            temple.addMinter(address(ramos));
+            temple.addMinter(address(strategy));
         }
-
-        // solhint-disable-next-line reentrancy
-        strategy = new RamosStrategy(rescuer, executor, "RamosStrategy", address(trv), address(ramos));
 
         changePrank(executor);
         dUSD.addMinter(executor);
@@ -135,7 +140,7 @@ contract RamosStrategyTestBase is TempleTest {
         if (balances.bptTotalSupply > 0) {
             balances.ramosBpt = amoStaking.stakedBalance() + bptToken.balanceOf(address(amoStaking));
 
-            (balances.totalTemple, balances.totalStable) = poolHelper.getTempleStableBalances();
+            (balances.totalTemple, balances.totalStable) = poolHelper.getPairBalances();
             balances.ramosTemple = balances.totalTemple * balances.ramosBpt / balances.bptTotalSupply;
             balances.ramosStable = balances.totalStable * balances.ramosBpt / balances.bptTotalSupply;
         }

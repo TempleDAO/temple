@@ -7,17 +7,22 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { IRamos } from "contracts/interfaces/amo/IRamos.sol";
 import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
-
+import { IRamosProtocolTokenVault } from "contracts/interfaces/amo/helpers/IRamosProtocolTokenVault.sol";
 import { AbstractStrategy } from "contracts/v2/strategies/AbstractStrategy.sol";
+import { ITempleERC20Token } from "contracts/interfaces/core/ITempleERC20Token.sol";
 
-contract RamosStrategy  is AbstractStrategy {
+contract RamosStrategy  is AbstractStrategy, IRamosProtocolTokenVault {
     using SafeERC20 for IERC20;
+    using SafeERC20 for ITempleERC20Token;
+    
     string public constant VERSION = "1.0.0";
 
     /**
      * @notice The RAMOS contract used to manage the TPI
      */
     IRamos public ramos;
+
+    ITempleERC20Token public immutable templeToken;
 
     event BorrowAndAddLiquidity(uint256 amount);
     event RemoveLiquidityAndRepay(uint256 amount);
@@ -27,9 +32,11 @@ contract RamosStrategy  is AbstractStrategy {
         address _initialExecutor,
         string memory _strategyName,
         address _treasuryReservesVault,
-        address _ramos
+        address _ramos,
+        address _templeToken
     ) AbstractStrategy(_initialRescuer, _initialExecutor, _strategyName, _treasuryReservesVault) {
         ramos = IRamos(_ramos);
+        templeToken = ITempleERC20Token(_templeToken);
     }
 
     /**
@@ -37,6 +44,17 @@ contract RamosStrategy  is AbstractStrategy {
      */
     function strategyVersion() external override pure returns (string memory) {
         return VERSION;
+    }
+
+    function borrowProtocolToken(uint256 amount, address recipient) external onlyElevatedAccess {
+        // @todo This should be sourced from the TRV, so the strategy can be minted dTemple
+        templeToken.mint(recipient, amount);
+    }
+
+    function repayProtocolToken(uint256 amount) external onlyElevatedAccess {
+        // @todo This should be repaid to the TRV, so the dTemple can be burned
+        templeToken.safeTransferFrom(msg.sender, address(this), amount);
+        templeToken.burn(amount);
     }
 
     /**
