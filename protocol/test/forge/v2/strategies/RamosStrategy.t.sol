@@ -51,6 +51,8 @@ contract RamosStrategyTestBase is TempleTest {
     TreasuryPriceIndexOracle public tpiOracle;
     TreasuryReservesVault public trv;
 
+    address public feeCollector = makeAddr("feeCollector");
+
     function _setUp() public {
         fork("mainnet", 17300437);
 
@@ -75,7 +77,7 @@ contract RamosStrategyTestBase is TempleTest {
                 rescuer, executor, balancerVault, 
                 address(temple), address(dai), address(bptToken), 
                 address(amoStaking), 
-                templeIndexPool, balancerPoolId, address(trv)
+                templeIndexPool, balancerPoolId, address(tpiOracle), feeCollector, 200
             );
         }
 

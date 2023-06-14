@@ -5,7 +5,6 @@ pragma solidity ^0.8.17;
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
-import { mulDiv } from "@prb/math/src/Common.sol";
 
 import { IRamos } from "contracts/interfaces/amo/IRamos.sol";
 import { IRamosProtocolTokenVault } from "contracts/interfaces/amo/helpers/IRamosProtocolTokenVault.sol";
@@ -14,6 +13,7 @@ import { IBalancerPoolHelper } from "contracts/interfaces/amo/helpers/IBalancerP
 import { IBalancerVault } from "contracts/interfaces/external/balancer/IBalancerVault.sol";
 import { IAuraStaking } from "contracts/interfaces/amo/IAuraStaking.sol";
 import { IBalancerBptToken } from "contracts/interfaces/external/balancer/IBalancerBptToken.sol";
+import { CommonEventsAndErrors } from "contracts/common/CommonEventsAndErrors.sol";
 
 import { TempleElevatedAccess } from "contracts/v2/access/TempleElevatedAccess.sol";
 import { AMOCommon } from "contracts/amo/helpers/AMOCommon.sol";
@@ -91,6 +91,15 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     /// @notice `protocolToken` index in balancer pool. to avoid recalculation or external calls
     uint64 public immutable override protocolTokenBalancerPoolIndex;
 
+    /// @notice The address to send proportion of rebalance as fees to
+    address public immutable override feeCollector;
+
+    // @notice The maximum rebalance fee which can be set
+    uint256 public override immutable maxRebalanceFee;
+
+    /// @notice The fees (in basis points) taken on a rebalance
+    RebalanceFees public override rebalanceFees;
+
     constructor(
         address _initialRescuer,
         address _initialExecutor,
@@ -101,7 +110,9 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         address _amoStaking,
         uint64 _protocolTokenIndexInPool,
         bytes32 _balancerPoolId,
-        address _tpiOracle
+        address _tpiOracle,
+        address _feeCollector,
+        uint256 _maxRebalanceFee
     ) TempleElevatedAccess(_initialRescuer, _initialExecutor) {
         balancerVault = IBalancerVault(_balancerVault);
         protocolToken = IERC20(_protocolToken);
@@ -111,6 +122,8 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         protocolTokenBalancerPoolIndex = _protocolTokenIndexInPool;
         balancerPoolId = _balancerPoolId;
         tpiOracle = ITreasuryPriceIndexOracle(_tpiOracle);
+        feeCollector = _feeCollector;
+        maxRebalanceFee = _maxRebalanceFee;
     }
 
     /**
@@ -199,6 +212,22 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
     }
 
     /**
+     * @notice Set the rebalance fees, in basis points
+     * @param rebalanceJoinFeeBps The fee for when a `rebalanceUpJoin` or `rebalanceDownJoin` is performed
+     * @param rebalanceExitFeeBps The fee for when a `rebalanceUpExit` or `rebalanceDownExit` is performed
+     */
+    function setRebalanceFees(uint256 rebalanceJoinFeeBps, uint256 rebalanceExitFeeBps) external override {
+        if (msg.sender != feeCollector) revert CommonEventsAndErrors.InvalidAccess();
+        if (rebalanceJoinFeeBps > maxRebalanceFee) revert CommonEventsAndErrors.InvalidParam();
+        if (rebalanceExitFeeBps > maxRebalanceFee) revert CommonEventsAndErrors.InvalidParam();
+
+        emit RebalanceFeesSet(rebalanceJoinFeeBps, rebalanceExitFeeBps);
+
+        // Downcast is safe since it can't be set greater than the max.
+        rebalanceFees = RebalanceFees(uint128(rebalanceJoinFeeBps), uint128(rebalanceExitFeeBps));
+    }
+
+    /**
      * @notice The Treasury Price Index - the target price of the Treasury, in `quoteToken` terms.
      */
     function treasuryPriceIndex() public view override returns (uint256) {
@@ -246,7 +275,8 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
      * Single-side WITHDRAW `protocolToken` from balancer liquidity pool to raise price.
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
      * pool exit. 
-     * @dev `protocolToken`returned from balancer pool are repaid to the `protocolTokenVault`
+     * Ramos rebalance fees are deducted from the amount of `protocolToken` returned from the balancer pool
+     * The remainder `protocolToken` are repaid to the `protocolTokenVault`
      * @param bptAmountIn amount of BPT tokens going in balancer pool for exit
      * @param minProtocolTokenOut amount of `protocolToken` expected out of balancer pool
      */
@@ -268,8 +298,14 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         );
         emit RebalanceUpExit(bptAmountIn, protocolTokenAmountOut);
 
-        // Dispose of the protocol tokens withdrawn from the pool
-        protocolTokenVault.repayProtocolToken(protocolTokenAmountOut);
+        // Collect the fees on the output protocol token
+        uint256 feeAmt = protocolTokenAmountOut * rebalanceFees.rebalanceExitFeeBps / BPS_PRECISION;
+        if (feeAmt != 0) {
+            protocolToken.safeTransfer(feeCollector, feeAmt);
+        }
+
+        // Repay the remaining protocol tokens withdrawn from the pool
+        protocolTokenVault.repayProtocolToken(protocolTokenAmountOut-feeAmt);
     }
 
     /**
@@ -277,7 +313,8 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
      * Single-side WITHDRAW `quoteToken` from balancer liquidity pool to lower price.
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
      * pool exit. 
-     * @dev `quoteToken`returned from balancer pool are repaid to the recipient
+     * Ramos rebalance fees are deducted from the amount of `quoteToken` returned from the exit
+     * The remainder `quoteToken` are repaid to the recipient
      * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
      * @param minQuoteTokenAmountOut Minimum amount of `quoteToken` expected to receive
      * @param recipient Address to which the `quoteToken` withdrawn are transferred
@@ -300,6 +337,12 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         );
         emit RebalanceDownExit(bptAmountIn, quoteTokenAmountOut, recipient);
 
+        // Collect the fees on the output quote token
+        uint256 feeAmt = quoteTokenAmountOut * rebalanceFees.rebalanceExitFeeBps / BPS_PRECISION;
+        if (feeAmt != 0) {
+            quoteToken.safeTransfer(feeCollector, feeAmt);
+        }
+
         if (recipient != address(this) && recipient != address(0)) {
             uint256 quoteTokenBalance = quoteToken.balanceOf(address(this));
             quoteToken.safeTransfer(recipient, quoteTokenBalance);
@@ -310,6 +353,8 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
      * @notice Rebalance up when `protocolToken` spot price is below TPI.
      * Single-side ADD `quoteToken` into the balancer liquidity pool to raise price.
      * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
+     * Ramos rebalance fees are deducted from the amount of `quoteToken` input
+     * The remainder `quoteToken` are added into the balancer pool
      * @dev The `quoteToken` amount must be deposited into this contract first
      * @param quoteTokenAmountIn Amount of `quoteToken` to deposit into balancer pool
      * @param minBptOut Minimum amount of BPT tokens expected to receive
@@ -321,12 +366,19 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         _validateParams(minBptOut, quoteTokenAmountIn, maxRebalanceAmounts.quoteToken);
         lastRebalanceTimeSecs = uint64(block.timestamp);
 
-        // Send the quote token to the poolHelper
-        quoteToken.safeTransfer(address(poolHelper), quoteTokenAmountIn);
+        // Collect the fees from the input quote token
+        uint256 feeAmt = quoteTokenAmountIn * rebalanceFees.rebalanceJoinFeeBps / BPS_PRECISION;
+        if (feeAmt != 0) {
+            quoteToken.safeTransfer(feeCollector, feeAmt);
+        }
+
+        // Send the remaining quote tokens to the poolHelper
+        uint256 joinAmountIn = quoteTokenAmountIn - feeAmt;
+        quoteToken.safeTransfer(address(poolHelper), joinAmountIn);
 
         // quoteToken single side join
         uint256 bptOut = poolHelper.joinPool(
-            quoteTokenAmountIn, minBptOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow,
+            joinAmountIn, minBptOut, rebalancePercentageBoundUp, rebalancePercentageBoundLow,
             treasuryPriceIndex(), postRebalanceSlippage, 1-protocolTokenBalancerPoolIndex, quoteToken
         );
         emit RebalanceUpJoin(quoteTokenAmountIn, bptOut);
@@ -340,6 +392,8 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
      * @notice Rebalance down when `protocolToken` spot price is above TPI.
      * Single-side ADD `protocolToken` into the balancer liquidity pool to lower price.
      * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
+     * Ramos rebalance fees are deducted from the amount of `protocolToken` input
+     * The remainder `protocolToken` are added into the balancer pool
      * @dev The `protocolToken` are borrowed from the `protocolTokenVault`
      * @param protocolTokenAmountIn Amount of `protocolToken` tokens to deposit into balancer pool
      * @param minBptOut Minimum amount of BPT tokens expected to receive
@@ -351,12 +405,22 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         _validateParams(minBptOut, protocolTokenAmountIn, maxRebalanceAmounts.protocolToken);
         lastRebalanceTimeSecs = uint64(block.timestamp);
 
-        // Pull the protocol token and send to the poolHelper
-        protocolTokenVault.borrowProtocolToken(protocolTokenAmountIn, address(poolHelper));
+        // Borrow the protocol token
+        protocolTokenVault.borrowProtocolToken(protocolTokenAmountIn, address(this));
+
+        // Collect the fees from the input protocol token amount
+        uint256 feeAmt = protocolTokenAmountIn * rebalanceFees.rebalanceJoinFeeBps / BPS_PRECISION;
+        if (feeAmt != 0) {
+            protocolToken.safeTransfer(feeCollector, feeAmt);
+        }
+
+        // Send the balance to the poolHelper
+        uint256 joinAmountIn = protocolTokenAmountIn - feeAmt;
+        protocolToken.safeTransfer(address(poolHelper), joinAmountIn);
 
         // protocolToken single side join
         uint256 bptOut = poolHelper.joinPool(
-            protocolTokenAmountIn, minBptOut, rebalancePercentageBoundUp,
+            joinAmountIn, minBptOut, rebalancePercentageBoundUp,
             rebalancePercentageBoundLow, treasuryPriceIndex(), 
             postRebalanceSlippage, protocolTokenBalancerPoolIndex, protocolToken
         );
@@ -535,8 +599,8 @@ contract Ramos is IRamos, TempleElevatedAccess, Pausable {
         if (bptTotalSupply != 0) {
             bptBalance = amoStaking.totalBalance();
             (uint256 totalProtocolTokenInLp, uint256 totalQuoteTokenInLp) = poolHelper.getPairBalances();
-            protocolTokenBalance = mulDiv(totalProtocolTokenInLp, bptBalance, bptTotalSupply);
-            quoteTokenBalance = mulDiv(totalQuoteTokenInLp, bptBalance, bptTotalSupply);
+            protocolTokenBalance = totalProtocolTokenInLp * bptBalance /bptTotalSupply;
+            quoteTokenBalance = totalQuoteTokenInLp * bptBalance /bptTotalSupply;
         }
     }
 

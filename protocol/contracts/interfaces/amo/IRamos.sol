@@ -32,6 +32,11 @@ interface IRamos {
         uint256 protocolToken;
     }
 
+    struct RebalanceFees {
+        uint128 rebalanceJoinFeeBps;
+        uint128 rebalanceExitFeeBps;
+    }
+
     // Admin events
     event RecoveredToken(address token, address to, uint256 amount);
     event SetPostRebalanceSlippage(uint64 slippageBps);
@@ -42,6 +47,7 @@ interface IRamos {
     event ProtocolTokenVaultSet(address indexed vault);
     event SetPoolHelper(address poolHelper);
     event SetMaxRebalanceAmounts(uint256 bptMaxAmount, uint256 quoteTokenMaxAmount, uint256 protocolTokenMaxAmount);
+    event RebalanceFeesSet(uint256 rebalanceJoinFeeBps, uint256 rebalanceExitFeeBps);
 
     // Rebalance events
     event RebalanceUpExit(uint256 bptAmountIn, uint256 protocolTokenAmountOut);
@@ -106,6 +112,31 @@ interface IRamos {
     function protocolTokenBalancerPoolIndex() external view returns (uint64);
 
     /**
+     * @notice The address to send proportion of rebalance as fees to
+     */
+    function feeCollector() external view returns (address);
+
+    /**
+     * @notice The maximum rebalance fee which can be set
+     */
+    function maxRebalanceFee() external view returns (uint256);
+
+    /**
+     * @notice The fees (in basis points) taken on a rebalance
+     */
+    function rebalanceFees() external view returns (
+        uint128 rebalanceJoinFeeBps, 
+        uint128 rebalanceExitFeeBps
+    );
+
+    /**
+     * @notice Set the rebalance fees, in basis points
+     * @param rebalanceJoinFeeBps The fee for when a `rebalanceUpJoin` or `rebalanceDownJoin` is performed
+     * @param rebalanceExitFeeBps The fee for when a `rebalanceUpExit` or `rebalanceDownExit` is performed
+     */
+    function setRebalanceFees(uint256 rebalanceJoinFeeBps, uint256 rebalanceExitFeeBps) external;
+
+    /**
      * @notice The Treasury Price Index (TPI) Oracle
      */
     function tpiOracle() external view returns (ITreasuryPriceIndexOracle);
@@ -135,7 +166,8 @@ interface IRamos {
      * Single-side WITHDRAW `protocolToken` from balancer liquidity pool to raise price.
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
      * pool exit. 
-     * @dev `protocolToken`returned from balancer pool are repaid to the `protocolTokenVault`
+     * Ramos rebalance fees are deducted from the amount of `protocolToken` returned from the exit
+     * The remainder `protocolToken` are repaid to the `protocolTokenVault`
      * @param bptAmountIn amount of BPT tokens going in balancer pool for exit
      * @param minProtocolTokenOut amount of `protocolToken` expected out of balancer pool
      */
@@ -149,7 +181,8 @@ interface IRamos {
      * Single-side WITHDRAW `quoteToken` from balancer liquidity pool to lower price.
      * BPT tokens are withdrawn from Aura rewards staking contract and used for balancer
      * pool exit. 
-     * @dev `quoteToken`returned from balancer pool are repaid to the recipient
+     * Ramos rebalance fees are deducted from the amount of `quoteToken` returned from the exit
+     * The remainder `quoteToken` are repaid to the recipient
      * @param bptAmountIn Amount of BPT tokens to deposit into balancer pool
      * @param minQuoteTokenAmountOut Minimum amount of `quoteToken` expected to receive
      * @param recipient Address to which the `quoteToken` withdrawn are transferred
@@ -164,6 +197,8 @@ interface IRamos {
      * @notice Rebalance up when `protocolToken` spot price is below TPI.
      * Single-side ADD `quoteToken` into the balancer liquidity pool to raise price.
      * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
+     * Ramos rebalance fees are deducted from the amount of `quoteToken` input
+     * The remainder `quoteToken` are added into the balancer pool
      * @dev The `quoteToken` amount must be deposited into this contract first
      * @param quoteTokenAmountIn Amount of `quoteToken` to deposit into balancer pool
      * @param minBptOut Minimum amount of BPT tokens expected to receive
@@ -177,6 +212,8 @@ interface IRamos {
      * @notice Rebalance down when `protocolToken` spot price is above TPI.
      * Single-side ADD `protocolToken` into the balancer liquidity pool to lower price.
      * Returned BPT tokens are deposited and staked into Aura for rewards using the staking contract.
+     * Ramos rebalance fees are deducted from the amount of `protocolToken` input
+     * The remainder `protocolToken` are added into the balancer pool
      * @dev The `protocolToken` are borrowed from the `protocolTokenVault`
      * @param protocolTokenAmountIn Amount of `protocolToken` tokens to deposit into balancer pool
      * @param minBptOut Minimum amount of BPT tokens expected to receive
